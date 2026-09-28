@@ -5,10 +5,10 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Set this to the URL users open, including scheme and port, for origin/CSRF checks.
-      ORIGIN: "${COAST_ORIGIN:-http://localhost:3000}"
-      # An empty value selects bundled PostgreSQL. External PostgreSQL skips it entirely.
-      DATABASE_URL: "${DATABASE_URL:-}"
+      # Change this to the URL users open for LAN or public access.
+      ORIGIN: http://localhost:3000
+      # Leave blank for bundled PostgreSQL, or set the URL of an existing database.
+      DATABASE_URL: ""
     volumes:
       - coast-data:/data
     restart: unless-stopped

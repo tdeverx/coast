@@ -1,8 +1,8 @@
 # Running Coast
 
-The default image contains Bun, Coast and PostgreSQL. `compose.yaml` builds it locally, exposes application port 3000 and persists everything under one `/data` volume. Set `COAST_ORIGIN` to the exact address users open, including scheme and any non-default port, before running `docker compose up --build -d`. The default is `http://localhost:3000`. Open that address and create the first administrator. Later accounts are created by an administrator in Settings.
+The default image contains Bun, Coast and PostgreSQL. `compose.yaml` builds it locally, exposes application port 3000 and persists everything under one `/data` volume. The Compose file sets `ORIGIN` to `http://localhost:3000` by default. For LAN or public access, edit that value to the exact address users open, including scheme and port. Leave `DATABASE_URL` blank for bundled PostgreSQL, or set it to an existing PostgreSQL database URL. Open the Coast address and create the first administrator. Later accounts are created by an administrator in Settings.
 
-Coast supports ordinary HTTP on trusted local networks. Terminate public TLS at your reverse proxy and set `COAST_ORIGIN` to the public HTTPS origin; HTTPS session cookies are Secure. Do not configure forwarded-header trust unless the proxy removes incoming client-supplied versions of those headers. Coast has no telemetry.
+Coast supports ordinary HTTP on trusted local networks. Terminate public TLS at your reverse proxy and set Compose `ORIGIN` to the public HTTPS origin; HTTPS session cookies are Secure. Do not configure forwarded-header trust unless the proxy removes incoming client-supplied versions of those headers. Coast has no telemetry.
 
 ## Storage and PostgreSQL
 

@@ -39,13 +39,13 @@ Coast runs in Docker Compose. Use **Docker Desktop** or another Docker installat
 
 The Compose file downloads the published `preview` image from GitHub Container Registry. It publishes Coast on port `3000` and creates a persistent Docker volume named `coast-data`. That volume contains the database, encrypted service credentials, cached artwork and runtime state. **Do not remove the volume when updating Coast.**
 
-To use Coast from another device on your LAN, create a text file named `.env` beside `compose.yaml` and put this line in it, replacing the example with the IP address of the computer running Coast:
+To use Coast from another device on your LAN, open `compose.yaml` in a text editor and change the `ORIGIN` line under `environment` to the address of the computer running Coast. For example, if its LAN address is `192.168.1.20`, set:
 
-```dotenv
-COAST_ORIGIN=http://192.168.1.20:3000
+```yaml
+ORIGIN: http://192.168.1.20:3000
 ```
 
-Then run `docker compose up -d --no-build` again. Open the same address from the other device. Coast does not configure your router or firewall.
+Save the file, then run `docker compose up -d --no-build` again. Open `http://192.168.1.20:3000` from the other device. Use your computer's actual LAN address in both places. Coast does not configure your router or firewall.
 
 > [!TIP]
 > To update, run `docker compose pull` and then `docker compose up -d --no-build` in the installation folder. Preview updates can change the database schema; keep a backup before updating.
@@ -60,7 +60,7 @@ cd coast
 docker compose up --build -d
 ```
 
-The source-build command uses `http://localhost:3000` unless you create a `.env` file beside `compose.yaml` and set `COAST_ORIGIN` there. To use an existing PostgreSQL database, add `DATABASE_URL` to that file. The database must already exist and permit Coast to run migrations. Keep the `coast-data` volume in either setup. See [deployment and recovery](docs/deployment.md) before changing database or storage settings, exposing Coast beyond a trusted local network, or upgrading.
+The source-build command uses `http://localhost:3000` by default. For LAN access, edit the `ORIGIN` line in `compose.yaml` as described above. To use an existing PostgreSQL database, set `DATABASE_URL` in the Compose file; the database must already exist and permit Coast to run migrations. Keep the `coast-data` volume in either setup. See [deployment and recovery](docs/deployment.md) before changing database or storage settings, exposing Coast beyond a trusted local network, or upgrading.
 
 ## What Coast connects to
 
@@ -84,7 +84,7 @@ Open the local URL printed by Vite (usually <http://localhost:5173>). The dev se
 
 ## Data and security
 
-Back up the database and the entire `secrets` directory together. Coast encrypts saved provider credentials using a key in that directory; without it, those credentials cannot be read. Keep the Docker volume private to the installation administrator. For access over the public internet, terminate HTTPS at a trusted reverse proxy and set `COAST_ORIGIN` to the exact public HTTPS address. Coast has no telemetry.
+Back up the database and the entire `secrets` directory together. Coast encrypts saved provider credentials using a key in that directory; without it, those credentials cannot be read. Keep the Docker volume private to the installation administrator. For access over the public internet, terminate HTTPS at a trusted reverse proxy and set the Compose `ORIGIN` value to the exact public HTTPS address. Coast has no telemetry.
 
 ## Project
 
