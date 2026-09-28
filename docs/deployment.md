@@ -6,11 +6,13 @@ Coast supports ordinary HTTP on trusted local networks. Terminate public TLS at 
 
 ## Storage and PostgreSQL
 
-The mount contains `postgres/`, `artwork/`, `secrets/` and `runtime/`. Credentials are encrypted using `secrets/credentials.key`; losing that key makes saved provider credentials unreadable. Back up the database and the entire secrets directory together. Stop the container before a filesystem-level database backup, or use PostgreSQL's supported logical backup tools while running. Keep the mount private to the installation administrator.
+The mount contains `postgres/`, `artwork/`, `secrets/` and `runtime/`. Credentials are encrypted using `secrets/credentials.key`; losing that key makes saved provider credentials unreadable. Back up the database and the entire secrets directory together. Stop the container before a filesystem-level database backup, or use PostgreSQL's supported logical backup tools while running. Keep the mount private to the installation administrator. Coast sets `secrets/`, `artwork/` and `runtime/` to mode `700`; secret files and recovery credentials use mode `600`.
 
 With no `DATABASE_URL`, startup initialises bundled PostgreSQL, creates a dedicated non-superuser Coast database owner, runs migrations and starts the application. PostgreSQL listens only on loopback inside the container. The supervisor stops both processes if either exits, and forwards shutdown signals. New private 0.x schemas do not promise upgrade compatibility; back up first and read release-specific instructions before changing images. A PostgreSQL major-version change requires the normal PostgreSQL upgrade procedure.
 
 Set `DATABASE_URL=postgresql://user:password@database-host:5432/coast` in the Compose environment to use an existing PostgreSQL database. The database must already exist and its user must be allowed to run Coast migrations. Bundled PostgreSQL will not start. Keep `/data` mounted for credentials, artwork and recovery state even with an external database.
+
+Some host bind mounts, including Apple Container's VirtioFS mounts, allow file writes but reject ownership changes (`chown`). With an external `DATABASE_URL`, Coast can use such a mount if the container's `coast` user (UID `10001`) can write the `secrets/`, `artwork/` and `runtime/` directories and their private permissions can be verified. Set the host directory ownership/permissions accordingly; Coast checks access as the actual service user before starting. The bundled PostgreSQL database additionally requires its data directory to be owned by the container's `postgres` user. If the mount cannot provide that, startup stops with guidance. Use the default POSIX-compatible named volume (`coast-data`) or another managed POSIX volume for bundled PostgreSQL, or configure an external `DATABASE_URL` when using a VirtioFS bind mount.
 
 ## Administrator recovery
 

@@ -3,15 +3,8 @@ set -Eeuo pipefail
 umask 077
 
 data_dir="${COAST_DATA_DIR:-/data}"
-mkdir -p "$data_dir" "$data_dir/secrets" "$data_dir/artwork" "$data_dir/runtime"
-chown coast:coast "$data_dir" "$data_dir/secrets" "$data_dir/artwork" "$data_dir/runtime"
-chmod 755 "$data_dir"
-chmod 700 "$data_dir/secrets" "$data_dir/artwork" "$data_dir/runtime"
-chown -R coast:coast "$data_dir/secrets"
-if [[ -e "$data_dir/recovery-credential" ]]; then
-  chown coast:coast "$data_dir/recovery-credential"
-  chmod 600 "$data_dir/recovery-credential"
-fi
+source /usr/local/lib/coast-container-storage.sh
+prepare_coast_storage "$data_dir"
 
 database_pid=""
 application_pid=""
@@ -27,14 +20,15 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   pg_bin="$(find /usr/lib/postgresql -mindepth 2 -maxdepth 2 -type d -name bin | sort -V | tail -1)"
   if [[ -z "$pg_bin" ]]; then echo 'Bundled PostgreSQL was not found.' >&2; exit 1; fi
   pg_data="$data_dir/postgres"
-  mkdir -p "$pg_data" /var/run/postgresql
-  chown postgres:postgres "$pg_data" /var/run/postgresql
-  chmod 700 "$pg_data"
+  prepare_postgres_storage "$pg_data"
   password_file="$data_dir/secrets/database-password"
   if [[ ! -s "$password_file" ]]; then
-    bun -e 'console.log(Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex"))' > "$password_file"
-    chown coast:coast "$password_file"
+    gosu coast bash -c 'umask 077; bun -e '\''console.log(Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex"))'\'' > "$1"' _ "$password_file"
     chmod 600 "$password_file"
+  fi
+  if ! gosu coast test -r "$password_file"; then
+    echo "Coast cannot read the bundled database credential at $password_file. Correct its host ownership and restart." >&2
+    exit 1
   fi
   database_password="$(cat "$password_file")"
   # The locally generated password is also safe for SQL and URL embedding.
@@ -43,6 +37,7 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
     init_password="$(mktemp)"
     printf '%s\n' "$database_password" > "$init_password"
     chown postgres:postgres "$init_password"
+    chmod 600 "$init_password"
     gosu postgres "$pg_bin/initdb" -D "$pg_data" --username=postgres --encoding=UTF8 --locale=C.UTF-8 --auth-local=trust --auth-host=scram-sha-256 --pwfile="$init_password" > /dev/null
     rm -f "$init_password"
   fi
