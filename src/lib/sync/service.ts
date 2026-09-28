@@ -106,9 +106,17 @@ export async function libraryScanProgress(userId: string, connectionId: string) 
 }
 
 /** Resume at committed page boundaries; removal only occurs after a successful full traversal. */
-export async function scanJellyfin(userId: string, connectionId: string, full = true) {
+export async function scanJellyfin(
+  userId: string,
+  connectionId: string,
+  full = true,
+  onStage?: (stage: string) => void
+) {
+  onStage?.('connection');
   const { adapter, connection, instance } = await getJellyfin(userId, connectionId);
+  onStage?.('identity');
   await adapter.identity(instance.serverIdentity || undefined);
+  onStage?.('checkpoint-read');
   const db = getDb(),
     kind = full ? 'jellyfin-full' : 'jellyfin-recent';
   const [checkpoint] = await db
@@ -184,6 +192,7 @@ export async function scanJellyfin(userId: string, connectionId: string, full = 
       instanceId: instance.id,
       showId,
       seasonId,
+      isolateConflictingProviderIds: true,
     });
     visited.set(item.id, saved.id);
     const [providerItem] = await db
@@ -281,6 +290,7 @@ export async function scanJellyfin(userId: string, connectionId: string, full = 
   };
   let count = 0;
   for (;;) {
+    onStage?.('library-page');
     const [current] = await db
       .select({ settings: providerConnections.settings })
       .from(providerConnections)
@@ -292,12 +302,14 @@ export async function scanJellyfin(userId: string, connectionId: string, full = 
       importPlayback ? undefined : since
     );
     await report(offset, page.total);
+    onStage?.('item-import');
     for (const [index, item] of page.items.entries()) {
       await importItem(item);
       count++;
       if ((index + 1) % 25 === 0 || index === page.items.length - 1)
         await report(offset + index + 1, page.total);
     }
+    onStage?.('checkpoint-write');
     await db
       .insert(syncCheckpoints)
       .values({
@@ -321,6 +333,7 @@ export async function scanJellyfin(userId: string, connectionId: string, full = 
     }
     offset = page.nextOffset;
   }
+  onStage?.('reconcile');
   await db.transaction(async (tx) => {
     if (full)
       await tx
@@ -338,6 +351,7 @@ export async function scanJellyfin(userId: string, connectionId: string, full = 
       .set({ cursor: null, scanId: null, completedAt: new Date(), updatedAt: new Date() })
       .where(and(eq(syncCheckpoints.connectionId, connectionId), eq(syncCheckpoints.kind, kind)));
   });
+  onStage?.('complete');
   await db
     .update(providerConnections)
     .set({

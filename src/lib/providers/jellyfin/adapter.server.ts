@@ -40,7 +40,7 @@ const sourceSchema = v.object({
 });
 const itemSchema = v.object({
   Id: v.string(),
-  Name: v.string(),
+  Name: str,
   Type: v.picklist(['Movie', 'Series', 'Season', 'Episode']),
   UserData: v.nullish(
     v.object({
@@ -116,6 +116,10 @@ function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
   const kind = ({ Movie: 'movie', Series: 'show', Season: 'season', Episode: 'episode' } as const)[
     i.Type
   ];
+  const title =
+    i.Name?.trim() ||
+    i.OriginalTitle?.trim() ||
+    (kind === 'episode' ? `Episode ${i.IndexNumber ?? '?'}` : i.Id);
   return {
     id: i.Id,
     kind,
@@ -136,7 +140,7 @@ function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
       provider: 'jellyfin',
       externalId: i.Id,
       kind,
-      title: i.Name,
+      title,
       originalTitle: i.OriginalTitle || undefined,
       overview: i.Overview || undefined,
       releaseDate: i.PremiereDate?.slice(0, 10),

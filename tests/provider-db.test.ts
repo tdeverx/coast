@@ -191,6 +191,30 @@ run(
         { instanceId }
       )
     ).rejects.toThrow('Conflicting provider identities');
+    const isolated = await ingestMetadata(
+      {
+        provider: 'jellyfin',
+        externalId: `isolated-${prefix}`,
+        kind: 'movie',
+        title: 'Conflict preserved separately',
+        externalIds: { tmdb: `one-${prefix}`, imdb: `two-${prefix}` },
+      },
+      { instanceId, isolateConflictingProviderIds: true }
+    );
+    ids.push(isolated.id);
+    expect(isolated.id).not.toBe(first.id);
+    expect(isolated.id).not.toBe(second.id);
+    expect(
+      await getDb()
+        .select()
+        .from(externalIds)
+        .where(
+          and(
+            eq(externalIds.provider, `jellyfin:${instanceId}`),
+            eq(externalIds.externalId, `isolated-${prefix}`)
+          )
+        )
+    ).toMatchObject([{ mediaId: isolated.id }]);
     expect(
       await getDb()
         .select()

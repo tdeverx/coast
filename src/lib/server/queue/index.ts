@@ -5,6 +5,7 @@ import { requireAdmin, type SessionUser } from '../auth';
 import { AppError } from '../security/errors';
 import { ProviderHttpError } from '../security/provider-fetch';
 import { notify, recordDiagnostic, resolveNotification } from '../notifications';
+import * as v from 'valibot';
 
 export interface OutboxAction {
   id: string;
@@ -60,6 +61,52 @@ export async function enqueueAction(input: {
 
 export function retryDelayMs(attempt: number): number {
   return Math.min(6 * 60 * 60_000, 5000 * 2 ** Math.min(13, Math.max(0, attempt - 1)));
+}
+
+/** Include only schema paths and value types; never persist rejected provider values. */
+export function validationDiagnostic(error: unknown) {
+  if (!(error instanceof v.ValiError)) return undefined;
+  return error.issues.slice(0, 12).map((issue) => ({
+    path:
+      issue.path
+        ?.map((segment: { key: unknown }) =>
+          typeof segment.key === 'string' || typeof segment.key === 'number'
+            ? String(segment.key)
+            : '?'
+        )
+        .join('.') || '(root)',
+    expected: issue.expected,
+    receivedType:
+      issue.input === null ? 'null' : Array.isArray(issue.input) ? 'array' : typeof issue.input,
+  }));
+}
+
+/** Map known scan invariants to stable codes without exposing arbitrary error messages. */
+export function safeDiagnosticErrorCode(error: unknown) {
+  if (!(error instanceof Error)) return undefined;
+  const codes: Record<string, string> = {
+    'Jellyfin returned an incomplete library page.': 'jellyfin.incomplete-library-page',
+    'Jellyfin returned a cyclic media hierarchy.': 'jellyfin.cyclic-media-hierarchy',
+    'Jellyfin returned an item without its show identity.': 'jellyfin.item-missing-show-identity',
+    'Conflicting provider identities require administrator review.': 'catalogue.identity-conflict',
+    'A season requires its canonical show.': 'catalogue.season-missing-show',
+    'An episode requires its canonical show.': 'catalogue.episode-missing-show',
+  };
+  return codes[error.message];
+}
+
+/** A short, controlled execution phase helps diagnose failures without storing error text. */
+export function tagDiagnosticStage(error: unknown, stage: string) {
+  if (error && typeof error === 'object') {
+    Object.defineProperty(error, 'diagnosticStage', { value: stage, configurable: true });
+  }
+  return error;
+}
+
+function safeDiagnosticStage(error: unknown) {
+  if (!error || typeof error !== 'object') return undefined;
+  const stage = (error as { diagnosticStage?: unknown }).diagnosticStage;
+  return typeof stage === 'string' && /^[a-z-]{1,40}$/.test(stage) ? stage : undefined;
 }
 
 export async function claimNextAction(): Promise<OutboxAction | null> {
@@ -150,6 +197,9 @@ export async function runQueueOnce(): Promise<boolean> {
               attempts: action.attempts,
               errorType: error instanceof Error ? error.name : 'unknown',
               status: error instanceof ProviderHttpError ? error.status : null,
+              errorCode: safeDiagnosticErrorCode(error),
+              stage: safeDiagnosticStage(error),
+              validationIssues: validationDiagnostic(error),
             },
           },
           sql

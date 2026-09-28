@@ -80,13 +80,14 @@ export async function ingestMetadata(
     seasonId?: string;
     mediaId?: string;
     complete?: boolean;
+    isolateConflictingProviderIds?: boolean;
   } = {}
 ) {
   const db = getDb();
   return db.transaction(async (tx) => {
     const identityProvider =
       metadata.provider === 'jellyfin' ? `jellyfin:${options.instanceId}` : metadata.provider;
-    const ids = { ...metadata.externalIds, [identityProvider]: metadata.externalId };
+    let ids = { ...metadata.externalIds, [identityProvider]: metadata.externalId };
     for (const key of Object.entries(ids)
       .map(([provider, id]) => `${provider}:${metadata.kind}:${id}`)
       .sort())
@@ -110,8 +111,16 @@ export async function ingestMetadata(
           )
           .limit(1);
         if (mapping) {
-          if (mediaId && mediaId !== mapping.mediaId)
+          if (mediaId && mediaId !== mapping.mediaId) {
+            if (options.isolateConflictingProviderIds && metadata.provider === 'jellyfin') {
+              // Preserve the Jellyfin item's identity without merging two canonical records.
+              // Conflicting third-party IDs remain in the provider snapshot for later review.
+              ids = { [identityProvider]: metadata.externalId };
+              mediaId = undefined;
+              break;
+            }
             throw new Error('Conflicting provider identities require administrator review.');
+          }
           mediaId = mapping.mediaId;
         }
       }

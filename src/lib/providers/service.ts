@@ -25,6 +25,7 @@ import {
   enqueueAction,
   registerActionHandler,
   PermanentActionError,
+  tagDiagnosticStage,
   type ActionHandler,
 } from '$lib/server/queue';
 import { JellyfinAdapter } from './jellyfin/adapter.server';
@@ -1330,7 +1331,15 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     if (!action.connectionId)
       throw new PermanentActionError('The Jellyfin connection is unavailable.');
     const { scanJellyfin } = await import('$lib/sync/service');
-    await scanJellyfin(action.userId, action.connectionId, action.payload.full !== false);
+    let stage = 'connection';
+    try {
+      await scanJellyfin(action.userId, action.connectionId, action.payload.full !== false, (next) => {
+        stage = next;
+      });
+    } catch (error) {
+      tagDiagnosticStage(error, stage);
+      throw error;
+    }
   });
   register('trakt.import', async (action) => {
     if (!action.connectionId)

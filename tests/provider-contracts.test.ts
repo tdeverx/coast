@@ -91,6 +91,31 @@ describe('TMDB boundary and relevant metadata', () => {
   });
 });
 describe('Jellyfin identity and library contracts', () => {
+  test('accepts an episode without a Jellyfin Name and supplies a useful fallback title', async () => {
+    const adapter = new JellyfinAdapter(
+      async () => ({
+        TotalRecordCount: 1,
+        Items: [
+          {
+            Id: 'unnamed-episode',
+            Type: 'Episode',
+            SeriesId: 'show',
+            ParentId: 'season',
+            IndexNumber: 7,
+            ParentIndexNumber: 1,
+          },
+        ],
+      }),
+      'device'
+    );
+
+    const [episode] = (await adapter.library('user')).items;
+    expect(episode.kind).toBe('episode');
+    expect(episode.metadata.title).toBe('Episode 7');
+    expect(episode.metadata.seasonNumber).toBe(1);
+    expect(episode.metadata.episodeNumber).toBe(7);
+  });
+
   test('accepts the public product identity returned by Jellyfin servers', async () => {
     const adapter = new JellyfinAdapter(
       async () => ({
