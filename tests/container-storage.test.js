@@ -9,6 +9,9 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const storageScript = join(root, 'scripts/container-storage.sh');
 
+/** @typedef {{ postgresUid?: number, denyMountChown?: boolean, denyMountChmod?: boolean, readOnlyMount?: boolean }} FixtureOptions */
+
+/** @param {FixtureOptions} [options] */
 async function fixture(options = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'coast-storage-test-'));
   const mount = join(directory, 'data');
@@ -20,6 +23,7 @@ async function fixture(options = {}) {
   await writeFile(join(state, 'owners.tsv'), '');
   for (const name of ['secrets', 'artwork', 'runtime']) await mkdir(join(mount, name));
 
+  /** @param {string} name @param {string} contents */
   const shim = async (name, contents) => {
     const path = join(bin, name);
     await writeFile(path, `#!/bin/bash\n${contents}\n`, { mode: 0o755 });
@@ -90,6 +94,7 @@ exec /bin/chmod "$mode" "$path"`);
   };
 }
 
+/** @param {Awaited<ReturnType<typeof fixture>>} fixture @param {string} [databaseUrl] */
 function run(fixture, databaseUrl = '') {
   const script = [
     'set -Eeuo pipefail',
