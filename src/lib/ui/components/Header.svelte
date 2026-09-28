@@ -57,7 +57,7 @@
             >{/if}
           <div class="menu-divider" role="separator"></div>
           <form method="POST" action="/logout">
-            <button class="menu-row menu-row-danger" role="menuitem"
+            <button type="submit" class="menu-row menu-row-danger" role="menuitem" data-menu-keep-open
               ><Icon name="logout" /><span class="menu-action-label">Sign out</span></button
             >
           </form>{/snippet}</ContextMenu
