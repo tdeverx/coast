@@ -1,0 +1,1 @@
+ALTER TABLE "tracking_events" ADD COLUMN "occurred_at_known" boolean DEFAULT true NOT NULL;

@@ -1,0 +1,41 @@
+{
+  "name": "coast",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "packageManager": "bun@1.4.2",
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "scripts": {
+    "dev": "bun --bun vite dev --host 0.0.0.0",
+    "build": "bun --bun vite build",
+    "start": "bun build/index.js",
+    "check": "bun --bun svelte-kit sync && bun --bun svelte-check --tsconfig ./tsconfig.json",
+    "test": "bun test tests",
+    "db:generate": "bun --bun drizzle-kit generate",
+    "db:migrate": "bun scripts/migrate.ts"
+  },
+  "dependencies": {
+    "@hugeicons/core-free-icons": "^4.3.5",
+    "@hugeicons/svelte": "^1.1.5",
+    "drizzle-orm": "^0.45.2",
+    "hls.js": "^1.6.0",
+    "valibot": "^1.1.0"
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "^2.70.3",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/bun": "^1.4.0",
+    "@playwright/test": "^1.55.0",
+    "drizzle-kit": "^0.31.4",
+    "svelte": "^5.57.0",
+    "svelte-adapter-bun": "1.0.1",
+    "svelte-check": "^4.7.6",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.2.2"
+  }
+}

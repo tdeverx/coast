@@ -1,0 +1,46 @@
+/** Display labels stay separate from provider and queue identifiers. */
+const labels: Record<string, string> = {
+  coast: 'Coast',
+  jellyfin: 'Jellyfin',
+  trakt: 'Trakt',
+  seerr: 'Seerr',
+  tmdb: 'TMDB',
+  pending: 'Queued',
+  running: 'Running',
+  failed: 'Failed',
+  succeeded: 'Completed',
+  cancelled: 'Cancelled',
+  approved: 'Approved',
+  declined: 'Declined',
+  available: 'Available',
+  processing: 'In progress',
+  partial: 'Partly available',
+  unavailable: 'Unavailable',
+  watch: 'Watched',
+  unwatch: 'Unwatched',
+  history: 'Watch history',
+  progress: 'Playback progress',
+  favourite: 'Favourites',
+  watchlist: 'Watchlist',
+  ratings: 'Rating',
+  collection: 'Library',
+  list: 'List',
+  'jellyfin.scan': 'Scan Jellyfin library',
+  'jellyfin.user-state': 'Update Jellyfin tracking',
+  'jellyfin.scrobble': 'Report Jellyfin playback',
+  'trakt.import': 'Import Trakt tracking',
+  'trakt.export': 'Update Trakt tracking',
+  'trakt.progress': 'Update Trakt playback progress',
+  'trakt.scrobble': 'Report Trakt playback',
+  'trakt.list-export': 'Update Trakt list',
+  'trakt.list-delete': 'Delete Trakt list',
+  'seerr.sync': 'Update request status',
+  'seerr.request': 'Send request',
+  'seerr.manage': 'Update request',
+  'history.remove': 'Remove matching history',
+};
+export function displayLabel(value: string): string {
+  return (
+    labels[value] ?? value.replace(/[._-]+/g, ' ').replace(/^\w/, (letter) => letter.toUpperCase())
+  );
+}

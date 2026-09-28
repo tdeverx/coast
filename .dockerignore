@@ -1,0 +1,16 @@
+.git
+.tools
+.svelte-kit
+node_modules
+build
+.env
+.env.*
+!.env.example
+data
+.coast
+.data
+.agents
+.codex
+playwright-report
+test-results
+*.log

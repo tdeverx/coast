@@ -1,0 +1,17 @@
+services:
+  coast:
+    image: ghcr.io/tdeverx/coast:preview
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      # Set this to the URL users open, including scheme and port, for origin/CSRF checks.
+      ORIGIN: "${COAST_ORIGIN:-http://localhost:3000}"
+      # An empty value selects bundled PostgreSQL. External PostgreSQL skips it entirely.
+      DATABASE_URL: "${DATABASE_URL:-}"
+    volumes:
+      - coast-data:/data
+    restart: unless-stopped
+    stop_grace_period: 40s
+volumes:
+  coast-data:
