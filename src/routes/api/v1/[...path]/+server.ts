@@ -1,5 +1,6 @@
 import { searchIgdb, igdbDetails, importIgdbGame } from '$lib/providers/igdb/service.server';
 import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
+import { libraryContent } from '$lib/server/queries/library-content';
 import * as games from '$lib/core/games/service';
 import { removeHistory } from '$lib/sync/history-removal';
 import { changeContinue, wholeWorkId } from '$lib/core/tracking/continue';
@@ -149,6 +150,8 @@ const handler: RequestHandler = async (event) => {
         ),
       });
     }
+    if (path[0] === 'library' && path.length === 1 && method === 'GET')
+      return json(await libraryContent(uid, url));
     if (path[0] === 'progress' && path.length === 1 && method === 'GET')
       return json(await progressData(subjectId, progressParameters(url), uid));
     if (path[0] === 'lists' && path[1] === 'content' && path.length === 2 && method === 'GET')

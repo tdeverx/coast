@@ -1,4 +1,5 @@
 <script lang="ts">
+  import MediaRows from '$lib/ui/components/MediaRows.svelte';
   import { page } from '$app/state';
   import PageHeader from '$lib/ui/components/PageHeader.svelte';
   import MediaHero from '$lib/ui/components/MediaHero.svelte';
@@ -51,10 +52,9 @@
         title={data.recommendations.title}
         href="/for-you?section=recommendations"
         items={data.recommendations.items}
-      />{/if}<Shelf
-      title="From your library"
-      items={data.library}
-      href="/library"
+      />{/if}<Shelf title="From your library" items={data.library} href="/library" /><MediaRows
+      rows={data.mediaRows}
+      personal
     />{#if data.hero}<div class="section row">
         <Button variant="ghost" icon="plus" onclick={() => (addOpen = true)}>Add a title</Button
         ><Button variant="ghost" href="/lists" icon="list">Your lists</Button>

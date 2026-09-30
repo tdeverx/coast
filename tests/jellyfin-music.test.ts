@@ -32,6 +32,36 @@ describe('Jellyfin music browsing', () => {
     expect(JSON.stringify(page)).not.toContain('private-token');
   });
 
+  test('All requests mixed music types without accepting screen items', async () => {
+    const adapter = new JellyfinAdapter(async (path) => {
+      const query = new URL(path, 'https://jellyfin.test').searchParams;
+      expect(query.get('includeItemTypes')).toBe('MusicArtist,MusicAlbum,Audio');
+      expect(query.get('searchTerm')).toBe('fixture');
+      expect(query.get('startIndex')).toBe('50');
+      return {
+        Items: [
+          { Id: artistId, Type: 'MusicArtist', Name: 'Artist' },
+          { Id: albumId, Type: 'MusicAlbum', Name: 'Album' },
+          { Id: trackId, Type: 'Audio', Name: 'Track' },
+        ],
+        TotalRecordCount: 54,
+        StartIndex: 50,
+      };
+    }, 'device');
+    const result = await adapter.musicLibrary('user', {
+      kind: 'all',
+      search: 'fixture',
+      offset: 50,
+    });
+    expect(result.items.map((item) => item.kind)).toEqual(['artist', 'album', 'track']);
+    expect(result.nextOffset).toBe(53);
+    const screen = new JellyfinAdapter(
+      async () => ({ Items: [{ Id: albumId, Type: 'Movie' }], TotalRecordCount: 1 }),
+      'device'
+    );
+    await expect(screen.musicLibrary('user', { kind: 'all' })).rejects.toThrow();
+  });
+
   test('albums preserve music identities and distinct artist credits', async () => {
     const adapter = new JellyfinAdapter(async (path) => {
       const query = new URL(path, 'https://jellyfin.test').searchParams;

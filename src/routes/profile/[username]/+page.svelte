@@ -1,4 +1,5 @@
 <script lang="ts">
+  import MediaRows from '$lib/ui/components/MediaRows.svelte';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';
   import CollectionPage from '$lib/ui/components/CollectionPage.svelte';
@@ -551,6 +552,7 @@
     {@render favourites('row')}
     <ProgressShelf surface="profile" username={data.username} />
     <ProgressShelf surface="watchlist" username={data.username} />
+    {#if data.mediaRows}<MediaRows rows={data.mediaRows} personal />{/if}
     {@render activity('row')}
     {@render statisticsRow('row')}
   {:else}

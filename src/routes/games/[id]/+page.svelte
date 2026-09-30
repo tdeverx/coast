@@ -5,7 +5,8 @@
   import { gameStatuses, type GameStatus } from '$lib/games/model';
   import { gameMinutes } from '$lib/games/presentation';
   import { displayLabel } from '$lib/ui/labels';
-  import PageHeader from '$lib/ui/components/PageHeader.svelte';
+  import MediaHero from '$lib/ui/components/MediaHero.svelte';
+  import { gameHero } from '$lib/games/presentation';
   import Button from '$lib/ui/components/Button.svelte';
   import GameOverview from '$lib/ui/components/GameOverview.svelte';
   import RowHeader from '$lib/ui/components/RowHeader.svelte';
@@ -80,13 +81,12 @@
   }
 </script>
 <svelte:head><title>{data.item.title} · Games · Coast</title></svelte:head>
-<div class="content page route-content">
-  <PageHeader title={data.item.title} description="Games">
+<MediaHero item={gameHero(data.item)}>
     {#snippet actions()}
       <Button variant="ghost" href="/games" icon="left">Games</Button>
-      {#if loggingAllowed}<Button icon="plus" disabled={busy} onclick={openSession}>Log a play session</Button>
-      {:else if playthrough && playthrough.status !== 'completed'}<Button icon="play" disabled={busy} onclick={() => update('in-progress')}>Resume playthrough</Button>
-      {:else}<Button icon="plus" disabled={busy} onclick={() => openStart(!!playthrough)}>Start {playthrough ? 'replaying' : 'playthrough'}</Button>{/if}
+      {#if loggingAllowed}<Button variant="hero" icon="plus" disabled={busy} onclick={openSession}>Log a play session</Button>
+      {:else if playthrough && playthrough.status !== 'completed'}<Button variant="hero" icon="play" disabled={busy} onclick={() => update('in-progress')}>Resume playthrough</Button>
+      {:else}<Button variant="hero" icon="plus" disabled={busy} onclick={() => openStart(!!playthrough)}>Start {playthrough ? 'replaying' : 'playthrough'}</Button>{/if}
       <ContextMenu label="Game actions" disabled={busy}>
         <MenuAction icon="plus" keepOpen={false} onclick={() => openStart(!!playthrough)}>Start another playthrough</MenuAction>
         {#if playthrough}
@@ -100,7 +100,8 @@
         {#if identity && data.sources.length}<MenuAction icon="refresh" keepOpen={false} onclick={refresh}>Refresh metadata</MenuAction>{/if}
       </ContextMenu>
     {/snippet}
-  </PageHeader>
+</MediaHero>
+<div class="content" style="padding-bottom:90px">
   {#if failure && !startOpen && !progressOpen && !sessionOpen}<div class="notice error" role="alert">{failure}</div>{/if}
   <GameOverview item={data.item} />
   <section class="section" aria-label="Playthroughs">
