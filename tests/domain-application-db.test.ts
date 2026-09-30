@@ -1000,12 +1000,10 @@ suite('application PostgreSQL read models', () => {
     ]);
     const first = await libraryData(a, { kind: 'movie', scope: 'all' });
     const second = await libraryData(a, { kind: 'movie', scope: 'all', page: 2 });
-    expect(first.total).toBeGreaterThan(500);
-    expect(first.items).toHaveLength(60);
-    expect(second.items).toHaveLength(60);
-    expect(
-      second.items.some((item) => first.items.some((previous) => previous.id === item.id))
-    ).toBe(false);
+    expect(first.total).toBe(1);
+    expect(first.items.map(item=>item.id)).toEqual([oldAvailable]);
+    expect(second.page).toBe(1);
+    expect(second.items.map(item=>item.id)).toEqual([oldAvailable]);
     const last = await libraryData(a, { kind: 'movie', scope: 'all', page: 999 });
     expect(last.page).toBe(last.pages);
     expect(last.items.map((item) => item.id)).toContain(oldAvailable);

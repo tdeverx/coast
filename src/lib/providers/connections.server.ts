@@ -37,11 +37,13 @@ export async function saveConnection(
   const secret = await encryptCredential(JSON.stringify(credentials));
   const connection = await getDb().transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(73001602)`);
+    const [lane]=await tx.select({id:providerConnections.id}).from(providerConnections).where(and(eq(providerConnections.userId,userId),eq(providerConnections.instanceId,instanceId)));
+    if(lane) await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`queue-lane:${userId}:${lane.id}`},0))`);
     const [previous] = await tx.select({ externalUserId: providerConnections.externalUserId, id: providerConnections.id })
       .from(providerConnections).where(and(eq(providerConnections.userId, userId), eq(providerConnections.instanceId, instanceId)));
     if (previous && previous.externalUserId !== externalUserId) {
       await tx.delete(syncCheckpoints).where(eq(syncCheckpoints.connectionId, previous.id));
-      await tx.update(availability).set({ state: 'unavailable' }).where(eq(availability.connectionId, previous.id));
+      await tx.update(availability).set({ state: 'unknown' }).where(eq(availability.connectionId, previous.id));
       await tx.update(outboxActions).set({ state: 'cancelled', updatedAt: new Date() })
         .where(and(eq(outboxActions.connectionId, previous.id), sql`${outboxActions.state} in ('pending','failed')`));
     }
@@ -62,7 +64,7 @@ export async function saveConnection(
           externalUserId,
           username,
           credentials: secret,
-          settings: sql`${providerConnections.settings} || ${settings}::jsonb`,
+          settings: previous?.externalUserId === externalUserId ? sql`(${providerConnections.settings} || ${settings}::jsonb) - 'collectionSourceExcluded' - 'sourceChangePreview'` : settings,
           status: 'connected',
           updatedAt: new Date(),
         },
@@ -82,16 +84,19 @@ export async function saveConnection(
   return { id: connection.id, username: connection.username, status: connection.status };
 }
 
-export async function disconnectProvider(userId: string, connectionId: string) {
-  await connectionFor(userId, connectionId);
+export async function disconnectProvider(userId: string, connectionId: string,previewId?:string) {
+  const {instance}=await connectionFor(userId, connectionId);
+  const {validateSourceChange,markSourceChange,notifySourceChange}=await import('$lib/collection/source-changes.server');
+  if(instance.provider==='jellyfin')await validateSourceChange(userId,connectionId,'connection',previewId);
   const cancelled = await getDb().transaction(async (tx) => {
+    if(instance.provider==='jellyfin')await markSourceChange(tx,[connectionId],true);
     await tx
       .update(providerConnections)
       .set({ status: 'disconnected', credentials: null, updatedAt: new Date() })
       .where(and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId)));
     await tx
       .update(availability)
-      .set({ state: 'unavailable' })
+      .set({ state: 'unknown' })
       .where(and(eq(availability.connectionId, connectionId), eq(availability.userId, userId)));
     return tx
       .update(outboxActions)
@@ -105,4 +110,5 @@ export async function disconnectProvider(userId: string, connectionId: string) {
       .returning({ id: outboxActions.id });
   });
   for (const action of cancelled) await resolveNotification(userId, `outbox:${action.id}`);
+  if(instance.provider==='jellyfin')await notifySourceChange([connectionId]);
 }

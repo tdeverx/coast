@@ -20,6 +20,7 @@ import { jsonb } from './jsonb';
 const createdAt = () => timestamp('created_at', { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () => timestamp('updated_at', { withTimezone: true }).notNull().defaultNow();
 export type MediaKind = ScreenKind;
+export type WorkKind = ScreenKind | 'game' | 'album' | 'track' | 'book' | 'audiobook' | 'comic';
 export type JsonObject = Record<string, unknown>;
 export type ProfileSettings = {
   displayName?: string;
@@ -36,6 +37,8 @@ export type ProfileSettings = {
 };
 export type UserSettings = {
   profile?: ProfileSettings;
+  shareDemand?: boolean;
+  listenThreshold?: number;
   syncConflictWinner?: string;
   fullWidth?: boolean;
   originalTitles?: boolean;
@@ -86,6 +89,14 @@ export const systemSettings = pgTable('system_settings', {
   value: jsonb('value').$type<unknown>().notNull(),
   updatedAt: updatedAt(),
 });
+
+/** Stable shared identity; each medium continues to own its metadata and activity. */
+export const works = pgTable('works', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  category: text('category').notNull(),
+  kind: text('kind').$type<WorkKind>().notNull(),
+  createdAt: createdAt(),
+}, (t) => [index('works_category_kind_idx').on(t.category, t.kind)]);
 
 export const media = pgTable(
   'media',
@@ -190,10 +201,10 @@ export const mediaRelationships = pgTable(
   {
     parentId: uuid('parent_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     childId: uuid('child_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     kind: text('kind').$type<MediaRelationship>().notNull(),
     position: integer('position').notNull().default(0),
   },
@@ -231,10 +242,24 @@ export const providerInstances = pgTable('provider_instances', {
   enabled: boolean('enabled').notNull().default(true),
   createdAt: createdAt(),
 });
+export const syncAccounts = pgTable('sync_accounts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  instanceId: uuid('instance_id').references(() => providerInstances.id, { onDelete: 'set null' }),
+  provider: text('provider').notNull(),
+  serverIdentity: text('server_identity').notNull(),
+  externalUserId: text('external_user_id').notNull(),
+  settings: jsonb('settings').$type<JsonObject>().notNull().default({}),
+  baselines: jsonb('baselines').$type<JsonObject>().notNull().default({}),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [uniqueIndex('sync_accounts_identity_unique').on(t.userId, t.provider, t.serverIdentity, t.externalUserId)]);
+
 export const providerConnections = pgTable(
   'provider_connections',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    accountGeneration: uuid('account_generation').notNull().defaultRandom(),
+    syncAccountId: uuid('sync_account_id').references(() => syncAccounts.id),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -276,9 +301,9 @@ export const providerItems = pgTable(
       .references(() => providerInstances.id, { onDelete: 'cascade' }),
     mediaId: uuid('media_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     externalId: text('external_id').notNull(),
-    kind: text('kind').$type<MediaKind>().notNull(),
+    kind: text('kind').$type<WorkKind>().notNull(),
     snapshot: jsonb('snapshot').$type<JsonObject>().notNull().default({}),
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -388,7 +413,7 @@ export const trackingEvents = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     mediaId: uuid('media_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     action: text('action').$type<TrackingAction>().notNull(),
     source: text('source').notNull().default('coast'),
     sourceEventId: text('source_event_id'),
@@ -435,7 +460,7 @@ export const trackingState = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     mediaId: uuid('media_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     watched: boolean('watched').notNull().default(false),
     playCount: integer('play_count').notNull().default(0),
     positionSeconds: real('position_seconds').notNull().default(0),
@@ -463,7 +488,7 @@ export const upNext = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     mediaId: uuid('media_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     addedAt: createdAt(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.mediaId] })]
@@ -507,7 +532,7 @@ export const ratings = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     mediaId: uuid('media_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     value: real('value').notNull(),
     source: text('source').notNull().default('coast'),
     updatedAt: updatedAt(),
@@ -533,6 +558,7 @@ export const lists = pgTable(
     playbackStartedAt: timestamp('playback_started_at', { withTimezone: true }),
     source: text('source').notNull().default('coast'),
     externalId: text('external_id'),
+    sourceAccountId: uuid('source_account_id').references(() => syncAccounts.id),
     sourceConnectionId: uuid('source_connection_id').references(() => providerConnections.id, {
       onDelete: 'set null',
     }),
@@ -541,7 +567,7 @@ export const lists = pgTable(
   },
   (t) => [
     index('lists_user_idx').on(t.userId),
-    uniqueIndex('lists_source_identity_unique').on(t.userId, t.source, t.externalId),
+    uniqueIndex('lists_source_identity_unique').on(t.userId, t.source, t.externalId, t.sourceAccountId),
   ]
 );
 export const listItems = pgTable(
@@ -553,7 +579,7 @@ export const listItems = pgTable(
       .references(() => lists.id, { onDelete: 'cascade' }),
     mediaId: uuid('media_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     position: integer('position').notNull(),
     addedAt: timestamp('added_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -575,7 +601,7 @@ export const availability = pgTable(
       .references(() => providerItems.id, { onDelete: 'cascade' }),
     mediaId: uuid('media_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     sourceId: text('source_id').notNull().default('default'),
     edition: text('edition'),
     container: text('container'),
@@ -608,6 +634,7 @@ export const outboxActions = pgTable(
   {
     correlationId: uuid('correlation_id').notNull().defaultRandom(),
     id: uuid('id').primaryKey().defaultRandom(),
+    accountGeneration: uuid('account_generation'),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -700,6 +727,10 @@ export const diagnostics = pgTable('diagnostics', {
   createdAt: createdAt(),
 });
 export const playbackSessions = pgTable('playback_sessions', {
+  mediaType: text('media_type').$type<'audio' | 'video'>().notNull().default('video'),
+  playedSeconds: real('played_seconds').notNull().default(0),
+  listenThreshold: integer('listen_threshold').notNull().default(50),
+  listenRecorded: boolean('listen_recorded').notNull().default(false),
   correlationId: uuid('correlation_id').notNull().defaultRandom(),
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id')
@@ -707,7 +738,7 @@ export const playbackSessions = pgTable('playback_sessions', {
     .references(() => users.id, { onDelete: 'cascade' }),
   mediaId: uuid('media_id')
     .notNull()
-    .references(() => media.id, { onDelete: 'cascade' }),
+    .references(() => works.id, { onDelete: 'cascade' }),
   connectionId: uuid('connection_id')
     .notNull()
     .references(() => providerConnections.id, { onDelete: 'cascade' }),
@@ -769,12 +800,13 @@ export const syncValues = pgTable(
   'sync_values',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    accountId: uuid('account_id').references(() => syncAccounts.id),
     connectionId: uuid('connection_id')
       .notNull()
       .references(() => providerConnections.id, { onDelete: 'cascade' }),
     mediaId: uuid('media_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     category: text('category').notNull(),
     remote: jsonb('remote').$type<JsonObject>().notNull(),
     agreed: jsonb('agreed').$type<JsonObject>(),
@@ -788,6 +820,7 @@ export const syncListValues = pgTable(
   'sync_list_values',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    accountId: uuid('account_id').references(() => syncAccounts.id),
     connectionId: uuid('connection_id')
       .notNull()
       .references(() => providerConnections.id, { onDelete: 'cascade' }),
@@ -865,3 +898,102 @@ export const gameSessions = pgTable('game_sessions', {
   index('game_sessions_playthrough_date_idx').on(t.playthroughId, t.playedAt),
   check('game_sessions_minutes_check', sql`${t.minutesPlayed} between 1 and 1440`),
 ]);
+
+/** Albums/tracks are works; artists are credits and browsing preferences. */
+export const musicWorks = pgTable('music_works', {
+  id: uuid('id').primaryKey().references(() => works.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  kind: text('kind').$type<'album' | 'track'>().notNull(),
+  artistNames: text('artist_names').array().notNull().default([]),
+  releaseDate: date('release_date'),
+  year: integer('year'),
+  durationSeconds: real('duration_seconds'),
+  overview: text('overview'),
+  genres: text('genres').array().notNull().default([]),
+  membershipComplete: boolean('membership_complete').notNull().default(false),
+  updatedAt: updatedAt(),
+});
+export const musicArtists = pgTable('music_artists', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  instanceId: uuid('instance_id').notNull().references(() => providerInstances.id, { onDelete: 'cascade' }),
+  externalId: text('external_id').notNull(),
+  name: text('name').notNull(),
+}, (t) => [uniqueIndex('music_artists_identity_unique').on(t.instanceId, t.externalId)]);
+export const musicCredits = pgTable('music_credits', {
+  workId: uuid('work_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
+  artistId: uuid('artist_id').notNull().references(() => musicArtists.id, { onDelete: 'cascade' }),
+  role: text('role').notNull(),
+}, (t) => [primaryKey({ columns: [t.workId, t.artistId, t.role] })]);
+export const musicArtistPreferences = pgTable('music_artist_preferences', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  artistId: uuid('artist_id').notNull().references(() => musicArtists.id, { onDelete: 'cascade' }),
+  favourite: boolean('favourite').notNull().default(false),
+}, (t) => [primaryKey({ columns: [t.userId, t.artistId] })]);
+export const workIdentifiers = pgTable('work_identifiers', {
+  workId: uuid('work_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(),
+  externalId: text('external_id').notNull(),
+  kind: text('kind').$type<WorkKind>().notNull(),
+}, (t) => [primaryKey({ columns: [t.provider, t.externalId, t.kind] }), index('work_identifiers_work_idx').on(t.workId)]);
+export const workEditions = pgTable('work_editions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  workId: uuid('work_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
+  instanceId: uuid('instance_id').references(() => providerInstances.id, { onDelete: 'cascade' }),
+  externalId: text('external_id').notNull(),
+  format: text('format'),
+  metadata: jsonb('metadata').$type<JsonObject>().notNull().default({}),
+}, (t) => [uniqueIndex('work_editions_identity_unique').on(t.instanceId, t.externalId)]);
+export const musicListenBatches = pgTable('music_listen_batches', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  batchId: uuid('batch_id').notNull(),
+  workId: uuid('work_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
+  tracks: uuid('tracks').array().notNull(),
+  createdAt: createdAt(),
+}, (t) => [primaryKey({ columns: [t.userId, t.batchId] })]);
+export const musicListens = pgTable('music_listens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  trackId: uuid('track_id').notNull().references(() => musicWorks.id, { onDelete: 'cascade' }),
+  batchId: uuid('batch_id').notNull(),
+  source: text('source').notNull().default('coast'),
+  occurredAtKnown: boolean('occurred_at_known').notNull().default(true),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: createdAt(),
+}, (t) => [uniqueIndex('music_listens_batch_unique').on(t.userId, t.trackId, t.batchId), index('music_listens_user_track_idx').on(t.userId, t.trackId)]);
+export const musicProgress = pgTable('music_progress', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  trackId: uuid('track_id').notNull().references(() => musicWorks.id, { onDelete: 'cascade' }),
+  playCount: integer('play_count').notNull().default(0),
+  positionSeconds: real('position_seconds').notNull().default(0),
+  durationSeconds: real('duration_seconds'),
+  updatedAt: updatedAt(),
+}, (t) => [primaryKey({ columns: [t.userId, t.trackId] })]);
+/** Intent survives unavailable mappings; only confirmed successful delivery clears it. */
+export const reconciliationIntents = pgTable('reconciliation_intents', {
+  connectionId: uuid('connection_id').notNull().references(() => providerConnections.id, { onDelete: 'cascade' }),
+  workId: uuid('work_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
+  category: text('category').notNull(),
+  value: jsonb('value').$type<JsonObject>().notNull(),
+  version: uuid('version').notNull().defaultRandom(),
+  updatedAt: updatedAt(),
+}, (t) => [primaryKey({ columns: [t.connectionId, t.workId, t.category] })]);
+export const collectionProjectionEntries = pgTable('collection_projection_entries', {
+  accountId: uuid('account_id').notNull().references(() => syncAccounts.id, { onDelete: 'cascade' }),
+  workId: uuid('work_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
+  attribution: text('attribution').$type<'pre-existing' | 'coast-added' | 'uncertain'>().notNull(),
+  remote: jsonb('remote').$type<JsonObject>().notNull(),
+  desired: boolean('desired').notNull().default(true),
+  conflict: boolean('conflict').notNull().default(false),
+  suppressed: boolean('suppressed').notNull().default(false),
+  updatedAt: updatedAt(),
+}, (t) => [primaryKey({ columns: [t.accountId, t.workId] })]);
+export const collectionProjectionPreviews = pgTable('collection_projection_previews', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  connectionId: uuid('connection_id').notNull().references(() => providerConnections.id, { onDelete: 'cascade' }),
+  accountId: uuid('account_id').notNull().references(() => syncAccounts.id),
+  configurationVersion: uuid('configuration_version').notNull(),
+  configuration: jsonb('configuration').$type<JsonObject>().notNull(),
+  snapshot: jsonb('snapshot').$type<JsonObject>().notNull(),
+  approved: boolean('approved').notNull().default(false),
+  createdAt: createdAt(),
+});

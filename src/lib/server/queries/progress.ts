@@ -1,4 +1,5 @@
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch';
+import type { MediaView } from '$lib/ui/types';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
@@ -19,8 +20,8 @@ export async function progressData(
 ): Promise<ProgressContent> {
   const options = v.parse(progressOptionsSchema, raw);
   if (options.view === 'watchlist' || options.view === 'favourites') {
-    const list = await listsData(userId, { ...options, filter: 'to-watch' }, viewerId);
-    return { ...options, page: list.page, pages: list.pages, total: list.total, items: list.items };
+    const list = await listsData(userId, { ...options, filter: 'to-watch',category:'screen' }, viewerId);
+    return { ...options, page: list.page, pages: list.pages, total: list.total, items: list.items.filter((item):item is MediaView=>!('href' in item)) };
   }
   if (options.view === 'finished' || options.view === 'dropped') {
     const result = await profileProgress(

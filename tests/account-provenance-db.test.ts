@@ -1,0 +1,51 @@
+import {beforeAll,afterAll,expect,test} from 'bun:test';
+import {eq,and} from 'drizzle-orm';
+import {getDb} from '../src/lib/server/db';
+import * as s from '../src/lib/server/db/schema';
+import {verifyTraktIdentity} from '../src/lib/providers/trakt/connection.server';
+const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
+let user:string,instance:string,connection:string,movie:string,list:string,account:string,generation:string;
+beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const db=getDb();
+ const [person]=await db.insert(s.users).values({username:`provenance-${crypto.randomUUID()}`}).returning();user=person.id;
+ const [server]=await db.insert(s.providerInstances).values({provider:'trakt',name:'Account provenance fixture',baseUrl:'https://api.trakt.tv',serverIdentity:'trakt'}).returning();instance=server.id;
+ const [title]=await db.insert(s.media).values({kind:'movie',title:'Provenance fixture'}).returning();movie=title.id;
+ const [linked]=await db.insert(s.providerConnections).values({userId:user,instanceId:instance,externalUserId:'stable-account-a',settings:{sync:{history:false},collectionProjection:{enabled:true}}}).returning();connection=linked.id;account=linked.syncAccountId!;generation=linked.accountGeneration;
+ const [saved]=await db.insert(s.lists).values({userId:user,name:'Historical account list',source:'trakt',sourceConnectionId:connection,sourceAccountId:account,externalId:'123'}).returning();list=saved.id;
+ await db.insert(s.syncValues).values({connectionId:connection,mediaId:movie,category:'collection',remote:{value:true},agreed:{value:true}});
+ await db.insert(s.syncListValues).values({connectionId:connection,listId:list,remote:{name:'Historical account list'},agreed:{name:'Historical account list'}});
+ await db.insert(s.collectionProjectionEntries).values({accountId:account,workId:movie,attribution:'coast-added',remote:{collectedAt:'2020-01-01'},desired:true});
+ await db.insert(s.outboxActions).values([{userId:user,connectionId:connection,kind:'trakt.collection-project',payload:{}},{userId:user,connectionId:connection,kind:'trakt.collection-cleanup',payload:{},state:'running'}]);
+});
+afterAll(async()=>{if(!user)return;const db=getDb();await db.delete(s.users).where(eq(s.users.id,user));await db.delete(s.providerInstances).where(eq(s.providerInstances.id,instance));await db.delete(s.media).where(eq(s.media.id,movie));});
+run('same account reconnect keeps baselines, settings and export attribution',async()=>{const db=getDb();await db.update(s.providerConnections).set({externalUserId:'stable-account-a'}).where(eq(s.providerConnections.id,connection));const [current]=await db.select().from(s.providerConnections).where(eq(s.providerConnections.id,connection));expect(current.accountGeneration).toBe(generation);expect(current.syncAccountId).toBe(account);expect((await db.select().from(s.syncValues).where(eq(s.syncValues.connectionId,connection)))).toHaveLength(1);});
+run('account replacement cancels old generations and separates list and tracking evidence',async()=>{const db=getDb();await db.update(s.providerConnections).set({externalUserId:'stable-account-b',settings:{sync:{history:true}}}).where(eq(s.providerConnections.id,connection));const [current]=await db.select().from(s.providerConnections).where(eq(s.providerConnections.id,connection));expect(current.accountGeneration).not.toBe(generation);expect(current.syncAccountId).not.toBe(account);expect(current.settings.sync).toEqual({history:true});expect(await db.select().from(s.syncValues).where(eq(s.syncValues.connectionId,connection))).toHaveLength(0);expect(await db.select().from(s.syncListValues).where(eq(s.syncListValues.connectionId,connection))).toHaveLength(0);const actions=await db.select().from(s.outboxActions).where(eq(s.outboxActions.connectionId,connection));expect(actions.every(a=>a.state==='cancelled'&&a.accountGeneration===generation)).toBe(true);expect(await db.select().from(s.collectionProjectionEntries).where(eq(s.collectionProjectionEntries.accountId,account))).toHaveLength(1);});
+run('returning to a verified account restores its settings and baselines without claiming another account list',async()=>{const db=getDb();await db.insert(s.lists).values({userId:user,name:'Other account list',source:'trakt',sourceConnectionId:connection,sourceAccountId:(await db.select().from(s.providerConnections).where(eq(s.providerConnections.id,connection)))[0].syncAccountId,externalId:'123'});await db.update(s.providerConnections).set({externalUserId:'stable-account-a'}).where(eq(s.providerConnections.id,connection));const [current]=await db.select().from(s.providerConnections).where(eq(s.providerConnections.id,connection));expect(current.syncAccountId).toBe(account);expect(current.settings.sync).toEqual({history:false});const baselines=await db.select().from(s.syncValues).where(eq(s.syncValues.connectionId,connection));expect(baselines).toHaveLength(1);expect(baselines[0].accountId).toBe(account);expect(await db.select().from(s.syncListValues).where(and(eq(s.syncListValues.connectionId,connection),eq(s.syncListValues.listId,list)))).toHaveLength(1);});
+run('removing a service preserves provenance and reconnecting the same pinned account restores evidence',async()=>{
+ const db=getDb();await db.delete(s.providerInstances).where(eq(s.providerInstances.id,instance));
+ const [historical]=await db.select().from(s.syncAccounts).where(eq(s.syncAccounts.id,account));expect(historical.instanceId).toBeNull();
+ expect(await db.select().from(s.lists).where(eq(s.lists.id,list))).toHaveLength(1);
+ expect(await db.select().from(s.collectionProjectionEntries).where(eq(s.collectionProjectionEntries.accountId,account))).toHaveLength(1);
+ const [server]=await db.insert(s.providerInstances).values({provider:'trakt',name:'Recreated provenance service',baseUrl:'https://api.trakt.tv',serverIdentity:'trakt'}).returning();instance=server.id;
+ const [linked]=await db.insert(s.providerConnections).values({userId:user,instanceId:instance,externalUserId:'stable-account-a'}).returning();connection=linked.id;
+ expect(linked.syncAccountId).toBe(account);expect(linked.settings.sync).toEqual({history:false});
+ expect(await db.select().from(s.syncValues).where(eq(s.syncValues.connectionId,connection))).toHaveLength(1);
+ expect(await db.select().from(s.syncListValues).where(eq(s.syncListValues.connectionId,connection))).toHaveLength(1);
+});
+run('a fresh authenticated slug-to-UUID upgrade preserves settings, baselines, lists, attribution and queued generations',async()=>{
+ const db=getDb();const slug=`verified-slug-${crypto.randomUUID()}`;
+ const [actor]=await db.insert(s.users).values({username:slug}).returning();
+ try{
+  const [legacy]=await db.insert(s.providerConnections).values({userId:actor.id,instanceId:instance,externalUserId:slug,settings:{traktIdentityPending:true,sync:{history:false,collection:false},collectionProjection:{enabled:false}}}).returning();
+  await db.insert(s.syncValues).values({connectionId:legacy.id,mediaId:movie,category:'history',remote:{value:true},agreed:{value:true}});
+  const [saved]=await db.insert(s.lists).values({userId:actor.id,name:'Retained list',source:'trakt',sourceConnectionId:legacy.id,sourceAccountId:legacy.syncAccountId,externalId:'legacy-list'}).returning();
+  await db.insert(s.syncListValues).values({connectionId:legacy.id,listId:saved.id,remote:{name:'Retained list'},agreed:{name:'Retained list'}});
+  await db.insert(s.collectionProjectionEntries).values({accountId:legacy.syncAccountId!,workId:movie,attribution:'coast-added',remote:{collectedAt:'2020-01-01'}});
+  await db.insert(s.outboxActions).values([{userId:actor.id,connectionId:legacy.id,kind:'trakt.import',payload:{}},{userId:actor.id,connectionId:legacy.id,kind:'trakt.export',payload:{},state:'running'}]);
+  const stableId=crypto.randomUUID();await expect(verifyTraktIdentity(legacy,{id:stableId,slug:'another-account'})).rejects.toThrow('verify the current account');
+  const verified=await verifyTraktIdentity(legacy,{id:stableId,slug});expect(verified.externalUserId).toBe(stableId);expect(verified.syncAccountId).toBe(legacy.syncAccountId);expect(verified.accountGeneration).toBe(legacy.accountGeneration);expect(verified.settings.sync).toEqual({history:false,collection:false});expect(verified.settings.traktIdentityPending).toBeUndefined();
+  expect(await db.select().from(s.syncValues).where(eq(s.syncValues.connectionId,legacy.id))).toHaveLength(1);expect(await db.select().from(s.syncListValues).where(eq(s.syncListValues.connectionId,legacy.id))).toHaveLength(1);
+  expect((await db.select().from(s.lists).where(eq(s.lists.id,saved.id)))[0].sourceAccountId).toBe(legacy.syncAccountId);
+  expect(await db.select().from(s.collectionProjectionEntries).where(eq(s.collectionProjectionEntries.accountId,legacy.syncAccountId!))).toHaveLength(1);
+  const actions=await db.select().from(s.outboxActions).where(eq(s.outboxActions.connectionId,legacy.id));expect(actions.map(a=>a.state).sort()).toEqual(['pending','running']);expect(actions.every(a=>a.accountGeneration===legacy.accountGeneration)).toBe(true);
+ }finally{await db.delete(s.users).where(eq(s.users.id,actor.id));}
+});

@@ -13,7 +13,7 @@ export type MediaCardPresentation = Pick<
   | 'artwork'
   | 'artworkSources'
   | 'logo'
-> & { kind: MusicKind | 'game'; href: string; connectionId?: string };
+> & { kind: MusicKind | 'game'; href: string; connectionId?: string; workId?: string; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean };
 export type MediaHeroPresentation = MediaCardPresentation &
   Pick<MediaView, 'overview' | 'genres' | 'runtimeMinutes' | 'certification'>;
 export type MediaCardShape = 'poster' | 'square' | 'fanart' | 'banner';
@@ -95,6 +95,7 @@ export interface MediaView {
   requestable?: boolean;
 }
 export interface PlaybackView {
+  mediaType?: 'audio' | 'video';
   sequence?: import('$lib/media/sequence').SequenceContext;
   detail: string;
   id: string;

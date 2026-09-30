@@ -1,7 +1,8 @@
 <script lang="ts">
   import { displayLabel } from '$lib/ui/labels';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { change, message } from '$lib/ui/client';
+  import { api,change, message } from '$lib/ui/client';
+  import type {SourceImpact} from '$lib/collection/source-changes.server';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   import RowHeader from './RowHeader.svelte';
@@ -32,6 +33,7 @@
     privateNetwork = $state(false),
     busy = $state(false),
     error = $state('');
+  let changing=$state<Instance|null>(null),impact=$state<SourceImpact|null>(null);
   function edit(instance: Instance | null) {
     editing = instance;
     provider = instance?.provider ?? 'tmdb';
@@ -71,12 +73,14 @@
       busy = false;
     }
   }
-  async function toggle(instance: Instance) {
+  async function toggle(instance: Instance,approved=false) {
     if (busy) return;
     busy = true;
     error = '';
     try {
-      await change(`providers/${instance.id}/${instance.enabled ? 'disable' : 'enable'}`, {});
+      if(instance.provider==='jellyfin'&&instance.enabled&&!approved){impact=await api(`providers/${instance.id}/instance-source-preview`,undefined,'GET');changing=instance;return;}
+      await change(`providers/${instance.id}/${instance.enabled ? 'disable' : 'enable'}`, {previewId:impact?.id});
+      changing=null;impact=null;
       notifyAction(`${instance.name} ${instance.enabled ? 'disabled' : 'enabled'}.`);
     } catch (e) {
       error = message(e);
@@ -129,6 +133,14 @@
       <ProviderAutomation {instance} />
     </div>{/each}
 </div>
+<Dialog open={!!changing} onclose={()=>changing=null} title="Disable this Collection source?">
+  <div class="stack"><p>Existing tracking stays in Coast. Remote Trakt entries stay until their owner approves cleanup.</p>
+    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+    {#each impact?.accounts??[] as account}<h3>{account.username}</h3><p>{account.removals.length} potential removals{account.uncertain?' · uncertain coverage or delivery':''} · {account.unresolved.length} unresolved identities.</p><ul>{#each account.removals.slice(0,60) as item}<li>{item.title}</li>{/each}</ul>{/each}
+    {#if !impact?.accounts.length}<p>No active Trakt Collection export depends on this source.</p>{/if}
+    <div class="row"><Button variant="danger" disabled={busy} onclick={()=>changing&&toggle(changing,true)}>Disable and leave Trakt entries</Button><Button variant="secondary" disabled={busy} onclick={()=>changing=null}>Keep enabled</Button></div>
+  </div>
+</Dialog>
 <Dialog bind:open title={editing ? 'Edit integration' : 'Add an integration'}>
   {#key `${open}:${editing?.id ?? 'new'}:${provider}`}
     <form

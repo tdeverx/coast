@@ -17,7 +17,8 @@ export function planPlayback(
   sources: PlaybackSource[],
   browser: BrowserCapabilities,
   policy: PlaybackPolicy,
-  sourceId?: string
+  sourceId?: string,
+  mediaType: 'audio' | 'video' = 'video'
 ): PlaybackPlan {
   const maximum = Math.min(policy.maxBitrate, browser.maxBitrate || Infinity);
   const choices = sources
@@ -30,11 +31,10 @@ export function planPlayback(
       const compatible =
         !!source.container &&
         browser.containers.includes(source.container.toLowerCase()) &&
-        !!video?.codec &&
-        browser.videoCodecs.includes(video.codec.toLowerCase()) &&
+        (mediaType==='audio' ? !video : !!video?.codec && browser.videoCodecs.includes(video.codec.toLowerCase())) &&
         (!audio || (!!audio.codec && browser.audioCodecs.includes(audio.codec.toLowerCase()))) &&
         (!source.bitrate || source.bitrate <= maximum) &&
-        (!browser.maxWidth || !video.width || video.width <= browser.maxWidth);
+        (!browser.maxWidth || !video?.width || video.width <= browser.maxWidth);
       if (source.directPlay && compatible)
         return {
           source,

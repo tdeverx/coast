@@ -1,10 +1,13 @@
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
+import { workCards } from '$lib/collection/query.server';
+import { getConfig } from '../config';
+import { and, or, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
 import { AppError } from '../security/errors';
 import { getLists } from '../../core/lists/service';
-import { mediaViews, mediaViewsForIds, hasPermittedMediaSource, applySequenceEntry } from './media';
+import { hasPermittedMediaSource, applySequenceEntry } from './media';
 import { sequenceEntries } from '../../core/lists/sequence';
 import { viewingRecency } from './viewing-recency';
 import { pageNumberSchema, PAGE_SIZE, pagination } from './pagination';
@@ -12,6 +15,7 @@ import { pageNumberSchema, PAGE_SIZE, pagination } from './pagination';
 const uuidSchema = v.pipe(v.string(), v.uuid());
 
 export const listsOptionsSchema = v.object({
+  category:v.optional(v.picklist(['all','screen']),'all'),
   view: v.optional(v.union([v.picklist(['watchlist', 'favourites']), uuidSchema]), 'watchlist'),
   filter: v.optional(
     v.picklist(['to-watch', 'progress', 'complete', 'dropped', 'all']),
@@ -19,7 +23,7 @@ export const listsOptionsSchema = v.object({
   ),
   scope: v.optional(v.picklist(['all', 'available']), 'all'),
   page: v.optional(pageNumberSchema, 1),
-  kind: v.optional(v.picklist(['all', 'movie', 'show']), 'all'),
+  kind: v.optional(v.picklist(['all', 'movie', 'show', 'album', 'track', 'game']), 'all'),
 });
 
 /** Read list summaries, then hydrate only the selected list's visible page. */
@@ -33,7 +37,12 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
   const selected = lists.find((list) => list.id === input.view) ?? null;
   if (!selected && !['watchlist', 'favourites'].includes(input.view))
     throw new AppError(404, 'This list was not found.');
-  const available = input.scope === 'available' ? hasPermittedMediaSource(viewerId) : undefined;
+  const config=await getConfig();
+  const categoryAllowed=config.experimentalFeatures&&input.category!=='screen'?undefined:eq(s.works.category,'screen');
+  const available = input.scope === 'available' ? or(hasPermittedMediaSource(viewerId),sql`exists(
+    with recursive scope(id,path) as (select ${s.works.id},array[${s.works.id}] union all select r.child_id,d.path||r.child_id from scope d join media_relationships r on r.parent_id=d.id where r.kind in ('contains','collection','sequence') and not r.child_id=any(d.path) and cardinality(d.path)<20)
+    select 1 from scope d join availability a on a.media_id=d.id join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${viewerId} and c.user_id=${viewerId} and a.state='available' and c.status='connected' and i.enabled
+  )`):undefined;
   const pageSize = PAGE_SIZE;
   let total: number;
   let selectedIds: { id: string; entryId?: string }[];
@@ -42,24 +51,27 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
   if (selected) {
     const where = and(
       available,
+      categoryAllowed,
       eq(s.listItems.listId, selected.id),
       input.kind === 'all'
         ? undefined
         : input.kind === 'show'
-          ? inArray(s.media.kind, ['show', 'season', 'episode'])
-          : eq(s.media.kind, 'movie')
+          ? inArray(s.works.kind, ['show', 'season', 'episode'])
+          : eq(s.works.kind, input.kind)
     );
     const [count] = await db
       .select({ total: sql<number>`count(*)::int` })
       .from(s.listItems)
-      .innerJoin(s.media, eq(s.media.id, s.listItems.mediaId))
+      .innerJoin(s.works,eq(s.works.id,s.listItems.mediaId))
+      .leftJoin(s.media,eq(s.media.id,s.works.id))
       .where(where);
     total = count.total;
     ({ page, pages } = pagination(total, input.page));
     selectedIds = await db
       .select({ id: s.listItems.mediaId, entryId: s.listItems.id })
       .from(s.listItems)
-      .innerJoin(s.media, eq(s.media.id, s.listItems.mediaId))
+      .innerJoin(s.works,eq(s.works.id,s.listItems.mediaId))
+      .leftJoin(s.media,eq(s.media.id,s.works.id))
       .where(where)
       .orderBy(asc(s.listItems.position), asc(s.listItems.mediaId))
       .limit(pageSize)
@@ -85,26 +97,30 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
       where (child_media.kind = 'movie' or e.media_id is not null) and not coalesce(e.is_special, false)
         and (child.position_seconds > 0 or (child.watched and coalesce(child.duration_seconds, e.runtime_minutes * 60, child_media.runtime_minutes * 60, 0) > 0))
     )))`;
+    const completed=sql`coalesce(${s.trackingState.watched},false) or exists(select 1 from music_listens ml where ml.user_id=${userId} and ml.track_id=${s.works.id}) or exists(select 1 from game_playthroughs gp where gp.user_id=${userId} and gp.game_id=${s.works.id} and gp.status='completed')`;
+    const dropped=sql`coalesce(${s.trackingState.dropped},false) or exists(select 1 from game_playthroughs gp where gp.user_id=${userId} and gp.game_id=${s.works.id} and gp.status='dropped')`;
+    const started=sql`(${progress}) or exists(select 1 from music_progress mp where mp.user_id=${userId} and mp.track_id=${s.works.id} and mp.position_seconds>0) or exists(select 1 from game_playthroughs gp where gp.user_id=${userId} and gp.game_id=${s.works.id} and gp.status in ('in-progress','paused'))`;
     const watchlistFilter =
       input.filter === 'complete'
-        ? eq(s.trackingState.watched, true)
+        ? sql`(${completed})`
         : input.filter === 'dropped'
-          ? eq(s.trackingState.dropped, true)
+          ? sql`(${dropped})`
           : input.filter === 'all'
             ? undefined
             : and(
-                eq(s.trackingState.watched, false),
-                eq(s.trackingState.dropped, false),
+                sql`not (${completed})`,
+                sql`not (${dropped})`,
                 input.filter === 'progress'
-                  ? progress
-                  : sql`not (${s.media.kind} = 'show' and ${progress})`
+                  ? started
+                  : sql`not ((${s.works.kind} in ('show','game','track')) and (${started}))`
               );
     const where = and(
       available,
+      categoryAllowed,
       eq(s.trackingState.userId, userId),
       input.kind === 'all'
-        ? inArray(s.media.kind, ['movie', 'show', 'collection'])
-        : eq(s.media.kind, input.kind),
+        ? inArray(s.works.kind, ['movie', 'show', 'collection', 'album', 'track', 'game'])
+        : eq(s.works.kind, input.kind),
       input.view === 'favourites'
         ? eq(s.trackingState.favourite, true)
         : and(eq(s.trackingState.watchlist, true), watchlistFilter)
@@ -112,14 +128,16 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
     const [count] = await db
       .select({ total: sql<number>`count(*)::int` })
       .from(s.trackingState)
-      .innerJoin(s.media, eq(s.media.id, s.trackingState.mediaId))
+      .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
+      .leftJoin(s.media,eq(s.media.id,s.works.id))
       .where(where);
     total = count.total;
     ({ page, pages } = pagination(total, input.page));
     selectedIds = await db
-      .select({ id: s.media.id })
+      .select({ id: s.works.id })
       .from(s.trackingState)
-      .innerJoin(s.media, eq(s.media.id, s.trackingState.mediaId))
+      .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
+      .leftJoin(s.media,eq(s.media.id,s.works.id))
       .where(where)
       .orderBy(
         ...(input.view === 'favourites'
@@ -130,21 +148,21 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
               and e.action = 'favourite' and e.value and e.applied and e.occurred_at_known) desc nulls last`,
             ]
           : [desc(s.media.updatedAt)]),
-        asc(s.media.id)
+        asc(s.works.id)
       )
       .limit(pageSize)
       .offset((page - 1) * pageSize);
   }
   const views = new Map(
     (
-      await mediaViews(userId, { ids: selectedIds.map((row) => row.id), limit: pageSize }, viewerId)
-    ).map((item) => [item.id, item])
+      await workCards(userId,viewerId,selectedIds.map(row=>row.id))
+    ).map((item) => [('workId' in item?item.workId:undefined)??item.id, item])
   );
   const sequence = selected?.playlist
     ? await sequenceEntries(userId, { kind: 'playlist', id: selected.id })
     : [];
   const entriesById = new Map(sequence.map((entry) => [entry.entryId, entry]));
-  const items = selectedIds.flatMap((row) => {
+  const items = selectedIds.flatMap<MediaView|MediaCardPresentation>((row) => {
     const view = views.get(row.id);
     if (!view) return [];
     const item = {
@@ -154,7 +172,7 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
         ? { listContext: { listId: selected.id, entryId: row.entryId } }
         : {}),
     };
-    if (!selected?.playlist || !row.entryId) return [item];
+    if (!selected?.playlist || !row.entryId || 'href' in item) return [item];
     const source = { kind: 'playlist' as const, id: selected.id };
     const entry = entriesById.get(row.entryId);
     return [
@@ -196,14 +214,10 @@ export async function userLists(userId: string) {
         )
         .orderBy(asc(s.listItems.position))
     : [];
-  const views = new Map(
-    (
-      await mediaViewsForIds(
-        userId,
-        items.map((item) => item.mediaId)
-      )
-    ).map((item) => [item.id, item])
-  );
+  const cards=[];
+  const ids=[...new Set(items.map(item=>item.mediaId))];
+  for(let offset=0;offset<ids.length;offset+=PAGE_SIZE)cards.push(...await workCards(userId,userId,ids.slice(offset,offset+PAGE_SIZE)));
+  const views = new Map(cards.map(item=>[('workId' in item?item.workId:undefined)??item.id,item]));
   const itemsByList = new Map<string, typeof items>();
   for (const item of items) {
     const group = itemsByList.get(item.listId) ?? [];

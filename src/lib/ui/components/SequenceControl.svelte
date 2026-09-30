@@ -3,7 +3,8 @@
   import { api, message, change } from '$lib/ui/client';
   import { sequencePath, type SequenceSource } from '$lib/media/sequence';
   import type { MediaView } from '$lib/ui/types';
-  import { playMedia } from '$lib/playback/client.svelte';
+  import { playMedia,playMusicQueue } from '$lib/playback/client.svelte';
+  import {page} from '$app/state';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   let {
@@ -20,6 +21,10 @@
     error = '';
     try {
       if (source.kind === 'playlist' && !after) {
+        if(page.data.experimentalFeatures){
+          const music=await api<Parameters<typeof playMusicQueue>[0]|null>(`music/queue?listId=${source.id}`,undefined,'GET');
+          if(music){await playMusicQueue(music);open=false;return;}
+        }
         await api(`lists/${source.id}/playback`, { restart });
         void invalidateAll();
       }

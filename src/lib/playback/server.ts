@@ -1,3 +1,5 @@
+import { acceptedPlayedTime, listenReached } from './listening';
+import { recordMusicListen } from '$lib/music/persistence.server';
 import { correlationId } from '$lib/diagnostics';
 import { sequenceContextSchema } from '$lib/media/sequence';
 import { sequenceEntries } from '$lib/core/lists/sequence';
@@ -11,6 +13,7 @@ import {
   episodes,
   providerItems,
   media,
+  musicWorks, musicProgress,
   playbackSessions,
   trackingState,
   editionProgress,
@@ -36,7 +39,7 @@ import type { PlaybackView } from '$lib/ui/types';
 const uuid = v.pipe(v.string(), v.uuid());
 const seconds = v.pipe(v.number(), v.finite(), v.minValue(0), v.maxValue(2592000));
 const browserSchema = v.object({
-  containers: v.array(v.picklist(['mp4', 'm4v', 'webm', 'mov', 'mkv', 'ts'])),
+  containers: v.array(v.picklist(['mp4', 'm4v', 'webm', 'mov', 'mkv', 'ts', 'mp3', 'flac', 'ogg', 'opus', 'aac', 'm4a', 'wav'])),
   videoCodecs: v.array(v.picklist(['h264', 'hevc', 'vp8', 'vp9', 'av1'])),
   audioCodecs: v.array(v.picklist(['aac', 'mp3', 'opus', 'vorbis', 'flac', 'ac3', 'eac3'])),
   nativeHls: v.boolean(),
@@ -86,7 +89,8 @@ export function playbackResourcePath(
   baseUrl: string,
   itemId: string,
   reference: string,
-  parentPath?: string
+  parentPath?: string,
+  mediaType: 'audio' | 'video' = 'video'
 ) {
   const base = new URL(baseUrl);
   const prefix = base.pathname.replace(/\/$/, '');
@@ -112,7 +116,7 @@ export function playbackResourcePath(
     /^(?:[a-f0-9]{32}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/i.test(value)
       ? value.replaceAll('-', '').toLowerCase()
       : value.toLowerCase();
-  const resourceItemId = /^\/videos\/([^/]+)\//i.exec(decoded)?.[1];
+  const resourceItemId = (mediaType==='audio'?/^\/audio\/([^/]+)\//i:/^\/videos\/([^/]+)\//i).exec(decoded)?.[1];
   if (
     !resourceItemId ||
     normalizeId(resourceItemId) !== normalizeId(itemId) ||
@@ -140,9 +144,12 @@ export async function startPlayback(
   void logDiagnostic('debug', 'playback.start');
   const data = v.parse(playbackInput, input),
     config = await getConfig();
-  const [item] = await getDb().select().from(media).where(eq(media.id, data.mediaId));
-  if (!item || !['movie', 'episode'].includes(item.kind))
-    throw new Error('Choose a movie or episode to play.');
+  const [screen] = await getDb().select().from(media).where(eq(media.id,data.mediaId));
+  const [music] = screen ? [] : await getDb().select().from(musicWorks).where(eq(musicWorks.id,data.mediaId));
+  const item=screen??(music?{...music,runtimeMinutes:(music.durationSeconds??0)/60}:undefined);
+  const mediaType=music?'audio':'video';
+  if(!item || !['movie','episode','track'].includes(item.kind))throw new Error('Choose a movie, episode or track to play.');
+  if(music && !config.experimentalFeatures)throw new Error('Music is disabled by the administrator.');
   const sequenceEntry = data.sequence
     ? (await sequenceEntries(userId, data.sequence)).find(
         (entry) => entry.entryId === data.sequence!.entryId && entry.mediaId === item.id
@@ -206,7 +213,7 @@ export async function startPlayback(
             delivery: config.playbackDelivery === 'relay-only' ? 'relay-only' : 'allow-direct',
             maxBitrate: maximum,
             allowTranscoding: config.allowTranscoding,
-          });
+          },undefined,mediaType);
           candidates.push({ row: sourceRow, plan, playSessionId: info.playSessionId, instance });
         } catch {
           /* Try all sources before reporting incompatibility. */
@@ -232,7 +239,7 @@ export async function startPlayback(
   const upstream =
     best.plan.mode === 'transcode'
       ? source.transcodingUrl!
-      : `/Videos/${best.row.providerItem.externalId}/stream?${query}`;
+      : `/${mediaType==='audio'?'Audio':'Videos'}/${best.row.providerItem.externalId}/stream?${query}`;
   // PlaybackInfo paths can be absolute from the server's own origin or rooted below its reverse-proxy prefix.
   const serverPath = new URL(best.instance.baseUrl).pathname;
   const reference =
@@ -242,7 +249,8 @@ export async function startPlayback(
   const streamPath = playbackResourcePath(
     best.instance.baseUrl,
     best.row.providerItem.externalId,
-    reference
+    reference,
+    undefined,mediaType
   );
   const [state] = await getDb()
     .select()
@@ -262,7 +270,8 @@ export async function startPlayback(
     source.durationSeconds ||
     best.row.availability.durationSeconds ||
     (item.runtimeMinutes || 0) * 60;
-  const saved = edition ?? state;
+  const [audioProgress]=music?await getDb().select().from(musicProgress).where(and(eq(musicProgress.userId,userId),eq(musicProgress.trackId,item.id))):[];
+  const saved = audioProgress ?? edition ?? state;
   const [rewatch] = await getDb()
     .select({
       startedAt: rewatchBoundary(userId, sql`${item.id}::uuid`),
@@ -286,15 +295,22 @@ export async function startPlayback(
     !data.fromStart &&
     (sequenceEntry || newerThanCompletion) &&
     savedPosition > 0 &&
-    (!savedDuration || savedPosition / savedDuration < 0.9)
+    (!savedDuration || savedPosition / savedDuration < (mediaType==='audio'?1:0.9))
       ? savedPosition
       : 0;
   const expiresAt = new Date(Date.now() + 24 * 3600000);
-  const [session] = await getDb()
+  const [viewer] = await getDb().select().from(users).where(eq(users.id,userId));
+  // A user has one prepared/active playback session across audio and video.
+  const session=await getDb().transaction(async tx=>{
+  await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
+  await tx.update(playbackSessions).set({state:'stopped',updatedAt:new Date()}).where(and(eq(playbackSessions.userId,userId),sql`${playbackSessions.state}<>'stopped'`));
+  const [prepared] = await tx
     .insert(playbackSessions)
     .values({
       userId,
       mediaId: item.id,
+      mediaType,
+      listenThreshold:Math.min(100,Math.max(1,Math.trunc(viewer.settings.listenThreshold??50))),
       sequence: data.sequence,
       connectionId: best.row.availability.connectionId,
       providerItemId: best.row.providerItem.id,
@@ -310,6 +326,8 @@ export async function startPlayback(
       expiresAt,
     })
     .returning();
+  return prepared;
+  });
   void logDiagnostic('info', 'playback.ready', { sessionId: session.id, durationMs: performance.now() - started });
   const subtitles = [];
   for (const subtitle of source.streams.filter(
@@ -326,7 +344,7 @@ export async function startPlayback(
       url: await resourceUrl(session.id, path, expiresAt),
     });
   }
-  const [viewer] = await getDb().select().from(users).where(eq(users.id, userId));
+
   const languages = viewer.settings.subtitleLanguages || config.subtitleLanguages;
   const preferred = subtitles.find(
     (s) =>
@@ -358,14 +376,15 @@ export async function startPlayback(
   const [presentation] = await mediaViews(userId, { ids: [item.id], limit: 1 });
   const detail = episode
     ? `${episode.show} · S${String(episode.season).padStart(2, '0')} E${String(episode.number).padStart(2, '0')}`
-    : [item.year, item.kind === 'movie' ? 'Movie' : 'Episode'].filter(Boolean).join(' · ');
+    : music?music.artistNames.join(', '):[item.year, item.kind === 'movie' ? 'Movie' : 'Episode'].filter(Boolean).join(' · ');
   return {
     id: session.id,
+    mediaType,
     sequence: data.sequence,
     mediaId: item.id,
     detail,
     title: item.title,
-    artwork: presentation?.poster ?? presentation?.backdrop,
+    artwork: music?(best.row.providerItem.snapshot.primaryImageTag?`/api/v1/providers/${best.row.availability.connectionId}/music/${best.row.providerItem.externalId}/artwork`:undefined):presentation?.poster ?? presentation?.backdrop,
     url: `/api/v1/playback/${session.id}/stream`,
     kind: best.plan.useHls ? 'hls' : 'direct',
     startSeconds: position,
@@ -382,6 +401,7 @@ export async function progressPlayback(userId: string, sessionId: string, input:
   const data = v.parse(
     v.object({
       positionSeconds: seconds,
+      playedSeconds: v.optional(seconds),
       durationSeconds: v.optional(seconds),
       event: v.optional(v.picklist(['start', 'progress', 'pause', 'stop', 'ended']), 'progress'),
       paused: v.optional(v.boolean()),
@@ -419,7 +439,7 @@ export async function progressPlayback(userId: string, sessionId: string, input:
         .select()
         .from(trackingState)
         .where(and(eq(trackingState.userId, userId), eq(trackingState.mediaId, session.mediaId)));
-      return { complete: session.state === 'prepared' ? false : (state?.watched ?? false), state };
+      return { complete: session.mediaType==='audio'?session.listenRecorded:session.state === 'prepared' ? false : (state?.watched ?? false), state };
     }
     const duration = session.durationSeconds || data.durationSeconds || 0;
     const position = duration ? Math.min(data.positionSeconds, duration) : data.positionSeconds;
@@ -431,6 +451,17 @@ export async function progressPlayback(userId: string, sessionId: string, input:
         : data.event === 'pause' || data.paused || session.state === 'paused'
           ? 'paused'
           : 'active';
+    if(session.mediaType==='audio'){
+      const playedSeconds=acceptedPlayedTime(session.playedSeconds,data.playedSeconds??session.playedSeconds,(Date.now()-session.updatedAt.getTime())/1000,session.state==='active');
+      const listened=session.listenRecorded||listenReached(playedSeconds,duration,session.listenThreshold);
+      if(listened&&!session.listenRecorded)await recordMusicListen(tx,userId,session.mediaId,session.id,'playback');
+      const savedPosition=data.event==='ended'?0:position;
+      await tx.insert(musicProgress).values({userId,trackId:session.mediaId,positionSeconds:savedPosition,durationSeconds:duration||null})
+        .onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{positionSeconds:savedPosition,durationSeconds:duration||null,updatedAt:new Date()}});
+      await enqueuePlaybackActionsInTransaction(tx,userId,{sessionId,connectionId:session.connectionId,mediaId:session.mediaId,jellyfinEvent:firstStart?'start':stop?'stop':'progress',positionSeconds:position,durationSeconds:duration,paused:nextState==='paused'});
+      await tx.update(playbackSessions).set({playedSeconds,listenRecorded:listened,positionSeconds:position,state:nextState,updatedAt:new Date()}).where(eq(playbackSessions.id,sessionId));
+      return {complete:listened,state:{positionSeconds:position}};
+    }
     let updated = await trackInTransaction(tx, userId, {
       mediaId: session.mediaId,
       action: 'progress',
@@ -550,7 +581,7 @@ export async function streamPlayback(
     path = payload.path;
   }
   const prefix = new URL(instance.baseUrl).pathname.replace(/\/$/, '');
-  path = playbackResourcePath(instance.baseUrl, item.externalId, `${prefix}${path}`);
+  path = playbackResourcePath(instance.baseUrl, item.externalId, `${prefix}${path}`,undefined,session.mediaType);
   const credentials = v.parse(
     v.object({ accessToken: v.string() }),
     JSON.parse(await decryptCredential(connection.credentials!))
@@ -601,7 +632,7 @@ export async function streamPlayback(
     const body = await response.text();
     if (body.length > 2 * 1024 * 1024) throw new Error('The HLS manifest is too large.');
     const rewritten = await rewriteHlsManifest(body, async (reference) => {
-      const child = playbackResourcePath(instance.baseUrl, item.externalId, reference, path);
+      const child = playbackResourcePath(instance.baseUrl, item.externalId, reference, path,session.mediaType);
       return resourceUrl(session.id, child, session.expiresAt);
     });
     outgoing.delete('Content-Length');

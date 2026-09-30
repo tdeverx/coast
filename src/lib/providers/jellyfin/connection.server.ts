@@ -69,3 +69,11 @@ export async function updateJellyfinPlaybackImport(
     );
   return { enabled };
 }
+
+export async function updateJellyfinReconciliation(userId:string,connectionId:string,input:unknown){
+  await connectionFor(userId,connectionId,'jellyfin');
+  const {enabled}=v.parse(v.object({enabled:v.boolean()}),input);
+  await getDb().update(providerConnections).set({settings:sql`${providerConnections.settings} || jsonb_build_object('reconcileTracking', ${enabled}::boolean)`}).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId)));
+  if(enabled) await enqueueAction({userId,connectionId,kind:'jellyfin.sync',payload:{}});
+  return {enabled};
+}

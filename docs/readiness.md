@@ -14,3 +14,11 @@ The local source builds as a Bun/SvelteKit application and includes Docker Compo
 Tests that use databases or provider accounts must use disposable databases and intentional test accounts. Coast does not seed provider credentials or personal history during setup.
 
 See the [product brief](brief.md), [architecture](architecture.md), [provider behavior](providers.md), [design system](design.md), and [deployment guide](deployment.md) for implementation details. These documents describe the current codebase; historical checkpoint notes are evidence from their dated runs, not certification of the current preview.
+
+## Collection and music checkpoint — 30 September 2026
+
+Local checks cover shared work/relationship migrations, profile-aware Collection, root-only lazy rows, demand opt-outs, account generations, Trakt pagination/projection review and Jellyfin backfill conflicts. Type checking, production build, the regression suite and separate provider/database/API fixtures passed. This evidence uses disposable databases and synthetic provider responses.
+
+Desktop/mobile playback fixtures cover direct and HLS audio, threshold endpoints and actual-play accounting, navigation persistence, queue skip notices/gaps and audio/video handoff. Existing video, subtitle, post-play and explicit-skip behaviour was also checked. The approved interface reuses existing shelves, menus and the media controller.
+
+Live Trakt acceptance remains deferred. Audio from the configured real Jellyfin server remains unverified; previous live video evidence cannot establish audio compatibility. No commit or deployment is implied by these local checks.

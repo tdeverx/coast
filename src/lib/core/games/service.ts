@@ -4,6 +4,8 @@ import { getDb, type Database } from '../../server/db';
 import { games, gameExternalIds, gamePlaythroughs, gameSessions } from '../../server/db/schema';
 import { PAGE_SIZE, pageNumberSchema, pagination } from '../../server/queries/pagination';
 import { DomainError } from '../errors';
+import { trackInTransaction } from '../tracking/service';
+import { enqueueCollectionProjectionInTransaction } from '../../sync/changes';
 import { gameInputSchema, playthroughInputSchema, playthroughUpdateSchema, gameSessionInputSchema } from '../../games/model';
 
 const uuid = (value: string) => v.parse(v.pipe(v.string(), v.uuid()), value);
@@ -69,6 +71,8 @@ export async function createPlaythrough(userId: string, gameId: string, raw: unk
     const [game] = await tx.select({ id: games.id }).from(games).where(eq(games.id, gameId));
     if (!game) throw new DomainError('Game not found.', 404, 'not_found');
     const [row] = await tx.insert(gamePlaythroughs).values({ userId, gameId, ...input, startedAt: input.status === 'in-progress' ? new Date() : null }).returning();
+    if(input.status==='planned')await trackInTransaction(tx,userId,{mediaId:gameId,action:'watchlist',value:true});
+    await enqueueCollectionProjectionInTransaction(tx,userId);
     return { ...row, minutesPlayed: 0 };
   });
 }
@@ -93,6 +97,7 @@ export async function updatePlaythrough(userId: string, id: string, raw: unknown
       completedAt: status === 'completed' ? current.completedAt ?? now : null,
       updatedAt: now,
     }).where(eq(gamePlaythroughs.id, id)).returning();
+    await enqueueCollectionProjectionInTransaction(tx,userId);
     return row;
   });
 }
@@ -121,6 +126,7 @@ export async function logGameSession(userId: string, id: string, raw: unknown) {
       startedAt: !current.startedAt || playedAt < current.startedAt ? playedAt : current.startedAt,
       updatedAt: new Date(),
     }).where(eq(gamePlaythroughs.id, id));
+    await enqueueCollectionProjectionInTransaction(tx,userId);
     return session;
   });
 }

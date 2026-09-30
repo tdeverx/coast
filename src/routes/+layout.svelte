@@ -13,9 +13,9 @@
   let { data, children } = $props();
   let expired = $state(false);
   let content: HTMLElement;
-  const watching = $derived(!!data.user && !!player.session && !player.paused);
+  const watching = $derived(!!data.user && !!player.session && player.session.mediaType!=='audio' && !player.paused);
   onNavigate(async (navigation) => {
-    if (player.session && !player.paused) pausePlayback();
+    if (player.session && player.session.mediaType!=='audio' && !player.paused) pausePlayback();
     const hero = document.querySelector<HTMLElement>('[data-hero-id]');
     if (
       !content ||
@@ -72,6 +72,7 @@
   data-coast-glass="on"
   data-width={data.user?.settings?.fullWidth === false ? 'constrained' : 'full'}
   class:player-active={!!player.session}
+  class:audio-active={player.session?.mediaType === 'audio'}
   class:watching
 >
   <PersistentPlayer /><HeroPlayer />

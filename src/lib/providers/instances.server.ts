@@ -6,7 +6,7 @@ import {
 import { AppError } from '$lib/server/security/errors';
 import { providerSchedule } from '$lib/providers/schedule';
 import * as v from 'valibot';
-import { and, eq } from 'drizzle-orm';
+import { and, eq,sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { users, providerInstances, providerConnections } from '$lib/server/db/schema';
 import {
@@ -184,10 +184,14 @@ export async function listProviders(userId: string, includeDisabled = false) {
         connection: connection
           ? {
               id: connection.id,
+              accountGeneration: connection.accountGeneration,
               username: connection.username,
               status: connection.status,
               settings: {
                 sync: connection.settings.sync,
+                reconcileTracking: connection.settings.reconcileTracking,
+                collectionProjection: connection.settings.collectionProjection,
+                collectionProjectionVersion: connection.settings.collectionProjectionVersion,
                 importPlayback: instance.provider === 'jellyfin' && connection.settings.importPlayback !== false,
               },
               updatedAt: connection.updatedAt,
@@ -242,4 +246,19 @@ export async function instanceFetchConfig(
 export function instanceTransport(instance: typeof providerInstances.$inferSelect) {
   return async (path: string, init?: RequestInit) =>
     createProviderTransport(await instanceFetchConfig(instance))(path, init);
+}
+
+export async function setInstanceEnabled(adminId:string,instanceId:string,enabled:boolean,previewId?:string){
+  await requireProviderAdmin(adminId);
+  const [instance]=await getDb().select().from(providerInstances).where(eq(providerInstances.id,instanceId));
+  if(!instance)throw new AppError(404,'Integration not found.');
+  const {validateSourceChange,markSourceChange,notifySourceChange}=await import('$lib/collection/source-changes.server');
+  if(instance.provider==='jellyfin'&&!enabled)await validateSourceChange(adminId,instanceId,'instance',previewId);
+  const sources=await getDb().select({id:providerConnections.id}).from(providerConnections).where(eq(providerConnections.instanceId,instanceId));
+  await getDb().transaction(async tx=>{
+    if(instance.provider==='jellyfin')await markSourceChange(tx,sources.map(s=>s.id),!enabled);
+    await tx.update(providerInstances).set({enabled,settings:sql`${providerInstances.settings}-'sourceChangePreview'`}).where(eq(providerInstances.id,instanceId));
+  });
+  if(instance.provider==='jellyfin'&&!enabled)await notifySourceChange(sources.map(s=>s.id));
+  return {enabled};
 }

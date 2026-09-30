@@ -63,7 +63,7 @@ export async function libraryData(userId: string, rawOptions: unknown = {}) {
     : undefined;
   const where = and(
     input.kind === 'all' ? inArray(s.media.kind, ['movie', 'show']) : eq(s.media.kind, input.kind),
-    input.scope === 'available' || input.source !== 'all' ? permittedSource : undefined,
+    permittedSource,
     tracking,
     genre
   );

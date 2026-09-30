@@ -1,6 +1,6 @@
 # Games backend
 
-The initial games backend stores game metadata and provider identities separately from Film & TV. Game playthroughs and sessions are private to their owner. Games reuse Coast’s existing library cards, filters, overview panels, menus and dialogs. IGDB provides remote game search, details and catalog import. Configure it in Settings → Integrations, then open Games from Library or Search.
+The games backend stores concrete game metadata, playthroughs and sessions under shared work identities. Games share Collected, saved-for-later, favourites, ratings, lists and queue relationships with other works. Collection follows signed-in profile visibility; session details and notes remain private to their owner. The latest playthrough determines current activity without deleting earlier runs. Games reuse Coast’s existing library cards, filters, overview panels, menus and dialogs. IGDB provides remote game search, details and catalog import. Configure it in Settings → Integrations, then open Games from Library or Search under the experimental feature gate.
 
 All endpoints require an authenticated Coast session. Writes use the existing same-origin checks and bounded JSON request reader.
 
@@ -35,6 +35,8 @@ Use an authenticated, same-origin request; do not put credentials in source file
 Credentials use Coast's encrypted store. [Twitch app tokens](https://dev.twitch.tv/docs/authentication/getting-tokens-oauth/#client-credentials-grant-flow) are obtained server-side, cached in memory and renewed before expiry or once after HTTP 401. IGDB and Twitch requests use fixed HTTPS origins and Coast's transport limits. Requests share a conservative lane per Twitch client ID; 429 responses surface an actionable error instead of being retried repeatedly. Disabled integrations are checked before each call, including when an app token is cached. Rotating credentials invalidates the cached adapter.
 
 Search and details expose normalized title, summary, first release date, cover/backdrop artwork, platforms, game genres, developers and publishers. Artwork URLs are derived from validated IGDB image IDs. Missing dates remain unknown. The provider is metadata-only: it does not import an owned library, playtime, achievements or account history.
+
+Metadata import alone does not add a game to personal Collection or establish installation. Games without an availability-capable source remain Unknown, including games marked Collected.
 
 Import fetches metadata before opening a transaction. Concurrent imports of the same IGDB ID produce one game. Importing again refreshes provider metadata while preserving the Coast game ID, playthroughs and sessions. Existing local metadata for an explicitly matching IGDB identity is replaced by the imported fields. Provider failures leave local records intact.
 

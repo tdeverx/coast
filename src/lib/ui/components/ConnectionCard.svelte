@@ -1,4 +1,6 @@
 <script lang="ts">
+  import CollectionProjectionSettings from './CollectionProjectionSettings.svelte';
+  import type {SourceImpact} from '$lib/collection/source-changes.server';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { onMount, untrack } from 'svelte';
   import { api, change, message } from '$lib/ui/client';
@@ -7,7 +9,11 @@
   import Dialog from './Dialog.svelte';
   let {
     provider,
+    sources = [],
+    dynamicCollectionExports = [],
   }: {
+    sources?: {id:string;name:string}[];
+    dynamicCollectionExports?: string[];
     provider: {
       id: string;
       name: string;
@@ -15,6 +21,7 @@
       configured: boolean;
       connection: {
         id: string;
+        accountGeneration?: string;
         username: string | null;
         status: string;
         settings: Record<string, unknown>;
@@ -42,6 +49,8 @@
   };
   let scan = $state<Scan | null>(null);
   let scanError = $state('');
+  let sourceImpact=$state<SourceImpact|null>(null);
+  async function prepareDisconnect(){sourceImpact=null;error='';busy=true;try{if(provider.provider==='jellyfin')sourceImpact=await api(`providers/${provider.connection!.id}/source-preview`,undefined,'GET');disconnect=true;}catch(e){error=message(e);}finally{busy=false;}}
   const scanning = $derived(scan?.state === 'pending' || scan?.state === 'running');
   const scanPercent = $derived(
     scan?.total ? Math.min(100, Math.floor((scan.processed / scan.total) * 100)) : null
@@ -82,15 +91,17 @@
     lists: false,
     scrobble: false,
   };
+  let reconcileTracking=$state(untrack(()=>provider.connection?.settings.reconcileTracking===true));
   let importPlayback = $state(
     untrack(() => provider.connection?.settings.importPlayback !== false)
   );
   let sync = $state<Record<string, boolean>>({ ...defaultSync });
   $effect(() => {
-    const key = `${provider.connection?.id}:${provider.connection?.status}`;
+    const key = `${provider.connection?.id}:${provider.connection?.status}:${provider.connection?.accountGeneration}`;
     if (key === initialized) return;
     initialized = key;
     importPlayback = provider.connection?.settings.importPlayback !== false;
+    reconcileTracking = provider.connection?.settings.reconcileTracking === true;
     sync = {
       ...defaultSync,
       ...(provider.connection?.settings.sync as Record<string, boolean>),
@@ -142,7 +153,7 @@
   const labels: Record<string, string> = {
     history: 'Watch history',
     progress: 'Viewing progress',
-    collection: 'Provider collection state',
+    collection: 'Import Trakt Collection as Collected items',
     ratings: 'Ratings',
     watchlist: 'Watchlist',
     lists: 'Custom lists',
@@ -209,6 +220,9 @@
           Your administrator’s next scheduled user sync will import existing playback state. Conflicts
           follow your conflict resolution preference; unresolved changes appear in Sync conflicts.
         </p>
+        <label class="check"><input type="checkbox" bind:checked={reconcileTracking} disabled={busy} />Apply Coast tracking when items become available</label>
+        <p class="small">Fill empty supported fields. Divergent server state follows your conflict preference. This setting is independent of imports.</p>
+        <div><Button variant="secondary" disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/reconciliation`,{enabled:reconcileTracking},'Reconciliation preference saved.')}>Save reconciliation preference</Button></div>
       </div>{/if}
     {#if provider.provider === 'trakt'}<div class="sync-options">
         {#each Object.entries(labels) as [key, label]}<label class="check"
@@ -226,7 +240,8 @@
       </div>
       <p class="small">
         Imports retain their Trakt source. Coast remains your authoritative tracker.
-      </p>{/if}
+      </p>
+      {#key provider.connection.accountGeneration}<CollectionProjectionSettings connectionId={provider.connection.id} settings={provider.connection.settings} {sources} />{/key}{/if}
     {#if provider.provider === 'jellyfin' && scan}
       <div class="scan-status" role="status" aria-live="polite">
         <div class="spread small">
@@ -268,7 +283,7 @@
         disabled={busy}
         onclick={() => {
           error = '';
-          disconnect = true;
+          void prepareDisconnect();
         }}>Disconnect</Button
       >
     </div>{:else if provider.provider === 'jellyfin'}<form
@@ -278,6 +293,7 @@
         void connect();
       }}
     >
+      {#if dynamicCollectionExports.length}<p class="notice">Collection export impact: {dynamicCollectionExports.join(', ')} will include this linked source after your access is assessed. Additions and unavailable identities are unresolved until user sync completes. Existing Trakt entries stay until cleanup is reviewed.</p>{/if}
       <label class="field"
         >Jellyfin username<input bind:value={username} autocomplete="username" required /></label
       ><label class="field"
@@ -316,6 +332,7 @@
       Your imported tracking data stays in Coast. Pending external actions for this connection will
       be cancelled.
     </p>
+    {#if sourceImpact?.accounts.length}<h3>Collection export impact</h3>{#each sourceImpact.accounts as account}<p>{account.removals.length} potential removals{account.uncertain?' · uncertain coverage or delivery':''} · {account.unresolved.length} unresolved identities.</p><ul>{#each account.removals.slice(0,60) as item}<li>{item.title}</li>{/each}</ul>{/each}<p class="small">Remote entries stay. Review Trakt Collection in Connections to approve removal after a fresh remote read.</p>{/if}
     <div class="row">
       <Button
         variant="danger"
@@ -324,7 +341,7 @@
           if (
             await action(
               `providers/${provider.connection!.id}/disconnect`,
-              {},
+              {previewId:sourceImpact?.id},
               'Account disconnected. Tracking data retained.'
             )
           )

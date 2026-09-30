@@ -2,8 +2,10 @@
   import Icon from './Icon.svelte';
   import { playbackTime as time } from '$lib/playback/time';
 
-  let { mediaId, title, detail, artwork, current, duration, onseek, scrubbing = $bindable(false) }: {
+  let { mediaId, href, audio = false, title, detail, artwork, current, duration, onseek, scrubbing = $bindable(false) }: {
     mediaId: string;
+    href?: string;
+    audio?: boolean;
     title: string;
     detail: string;
     artwork?: string | null;
@@ -25,9 +27,9 @@
 </script>
 
 <div class="now-playing" class:scrubbing style={`--progress:${progress}%`}>
-  <a class="artwork" href={`/media/${mediaId}`} aria-label={`View ${title}`} title={`View ${title}`}>
+  <a class="artwork" href={href ?? `/media/${mediaId}`} aria-label={`View ${title}`} title={`View ${title}`}>
       {#if artwork && !artworkFailed}<img src={artwork} alt="" onerror={() => (artworkFailed = true)} />
-      {:else}<Icon name="film" size={18} />{/if}
+      {:else}<Icon name={audio ? 'volume' : 'film'} size={18} />{/if}
     </a>
   <div class="seek-area">
     <div class="track-info"><div class="track-copy"><strong>{title}</strong><span>{detail}</span></div></div>

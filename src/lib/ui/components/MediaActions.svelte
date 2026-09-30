@@ -65,6 +65,12 @@
     loading = $state(false),
     error = $state('');
   let generation = 0;
+  $effect(() => {
+    item.id;
+    generation++;
+    data = null;
+    loading = false;
+  });
   const active = $derived(data?.item ?? item);
   const language = $derived(trackingLanguage(active.category ?? 'screen'));
   const detailTargets = $derived(
@@ -167,7 +173,7 @@
         if (resolved.next?.id === id) result.item = { ...result.item, ...resolved.next };
         result.playable = resolved.next;
       }
-      if (token === generation) {
+      if (token === generation && id === item.id) {
         data = result;
       }
       return result;
@@ -297,7 +303,9 @@
       );
       return result.next;
     }
-    return data ? data.playable : isMediaGroup(item) ? (await loadActions())?.playable : item;
+    // A completed episode can change the group's next item while this menu's
+    // lazily loaded action data is still cached.
+    return isMediaGroup(item) ? (await loadActions())?.playable : data?.playable ?? item;
   }
   async function play(edition?: string, fromStart = false) {
     error = '';
@@ -536,6 +544,9 @@
       onclick={() => toggleSaved('watchlist')}
       >{active.watchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}</MenuAction
     >
+    <MenuAction icon="plus" checked={active.collected} disabled={busy} onclick={()=>perform(async()=>{await api(`collection/${active.id}`,{collected:!active.collected});await invalidateAll();},active.collected?'Removed Collected status. Other relationships and history are preserved.':'Added to Collection.')}>
+      {active.collected?'Remove from':'Add to'} Collection
+    </MenuAction>
     <MenuAction
       icon="heart"
       checked={active.favourite}

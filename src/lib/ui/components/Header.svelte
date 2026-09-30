@@ -12,6 +12,7 @@
     $props();
   const nav: { label: string; href: string }[] = [
     { label: 'For You', href: '/for-you' },
+    { label: 'Collection', href: '/collection' },
     { label: 'Library', href: '/library' },
     { label: 'Discover', href: '/discover' },
     { label: 'Search', href: '/search' },
@@ -20,8 +21,8 @@
 
 <a class="skip" href="#main-content">Skip to content</a>
 <header
-  class:chrome-hidden={!!player.session && !player.paused && !player.controlsVisible}
-  inert={!!player.session && !player.paused && !player.controlsVisible}
+  class:chrome-hidden={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
+  inert={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
 >
   <div class="header-inner content">
     <a class="brand-home" href="/for-you" aria-label="Coast home"><Brand compact size={44} /></a>

@@ -8,6 +8,7 @@ import {
   ratings,
   trackingEvents,
   outboxActions,
+  works, musicProgress,
   type JsonObject,
 } from '$lib/server/db/schema';
 import { trackInTransaction } from '$lib/core/tracking/service';
@@ -42,6 +43,11 @@ export async function localSyncValue(
   mediaId: string,
   category: ValueCategory
 ): Promise<JsonObject> {
+  const [work]=await tx.select().from(works).where(eq(works.id,mediaId));
+  if(work?.category==='music'&&(category==='history'||category==='progress')){
+    const [state]=await tx.select().from(musicProgress).where(and(eq(musicProgress.userId,userId),eq(musicProgress.trackId,mediaId)));
+    return category==='history'?{value:(state?.playCount??0)>0,playCount:state?.playCount??0}:{positionSeconds:Math.round((state?.positionSeconds??0)*1000)/1000,durationSeconds:Math.round(state?.durationSeconds??0)};
+  }
   if (category === 'ratings') {
     const [rating] = await tx
       .select()
@@ -71,6 +77,11 @@ export async function applySyncValue(
   source: string,
   occurredAt?: string
 ) {
+  const [work]=await tx.select().from(works).where(eq(works.id,mediaId));
+  if(work?.category==='music'&&(category==='history'||category==='progress')){
+    const fields=category==='history'?{playCount:value.value?Math.max(1,Number(value.playCount??1)):0}:{positionSeconds:Number(value.positionSeconds),durationSeconds:Number(value.durationSeconds)};
+    await tx.insert(musicProgress).values({userId,trackId:mediaId,...fields}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{...fields,updatedAt:new Date()}});return;
+  }
   if (category === 'ratings') {
     await rateInTransaction(tx, userId, { mediaId, value: value.value as number | null });
     await tx
@@ -123,6 +134,7 @@ export async function reconcileProviderValue(
   remote: JsonObject,
   options: {
     source?: string;
+    importRemote?: boolean;
     occurredAt?: string;
     apply?: (tx: Transaction) => Promise<unknown>;
   } = {}
@@ -146,6 +158,9 @@ export async function reconcileProviderValue(
       );
     const local = await localSyncValue(tx, userId, mediaId, category);
     let decision = decideSync(local, remote, previous);
+    // An outbound read can expose divergence, but an import opt-out must still
+    // prevent it from silently applying that remote state to Coast.
+    if(options.importRemote===false && decision==='remote')decision='conflict';
     if (!previous && decision === 'remote') {
       const actions =
         category === 'history'
@@ -182,7 +197,8 @@ export async function reconcileProviderValue(
         .limit(1);
       if (edited || queued) decision = 'conflict';
     }
-    const preference = await conflictPreference(tx, userId, connectionId);
+    const selectedPreference = await conflictPreference(tx, userId, connectionId);
+    const preference=options.importRemote===false&&selectedPreference==='remote'?'manual':selectedPreference;
     const ownedConnections = tx
       .select({ id: providerConnections.id })
       .from(providerConnections)

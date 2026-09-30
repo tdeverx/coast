@@ -1,3 +1,4 @@
+import type { MediaCategory } from '$lib/media/model';
 import { context } from '$lib/server/diagnostics';
 import { correlationId } from '$lib/diagnostics';
 import { supportsProviderField } from '$lib/providers/capabilities';
@@ -11,9 +12,10 @@ import {
   systemSettings,
   notifications,
   availability,
-  providerItems,
   syncValues,
   trackingState,
+  reconciliationIntents,
+  works,
 } from '$lib/server/db/schema';
 import {
   trackInTransaction,
@@ -110,6 +112,13 @@ export async function enqueueInTransaction(
   await tx.insert(outboxActions).values({ correlationId: correlationId(context.getStore()), ...action, createdAt: sql`clock_timestamp()` });
 }
 
+export async function enqueueCollectionProjectionInTransaction(tx:Transaction,userId:string){
+  const accounts=await tx.select({id:providerConnections.id}).from(providerConnections)
+    .innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
+    .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.provider,'trakt'),eq(providerInstances.enabled,true),sql`${providerConnections.settings}->'collectionProjection'->>'enabled'='true'`));
+  for(const account of accounts)await enqueueInTransaction(tx,{userId,connectionId:account.id,kind:'trakt.collection-project',payload:{},compactionKey:'trakt-collection-project'});
+}
+
 /** Native mutation and its outbound intent commit together, including bulk child events. */
 export async function enqueueTraktChangeInTransaction(
   tx: Transaction,
@@ -129,6 +138,10 @@ export async function enqueueTraktChangeInTransaction(
   for (const { connection } of connections) {
     const sync = connection.settings.sync as Record<string, boolean> | undefined;
     if (connection.id === change.excludeConnectionId) continue;
+    if(change.category==='collection'){
+      if((connection.settings.collectionProjection as {enabled?:boolean})?.enabled)await enqueueInTransaction(tx,{userId,connectionId:connection.id,kind:'trakt.collection-project',payload:{},compactionKey:'trakt-collection-project'});
+      continue;
+    }
     const [conflict] = await tx
       .select({ id: syncValues.id })
       .from(syncValues)
@@ -170,27 +183,23 @@ async function enqueueJellyfinChange(
         : action === 'progress'
           ? 'progress'
           : null;
-  if (!field || !supportsProviderField('jellyfin', 'screen', field, 'write')) return;
-  const connections = await tx
-    .selectDistinct({ id: providerConnections.id })
-    .from(availability)
-    .innerJoin(providerConnections, eq(providerConnections.id, availability.connectionId))
-    .innerJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
-    .innerJoin(providerItems, eq(providerItems.id, availability.providerItemId))
-    .where(
-      and(
-        eq(availability.userId, userId),
-        eq(availability.mediaId, mediaId),
-        eq(availability.state, 'available'),
-        eq(providerConnections.userId, userId),
-        eq(providerConnections.status, 'connected'),
-        eq(providerInstances.provider, 'jellyfin'),
-        eq(providerInstances.enabled, true)
-      )
-    )
+  if (!field) return;
+  const [work]=await tx.select({category:works.category}).from(works).where(eq(works.id,mediaId));
+  if (!work || !supportsProviderField('jellyfin', work.category as MediaCategory, field, 'write')) return;
+  const connections = await tx.select({id:providerConnections.id, settings:providerConnections.settings}).from(providerConnections)
+    .innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
+    .where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.provider,'jellyfin'),eq(providerInstances.enabled,true),
+      sql`(${providerConnections.settings}->>'reconcileTracking'='true' or exists(select 1 from availability a where a.connection_id=${providerConnections.id} and a.user_id=${userId} and a.media_id=${mediaId} and a.state='available'))`))
     .orderBy(asc(providerConnections.id));
   for (const connection of connections) {
     if (connection.id === excludeConnectionId) continue;
+    let desired:Record<string,unknown>=field==='progress'?{positionSeconds:Number(value??0),durationSeconds:durationSeconds??0}:{value:action==='unwatch'?false:Boolean(value??true)};
+    if(field==='history'){const {localSyncValue}=await import('$lib/sync/values');const local=await localSyncValue(tx,userId,mediaId,'history');if('playCount' in local)desired=local;}
+    const version=crypto.randomUUID();
+    await tx.insert(reconciliationIntents).values({connectionId:connection.id,workId:mediaId,category:field,value:desired,version})
+      .onConflictDoUpdate({target:[reconciliationIntents.connectionId,reconciliationIntents.workId,reconciliationIntents.category],set:{value:desired,version,updatedAt:new Date()}});
+    const [mapped]=await tx.select({id:availability.id}).from(availability).where(and(eq(availability.userId,userId),eq(availability.connectionId,connection.id),eq(availability.mediaId,mediaId),eq(availability.state,'available'))).limit(1);
+    if(!mapped)continue;
     const [conflict] = await tx
       .select({ id: syncValues.id })
       .from(syncValues)
@@ -212,10 +221,13 @@ async function enqueueJellyfinChange(
       kind: 'jellyfin.user-state',
       payload: {
         mediaId,
+        intentVersion:version,
+        backfill:false,
         field:
           action === 'progress' ? 'progress' : action === 'favourite' ? 'favourite' : 'watched',
         ...(durationSeconds !== undefined ? { durationSeconds } : {}),
         value: action === 'unwatch' ? false : (value ?? true),
+        playCount: desired.playCount,
       },
       compactionKey: `jellyfin:${action === 'progress' ? 'progress' : action === 'favourite' ? 'favourite' : 'watched'}:${mediaId}`,
     });
@@ -309,6 +321,9 @@ export async function trackWithExports(userId: string, input: TrackingInput) {
         input.action,
         input.action === 'favourite' ? result.state.favourite : undefined
       );
+    if(result.changed && !result.reviewRequired){
+      await enqueueCollectionProjectionInTransaction(tx,userId);
+    }
     return result;
   });
 }
@@ -328,6 +343,7 @@ export async function bulkTrackWithExports(
         eventId: event.eventId,
       });
     }
+    if(result.changed)await enqueueCollectionProjectionInTransaction(tx,userId);
     return result;
   });
 }
@@ -344,6 +360,7 @@ export async function rateWithExports(
         value: input.value ?? undefined,
         remove: input.value === null,
       });
+    if(result.changed)await enqueueCollectionProjectionInTransaction(tx,userId);
     return result.rating;
   });
 }

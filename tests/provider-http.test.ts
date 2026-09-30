@@ -2,6 +2,7 @@ import { addListItem, createList, getList, deleteList } from '../src/lib/core/li
 import { restartPlaylist, sequenceEntries } from '../src/lib/core/lists/sequence';
 import { track } from '../src/lib/core/tracking/service';
 import { streamArtwork } from '../src/lib/providers/artwork.server';
+import { verifyTraktIdentity } from '../src/lib/providers/trakt/connection.server';
 import { afterAll, beforeAll, test, expect } from 'bun:test';
 import { networkInterfaces } from 'node:os';
 import { mkdtemp, rm, readdir } from 'node:fs/promises';
@@ -78,6 +79,7 @@ const seenPaths: string[] = [];
 let traktWrites = 0;
 const exportedHistory: Record<string, unknown>[] = [];
 const traktId = Math.floor(Math.random() * 1000000000);
+const traktAccountId = crypto.randomUUID();
 const historyRecords = [
   {
     id: 502,
@@ -157,6 +159,10 @@ beforeAll(async () => {
           token_type: 'bearer',
           scope: 'public',
         });
+      }
+      if (path === '/users/settings') {
+        expect(request.headers.get('authorization')).toBe('Bearer synthetic-refreshed');
+        return json({user:{username:'fixture',ids:{uuid:traktAccountId,slug:'fixture'}}});
       }
       if (path.startsWith('/sync/history/movies/')) return json(exportedHistory);
       if (path === '/sync/history' && request.method === 'GET') return json(historyRecords);
@@ -892,8 +898,12 @@ run(
       });
       expect(second.startSeconds).toBe(0);
       await progressPlayback(actorId, second.id, { positionSeconds: 0, event: 'stop' });
-      await progressPlayback(actorId, resumed.id, { positionSeconds: 0.3, event: 'start' });
-      await progressPlayback(actorId, resumed.id, { positionSeconds: 0.99, event: 'ended' });
+      // Preparing another title ends the prior session under the shared audio/video
+      // session policy. Returning to the first entry requires a fresh preparation.
+      const returning=await startPlayback(actorId,{mediaId,browser,sequence});
+      expect(returning.startSeconds).toBeCloseTo(0.3);
+      await progressPlayback(actorId, returning.id, { positionSeconds: 0.3, event: 'start' });
+      await progressPlayback(actorId, returning.id, { positionSeconds: 0.99, event: 'ended' });
       expect((await sequenceEntries(actorId, source)).map((entry) => entry.watched)).toEqual([
         true,
         false,
@@ -1015,7 +1025,7 @@ run(
 );
 
 run(
-  'Trakt refresh and selective history import preserve source identities over real HTTP',
+  'Trakt identity verification, refresh and selective history import preserve source identities over real HTTP',
   async () => {
     const transport = createProviderTransport({
       baseUrl,
@@ -1034,6 +1044,9 @@ run(
         tokens.access_token
       ),
       sync = { ...defaultSyncPreferences, history: true };
+    const profile=await adapter.profile();expect(profile.id).toBe(traktAccountId);expect(profile.slug).toBe('fixture');
+    const [legacy]=await getDb().update(providerConnections).set({settings:{traktIdentityPending:true,sync:{}}}).where(eq(providerConnections.id,traktConnectionId)).returning();
+    const verified=await verifyTraktIdentity(legacy,profile);expect(verified.syncAccountId).toBe(legacy.syncAccountId);expect(verified.accountGeneration).toBe(legacy.accountGeneration);expect(verified.externalUserId).toBe(traktAccountId);
     const start = seenPaths.length;
     const [beforeImport] = await getDb()
       .select()

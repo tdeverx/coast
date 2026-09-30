@@ -144,6 +144,8 @@ run('genre filtering uses resolved provider and override genres before counting'
     genres: [marker],
   });
   mediaIds.push(movie.id);
+  const [mapping]=await getDb().insert(s.providerItems).values({instanceId:instance,mediaId:movie.id,externalId:marker,kind:'movie'}).returning();
+  await getDb().insert(s.availability).values({userId:member,connectionId:connections[1],providerItemId:mapping.id,mediaId:movie.id});
   const data = await libraryData(member, { scope: 'all', genre: marker.toUpperCase() });
   expect(data.total).toBe(1);
   expect(data.items[0].id).toBe(movie.id);

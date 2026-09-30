@@ -1,8 +1,9 @@
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';
-import { listItems, lists, media } from '../../server/db/schema';
+import { listItems, lists, media, works, games, musicWorks } from '../../server/db/schema';
 import { DomainError } from '../errors';
+import { enqueueCollectionProjectionInTransaction } from '../../sync/changes';
 
 const uuidSchema = v.pipe(v.string(), v.uuid());
 export const listInputSchema = v.object({
@@ -35,7 +36,7 @@ export async function createList(userId: string, raw: v.InferInput<typeof create
   const { mediaId, ...input } = v.parse(createListInputSchema, raw);
   return getDb().transaction(async (tx) => {
     if (mediaId) {
-      const [item] = await tx.select({ id: media.id }).from(media).where(eq(media.id, mediaId));
+      const [item] = await tx.select({ id: works.id }).from(works).where(eq(works.id, mediaId));
       if (!item) throw new DomainError('This title was not found.', 404, 'not_found');
     }
     const [list] = await tx
@@ -43,6 +44,7 @@ export async function createList(userId: string, raw: v.InferInput<typeof create
       .values({ userId, ...input })
       .returning();
     if (mediaId) await tx.insert(listItems).values({ listId: list.id, mediaId, position: 0 });
+    await enqueueCollectionProjectionInTransaction(tx,userId);
     return list;
   });
 }
@@ -68,6 +70,7 @@ export async function deleteList(userId: string, listId: string) {
   return getDb().transaction(async (tx) => {
     await ownedList(tx, userId, listId);
     await tx.delete(lists).where(eq(lists.id, listId));
+    await enqueueCollectionProjectionInTransaction(tx,userId);
   });
 }
 export async function getLists(userId: string) {
@@ -100,15 +103,20 @@ export async function getList(userId: string, listId: string) {
   const items = await getDb()
     .select({
       entryId: listItems.id,
-      item: media,
+      item: works,
+      screen: media,
+      title: sql<string>`coalesce(${media.title},${games.title},${musicWorks.title})`,
       position: listItems.position,
       addedAt: listItems.addedAt,
     })
     .from(listItems)
-    .innerJoin(media, eq(media.id, listItems.mediaId))
+    .innerJoin(works, eq(works.id, listItems.mediaId))
+    .leftJoin(media, eq(media.id, works.id))
+    .leftJoin(games, eq(games.id, works.id))
+    .leftJoin(musicWorks, eq(musicWorks.id, works.id))
     .where(eq(listItems.listId, listId))
     .orderBy(asc(listItems.position), asc(listItems.addedAt));
-  return { ...list, items };
+  return { ...list, items: items.map(({screen,title,...entry})=>({...entry,item:screen??{...entry.item,title}})) };
 }
 export async function addListItem(
   userId: string,
@@ -128,7 +136,7 @@ export async function addListItem(
         .where(and(eq(listItems.listId, listId), eq(listItems.mediaId, mediaId)));
       if (existing) return { entryId: existing.id, added: false };
     }
-    const [item] = await tx.select({ id: media.id }).from(media).where(eq(media.id, mediaId));
+    const [item] = await tx.select({ id: works.id }).from(works).where(eq(works.id, mediaId));
     if (!item) throw new DomainError('This title was not found.', 404, 'not_found');
     const [maximum] = await tx
       .select({ position: sql<number>`coalesce(max(${listItems.position}), -1)::int` })
@@ -148,6 +156,7 @@ export async function addListItem(
       .values({ listId, mediaId, position })
       .returning({ id: listItems.id });
     await tx.update(lists).set({ updatedAt: new Date() }).where(eq(lists.id, listId));
+    await enqueueCollectionProjectionInTransaction(tx,userId);
     return { entryId: entry.id, added: true };
   });
 }
@@ -167,6 +176,7 @@ export async function removeListItem(userId: string, listId: string, entryId: st
         .set({ position })
         .where(and(eq(listItems.listId, listId), eq(listItems.id, item.id)));
     await tx.update(lists).set({ updatedAt: new Date() }).where(eq(lists.id, listId));
+    await enqueueCollectionProjectionInTransaction(tx,userId);
   });
 }
 /** A reorder is an exact permutation, preventing hidden item deletion or cross-list insertion. */

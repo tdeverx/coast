@@ -108,6 +108,17 @@ run('shared rate-limit cooldown protects all queued accounts on the affected ser
   await getSql()`UPDATE provider_instances SET settings = settings - 'jobsRetryAt' WHERE id = ${instances[0]}`;
   expect((await claimNextAction())?.id).toBe(other);
 });
+run('Collection cleanup and entry reviews share the existing service traversal lock without deduplicating separate reviews',async()=>{
+ const db=getSql(),other=crypto.randomUUID();
+ await db`insert into provider_connections(id,user_id,instance_id,external_user_id,credentials) values(${other},${users[1]},${instances[2]},'review-fixture','fixture')`;
+ try{
+  const cleanup=await queue(3,'trakt.collection-cleanup');
+  const first=await enqueueAction({userId:users[1],connectionId:other,kind:'trakt.collection-review',payload:{workId:crypto.randomUUID()}});
+  const second=await enqueueAction({userId:users[1],connectionId:other,kind:'trakt.collection-review',payload:{workId:crypto.randomUUID()}});
+  expect(first).not.toBe(second);expect((await claimNextAction())?.id).toBe(cleanup);expect(await claimNextAction()).toBeNull();
+  await db`update outbox_actions set state='succeeded' where id=${cleanup}`;expect((await claimNextAction())?.id).toBe(first);
+ }finally{await db`delete from provider_connections where id=${other}`;}
+});
 run(
   'session lock prevents concurrent scan execution when a running lease becomes stale',
   async () => {

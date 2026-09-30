@@ -9,6 +9,7 @@ import {
   listItems,
   episodes,
   media,
+  works,
   mediaRelationships,
   trackingEvents,
   removedTrackingSources,
@@ -117,10 +118,12 @@ async function applyChange(
   skipOrderWarning = false
 ): Promise<TrackingResult> {
   const [item] = await tx
-    .select({ kind: media.kind })
-    .from(media)
-    .where(eq(media.id, input.mediaId));
+    .select({ kind: works.kind, category: works.category })
+    .from(works)
+    .where(eq(works.id, input.mediaId));
   if (!item) throw new DomainError('This title was not found.', 404, 'not_found');
+  if (item.category !== 'screen' && ['watch', 'unwatch', 'progress', 'drop', 'restore'].includes(input.action))
+    throw new DomainError('Use this medium’s activity controls.');
   if (
     (item.kind === 'show' || item.kind === 'season' || item.kind === 'collection') &&
     ['watch', 'unwatch', 'progress'].includes(input.action)

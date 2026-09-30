@@ -19,7 +19,7 @@ export const settingsTitles: Record<string, string> = Object.fromEntries(setting
 
 export const settingsDescriptions: Record<string, string> = {
   appearance: 'Choose how Coast displays your library and optional notifications.',
-  playback: 'Set subtitle preferences for your next playback session.',
+  playback: 'Set subtitle and music listening preferences for your next playback session.',
   account: 'Review your account, change your password and restore preferences.',
   connections: 'Link your personal service accounts and choose what they sync.',
   pending: 'Review conflicting changes before they replace your saved tracking data.',
@@ -32,8 +32,8 @@ export const settingsDescriptions: Record<string, string> = {
 };
 
 export const preferenceFields = {
-  appearance: ['fullWidth', 'originalTitles', 'region', 'notificationsSilenced'],
-  playback: ['subtitlesAlways', 'subtitleLanguages', 'subtitlePrompt'],
+  appearance: ['shareDemand', 'fullWidth', 'originalTitles', 'region', 'notificationsSilenced'],
+  playback: ['listenThreshold', 'subtitlesAlways', 'subtitleLanguages', 'subtitlePrompt'],
   connections: ['syncConflictWinner'],
 } as const;
 

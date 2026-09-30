@@ -160,6 +160,7 @@ export async function scheduleProviderMaintenance(
               'jellyfin.sync',
               'trakt.import',
               'trakt.lists-import',
+              'trakt.collection-project',
               'seerr.sync',
             ])
           )
@@ -254,6 +255,10 @@ export async function scheduleProviderMaintenance(
         continue;
       }
       if (instance.provider === 'trakt') {
+        if(options.task !== 'lists' && (options.force || schedule.trackingEnabled) && (connection.settings.collectionProjection as {enabled?:boolean})?.enabled){
+          const projectionJob=jobsByKey.get(`${connection.id}:trakt.collection-project`);
+          if(!projectionJob?.active && (options.force||!projectionJob?.last||now-new Date(projectionJob.last).getTime()>=schedule.intervalMinutes*60000))await queue(connection,'trakt.collection-project');
+        }
         const sync = connection.settings.sync as Record<string, boolean> | undefined;
         if (
           options.task !== 'tracking' &&

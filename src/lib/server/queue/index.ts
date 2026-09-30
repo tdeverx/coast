@@ -1,4 +1,4 @@
-import { maintenanceKinds } from '$lib/providers/tasks';
+import { maintenanceKinds,serviceTraversalKinds } from '$lib/providers/tasks';
 import { context, logDiagnostic, classifyFailure } from '../diagnostics';
 import { refreshDiagnosticConfig } from '../config';
 import { correlationId } from '../../diagnostics';
@@ -17,6 +17,7 @@ export interface OutboxAction {
   connectionId: string | null;
   kind: string;
   payload: Record<string, unknown>;
+  accountGeneration?: string | null;
   attempts: number;
   correlationId: string;
   instanceId?: string | null;
@@ -140,9 +141,9 @@ export async function claimNextAction(): Promise<OutboxAction | null> {
             AND earlier.state IN ('pending', 'running', 'failed') AND (earlier.created_at, earlier.id) < (candidate.created_at, candidate.id)
             AND (earlier.kind NOT IN ${sql(maintenanceKinds)} OR earlier.state = 'running' OR
               (candidate.kind IN ${sql(maintenanceKinds)} AND earlier.state = 'pending' AND earlier.next_attempt_at <= NOW())))
-          AND (candidate.kind NOT IN ${sql(maintenanceKinds)} OR NOT EXISTS (
+          AND (candidate.kind NOT IN ${sql(serviceTraversalKinds)} OR NOT EXISTS (
             SELECT 1 FROM outbox_actions busy JOIN provider_connections busy_connection ON busy_connection.id = busy.connection_id
-            WHERE busy_connection.instance_id = connection.instance_id AND busy.kind IN ${sql(maintenanceKinds)} AND busy.state = 'running'))
+            WHERE busy_connection.instance_id = connection.instance_id AND busy.kind IN ${sql(serviceTraversalKinds)} AND busy.state = 'running'))
         ORDER BY candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
       ) RETURNING *, (SELECT instance_id FROM provider_connections WHERE id = connection_id) AS instance_id`;
     return row
@@ -152,6 +153,7 @@ export async function claimNextAction(): Promise<OutboxAction | null> {
           connectionId: row.connection_id,
           kind: row.kind,
           payload: row.payload,
+          accountGeneration: row.account_generation,
           attempts: row.attempts,
           correlationId: row.correlation_id,
           instanceId: row.instance_id,
@@ -167,7 +169,7 @@ export async function runQueueOnce(): Promise<boolean> {
   // also holds the shared service lock, while other accounts' edits remain independent.
   const reserved = await getSql().reserve();
   const lockKeys = [`queue-lane:${action.userId}:${action.connectionId ?? 'local'}`];
-  if (action.instanceId && maintenanceKinds.includes(action.kind))
+  if (action.instanceId && serviceTraversalKinds.includes(action.kind))
     lockKeys.push(`maintenance:${action.instanceId}`);
   const held: string[] = [];
   try {
@@ -193,10 +195,11 @@ export async function runQueueOnce(): Promise<boolean> {
       try {
         if (action.connectionId) {
           const [connection] =
-            await getSql()`SELECT c.id, c.credentials, i.provider FROM provider_connections c JOIN provider_instances i ON i.id = c.instance_id JOIN users u ON u.id = c.user_id
+            await getSql()`SELECT c.id, c.account_generation, c.credentials, i.provider FROM provider_connections c JOIN provider_instances i ON i.id = c.instance_id JOIN users u ON u.id = c.user_id
           WHERE c.id = ${action.connectionId} AND c.user_id = ${action.userId} AND c.status = 'connected' AND i.enabled AND NOT u.disabled`;
           if (
             !connection ||
+            (action.accountGeneration && action.accountGeneration !== connection.account_generation) ||
             (['jellyfin', 'trakt'].includes(connection.provider) && !connection.credentials)
           )
             throw new PermanentActionError('The connected account is unavailable.');

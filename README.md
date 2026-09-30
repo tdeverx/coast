@@ -1,7 +1,7 @@
 <div align="center">
   <img src="static/coast-mark.png" alt="Coast mark" width="112" />
   <h1>Coast</h1>
-  <p>A self-hosted home for your movie and TV library, watch history and lists.</p>
+  <p>A self-hosted home for your media collection, tracking and server library.</p>
   <p>
     <a href="https://github.com/tdeverx/coast/actions/workflows/verify-and-publish-preview.yml"><img alt="Build and preview image" src="https://github.com/tdeverx/coast/actions/workflows/verify-and-publish-preview.yml/badge.svg?branch=main"></a>
     <a href="LICENSE"><img alt="AGPL-3.0-only" src="https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg"></a>
@@ -65,6 +65,8 @@ The source-build command uses `http://localhost:3000` by default. For LAN access
 ## What Coast connects to
 
 Coast can connect to Jellyfin for library and playback, TMDB for metadata and discovery, Trakt for optional account linking and tracking, and Seerr for requests. These connections are optional; Coast's own profiles, lists, ratings and watch history work without them. Add shared service connections in **Settings → Integrations**, then link personal accounts under **Connections**. Trakt sync still needs more real-account verification before it should be relied on.
+
+**Collection** contains your saved items and tracking, including media unavailable on a server. **Library** contains server content accessible to your account. Collection filters can show available items or missing demand without changing personal membership. Experimental music and games reuse the same relationships; music adds listening and audio playback, while IGDB supplies game metadata. See [Collection and Library](docs/collection.md), [music](docs/music.md) and [games](docs/games.md).
 
 Keep API keys and passwords in Coast's settings. Do not put secrets in the image, a Compose file committed to Git, or a bug report.
 

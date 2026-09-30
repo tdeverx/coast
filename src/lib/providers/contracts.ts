@@ -84,6 +84,8 @@ export interface AvailableItem {
   id: string;
   kind: 'movie' | 'show' | 'season' | 'episode';
   metadata: Metadata;
+  /** Account-scoped expected leaf count; never grants access or proves server inventory. */
+  expectedMembers?: number;
   parentId?: string;
   showId?: string;
   seasonNumber?: number;

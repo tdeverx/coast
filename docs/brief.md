@@ -6,6 +6,8 @@ The 1.0 goal is a genuinely usable release candidate for tracking movies and tel
 
 Use this document as the required source of truth. Do not invent additional product features or architectural layers. When something is genuinely unresolved, record it clearly rather than silently designing an elaborate solution.
 
+The later approved [Collection and Library](collection.md) extension refines this brief: personal Collection is separate from accessible server content, uses shared work identities and relationships, and includes experimental music listening/audio and game relationships. Books, audiobooks and comics remain future concrete models. Existing schedulers, sign-in bindings, menus and media controls remain the foundation.
+
 ## Product identity
 
 The product is named Coast.
@@ -269,7 +271,7 @@ Support:
 - Watchlist
 - Favourites
 - User-created ordered lists
-- Collected/library state
+- Personal Collected state, separate from server Library availability
 - Provider-imported lists with their source retained
 - TMDB collections/franchises as media relationships
 

@@ -4,12 +4,11 @@ import { requireExperimentalFeatures } from '$lib/server/experimental';
 import { libraryData } from './library';
 import { presentationContent } from './media-rows';
 import { musicBrowseData } from './music';
-import { listGames } from '$lib/core/games/service';
-import { gameCard } from '$lib/games/presentation';
 import type { LibraryContent } from '$lib/library';
 
 export async function libraryContent(userId: string, url: URL): Promise<LibraryContent> {
   if (url.searchParams.get('preview') === 'true') {
+    if(url.searchParams.get('surface')==='play')return {items:[],page:1,pages:1,total:0,failure:'No game availability source is connected. Tracked games are in Collection.'};
     const result = await presentationContent(userId, url);
     return { ...result, page: 1, pages: 1, total: result.items.length };
   }
@@ -39,14 +38,9 @@ export async function libraryContent(userId: string, url: URL): Promise<LibraryC
       failure: result.failure,
     };
   }
-  const state = v.parse(
+  v.parse(
     v.picklist(['all', 'planned', 'in-progress', 'completed', 'paused', 'dropped']),
     selection
   );
-  const result = await listGames(
-    '',
-    Number(url.searchParams.get('page') ?? 1),
-    state === 'all' ? undefined : { userId, status: state }
-  );
-  return { ...result, items: result.items.map((item) => gameCard(item)) };
+  return {items:[],page:1,pages:1,total:0,failure:'No game availability source is connected. Tracked games are in Collection.'};
 }

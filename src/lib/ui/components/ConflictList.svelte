@@ -6,6 +6,7 @@
   type Conflict = {
     id: string;
     mediaId: string;
+    kind?: string;
     title: string;
     source: string;
     action: string;
@@ -54,7 +55,7 @@
   {#each conflicts as conflict}<article class="panel stack">
       <div class="spread">
         <div>
-          <a href={conflict.mediaId ? `/media/${conflict.mediaId}` : '/lists'}
+          <a href={conflict.mediaId ? `/${conflict.kind==='album'||conflict.kind==='track'?'music/work':conflict.kind==='game'?'games':'media'}/${conflict.mediaId}` : '/lists'}
             ><h3>{conflict.title}</h3></a
           >
           <p class="small">

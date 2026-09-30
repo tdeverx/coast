@@ -1,13 +1,33 @@
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
-import { providerInstances, providerConnections } from '$lib/server/db/schema';
+import { providerInstances, providerConnections, syncAccounts } from '$lib/server/db/schema';
 import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
 import { getConfig } from '$lib/server/config';
 import { TraktAdapter } from '$lib/providers/trakt/adapter.server';
 import { defaultSyncPreferences, type SyncPreferences } from '$lib/providers/contracts';
 import { getInstance, instanceTransport } from '$lib/providers/instances.server';
 import { connectionFor, saveConnection } from '$lib/providers/connections.server';
+
+/** Upgrade the merged slug identity only after the authenticated account proves it. */
+export async function verifyTraktIdentity(connection:typeof providerConnections.$inferSelect,profile:{id:string;slug?:string}){
+  if(!connection.settings.traktIdentityPending)return connection;
+  if(profile.id!==connection.externalUserId&&profile.slug!==connection.externalUserId)
+    throw new Error('Reconnect Trakt to verify the current account.');
+  return getDb().transaction(async tx=>{
+    const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connection.id)).for('update');
+    if(!current||current.accountGeneration!==connection.accountGeneration||current.externalUserId!==connection.externalUserId)
+      throw new Error('The connected account changed.');
+    const settings={...current.settings};delete settings.traktIdentityPending;
+    const [account]=await tx.select().from(syncAccounts).where(and(eq(syncAccounts.id,current.syncAccountId!),eq(syncAccounts.provider,'trakt'))).for('update');
+    if(!account)throw new Error('Reconnect Trakt to verify the current account.');
+    // Updating the durable account first lets the connection trigger distinguish
+    // this verified identity correction from switching to another provider account.
+    await tx.update(syncAccounts).set({externalUserId:profile.id,settings,verifiedAt:new Date()}).where(eq(syncAccounts.id,account.id));
+    const [verified]=await tx.update(providerConnections).set({externalUserId:profile.id,settings,updatedAt:new Date()}).where(eq(providerConnections.id,current.id)).returning();
+    return verified;
+  });
+}
 
 async function traktApp(instance: typeof providerInstances.$inferSelect) {
   if (!(await getConfig()).enableTrakt)
@@ -129,6 +149,8 @@ export async function finishTraktDevice(userId: string, instanceId: string) {
       app.clientSecret,
       tokens.access_token
     ).profile();
+    const verified=connection.settings.traktIdentityPending && (profile.id===connection.externalUserId||profile.slug===connection.externalUserId)
+      ? await verifyTraktIdentity(connection,profile) : connection;
     return {
       pending: false,
       connection: await saveConnection(
@@ -138,7 +160,7 @@ export async function finishTraktDevice(userId: string, instanceId: string) {
         profile.username,
         tokens,
         {
-          sync: defaultSyncPreferences,
+          sync: verified.externalUserId === profile.id ? verified.settings.sync ?? defaultSyncPreferences : defaultSyncPreferences,
         }
       ),
     };
@@ -168,7 +190,7 @@ export async function getTrakt(userId: string, connectionId: string) {
           eq(providerConnections.status, 'connected')
         )
       );
-    if (!current?.credentials) throw new Error('Reconnect Trakt to continue.');
+    if (!current?.credentials || current.accountGeneration !== context.connection.accountGeneration) throw new Error('Reconnect Trakt to continue.');
     let saved = v.parse(
       v.object({
         access_token: v.string(),
@@ -199,17 +221,16 @@ export async function getTrakt(userId: string, connectionId: string) {
     }
     return saved;
   });
+  const adapter=new TraktAdapter(instanceTransport(context.instance),app.clientId,app.clientSecret,token.access_token);
+  const connection=context.connection.settings.traktIdentityPending
+    ? await verifyTraktIdentity(context.connection,await adapter.profile()) : context.connection;
   return {
     ...context,
-    adapter: new TraktAdapter(
-      instanceTransport(context.instance),
-      app.clientId,
-      app.clientSecret,
-      token.access_token
-    ),
+    connection,
+    adapter,
     sync: {
       ...defaultSyncPreferences,
-      ...(context.connection.settings.sync as Partial<SyncPreferences>),
+      ...(connection.settings.sync as Partial<SyncPreferences>),
     },
   };
 }

@@ -39,6 +39,7 @@ export const traktRecordSchema = v.object({
   watched_at: v.optional(v.string()),
   rated_at: v.optional(v.string()),
   collected_at: v.optional(v.string()),
+  metadata: v.optional(v.record(v.string(),v.unknown())),
   listed_at: v.optional(v.string()),
   paused_at: v.optional(v.string()),
   rating: v.optional(v.number()),
@@ -51,7 +52,7 @@ export const traktRecordSchema = v.object({
     v.array(
       v.object({
         number: v.number(),
-        episodes: v.array(v.object({ number: v.number(), collected_at: v.optional(v.string()) })),
+        episodes: v.array(v.object({ number: v.number(), collected_at: v.optional(v.string()), metadata: v.optional(v.record(v.string(),v.unknown())) })),
       })
     )
   ),
@@ -129,10 +130,10 @@ export class TraktAdapter {
   }
   async profile() {
     const data = v.parse(
-      v.object({ user: v.object({ username: v.string(), ids: v.object({ slug: v.string() }) }) }),
+      v.object({ user: v.object({ username: v.string(), ids: v.object({ uuid: v.string(), slug: v.optional(v.string()) }) }) }),
       await this.call('/users/settings')
     );
-    return { id: data.user.ids.slug, username: data.user.username };
+    return { id: data.user.ids.uuid, username: data.user.username, slug: data.user.ids.slug };
   }
   async read(
     category: Exclude<SyncCategory, 'lists' | 'scrobble'>,
@@ -150,10 +151,7 @@ export class TraktAdapter {
     );
   }
   async collectionShows(): Promise<TraktRecord[]> {
-    return v.parse(
-      v.array(traktRecordSchema),
-      await this.call('/sync/collection/shows?extended=full')
-    );
+    return this.readPages('/sync/collection/shows?extended=full', value => v.parse(v.array(traktRecordSchema),value));
   }
   async lists() {
     return this.readPages('/users/me/lists', (value) =>

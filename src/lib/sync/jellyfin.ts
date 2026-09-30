@@ -1,3 +1,5 @@
+import { persistMusic, observeMusicAccess, recordMusicListen, importedListenBatch } from '$lib/music/persistence.server';
+import { enqueueInTransaction } from '$lib/sync/changes';
 import {
   reconcileProviderValue,
   acknowledgeProviderValue,
@@ -20,12 +22,25 @@ import {
   providerInstances,
   media,
   users,
+  works, musicProgress, reconciliationIntents, syncValues,
 } from '$lib/server/db/schema';
 import { PermanentActionError } from '$lib/server/queue';
 import { notify } from '$lib/server/notifications';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
+import { getConfig } from '$lib/server/config';
 import { ingestMetadata } from '$lib/catalogue/service';
 import type { AvailableItem } from '$lib/providers/contracts';
+
+export type JellyfinSyncContext=Awaited<ReturnType<typeof getJellyfin>>;
+async function jellyfinContext(userId:string,connectionId:string,provided?:JellyfinSyncContext){
+  if(!provided)return getJellyfin(userId,connectionId);
+  const [current]=await getDb().select({connection:providerConnections,instance:providerInstances}).from(providerConnections)
+    .innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId)).innerJoin(users,eq(users.id,providerConnections.userId))
+    .where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(users.disabled,false),eq(providerInstances.enabled,true)));
+  if(!current||current.instance.provider!=='jellyfin'||current.connection.accountGeneration!==provided.connection.accountGeneration||current.instance.id!==provided.instance.id)
+    throw new PermanentActionError('The connected account changed during this task.');
+  return {...current,adapter:provided.adapter};
+}
 
 export async function libraryScanProgress(userId: string, connectionId: string) {
   const { connection } = await getJellyfin(userId, connectionId);
@@ -90,9 +105,10 @@ export async function scanJellyfinLibrary(
 export async function syncJellyfinUser(
   userId: string,
   connectionId: string,
-  onStage?: (stage: string) => void
+  onStage?: (stage: string) => void,
+  provided?: JellyfinSyncContext
 ) {
-  return runJellyfinScan(userId, connectionId, 'user', true, onStage);
+  return runJellyfinScan(userId, connectionId, 'user', true, onStage,provided);
 }
 
 async function runJellyfinScan(
@@ -100,10 +116,11 @@ async function runJellyfinScan(
   connectionId: string,
   scope: 'library' | 'user',
   full = true,
-  onStage?: (stage: string) => void
+  onStage?: (stage: string) => void,
+  provided?: JellyfinSyncContext
 ) {
   onStage?.('connection');
-  const { adapter, connection, instance } = await getJellyfin(userId, connectionId);
+  const { adapter, connection, instance } = await jellyfinContext(userId, connectionId,provided);
   onStage?.('identity');
   await adapter.identity(instance.serverIdentity || undefined);
   onStage?.('checkpoint-read');
@@ -144,6 +161,10 @@ async function runJellyfinScan(
           and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId))
         );
   }
+  // Mark traversal before its first remote request. An interrupted first page
+  // cannot leave earlier negative observations looking like current coverage.
+  await db.insert(syncCheckpoints).values({connectionId,kind,cursor:String(offset),scanId,updatedAt:new Date()})
+    .onConflictDoUpdate({target:[syncCheckpoints.connectionId,syncCheckpoints.kind],set:{cursor:String(offset),scanId,updatedAt:new Date()}});
   await report(offset, null);
   const visited = new Map<string, string>();
   const knownItems = new Map<
@@ -161,6 +182,7 @@ async function runJellyfinScan(
           eq(providerConnections.id, connectionId),
           eq(providerConnections.userId, userId),
           eq(providerConnections.externalUserId, connection.externalUserId!),
+          eq(providerConnections.accountGeneration, connection.accountGeneration),
           eq(providerConnections.status, 'connected'),
           eq(users.disabled, false),
           eq(providerInstances.enabled, true)
@@ -256,6 +278,7 @@ async function runJellyfinScan(
             set: { mediaId: saved.id, snapshot: { ...item.metadata }, lastSeenAt: new Date() },
           })
           .returning();
+    if (item.expectedMembers !== undefined) await db.update(providerItems).set({snapshot:sql`${providerItems.snapshot} || jsonb_build_object('expectedMembers',${item.expectedMembers}::integer)`}).where(eq(providerItems.id,providerItem.id));
     if (scope === 'library') return saved.id;
     const [wasAvailable] = await db
       .select({ id: availability.id })
@@ -396,6 +419,56 @@ async function runJellyfinScan(
     }
     offset = page.nextOffset;
   }
+  // Metadata and per-user access remain separate for music, within the same service task.
+  for(const musicKind of (await getConfig()).experimentalFeatures?['album','track'] as const:[]){
+    let musicOffset=0;for(;;){
+      importPlayback=(await ensureConnected()).settings.importPlayback!==false;
+      const page=await adapter.musicLibrary(connection.externalUserId!,{kind:musicKind,offset:musicOffset,limit:100});
+      await ensureConnected();
+      for(const item of page.items){
+        const saved=scope==='user'?await observeMusicAccess(userId,connectionId,instance.id,item,scanId):await persistMusic(instance.id,item);
+        if(scope==='user' && saved.workId && importPlayback){
+          if(item.favourite!==undefined)await reconcileProviderValue(userId,connectionId,saved.workId,'favourite',{value:item.favourite},{source:'jellyfin'});
+          if(item.kind==='track'){
+            const count=Math.max(0,Math.min(item.playCount??0,10000));
+            await reconcileProviderValue(userId,connectionId,saved.workId,'history',{value:count>0,playCount:count},{source:'jellyfin',apply:async tx=>{
+              let added=0;
+              const [baseline]=await tx.select().from(syncValues).where(and(eq(syncValues.connectionId,connectionId),eq(syncValues.mediaId,saved.workId!),eq(syncValues.category,'history')));
+              const local=await localSyncValue(tx,userId,saved.workId!,'history');
+              const observed=Number(baseline?.remote.playCount??local.playCount??0);
+              for(let n=Math.min(count,observed);n<count;n++)if(await recordMusicListen(tx,userId,saved.workId!,importedListenBatch(connection.syncAccountId??connectionId,item.id,n),'jellyfin',undefined,false))added++;
+              await tx.insert(musicProgress).values({userId,trackId:saved.workId!,playCount:count}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{playCount:count,updatedAt:new Date()}});
+              return {changed:added>0};
+            }});
+            await reconcileProviderValue(userId,connectionId,saved.workId,'progress',{positionSeconds:Math.round((item.positionSeconds??0)*1000)/1000,durationSeconds:Math.round(item.durationSeconds??0)},{source:'jellyfin'});
+          }
+        }
+      }
+      if(page.nextOffset===null)break;musicOffset=page.nextOffset;
+    }
+  }
+  // Complete known membership is a metadata property; this never grants another user access.
+  if ((await getConfig()).experimentalFeatures) await db.execute(sql`update music_works m set membership_complete=exists(select 1 from provider_items pi where pi.media_id=m.id and pi.instance_id=${instance.id} and (pi.snapshot->>'expectedMembers')::integer=(select count(*) from media_relationships r join music_works t on t.id=r.child_id where r.parent_id=m.id and r.kind='contains' and t.kind='track')) where m.kind='album' and exists(select 1 from provider_items pi where pi.media_id=m.id and pi.instance_id=${instance.id} and pi.snapshot->>'expectedMembers' is not null)`);
+  // A complete traversal can confirm a provider's advertised known membership, not server-wide coverage.
+  await db.execute(sql`update provider_items pi set snapshot=pi.snapshot || jsonb_build_object('membershipComplete',(pi.snapshot->>'expectedMembers')::integer=(select count(*) from episodes e where (pi.kind='show' and e.show_id=pi.media_id or pi.kind='season' and e.season_id=pi.media_id)))
+    where pi.instance_id=${instance.id} and pi.kind in ('show','season') and pi.snapshot->>'expectedMembers' is not null`);
+  if(scope==='user' && (await ensureConnected()).settings.reconcileTracking===true){
+    await db.transaction(async tx=>{
+      // Include state imported while no mapping existed, without treating empty rows as intent.
+      const states=await tx.select().from(trackingState).where(and(eq(trackingState.userId,userId),sql`(${trackingState.favourite} or ${trackingState.watched} or ${trackingState.positionSeconds}>0)`));
+      for(const state of states)for(const [category,value] of [['favourite',{value:state.favourite}],['history',{value:state.watched}],['progress',{positionSeconds:state.positionSeconds,durationSeconds:state.durationSeconds??0}]] as const){
+        if(category==='progress'?state.positionSeconds<=0:!value.value)continue;
+        await tx.insert(reconciliationIntents).values({connectionId,workId:state.mediaId,category,value}).onConflictDoNothing();
+      }
+      const music=await tx.select().from(musicProgress).where(eq(musicProgress.userId,userId));
+      for(const state of music){
+        if(state.playCount>0)await tx.insert(reconciliationIntents).values({connectionId,workId:state.trackId,category:'history',value:{value:true,playCount:state.playCount}}).onConflictDoNothing();
+        if(state.positionSeconds>0)await tx.insert(reconciliationIntents).values({connectionId,workId:state.trackId,category:'progress',value:{positionSeconds:state.positionSeconds,durationSeconds:state.durationSeconds??0}}).onConflictDoNothing();
+      }
+      const intents=await tx.select().from(reconciliationIntents).where(and(eq(reconciliationIntents.connectionId,connectionId),sql`exists(select 1 from availability a where a.connection_id=${connectionId} and a.media_id=${reconciliationIntents.workId} and a.scan_id=${scanId} and a.state='available')`));
+      for(const intent of intents)await enqueueInTransaction(tx,{userId,connectionId,kind:'jellyfin.reconcile',payload:{mediaId:intent.workId,field:intent.category==='history'?'watched':intent.category,value:intent.category==='progress'?Number(intent.value.positionSeconds):Boolean(intent.value.value),playCount:intent.value.playCount,durationSeconds:intent.value.durationSeconds,intentVersion:intent.version,backfill:true},compactionKey:`jellyfin-reconcile:${intent.workId}:${intent.category}`});
+    });
+  }
   onStage?.('reconcile');
   await ensureConnected();
   await db.transaction(async (tx) => {
@@ -414,6 +487,7 @@ async function runJellyfinScan(
       .update(syncCheckpoints)
       .set({ cursor: null, scanId: null, completedAt: new Date(startedAt), updatedAt: new Date() })
       .where(and(eq(syncCheckpoints.connectionId, connectionId), eq(syncCheckpoints.kind, kind)));
+    if(scope==='user'){const {enqueueCollectionProjectionInTransaction}=await import('$lib/sync/changes');await enqueueCollectionProjectionInTransaction(tx,userId);}
   });
   onStage?.('complete');
   await report(processed, total, 'complete');
@@ -436,7 +510,8 @@ async function runJellyfinScan(
 export async function executeJellyfinUserState(
   userId: string,
   connectionId: string,
-  input: Record<string, unknown>
+  input: Record<string, unknown>,
+  provided?: JellyfinSyncContext
 ) {
   const data = v.parse(
     v.object({
@@ -444,10 +519,15 @@ export async function executeJellyfinUserState(
       field: v.picklist(['watched', 'favourite', 'progress']),
       value: v.union([v.boolean(), v.pipe(v.number(), v.minValue(0))]),
       durationSeconds: v.optional(v.number()),
+      playCount: v.optional(v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(2147483647))),
+      intentVersion: v.optional(v.pipe(v.string(),v.uuid())),
+      backfill: v.optional(v.boolean(),false),
     }),
     input
   );
-  const { adapter, connection } = await getJellyfin(userId, connectionId);
+  const { adapter, connection,instance } = await jellyfinContext(userId, connectionId,provided);
+  if(data.backfill && connection.settings.reconcileTracking!==true)return;
+  await adapter.identity(instance.serverIdentity||undefined);
   const items = await getDb()
     .selectDistinct({ id: providerItems.externalId })
     .from(availability)
@@ -461,17 +541,27 @@ export async function executeJellyfinUserState(
       )
     );
   const category = data.field === 'watched' ? 'history' : data.field;
-  const desired =
+  let desired:Record<string,unknown> =
     category === 'progress'
-      ? { positionSeconds: Number(data.value), durationSeconds: data.durationSeconds ?? 0 }
+      ? { positionSeconds: Math.round(Number(data.value)*1000)/1000, durationSeconds: Math.round(data.durationSeconds ?? 0) }
       : { value: Boolean(data.value) };
   const current = await getDb().transaction((tx) =>
     localSyncValue(tx, userId, data.mediaId, category)
   );
+  if(category==='history'&&'playCount' in current)desired={...desired,playCount:data.playCount??(data.value?current.playCount:0)};
   if (!sameValue(current, desired)) return;
+  if(!items.length)return; // Durable intent remains; a future successful user sync can deliver it.
+  const [work]=await getDb().select().from(works).where(eq(works.id,data.mediaId));
   for (const item of items) {
-    const remote = (await adapter.item(connection.externalUserId!, item.id)).userData;
+    const music=work?.category==='music'?await adapter.musicItem(connection.externalUserId!,item.id):null;
+    const remote = music?{played:!!music.playCount,favourite:music.favourite,positionSeconds:music.positionSeconds??0}:(await adapter.item(connection.externalUserId!, item.id)).userData;
     if (remote) {
+      const remoteEmpty=data.field==='watched'?!remote.played:data.field==='favourite'?!remote.favourite:!remote.positionSeconds;
+      if(remoteEmpty){
+        // Empty/default fields can be filled without interpreting an empty server as an import.
+        await getDb().insert(syncValues).values({connectionId,mediaId:data.mediaId,category,remote:category==='progress'?{positionSeconds:0,durationSeconds:Math.round(data.durationSeconds??0)}:{value:false,...(music&&category==='history'?{playCount:0}:{})},agreed:desired})
+          .onConflictDoUpdate({target:[syncValues.connectionId,syncValues.mediaId,syncValues.category],set:{conflict:false,agreed:desired}});
+      }
       const decision = await reconcileProviderValue(
         userId,
         connectionId,
@@ -480,15 +570,17 @@ export async function executeJellyfinUserState(
         category === 'progress'
           ? {
               positionSeconds: Math.round(remote.positionSeconds * 1000) / 1000,
-              durationSeconds: data.durationSeconds ?? 0,
+              durationSeconds: Math.round(data.durationSeconds ?? 0),
             }
-          : { value: data.field === 'watched' ? remote.played : (remote.favourite ?? false) },
-        { source: 'jellyfin' }
+          : { value: data.field === 'watched' ? remote.played : (remote.favourite ?? false),...(music&&category==='history'?{playCount:music.playCount??0}:{}) },
+        { source: 'jellyfin',importRemote:connection.settings.importPlayback!==false }
       );
       if (decision === 'conflict' || decision === 'remote') return;
     }
     if (data.field === 'progress')
       await adapter.setProgress(connection.externalUserId!, item.id, Number(data.value));
+    else if(music && data.field==='watched')await adapter.setListeningSummary(connection.externalUserId!,item.id,Number(desired.playCount));
+    else if(music && data.field==='favourite')await adapter.setMusicFavourite(connection.externalUserId!,item.id,Boolean(data.value));
     else
       await adapter.setUserState(
         connection.externalUserId!,
@@ -498,6 +590,7 @@ export async function executeJellyfinUserState(
       );
   }
   await acknowledgeProviderValue(userId, connectionId, data.mediaId, category, desired);
+  if(data.intentVersion)await getDb().delete(reconciliationIntents).where(and(eq(reconciliationIntents.connectionId,connectionId),eq(reconciliationIntents.workId,data.mediaId),eq(reconciliationIntents.category,category),eq(reconciliationIntents.version,data.intentVersion)));
 }
 
 export async function executeJellyfinScrobble(

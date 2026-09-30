@@ -117,7 +117,7 @@ Collections and playlists share an ordered playback sequence. Explicit collectio
 
 Create a custom list as a Playlist to enable ordered playback. Each playlist entry has its own identity, including repeated titles, so moving or removing one occurrence leaves the others intact. Playback sessions and tracking events retain the sequence context; playlist progress and completion belong to the individual entry and survive reordering. Play playlist starts or resumes the current run; Start again begins a new dated run without deleting history. Playlist cards start at their selected entry and then continue in order. Playlists remain local to Coast, rather than flattening repeated entries into provider lists.
 
-Library availability comes from permitted Jellyfin sources. Manual Collected controls and the built-in Collected shelf are removed. Existing provider collection state remains stored and available to the integration sync settings; it is distinct from library availability and named collections.
+Library contains accessible server content. Personal Collection includes meaningful saved relationships and retained activity, even when items are unavailable. Add to Collection sets direct Collected status; Remove from Collection removes only that status and preserves other relationships and history. Named screen collections/franchises remain separate metadata groups. [Collection and Library](collection.md) defines membership, availability, missing demand and Trakt projection; [Music](music.md) defines listening and audio queue behaviour.
 
 
 ### Media action menus

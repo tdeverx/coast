@@ -1,9 +1,13 @@
 import { browserDiagnostic } from '$lib/ui/diagnostics';
 import { api } from '$lib/ui/client';
+import { notifyAction } from '$lib/ui/action-feedback.svelte';
 import type { PlaybackView } from '$lib/ui/types';
 
 export const player = $state({
   session: null as PlaybackView | null,
+  audioQueue: [] as {id:string;title:string;availability:string}[],
+  audioIndex: -1,
+  audioNotice: '',
   role: 'idle' as 'idle' | 'playback' | 'postplay',
   paused: true,
   controlsVisible: true,
@@ -50,6 +54,7 @@ export function setHeroMuted(muted: boolean) {
 export async function playMedia(
   mediaId: string,
   options: {
+    mediaType?: 'audio' | 'video';
     sourceId?: string;
     edition?: string;
     fromStart?: boolean;
@@ -88,9 +93,9 @@ export async function playMedia(
       mediaId,
       ...options,
       browser: {
-        containers: ['mp4', 'm4v', 'webm'],
+        containers: ['mp4', 'm4v', 'webm', 'mp3', 'flac', 'ogg', 'm4a', 'aac', 'wav'],
         videoCodecs,
-        audioCodecs: ['aac', 'mp3', 'opus', 'vorbis'],
+        audioCodecs: ['aac', 'mp3', 'opus', 'vorbis', 'flac'],
         nativeHls: !!video.canPlayType('application/vnd.apple.mpegurl'),
         hlsJs: typeof MediaSource !== 'undefined',
         maxBitrate: options.maxBitrate,
@@ -125,4 +130,27 @@ export function presentTrailer(
     heroPlayer.muted = true;
   }
   heroPlayer.visible = true;
+}
+
+export async function playMusic(workId:string,continuing=false){
+  const result=await api<{items:{id:string;title:string;availability:string}[];continueId:string|null}>(`music/${workId}/queue`,undefined,'GET');
+  return playMusicQueue(result,continuing);
+}
+export async function playMusicQueue(result:{items:{id:string;title:string;availability:string}[];continueId:string|null},continuing=false){
+  player.audioQueue=result.items;player.audioIndex=continuing?Math.max(0,result.items.findIndex(item=>item.id===result.continueId))-1:-1;player.audioNotice='';
+  return advanceMusic(1,continuing);
+}
+export async function playSavedMusicQueue(){return playMusicQueue(await api('music/queue',undefined,'GET'));}
+export async function advanceMusic(direction:1|-1=1,continuing=false){
+  let index=player.audioIndex+direction;
+  const skipped:string[]=[];
+  while(index>=0&&index<player.audioQueue.length){
+    const entry=player.audioQueue[index];player.audioIndex=index;
+    if(entry.availability==='available'){
+      try{await playMedia(entry.id,{mediaType:'audio',fromStart:!continuing});player.audioNotice=skipped.length?`Skipped unavailable tracks: ${skipped.join(', ')}`:'';if(player.audioNotice)notifyAction(player.audioNotice);return;}catch{skipped.push(entry.title);}
+    }else skipped.push(entry.title);
+    index+=direction;
+  }
+  await controller?.stop();player.audioNotice=skipped.length?`No playable tracks remain. Skipped: ${skipped.join(', ')}`:'Queue finished.';
+  if(skipped.length)notifyAction(player.audioNotice);
 }

@@ -20,7 +20,7 @@ type Capability = {
 /** Implemented adapter abilities, independent of per-account sync preferences/permissions. */
 export const providerCapabilities = {
   jellyfin: {
-    categories: ['screen'],
+    categories: ['screen', 'music'],
     read: ['metadata', 'availability', 'history', 'progress', 'favourite'],
     write: ['history', 'progress', 'favourite', 'scrobble'],
     playback: true,
