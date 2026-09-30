@@ -47,6 +47,7 @@ export const load = (async ({ locals, params, depends }) => {
     conflicts: section === 'pending' ? await getPendingConflicts(locals.user!.id) : [],
     providers: await listProviders(locals.user!.id, admin),
     config: admin ? config : null,
+    allowNotificationSilencing: config.allowNotificationSilencing,
     defaults: {
       syncConflictWinner: 'manual',
       fullWidth: true,

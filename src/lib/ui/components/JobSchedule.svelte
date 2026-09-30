@@ -17,8 +17,11 @@
   } = $props();
   let schedule = $state(untrack(() => providerSchedule(provider.provider, provider.schedule)));
   let busy = $state(false),
-    error = $state('');
+    error = $state(''),
+    saved = $state(untrack(() => JSON.stringify(schedule)));
+  const dirty = $derived(JSON.stringify(schedule) !== saved);
   async function perform(run: boolean) {
+    if (busy) return;
     busy = true;
     error = '';
     try {
@@ -28,6 +31,7 @@
         connections: number;
         busy?: boolean;
       }>(`providers/${provider.id}/${run ? 'run-job' : 'schedule'}`, run ? {} : schedule);
+      if (!run) saved = JSON.stringify(schedule);
       notifyAction(
         run
           ? result.busy
@@ -43,7 +47,13 @@
   }
 </script>
 
-<div class="panel stack">
+<form
+  class="panel stack"
+  onsubmit={(event) => {
+    event.preventDefault();
+    void perform(false);
+  }}
+>
   <div>
     <h3>{provider.name}</h3>
     <p class="small">
@@ -55,6 +65,14 @@
     </p>
   </div>
   <p class="small">
+    <span class="badge"
+      >{dirty
+        ? 'Unsaved changes'
+        : schedule.enabled
+          ? 'Automatic runs enabled'
+          : 'Automatic runs paused'}</span
+    >
+    ·
     {provider.connectedAccounts} connected {provider.connectedAccounts === 1
       ? 'account'
       : 'accounts'}
@@ -68,6 +86,8 @@
         ? 'Check for changes every (minutes)'
         : 'Run every (minutes)'}<input
         type="number"
+        required
+        step="1"
         min="1"
         max="10080"
         bind:value={schedule.intervalMinutes}
@@ -77,6 +97,8 @@
     {#if provider.provider === 'jellyfin'}<label class="field"
         >Full library scan every (hours)<input
           type="number"
+          required
+          step="1"
           min="1"
           max="720"
           bind:value={schedule.fullIntervalHours}
@@ -85,7 +107,8 @@
       >{/if}
   </div>
   <div class="row">
-    <Button variant="secondary" disabled={busy} onclick={() => perform(false)}>Save schedule</Button
+    <Button type="submit" variant="secondary" disabled={busy || !dirty}
+      >{busy ? 'Working…' : 'Save schedule'}</Button
     ><Button
       variant="ghost"
       icon="refresh"
@@ -95,7 +118,7 @@
     >
   </div>
   {#if error}<p class="notice error" role="alert">{error}</p>{/if}
-</div>
+</form>
 
 <style>
   .fields {

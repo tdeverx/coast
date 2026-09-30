@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { onMount } from 'svelte';
   import { api, change, message } from '$lib/ui/client';
   import Button from './Button.svelte';
@@ -25,7 +26,11 @@
     username = $state(''),
     password = $state(''),
     disconnect = $state(false),
-    device = $state<{ userCode: string; verificationUrl: string; interval: number } | null>(null),
+    device = $state<{
+      userCode: string;
+      verificationUrl: string;
+      interval: number;
+    } | null>(null),
     pending = $state(false);
   type Scan = {
     state: string;
@@ -89,11 +94,14 @@
       ...(provider.connection?.settings.sync as Record<string, boolean>),
     };
   });
-  async function action<T = unknown>(path: string, body: unknown = {}) {
+  async function action<T = unknown>(path: string, body: unknown = {}, label?: string) {
+    if (busy) return;
     error = '';
     busy = true;
     try {
-      return await change<T>(path, body);
+      const result = await change<T>(path, body);
+      if (label) notifyAction(label);
+      return { result };
     } catch (e) {
       error = message(e);
     } finally {
@@ -101,7 +109,11 @@
     }
   }
   async function connect() {
-    await action('providers/jellyfin', { instanceId: provider.id, username, password });
+    await action(
+      'providers/jellyfin',
+      { instanceId: provider.id, username, password },
+      'Jellyfin connected.'
+    );
     password = '';
   }
   async function start() {
@@ -119,8 +131,11 @@
     const result = await action<{ pending?: boolean }>('providers/trakt/finish', {
       instanceId: provider.id,
     });
-    pending = result?.pending ?? false;
-    if (result && !result.pending) device = null;
+    pending = result?.result?.pending ?? false;
+    if (result && !result.result?.pending) {
+      device = null;
+      notifyAction('Trakt connected.');
+    }
   }
   const labels: Record<string, string> = {
     history: 'Watch history',
@@ -160,7 +175,7 @@
       >{provider.connection?.status === 'connected' ? 'Connected' : 'Not connected'}</span
     >
   </div>
-  {#if error}<div class="notice error" role="alert">
+  {#if error && !disconnect}<div class="notice error" role="alert">
       {error}
     </div>{/if}{#if provider.connection?.status === 'connected'}<p class="small">
       Connected as {provider.connection.username}
@@ -179,9 +194,13 @@
             variant="secondary"
             disabled={busy}
             onclick={() =>
-              action(`providers/${provider.connection!.id}/playback-import`, {
-                enabled: importPlayback,
-              })}>Save import preference</Button
+              action(
+                `providers/${provider.connection!.id}/playback-import`,
+                {
+                  enabled: importPlayback,
+                },
+                'Playback import preference saved.'
+              )}>Save import preference</Button
           >
         </div>
         <p class="small">
@@ -191,14 +210,15 @@
       </div>{/if}
     {#if provider.provider === 'trakt'}<div class="sync-options">
         {#each Object.entries(labels) as [key, label]}<label class="check"
-            ><input type="checkbox" bind:checked={sync[key]} />{label}</label
+            ><input type="checkbox" bind:checked={sync[key]} disabled={busy} />{label}</label
           >{/each}
       </div>
       <div class="row">
         <Button
           variant="secondary"
           disabled={busy}
-          onclick={() => action(`providers/${provider.connection!.id}/sync`, sync)}
+          onclick={() =>
+            action(`providers/${provider.connection!.id}/sync`, sync, 'Sync preferences saved.')}
           >Save sync preferences</Button
         >
       </div>
@@ -241,7 +261,13 @@
         Could not refresh scan progress: {scanError}
       </p>{/if}
     <div class="row">
-      <Button variant="ghost" disabled={busy} onclick={() => (disconnect = true)}>Disconnect</Button
+      <Button
+        variant="ghost"
+        disabled={busy}
+        onclick={() => {
+          error = '';
+          disconnect = true;
+        }}>Disconnect</Button
       >
     </div>{:else if provider.provider === 'jellyfin'}<form
       class="stack"
@@ -283,6 +309,7 @@
 </section>
 <Dialog bind:open={disconnect} title="Disconnect this account?"
   ><div class="stack">
+    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
     <p>
       Your imported tracking data stays in Coast. Pending external actions for this connection will
       be cancelled.
@@ -290,9 +317,16 @@
     <div class="row">
       <Button
         variant="danger"
+        disabled={busy}
         onclick={async () => {
-          await action(`providers/${provider.connection!.id}/disconnect`);
-          disconnect = false;
+          if (
+            await action(
+              `providers/${provider.connection!.id}/disconnect`,
+              {},
+              'Account disconnected. Tracking data retained.'
+            )
+          )
+            disconnect = false;
         }}>Disconnect</Button
       ><Button variant="secondary" onclick={() => (disconnect = false)}>Keep connected</Button>
     </div>
