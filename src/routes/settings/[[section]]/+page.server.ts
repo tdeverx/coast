@@ -31,6 +31,12 @@ export const load = (async ({ locals, params, depends }) => {
   const config = await getConfig();
   return {
     section,
+    hasLocalPassword:
+      section === 'account'
+        ? (
+            await getSql()`SELECT password_hash IS NOT NULL AS present FROM users WHERE id = ${locals.user!.id}`
+          )[0]?.present === true
+        : false,
     supportConnections:
       section === 'users'
         ? await getDb()
@@ -61,8 +67,14 @@ export const load = (async ({ locals, params, depends }) => {
     health: section === 'admin' ? await systemHealth(locals.user) : null,
     users: section === 'users' ? await listUsers(locals.user) : [],
     actions: ['admin', 'jobs'].includes(section) ? await listActions(locals.user) : [],
-    loggingAudit: section === 'activity' ? await getSql()`SELECT previous_level AS previous, next_level AS next, created_at AS "createdAt" FROM diagnostic_setting_audit ORDER BY created_at DESC LIMIT 30` : [],
-    metadataAudit: section === 'activity' ? await getSql()`SELECT id, message, created_at AS "createdAt" FROM diagnostics WHERE kind = 'metadata_override' ORDER BY created_at DESC LIMIT 30` : [],
+    loggingAudit:
+      section === 'activity'
+        ? await getSql()`SELECT previous_level AS previous, next_level AS next, created_at AS "createdAt" FROM diagnostic_setting_audit ORDER BY created_at DESC LIMIT 30`
+        : [],
+    metadataAudit:
+      section === 'activity'
+        ? await getSql()`SELECT id, message, created_at AS "createdAt" FROM diagnostics WHERE kind = 'metadata_override' ORDER BY created_at DESC LIMIT 30`
+        : [],
     diagnostics: ['activity', 'admin'].includes(section)
       ? await listDiagnostics(locals.user, 30)
       : [],

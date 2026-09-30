@@ -1,7 +1,8 @@
+import { maintenanceKinds } from '$lib/providers/tasks';
 import { context, logDiagnostic, classifyFailure } from '../diagnostics';
 import { refreshDiagnosticConfig } from '../config';
 import { correlationId } from '../../diagnostics';
-import { desc, eq, sql } from 'drizzle-orm';
+import { desc, eq, sql, inArray } from 'drizzle-orm';
 import { getDb, getSql } from '../db';
 import { outboxActions, providerConnections, providerInstances, users } from '../db/schema';
 import { requireAdmin, type SessionUser } from '../auth';
@@ -18,8 +19,10 @@ export interface OutboxAction {
   payload: Record<string, unknown>;
   attempts: number;
   correlationId: string;
+  instanceId?: string | null;
 }
 export type ActionHandler = (action: OutboxAction) => Promise<void>;
+
 const handlers = new Map<string, ActionHandler>();
 export class PermanentActionError extends Error {
   constructor(message: string) {
@@ -48,6 +51,11 @@ export async function enqueueAction(input: {
       const [connection] =
         await sql`SELECT id FROM provider_connections WHERE id = ${input.connectionId} AND user_id = ${input.userId}`;
       if (!connection) throw new AppError(403, 'This connection does not belong to this account.');
+    }
+    if (maintenanceKinds.includes(input.kind)) {
+      const [existing] =
+        await sql`SELECT id FROM outbox_actions WHERE user_id = ${input.userId} AND connection_id IS NOT DISTINCT FROM ${input.connectionId || null}::uuid AND kind = ${input.kind} AND state IN ('pending','running','failed') LIMIT 1`;
+      if (existing) return existing.id;
     }
     if (input.compactionKey) {
       const replaced =
@@ -114,106 +122,164 @@ function safeDiagnosticStage(error: unknown) {
 }
 
 export async function claimNextAction(): Promise<OutboxAction | null> {
-  // A crashed worker's lease becomes retryable, preserving its position in the connection lane.
-  await getSql()`UPDATE outbox_actions SET state = 'pending', locked_at = NULL, next_attempt_at = NOW(), updated_at = NOW()
-    WHERE state = 'running' AND locked_at < NOW() - INTERVAL '5 minutes'`;
-  const [row] =
-    await getSql()`UPDATE outbox_actions SET state = 'running', attempts = attempts + 1, locked_at = NOW(), updated_at = NOW()
-    WHERE id = (
-      SELECT candidate.id FROM outbox_actions candidate
-      WHERE candidate.state = 'pending' AND candidate.next_attempt_at <= NOW()
-        AND NOT EXISTS (SELECT 1 FROM outbox_actions earlier
-          WHERE earlier.user_id = candidate.user_id AND earlier.connection_id IS NOT DISTINCT FROM candidate.connection_id
-          AND earlier.state IN ('pending', 'running', 'failed') AND (earlier.created_at, earlier.id) < (candidate.created_at, candidate.id))
-      ORDER BY candidate.created_at, candidate.id FOR UPDATE SKIP LOCKED LIMIT 1
-    ) RETURNING *`;
-  return row
-    ? {
-        id: row.id,
-        userId: row.user_id,
-        connectionId: row.connection_id,
-        kind: row.kind,
-        payload: row.payload,
-        attempts: row.attempts,
-        correlationId: row.correlation_id,
-      }
-    : null;
+  // Serialize only the short claim transaction. A service's network work remains independent.
+  return getSql().begin(async (sql) => {
+    await sql`SELECT pg_advisory_xact_lock(hashtextextended('queue-claim', 0))`;
+    await sql`UPDATE outbox_actions SET state = 'pending', locked_at = NULL, next_attempt_at = NOW(), updated_at = NOW()
+      WHERE state = 'running' AND locked_at < NOW() - INTERVAL '5 minutes'`;
+    const [row] =
+      await sql`UPDATE outbox_actions SET state = 'running', attempts = attempts + 1, locked_at = NOW(), updated_at = NOW()
+      WHERE id = (
+        SELECT candidate.id FROM outbox_actions candidate
+        LEFT JOIN provider_connections connection ON connection.id = candidate.connection_id
+        LEFT JOIN provider_instances instance ON instance.id = connection.instance_id
+        WHERE candidate.state = 'pending' AND candidate.next_attempt_at <= NOW()
+          AND (instance.settings->>'jobsRetryAt' IS NULL OR (instance.settings->>'jobsRetryAt')::timestamptz <= NOW())
+          AND NOT EXISTS (SELECT 1 FROM outbox_actions earlier
+            WHERE earlier.user_id = candidate.user_id AND earlier.connection_id IS NOT DISTINCT FROM candidate.connection_id
+            AND earlier.state IN ('pending', 'running', 'failed') AND (earlier.created_at, earlier.id) < (candidate.created_at, candidate.id)
+            AND (earlier.kind NOT IN ${sql(maintenanceKinds)} OR earlier.state = 'running' OR
+              (candidate.kind IN ${sql(maintenanceKinds)} AND earlier.state = 'pending' AND earlier.next_attempt_at <= NOW())))
+          AND (candidate.kind NOT IN ${sql(maintenanceKinds)} OR NOT EXISTS (
+            SELECT 1 FROM outbox_actions busy JOIN provider_connections busy_connection ON busy_connection.id = busy.connection_id
+            WHERE busy_connection.instance_id = connection.instance_id AND busy.kind IN ${sql(maintenanceKinds)} AND busy.state = 'running'))
+        ORDER BY candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
+      ) RETURNING *, (SELECT instance_id FROM provider_connections WHERE id = connection_id) AS instance_id`;
+    return row
+      ? {
+          id: row.id,
+          userId: row.user_id,
+          connectionId: row.connection_id,
+          kind: row.kind,
+          payload: row.payload,
+          attempts: row.attempts,
+          correlationId: row.correlation_id,
+          instanceId: row.instance_id,
+        }
+      : null;
+  });
 }
 
 export async function runQueueOnce(): Promise<boolean> {
   const action = await claimNextAction();
   if (!action) return false;
-  await refreshDiagnosticConfig();
-  return context.run(action.correlationId, async () => {
-    const started = performance.now();
-    void logDiagnostic('debug', 'job.start', { actionId: action.id, attempts: action.attempts });
-    const heartbeat = setInterval(() => {
-      void getSql()`UPDATE outbox_actions SET locked_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts}`.catch(
-        () => {}
-      );
-    }, 20_000);
-    heartbeat.unref();
-    try {
-      const handler = handlers.get(action.kind);
-      if (!handler) throw new PermanentActionError('This action type is no longer supported.');
-      await handler(action);
-      await getSql().begin(async (sql) => {
-        const completed =
-          await sql`UPDATE outbox_actions SET state = 'succeeded', locked_at = NULL, last_error = NULL, updated_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
-        if (completed.length) await resolveNotification(action.userId, `outbox:${action.id}`, sql);
-      });
-      void logDiagnostic('info', 'job.complete', {
-        actionId: action.id,
-        attempts: action.attempts,
-        durationMs: performance.now() - started,
-      });
-    } catch (error) {
-      void logDiagnostic('error', 'job.failed', {
-        actionId: action.id,
-        attempts: action.attempts,
-        failure: classifyFailure(error),
-        status: error instanceof ProviderHttpError ? error.status : undefined,
-        errorCode: safeDiagnosticErrorCode(error),
-        stage: safeDiagnosticStage(error),
-        durationMs: performance.now() - started,
-      });
-      const permanent =
-        error instanceof PermanentActionError ||
-        (error instanceof ProviderHttpError &&
-          [400, 401, 403, 404, 405, 409, 410, 422].includes(error.status));
-      const message = permanent
-        ? 'The connected service could not accept this action. An administrator can review the connection and retry it.'
-        : 'The connected service is unavailable. Coast will retry automatically.';
-      const retryAfter =
-        error instanceof ProviderHttpError
-          ? Math.min(86_400_000, Math.max(0, (error.retryAfterSeconds || 0) * 1000))
-          : 0;
-      const next = new Date(Date.now() + Math.max(retryDelayMs(action.attempts), retryAfter));
-      await getSql().begin(async (sql) => {
-        const failed =
-          await sql`UPDATE outbox_actions SET state = ${permanent ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, updated_at = NOW()
-        WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
-        if (!failed.length) return; // A recovered lease owns the outcome now.
-        if (permanent || action.attempts >= 3)
-          await notify(
-            {
-              userId: action.userId,
-              kind: 'external-action',
-              title: permanent
-                ? 'An external action needs attention'
-                : 'Waiting for a connected service',
-              body: message,
-              level: 'normal',
-              sourceKey: `outbox:${action.id}`,
-            },
-            sql
-          );
-      });
-    } finally {
-      clearInterval(heartbeat);
+  // Hold the connection lane across stale-lease recovery for every action. Maintenance
+  // also holds the shared service lock, while other accounts' edits remain independent.
+  const reserved = await getSql().reserve();
+  const lockKeys = [`queue-lane:${action.userId}:${action.connectionId ?? 'local'}`];
+  if (action.instanceId && maintenanceKinds.includes(action.kind))
+    lockKeys.push(`maintenance:${action.instanceId}`);
+  const held: string[] = [];
+  try {
+    for (const key of lockKeys) {
+      const [lock] =
+        await reserved`SELECT pg_try_advisory_lock(hashtextextended(${key}, 0)) AS acquired`;
+      if (!lock.acquired) {
+        await getSql()`UPDATE outbox_actions SET state = 'pending', locked_at = NULL, attempts = attempts - 1, next_attempt_at = NOW() + INTERVAL '2 seconds' WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts}`;
+        return true;
+      }
+      held.push(key);
     }
-    return true;
-  });
+    await refreshDiagnosticConfig();
+    return await context.run(action.correlationId, async () => {
+      const started = performance.now();
+      void logDiagnostic('debug', 'job.start', { actionId: action.id, attempts: action.attempts });
+      const heartbeat = setInterval(() => {
+        void reserved`UPDATE outbox_actions SET locked_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts}`.catch(
+          () => {}
+        );
+      }, 20_000);
+      heartbeat.unref();
+      try {
+        if (action.connectionId) {
+          const [connection] =
+            await getSql()`SELECT c.id, c.credentials, i.provider FROM provider_connections c JOIN provider_instances i ON i.id = c.instance_id JOIN users u ON u.id = c.user_id
+          WHERE c.id = ${action.connectionId} AND c.user_id = ${action.userId} AND c.status = 'connected' AND i.enabled AND NOT u.disabled`;
+          if (
+            !connection ||
+            (['jellyfin', 'trakt'].includes(connection.provider) && !connection.credentials)
+          )
+            throw new PermanentActionError('The connected account is unavailable.');
+        }
+        const handler = handlers.get(action.kind);
+        if (!handler) throw new PermanentActionError('This action type is no longer supported.');
+        await handler(action);
+        await getSql().begin(async (sql) => {
+          const completed =
+            await sql`UPDATE outbox_actions SET state = 'succeeded', locked_at = NULL, last_error = NULL, updated_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
+          if (completed.length)
+            await resolveNotification(action.userId, `outbox:${action.id}`, sql);
+        });
+        void logDiagnostic('info', 'job.complete', {
+          actionId: action.id,
+          attempts: action.attempts,
+          durationMs: performance.now() - started,
+        });
+      } catch (error) {
+        void logDiagnostic('error', 'job.failed', {
+          actionId: action.id,
+          attempts: action.attempts,
+          failure: classifyFailure(error),
+          status: error instanceof ProviderHttpError ? error.status : undefined,
+          errorCode: safeDiagnosticErrorCode(error),
+          stage: safeDiagnosticStage(error),
+          durationMs: performance.now() - started,
+        });
+        const permanent =
+          error instanceof PermanentActionError ||
+          error instanceof v.ValiError ||
+          (error instanceof ProviderHttpError &&
+            [400, 401, 403, 404, 405, 409, 410, 422].includes(error.status));
+        const message = permanent
+          ? 'The connected service could not accept this action. An administrator can review the connection and retry it.'
+          : 'The connected service is unavailable. Coast will retry automatically.';
+        const retryAfter =
+          error instanceof ProviderHttpError
+            ? Math.min(86_400_000, Math.max(0, (error.retryAfterSeconds || 0) * 1000))
+            : 0;
+        const next = new Date(Date.now() + Math.max(retryDelayMs(action.attempts), retryAfter));
+        await getSql().begin(async (sql) => {
+          if (
+            action.instanceId &&
+            retryAfter > 0 &&
+            error instanceof ProviderHttpError &&
+            [429, 503].includes(error.status)
+          ) {
+            const until = new Date(Date.now() + retryAfter).toISOString();
+            await sql`UPDATE provider_instances SET settings = jsonb_set(settings, '{jobsRetryAt}', to_jsonb(GREATEST(COALESCE(settings->>'jobsRetryAt', ''), ${until})::text), true) WHERE id = ${action.instanceId}`;
+          }
+          const failed =
+            await sql`UPDATE outbox_actions SET state = ${permanent ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, updated_at = NOW()
+        WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
+          if (!failed.length) return; // A recovered lease owns the outcome now.
+          if (permanent || action.attempts >= 3)
+            await notify(
+              {
+                userId: action.userId,
+                kind: 'external-action',
+                title: permanent
+                  ? 'An external action needs attention'
+                  : 'Waiting for a connected service',
+                body: message,
+                level: 'normal',
+                sourceKey: `outbox:${action.id}`,
+              },
+              sql
+            );
+        });
+      } finally {
+        clearInterval(heartbeat);
+      }
+      return true;
+    });
+  } finally {
+    try {
+      for (const key of held.reverse())
+        await reserved`SELECT pg_advisory_unlock(hashtextextended(${key}, 0))`;
+    } finally {
+      reserved.release();
+    }
+  }
 }
 
 let running = false;
@@ -252,8 +318,44 @@ export function stopQueueWorker() {
 
 export async function listActions(actor: SessionUser | null) {
   requireAdmin(actor);
+  // Bound each indexed state query before joining credentials-free display data. This
+  // avoids sorting the entire completed playback history on every settings poll.
+  const states = ['running', 'pending', 'failed', 'succeeded', 'cancelled'] as const;
+  const recent = await Promise.all(
+    states.map((state) =>
+      getDb()
+        .select({
+          id: outboxActions.id,
+          state: outboxActions.state,
+          createdAt: outboxActions.createdAt,
+        })
+        .from(outboxActions)
+        .where(eq(outboxActions.state, state))
+        .orderBy(desc(outboxActions.createdAt))
+        .limit(200)
+    )
+  );
+  const ids = recent
+    .flat()
+    .sort(
+      (a, b) =>
+        Number(['succeeded', 'cancelled'].includes(a.state)) -
+          Number(['succeeded', 'cancelled'].includes(b.state)) ||
+        b.createdAt.getTime() - a.createdAt.getTime()
+    )
+    .slice(0, 200)
+    .map((row) => row.id);
+  if (!ids.length) return [];
   return getDb()
     .select({
+      progress: sql<{
+        processed?: number;
+        total?: number | null;
+        phase?: string;
+      } | null>`case when ${outboxActions.kind}='jellyfin.library' and (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} then ${providerInstances.settings}->'libraryScan' when ${outboxActions.kind}='jellyfin.sync' and (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} then ${providerConnections.settings}->'userSync' else null end`,
+      instanceId: providerInstances.id,
+      provider: providerInstances.provider,
+      updatedAt: outboxActions.updatedAt,
       connectionLabel: sql<string>`concat(coalesce(${providerInstances.name},'Coast'), ' · ', ${users.username})`,
       id: outboxActions.id,
       userId: outboxActions.userId,
@@ -262,13 +364,14 @@ export async function listActions(actor: SessionUser | null) {
       state: outboxActions.state,
       attempts: outboxActions.attempts,
       lastError: outboxActions.lastError,
-      nextAttemptAt: outboxActions.nextAttemptAt,
+      nextAttemptAt: sql<Date>`greatest(${outboxActions.nextAttemptAt}, (${providerInstances.settings}->>'jobsRetryAt')::timestamptz)`,
       createdAt: outboxActions.createdAt,
     })
     .from(outboxActions)
     .innerJoin(users, eq(users.id, outboxActions.userId))
     .leftJoin(providerConnections, eq(providerConnections.id, outboxActions.connectionId))
     .leftJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
+    .where(inArray(outboxActions.id, ids))
     .orderBy(
       sql`case when ${outboxActions.state} in ('running', 'pending', 'failed') then 0 else 1 end`,
       desc(outboxActions.createdAt)

@@ -1,6 +1,8 @@
 <script lang="ts">
-  import { goto, invalidateAll } from '$app/navigation';
+  import { goto, invalidateAll, replaceState } from '$app/navigation';
+  import { page } from '$app/state';
   import { untrack } from 'svelte';
+  import { randomId } from '$lib/diagnostics';
   import { api, message } from '$lib/ui/client';
   import { gameStatuses, type GameStatus } from '$lib/games/model';
   import { gameMinutes } from '$lib/games/presentation';
@@ -46,8 +48,20 @@
   function openSession() {
     const now = new Date();
     playedAt = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-    sessionId = crypto.randomUUID(); minutes = 60; note = ''; failure = ''; sessionOpen = true;
+    sessionId = randomId(); minutes = 60; note = ''; failure = ''; sessionOpen = true;
   }
+  $effect(() => {
+    const action = page.url.searchParams.get('action');
+    if (!action) return;
+    untrack(() => {
+      if (action === 'start') openStart(!!playthrough);
+      else if (action === 'progress' && playthrough) openProgress();
+      else if (action === 'log' && loggingAllowed) openSession();
+      const url = new URL(page.url);
+      url.searchParams.delete('action');
+      replaceState(url, page.state);
+    });
+  });
   function selectedUrl(id: string, page = 1) { return `/games/${data.item.id}?${new URLSearchParams({ playthrough: id, page: String(page) })}`; }
   async function start() {
     await act(async () => {

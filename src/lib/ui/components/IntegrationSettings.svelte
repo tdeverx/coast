@@ -4,6 +4,11 @@
   import { change, message } from '$lib/ui/client';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
+  import RowHeader from './RowHeader.svelte';
+  import ContextMenu from './ContextMenu.svelte';
+  import MenuAction from './MenuAction.svelte';
+  import ProviderAutomation from './ProviderAutomation.svelte';
+  import type { ProviderSchedule } from '$lib/providers/schedule';
   type Instance = {
     id: string;
     provider: string;
@@ -12,6 +17,7 @@
     enabled: boolean;
     allowPrivateNetwork: boolean;
     linkedMediaInstanceId: string | null;
+    schedule: ProviderSchedule;
   };
   let {
     providers,
@@ -81,35 +87,47 @@
 </script>
 
 <div class="stack form-width">
+  <RowHeader title="Integrations"
+    >{#snippet actions()}<Button
+        variant="ghost"
+        disabled={busy}
+        icon="plus"
+        onclick={() => edit(null)}>Add integration</Button
+      >{/snippet}</RowHeader
+  >
   <p class="small">
     <a class="text-accent" href="/settings/connections">Link your account in Connections</a>
     · <a class="text-accent" href="/settings/jobs">Manage schedules</a>
   </p>
   {#if error && !open}<div class="notice error" role="alert">{error}</div>{/if}
   {#each providers as instance (instance.id)}<div class="panel stack">
-      <div class="spread">
-        <div>
-          <h3>{instance.name}</h3>
-          <p class="small">
-            {displayLabel(instance.provider)} · {instance.baseUrl}
-          </p>
-        </div>
-        <span class="badge">{instance.enabled ? 'Enabled' : 'Disabled'}</span>
-      </div>
+      <RowHeader title={instance.name}>
+        {#snippet filters()}<span class="badge">{instance.enabled ? 'Enabled' : 'Disabled'}</span
+          >{/snippet}
+        {#snippet actions()}<ContextMenu
+            label={`${instance.name} integration actions`}
+            disabled={busy}
+          >
+            <MenuAction icon="settings" keepOpen={false} onclick={() => edit(instance)}
+              >Edit integration</MenuAction
+            >
+            <MenuAction
+              icon={instance.enabled ? 'pause' : 'play'}
+              keepOpen={false}
+              onclick={() => void toggle(instance)}
+              >{instance.enabled ? 'Disable integration' : 'Enable integration'}</MenuAction
+            >
+          </ContextMenu>{/snippet}
+      </RowHeader>
+      <p class="small">{displayLabel(instance.provider)} · {instance.baseUrl}</p>
       <p class="small">
         {instance.enabled
           ? 'Available to users.'
-          : 'Hidden from personal connections. Existing tracking data is retained.'}
-        Disabling stops new provider actions; queued work may fail until enabled again.
+          : 'Hidden from personal connections. Existing tracking data is retained.'} Disabling stops new
+        provider actions; queued work may fail until enabled again.
       </p>
-      <div class="row">
-        <Button variant="secondary" disabled={busy} onclick={() => edit(instance)}>Edit</Button
-        ><Button variant="ghost" disabled={busy} onclick={() => toggle(instance)}
-          >{instance.enabled ? 'Disable' : 'Enable'}</Button
-        >
-      </div>
+      <ProviderAutomation {instance} />
     </div>{/each}
-  <Button disabled={busy} icon="plus" onclick={() => edit(null)}>Add an integration</Button>
 </div>
 <Dialog bind:open title={editing ? 'Edit integration' : 'Add an integration'}>
   {#key `${open}:${editing?.id ?? 'new'}:${provider}`}

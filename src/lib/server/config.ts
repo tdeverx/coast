@@ -6,6 +6,8 @@ import { requireAdmin, type SessionUser } from './auth';
 
 export const configSchema = v.object({
   experimentalFeatures: v.boolean(),
+  jellyfinAutoCreateUsers: v.boolean(),
+  jellyfinSyncAdmins: v.boolean(),
   diagnosticLevel: v.picklist(diagnosticLevels),
   sessionLifetimeDays: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(365)),
   allowArbitraryServers: v.boolean(),
@@ -26,6 +28,8 @@ export const configSchema = v.object({
 export type CoastConfig = v.InferOutput<typeof configSchema>;
 export const defaultConfig: CoastConfig = {
   experimentalFeatures: false,
+  jellyfinAutoCreateUsers: false,
+  jellyfinSyncAdmins: false,
   diagnosticLevel: 'info',
   sessionLifetimeDays: 30,
   allowArbitraryServers: false,

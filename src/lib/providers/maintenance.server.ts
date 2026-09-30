@@ -10,34 +10,75 @@ import {
   syncCheckpoints,
 } from '$lib/server/db/schema';
 import { getConfig } from '$lib/server/config';
-import { enqueueAction } from '$lib/server/queue';
+import { correlationId } from '$lib/diagnostics';
+import { context, logDiagnostic } from '$lib/server/diagnostics';
 import { requireProviderAdmin, getInstance } from '$lib/providers/instances.server';
 
-export async function updateProviderSchedule(
+export async function updateProviderSchedule(adminId: string, instanceId: string, input: unknown) {
+  await requireProviderAdmin(adminId);
+  const instance = await getInstance(instanceId);
+  if (!['jellyfin', 'seerr', 'trakt'].includes(instance.provider))
+    throw new Error('This integration has no scheduled jobs.');
+  const patch = v.parse(v.partial(providerScheduleSchema), input);
+  if (!Object.keys(patch).length) throw new Error('Choose a schedule setting to update.');
+  return getDb().transaction(async (tx) => {
+    const [current] = await tx
+      .select()
+      .from(providerInstances)
+      .where(eq(providerInstances.id, instanceId))
+      .for('update');
+    if (!current) throw new Error('Integration not found.');
+    const schedule = v.parse(providerScheduleSchema, {
+      ...providerSchedule(current.provider, current.settings.schedule),
+      ...patch,
+    });
+    if (patch.libraryConnectionId) {
+      const [source] = await tx
+        .select({ id: providerConnections.id })
+        .from(providerConnections)
+        .innerJoin(users, eq(users.id, providerConnections.userId))
+        .where(
+          and(
+            eq(providerConnections.id, patch.libraryConnectionId),
+            eq(providerConnections.instanceId, instanceId),
+            eq(providerConnections.status, 'connected'),
+            eq(users.disabled, false)
+          )
+        );
+      if (current.provider !== 'jellyfin' || !source)
+        throw new Error('Choose a connected account for this Jellyfin service.');
+    }
+    await tx
+      .update(providerInstances)
+      .set({
+        settings: sql`jsonb_set(${providerInstances.settings},'{schedule}',${schedule}::jsonb,true)`,
+      })
+      .where(eq(providerInstances.id, instanceId));
+    return schedule;
+  });
+}
+
+export async function runProviderJob(
   adminId: string,
   instanceId: string,
-  input: unknown
+  task: 'all' | 'library' | 'users' | 'tracking' | 'lists' = 'all'
 ) {
   await requireProviderAdmin(adminId);
   const instance = await getInstance(instanceId);
   if (!['jellyfin', 'seerr', 'trakt'].includes(instance.provider))
     throw new Error('This integration has no scheduled jobs.');
-  const schedule = v.parse(providerScheduleSchema, input);
-  await getDb()
-    .update(providerInstances)
-    .set({
-      settings: sql`jsonb_set(${providerInstances.settings},'{schedule}',${schedule}::jsonb,true)`,
-    })
-    .where(eq(providerInstances.id, instanceId));
-  return schedule;
-}
-
-export async function runProviderJob(adminId: string, instanceId: string) {
-  await requireProviderAdmin(adminId);
-  const instance = await getInstance(instanceId);
-  if (!['jellyfin', 'seerr', 'trakt'].includes(instance.provider))
-    throw new Error('This integration has no scheduled jobs.');
-  return scheduleProviderMaintenance({ instanceId, force: true });
+  if (
+    task !== 'all' &&
+    !(
+      instance.provider === 'jellyfin'
+        ? ['library', 'users']
+        : instance.provider === 'trakt'
+          ? ['tracking', 'lists']
+          : []
+    ).includes(task)
+  )
+    throw new Error('This task is unavailable for the selected service.');
+  return scheduleProviderMaintenance({ instanceId, force: true, task });
 }
 
 let maintenanceTimer: ReturnType<typeof setInterval> | undefined;
@@ -52,15 +93,33 @@ export function stopProviderMaintenance() {
 /** Idempotent maintenance scheduling; durable work remains in the PostgreSQL outbox. */
 /** One integration schedule covers every connected account. Queue lanes keep credentials and retries isolated. */
 export async function scheduleProviderMaintenance(
-  options: { instanceId?: string; force?: boolean } = {}
+  options: {
+    instanceId?: string;
+    force?: boolean;
+    task?: 'all' | 'library' | 'users' | 'tracking' | 'lists';
+  } = {}
 ) {
+  const config = await getConfig();
   return getDb().transaction(async (tx) => {
     // Prevent overlapping timer/manual runs across processes without waiting or duplicating work.
     const [lock] = await tx.execute<{ acquired: boolean }>(
       sql`select pg_try_advisory_xact_lock(hashtextextended('provider-maintenance',0)) as acquired`
     );
     if (!lock.acquired) return { queued: 0, active: 0, connections: 0, busy: true };
-    const config = await getConfig();
+    // Queued jobs from the combined scanner cannot safely run under the split task model.
+    await tx
+      .update(outboxActions)
+      .set({
+        state: 'cancelled',
+        lastError: 'Replaced by separate library and user tasks.',
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(outboxActions.kind, 'jellyfin.scan'),
+          inArray(outboxActions.state, ['pending', 'failed'])
+        )
+      );
     const rows = await tx
       .select({ connection: providerConnections, instance: providerInstances })
       .from(providerConnections)
@@ -74,13 +133,13 @@ export async function scheduleProviderMaintenance(
           options.instanceId ? eq(providerInstances.id, options.instanceId) : undefined,
           inArray(providerInstances.provider, ['jellyfin', 'trakt', 'seerr'])
         )
-      );
+      )
+      .orderBy(providerConnections.createdAt, providerConnections.id);
     const eligible = rows.filter(
       ({ instance }) =>
         (instance.provider !== 'trakt' || config.enableTrakt) &&
         (instance.provider !== 'seerr' || config.enableRequests) &&
-        (options.force ||
-          providerSchedule(instance.provider, instance.settings.schedule).enabled)
+        (options.force || providerSchedule(instance.provider, instance.settings.schedule).enabled)
     );
     if (!eligible.length) return { queued: 0, active: 0, connections: 0, busy: false };
     const ids = eligible.map((row) => row.connection.id);
@@ -96,7 +155,13 @@ export async function scheduleProviderMaintenance(
         .where(
           and(
             inArray(outboxActions.connectionId, ids),
-            inArray(outboxActions.kind, ['jellyfin.scan', 'trakt.import', 'seerr.sync'])
+            inArray(outboxActions.kind, [
+              'jellyfin.library',
+              'jellyfin.sync',
+              'trakt.import',
+              'trakt.lists-import',
+              'seerr.sync',
+            ])
           )
         )
         .groupBy(outboxActions.connectionId, outboxActions.kind),
@@ -111,46 +176,116 @@ export async function scheduleProviderMaintenance(
     );
     let queued = 0,
       active = 0;
+    const now = Date.now();
+    const handledLibraries = new Set<string>();
+    async function queue(
+      connection: (typeof eligible)[number]['connection'],
+      kind: string,
+      payload: Record<string, unknown> = {}
+    ) {
+      // Match enqueueAction's lane lock so connect/reconnect and timer scheduling deduplicate atomically.
+      await tx.execute(
+        sql`select pg_advisory_xact_lock(hashtextextended(${`${connection.userId}:${connection.id}`}, 0))`
+      );
+      const [existing] = await tx
+        .select({ id: outboxActions.id })
+        .from(outboxActions)
+        .where(
+          and(
+            eq(outboxActions.connectionId, connection.id),
+            eq(outboxActions.kind, kind),
+            inArray(outboxActions.state, ['pending', 'running', 'failed'])
+          )
+        )
+        .limit(1);
+      if (existing) {
+        active++;
+        return;
+      }
+      await tx.insert(outboxActions).values({
+        userId: connection.userId,
+        connectionId: connection.id,
+        kind,
+        payload,
+        compactionKey: kind,
+        correlationId: correlationId(context.getStore()),
+        createdAt: sql`clock_timestamp()`,
+      });
+      queued++;
+    }
     for (const { instance, connection } of eligible) {
       const schedule = providerSchedule(instance.provider, instance.settings.schedule);
-      const kind =
-        instance.provider === 'jellyfin'
-          ? 'jellyfin.scan'
-          : instance.provider === 'trakt'
-            ? 'trakt.import'
-            : 'seerr.sync';
+      if (instance.provider === 'jellyfin') {
+        if (!handledLibraries.has(instance.id)) {
+          handledLibraries.add(instance.id);
+          const accounts = eligible
+            .filter((row) => row.instance.id === instance.id)
+            .map((row) => row.connection);
+          const progress = instance.settings.libraryScan as Record<string, unknown> | undefined;
+          const sourceId = schedule.libraryConnectionId ?? progress?.connectionId;
+          const source =
+            accounts.find((account) => account.id === sourceId) ??
+            (schedule.libraryConnectionId ? undefined : accounts[0]);
+          const fullAt = Date.parse(String(progress?.fullCompletedAt ?? '')) || 0;
+          const recentAt = Date.parse(String(progress?.recentCompletedAt ?? '')) || 0;
+          const full =
+            !!options.force ||
+            source?.id !== progress?.connectionId ||
+            source?.externalUserId !== progress?.externalUserId ||
+            now - fullAt >= schedule.fullIntervalHours * 3600000;
+          const libraryActive = accounts.some(
+            (account) => jobsByKey.get(`${account.id}:jellyfin.library`)?.active
+          );
+          if (options.task !== 'users' && (options.force || schedule.libraryEnabled)) {
+            if (libraryActive) active++;
+            else if (
+              source &&
+              (full || now - Math.max(fullAt, recentAt) >= schedule.intervalMinutes * 60000)
+            )
+              await queue(source, 'jellyfin.library', { full });
+          }
+        }
+        const last = checkpointByKey.get(`${connection.id}:jellyfin-user`) ?? 0;
+        if (options.task !== 'library' && (options.force || schedule.userSyncEnabled)) {
+          if (jobsByKey.get(`${connection.id}:jellyfin.sync`)?.active) active++;
+          else if (options.force || now - last >= schedule.userIntervalMinutes * 60000)
+            await queue(connection, 'jellyfin.sync');
+        }
+        continue;
+      }
+      if (instance.provider === 'trakt') {
+        const sync = connection.settings.sync as Record<string, boolean> | undefined;
+        if (
+          options.task !== 'tracking' &&
+          (options.force || schedule.listsEnabled) &&
+          sync?.lists
+        ) {
+          const listsJob = jobsByKey.get(`${connection.id}:trakt.lists-import`);
+          const last = listsJob?.last ? new Date(listsJob.last).getTime() : 0;
+          if (listsJob?.active) active++;
+          else if (options.force || now - last >= schedule.listsIntervalMinutes * 60000)
+            await queue(connection, 'trakt.lists-import');
+        }
+        if (
+          options.task === 'lists' ||
+          (!options.force && !schedule.trackingEnabled) ||
+          !['history', 'progress', 'collection', 'ratings', 'watchlist'].some(
+            (category) => sync?.[category]
+          )
+        )
+          continue;
+      }
+      const kind = instance.provider === 'trakt' ? 'trakt.import' : 'seerr.sync';
       const job = jobsByKey.get(`${connection.id}:${kind}`);
       if (job?.active) {
         active++;
         continue;
       }
-      const fullAt = checkpointByKey.get(`${connection.id}:jellyfin-full`) ?? 0;
-      const recentAt = checkpointByKey.get(`${connection.id}:jellyfin-recent`) ?? 0;
-      const full =
-        !!options.force || Date.now() - fullAt > schedule.fullIntervalHours * 3600000;
       const checked = Date.parse(String(connection.settings.requestsVerifiedAt ?? '')) || 0;
       const last =
-        instance.provider === 'jellyfin'
-          ? Math.max(fullAt, recentAt)
-          : instance.provider === 'seerr'
-            ? checked
-            : job?.last
-              ? new Date(job.last).getTime()
-              : 0;
-      if (
-        !options.force &&
-        !(instance.provider === 'jellyfin' && full) &&
-        Date.now() - last <= schedule.intervalMinutes * 60000
-      )
-        continue;
-      await enqueueAction({
-        userId: connection.userId,
-        connectionId: connection.id,
-        kind,
-        payload: instance.provider === 'jellyfin' ? { full } : {},
-        compactionKey: kind,
-      });
-      queued++;
+        instance.provider === 'seerr' ? checked : job?.last ? new Date(job.last).getTime() : 0;
+      if (options.force || now - last >= schedule.intervalMinutes * 60000)
+        await queue(connection, kind);
     }
     return { queued, active, connections: eligible.length, busy: false };
   });
@@ -159,10 +294,14 @@ export async function scheduleProviderMaintenance(
 export function startProviderMaintenance() {
   if (maintenanceTimer) return;
   maintenanceTimer = setInterval(() => {
-    void scheduleProviderMaintenance().catch(() => {});
+    void scheduleProviderMaintenance().catch(() =>
+      logDiagnostic('error', 'job.failed', { stage: 'maintenance', failure: 'unexpected' })
+    );
   }, 60000);
   maintenanceTimer.unref();
   process.once('SIGTERM', stopProviderMaintenance);
   process.once('SIGINT', stopProviderMaintenance);
-  void scheduleProviderMaintenance().catch(() => {});
+  void scheduleProviderMaintenance().catch(() =>
+    logDiagnostic('error', 'job.failed', { stage: 'maintenance', failure: 'unexpected' })
+  );
 }

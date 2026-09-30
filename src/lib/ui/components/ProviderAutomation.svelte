@@ -1,0 +1,89 @@
+<script lang="ts">
+  import { tick } from 'svelte';
+  import type { ProviderSchedule } from '$lib/providers/schedule';
+  import { notifyAction } from '$lib/ui/action-feedback.svelte';
+  import { change, message } from '$lib/ui/client';
+  import RowHeader from './RowHeader.svelte';
+  let {
+    instance,
+  }: { instance: { id: string; provider: string; enabled: boolean; schedule: ProviderSchedule } } =
+    $props();
+  let busy = $state(false),
+    error = $state('');
+  let pending = $state<Partial<ProviderSchedule>>({});
+  const schedule = $derived({ ...instance.schedule, ...pending });
+  const choices = $derived(
+    instance.provider === 'jellyfin'
+      ? [
+          { key: 'libraryEnabled' as const, label: 'Shared library scans' },
+          { key: 'userSyncEnabled' as const, label: 'User activity imports' },
+        ]
+      : instance.provider === 'trakt'
+        ? [
+            { key: 'trackingEnabled' as const, label: 'Tracking imports' },
+            { key: 'listsEnabled' as const, label: 'List imports' },
+          ]
+        : []
+  );
+  async function toggle(key: keyof ProviderSchedule, checked: boolean) {
+    if (busy) return;
+    busy = true;
+    error = '';
+    pending = { [key]: checked };
+    try {
+      await change(`providers/${instance.id}/schedule`, { [key]: checked });
+      notifyAction(checked ? 'Automatic work enabled.' : 'Automatic work paused.');
+    } catch (cause) {
+      error = message(cause);
+    } finally {
+      await tick();
+      pending = {};
+      busy = false;
+    }
+  }
+</script>
+
+{#if ['jellyfin', 'trakt', 'seerr'].includes(instance.provider)}
+  <div class="automation stack">
+    <RowHeader title="Automatic work"
+      >{#snippet actions()}<a class="small text-accent" href="/settings/jobs"
+          >View tasks & schedules</a
+        >{/snippet}</RowHeader
+    >
+    <label class="check"
+      ><input
+        type="checkbox"
+        checked={schedule.enabled}
+        disabled={busy || !instance.enabled}
+        onchange={(event) => void toggle('enabled', event.currentTarget.checked)}
+      />Run background jobs automatically</label
+    >
+    {#each choices as choice (choice.key)}<label class="check"
+        ><input
+          type="checkbox"
+          checked={!!schedule[choice.key]}
+          disabled={busy || !instance.enabled}
+          onchange={(event) => void toggle(choice.key, event.currentTarget.checked)}
+        />{choice.label}</label
+      >{/each}
+    <p class="small">
+      {!instance.enabled
+        ? 'Enable this integration to run background work.'
+        : !instance.schedule.enabled
+          ? 'Automatic work is paused. Your task settings are saved.'
+          : 'Selected tasks run on their schedules.'} Already queued jobs remain available in Jobs.
+    </p>
+    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+  </div>
+{/if}
+
+<style>
+  .automation {
+    border-top: 1px solid var(--line-soft);
+    padding-top: 20px;
+    gap: 12px;
+  }
+  .automation :global(.row-header) {
+    margin-bottom: 0;
+  }
+</style>

@@ -21,6 +21,7 @@ export function musicCard(item: MusicItem, connectionId: string): MediaCardPrese
     kind: item.kind,
     title: item.title,
     href: musicHref(connectionId, item.id),
+    connectionId,
     captionSubtitle:
       musicCredits(item) ||
       (item.kind === 'artist' ? 'Artist' : item.kind === 'album' ? 'Album' : 'Track'),

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { api, change, message } from '$lib/ui/client';
   import Button from './Button.svelte';
   import Icon from './Icon.svelte';
@@ -82,13 +82,15 @@
     lists: false,
     scrobble: false,
   };
-  let importPlayback = $state(false);
+  let importPlayback = $state(
+    untrack(() => provider.connection?.settings.importPlayback !== false)
+  );
   let sync = $state<Record<string, boolean>>({ ...defaultSync });
   $effect(() => {
     const key = `${provider.connection?.id}:${provider.connection?.status}`;
     if (key === initialized) return;
     initialized = key;
-    importPlayback = provider.connection?.settings.importPlayback === true;
+    importPlayback = provider.connection?.settings.importPlayback !== false;
     sync = {
       ...defaultSync,
       ...(provider.connection?.settings.sync as Record<string, boolean>),
@@ -186,8 +188,8 @@
           status, resume progress and favourites from Jellyfin</label
         >
         <p class="small">
-          Optional and off by default. Library scans import playback state from this Jellyfin
-          account when enabled. Turning it off keeps previously imported activity.
+          Enabled by default. User activity syncs import playback state from this Jellyfin account when
+          enabled. Turning it off keeps previously imported activity.
         </p>
         <div>
           <Button
@@ -204,7 +206,7 @@
           >
         </div>
         <p class="small">
-          Your administrator’s next scheduled scan will import existing playback state. Conflicts
+          Your administrator’s next scheduled user sync will import existing playback state. Conflicts
           follow your conflict resolution preference; unresolved changes appear in Sync conflicts.
         </p>
       </div>{/if}
@@ -231,24 +233,24 @@
           <strong>
             {scan.state === 'pending'
               ? scan.attempts
-                ? 'Scan waiting to retry'
-                : 'Scan queued'
+                ? 'Sync waiting to retry'
+                : 'Sync queued'
               : scan.state === 'running'
                 ? scan.phase === 'reconciling'
-                  ? 'Finishing library scan'
-                  : 'Scanning library'
+                  ? 'Finishing activity sync'
+                  : 'Syncing activity'
                 : scan.state === 'succeeded'
-                  ? 'Library scan complete'
+                  ? 'Activity sync complete'
                   : scan.state === 'failed'
-                    ? 'Library scan failed'
-                    : 'Library scan cancelled'}
+                    ? 'Activity sync failed'
+                    : 'Activity sync cancelled'}
           </strong>{#if scan.total !== null}<span
               >{scan.processed.toLocaleString()} / {scan.total.toLocaleString()}{#if scanning && scanPercent !== null}
                 · {scanPercent}%{/if}</span
             >{:else if scanning}<span>{scan.processed.toLocaleString()} items processed</span>{/if}
         </div>
         {#if scanning}<progress
-            aria-label="Library scan progress"
+            aria-label="Activity sync progress"
             max="100"
             value={scanPercent ?? undefined}
           ></progress>{/if}
@@ -283,7 +285,7 @@
           type="password"
           bind:value={password}
           autocomplete="current-password"
-          required
+          maxlength="4096"
         /></label
       ><Button variant="secondary" type="submit" disabled={busy}
         >{busy ? 'Connecting…' : 'Connect Jellyfin'}</Button

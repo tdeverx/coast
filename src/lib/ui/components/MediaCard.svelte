@@ -17,6 +17,7 @@
   import { liquidGlass } from '$lib/ui/materials/glass';
   import Icon from './Icon.svelte';
   import MediaActions from './MediaActions.svelte';
+  import PresentationActions from './PresentationActions.svelte';
   let {
     item,
     shape = 'poster',
@@ -45,6 +46,7 @@
   let imageIndex = $state(0);
   let active = $state(false);
   let actions = $state<MediaActions>();
+  let presentationActions = $state<PresentationActions>();
   const selectedType = $derived(
     artworkStyle === 'auto'
       ? shape === 'banner'
@@ -74,10 +76,11 @@
     imageIndex = 0;
   });
   async function openMenu(point: MenuPoint) {
-    if (readOnly() || !trackedItem) return;
+    if (readOnly()) return;
     active = true;
     await tick();
-    actions?.openAt(point);
+    if (trackedItem) actions?.openAt(point);
+    else presentationActions?.openAt(point);
   }
   const completion = $derived(
     progressFraction(
@@ -116,7 +119,7 @@
     else await goto(href);
   }
   function cardGesture(node: HTMLElement) {
-    if (trackedItem && !readOnly()) return contextGesture(node, openMenu);
+    if (!readOnly()) return contextGesture(node, openMenu);
   }
   function select(event: MouseEvent) {
     if (onselect && trackedItem) {
@@ -187,18 +190,25 @@
           size={28}
         /></button
       >
-      {#if trackedItem}<div class="card-menu">
-          <button
-            class="icon-button"
-            aria-label={`Actions for ${item.title}`}
-            aria-haspopup="menu"
-            onclick={(event) => {
-              const rect = event.currentTarget.getBoundingClientRect();
-              void openMenu({ x: rect.left, y: rect.bottom });
-            }}><Icon name="more" size={18} /></button
-          >
-          {#if active}<MediaActions bind:this={actions} item={trackedItem} menuOnly />{/if}
-        </div>{/if}
+      <div class="card-menu">
+        <button
+          class="icon-button"
+          aria-label={`Actions for ${item.title}`}
+          aria-haspopup="menu"
+          onclick={(event) => {
+            const rect = event.currentTarget.getBoundingClientRect();
+            void openMenu({ x: rect.left, y: rect.bottom });
+          }}><Icon name="more" size={18} /></button
+        >
+        {#if active}{#if trackedItem}<MediaActions
+              bind:this={actions}
+              item={trackedItem}
+              menuOnly
+            />{:else if 'href' in item}<PresentationActions
+              bind:this={presentationActions}
+              {item}
+            />{/if}{/if}
+      </div>
     {/if}
     {#if completion !== null && completion > 0 && completion < 0.9}<div
         class="progress"

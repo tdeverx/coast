@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { asc, and, eq } from 'drizzle-orm';
+import { asc, and, eq, sql } from 'drizzle-orm';
 import { getDb, getSql } from '../db';
 import { users, providerConnections, providerInstances, type UserSettings } from '../db/schema';
 import { getConfig } from '../config';
@@ -91,7 +91,7 @@ export async function setupRequired(): Promise<boolean> {
   return !row.exists;
 }
 
-async function newSession(user: SessionUser): Promise<SessionResult> {
+export async function newSession(user: SessionUser): Promise<SessionResult> {
   const { sessionLifetimeDays } = await getConfig();
   const token = randomToken();
   const expiresAt = new Date(Date.now() + sessionLifetimeDays * 86_400_000);
@@ -131,7 +131,8 @@ export async function login(input: unknown, clientKey = 'local'): Promise<Sessio
   }));
   const hash = row?.password_hash || dummy;
   const valid = await Bun.password.verify(account.password, hash);
-  if (!row || !valid) throw new AppError(401, 'The username or password is incorrect.');
+  if (!row || !row.password_hash || !valid)
+    throw new AppError(401, 'The username or password is incorrect.');
   return newSession(publicUser(row));
 }
 
@@ -196,7 +197,7 @@ export async function updatePassword(
   checkLoginRate(`password-change:${user.id}`);
   const next = v.parse(passwordSchema, nextPassword);
   const [row] = await getSql()`SELECT password_hash FROM users WHERE id = ${user.id}`;
-  if (!row || !(await Bun.password.verify(currentPassword, row.password_hash)))
+  if (!row?.password_hash || !(await Bun.password.verify(currentPassword, row.password_hash)))
     throw new AppError(403, 'The current password is incorrect.');
   const hash = await Bun.password.hash(next, {
     algorithm: 'argon2id',
@@ -219,6 +220,7 @@ export async function listUsers(actor: SessionUser | null) {
       role: users.role,
       settings: users.settings,
       disabled: users.disabled,
+      hasLocalPassword: sql<boolean>`${users.passwordHash} is not null`,
       createdAt: users.createdAt,
     })
     .from(users)
@@ -240,6 +242,54 @@ export async function deleteUser(actor: SessionUser | null, userId: string): Pro
     }
     // Provider account deletion is deliberately a separate, explicit adapter operation.
     await sql`DELETE FROM users WHERE id = ${userId}`;
+  });
+}
+
+export async function updateUser(actor: SessionUser | null, userId: string, input: unknown) {
+  const admin = requireAdmin(actor);
+  const patch = v.parse(
+    v.partial(
+      v.object({
+        email: accountSchema.entries.email,
+        role: v.picklist(['admin', 'user']),
+        disabled: v.boolean(),
+        password: passwordSchema,
+      })
+    ),
+    input
+  );
+  if (
+    admin.id === userId &&
+    (patch.disabled || patch.role === 'user' || patch.password !== undefined)
+  )
+    throw new AppError(
+      400,
+      'Use your account settings to change your password. Another administrator must change your role or disable your account.'
+    );
+  const hash =
+    patch.password === undefined
+      ? null
+      : await Bun.password.hash(patch.password, {
+          algorithm: 'argon2id',
+          memoryCost: 19456,
+          timeCost: 2,
+        });
+  return getSql().begin(async (transaction) => {
+    await transaction`SELECT pg_advisory_xact_lock(73001602)`;
+    const [target] = await transaction`SELECT * FROM users WHERE id = ${userId} FOR UPDATE`;
+    if (!target) throw new AppError(404, 'Account not found.');
+    const role = patch.role ?? target.role;
+    const disabled = patch.disabled ?? target.disabled;
+    if (target.role === 'admin' && !target.disabled && (role !== 'admin' || disabled)) {
+      const [count] =
+        await transaction`SELECT count(*)::int AS total FROM users WHERE role = 'admin' AND disabled = FALSE AND id <> ${userId}`;
+      if (!count.total) throw new AppError(409, 'Keep at least one active administrator account.');
+    }
+    const [row] =
+      await transaction`UPDATE users SET email = ${patch.email === undefined ? target.email : patch.email || null}, role = ${role}, disabled = ${disabled}, password_hash = ${hash ?? target.password_hash} WHERE id = ${userId} RETURNING *`;
+    if (role !== target.role || disabled !== target.disabled || hash)
+      await transaction`DELETE FROM sessions WHERE user_id = ${userId}`;
+    return { ...publicUser(row), disabled: row.disabled, hasLocalPassword: !!row.password_hash };
   });
 }
 

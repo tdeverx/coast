@@ -228,14 +228,14 @@ export class JellyfinAdapter {
       serverId: auth.ServerId,
     };
   }
-  async library(userId: string, offset = 0, since?: string): Promise<LibraryPage> {
+  async library(userId: string, offset = 0, since?: string, scope: 'library' | 'user' = 'library'): Promise<LibraryPage> {
     const query = new URLSearchParams({
       userId,
       recursive: 'true',
       includeItemTypes: 'Movie,Series,Season,Episode',
-      fields: 'ProviderIds,MediaSources,MediaStreams,Overview,Genres,OriginalTitle,Chapters',
-      enableImages: 'true',
-      enableUserData: 'true',
+      fields: scope === 'user' ? 'MediaSources,MediaStreams' : 'ProviderIds,MediaSources,MediaStreams,Overview,Genres,OriginalTitle,Chapters',
+      enableImages: String(scope === 'library'),
+      enableUserData: String(scope === 'user'),
       enableImageTypes: artworkKeys.map((type) => artworkTypes[type].jellyfin).join(','),
       startIndex: String(offset),
       limit: '100',
@@ -262,6 +262,19 @@ export class JellyfinAdapter {
       nextOffset: next < page.TotalRecordCount ? next : null,
     };
   }
+  async userPolicy(userId: string) {
+    const user = v.parse(
+      v.object({
+        Id: v.string(),
+        Name: v.string(),
+        Policy: v.object({ IsAdministrator: v.boolean(), IsDisabled: v.boolean() }),
+      }),
+      await this.call(`/Users/${encodeURIComponent(userId)}`)
+    );
+    if (user.Id !== userId)
+      throw new ProviderActionError('Jellyfin returned an unexpected user identity.', 'identity');
+    return { administrator: user.Policy.IsAdministrator, disabled: user.Policy.IsDisabled };
+  }
   async item(userId: string, id: string) {
     return mapLibraryItem(
       v.parse(
@@ -275,6 +288,16 @@ export class JellyfinAdapter {
   }
   async musicItem(userId: string, id: string) {
     return musicItem((path, init) => this.call(path, init), userId, id);
+  }
+  async setMusicFavourite(userId: string, id: string, value: boolean) {
+    const item = await this.musicItem(userId, id);
+    if (item.favourite === value) return;
+    await this.call(
+      `/UserFavoriteItems/${encodeURIComponent(id)}?userId=${encodeURIComponent(userId)}`,
+      {
+        method: value ? 'POST' : 'DELETE',
+      }
+    );
   }
   async localTrailers(userId: string, itemId: string) {
     return v

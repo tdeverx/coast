@@ -53,7 +53,7 @@ export const users = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     username: text('username').notNull(),
-    passwordHash: text('password_hash').notNull(),
+    passwordHash: text('password_hash'),
     email: text('email'),
     role: text('role').$type<'admin' | 'user'>().notNull().default('user'),
     settings: jsonb('settings').$type<UserSettings>().notNull().default({}),
@@ -252,8 +252,21 @@ export const providerConnections = pgTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [uniqueIndex('connections_user_instance_unique').on(t.userId, t.instanceId)]
+  (t) => [
+    uniqueIndex('connections_user_instance_unique').on(t.userId, t.instanceId),
+    index('connections_instance_status_idx').on(t.instanceId, t.status),
+  ]
 );
+
+export const userIdentities = pgTable('user_identities', {
+  instanceId: uuid('instance_id').notNull().references(() => providerInstances.id, { onDelete: 'cascade' }),
+  externalUserId: text('external_user_id').notNull(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: createdAt(),
+}, (t) => [
+  primaryKey({ columns: [t.instanceId, t.externalUserId] }),
+  uniqueIndex('user_identities_user_instance_unique').on(t.userId, t.instanceId),
+]);
 export const providerItems = pgTable(
   'provider_items',
   {
@@ -618,6 +631,8 @@ export const outboxActions = pgTable(
   (t) => [
     index('outbox_pending_idx').on(t.state, t.nextAttemptAt),
     index('outbox_connection_order_idx').on(t.userId, t.connectionId, t.createdAt),
+    index('outbox_maintenance_idx').on(t.connectionId, t.kind, t.state, t.updatedAt),
+    index('outbox_state_created_idx').on(t.state, t.createdAt),
   ]
 );
 export const jobs = pgTable('jobs', {

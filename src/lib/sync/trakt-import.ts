@@ -120,8 +120,24 @@ export async function resolveTrakt(
   );
 }
 
-export async function importTrakt(userId: string, connectionId: string) {
-  return importTraktFromAdapter(userId, connectionId, await getTrakt(userId, connectionId));
+export async function importTrakt(
+  userId: string,
+  connectionId: string,
+  scope: 'tracking' | 'lists'
+) {
+  const context = await getTrakt(userId, connectionId);
+  const sync =
+    scope === 'tracking'
+      ? { ...context.sync, lists: false }
+      : {
+          ...context.sync,
+          history: false,
+          progress: false,
+          collection: false,
+          ratings: false,
+          watchlist: false,
+        };
+  return importTraktFromAdapter(userId, connectionId, { ...context, sync });
 }
 
 /** Internal engine: service entrypoints resolve the authenticated connection before supplying capabilities. */

@@ -19,3 +19,16 @@ export async function musicDetails(userId: string, connectionId: string, id: str
     item: await adapter.musicItem(connection.externalUserId!, id),
   };
 }
+
+export async function setMusicFavourite(
+  userId: string,
+  connectionId: string,
+  id: string,
+  input: unknown
+) {
+  v.parse(jellyfinMusicIdSchema, id);
+  const { favourite } = v.parse(v.object({ favourite: v.boolean() }), input);
+  const { adapter, connection } = await getJellyfin(userId, connectionId);
+  await adapter.setMusicFavourite(connection.externalUserId!, id, favourite);
+  return { favourite };
+}

@@ -8,7 +8,7 @@ import { users, systemSettings, externalIds } from '../src/lib/server/db/schema'
 import { defaultConfig } from '../src/lib/server/config';
 import { configureInstance } from '../src/lib/providers/instances.server';
 import { connectJellyfin } from '../src/lib/providers/jellyfin/connection.server';
-import { scanJellyfin } from '../src/lib/sync/jellyfin';
+import { scanJellyfinLibrary, syncJellyfinUser } from '../src/lib/sync/jellyfin';
 
 if (!process.env.DATABASE_URL?.endsWith('/coast_browser_test'))
   throw new Error('Use only the disposable coast_browser_test database.');
@@ -228,7 +228,8 @@ const connection = await connectJellyfin(actor.id, {
   username: 'fixture',
   password: 'synthetic',
 });
-await scanJellyfin(actor.id, connection.id, true);
+await scanJellyfinLibrary(actor.id, connection.id, true);
+await syncJellyfinUser(actor.id, connection.id);
 const mappings = await getDb()
   .select()
   .from(externalIds)

@@ -7,7 +7,7 @@ import {
 import { importJellyfinPlayback } from '$lib/sync/jellyfin-playback';
 import { artworkKeys } from '$lib/artwork';
 import * as v from 'valibot';
-import { and, eq, isNull, ne, or, sql, desc } from 'drizzle-orm';
+import { and, eq, isNull, ne, or, sql, desc, inArray } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import {
   availability,
@@ -17,7 +17,11 @@ import {
   providerConnections,
   trackingState,
   outboxActions,
+  providerInstances,
+  media,
+  users,
 } from '$lib/server/db/schema';
+import { PermanentActionError } from '$lib/server/queue';
 import { notify } from '$lib/server/notifications';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { ingestMetadata } from '$lib/catalogue/service';
@@ -32,7 +36,7 @@ export async function libraryScanProgress(userId: string, connectionId: string) 
       and(
         eq(outboxActions.userId, userId),
         eq(outboxActions.connectionId, connectionId),
-        eq(outboxActions.kind, 'jellyfin.scan')
+        eq(outboxActions.kind, 'jellyfin.sync')
       )
     )
     .orderBy(desc(outboxActions.createdAt))
@@ -45,7 +49,7 @@ export async function libraryScanProgress(userId: string, connectionId: string) 
       startedAt: v.string(),
       phase: v.picklist(['scanning', 'reconciling', 'complete']),
     }),
-    connection.settings.libraryScan
+    connection.settings.userSync
   );
   const current =
     parsed.success && new Date(parsed.output.startedAt) >= job.createdAt ? parsed.output : null;
@@ -57,10 +61,7 @@ export async function libraryScanProgress(userId: string, connectionId: string) 
         .where(
           and(
             eq(syncCheckpoints.connectionId, connectionId),
-            eq(
-              syncCheckpoints.kind,
-              job.payload.full === false ? 'jellyfin-recent' : 'jellyfin-full'
-            )
+            eq(syncCheckpoints.kind, 'jellyfin-user')
           )
         )
         .limit(1);
@@ -68,8 +69,7 @@ export async function libraryScanProgress(userId: string, connectionId: string) 
     checkpoint && checkpoint.updatedAt >= job.createdAt ? Number(checkpoint.cursor ?? 0) : 0;
   return {
     state: job.state,
-    processed:
-      current?.processed ?? (Number.isSafeInteger(checkpointCount) ? checkpointCount : 0),
+    processed: current?.processed ?? (Number.isSafeInteger(checkpointCount) ? checkpointCount : 0),
     total: current?.total ?? null,
     phase: current?.phase ?? 'scanning',
     error: job.lastError,
@@ -78,9 +78,27 @@ export async function libraryScanProgress(userId: string, connectionId: string) 
 }
 
 /** Resume at committed page boundaries; removal only occurs after a successful full traversal. */
-export async function scanJellyfin(
+export async function scanJellyfinLibrary(
   userId: string,
   connectionId: string,
+  full = true,
+  onStage?: (stage: string) => void
+) {
+  return runJellyfinScan(userId, connectionId, 'library', full, onStage);
+}
+
+export async function syncJellyfinUser(
+  userId: string,
+  connectionId: string,
+  onStage?: (stage: string) => void
+) {
+  return runJellyfinScan(userId, connectionId, 'user', true, onStage);
+}
+
+async function runJellyfinScan(
+  userId: string,
+  connectionId: string,
+  scope: 'library' | 'user',
   full = true,
   onStage?: (stage: string) => void
 ) {
@@ -90,67 +108,105 @@ export async function scanJellyfin(
   await adapter.identity(instance.serverIdentity || undefined);
   onStage?.('checkpoint-read');
   const db = getDb(),
-    kind = full ? 'jellyfin-full' : 'jellyfin-recent';
+    kind = scope === 'user' ? 'jellyfin-user' : full ? 'jellyfin-full' : 'jellyfin-recent';
   const [checkpoint] = await db
     .select()
     .from(syncCheckpoints)
     .where(and(eq(syncCheckpoints.connectionId, connectionId), eq(syncCheckpoints.kind, kind)));
-  const scanId =
-    checkpoint?.cursor && checkpoint.scanId ? checkpoint.scanId : crypto.randomUUID();
+  const scanId = checkpoint?.cursor && checkpoint.scanId ? checkpoint.scanId : crypto.randomUUID();
   let offset = checkpoint?.cursor ? Number(checkpoint.cursor) : 0;
   if (!Number.isSafeInteger(offset) || offset < 0) offset = 0;
-  const since =
-    !full && connection.settings.importPlayback !== true && checkpoint?.completedAt
-      ? new Date(checkpoint.completedAt.getTime() - 60000).toISOString()
-      : undefined;
+  const previousScan = instance.settings.libraryScan as Record<string, unknown> | undefined;
+  const completedAt =
+    checkpoint?.completedAt?.getTime() ??
+    Math.max(
+      Date.parse(String(previousScan?.fullCompletedAt ?? '')) || 0,
+      Date.parse(String(previousScan?.recentCompletedAt ?? '')) || 0
+    );
+  const since = !full && completedAt ? new Date(completedAt - 60000).toISOString() : undefined;
   const startedAt = new Date().toISOString();
   async function report(processed: number, total: number | null, phase = 'scanning') {
     const progress = { processed, total, phase, startedAt };
-    await db
-      .update(providerConnections)
-      .set({
-        settings: sql`jsonb_set(${providerConnections.settings}, '{libraryScan}', ${progress}::jsonb, true)`,
-      })
-      .where(
-        and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId))
-      );
+    if (scope === 'library')
+      await db
+        .update(providerInstances)
+        .set({
+          settings: sql`jsonb_set(${providerInstances.settings}, '{libraryScan}', coalesce(${providerInstances.settings}->'libraryScan', '{}'::jsonb) || ${progress}::jsonb, true)`,
+        })
+        .where(eq(providerInstances.id, instance.id));
+    else
+      await db
+        .update(providerConnections)
+        .set({
+          settings: sql`jsonb_set(${providerConnections.settings}, '{userSync}', ${progress}::jsonb, true)`,
+        })
+        .where(
+          and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId))
+        );
   }
   await report(offset, null);
   const visited = new Map<string, string>();
-  let importPlayback = connection.settings.importPlayback === true;
-  const importItem = async (
-    item: AvailableItem,
-    ancestry = new Set<string>()
-  ): Promise<string> => {
+  const knownItems = new Map<
+    string,
+    { providerItem: typeof providerItems.$inferSelect; saved: typeof media.$inferSelect }
+  >();
+  async function ensureConnected() {
+    const [current] = await db
+      .select({ settings: providerConnections.settings })
+      .from(providerConnections)
+      .innerJoin(users, eq(users.id, providerConnections.userId))
+      .innerJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
+      .where(
+        and(
+          eq(providerConnections.id, connectionId),
+          eq(providerConnections.userId, userId),
+          eq(providerConnections.externalUserId, connection.externalUserId!),
+          eq(providerConnections.status, 'connected'),
+          eq(users.disabled, false),
+          eq(providerInstances.enabled, true)
+        )
+      );
+    if (!current) throw new PermanentActionError('The connected account changed during this task.');
+    return current;
+  }
+  let importPlayback = connection.settings.importPlayback !== false;
+  const importItem = async (item: AvailableItem, ancestry = new Set<string>()): Promise<string> => {
     if (visited.has(item.id)) return visited.get(item.id)!;
     if (ancestry.has(item.id)) throw new Error('Jellyfin returned a cyclic media hierarchy.');
     ancestry.add(item.id);
+    const [known] = knownItems.has(item.id)
+      ? [knownItems.get(item.id)!]
+      : scope === 'user'
+        ? await db
+            .select({ providerItem: providerItems, saved: media })
+            .from(providerItems)
+            .innerJoin(media, eq(media.id, providerItems.mediaId))
+            .where(
+              and(eq(providerItems.instanceId, instance.id), eq(providerItems.externalId, item.id))
+            )
+            .limit(1)
+        : [];
+    // An account may see a title outside the source account's libraries. Fill that single
+    // missing identity once, without re-importing the catalogue for every user.
+    if (scope === 'user' && !known) item = await adapter.item(connection.externalUserId!, item.id);
     let showId: string | undefined, seasonId: string | undefined;
-    if (item.kind === 'episode' || item.kind === 'season') {
+    if (!known && (item.kind === 'episode' || item.kind === 'season')) {
       if (!item.showId) throw new Error('Jellyfin returned an item without its show identity.');
       const [parent] = await db
         .select()
         .from(providerItems)
         .where(
-          and(
-            eq(providerItems.instanceId, instance.id),
-            eq(providerItems.externalId, item.showId)
-          )
+          and(eq(providerItems.instanceId, instance.id), eq(providerItems.externalId, item.showId))
         )
         .limit(1);
       showId =
         parent?.mediaId ||
-        (await importItem(
-          await adapter.item(connection.externalUserId!, item.showId),
-          ancestry
-        ));
+        (await importItem(await adapter.item(connection.externalUserId!, item.showId), ancestry));
       if (item.kind === 'episode') {
         const [existing] = await db
           .select()
           .from(seasons)
-          .where(
-            and(eq(seasons.showId, showId), eq(seasons.seasonNumber, item.seasonNumber ?? 0))
-          );
+          .where(and(eq(seasons.showId, showId), eq(seasons.seasonNumber, item.seasonNumber ?? 0)));
         if (existing) seasonId = existing.mediaId;
         else if (item.parentId)
           seasonId = await importItem(
@@ -174,28 +230,33 @@ export async function scanJellyfin(
     );
     item.metadata.posterPath = item.metadata.artwork.primary;
     item.metadata.backdropPath = item.metadata.artwork.backdrop;
-    const saved = await ingestMetadata(item.metadata, {
-      instanceId: instance.id,
-      showId,
-      seasonId,
-      isolateConflictingProviderIds: true,
-    });
-    visited.set(item.id, saved.id);
-    const [providerItem] = await db
-      .insert(providerItems)
-      .values({
+    const saved =
+      known?.saved ??
+      (await ingestMetadata(item.metadata, {
         instanceId: instance.id,
-        externalId: item.id,
-        kind: item.kind,
-        mediaId: saved.id,
-        snapshot: { ...item.metadata },
-        lastSeenAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: [providerItems.instanceId, providerItems.externalId],
-        set: { mediaId: saved.id, snapshot: { ...item.metadata }, lastSeenAt: new Date() },
-      })
-      .returning();
+        showId,
+        seasonId,
+        isolateConflictingProviderIds: true,
+      }));
+    visited.set(item.id, saved.id);
+    const [providerItem] = known
+      ? [known.providerItem]
+      : await db
+          .insert(providerItems)
+          .values({
+            instanceId: instance.id,
+            externalId: item.id,
+            kind: item.kind,
+            mediaId: saved.id,
+            snapshot: { ...item.metadata },
+            lastSeenAt: new Date(),
+          })
+          .onConflictDoUpdate({
+            target: [providerItems.instanceId, providerItems.externalId],
+            set: { mediaId: saved.id, snapshot: { ...item.metadata }, lastSeenAt: new Date() },
+          })
+          .returning();
+    if (scope === 'library') return saved.id;
     const [wasAvailable] = await db
       .select({ id: availability.id })
       .from(availability)
@@ -274,19 +335,34 @@ export async function scanJellyfin(
     if (importPlayback) await importJellyfinPlayback(userId, connectionId, saved.id, item);
     return saved.id;
   };
-  let count = 0;
+  let count = 0,
+    processed = offset,
+    total: number | null = null;
   for (;;) {
     onStage?.('library-page');
-    const [current] = await db
-      .select({ settings: providerConnections.settings })
-      .from(providerConnections)
-      .where(eq(providerConnections.id, connectionId));
-    importPlayback = current?.settings.importPlayback === true;
-    const page = await adapter.library(
-      connection.externalUserId!,
-      offset,
-      importPlayback ? undefined : since
-    );
+    const current = await ensureConnected();
+    importPlayback = !!current && current.settings.importPlayback !== false;
+    const page = await adapter.library(connection.externalUserId!, offset, since, scope);
+    await ensureConnected();
+    visited.clear();
+    knownItems.clear();
+    if (scope === 'user' && page.items.length) {
+      const mapped = await db
+        .select({ providerItem: providerItems, saved: media })
+        .from(providerItems)
+        .innerJoin(media, eq(media.id, providerItems.mediaId))
+        .where(
+          and(
+            eq(providerItems.instanceId, instance.id),
+            inArray(
+              providerItems.externalId,
+              page.items.map((item) => item.id)
+            )
+          )
+        );
+      for (const row of mapped) knownItems.set(row.providerItem.externalId, row);
+    }
+    total = page.total;
     await report(offset, page.total);
     onStage?.('item-import');
     for (const [index, item] of page.items.entries()) {
@@ -314,14 +390,16 @@ export async function scanJellyfin(
         },
       });
     if (page.nextOffset === null) {
-      await report(offset + page.items.length, page.total, 'reconciling');
+      processed = offset + page.items.length;
+      await report(processed, page.total, 'reconciling');
       break;
     }
     offset = page.nextOffset;
   }
   onStage?.('reconcile');
+  await ensureConnected();
   await db.transaction(async (tx) => {
-    if (full)
+    if (scope === 'user')
       await tx
         .update(availability)
         .set({ state: 'unavailable', verifiedAt: new Date() })
@@ -334,18 +412,24 @@ export async function scanJellyfin(
         );
     await tx
       .update(syncCheckpoints)
-      .set({ cursor: null, scanId: null, completedAt: new Date(), updatedAt: new Date() })
-      .where(
-        and(eq(syncCheckpoints.connectionId, connectionId), eq(syncCheckpoints.kind, kind))
-      );
+      .set({ cursor: null, scanId: null, completedAt: new Date(startedAt), updatedAt: new Date() })
+      .where(and(eq(syncCheckpoints.connectionId, connectionId), eq(syncCheckpoints.kind, kind)));
   });
   onStage?.('complete');
-  await db
-    .update(providerConnections)
-    .set({
-      settings: sql`jsonb_set(${providerConnections.settings}, '{libraryScan,phase}', '"complete"'::jsonb, true)`,
-    })
-    .where(eq(providerConnections.id, connectionId));
+  await report(processed, total, 'complete');
+  if (scope === 'library') {
+    const completion = {
+      connectionId,
+      externalUserId: connection.externalUserId,
+      [full ? 'fullCompletedAt' : 'recentCompletedAt']: startedAt,
+    };
+    await db
+      .update(providerInstances)
+      .set({
+        settings: sql`jsonb_set(${providerInstances.settings}, '{libraryScan}', coalesce(${providerInstances.settings}->'libraryScan', '{}'::jsonb) || ${completion}::jsonb, true)`,
+      })
+      .where(eq(providerInstances.id, instance.id));
+  }
   return { count, full };
 }
 

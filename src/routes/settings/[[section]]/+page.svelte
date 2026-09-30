@@ -43,19 +43,29 @@
       .split(separator)
       .map((value) => value.trim())
       .filter(Boolean);
+  let editing = $state<{
+    id: string;
+    username: string;
+    email: string;
+    role: 'admin' | 'user';
+    disabled: boolean;
+    password: string;
+  } | null>(null);
   let initializedSection = untrack(() => data.section);
   const fields = $derived(
     data.section === 'policies'
       ? policyFields
       : data.section === 'activity'
         ? ['diagnosticLevel']
-        : (preferenceFields[data.section as keyof typeof preferenceFields] ?? [])
+        : data.section === 'users'
+          ? ['jellyfinAutoCreateUsers', 'jellyfinSyncAdmins']
+          : (preferenceFields[data.section as keyof typeof preferenceFields] ?? [])
   );
   let saved = $state(
     untrack(() =>
       JSON.stringify(
         selectSettings(
-          ['policies', 'activity'].includes(data.section) ? (policy ?? {}) : prefs,
+          ['policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
           fields
         )
       )
@@ -63,7 +73,7 @@
   );
   const draft = $derived({
     ...selectSettings(
-      ['policies', 'activity'].includes(data.section) ? (policy ?? {}) : prefs,
+      ['policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
       fields
     ),
     ...(data.section === 'playback'
@@ -87,7 +97,7 @@
     allowlistText = policy?.serverAllowlist.join('\n') ?? '';
     saved = JSON.stringify(
       selectSettings(
-        ['policies', 'activity'].includes(data.section) ? (policy ?? {}) : prefs,
+        ['policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
         fields
       )
     );
@@ -114,13 +124,15 @@
     const submitted = $state.snapshot(draft);
     if (
       await save(
-        ['policies', 'activity'].includes(data.section) ? 'settings/system' : 'settings',
+        ['policies', 'activity', 'users'].includes(data.section) ? 'settings/system' : 'settings',
         submitted,
         data.section === 'activity'
           ? 'Diagnostic logging updated. Changes are active now.'
           : data.section === 'policies'
             ? 'System policies saved. Changes are active now.'
-            : 'Preferences saved.'
+            : data.section === 'users'
+              ? 'Jellyfin sign-in policies saved.'
+              : 'Preferences saved.'
       )
     ) {
       restoreDraft();
@@ -129,7 +141,9 @@
           ? 'Diagnostic logging updated. Changes are active now.'
           : data.section === 'policies'
             ? 'System policies saved. Changes are active now.'
-            : 'Preferences saved.';
+            : data.section === 'users'
+              ? 'Jellyfin sign-in policies saved.'
+              : 'Preferences saved.';
     }
   }
   async function save(path: string, body: unknown, label = 'Saved.', method = 'POST') {
@@ -327,53 +341,57 @@
             </p>
           </div>
           <div class="panel stack">
-            <h3>Change password</h3>
-            <p class="small">
-              Use at least 12 characters. Changing your password signs you out on every device.
-            </p>
-            <form
-              class="stack"
-              onsubmit={async (e) => {
-                e.preventDefault();
-                const form = e.currentTarget;
-                if (busy) return;
-                busy = true;
-                error = '';
-                success = '';
-                try {
-                  await api('settings/password', values(form));
-                  form.reset();
-                  busy = false;
-                  await goto('/login?passwordChanged=1', {
-                    invalidateAll: true,
-                  });
-                } catch (e) {
-                  error = message(e);
-                } finally {
-                  busy = false;
-                }
-              }}
-            >
-              {#if error && !resetOpen}<p class="notice error" role="alert">
-                  {error}
-                </p>{/if}
-              <label class="field"
-                >Current password<input
-                  type="password"
-                  name="currentPassword"
-                  autocomplete="current-password"
-                  required
-                /></label
-              ><label class="field"
-                >New password<input
-                  type="password"
-                  name="password"
-                  autocomplete="new-password"
-                  minlength="12"
-                  required
-                /></label
-              ><Button type="submit" disabled={busy}>Update password</Button>
-            </form>
+            {#if data.hasLocalPassword}<h3>Change password</h3>
+              <p class="small">
+                Use at least 12 characters. Changing your password signs you out on every device.
+              </p>
+              <form
+                class="stack"
+                onsubmit={async (e) => {
+                  e.preventDefault();
+                  const form = e.currentTarget;
+                  if (busy) return;
+                  busy = true;
+                  error = '';
+                  success = '';
+                  try {
+                    await api('settings/password', values(form));
+                    form.reset();
+                    busy = false;
+                    await goto('/login?passwordChanged=1', {
+                      invalidateAll: true,
+                    });
+                  } catch (e) {
+                    error = message(e);
+                  } finally {
+                    busy = false;
+                  }
+                }}
+              >
+                {#if error && !resetOpen}<p class="notice error" role="alert">
+                    {error}
+                  </p>{/if}
+                <label class="field"
+                  >Current password<input
+                    type="password"
+                    name="currentPassword"
+                    autocomplete="current-password"
+                    required
+                  /></label
+                ><label class="field"
+                  >New password<input
+                    type="password"
+                    name="password"
+                    autocomplete="new-password"
+                    minlength="12"
+                    required
+                  /></label
+                ><Button type="submit" disabled={busy}>Update password</Button>
+              </form>{:else}<h3>Jellyfin sign-in</h3>
+              <p class="small">
+                Change your Jellyfin password through your Jellyfin service. An administrator can
+                add a separate Coast password if you need local sign-in.
+              </p>{/if}
           </div>
           <div class="panel stack">
             <h3>Restore preferences</h3>
@@ -580,15 +598,59 @@
           experimentalFeatures={data.config?.experimentalFeatures ?? false}
         />
       {:else if data.section === 'users'}<div class="stack">
+          {#if policy}<form
+              class="panel stack form-width"
+              onsubmit={(event) => {
+                event.preventDefault();
+                void saveDraft();
+              }}
+            >
+              <h3>Jellyfin sign-in</h3>
+              <p class="small">
+                Only enabled Jellyfin services verified by an administrator can be used to sign in.
+              </p>
+              <label class="check"
+                ><input
+                  type="checkbox"
+                  bind:checked={policy.jellyfinAutoCreateUsers}
+                  disabled={busy}
+                />Create Coast accounts on first Jellyfin sign-in</label
+              >
+              <p class="small">
+                Creates a separate Coast account and connects it to Jellyfin. Existing linked
+                accounts are reused. Jellyfin validates its own passwords; Coast does not store
+                them.
+              </p>
+              <label class="check"
+                ><input
+                  type="checkbox"
+                  bind:checked={policy.jellyfinSyncAdmins}
+                  disabled={busy}
+                />Sync administrator roles from Jellyfin at sign-in</label
+              >
+              <p class="small">
+                Grants or removes Coast administrator access to match Jellyfin at each Jellyfin
+                sign-in. Disabled Coast accounts stay disabled. Keep an active Coast administrator
+                before demoting the last one.
+              </p>
+              {@render saveControls('Save sign-in policies')}
+            </form>{/if}
           <div class="overflow">
             <table class="table">
               <thead
                 ><tr
-                  ><th>Username</th><th>Role</th><th>Email</th><th>Linked accounts</th><th></th></tr
+                  ><th>Username</th><th>Role</th><th>Status</th><th>Email</th><th
+                    >Linked accounts</th
+                  ><th></th></tr
                 ></thead
               ><tbody
                 >{#each data.users as user}<tr
-                    ><td>{user.username}</td><td>{user.role}</td><td>{user.email ?? '—'}</td><td
+                    ><td>{user.username}</td><td>{user.role}</td><td
+                      >{user.disabled ? 'Disabled' : 'Active'}
+                      <p class="small">
+                        {user.hasLocalPassword ? 'Coast password' : 'Jellyfin sign-in'}
+                      </p></td
+                    ><td>{user.email ?? '—'}</td><td
                       >{#each data.supportConnections.filter((connection) => connection.userId === user.id) as connection}<div
                         >
                           <strong>{connection.provider}</strong> · {connection.username ??
@@ -600,6 +662,20 @@
                           </p>
                         </div>{/each}</td
                     ><td
+                      ><Button
+                        variant="ghost"
+                        disabled={busy}
+                        onclick={() => {
+                          error = '';
+                          editing = {
+                            id: user.id,
+                            username: user.username,
+                            email: user.email ?? '',
+                            role: user.role,
+                            disabled: user.disabled,
+                            password: '',
+                          };
+                        }}>Edit</Button
                       >{#if user.id !== page.data.user?.id}<Button
                           variant="ghost"
                           onclick={() => {
@@ -909,6 +985,78 @@
     </div>
   </div></Dialog
 >
+
+<Dialog
+  open={!!editing}
+  title={editing ? `Edit ${editing.username}` : 'Edit account'}
+  onclose={() => {
+    if (!busy) editing = null;
+  }}
+>
+  {#if editing}<form
+      class="stack"
+      onsubmit={async (event) => {
+        event.preventDefault();
+        if (!editing) return;
+        const { email, role, disabled, password, id } = editing;
+        if (
+          await save(
+            `admin/users/${id}`,
+            { email, role, disabled, ...(password ? { password } : {}) },
+            'Account updated.',
+            'PATCH'
+          )
+        )
+          editing = null;
+      }}
+    >
+      {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+      <label class="field"
+        >Email <small>Optional</small><input
+          type="email"
+          bind:value={editing.email}
+          maxlength="254"
+          disabled={busy}
+        /></label
+      >
+      <label class="field"
+        >Role<select bind:value={editing.role} disabled={busy || editing.id === page.data.user?.id}
+          ><option value="user">User</option><option value="admin">Administrator</option></select
+        ></label
+      >
+      <label class="check"
+        ><input
+          type="checkbox"
+          bind:checked={editing.disabled}
+          disabled={busy || editing.id === page.data.user?.id}
+        />Disable Coast account</label
+      >
+      <p class="small">
+        Role, access and password changes sign this account out on every device. Jellyfin role sync
+        applies again at its next Jellyfin sign-in.
+      </p>
+      {#if editing.id !== page.data.user?.id}<label class="field"
+          >New Coast password <small>Optional · at least 12 characters</small><input
+            type="password"
+            autocomplete="new-password"
+            bind:value={editing.password}
+            minlength="12"
+            maxlength="128"
+            disabled={busy}
+          /><small
+            >Leave blank to keep the current sign-in method. This does not change the Jellyfin
+            password.</small
+          ></label
+        >{/if}
+      <div class="row">
+        <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save account'}</Button><Button
+          variant="secondary"
+          disabled={busy}
+          onclick={() => (editing = null)}>Cancel</Button
+        >
+      </div>
+    </form>{/if}
+</Dialog>
 
 <style>
   .section-description {
