@@ -1,0 +1,44 @@
+import { chromium,expect } from '@playwright/test';
+import { mkdir,readFile } from 'node:fs/promises';
+import { eq,and,sql } from 'drizzle-orm';
+import { getDb,closeDb } from '../src/lib/server/db';
+import { users,musicListens,playbackSessions } from '../src/lib/server/db/schema';
+if(!/\/coast_collection_test$/.test(process.env.DATABASE_URL??''))throw new Error('Use only the disposable music fixture database.');
+const fixture=JSON.parse((await readFile('/private/tmp/coast-browser-fixture.log','utf8')).split('\n')[0]);
+const origin='http://127.0.0.1:5175';
+const [actor]=await getDb().select().from(users).where(eq(users.username,fixture.username));
+const count=async()=>Number((await getDb().select({count:sql<number>`count(*)::int`}).from(musicListens).where(and(eq(musicListens.userId,actor.id),eq(musicListens.trackId,fixture.trackId))))[0].count);
+const output='/private/tmp/coast-browser-evidence';await mkdir(output,{recursive:true});
+const browser=await chromium.launch();
+const sessionFile='/private/tmp/coast-fixture-browser-session.json';
+try{
+ for(const delivery of ['direct','hls'] as const)for(const mobile of [false,true]){
+  const context=await browser.newContext({...(await Bun.file(sessionFile).exists()?{storageState:sessionFile}:{}),viewport:mobile?{width:390,height:844}:{width:1440,height:1000},isMobile:mobile,hasTouch:mobile});
+  if(delivery==='hls')await context.addInitScript(()=>{const native=HTMLMediaElement.prototype.canPlayType;HTMLMediaElement.prototype.canPlayType=function(type){return /mpegurl/i.test(type)?'':native.call(this,type);};});
+  const page=await context.newPage();
+  let audioDelivery='';
+  await page.route('**/api/v1/playback',async route=>{const request=route.request();if(request.method()!=='POST')return route.continue();const data=request.postDataJSON();if(data.mediaType==='audio'&&delivery==='hls')data.browser.containers=[];return route.continue({postData:JSON.stringify(data)});});
+  page.on('response',async response=>{if(response.url()===origin+'/api/v1/playback'&&response.request().method()==='POST'){const data=await response.json();if(data.mediaType==='audio')audioDelivery=data.kind;}});page.setDefaultTimeout(10000);
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
+  await page.goto(`${origin}/for-you`);if(page.url().includes('/login')){await page.locator('input[name="username"]').fill(fixture.username);await page.locator('input[name="password"]').fill(fixture.password);await page.getByRole('button',{name:'Sign in',exact:true}).click();}await expect(page).toHaveURL(/for-you$/);
+  await context.storageState({path:sessionFile});
+  await page.goto(`${origin}/music/${fixture.connectionId}/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`);await expect.poll(()=>page.locator('.page-shell').evaluate(e=>(e as HTMLElement).style.getPropertyValue('--active-hero-height'))).not.toBe('');
+  expect((await page.request.post(origin+'/api/v1/settings',{headers:{Origin:origin},data:{listenThreshold:50,subtitlePrompt:false}})).ok()).toBe(true);
+  const before=await count();await page.getByRole('button',{name:'Play',exact:true}).click();
+  const player=page.getByRole('region',{name:/^Playback controls:/});await expect(player).toBeVisible();
+  await expect.poll(()=>page.locator('audio').evaluate(a=>(a as HTMLAudioElement).currentTime)).toBeGreaterThan(0.3);expect(audioDelivery).toBe(delivery==='hls'?'hls':'direct');
+  await page.getByRole('link',{name:'Collection',exact:true}).click();await expect(page).toHaveURL(/collection$/);await expect(player).toBeVisible();
+  await expect.poll(()=>page.locator('audio').evaluate(a=>(a as HTMLAudioElement).currentTime),{timeout:12000}).toBeGreaterThan(6.5);
+  await player.getByRole('button',{name:'Pause',exact:true}).click();await expect.poll(count).toBe(before+1);
+  await page.screenshot({path:`${output}/audio-${delivery}-${mobile?'mobile':'desktop'}.png`,fullPage:false});
+  await player.getByRole('button',{name:'Next track',exact:true}).click();await expect(player).toContainText('Coast Audio Two');await expect(page.getByRole('status').filter({hasText:'Skipped unavailable tracks: Coast missing audio'})).toBeVisible();
+  await player.getByRole('button',{name:'Playback options',exact:true}).click();await page.getByRole('menuitem',{name:'Queue',exact:true}).click();await expect(page.getByRole('menuitemradio',{name:'Coast missing audio',exact:true})).toHaveAttribute('aria-disabled','true');await page.keyboard.press('Escape');await page.keyboard.press('Escape');
+  await player.getByRole('button',{name:'Close player',exact:true}).click();await expect(player).toHaveCount(0);
+  await page.goto(`${origin}/music/${fixture.connectionId}/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb`);await expect.poll(()=>page.locator('.page-shell').evaluate(e=>(e as HTMLElement).style.getPropertyValue('--active-hero-height'))).not.toBe('');await page.getByRole('button',{name:'Play',exact:true}).click();await expect(player).toBeVisible();
+  const seekBefore=await count();await expect.poll(()=>page.locator('audio').evaluate(a=>(a as HTMLAudioElement).currentTime)).toBeGreaterThan(0.3);await page.getByRole('slider',{name:'Playback position'}).press('End');await expect(player).toHaveCount(0,{timeout:10000});expect(await count()).toBe(seekBefore);
+  await page.getByRole('button',{name:'Play',exact:true}).click();await expect(player).toBeVisible();
+  await page.getByRole('link',{name:'Library',exact:true}).click();await page.goto(`${origin}/media/${fixture.mediaId}`);await expect(page.getByRole('button',{name:'Pause trailer',exact:true})).toBeVisible();await page.getByRole('button',{name:/^(Play|Resume)$/}).first().click();await expect(page.locator('video[data-player="playback"]')).toBeVisible();await expect(player).toContainText('Coast Playback Fixture');await expect.poll(()=>page.locator('audio').evaluate(a=>(a as HTMLAudioElement).paused)).toBe(true);
+  const active=await getDb().select().from(playbackSessions).where(and(eq(playbackSessions.userId,actor.id),sql`${playbackSessions.state}<>'stopped'`));expect(active).toHaveLength(1);expect(active[0].mediaType).toBe('video');
+  expect(errors).toEqual([]);await context.close();console.info(`${mobile?'Mobile':'Desktop'} ${delivery} audio: playback, threshold, navigation, skips, seek exclusion and video handoff passed.`);
+ }
+}finally{await browser.close();await closeDb();}

@@ -42,13 +42,14 @@ const itemSchema = v.object({
   IndexNumber: number,
   ParentIndexNumber: number,
   RunTimeTicks: number,
+  ChildCount: number,
   PremiereDate: text,
   ProductionYear: number,
   Genres: v.nullish(v.array(v.string()), []),
   Overview: text,
   ImageTags: v.nullish(v.record(v.string(), v.string()), {}),
   ProviderIds: v.nullish(v.record(v.string(), v.string()), {}),
-  UserData: v.nullish(v.object({ IsFavorite: v.optional(v.boolean()) })),
+  UserData: v.nullish(v.object({ IsFavorite: v.optional(v.boolean()), Played: v.optional(v.boolean()), PlayCount: v.optional(count), PlaybackPositionTicks: number })),
 });
 const kinds = {
   MusicArtist: 'artist',
@@ -59,6 +60,7 @@ function mapItem(item: v.InferOutput<typeof itemSchema>): MusicItem {
   return {
     id: item.Id,
     kind: kinds[item.Type],
+    expectedMembers: item.Type === 'MusicAlbum' ? item.ChildCount ?? undefined : undefined,
     title:
       item.Name?.trim() || (item.Type === 'Audio' ? `Track ${item.IndexNumber ?? '?'}` : item.Id),
     artists: item.ArtistItems.map((artist) => ({
@@ -80,6 +82,8 @@ function mapItem(item: v.InferOutput<typeof itemSchema>): MusicItem {
     genres: item.Genres,
     overview: item.Overview || undefined,
     favourite: item.UserData?.IsFavorite,
+    playCount: item.UserData?.PlayCount ?? (item.UserData?.Played ? 1 : 0),
+    positionSeconds: item.UserData?.PlaybackPositionTicks ? item.UserData.PlaybackPositionTicks / 10000000 : undefined,
     primaryImageTag: item.ImageTags.Primary || undefined,
     externalIds: Object.fromEntries(
       Object.entries(item.ProviderIds)
@@ -99,7 +103,7 @@ export async function browseMusic(
   const query = new URLSearchParams({
     userId,
     recursive: 'true',
-    fields: 'Genres,Overview,ProviderIds',
+    fields: 'Genres,Overview,ProviderIds,ChildCount',
     enableUserData: 'true',
     enableImages: 'true',
     enableImageTypes: 'Primary',

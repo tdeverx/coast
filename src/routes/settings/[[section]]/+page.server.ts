@@ -16,7 +16,8 @@ import {
   users,
 } from '$lib/server/db/schema';
 import { eq, desc } from 'drizzle-orm';
-export const load = (async ({ locals, params, depends }) => {
+import { adminDemand } from '$lib/collection/demand.server';
+export const load = (async ({ locals, params, depends, url }) => {
   depends('coast:settings');
   const section = params.section ?? 'appearance';
   if (!settingsSections.some(([id]) => id === section)) error(404, 'Settings page not found.');
@@ -56,6 +57,8 @@ export const load = (async ({ locals, params, depends }) => {
     allowNotificationSilencing: config.allowNotificationSilencing,
     defaults: {
       syncConflictWinner: 'manual',
+      shareDemand:true,
+      listenThreshold:50,
       fullWidth: true,
       originalTitles: false,
       region: 'GB',
@@ -65,6 +68,7 @@ export const load = (async ({ locals, params, depends }) => {
       notificationsSilenced: false,
     },
     health: section === 'admin' ? await systemHealth(locals.user) : null,
+    demand: section === 'admin' ? adminDemand(url) : null,
     users: section === 'users' ? await listUsers(locals.user) : [],
     actions: ['admin', 'jobs'].includes(section) ? await listActions(locals.user) : [],
     loggingAudit:

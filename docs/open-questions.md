@@ -7,6 +7,8 @@ The user has configured Jellyfin, TMDB and Seerr. Live Trakt acceptance is defer
 - Accounts are administrator-created after first-run setup; no public registration.
 - Default session lifetime is 30 days with activity-based renewal; sensitive operations require a current session.
 - Local completion threshold is 90% for movie/episode playback, with explicit manual completion always available. This is an implementation default, not a provider source-of-truth policy.
+- Music logs a listen after 50% actually played by default. The integer 1–100% preference is captured at session start; seeking, pauses and buffering do not add played time.
+- Demand sharing with administrators defaults on with a personal opt-out. Jellyfin activity imports default on; outbound tracking reconciliation is a separate connection opt-in.
 - Specials are tracked but excluded from automatic show completion.
 - New integrations require administrator-approved instances. Arbitrary user servers default off; LAN destinations require explicit approval because self-hosted servers commonly use private addresses.
 - External account deletion is opt-in only where an adapter explicitly supports it.
@@ -19,3 +21,5 @@ Live TMDB, Jellyfin, Trakt and Seerr validation needs intentionally supplied ser
 Live Jellyfin identity, account linking, full scans, short HLS playback and outbound progress delivery now pass. Coast retains the short test's resume position; Jellyfin accepted its events but returned zero resume position afterward. Live TMDB reads and Seerr 3.4.1 identity/permissions/destinations also pass. Trakt linking and synchronization, and real Seerr request mutations, remain unverified. See [Readiness](readiness.md) for precise evidence and limits. Credentials should be entered in Coast rather than chat.
 
 Do not ask again for Trakt configuration or create Seerr requests for acceptance unless the user resumes that work. These checks have not passed; they are explicitly deferred/owned by the user.
+
+Music direct/HLS playback and desktop/mobile control behaviour have synthetic fixture evidence. Audio from the configured live server remains unverified; prior live Jellyfin video evidence does not establish audio compatibility.

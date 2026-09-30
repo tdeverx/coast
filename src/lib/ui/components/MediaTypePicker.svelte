@@ -1,16 +1,18 @@
-<script lang="ts">
+<script lang="ts" generics="T extends 'all' | 'movie' | 'show' | 'album' | 'track' | 'game' = 'all' | 'movie' | 'show'">
   import RowFilter from './RowFilter.svelte';
   import SegmentedControl from './SegmentedControl.svelte';
   let {
-    value = $bindable('all'),
+    value = $bindable('all' as T),
     compact = false,
+    includeOtherMedia = false,
     label = 'Media type',
     onchange,
   }: {
-    value?: 'all' | 'movie' | 'show';
+    value?: T;
+    includeOtherMedia?: boolean;
     compact?: boolean;
     label?: string;
-    onchange?: (value: 'all' | 'movie' | 'show') => void;
+    onchange?: (value: T) => void;
   } = $props();
 </script>
 
@@ -21,6 +23,7 @@
       { value: 'all', label: 'All' },
       { value: 'movie', label: 'Movies' },
       { value: 'show', label: 'Shows' },
+      ...(includeOtherMedia ? [{ value: 'album', label: 'Albums' }, { value: 'track', label: 'Tracks' }, { value: 'game', label: 'Games' }] : []),
     ]}
     onchange={(next) => {
       value = next as typeof value;
@@ -34,6 +37,7 @@
       { value: 'all', label: 'All' },
       { value: 'movie', label: 'Movies' },
       { value: 'show', label: 'Shows' },
+      ...(includeOtherMedia ? [{ value: 'album', label: 'Albums' }, { value: 'track', label: 'Tracks' }, { value: 'game', label: 'Games' }] : []),
     ]}
     onchange={(next) => {
       value = next as typeof value;

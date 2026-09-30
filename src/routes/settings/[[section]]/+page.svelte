@@ -12,6 +12,7 @@
   import PageHeader from '$lib/ui/components/PageHeader.svelte';
   import RowHeader from '$lib/ui/components/RowHeader.svelte';
   import JobsSettings from '$lib/ui/components/JobsSettings.svelte';
+  import Pagination from '$lib/ui/components/Pagination.svelte';
   import IntegrationSettings from '$lib/ui/components/IntegrationSettings.svelte';
   import ConflictList from '$lib/ui/components/ConflictList.svelte';
   import { page } from '$app/state';
@@ -261,6 +262,8 @@
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">Notifications</legend>
             <h3>Notifications</h3>
+            <label class="check"><input type="checkbox" bind:checked={prefs.shareDemand} />Share missing demand with administrators</label>
+            <p class="small">Administrators can see your needed titles and request status. This does not change profile visibility.</p>
             <div class="setting">
               <div>
                 <h3>Silence optional notifications</h3>
@@ -291,6 +294,7 @@
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">Subtitles</legend>
             <h3>Subtitles</h3>
+            {#if data.experimentalFeatures}<label class="field">Listen threshold (%)<input type="number" min="1" max="100" step="1" bind:value={prefs.listenThreshold} /><small>Count a listen after this percentage is actually played. Captured when playback starts.</small></label>{/if}
             <div class="setting">
               <div>
                 <h3>Always enable subtitles</h3>
@@ -465,6 +469,8 @@
           </form>
           {#each data.providers.filter((p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider)) as p (p.id)}<ConnectionCard
               provider={p}
+              dynamicCollectionExports={data.providers.filter(source=>source.provider==='trakt'&&source.connection?.status==='connected'&&(source.connection.settings.collectionProjection as {enabled?:boolean;scope?:string;source?:string;availableOnly?:boolean})?.enabled&&(source.connection.settings.collectionProjection as {scope?:string}).scope!=='fixed'&&((source.connection.settings.collectionProjection as {source?:string}).source==='server'||(source.connection.settings.collectionProjection as {availableOnly?:boolean}).availableOnly)).map(source=>source.name)}
+              sources={data.providers.filter(source=>source.provider==='jellyfin'&&source.connection?.status==='connected').map(source=>({id:source.connection!.id,name:source.name}))}
             />{/each}{#if !data.providers.some((p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider))}<EmptyState
               title="Connect your world."
               description="An administrator can add Jellyfin, Trakt, and Seerr integrations. Then you can link your own accounts here."
@@ -520,6 +526,14 @@
             </div>{:else}<p class="small">
               No services are connected yet. You can still track titles in Coast.
             </p>{/if}
+          <RowHeader title="Missing demand" />
+          <p class="small">Released next-needed items and saved titles that are missing or uncertain for each account. Users who opt out are excluded.</p>
+          {#await data.demand}<p class="small" role="status">Checking personal demand…</p>{:then demand}
+            {#if demand?.users.length}<div class="overflow"><table class="table"><thead><tr><th>User</th><th>Needed title</th><th>Reason</th><th>Availability</th><th>Source coverage</th><th>Request</th></tr></thead><tbody>
+              {#each demand.users as person}{#each person.items as item}<tr><td><a href={`/collection?username=${encodeURIComponent(person.username)}`}>{person.username}</a></td><td><a href={item.href}>{item.neededTitle}</a>{#if item.dateUnknown}<small> · Release date unknown</small>{/if}</td><td>{item.reason}</td><td>{item.availability==='unknown'?'Uncertain':'Missing for this user'}</td><td>{item.sources.map((source:{name:string;fresh:boolean})=>`${source.name}: ${source.fresh?'current':'not current'}`).join(', ')||'No applicable sources'}</td><td>{item.requests.map((request:{state:string})=>request.state).join(', ')||'No request'}</td></tr>{/each}{#if person.pages>1}<tr><td colspan="6"><Pagination page={person.page} pages={person.pages} pageUrl={number=>`/settings/admin?userId=${person.userId}&itemsPage=${number}`} label={`${person.username} demand pages`} /></td></tr>{/if}{/each}
+            </tbody></table></div>{:else}<p class="small">No missing demand on this page.</p>{/if}
+            {#if demand}<Pagination page={demand.page} pages={demand.pages} pageUrl={number=>`/settings/admin?page=${number}`} label="Demand pages" />{/if}
+          {:catch}<p class="notice error" role="alert">Demand could not be loaded. Try again.</p>{/await}
           <h3>Requests needing attention</h3>
           {#if data.requests.filter((r) => r.request.state === 'pending').length}<div
               class="overflow"

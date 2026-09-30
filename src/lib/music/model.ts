@@ -1,4 +1,4 @@
-/** Jellyfin music identities are scoped to a connection, separate from screen tracking. */
+/** Provider item IDs require their service instance; workId is the shared Coast identity. */
 export type MusicKind = 'artist' | 'album' | 'track';
 export interface MusicArtist {
   id: string;
@@ -6,6 +6,11 @@ export interface MusicArtist {
 }
 export interface MusicItem {
   id: string;
+  workId?: string;
+  artistId?: string;
+  playCount?: number;
+  positionSeconds?: number;
+  expectedMembers?: number;
   kind: MusicKind;
   title: string;
   artists: MusicArtist[];
@@ -22,6 +27,7 @@ export interface MusicItem {
   overview?: string;
   favourite?: boolean;
   primaryImageTag?: string;
+  artworkUrl?: string;
   externalIds: Record<string, string>;
 }
 export interface MusicPage {

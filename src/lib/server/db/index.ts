@@ -16,7 +16,9 @@ export function getSql(): SQL {
       throw new Error(
         'DATABASE_URL is required. Start PostgreSQL and configure Coast before serving requests.'
       );
-    client = new Bun.SQL(url, { max: 10, idleTimeout: 30, connectionTimeout: 10 });
+    // Interactive shelves use many small correlated reads; JIT compilation can take
+    // seconds before returning a few cards and exhaust the test container's memory.
+    client = new Bun.SQL(url, { max: 10, idleTimeout: 30, connectionTimeout: 10, connection: { jit: 'off' } });
   }
   return client;
 }

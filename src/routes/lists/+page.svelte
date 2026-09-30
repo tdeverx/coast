@@ -15,10 +15,10 @@
     description = $state(''),
     error = $state(''),
     deleteId = $state('');
-  let heroItems = $state<MediaView[]>(untrack(() => data.detail?.items ?? []));
+  let heroItems = $state<MediaView[]>(untrack(() => data.detail?.items.filter((item):item is MediaView=>!('href' in item)) ?? []));
   let selection = $state('');
   $effect(() => {
-    heroItems = data.detail?.items ?? [];
+    heroItems = data.detail?.items.filter((item):item is MediaView=>!('href' in item)) ?? [];
   });
   const builtins = [
     { id: 'watchlist', name: 'Watchlist' },

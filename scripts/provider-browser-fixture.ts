@@ -1,17 +1,18 @@
 /** Synthetic, disposable browser QA only. Never points to an existing Coast database. */
+import { persistMusic } from '../src/lib/music/persistence.server';
 import { networkInterfaces } from 'node:os';
 import { join } from 'node:path';
 import { migrate } from 'drizzle-orm/bun-sql/migrator';
 import { eq } from 'drizzle-orm';
 import { getDb, closeDb } from '../src/lib/server/db';
-import { users, systemSettings, externalIds } from '../src/lib/server/db/schema';
+import { users, systemSettings, externalIds, providerItems, providerInstances } from '../src/lib/server/db/schema';
 import { defaultConfig } from '../src/lib/server/config';
 import { configureInstance } from '../src/lib/providers/instances.server';
 import { connectJellyfin } from '../src/lib/providers/jellyfin/connection.server';
 import { scanJellyfinLibrary, syncJellyfinUser } from '../src/lib/sync/jellyfin';
 
-if (!process.env.DATABASE_URL?.endsWith('/coast_browser_test'))
-  throw new Error('Use only the disposable coast_browser_test database.');
+if (!/\/(coast_browser_test|coast_collection_test)$/.test(process.env.DATABASE_URL??''))
+  throw new Error('Use only the disposable coast_browser_test or coast_collection_test database.');
 if (!process.env.COAST_DATA_DIR?.includes('coast-browser'))
   throw new Error('Use an isolated COAST_DATA_DIR containing coast-browser.');
 const address = Object.values(networkInterfaces())
@@ -109,10 +110,16 @@ const playable = new Map([
   ...[movie, episodeOne, episodeTwo, special].map((item) => [item.Id, item.MediaSources] as const),
   ['browser-trailer', [source('fixture-trailer-direct', true, 'browser-trailer')]] as const,
 ]);
+const album={Id:'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',Type:'MusicAlbum',Name:'Coast Audio Album',ChildCount:2,Artists:['Fixture artist'],ProductionYear:2020};
+const audioSource=(id:string,hls=false)=>({Id:id,Name:hls?'Audio HLS':'Audio original',Container:hls?'ts':'m4a',Bitrate:32000,RunTimeTicks:120000000,SupportsDirectPlay:!hls,SupportsTranscoding:hls,TranscodingUrl:hls?`/Audio/${id.split('-')[0]}/master.m3u8?api_key=fixture-upstream`:undefined,MediaStreams:[{Index:0,Type:'Audio',Codec:'aac',IsDefault:true}]});
+const song=(id:string,name:string,index:number)=>({Id:id,Type:'Audio',Name:name,Artists:['Fixture artist'],AlbumId:album.Id,Album:album.Name,IndexNumber:index,ParentIndexNumber:1,ProductionYear:2020,RunTimeTicks:120000000,UserData:{Played:false,PlayCount:0,PlaybackPositionTicks:0,IsFavorite:false}});
+const songOne=song('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','Coast Audio One',1),songTwo=song('dddddddddddddddddddddddddddddddd','Coast Audio Two',3);
+const musicItems=[album,songOne,songTwo];
+for(const track of [songOne,songTwo])playable.set(track.Id,[audioSource(`${track.Id}-direct`),audioSource(`${track.Id}-hls`,true)]);
 const json = (value: unknown) => Response.json(value);
 const server = Bun.serve({
   hostname: address,
-  port: 0,
+  port: Number(process.env.COAST_FIXTURE_PORT??0),
   fetch: async (request) => {
     const url = new URL(request.url),
       path = url.pathname;
@@ -130,6 +137,11 @@ const server = Bun.serve({
         User: { Id: 'fixture-user', Name: 'Fixture viewer' },
       });
     if (path === '/Items') {
+      if(/Music|Audio/.test(url.searchParams.get('includeItemTypes')??'')){
+        const types=(url.searchParams.get('includeItemTypes')??'').split(',');
+        const items=musicItems.filter(i=>types.includes(i.Type));
+        return json({Items:items,TotalRecordCount:items.length,StartIndex:0});
+      }
       const offset = Math.max(0, Number(url.searchParams.get('startIndex')) || 0);
       const limit = Math.max(1, Number(url.searchParams.get('limit')) || 100);
       return json({
@@ -140,7 +152,7 @@ const server = Bun.serve({
     }
     const itemPath = /^\/Users\/fixture-user\/Items\/([^/]+)$/.exec(path);
     if (itemPath) {
-      const item = library.find((item) => item.Id === itemPath[1]);
+      const item = [...library,...musicItems].find((item) => item.Id === itemPath[1]);
       return item ? json(item) : new Response('Fixture item not found', { status: 404 });
     }
     const playbackPath = /^\/Items\/([^/]+)\/PlaybackInfo$/.exec(path);
@@ -150,6 +162,15 @@ const server = Bun.serve({
         ? json({ MediaSources: sources, PlaySessionId: `browser-play-${playbackPath[1]}` })
         : new Response('Fixture item is not playable', { status: 404 });
     }
+    const statePath=/^\/UserItems\/([^/]+)\/UserData$/.exec(path);
+    const favouritePath=/^\/UserFavoriteItems\/([^/]+)$/.exec(path);
+    if(statePath||favouritePath){
+      const item=musicItems.find(i=>i.Id===(statePath??favouritePath)![1]) as typeof songOne|undefined;
+      if(!item||!('UserData' in item))return new Response('Not found',{status:404});
+      if(statePath)Object.assign(item.UserData,await request.json());
+      else item.UserData.IsFavorite=request.method==='POST';
+      return json(item.UserData);
+    }
     if (path.startsWith('/Sessions/')) return new Response(null, { status: 204 });
     const trailerPath = /^\/Items\/([^/]+)\/LocalTrailers$/.exec(path);
     if (trailerPath)
@@ -158,7 +179,8 @@ const server = Bun.serve({
           ? [{ Id: 'browser-trailer', Name: 'Coast synthetic trailer' }]
           : []
       );
-    const videoPath = /^\/Videos\/([^/]+)\//.exec(path);
+    const videoPath = /^\/(?:Videos|Audio)\/([^/]+)\//.exec(path);
+    const isAudio=path.startsWith('/Audio/');
     if (!videoPath || !playable.has(videoPath[1]))
       return new Response('Fixture resource not found', { status: 404 });
     if (path.endsWith('/Stream.vtt'))
@@ -167,21 +189,21 @@ const server = Bun.serve({
       });
     if (path.endsWith('/master.m3u8'))
       return new Response(
-        '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1000000\nmain.m3u8?api_key=fixture-upstream\n',
+        '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=32000\nmain.m3u8?api_key=fixture-upstream\n',
         { headers: { 'content-type': 'application/vnd.apple.mpegurl' } }
       );
     if (path.endsWith('/main.m3u8'))
       return new Response(
-        '#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:60\n#EXT-X-MEDIA-SEQUENCE:0\n#EXTINF:60,\nsegment.ts?api_key=fixture-upstream\n#EXT-X-ENDLIST\n',
+        `#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:${isAudio?13:60}\n#EXT-X-MEDIA-SEQUENCE:0\n#EXTINF:${isAudio?12.05:60},\nsegment.ts?api_key=fixture-upstream\n#EXT-X-ENDLIST\n`,
         { headers: { 'content-type': 'application/vnd.apple.mpegurl' } }
       );
     if (path.endsWith('/segment.ts'))
-      return new Response(Bun.file(join(import.meta.dir, '../tests/fixtures/browser.mpegts')), {
+      return new Response(Bun.file(join(import.meta.dir, isAudio?'../tests/fixtures/browser-audio.mpegts':'../tests/fixtures/browser.mpegts')), {
         headers: { 'content-type': 'video/mp2t' },
       });
     if (path.endsWith('/stream')) {
       const bytes = new Uint8Array(
-          await Bun.file(join(import.meta.dir, '../tests/fixtures/browser.mp4')).arrayBuffer()
+          await Bun.file(join(import.meta.dir, isAudio?'../tests/fixtures/browser-audio.m4a':'../tests/fixtures/browser.mp4')).arrayBuffer()
         ),
         range = request.headers.get('range');
       if (range) {
@@ -192,14 +214,14 @@ const server = Bun.serve({
         return new Response(bytes.slice(start, end + 1), {
           status: 206,
           headers: {
-            'content-type': 'video/mp4',
+            'content-type': isAudio?'audio/mp4':'video/mp4',
             'content-range': `bytes ${start}-${end}/${bytes.length}`,
             'accept-ranges': 'bytes',
           },
         });
       }
       return new Response(bytes, {
-        headers: { 'content-type': 'video/mp4', 'accept-ranges': 'bytes' },
+        headers: { 'content-type': isAudio?'audio/mp4':'video/mp4', 'accept-ranges': 'bytes' },
       });
     }
     return new Response('Fixture route not found', { status: 404 });
@@ -209,14 +231,16 @@ await getDb()
   .insert(systemSettings)
   .values({
     key: 'coast',
-    value: { ...defaultConfig, allowedProviderPorts: [server.port!], serverAllowlist: [address] },
+    value: { ...defaultConfig, experimentalFeatures:true, allowedProviderPorts: [server.port!], serverAllowlist: [address] },
   })
   .onConflictDoUpdate({
     target: systemSettings.key,
     set: {
-      value: { ...defaultConfig, allowedProviderPorts: [server.port!], serverAllowlist: [address] },
+      value: { ...defaultConfig, experimentalFeatures:true, allowedProviderPorts: [server.port!], serverAllowlist: [address] },
     },
   });
+// This named disposable installation keeps a single synthetic source across reruns.
+await getDb().delete(providerInstances).where(eq(providerInstances.name,'Synthetic home library'));
 const instance = await configureInstance(actor.id, {
   provider: 'jellyfin',
   name: 'Synthetic home library',
@@ -230,6 +254,8 @@ const connection = await connectJellyfin(actor.id, {
 });
 await scanJellyfinLibrary(actor.id, connection.id, true);
 await syncJellyfinUser(actor.id, connection.id);
+await persistMusic(instance.id,{id:'cccccccccccccccccccccccccccccccc',kind:'track',title:'Coast missing audio',albumId:album.Id,trackNumber:2,discNumber:1,artistNames:['Fixture artist'],artists:[],albumArtists:[],genres:[],externalIds:{}});
+const musicMappings=await getDb().select().from(providerItems).where(eq(providerItems.instanceId,instance.id));
 const mappings = await getDb()
   .select()
   .from(externalIds)
@@ -245,6 +271,9 @@ console.info(
     username,
     password,
     mediaId,
+    connectionId:connection.id,
+    albumId:musicMappings.find(i=>i.externalId===album.Id)?.mediaId,
+    trackId:musicMappings.find(i=>i.externalId===songOne.Id)?.mediaId,
     showId: canonical(show.Id),
     episodeOneId: canonical(episodeOne.Id),
     episodeTwoId: canonical(episodeTwo.Id),
@@ -252,7 +281,7 @@ console.info(
     detailPath: `/media/${mediaId}`,
     providerUrl: `http://${address}:${server.port}`,
     dataDir: process.env.COAST_DATA_DIR,
-    database: 'coast_browser_test',
+    database: new URL(process.env.DATABASE_URL!).pathname.slice(1),
   })
 );
 console.info(

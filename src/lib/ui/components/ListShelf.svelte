@@ -2,7 +2,7 @@
   import { onMount, untrack } from 'svelte';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
-  import type { MediaView } from '$lib/ui/types';
+  import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
   import { api, message } from '$lib/ui/client';
   import SequenceControl from './SequenceControl.svelte';
   import Shelf from './Shelf.svelte';
@@ -11,11 +11,11 @@
   import Pagination from './Pagination.svelte';
   type Content = {
     selected?: { playlist: boolean } | null;
-    items: MediaView[];
+    items: (MediaView|MediaCardPresentation)[];
     page: number;
     pages: number;
     total: number;
-    kind: 'all' | 'movie' | 'show';
+    kind: 'all' | 'movie' | 'show' | 'album' | 'track' | 'game';
     filter: string;
     scope?: 'all' | 'available';
   };
@@ -52,7 +52,7 @@
   const href = (number = 1) =>
     `/lists?${new URLSearchParams({ view, kind, filter, scope, page: String(number) })}`;
   $effect(() => {
-    if (ready) onitems?.(content.items, selection);
+    if (ready) onitems?.(content.items.filter((item):item is MediaView=>!('href' in item)), selection);
   });
   async function load(number = 1) {
     controller?.abort();
@@ -125,9 +125,10 @@
     {#snippet controls()}<div class="pickers">
         <MediaTypePicker
           compact
+          includeOtherMedia={page.data.experimentalFeatures}
           label={`${title} media type`}
           bind:value={kind}
-          onchange={() => load()}
+          onchange={(value)=>{kind=value as Content['kind'];void load();}}
         />
       </div>{/snippet}
     {#snippet actions()}

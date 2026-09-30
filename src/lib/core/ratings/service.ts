@@ -1,7 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';
-import { media, ratings } from '../../server/db/schema';
+import { works, ratings } from '../../server/db/schema';
 import { DomainError } from '../errors';
 
 export const ratingValueSchema = v.nullable(
@@ -29,7 +29,7 @@ export async function rateInTransaction(
   v.parse(v.pipe(v.string(), v.uuid()), userId);
   const input = v.parse(ratingInputSchema, raw);
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
-  const [item] = await tx.select({ id: media.id }).from(media).where(eq(media.id, input.mediaId));
+  const [item] = await tx.select({ id: works.id }).from(works).where(eq(works.id, input.mediaId));
   if (!item) throw new DomainError('This title was not found.', 404, 'not_found');
   const [existing] = await tx
     .select()

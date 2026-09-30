@@ -1,3 +1,9 @@
+import { previewProjection, approveProjection,reviewProjection } from '$lib/collection/projection.server';
+import { previewSourceChange } from '$lib/collection/source-changes.server';
+import { musicQueue,savedMusicQueue } from '$lib/music/queue.server';
+import { collectionData, collectionParameters, workActionData } from '$lib/collection/query.server';
+import { missingDemand, adminDemand } from '$lib/collection/demand.server';
+import { logMusic } from '$lib/music/persistence.server';
 import { searchIgdb, igdbDetails, importIgdbGame } from '$lib/providers/igdb/service.server';
 import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
 import { libraryContent } from '$lib/server/queries/library-content';
@@ -21,9 +27,7 @@ import { fallbackArtwork } from '$lib/providers/tmdb/fallback.server';
 import { streamTmdbArtwork } from '$lib/providers/tmdb/artwork.server';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { eq } from 'drizzle-orm';
 import { getDb, getSql } from '$lib/server/db';
-import { providerInstances } from '$lib/server/db/schema';
 import {
   requireUser,
   requireAdmin,
@@ -34,7 +38,10 @@ import {
   updateUserSettings,
   resetUserSettings,
 } from '$lib/server/auth';
-import { updateConfig } from '$lib/server/config';
+import {works} from '$lib/server/db/schema';
+import {eq} from 'drizzle-orm';
+import {requireExperimentalFeatures} from '$lib/server/experimental';
+import { getConfig,updateConfig } from '$lib/server/config';
 import { AppError } from '$lib/server/security/errors';
 import { DomainError } from '$lib/core/errors';
 import { ProviderActionError } from '$lib/providers/contracts';
@@ -52,8 +59,8 @@ import {
 import { detailsData } from '$lib/server/queries/media';
 import { userLists } from '$lib/server/queries/lists';
 import { refreshMedia } from '$lib/catalogue/service';
-import { listProviders, configureInstance } from '$lib/providers/instances.server';
-import { connectJellyfin, updateJellyfinPlaybackImport } from '$lib/providers/jellyfin/connection.server';
+import { listProviders, configureInstance,setInstanceEnabled } from '$lib/providers/instances.server';
+import { connectJellyfin, updateJellyfinPlaybackImport, updateJellyfinReconciliation } from '$lib/providers/jellyfin/connection.server';
 import { startTraktDevice, finishTraktDevice, updateSyncPreferences } from '$lib/providers/trakt/connection.server';
 import { disconnectProvider } from '$lib/providers/connections.server';
 import { updateProviderSchedule, runProviderJob } from '$lib/providers/maintenance.server';
@@ -126,10 +133,21 @@ const handler: RequestHandler = async (event) => {
       uid = user.id;
     const subjectId =
       method === 'GET' &&
-      ['progress', 'profile'].includes(path[0]) &&
+      ['progress', 'profile', 'collection'].includes(path[0]) &&
       url.searchParams.has('username')
         ? (await profileUser(url.searchParams.get('username')!)).id
         : uid;
+    if(path[0]==='music' && path[2]==='queue' && method==='GET') return json(await musicQueue(uid,uuid(path[1])));
+    if(path[0]==='music' && path[1]==='queue' && method==='GET')return json(await savedMusicQueue(uid,url.searchParams.has('listId')?uuid(url.searchParams.get('listId')):undefined));
+    if (path[0] === 'collection' && path.length === 1 && method === 'GET') return json(await collectionData(uid,collectionParameters(url),url.searchParams.get('username')??undefined));
+    if (path[0] === 'collection' && path[1] && path.length === 2 && method === 'GET') {
+      const [work]=await getDb().select().from(works).where(eq(works.id,uuid(path[1])));if(work?.category!=='screen')requireExperimentalFeatures(await getConfig());
+      return json(await workActionData(uid,uuid(path[1])));
+    }
+    if (path[0] === 'missing' && method === 'GET') return json(await missingDemand(uid,url));
+    if (path[0] === 'admin' && path[1] === 'demand' && method === 'GET') { requireAdmin(user); return json(await adminDemand(url)); }
+    if(path[0]==='providers'&&path[2]==='source-preview'&&method==='GET')return json(await previewSourceChange(uid,uuid(path[1]),'connection'));
+    if(path[0]==='providers'&&path[2]==='instance-source-preview'&&method==='GET'){requireAdmin(user);return json(await previewSourceChange(uid,uuid(path[1]),'instance'));}
     if (path[0] === 'heroes' && path.length === 1 && method === 'GET') {
       const ids = v.parse(
         v.pipe(v.array(v.pipe(v.string(), v.uuid())), v.maxLength(60)),
@@ -176,7 +194,19 @@ const handler: RequestHandler = async (event) => {
     if (path[0] === 'artwork' && method === 'GET')
       return streamArtwork(uid, uuid(path[1]), text(path[2]), text(path[3]), request);
     const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method) ? await readBody(request) : {};
+    const relationshipWork=path[0]==='collection'&&path.length===2?path[1]:['tracking','ratings','up-next','lists'].includes(path[0])?body.mediaId:undefined;
+    if(relationshipWork){const [work]=await getDb().select().from(works).where(eq(works.id,uuid(relationshipWork)));if(work&&work.category!=='screen')requireExperimentalFeatures(await getConfig());}
+    if(path[0]==='providers' && path[2]==='reconciliation' && method==='POST') return json(await updateJellyfinReconciliation(uid,uuid(path[1]),body));
+    if(path[0]==='providers'&&path[2]==='collection-preview'&&method==='POST')return json(await previewProjection(uid,uuid(path[1]),body));
+    if(path[0]==='providers'&&path[2]==='collection-approve'&&method==='POST')return json(await approveProjection(uid,uuid(path[1]),body));
+    if(path[0]==='providers'&&path[2]==='collection-review'&&method==='POST')return json(await reviewProjection(uid,uuid(path[1]),body));
     let result: unknown;
+    if(path[0]==='collection' && path.length===2 && method==='POST') {
+      const data=v.parse(v.object({collected:v.boolean()}),body);
+      return json(await trackWithExports(uid,{mediaId:uuid(path[1]),action:'collect',value:data.collected}));
+    }
+    if(path[0]==='music' && path[1] && path[2]==='log' && method==='POST') return json(await logMusic(uid,uuid(path[1]),body));
+
     if (path[0] === 'up-next' && path.length === 1 && method === 'POST') {
       await setUpNext(uid, body);
       result = { ok: true };
@@ -394,7 +424,7 @@ const handler: RequestHandler = async (event) => {
       else if (path[2] === 'music' && path.length === 5 && path[4] === 'favourite' && method === 'POST')
         result = await setMusicFavourite(uid, uuid(path[1]), path[3], body);
       else if (path[2] === 'disconnect' && method === 'POST')
-        result = await disconnectProvider(uid, uuid(path[1]));
+        result = await disconnectProvider(uid, uuid(path[1]),typeof body.previewId==='string'?uuid(body.previewId):undefined);
       else if (path[2] === 'scan' && method === 'GET')
         result = await libraryScanProgress(uid, uuid(path[1]));
       else if (path[2] === 'schedule' && method === 'POST') {
@@ -409,10 +439,7 @@ const handler: RequestHandler = async (event) => {
         result = await updateSyncPreferences(uid, uuid(path[1]), body);
       else if (['disable', 'enable'].includes(path[2]) && method === 'POST') {
         requireAdmin(user);
-        result = await getDb()
-          .update(providerInstances)
-          .set({ enabled: path[2] === 'enable' })
-          .where(eq(providerInstances.id, uuid(path[1])));
+        result = await setInstanceEnabled(uid,uuid(path[1]),path[2]==='enable',typeof body.previewId==='string'?uuid(body.previewId):undefined);
       } else throw new AppError(404, 'Action not found.');
     } else if (path[0] === 'requests') {
       if (path[1] === 'options' && method === 'GET') {

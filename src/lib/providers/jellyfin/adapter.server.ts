@@ -57,6 +57,7 @@ const itemSchema = v.object({
   ProductionYear: num,
   PremiereDate: str,
   RunTimeTicks: num,
+  RecursiveItemCount: num,
   IndexNumber: num,
   ParentIndexNumber: num,
   ParentId: str,
@@ -124,6 +125,7 @@ function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
   return {
     id: i.Id,
     kind,
+    expectedMembers: (kind === 'show' || kind === 'season') ? i.RecursiveItemCount ?? undefined : undefined,
     parentId: i.ParentId || undefined,
     showId: i.SeriesId || undefined,
     seasonNumber: (kind === 'season' ? i.IndexNumber : i.ParentIndexNumber) ?? undefined,
@@ -233,7 +235,7 @@ export class JellyfinAdapter {
       userId,
       recursive: 'true',
       includeItemTypes: 'Movie,Series,Season,Episode',
-      fields: scope === 'user' ? 'MediaSources,MediaStreams' : 'ProviderIds,MediaSources,MediaStreams,Overview,Genres,OriginalTitle,Chapters',
+      fields: scope === 'user' ? 'MediaSources,MediaStreams,RecursiveItemCount' : 'ProviderIds,MediaSources,MediaStreams,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount',
       enableImages: String(scope === 'library'),
       enableUserData: String(scope === 'user'),
       enableImageTypes: artworkKeys.map((type) => artworkTypes[type].jellyfin).join(','),
@@ -322,12 +324,26 @@ export class JellyfinAdapter {
       DirectPlayProfiles: [
         {
           Container: capabilities.containers.join(','),
+          AudioCodec: capabilities.audioCodecs.join(','),
+          Type: 'Audio',
+        },
+        {
+          Container: capabilities.containers.join(','),
           VideoCodec: capabilities.videoCodecs.join(','),
           AudioCodec: capabilities.audioCodecs.join(','),
           Type: 'Video',
         },
       ],
       TranscodingProfiles: [
+        {
+          Container: 'ts',
+          Type: 'Audio',
+          AudioCodec: 'aac',
+          Protocol: 'hls',
+          Context: 'Streaming',
+          MaxAudioChannels: '2',
+          MinSegments: 1,
+        },
         {
           Container: 'ts',
           Type: 'Video',
@@ -419,6 +435,11 @@ export class JellyfinAdapter {
         body: JSON.stringify({ PlaybackPositionTicks: Math.round(positionSeconds * 10000000) }),
       }
     );
+  }
+  async setListeningSummary(userId:string,itemId:string,playCount:number){
+    await this.call(`/UserItems/${encodeURIComponent(itemId)}/UserData?userId=${encodeURIComponent(userId)}`,{
+      method:'POST',body:JSON.stringify({Played:playCount>0,PlayCount:playCount}),
+    });
   }
   async scrobble(
     event: 'start' | 'progress' | 'stop',

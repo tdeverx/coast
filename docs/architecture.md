@@ -4,9 +4,9 @@ One SvelteKit application runs on Bun and PostgreSQL. Svelte 5 components call C
 
 ## Domain and database
 
-Every movie, show, season and episode has a UUID in `media`. Concrete subtype tables describe the hierarchy. Provider identifiers map onto those identities; they never replace them. Episode orders map stable episode IDs to display positions. Relationships express collections and franchises. New media kinds may add tables while reusing identity, lists and tracking.
+Every work has a UUID, category and kind in `works`. Existing screen and game UUIDs and URLs are preserved. Concrete screen, game and music tables own metadata and activity; artists remain credit/browsing entities. Provider identifiers map onto canonical identities and server item IDs are scoped to their service instance. Episode orders reference stable episode IDs; relationships describe membership and order. Future media types add concrete tables using the shared identity and personal relationships.
 
-Provider metadata snapshots remain separate from administrator overrides/locks and per-user presentation preferences. A shared snapshot is retained only for relevant or actively cached items. Tracking events preserve source identity and idempotency; per-user state projects events for fast reads. Playback progress can be source-specific while completion belongs to the canonical item.
+Provider metadata snapshots remain separate from administrator overrides/locks and per-user presentation preferences. A shared snapshot is retained only for relevant or actively cached items. Shared Collected, watchlist, favourites, ratings, ordered lists and queue membership use canonical works. Screen watches, game playthroughs/sessions and music listens/progress retain their concrete activity models and retry identities. Server presence alone does not create personal Collection membership.
 
 Provider definitions, service instances, per-user connections and per-user availability are separate. Service credentials are encrypted at rest. Availability is a local projection, never a live request on each card. Jobs and outbound actions live in PostgreSQL with per-connection ordering, retry and audit state.
 
@@ -14,13 +14,15 @@ Provider definitions, service instances, per-user connections and per-user avail
 
 - `core`: canonical tracking, history, ratings, ordered lists and collection state.
 - `catalogue`: metadata resolution, canonical ingestion, search and availability.
+- `collection`: personal membership and access assessments, missing demand, source-change previews and managed Trakt Collection projection.
+- `music`: provider browsing, persisted albums/tracks and credits, retry-safe listen batches and ordered audio queues.
 - `providers`: shared capability contracts, integration configuration in `instances.server.ts`, account connections beside each provider's adapter, and Seerr request handling in `seerr/requests.server.ts`. Queue handlers and maintenance scheduling have separate server modules. Routes import the module that owns each operation directly.
 - `sync`: Jellyfin library/state synchronisation, Trakt imports, value exports and list exports have separate modules. `changes.ts` keeps canonical writes and outbound intent in one transaction; reconciliation, conflict preferences and history removal remain shared.
 - `playback`: source planning, authorised sessions, progress and external scrobbling.
 - `server`: database, local auth, encryption, network policy, queue and notifications. `server/queries` contains the read models for media details, home, library, lists and requests; routes import the relevant query directly.
 - `ui`: shared Svelte components, icons, semantic tokens, materials and motion.
 
-Native title creation belongs to `core/media`, alongside its transactional subtype and tracking writes. Query modules only read state. Library, Lists and Requests share page bounds and size, select before resolving media cards, and retain complete membership for explicit detail queries. Ordinary inbox, action and user projections use Drizzle column selection, so their camelCase field names and types match the UI without conversion fallbacks.
+Native title creation belongs to `core/media`, alongside its transactional subtype and tracking writes. Query modules only read state. Collection, Library, Lists and Requests filter and count before selecting bounded 60-item pages and resolving media cards. Explicit detail queries retain complete membership. Collection uses the profile owner's personal reasons and the visitor's source permissions. Ordinary inbox, action and user projections use Drizzle column selection, so their camelCase field names and types match the UI without conversion fallbacks.
 
 Settings navigation labels and administrator-only section membership come from `settings/sections.ts`, shared by the page and its server loader. `MediaActions` owns tracking and playback actions; `MediaRequestMenu` owns request-option loading and menu presentation, while confirmation and request dialogs retain their existing placement.
 
@@ -33,6 +35,8 @@ Passwords use Bun Argon2id. Random session secrets are hashed in storage and hel
 Stored credentials use authenticated encryption with a persistent key under the single data mount. Startup-only recovery consumes a single-use file and creates an in-memory identity valid only for that process lifetime. No provider token is sent to browser code.
 
 User-supplied provider URLs are server-policy controlled: HTTP(S), allowed ports/hosts, explicit LAN allowances, validated DNS targets, no unsafe redirects, bounded responses and deadlines. Identity checks bind Jellyfin connections to the expected server. Playback relays enforce ownership and target policy. Errors presented to users are concise; detailed diagnostic events are visible only to administrators and redact credentials.
+
+`user_identities` binds Jellyfin sign-in. Separate `sync_accounts` retain provider account and pinned-service evidence for baselines, delivery and projection ledgers. Account generations prevent queued or running work from using replacement credentials. Trakt uses its stable account UUID; a fresh authenticated matching profile can upgrade an older slug binding without losing same-account provenance.
 
 ## Deployment
 

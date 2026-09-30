@@ -113,6 +113,55 @@
       "when": 1790780101807,
       "tag": "0015_maintenance_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1790783557803,
+      "tag": "0016_collection_and_music",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1790786271002,
+      "tag": "0017_account_history_and_music_state",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790786582427,
+      "tag": "0018_list_account_provenance",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790794938250,
+      "tag": "0019_lyrical_argent",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790795240494,
+      "tag": "0020_stormy_slapstick",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790795624654,
+      "tag": "0021_reflective_kate_bishop",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790800312395,
+      "tag": "0022_verified_trakt_identity",
+      "breakpoints": true
     }
   ]
 }

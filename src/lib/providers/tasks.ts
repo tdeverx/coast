@@ -4,8 +4,12 @@ export const maintenanceKinds = [
   'jellyfin.sync',
   'trakt.import',
   'trakt.lists-import',
+  'trakt.collection-project',
   'seerr.sync',
 ];
+// Cleanup/review traverse remote collections too, but retain per-preview/per-work
+// queue identities rather than maintenance's one-job-per-kind deduplication.
+export const serviceTraversalKinds=[...maintenanceKinds,'trakt.collection-cleanup','trakt.collection-review'];
 export type ServiceTask = {
   id: string;
   title: string;
@@ -23,10 +27,12 @@ export function serviceTasks(provider: string): ServiceTask[] {
       'Tracking changes, requests and playback reports are delivered when you use Coast.',
     kinds:
       provider === 'jellyfin'
-        ? ['jellyfin.user-state', 'jellyfin.scrobble', 'history.remove']
+        ? ['jellyfin.user-state', 'jellyfin.reconcile', 'jellyfin.scrobble', 'history.remove']
         : provider === 'trakt'
           ? [
               'trakt.export',
+              'trakt.collection-cleanup',
+              'trakt.collection-review',
               'trakt.progress',
               'trakt.scrobble',
               'trakt.list-export',
@@ -63,10 +69,10 @@ export function serviceTasks(provider: string): ServiceTask[] {
     return [
       {
         id: 'tracking',
-        title: 'Tracking imports',
+        title: 'Tracking & Collection',
         description:
-          'Selected history, progress, collection, ratings and watchlist categories for each account.',
-        kinds: ['trakt.import'],
+          'Selected tracking imports and opted-in Collection exports for each account.',
+        kinds: ['trakt.import', 'trakt.collection-project'],
         scope: 'tracking',
         interval: 'intervalMinutes',
         enabled: 'trackingEnabled',

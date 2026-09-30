@@ -5,10 +5,13 @@
   import { invalidateAll } from '$app/navigation';
   import {
     player,
+    advanceMusic,
+    playSavedMusicQueue,
     playMedia,
     registerPlaybackController,
     setPlaybackMuted,
   } from '$lib/playback/client.svelte';
+  import { actualPlayedDelta } from '$lib/playback/listening';
   import { noCrop, videoFitStyle, type FrameCrop } from '$lib/playback/crop';
   import { observeVideoCrop } from '$lib/playback/observe-crop';
   import { api, message } from '$lib/ui/client';
@@ -20,7 +23,9 @@
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   import PlaybackTimeline from './PlaybackTimeline.svelte';
-  let video: HTMLVideoElement, host: HTMLDivElement;
+  let video = $state<HTMLVideoElement>(null!);
+  let audio = $state<HTMLAudioElement>(null!);
+  let host: HTMLDivElement;
   let current = $state(0),
     duration = $state(0),
     crop = $state(true),
@@ -42,6 +47,34 @@
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   let keyboardInteraction = false;
   let scrubbing = $state(false);
+  const audioMode = $derived(player.session?.mediaType === 'audio');
+  const media = $derived<HTMLMediaElement>(audioMode ? audio : video);
+  let playedSeconds = 0, playedPosition = 0, playedAt = 0, wasPlaying = false, seeking = false;
+  function accountPlayed() {
+    if (!audioMode || !media) return;
+    const now = performance.now();
+    if (playedAt) playedSeconds += actualPlayedDelta(playedPosition, media.currentTime, (now - playedAt) / 1000, wasPlaying, seeking);
+    // Native played ranges exclude seek gaps, pauses and buffering, and retain the
+    // endpoints that coarse timeupdate events can miss on a complete traversal.
+    let covered = 0;
+    for (let index = 0; index < media.played.length; index++)
+      covered += media.played.end(index) - media.played.start(index);
+    playedSeconds = Math.max(playedSeconds, covered);
+    playedAt = now;
+    playedPosition = media.currentTime;
+    current = media.currentTime;
+    wasPlaying = !media.paused && media.readyState >= 3;
+  }
+  function pause() { accountPlayed(); media?.pause(); }
+  function waiting() { accountPlayed(); wasPlaying = false; tracePlayback('playback.waiting'); }
+  function seekingStarted() { seeking = true; accountPlayed(); tracePlayback('playback.seek'); }
+  function seekingEnded() { seeking = false; playedPosition = media.currentTime; playedAt = performance.now(); wasPlaying = !media.paused && media.readyState >= 3; }
+  function paused() {
+    accountPlayed();
+    player.paused = true;
+    tracePlayback('playback.pause');
+    if (active && !closed && player.role !== 'postplay') void report('pause');
+  }
   const active = $derived(player.role === 'playback' || player.role === 'postplay');
   const src = $derived(player.subtitlePrompt ? undefined : player.session?.url);
   const videoStyle = $derived(
@@ -52,9 +85,11 @@
     ...new Set(player.session?.sources.map((source) => source.edition ?? '') ?? []),
   ]);
   function seek(seconds: number) {
-    if (!video || !Number.isFinite(duration) || duration <= 0) return;
+    if (!media || !Number.isFinite(duration) || duration <= 0) return;
+    accountPlayed();
     current = Math.max(0, Math.min(duration, seconds));
-    video.currentTime = current;
+    if (audioMode) seeking = true;
+    media.currentTime = current;
     revealControls();
     void report();
   }
@@ -64,7 +99,7 @@
   }
   function armIdle() {
     clearTimeout(idleTimer);
-    if (!active || player.paused || player.role === 'postplay' || error) return;
+    if (!active || audioMode || player.paused || player.role === 'postplay' || error) return;
     idleTimer = setTimeout(() => {
       const focused =
         keyboardInteraction && document.activeElement?.closest('.playback-chrome, header');
@@ -91,11 +126,13 @@
     if (!session || !active) return false;
     const started = startedSessionId === session.id;
     if (event !== 'stop' && (player.subtitlePrompt || !started)) return false;
+    accountPlayed();
     const payload = {
       positionSeconds: started ? current : session.startSeconds,
       durationSeconds: started && Number.isFinite(duration) ? duration : session.durationSeconds,
       event,
-      paused: event === 'pause' || video.paused,
+      paused: event === 'pause' || media.paused,
+      ...(audioMode ? { playedSeconds } : {}),
     };
     // Preserve play/pause/stop order even while a previous report is in flight.
     reports = reports.then(async () => {
@@ -122,17 +159,18 @@
     player.paused = false;
     if (!active || player.subtitlePrompt || !player.session || closed) return;
     // Ignore events from a source being replaced.
-    if (video.getAttribute('src') !== player.session.url && !hls) return;
+    if (media.getAttribute('src') !== player.session.url && !hls) return;
     startedSessionId = player.session.id;
-    current = video.currentTime;
-    duration = video.duration;
+    current = media.currentTime;
+    duration = Number.isFinite(media.duration) ? media.duration : player.session?.durationSeconds ?? 0;
+    if (audioMode) { playedPosition = media.currentTime; playedAt = performance.now(); wasPlaying = true; }
     lastReport = Date.now();
     void report('start');
   }
   async function close() {
     if (closed) return;
     closed = true;
-    video?.pause();
+    pause();
     await report('stop');
     player.role = 'idle';
     player.paused = true;
@@ -143,27 +181,28 @@
     void invalidateAll();
   }
   async function toggle() {
-    if (!video) return;
-    if (video.paused) {
+    if (!media) return;
+    if (media.paused) {
       try {
-        await video.play();
+        await media.play();
       } catch (e) {
         error = message(e);
       }
-    } else video.pause();
+    } else pause();
   }
   async function failure() {
     if (!src) return;
     tracePlayback('playback.failed');
     error = 'Playback was interrupted. Please try again.';
     if (player.session)
-      await api(`playback/${player.session.id}/error`, { code: video?.error?.code ?? 0 }).catch(
+      await api(`playback/${player.session.id}/error`, { code: media?.error?.code ?? 0 }).catch(
         () => {}
       );
   }
   function update() {
-    current = video.currentTime;
-    duration = video.duration;
+    accountPlayed();
+    current = media.currentTime;
+    duration = Number.isFinite(media.duration) ? media.duration : player.session?.durationSeconds ?? 0;
     if (active && Date.now() - lastReport > 10000) {
       lastReport = Date.now();
       void report();
@@ -176,13 +215,20 @@
       video.textTracks[i].mode = i === selected ? 'showing' : 'disabled';
   }
   function metadata() {
-    frame = { width: video.videoWidth, height: video.videoHeight };
-    duration = video.duration;
-    if (active && player.session?.startSeconds && video.currentTime < 1)
-      video.currentTime = player.session.startSeconds;
-    applySubtitles();
+    if (!audioMode) frame = { width: video.videoWidth, height: video.videoHeight };
+    duration = Number.isFinite(media.duration) ? media.duration : player.session?.durationSeconds ?? 0;
+    if (active && player.session?.startSeconds && media.currentTime < 1)
+      media.currentTime = player.session.startSeconds;
+    if (!audioMode) applySubtitles();
   }
   async function ended() {
+    if (audioMode) {
+      accountPlayed();
+      const delivered = await report('ended');
+      if (delivered) await advanceMusic();
+      else player.paused = true;
+      return;
+    }
     saving = true;
     saved = await report('ended');
     saving = false;
@@ -228,6 +274,10 @@
     const session = player.session;
     if (!session) return;
     try {
+      if (audioMode) {
+        await playMedia(session.mediaId, { mediaType: 'audio', fromStart: false });
+        return;
+      }
       await playMedia(session.mediaId, {
         edition,
         subtitleIndex: subtitle,
@@ -241,6 +291,7 @@
   $effect(() => {
     const session = player.session;
     if (session) {
+      playedSeconds = 0; playedPosition = session.startSeconds; playedAt = 0; wasPlaying = false; seeking = false;
       crop = true;
       subtitle = session.defaultSubtitleIndex ?? -1;
       current = session.startSeconds;
@@ -254,7 +305,7 @@
   $effect(() => {
     const url = src,
       kind = player.session?.kind,
-      element = video;
+      element = media;
     if (!element || !url) return;
     let cancelled = false;
     error = '';
@@ -289,7 +340,7 @@
       }
     };
     untrack(() => void start());
-    const stopCrop = observeVideoCrop(element, {
+    const stopCrop = audioMode ? () => {} : observeVideoCrop(video, {
       enabled: () => crop,
       onCrop: (next) => (bars = next),
     });
@@ -304,13 +355,13 @@
     };
   });
   $effect(() => {
-    if (video) video.muted = player.muted;
+    if (media) { media.muted = player.muted; media.volume = volume; }
   });
   onMount(() => {
     const unregister = registerPlaybackController({
       stop: close,
-      pause: () => video.pause(),
-      resume: () => video.play(),
+      pause,
+      resume: () => media.play(),
     });
     const observer = new ResizeObserver((entries) => {
       const rect = entries[0].contentRect;
@@ -330,7 +381,7 @@
         void toggle();
       }
       if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
-        video.pause();
+        pause();
       }
     };
     document.addEventListener('keydown', key);
@@ -348,11 +399,25 @@
   });
   let lastTiming = 0;
   function tracePlayback(event: import('$lib/diagnostics').DiagnosticEvent) {
-    browserDiagnostic(event, { sessionId: player.session?.id, durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0, bufferedSeconds: video?.buffered.length ? Math.max(0, video.buffered.end(video.buffered.length - 1) - video.currentTime) : 0, positionSeconds: video?.currentTime, readyState: video?.readyState, networkState: video?.networkState, code: video?.error?.code });
+    browserDiagnostic(event, { sessionId: player.session?.id, durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0, bufferedSeconds: media?.buffered.length ? Math.max(0, media.buffered.end(media.buffered.length - 1) - media.currentTime) : 0, positionSeconds: media?.currentTime, readyState: media?.readyState, networkState: media?.networkState, code: media?.error?.code });
   }
 </script>
 
-<div bind:this={host} class="player" class:active aria-hidden={!active}>
+<audio
+  bind:this={audio}
+  aria-label={audioMode ? player.session?.title : 'Music playback'}
+  preload="metadata"
+  ontimeupdate={() => { if (audioMode) update(); }}
+  onloadedmetadata={() => { if (audioMode) { metadata(); tracePlayback('playback.ready'); } }}
+  onplaying={() => { if (audioMode) playing(); }}
+  onpause={() => { if (audioMode) paused(); }}
+  onwaiting={() => { if (audioMode) waiting(); }}
+  onseeking={() => { if (audioMode) seekingStarted(); }}
+  onseeked={() => { if (audioMode) seekingEnded(); }}
+  onended={() => { if (audioMode) void ended(); }}
+  onerror={() => { if (audioMode) void failure(); }}
+><track kind="captions" /></audio>
+<div bind:this={host} class="player" class:active={active && !audioMode} aria-hidden={!active || audioMode}>
   <video
     bind:this={video}
     data-player="playback"
@@ -361,21 +426,17 @@
     style={videoStyle}
     playsinline
     preload="metadata"
-    ontimeupdate={() => { update(); if (video && performance.now() - lastTiming > 10_000) { lastTiming = performance.now(); tracePlayback('playback.timing'); } }}
-    onwaiting={() => tracePlayback('playback.waiting')}
-    onseeking={() => tracePlayback('playback.seek')}
-    onloadedmetadata={() => { metadata(); tracePlayback('playback.ready'); }}
+    ontimeupdate={() => { if (audioMode) return; update(); if (video && performance.now() - lastTiming > 10_000) { lastTiming = performance.now(); tracePlayback('playback.timing'); } }}
+    onwaiting={() => { if (!audioMode) waiting(); }}
+    onseeking={() => { if (!audioMode) tracePlayback('playback.seek'); }}
+    onloadedmetadata={() => { if (audioMode) return; metadata(); tracePlayback('playback.ready'); }}
     onplay={() => {
-      player.paused = false;
+      if (!audioMode) player.paused = false;
     }}
-    onplaying={() => { playing(); tracePlayback('playback.playing'); }}
-    onpause={() => {
-      player.paused = true;
-      tracePlayback('playback.pause');
-      if (active && !closed && player.role !== 'postplay') void report('pause');
-    }}
-    onended={ended}
-    onerror={() => { void failure(); }}
+    onplaying={() => { if (audioMode) return; playing(); tracePlayback('playback.playing'); }}
+    onpause={() => { if (!audioMode) paused(); }}
+    onended={() => { if (!audioMode) void ended(); }}
+    onerror={() => { if (!audioMode) void failure(); }}
   >
     {#each tracks as track (track.url)}<track
         kind="subtitles"
@@ -436,14 +497,15 @@
     <section
       use:liquidGlass={{ variant: 'clear' }}
       class="controls glass"
+      class:audio={audioMode}
       aria-label={`Playback controls: ${player.session?.title}`}
     >
       <div class="transport">
         <button
-          class="icon-button skip-back"
-          aria-label="Back 10 seconds"
-          title="Back 10 seconds"
-          onclick={() => seek(current - 10)}><Icon name="rewind" size={20} /></button
+          class="icon-button" class:skip-back={!audioMode}
+          aria-label={audioMode ? 'Previous track' : 'Back 10 seconds'}
+          title={audioMode ? 'Previous track' : 'Back 10 seconds'}
+          onclick={() => audioMode ? advanceMusic(-1) : seek(current - 10)}><Icon name={audioMode ? 'left' : 'rewind'} size={20} /></button
         >
         <button
           class="icon-button play-toggle"
@@ -451,14 +513,16 @@
           onclick={toggle}><Icon name={player.paused ? 'play' : 'pause'} size={28} /></button
         >
         <button
-          class="icon-button skip-forward"
-          aria-label="Forward 30 seconds"
-          title="Forward 30 seconds"
-          onclick={() => seek(current + 30)}><Icon name="forward" size={20} /></button
+          class="icon-button" class:skip-forward={!audioMode}
+          aria-label={audioMode ? 'Next track' : 'Forward 30 seconds'}
+          title={audioMode ? 'Next track' : 'Forward 30 seconds'}
+          onclick={() => audioMode ? advanceMusic() : seek(current + 30)}><Icon name={audioMode ? 'right' : 'forward'} size={20} /></button
         >
       </div>
       <PlaybackTimeline
         mediaId={player.session!.mediaId}
+        href={audioMode ? `/music/work/${player.session!.mediaId}` : undefined}
+        audio={audioMode}
         title={player.session?.title ?? 'Now playing'}
         detail={player.session?.detail ?? ''}
         artwork={player.session?.artwork}
@@ -468,6 +532,16 @@
         bind:scrubbing
       />
       <ContextMenu label="Playback options" upward>
+        {#if audioMode}
+          <MenuAction icon="list" onclick={()=>playSavedMusicQueue().catch(cause=>error=message(cause))}>Play saved music queue</MenuAction>
+          {#if player.audioNotice}<p class="menu-status" role="status">{player.audioNotice}</p>{/if}
+          <ContextMenu label="Queue" icon="list" upward panel>
+            {#each player.audioQueue as entry, index}
+              <MenuAction selection="radio" checked={index === player.audioIndex} disabled={entry.availability !== 'available'} disabledReason={entry.availability === 'unknown' ? 'Availability unresolved' : entry.availability !== 'available' ? 'Unavailable' : undefined}
+                onclick={() => { player.audioIndex = index - 1; void advanceMusic(); }}>{entry.title}</MenuAction>
+            {/each}
+          </ContextMenu>
+        {:else}
         {#if tracks.length}
           <ContextMenu label="Subtitles" icon="subtitles" upward panel>
             <MenuAction
@@ -506,14 +580,16 @@
           >{crop ? 'Fit video' : 'Crop black bars'}</MenuAction
         >
         <MenuAction icon="fullscreen" onclick={fullscreen}>Full screen</MenuAction>
+        {/if}
       </ContextMenu>
-      <div class="control-divider" aria-hidden="true"></div>
+      {#if !audioMode}<div class="control-divider" aria-hidden="true"></div>
       <button
         class="icon-button fullscreen-button"
         aria-label="Toggle fullscreen"
         title="Toggle fullscreen"
         onclick={fullscreen}><Icon name="fullscreen" size={20} /></button
       >
+      {/if}
       <ContextMenu label="Volume" upward>
         {#snippet trigger()}<Icon
             name={player.muted || volume === 0 ? 'muted' : 'volume'}
@@ -537,7 +613,7 @@
               step="0.05"
               bind:value={volume}
               oninput={() => {
-                video.volume = volume;
+                media.volume = volume;
                 setPlaybackMuted(volume === 0);
               }}
             /></label
@@ -725,6 +801,9 @@
       grid-column: 1 / -1;
       grid-row: 1;
       margin-inline: 0;
+    }
+    .controls.audio {
+      grid-template-columns: minmax(0, 1fr) repeat(3, 44px);
     }
     .skip-back,
     .skip-forward {

@@ -303,6 +303,8 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
           v.literal('coast'),
           v.pipe(v.string(), v.uuid()),
         ]),
+        shareDemand: v.boolean(),
+        listenThreshold: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
         fullWidth: v.boolean(),
         originalTitles: v.boolean(),
         region: v.pipe(v.string(), v.regex(/^[A-Z]{2}$/)),

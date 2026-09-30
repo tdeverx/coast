@@ -155,6 +155,11 @@ export async function importTraktFromAdapter(
   ) => {
     const item = await resolveTrakt(record);
     if (!item) return;
+    if(category==='collection'){
+      seen.add(item.id);
+      const {isGeneratedProjection}=await import('$lib/collection/projection.server');
+      if(await isGeneratedProjection(connectionId,item.id))return;
+    }
     const timestamp =
       record.watched_at ||
       record.paused_at ||
@@ -248,7 +253,7 @@ export async function importTraktFromAdapter(
       const records = await adapter.read(category, page);
       if (category === 'history') history.push(...records);
       else for (const record of records) await apply(category, record);
-      if (records.length < 100 || category === 'collection') break;
+      if (records.length < 100) break;
       if (page >= 10000) throw new Error('Trakt import exceeded the supported page bound.');
     }
     if (category === 'history') {
@@ -259,7 +264,6 @@ export async function importTraktFromAdapter(
       for (const record of await adapter.collectionShows()) {
         const show = await resolveTrakt(record);
         if (!show) continue;
-        await apply(category, record);
         for (const season of record.seasons || [])
           for (const episode of season.episodes) {
             const shell: Metadata = {
@@ -272,6 +276,8 @@ export async function importTraktFromAdapter(
             };
             const item = await ingestMetadata(shell, { showId: show.id });
             seen.add(item.id);
+            const {isGeneratedProjection}=await import('$lib/collection/projection.server');
+            if(await isGeneratedProjection(connectionId,item.id))continue;
             await reconcileProviderValue(
               userId,
               connectionId,
@@ -288,6 +294,7 @@ export async function importTraktFromAdapter(
       .where(and(eq(syncValues.connectionId, connectionId), eq(syncValues.category, category)));
     for (const entry of previous)
       if (!seen.has(entry.mediaId)) {
+        if(category==='collection'){const {isGeneratedProjection}=await import('$lib/collection/projection.server');if(await isGeneratedProjection(connectionId,entry.mediaId))continue;}
         const remote =
           category === 'ratings'
             ? { value: null }
@@ -331,6 +338,7 @@ export async function importTraktFromAdapter(
               ? eq(lists.id, mapped)
               : and(
                   eq(lists.sourceConnectionId, connectionId),
+                  eq(lists.sourceAccountId,connection.syncAccountId!),
                   eq(lists.externalId, String(remote.ids.trakt))
                 )
           )
@@ -345,6 +353,7 @@ export async function importTraktFromAdapter(
             name: remote.name,
             description: remote.description,
             source: 'trakt',
+            sourceAccountId: connection.syncAccountId,
             externalId: String(remote.ids.trakt),
             sourceConnectionId: connectionId,
           })

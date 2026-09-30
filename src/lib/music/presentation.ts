@@ -2,6 +2,7 @@ import type { MusicItem } from './model';
 import type { MediaCardPresentation, MediaHeroPresentation } from '$lib/ui/types';
 
 export function musicHref(connectionId: string, itemId: string) {
+  if(!connectionId)return `/music/work/${encodeURIComponent(itemId)}`;
   return `/music/${encodeURIComponent(connectionId)}/${encodeURIComponent(itemId)}`;
 }
 export function musicCredits(item: MusicItem) {
@@ -18,17 +19,18 @@ export function musicDuration(seconds?: number) {
 export function musicCard(item: MusicItem, connectionId: string): MediaCardPresentation {
   return {
     id: item.id,
+    workId: item.workId,
     kind: item.kind,
     title: item.title,
-    href: musicHref(connectionId, item.id),
+    href: item.workId?`/music/work/${item.workId}`:musicHref(connectionId, item.id),
     connectionId,
     captionSubtitle:
       musicCredits(item) ||
       (item.kind === 'artist' ? 'Artist' : item.kind === 'album' ? 'Album' : 'Track'),
     year: item.year,
-    poster: item.primaryImageTag
+    poster: item.artworkUrl??(item.primaryImageTag
       ? `/api/v1/providers/${connectionId}/music/${item.id}/artwork`
-      : undefined,
+      : undefined),
   };
 }
 

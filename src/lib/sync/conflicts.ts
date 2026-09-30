@@ -7,6 +7,9 @@ import { getDb } from '$lib/server/db';
 import {
   trackingEvents,
   media,
+  works,
+  games,
+  musicWorks,
   syncValues,
   providerConnections,
   providerInstances,
@@ -34,14 +37,17 @@ export async function getPendingConflicts(userId: string) {
   const providerConflicts = await getDb()
     .select({
       entry: syncValues,
-      title: media.title,
-      kind: media.kind,
+      title: sql<string>`coalesce(${media.title},${games.title},${musicWorks.title},${works.kind})`,
+      kind: works.kind,
       source: providerInstances.name,
     })
     .from(syncValues)
     .innerJoin(providerConnections, eq(providerConnections.id, syncValues.connectionId))
     .innerJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
-    .innerJoin(media, eq(media.id, syncValues.mediaId))
+    .innerJoin(works, eq(works.id, syncValues.mediaId))
+    .leftJoin(media, eq(media.id, works.id))
+    .leftJoin(games, eq(games.id, works.id))
+    .leftJoin(musicWorks, eq(musicWorks.id, works.id))
     .where(and(eq(providerConnections.userId, userId), eq(syncValues.conflict, true)))
     .orderBy(desc(syncValues.updatedAt))
     .limit(100);

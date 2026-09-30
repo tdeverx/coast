@@ -180,6 +180,20 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     const { executeHistoryRemoval } = await import('$lib/sync/history-removal');
     await executeHistoryRemoval(action.userId, action.connectionId, action.payload);
   });
+  register('trakt.collection-review',async action=>{
+    if(!action.connectionId)throw new PermanentActionError('The connection is unavailable.');
+    const {executeProjectionReview}=await import('$lib/collection/projection.server');await executeProjectionReview(action.userId,action.connectionId,action.payload);
+  });
+  for(const kind of ['trakt.collection-project','trakt.collection-cleanup'])register(kind,async action=>{
+    if(!action.connectionId)throw new PermanentActionError('The connection is unavailable.');
+    const {executeProjection}=await import('$lib/collection/projection.server');await executeProjection(action.userId,action.connectionId,kind.endsWith('cleanup')?action.payload:undefined);
+  });
+  register('jellyfin.reconcile',async action=>{
+    if(!action.connectionId)throw new PermanentActionError('The connection is unavailable.');
+    const {connection}=await connectionFor(action.userId,action.connectionId,'jellyfin');
+    if(connection.settings.reconcileTracking!==true)return;
+    const {executeJellyfinUserState}=await import('$lib/sync/jellyfin');await executeJellyfinUserState(action.userId,action.connectionId,action.payload);
+  });
   register('jellyfin.user-state', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Jellyfin connection is unavailable.');

@@ -1,0 +1,5 @@
+import {expect,test} from 'bun:test';
+import {actualPlayedDelta,acceptedPlayedTime,listenReached} from '../src/lib/playback/listening';
+test('seeking, pauses, buffering and reverse progress earn no listen time',()=>{expect(actualPlayedDelta(0,100,1,true)).toBe(0);expect(actualPlayedDelta(0,1,1,false)).toBe(0);expect(actualPlayedDelta(5,2,1,true)).toBe(0);expect(actualPlayedDelta(0,1,1,true,true)).toBe(0);expect(actualPlayedDelta(0,1,1,true)).toBe(1);});
+test('threshold uses actual played time and the session preference',()=>{expect(listenReached(49,100,50)).toBe(false);expect(listenReached(50,100,50)).toBe(true);expect(listenReached(50,100,100)).toBe(false);expect(listenReached(0,0,50)).toBe(false);expect(acceptedPlayedTime(10,100,2,true)).toBe(12.25);expect(acceptedPlayedTime(10,12,2,false)).toBe(10);});
+test('full native traversal reports tolerate clock sampling without accepting arbitrary elapsed playback',()=>{expect(listenReached(acceptedPlayedTime(0,12,11.9,true),12,100)).toBe(true);expect(listenReached(acceptedPlayedTime(0,12,1,true),12,100)).toBe(false);});

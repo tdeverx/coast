@@ -11,7 +11,7 @@ export function isExperimentalPath(path: string) {
   }
   return (
     /^\/(?:music|games)(?:\/|$)/.test(path) ||
-    /^\/api\/v1\/(?:games|game-playthroughs)(?:\/|$)/.test(path) ||
+    /^\/api\/v1\/(?:music|games|game-playthroughs)(?:\/|$)/.test(path) ||
     /^\/api\/v1\/providers\/[^/]+\/music(?:\/|$)/.test(path)
   );
 }

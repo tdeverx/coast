@@ -1,5 +1,5 @@
 /** Shared tracking language. Only Film & TV is enabled by the current catalog/adapters. */
-export type MediaCategory = 'screen' | 'book' | 'comic' | 'game';
+export type MediaCategory = 'screen' | 'music' | 'book' | 'comic' | 'game';
 export type ScreenKind = 'movie' | 'show' | 'season' | 'episode' | 'collection';
 export type Lifecycle = 'planned' | 'in-progress' | 'completed' | 'paused' | 'dropped';
 export type ProgressUnit =
@@ -46,6 +46,7 @@ export const mediaCategories = {
     action: 'Play',
     shape: 'poster',
   },
+  music: { label: 'Music', completed: 'Listened', repeat: 'Listened again', action: 'Play', shape: 'square' },
   book: { label: 'Books', completed: 'Read', repeat: 'Reread', action: 'Read', shape: 'poster' },
   comic: { label: 'Comics', completed: 'Read', repeat: 'Reread', action: 'Read', shape: 'poster' },
   game: {
@@ -102,15 +103,15 @@ export function primaryMediaAction(input: {
   canRequest: boolean;
 }): 'play' | 'read' | 'open' | 'request' | 'progress' {
   if (input.canOpen)
-    return input.category === 'screen' ? 'play' : input.category === 'game' ? 'open' : 'read';
+    return ['screen', 'music'].includes(input.category) ? 'play' : input.category === 'game' ? 'open' : 'read';
   return input.canRequest ? 'request' : 'progress';
 }
 
 /** Menu categories stay stable while actions use the medium's vocabulary. */
 export function trackingLanguage(category: MediaCategory) {
-  const verb = category === 'screen' ? 'watch' : category === 'game' ? 'playthrough' : 'read';
+  const verb = category === 'screen' ? 'watch' : category === 'music' ? 'listen' : category === 'game' ? 'playthrough' : 'read';
   const repeat =
-    category === 'screen' ? 'rewatching' : category === 'game' ? 'replaying' : 'rereading';
+    category === 'screen' ? 'rewatching' : category === 'music' ? 'listening again' : category === 'game' ? 'replaying' : 'rereading';
   return {
     mark:
       category === 'screen' ? 'Mark watched' : category === 'game' ? 'Mark completed' : 'Mark read',

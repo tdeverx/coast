@@ -97,6 +97,9 @@
     gap: 10px;
     animation: appear var(--motion);
   }
+  :global(.player-active) .toasts {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+  }
   .action-message,
   .toast > a {
     flex: 1;
@@ -116,6 +119,16 @@
     .toasts {
       right: 16px;
       bottom: 18px;
+    }
+  }
+  @media (max-width: 639px) {
+    :global(.player-active) .toasts {
+      bottom: calc(148px + env(safe-area-inset-bottom));
+    }
+  }
+  @media (max-width: 479px) {
+    :global(.player-active) .toasts {
+      bottom: calc(208px + env(safe-area-inset-bottom));
     }
   }
 </style>

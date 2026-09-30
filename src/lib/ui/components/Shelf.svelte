@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="ts" generics="T extends MediaView | MediaCardPresentation">
   import { page } from '$app/state';
   import AvailabilityToggle from './AvailabilityToggle.svelte';
   import type { ArtworkPriority } from '$lib/ui/types';
@@ -8,6 +8,7 @@
   import { untrack, type Snippet } from 'svelte';
   import type {
     MediaView,
+    MediaCardPresentation,
     MediaCardShape,
     MediaCardArtwork,
     MediaCardOverlay,
@@ -59,9 +60,9 @@
     actions?: Snippet;
     empty?: Snippet;
     busy?: boolean;
-    details?: Snippet<[MediaView]>;
+    details?: Snippet<[T]>;
     title: string;
-    items: MediaView[];
+    items: T[];
     href?: string;
     shape?: MediaCardShape;
     artworkStyle?: MediaCardArtwork;
@@ -69,7 +70,7 @@
     artworkPriority?: ArtworkPriority;
   } = $props();
   // Keep the last completed selection visible while its replacement is being fetched.
-  let settledItems = $state<MediaView[]>(untrack(() => items));
+  let settledItems = $state<T[]>(untrack(() => items));
   let selection = $state(
     untrack(() => (layout === 'grid' ? (page.url.searchParams.get('rowProgress') ?? 'all') : 'all'))
   );
@@ -101,6 +102,7 @@
       { value: 'season', label: 'Seasons' },
       { value: 'episode', label: 'Episodes' },
       { value: 'collection', label: 'Collections' },
+      {value:'album',label:'Albums'},{value:'track',label:'Tracks'},{value:'game',label:'Games'},
     ].filter((option) => sourceItems.some((item) => item.kind === option.value)),
   ]);
   const visibleItems = $derived(
@@ -172,7 +174,7 @@
       {#each visibleItems as item (item.entryId ?? item.id)}<div class="shelf-item">
           <MediaCard
             {item}
-            shape={style.shape}
+            shape={['album','track','game'].includes(item.kind)?'square':style.shape}
             artworkStyle={style.artworkStyle}
             overlay={style.overlay}
             artworkPriority={style.artworkPriority}

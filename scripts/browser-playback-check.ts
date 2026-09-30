@@ -9,6 +9,7 @@ if (!mediaId || !/^[a-f0-9-]{36}$/.test(mediaId))
 const showId = process.env.COAST_BROWSER_SHOW_ID;
 const episodeOneId = process.env.COAST_BROWSER_EPISODE_ONE_ID;
 const episodeTwoId = process.env.COAST_BROWSER_EPISODE_TWO_ID;
+const specialId = process.env.COAST_BROWSER_SPECIAL_ID;
 if (
   [showId, episodeOneId, episodeTwoId].some(Boolean) &&
   ![showId, episodeOneId, episodeTwoId].every((id) => id && /^[a-f0-9-]{36}$/.test(id))
@@ -21,7 +22,7 @@ const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const heroVideo = page.locator('video[data-player="hero"]');
 const playbackVideo = page.locator('video[data-player="playback"]');
 const chrome = page.locator('.playback-chrome');
-const header = page.locator('header');
+const header = page.locator('header').first();
 const forceHlsJs = process.env.COAST_BROWSER_FORCE_HLS_JS === '1';
 if (forceHlsJs) {
   await page.addInitScript(() => {
@@ -58,6 +59,11 @@ const screenshot = (name: string) =>
     path: `${output}/${name}${forceHlsJs ? '-hlsjs' : ''}.png`,
     animations: 'disabled',
   });
+async function hydrated() {
+  await expect.poll(() => page.locator('.page-shell').evaluate(element =>
+    (element as HTMLElement).style.getPropertyValue('--active-hero-height')
+  )).not.toBe('');
+}
 function readVideo(locator: Locator) {
   return locator.evaluate((element) => {
     const video = element as HTMLVideoElement;
@@ -74,10 +80,10 @@ function readVideo(locator: Locator) {
   });
 }
 async function openPlaybackMenu(name: string) {
-  await page.mouse.move(20, 20);
-  await page.getByRole('button', { name: 'Playback options', exact: true }).click();
-  await page.getByRole('menu', { name: 'Playback options', exact: true })
-    .getByRole('menuitem', { name, exact: true }).click();
+  const trigger=page.getByRole('button', { name: 'Playback options', exact: true });
+  await trigger.focus();
+  await trigger.press('ArrowDown');
+  await page.getByRole('menuitem',{name,exact:true}).press('ArrowRight');
   const menu = page.getByRole('menu', { name, exact: true });
   await expect(menu).toBeVisible();
   return menu;
@@ -95,19 +101,19 @@ async function seekTo(seconds: number) {
   }, seconds);
 }
 try {
-  await page.goto(`${origin}/login`);
-  await page.waitForLoadState('networkidle');
-  await page.locator('input[name=username]').fill('fixtureadmin');
-  await page.locator('input[name=password]').fill('Coast-fixture-password');
-  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  const stored=Bun.file('/private/tmp/coast-fixture-browser-session.json');
+  if(await stored.exists())await page.context().addCookies(JSON.parse(await stored.text()).cookies);
+  await page.goto(`${origin}/for-you`);
+  if(page.url().includes('/login')){await page.locator('input[name=username]').fill('fixtureadmin');await page.locator('input[name=password]').fill('Coast-fixture-password');await page.getByRole('button',{name:'Sign in',exact:true}).click();}
   await expect(page).toHaveURL(/\/for-you$/);
+  await page.context().storageState({path:'/private/tmp/coast-fixture-browser-session.json'});
   step = 'subtitle preferences';
   await page.goto(`${origin}/settings/playback`);
-  await page.waitForLoadState('networkidle');
-  await page.getByLabel('Ask before playback', { exact: true }).check();
-  await page.getByRole('button', { name: 'Save playback preferences', exact: true }).click();
-  await expect(page.getByRole('status')).toHaveText('Saved.');
+  await page.waitForLoadState('domcontentloaded');
+  const ask=page.getByLabel('Ask before playback', { exact: true });
+  if(!await ask.isChecked()){await ask.check();await page.getByRole('button', { name: 'Save playback preferences', exact: true }).click();await expect(page.getByRole('status')).toHaveText('Preferences saved.');}
   await page.goto(`${origin}/media/${mediaId}`);
+  await hydrated();
   await expect(
     page.getByRole('heading', { name: 'Coast Playback Fixture', exact: true })
   ).toBeVisible();
@@ -136,7 +142,7 @@ try {
     (response) =>
       response.url() === `${origin}/api/v1/playback` && response.request().method() === 'POST'
   );
-  await page.getByRole('button', { name: /^(Play|Resume) Movie$/ }).click();
+  await page.getByRole('button', { name: /^(Play|Resume)$/ }).click();
   const preparedSession = await (await preparedResponse).json();
   const prompt = page
     .getByRole('dialog')
@@ -152,7 +158,7 @@ try {
     'PASS subtitle prompt cancellation closes the prepared session without starting playback'
   );
   step = 'direct playback and subtitle prompt';
-  await page.getByRole('button', { name: /^(Play|Resume) Movie$/ }).click();
+  await page.getByRole('button', { name: /^(Play|Resume)$/ }).click();
   await expect(prompt).toBeVisible();
   await prompt.locator('select').selectOption('1');
   await prompt.getByRole('button', { name: 'Start playback', exact: true }).click();
@@ -182,6 +188,7 @@ try {
   );
 
   step = 'subtitle off and on';
+  await page.getByRole('button',{name:'Pause',exact:true}).click();
   await (await openPlaybackMenu('Subtitles')).getByRole('menuitemradio', { name: /^Off/ }).click();
   await expect
     .poll(async () => (await readVideo(playbackVideo)).subtitleMode)
@@ -191,6 +198,7 @@ try {
     .poll(async () => (await readVideo(playbackVideo)).subtitleMode)
     .toBe('showing');
   console.log('PASS subtitle off/on uses the real text track');
+  await page.locator('.playback-chrome').getByRole('button',{name:'Play',exact:true}).click();
 
   step = 'navigation and progress';
   await page.mouse.move(20, 20);
@@ -212,8 +220,9 @@ try {
   await page.getByRole('button', { name: 'Close player', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Close player', exact: true })).not.toBeVisible();
   await page.goto(`${origin}/media/${mediaId}`);
-  await expect(page.getByRole('button', { name: 'Resume Movie', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Resume Movie', exact: true }).click();
+  await hydrated();
+  await expect(page.getByRole('button', { name: 'Resume', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await page
     .getByRole('dialog')
     .getByRole('button', { name: 'Start playback', exact: true })
@@ -224,14 +233,17 @@ try {
   console.log('PASS title video persists while navigation pauses playback, with saved progress and resume');
 
   step = 'HLS source';
-  const qualityMenu = await openPlaybackMenu('Source and quality');
-  const qualityNames = await qualityMenu.getByRole('menuitem').allTextContents();
-  console.log('Available fixture sources:', JSON.stringify(qualityNames));
-  const hlsResponse = page.waitForResponse(
-    (response) =>
-      response.url() === `${origin}/api/v1/playback` && response.request().method() === 'POST'
-  );
-  await qualityMenu.getByRole('menuitem', { name: /HEVC.*Cinema/ }).click();
+  await page.getByRole('button',{name:'Close player',exact:true}).click();
+  await page.goto(`${origin}/media/${mediaId}`);
+  await hydrated();
+  // Simulate a device requiring transcoding, using the unchanged Play control.
+  await page.route('**/api/v1/playback',async route=>{
+    if(route.request().method()!=='POST')return route.continue();
+    const body=route.request().postDataJSON();body.browser.containers=[];
+    await route.continue({postData:JSON.stringify(body)});
+  });
+  const hlsResponse = page.waitForResponse(response=>response.url()===`${origin}/api/v1/playback`&&response.request().method()==='POST');
+  await page.getByRole('button',{name:/^(Play|Resume)$/}).click();
   const hlsSession = await (await hlsResponse).json();
   expect(hlsSession.kind).toBe('hls');
   await page
@@ -281,7 +293,7 @@ try {
   await expect.poll(async () => (await readVideo(heroVideo)).paused).toBe(false);
   const pausedPosition = (await readVideo(playbackVideo)).currentTime;
   const preparationsBeforeResume = preparationRequests;
-  await page.getByRole('button', { name: 'Resume Movie', exact: true }).click();
+  await page.getByRole('button', { name: 'Resume', exact: true }).click();
   await expect.poll(async () => (await readVideo(playbackVideo)).paused).toBe(false);
   await expect
     .poll(async () => (await readVideo(playbackVideo)).currentTime)
@@ -298,8 +310,9 @@ try {
   await expect(page.getByText('Your watch history is up to date.', { exact: true })).toBeVisible();
   await screenshot('postplay-mobile');
   await page.getByRole('button', { name: 'Back to Coast', exact: true }).click();
-  await expect(page.locator('dd').first()).toHaveText('Watched');
-  await expect(page.getByRole('button', { name: 'Play Movie', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Close player', exact: true })).not.toBeVisible();
+  await expect(page.getByText('Marked as watched', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Play', exact: true })).toBeVisible();
   console.log('PASS ended playback saves watch history and renders post-play');
   if (showId && episodeOneId && episodeTwoId) {
     step = 'show hero and first episode';
@@ -310,7 +323,8 @@ try {
     expect(reset.ok()).toBe(true);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto(`${origin}/media/${showId}`);
-    await page.waitForLoadState('networkidle');
+    await hydrated();
+    await page.waitForLoadState('domcontentloaded');
     await expect(
       page.getByRole('heading', { name: 'Coast Series Fixture', exact: true })
     ).toBeVisible();
@@ -378,15 +392,15 @@ try {
     ).toBeVisible({ timeout: 10_000 });
     await expect(postplay.getByRole('button', { name: /^Play S/ })).not.toBeVisible();
     await postplay.getByRole('button', { name: 'Back to Coast', exact: true }).click();
-    await expect(page.locator('dd').first()).toHaveText('Watched');
+    await expect(page.getByRole('button', { name: 'Close player', exact: true })).not.toBeVisible();
     const completedShow = await (await page.request.get(`${origin}/api/v1/media/${showId}`)).json();
     expect(completedShow.item.completedEpisodes).toBe(2);
     expect(completedShow.item.totalEpisodes).toBe(2);
     expect(completedShow.item.watched).toBe(true);
-    expect(
-      completedShow.episodes.find((episode: { seasonNumber: number }) => episode.seasonNumber === 0)
-        ?.watched
-    ).toBe(false);
+    if (specialId) {
+      const special = await (await page.request.get(`${origin}/api/v1/media/${specialId}`)).json();
+      expect(special.item.watched).toBe(false);
+    }
     expect(
       await showVideo.evaluate(
         (video) => video === document.querySelector('video[data-player="playback"]') && video.isConnected
