@@ -67,6 +67,7 @@
     rows={2}
     size={surface === 'listen' ? 'square' : 'poster'}
     preserveHeight
+    mediaKind={surface === 'listen' ? 'music' : 'game'}
     actions={notices}
     href={layout === 'row' ? href : undefined}
   >

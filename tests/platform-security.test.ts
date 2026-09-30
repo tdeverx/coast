@@ -8,7 +8,6 @@ import {
   validateProviderUrl,
 } from '../src/lib/server/security/provider-fetch';
 import { assertSameOrigin } from '../src/lib/server/security/csrf';
-import { decryptCredential, encryptCredential } from '../src/lib/server/security/credentials';
 import { requireAdmin, hashToken, randomToken } from '../src/lib/server/auth';
 import { safeFields } from '../src/lib/diagnostics';
 import { retryDelayMs } from '../src/lib/server/queue';
@@ -132,26 +131,46 @@ test('state-changing browser requests require a matching Origin', () => {
 });
 
 let directory: string;
-const originalDataDirectory = process.env.COAST_DATA_DIR;
 test('provider credentials use authenticated encryption and a persisted non-plaintext key', async () => {
   directory = await mkdtemp(join(tmpdir(), 'coast-secrets-test-'));
-  process.env.COAST_DATA_DIR = directory;
-  const first = await encryptCredential('provider-secret');
-  const second = await encryptCredential('provider-secret');
+  // The application caches its key for its process lifetime. Keep this test independent of DB suites.
+  const child = Bun.spawn(
+    [
+      process.execPath,
+      '--eval',
+      `
+      import { encryptCredential, decryptCredential } from './src/lib/server/security/credentials.ts';
+      const first = await encryptCredential('provider-secret');
+      const second = await encryptCredential('provider-secret');
+      const plain = await decryptCredential(first);
+      const parts = first.split('.');
+      const bytes = Buffer.from(parts[2], 'base64url');
+      bytes[0] ^= 1;
+      parts[2] = bytes.toString('base64url');
+      let rejected = false;
+      try { await decryptCredential(parts.join('.')); } catch { rejected = true; }
+      console.log(JSON.stringify({ first, second, plain, rejected }));
+    `,
+    ],
+    {
+      cwd: join(import.meta.dir, '..'),
+      env: { ...process.env, COAST_DATA_DIR: directory },
+      stdout: 'pipe',
+      stderr: 'pipe',
+    }
+  );
+  const output = await new Response(child.stdout).text();
+  const failure = await new Response(child.stderr).text();
+  expect(await child.exited, failure).toBe(0);
+  const { first, second, plain, rejected } = JSON.parse(output);
   expect(first).not.toBe(second);
   expect(first).not.toContain('provider-secret');
-  expect(await decryptCredential(first)).toBe('provider-secret');
-  const parts = first.split('.');
-  const bytes = Buffer.from(parts[2], 'base64url');
-  bytes[0] ^= 1;
-  parts[2] = bytes.toString('base64url');
-  await expect(decryptCredential(parts.join('.'))).rejects.toThrow();
+  expect(plain).toBe('provider-secret');
+  expect(rejected).toBe(true);
   expect((await readFile(join(directory, 'secrets', 'credentials.key'))).length).toBe(32);
 });
 afterAll(async () => {
   if (directory) await rm(directory, { recursive: true, force: true });
-  if (originalDataDirectory === undefined) delete process.env.COAST_DATA_DIR;
-  else process.env.COAST_DATA_DIR = originalDataDirectory;
 });
 
 test('session secrets are random and hashed; admin checks execute on the server', async () => {

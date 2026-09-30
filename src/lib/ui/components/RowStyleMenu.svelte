@@ -10,6 +10,7 @@
     artworkStyle = 'auto',
     overlay = 'none',
     artworkOptions = true,
+    mediaKind = 'screen',
     overridePriority = $bindable(null),
     overrideShape = $bindable(null),
     overrideArtwork = $bindable(null),
@@ -20,6 +21,7 @@
     artworkStyle?: MediaCardArtwork;
     overlay?: MediaCardOverlay;
     artworkOptions?: boolean;
+    mediaKind?: 'screen' | 'music' | 'game';
     overridePriority?: ArtworkPriority | null;
     overrideShape?: MediaCardShape | null;
     overrideArtwork?: MediaCardArtwork | null;
@@ -42,14 +44,19 @@
   const shapes: MediaCardShape[] = ['poster', 'square', 'fanart', 'banner'];
 
   const currentArtwork = $derived(overrideArtwork ?? artworkStyle);
-  const artworkStyles: { value: MediaCardArtwork; label: string }[] = [
+  const artworkStyles = $derived([
     { value: 'auto', label: 'Automatic' },
     { value: 'none', label: 'None' },
-    ...(['primary', 'backdrop', 'thumb', 'banner', 'screenshot'] as const).map((value) => ({
+    ...(mediaKind === 'screen'
+      ? (['primary', 'backdrop', 'thumb', 'banner', 'screenshot'] as const)
+      : mediaKind === 'game'
+        ? (['primary', 'backdrop'] as const)
+        : (['primary'] as const)
+    ).map((value) => ({
       value,
-      label: artworkTypes[value].label,
+      label: value === 'primary' && mediaKind === 'music' ? 'Cover' : artworkTypes[value].label,
     })),
-  ];
+  ] satisfies { value: MediaCardArtwork; label: string }[]);
   const priorities: ArtworkPriority[] = [
     'episode-season-show',
     'episode-show-season',
@@ -89,36 +96,36 @@
           onclick={() => (overrideArtwork = option.value)}>{option.label}</MenuAction
         >{/each}
     </ContextMenu>
-    <ContextMenu label="Prefer artwork from" panel>
-      <MenuAction
-        selection="radio"
-        checked={overridePriority === null}
-        onclick={() => (overridePriority = null)}>Use default</MenuAction
-      >
-      <div class="menu-divider" role="separator"></div>
-      {#each priorities as priority}<MenuAction
+    {#if mediaKind === 'screen'}<ContextMenu label="Prefer artwork from" panel>
+        <MenuAction
           selection="radio"
-          checked={overridePriority === priority}
-          onclick={() => (overridePriority = priority)}
-          >{priority
-            .split('-')
-            .map((level) => level[0].toUpperCase() + level.slice(1))
-            .join(' → ')}</MenuAction
-        >{/each}
-    </ContextMenu>
-    <ContextMenu label="Overlay" panel>
-      <MenuAction
-        selection="radio"
-        checked={overrideOverlay === null}
-        onclick={() => (overrideOverlay = null)}>Use default</MenuAction
-      >
-      <div class="menu-divider" role="separator"></div>
-      {#each overlays as option}<MenuAction
+          checked={overridePriority === null}
+          onclick={() => (overridePriority = null)}>Use default</MenuAction
+        >
+        <div class="menu-divider" role="separator"></div>
+        {#each priorities as priority}<MenuAction
+            selection="radio"
+            checked={overridePriority === priority}
+            onclick={() => (overridePriority = priority)}
+            >{priority
+              .split('-')
+              .map((level) => level[0].toUpperCase() + level.slice(1))
+              .join(' → ')}</MenuAction
+          >{/each}
+      </ContextMenu>
+      <ContextMenu label="Overlay" panel>
+        <MenuAction
           selection="radio"
-          checked={overrideOverlay !== null && currentOverlay === option.value}
-          onclick={() => (overrideOverlay = option.value)}>{option.label}</MenuAction
-        >{/each}
-    </ContextMenu>
+          checked={overrideOverlay === null}
+          onclick={() => (overrideOverlay = null)}>Use default</MenuAction
+        >
+        <div class="menu-divider" role="separator"></div>
+        {#each overlays as option}<MenuAction
+            selection="radio"
+            checked={overrideOverlay !== null && currentOverlay === option.value}
+            onclick={() => (overrideOverlay = option.value)}>{option.label}</MenuAction
+          >{/each}
+      </ContextMenu>{/if}
   {/if}
   <div class="menu-divider" role="separator"></div>
   <MenuAction

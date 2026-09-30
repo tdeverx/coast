@@ -64,12 +64,12 @@ try {
     ).status()
   ).toBe(404);
   await page.goto(`${origin}/library`);
-  await expect(page.getByRole('link', { name: 'Music', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: 'Games', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'View all Listen', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'View all Play', exact: true })).toHaveCount(0);
   await setEnabled(true);
   await page.goto(`${origin}/library`);
-  await expect(page.getByRole('link', { name: 'Music', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Games', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'View all Listen', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'View all Play', exact: true })).toBeVisible();
   expect((await page.request.get(`${origin}/music`)).status()).toBe(200);
   expect((await page.request.get(`${origin}/games`)).status()).toBe(200);
   const gameResponse = await page.request.post(`${origin}/api/v1/games`, {

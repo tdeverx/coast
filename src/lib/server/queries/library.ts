@@ -69,33 +69,11 @@ export async function libraryData(userId: string, rawOptions: unknown = {}) {
   );
   const join = and(eq(s.trackingState.mediaId, s.media.id), eq(s.trackingState.userId, userId));
   const db = getDb();
-  const [[count], providers] = await Promise.all([
-    db
-      .select({ total: sql<number>`count(*)::int` })
-      .from(s.media)
-      .leftJoin(s.trackingState, join)
-      .where(where),
-    db
-      .select({
-        id: s.providerInstances.id,
-        name: s.providerInstances.name,
-        provider: s.providerInstances.provider,
-      })
-      .from(s.providerInstances)
-      .innerJoin(
-        s.providerConnections,
-        eq(s.providerConnections.instanceId, s.providerInstances.id)
-      )
-      .where(
-        and(
-          eq(s.providerConnections.userId, userId),
-          eq(s.providerConnections.status, 'connected'),
-          eq(s.providerInstances.enabled, true),
-          eq(s.providerInstances.provider, 'jellyfin')
-        )
-      )
-      .orderBy(asc(s.providerInstances.name), asc(s.providerInstances.id)),
-  ]);
+  const [count] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(s.media)
+    .leftJoin(s.trackingState, join)
+    .where(where);
   const total = count.total;
   const { page, pages } = pagination(total, input.page);
   const selected = await db
@@ -125,6 +103,5 @@ export async function libraryData(userId: string, rawOptions: unknown = {}) {
       source: input.source,
       tracking: input.tracking,
     },
-    providers,
   };
 }

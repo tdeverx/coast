@@ -7,7 +7,7 @@ export const load = (async ({ locals }) => {
   const items = await mediaViews(locals.user!.id, { ids: result.items.map((i) => i.id) });
   return {
     items,
-    mediaRows: await mediaRows(locals.user!.id),
+    mediaRows: await mediaRows(),
     trending: result.trending.flatMap((id) =>
       items.find((m) => m.id === id) ? [items.find((m) => m.id === id)!] : []
     ),

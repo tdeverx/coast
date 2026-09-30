@@ -44,6 +44,6 @@ export const load = (async ({ locals, url, params }) => {
     username: user.username,
     isOwner: user.id === viewer.id,
     activity,
-    mediaRows: view === 'overview' && user.id === viewer.id ? await mediaRows(user.id, true) : null,
+    mediaRows: view === 'overview' && user.id === viewer.id ? await mediaRows(true) : null,
   };
 }) satisfies PageServerLoad;

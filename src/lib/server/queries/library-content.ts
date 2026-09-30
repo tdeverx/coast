@@ -2,13 +2,17 @@ import * as v from 'valibot';
 import { getConfig } from '$lib/server/config';
 import { requireExperimentalFeatures } from '$lib/server/experimental';
 import { libraryData } from './library';
+import { presentationContent } from './media-rows';
 import { musicBrowseData } from './music';
 import { listGames } from '$lib/core/games/service';
 import { gameCard } from '$lib/games/presentation';
-import { musicCard } from '$lib/music/presentation';
 import type { LibraryContent } from '$lib/library';
 
 export async function libraryContent(userId: string, url: URL): Promise<LibraryContent> {
+  if (url.searchParams.get('preview') === 'true') {
+    const result = await presentationContent(userId, url);
+    return { ...result, page: 1, pages: 1, total: result.items.length };
+  }
   const surface = v.parse(
     v.picklist(['watch', 'listen', 'play']),
     url.searchParams.get('surface') ?? 'watch'
@@ -28,7 +32,7 @@ export async function libraryContent(userId: string, url: URL): Promise<LibraryC
     musicUrl.searchParams.set('kind', selection);
     const result = await musicBrowseData(userId, musicUrl);
     return {
-      items: result.items.map((item) => musicCard(item, result.connectionId)),
+      items: result.items,
       page: result.page,
       pages: result.pages,
       total: result.total,

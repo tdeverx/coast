@@ -10,12 +10,14 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
   if (!locals.user) error(401, 'Sign in to browse games.');
   const parsed = v.safeParse(
     v.object({
+      personal: v.boolean(),
       view: v.picklist(['library', 'igdb']),
       state: v.picklist(['all', 'planned', 'in-progress', 'completed', 'paused', 'dropped']),
       search: v.pipe(v.string(), v.maxLength(250)),
       page: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000)),
     }),
     {
+      personal: url.searchParams.get('personal') === 'true',
       view: url.searchParams.get('view') ?? 'library',
       state: url.searchParams.get('state') ?? 'all',
       search: (url.searchParams.get('search') ?? '').trim(),
@@ -34,7 +36,9 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
     const result = await listGames(
       filters.search,
       filters.page,
-      filters.state === 'all' ? undefined : { userId: locals.user.id, status: filters.state }
+      filters.state === 'all' && !filters.personal
+        ? undefined
+        : { userId: locals.user.id, ...(filters.state !== 'all' ? { status: filters.state } : {}) }
     );
     return {
       ...result,

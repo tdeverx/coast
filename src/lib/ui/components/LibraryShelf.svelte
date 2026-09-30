@@ -79,10 +79,8 @@
         signal: request.signal,
       });
       if (request.signal.aborted) return;
-      if (result.failure) {
-        failure = result.failure;
-        return;
-      }
+      failure = result.failure ?? '';
+      if (failure && !result.items.length) return;
       const combined = append ? [...content.items, ...result.items] : result.items;
       const unique = new Map(combined.map((item) => ['href' in item ? item.href : item.id, item]));
       content = { ...result, items: [...unique.values()] };
@@ -98,7 +96,7 @@
     if (ready && !busy && content.page < content.pages) void load(content.page + 1, true);
   }
   $effect(() => {
-    route.data;
+    route.data.filters;
     const next = initial;
     untrack(() => {
       if (next && layout === 'grid') content = next;
@@ -175,6 +173,7 @@
       {busy}
       rows={2}
       preserveHeight
+      mediaKind={surface === 'listen' ? 'music' : 'game'}
       size={surface === 'listen' ? 'square' : 'poster'}
       filters={selectionPicker}
       actions={errors}

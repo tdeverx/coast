@@ -8,8 +8,13 @@
   import MediaCard from '$lib/ui/components/MediaCard.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   let { data } = $props();
-  function pageUrl(page: number, view = data.filters.view) {
-    return `/games?${new URLSearchParams({ view, state: data.filters.state, instance: data.instanceId, search: data.filters.search, page: String(page) })}`;
+  function pageUrl(
+    page: number,
+    view = data.filters.view,
+    state = data.filters.state,
+    personal = data.filters.personal
+  ) {
+    return `/games?${new URLSearchParams({ view, state, personal: String(personal), instance: data.instanceId, search: data.filters.search, page: String(page) })}`;
   }
 </script>
 
@@ -18,13 +23,24 @@
   <BrowseHeader surface="play" enabled={data.experimentalFeatures}>
     {#snippet filters()}<RowFilter
         label="Games view"
-        value={data.filters.view}
+        value={data.filters.view === 'library' && data.filters.personal
+          ? 'personal'
+          : data.filters.view}
         options={[
           { value: 'library', label: 'All games' },
+          { value: 'personal', label: 'Your games' },
           { value: 'igdb', label: 'Discover' },
         ]}
         onchange={(view) =>
-          goto(pageUrl(1, view as typeof data.filters.view), { keepFocus: true, noScroll: true })}
+          goto(
+            pageUrl(
+              1,
+              view === 'igdb' ? 'igdb' : 'library',
+              data.filters.state,
+              view === 'personal'
+            ),
+            { keepFocus: true, noScroll: true }
+          )}
       />{#if data.filters.view === 'library'}<RowFilter
           label="Play state"
           value={data.filters.state}
@@ -37,7 +53,7 @@
             { value: 'dropped', label: 'Dropped' },
           ]}
           onchange={(state) =>
-            goto(`/games?${new URLSearchParams({ ...data.filters, state, page: '1' })}`, {
+            goto(pageUrl(1, data.filters.view, state as typeof data.filters.state), {
               noScroll: true,
               keepFocus: true,
             })}
@@ -50,6 +66,7 @@
   </BrowseHeader>
   <form class="filter-row browse-search" action="/games" method="GET">
     <input type="hidden" name="view" value={data.filters.view} />
+    <input type="hidden" name="personal" value={String(data.filters.personal)} />
     <input type="hidden" name="state" value={data.filters.state} />
     <input type="hidden" name="instance" value={data.instanceId} />
     <input
@@ -92,7 +109,11 @@
     />
   {:else}
     <EmptyState
-      title={data.filters.search ? 'No matching games' : 'No games yet'}
+      title={data.filters.search || data.filters.state !== 'all'
+        ? 'No matching games'
+        : data.filters.personal
+          ? 'No playthroughs yet'
+          : 'No games yet'}
       description="Discover games with IGDB and add them to start tracking."
       icon="library"
     >
