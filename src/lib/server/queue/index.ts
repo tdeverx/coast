@@ -1,10 +1,13 @@
+import { context, logDiagnostic, classifyFailure } from '../diagnostics';
+import { refreshDiagnosticConfig } from '../config';
+import { correlationId } from '../../diagnostics';
 import { desc, eq, sql } from 'drizzle-orm';
 import { getDb, getSql } from '../db';
 import { outboxActions, providerConnections, providerInstances, users } from '../db/schema';
 import { requireAdmin, type SessionUser } from '../auth';
 import { AppError } from '../security/errors';
 import { ProviderHttpError } from '../security/provider-fetch';
-import { notify, recordDiagnostic, resolveNotification } from '../notifications';
+import { notify, resolveNotification } from '../notifications';
 import * as v from 'valibot';
 
 export interface OutboxAction {
@@ -14,6 +17,7 @@ export interface OutboxAction {
   kind: string;
   payload: Record<string, unknown>;
   attempts: number;
+  correlationId: string;
 }
 export type ActionHandler = (action: OutboxAction) => Promise<void>;
 const handlers = new Map<string, ActionHandler>();
@@ -53,8 +57,8 @@ export async function enqueueAction(input: {
         await sql`DELETE FROM notifications WHERE user_id = ${input.userId} AND source_key = ${`outbox:${old.id}`}`;
     }
     const [row] =
-      await sql`INSERT INTO outbox_actions (user_id, connection_id, kind, payload, compaction_key, created_at)
-      VALUES (${input.userId}, ${input.connectionId || null}, ${input.kind}, ${input.payload}::jsonb, ${input.compactionKey || null}, clock_timestamp()) RETURNING id`;
+      await sql`INSERT INTO outbox_actions (user_id, connection_id, kind, payload, compaction_key, created_at, correlation_id)
+      VALUES (${input.userId}, ${input.connectionId || null}, ${input.kind}, ${input.payload}::jsonb, ${input.compactionKey || null}, clock_timestamp(), ${correlationId(context.getStore())}) RETURNING id`;
     return row.id;
   });
 }
@@ -131,6 +135,7 @@ export async function claimNextAction(): Promise<OutboxAction | null> {
         kind: row.kind,
         payload: row.payload,
         attempts: row.attempts,
+        correlationId: row.correlation_id,
       }
     : null;
 }
@@ -138,77 +143,77 @@ export async function claimNextAction(): Promise<OutboxAction | null> {
 export async function runQueueOnce(): Promise<boolean> {
   const action = await claimNextAction();
   if (!action) return false;
-  const heartbeat = setInterval(() => {
-    void getSql()`UPDATE outbox_actions SET locked_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts}`.catch(
-      () => {}
-    );
-  }, 20_000);
-  heartbeat.unref();
-  try {
-    const handler = handlers.get(action.kind);
-    if (!handler) throw new PermanentActionError('This action type is no longer supported.');
-    await handler(action);
-    await getSql().begin(async (sql) => {
-      const completed =
-        await sql`UPDATE outbox_actions SET state = 'succeeded', locked_at = NULL, last_error = NULL, updated_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
-      if (completed.length) await resolveNotification(action.userId, `outbox:${action.id}`, sql);
-    });
-  } catch (error) {
-    const permanent =
-      error instanceof PermanentActionError ||
-      (error instanceof ProviderHttpError &&
-        [400, 401, 403, 404, 405, 409, 410, 422].includes(error.status));
-    const message = permanent
-      ? 'The connected service could not accept this action. An administrator can review the connection and retry it.'
-      : 'The connected service is unavailable. Coast will retry automatically.';
-    const retryAfter =
-      error instanceof ProviderHttpError
-        ? Math.min(86_400_000, Math.max(0, (error.retryAfterSeconds || 0) * 1000))
-        : 0;
-    const next = new Date(Date.now() + Math.max(retryDelayMs(action.attempts), retryAfter));
-    await getSql().begin(async (sql) => {
-      const failed =
-        await sql`UPDATE outbox_actions SET state = ${permanent ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, updated_at = NOW()
+  await refreshDiagnosticConfig();
+  return context.run(action.correlationId, async () => {
+    const started = performance.now();
+    void logDiagnostic('debug', 'job.start', { actionId: action.id, attempts: action.attempts });
+    const heartbeat = setInterval(() => {
+      void getSql()`UPDATE outbox_actions SET locked_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts}`.catch(
+        () => {}
+      );
+    }, 20_000);
+    heartbeat.unref();
+    try {
+      const handler = handlers.get(action.kind);
+      if (!handler) throw new PermanentActionError('This action type is no longer supported.');
+      await handler(action);
+      await getSql().begin(async (sql) => {
+        const completed =
+          await sql`UPDATE outbox_actions SET state = 'succeeded', locked_at = NULL, last_error = NULL, updated_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
+        if (completed.length) await resolveNotification(action.userId, `outbox:${action.id}`, sql);
+      });
+      void logDiagnostic('info', 'job.complete', {
+        actionId: action.id,
+        attempts: action.attempts,
+        durationMs: performance.now() - started,
+      });
+    } catch (error) {
+      void logDiagnostic('error', 'job.failed', {
+        actionId: action.id,
+        attempts: action.attempts,
+        failure: classifyFailure(error),
+        status: error instanceof ProviderHttpError ? error.status : undefined,
+        errorCode: safeDiagnosticErrorCode(error),
+        stage: safeDiagnosticStage(error),
+        durationMs: performance.now() - started,
+      });
+      const permanent =
+        error instanceof PermanentActionError ||
+        (error instanceof ProviderHttpError &&
+          [400, 401, 403, 404, 405, 409, 410, 422].includes(error.status));
+      const message = permanent
+        ? 'The connected service could not accept this action. An administrator can review the connection and retry it.'
+        : 'The connected service is unavailable. Coast will retry automatically.';
+      const retryAfter =
+        error instanceof ProviderHttpError
+          ? Math.min(86_400_000, Math.max(0, (error.retryAfterSeconds || 0) * 1000))
+          : 0;
+      const next = new Date(Date.now() + Math.max(retryDelayMs(action.attempts), retryAfter));
+      await getSql().begin(async (sql) => {
+        const failed =
+          await sql`UPDATE outbox_actions SET state = ${permanent ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, updated_at = NOW()
         WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
-      if (!failed.length) return; // A recovered lease owns the outcome now.
-      if (permanent || action.attempts >= 3)
-        await notify(
-          {
-            userId: action.userId,
-            kind: 'external-action',
-            title: permanent
-              ? 'An external action needs attention'
-              : 'Waiting for a connected service',
-            body: message,
-            level: 'normal',
-            sourceKey: `outbox:${action.id}`,
-          },
-          sql
-        );
-      if (permanent || action.attempts === 3)
-        await recordDiagnostic(
-          {
-            userId: action.userId,
-            kind: 'outbox',
-            message,
-            detail: {
-              actionId: action.id,
-              kind: action.kind,
-              attempts: action.attempts,
-              errorType: error instanceof Error ? error.name : 'unknown',
-              status: error instanceof ProviderHttpError ? error.status : null,
-              errorCode: safeDiagnosticErrorCode(error),
-              stage: safeDiagnosticStage(error),
-              validationIssues: validationDiagnostic(error),
+        if (!failed.length) return; // A recovered lease owns the outcome now.
+        if (permanent || action.attempts >= 3)
+          await notify(
+            {
+              userId: action.userId,
+              kind: 'external-action',
+              title: permanent
+                ? 'An external action needs attention'
+                : 'Waiting for a connected service',
+              body: message,
+              level: 'normal',
+              sourceKey: `outbox:${action.id}`,
             },
-          },
-          sql
-        );
-    });
-  } finally {
-    clearInterval(heartbeat);
-  }
-  return true;
+            sql
+          );
+      });
+    } finally {
+      clearInterval(heartbeat);
+    }
+    return true;
+  });
 }
 
 let running = false;

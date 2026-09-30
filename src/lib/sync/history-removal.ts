@@ -7,7 +7,8 @@ import { historyScope } from '$lib/core/tracking/history-scope';
 import { rebuildHistoryInTransaction } from '$lib/core/tracking/service';
 import { enqueueInTransaction } from './changes';
 import { acknowledgeProviderValue } from './values';
-import { getJellyfin, getTrakt } from '$lib/providers/service';
+import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
+import { getTrakt } from '$lib/providers/trakt/connection.server';
 import { PermanentActionError } from '$lib/server/queue';
 const uuid = v.pipe(v.string(), v.uuid());
 const inputSchema = v.object({

@@ -12,7 +12,10 @@
     allowPrivateNetwork: boolean;
     linkedMediaInstanceId: string | null;
   };
-  let { providers }: { providers: Instance[] } = $props();
+  let {
+    providers,
+    experimentalFeatures = false,
+  }: { providers: Instance[]; experimentalFeatures?: boolean } = $props();
   let open = $state(false),
     editing = $state<Instance | null>(null),
     provider = $state('tmdb'),
@@ -99,7 +102,9 @@
       >Provider<select bind:value={provider} disabled={!!editing}
         ><option value="tmdb">TMDB</option><option value="jellyfin">Jellyfin</option><option
           value="trakt">Trakt</option
-        ><option value="seerr">Seerr</option></select
+        ><option value="seerr">Seerr</option>{#if experimentalFeatures}<option value="igdb"
+            >IGDB</option
+          >{/if}</select
       ></label
     >
     <label class="field"
@@ -134,20 +139,23 @@
           required={!editing}
         /><small>From your TMDB account’s API settings.</small></label
       >
-    {:else if provider === 'trakt'}<label class="field"
-        >Application client ID<input
+    {:else if provider === 'trakt' || provider === 'igdb'}<label class="field"
+        >{provider === 'igdb' ? 'Twitch client ID' : 'Application client ID'}<input
           name="clientId"
           autocomplete="off"
           required={!editing}
         /></label
       ><label class="field"
-        >Application client secret<input
+        >{provider === 'igdb' ? 'Twitch client secret' : 'Application client secret'}<input
           name="clientSecret"
           type="password"
           autocomplete="off"
           required={!editing}
         /></label
       >
+      {#if provider === 'igdb'}<small
+          >From your Twitch developer application. Coast verifies these credentials with IGDB.</small
+        >{/if}
     {:else if provider === 'seerr'}<label class="field"
         >Seerr API key<input
           name="apiKey"

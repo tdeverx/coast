@@ -1,5 +1,6 @@
 import { artworkKeys, artworkTypes } from '$lib/artwork';
 import * as v from 'valibot';
+import { browseMusic, musicItem, type MusicBrowseOptions } from './music.server';
 import { ProviderActionError } from '../contracts';
 import type {
   AvailableItem,
@@ -268,6 +269,12 @@ export class JellyfinAdapter {
         await this.call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(id)}`)
       )
     );
+  }
+  async musicLibrary(userId: string, options: MusicBrowseOptions = {}) {
+    return browseMusic((path, init) => this.call(path, init), userId, options);
+  }
+  async musicItem(userId: string, id: string) {
+    return musicItem((path, init) => this.call(path, init), userId, id);
   }
   async localTrailers(userId: string, itemId: string) {
     return v

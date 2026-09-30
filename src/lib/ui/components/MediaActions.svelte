@@ -5,7 +5,12 @@
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { trackingLanguage } from '$lib/media/model';
   import { sequencePath } from '$lib/media/sequence';
-  import { isMediaGroup, isResumable, targetLabel, type MediaActionData } from '$lib/media/actions';
+  import {
+    isMediaGroup,
+    isResumable,
+    targetLabel,
+    type MediaActionData,
+  } from '$lib/media/actions';
   import type { RequestDestination } from '$lib/media/requests';
   import type { MediaView } from '$lib/ui/types';
   import { api, message, ApiError } from '$lib/ui/client';
@@ -17,6 +22,8 @@
   import MenuAction from './MenuAction.svelte';
   import Dialog from './Dialog.svelte';
   import RequestDialog from './RequestDialog.svelte';
+  import MediaRequestMenu from './MediaRequestMenu.svelte';
+  import { requestScope } from '$lib/media/requests';
   import SequenceControl from './SequenceControl.svelte';
   import MetadataEditor from './MetadataEditor.svelte';
   import Rating from './Rating.svelte';
@@ -49,10 +56,10 @@
     | 'rewatch'
     | 'personalise'
     | 'admin'
-    | 'requests'
     | 'list-entry';
   let menu = $state<ContextMenu>(),
-    sequenceControl = $state<SequenceControl>();
+    sequenceControl = $state<SequenceControl>(),
+    requestMenu = $state<MediaRequestMenu>();
   let data = $state<MediaActionData | null>(null),
     busy = $state(false),
     loading = $state(false),
@@ -80,7 +87,9 @@
   const playable = $derived(data ? data.playable : isMediaGroup(item) ? next : item);
   const editions = $derived(data?.editions ?? []);
   const selectedEdition = $derived(
-    page.params.id === active.id ? (page.url.searchParams.get('edition') ?? undefined) : undefined
+    page.params.id === active.id
+      ? (page.url.searchParams.get('edition') ?? undefined)
+      : undefined
   );
   const resumable = $derived(!!playable && isResumable(playable));
   const playLabel = $derived(
@@ -113,69 +122,10 @@
     date = $state(''),
     includeSpecials = $state(false);
   let requestOptions = $state<RequestDestination[] | undefined>(),
-    requestOptionsBusy = $state(false),
-    requestOptionsError = $state(''),
     request4k = $state(false);
-  const existingRequests = $derived(data?.requests ?? []);
-  const canManageRequests = $derived(
-    existingRequests.some(
-      (request) => request.canCancel || request.canApprove || request.canDecline
-    )
-  );
-  const requested = $derived(
-    existingRequests.some((request) => ['pending', 'approved'].includes(request.state))
-  );
-  const requestLabel = $derived(
-    canManageRequests
-      ? 'Manage request'
-      : requested
-        ? 'Requested'
-        : requestItem?.available || existingRequests.length
-          ? 'Request more'
-          : 'Request'
-  );
-  const requestDisabledReason = $derived(
-    !data
-      ? 'Checking request availability'
-      : !data.requestsEnabled
-        ? 'Connect Seerr and enable requests'
-        : !requestItem?.tmdbId
-          ? 'Match this title with TMDB before requesting it'
-          : ''
-  );
-  const canRequestStandard = $derived(
-    requestOptions?.some((entry) => entry.variants.standard?.requestable)
-  );
-  const canRequest4k = $derived(requestOptions?.some((entry) => entry.variants.fourK?.requestable));
-  async function loadRequestOptions() {
-    if (requestOptionsBusy || requestOptions || requestDisabledReason || !requestItem) return;
-    const id = requestItem.id;
-    requestOptionsBusy = true;
-    requestOptionsError = '';
-    try {
-      const result = await api<{ destinations: RequestDestination[] }>(
-        `requests/options?mediaId=${id}`,
-        undefined,
-        'GET'
-      );
-      if (requestItem?.id === id) requestOptions = result.destinations;
-    } catch (cause) {
-      requestOptionsError = message(cause);
-    } finally {
-      requestOptionsBusy = false;
-    }
-  }
   function openRequest(fourK = false) {
     request4k = fourK;
     requestOpen = true;
-  }
-  function requestScope(request: MediaActionData['requests'][number]) {
-    const scope = request.seasons.length
-      ? `${request.seasons.length === 1 ? 'Season' : 'Seasons'} ${request.seasons.join(', ')}`
-      : request.is4k
-        ? '4K version'
-        : 'Standard version';
-    return `${scope}${request.is4k && request.seasons.length ? ' · 4K' : ''}${new Set(existingRequests.map((entry) => entry.destination)).size > 1 ? ` · ${request.destination}` : ''}`;
   }
   function manageRequest(
     request: MediaActionData['requests'][number],
@@ -183,13 +133,17 @@
   ) {
     confirm(
       `${action === 'cancel' ? 'Cancel' : action === 'approve' ? 'Approve' : 'Decline'} request?`,
-      `${requestItem?.title ?? active.title} · ${requestScope(request)}`,
+      `${requestItem?.title ?? active.title} · ${requestScope(request, data?.requests ?? [])}`,
       async () => {
         if (
-          await perform(() => api(`requests/${request.id}`, { action }), 'Request update queued.')
+          await perform(
+            () => api(`requests/${request.id}`, { action }),
+            'Request update queued.'
+          )
         ) {
           confirmOpen = false;
           requestOptions = undefined;
+          requestMenu?.resetOptions();
         }
       },
       action !== 'approve'
@@ -227,7 +181,7 @@
   function openMenu() {
     data = null;
     requestOptions = undefined;
-    requestOptionsError = '';
+    requestMenu?.resetOptions();
     void loadActions();
   }
   export function openAt(point: { x: number; y: number }) {
@@ -382,7 +336,9 @@
   }
   function openForm(value: NonNullable<typeof form>, target = active) {
     dialogTarget = target;
-    date = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    date = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+      .toISOString()
+      .slice(0, 16);
     error = '';
     includeSpecials = false;
     form = value;
@@ -392,7 +348,8 @@
     if (kind === 'rewatch') {
       if (
         await perform(
-          () => api('rewatch', { mediaId: formTarget.id, startedAt: new Date(date).toISOString() }),
+          () =>
+            api('rewatch', { mediaId: formTarget.id, startedAt: new Date(date).toISOString() }),
           'Rewatch started.'
         )
       )
@@ -438,7 +395,10 @@
       'Only this occurrence will be removed. Your watch history is kept.',
       async () => {
         if (
-          await perform(() => api(`lists/${listId}/items`, { entryId }, 'DELETE'), 'Entry removed.')
+          await perform(
+            () => api(`lists/${listId}/items`, { entryId }, 'DELETE'),
+            'Entry removed.'
+          )
         ) {
           confirmOpen = false;
         }
@@ -453,7 +413,10 @@
       | undefined;
     await perform(
       async () => {
-        result = await api('continue', { mediaId: target.id, action: removing ? 'remove' : 'add' });
+        result = await api('continue', {
+          mediaId: target.id,
+          action: removing ? 'remove' : 'add',
+        });
       },
       `${target.title} · ${removing ? 'Removed from Continue · Rewatch ended · History preserved' : target.dropped ? 'Restored to Continue' : 'Added to Next'}`,
       removing
@@ -491,52 +454,15 @@
   }
   function refresh() {
     const target = data?.refreshTarget;
-    if (target) void perform(() => api(`media/${target.id}/refresh`, {}), 'Metadata refreshed.');
+    if (target)
+      void perform(() => api(`media/${target.id}/refresh`, {}), 'Metadata refreshed.');
   }
 </script>
 
 {#snippet branch(label: string, to: View, icon: import('./Icon.svelte').IconName)}
-  <ContextMenu
-    {label}
-    {icon}
-    panel
-    disabled={busy || loading}
-    onopen={to === 'requests' ? () => void loadRequestOptions() : undefined}
-  >
+  <ContextMenu {label} {icon} panel disabled={busy || loading}>
     {@render content(to)}
   </ContextMenu>
-{/snippet}
-{#snippet requestManagement(request: MediaActionData['requests'][number])}
-  {#if request.canApprove}<MenuAction
-      icon="check"
-      disabled={busy}
-      onclick={() => manageRequest(request, 'approve')}>Approve request…</MenuAction
-    >{/if}
-  <MenuAction icon="arrow" href={`/requests?request=${request.id}`}
-    >View request · {request.state === 'pending'
-      ? 'Pending'
-      : request.state === 'approved'
-        ? 'Approved'
-        : request.state === 'available'
-          ? 'Available'
-          : 'Failed'}</MenuAction
-  >
-  {#if request.canCancel || request.canDecline}<div
-      class="menu-divider"
-      role="separator"
-    ></div>{/if}
-  {#if request.canDecline}<MenuAction
-      icon="close"
-      danger
-      disabled={busy}
-      onclick={() => manageRequest(request, 'decline')}>Decline request…</MenuAction
-    >{/if}
-  {#if request.canCancel}<MenuAction
-      icon="close"
-      danger
-      disabled={busy}
-      onclick={() => manageRequest(request, 'cancel')}>Cancel request…</MenuAction
-    >{/if}
 {/snippet}
 {#snippet playbackChoices(edition?: string)}
   <MenuAction
@@ -572,16 +498,19 @@
         onclick={startTarget}>{playLabel}</MenuAction
       >
     {/if}
-    {#if canManageRequests || (!requestDisabledReason && requestLabel !== 'Request')}
-      {@render branch(requestLabel, 'requests', 'request')}
-    {:else}
-      <MenuAction
-        icon="request"
-        disabled={loading || busy || !!requestDisabledReason}
-        disabledReason={requestDisabledReason}
-        onclick={() => openRequest()}>{requestLabel}…</MenuAction
-      >
-    {/if}
+    <MediaRequestMenu
+      bind:this={requestMenu}
+      item={requestItem}
+      {data}
+      {busy}
+      {loading}
+      {error}
+      onrequest={(fourK = false, options) => {
+        requestOptions = options;
+        openRequest(fourK);
+      }}
+      onmanage={manageRequest}
+    />
     <div class="menu-divider" role="separator"></div>
     {@render branch(language.mark, 'watched', 'check')}
     {@render branch('Rewatch', 'rewatch', 'refresh')}
@@ -633,7 +562,10 @@
     {/if}
   {:else if view === 'details'}
     {#each detailTargets as target (target.id)}
-      <MenuAction icon={target.kind === 'show' ? 'library' : 'film'} href={`/media/${target.id}`}>
+      <MenuAction
+        icon={target.kind === 'show' ? 'library' : 'film'}
+        href={`/media/${target.id}`}
+      >
         {target.kind === 'episode'
           ? `Episode · S${String(target.seasonNumber ?? 0).padStart(2, '0')}E${String(target.episodeNumber ?? 0).padStart(2, '0')}`
           : target.kind === 'show'
@@ -719,7 +651,9 @@
           `Mark unwatched · ${active.title}`,
           `Mark ${targetLabel(active)} unwatched and clear its saved playback position. Keep all past watches in your history.`,
           async () => {
-            if (await perform(() => track('unwatch', {}, true), 'Marked unwatched. History kept.'))
+            if (
+              await perform(() => track('unwatch', {}, true), 'Marked unwatched. History kept.')
+            )
               confirmOpen = false;
           },
           false
@@ -791,46 +725,6 @@
           editOpen = true;
         }}>Edit title details…</MenuAction
       >{/if}
-  {:else if view === 'requests'}
-    {#if canRequestStandard}
-      <MenuAction icon="request" onclick={() => openRequest()}
-        >{requestItem?.kind === 'show'
-          ? 'Request remaining seasons…'
-          : 'Request standard version…'}</MenuAction
-      >
-    {/if}
-    {#if canRequest4k}<MenuAction icon="request" onclick={() => openRequest(true)}
-        >Request 4K…</MenuAction
-      >{/if}
-    {#if requestOptionsError}<MenuAction icon="refresh" onclick={loadRequestOptions}
-        >Retry request options</MenuAction
-      >{/if}
-    {#if existingRequests.length}
-      {#if canRequestStandard || canRequest4k || requestOptionsError}<div
-          class="menu-divider"
-          role="separator"
-        ></div>{/if}
-      {#if existingRequests.length === 1}
-        {@render requestManagement(existingRequests[0])}
-      {:else}
-        {#each existingRequests as request (request.id)}
-          <ContextMenu label={requestScope(request)} panel>
-            {#snippet trigger()}<Icon name="request" /><span class="menu-action-label"
-                >{requestScope(request)}</span
-              ><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
-            {@render requestManagement(request)}
-          </ContextMenu>
-        {/each}
-      {/if}
-    {:else}
-      {#if canRequestStandard || canRequest4k}<div class="menu-divider" role="separator"></div>{/if}
-      <MenuAction icon="arrow" href="/requests">View requests</MenuAction>
-      {#if requestOptions && !canRequestStandard && !canRequest4k}<MenuAction
-          disabled
-          disabledReason="Already available, requested, or not permitted for your account"
-          >Nothing more to request</MenuAction
-        >{/if}
-    {/if}
   {:else if view === 'list-entry'}
     {#if item.listContext && active.id === item.id}
       <MenuAction

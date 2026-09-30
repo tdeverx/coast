@@ -1,5 +1,6 @@
 <script lang="ts">
   import '../app.css';
+  import { installBrowserDiagnostics } from '$lib/ui/diagnostics';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { invalidate, onNavigate } from '$app/navigation';
@@ -38,6 +39,7 @@
     };
   });
   onMount(() => {
+    const stopDiagnostics = data.user ? installBrowserDiagnostics() : () => {};
     const expire = () => (expired = true);
     window.addEventListener('coast:auth-expired', expire);
     let polling = false;
@@ -53,6 +55,7 @@
       }
     }, 60000);
     return () => {
+      stopDiagnostics();
       window.removeEventListener('coast:auth-expired', expire);
       clearInterval(timer);
     };

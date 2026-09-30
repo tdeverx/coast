@@ -1,16 +1,20 @@
+import { context, logDiagnostic, classifyFailure, diagnosticStore } from '$lib/server/diagnostics';
+import { correlationId } from '$lib/diagnostics';
+import { isExperimentalPath } from '$lib/server/experimental';
+import { refreshDiagnosticConfig, getConfig } from '$lib/server/config';
 import { building } from '$app/environment';
-import { redirect, json, type Handle } from '@sveltejs/kit';
+import { redirect, json, error, isRedirect, isHttpError, type Handle } from '@sveltejs/kit';
 import { authenticateSession, setupRequired } from '$lib/server/auth';
 import { SESSION_COOKIE, setSessionCookie } from '$lib/server/auth/cookies';
 import { assertSameOrigin } from '$lib/server/security/csrf';
 import { initializePlatform } from '$lib/server/startup';
-import { registerProviderActions } from '$lib/providers/service';
+import { registerProviderActions } from '$lib/providers/actions.server';
 
 export const init: import('@sveltejs/kit').ServerInit = async () => {
   if (!building) await initializePlatform(registerProviderActions);
 };
 
-export const handle: Handle = async ({ event, resolve }) => {
+const applicationHandle: Handle = async ({ event, resolve }) => {
   if (building) return resolve(event);
   await initializePlatform(registerProviderActions);
   if (!['GET', 'HEAD', 'OPTIONS'].includes(event.request.method)) {
@@ -42,10 +46,84 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
   if (event.locals.setup && !['/setup', '/recovery'].includes(event.url.pathname))
     redirect(303, '/setup');
+  if (isExperimentalPath(event.url.pathname) && !(await getConfig()).experimentalFeatures) {
+    if (event.url.pathname.startsWith('/api/'))
+      return json(
+        { error: 'Experimental features are disabled.', code: 'experimental_disabled' },
+        { status: 404, headers: { 'cache-control': 'private, no-store' } }
+      );
+    event.setHeaders({ 'cache-control': 'private, no-store' });
+    error(404, 'Experimental features are disabled.');
+  }
   const response = await resolve(event);
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'same-origin');
   response.headers.set('X-Frame-Options', 'DENY');
   if (event.locals.user) response.headers.set('Cache-Control', 'private, no-store');
   return response;
+};
+
+export const handle: Handle = async ({ event, resolve }) => {
+  if (building) return resolve(event);
+  const id = correlationId(event.request.headers.get('x-coast-correlation-id'));
+  return context.run(id, async () => {
+    await refreshDiagnosticConfig();
+    const started = performance.now();
+    const diagnosticRequest = event.url.pathname.startsWith('/api/v1/diagnostics');
+    const segment = event.url.pathname.split('/')[3];
+    const operation = [
+      'playback',
+      'providers',
+      'settings',
+      'admin',
+      'media',
+      'lists',
+      'notifications',
+      'requests',
+    ].includes(segment)
+      ? segment
+      : ['login', 'setup', 'recovery', 'logout'].includes(event.url.pathname.split('/')[1])
+        ? 'auth'
+        : 'other';
+    if (!diagnosticRequest)
+      void logDiagnostic('debug', 'request.start', { method: event.request.method, operation });
+    try {
+      const response = await applicationHandle({ event, resolve });
+      response.headers.set('x-coast-correlation-id', id);
+      response.headers.set('x-coast-diagnostic-level', diagnosticStore.level);
+      // Ingestion and level polling must not log their own traffic.
+      if (!diagnosticRequest)
+        void logDiagnostic(
+          response.status >= 500 ? 'error' : response.status >= 400 ? 'warn' : 'info',
+          'request.complete',
+          {
+            method: event.request.method,
+            operation,
+            status: response.status,
+            durationMs: performance.now() - started,
+          }
+        );
+      return response;
+    } catch (error) {
+      if (isRedirect(error) || isHttpError(error)) {
+        if (!diagnosticRequest)
+          void logDiagnostic(error.status >= 400 ? 'warn' : 'info', 'request.complete', {
+            operation,
+            status: error.status,
+            method: event.request.method,
+            durationMs: performance.now() - started,
+          });
+      } else
+        void logDiagnostic('error', 'request.failed', {
+          operation,
+          failure: classifyFailure(error),
+          durationMs: performance.now() - started,
+        });
+      throw error;
+    }
+  });
+};
+export const handleError: import('@sveltejs/kit').HandleServerError = ({ error }) => {
+  void logDiagnostic('error', 'application.failed', { failure: classifyFailure(error) });
+  return { message: 'The application could not complete this request.' };
 };

@@ -435,7 +435,7 @@ async function seerrDiscovery(userId: string) {
     .select()
     .from(providerInstances)
     .where(and(eq(providerInstances.provider, 'seerr'), eq(providerInstances.enabled, true)));
-  const { getSeerr } = await import('$lib/providers/service');
+  const { getSeerr } = await import('$lib/providers/seerr/connection.server');
   for (const instance of instances)
     try {
       return (await getSeerr(userId, instance.id)).adapter;

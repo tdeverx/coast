@@ -10,7 +10,7 @@ export function providerSchedule(provider: string, saved?: unknown): ProviderSch
   return parsed.success
     ? parsed.output
     : {
-        enabled: provider !== 'trakt',
+        enabled: !['trakt', 'igdb'].includes(provider),
         intervalMinutes: provider === 'jellyfin' ? 10 : provider === 'seerr' ? 1 : 60,
         fullIntervalHours: 24,
       };

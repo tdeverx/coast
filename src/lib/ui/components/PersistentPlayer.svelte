@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { browserDiagnostic } from '$lib/ui/diagnostics';
   import { sequencePath } from '$lib/media/sequence';
   import { onMount, untrack, tick } from 'svelte';
   import { invalidateAll } from '$app/navigation';
@@ -153,6 +154,7 @@
   }
   async function failure() {
     if (!src) return;
+    tracePlayback('playback.failed');
     error = 'Playback was interrupted. Please try again.';
     if (player.session)
       await api(`playback/${player.session.id}/error`, { code: video?.error?.code ?? 0 }).catch(
@@ -344,6 +346,10 @@
       hls?.destroy();
     };
   });
+  let lastTiming = 0;
+  function tracePlayback(event: import('$lib/diagnostics').DiagnosticEvent) {
+    browserDiagnostic(event, { sessionId: player.session?.id, durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0, bufferedSeconds: video?.buffered.length ? Math.max(0, video.buffered.end(video.buffered.length - 1) - video.currentTime) : 0, positionSeconds: video?.currentTime, readyState: video?.readyState, networkState: video?.networkState, code: video?.error?.code });
+  }
 </script>
 
 <div bind:this={host} class="player" class:active aria-hidden={!active}>
@@ -355,18 +361,21 @@
     style={videoStyle}
     playsinline
     preload="metadata"
-    ontimeupdate={update}
-    onloadedmetadata={metadata}
+    ontimeupdate={() => { update(); if (video && performance.now() - lastTiming > 10_000) { lastTiming = performance.now(); tracePlayback('playback.timing'); } }}
+    onwaiting={() => tracePlayback('playback.waiting')}
+    onseeking={() => tracePlayback('playback.seek')}
+    onloadedmetadata={() => { metadata(); tracePlayback('playback.ready'); }}
     onplay={() => {
       player.paused = false;
     }}
-    onplaying={playing}
+    onplaying={() => { playing(); tracePlayback('playback.playing'); }}
     onpause={() => {
       player.paused = true;
+      tracePlayback('playback.pause');
       if (active && !closed && player.role !== 'postplay') void report('pause');
     }}
     onended={ended}
-    onerror={failure}
+    onerror={() => { void failure(); }}
   >
     {#each tracks as track (track.url)}<track
         kind="subtitles"

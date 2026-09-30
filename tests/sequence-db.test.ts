@@ -15,7 +15,7 @@ import {
   sequenceEntries,
 } from '../src/lib/core/lists/sequence';
 import { track } from '../src/lib/core/tracking/service';
-import { deleteListWithExports } from '../src/lib/sync/service';
+import { deleteListWithExports } from '../src/lib/sync/trakt-lists';
 import { bulkTrack } from '../src/lib/core/tracking/service';
 import { setRewatch } from '../src/lib/core/tracking/rewatch';
 import { mediaViewsForIds, sequenceNextView } from '../src/lib/server/queries/media';

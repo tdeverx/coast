@@ -1,3 +1,4 @@
+import { correlationId } from '$lib/diagnostics';
 import { sequenceContextSchema } from '$lib/media/sequence';
 import { sequenceEntries } from '$lib/core/lists/sequence';
 import { rewatchBoundary, rewatchFields } from '$lib/core/tracking/rewatch';
@@ -17,12 +18,13 @@ import {
   providerConnections,
   providerInstances,
 } from '$lib/server/db/schema';
-import { getJellyfin, instanceFetchConfig } from '$lib/providers/service';
+import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
+import { instanceFetchConfig } from '$lib/providers/instances.server';
 import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
 import { getConfig } from '$lib/server/config';
 import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
 import { secureProviderFetch } from '$lib/server/security/provider-fetch';
-import { recordDiagnostic } from '$lib/server/notifications';
+import { logDiagnostic, classifyFailure, context } from '$lib/server/diagnostics';
 import { trackInTransaction } from '$lib/core/tracking/service';
 import {
   enqueueTraktChangeInTransaction,
@@ -134,6 +136,8 @@ export async function startPlayback(
   userId: string,
   input: unknown
 ): Promise<PlaybackView & { defaultSubtitleIndex: number | null; subtitlePrompt: boolean }> {
+  const started = performance.now();
+  void logDiagnostic('debug', 'playback.start');
   const data = v.parse(playbackInput, input),
     config = await getConfig();
   const [item] = await getDb().select().from(media).where(eq(media.id, data.mediaId));
@@ -209,12 +213,7 @@ export async function startPlayback(
         }
       }
     } catch (error) {
-      await recordDiagnostic({
-        userId,
-        kind: 'playback-source',
-        message: error instanceof Error ? error.message : 'A playback source failed.',
-        detail: { connectionId: row.availability.connectionId, mediaId: item.id },
-      });
+      void logDiagnostic('error', 'playback.failed', { failure: classifyFailure(error) });
     }
   }
   candidates.sort((a, b) => comparePlaybackPlans(a.plan, b.plan));
@@ -307,9 +306,11 @@ export async function startPlayback(
       positionSeconds: position,
       durationSeconds: duration,
       state: 'prepared',
+      correlationId: correlationId(context.getStore()),
       expiresAt,
     })
     .returning();
+  void logDiagnostic('info', 'playback.ready', { sessionId: session.id, durationMs: performance.now() - started });
   const subtitles = [];
   for (const subtitle of source.streams.filter(
     (s) =>
@@ -524,6 +525,8 @@ export async function streamPlayback(
     );
   if (!session || session.state === 'stopped')
     return new Response('Playback session expired.', { status: 410 });
+  context.enterWith(session.correlationId);
+  void logDiagnostic('trace', 'playback.timing', { sessionId: session.id });
   const { connection, instance } = await getJellyfin(userId, session.connectionId);
   const [item] = await getDb()
     .select()
@@ -749,16 +752,9 @@ export async function recordPlaybackError(userId: string, sessionId: string, cod
       and(eq(playbackSessions.id, v.parse(uuid, sessionId)), eq(playbackSessions.userId, userId))
     );
   if (!session) throw new Error('Playback session not found.');
-  await recordDiagnostic({
-    userId,
-    kind: 'playback',
-    message: 'Browser playback failed.',
-    detail: {
-      sessionId: session.id,
-      code:
-        typeof code === 'number' && Number.isInteger(code) && code >= 0 && code <= 4
-          ? code
-          : 'unknown',
-    },
+  void logDiagnostic('error', 'playback.failed', {
+    sessionId: session.id,
+    failure: 'media',
+    code: typeof code === 'number' && Number.isInteger(code) && code >= 0 && code <= 4 ? code : 0,
   });
 }

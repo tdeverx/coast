@@ -6,8 +6,9 @@ import { eq } from 'drizzle-orm';
 import { getDb, closeDb } from '../src/lib/server/db';
 import { users, systemSettings, externalIds } from '../src/lib/server/db/schema';
 import { defaultConfig } from '../src/lib/server/config';
-import { configureInstance, connectJellyfin } from '../src/lib/providers/service';
-import { scanJellyfin } from '../src/lib/sync/service';
+import { configureInstance } from '../src/lib/providers/instances.server';
+import { connectJellyfin } from '../src/lib/providers/jellyfin/connection.server';
+import { scanJellyfin } from '../src/lib/sync/jellyfin';
 
 if (!process.env.DATABASE_URL?.endsWith('/coast_browser_test'))
   throw new Error('Use only the disposable coast_browser_test database.');

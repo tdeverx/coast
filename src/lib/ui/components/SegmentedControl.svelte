@@ -18,6 +18,7 @@
 <div class:scrollable class="picker-container">
   <div class="segmented-control" role="group" aria-label={label} use:slidingPill>
     {#each options as option}<button
+        type="button"
         aria-pressed={value === option.value}
         onclick={() => {
           value = option.value;

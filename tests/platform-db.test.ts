@@ -1,3 +1,4 @@
+import { context, diagnosticStore } from '../src/lib/server/diagnostics';
 import { beforeAll, afterAll, describe, expect, test } from 'bun:test';
 import { migrate } from 'drizzle-orm/bun-sql/migrator';
 import { getDb, getSql, closeDb } from '../src/lib/server/db';
@@ -21,7 +22,7 @@ import {
   PermanentActionError,
 } from '../src/lib/server/queue';
 import { notify, inbox, listDiagnostics } from '../src/lib/server/notifications';
-import { defaultConfig, updateConfig } from '../src/lib/server/config';
+import { defaultConfig, getConfig, updateConfig } from '../src/lib/server/config';
 import {
   initializeRecovery,
   recoveryLogin,
@@ -79,6 +80,41 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
     });
     expect(additional.role).toBe('admin');
   });
+  test('only administrators can persist and change the experimental gate at runtime', async () => {
+    expect((await getConfig()).experimentalFeatures).toBe(false);
+    await expect(
+      updateConfig(member, { ...defaultConfig, experimentalFeatures: true })
+    ).rejects.toThrow('Administrator');
+    expect((await getConfig()).experimentalFeatures).toBe(false);
+    await updateConfig(admin, { ...defaultConfig, experimentalFeatures: true });
+    expect((await getConfig()).experimentalFeatures).toBe(true);
+    await updateConfig(admin, defaultConfig);
+    expect((await getConfig()).experimentalFeatures).toBe(false);
+  });
+  test('diagnostic settings apply immediately and audit changes even when disabled', async () => {
+    expect((await getConfig()).diagnosticLevel).toBe('info');
+    await expect(
+      updateConfig(member, { ...defaultConfig, diagnosticLevel: 'trace' })
+    ).rejects.toThrow('Administrator');
+    for (const diagnosticLevel of ['trace', 'off', 'info'] as const) {
+      await updateConfig(admin, { ...defaultConfig, diagnosticLevel });
+      expect(diagnosticStore.level).toBe(diagnosticLevel);
+      expect((await getConfig()).diagnosticLevel).toBe(diagnosticLevel);
+    }
+    const records: { actor_id: string; previous_level: string; next_level: string }[] =
+      await getSql()`SELECT actor_id, previous_level, next_level FROM diagnostic_setting_audit ORDER BY created_at, id`;
+    expect(
+      records.map((row: { previous_level: string; next_level: string }) => [
+        row.previous_level,
+        row.next_level,
+      ])
+    ).toEqual([
+      ['info', 'trace'],
+      ['trace', 'off'],
+      ['off', 'info'],
+    ]);
+    expect(records.every((row: { actor_id: string }) => row.actor_id === admin.id)).toBe(true);
+  });
   test('sessions rotate with a brief concurrent-request grace period and expire server-side', async () => {
     const session = await login(
       { username: 'member', password: 'member-passphrase-123' },
@@ -97,11 +133,14 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
     expect(await authenticateSession(rotated!.token)).toBeNull();
   });
   test('parallel claims preserve order within a lane while permitting another user', async () => {
-    const first = await enqueueAction({
-      userId: member.id,
-      kind: 'test.order',
-      payload: { order: 1 },
-    });
+    const requestId = crypto.randomUUID();
+    const first = await context.run(requestId, () =>
+      enqueueAction({
+        userId: member.id,
+        kind: 'test.order',
+        payload: { order: 1 },
+      })
+    );
     const second = await enqueueAction({
       userId: member.id,
       kind: 'test.order',
@@ -119,6 +158,7 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
         .map((value) => value!.id)
         .sort()
     ).toEqual([first, other].sort());
+    expect(claims.find((value) => value?.id === first)?.correlationId).toBe(requestId);
     expect(claims.find((value) => value?.id === first)?.payload).toEqual({ order: 1 });
     const [pending] = await getSql()`SELECT state FROM outbox_actions WHERE id = ${second}`;
     expect(pending.state).toBe('pending');

@@ -29,7 +29,11 @@
       tracking: trackingFilter,
       genre: data.filters.genre,
     });
-    void goto(`/library?${query}`, { keepFocus: true, noScroll: true, replaceState: true });
+    void goto(`/library?${query}`, {
+      keepFocus: true,
+      noScroll: true,
+      replaceState: true,
+    });
   }
   function pageUrl(number: number) {
     return `/library?${new URLSearchParams({ ...data.filters, page: String(number) })}`;
@@ -48,6 +52,10 @@
       {#if data.filters.genre}<Button href="/library?scope=all" variant="ghost" icon="close"
           >Clear genre</Button
         >{/if}
+      {#if data.experimentalFeatures}<Button variant="ghost" href="/games" icon="library"
+          >Games</Button
+        >
+        <Button variant="ghost" href="/music" icon="library">Music</Button>{/if}
       <Button variant="ghost" href="/settings/connections" icon="server">Connections</Button>
       <Button variant="secondary" icon="plus" onclick={() => (addOpen = true)}>Add a title</Button>
     {/snippet}

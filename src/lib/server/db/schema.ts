@@ -221,7 +221,7 @@ export const externalIds = pgTable(
 
 export const providerInstances = pgTable('provider_instances', {
   id: uuid('id').primaryKey().defaultRandom(),
-  provider: text('provider').$type<'jellyfin' | 'trakt' | 'tmdb' | 'seerr'>().notNull(),
+  provider: text('provider').$type<'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb'>().notNull(),
   name: text('name').notNull(),
   baseUrl: text('base_url').notNull(),
   serverIdentity: text('server_identity'),
@@ -593,6 +593,7 @@ export const availability = pgTable(
 export const outboxActions = pgTable(
   'outbox_actions',
   {
+    correlationId: uuid('correlation_id').notNull().defaultRandom(),
     id: uuid('id').primaryKey().defaultRandom(),
     userId: uuid('user_id')
       .notNull()
@@ -684,6 +685,7 @@ export const diagnostics = pgTable('diagnostics', {
   createdAt: createdAt(),
 });
 export const playbackSessions = pgTable('playback_sessions', {
+  correlationId: uuid('correlation_id').notNull().defaultRandom(),
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id')
     .notNull()
@@ -784,3 +786,67 @@ export const syncListValues = pgTable(
   },
   (t) => [uniqueIndex('sync_list_values_identity_unique').on(t.connectionId, t.listId)]
 );
+
+export const diagnosticSettingAudit = pgTable('diagnostic_setting_audit', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+  previousLevel: text('previous_level').notNull(),
+  nextLevel: text('next_level').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Games have their own metadata, progress units and history; screen-provider queries stay scoped.
+export const games = pgTable('games', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: text('title').notNull(),
+  posterPath: text('poster_path'),
+  backdropPath: text('backdrop_path'),
+  overview: text('overview'),
+  releaseDate: date('release_date'),
+  platforms: text('platforms').array().notNull().default([]),
+  genres: text('genres').array().notNull().default([]),
+  developers: text('developers').array().notNull().default([]),
+  publishers: text('publishers').array().notNull().default([]),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (t) => [index('games_title_idx').on(t.title)]);
+
+export const gameExternalIds = pgTable('game_external_ids', {
+  gameId: uuid('game_id').notNull().references(() => games.id, { onDelete: 'cascade' }),
+  provider: text('provider').notNull(),
+  externalId: text('external_id').notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.provider, t.externalId] }),
+  index('game_external_ids_game_idx').on(t.gameId),
+]);
+
+export const gamePlaythroughs = pgTable('game_playthroughs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  gameId: uuid('game_id').notNull().references(() => games.id, { onDelete: 'cascade' }),
+  platform: text('platform'),
+  status: text('status').$type<import('$lib/games/model').GameStatus>().notNull().default('planned'),
+  progressPercent: real('progress_percent').notNull().default(0),
+  repeat: boolean('repeat').notNull().default(false),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (t) => [
+  index('game_playthroughs_user_game_idx').on(t.userId, t.gameId),
+  check('game_playthroughs_status_check', sql`${t.status} in ('planned','in-progress','completed','paused','dropped')`),
+  check('game_playthroughs_progress_check', sql`${t.progressPercent} between 0 and 100`),
+  check('game_playthroughs_completion_check', sql`(${t.status} = 'completed') = (${t.completedAt} is not null)`),
+]);
+
+export const gameSessions = pgTable('game_sessions', {
+  id: uuid('id').primaryKey(),
+  playthroughId: uuid('playthrough_id').notNull().references(() => gamePlaythroughs.id, { onDelete: 'cascade' }),
+  minutesPlayed: integer('minutes_played').notNull(),
+  playedAt: timestamp('played_at', { withTimezone: true }).notNull(),
+  note: text('note'),
+  createdAt: createdAt(),
+}, (t) => [
+  index('game_sessions_playthrough_date_idx').on(t.playthroughId, t.playedAt),
+  check('game_sessions_minutes_check', sql`${t.minutesPlayed} between 1 and 1440`),
+]);

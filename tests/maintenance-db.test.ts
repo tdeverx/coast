@@ -2,11 +2,7 @@ import { afterAll, beforeAll, test, expect } from 'bun:test';
 import { eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import {
-  updateProviderSchedule,
-  runProviderJob,
-  scheduleProviderMaintenance,
-} from '../src/lib/providers/service';
+import { updateProviderSchedule, runProviderJob, scheduleProviderMaintenance } from '../src/lib/providers/maintenance.server';
 import { libraryData } from '../src/lib/server/queries/library';
 import { ingestMetadata } from '../src/lib/catalogue/service';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;

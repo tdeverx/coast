@@ -10,7 +10,7 @@ import {
 import { assertSameOrigin } from '../src/lib/server/security/csrf';
 import { decryptCredential, encryptCredential } from '../src/lib/server/security/credentials';
 import { requireAdmin, hashToken, randomToken } from '../src/lib/server/auth';
-import { redactDiagnostic } from '../src/lib/server/notifications';
+import { safeFields } from '../src/lib/diagnostics';
 import { retryDelayMs } from '../src/lib/server/queue';
 
 describe('provider network boundary', () => {
@@ -164,18 +164,14 @@ test('session secrets are random and hashed; admin checks execute on the server'
     requireAdmin({ id: 'user', username: 'user', email: null, role: 'user', settings: {} })
   ).toThrow('Administrator');
 });
-test('diagnostics redact nested credentials and query secrets', () => {
+test('diagnostics exclude nested credentials and URLs', () => {
   expect(
-    redactDiagnostic({
+    safeFields({
       password: 'secret',
       child: { accessToken: 'secret' },
       url: 'https://server/path?api_key=secret&ok=1',
     })
-  ).toEqual({
-    password: '[redacted]',
-    child: { accessToken: '[redacted]' },
-    url: 'https://server/path?api_key=[redacted]&ok=1',
-  });
+  ).toEqual({});
 });
 test('queue retry has bounded exponential delay and no expiry', () => {
   expect(retryDelayMs(1)).toBe(5000);

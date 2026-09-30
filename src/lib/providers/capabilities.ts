@@ -38,6 +38,7 @@ export const providerCapabilities = {
     playback: false,
   },
   tmdb: { categories: ['screen'], read: ['metadata'], write: [], playback: false },
+  igdb: { categories: ['game'], read: ['metadata'], write: [], playback: false },
 } satisfies Record<string, Capability>;
 export function supportsProviderField(
   provider: keyof typeof providerCapabilities,

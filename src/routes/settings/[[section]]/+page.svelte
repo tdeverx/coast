@@ -1,4 +1,9 @@
 <script lang="ts">
+  import {
+    personalSettings as links,
+    administratorSettings as adminLinks,
+    settingsTitles as titles,
+  } from '$lib/settings/sections';
   import PageHeader from '$lib/ui/components/PageHeader.svelte';
   import RowHeader from '$lib/ui/components/RowHeader.svelte';
   import JobsSettings from '$lib/ui/components/JobsSettings.svelte';
@@ -22,37 +27,9 @@
     deleteId = $state('');
   const conflictServices = $derived(
     data.providers.filter(
-      (p) => p.enabled && p.provider !== 'tmdb' && p.connection?.status === 'connected'
+      (p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider) && p.connection?.status === 'connected'
     )
   );
-  const titles: Record<string, string> = {
-    appearance: 'Appearance',
-    playback: 'Playback',
-    account: 'Account',
-    connections: 'Connections',
-    pending: 'Sync conflicts',
-    jobs: 'Jobs & schedules',
-    admin: 'Overview',
-    integrations: 'Integrations',
-    users: 'Accounts',
-    policies: 'Policies',
-    activity: 'Activity & diagnostics',
-  };
-  const links = [
-    ['appearance', 'Appearance'],
-    ['playback', 'Playback'],
-    ['account', 'Account'],
-    ['connections', 'Connections'],
-    ['pending', 'Sync conflicts'],
-  ];
-  const adminLinks = [
-    ['jobs', 'Jobs & schedules'],
-    ['admin', 'Overview'],
-    ['integrations', 'Integrations'],
-    ['users', 'Accounts'],
-    ['policies', 'Policies'],
-    ['activity', 'Activity & diagnostics'],
-  ];
   $effect(() => {
     if (data.config) policy = structuredClone(data.config);
   });
@@ -295,9 +272,9 @@
               <Button type="submit" variant="primary" disabled={busy}>Save preference</Button>
             </div>
           </form>
-          {#each data.providers.filter((p) => p.provider !== 'tmdb') as p}<ConnectionCard
+          {#each data.providers.filter((p) => !['tmdb', 'igdb'].includes(p.provider)) as p}<ConnectionCard
               provider={p}
-            />{/each}{#if !data.providers.some((p) => p.provider !== 'tmdb')}<EmptyState
+            />{/each}{#if !data.providers.some((p) => !['tmdb', 'igdb'].includes(p.provider))}<EmptyState
               title="Connect your world."
               description="An administrator can add Jellyfin, Trakt, and Seerr integrations. Then you can link your own accounts here."
               icon="server"
@@ -423,7 +400,7 @@
             ><Button type="submit" disabled={busy}>Send notice</Button>
           </form>
         </div>
-      {:else if data.section === 'integrations'}<IntegrationSettings providers={data.providers} />
+      {:else if data.section === 'integrations'}<IntegrationSettings providers={data.providers} experimentalFeatures={data.config?.experimentalFeatures ?? false} />
       {:else if data.section === 'users'}<div class="stack">
           <div class="overflow">
             <table class="table">
@@ -498,6 +475,9 @@
             void save('settings/system', policy);
           }}
         >
+          <h3>Experimental features</h3>
+          <label class="check"><input type="checkbox" bind:checked={policy.experimentalFeatures} />Enable experimental music and gaming</label>
+          <p class="small">Enable music browsing and gaming for signed-in users. These features are still in development. Turning this off hides their screens and blocks their APIs without deleting existing data.</p>
           <h3>Sessions</h3>
           <label class="field"
             >Session lifetime in days<input
@@ -599,10 +579,19 @@
             to silence optional notifications</label
           ><Button type="submit" disabled={busy}>Save system policies</Button>
         </form>
-      {:else if data.section === 'activity'}<p class="small" style="margin-bottom:24px">
+      {:else if data.section === 'activity'}
+        {#if policy}<form class="stack form-width" style="margin-bottom:24px" onsubmit={(e) => { e.preventDefault(); void save('settings/system', policy, 'Diagnostic logging updated.'); }}>
+          <label class="field">Diagnostic logging<select bind:value={policy.diagnosticLevel}>
+            <option value="off">Off</option><option value="error">Error</option><option value="warn">Warn</option><option value="info">Info</option><option value="debug">Debug</option><option value="trace">Trace</option>
+          </select></label>
+          <p class="small">Info is the default. Debug and Trace enable verbose lifecycle and playback timing events. Changes apply while Coast is running. Local diagnostics rotate at 1 MiB, keep up to four files, and expire after seven days. Security and audit records remain independent.</p>
+          <Button type="submit" disabled={busy}>Save diagnostic logging</Button>
+          <a href="/api/v1/diagnostics?download">Download recent diagnostics</a>
+        </form>{/if}<p class="small" style="margin-bottom:24px">
           Administrator diagnostics include application and playback failures. Sensitive credentials
-          are redacted.
+          and personal data are excluded.
         </p>
+        {#if data.loggingAudit.length || data.metadataAudit.length}<details class="panel" style="margin-bottom:24px"><summary>Audit activity</summary><div class="stack">{#each data.loggingAudit as event}<p>Diagnostic logging changed from {event.previous} to {event.next} · {new Date(event.createdAt).toLocaleString()}</p>{/each}{#each data.metadataAudit as event}<p>{event.message} · {new Date(event.createdAt).toLocaleString()}</p>{/each}</div></details>{/if}
         {#if data.diagnostics.length}<div class="stack">
             {#each data.diagnostics as event}<details class="panel">
                 <summary
@@ -611,7 +600,7 @@
                     >{new Date(event.createdAt).toLocaleString()}</small
                   ></summary
                 >
-                <pre>{JSON.stringify(event.detail, null, 2)}</pre>
+                <pre>{JSON.stringify({ level: event.level, correlationId: event.correlationId, ...event.detail }, null, 2)}</pre>
               </details>{/each}
           </div>{:else}<EmptyState
             title="No diagnostics to review."

@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { detailsData } from '$lib/server/queries/media';
-import { requestOptions } from '$lib/providers/service';
+import { requestOptions } from '$lib/providers/seerr/requests.server';
 import { ensureDetails } from '$lib/catalogue/service';
 
 export const load = (async ({ locals, params }) => {

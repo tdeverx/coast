@@ -1,8 +1,9 @@
 import type { ArtworkImages, ArtworkType } from '$lib/artwork';
 import type { ArtworkLevel, ArtworkPriority, MediaView, MediaCardShape } from './types';
+type ArtworkItem = Pick<MediaView, 'artworkSources' | 'poster' | 'backdrop' | 'artwork'>;
 
 /** Preserve source levels until display time, so changing priority never uses inherited artwork as local artwork. */
-export function orderedArtwork(item: MediaView, priority?: ArtworkPriority): ArtworkImages[] {
+export function orderedArtwork(item: ArtworkItem, priority?: ArtworkPriority): ArtworkImages[] {
   if (!priority || !item.artworkSources) return [];
   return (priority.split('-') as ArtworkLevel[]).flatMap((level) => {
     const images = item.artworkSources?.[level];
@@ -12,7 +13,7 @@ export function orderedArtwork(item: MediaView, priority?: ArtworkPriority): Art
 
 /** Exhaust the requested artwork type across levels before substituting a different type. */
 export function cardArtwork(
-  item: MediaView,
+  item: ArtworkItem,
   type: ArtworkType | 'none',
   shape: MediaCardShape,
   priority?: ArtworkPriority
@@ -46,7 +47,7 @@ export function cardArtwork(
 
 /** Overlays only fall back to the same image type at another level. */
 export function overlayArtwork(
-  item: MediaView,
+  item: ArtworkItem,
   type: 'none' | 'logo' | 'art' | 'disc',
   priority?: ArtworkPriority
 ) {

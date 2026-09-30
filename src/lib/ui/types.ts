@@ -1,5 +1,19 @@
 import type { ScreenKind, MediaCategory, Lifecycle, Progress } from '$lib/media/model';
 import type { ArtworkImages } from '$lib/artwork';
+import type { MusicKind } from '$lib/music/model';
+export type MediaCardPresentation = Pick<
+  MediaView,
+  | 'id'
+  | 'title'
+  | 'captionTitle'
+  | 'captionSubtitle'
+  | 'year'
+  | 'poster'
+  | 'backdrop'
+  | 'artwork'
+  | 'artworkSources'
+  | 'logo'
+> & { kind: MusicKind | 'game'; href: string };
 export type MediaCardShape = 'poster' | 'square' | 'fanart' | 'banner';
 export type MediaCardArtwork =
   | 'auto'
@@ -62,7 +76,12 @@ export interface MediaView {
   collected: boolean;
   dropped: boolean;
   rewatchStartedAt?: string | null;
-  trackingParents?: { id: string; kind: MediaKind; title: string; dropped: boolean }[];
+  trackingParents?: {
+    id: string;
+    kind: MediaKind;
+    title: string;
+    dropped: boolean;
+  }[];
   rating: number | null;
   completedEpisodes?: number;
   totalEpisodes?: number;
@@ -88,6 +107,11 @@ export interface PlaybackView {
   edition?: string;
   defaultSubtitleIndex: number | null;
   subtitlePrompt: boolean;
-  subtitles: { index: number; label: string; language?: string; url?: string }[];
+  subtitles: {
+    index: number;
+    label: string;
+    language?: string;
+    url?: string;
+  }[];
   sources: { id: string; label: string; edition?: string }[];
 }

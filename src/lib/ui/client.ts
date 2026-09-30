@@ -1,3 +1,4 @@
+import { diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
 import { invalidateAll } from '$app/navigation';
 
 export class ApiError extends Error {
@@ -18,9 +19,10 @@ export async function api<T = unknown>(
   const response = await fetch(`/api/v1/${path}`, {
     ...options,
     method,
-    headers: body === undefined ? {} : { 'content-type': 'application/json' },
+    headers: { ...diagnosticHeaders(), ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+  receiveDiagnosticLevel(response);
   const payload = await response
     .json()
     .catch(() => ({ error: 'The server could not complete this request.' }));

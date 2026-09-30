@@ -7,6 +7,7 @@
   import { tick, getContext } from 'svelte';
   import type {
     MediaView,
+    MediaCardPresentation,
     MediaCardShape,
     MediaCardArtwork,
     MediaCardOverlay,
@@ -24,7 +25,7 @@
     artworkPriority,
     onselect,
   }: {
-    item: MediaView;
+    item: MediaView | MediaCardPresentation;
     shape?: MediaCardShape;
     artworkStyle?: MediaCardArtwork;
     overlay?: MediaCardOverlay;
@@ -32,6 +33,8 @@
     onselect?: (item: MediaView) => void;
   } = $props();
   const readOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
+  const trackedItem = $derived('href' in item ? undefined : item);
+  const href = $derived('href' in item ? item.href : `/media/${item.id}`);
   let overlayIndex = $state(0);
   const overlayCandidates = $derived(overlayArtwork(item, overlay, artworkPriority));
   const overlayImage = $derived(overlayCandidates[overlayIndex]);
@@ -71,43 +74,51 @@
     imageIndex = 0;
   });
   async function openMenu(point: MenuPoint) {
-    if (readOnly()) return;
+    if (readOnly() || !trackedItem) return;
     active = true;
     await tick();
     actions?.openAt(point);
   }
   const completion = $derived(
     progressFraction(
-      item.trackingProgress ?? {
+      trackedItem?.trackingProgress ?? {
         unit: 'seconds',
-        value: item.progress,
-        ...(item.duration > 0 ? { total: item.duration } : {}),
+        value: trackedItem?.progress ?? 0,
+        ...(trackedItem && trackedItem.duration > 0 ? { total: trackedItem.duration } : {}),
       }
     )
   );
   const primaryAction = $derived(
-    primaryMediaAction({
-      category: item.category ?? 'screen',
-      canOpen: item.canOpen ?? item.available,
-      canRequest: item.requestable ?? ((item.category ?? 'screen') === 'screen' && !item.available),
-    })
+    trackedItem
+      ? primaryMediaAction({
+          category: trackedItem.category ?? 'screen',
+          canOpen: trackedItem.canOpen ?? trackedItem.available,
+          canRequest:
+            trackedItem.requestable ??
+            ((trackedItem.category ?? 'screen') === 'screen' && !trackedItem.available),
+        })
+      : 'open'
   );
   const primaryLabel = $derived(
-    { play: 'Play', read: 'Read', open: 'Open', request: 'Request', progress: 'Update progress' }[
-      primaryAction
-    ]
+    {
+      play: 'Play',
+      read: 'Read',
+      open: 'Open',
+      request: 'Request',
+      progress: 'Update progress',
+    }[primaryAction]
   );
   async function activate() {
     active = true;
     await tick();
     if (primaryAction === 'play') await actions?.start();
     else if (primaryAction === 'request') actions?.request();
-    else await goto(`/media/${item.id}`);
+    else await goto(href);
   }
   function select(event: MouseEvent) {
-    if (onselect) {
+    if (onselect && trackedItem) {
       event.preventDefault();
-      onselect(item);
+      onselect(trackedItem);
     }
   }
 </script>
@@ -118,15 +129,14 @@
   onpointerenter={() => (active = true)}
   onfocusin={() => (active = true)}
 >
-  <div class="art {shape}" class:unavailable={!item.available} class:contained title={artworkHint}>
+  <div
+    class="art {shape}"
+    class:unavailable={trackedItem && !trackedItem.available}
+    class:contained
+    title={artworkHint}
+  >
     <span class="hover-stroke" aria-hidden="true"></span>
-    <a
-      class="art-link"
-      href="/media/{item.id}"
-      aria-label={item.title}
-      onclick={select}
-      draggable="false"
-    >
+    <a class="art-link" {href} aria-label={item.title} onclick={select} draggable="false">
       {#if artwork}<img
           use:lazyImage={artwork}
           alt=""
@@ -136,9 +146,16 @@
           onerror={() => (imageIndex += 1)}
         />
       {:else if artworkStyle !== 'none'}<div class="fallback">
-          <Icon name={item.kind === 'show' ? 'library' : 'film'} size={32} /><span
-            >{item.title}</span
-          >
+          <Icon
+            name={item.kind === 'artist'
+              ? 'user'
+              : item.kind === 'album' || item.kind === 'track' || item.kind === 'game'
+                ? 'library'
+                : item.kind === 'show'
+                  ? 'library'
+                  : 'film'}
+            size={32}
+          /><span>{item.title}</span>
         </div>{/if}
     </a>
     {#if overlayImage}
@@ -167,18 +184,18 @@
           size={28}
         /></button
       >
-      <div class="card-menu">
-        <button
-          class="icon-button"
-          aria-label={`Actions for ${item.title}`}
-          aria-haspopup="menu"
-          onclick={(event) => {
-            const rect = event.currentTarget.getBoundingClientRect();
-            void openMenu({ x: rect.left, y: rect.bottom });
-          }}><Icon name="more" size={18} /></button
-        >
-        {#if active}<MediaActions bind:this={actions} {item} menuOnly />{/if}
-      </div>
+      {#if trackedItem}<div class="card-menu">
+          <button
+            class="icon-button"
+            aria-label={`Actions for ${item.title}`}
+            aria-haspopup="menu"
+            onclick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              void openMenu({ x: rect.left, y: rect.bottom });
+            }}><Icon name="more" size={18} /></button
+          >
+          {#if active}<MediaActions bind:this={actions} item={trackedItem} menuOnly />{/if}
+        </div>{/if}
     {/if}
     {#if completion !== null && completion > 0 && completion < 0.9}<div
         class="progress"
@@ -191,21 +208,23 @@
         <span style:width={`${completion * 100}%`}></span>
       </div>{/if}
   </div>
-  <a class="caption" href="/media/{item.id}" onclick={select}>
+  <a class="caption" {href} onclick={select}>
     <div class="title">{item.captionTitle ?? item.title}</div>
     <div class="meta">
       {#if item.captionSubtitle}<span class="subtitle">{item.captionSubtitle}</span
-        >{:else if item.kind === 'season' && item.seasonNumber !== undefined}{item.captionTitle
+        >{:else if item.kind === 'season' && trackedItem?.seasonNumber !== undefined}{item.captionTitle
           ? item.title
-          : (item.year ?? '')}{:else if item.seasonNumber !== undefined}S{String(
-          item.seasonNumber
-        ).padStart(2, '0')}E{String(item.episodeNumber ?? 0).padStart(2, '0')}{:else}{item.year ??
-          ''}{#if item.year}<span>·</span>{/if}{item.kind === 'show'
+          : (item.year ?? '')}{:else if trackedItem?.seasonNumber !== undefined}S{String(
+          trackedItem.seasonNumber
+        ).padStart(2, '0')}E{String(trackedItem.episodeNumber ?? 0).padStart(
+          2,
+          '0'
+        )}{:else}{item.year ?? ''}{#if item.year}<span>·</span>{/if}{item.kind === 'show'
           ? 'Show'
           : item.kind === 'movie'
             ? 'Movie'
-            : item.kind}{/if}{#if item.rating}<span>·</span><span class="rating"
-          ><Icon name="star" size={14} filled /> {item.rating}</span
+            : item.kind}{/if}{#if trackedItem?.rating}<span>·</span><span class="rating"
+          ><Icon name="star" size={14} filled /> {trackedItem.rating}</span
         >{/if}
     </div>
   </a>

@@ -28,22 +28,14 @@ import {
 } from '../src/lib/server/db/schema';
 import { defaultConfig } from '../src/lib/server/config';
 import { createProviderTransport } from '../src/lib/server/security/provider-fetch';
-import {
-  configureInstance,
-  updateJellyfinPlaybackImport,
-  updateProviderSchedule,
-  connectJellyfin,
-  requestMedia,
-  requestOptions,
-  listProviders,
-  registerProviderActions,
-} from '../src/lib/providers/service';
-import {
-  scanJellyfin,
-  libraryScanProgress,
-  importTraktFromAdapter,
-  exportTraktToAdapter,
-} from '../src/lib/sync/service';
+import { configureInstance, listProviders } from '../src/lib/providers/instances.server';
+import { updateJellyfinPlaybackImport, connectJellyfin } from '../src/lib/providers/jellyfin/connection.server';
+import { updateProviderSchedule } from '../src/lib/providers/maintenance.server';
+import { requestMedia, requestOptions } from '../src/lib/providers/seerr/requests.server';
+import { registerProviderActions } from '../src/lib/providers/actions.server';
+import { scanJellyfin, libraryScanProgress } from '../src/lib/sync/jellyfin';
+import { importTraktFromAdapter } from '../src/lib/sync/trakt-import';
+import { exportTraktToAdapter } from '../src/lib/sync/trakt-export';
 import { startPlayback, streamPlayback, progressPlayback } from '../src/lib/playback/server';
 import { TmdbAdapter } from '../src/lib/providers/tmdb/adapter.server';
 import { runQueueOnce, registerActionHandler, enqueueAction } from '../src/lib/server/queue';

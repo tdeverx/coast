@@ -14,12 +14,15 @@ Provider definitions, service instances, per-user connections and per-user avail
 
 - `core`: canonical tracking, history, ratings, ordered lists and collection state.
 - `catalogue`: metadata resolution, canonical ingestion, search and availability.
-- `providers`: typed capability contracts and explicit TMDB, Jellyfin, Trakt and Seerr adapters.
+- `providers`: shared capability contracts, integration configuration in `instances.server.ts`, account connections beside each provider's adapter, and Seerr request handling in `seerr/requests.server.ts`. Queue handlers and maintenance scheduling have separate server modules. Routes import the module that owns each operation directly.
+- `sync`: Jellyfin library/state synchronisation, Trakt imports, value exports and list exports have separate modules. `changes.ts` keeps canonical writes and outbound intent in one transaction; reconciliation, conflict preferences and history removal remain shared.
 - `playback`: source planning, authorised sessions, progress and external scrobbling.
 - `server`: database, local auth, encryption, network policy, queue and notifications. `server/queries` contains the read models for media details, home, library, lists and requests; routes import the relevant query directly.
 - `ui`: shared Svelte components, icons, semantic tokens, materials and motion.
 
 Native title creation belongs to `core/media`, alongside its transactional subtype and tracking writes. Query modules only read state. Library, Lists and Requests share page bounds and size, select before resolving media cards, and retain complete membership for explicit detail queries. Ordinary inbox, action and user projections use Drizzle column selection, so their camelCase field names and types match the UI without conversion fallbacks.
+
+Settings navigation labels and administrator-only section membership come from `settings/sections.ts`, shared by the page and its server loader. `MediaActions` owns tracking and playback actions; `MediaRequestMenu` owns request-option loading and menu presentation, while confirmation and request dialogs retain their existing placement.
 
 Provider objects and unvalidated JSON do not cross into the UI. JSON is reserved for provider boundary snapshots, constrained settings and action payloads; core identity and tracking are concrete columns.
 

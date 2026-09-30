@@ -7,6 +7,7 @@
 - [Behaviour](behaviour.md): tracking, metadata, playback and queue semantics.
 - [Canonical domain](domain-model.md): schema, transactions and read models.
 - [Provider boundaries](providers.md): adapter behavior and verification limits.
+- [Jellyfin music](music.md): browsing interface and API, verification and remaining playback work.
 - [Future connector contract](connectors.md): proposed HTTP/webhook boundary; not implemented.
 - [Deployment](deployment.md): container, storage, accounts and recovery.
 - [Design](design.md): inherited visual language and UI composition.

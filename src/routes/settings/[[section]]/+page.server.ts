@@ -1,12 +1,13 @@
+import { settingsSections, administratorSettings } from '$lib/settings/sections';
 import type { PageServerLoad } from './$types';
 import { getPendingConflicts } from '$lib/sync/conflicts';
 import { error } from '@sveltejs/kit';
 import { requireAdmin, listUsers } from '$lib/server/auth';
-import { listProviders } from '$lib/providers/service';
+import { listProviders } from '$lib/providers/instances.server';
 import { getConfig } from '$lib/server/config';
 import { systemHealth, listDiagnostics } from '$lib/server/notifications';
 import { listActions } from '$lib/server/queue';
-import { getDb } from '$lib/server/db';
+import { getSql, getDb } from '$lib/server/db';
 import {
   mediaRequests,
   media,
@@ -18,24 +19,15 @@ import { eq, desc } from 'drizzle-orm';
 export const load = (async ({ locals, params, depends }) => {
   depends('coast:settings');
   const section = params.section ?? 'appearance';
-  const valid = [
-    'appearance',
-    'playback',
-    'account',
-    'connections',
-    'pending',
-    'jobs',
-    'admin',
-    'integrations',
-    'users',
-    'policies',
-    'activity',
-  ];
-  if (!valid.includes(section)) error(404, 'Settings page not found.');
-  const admin = ['admin', 'integrations', 'users', 'policies', 'activity', 'jobs'].includes(
-    section
-  );
-  if (admin) requireAdmin(locals.user);
+  if (!settingsSections.some(([id]) => id === section)) error(404, 'Settings page not found.');
+  const admin = administratorSettings.some(([id]) => id === section);
+  if (admin) {
+    try {
+      requireAdmin(locals.user);
+    } catch {
+      error(403, 'Administrator access is required.');
+    }
+  }
   const config = await getConfig();
   return {
     section,
@@ -68,6 +60,8 @@ export const load = (async ({ locals, params, depends }) => {
     health: section === 'admin' ? await systemHealth(locals.user) : null,
     users: section === 'users' ? await listUsers(locals.user) : [],
     actions: ['admin', 'jobs'].includes(section) ? await listActions(locals.user) : [],
+    loggingAudit: section === 'activity' ? await getSql()`SELECT previous_level AS previous, next_level AS next, created_at AS "createdAt" FROM diagnostic_setting_audit ORDER BY created_at DESC LIMIT 30` : [],
+    metadataAudit: section === 'activity' ? await getSql()`SELECT id, message, created_at AS "createdAt" FROM diagnostics WHERE kind = 'metadata_override' ORDER BY created_at DESC LIMIT 30` : [],
     diagnostics: ['activity', 'admin'].includes(section)
       ? await listDiagnostics(locals.user, 30)
       : [],

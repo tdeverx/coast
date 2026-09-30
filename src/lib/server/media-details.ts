@@ -4,7 +4,7 @@ import { getDb } from './db';
 import * as s from './db/schema';
 import { getTmdb, ingestMetadata } from '$lib/catalogue/service';
 import { mediaViewsForIds } from './queries/media';
-import { getTraktCommunity } from '$lib/providers/service';
+import { getTraktCommunity } from '$lib/providers/trakt/connection.server';
 import { providerCache } from './utils/provider-cache';
 import { mapConcurrent } from './utils/async';
 import type { MediaInsights, PersonDetails } from '$lib/media/details';

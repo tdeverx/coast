@@ -1,3 +1,4 @@
+import { diagnosticStore } from '../diagnostics';
 import * as v from 'valibot';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { getDb, getSql } from '../db';
@@ -92,42 +93,9 @@ export async function broadcast(actor: SessionUser | null, input: unknown) {
   return { delivered: users.length };
 }
 
-export function redactDiagnostic(value: unknown, depth = 0): unknown {
-  if (depth > 6) return '[truncated]';
-  if (typeof value === 'string')
-    return value
-      .replace(
-        /([?&](?:api_key|apikey|access_token|token|authorization|x-emby-token)=)[^&\s]+/gi,
-        '$1[redacted]'
-      )
-      .replace(/\bBearer\s+[^\s,]+/gi, 'Bearer [redacted]')
-      .slice(0, 2000);
-  if (Array.isArray(value))
-    return value.slice(0, 50).map((item) => redactDiagnostic(item, depth + 1));
-  if (value && typeof value === 'object')
-    return Object.fromEntries(
-      Object.entries(value)
-        .slice(0, 50)
-        .map(([key, child]) => [
-          key,
-          /password|secret|token|credential|authorization|cookie|api.?key/i.test(key)
-            ? '[redacted]'
-            : redactDiagnostic(child, depth + 1),
-        ])
-    );
-  return value;
-}
-export async function recordDiagnostic(
-  input: { userId?: string; kind: string; message: string; detail?: Record<string, unknown> },
-  database = getSql()
-) {
-  const [row] =
-    await database`INSERT INTO diagnostics (user_id, kind, message, detail) VALUES (${input.userId || null}, ${input.kind}, ${redactDiagnostic(input.message) as string}, ${redactDiagnostic(input.detail || {})}::jsonb) RETURNING id`;
-  return row.id as string;
-}
 export async function listDiagnostics(actor: SessionUser | null, limit = 100) {
   requireAdmin(actor);
-  return getSql()`SELECT id, user_id AS "userId", kind, message, detail, created_at AS "createdAt" FROM diagnostics ORDER BY created_at DESC LIMIT ${Math.max(1, Math.min(500, limit))}`;
+  return (await diagnosticStore.recent()).slice(0, Math.max(1, Math.min(500, limit)));
 }
 export async function systemHealth(actor: SessionUser | null) {
   requireAdmin(actor);

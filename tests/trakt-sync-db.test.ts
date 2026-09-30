@@ -3,7 +3,9 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import { ingestMetadata } from '../src/lib/catalogue/service';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
-import { exportTraktListToAdapter, exportTraktToAdapter, importTraktFromAdapter } from '../src/lib/sync/service';
+import { exportTraktListToAdapter } from '../src/lib/sync/trakt-lists';
+import { exportTraktToAdapter } from '../src/lib/sync/trakt-export';
+import { importTraktFromAdapter } from '../src/lib/sync/trakt-import';
 import { externalIds, listItems, lists, media, providerConnections, providerInstances, ratings, seasons, trackingEvents, trackingState, users } from '../src/lib/server/db/schema';
 import type { SyncPreferences } from '../src/lib/providers/contracts';
 

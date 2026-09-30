@@ -1,3 +1,5 @@
+import { context } from '$lib/server/diagnostics';
+import { correlationId } from '$lib/diagnostics';
 import { supportsProviderField } from '$lib/providers/capabilities';
 import { and, eq, inArray, asc, sql } from 'drizzle-orm';
 import { getDb, type Database } from '$lib/server/db';
@@ -105,7 +107,7 @@ export async function enqueueInTransaction(
         )
       );
   }
-  await tx.insert(outboxActions).values({ ...action, createdAt: sql`clock_timestamp()` });
+  await tx.insert(outboxActions).values({ correlationId: correlationId(context.getStore()), ...action, createdAt: sql`clock_timestamp()` });
 }
 
 /** Native mutation and its outbound intent commit together, including bulk child events. */

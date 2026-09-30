@@ -1,3 +1,6 @@
+import { searchIgdb, igdbDetails, importIgdbGame } from '$lib/providers/igdb/service.server';
+import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
+import * as games from '$lib/core/games/service';
 import { removeHistory } from '$lib/sync/history-removal';
 import { changeContinue, wholeWorkId } from '$lib/core/tracking/continue';
 import { mediaActionData, mediaHistory, mediaActivity } from '$lib/server/queries/media-actions';
@@ -47,18 +50,21 @@ import {
 import { detailsData } from '$lib/server/queries/media';
 import { userLists } from '$lib/server/queries/lists';
 import { refreshMedia } from '$lib/catalogue/service';
-import * as providers from '$lib/providers/service';
-import {
-  libraryScanProgress,
-  queueTraktListChange,
-  deleteListWithExports,
-} from '$lib/sync/service';
+import { listProviders, configureInstance } from '$lib/providers/instances.server';
+import { connectJellyfin, updateJellyfinPlaybackImport } from '$lib/providers/jellyfin/connection.server';
+import { startTraktDevice, finishTraktDevice, updateSyncPreferences } from '$lib/providers/trakt/connection.server';
+import { disconnectProvider } from '$lib/providers/connections.server';
+import { updateProviderSchedule, runProviderJob } from '$lib/providers/maintenance.server';
+import { requestOptions, requestMedia, manageRequest } from '$lib/providers/seerr/requests.server';
+import { musicLibrary, musicDetails } from '$lib/music/service.server';
+import { streamMusicArtwork } from '$lib/music/artwork.server';
+import { libraryScanProgress } from '$lib/sync/jellyfin';
+import { queueTraktListChange, deleteListWithExports } from '$lib/sync/trakt-lists';
 import { listActions, cancelAction, retryAction } from '$lib/server/queue';
 import {
   inbox,
   markNotification,
   broadcast,
-  recordDiagnostic,
   systemHealth,
 } from '$lib/server/notifications';
 import {
@@ -98,7 +104,9 @@ async function readBody(request: Request): Promise<Record<string, unknown>> {
     offset += chunk.byteLength;
   }
   try {
-    return v.parse(v.record(v.string(), v.unknown()), JSON.parse(new TextDecoder().decode(bytes)));
+    const value: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (Array.isArray(value)) throw new Error('Expected a JSON object.');
+    return v.parse(v.record(v.string(), v.unknown()), value);
   } catch {
     throw new AppError(400, 'The request must contain valid JSON.');
   }
@@ -143,10 +151,6 @@ const handler: RequestHandler = async (event) => {
     }
     if (path[0] === 'progress' && path.length === 1 && method === 'GET')
       return json(await progressData(subjectId, progressParameters(url), uid));
-    if (path[0] === 'up-next' && path.length === 1 && method === 'POST') {
-      await setUpNext(uid, await request.json());
-      return json({ ok: true });
-    }
     if (path[0] === 'lists' && path[1] === 'content' && path.length === 2 && method === 'GET')
       return json(
         await listsData(uid, {
@@ -169,7 +173,31 @@ const handler: RequestHandler = async (event) => {
       return streamArtwork(uid, uuid(path[1]), text(path[2]), text(path[3]), request);
     const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method) ? await readBody(request) : {};
     let result: unknown;
-    if (path[0] === 'session' && method === 'GET') result = { user, expiresAt: locals.expiresAt };
+    if (path[0] === 'up-next' && path.length === 1 && method === 'POST') {
+      await setUpNext(uid, body);
+      result = { ok: true };
+    } else if (path[0] === 'games') {
+      if (path.length === 3 && path[1] === 'igdb' && path[2] === 'search' && method === 'GET')
+        result = await searchIgdb(uuid(url.searchParams.get('instanceId')), url.searchParams.get('q') ?? '', Number(url.searchParams.get('page') ?? 1));
+      else if (path.length === 3 && path[1] === 'igdb' && method === 'GET')
+        result = await igdbDetails(uuid(url.searchParams.get('instanceId')), path[2]);
+      else if (path.length === 2 && path[1] === 'import' && method === 'POST')
+        result = await importIgdbGame(body);
+      else if (path.length === 1 && method === 'GET')
+        result = await games.listGames(url.searchParams.get('q') ?? '', Number(url.searchParams.get('page') ?? 1));
+      else if (path.length === 1 && method === 'POST') result = await games.createGame(body);
+      else if (path.length === 2 && method === 'GET') result = await games.gameDetails(uid, uuid(path[1]));
+      else if (path.length === 3 && path[2] === 'playthroughs' && method === 'POST')
+        result = await games.createPlaythrough(uid, uuid(path[1]), body);
+      else throw new AppError(404, 'Action not found.');
+    } else if (path[0] === 'game-playthroughs') {
+      if (path.length === 2 && method === 'GET')
+        result = await games.playthroughDetails(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1));
+      else if (path.length === 2 && method === 'PATCH') result = await games.updatePlaythrough(uid, uuid(path[1]), body);
+      else if (path.length === 3 && path[2] === 'sessions' && method === 'POST')
+        result = await games.logGameSession(uid, uuid(path[1]), body);
+      else throw new AppError(404, 'Action not found.');
+    } else if (path[0] === 'session' && method === 'GET') result = { user, expiresAt: locals.expiresAt };
     else if (
       path[0] === 'profile' &&
       path[1] === 'activity' &&
@@ -322,20 +350,16 @@ const handler: RequestHandler = async (event) => {
         const listId = path.length === 1 ? (result as { id?: string })?.id : path[1];
         if (listId)
           await queueTraktListChange(uid, listId).catch(async () => {
-            await recordDiagnostic({
-              userId: uid,
-              kind: 'sync',
-              message: 'A list export could not be enqueued.',
-            });
+            void logDiagnostic('error', 'job.failed', { failure: 'unexpected' });
           });
       }
     } else if (path[0] === 'providers') {
-      if (path.length === 1 && method === 'GET') result = await providers.listProviders(uid);
+      if (path.length === 1 && method === 'GET') result = await listProviders(uid);
       else if (path.length === 1 && method === 'POST') {
         requireAdmin(user);
-        result = await providers.configureInstance(uid, body);
+        result = await configureInstance(uid, body);
       } else if (path[1] === 'jellyfin' && method === 'POST')
-        result = await providers.connectJellyfin(
+        result = await connectJellyfin(
           uid,
           v.parse(
             v.object({
@@ -347,23 +371,36 @@ const handler: RequestHandler = async (event) => {
           )
         );
       else if (path[1] === 'trakt' && path[2] === 'start' && method === 'POST')
-        result = await providers.startTraktDevice(uid, uuid(body.instanceId));
+        result = await startTraktDevice(uid, uuid(body.instanceId));
       else if (path[1] === 'trakt' && path[2] === 'finish' && method === 'POST')
-        result = await providers.finishTraktDevice(uid, uuid(body.instanceId));
+        result = await finishTraktDevice(uid, uuid(body.instanceId));
+      else if (path[2] === 'music' && path.length === 5 && path[4] === 'artwork' && method === 'GET')
+        return await streamMusicArtwork(uid, uuid(path[1]), path[3], request);
+      else if (path[2] === 'music' && path.length === 3 && method === 'GET')
+        result = await musicLibrary(uid, uuid(path[1]), {
+          kind: url.searchParams.get('kind') ?? undefined,
+          offset: url.searchParams.has('offset') ? Number(url.searchParams.get('offset')) : undefined,
+          limit: url.searchParams.has('limit') ? Number(url.searchParams.get('limit')) : undefined,
+          search: url.searchParams.get('search') ?? undefined,
+          artistId: url.searchParams.get('artistId') ?? undefined,
+          albumId: url.searchParams.get('albumId') ?? undefined,
+        });
+      else if (path[2] === 'music' && path.length === 4 && method === 'GET')
+        result = await musicDetails(uid, uuid(path[1]), path[3]);
       else if (path[2] === 'disconnect' && method === 'POST')
-        result = await providers.disconnectProvider(uid, uuid(path[1]));
+        result = await disconnectProvider(uid, uuid(path[1]));
       else if (path[2] === 'scan' && method === 'GET')
         result = await libraryScanProgress(uid, uuid(path[1]));
       else if (path[2] === 'schedule' && method === 'POST') {
         requireAdmin(user);
-        result = await providers.updateProviderSchedule(uid, uuid(path[1]), body);
+        result = await updateProviderSchedule(uid, uuid(path[1]), body);
       } else if (path[2] === 'run-job' && method === 'POST') {
         requireAdmin(user);
-        result = await providers.runProviderJob(uid, uuid(path[1]));
+        result = await runProviderJob(uid, uuid(path[1]));
       } else if (path[2] === 'playback-import' && method === 'POST')
-        result = await providers.updateJellyfinPlaybackImport(uid, uuid(path[1]), body);
+        result = await updateJellyfinPlaybackImport(uid, uuid(path[1]), body);
       else if (path[2] === 'sync' && method === 'POST')
-        result = await providers.updateSyncPreferences(uid, uuid(path[1]), body);
+        result = await updateSyncPreferences(uid, uuid(path[1]), body);
       else if (['disable', 'enable'].includes(path[2]) && method === 'POST') {
         requireAdmin(user);
         result = await getDb()
@@ -373,7 +410,7 @@ const handler: RequestHandler = async (event) => {
       } else throw new AppError(404, 'Action not found.');
     } else if (path[0] === 'requests') {
       if (path[1] === 'options' && method === 'GET') {
-        const options = await providers.requestOptions(uid, uuid(url.searchParams.get('mediaId')));
+        const options = await requestOptions(uid, uuid(url.searchParams.get('mediaId')));
         result = {
           destinations: options.map((d) => ({
             id: d.instanceId,
@@ -382,12 +419,12 @@ const handler: RequestHandler = async (event) => {
           })),
         };
       } else if (path.length === 1 && method === 'POST')
-        result = await providers.requestMedia(uid, {
+        result = await requestMedia(uid, {
           ...body,
           addToWatchlist: body.watchlist !== false,
         });
       else if (path.length === 2 && method === 'POST')
-        result = await providers.manageRequest(
+        result = await manageRequest(
           uid,
           uuid(path[1]),
           v.parse(v.picklist(['cancel', 'approve', 'decline']), body.action)
@@ -456,15 +493,7 @@ const handler: RequestHandler = async (event) => {
         { error: error.message, code: error.code },
         { status: error.code === 'permission' ? 403 : 400 }
       );
-    await recordDiagnostic({
-      userId: locals.user?.id,
-      kind: path[0] === 'playback' ? 'playback' : 'application',
-      message: 'An application request failed.',
-      detail: {
-        route: path.join('/'),
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-    }).catch(() => {});
+    void logDiagnostic('error', path[0] === 'playback' ? 'playback.failed' : 'application.failed', { failure: classifyFailure(error) });
     return json(
       {
         error:

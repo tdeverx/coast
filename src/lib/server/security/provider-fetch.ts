@@ -1,9 +1,11 @@
+import { logDiagnostic, classifyFailure, context } from '../diagnostics';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import { AppError } from './errors';
 
 export interface ProviderFetchConfig {
   baseUrl: string;
+  provider?: 'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb';
   approved?: boolean;
   allowPrivateNetwork?: boolean;
   allowedPorts?: number[];
@@ -111,7 +113,8 @@ function limitedBody(
   body: ReadableStream<Uint8Array>,
   max: number,
   controller: AbortController,
-  timeout: number
+  timeout: number,
+  diagnostics: { provider: ProviderFetchConfig['provider']; correlationId?: string }
 ) {
   const reader = body.getReader();
   let bytes = 0;
@@ -129,6 +132,12 @@ function limitedBody(
         }
         bytes += result.value.byteLength;
         if (bytes > max) {
+          void logDiagnostic(
+            'error',
+            'provider.failed',
+            { provider: diagnostics.provider, failure: 'validation' },
+            diagnostics.correlationId
+          );
           controller.abort();
           await reader.cancel();
           output.error(new Error('Service response exceeded its size limit.'));
@@ -136,6 +145,15 @@ function limitedBody(
         }
         output.enqueue(result.value);
       } catch (error) {
+        void logDiagnostic(
+          'error',
+          'provider.failed',
+          {
+            provider: diagnostics.provider,
+            failure: controller.signal.aborted ? 'timeout' : classifyFailure(error),
+          },
+          diagnostics.correlationId
+        );
         output.error(error);
       } finally {
         clearTimeout(timer);
@@ -148,7 +166,7 @@ function limitedBody(
   });
 }
 
-export async function secureProviderFetch(
+async function providerFetch(
   config: ProviderFetchConfig,
   path: string,
   init: RequestInit = {},
@@ -216,7 +234,10 @@ export async function secureProviderFetch(
     }
     return new Response(
       response.body
-        ? limitedBody(response.body, max, controller, options.stream ? 30_000 : timeout)
+        ? limitedBody(response.body, max, controller, options.stream ? 30_000 : timeout, {
+            provider: config.provider,
+            correlationId: context.getStore(),
+          })
         : null,
       { status: response.status, statusText: response.statusText, headers: response.headers }
     );
@@ -254,4 +275,37 @@ export function createProviderTransport(config: ProviderFetchConfig) {
       throw new AppError(502, 'The connected service returned an invalid response.');
     }
   };
+}
+
+export async function secureProviderFetch(
+  config: ProviderFetchConfig,
+  path: string,
+  init: RequestInit = {},
+  options: { stream?: boolean; maxBytes?: number } = {}
+): Promise<Response> {
+  const started = performance.now();
+  void logDiagnostic('trace', 'provider.start', {
+    provider: config.provider,
+    method: init.method || 'GET',
+    stream: !!options.stream,
+  });
+  try {
+    const response = await providerFetch(config, path, init, options);
+    void logDiagnostic(response.ok ? 'info' : 'warn', 'provider.complete', {
+      provider: config.provider,
+      method: init.method || 'GET',
+      status: response.status,
+      failure: response.ok ? undefined : 'http',
+      durationMs: performance.now() - started,
+      stream: !!options.stream,
+    });
+    return response;
+  } catch (error) {
+    void logDiagnostic('error', 'provider.failed', {
+      provider: config.provider,
+      failure: classifyFailure(error),
+      durationMs: performance.now() - started,
+    });
+    throw error;
+  }
 }

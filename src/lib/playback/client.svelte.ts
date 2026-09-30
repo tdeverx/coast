@@ -1,3 +1,4 @@
+import { browserDiagnostic } from '$lib/ui/diagnostics';
 import { api } from '$lib/ui/client';
 import type { PlaybackView } from '$lib/ui/types';
 
@@ -10,6 +11,7 @@ export const player = $state({
   continuationId: '',
   muted: true,
   loading: false,
+  preparationStartedAt: 0,
 });
 export const heroPlayer = $state({
   id: '',
@@ -73,6 +75,8 @@ export async function playMedia(
     return;
   }
   player.loading = true;
+  player.preparationStartedAt = performance.now();
+  browserDiagnostic('playback.start');
   try {
     if (player.session) await controller?.stop();
     const video = document.createElement('video');
@@ -99,6 +103,9 @@ export async function playMedia(
     player.paused = true;
     player.controlsVisible = true;
     setPlaybackMuted(false);
+  } catch (error) {
+    browserDiagnostic('playback.failed', { failure: 'unexpected' });
+    throw error;
   } finally {
     player.loading = false;
   }

@@ -33,8 +33,8 @@
     >
       {#each nav as item}<a
           href={item.href}
-          class:active={page.url.pathname === item.href}
-          aria-current={page.url.pathname === item.href ? 'page' : undefined}
+          class:active={page.url.pathname === item.href || (item.href === '/library' && page.url.pathname.startsWith('/games'))}
+          aria-current={page.url.pathname === item.href || (item.href === '/library' && page.url.pathname.startsWith('/games')) ? 'page' : undefined}
           aria-label={item.label}><span>{item.label}</span></a
         >{/each}
     </nav>

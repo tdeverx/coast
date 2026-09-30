@@ -52,7 +52,9 @@
 
 <svelte:head><title>Search · Coast</title></svelte:head>
 <div class="content page route-content" aria-busy={busy}>
-  <PageHeader title="Search" description="Find movies and shows in your library and beyond." />
+  <PageHeader title="Search" description="Find movies and shows in your library and beyond.">
+    {#snippet actions()}{#if data.experimentalFeatures}<Button variant="ghost" href="/games?view=igdb" icon="search">Search games</Button>{/if}{/snippet}
+  </PageHeader>
   <form
     class="filter-row search-controls"
     action="/search"
