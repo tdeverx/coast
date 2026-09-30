@@ -65,16 +65,17 @@ run('one admin schedule covers all active accounts and rejects user controls', a
     fullIntervalHours: 48,
   });
   const result = await scheduleProviderMaintenance({ instanceId: instance });
-  expect(result.queued).toBe(2);
+  expect(result.queued).toBe(3);
   const jobs = await getDb()
     .select()
     .from(s.outboxActions)
     .where(inArray(s.outboxActions.connectionId, connections));
-  expect(jobs.map((j) => j.userId).sort()).toEqual([admin, member].sort());
-  expect(jobs.every((j) => j.kind === 'jellyfin.scan' && j.payload.full === true)).toBe(true);
+  expect([...new Set(jobs.map((j) => j.userId))].sort()).toEqual([admin, member].sort());
+  expect(jobs.filter(j => j.kind === 'jellyfin.library')).toHaveLength(1);
+  expect(jobs.filter(j => j.kind === 'jellyfin.sync')).toHaveLength(2);
   const again = await runProviderJob(admin, instance);
   expect(again.queued).toBe(0);
-  expect(again.active).toBe(2);
+  expect(again.active).toBe(3);
   expect(
     (
       await getDb()
@@ -104,14 +105,34 @@ run('paused schedules stay paused and recently checked accounts do not repeat wo
     .values(
       connections
         .slice(0, 2)
-        .map((connectionId) => ({ connectionId, kind: 'jellyfin-full', completedAt: new Date() }))
+        .map((connectionId) => ({ connectionId, kind: 'jellyfin-user', completedAt: new Date() }))
     );
+  await getDb().update(s.providerInstances).set({ settings: { schedule: { enabled: true, intervalMinutes: 30, fullIntervalHours: 48 }, libraryScan: { connectionId: connections[0], externalUserId: null, fullCompletedAt: new Date().toISOString() } } }).where(eq(s.providerInstances.id, instance));
   expect((await scheduleProviderMaintenance({ instanceId: instance })).queued).toBe(0);
   const results = await Promise.all([
     runProviderJob(admin, instance),
     runProviderJob(admin, instance),
   ]);
-  expect(results.reduce((n, r) => n + r.queued, 0)).toBe(2);
+  expect(results.reduce((n, r) => n + r.queued, 0)).toBe(3);
+});
+run('independent schedule edits preserve toggles, cadences and scan progress', async () => {
+  await updateProviderSchedule(admin, instance, {
+    enabled: false, intervalMinutes: 30, fullIntervalHours: 48,
+    libraryConnectionId: connections[0], userSyncEnabled: false,
+  });
+  await Promise.all([
+    updateProviderSchedule(admin, instance, { userIntervalMinutes: 17 }),
+    updateProviderSchedule(admin, instance, { intervalMinutes: 45 }),
+  ]);
+  const [saved] = await getDb().select().from(s.providerInstances).where(eq(s.providerInstances.id, instance));
+  expect(saved.settings.schedule).toMatchObject({
+    enabled: false, intervalMinutes: 45, fullIntervalHours: 48,
+    libraryConnectionId: connections[0], userSyncEnabled: false, userIntervalMinutes: 17,
+  });
+  expect(saved.settings.libraryScan).toMatchObject({ connectionId: connections[0] });
+  await expect(updateProviderSchedule(admin, instance, { userIntervalMinutes: 0 })).rejects.toThrow();
+  await expect(updateProviderSchedule(admin, instance, { libraryConnectionId: connections[2] })).rejects.toThrow('connected account');
+  await expect(updateProviderSchedule(admin, instance, {})).rejects.toThrow('setting');
 });
 run('genre filtering uses resolved provider and override genres before counting', async () => {
   const marker = `genre-${crypto.randomUUID()}`;

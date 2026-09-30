@@ -112,7 +112,7 @@ describe('Continue Watching and New Seasons', () => {
   });
 });
 test('schedule defaults preserve existing cadence and keep Trakt imports opt-in', () => {
-  expect(providerSchedule('jellyfin')).toEqual({
+  expect(providerSchedule('jellyfin')).toMatchObject({
     enabled: true,
     intervalMinutes: 10,
     fullIntervalHours: 24,

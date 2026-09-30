@@ -26,9 +26,9 @@ export async function connectJellyfin(
   await enqueueAction({
     userId,
     connectionId: connection.id,
-    kind: 'jellyfin.scan',
-    payload: { full: true },
-    compactionKey: 'jellyfin-scan',
+    kind: 'jellyfin.sync',
+    payload: {},
+    compactionKey: 'jellyfin.sync',
   });
   return connection;
 }

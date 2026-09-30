@@ -29,6 +29,7 @@ import {
   requireAdmin,
   createUser,
   deleteUser,
+  updateUser,
   updatePassword,
   updateUserSettings,
   resetUserSettings,
@@ -57,7 +58,7 @@ import { startTraktDevice, finishTraktDevice, updateSyncPreferences } from '$lib
 import { disconnectProvider } from '$lib/providers/connections.server';
 import { updateProviderSchedule, runProviderJob } from '$lib/providers/maintenance.server';
 import { requestOptions, requestMedia, manageRequest } from '$lib/providers/seerr/requests.server';
-import { musicLibrary, musicDetails } from '$lib/music/service.server';
+import { musicLibrary, musicDetails, setMusicFavourite } from '$lib/music/service.server';
 import { streamMusicArtwork } from '$lib/music/artwork.server';
 import { libraryScanProgress } from '$lib/sync/jellyfin';
 import { queueTraktListChange, deleteListWithExports } from '$lib/sync/trakt-lists';
@@ -390,6 +391,8 @@ const handler: RequestHandler = async (event) => {
         });
       else if (path[2] === 'music' && path.length === 4 && method === 'GET')
         result = await musicDetails(uid, uuid(path[1]), path[3]);
+      else if (path[2] === 'music' && path.length === 5 && path[4] === 'favourite' && method === 'POST')
+        result = await setMusicFavourite(uid, uuid(path[1]), path[3], body);
       else if (path[2] === 'disconnect' && method === 'POST')
         result = await disconnectProvider(uid, uuid(path[1]));
       else if (path[2] === 'scan' && method === 'GET')
@@ -399,7 +402,7 @@ const handler: RequestHandler = async (event) => {
         result = await updateProviderSchedule(uid, uuid(path[1]), body);
       } else if (path[2] === 'run-job' && method === 'POST') {
         requireAdmin(user);
-        result = await runProviderJob(uid, uuid(path[1]));
+        result = await runProviderJob(uid, uuid(path[1]), v.parse(v.optional(v.picklist(['all','library','users','tracking','lists']), 'all'), body.task));
       } else if (path[2] === 'playback-import' && method === 'POST')
         result = await updateJellyfinPlaybackImport(uid, uuid(path[1]), body);
       else if (path[2] === 'sync' && method === 'POST')
@@ -479,6 +482,8 @@ const handler: RequestHandler = async (event) => {
         result = await createUser(user, body);
       else if (path[1] === 'users' && path.length === 3 && method === 'DELETE')
         result = await deleteUser(user, uuid(path[2]));
+      else if (path[1] === 'users' && path.length === 3 && method === 'PATCH')
+        result = await updateUser(user, uuid(path[2]), body);
       else if (path[1] === 'health' && method === 'GET') result = await systemHealth(user);
       else throw new AppError(404, 'Action not found.');
     } else throw new AppError(404, 'Action not found.');

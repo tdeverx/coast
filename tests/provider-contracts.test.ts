@@ -689,7 +689,7 @@ test('Jellyfin playback state stays separate from shared metadata', async () => 
       TotalRecordCount: 1,
     };
   }, 'test-device');
-  const [item] = (await adapter.library('viewer')).items;
+  const [item] = (await adapter.library('viewer', 0, undefined, 'user')).items;
   expect(item.userData).toEqual({
     played: true,
     playCount: 4,
@@ -734,4 +734,22 @@ test('Trakt cleared progress deletes only the matching media kind and identity',
   );
   await adapter.clearProgress('movie', { trakt: 1 });
   expect(deleted).toEqual(['/sync/playback/10']);
+});
+
+
+test('Jellyfin shared scans omit account state and activity scans omit expensive metadata fields', async () => {
+  const calls: URLSearchParams[] = [];
+  const adapter = new JellyfinAdapter(async path => {
+    calls.push(new URL(path, 'https://fixture.invalid').searchParams);
+    return { Items: [], TotalRecordCount: 0 };
+  }, 'fixture');
+  await adapter.library('source', 0, '2026-01-01T00:00:00Z');
+  await adapter.library('viewer', 0, undefined, 'user');
+  expect(calls[0].get('enableUserData')).toBe('false');
+  expect(calls[0].get('minDateLastSaved')).toBe('2026-01-01T00:00:00Z');
+  expect(calls[1].get('userId')).toBe('viewer');
+  expect(calls[1].get('enableUserData')).toBe('true');
+  expect(calls[1].get('enableImages')).toBe('false');
+  expect(calls[1].get('fields')).not.toContain('Overview');
+  expect(calls[1].get('minDateLastSaved')).toBeNull();
 });

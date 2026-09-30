@@ -13,7 +13,7 @@ export type MediaCardPresentation = Pick<
   | 'artwork'
   | 'artworkSources'
   | 'logo'
-> & { kind: MusicKind | 'game'; href: string };
+> & { kind: MusicKind | 'game'; href: string; connectionId?: string };
 export type MediaHeroPresentation = MediaCardPresentation &
   Pick<MediaView, 'overview' | 'genres' | 'runtimeMinutes' | 'certification'>;
 export type MediaCardShape = 'poster' | 'square' | 'fanart' | 'banner';

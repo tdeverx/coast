@@ -6,7 +6,7 @@ import {
 import { AppError } from '$lib/server/security/errors';
 import { providerSchedule } from '$lib/providers/schedule';
 import * as v from 'valibot';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { users, providerInstances, providerConnections } from '$lib/server/db/schema';
 import {
@@ -159,23 +159,19 @@ export async function listProviders(userId: string, includeDisabled = false) {
     .select()
     .from(providerConnections)
     .where(eq(providerConnections.userId, userId));
-  const counts = includeDisabled
-    ? await getDb()
-        .select({
-          instanceId: providerConnections.instanceId,
-          count: sql<number>`count(*)::int`,
-        })
-        .from(providerConnections)
-        .innerJoin(users, eq(users.id, providerConnections.userId))
-        .where(and(eq(providerConnections.status, 'connected'), eq(users.disabled, false)))
-        .groupBy(providerConnections.instanceId)
-    : [];
+  const accounts = includeDisabled ? await getDb()
+    .select({ id: providerConnections.id, instanceId: providerConnections.instanceId, username: users.username })
+    .from(providerConnections).innerJoin(users, eq(users.id, providerConnections.userId))
+    .where(and(eq(providerConnections.status, 'connected'), eq(users.disabled, false)))
+    .orderBy(providerConnections.createdAt, providerConnections.id) : [];
   return instances
     .filter((instance) => config.experimentalFeatures || instance.provider !== 'igdb')
     .map((instance) => {
       const connection = connections.find((connection) => connection.instanceId === instance.id);
       return {
-        connectedAccounts: counts.find((row) => row.instanceId === instance.id)?.count ?? 0,
+        connectedAccounts: accounts.filter(row => row.instanceId === instance.id).length,
+        accounts: accounts.filter(row => row.instanceId === instance.id).map(({ id, username }) => ({ id, username })),
+        libraryScan: includeDisabled ? instance.settings.libraryScan : undefined,
         id: instance.id,
         provider: instance.provider,
         name: instance.name,
@@ -192,7 +188,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
               status: connection.status,
               settings: {
                 sync: connection.settings.sync,
-                importPlayback: connection.settings.importPlayback === true,
+                importPlayback: instance.provider === 'jellyfin' && connection.settings.importPlayback !== false,
               },
               updatedAt: connection.updatedAt,
             }

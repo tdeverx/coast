@@ -1,3 +1,4 @@
+import { getConfig } from '$lib/server/config';
 import { conflictPreference } from '$lib/sync/preference';
 import * as v from 'valibot';
 import { and, eq } from 'drizzle-orm';
@@ -22,6 +23,9 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   const register = (kind: string, handler: ActionHandler) =>
     registerActionHandler(kind, async (action) => {
       try {
+        const config = await getConfig();
+        if ((action.kind.startsWith('trakt.') && !config.enableTrakt) || (action.kind.startsWith('seerr.') && !config.enableRequests))
+          throw new PermanentActionError('This service is disabled by the administrator.');
         await handler(action);
       } catch (error) {
         if (error instanceof ProviderActionError) throw new PermanentActionError(error.message);
@@ -194,13 +198,13 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     const { executeLiveScrobble } = await import('$lib/sync/trakt-export');
     await executeLiveScrobble(action.userId, action.connectionId, action.payload);
   });
-  register('jellyfin.scan', async (action) => {
+  register('jellyfin.library', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Jellyfin connection is unavailable.');
-    const { scanJellyfin } = await import('$lib/sync/jellyfin');
+    const { scanJellyfinLibrary } = await import('$lib/sync/jellyfin');
     let stage = 'connection';
     try {
-      await scanJellyfin(
+      await scanJellyfinLibrary(
         action.userId,
         action.connectionId,
         action.payload.full !== false,
@@ -213,11 +217,23 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
       throw error;
     }
   });
+  register('jellyfin.sync', async (action) => {
+    if (!action.connectionId) throw new PermanentActionError('The Jellyfin connection is unavailable.');
+    const { syncJellyfinUser } = await import('$lib/sync/jellyfin');
+    let stage = 'connection';
+    try { await syncJellyfinUser(action.userId, action.connectionId, next => { stage = next; }); }
+    catch (error) { tagDiagnosticStage(error, stage); throw error; }
+  });
   register('trakt.import', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
     const { importTrakt } = await import('$lib/sync/trakt-import');
-    await importTrakt(action.userId, action.connectionId);
+    await importTrakt(action.userId, action.connectionId, 'tracking');
+  });
+  register('trakt.lists-import', async (action) => {
+    if (!action.connectionId) throw new PermanentActionError('The Trakt connection is unavailable.');
+    const { importTrakt } = await import('$lib/sync/trakt-import');
+    await importTrakt(action.userId, action.connectionId, 'lists');
   });
   register('trakt.list-export', async (action) => {
     if (!action.connectionId)

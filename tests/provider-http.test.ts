@@ -33,7 +33,7 @@ import { updateJellyfinPlaybackImport, connectJellyfin } from '../src/lib/provid
 import { updateProviderSchedule } from '../src/lib/providers/maintenance.server';
 import { requestMedia, requestOptions } from '../src/lib/providers/seerr/requests.server';
 import { registerProviderActions } from '../src/lib/providers/actions.server';
-import { scanJellyfin, libraryScanProgress } from '../src/lib/sync/jellyfin';
+import { scanJellyfinLibrary, syncJellyfinUser, libraryScanProgress } from '../src/lib/sync/jellyfin';
 import { importTraktFromAdapter } from '../src/lib/sync/trakt-import';
 import { exportTraktToAdapter } from '../src/lib/sync/trakt-export';
 import { startPlayback, streamPlayback, progressPlayback } from '../src/lib/playback/server';
@@ -44,6 +44,10 @@ import { defaultSyncPreferences } from '../src/lib/providers/contracts';
 import { POST } from '../src/routes/api/v1/[...path]/+server';
 
 const enabled = process.env.COAST_PROVIDER_HTTP_TEST === '1';
+async function syncLibraryAndUser(userId: string, connectionId: string, full: boolean) {
+  await scanJellyfinLibrary(userId, connectionId, full);
+  await syncJellyfinUser(userId, connectionId);
+}
 const run = enabled ? test : test.skip;
 const browser = {
   containers: ['mp4'],
@@ -299,7 +303,7 @@ beforeAll(async () => {
   connectionId = (
     await connectJellyfin(actorId, { instanceId, username: 'fixture', password: 'synthetic' })
   ).id;
-  await scanJellyfin(actorId, connectionId, true);
+  await syncLibraryAndUser(actorId, connectionId, true);
   const [identity] = await getDb()
     .select()
     .from(externalIds)
@@ -333,6 +337,7 @@ beforeAll(async () => {
       userId: actorId,
       instanceId: traktInstanceId,
       externalUserId: 'fixture',
+      credentials: 'Synthetic fixture credentials; the test adapter owns transport.',
       status: 'connected',
       settings: { sync: {} },
     })
@@ -433,8 +438,17 @@ run(
   }
 );
 
+run('shared metadata scans leave account tracking alone and user sync reuses existing metadata', async () => {
+  const before = await getSql()`SELECT media_id, watched, favourite FROM tracking_state WHERE user_id = ${actorId} ORDER BY media_id`;
+  await scanJellyfinLibrary(actorId, connectionId, true);
+  expect(await getSql()`SELECT media_id, watched, favourite FROM tracking_state WHERE user_id = ${actorId} ORDER BY media_id`).toEqual(before);
+  const [metadata] = await getSql()`SELECT last_seen_at, snapshot FROM provider_items WHERE instance_id = ${instanceId} AND external_id = 'abc123'`;
+  await syncJellyfinUser(actorId, connectionId);
+  const [after] = await getSql()`SELECT last_seen_at, snapshot FROM provider_items WHERE instance_id = ${instanceId} AND external_id = 'abc123'`;
+  expect(after).toEqual(metadata);
+});
 run(
-  'Jellyfin playback import is opt-in, scoped, repeatable and preserves newer Coast changes',
+  'Jellyfin playback import defaults on, is scoped and repeatable, and preserves opt-outs and newer Coast changes',
   async () => {
     jellyfinUserData = {
       Played: true,
@@ -443,15 +457,15 @@ run(
       LastPlayedDate: '2020-01-01T00:00:00Z',
     };
     try {
-      await scanJellyfin(actorId, connectionId, true);
+      await syncLibraryAndUser(actorId, connectionId, true);
       expect(
         await getDb().select().from(trackingState).where(eq(trackingState.mediaId, mediaId))
-      ).toHaveLength(0);
+      ).toMatchObject([{ watched: true, playCount: 3 }]);
       await expect(
         updateJellyfinPlaybackImport(otherId, connectionId, { enabled: true })
       ).rejects.toThrow();
       await updateJellyfinPlaybackImport(actorId, connectionId, { enabled: true });
-      await scanJellyfin(actorId, connectionId, true);
+      await syncLibraryAndUser(actorId, connectionId, true);
       const state = async () =>
         (
           await getDb()
@@ -465,7 +479,7 @@ run(
         (await getDb().select().from(trackingEvents).where(eq(trackingEvents.mediaId, mediaId)))
           .length;
       const importedCount = await events();
-      await scanJellyfin(actorId, connectionId, true);
+      await syncLibraryAndUser(actorId, connectionId, true);
       expect(await events()).toBe(importedCount);
       await track(actorId, {
         mediaId,
@@ -475,11 +489,11 @@ run(
         occurredAt: '2021-01-01T00:00:00Z',
       });
       jellyfinUserData.PlaybackPositionTicks = 4000000;
-      await scanJellyfin(actorId, connectionId, true);
+      await syncLibraryAndUser(actorId, connectionId, true);
       expect((await state()).positionSeconds).toBeCloseTo(0.6);
       await updateJellyfinPlaybackImport(actorId, connectionId, { enabled: false });
       jellyfinUserData.LastPlayedDate = '2022-01-01T00:00:00Z';
-      await scanJellyfin(actorId, connectionId, true);
+      await syncLibraryAndUser(actorId, connectionId, true);
       expect((await state()).positionSeconds).toBeCloseTo(0.6);
       expect((await state()).playCount).toBe(3);
       const [connection] = await getDb()
@@ -487,7 +501,7 @@ run(
         .from(providerConnections)
         .where(eq(providerConnections.id, connectionId));
       expect(connection.settings.importPlayback).toBe(false);
-      expect(connection.settings.libraryScan).toBeDefined();
+      expect(connection.settings.userSync).toBeDefined();
     } finally {
       jellyfinUserData = undefined;
       await updateJellyfinPlaybackImport(actorId, connectionId, { enabled: false });
@@ -519,13 +533,13 @@ run(
       .select()
       .from(providerInstances)
       .where(eq(providerInstances.id, instanceId));
-    expect(instance.settings.schedule).toEqual({
+    expect(instance.settings.schedule).toMatchObject({
       enabled: false,
       intervalMinutes: 30,
       fullIntervalHours: 48,
     });
     expect(connection.settings.importPlayback).toBe(false);
-    expect(connection.settings.libraryScan).toBeDefined();
+    expect(connection.settings.userSync).toBeDefined();
   }
 );
 run('library scans persist real counts without exposing another user’s scan', async () => {
@@ -533,7 +547,7 @@ run('library scans persist real counts without exposing another user’s scan', 
     .select()
     .from(providerConnections)
     .where(eq(providerConnections.id, connectionId));
-  expect(connection.settings.libraryScan).toMatchObject({
+  expect(connection.settings.userSync).toMatchObject({
     processed: 1,
     total: 1,
     phase: 'complete',
@@ -976,7 +990,7 @@ run(
   'an interrupted library page preserves availability; a complete empty scan invalidates it',
   async () => {
     scanMode = 'broken';
-    await expect(scanJellyfin(actorId, connectionId, true)).rejects.toThrow('incomplete library');
+    await expect(syncLibraryAndUser(actorId, connectionId, true)).rejects.toThrow('incomplete library');
     expect(
       (
         await getDb()
@@ -988,7 +1002,7 @@ run(
       ).length
     ).toBe(2);
     scanMode = 'empty';
-    await scanJellyfin(actorId, connectionId, true);
+    await syncLibraryAndUser(actorId, connectionId, true);
     expect(
       await getDb()
         .select()
