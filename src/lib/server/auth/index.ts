@@ -246,24 +246,28 @@ export async function deleteUser(actor: SessionUser | null, userId: string): Pro
 export async function updateUserSettings(actor: SessionUser | null, input: unknown) {
   const user = requireUser(actor);
   const settings = v.parse(
-    v.object({
-      syncConflictWinner: v.optional(
-        v.union([v.literal('manual'), v.literal('coast'), v.pipe(v.string(), v.uuid())]),
-        'manual'
-      ),
-      fullWidth: v.boolean(),
-      originalTitles: v.boolean(),
-      region: v.pipe(v.string(), v.regex(/^[A-Z]{2}$/)),
-      theme: v.optional(v.picklist(['dark', 'light', 'system'])),
-      notificationLevel: v.optional(v.picklist(['silent', 'normal', 'persistent'])),
-      notificationsSilenced: v.boolean(),
-      subtitleLanguages: v.array(v.string()),
-      subtitlesAlways: v.boolean(),
-      subtitlePrompt: v.boolean(),
-    }),
+    v.partial(
+      v.object({
+        syncConflictWinner: v.union([
+          v.literal('manual'),
+          v.literal('coast'),
+          v.pipe(v.string(), v.uuid()),
+        ]),
+        fullWidth: v.boolean(),
+        originalTitles: v.boolean(),
+        region: v.pipe(v.string(), v.regex(/^[A-Z]{2}$/)),
+        theme: v.optional(v.picklist(['dark', 'light', 'system'])),
+        notificationLevel: v.optional(v.picklist(['silent', 'normal', 'persistent'])),
+        notificationsSilenced: v.boolean(),
+        subtitleLanguages: v.array(v.string()),
+        subtitlesAlways: v.boolean(),
+        subtitlePrompt: v.boolean(),
+      })
+    ),
     input
   );
   if (
+    settings.syncConflictWinner !== undefined &&
     !['manual', 'coast'].includes(settings.syncConflictWinner) &&
     settings.syncConflictWinner !== user.settings.syncConflictWinner
   ) {

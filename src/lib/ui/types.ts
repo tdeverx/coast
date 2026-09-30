@@ -14,6 +14,8 @@ export type MediaCardPresentation = Pick<
   | 'artworkSources'
   | 'logo'
 > & { kind: MusicKind | 'game'; href: string };
+export type MediaHeroPresentation = MediaCardPresentation &
+  Pick<MediaView, 'overview' | 'genres' | 'runtimeMinutes' | 'certification'>;
 export type MediaCardShape = 'poster' | 'square' | 'fanart' | 'banner';
 export type MediaCardArtwork =
   | 'auto'

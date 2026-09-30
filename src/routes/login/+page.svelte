@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import { enhance } from '$app/forms';
   import Brand from '$lib/ui/components/Brand.svelte';
   import Button from '$lib/ui/components/Button.svelte';
@@ -12,6 +13,12 @@
     <div class="row brand"><Brand /></div>
     <h1>Welcome back.</h1>
     <p>Pick up where you left off.</p>
+    {#if page.url.searchParams.get('passwordChanged') === '1'}<p
+        class="notice success"
+        role="status"
+      >
+        Password updated. Sign in with your new password.
+      </p>{/if}
     <form
       method="POST"
       class="stack"
@@ -23,8 +30,10 @@
         };
       }}
     >
-      {#if form?.error}<div class="notice error" role="alert">{form.error}</div>{/if}<label
-        class="field">Username<input name="username" autocomplete="username" required /></label
+      {#if form?.error}<div class="notice error" role="alert">
+          {form.error}
+        </div>{/if}<label class="field"
+        >Username<input name="username" autocomplete="username" required /></label
       ><label class="field"
         >Password<input
           name="password"
@@ -34,6 +43,8 @@
         /></label
       ><Button type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</Button>
     </form>
-    <div class="auth-footer"><a href="/recovery">Administrator recovery</a></div>
+    <div class="auth-footer">
+      <a href="/recovery">Administrator recovery</a>
+    </div>
   </div>
 </div>

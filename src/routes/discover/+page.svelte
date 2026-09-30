@@ -1,4 +1,5 @@
 <script lang="ts">
+  import MediaRows from '$lib/ui/components/MediaRows.svelte';
   import PageHeader from '$lib/ui/components/PageHeader.svelte';
   import { isHeroTitle } from '$lib/media/hero';
   import MediaHero from '$lib/ui/components/MediaHero.svelte';
@@ -56,7 +57,10 @@
       href="/discover?section=recent"
       title="Recently released"
       items={data.recent}
-    />{#if featured.length}<p class="small quiet" style="margin-top:50px">
+    /><MediaRows rows={data.mediaRows} />{#if featured.length}<p
+        class="small quiet"
+        style="margin-top:50px"
+      >
         Metadata provided by TMDB. This product is not endorsed or certified by TMDB.
       </p>{/if}
   {/if}

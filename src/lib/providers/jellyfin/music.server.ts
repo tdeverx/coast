@@ -12,7 +12,7 @@ export const jellyfinMusicIdSchema = v.pipe(
 );
 export const musicBrowseSchema = v.pipe(
   v.object({
-    kind: v.optional(v.picklist(['artist', 'album', 'track']), 'album'),
+    kind: v.optional(v.picklist(['all', 'artist', 'album', 'track']), 'album'),
     offset: v.optional(v.pipe(count, v.maxValue(2147483647)), 0),
     limit: v.optional(v.pipe(count, v.minValue(1), v.maxValue(100)), 50),
     search: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(200))),
@@ -112,11 +112,13 @@ export async function browseMusic(
         ? 'ParentIndexNumber,IndexNumber,SortName'
         : 'SortName',
     includeItemTypes:
-      options.kind === 'artist'
-        ? 'MusicAlbum,Audio'
-        : options.kind === 'album'
-          ? 'MusicAlbum'
-          : 'Audio',
+      options.kind === 'all'
+        ? 'MusicArtist,MusicAlbum,Audio'
+        : options.kind === 'artist'
+          ? 'MusicAlbum,Audio'
+          : options.kind === 'album'
+            ? 'MusicAlbum'
+            : 'Audio',
   });
   if (options.search) query.set('searchTerm', options.search);
   if (options.artistId)
@@ -137,7 +139,7 @@ export async function browseMusic(
   if (!page.Items.length && options.offset < page.TotalRecordCount)
     throw new Error('Jellyfin returned an incomplete music page.');
   const items = page.Items.map(mapItem);
-  if (items.some((item) => item.kind !== options.kind))
+  if (options.kind !== 'all' && items.some((item) => item.kind !== options.kind))
     throw new Error('Jellyfin returned an unexpected music item type.');
   return {
     items,

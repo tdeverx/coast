@@ -1,9 +1,9 @@
 <script lang="ts">
   import { goto, invalidateAll } from '$app/navigation';
-  import PageHeader from '$lib/ui/components/PageHeader.svelte';
+  import BrowseHeader from '$lib/ui/components/BrowseHeader.svelte';
+  import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
   import MediaCard from '$lib/ui/components/MediaCard.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   import { musicCard } from '$lib/music/presentation';
@@ -20,39 +20,23 @@
 
 <svelte:head><title>Music · Coast</title></svelte:head>
 <div class="content page route-content">
-  <PageHeader title="Music" description="Browse music from your Jellyfin library.">
-    {#snippet actions()}
-      <Button variant="ghost" href="/library" icon="film">Movies and shows</Button>
-      <Button variant="ghost" href="/settings/connections" icon="server">Connections</Button>
-    {/snippet}
-  </PageHeader>
-  <form class="filter-row" action="/music" method="GET">
-    <SegmentedControl
-      label="Music type"
-      value={data.filters.kind}
-      options={[
-        { value: 'album', label: 'Albums' },
-        { value: 'artist', label: 'Artists' },
-        { value: 'track', label: 'Tracks' },
-      ]}
-      onchange={(kind) =>
-        goto(pageUrl(1, kind as typeof data.filters.kind), {
-          keepFocus: true,
-          noScroll: true,
-        })}
-    />
+  <BrowseHeader surface="listen" enabled={data.experimentalFeatures}>
+    {#snippet filters()}<RowFilter
+        label="Music type"
+        value={data.filters.kind}
+        options={[
+          { value: 'all', label: 'All' },
+          { value: 'album', label: 'Albums' },
+          { value: 'artist', label: 'Artists' },
+          { value: 'track', label: 'Tracks' },
+        ]}
+        onchange={(kind) =>
+          goto(pageUrl(1, kind as typeof data.filters.kind), { keepFocus: true, noScroll: true })}
+      />{/snippet}
+  </BrowseHeader>
+  <form class="filter-row browse-search" action="/music" method="GET">
     <input type="hidden" name="kind" value={data.filters.kind} />
-    <div style="flex:1"></div>
-    {#if data.sources.length}
-      <select
-        aria-label="Music source"
-        name="connection"
-        value={data.connectionId}
-        onchange={(event) => event.currentTarget.form?.requestSubmit()}
-      >
-        {#each data.sources as source}<option value={source.id}>{source.name}</option>{/each}
-      </select>
-    {/if}
+    <input type="hidden" name="connection" value={data.connectionId} />
     <input
       aria-label="Search music"
       name="search"
@@ -78,11 +62,13 @@
     <div class="spread" style="margin-bottom:22px">
       <p class="small">
         {data.total}
-        {data.filters.kind === 'artist'
-          ? 'artists'
-          : data.filters.kind === 'album'
-            ? 'albums'
-            : 'tracks'}
+        {data.filters.kind === 'all'
+          ? 'music items'
+          : data.filters.kind === 'artist'
+            ? 'artists'
+            : data.filters.kind === 'album'
+              ? 'albums'
+              : 'tracks'}
       </p>
     </div>
     <div class="grid">
@@ -95,7 +81,7 @@
   {:else}
     <EmptyState
       title="No matching music"
-      description="Try another music type, source or search."
+      description="Try another music type or search."
       icon="library"
     >
       <Button variant="secondary" href={`/music?connection=${data.connectionId}`}
@@ -104,3 +90,11 @@
     </EmptyState>
   {/if}
 </div>
+
+<style>
+  .browse-search input[type='search'] {
+    flex: 1;
+    min-width: min(100%, 200px);
+    width: auto;
+  }
+</style>

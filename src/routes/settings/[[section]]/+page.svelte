@@ -3,6 +3,11 @@
     personalSettings as links,
     administratorSettings as adminLinks,
     settingsTitles as titles,
+    settingsDescriptions as descriptions,
+    preferenceFields,
+    policyFields,
+    policyGroups,
+    selectSettings,
   } from '$lib/settings/sections';
   import PageHeader from '$lib/ui/components/PageHeader.svelte';
   import RowHeader from '$lib/ui/components/RowHeader.svelte';
@@ -11,7 +16,10 @@
   import ConflictList from '$lib/ui/components/ConflictList.svelte';
   import { page } from '$app/state';
   import { untrack } from 'svelte';
-  import { change, message } from '$lib/ui/client';
+  import { beforeNavigate, goto } from '$app/navigation';
+
+  import { notifyAction } from '$lib/ui/action-feedback.svelte';
+  import { api, change, message } from '$lib/ui/client';
   import Button from '$lib/ui/components/Button.svelte';
   import Icon from '$lib/ui/components/Icon.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
@@ -24,22 +32,115 @@
     busy = $state(false),
     prefs = $state(untrack(() => ({ ...data.defaults, ...page.data.user?.settings }))),
     policy = $state(untrack(() => (data.config ? structuredClone(data.config) : null))),
-    deleteId = $state('');
+    deleteId = $state(''),
+    resetOpen = $state(false),
+    subtitleLanguagesText = $state(untrack(() => prefs.subtitleLanguages.join(', '))),
+    policyLanguagesText = $state(untrack(() => policy?.subtitleLanguages.join(', ') ?? '')),
+    portsText = $state(untrack(() => policy?.allowedProviderPorts.join(', ') ?? '')),
+    allowlistText = $state(untrack(() => policy?.serverAllowlist.join('\n') ?? ''));
+  const splitValues = (text: string, separator: string) =>
+    text
+      .split(separator)
+      .map((value) => value.trim())
+      .filter(Boolean);
+  let initializedSection = untrack(() => data.section);
+  const fields = $derived(
+    data.section === 'policies'
+      ? policyFields
+      : data.section === 'activity'
+        ? ['diagnosticLevel']
+        : (preferenceFields[data.section as keyof typeof preferenceFields] ?? [])
+  );
+  let saved = $state(
+    untrack(() =>
+      JSON.stringify(
+        selectSettings(
+          ['policies', 'activity'].includes(data.section) ? (policy ?? {}) : prefs,
+          fields
+        )
+      )
+    )
+  );
+  const draft = $derived({
+    ...selectSettings(
+      ['policies', 'activity'].includes(data.section) ? (policy ?? {}) : prefs,
+      fields
+    ),
+    ...(data.section === 'playback'
+      ? { subtitleLanguages: splitValues(subtitleLanguagesText, ',') }
+      : {}),
+    ...(data.section === 'policies'
+      ? {
+          subtitleLanguages: splitValues(policyLanguagesText, ','),
+          allowedProviderPorts: splitValues(portsText, ',').map(Number),
+          serverAllowlist: splitValues(allowlistText, '\n'),
+        }
+      : {}),
+  });
+  const dirty = $derived(fields.length > 0 && JSON.stringify(draft) !== saved);
+  function restoreDraft() {
+    prefs = { ...data.defaults, ...page.data.user?.settings };
+    policy = data.config ? structuredClone(data.config) : null;
+    subtitleLanguagesText = prefs.subtitleLanguages.join(', ');
+    policyLanguagesText = policy?.subtitleLanguages.join(', ') ?? '';
+    portsText = policy?.allowedProviderPorts.join(', ') ?? '';
+    allowlistText = policy?.serverAllowlist.join('\n') ?? '';
+    saved = JSON.stringify(
+      selectSettings(
+        ['policies', 'activity'].includes(data.section) ? (policy ?? {}) : prefs,
+        fields
+      )
+    );
+    error = '';
+    success = '';
+  }
+  beforeNavigate(({ cancel, to }) => {
+    if (to?.url.pathname === page.url.pathname) return;
+    if (busy || (dirty && !window.confirm('Discard unsaved settings?'))) cancel();
+  });
   const conflictServices = $derived(
     data.providers.filter(
-      (p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider) && p.connection?.status === 'connected'
+      (p) =>
+        p.enabled && !['tmdb', 'igdb'].includes(p.provider) && p.connection?.status === 'connected'
     )
   );
   $effect(() => {
-    if (data.config) policy = structuredClone(data.config);
+    // Background refreshes must not erase unsaved edits on the current page.
+    if (data.section === initializedSection) return;
+    initializedSection = data.section;
+    untrack(restoreDraft);
   });
+  async function saveDraft() {
+    const submitted = $state.snapshot(draft);
+    if (
+      await save(
+        ['policies', 'activity'].includes(data.section) ? 'settings/system' : 'settings',
+        submitted,
+        data.section === 'activity'
+          ? 'Diagnostic logging updated. Changes are active now.'
+          : data.section === 'policies'
+            ? 'System policies saved. Changes are active now.'
+            : 'Preferences saved.'
+      )
+    ) {
+      restoreDraft();
+      success =
+        data.section === 'activity'
+          ? 'Diagnostic logging updated. Changes are active now.'
+          : data.section === 'policies'
+            ? 'System policies saved. Changes are active now.'
+            : 'Preferences saved.';
+    }
+  }
   async function save(path: string, body: unknown, label = 'Saved.', method = 'POST') {
+    if (busy) return false;
     busy = true;
     error = '';
     success = '';
     try {
       await change(path, body, method);
       success = label;
+      if (!fields.length) notifyAction(label);
       return true;
     } catch (e) {
       error = message(e);
@@ -50,6 +151,23 @@
   }
   const values = (form: HTMLFormElement) => Object.fromEntries(new FormData(form));
 </script>
+
+{#snippet saveControls(label: string)}
+  <div class="save-controls">
+    {#if error}<div class="notice error" role="alert">
+        {error} Your changes have not been saved.
+      </div>{/if}
+    <div class="row">
+      <Button type="submit" disabled={busy || !dirty}>{busy ? 'Saving…' : label}</Button>
+      <Button variant="ghost" disabled={busy || !dirty} onclick={restoreDraft}
+        >Discard changes</Button
+      >
+    </div>
+    <p class="small" role="status" aria-live="polite">
+      {busy ? 'Saving your changes…' : dirty ? 'Unsaved changes' : success || 'Up to date'}
+    </p>
+  </div>
+{/snippet}
 
 <svelte:head><title>{titles[data.section]} · Coast</title></svelte:head>
 <div class="content page">
@@ -67,120 +185,137 @@
             href="/settings/{key}">{label}</a
           >{/each}{/if}
     </nav>
-    <section class="settings-main">
+    <section class="settings-main" aria-label={titles[data.section]}>
       <RowHeader title={titles[data.section]} />
-      {#if error}<div class="notice error" role="alert" style="margin-bottom:20px">
-          {error}
-        </div>{/if}{#if success}<div
-          class="notice success"
-          role="status"
+      <p class="section-description small">{descriptions[data.section]}</p>
+      {#if error && !fields.length && !['account', 'users'].includes(data.section) && !deleteId && !resetOpen}<div
+          class="notice error"
+          role="alert"
           style="margin-bottom:20px"
         >
-          {success}
+          {error}
         </div>{/if}
       {#if data.section === 'appearance'}<form
           class="stack form-width"
           onsubmit={(e) => {
             e.preventDefault();
-            void save('settings', prefs);
+            void saveDraft();
           }}
         >
-          <div class="setting">
-            <div>
-              <h3>Full-width content</h3>
-              <p>Let your library make the most of the screen. Heroes always stay edge-to-edge.</p>
+          <fieldset class="panel stack" disabled={busy}>
+            <legend class="sr-only">Display</legend>
+            <h3>Display</h3>
+            <div class="setting">
+              <div>
+                <h3>Full-width content</h3>
+                <p>
+                  Let your library make the most of the screen. Heroes always stay edge-to-edge.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                aria-label="Full-width content"
+                bind:checked={prefs.fullWidth}
+              />
             </div>
-            <input type="checkbox" aria-label="Full-width content" bind:checked={prefs.fullWidth} />
-          </div>
-          <div class="setting">
-            <div>
-              <h3>Prefer original titles</h3>
-              <p>Use a title’s original language where it is available.</p>
+            <div class="setting">
+              <div>
+                <h3>Prefer original titles</h3>
+                <p>Use a title’s original language where it is available.</p>
+              </div>
+              <input
+                type="checkbox"
+                aria-label="Prefer original titles"
+                bind:checked={prefs.originalTitles}
+              />
             </div>
-            <input
-              type="checkbox"
-              aria-label="Prefer original titles"
-              bind:checked={prefs.originalTitles}
-            />
-          </div>
-          <label class="field"
-            >Region<select bind:value={prefs.region}
-              ><option value="GB">United Kingdom</option><option value="US">United States</option
-              ><option value="CA">Canada</option><option value="AU">Australia</option><option
-                value="DE">Germany</option
-              ><option value="FR">France</option><option value="JP">Japan</option><option value="IN"
-                >India</option
-              ></select
-            ><small>Used for age certificates and regional metadata.</small></label
-          >
-          <div class="setting">
-            <div>
-              <h3>Silence optional notifications</h3>
-              <p>
-                Keep optional updates in your inbox. Important administrator notices still appear.
-              </p>
-            </div>
-            <input
-              type="checkbox"
-              aria-label="Silence optional notifications"
-              bind:checked={prefs.notificationsSilenced}
-            />
-          </div>
-          <div class="row">
-            <Button type="submit" disabled={busy}>Save preferences</Button><Button
-              variant="ghost"
-              onclick={async () => {
-                if (await save('settings/reset', {}, 'Administrator defaults restored.'))
-                  prefs = { ...data.defaults };
-              }}>Reset to administrator defaults</Button
+          </fieldset>
+          <fieldset class="panel stack" disabled={busy}>
+            <legend class="sr-only">Regional metadata</legend>
+            <h3>Regional metadata</h3>
+            <label class="field"
+              >Region<select bind:value={prefs.region}
+                ><option value="GB">United Kingdom</option><option value="US">United States</option
+                ><option value="CA">Canada</option><option value="AU">Australia</option><option
+                  value="DE">Germany</option
+                ><option value="FR">France</option><option value="JP">Japan</option><option
+                  value="IN">India</option
+                ></select
+              ><small>Used for age certificates and regional metadata.</small></label
             >
-          </div>
+          </fieldset>
+          <fieldset class="panel stack" disabled={busy}>
+            <legend class="sr-only">Notifications</legend>
+            <h3>Notifications</h3>
+            <div class="setting">
+              <div>
+                <h3>Silence optional notifications</h3>
+                <p>
+                  Keep optional updates in your inbox. Important administrator notices still appear.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                aria-label="Silence optional notifications"
+                disabled={!data.allowNotificationSilencing}
+                bind:checked={prefs.notificationsSilenced}
+              />
+            </div>
+            {#if !data.allowNotificationSilencing}<p class="small">
+                Your administrator requires optional notifications to remain visible.
+              </p>{/if}
+          </fieldset>
+          {@render saveControls('Save preferences')}
         </form>
       {:else if data.section === 'playback'}<form
           class="stack form-width"
           onsubmit={(e) => {
             e.preventDefault();
-            void save('settings', prefs);
+            void saveDraft();
           }}
         >
-          <div class="setting">
-            <div>
-              <h3>Always enable subtitles</h3>
-              <p>Choose a matching subtitle track whenever one is available.</p>
+          <fieldset class="panel stack" disabled={busy}>
+            <legend class="sr-only">Subtitles</legend>
+            <h3>Subtitles</h3>
+            <div class="setting">
+              <div>
+                <h3>Always enable subtitles</h3>
+                <p>
+                  Enable your preferred track, or the first available track if no language matches.
+                </p>
+              </div>
+              <input
+                type="checkbox"
+                aria-label="Always enable subtitles"
+                bind:checked={prefs.subtitlesAlways}
+              />
             </div>
-            <input
-              type="checkbox"
-              aria-label="Always enable subtitles"
-              bind:checked={prefs.subtitlesAlways}
-            />
-          </div>
-          <label class="field"
-            >Preferred subtitle languages<input
-              value={prefs.subtitleLanguages?.join(', ') ?? 'en'}
-              onchange={(e) =>
-                (prefs.subtitleLanguages = e.currentTarget.value
-                  .split(',')
-                  .map((s) => s.trim())
-                  .filter(Boolean))}
-              placeholder="en, fr"
-            /><small>Language codes in preference order, separated by commas.</small></label
-          >
-          <div class="setting">
-            <div>
-              <h3>Ask before playback</h3>
-              <p>Choose subtitle preferences before starting a title.</p>
+            <label class="field"
+              >Preferred subtitle languages<input
+                bind:value={subtitleLanguagesText}
+                placeholder="en, fr"
+              /><small>Language codes in preference order, separated by commas.</small></label
+            >
+            <div class="setting">
+              <div>
+                <h3>Ask before playback</h3>
+                <p>Choose subtitle preferences before starting a title.</p>
+              </div>
+              <input
+                type="checkbox"
+                aria-label="Ask before playback"
+                bind:checked={prefs.subtitlePrompt}
+              />
             </div>
-            <input
-              type="checkbox"
-              aria-label="Ask before playback"
-              bind:checked={prefs.subtitlePrompt}
-            />
-          </div>
+            <p class="small">
+              When Always enable is off, the administrator’s default subtitle mode applies.
+            </p>
+          </fieldset>
           <p class="small">
             Quality and delivery follow the administrator’s server policy. You can choose an
             available edition on a title’s details page.
           </p>
-          <Button type="submit" disabled={busy}>Save playback preferences</Button>
+          {@render saveControls('Save playback preferences')}
         </form>
       {:else if data.section === 'account'}<div class="stack form-width">
           <div class="panel">
@@ -191,62 +326,102 @@
                 : 'Coast account'}
             </p>
           </div>
-          <h3>Change password</h3>
-          <form
-            class="stack"
-            onsubmit={async (e) => {
-              e.preventDefault();
-              const form = e.currentTarget;
-              if (
-                await save(
-                  'settings/password',
-                  values(form),
-                  'Password updated. Sign in again with your new password.'
-                )
-              )
-                form.reset();
-            }}
-          >
-            <label class="field"
-              >Current password<input
-                type="password"
-                name="currentPassword"
-                autocomplete="current-password"
-                required
-              /></label
-            ><label class="field"
-              >New password<input
-                type="password"
-                name="password"
-                autocomplete="new-password"
-                minlength="12"
-                required
-              /></label
-            ><Button type="submit" disabled={busy}>Update password</Button>
-          </form>
-          <div class="divider"></div>
-          <h3>About Coast</h3>
-          <p class="small">
-            Coast 0.1.0 · AGPL-3.0-only<br />Your installation owns your tracking data. No telemetry
-            is sent to Coast developers.
-          </p>
-          <p class="small">
-            Metadata supplied by TMDB when configured. This product is not endorsed or certified by
-            TMDB.
-          </p>
+          <div class="panel stack">
+            <h3>Change password</h3>
+            <p class="small">
+              Use at least 12 characters. Changing your password signs you out on every device.
+            </p>
+            <form
+              class="stack"
+              onsubmit={async (e) => {
+                e.preventDefault();
+                const form = e.currentTarget;
+                if (busy) return;
+                busy = true;
+                error = '';
+                success = '';
+                try {
+                  await api('settings/password', values(form));
+                  form.reset();
+                  busy = false;
+                  await goto('/login?passwordChanged=1', {
+                    invalidateAll: true,
+                  });
+                } catch (e) {
+                  error = message(e);
+                } finally {
+                  busy = false;
+                }
+              }}
+            >
+              {#if error && !resetOpen}<p class="notice error" role="alert">
+                  {error}
+                </p>{/if}
+              <label class="field"
+                >Current password<input
+                  type="password"
+                  name="currentPassword"
+                  autocomplete="current-password"
+                  required
+                /></label
+              ><label class="field"
+                >New password<input
+                  type="password"
+                  name="password"
+                  autocomplete="new-password"
+                  minlength="12"
+                  required
+                /></label
+              ><Button type="submit" disabled={busy}>Update password</Button>
+            </form>
+          </div>
+          <div class="panel stack">
+            <h3>Restore preferences</h3>
+            <p class="small">
+              Reset appearance, notifications, playback and conflict resolution to the installation
+              defaults. Your profile, tracking data and linked accounts stay in place.
+            </p>
+            <div>
+              <Button
+                variant="secondary"
+                disabled={busy}
+                onclick={() => {
+                  error = '';
+                  resetOpen = true;
+                }}>Restore defaults…</Button
+              >
+            </div>
+          </div>
+          <div class="panel stack">
+            <h3>About Coast</h3>
+            <p class="small">
+              Coast 0.1.0 · AGPL-3.0-only<br />Your installation owns your tracking data. No
+              telemetry is sent to Coast developers.
+            </p>
+            <p class="small">
+              Metadata supplied by TMDB when configured. This product is not endorsed or certified
+              by TMDB.
+            </p>
+          </div>
         </div>
       {:else if data.section === 'connections'}<div class="stack form-width">
-          <p>Connect the accounts you use. Your tracking stays in Coast when you disconnect.</p>
+          <p class="small">
+            Your tracking stays in Coast when you disconnect. <a
+              class="text-accent"
+              href="/settings/pending">Review sync conflicts</a
+            >
+          </p>
           <form
-            class="stack"
+            class="panel stack"
             onsubmit={(event) => {
               event.preventDefault();
-              void save('settings', prefs);
+              void saveDraft();
             }}
           >
-            <label
-              >Conflict resolution
-              <select bind:value={prefs.syncConflictWinner}>
+            <h3>Conflict resolution</h3>
+            <label class="field"
+              >Preferred winner
+              <select bind:value={prefs.syncConflictWinner} disabled={busy}>
                 <option value="manual">Manual — review every conflict</option>
                 <option value="coast">Coast wins automatically</option>
                 {#each conflictServices as service}
@@ -268,13 +443,11 @@
               Your choice applies when syncing; conflicts the preferred account cannot resolve stay
               in Sync conflicts. Sync permissions and enabled categories still apply.
             </p>
-            <div>
-              <Button type="submit" variant="primary" disabled={busy}>Save preference</Button>
-            </div>
+            {@render saveControls('Save conflict preference')}
           </form>
-          {#each data.providers.filter((p) => !['tmdb', 'igdb'].includes(p.provider)) as p}<ConnectionCard
+          {#each data.providers.filter((p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider)) as p (p.id)}<ConnectionCard
               provider={p}
-            />{/each}{#if !data.providers.some((p) => !['tmdb', 'igdb'].includes(p.provider))}<EmptyState
+            />{/each}{#if !data.providers.some((p) => p.enabled && !['tmdb', 'igdb'].includes(p.provider))}<EmptyState
               title="Connect your world."
               description="An administrator can add Jellyfin, Trakt, and Seerr integrations. Then you can link your own accounts here."
               icon="server"
@@ -342,6 +515,7 @@
                         ><div class="row">
                           <Button
                             variant="secondary"
+                            disabled={busy}
                             onclick={() =>
                               save(
                                 `requests/${r.request.id}`,
@@ -350,6 +524,7 @@
                               )}>Approve</Button
                           ><Button
                             variant="ghost"
+                            disabled={busy}
                             onclick={() =>
                               save(
                                 `requests/${r.request.id}`,
@@ -400,7 +575,10 @@
             ><Button type="submit" disabled={busy}>Send notice</Button>
           </form>
         </div>
-      {:else if data.section === 'integrations'}<IntegrationSettings providers={data.providers} experimentalFeatures={data.config?.experimentalFeatures ?? false} />
+      {:else if data.section === 'integrations'}<IntegrationSettings
+          providers={data.providers}
+          experimentalFeatures={data.config?.experimentalFeatures ?? false}
+        />
       {:else if data.section === 'users'}<div class="stack">
           <div class="overflow">
             <table class="table">
@@ -424,174 +602,235 @@
                     ><td
                       >{#if user.id !== page.data.user?.id}<Button
                           variant="ghost"
-                          onclick={() => (deleteId = user.id)}>Delete</Button
+                          onclick={() => {
+                            error = '';
+                            deleteId = user.id;
+                          }}>Delete</Button
                         >{/if}</td
                     ></tr
                   >{/each}</tbody
               >
             </table>
           </div>
-          <h3>Create a Coast account</h3>
-          <form
-            class="stack form-width"
-            onsubmit={async (e) => {
-              e.preventDefault();
-              const form = e.currentTarget,
-                body = values(form);
-              if (
-                await save(
-                  'admin/users',
-                  { ...body, email: body.email || undefined },
-                  'Account created.'
+          <div class="panel stack form-width">
+            <h3>Create a Coast account</h3>
+            <p class="small">
+              Users can manage their own tracking and connections. Administrators can also change
+              installation policies and manage every account.
+            </p>
+            <form
+              class="stack"
+              onsubmit={async (e) => {
+                e.preventDefault();
+                const form = e.currentTarget,
+                  body = values(form);
+                if (
+                  await save(
+                    'admin/users',
+                    { ...body, email: body.email || undefined },
+                    'Account created.'
+                  )
                 )
-              )
-                form.reset();
-            }}
-          >
-            <label class="field"
-              >Username<input name="username" required minlength="3" maxlength="32" /></label
-            ><label class="field"
-              >Password<input
-                name="password"
-                type="password"
-                required
-                minlength="12"
-                autocomplete="new-password"
-              /></label
-            ><label class="field"
-              >Email <small>Optional</small><input name="email" type="email" /></label
-            ><label class="field"
-              >Role<select name="role"
-                ><option value="user">User</option><option value="admin">Administrator</option
-                ></select
-              ></label
-            ><Button type="submit" disabled={busy}>Create account</Button>
-          </form>
+                  form.reset();
+              }}
+            >
+              {#if error && !deleteId}<p class="notice error" role="alert">
+                  {error}
+                </p>{/if}
+              <label class="field"
+                >Username<input name="username" required minlength="3" maxlength="32" /></label
+              ><label class="field"
+                >Password<input
+                  name="password"
+                  type="password"
+                  required
+                  minlength="12"
+                  autocomplete="new-password"
+                /></label
+              ><label class="field"
+                >Email <small>Optional</small><input name="email" type="email" /></label
+              ><label class="field"
+                >Role<select name="role"
+                  ><option value="user">User</option><option value="admin">Administrator</option
+                  ></select
+                ></label
+              ><Button type="submit" disabled={busy}>Create account</Button>
+            </form>
+          </div>
         </div>
       {:else if data.section === 'policies' && policy}<form
           class="stack form-width"
           onsubmit={(e) => {
             e.preventDefault();
-            void save('settings/system', policy);
+            void saveDraft();
           }}
         >
-          <h3>Experimental features</h3>
-          <label class="check"><input type="checkbox" bind:checked={policy.experimentalFeatures} />Enable experimental music and gaming</label>
-          <p class="small">Enable music browsing and gaming for signed-in users. These features are still in development. Turning this off hides their screens and blocks their APIs without deleting existing data.</p>
-          <h3>Sessions</h3>
-          <label class="field"
-            >Session lifetime in days<input
-              type="number"
-              min="1"
-              max="365"
-              bind:value={policy.sessionLifetimeDays}
-            /><small>Activity refreshes an active session.</small></label
-          >
-          <h3>Playback</h3>
-          <label class="field"
-            >Delivery policy<select bind:value={policy.playbackDelivery}
-              ><option value="direct-and-relay">Allow direct and relayed/transcoded playback</option
-              ><option value="relay-only">Relay/transcode only</option></select
-            ></label
-          ><label class="field"
-            >Maximum bitrate (Mbps)<input
-              type="number"
-              min="1"
-              max="1000"
-              bind:value={policy.maxBitrateMbps}
-            /></label
-          ><label class="check"
-            ><input type="checkbox" bind:checked={policy.allowTranscoding} />Allow Jellyfin
-            transcoding</label
-          ><label class="field"
-            >Default subtitle mode<select bind:value={policy.subtitleDefault}
-              ><option value="off">Off</option><option value="preferred">Preferred languages</option
-              ><option value="always">Always enable</option></select
-            ></label
-          ><label class="field"
-            >Default subtitle languages<input
-              value={policy.subtitleLanguages.join(', ')}
-              onchange={(e) => {
-                if (!policy) return;
-                policy.subtitleLanguages = e.currentTarget.value
-                  .split(',')
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-              }}
-            /></label
-          >
-          <h3>Metadata</h3>
-          <label class="field"
-            >Shared metadata source<select bind:value={policy.metadataSource}
-              ><option value="local-preferred">Prefer local server metadata</option><option
-                value="tmdb-only">TMDB exclusively</option
-              ></select
-            ></label
-          >
-          <label class="check"
-            ><input type="checkbox" bind:checked={policy.cacheTmdbArtwork} />Cache TMDB artwork on
-            this server</label
-          >
-          <p class="small muted">
-            Off by default. Save local copies of TMDB images when viewed. Jellyfin images always
-            come from your media server; browser caching still applies. Turning this off bypasses
-            saved TMDB copies and stops new disk writes.
-          </p>
-          <h3>Integrations & network</h3>
-          <label class="check"
-            ><input type="checkbox" bind:checked={policy.enableTrakt} />Allow Trakt synchronisation</label
-          ><label class="check"
-            ><input type="checkbox" bind:checked={policy.enableRequests} />Allow media requests</label
-          ><label class="field"
-            >Allowed provider ports<input
-              value={policy.allowedProviderPorts.join(', ')}
-              onchange={(e) => {
-                if (!policy) return;
-                policy.allowedProviderPorts = e.currentTarget.value
-                  .split(',')
-                  .map((s) => Number(s.trim()))
-                  .filter(Number.isFinite);
-              }}
-            /></label
-          ><label class="field"
-            >Server allowlist<textarea
-              rows="3"
-              value={policy.serverAllowlist.join('\n')}
-              onchange={(e) => {
-                if (!policy) return;
-                policy.serverAllowlist = e.currentTarget.value
-                  .split('\n')
-                  .map((s) => s.trim())
-                  .filter(Boolean);
-              }}
-            ></textarea><small>One hostname per line. Leave empty to use approved instances.</small
-            ></label
-          >
-          <h3>Notifications</h3>
-          <label class="field"
-            >Default presentation<select bind:value={policy.notificationLevel}
-              ><option value="silent">Inbox only</option><option value="normal"
-                >Toast and inbox</option
-              ><option value="persistent">Requires dismissal</option></select
-            ></label
-          ><label class="check"
-            ><input type="checkbox" bind:checked={policy.allowNotificationSilencing} />Allow users
-            to silence optional notifications</label
-          ><Button type="submit" disabled={busy}>Save system policies</Button>
+          <nav class="policy-links" aria-label="Policy groups">
+            {#each policyGroups as [key, label]}<a class="badge" href="#{key}">{label}</a>{/each}
+          </nav>
+          <fieldset class="panel stack" id="features" disabled={busy}>
+            <legend class="sr-only">Experimental features</legend>
+            <h3>Experimental features</h3>
+            <label class="check"
+              ><input type="checkbox" bind:checked={policy.experimentalFeatures} />Enable
+              experimental music and gaming</label
+            >
+            <p class="small">
+              Enable music browsing and gaming for signed-in users. These features are still in
+              development. Turning this off hides their screens and blocks their APIs without
+              deleting existing data.
+            </p>
+          </fieldset>
+          <fieldset class="panel stack" id="sessions" disabled={busy}>
+            <legend class="sr-only">Sessions</legend>
+            <h3>Sessions</h3>
+            <label class="field"
+              >Session lifetime in days<input
+                type="number"
+                min="1"
+                max="365"
+                bind:value={policy.sessionLifetimeDays}
+                required
+                step="1"
+              /><small
+                >Activity refreshes an active session using this lifetime. Applies to new sign-ins
+                and refreshed sessions.</small
+              ></label
+            >
+          </fieldset>
+          <fieldset class="panel stack" id="playback-policy" disabled={busy}>
+            <legend class="sr-only">Playback</legend>
+            <h3>Playback</h3>
+            <label class="field"
+              >Delivery policy<select bind:value={policy.playbackDelivery}
+                ><option value="direct-and-relay"
+                  >Allow direct and relayed/transcoded playback</option
+                ><option value="relay-only">Relay/transcode only</option></select
+              ></label
+            ><label class="field"
+              >Maximum bitrate (Mbps)<input
+                type="number"
+                min="1"
+                max="1000"
+                bind:value={policy.maxBitrateMbps}
+                required
+              /><small>Upper limit used when planning new playback sessions.</small></label
+            ><label class="check"
+              ><input type="checkbox" bind:checked={policy.allowTranscoding} />Allow Jellyfin
+              transcoding</label
+            ><label class="field"
+              >Default subtitle mode<select bind:value={policy.subtitleDefault}
+                ><option value="off">Off</option><option value="preferred"
+                  >Preferred languages</option
+                ><option value="always">Always enable</option></select
+              ></label
+            ><label class="field"
+              >Default subtitle languages<input
+                bind:value={policyLanguagesText}
+                placeholder="en, fr"
+              /></label
+            >
+          </fieldset>
+          <fieldset class="panel stack" id="metadata" disabled={busy}>
+            <legend class="sr-only">Metadata</legend>
+            <h3>Metadata</h3>
+            <label class="field"
+              >Shared metadata source<select bind:value={policy.metadataSource}
+                ><option value="local-preferred">Prefer local server metadata</option><option
+                  value="tmdb-only">TMDB exclusively</option
+                ></select
+              ></label
+            >
+            <label class="check"
+              ><input type="checkbox" bind:checked={policy.cacheTmdbArtwork} />Cache TMDB artwork on
+              this server</label
+            >
+            <p class="small muted">
+              Off by default. Save local copies of TMDB images when viewed. Jellyfin images always
+              come from your media server; browser caching still applies. Turning this off bypasses
+              saved TMDB copies and stops new disk writes.
+            </p>
+          </fieldset>
+          <fieldset class="panel stack" id="network" disabled={busy}>
+            <legend class="sr-only">Integrations & network</legend>
+            <h3>Integrations & network</h3>
+            <label class="check"
+              ><input type="checkbox" bind:checked={policy.enableTrakt} />Allow Trakt
+              synchronisation</label
+            ><label class="check"
+              ><input type="checkbox" bind:checked={policy.enableRequests} />Allow media requests</label
+            ><label class="field"
+              >Allowed provider ports<input bind:value={portsText} /><small
+                >Comma-separated ports (1–65535). Checked when connecting to services; changing this
+                does not stop active playback.</small
+              ></label
+            ><label class="field"
+              >Server allowlist<textarea rows="3" bind:value={allowlistText}></textarea><small
+                >One hostname per line. Leave empty to use approved instances.</small
+              ></label
+            >
+          </fieldset>
+          <fieldset class="panel stack" id="notifications" disabled={busy}>
+            <legend class="sr-only">Notifications</legend>
+            <h3>Notifications</h3>
+            <label class="field"
+              >Default presentation<select bind:value={policy.notificationLevel}
+                ><option value="silent">Inbox only</option><option value="normal"
+                  >Toast and inbox</option
+                ><option value="persistent">Requires dismissal</option></select
+              ></label
+            ><label class="check"
+              ><input type="checkbox" bind:checked={policy.allowNotificationSilencing} />Allow users
+              to silence optional notifications</label
+            >
+          </fieldset>
+          {@render saveControls('Save system policies')}
         </form>
       {:else if data.section === 'activity'}
-        {#if policy}<form class="stack form-width" style="margin-bottom:24px" onsubmit={(e) => { e.preventDefault(); void save('settings/system', policy, 'Diagnostic logging updated.'); }}>
-          <label class="field">Diagnostic logging<select bind:value={policy.diagnosticLevel}>
-            <option value="off">Off</option><option value="error">Error</option><option value="warn">Warn</option><option value="info">Info</option><option value="debug">Debug</option><option value="trace">Trace</option>
-          </select></label>
-          <p class="small">Info is the default. Debug and Trace enable verbose lifecycle and playback timing events. Changes apply while Coast is running. Local diagnostics rotate at 1 MiB, keep up to four files, and expire after seven days. Security and audit records remain independent.</p>
-          <Button type="submit" disabled={busy}>Save diagnostic logging</Button>
-          <a href="/api/v1/diagnostics?download">Download recent diagnostics</a>
-        </form>{/if}<p class="small" style="margin-bottom:24px">
+        {#if policy}<form
+            class="panel stack form-width"
+            style="margin-bottom:24px"
+            onsubmit={(e) => {
+              e.preventDefault();
+              void saveDraft();
+            }}
+          >
+            <label class="field"
+              >Diagnostic logging<select disabled={busy} bind:value={policy.diagnosticLevel}>
+                <option value="off">Off</option><option value="error">Error</option><option
+                  value="warn">Warn</option
+                ><option value="info">Info</option><option value="debug">Debug</option><option
+                  value="trace">Trace</option
+                >
+              </select></label
+            >
+            <p class="small">
+              Info is the default. Debug and Trace enable verbose lifecycle and playback timing
+              events. Changes apply while Coast is running. Local diagnostics rotate at 1 MiB, keep
+              up to four files, and expire after seven days. Security and audit records remain
+              independent.
+            </p>
+            {@render saveControls('Save diagnostic logging')}
+            <a href="/api/v1/diagnostics?download">Download recent diagnostics</a>
+          </form>{/if}
+        <p class="small" style="margin-bottom:24px">
           Administrator diagnostics include application and playback failures. Sensitive credentials
           and personal data are excluded.
         </p>
-        {#if data.loggingAudit.length || data.metadataAudit.length}<details class="panel" style="margin-bottom:24px"><summary>Audit activity</summary><div class="stack">{#each data.loggingAudit as event}<p>Diagnostic logging changed from {event.previous} to {event.next} · {new Date(event.createdAt).toLocaleString()}</p>{/each}{#each data.metadataAudit as event}<p>{event.message} · {new Date(event.createdAt).toLocaleString()}</p>{/each}</div></details>{/if}
+        {#if data.loggingAudit.length || data.metadataAudit.length}<details
+            class="panel"
+            style="margin-bottom:24px"
+          >
+            <summary>Audit activity</summary>
+            <div class="stack">
+              {#each data.loggingAudit as event}<p>
+                  Diagnostic logging changed from {event.previous} to {event.next}
+                  · {new Date(event.createdAt).toLocaleString()}
+                </p>{/each}{#each data.metadataAudit as event}<p>
+                  {event.message} · {new Date(event.createdAt).toLocaleString()}
+                </p>{/each}
+            </div>
+          </details>{/if}
         {#if data.diagnostics.length}<div class="stack">
             {#each data.diagnostics as event}<details class="panel">
                 <summary
@@ -600,7 +839,15 @@
                     >{new Date(event.createdAt).toLocaleString()}</small
                   ></summary
                 >
-                <pre>{JSON.stringify({ level: event.level, correlationId: event.correlationId, ...event.detail }, null, 2)}</pre>
+                <pre>{JSON.stringify(
+                    {
+                      level: event.level,
+                      correlationId: event.correlationId,
+                      ...event.detail,
+                    },
+                    null,
+                    2
+                  )}</pre>
               </details>{/each}
           </div>{:else}<EmptyState
             title="No diagnostics to review."
@@ -610,8 +857,41 @@
     </section>
   </div>
 </div>
+<Dialog bind:open={resetOpen} title="Restore all personal preferences?">
+  <div class="stack">
+    <p>
+      This resets appearance, notification, playback and conflict resolution preferences. Subtitle
+      defaults follow your administrator’s current policy.
+    </p>
+    <p class="small">
+      Your profile, tracking data, passwords and linked service accounts are preserved.
+    </p>
+    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+    <div class="row">
+      <Button
+        disabled={busy}
+        onclick={async () => {
+          if (
+            await save(
+              'settings/reset',
+              {},
+              'Personal preferences restored to installation defaults.'
+            )
+          ) {
+            restoreDraft();
+            success = 'Personal preferences restored to installation defaults.';
+            resetOpen = false;
+          }
+        }}>{busy ? 'Restoring…' : 'Restore all preferences'}</Button
+      ><Button variant="secondary" disabled={busy} onclick={() => (resetOpen = false)}
+        >Keep preferences</Button
+      >
+    </div>
+  </div>
+</Dialog>
 <Dialog onclose={() => (deleteId = '')} open={!!deleteId} title="Delete this Coast account?"
   ><div class="stack">
+    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
     <p>
       This removes the Coast account and its local tracking data. Linked service accounts will
       remain intact.
@@ -620,16 +900,42 @@
     <div class="row">
       <Button
         variant="danger"
+        disabled={busy}
         onclick={async () => {
           if (await save(`admin/users/${deleteId}`, {}, 'Account deleted.', 'DELETE'))
             deleteId = '';
         }}>Delete Coast account</Button
-      ><Button variant="secondary" onclick={() => (deleteId = '')}>Cancel</Button>
+      ><Button variant="secondary" disabled={busy} onclick={() => (deleteId = '')}>Cancel</Button>
     </div>
   </div></Dialog
 >
 
 <style>
+  .section-description {
+    margin: -8px 0 24px;
+  }
+  fieldset {
+    min-width: 0;
+    border: 1px solid var(--line);
+  }
+  fieldset:disabled {
+    opacity: 0.75;
+  }
+  .save-controls {
+    display: grid;
+    gap: 12px;
+  }
+  .policy-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .policy-links a:hover {
+    color: var(--ink);
+  }
+  fieldset[id] {
+    scroll-margin-top: 100px;
+  }
   .settings-main {
     min-width: 0;
     max-width: 1100px;
@@ -638,8 +944,12 @@
     display: flex;
     align-items: center;
     gap: 28px;
-    padding: 0 0 24px;
+    padding: 0 0 16px;
     border-bottom: 1px solid var(--line-soft);
+  }
+  .setting:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
   }
   .setting > div {
     flex: 1;

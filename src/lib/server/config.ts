@@ -55,15 +55,17 @@ export async function updateConfig(
   input: unknown
 ): Promise<CoastConfig> {
   const admin = requireAdmin(actor);
-  const next = v.parse(configSchema, input);
-  await getSql().begin(async (sql) => {
+  const patch = v.parse(v.partial(configSchema), input);
+  const next = await getSql().begin(async (sql) => {
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('coast:configuration', 0))`;
     const previous = await getConfig(sql);
+    const next = v.parse(configSchema, { ...previous, ...patch });
     await sql`INSERT INTO system_settings (key, value) VALUES ('coast', ${next}::jsonb)
       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`;
     if (previous.diagnosticLevel !== next.diagnosticLevel)
       await sql`INSERT INTO diagnostic_setting_audit (actor_id, previous_level, next_level)
         VALUES (${admin.id}, ${previous.diagnosticLevel}, ${next.diagnosticLevel})`;
+    return next;
   });
   diagnosticStore.level = next.diagnosticLevel;
   return next;

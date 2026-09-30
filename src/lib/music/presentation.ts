@@ -1,5 +1,5 @@
 import type { MusicItem } from './model';
-import type { MediaCardPresentation } from '$lib/ui/types';
+import type { MediaCardPresentation, MediaHeroPresentation } from '$lib/ui/types';
 
 export function musicHref(connectionId: string, itemId: string) {
   return `/music/${encodeURIComponent(connectionId)}/${encodeURIComponent(itemId)}`;
@@ -28,5 +28,15 @@ export function musicCard(item: MusicItem, connectionId: string): MediaCardPrese
     poster: item.primaryImageTag
       ? `/api/v1/providers/${connectionId}/music/${item.id}/artwork`
       : undefined,
+  };
+}
+
+export function musicHero(item: MusicItem, connectionId: string): MediaHeroPresentation {
+  return {
+    ...musicCard(item, connectionId),
+    id: `music:${connectionId}:${item.id}`,
+    overview: item.overview,
+    genres: item.genres,
+    runtimeMinutes: item.durationSeconds ? Math.round(item.durationSeconds / 60) : undefined,
   };
 }

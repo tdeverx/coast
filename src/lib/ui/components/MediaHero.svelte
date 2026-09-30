@@ -1,11 +1,16 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { onMount, untrack, type Snippet } from 'svelte';
   import { blackFadeGradient } from '$lib/ui/materials/black-fade';
   import { api } from '$lib/ui/client';
-  import type { MediaView } from '$lib/ui/types';
+  import type { MediaView, MediaHeroPresentation } from '$lib/ui/types';
   import { heroPlayer, presentTrailer, setHeroMuted } from '$lib/playback/client.svelte';
   import MediaActions from './MediaActions.svelte';
   import Icon from './Icon.svelte';
+  import Button from './Button.svelte';
+  type HeroItem = MediaView | MediaHeroPresentation;
+  function screenItem(item: HeroItem): item is MediaView {
+    return 'available' in item;
+  }
   let {
     item,
     parents = [],
@@ -13,10 +18,12 @@
     context = 'details',
     next = null,
     requestable = false,
+    actions,
   }: {
-    item: MediaView;
+    item: HeroItem;
+    actions?: Snippet;
     parents?: MediaView[];
-    items?: MediaView[];
+    items?: HeroItem[];
     context?: 'discover' | 'details' | 'home';
     next?: MediaView | null;
     requestable?: boolean;
@@ -76,7 +83,7 @@
     backdropFailed = false;
     posterFailed = false;
     logoFailed = false;
-    if (!host || (!title.available && !title.trailer)) return;
+    if (!host || !screenItem(title) || (!title.available && !title.trailer)) return;
     let visible = true,
       cancelled = false,
       delayPassed = false,
@@ -201,9 +208,9 @@
               >{parent.kind === 'show' ? 'Show' : parent.title}</a
             ><span aria-hidden="true">›</span>{/each}<span aria-current="page">{active.title}</span>
         </nav>{:else if active.genres?.length}<div class="genres">
-          {#each active.genres.slice(0, 4) as genre}<a
-              href={`/library?scope=all&genre=${encodeURIComponent(genre)}`}>{genre}</a
-            >{/each}
+          {#each active.genres.slice(0, 4) as genre}{#if screenItem(active)}<a
+                href={`/library?scope=all&genre=${encodeURIComponent(genre)}`}>{genre}</a
+              >{:else}<span>{genre}</span>{/if}{/each}
         </div>{/if}
       <div class="metadata">
         {#if active.kind === 'episode'}<span
@@ -211,6 +218,7 @@
               active.episodeNumber ?? 0
             ).padStart(2, '0')}</span
           >{/if}
+        {#if !screenItem(active)}<span>{active.captionSubtitle}</span>{/if}
         {#if active.year}<span>{active.year}</span>{/if}
         {#if active.certification}<span>{active.certification}</span>{/if}
         {#if active.runtimeMinutes}<span>{active.runtimeMinutes} min</span>{/if}
@@ -218,7 +226,15 @@
       {#if active.overview}<p class="overview">{active.overview}</p>{/if}
     </div>
     <div class="hero-action-row">
-      <MediaActions item={active} {context} {next} {requestable} hero />
+      {#if actions}{@render actions()}
+      {:else if screenItem(active)}<MediaActions
+          item={active}
+          {context}
+          {next}
+          {requestable}
+          hero
+        />
+      {:else}<Button href={active.href} variant="hero">View {active.kind}</Button>{/if}
       {#if items.length > 1 || hasTrailer}<div class="hero-pagination">
           {#if hasTrailer}<button
               class="icon-button"

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invalidateAll } from '$app/navigation';
-  import PageHeader from '$lib/ui/components/PageHeader.svelte';
+  import MediaHero from '$lib/ui/components/MediaHero.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import RowHeader from '$lib/ui/components/RowHeader.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
@@ -9,7 +9,13 @@
   import ContentRow from '$lib/ui/components/ContentRow.svelte';
   import MediaCard from '$lib/ui/components/MediaCard.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
-  import { musicCard, musicCredits, musicDuration, musicHref } from '$lib/music/presentation';
+  import {
+    musicHero,
+    musicCard,
+    musicCredits,
+    musicDuration,
+    musicHref,
+  } from '$lib/music/presentation';
   let { data } = $props();
   const item = $derived(data.item);
   const artists = $derived(item.kind === 'album' ? item.albumArtists : item.artists);
@@ -34,17 +40,14 @@
 </script>
 
 <svelte:head><title>{item.title} · Music · Coast</title></svelte:head>
-<div class="content page route-content">
-  <PageHeader
-    title={item.title}
-    description={[musicCredits(item), item.year].filter(Boolean).join(' · ')}
-  >
-    {#snippet actions()}<Button
-        variant="ghost"
-        href={`/music?connection=${data.connectionId}`}
-        icon="left">Music</Button
-      >{/snippet}
-  </PageHeader>
+<MediaHero item={musicHero(item, data.connectionId)}>
+  {#snippet actions()}<Button
+      variant="ghost"
+      href={`/music?connection=${data.connectionId}`}
+      icon="left">Music</Button
+    >{/snippet}
+</MediaHero>
+<div class="content" style="padding-bottom:90px">
   {#if artists.length || item.albumId}<div class="row" style="margin-bottom:22px">
       {#each artists as artist}<Button
           variant="ghost"

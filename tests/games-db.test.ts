@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { migrate } from 'drizzle-orm/bun-sql/migrator';
 import { eq, inArray } from 'drizzle-orm';
 import { closeDb, getDb } from '../src/lib/server/db';
+import { gameRow } from '../src/lib/server/queries/media-rows';
 import { users, games } from '../src/lib/server/db/schema';
 import { createGame, createPlaythrough, gameDetails, logGameSession, playthroughDetails, updatePlaythrough, listGames } from '../src/lib/core/games/service';
 
@@ -51,5 +52,13 @@ suite('game catalog and private playthroughs', () => {
     expect((await playthroughDetails(owner, replay.id)).startedAt).not.toBeNull();
     expect((await playthroughDetails(owner, replay.id)).status).toBe('in-progress');
     expect((await playthroughDetails(owner, playthrough.id)).minutesPlayed).toBe(30);
+    expect((await gameRow(owner, true)).items.map((item) => item.id)).toEqual([gameId]);
+    expect((await gameRow(other, true)).items).toEqual([]);
+    expect((await gameRow(other)).items.some((item) => item.id === gameId)).toBe(true);
+    expect((await listGames('', 1, { userId: owner, status: 'in-progress' })).items.some((item) => item.id === gameId)).toBe(true);
+    expect((await listGames('', 1, { userId: other, status: 'in-progress' })).items).toEqual([]);
+    await createPlaythrough(other, gameId, { status: 'planned' });
+    expect((await listGames('', 1, { userId: owner, status: 'planned' })).items).toEqual([]);
+    expect((await listGames('', 1, { userId: other, status: 'planned' })).items.map((item) => item.id)).toEqual([gameId]);
   });
 });

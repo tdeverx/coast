@@ -210,6 +210,12 @@
   .preserve {
     min-height: calc(var(--row-card-width) * 1.5 + 108px);
   }
+  .two-rows.preserve {
+    min-height: calc((var(--row-card-width) * 1.5 + 108px) * 2 + 20px);
+  }
+  .two-rows.preserve.square {
+    min-height: calc((var(--row-card-width) + 108px) * 2 + 20px);
+  }
   .preserve.square {
     min-height: calc(var(--row-card-width) + 108px);
   }
