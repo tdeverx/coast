@@ -6,7 +6,6 @@
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import MediaCard from '$lib/ui/components/MediaCard.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
-  import { musicCard } from '$lib/music/presentation';
   let { data } = $props();
   function pageUrl(page: number, kind = data.filters.kind) {
     return `/music?${new URLSearchParams({
@@ -50,7 +49,8 @@
   {#if data.failure}
     <div class="notice error" role="alert">{data.failure}</div>
     <Button variant="secondary" icon="refresh" onclick={() => invalidateAll()}>Try again</Button>
-  {:else if !data.sources.length}
+  {/if}
+  {#if !data.sources.length}
     <EmptyState
       title="Connect your music library"
       description="Link a Jellyfin account to browse its music."
@@ -72,13 +72,10 @@
       </p>
     </div>
     <div class="grid">
-      {#each data.items as item (item.id)}<MediaCard
-          item={musicCard(item, data.connectionId)}
-          shape="square"
-        />{/each}
+      {#each data.items as item (item.href)}<MediaCard {item} shape="square" />{/each}
     </div>
     <Pagination page={data.page} pages={data.pages} {pageUrl} label="Music pages" />
-  {:else}
+  {:else if !data.failure}
     <EmptyState
       title="No matching music"
       description="Try another music type or search."

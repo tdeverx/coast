@@ -115,6 +115,9 @@
     else if (primaryAction === 'request') actions?.request();
     else await goto(href);
   }
+  function cardGesture(node: HTMLElement) {
+    if (trackedItem && !readOnly()) return contextGesture(node, openMenu);
+  }
   function select(event: MouseEvent) {
     if (onselect && trackedItem) {
       event.preventDefault();
@@ -125,7 +128,7 @@
 
 <article
   class="media-card"
-  use:contextGesture={openMenu}
+  use:cardGesture
   onpointerenter={() => (active = true)}
   onfocusin={() => (active = true)}
 >

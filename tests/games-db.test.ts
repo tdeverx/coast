@@ -52,6 +52,9 @@ suite('game catalog and private playthroughs', () => {
     expect((await playthroughDetails(owner, replay.id)).startedAt).not.toBeNull();
     expect((await playthroughDetails(owner, replay.id)).status).toBe('in-progress');
     expect((await playthroughDetails(owner, playthrough.id)).minutesPlayed).toBe(30);
+    expect((await listGames('', 1, { userId: owner })).items.some((item) => item.id === gameId)).toBe(true);
+    expect((await listGames('', 1, { userId: other })).items).toEqual([]);
+    await expect(listGames('', 1, { userId: owner, status: '' as never })).rejects.toThrow();
     expect((await gameRow(owner, true)).items.map((item) => item.id)).toEqual([gameId]);
     expect((await gameRow(other, true)).items).toEqual([]);
     expect((await gameRow(other)).items.some((item) => item.id === gameId)).toBe(true);

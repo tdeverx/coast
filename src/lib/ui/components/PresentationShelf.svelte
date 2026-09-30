@@ -1,59 +1,114 @@
 <script lang="ts">
-  import type { MediaCardPresentation } from '$lib/ui/types';
+  import { onMount, onDestroy, untrack } from 'svelte';
+  import type { PresentationRow } from '$lib/server/queries/media-rows';
+  import { librarySelections } from '$lib/library';
+  import { api, message } from '$lib/ui/client';
   import ContentRow from './ContentRow.svelte';
   import MediaCard from './MediaCard.svelte';
   import RowFilter from './RowFilter.svelte';
   import Button from './Button.svelte';
-  import { invalidateAll } from '$app/navigation';
   let {
     title,
-    href,
-    items = [],
     music = false,
-    types = true,
-    busy = false,
-    failure = '',
+    personal = false,
     empty = 'No items here yet.',
-    layout = 'row',
+    refreshKey,
   }: {
     title: string;
-    href?: string;
-    items?: MediaCardPresentation[];
+    refreshKey?: unknown;
     music?: boolean;
-    types?: boolean;
-    busy?: boolean;
-    failure?: string;
+    personal?: boolean;
     empty?: string;
-    layout?: 'row' | 'grid';
   } = $props();
-  let kind = $state('all');
-  const visible = $derived(items.filter((item) => kind === 'all' || item.kind === kind));
+  let kind = $state('all'),
+    content = $state<PresentationRow>({ items: [], failure: '' });
+  let busy = $state(false),
+    ready = $state(false),
+    activated = false;
+  let host: HTMLDivElement, controller: AbortController | undefined;
+  const href = $derived(
+    music ? `/music?kind=${kind}` : `/games${personal ? '?personal=true' : ''}`
+  );
+  async function load() {
+    activated = true;
+    controller?.abort();
+    const request = new AbortController();
+    controller = request;
+    busy = true;
+    try {
+      const result = await api<PresentationRow>(
+        'library?' +
+          new URLSearchParams({
+            preview: 'true',
+            surface: music ? 'listen' : 'play',
+            selection: kind,
+            personal: String(personal),
+          }),
+        undefined,
+        'GET',
+        { signal: request.signal }
+      );
+      if (!request.signal.aborted) {
+        content = result;
+        ready = true;
+      }
+    } catch (cause) {
+      if (!request.signal.aborted) content = { ...content, failure: message(cause) };
+    } finally {
+      if (!request.signal.aborted) busy = false;
+    }
+  }
+  $effect(() => {
+    refreshKey;
+    untrack(() => {
+      if (activated) void load();
+    });
+  });
+  onMount(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          observer.disconnect();
+          if (!activated) void load();
+        }
+      },
+      { rootMargin: '300px' }
+    );
+    observer.observe(host);
+    return () => observer.disconnect();
+  });
+  onDestroy(() => controller?.abort());
 </script>
 
-<ContentRow {title} {href} {layout} {busy} size={music ? 'square' : 'poster'}>
-  {#snippet controls()}{#if music && types}<RowFilter
-        label={`${title} type`}
-        bind:value={kind}
-        options={[
-          { value: 'all', label: 'All' },
-          { value: 'album', label: 'Albums' },
-          { value: 'artist', label: 'Artists' },
-          { value: 'track', label: 'Tracks' },
-        ]}
-      />{/if}{/snippet}
-  {#snippet children(style)}
-    {#if failure}<div class="row-empty">
-        <p class="notice error" role="alert">{failure}</p>
-        <Button variant="ghost" onclick={() => invalidateAll()}>Try again</Button>
-      </div>{/if}
-    {#if busy}<p class="row-empty muted" role="status">Loading {title.toLowerCase()}…</p>
-    {:else if visible.length}{#each visible as item (`${item.href}`)}<MediaCard
-          {item}
-          {...style}
-        />{/each}
-    {:else if !failure}<p class="row-empty muted">
-        {kind === 'all' ? empty : 'No music in this selection.'}{#if href}
-          <a {href}>Browse {music ? 'music' : 'games'}</a>{/if}
-      </p>{/if}
-  {/snippet}
-</ContentRow>
+<div bind:this={host}>
+  <ContentRow
+    {title}
+    {href}
+    {busy}
+    preserveHeight
+    size={music ? 'square' : 'poster'}
+    mediaKind={music ? 'music' : 'game'}
+    resetKey={kind}
+  >
+    {#snippet controls()}{#if music}<RowFilter
+          label={`${title} type`}
+          value={kind}
+          options={librarySelections.listen}
+          onchange={(value) => {
+            kind = value;
+            void load();
+          }}
+        />{/if}{/snippet}
+    {#snippet actions()}{#if content.failure}<span role="alert">{content.failure}</span><Button
+          variant="ghost"
+          onclick={load}>Try again</Button
+        >{/if}{/snippet}
+    {#snippet children(style)}
+      {#each content.items as item (item.href)}<MediaCard {item} {...style} />{/each}
+      {#if !content.items.length && !content.failure}<p class="row-empty muted" role="status">
+          {busy || !ready ? `Loading ${title.toLowerCase()}…` : empty}
+          {#if ready && !busy}<a {href}>Browse {music ? 'music' : 'games'}</a>{/if}
+        </p>{/if}
+    {/snippet}
+  </ContentRow>
+</div>

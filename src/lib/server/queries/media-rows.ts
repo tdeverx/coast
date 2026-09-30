@@ -1,5 +1,8 @@
 import { desc, eq, inArray, sql } from 'drizzle-orm';
+import * as v from 'valibot';
 import { getConfig } from '$lib/server/config';
+import { requireExperimentalFeatures } from '$lib/server/experimental';
+import { mapConcurrent } from '$lib/server/utils/async';
 import { getDb } from '$lib/server/db';
 import { games, gamePlaythroughs } from '$lib/server/db/schema';
 import { listProviders } from '$lib/providers/instances.server';
@@ -22,17 +25,15 @@ export async function musicRow(
         source.enabled &&
         source.connection?.status === 'connected'
     );
-    const results = await Promise.all(
-      sources.map(async (source) => {
-        const connectionId = source.connection!.id;
-        try {
-          const result = await musicLibrary(userId, connectionId, { kind, search, limit });
-          return { items: result.items.map((item) => musicCard(item, connectionId)), failure: '' };
-        } catch {
-          return { items: [], failure: `Music from ${source.name} could not be loaded.` };
-        }
-      })
-    );
+    const results = await mapConcurrent(sources, 4, async (source) => {
+      const connectionId = source.connection!.id;
+      try {
+        const result = await musicLibrary(userId, connectionId, { kind, search, limit });
+        return { items: result.items.map((item) => musicCard(item, connectionId)), failure: '' };
+      } catch {
+        return { items: [], failure: `Music from ${source.name} could not be loaded.` };
+      }
+    });
     return {
       items: results.flatMap((result) => result.items),
       failure: results
@@ -72,16 +73,25 @@ export async function gameRow(userId: string, personal = false): Promise<Present
   return { items: items.map((game) => gameCard(game)), failure: '' };
 }
 
-export async function mediaRows(userId: string, personal = false) {
-  const enabled = (await getConfig()).experimentalFeatures;
-  return {
-    enabled,
-    music: enabled ? musicRow(userId) : Promise.resolve({ items: [], failure: '' }),
-    games: enabled
-      ? gameRow(userId, personal).catch(() => ({
-          items: [],
-          failure: 'Games could not be loaded. Please try again.',
-        }))
-      : Promise.resolve({ items: [], failure: '' }),
-  };
+export async function presentationContent(userId: string, url: URL): Promise<PresentationRow> {
+  requireExperimentalFeatures(await getConfig());
+  const surface = v.parse(v.picklist(['listen', 'play']), url.searchParams.get('surface'));
+  if (surface === 'listen') {
+    const kind = v.parse(
+      v.picklist(['all', 'album', 'artist', 'track']),
+      url.searchParams.get('selection') ?? 'all'
+    );
+    return musicRow(userId, '', kind);
+  }
+  const personal =
+    v.parse(v.picklist(['true', 'false']), url.searchParams.get('personal') ?? 'false') === 'true';
+  return gameRow(userId, personal).catch(() => ({
+    items: [],
+    failure: 'Games could not be loaded. Please try again.',
+  }));
+}
+
+// Only configuration is needed during SSR; off-screen providers load when their rows approach.
+export async function mediaRows(personal = false) {
+  return { enabled: (await getConfig()).experimentalFeatures, personal };
 }

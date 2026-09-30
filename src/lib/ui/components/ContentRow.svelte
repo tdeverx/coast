@@ -20,6 +20,7 @@
     overlay = 'none',
     artworkPriority,
     artworkOptions = true,
+    mediaKind = 'screen',
     busy = false,
     preserveHeight = false,
     rows = 1,
@@ -48,6 +49,7 @@
     overlay?: MediaCardOverlay;
     artworkPriority?: ArtworkPriority;
     artworkOptions?: boolean;
+    mediaKind?: 'screen' | 'music' | 'game';
     layout?: 'row' | 'grid';
     size?: 'poster' | 'square' | 'fanart' | 'banner' | 'panel';
     busy?: boolean;
@@ -85,7 +87,8 @@
       if (measuredWidth && width !== measuredWidth) {
         savedHeight = 0;
         void tick().then(measure);
-      } else if (preserveHeight && layout === 'row')
+      } else if (preserveHeight && layout === 'row' && currentSize === 'panel')
+        // Card dimensions are reserved in CSS; panels have variable content heights.
         savedHeight = Math.max(savedHeight, scroller.getBoundingClientRect().height);
       measuredWidth = width;
       previous = scroller.scrollLeft > 1;
@@ -160,6 +163,7 @@
       {artworkStyle}
       {overlay}
       {artworkOptions}
+      {mediaKind}
       bind:overridePriority
       bind:overrideShape
       bind:overrideArtwork
@@ -171,7 +175,7 @@
     class:grid-layout={layout === 'grid'}
     class:preserve={preserveHeight}
     class:square={currentSize === 'square'}
-    style:min-height={layout === 'row' && preserveHeight && savedHeight
+    style:min-height={layout === 'row' && preserveHeight && currentSize === 'panel' && savedHeight
       ? `${savedHeight}px`
       : undefined}
     class:fanart={currentSize === 'fanart'}
@@ -207,23 +211,24 @@
     min-width: 0;
     scroll-snap-align: start;
   }
+  .rail {
+    --row-art-ratio: 1.5;
+    --row-gap: 20px;
+  }
+  .square {
+    --row-art-ratio: 1;
+  }
+  .fanart {
+    --row-art-ratio: 0.5625;
+  }
+  .banner {
+    --row-art-ratio: 0.185;
+  }
   .preserve {
-    min-height: calc(var(--row-card-width) * 1.5 + 108px);
+    min-height: calc(var(--row-card-width) * var(--row-art-ratio) + 108px);
   }
   .two-rows.preserve {
-    min-height: calc((var(--row-card-width) * 1.5 + 108px) * 2 + 20px);
-  }
-  .two-rows.preserve.square {
-    min-height: calc((var(--row-card-width) + 108px) * 2 + 20px);
-  }
-  .preserve.square {
-    min-height: calc(var(--row-card-width) + 108px);
-  }
-  .preserve.fanart {
-    min-height: calc(var(--row-card-width) * 0.5625 + 108px);
-  }
-  .preserve.banner {
-    min-height: calc(var(--row-card-width) * 0.185 + 108px);
+    min-height: calc((var(--row-card-width) * var(--row-art-ratio) + 108px) * 2 + var(--row-gap));
   }
   .preserve.panel-row {
     min-height: 380px;
@@ -277,6 +282,7 @@
   @media (max-width: 500px) {
     .rail {
       gap: 14px;
+      --row-gap: 14px;
     }
     .rail:not(.fanart):not(.banner):not(.panel-row) {
       --row-card-width: 145px;

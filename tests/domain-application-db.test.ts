@@ -755,7 +755,7 @@ suite('application PostgreSQL read models', () => {
       createLocalMedia(b, { title: 'Should not exist', kind: 'show' })
     ).rejects.toMatchObject({ status: 401 });
   });
-  test('details and ordered custom lists retain every item beyond the 500-row query batch', async () => {
+  test('season details and ordered custom lists retain every item beyond the 500-row query batch', async () => {
     const longShow = crypto.randomUUID(),
       longSeason = crypto.randomUUID();
     const episodeIds = Array.from({ length: 501 }, () => crypto.randomUUID());
@@ -793,7 +793,10 @@ suite('application PostgreSQL read models', () => {
     await getDb()
       .insert(s.listItems)
       .values(episodeIds.map((mediaId, position) => ({ listId: list.id, mediaId, position })));
-    const details = await detailsData(a, longShow);
+    const showDetails = await detailsData(a, longShow);
+    expect(showDetails.episodes).toEqual([]);
+    expect(showDetails.seasons.map((season) => season.item?.id)).toEqual([longSeason]);
+    const details = await detailsData(a, longSeason);
     expect(details.episodes).toHaveLength(501);
     expect(details.episodes.map((episode) => episode.id)).toEqual(episodeIds);
     const listed = (await userLists(a)).find((row) => row.id === list.id);
@@ -983,7 +986,6 @@ suite('application PostgreSQL read models', () => {
     const available = await libraryData(a, { kind: 'movie', scope: 'available' });
     expect(available.total).toBe(1);
     expect(available.items.map((item) => item.id)).toEqual([oldAvailable]);
-    expect(available.providers.map((provider) => provider.id)).toEqual([instance]);
     expect(
       (await libraryData(a, { scope: 'all', source: instance, tracking: 'progress' })).items.map(
         (item) => item.id

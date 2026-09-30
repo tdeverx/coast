@@ -77,7 +77,14 @@ beforeAll(async () => {
         occurredAt: new Date('2026-09-26T12:00:00Z'),
       },
     ]);
-  await getDb().insert(ratings).values({ userId: owner, mediaId: ids[0], value: 4 });
+  await getDb()
+    .insert(ratings)
+    .values({
+      userId: owner,
+      mediaId: ids[0],
+      value: 4,
+      updatedAt: new Date('2026-09-27T12:00:00Z'),
+    });
 });
 afterAll(async () => {
   if (!owner) return;

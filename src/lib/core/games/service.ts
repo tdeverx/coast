@@ -32,15 +32,15 @@ export async function createGame(raw: unknown) {
   });
 }
 
-export async function listGames(search = '', requestedPage = 1, tracking?: { userId: string; status: import('../../games/model').GameStatus }) {
+export async function listGames(search = '', requestedPage = 1, tracking?: { userId: string; status?: import('../../games/model').GameStatus }) {
   v.parse(pageNumberSchema, requestedPage);
   const query = v.parse(v.pipe(v.string(), v.trim(), v.maxLength(250)), search);
   if (tracking) {
     uuid(tracking.userId);
-    v.parse(v.picklist(['planned', 'in-progress', 'completed', 'paused', 'dropped']), tracking.status);
+    if (tracking.status !== undefined) v.parse(v.picklist(['planned', 'in-progress', 'completed', 'paused', 'dropped']), tracking.status);
   }
   const where = and(query ? ilike(games.title, `%${query.replace(/[\\%_]/g, '\\$&')}%`) : undefined,
-    tracking ? sql`exists(select 1 from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId} and status = ${tracking.status})` : undefined);
+    tracking ? sql`exists(select 1 from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId} and ${tracking.status ? sql`status = ${tracking.status}` : sql`true`})` : undefined);
   const db = getDb();
   const [totals] = await db.select({ total: count() }).from(games).where(where);
   const { page, pages } = pagination(totals.total, requestedPage);
