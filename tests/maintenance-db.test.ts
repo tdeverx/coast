@@ -65,17 +65,17 @@ run('one admin schedule covers all active accounts and rejects user controls', a
     fullIntervalHours: 48,
   });
   const result = await scheduleProviderMaintenance({ instanceId: instance });
-  expect(result.queued).toBe(3);
+  expect(result.queued).toBe(2);
   const jobs = await getDb()
     .select()
     .from(s.outboxActions)
     .where(inArray(s.outboxActions.connectionId, connections));
-  expect([...new Set(jobs.map((j) => j.userId))].sort()).toEqual([admin, member].sort());
+  expect(new Set(jobs.map((j) => j.userId)).size).toBe(1);
   expect(jobs.filter(j => j.kind === 'jellyfin.library')).toHaveLength(1);
-  expect(jobs.filter(j => j.kind === 'jellyfin.sync')).toHaveLength(2);
+  expect(jobs.filter(j => j.kind === 'jellyfin.sync')).toHaveLength(1);
   const again = await runProviderJob(admin, instance);
   expect(again.queued).toBe(0);
-  expect(again.active).toBe(3);
+  expect(again.active).toBe(2);
   expect(
     (
       await getDb()
@@ -86,6 +86,17 @@ run('one admin schedule covers all active accounts and rejects user controls', a
       .map((j) => j.id)
       .sort()
   ).toEqual(jobs.map((j) => j.id).sort());
+});
+run('one task per service rotates to the account checked least recently', async()=>{
+ const jobs=await getDb().select().from(s.outboxActions).where(inArray(s.outboxActions.connectionId,connections));
+ const job=jobs.find(j=>j.kind==='jellyfin.sync')!;
+ await getDb().update(s.outboxActions).set({state:'succeeded',updatedAt:new Date()}).where(eq(s.outboxActions.id,job.id));
+ await getDb().insert(s.syncCheckpoints).values({connectionId:job.connectionId!,kind:'jellyfin-user',completedAt:new Date()});
+ expect((await scheduleProviderMaintenance({instanceId:instance})).queued).toBe(1);
+ const other=connections.slice(0,2).find(id=>id!==job.connectionId)!;
+ const pending=await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.connectionId,other));
+ expect(pending.filter(j=>j.kind==='jellyfin.sync'&&j.state==='pending')).toHaveLength(1);
+ await getDb().delete(s.syncCheckpoints).where(eq(s.syncCheckpoints.connectionId,job.connectionId!));
 });
 run('paused schedules stay paused and recently checked accounts do not repeat work', async () => {
   await getDb().delete(s.outboxActions).where(inArray(s.outboxActions.connectionId, connections));
@@ -113,7 +124,7 @@ run('paused schedules stay paused and recently checked accounts do not repeat wo
     runProviderJob(admin, instance),
     runProviderJob(admin, instance),
   ]);
-  expect(results.reduce((n, r) => n + r.queued, 0)).toBe(3);
+  expect(results.reduce((n, r) => n + r.queued, 0)).toBe(2);
 });
 run('independent schedule edits preserve toggles, cadences and scan progress', async () => {
   await updateProviderSchedule(admin, instance, {

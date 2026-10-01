@@ -8,7 +8,7 @@ import type { PageCommand, PageSection } from './types';
 export type MusicPageData = { item: MusicItem; connectionId: string; children: MusicPage; failure: string; page: number; pages: number };
 
 /** Music supplies data and commands to the same hero/content/shelf page as other media. */
-export function createMusicPage(get: () => MusicPageData, getUrl: () => URL) {
+export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, canAct:()=>boolean=()=>true) {
   let failure = $state('');
   let busy = $state(false);
   const item = $derived(get().item);
@@ -29,7 +29,7 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL) {
     busy = true; failure = '';
     try { await task(); } catch (cause) { failure = message(cause); } finally { busy = false; }
   }
-  const commands = $derived<PageCommand[]>([
+  const commands = $derived<PageCommand[]>(canAct() ? [
     ...(item.workId ? [
       { label: 'Play', icon: 'play' as const, disabled: busy, run: () => act(() => playMusic(item.workId!, false)) },
       { label: 'Continue', variant: 'secondary' as const, disabled: busy, run: () => act(() => playMusic(item.workId!, true)) },
@@ -37,7 +37,7 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL) {
         run: () => act(async () => { await api(`music/${item.workId}/log`, { batchId: crypto.randomUUID() }); await invalidateAll(); }) },
     ] : []),
     { label: 'Music', variant: 'ghost', icon: 'left', href: `/music?connection=${get().connectionId}` },
-  ]);
+  ] : []);
   const sections = $derived.by((): PageSection[] => {
     const data = get();
     const result: PageSection[] = [];

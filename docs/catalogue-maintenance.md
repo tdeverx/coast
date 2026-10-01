@@ -1,0 +1,17 @@
+# Background shared catalogue maintenance
+
+Two tasks use the existing maintenance timer, PostgreSQL outbox and Jobs controls. No additional scheduler, authentication binding or production dependency is introduced.
+
+**User catalogue** runs once per connected, enabled Jellyfin/Trakt account each day by default. It reads direct account references only: Trakt history, progress, collection, ratings, watchlist and owned lists; Jellyfin watched, played, resumed and favourited titles. Server presence alone does not qualify. Disabled Coast users are excluded. All pages are traversed, and failures retain durable retry work rather than being marked complete.
+
+Only absent, verified TMDB movie/show identities are added. Episode/season references resolve their show; full TMDB show refresh supplies shared seasons and episodes. Discovery first persists the verified identity and provider title, then shared refresh fills the TMDB details. Existing shared identities are skipped. Titles lacking a verified TMDB ID are left unresolved; there is no guessed title matching. Compatible verified provider IDs use the existing identity resolver, retaining UUIDs and rejecting conflicting identities.
+
+This task does not import personal activity, lists or Collection relationships, change import opt-outs, fetch recommendations, or write to a remote account. Personal imports continue through their existing separate tasks. Administrators can pause user catalogue discovery independently or change its interval in the existing integration and Jobs interfaces.
+
+**Shared metadata refresh** maintains existing shared TMDB movies, shows and collections, including their season/episode membership, in batches of at most 100 titles inside one queued task. Newly discovered or incomplete records are handled first; completed details become eligible again after seven days by default. Existing regional snapshots retain their regions; records without a snapshot use GB. Newly discovered records receive full details on the next maintenance check when refresh is enabled.
+
+Each service/task has at most one pending or running job, including concurrent timer, manual-run, reconnect and retry requests. Account tasks rotate to the eligible account checked least recently. Individual title failures retain a retry time in their provider snapshot and do not prevent later titles in the batch from updating. Missing/invalid provider records retry after a day; outages and rate limits retry the batch through the outbox. Two bounded workers process the batch, and progress is saved every ten records and at completion. Jobs bind to the shared TMDB service without manufacturing a user authentication connection; the existing service traversal lock, stale-lease lock, Retry-After cooldown and Jobs history apply. Pending/running work is not duplicated. Failed account work remains reviewable and does not block other accounts. Pausing prevents automatic scheduling; Run now queues a bounded batch even when automatic runs are paused. Already queued work follows the existing Jobs semantics.
+
+Background refresh does not ingest recommendations or change personal relationships. Provider metadata snapshots continue to respect presentation overrides. Deleted or unavailable remote metadata does not delete Coast titles or personal history. IGDB games and music are outside TMDB coverage.
+
+Validation uses paginated provider read fixtures, database scheduling/identity fixtures and the existing maintenance/queue tests. Live account scans and TMDB responses are distinct from fixture acceptance.

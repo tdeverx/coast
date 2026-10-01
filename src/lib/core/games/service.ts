@@ -51,16 +51,16 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
   return { items: items.map((item) => ({ ...item, category: 'game' as const })), total: totals.total, page, pages };
 }
 
-export async function gameDetails(userId: string, gameId: string) {
-  uuid(userId); uuid(gameId);
+export async function gameDetails(userId: string | null, gameId: string) {
+  if(userId)uuid(userId); uuid(gameId);
   const db = getDb();
   const [game] = await db.select().from(games).where(eq(games.id, gameId));
   if (!game) throw new DomainError('Game not found.', 404, 'not_found');
   const identities = await db.select({ provider: gameExternalIds.provider, externalId: gameExternalIds.externalId })
     .from(gameExternalIds).where(eq(gameExternalIds.gameId, gameId));
-  const playthroughs = await db.select(playthroughFields).from(gamePlaythroughs)
+  const playthroughs = userId ? await db.select(playthroughFields).from(gamePlaythroughs)
     .where(and(eq(gamePlaythroughs.userId, userId), eq(gamePlaythroughs.gameId, gameId)))
-    .orderBy(desc(gamePlaythroughs.createdAt), desc(gamePlaythroughs.id)).limit(PAGE_SIZE);
+    .orderBy(desc(gamePlaythroughs.createdAt), desc(gamePlaythroughs.id)).limit(PAGE_SIZE) : [];
   return { ...game, category: 'game' as const, identities, playthroughs };
 }
 

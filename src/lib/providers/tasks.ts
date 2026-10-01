@@ -1,7 +1,10 @@
 import type { ProviderSchedule } from './schedule';
 export const maintenanceKinds = [
+  'catalogue.user-scan',
+  'tmdb.refresh',
   'jellyfin.library',
   'jellyfin.sync',
+  'trakt.live',
   'trakt.import',
   'trakt.lists-import',
   'trakt.collection-project',
@@ -15,8 +18,8 @@ export type ServiceTask = {
   title: string;
   description: string;
   kinds: string[];
-  scope?: 'library' | 'users' | 'tracking' | 'lists' | 'all';
-  interval?: 'intervalMinutes' | 'userIntervalMinutes' | 'listsIntervalMinutes';
+  scope?: 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'catalogue' | 'metadata' | 'all';
+  interval?: 'intervalMinutes' | 'userIntervalMinutes' | 'listsIntervalMinutes' | 'liveIdleMinutes' | 'catalogueIntervalMinutes';
   enabled?: keyof ProviderSchedule;
 };
 export function serviceTasks(provider: string): ServiceTask[] {
@@ -30,6 +33,7 @@ export function serviceTasks(provider: string): ServiceTask[] {
         ? ['jellyfin.user-state', 'jellyfin.reconcile', 'jellyfin.scrobble', 'history.remove']
         : provider === 'trakt'
           ? [
+              'trakt.checkin',
               'trakt.export',
               'trakt.collection-cleanup',
               'trakt.collection-review',
@@ -41,6 +45,8 @@ export function serviceTasks(provider: string): ServiceTask[] {
             ]
           : ['seerr.request', 'seerr.manage'],
   };
+  const catalogue: ServiceTask = { id: 'catalogue', title: 'User catalogue', description: 'Add missing shared TMDB titles directly referenced by connected accounts. No recommendations or personal tracking changes.', kinds: ['catalogue.user-scan'], scope: 'catalogue', interval: 'catalogueIntervalMinutes', enabled: 'catalogueEnabled' };
+  if (provider === 'tmdb') return [{ id: 'metadata', title: 'Shared metadata refresh', description: 'Refresh existing shared TMDB records in bounded batches. Each title retries independently.', kinds: ['tmdb.refresh'], scope: 'metadata', interval: 'intervalMinutes' }];
   if (provider === 'jellyfin')
     return [
       {
@@ -63,10 +69,14 @@ export function serviceTasks(provider: string): ServiceTask[] {
         interval: 'userIntervalMinutes',
         enabled: 'userSyncEnabled',
       },
+      catalogue,
       changes,
     ];
   if (provider === 'trakt')
     return [
+      {
+        id:'live',title:'Live activity',description:'Read watching activity while idle or active. Outbound check-ins use each account’s scrobble preference.',kinds:['trakt.live'],scope:'live',interval:'liveIdleMinutes',enabled:'liveEnabled',
+      },
       {
         id: 'tracking',
         title: 'Tracking & Collection',
@@ -87,6 +97,7 @@ export function serviceTasks(provider: string): ServiceTask[] {
         interval: 'listsIntervalMinutes',
         enabled: 'listsEnabled',
       },
+      catalogue,
       changes,
     ];
   if (provider === 'seerr')

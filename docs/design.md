@@ -17,6 +17,8 @@ The original Coast project informed this visual language and interaction pattern
 
 Use the shared components rather than copying their markup into routes:
 
+Explicit user rule: avoid inventing UI. Reuse the newer approved elements and composition patterns first. Where no existing UI fits, extend the closest approved design and closely match its structure, spacing, typography, colors, materials and responsive behavior. Necessary new or modified visual variants must be clearly labeled **Non-approved** in the UI reference for the user to inspect and decide; do not silently replace an approved design or promote a prototype before review. Preserve approved uses, and remove rejected/superseded variants rather than accumulating duplicate components. New feature behavior alone does not justify a new layout, menu, card, header or control system.
+
 | Pattern | Component |
 | --- | --- |
 | Page title, description and actions | `Heading` with `variant="page"` |

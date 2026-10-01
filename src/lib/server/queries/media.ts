@@ -94,11 +94,12 @@ export async function mediaViews(
     kind?: string;
     availableFirst?: boolean;
   } = {},
-  viewerId = userId
+  viewerId: string | null = userId
 ): Promise<MediaView[]> {
   v.parse(uuidSchema, userId);
   const options = v.parse(viewOptionsSchema, rawOptions);
   if (options.ids?.length === 0) return [];
+  if(viewerId===null)return (await (await import('$lib/social/public.server')).publicMedia(options.ids)).filter(item=>!options.kind||item.kind===options.kind).slice(0,options.limit??150);
   const db = getDb();
   const pattern = options.query
     ? `%${options.query.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_')}%`
@@ -472,6 +473,15 @@ export async function mediaViews(
       item.duration = count?.total ?? 0;
       item.trackingProgress = { unit: 'episodes', value: item.progress, total: item.duration };
       item.status = item.dropped ? 'dropped' : item.watched ? 'completed' : 'in-progress';
+    }
+  }
+  if(viewerId!==userId){
+    const visibility=await (await import('$lib/social/privacy.server')).profileVisibility(userId,viewerId);
+    for(const item of views){item.queued=false;
+      if(!visibility.collection){item.watchlist=false;item.collected=false;}
+      if(!visibility.favourites)item.favourite=false;if(!visibility.ratings)item.rating=null;
+      if(!visibility.activity){item.watched=false;item.playCount=0;item.dropped=false;item.completedEpisodes=0;item.rewatchStartedAt=null;}
+      if(!visibility.progress){item.progress=0;item.duration=0;item.status=null;item.trackingProgress=undefined;item.trackingParents=[];}
     }
   }
   return options.query ? views.sort((a, b) => Number(b.available) - Number(a.available)) : views;

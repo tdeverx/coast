@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {audiences,socialSections,socialCategories,type Audience} from '$lib/social/model';
   import {
     personalSettings as links,
     administratorSettings as adminLinks,
@@ -209,7 +210,18 @@
         >
           {error}
         </div>{/if}
-      {#if data.section === 'appearance'}<form
+      {#if data.section==='privacy'}
+  <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}><fieldset class="panel stack" disabled={busy}><legend class="sr-only">Privacy & social</legend>
+  <label class="field">Profile audience<select bind:value={prefs.social.audience}>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>
+  <p class="small">A private profile is hidden from everyone else. Other sections can have their own audience.</p>
+  {#each socialSections as section}<label class="field">{section}<select value={prefs.social.sections?.[section]??'default'} onchange={event=>{const value=event.currentTarget.value;prefs.social={...prefs.social,sections:{...prefs.social.sections,[section]:value==='default'?undefined:value as Audience}};}}><option value="default">Use profile audience</option>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>{/each}
+  {#each socialCategories as category}<label class="field">{category} sharing<select value={prefs.social.categories?.[category]??'public'} onchange={event=>{prefs.social={...prefs.social,categories:{...prefs.social.categories,[category]:event.currentTarget.value as Audience}};}}>{#each audiences as audience}<option value={audience}>{audience==='public'?'Use section audience':audience}</option>{/each}</select></label>{/each}
+  <Heading title="Social notifications" />
+  {#each ['friend-request','friend-accepted','recommendation','reaction'] as const as kind}<label class="check"><input type="checkbox" checked={prefs.social.notifications?.[kind]!==false} onchange={event=>{prefs.social={...prefs.social,notifications:{...prefs.social.notifications,[kind]:event.currentTarget.checked}};}} />{kind}</label>{/each}
+  <p class="small">Friend requests still arrive in Friends when alerts are silenced.</p>
+  {@render saveControls('Save privacy preferences')}
+  </fieldset></form>
+{:else if data.section === 'appearance'}<form
           class="stack form-width"
           onsubmit={(e) => {
             e.preventDefault();
@@ -760,6 +772,7 @@
           <fieldset class="panel stack" id="features" disabled={busy}>
             <legend class="sr-only">Experimental features</legend>
             <h3>Experimental features</h3>
+            <label class="field">Website access<select bind:value={policy.siteAccess}><option value="private">Private · sign-in required</option><option value="public-read-only">Public read-only · profiles, Discover and media details</option></select></label>
             <label class="check"
               ><input type="checkbox" bind:checked={policy.experimentalFeatures} />Enable
               experimental music and gaming</label

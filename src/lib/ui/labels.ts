@@ -31,6 +31,8 @@ const labels: Record<string, string> = {
   ratings: 'Rating',
   collection: 'Collection',
   list: 'List',
+  'catalogue.user-scan': 'Discover user-linked titles',
+  'tmdb.refresh': 'Refresh shared TMDB metadata',
   'jellyfin.library': 'Scan shared Jellyfin library',
   'jellyfin.sync': 'Sync Jellyfin user activity',
   'jellyfin.user-state': 'Update Jellyfin tracking',

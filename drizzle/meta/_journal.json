@@ -162,6 +162,41 @@
       "when": 1790800312395,
       "tag": "0022_verified_trakt_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790874014173,
+      "tag": "0023_swift_the_captain",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790874564506,
+      "tag": "0024_pretty_hedge_knight",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1790874564507,
+      "tag": "0025_social_notification_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790877119053,
+      "tag": "0026_steady_vargas",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1790878898425,
+      "tag": "0027_last_king_cobra",
+      "breakpoints": true
     }
   ]
 }

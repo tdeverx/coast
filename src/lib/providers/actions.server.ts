@@ -33,6 +33,14 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
       }
     });
   if (options.maintenance !== false) startProviderMaintenance();
+  register('catalogue.user-scan', async action => { await (await import('$lib/catalogue/maintenance.server')).scanUserCatalogue(action); });
+  register('tmdb.refresh', async action => {
+    v.parse(v.object({ instanceId: uuid, force: v.optional(v.boolean(), false) }), action.payload);
+    await (await import('$lib/catalogue/maintenance.server')).refreshSharedMetadata(action);
+  });
+  register('social.checkin-complete',async action=>{await (await import('$lib/social/presence.server')).completeCheckin(action.userId,v.parse(uuid,action.payload.checkinId));});
+  register('trakt.live',async action=>{if(action.connectionId)await (await import('$lib/social/trakt.server')).pollLive(action.userId,action.connectionId);});
+  register('trakt.checkin',async action=>{if(action.connectionId)await (await import('$lib/social/trakt.server')).deliverCheckin(action.userId,action.connectionId,v.parse(uuid,action.payload.checkinId));});
   register('seerr.manage', async (action) => {
     const data = v.parse(
       v.object({

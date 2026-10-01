@@ -16,7 +16,7 @@
   } from '$lib/media/actions';
   import type { RequestDestination } from '$lib/media/requests';
   import type { MediaView } from '$lib/ui/types';
-  import { api, message, ApiError } from '$lib/ui/client';
+  import { api, change, message, ApiError } from '$lib/ui/client';
   import { playbackTime } from '$lib/playback/time';
   import { playMedia, player } from '$lib/playback/client.svelte';
   import Button from './Button.svelte';
@@ -32,6 +32,8 @@
   import Rating from './Rating.svelte';
 
   const readOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
+  import RecommendAction from './RecommendAction.svelte';
+  import ReactionActions from './ReactionActions.svelte';
   let {
     item,
     context = 'details',
@@ -446,6 +448,7 @@
     if (target)
       void perform(() => api(`media/${target.id}/refresh`, {}), 'Metadata refreshed.');
   }
+  async function checkIn(){try{await change('social/checkins',{workId:active.id});}catch(cause){mutation.error=message(cause);}}
 </script>
 
 {#snippet branch(label: string, to: View, icon: import('./Icon.svelte').IconName)}
@@ -500,6 +503,9 @@
       }}
       onmanage={manageRequest}
     />
+    <RecommendAction workId={active.id} disabled={busy||loading} />
+    <ReactionActions targetId={active.id} disabled={busy||loading} />
+    {#if ['movie','episode'].includes(active.kind)}<MenuAction icon="clock" disabled={busy||loading||!active.runtimeMinutes} onclick={checkIn}>Check in</MenuAction>{/if}
     <div class="menu-divider" role="separator"></div>
     {@render branch(language.mark, 'watched', 'check')}
     {@render branch('Rewatch', 'rewatch', 'refresh')}

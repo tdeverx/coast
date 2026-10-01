@@ -36,6 +36,7 @@ type ExportChange = {
   eventId?: string;
   fromPlayback?: boolean;
   excludeConnectionId?: string;
+  excludeConnectionIds?: string[];
 };
 async function traktConnectionsForMedia(tx: Transaction, userId: string, mediaId: string) {
   const [settings] = await tx.select().from(systemSettings).where(eq(systemSettings.key, 'coast'));
@@ -137,7 +138,7 @@ export async function enqueueTraktChangeInTransaction(
   const connections = await traktConnectionsForMedia(tx, userId, change.mediaId);
   for (const { connection } of connections) {
     const sync = connection.settings.sync as Record<string, boolean> | undefined;
-    if (connection.id === change.excludeConnectionId) continue;
+    if (connection.id === change.excludeConnectionId || change.excludeConnectionIds?.includes(connection.id)) continue;
     if(change.category==='collection'){
       if((connection.settings.collectionProjection as {enabled?:boolean})?.enabled)await enqueueInTransaction(tx,{userId,connectionId:connection.id,kind:'trakt.collection-project',payload:{},compactionKey:'trakt-collection-project'});
       continue;

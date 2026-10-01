@@ -3,13 +3,14 @@ import { and, desc, eq } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { users, media, trackingState, type ProfileSettings } from '$lib/server/db/schema';
 import { AppError } from '$lib/server/security/errors';
+import { avatarRequestLimit, gifBytes, storeGifAvatar, pruneGifAvatars } from './gif-avatar.server';
 const uuid = v.pipe(v.string(), v.uuid());
 const profileInput = v.variant('action', [
   v.object({
     action: v.literal('edit'),
     displayName: v.pipe(v.string(), v.trim(), v.maxLength(60)),
     bio: v.pipe(v.string(), v.trim(), v.maxLength(240)),
-    avatar: v.nullable(v.pipe(v.string(), v.maxLength(220000))),
+    avatar: v.nullable(v.pipe(v.string(), v.maxLength(avatarRequestLimit))),
   }),
   v.object({
     action: v.literal('preferences'),
@@ -31,23 +32,32 @@ const profileInput = v.variant('action', [
 ]);
 export async function updateProfile(userId: string, input: unknown) {
   const data = v.parse(profileInput, input);
-  if (data.action === 'edit' && data.avatar) {
-    if (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(data.avatar))
-      throw new AppError(400, 'Choose a PNG, JPEG or WebP avatar.');
+  if (data.action === 'edit' && data.avatar && !data.avatar.startsWith(`/api/v1/profile/avatar/${userId}/`)) {
+    if (!/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+=*$/.test(data.avatar))
+      throw new AppError(400, 'Choose a PNG, JPEG, WebP or GIF avatar.');
+    if (data.avatar.startsWith('data:image/gif;')) gifBytes(data.avatar);
+    else if (data.avatar.length > 220000) throw new AppError(400, 'Choose a smaller image.');
     const bytes = Buffer.from(data.avatar.split(',')[1], 'base64');
     const valid = data.avatar.startsWith('data:image/png;')
       ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
       : data.avatar.startsWith('data:image/jpeg;')
         ? bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
-        : bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
+        : data.avatar.startsWith('data:image/gif;')
+          ? ['GIF87a', 'GIF89a'].includes(bytes.toString('ascii', 0, 6))
+          : bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
     if (!valid) throw new AppError(400, 'The avatar is not a valid image.');
   }
-  return getDb().transaction(async (tx) => {
+  const result = await getDb().transaction(async (tx) => {
     const [user] = await tx.select().from(users).where(eq(users.id, userId)).for('update');
     if (!user) throw new AppError(404, 'Account not found.');
     const profile: ProfileSettings = { ...user.settings.profile };
-    if (data.action === 'edit')
-      Object.assign(profile, { displayName: data.displayName, bio: data.bio, avatar: data.avatar });
+    if (data.action === 'edit') {
+      if (data.avatar?.startsWith('/api/') && data.avatar !== profile.avatar)
+        throw new AppError(400, 'Choose your own profile icon.');
+      const avatar = data.avatar?.startsWith('data:image/gif;')
+        ? await storeGifAvatar(userId, data.avatar) : data.avatar;
+      Object.assign(profile, { displayName: data.displayName, bio: data.bio, avatar });
+    }
     else if (data.action === 'preferences') {
       if (data.period !== undefined) profile.period = data.period;
       if (data.favouriteKind !== undefined) profile.favouriteKind = data.favouriteKind;
@@ -120,4 +130,6 @@ export async function updateProfile(userId: string, input: unknown) {
       .where(eq(users.id, userId));
     return profile;
   });
+  if (data.action === 'edit') await pruneGifAvatars(userId);
+  return result;
 }

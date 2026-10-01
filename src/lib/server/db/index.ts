@@ -2,7 +2,10 @@ import type { SQL } from 'bun';
 import { drizzle } from 'drizzle-orm/bun-sql';
 import * as schema from './schema';
 
-let client: SQL | undefined;
+// Vite reloads server modules after edits. Keep one pool through hot reloads
+// instead of leaving an unreachable pool open for each module generation.
+let client: SQL | undefined = import.meta.hot?.data.sqlClient;
+import.meta.hot?.dispose((data) => { data.sqlClient = client; });
 let database: ReturnType<typeof createDatabase> | undefined;
 function createDatabase(sql: SQL) {
   return drizzle({ client: sql, schema });

@@ -4,7 +4,8 @@ import { requestOptions } from '$lib/providers/seerr/requests.server';
 import { ensureDetails } from '$lib/catalogue/service';
 
 export const load = (async ({ locals, params }) => {
-  const userId = locals.user!.id;
+  if(!locals.user){const initial={...(await (await import('$lib/social/public.server')).publicDetails(params.id)),requestable:false,refreshUnavailable:false};return {...initial,enhancement:Promise.resolve(initial)};}
+  const userId = locals.user.id;
   const initial = {
     ...(await detailsData(userId, params.id)),
     requestable: false,

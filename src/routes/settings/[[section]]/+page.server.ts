@@ -56,6 +56,7 @@ export const load = (async ({ locals, params, depends, url }) => {
     config: admin ? config : null,
     allowNotificationSilencing: config.allowNotificationSilencing,
     defaults: {
+      social:{audience:'friends' as const,sections:{},categories:{},notifications:{}},
       syncConflictWinner: 'manual',
       shareDemand:true,
       listenThreshold:50,

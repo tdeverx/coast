@@ -63,6 +63,9 @@
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import { createMusicPage } from '$lib/ui/pages/music.svelte';
   import type { ComponentProps } from 'svelte';
+  import RecommendAction from '$lib/ui/components/RecommendAction.svelte';
+  import ReactionActions from '$lib/ui/components/ReactionActions.svelte';
+  import SocialControls from '$lib/ui/components/SocialControls.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import type { ShelfConfig } from '$lib/ui/shelves';
   const name=$derived(page.url.searchParams.get('component')??'Button');
@@ -102,7 +105,10 @@
 <svelte:head><title>{name} · UI preview</title></svelte:head>
 <div class="demo" class:header-demo={name==='Header'}>
   {#if ready}
-    {#if name==='Glass'}
+    {#if name==='RecommendAction'}<ContextMenu label="Media actions"><RecommendAction workId={id} /></ContextMenu>
+    {:else if name==='ReactionActions'}<ReactionActions targetId={id} />
+    {:else if name==='SocialControls'}<SocialControls friends={[{username:'Alice'},{username:'Sam'},{username:'Taylor'}]} total={7} />
+    {:else if name==='Glass'}
       <div class="glass-samples">{#each materials as material}<div class="glass glass-sample" class:light={material.variant==='glassLight'||material.variant==='blurLight'} use:liquidGlass={{variant:material.variant}}><strong>{material.label}</strong><span>Existing glass material</span></div>{/each}</div>
     {:else if name==='AddTitle'}
       <AddTitle bind:open />

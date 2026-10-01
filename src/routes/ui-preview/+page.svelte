@@ -152,7 +152,7 @@
     {#each visible as name}
       <section class="specimen" aria-labelledby={`label-${name}`}>
         <Heading title={name}>
-          {#snippet heading()}<h2 id={`label-${name}`}>{name}</h2>{/snippet}
+          {#snippet heading()}<h2 id={`label-${name}`}>{name}{name==='SocialControls'?' · Non-approved':''}</h2>{/snippet}
           {#snippet actions()}<a class="small quiet" href={`/ui-preview/demo?component=${name}`} target="_blank" rel="noreferrer">Open ↗</a>{/snippet}
         </Heading>
         <p class="small quiet">src/lib/ui/components/{name}.svelte</p>

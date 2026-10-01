@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { ProfileSettings } from '$lib/server/db/schema';
-  import { change, message } from '$lib/ui/client';
+  import { api, change, message } from '$lib/ui/client';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
+  import RowFilter from './RowFilter.svelte';
   let {
     open = $bindable(false),
     profile,
@@ -15,31 +16,49 @@
     busy = $state(false),
     reading = $state(false);
   let avatarVersion = 0;
+  let iconChoices=$state<{id:string;provider:string;name:string}[]>([]),iconChoice=$state('');
   $effect(() => {
     if (open) {
       displayName = profile.displayName ?? '';
       bio = profile.bio ?? '';
       avatar = profile.avatar ?? null;
-      error = '';
+      error = '';iconChoice='';iconChoices=[];
+      const controller=new AbortController();
+      void api<typeof iconChoices>('profile/avatars',undefined,'GET',{signal:controller.signal}).then(choices=>{if(!controller.signal.aborted)iconChoices=choices;}).catch(()=>{});
+      return ()=>{controller.abort();avatarVersion++;};
     }
   });
   async function selectAvatar(event: Event) {
     const file = (event.currentTarget as HTMLInputElement).files?.[0];
     if (!file) return;
+    iconChoice='';
+    await prepareAvatar(file);
+  }
+  async function prepareAvatar(file:Blob){
     const version = ++avatarVersion;
     error = '';
     reading = true;
     let url = '';
     try {
       if (
-        !['image/jpeg', 'image/png', 'image/webp'].includes(file.type) ||
+        !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) ||
         file.size > 5 * 1024 * 1024
       )
-        throw new Error('Choose a PNG, JPEG or WebP smaller than 5 MB.');
+        throw new Error('Choose a PNG, JPEG, WebP or GIF smaller than 5 MB.');
       url = URL.createObjectURL(file);
       const image = new Image();
       image.src = url;
       await image.decode();
+      if (file.type === 'image/gif') {
+        const result = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error('Your browser could not read this GIF.'));
+          reader.readAsDataURL(file);
+        });
+        if (version === avatarVersion) avatar = result;
+        return;
+      }
       const canvas = document.createElement('canvas');
       canvas.width = canvas.height = 256;
       const context = canvas.getContext('2d');
@@ -65,6 +84,17 @@
       if (url) URL.revokeObjectURL(url);
       if (version === avatarVersion) reading = false;
     }
+  }
+  async function selectProvider(id:string){
+    iconChoice=id;if(!id)return;
+    const version=++avatarVersion;error='';reading=true;
+    try{
+      const response=await fetch(`/api/v1/profile/avatars/${id}`);
+      if(!response.ok){const result=await response.json().catch(()=>null);throw Error(result?.error??'The service icon could not be imported.');}
+      const image=await response.blob();
+      if(version!==avatarVersion||!open)return;
+      await prepareAvatar(image);
+    }catch(cause){error=message(cause);}finally{reading=false;}
   }
   async function save() {
     busy = true;
@@ -99,7 +129,7 @@
         <label
           >Avatar<input
             type="file"
-            accept="image/png,image/jpeg,image/webp"
+            accept="image/png,image/jpeg,image/webp,image/gif"
             onchange={selectAvatar}
             disabled={busy || reading}
           /></label
@@ -113,7 +143,8 @@
           >{/if}
       </div>
     </div>
-    <p class="small">Cropped to a square and saved locally in Coast. Your profile is private.</p>
+    {#if iconChoices.length}<RowFilter label="Connected profile icon" value={iconChoice} options={[{value:'',label:'Choose a connected service'},...iconChoices.map(choice=>({value:choice.id,label:`${choice.provider==='jellyfin'?'Jellyfin':'Trakt'} · ${choice.name}`}))]} onchange={value=>{if(!busy&&!reading)void selectProvider(value);}} />{/if}
+    <p class="small">Saved locally in Coast. GIFs keep their animation; other images are cropped to a square. Visibility follows your privacy settings.</p>
     <label
       >Display name<input
         bind:value={displayName}

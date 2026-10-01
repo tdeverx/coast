@@ -68,7 +68,7 @@
       { fullCompletedAt?: string; processed?: number; total?: number | null } | undefined
   );
   const fields = $derived(
-    task.scope === 'library'
+    task.scope==='live' ? ['liveIdleMinutes','liveActiveMinutes'] : task.scope === 'library'
       ? ['intervalMinutes', 'fullIntervalHours', 'libraryConnectionId']
       : task.interval
         ? [task.interval]
@@ -135,10 +135,10 @@
       {#if task.scope}<MenuAction
           icon="refresh"
           keepOpen={false}
-          disabled={busy || !provider.enabled || !provider.connectedAccounts}
+          disabled={busy || !provider.enabled || (!provider.connectedAccounts && provider.provider !== 'tmdb')}
           disabledReason={!provider.enabled
             ? 'Enable this service in Integrations.'
-            : !provider.connectedAccounts
+            : (!provider.connectedAccounts && provider.provider !== 'tmdb')
               ? 'Connect an account before running this task.'
               : undefined}
           onclick={() => void run()}>Run now</MenuAction
@@ -227,11 +227,11 @@
           ? 'Library changes every (minutes)'
           : task.scope === 'users'
             ? 'User activity every (minutes)'
-            : task.scope === 'lists'
+            : task.scope === 'live' ? 'Idle checks every (minutes)' : task.scope === 'lists'
               ? 'Lists every (minutes)'
               : task.scope === 'tracking'
                 ? 'Tracking every (minutes)'
-                : 'Requests every (minutes)'}<input
+                : task.scope === 'catalogue' ? 'User catalogue every (minutes)' : task.scope === 'metadata' ? 'Refresh each title every (minutes)' : 'Requests every (minutes)'}<input
           type="number"
           min="1"
           max="10080"
@@ -241,6 +241,7 @@
           disabled={busy}
         /></label
       >{/if}
+    {#if task.scope==='live'}<label class="field">Active checks every (minutes)<input type="number" min="1" max="10080" step="1" required bind:value={draft.liveActiveMinutes} disabled={busy} /></label>{/if}
     {#if task.scope === 'library'}
       <label class="field"
         >Full library scan every (hours)<input

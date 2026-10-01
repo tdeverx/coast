@@ -16,6 +16,7 @@
   import { contextGesture, type MenuPoint } from '$lib/ui/context-gesture';
   import { liquidGlass } from '$lib/ui/materials/glass';
   import Icon from './Icon.svelte';
+  import SocialControls from './SocialControls.svelte';
   import MediaActions from './MediaActions.svelte';
   import PresentationActions from './PresentationActions.svelte';
   let {
@@ -25,6 +26,7 @@
     overlay = 'none',
     artworkPriority,
     onselect,
+    social,
   }: {
     item: MediaView | MediaCardPresentation;
     shape?: MediaCardShape;
@@ -32,6 +34,7 @@
     overlay?: MediaCardOverlay;
     artworkPriority?: ArtworkPriority;
     onselect?: (item: MediaView) => void;
+    social?:{friends:{username:string;avatar?:string|null}[];total:number};
   } = $props();
   const readOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
   const trackedItem = $derived('href' in item ? undefined : item);
@@ -210,6 +213,7 @@
             />{/if}{/if}
       </div>
     {/if}
+    {#if social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} showLabel={false} showReactions={false} /></div>{/if}
     {#if completion !== null && completion > 0 && completion < 0.9}<div
         class="progress"
         role="progressbar"
@@ -244,6 +248,8 @@
 </article>
 
 <style>
+  .card-friends{position:absolute;bottom:8px;left:8px;z-index:3;}
+
   .media-card {
     display: block;
     min-width: 0;

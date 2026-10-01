@@ -1,3 +1,10 @@
+import {isPublicReadPath} from '$lib/social/public.server';
+import {profileAvatarChoices,providerProfileAvatar} from '$lib/core/profile/avatars.server';
+import {avatarRequestLimit,streamGifAvatar} from '$lib/core/profile/gif-avatar.server';
+import * as social from '$lib/social/service.server';
+import {activityFeed,workSocial,reactionSummary} from '$lib/social/queries.server';
+import {friendInsights,friendDiscovery} from '$lib/social/insights.server';
+import {requireVisible} from '$lib/social/privacy.server';
 import { previewProjection, approveProjection,reviewProjection } from '$lib/collection/projection.server';
 import { previewSourceChange } from '$lib/collection/source-changes.server';
 import { musicQueue,savedMusicQueue } from '$lib/music/queue.server';
@@ -89,7 +96,7 @@ import { streamArtwork } from '$lib/providers/artwork.server';
 
 const uuid = (value: unknown) => v.parse(v.pipe(v.string(), v.uuid()), value);
 const text = (value: unknown) => v.parse(v.pipe(v.string(), v.maxLength(1000)), value);
-async function readBody(request: Request): Promise<Record<string, unknown>> {
+async function readBody(request: Request, maxBytes = 1_048_576): Promise<Record<string, unknown>> {
   if (!request.headers.get('content-type')?.startsWith('application/json'))
     throw new AppError(415, 'Send an application/json request.');
   const reader = request.body?.getReader();
@@ -100,7 +107,7 @@ async function readBody(request: Request): Promise<Record<string, unknown>> {
     const { done, value } = await reader.read();
     if (done) break;
     length += value.byteLength;
-    if (length > 1_048_576) {
+    if (length > maxBytes) {
       await reader.cancel();
       throw new AppError(413, 'This request is too large.');
     }
@@ -129,6 +136,18 @@ const handler: RequestHandler = async (event) => {
       await getSql()`select 1`;
       return json({ status: 'healthy' });
     }
+    if(path[0]==='profile'&&path[1]==='avatar'&&path.length===4&&method==='GET')
+      return await streamGifAvatar(uuid(path[2]),path[3],locals.user?.id??null);
+    if(!locals.user && method==='GET' && isPublicReadPath(url.pathname) && (await getConfig()).siteAccess==='public-read-only') {
+      if(path[0]==='artwork'&&path[1]==='tmdb')return streamTmdbArtwork(path[2],path[3],request);
+      if(path[0]==='profile' && ['section','activity'].includes(path[1]) && url.searchParams.has('username')) {
+        const owner=await profileUser(url.searchParams.get('username')!);
+        const section=path[1]==='activity'?'activity':v.parse(v.picklist(['favourites','insights']),url.searchParams.get('section'));
+        await requireVisible(owner.id,null,section,'screen');
+        const data=await profileData(owner.id,{view:section==='activity'?'history':section==='favourites'?'favourites':'overview',page:Number(url.searchParams.get('page')??1),period:url.searchParams.get('period')??'all',kind:url.searchParams.get('kind')??'all'},new Date(),null);
+        return json(section==='activity'?{items:data.history,page:data.page,pages:data.pages,total:data.total}:section==='favourites'?{favourites:data.favourites,page:data.page,pages:data.pages,total:data.total}:{totals:data.totals,activity:await profileActivity(owner.id,new Date(),data.filters.period,null)});
+      }
+    }
     const user = requireUser(locals.user),
       uid = user.id;
     const subjectId =
@@ -137,6 +156,27 @@ const handler: RequestHandler = async (event) => {
       url.searchParams.has('username')
         ? (await profileUser(url.searchParams.get('username')!)).id
         : uid;
+    if(path[0]==='profile'&&path[1]==='avatars'&&method==='GET')return path[2]?await providerProfileAvatar(uid,uuid(path[2]),request):json(await profileAvatarChoices(uid));
+    if(path[0]==='social') {
+      const action=path[1], id=path[2], page=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(100000)),Number(url.searchParams.get('page')??1));
+      if(method==='GET') {
+        if(action==='friends')return json(await social.friends(uid,page));
+        if(action==='feed')return json(await activityFeed(uid,Object.fromEntries(url.searchParams)));
+        if(action==='reactions')return json(await reactionSummary(uid,v.parse(v.picklist(['work','activity']),url.searchParams.get('targetKind')),(url.searchParams.get('ids')??'').split(',').filter(Boolean)));
+        if(action==='works')return json(await workSocial(uid,(url.searchParams.get('ids')??'').split(',').filter(Boolean)));
+        if(action==='recommendations')return json(await social.recommendations(uid,page,url.searchParams.get('available')==='true'));
+        if(action==='insights')return json(url.searchParams.has('friendId')?await friendInsights(uid,uuid(url.searchParams.get('friendId'))):await friendDiscovery(uid));
+        if(action==='checkins')return json(await (await import('$lib/social/presence.server')).presence(uid));
+      } else if(method==='POST') {
+        const input=await readBody(request);
+        if(action==='friends')return json(id?await social.changeFriend(uid,uuid(id),input):await social.requestFriend(uid,input));
+        if(action==='reactions')return json(await social.react(uid,input));
+        if(action==='recommendations')return json(id?await social.respondRecommendation(uid,uuid(id),input):await social.recommend(uid,input));
+        if(action==='checkins')return json(id?await (await import('$lib/social/presence.server')).cancelCheckin(uid,uuid(id)):await (await import('$lib/social/presence.server')).startCheckin(uid,input));
+      }
+      throw new AppError(404,'Social action not found.');
+    }
+    if(subjectId!==uid)await requireVisible(subjectId,uid,path[0]==='collection'?'collection':path[0]==='progress'?(url.searchParams.get('view')==='watchlist'?'collection':url.searchParams.get('view')==='favourites'?'favourites':'progress'):path[1]==='activity'?'activity':url.searchParams.get('section')==='favourites'?'favourites':'insights','screen');
     if(path[0]==='music' && path[2]==='queue' && method==='GET') return json(await musicQueue(uid,uuid(path[1])));
     if(path[0]==='music' && path[1]==='queue' && method==='GET')return json(await savedMusicQueue(uid,url.searchParams.has('listId')?uuid(url.searchParams.get('listId')):undefined));
     if (path[0] === 'collection' && path.length === 1 && method === 'GET') return json(await collectionData(uid,collectionParameters(url),url.searchParams.get('username')??undefined));
@@ -193,7 +233,7 @@ const handler: RequestHandler = async (event) => {
       return fallbackArtwork(uuid(path[2]), text(path[3]));
     if (path[0] === 'artwork' && method === 'GET')
       return streamArtwork(uid, uuid(path[1]), text(path[2]), text(path[3]), request);
-    const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method) ? await readBody(request) : {};
+    const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method) ? await readBody(request, path[0]==='profile'&&path.length===1&&method==='POST'?avatarRequestLimit:1_048_576) : {};
     const relationshipWork=path[0]==='collection'&&path.length===2?path[1]:['tracking','ratings','up-next','lists'].includes(path[0])?body.mediaId:undefined;
     if(relationshipWork){const [work]=await getDb().select().from(works).where(eq(works.id,uuid(relationshipWork)));if(work&&work.category!=='screen')requireExperimentalFeatures(await getConfig());}
     if(path[0]==='providers' && path[2]==='reconciliation' && method==='POST') return json(await updateJellyfinReconciliation(uid,uuid(path[1]),body));
@@ -282,7 +322,7 @@ const handler: RequestHandler = async (event) => {
           ? { favourites: data.favourites, page: data.page, pages: data.pages, total: data.total }
           : {
               totals: data.totals,
-              activity: await profileActivity(subjectId, new Date(), data.filters.period),
+              activity: await profileActivity(subjectId, new Date(), data.filters.period,uid),
             };
     } else if (path[0] === 'profile' && path.length === 1 && method === 'POST')
       result = await updateProfile(uid, body);
@@ -432,7 +472,7 @@ const handler: RequestHandler = async (event) => {
         result = await updateProviderSchedule(uid, uuid(path[1]), body);
       } else if (path[2] === 'run-job' && method === 'POST') {
         requireAdmin(user);
-        result = await runProviderJob(uid, uuid(path[1]), v.parse(v.optional(v.picklist(['all','library','users','tracking','lists']), 'all'), body.task));
+        result = await runProviderJob(uid, uuid(path[1]), v.parse(v.optional(v.picklist(['all','library','users','tracking','lists','live','catalogue','metadata']), 'all'), body.task));
       } else if (path[2] === 'playback-import' && method === 'POST')
         result = await updateJellyfinPlaybackImport(uid, uuid(path[1]), body);
       else if (path[2] === 'sync' && method === 'POST')
@@ -471,7 +511,7 @@ const handler: RequestHandler = async (event) => {
         result = await recordPlaybackError(uid, uuid(path[1]), body.code);
       else throw new AppError(404, 'Action not found.');
     } else if (path[0] === 'notifications') {
-      if (path.length === 1 && method === 'GET') result = await inbox(user);
+      if (path.length === 1 && method === 'GET') result = await inbox(user,60,{kind:url.searchParams.get('kind')??'all',unread:url.searchParams.get('unread')==='true'});
       else if (path[1] === 'broadcast' && method === 'POST') result = await broadcast(user, body);
       else if (method === 'POST')
         result = await markNotification(

@@ -1,4 +1,7 @@
 <script lang="ts">
+  import {goto} from '$app/navigation';
+  import {page} from '$app/state';
+  import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Heading from '$lib/ui/components/Heading.svelte';
   import { change, message } from '$lib/ui/client';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
@@ -11,6 +14,7 @@
 <svelte:head><title>Notifications · Coast</title></svelte:head>
 <div class="content page">
   <Heading variant="page" title="Notifications" description="Updates from your connected services and Coast." />
+  <RowFilter label="Notification type" value={page.url.searchParams.get('kind')??'all'} options={[{value:'all',label:'All notifications'},{value:'friend-request',label:'Friend requests'},{value:'friend-accepted',label:'Friend accepted'},{value:'recommendation',label:'Recommendations'},{value:'reaction',label:'Reactions'},{value:'request',label:'Requests'},{value:'administrator',label:'Administrator'}]} onchange={kind=>goto('/notifications?kind='+kind)} />
   {#if error}<div class="notice error" role="alert">{error}</div>{/if}{#if data.inbox.length}<div
       class="inbox"
     >
@@ -25,7 +29,7 @@
             />
           </div>
           <div class="notification-copy">
-            <h3>{notice.title}</h3>
+            <h3>{#if notice.data}<a href={notice.data.destination}>{notice.title}</a>{:else}{notice.title}{/if}</h3>
             {#if notice.body}<p>{notice.body}</p>{/if}<small
               >{new Date(notice.createdAt).toLocaleString()}{notice.locked
                 ? ' · Important notice'
@@ -33,6 +37,7 @@
             >
           </div>
           <div class="row">
+            {#if notice.data?.actions}{#each notice.data.actions as action}<Button variant="ghost" onclick={()=>change(`social/${notice.kind==='friend-request'?'friends':'recommendations'}/${notice.data!.subjectId}`,{action}).catch(e=>error=message(e))}>{action==='save'?'Save for later':action[0].toUpperCase()+action.slice(1)}</Button>{/each}{/if}
             {#if !notice.readAt}<Button
                 variant="ghost"
                 onclick={() =>

@@ -32,6 +32,11 @@ export const valueCategories: ValueCategory[] = [
   'ratings',
 ];
 export function sameValue(a: JsonObject | null | undefined, b: JsonObject) {
+  // Resume positions arrive as percentages, ticks or rounded seconds.
+  // Runtime is metadata, not a competing personal edit.
+  if (a && typeof a.positionSeconds === 'number' && typeof b.positionSeconds === 'number')
+    return a.positionSeconds === b.positionSeconds ||
+      (a.positionSeconds > 0 && b.positionSeconds > 0 && Math.abs(a.positionSeconds - b.positionSeconds) <= 1);
   return (
     !!a &&
     Object.keys({ ...a, ...b }).every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key]))
@@ -61,7 +66,11 @@ export async function localSyncValue(
     .where(and(eq(trackingState.userId, userId), eq(trackingState.mediaId, mediaId)));
   if (category === 'progress')
     return {
-      positionSeconds: Math.round((state?.positionSeconds ?? 0) * 1000) / 1000,
+      // Providers clear resume markers after completion. Preserve concrete Coast
+      // history/progress while comparing the shared resume state.
+      positionSeconds: state?.watched && state.durationSeconds &&
+        state.positionSeconds >= state.durationSeconds - Math.min(1,state.durationSeconds * 0.01)
+        ? 0 : Math.round((state?.positionSeconds ?? 0) * 1000) / 1000,
       durationSeconds: Math.round(state?.durationSeconds ?? 0),
     };
   const field =
@@ -110,21 +119,27 @@ export async function applySyncValue(
         : { value: Boolean(value.value) }),
     });
 }
-/** Compare three values. A conflict persists until an explicit winner is chosen. */
+/** Compare personal edits. Convergence needs no winner or remote write. */
 export function decideSync(
   local: JsonObject,
   remote: JsonObject,
   previous?: { remote: JsonObject; agreed: JsonObject | null; conflict: boolean }
 ) {
-  if (previous?.conflict) return 'conflict';
   if (sameValue(local, remote)) return 'agree';
+  // An uninitialized destination has no competing user value. This also
+  // reclassifies initial-empty conflicts produced by earlier comparisons.
+  if (previous?.agreed === null && emptySyncValue(remote) && !emptySyncValue(local))
+    return 'local';
+  if (previous?.conflict) return 'conflict';
   if (previous) {
     if (sameValue(previous.remote, remote)) return 'local';
     return sameValue(previous.agreed, local) ? 'remote' : 'conflict';
   }
   // An initial import can fill empty state; existing divergent user choices require review.
-  const empty = Object.entries(local).every(([key, value]) => key === 'durationSeconds' || !value);
-  return empty ? 'remote' : 'conflict';
+  return emptySyncValue(local) ? 'remote' : emptySyncValue(remote) ? 'local' : 'conflict';
+}
+export function emptySyncValue(value: JsonObject) {
+  return Object.entries(value).every(([key, value]) => key === 'durationSeconds' || !value);
 }
 export async function reconcileProviderValue(
   userId: string,
@@ -134,6 +149,7 @@ export async function reconcileProviderValue(
   remote: JsonObject,
   options: {
     source?: string;
+    accountGeneration?: string;
     importRemote?: boolean;
     occurredAt?: string;
     apply?: (tx: Transaction) => Promise<unknown>;
@@ -144,8 +160,10 @@ export async function reconcileProviderValue(
     const [connection] = await tx
       .select()
       .from(providerConnections)
-      .where(and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId)));
+      .where(and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId))).for('update');
     if (!connection) throw new Error('Connection does not belong to this account.');
+    if(options.accountGeneration && (connection.accountGeneration!==options.accountGeneration || connection.status!=='connected'))
+      throw new Error('The connected account changed before reconciliation.');
     const [previous] = await tx
       .select()
       .from(syncValues)
@@ -179,7 +197,8 @@ export async function reconcileProviderValue(
               actions.map((action) => sql`${action}`),
               sql`,`
             )})`,
-            eq(trackingEvents.applied, true)
+            eq(trackingEvents.applied, true),
+            sql`${trackingEvents.source} in ('coast','playback','coast-review')`
           )
         )
         .limit(1);
@@ -304,12 +323,13 @@ export async function acknowledgeProviderValue(
   await getDb().transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
     const agreed = remote;
+    const local = await localSyncValue(tx, userId, mediaId, category);
     await tx
       .insert(syncValues)
       .values({ connectionId, mediaId, category, remote, agreed })
       .onConflictDoUpdate({
         target: [syncValues.connectionId, syncValues.mediaId, syncValues.category],
-        set: { remote, agreed, updatedAt: new Date() },
+        set: { remote, agreed, ...(sameValue(local, remote) ? {conflict:false} : {}), updatedAt: new Date() },
       });
   });
 }

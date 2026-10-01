@@ -23,3 +23,34 @@ Live Jellyfin identity, account linking, full scans, short HLS playback and outb
 Do not ask again for Trakt configuration or create Seerr requests for acceptance unless the user resumes that work. These checks have not passed; they are explicitly deferred/owned by the user.
 
 Music direct/HLS playback and desktop/mobile control behaviour have synthetic fixture evidence. Audio from the configured live server remains unverified; prior live Jellyfin video evidence does not establish audio compatibility.
+
+## Deferred UX ideas — 1 October 2026
+
+The user asked to park these ideas for later. They are discussion candidates, not approved implementation requirements or scheduled work. Preserve the current interface until the user resumes this discussion.
+
+### User proposals
+
+- Combine Library and Collection into one browsing destination, with a Collection toggle using the existing availability-toggle pattern.
+- Alternatively, move Collection into the profile/account context menu.
+
+### Suggestions discussed for Collection and Library
+
+- Keep personal membership and server availability separate in the data, with independent Collection and Available filters on one page. Both off would show personal items plus accessible server content, excluding unrelated discovery metadata; both on would show their intersection.
+- Consider Collection on and Available off as the initial tracking-focused view, remember the user's selections, and give the Collection toggle a clear label. A profile-menu shortcut could open this view rather than being its only entry point.
+- Consolidate duplicate availability controls; retain advanced Missing, Unknown, Partial and Ready to continue choices in the existing filter menu.
+- Explain why an item remains after removing direct Collected status, using its retained watchlist/history or other membership reasons in existing feedback.
+- Present missing demand as an actionable shelf using existing cards/request actions, keeping uncertain access separate from confirmed missing.
+- Offer music Continue only when meaningful resumable progress exists, identifying the target track.
+- Restore filters, loaded rows and scroll when returning from details.
+
+### Suggestions discussed beyond Collection
+
+- Prioritise exact next actions on For You: resumable items and the next episode/track, with recommendations secondary.
+- Explain playback failures as missing content, server outage or denied access, and offer the relevant existing Request, Retry, Choose source or reconnect action.
+- Show plain sync outcomes and freshness in personal Connections; leave job identifiers and scheduling mechanics in administrator Jobs.
+- Keep watched/listened/played logging placement and feedback consistent while preserving each activity's semantics. Make recorded automatic listens discoverable without interrupting playback.
+- Clarify shared Integrations versus personal Connections, including the next setup step, default imports and separate export opt-ins.
+- Preserve browsing context and appropriate playback-source/subtitle preferences, avoiding repeated questions already answered.
+- Distinguish empty states for no tracking, no matching filters, no linked source and failed server assessment, each with a useful next action.
+
+Suggested priorities were next-action clarity on For You, actionable playback failures and understandable sync feedback. These priorities are also deferred and remain unapproved.

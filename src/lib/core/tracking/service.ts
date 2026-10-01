@@ -205,7 +205,7 @@ async function applyChange(
       ? 'This imported change contradicts completed Coast history. Review it before applying.'
       : null;
   const warning = projected.changed
-    ? (contradictory ?? (skipOrderWarning ? null : await warningFor(tx, userId, input, state)))
+    ? (contradictory ?? (skipOrderWarning || (imported && input.action === 'watch') ? null : await warningFor(tx, userId, input, state)))
     : null;
   const reviewRequired = Boolean(warning && !input.acknowledged && imported);
   if (warning && !input.acknowledged && !imported) throw new AcknowledgementRequired(warning);

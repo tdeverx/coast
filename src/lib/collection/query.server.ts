@@ -37,7 +37,7 @@ export function collectionCTE(ownerId: string, viewerId: string, source = 'all')
   ), descendants(root,id) as (
     select id,id from works
     union select d.root,e.child_id from descendants d join edges e on e.parent_id=d.id
-  ), direct as (
+  ), raw_direct as (
     select media_id as id,'collected' as relationship from tracking_state where user_id=${ownerId} and collected
     union select media_id,'watchlist' from tracking_state where user_id=${ownerId} and watchlist
     union select media_id,'favourite' from tracking_state where user_id=${ownerId} and favourite
@@ -50,7 +50,7 @@ export function collectionCTE(ownerId: string, viewerId: string, source = 'all')
       (status in ('in-progress','paused','completed','dropped') or progress_percent>0 or exists(select 1 from game_sessions where playthrough_id=p.id))
     union select track_id,'activity' from music_listens where user_id=${ownerId}
     union select track_id,'activity' from music_progress where user_id=${ownerId} and (position_seconds>0 or play_count>0)
-  ), reasons as (
+  ), direct as (select d.* from raw_direct d join works w on w.id=d.id where social_visible(${ownerId}::uuid,${viewerId}::uuid,case when d.relationship='activity' then 'activity' when d.relationship='favourite' then 'favourites' when d.relationship='rating' then 'ratings' else 'collection' end,w.category)), reasons as (
     select id,relationship,'direct' as origin,id as work_id from direct
     union select d.id,'collected','inherited',d.root from descendants d join direct r on r.id=d.root and r.relationship='collected' where d.id<>d.root
     union select d.root,r.relationship,'member-derived',d.id from descendants d join direct r on r.id=d.id where d.id<>d.root
@@ -123,11 +123,11 @@ export function collectionCTE(ownerId: string, viewerId: string, source = 'all')
           (c.available=c.total and km.complete)) then 'available'
         when c.available>0 then 'partial' when c.total>0 and c.assessed and
           (w.kind not in ('show','season','collection','album') or km.complete) then 'unavailable' else 'unknown' end as availability,
-      coalesce(ts.dropped,false) or coalesce(gs.dropped,false) as dropped,
-      coalesce(ts.watched,false) or coalesce(gs.completed,false) or ((ml.track_id is not null or coalesce(mp.play_count,0)>0) and coalesce(mp.position_seconds,0)=0 and ar.root is null) or
-        (coalesce(mc.completed,false) and km.complete) as completed,
-      (coalesce(ts.position_seconds,0)>0 or coalesce(mp.position_seconds,0)>0 or coalesce(ts.completed_episodes,0)>0 or ar.root is not null or coalesce(gs.active,false)) as active,
-      coalesce(ne.media_id,nm.id,w.id) as next_id
+      social_visible(${ownerId}::uuid,${viewerId}::uuid,'activity',w.category) and (coalesce(ts.dropped,false) or coalesce(gs.dropped,false)) as dropped,
+      social_visible(${ownerId}::uuid,${viewerId}::uuid,'activity',w.category) and (coalesce(ts.watched,false) or coalesce(gs.completed,false) or ((ml.track_id is not null or coalesce(mp.play_count,0)>0) and coalesce(mp.position_seconds,0)=0 and ar.root is null) or
+        (coalesce(mc.completed,false) and km.complete)) as completed,
+      social_visible(${ownerId}::uuid,${viewerId}::uuid,'progress',w.category) and (coalesce(ts.position_seconds,0)>0 or coalesce(mp.position_seconds,0)>0 or coalesce(ts.completed_episodes,0)>0 or ar.root is not null or coalesce(gs.active,false)) as active,
+      case when social_visible(${ownerId}::uuid,${viewerId}::uuid,'progress',w.category) then coalesce(ne.media_id,nm.id,w.id) else null end as next_id
     from works w left join media m on m.id=w.id left join games g on g.id=w.id left join music_works mu on mu.id=w.id
       left join tracking_state ts on ts.media_id=w.id and ts.user_id=${ownerId} left join coverage c on c.root=w.id
       left join active_roots ar on ar.root=w.id left join game_status gs on gs.game_id=w.id
@@ -177,8 +177,9 @@ export function collectionParameters(url: URL) { return Object.fromEntries(['pag
 export async function collectionData(viewerId: string, raw: unknown={}, username?: string) {
   const owner=username?await profileUser(username):null, ownerId=owner?.id??viewerId;
   const input=v.parse(collectionOptionsSchema,raw);
+  if(ownerId!==viewerId)await (await import('$lib/social/privacy.server')).requireVisible(ownerId,viewerId,'collection',input.category==='all'?undefined:input.category);
   const config=await getConfig();if(['music','game'].includes(input.category))requireExperimentalFeatures(config);
-  const condition=sql`(${config.experimentalFeatures} or c.category='screen') and (${input.category}='all' or c.category=${input.category}) and (${input.kind}='all' or c.kind=${input.kind})
+  const condition=sql`social_visible(${ownerId}::uuid,${viewerId}::uuid,'collection',c.category) and (${config.experimentalFeatures} or c.category='screen') and (${input.category}='all' or c.category=${input.category}) and (${input.kind}='all' or c.kind=${input.kind})
     and (${input.level}='all' or (c.kind not in ('episode','season') and not exists(select 1 from edges e join works parent on parent.id=e.parent_id where e.child_id=c.id and parent.kind in ('show','season','album'))))
     and (${input.relationship}='all' or exists(select 1 from jsonb_array_elements(c.reasons) r where r->>'relationship'=${input.relationship}))
     and (${input.activity}='all' or (${input.activity}='active' and c.active and not c.dropped and not c.completed)

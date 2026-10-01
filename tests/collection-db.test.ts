@@ -78,7 +78,7 @@ run('saved music queues and ordered playlists retain repeats and listened tracks
 });
 run('administrator demand respects opt-out without removing profile relationships',async()=>{
  const {missingDemand,adminDemand}=await import('../src/lib/collection/demand.server');const db=getDb();
- await db.update(users).set({settings:{shareDemand:false}}).where(eq(users.id,owner));
+ await db.update(users).set({settings:{shareDemand:false,social:{audience:'public'}}}).where(eq(users.id,owner));
  const personal=await missingDemand(owner,new URL('http://fixture/missing'));expect(personal.items.some(i=>i.workId===movie)).toBe(true);
  const shared=await adminDemand(new URL('http://fixture/admin/demand'));expect(shared.users.some(u=>u.userId===owner)).toBe(false);
  const [visible]=await workAssessments(owner,viewer,[movie]);expect(visible.reasons.some(r=>r.relationship==='watchlist')).toBe(true);

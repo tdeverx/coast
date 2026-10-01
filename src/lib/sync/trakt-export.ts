@@ -15,6 +15,8 @@ import {
   trackingEvents,
   removedTrackingSources,
   syncValues,
+  socialScrobbleDeliveries,
+  providerConnections,
 } from '$lib/server/db/schema';
 import { PermanentActionError } from '$lib/server/queue';
 import { getTrakt } from '$lib/providers/trakt/connection.server';
@@ -23,7 +25,7 @@ import type { TraktRecord, TraktAdapter } from '$lib/providers/trakt/adapter.ser
 import { traktEntry, traktPlurals, exportIdentity } from '$lib/sync/trakt-identity';
 
 /** Read the provider value before overwriting it; imports alone cannot detect edits made since the last sync. */
-async function readTraktValue(adapter: TraktAdapter, mediaId: string, category: ValueCategory) {
+export async function readTraktValue(adapter: TraktAdapter, mediaId: string, category: ValueCategory) {
   const [item] = await getDb().select().from(media).where(eq(media.id, mediaId));
   if (!item || item.kind === 'collection' || category === 'favourite')
     throw new PermanentActionError('Unsupported Trakt value.');
@@ -76,7 +78,7 @@ async function readTraktValue(adapter: TraktAdapter, mediaId: string, category: 
       }
       return { value: true };
     }
-    if (records.length < 100 || category === 'collection') {
+    if (records.length < 100) {
       return category === 'progress'
         ? { positionSeconds: 0, durationSeconds: (item.runtimeMinutes ?? 0) * 60 }
         : { value: category === 'ratings' ? null : false };
@@ -222,15 +224,19 @@ export async function executeLiveScrobble(
   connectionId: string,
   input: Record<string, unknown>
 ) {
+  return executeLiveScrobbleToAdapter(userId,connectionId,input,await getTrakt(userId,connectionId));
+}
+export async function executeLiveScrobbleToAdapter(userId:string,connectionId:string,input:Record<string,unknown>,{adapter,sync,connection}:Awaited<ReturnType<typeof getTrakt>>) {
+  if(connection.userId!==userId||connection.id!==connectionId)throw new PermanentActionError('The connected account is unavailable.');
   const data = v.parse(
     v.object({
       mediaId: v.pipe(v.string(), v.uuid()),
+      sessionId: v.pipe(v.string(), v.uuid()),
       event: v.picklist(['start', 'pause', 'stop']),
       progress: v.pipe(v.number(), v.minValue(0), v.maxValue(100)),
     }),
     input
   );
-  const { adapter, sync } = await getTrakt(userId, connectionId);
   if (!sync.scrobble) return;
   const [item] = await getDb().select().from(media).where(eq(media.id, data.mediaId));
   if (!item || !['movie', 'episode'].includes(item.kind)) return;
@@ -244,7 +250,26 @@ export async function executeLiveScrobble(
       .map((m) => [m.provider, m.provider === 'imdb' ? m.externalId : Number(m.externalId)])
   );
   if (!Object.keys(ids).length) return;
-  await adapter.scrobble(data.event, item.kind as 'movie' | 'episode', ids, data.progress);
+  // Only completion can create history. Reserve its evidence before sending so a lost
+  // response cannot silently become a second play on retry.
+  const completion=data.event==='stop' && data.progress>=80 && data.sessionId;
+  if(completion){
+    const [previous]=await getDb().select().from(socialScrobbleDeliveries).where(and(eq(socialScrobbleDeliveries.connectionId,connectionId),eq(socialScrobbleDeliveries.sessionId,completion)));
+    if(previous?.accountGeneration===connection.accountGeneration){
+      if(previous.state==='confirmed')return;
+      throw new PermanentActionError('Scrobble delivery is uncertain. Review Trakt history before retrying.');
+    }
+    await getDb().insert(socialScrobbleDeliveries).values({connectionId,sessionId:completion,workId:data.mediaId,accountGeneration:connection.accountGeneration,state:'uncertain'}).onConflictDoUpdate({target:[socialScrobbleDeliveries.connectionId,socialScrobbleDeliveries.sessionId],set:{accountGeneration:connection.accountGeneration,state:'uncertain',remoteId:null,updatedAt:new Date()}});
+  }
+  const result=await adapter.scrobble(data.event, item.kind as 'movie' | 'episode', ids, data.progress);
+  if(completion){
+    const response=v.parse(v.object({id:v.optional(v.number()),action:v.string()}),result);
+    await getDb().transaction(async tx=>{
+      const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId)).for('update');
+      if(current?.accountGeneration!==connection.accountGeneration)return;
+      await tx.update(socialScrobbleDeliveries).set({remoteId:response.id?String(response.id):null,state:'confirmed',updatedAt:new Date()}).where(and(eq(socialScrobbleDeliveries.connectionId,connectionId),eq(socialScrobbleDeliveries.sessionId,completion),eq(socialScrobbleDeliveries.accountGeneration,connection.accountGeneration)));
+    });
+  }
 }
 
 export async function executeProgressExport(

@@ -303,6 +303,7 @@ export async function startPlayback(
   // A user has one prepared/active playback session across audio and video.
   const session=await getDb().transaction(async tx=>{
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
+  await tx.execute(sql`update social_checkins set state='cancelled',updated_at=now() where user_id=${userId} and state='active'`);
   await tx.update(playbackSessions).set({state:'stopped',updatedAt:new Date()}).where(and(eq(playbackSessions.userId,userId),sql`${playbackSessions.state}<>'stopped'`));
   const [prepared] = await tx
     .insert(playbackSessions)
@@ -423,6 +424,7 @@ export async function progressPlayback(userId: string, sessionId: string, input:
       );
     if (!session) throw new Error('This playback session has expired.');
     const stop = data.event === 'stop' || data.event === 'ended';
+    if(data.event==='start')await tx.execute(sql`update social_checkins set state='cancelled',updated_at=now() where user_id=${userId} and state='active'`);
     const firstStart = session.state === 'prepared' && data.event === 'start';
     const resumed = session.state === 'paused' && data.event === 'start';
     if (

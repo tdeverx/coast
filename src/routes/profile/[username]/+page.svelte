@@ -446,7 +446,7 @@
   {#if expandedStats}<Button href={profileUrl} variant="ghost" icon="left">Profile</Button
     >{@render statisticsRow('grid')}
   {:else if data.view === 'overview'}
-    <header class="profile-header" class:with-background={!!background}>
+    {#if data.visibility.details}<header class="profile-header" class:with-background={!!background}>
       {#if background}<div class="backdrop" aria-hidden="true">
           <img
             src={background}
@@ -506,7 +506,7 @@
             </div>{/if}
         </div>
       </div>
-    </header>
+    </header>{/if}
     {#if data.featured}<section class="featured section">
         <div class="featured-art"><MediaCard item={data.featured} /></div>
         <div>
@@ -528,12 +528,12 @@
             </div>{/if}
         </div>
       </section>{/if}
-    {@render favourites('row')}
-    <Shelf source={{ type: 'progress', surface: "profile", username: data.username }} />
-    <Shelf source={{ type: 'progress', surface: "watchlist", username: data.username }} />
+    {#if data.visibility.favourites}{@render favourites('row')}{/if}
+    {#if data.visibility.progress && page.data.user}<Shelf source={{ type: 'progress', surface: "profile", username: data.username }} />{/if}
+    {#if data.visibility.collection && page.data.user}<Shelf source={{ type: 'progress', surface: "watchlist", username: data.username }} />{/if}
     {#if data.mediaRows}{#each homeShelves(data.mediaRows, true) as source}<Shelf {source} />{/each}{/if}
-    {@render activity('row')}
-    {@render statisticsRow('row')}
+    {#if data.visibility.activity}{@render activity('row')}{/if}
+    {#if data.visibility.insights}{@render statisticsRow('row')}{/if}
   {:else}
     <div class="back">
       <Button href={profileUrl} variant="ghost" icon="left">Profile</Button>
