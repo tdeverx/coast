@@ -1,6 +1,6 @@
 <script lang="ts">
   import { displayLabel } from '$lib/ui/labels';
-  import PageHeader from '$lib/ui/components/PageHeader.svelte';
+  import Heading from '$lib/ui/components/Heading.svelte';
   import { change, message } from '$lib/ui/client';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import Button from '$lib/ui/components/Button.svelte';
@@ -21,7 +21,7 @@
 
 <svelte:head><title>{data.requestId ? 'Request' : 'Requests'} · Coast</title></svelte:head>
 <div class="content page route-content">
-  <PageHeader
+  <Heading variant="page"
     title={data.requestId ? 'Request' : 'Requests'}
     description={data.requestId
       ? 'Request status and details.'
@@ -34,7 +34,7 @@
       {:else}<Button href="/discover" variant="secondary" icon="discover">Discover titles</Button
         >{/if}
     {/snippet}
-  </PageHeader>
+  </Heading>
   {#if error}<div class="notice error" role="alert">
       {error}
     </div>{/if}{#if data.requests.length}<Shelf
@@ -42,7 +42,7 @@
       {items}
       layout="grid"
       availability={false}
-    >
+     filterBy="type">
       {#snippet details(item)}{@const request = requestById.get(item.entryId!)!}
         <div class="request-details stack">
           <span class="badge" class:available={request.state === 'available'}

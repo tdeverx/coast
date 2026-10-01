@@ -1,7 +1,7 @@
 <script lang="ts">
+  import Shelf from '$lib/ui/components/Shelf.svelte';
   import { setContext } from 'svelte';
-  import LibraryShelf from '$lib/ui/components/LibraryShelf.svelte';
-  import RowHeader from '$lib/ui/components/RowHeader.svelte';
+  import Heading from '$lib/ui/components/Heading.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   import { page } from '$app/state';
@@ -16,26 +16,16 @@
 <svelte:head><title>{title} · Coast</title></svelte:head>
 <div class="content page route-content">
   {#if data.view !== 'overview'}<Button href={data.username ? `/collection?username=${encodeURIComponent(data.username)}` : '/collection'} variant="ghost" icon="left">{title}</Button>
-  {:else}<RowHeader {title}>{#snippet heading()}<h1>{title}</h1>{/snippet}</RowHeader>{/if}
+  {:else}<Heading {title}>{#snippet heading()}<h1>{title}</h1>{/snippet}</Heading>{/if}
   {#key `${data.view}:${data.username}:${JSON.stringify(data.filters)}`}
     {#if data.view === 'overview' || data.view === 'watch'}
-      <LibraryShelf surface="watch" collection username={data.username ?? ''}
-        layout={data.view === 'watch' ? 'grid' : 'row'} initial={data.content ?? undefined}
-        initialSelection={watchSelection} initialKind={data.filters.kind as 'all'|'movie'|'show'}
-        initialScope={data.filters.availability === 'available' ? 'available' : 'all'}
-        initialAvailability={data.filters.availability} initialRelationship={data.filters.relationship} initialSource={data.filters.source} />
+      <Shelf source={{ type: 'library', surface: "watch", collection: true, username: data.username ?? '', layout: data.view === 'watch' ? 'grid' : 'row', initial: data.content ?? undefined, initialSelection: watchSelection, initialKind: data.filters.kind as 'all'|'movie'|'show', initialScope: data.filters.availability === 'available' ? 'available' : 'all', initialAvailability: data.filters.availability, initialRelationship: data.filters.relationship, initialSource: data.filters.source }} />
     {/if}
     {#if data.experimentalFeatures && (data.view === 'overview' || data.view === 'listen')}
-      <LibraryShelf surface="listen" collection username={data.username ?? ''}
-        layout={data.view === 'listen' ? 'grid' : 'row'} initial={data.view === 'listen' ? data.content ?? undefined : undefined}
-        initialSelection={data.view === 'listen' ? data.filters.kind : 'all'} initialScope="all"
-        initialAvailability={data.view === 'listen' ? data.filters.availability : 'all'} initialRelationship={data.view === 'listen' ? data.filters.relationship : 'all'} initialSource={data.view === 'listen' ? data.filters.source : 'all'} />
+      <Shelf source={{ type: 'library', surface: "listen", collection: true, username: data.username ?? '', layout: data.view === 'listen' ? 'grid' : 'row', initial: data.view === 'listen' ? data.content ?? undefined : undefined, initialSelection: data.view === 'listen' ? data.filters.kind : 'all', initialScope: "all", initialAvailability: data.view === 'listen' ? data.filters.availability : 'all', initialRelationship: data.view === 'listen' ? data.filters.relationship : 'all', initialSource: data.view === 'listen' ? data.filters.source : 'all' }} />
     {/if}
     {#if data.experimentalFeatures && (data.view === 'overview' || data.view === 'play')}
-      <LibraryShelf surface="play" collection username={data.username ?? ''}
-        layout={data.view === 'play' ? 'grid' : 'row'} initial={data.view === 'play' ? data.content ?? undefined : undefined}
-        initialSelection={data.view === 'play' ? data.filters.activity === 'active' ? 'in-progress' : data.filters.activity : 'all'} initialScope="all"
-        initialAvailability={data.view === 'play' ? data.filters.availability : 'all'} initialRelationship={data.view === 'play' ? data.filters.relationship : 'all'} initialSource={data.view === 'play' ? data.filters.source : 'all'} />
+      <Shelf source={{ type: 'library', surface: "play", collection: true, username: data.username ?? '', layout: data.view === 'play' ? 'grid' : 'row', initial: data.view === 'play' ? data.content ?? undefined : undefined, initialSelection: data.view === 'play' ? data.filters.activity === 'active' ? 'in-progress' : data.filters.activity : 'all', initialScope: "all", initialAvailability: data.view === 'play' ? data.filters.availability : 'all', initialRelationship: data.view === 'play' ? data.filters.relationship : 'all', initialSource: data.view === 'play' ? data.filters.source : 'all' }} />
     {/if}
   {/key}
   {#await data.missing then demand}{#if demand?.total}<section class="section">
@@ -45,5 +35,5 @@
 </div>
 
 <style>
-  h1 { font-size: var(--row-title-size); font-weight: var(--row-title-weight); margin: 0; }
+  h1 { font-size: var(--text-xl); font-weight: var(--weight-bold); margin: 0; }
 </style>

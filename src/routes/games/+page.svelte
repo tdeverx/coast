@@ -1,7 +1,8 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { goto, invalidateAll } from '$app/navigation';
-  import BrowseHeader from '$lib/ui/components/BrowseHeader.svelte';
+  import Heading from '$lib/ui/components/Heading.svelte';
+  import { browseHeading } from '$lib/ui/headings';
   import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
@@ -20,8 +21,7 @@
 
 <svelte:head><title>Games · Coast</title></svelte:head>
 <div class="content page route-content">
-  <BrowseHeader surface="play" enabled={data.experimentalFeatures}>
-    {#snippet filters()}<RowFilter
+  <Heading {...browseHeading("play", data.experimentalFeatures)}>{#snippet actions()}<RowFilter
         label="Games view"
         value={data.filters.view === 'library' && data.filters.personal
           ? 'personal'
@@ -57,13 +57,11 @@
               noScroll: true,
               keepFocus: true,
             })}
-        />{/if}{/snippet}
-    {#snippet actions()}{#if page.data.user?.role === 'admin'}<Button
+        />{/if}{#if page.data.user?.role === 'admin'}<Button
           variant="ghost"
           href="/settings/integrations"
           icon="server">Integrations</Button
-        >{/if}{/snippet}
-  </BrowseHeader>
+        >{/if}{/snippet}</Heading>
   <form class="filter-row browse-search" action="/games" method="GET">
     <input type="hidden" name="view" value={data.filters.view} />
     <input type="hidden" name="personal" value={String(data.filters.personal)} />

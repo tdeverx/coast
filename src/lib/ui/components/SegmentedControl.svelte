@@ -5,17 +5,15 @@
     value = $bindable(),
     onchange,
     label,
-    scrollable = true,
   }: {
     label?: string;
-    scrollable?: boolean;
     options: { value: string; label: string }[];
     value: string;
     onchange?: (value: string) => void;
   } = $props();
 </script>
 
-<div class:scrollable class="picker-container">
+<div class="picker-container scrollable">
   <div class="segmented-control" role="group" aria-label={label} use:slidingPill>
     {#each options as option}<button
         type="button"

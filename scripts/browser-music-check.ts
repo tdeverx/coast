@@ -22,6 +22,18 @@ try{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});
   await page.goto(`${origin}/for-you`);if(page.url().includes('/login')){await page.locator('input[name="username"]').fill(fixture.username);await page.locator('input[name="password"]').fill(fixture.password);await page.getByRole('button',{name:'Sign in',exact:true}).click();}await expect(page).toHaveURL(/for-you$/);
   await context.storageState({path:sessionFile});
+  await page.goto(`${origin}/music?connection=${fixture.connectionId}&kind=album`);
+  await expect(page.locator('[data-coast-glass-renderer]').first()).toBeAttached();
+  await page.getByRole('button',{name:'Actions for Coast Audio Album',exact:true}).click();
+  const albumMenu=page.getByRole('menu',{name:'Actions for Coast Audio Album',exact:true});
+  const collected=albumMenu.getByRole('menuitemcheckbox',{name:/Collection$/});
+  await expect(collected).toBeEnabled();
+  const originalCollected=await collected.getAttribute('aria-checked');
+  await collected.click();
+  await expect(collected).toHaveAttribute('aria-checked',originalCollected==='true'?'false':'true');
+  await collected.click();
+  await expect(collected).toHaveAttribute('aria-checked',originalCollected!);
+  await page.keyboard.press('Escape');
   await page.goto(`${origin}/music/${fixture.connectionId}/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa`);await expect.poll(()=>page.locator('.page-shell').evaluate(e=>(e as HTMLElement).style.getPropertyValue('--active-hero-height'))).not.toBe('');
   expect((await page.request.post(origin+'/api/v1/settings',{headers:{Origin:origin},data:{listenThreshold:50,subtitlePrompt:false}})).ok()).toBe(true);
   const before=await count();await page.getByRole('button',{name:'Play',exact:true}).click();

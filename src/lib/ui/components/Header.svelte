@@ -72,7 +72,7 @@
     position: fixed;
     inset: 0 0 auto;
     z-index: 80;
-    background: linear-gradient(#0007, transparent);
+    background: linear-gradient(color-mix(in srgb, var(--canvas) calc(119 / 255 * 100%), transparent), transparent);
     pointer-events: none;
   }
   .header-inner {
@@ -119,8 +119,8 @@
     align-items: center;
   }
   .avatar {
-    font-size: 12px;
-    font-weight: 650;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
   }
   .notification {
     position: relative;

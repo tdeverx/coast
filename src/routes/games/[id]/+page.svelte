@@ -7,12 +7,13 @@
   import { gameStatuses, type GameStatus } from '$lib/games/model';
   import { gameMinutes } from '$lib/games/presentation';
   import { displayLabel } from '$lib/ui/labels';
-  import MediaHero from '$lib/ui/components/MediaHero.svelte';
+  import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import { gameHero } from '$lib/games/presentation';
   import Button from '$lib/ui/components/Button.svelte';
-  import GameOverview from '$lib/ui/components/GameOverview.svelte';
-  import RowHeader from '$lib/ui/components/RowHeader.svelte';
-  import ContentRow from '$lib/ui/components/ContentRow.svelte';
+  import { overviewPanels } from '$lib/ui/insights/overview';
+  import { gameFacts } from '$lib/games/presentation';
+  import Heading from '$lib/ui/components/Heading.svelte';
+  import Shelf from '$lib/ui/components/Shelf.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
   import ProgressChart from '$lib/ui/components/ProgressChart.svelte';
@@ -22,6 +23,7 @@
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   let { data } = $props();
+  const overview = $derived(overviewPanels(data.item.overview,gameFacts(data.item)));
   let busy = $state(false), failure = $state('');
   let startOpen = $state(false), progressOpen = $state(false), sessionOpen = $state(false);
   let platform = $state(''), repeat = $state(false), percent = $state(0), status = $state<GameStatus>('in-progress');
@@ -95,8 +97,8 @@
   }
 </script>
 <svelte:head><title>{data.item.title} · Games · Coast</title></svelte:head>
-<MediaHero item={gameHero(data.item)}>
-    {#snippet actions()}
+<MediaPage details item={gameHero(data.item)}>
+    {#snippet heroActions()}
       <Button variant="ghost" href="/games" icon="left">Games</Button>
       {#if loggingAllowed}<Button variant="hero" icon="plus" disabled={busy} onclick={openSession}>Log a play session</Button>
       {:else if playthrough && playthrough.status !== 'completed'}<Button variant="hero" icon="play" disabled={busy} onclick={() => update('in-progress')}>Resume playthrough</Button>
@@ -114,21 +116,21 @@
         {#if identity && data.sources.length}<MenuAction icon="refresh" keepOpen={false} onclick={refresh}>Refresh metadata</MenuAction>{/if}
       </ContextMenu>
     {/snippet}
-</MediaHero>
-<div class="content" style="padding-bottom:90px">
+
+
   {#if failure && !startOpen && !progressOpen && !sessionOpen}<div class="notice error" role="alert">{failure}</div>{/if}
-  <GameOverview item={data.item} />
+  {#if overview.length}<Shelf title="Overview" size="panel" artworkOptions={false} panels={overview} />{/if}
   <section class="section" aria-label="Playthroughs">
-    <RowHeader title="Playthroughs">
+    <Heading title="Playthroughs">
       {#snippet filters()}{#if data.item.playthroughs.length}
         <select aria-label="Playthrough" value={playthrough?.id ?? ''} onchange={(event) => goto(selectedUrl(event.currentTarget.value), { noScroll: true, keepFocus: true })}>
           {#each data.item.playthroughs as entry, index}<option value={entry.id}>{entry.repeat ? 'Replay' : 'Playthrough'} · {entry.platform || 'All platforms'} · {displayLabel(entry.status)} · {data.item.playthroughs.length - index}</option>{/each}
         </select>
       {/if}{/snippet}
       {#snippet actions()}{#if identity && data.sources.length > 1}<select aria-label="Metadata refresh source" bind:value={refreshInstance}>{#each data.sources as source}<option value={source.id}>{source.name}</option>{/each}</select>{/if}{/snippet}
-    </RowHeader>
+    </Heading>
     {#if playthrough}
-      <ContentRow title="Progress" size="panel" artworkOptions={false}>
+      <Shelf title="Progress" size="panel" artworkOptions={false}>
         <DetailCard title={displayLabel(playthrough.status)} description={playthrough.repeat ? 'Replaying' : 'Current playthrough'}>
           <ProgressChart label="Game completion" items={[{ label: 'Completion', value: playthrough.progressPercent, total: 100 }]} />
         </DetailCard>
@@ -138,8 +140,8 @@
           { label: 'Started', value: playthrough.startedAt ? new Date(playthrough.startedAt).toLocaleDateString() : 'Not started', text: true },
           { label: 'Completed', value: playthrough.completedAt ? new Date(playthrough.completedAt).toLocaleDateString() : 'Unfinished', text: true },
         ]} /></DetailCard>
-      </ContentRow>
-      <RowHeader title="Play history" />
+      </Shelf>
+      <Heading title="Play history" />
       {#if playthrough.sessions.length}<div class="overflow"><table class="table">
         <thead><tr><th scope="col">Date</th><th scope="col">Time played</th><th scope="col">Note</th></tr></thead>
         <tbody>{#each playthrough.sessions as session (session.id)}<tr><td>{new Date(session.playedAt).toLocaleString()}</td><td>{gameMinutes(session.minutesPlayed)}</td><td>{session.note || '—'}</td></tr>{/each}</tbody>
@@ -150,7 +152,7 @@
       <Button variant="secondary" icon="plus" onclick={() => openStart()}>Start playthrough</Button>
     </EmptyState>{/if}
   </section>
-</div>
+</MediaPage>
 <Dialog bind:open={startOpen} title={repeat ? 'Start replaying' : 'Start a playthrough'}>
   <form class="stack" onsubmit={(event) => { event.preventDefault(); void start(); }}>
     {#if failure}<div class="notice error" role="alert">{failure}</div>{/if}

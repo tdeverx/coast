@@ -4,10 +4,11 @@
   import { maintenanceKinds, serviceTasks, type ServiceTask } from '$lib/providers/tasks';
   import { displayLabel } from '$lib/ui/labels';
   import type { ProviderSchedule } from '$lib/providers/schedule';
-  import RowHeader from './RowHeader.svelte';
+  import Heading from './Heading.svelte';
   import RowFilter from './RowFilter.svelte';
   import JobSchedule from './JobSchedule.svelte';
-  import QueueList, { type QueueAction } from './QueueList.svelte';
+  import QueueList from './QueueList.svelte';
+  import type { QueueAction } from '$lib/ui/queue';
   import SegmentedControl from './SegmentedControl.svelte';
   import ContextMenu from './ContextMenu.svelte';
   import MenuAction from './MenuAction.svelte';
@@ -102,7 +103,7 @@
 </script>
 
 <div class="stack jobs">
-  <RowHeader title="Background work">
+  <Heading title="Background work">
     {#snippet filters()}<SegmentedControl
         label="Job status"
         bind:value={filter}
@@ -130,14 +131,14 @@
           { value: 'playback', label: 'Playback reports' },
         ]}
       />{/snippet}
-  </RowHeader>
+  </Heading>
   <p class="small intro">
     {visible.length} matching runs · Up to 200 recent jobs, with active work first. Automatic-run toggles
     are in <a class="text-accent" href="/settings/integrations">Integrations</a>.
   </p>
   {#each sections as section (section.provider.id)}
     <section class="service stack" aria-label={`${section.provider.name} tasks`}>
-      <RowHeader title={section.provider.name}>
+      <Heading title={section.provider.name}>
         {#snippet filters()}<span class="small"
             >{displayLabel(section.provider.provider)} · {section.provider.connectedAccounts} connected
             {section.provider.connectedAccounts === 1 ? 'account' : 'accounts'}</span
@@ -149,7 +150,7 @@
               >Connections</MenuAction
             ></ContextMenu
           >{/snippet}
-      </RowHeader>
+      </Heading>
       <div class="task-grid">
         {#each section.tasks as task (task.id)}<JobSchedule
             provider={section.provider}
@@ -164,14 +165,14 @@
           />{/each}
       </div>
       {#if section.other.length}<div class="panel">
-          <RowHeader title="Other runs" /><QueueList actions={section.other} />
+          <Heading title="Other runs" /><QueueList actions={section.other} />
         </div>{/if}
     </section>
   {:else}<p class="small">
       No services match these filters. Add an integration or choose another task type.
     </p>{/each}
   {#if orphaned.length}<section class="service">
-      <RowHeader title="Other background work" /><QueueList actions={orphaned} />
+      <Heading title="Other background work" /><QueueList actions={orphaned} />
     </section>{/if}
   <p class="small">
     Schedules are checked once a minute while Coast is running. Each service imports one account at

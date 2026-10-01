@@ -416,8 +416,8 @@
   }
   .device-code {
     display: block;
-    font-size: 26px;
-    letter-spacing: 0.15em;
+    font-size: var(--text-2xl);
+    letter-spacing: var(--tracking-wide);
     color: var(--ink);
     margin-top: 15px;
   }

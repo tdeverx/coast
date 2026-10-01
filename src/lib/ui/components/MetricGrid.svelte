@@ -31,28 +31,28 @@
   dt {
     order: 1;
     color: var(--muted);
-    font-size: 11px;
-    line-height: 1.4;
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
   }
   dd {
     margin: 0;
-    font-size: var(--detail-value-size, 28px);
-    font-weight: 650;
-    line-height: 1.15;
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.025em;
+    letter-spacing: var(--tracking-tight);
     overflow-wrap: anywhere;
   }
   dd.copy {
-    font-size: 18px;
-    letter-spacing: -0.015em;
-    line-height: 1.4;
+    font-size: var(--text-xl);
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--leading-normal);
   }
   p {
     order: 2;
     margin: 0;
     color: var(--quiet);
-    font-size: 10px;
-    line-height: 1.4;
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
   }
 </style>

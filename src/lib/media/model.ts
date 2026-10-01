@@ -1,4 +1,4 @@
-/** Shared tracking language. Only Film & TV is enabled by the current catalog/adapters. */
+/** Shared presentation language for concrete screen, music and game tracking. */
 export type MediaCategory = 'screen' | 'music' | 'book' | 'comic' | 'game';
 export type ScreenKind = 'movie' | 'show' | 'season' | 'episode' | 'collection';
 export type Lifecycle = 'planned' | 'in-progress' | 'completed' | 'paused' | 'dropped';
@@ -14,17 +14,6 @@ export interface Progress {
   unit: ProgressUnit;
   value: number;
   total?: number;
-}
-export interface Work {
-  id: string;
-  category: MediaCategory;
-  title: string;
-}
-export interface Edition {
-  id: string;
-  workId: string;
-  format: string;
-  platform?: string;
 }
 export interface ActivitySession {
   id: string;

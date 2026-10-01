@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Heading from './Heading.svelte';
   import { untrack } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
@@ -11,8 +12,8 @@
   import MenuAction from './MenuAction.svelte';
   import Dialog from './Dialog.svelte';
   import RowFilter from './RowFilter.svelte';
-  import RowTitle from './RowTitle.svelte';
-  import QueueList, { type QueueAction } from './QueueList.svelte';
+  import QueueList from './QueueList.svelte';
+  import type { QueueAction } from '$lib/ui/queue';
   let {
     provider,
     task,
@@ -129,7 +130,7 @@
 
 <article class="panel task-card" aria-label={`${provider.name}: ${task.title}`}>
   <div class="spread task-heading" use:contextGesture={(point) => menu?.openAt(point)}>
-    <RowTitle title={task.title} />
+    <Heading variant="title" title={task.title} />
     <ContextMenu bind:this={menu} label={`${provider.name} ${task.title} actions`}>
       {#if task.scope}<MenuAction
           icon="refresh"

@@ -1,192 +1,387 @@
 <script lang="ts" generics="T extends MediaView | MediaCardPresentation">
+  import { untrack, type Snippet } from 'svelte';
+  import { createShelfSource, type ShelfConfig } from '$lib/ui/shelves';
+  import type { ShelfControl } from '$lib/ui/shelves/types';
+  import { createShelfSelection } from '$lib/ui/shelves/local.svelte';
+  import { createShelfLayout } from '$lib/ui/shelves/layout.svelte';
+  import { lazyContent } from '$lib/ui/lazy-content';
+  import RowFeedback from './RowFeedback.svelte';
+  import Pagination from './Pagination.svelte';
+  import SequenceControl from './SequenceControl.svelte';
+  import Button from './Button.svelte';
   import { page } from '$app/state';
   import AvailabilityToggle from './AvailabilityToggle.svelte';
-  import type { ArtworkPriority } from '$lib/ui/types';
+  import { mediaTypeOptions } from '$lib/ui/filter-options';
   import RowFilter from './RowFilter.svelte';
   import SegmentedControl from './SegmentedControl.svelte';
-  import ContentRow from './ContentRow.svelte';
-  import { untrack, type Snippet } from 'svelte';
-  import type {
-    MediaView,
-    MediaCardPresentation,
-    MediaCardShape,
-    MediaCardArtwork,
-    MediaCardOverlay,
-  } from '$lib/ui/types';
+  import type { ArtworkPriority, MediaView, MediaCardPresentation, MediaCardShape, MediaCardArtwork } from '$lib/ui/types';
+  import RowStyleMenu from './RowStyleMenu.svelte';
+  import Heading from './Heading.svelte';
+  import Icon from './Icon.svelte';
+  import { contextGesture } from '$lib/ui/context-gesture';
+  import type { MediaRowStyle, MediaCardOverlay } from '$lib/ui/types';
+  import Shelf from './Shelf.svelte';
+  import { journalCards, type JournalCards, type JournalCard } from '$lib/ui/shelves/journal-cards';
+  import DetailCard from './DetailCard.svelte';
+  import type { InsightPanel } from '$lib/ui/insights/types';
   import MediaCard from './MediaCard.svelte';
   let {
-    title,
-    items,
-    href,
-    shape = 'poster',
-    layout = 'row',
-    artworkStyle = 'auto',
-    overlay = 'none',
-    artworkPriority,
-    heading,
-    filters,
-    controls,
-    actions,
-    empty,
-    busy = false,
-    details,
-    filterBy = 'type',
-    availability = true,
-    availableOnly = $bindable(false),
-    onavailability,
-    pageNumber,
-    pages,
-    onpage,
-    rows = 1,
-    hasMore = false,
-    onend,
-    resetKey,
+    title = '', items = [], source, panels, journal, href, children, heading, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle = 'auto', artworkPriority,
+    mediaKind = 'screen', filters, controls, actions, empty, details,
+    busy = false, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
+    pageNumber, pages, onpage, pageUrl, filterBy = 'none', availability = true, availableOnly = $bindable(false),
   }: {
+    filterBy?: 'none' | 'type' | 'watched';
     availability?: boolean;
     availableOnly?: boolean;
-    onavailability?: (value: boolean) => void;
-    pageNumber?: number;
-    pages?: number;
-    onpage?: (page: number) => void;
-    rows?: 1 | 2;
-    hasMore?: boolean;
-    onend?: () => void;
-    resetKey?: string;
-    filterBy?: 'type' | 'watched';
-    layout?: 'row' | 'grid';
+    children?: Snippet<[MediaRowStyle]>;
     heading?: Snippet;
+    size?: 'poster' | 'square' | 'fanart' | 'banner' | 'panel';
+    overlay?: MediaCardOverlay;
+    artworkOptions?: boolean;
+    title?: string;
+    items?: T[];
+    source?: ShelfConfig;
+    panels?: InsightPanel[];
+    journal?: JournalCards;
+    href?: string;
+    shape?: MediaCardShape;
+    layout?: 'row' | 'grid';
+    artworkStyle?: MediaCardArtwork;
+    artworkPriority?: ArtworkPriority;
+    mediaKind?: 'screen' | 'music' | 'game';
     filters?: Snippet;
     controls?: Snippet;
     actions?: Snippet;
     empty?: Snippet;
-    busy?: boolean;
     details?: Snippet<[T]>;
-    title: string;
-    items: T[];
-    href?: string;
-    shape?: MediaCardShape;
-    artworkStyle?: MediaCardArtwork;
-    overlay?: MediaCardOverlay;
-    artworkPriority?: ArtworkPriority;
+    busy?: boolean;
+    preserveHeight?: boolean;
+    rows?: 1 | 2;
+    hasMore?: boolean;
+    onend?: () => void;
+    resetKey?: string;
+    pageNumber?: number;
+    pages?: number;
+    onpage?: (page: number) => void;
+    pageUrl?: (page: number) => string;
   } = $props();
-  // Keep the last completed selection visible while its replacement is being fetched.
-  let settledItems = $state<T[]>(untrack(() => items));
-  let selection = $state(
-    untrack(() => (layout === 'grid' ? (page.url.searchParams.get('rowProgress') ?? 'all') : 'all'))
-  );
-  let kind = $state(
-    untrack(() => (layout === 'grid' ? (page.url.searchParams.get('rowKind') ?? 'all') : 'all'))
-  );
-  untrack(() => {
-    if (layout === 'grid' && page.url.searchParams.get('rowAvailable') === 'true')
-      availableOnly = true;
-  });
-  const titleHref = $derived.by(() => {
-    if (!href) return undefined;
-    const url = new URL(href, page.url);
-    if (!controls) url.searchParams.set(url.pathname === '/library' ? 'kind' : 'rowKind', kind);
-    if (filterBy === 'watched') url.searchParams.set('rowProgress', selection);
-    if (availability && !onavailability) {
-      if (url.pathname === '/library')
-        url.searchParams.set('scope', availableOnly ? 'available' : 'all');
-      else url.searchParams.set('rowAvailable', String(availableOnly));
-    }
-    return url.pathname + url.search;
-  });
-  const sourceItems = $derived(busy ? settledItems : items);
-  const typeOptions = $derived([
-    { value: 'all', label: 'All' },
-    ...[
-      { value: 'movie', label: 'Movies' },
-      { value: 'show', label: 'Shows' },
-      { value: 'season', label: 'Seasons' },
-      { value: 'episode', label: 'Episodes' },
-      { value: 'collection', label: 'Collections' },
-      {value:'album',label:'Albums'},{value:'track',label:'Tracks'},{value:'game',label:'Games'},
-    ].filter((option) => sourceItems.some((item) => item.kind === option.value)),
-  ]);
-  const visibleItems = $derived(
-    sourceItems.filter(
-      (item) =>
-        (!availability || onavailability || !availableOnly || item.available) &&
-        (controls || kind === 'all' || item.kind === kind) &&
-        (filterBy !== 'watched' ||
-          selection === 'all' ||
-          item.watched === (selection === 'watched'))
-    )
-  );
+  const adapter = untrack(() => source ? createShelfSource(() => source!) : undefined);
+  const filterMode = $derived(adapter?.filterBy ?? filterBy);
+  const inputItems = $derived(adapter ? adapter.items as T[] : items);
+  const displayTitle = $derived(adapter?.title ?? title);
+  const displayBusy = $derived(adapter?.busy ?? busy);
+  const displayLayout = $derived(source?.layout ?? layout);
+  const selection = createShelfSelection(() => ({
+    items: inputItems, mode: filterMode, layout: displayLayout, busy: displayBusy,
+    availability, availableOnly, title: displayTitle, href: adapter?.href ?? href, url: page.url,
+  }), value => { availableOnly = value; });
+  const displayItems = $derived(selection.items);
+  const key = (item: T) => item.entryId ?? ('href' in item ? item.href : item.id);
 
-  $effect(() => {
-    if (!busy) settledItems = items;
-  });
-  $effect(() => {
-    if (!controls && !typeOptions.some((option) => option.value === kind)) kind = 'all';
-  });
+  const entries = $derived<{ key: string; item: T | JournalCard['item']; activity?: JournalCard['activity']; note?: JournalCard['note']; run?: JournalCard['run'] }[]>(
+    journal ? journalCards(journal.runs, !!journal.selection).map(entry => entry) : displayItems.map(item => ({ key: key(item), item }))
+  );
+  const displayHref = $derived(selection.href);
+  const displayFilters = $derived(adapter && filterMode === 'none' ? (adapter.filters.length ? adapterFilters : undefined) : filterMode === 'none' ? filters : filters || filterMode === 'watched' || availability ? localFilters : undefined);
+  const displayControls = $derived(adapter && filterMode === 'none' ? (adapter.controls.length ? adapterControls : undefined) : filterMode === 'none' ? controls : localControls);
+  const displayActions = $derived(adapter ? adapterActions : actions);
+  const displaySize = $derived(adapter?.shape ?? shape ?? size);
+  const displayArtworkStyle = $derived(adapter?.artworkStyle ?? artworkStyle);
+  const displayArtworkPriority = $derived(adapter?.artworkPriority ?? artworkPriority);
+  const displayMediaKind = $derived(adapter?.mediaKind ?? mediaKind);
+  const displayPreserveHeight = $derived(preserveHeight ?? (!children && !panels));
+  const displayRows = $derived(adapter?.rows ?? rows);
+  const displayHasMore = $derived(adapter?.hasMore ?? hasMore);
+  const displayOnend = $derived(adapter ? () => {if(!adapter.busy) void adapter.load((adapter.page ?? 1)+1,true);} : onend);
+  const displayResetKey = $derived(adapter?.resetKey ?? resetKey ?? (filterMode !== 'none' ? selection.resetKey : undefined));
+  const displayPageNumber = $derived(adapter?.page ?? pageNumber ?? 1);
+  const displayPages = $derived(adapter?.pages ?? pages ?? 1);
+  const displayOnpage = $derived(adapter ? (adapter.headerPagination ? adapter.load : undefined) : onpage);
+  let styleMenu = $state<RowStyleMenu>();
+  const rail = createShelfLayout(() => ({
+    size: displaySize, artworkStyle: displayArtworkStyle, artworkPriority: displayArtworkPriority,
+    overlay, layout: displayLayout, busy: displayBusy, preserveHeight: displayPreserveHeight,
+    hasMore: displayHasMore, onend: displayOnend, resetKey: displayResetKey,
+  }));
+  function styleGesture(node: HTMLElement) {
+    if (displaySize !== 'panel') return contextGesture(node, point => styleMenu?.openAt(point));
+  }
 </script>
 
-{#snippet rowFilters()}
+{#snippet localFilters()}
   {@render filters?.()}
-  {#if filterBy === 'watched'}<SegmentedControl
-      label={`${title} progress`}
-      bind:value={selection}
-      options={[
-        { value: 'all', label: 'All' },
-        { value: 'unwatched', label: 'Unwatched' },
-        { value: 'watched', label: 'Watched' },
-      ]}
-    />{/if}
-  {#if availability}<AvailabilityToggle
-      value={availableOnly}
-      onchange={(value) => {
-        availableOnly = value;
-        onavailability?.(value);
-      }}
-    />{/if}
+  {@render renderControls(selection.filters)}
 {/snippet}
-{#snippet rowControls()}
-  {@render controls?.()}
-  {#if !controls}<RowFilter label={`${title} type`} bind:value={kind} options={typeOptions} />{/if}
+{#snippet localControls()}{@render renderControls(selection.controls)}{/snippet}
+{#snippet renderControls(options: ShelfControl[])}
+  {#each options as control (control.label)}
+    {#if control.type === 'segments'}<SegmentedControl label={control.label} value={control.value} options={control.options ?? []} onchange={control.change} />
+    {:else if control.type === 'availability'}<AvailabilityToggle value={control.value === 'available'} onchange={value => control.change(value ? 'available' : 'all')} />
+    {:else}<RowFilter label={control.label} value={control.value} options={control.type === 'media-type' ? mediaTypeOptions(control.includeOtherMedia) : control.options ?? []} onchange={control.change} />{/if}
+  {/each}
 {/snippet}
-
-{#if sourceItems.length || heading || filters || empty}<ContentRow
-    {title}
-    href={titleHref}
-    {actions}
-    filters={filters || filterBy === 'watched' || availability ? rowFilters : undefined}
-    controls={rowControls}
-    {heading}
-    size={shape}
-    {artworkStyle}
-    {overlay}
-    {artworkPriority}
-    {layout}
-    {pageNumber}
-    {pages}
-    {onpage}
-    {rows}
-    {hasMore}
-    {onend}
-    resetKey={resetKey ?? `${selection}:${kind}:${availableOnly}`}
-    {busy}
-    preserveHeight={!!filters || !!heading || !!controls || !!filterBy}
+{#snippet adapterFilters()}{@render renderControls(adapter?.filters ?? [])}{/snippet}
+{#snippet adapterControls()}{@render renderControls(adapter?.controls ?? [])}{/snippet}
+{#snippet adapterActions()}
+  {#if adapter?.sequence}<SequenceControl source={adapter.sequence} />{/if}
+  <RowFeedback error={adapter?.error} retry={() => adapter?.load(adapter.page)} retryLabel={adapter?.retryLabel ?? 'Try again'} />
+  {#if adapter?.notice}<span class="small muted">{adapter.notice}</span>{/if}
+  {#each adapter?.actions ?? [] as action}<Button variant="ghost" onclick={action.run}>{action.label}</Button>{/each}
+  {@render actions?.()}
+{/snippet}
+<div use:lazyContent={{load: () => adapter?.load(), enabled: () => !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
+  {#snippet cards(style: MediaRowStyle)}
+    {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
+    {#each entries as entry (entry.key)}{@const item = entry.item}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'}>
+      <MediaCard {item} {...style}
+        shape={!journal && rail.overrideShape === null && shape === undefined && adapter?.shape === undefined && ['album', 'track', 'game'].includes(item.kind) ? 'square' : style.shape} />
+      {#if entry.run}<details class="journal-run">
+        <summary>Show {entry.run.length} episodes</summary>
+        <div class="episode-list">{#each entry.run as episode}<a href={episode.href}><span>{episode.title}</span><small>{episode.note.time} · {episode.note.source}{episode.note.repeat ? ' · Rewatch' : ''}</small></a>{/each}</div>
+      </details>
+      {:else if entry.activity && entry.note}
+        {#if journal?.selection}<label class="check"><input type="checkbox" checked={journal.selection.checked(entry.activity.eventId)} disabled={journal.selection.disabled} onchange={() => journal?.selection?.toggle(entry.activity!.eventId)} />Select {item.captionSubtitle || item.title}</label>{/if}
+        <p class="entry-note">
+          {#if entry.note.action}{entry.note.action} · {/if}
+          {#if entry.note.pending}Pending review · {/if}
+          {#if entry.note.date}<time datetime={entry.note.date}>{entry.note.time}</time>{:else}{entry.note.time}{/if} · {entry.note.source}{#if entry.note.repeat}<span class="rewatch">{entry.note.repeat}</span>{/if}
+        </p>
+      {/if}
+      {#if extra?.summary}<details class="credit-roles"><summary>{extra.summary}</summary><p>{extra.body}</p></details>{/if}
+      {#if extra?.actions}<div class="order">{#each extra.actions as action}<Button variant="ghost" icon={action.icon} label={action.label} disabled={action.disabled} onclick={action.run} />{/each}</div>{/if}
+      {#if !entry.activity}{@render details?.(item as T)}{/if}
+    </div>{/each}
+    {#if adapter && !displayItems.length && !adapter.error}<div class="row-empty" aria-live="polite"><RowFeedback message={adapter.empty}>
+      {#if adapter.emptyHref}<a href={adapter.emptyHref}>{adapter.emptyLink}</a>{/if}
+    </RowFeedback></div>
+    {:else if !adapter && !displayItems.length && (empty || filterMode !== 'none') && (filterMode === 'none' || !busy)}<div class="row-empty" aria-live="polite">
+      {#if filterMode !== 'none' && selection.filtered}<p class="muted">No titles in this selection.</p>
+      {:else}{@render empty?.()}{/if}
+    </div>{/if}
+    {/if}
+  {/snippet}
+{#if adapter?.groups}
+<div class="journal">
+  {#each adapter.groups as group}<Shelf title={group.title} href={group.href} controls={group.controls} items={group.items} size="fanart" layout={displayLayout} preserveHeight={!!group.preserveHeight} journal={group.runs ? { runs: group.runs, selection: group.selection } : undefined}>
+    {#snippet heading()}{#if group.heading}<h3>{group.heading}</h3><span class="small muted">{group.count} {group.count===1?'entry':'entries'}</span>{:else}<Heading variant="title" title={group.title} href={group.href} />{/if}{/snippet}
+  </Shelf>{/each}
+</div>
+{:else if children || adapter || filterMode === 'none' || selection.sourceItems.length || filters || empty}
+<section class="content-row section" aria-label={displayTitle} aria-busy={displayBusy}>
+  <div use:styleGesture>
+    <Heading title={displayTitle} {heading} filters={displayFilters} actions={displayActions} href={displayHref}>
+      {#snippet navigation()}{#if displayLayout === 'row' || displayControls || displayOnpage}<div class="navigation">
+            {#if displayLayout === 'row' || displayOnpage}
+              <button
+                class="icon-button"
+                aria-label={displayLayout === 'grid' ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}
+                disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber <= 1 : !rail.previous}
+                onclick={() => (displayLayout === 'grid' ? displayOnpage?.(displayPageNumber - 1) : rail.scroll(-1))}
+                ><Icon name="left" /></button
+              >{/if}
+            {#if displayControls}<div class="row-controls">{@render displayControls()}</div>{/if}
+            {#if displayLayout === 'row' || displayOnpage}
+              <button
+                class="icon-button"
+                aria-label={displayLayout === 'grid' ? `Next ${displayTitle} page` : `Scroll ${displayTitle} right`}
+                disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber >= displayPages : !rail.next && !displayHasMore}
+                onclick={() => (displayLayout === 'grid' ? displayOnpage?.(displayPageNumber + 1) : rail.scroll(1))}
+                ><Icon name="right" /></button
+              >{/if}
+          </div>{/if}{/snippet}
+    </Heading>
+  </div>
+  {#if displaySize !== 'panel'}<RowStyleMenu
+      bind:this={styleMenu}
+      title={displayTitle}
+      shape={displaySize}
+      artworkStyle={displayArtworkStyle}
+      {overlay}
+      {artworkOptions}
+      mediaKind={displayMediaKind}
+      bind:overridePriority={rail.overridePriority}
+      bind:overrideShape={rail.overrideShape}
+      bind:overrideArtwork={rail.overrideArtwork}
+      bind:overrideOverlay={rail.overrideOverlay}
+    />{/if}
+  <div
+    class="rail"
+    class:two-rows={displayRows === 2 && displayLayout === 'row'}
+    class:grid-layout={displayLayout === 'grid'}
+    class:preserve={displayPreserveHeight}
+    class:square={rail.size === 'square'}
+    style:min-height={displayLayout === 'row' && displayPreserveHeight && rail.size === 'panel' && rail.savedHeight
+      ? `${rail.savedHeight}px`
+      : undefined}
+    class:fanart={rail.size === 'fanart'}
+    class:banner={rail.size === 'banner'}
+    class:panel-row={rail.size === 'panel'}
+    bind:this={rail.scroller}
+    onscroll={rail.reachedEnd}
   >
-    {#snippet children(style)}
-      {#each visibleItems as item (item.entryId ?? item.id)}<div class="shelf-item">
-          <MediaCard
-            {item}
-            shape={['album','track','game'].includes(item.kind)?'square':style.shape}
-            artworkStyle={style.artworkStyle}
-            overlay={style.overlay}
-            artworkPriority={style.artworkPriority}
-          />{#if details}{@render details(item)}{/if}
-        </div>{/each}
-      {#if !busy && !visibleItems.length && (empty || filterBy)}<div
-          class="row-empty"
-          aria-live="polite"
-        >
-          {#if selection !== 'all' || kind !== 'all' || availableOnly}<p class="muted">
-              No titles in this selection.
-            </p>{:else}{@render empty?.()}{/if}
-        </div>{/if}
-    {/snippet}
-  </ContentRow>{/if}
+    {#if children}{@render children(rail.style)}{:else}{@render cards(rail.style)}{/if}
+  </div>
+</section>
+
+{/if}
+{#if adapter?.appendOnly}<div class="load-more" use:lazyContent={{load:()=>adapter.load(),enabled:()=>!adapter.error,repeat:true}} aria-busy={adapter.busy} aria-live="polite">
+  {#if adapter.error}<p role="alert">{adapter.error}</p>{/if}
+  {#if adapter.hasMore && !adapter.busy}<Button variant="ghost" onclick={()=>adapter.load()}>{adapter.error?'Retry':adapter.loadMoreLabel}</Button>
+  {:else if !adapter.hasMore && !adapter.items.length}<p class="muted">{adapter.empty}</p>{/if}
+</div>{/if}
+{#if (adapter?.footerPagination || pageUrl) && displayLayout === 'grid'}<Pagination page={displayPageNumber} pages={displayPages}
+  busy={displayBusy} onchange={adapter?.pageUrl || pageUrl ? undefined : adapter?.load} pageUrl={adapter?.pageUrl ?? pageUrl} label={`${displayTitle} pages`} />{/if}
+</div>
+<style>
+  .journal { min-width:0; }
+  .journal :global(.content-row:first-child) { margin-top:0; }
+  .load-more { display:grid; justify-items:center; gap:10px; padding-block:18px; }
+
+
+  .content-row {
+    min-width: 0;
+  }
+  .rail {
+    --row-card-width: clamp(155px, 14vw, 210px);
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: min(100%, var(--row-card-width));
+    align-items: start;
+    gap: 20px;
+    overflow: auto;
+    padding: 24px var(--gutter);
+    margin: -24px calc(-1 * var(--gutter));
+    scroll-padding-inline: var(--gutter);
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .rail :global(> *) {
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+  .rail {
+    --row-art-ratio: 1.5;
+    --row-gap: 20px;
+  }
+  .square {
+    --row-art-ratio: 1;
+  }
+  .fanart {
+    --row-art-ratio: 0.5625;
+  }
+  .banner {
+    --row-art-ratio: 0.185;
+  }
+  .preserve {
+    min-height: calc(var(--row-card-width) * var(--row-art-ratio) + 108px);
+  }
+  .two-rows.preserve {
+    min-height: calc((var(--row-card-width) * var(--row-art-ratio) + 108px) * 2 + var(--row-gap));
+  }
+  .preserve.panel-row {
+    min-height: 380px;
+  }
+  .fanart {
+    --row-card-width: clamp(255px, 27vw, 380px);
+  }
+  .banner {
+    --row-card-width: clamp(310px, 34vw, 480px);
+  }
+  .panel-row {
+    --row-card-width: 360px;
+    grid-auto-columns: min(calc(100% - 24px), 440px);
+    align-items: stretch;
+  }
+  .two-rows {
+    grid-template-rows: repeat(2, auto);
+  }
+  .grid-layout {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--row-card-width)), 1fr));
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+  .grid-layout :global(.row-empty) {
+    grid-column: 1 / -1;
+  }
+  .row-controls {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .navigation {
+    align-items: center;
+    min-width: 0;
+    display: flex;
+    gap: 2px;
+  }
+  .navigation .icon-button {
+    width: var(--control-compact-height);
+    height: var(--control-compact-height);
+    color: var(--muted);
+  }
+  .navigation .icon-button:disabled {
+    opacity: 0.25;
+  }
+  @media (max-width: 500px) {
+    .rail {
+      gap: 14px;
+      --row-gap: 14px;
+    }
+    .rail:not(.fanart):not(.banner):not(.panel-row) {
+      --row-card-width: 145px;
+    }
+  }
+
+  .credit-roles { margin-top:6px; font-size:var(--text-sm); color:var(--muted); }
+  .credit-roles summary { cursor:pointer; font-weight:var(--weight-semibold); }
+  .credit-roles p { margin-top:8px; line-height:var(--leading-relaxed); overflow-wrap:anywhere; }
+  .order { display:flex; align-items:center; gap:4px; margin-top:8px; }
+
+
+
+  .episode-run {
+    min-width: 0;
+  }
+  .journal-run {
+    margin-top: 10px;
+    font-size: var(--text-sm);
+    color: var(--muted);
+  }
+  .journal-run summary {
+    cursor: pointer;
+    padding-block: 4px;
+  }
+  .episode-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .episode-list a {
+    display: grid;
+    gap: 4px;
+  }
+  .episode-list small {
+    font-size: var(--text-sm);
+    color: var(--quiet);
+  }
+  .rewatch {
+    margin-left: 8px;
+    color: var(--muted);
+  }
+  .entry {
+    min-width: 0;
+  }
+  .entry-note {
+    font-size: var(--text-sm);
+    color: var(--quiet);
+    margin-top: 6px;
+  }
+
+</style>

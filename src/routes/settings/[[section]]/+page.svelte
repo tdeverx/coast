@@ -9,8 +9,7 @@
     policyGroups,
     selectSettings,
   } from '$lib/settings/sections';
-  import PageHeader from '$lib/ui/components/PageHeader.svelte';
-  import RowHeader from '$lib/ui/components/RowHeader.svelte';
+  import Heading from '$lib/ui/components/Heading.svelte';
   import JobsSettings from '$lib/ui/components/JobsSettings.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   import IntegrationSettings from '$lib/ui/components/IntegrationSettings.svelte';
@@ -186,7 +185,7 @@
 
 <svelte:head><title>{titles[data.section]} · Coast</title></svelte:head>
 <div class="content page">
-  <PageHeader title="Settings" description="Manage your preferences, connections and account." />
+  <Heading variant="page" title="Settings" description="Manage your preferences, connections and account." />
   <div class="settings-grid">
     <nav class="settings-nav" aria-label="Settings">
       <span class="group">You</span>{#each links as [key, label]}<a
@@ -198,10 +197,10 @@
             class:active={data.section === key}
             aria-current={data.section === key ? 'page' : undefined}
             href="/settings/{key}">{label}</a
-          >{/each}{/if}
+          >{/each}<a href="/ui-preview">UI reference</a>{/if}
     </nav>
     <section class="settings-main" aria-label={titles[data.section]}>
-      <RowHeader title={titles[data.section]} />
+      <Heading title={titles[data.section]} />
       <p class="section-description small">{descriptions[data.section]}</p>
       {#if error && !fields.length && !['account', 'users'].includes(data.section) && !deleteId && !resetOpen}<div
           class="notice error"
@@ -512,10 +511,10 @@
               <p class="small">Your installation, your data</p>
             </div>
           </div>
-          <RowHeader title="Integration health"
+          <Heading title="Integration health"
             >{#snippet actions()}<a class="small text-accent" href="/settings/integrations"
                 >Manage integrations</a
-              >{/snippet}</RowHeader
+              >{/snippet}</Heading
           >
           {#if data.providers.length}<div class="panel">
               {#each data.providers as p}<div class="spread integration-row">
@@ -526,7 +525,7 @@
             </div>{:else}<p class="small">
               No services are connected yet. You can still track titles in Coast.
             </p>{/if}
-          <RowHeader title="Missing demand" />
+          <Heading title="Missing demand" />
           <p class="small">Released next-needed items and saved titles that are missing or uncertain for each account. Users who opt out are excluded.</p>
           {#await data.demand}<p class="small" role="status">Checking personal demand…</p>{:then demand}
             {#if demand?.users.length}<div class="overflow"><table class="table"><thead><tr><th>User</th><th>Needed title</th><th>Reason</th><th>Availability</th><th>Source coverage</th><th>Request</th></tr></thead><tbody>
@@ -1107,7 +1106,7 @@
     align-items: center;
     gap: 28px;
     padding: 0 0 16px;
-    border-bottom: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line);
   }
   .setting:last-child {
     padding-bottom: 0;
@@ -1117,12 +1116,12 @@
     flex: 1;
   }
   .setting h3 {
-    font-size: 13px;
+    font-size: var(--text-sm);
   }
   .setting p {
-    font-size: 11px;
+    font-size: var(--text-sm);
     margin-top: 6px;
-    line-height: 1.7;
+    line-height: var(--leading-relaxed);
   }
   .setting input {
     flex: none;
@@ -1140,31 +1139,31 @@
     color: var(--muted);
   }
   .health-grid strong {
-    font-size: 18px;
-    font-weight: 550;
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
     text-transform: capitalize;
   }
   .health-grid h3 {
-    font-size: 11px;
+    font-size: var(--text-sm);
     color: var(--muted);
   }
   .integration-row + .integration-row {
     margin-top: 20px;
   }
   .integration-row span:first-child {
-    font-size: 12px;
+    font-size: var(--text-sm);
   }
   pre {
-    font-size: 10px;
+    font-size: var(--text-sm);
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-    background: #0004;
+    background: color-mix(in srgb, var(--canvas) calc(68 / 255 * 100%), transparent);
     padding: 16px;
     border-radius: 8px;
     margin-top: 20px;
   }
   summary {
-    font-size: 11px;
+    font-size: var(--text-sm);
     color: var(--muted);
   }
   @media (max-width: 800px) {

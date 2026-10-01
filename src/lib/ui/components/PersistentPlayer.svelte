@@ -656,7 +656,7 @@
     visibility: hidden;
     position: fixed;
     inset: 0;
-    background: #000;
+    background: var(--canvas);
     z-index: 0;
     pointer-events: none;
     overflow: hidden;
@@ -711,7 +711,7 @@
     width: 32px;
     height: 44px;
     border-radius: 10px;
-    color: #fff;
+    color: var(--ink);
     transition: transform var(--fast) var(--ease);
   }
   .controls .play-toggle {
@@ -731,7 +731,7 @@
   }
   .controls :global(.icon-button:is(:hover, :focus-visible)) {
     background: transparent;
-    color: #fff;
+    color: var(--ink);
     transform: scale(1.08);
   }
   .control-divider {
@@ -739,7 +739,7 @@
     width: 1px;
     flex: none;
     margin-inline: 4px;
-    background: rgb(255 255 255 / 20%);
+    background: color-mix(in srgb, var(--white) 20%, transparent);
   }
   .play-error,
   .postplay {
@@ -759,7 +759,7 @@
     display: grid;
     gap: 10px;
     padding: 12px;
-    font-size: 12px;
+    font-size: var(--text-sm);
   }
   .volume input {
     accent-color: var(--ink);

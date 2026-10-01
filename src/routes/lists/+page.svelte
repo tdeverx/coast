@@ -1,11 +1,11 @@
 <script lang="ts">
-  import PageHeader from '$lib/ui/components/PageHeader.svelte';
+  import Shelf from '$lib/ui/components/Shelf.svelte';
+  import Heading from '$lib/ui/components/Heading.svelte';
   import { goto } from '$app/navigation';
   import { untrack } from 'svelte';
   import { api, change, message } from '$lib/ui/client';
   import type { MediaView } from '$lib/ui/types';
-  import CollectionPage from '$lib/ui/components/CollectionPage.svelte';
-  import ListShelf from '$lib/ui/components/ListShelf.svelte';
+  import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   let { data } = $props();
@@ -43,39 +43,27 @@
 </script>
 
 <svelte:head><title>{title} · Coast</title></svelte:head>
-<CollectionPage hero={!!data.detail} items={heroItems} {selection}>
+<MediaPage hero={!!data.detail} collection={{items:heroItems,selection}} context="home">
   {#if error}<p class="notice error" role="alert">{error}</p>{/if}
   {#if data.detail}
     <Button href="/lists" variant="ghost" icon="left">Your lists</Button>
     {#if data.detail.selected?.description}<p class="description">
         {data.detail.selected.description}
       </p>{/if}
-    {#key data.detail}<ListShelf
-        view={data.detail.view}
-        {title}
-        layout="grid"
-        custom={!!data.detail.selected}
-        initial={data.detail}
-        onitems={(items, key) => {
+    {#key data.detail}<Shelf source={{ type: 'list', view: data.detail.view, title: title, layout: "grid", custom: !!data.detail.selected, initial: data.detail, onitems: (items, key) => {
           heroItems = items;
           selection = key;
-        }}
-        ondelete={() => (deleteId = data.detail!.selected!.id)}
-      />{/key}
+        }, ondelete: () => (deleteId = data.detail!.selected!.id) }} />{/key}
   {:else}
-    <PageHeader title="Your lists">
+    <Heading variant="page" title="Your lists">
       {#snippet actions()}<Button icon="plus" onclick={() => (create = true)}>Create list</Button
         >{/snippet}
-    </PageHeader>
+    </Heading>
     {#each [...builtins, ...data.lists] as list (list.id)}
-      {#key data}<ListShelf
-          view={list.id}
-          title={list.name}
-          custom={!builtins.some((builtin) => builtin.id === list.id)}
-        />{/key}
+      {#key data}<Shelf source={{ type: 'list', view: list.id, title: list.name, custom: !builtins.some((builtin) => builtin.id === list.id) }} />{/key}
     {/each}
   {/if}
-</CollectionPage>
+</MediaPage>
 <Dialog bind:open={create} title="Create a list">
   <form
     class="stack"

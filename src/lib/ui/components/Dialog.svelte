@@ -64,7 +64,7 @@
     width: min(864px, calc(100vw - 32px));
   }
   dialog::backdrop {
-    background: rgb(0 0 0 / 75%);
+    background: color-mix(in srgb, var(--canvas) 75%, transparent);
   }
   .heading {
     margin-bottom: 22px;

@@ -1,11 +1,13 @@
 <script lang="ts">
   import { playMusic } from '$lib/playback/client.svelte';
-  import { invalidateAll } from '$app/navigation';
   import type { MediaCardPresentation } from '$lib/ui/types';
   import type { MusicItem } from '$lib/music/model';
   import type { GameStatus } from '$lib/games/model';
   import { api, message } from '$lib/ui/client';
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
+  import { createMutation } from '$lib/ui/mutation.svelte';
+  import { setRelationship, type Relationship } from '$lib/ui/relationships';
+  import RelationshipActions from './RelationshipActions.svelte';
+  import ListMembershipActions from './ListMembershipActions.svelte';
   import ContextMenu from './ContextMenu.svelte';
   import MenuAction from './MenuAction.svelte';
   import Rating from './Rating.svelte';
@@ -16,24 +18,23 @@
   let relationships = $state({ collected: false, watchlist: false, favourite: false });
   let rating = $state<number | null>(null), queued = $state(false);
   let lists = $state<{ id: string; name: string; playlist: boolean; entryId: string | null }[]>([]);
-  let loading = $state(false),
-    busy = $state(false),
-    failure = $state('');
+  let loading = $state(false);
+  const mutation = createMutation(load);
+  const busy = $derived(mutation.busy);
+  const failure = $derived(mutation.error);
   let generation = 0;
   const storedGame = $derived(item.kind === 'game' && item.href === `/games/${item.id}`);
   const workId = $derived(music?.workId ?? item.workId ?? (storedGame ? item.id : undefined));
   const musicPath = $derived(
     item.connectionId ? `providers/${item.connectionId}/music/${item.id}` : ''
   );
+  const identity = $derived([item.id, item.workId, item.connectionId, item.href].join(':'));
   $effect(() => {
-    item.id;
-    item.workId;
-    item.connectionId;
-    item.href;
+    identity;
     generation++;
     reset();
     loading = false;
-    failure = '';
+    mutation.error = '';
   });
   function reset() {
     music = undefined;
@@ -51,7 +52,7 @@
     const path = musicPath, id = item.id, isGame = storedGame;
     const knownWorkId = item.workId ?? (isGame ? id : undefined);
     loading = true;
-    failure = '';
+    mutation.error = '';
     reset();
     try {
       if (knownWorkId) await loadRelationships(knownWorkId, token);
@@ -71,7 +72,7 @@
         if (token === generation) playthrough = result.playthroughs[0];
       }
     } catch (cause) {
-      if (token === generation) failure = message(cause);
+      if (token === generation) mutation.error = message(cause);
     } finally {
       if (token === generation) loading = false;
     }
@@ -91,9 +92,12 @@
     lists = result.lists;
   }
   async function toggleList(list:typeof lists[number]){await save(()=>list.entryId&&!list.playlist?api(`lists/${list.id}/items`,{entryId:list.entryId},'DELETE'):api(`lists/${list.id}/items`,{mediaId:workId}),'List updated.');}
-  async function relationship(action:'collect'|'watchlist'|'favourite'){
-    if(!workId)return;const id=workId;const field=action==='collect'?'collected':action;const value=!relationships[field];
-    await save(()=>action==='collect'?api(`collection/${id}`,{collected:value}):api('tracking',{mediaId:id,action,value}),value?'Saved to Collection.':'Relationship removed. History is preserved.');
+  async function relationship(kind: Relationship) {
+    if (!workId) return;
+    const id = workId;
+    const previous = kind === 'queued' ? queued : relationships[kind];
+    await save(() => setRelationship(id, kind, !previous), kind === 'queued' ? 'Queue updated.'
+      : previous ? 'Relationship removed. History is preserved.' : 'Saved to Collection.');
   }
   async function listen(){if(workId)await save(()=>api(`music/${workId}/log`,{batchId:crypto.randomUUID()}),'Listen logged.');}
   function gameAction(action: 'start' | 'progress' | 'log') {
@@ -101,21 +105,7 @@
     if (action !== 'start' && playthrough) params.set('playthrough', playthrough.id);
     return `${item.href}?${params}`;
   }
-  async function save(task: () => Promise<unknown>, label: string) {
-    if (busy) return;
-    busy = true;
-    failure = '';
-    try {
-      await task();
-      await load();
-      await invalidateAll();
-      notifyAction(label);
-    } catch (cause) {
-      failure = message(cause);
-    } finally {
-      busy = false;
-    }
-  }
+  const save = mutation.run;
   async function favourite() {
     if (!music || !musicPath) return;
     const value = !music.favourite;
@@ -174,14 +164,20 @@
   {/if}
   {#if !loading && workId}
     <div class="menu-divider" role="separator"></div>
-    {#if item.kind==='track'||item.kind==='album'}<MenuAction icon="play" disabled={busy} onclick={()=>playMusic(workId!).catch(e=>failure=message(e))}>Play</MenuAction><MenuAction icon="clock" disabled={busy} onclick={listen}>Log {item.kind==='album'?'album':'listen'}</MenuAction>{/if}
-    <MenuAction icon="plus" checked={relationships.collected} disabled={busy} onclick={()=>relationship('collect')}>{relationships.collected?'Remove from':'Add to'} Collection</MenuAction>
-    <MenuAction icon="list" checked={relationships.watchlist} disabled={busy} onclick={()=>relationship('watchlist')}>{relationships.watchlist?'Remove from':'Save for'} later</MenuAction>
-    {#if storedGame||!music}<MenuAction icon="heart" checked={relationships.favourite} disabled={busy} onclick={()=>relationship('favourite')}>{relationships.favourite?'Remove from':'Add to'} favourites</MenuAction>{/if}
-    <MenuAction icon="list" checked={queued} disabled={busy} onclick={()=>save(()=>api('up-next',{mediaId:workId,queued:!queued}),'Queue updated.')}>{queued?'Remove from':'Add to'} queue</MenuAction>
+    {#if item.kind==='track'||item.kind==='album'}<MenuAction icon="play" disabled={busy} onclick={()=>playMusic(workId!).catch(e=>mutation.error = message(e))}>Play</MenuAction><MenuAction icon="clock" disabled={busy} onclick={listen}>Log {item.kind==='album'?'album':'listen'}</MenuAction>{/if}
+    <RelationshipActions disabled={busy} onchange={relationship} items={[
+      { kind: 'collected', value: relationships.collected, icon: 'plus', label: `${relationships.collected ? 'Remove from' : 'Add to'} Collection` },
+      { kind: 'watchlist', value: relationships.watchlist, icon: 'list', label: `${relationships.watchlist ? 'Remove from' : 'Save for'} later` },
+      ...(storedGame || !music ? [{ kind: 'favourite' as const, value: relationships.favourite, icon: 'heart' as const, label: `${relationships.favourite ? 'Remove from' : 'Add to'} favourites` }] : []),
+      { kind: 'queued', value: queued, icon: 'list', label: `${queued ? 'Remove from' : 'Add to'} queue` },
+    ]} />
+
     <Rating mediaId={workId} value={rating} menu onrated={value=>rating=value}/>
     <ContextMenu label="Lists" icon="list" panel disabled={busy}>
-      {#each lists as list}<MenuAction icon="list" checked={!!list.entryId&&!list.playlist} disabled={busy} onclick={()=>toggleList(list)}>{list.playlist?'Append to ':''}{list.name}</MenuAction>{:else}<MenuAction href="/lists">Create a list…</MenuAction>{/each}
+      <ListMembershipActions {lists} member={list => !!list.entryId} disabled={busy}
+        playlistIcon="list" playlistLabel="Append to" onchange={toggleList}>
+        {#snippet empty()}<MenuAction href="/lists">Create a list…</MenuAction>{/snippet}
+      </ListMembershipActions>
     </ContextMenu>
   {/if}
   {#if failure}<p class="menu-status notice error" role="alert">{failure}</p>
@@ -192,7 +188,7 @@
   .menu-status {
     max-width: 260px;
     padding: 8px 12px;
-    font-size: 12px;
+    font-size: var(--text-sm);
     color: var(--muted);
   }
 </style>

@@ -105,10 +105,10 @@
     flex: 1;
   }
   .toast h3 {
-    font-size: 11px;
+    font-size: var(--text-sm);
   }
   .toast p {
-    font-size: 10px;
+    font-size: var(--text-sm);
     margin-top: 5px;
   }
   .toast .icon-button {

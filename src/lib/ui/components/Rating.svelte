@@ -138,9 +138,9 @@
     border: 0;
     background: transparent;
     padding: 0;
-    font-size: 24px;
-    line-height: 1;
-    color: rgb(255 255 255 / 55%);
+    font-size: var(--text-2xl);
+    line-height: var(--leading-solid);
+    color: color-mix(in srgb, var(--white) 55%, transparent);
   }
   .rating-star-outline,
   .rating-star-fill {
@@ -161,7 +161,7 @@
     clip-path: inset(0 calc(100% - var(--star-fill)) 0 0);
   }
   .rating-star-preview .rating-star-fill {
-    color: white;
+    color: var(--ink);
   }
   .rating-star-selected .rating-star-fill {
     color: var(--rating);
@@ -174,7 +174,7 @@
     height: var(--icon-inline);
   }
   .rating-control {
-    font-size: 11px;
+    font-size: var(--text-sm);
     display: flex;
     align-items: center;
     gap: 8px;

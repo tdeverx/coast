@@ -6,12 +6,12 @@ export interface ChartDatum {
   tone?: string;
 }
 export const chartTones = [
-  '#f1f3f7',
-  '#b7bbc2',
-  '#858b94',
-  '#626973',
-  '#464d57',
-  '#353b44',
-  '#262c34',
+  'var(--ink)',
+  'var(--muted)',
+  'var(--quiet)',
+  'color-mix(in srgb, var(--quiet) 80%, var(--canvas))',
+  'color-mix(in srgb, var(--quiet) 60%, var(--canvas))',
+  'var(--line)',
+  'var(--surface-hover)',
 ];
 export const chartValue = (value: number) => (Number.isFinite(value) ? Math.max(0, value) : 0);

@@ -19,7 +19,6 @@ export const collectionOptionsSchema = v.object({
   availability: v.optional(v.picklist(['all', 'available', 'partial', 'unavailable', 'unknown', 'ready']), 'all'),
   source: v.optional(v.union([v.literal('all'), v.pipe(v.string(), v.uuid())]), 'all'),
 });
-export type CollectionOptions = v.InferOutput<typeof collectionOptionsSchema>;
 export type AvailabilityState = 'available' | 'partial' | 'unavailable' | 'unknown';
 export type CollectionReason = { relationship: string; origin: 'direct' | 'inherited' | 'member-derived'; workId: string };
 export type WorkAssessment = { id: string; category: string; kind: string; title: string; reasons: CollectionReason[]; availability: AvailabilityState; stale: boolean; active: boolean; completed: boolean; dropped: boolean; nextId: string | null; releaseDate: string | null };

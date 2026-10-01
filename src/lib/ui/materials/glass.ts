@@ -3,29 +3,8 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export type LiquidGlassOptions = {
   variant?: GlassVariant;
-  renderer?: 'css' | 'native';
   enabled?: boolean;
-  force?: boolean;
-  refraction?: number;
-  depth?: number;
-  dispersion?: number;
-  radius?: number;
-  saturation?: number;
-  brightness?: number;
-  tint?: string;
-  fillOpacity?: number;
 };
-
-export const liquidGlassDefaults = {
-  refraction: 1,
-  depth: 30,
-  dispersion: 0.5,
-  radius: 2,
-  saturation: 1.2,
-  brightness: 1,
-  tint: '#000000',
-  fillOpacity: 0.05,
-} as const;
 
 let filterSequence = 0;
 const clamp = (value: number, minimum: number, maximum: number) =>
@@ -117,7 +96,7 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     const options = typeof requested === 'boolean' ? { enabled: requested } : requested;
     const preset = glassPresets.materials[options.variant ?? 'clear'];
     return {
-      ...liquidGlassDefaults,
+      ...preset,
       refraction: preset.refraction,
       depth: preset.depth,
       dispersion: preset.dispersion,
@@ -147,7 +126,7 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       'bottom-inner-depth': `${surface.bottomInnerWidth}px`,
       'bottom-inner-opacity': `${surface.bottomInnerOpacity}%`,
       'bottom-inner-softness': `${surface.bottomInnerSoftness}px`,
-      shadow: `0 0 0 ${surface.strokeAlignment === 'external' ? surface.strokeWidth : 0}px color-mix(in srgb, ${surface.strokeColor} ${surface.strokeOpacity}%, transparent), ${surface.shadowOffsetX}px ${surface.shadowOffsetY}px 0.9375rem rgb(0 0 0 / ${surface.shadowOpacity}%)`,
+      shadow: `0 0 0 ${surface.strokeAlignment === 'external' ? surface.strokeWidth : 0}px color-mix(in srgb, ${surface.strokeColor} ${surface.strokeOpacity}%, transparent), ${surface.shadowOffsetX}px ${surface.shadowOffsetY}px 0.9375rem color-mix(in srgb, var(--canvas) ${surface.shadowOpacity}%, transparent)`,
     };
     for (const [key, value] of Object.entries(values)) {
       const property = `--coast-glass-${key}`;
@@ -168,11 +147,11 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     const options = settings();
     const enabled =
       nativeSupported &&
-      options.renderer !== 'css' &&
+      options.refraction > 0 &&
       options.enabled !== false &&
-      (options.force || document.querySelector('[data-coast-glass="on"]'));
+      document.querySelector('[data-coast-glass="on"]');
     if (!enabled) {
-      clearNative(!nativeSupported || options.renderer === 'css' ? 'css' : 'disabled');
+      clearNative(!nativeSupported || options.refraction === 0 ? 'css' : 'disabled');
       return;
     }
     const width = Math.round(node.offsetWidth),
