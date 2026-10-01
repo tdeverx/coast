@@ -240,7 +240,7 @@ export async function updateSyncPreferences(
   connectionId: string,
   input: unknown
 ) {
-  await connectionFor(userId, connectionId, 'trakt');
+  const {connection:expected}=await connectionFor(userId, connectionId, 'trakt');
   const sync = v.parse(
     v.object({
       history: v.boolean(),
@@ -250,16 +250,15 @@ export async function updateSyncPreferences(
       watchlist: v.boolean(),
       lists: v.boolean(),
       scrobble: v.boolean(),
+      liveRead: v.optional(v.boolean()),
     }),
     input
   ) as SyncPreferences;
-  const [connection] = await getDb()
-    .select()
-    .from(providerConnections)
-    .where(eq(providerConnections.id, connectionId));
-  await getDb()
-    .update(providerConnections)
-    .set({ settings: { ...connection.settings, sync }, updatedAt: new Date() })
-    .where(eq(providerConnections.id, connectionId));
+  const {liveRead,...preferences}=sync as SyncPreferences&{liveRead?:boolean};
+  await getDb().transaction(async tx=>{
+    const [current]=await tx.select().from(providerConnections).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId))).for('update');
+    if(!current||current.accountGeneration!==expected.accountGeneration||current.status!=='connected')throw new Error('The connected account changed. Reload before saving preferences.');
+    await tx.update(providerConnections).set({settings:sql`jsonb_set(${providerConnections.settings},'{sync}',${preferences}::jsonb,true) || ${liveRead===undefined?{}:{liveRead}}::jsonb`,updatedAt:new Date()}).where(eq(providerConnections.id,connectionId));
+  });
   return sync;
 }

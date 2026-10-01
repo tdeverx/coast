@@ -15,10 +15,12 @@ import {
   episodes,
 } from '../src/lib/server/db/schema';
 import { updateProfile } from '../src/lib/core/profile/service';
+import { streamGifAvatar } from '../src/lib/core/profile/gif-avatar.server';
 import { track } from '../src/lib/core/tracking/service';
 import { progressData } from '../src/lib/server/queries/progress';
 import { profileData, profileActivity, profileProgress } from '../src/lib/server/queries/profile';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
+const animatedAvatar = 'R0lGODlhAQABAIAAAP8AAAAA/yH/C05FVFNDQVBFMi4wAwEAAAAh+QQAFAAAACwAAAAAAQABAAACAkQBACH5BAAUAAAALAAAAAABAAEAAAICTAEAOw==';
 let owner: string,
   other: string,
   ids: string[] = [];
@@ -204,6 +206,25 @@ run(
     expect((await profileData(owner)).background).toBeNull();
   }
 );
+
+run('GIF avatars preserve all frames, enforce visibility and remove replaced files', async () => {
+  const input = {action:'edit',displayName:'Animated avatar',bio:'',avatar:'data:image/gif;base64,'+animatedAvatar};
+  const saved = await updateProfile(owner,input);
+  expect(saved.avatar).toMatch(new RegExp(`^/api/v1/profile/avatar/${owner}/[a-f0-9]{64}$`));
+  const hash = saved.avatar!.split('/').at(-1)!;
+  const response = await streamGifAvatar(owner,hash,owner);
+  expect(response.headers.get('content-type')).toBe('image/gif');
+  expect(Buffer.from(await response.arrayBuffer())).toEqual(Buffer.from(animatedAvatar,'base64'));
+  await expect(streamGifAvatar(owner,hash,other)).rejects.toThrow('private');
+  await expect(streamGifAvatar(owner,hash,null)).rejects.toThrow('private');
+  await expect(updateProfile(other,{...input,avatar:saved.avatar})).rejects.toThrow();
+  expect((await updateProfile(owner,{...input,avatar:saved.avatar,bio:'Still animated'})).avatar).toBe(saved.avatar);
+  const tooLarge=Buffer.concat([Buffer.from(animatedAvatar,'base64'),Buffer.alloc(5*1024*1024)]);
+  await expect(updateProfile(owner,{...input,avatar:'data:image/gif;base64,'+tooLarge.toString('base64')})).rejects.toThrow('5 MB');
+  await expect(updateProfile(owner,{...input,avatar:'data:image/gif;base64,PHN2Zz4='})).rejects.toThrow('valid GIF');
+  await updateProfile(owner,{...input,avatar:null});
+  await expect(streamGifAvatar(owner,hash,owner)).rejects.toThrow('not found');
+});
 
 run('periods align history, totals, genres and ratings without changing favourites', async () => {
   const old = new Date('2000-01-01T12:00:00Z');

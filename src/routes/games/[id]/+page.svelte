@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto, invalidateAll, replaceState } from '$app/navigation';
   import { page } from '$app/state';
+  import {setContext} from 'svelte';
   import { untrack } from 'svelte';
   import { randomId } from '$lib/diagnostics';
   import { api, message } from '$lib/ui/client';
@@ -21,8 +22,11 @@
   import ContextMenu from '$lib/ui/components/ContextMenu.svelte';
   import MenuAction from '$lib/ui/components/MenuAction.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
+  import RecommendAction from '$lib/ui/components/RecommendAction.svelte';
+  import ReactionActions from '$lib/ui/components/ReactionActions.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   let { data } = $props();
+  setContext('profile-read-only',()=>!page.data.user);
   const overview = $derived(overviewPanels(data.item.overview,gameFacts(data.item)));
   let busy = $state(false), failure = $state('');
   let startOpen = $state(false), progressOpen = $state(false), sessionOpen = $state(false);
@@ -98,12 +102,13 @@
 </script>
 <svelte:head><title>{data.item.title} · Games · Coast</title></svelte:head>
 <MediaPage details item={gameHero(data.item)}>
-    {#snippet heroActions()}
+    {#snippet heroActions()}{#if page.data.user}
       <Button variant="ghost" href="/games" icon="left">Games</Button>
       {#if loggingAllowed}<Button variant="hero" icon="plus" disabled={busy} onclick={openSession}>Log a play session</Button>
       {:else if playthrough && playthrough.status !== 'completed'}<Button variant="hero" icon="play" disabled={busy} onclick={() => update('in-progress')}>Resume playthrough</Button>
       {:else}<Button variant="hero" icon="plus" disabled={busy} onclick={() => openStart(!!playthrough)}>Start {playthrough ? 'replaying' : 'playthrough'}</Button>{/if}
       <ContextMenu label="Game actions" disabled={busy}>
+        <RecommendAction workId={data.item.id} disabled={busy} /><ReactionActions targetId={data.item.id} disabled={busy} />
         <MenuAction icon="plus" keepOpen={false} onclick={() => openStart(!!playthrough)}>Start another playthrough</MenuAction>
         {#if playthrough}
           <MenuAction icon="clock" keepOpen={false} onclick={openProgress}>Update progress…</MenuAction>
@@ -115,7 +120,7 @@
         {/if}
         {#if identity && data.sources.length}<MenuAction icon="refresh" keepOpen={false} onclick={refresh}>Refresh metadata</MenuAction>{/if}
       </ContextMenu>
-    {/snippet}
+    {:else}<Button href="/login" variant="hero">Sign in to track</Button>{/if}{/snippet}
 
 
   {#if failure && !startOpen && !progressOpen && !sessionOpen}<div class="notice error" role="alert">{failure}</div>{/if}

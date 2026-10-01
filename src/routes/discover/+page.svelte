@@ -6,8 +6,10 @@
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Button from '$lib/ui/components/Button.svelte';
+  import {setContext} from 'svelte';
   import { page } from '$app/state';
   let { data } = $props();
+  setContext('profile-read-only',()=>!page.data.user);
   const section = $derived(page.url.searchParams.get('section'));
   const featured = $derived(
     (data.trending.length ? data.trending : data.items).filter(isHeroTitle).slice(0, 5)

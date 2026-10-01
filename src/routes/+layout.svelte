@@ -76,7 +76,7 @@
   class:watching
 >
   <PersistentPlayer /><MediaHero mode="player" />
-  {#if data.user}<Header
+  {#if data.user || data.publicRead}<Header
       user={data.user}
       unread={data.notifications.filter((notification) => !notification.readAt).length}
     />{/if}

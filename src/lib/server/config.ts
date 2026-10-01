@@ -5,6 +5,7 @@ import { getSql } from './db';
 import { requireAdmin, type SessionUser } from './auth';
 
 export const configSchema = v.object({
+  siteAccess: v.optional(v.picklist(['private','public-read-only']),'private'),
   experimentalFeatures: v.boolean(),
   jellyfinAutoCreateUsers: v.boolean(),
   jellyfinSyncAdmins: v.boolean(),
@@ -27,6 +28,7 @@ export const configSchema = v.object({
 });
 export type CoastConfig = v.InferOutput<typeof configSchema>;
 export const defaultConfig: CoastConfig = {
+  siteAccess:'private',
   experimentalFeatures: false,
   jellyfinAutoCreateUsers: false,
   jellyfinSyncAdmins: false,

@@ -1,6 +1,7 @@
 <script lang="ts">
   import MediaDetailRows from '$lib/ui/components/MediaDetailRows.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
+  import {setContext} from 'svelte';
   import { page } from '$app/state';
   import { playMedia } from '$lib/playback/client.svelte';
   import { change, message } from '$lib/ui/client';
@@ -13,6 +14,7 @@
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   let { data } = $props();
+  setContext('profile-read-only',()=>!page.data.user);
   let enriched = $state<Awaited<typeof data.enhancement> | null>(null);
   const view = $derived(enriched ?? data);
   const section = $derived(page.url.searchParams.get('section'));

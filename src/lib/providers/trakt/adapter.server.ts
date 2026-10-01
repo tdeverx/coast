@@ -129,10 +129,10 @@ export class TraktAdapter {
   }
   async profile() {
     const data = v.parse(
-      v.object({ user: v.object({ username: v.string(), ids: v.object({ uuid: v.string(), slug: v.optional(v.string()) }) }) }),
+      v.object({ user: v.object({ username: v.string(), ids: v.object({ uuid: v.string(), slug: v.optional(v.string()) }), images:v.optional(v.object({avatar:v.optional(v.object({full:v.nullish(v.string())}))})) }) }),
       await this.call('/users/settings')
     );
-    return { id: data.user.ids.uuid, username: data.user.username, slug: data.user.ids.slug };
+    return { id: data.user.ids.uuid, username: data.user.username, slug: data.user.ids.slug, avatar:data.user.images?.avatar?.full??null };
   }
   async read(
     category: Exclude<SyncCategory, 'lists' | 'scrobble'>,
@@ -355,6 +355,17 @@ export class TraktAdapter {
       }
     }
   }
+  async watching() {
+    const raw=await this.call('/users/me/watching?extended=full');
+    return raw===null?null:v.parse(v.object({started_at:v.pipe(v.string(),v.isoTimestamp()),expires_at:v.pipe(v.string(),v.isoTimestamp()),action:v.string(),type:v.picklist(['movie','episode']),movie:v.nullish(title),show:v.nullish(title),episode:v.nullish(episode)}),raw);
+  }
+  async checkin(kind:'movie'|'episode',traktIds:Record<string,string|number>) {
+    return v.parse(v.object({id:v.number(),watched_at:v.pipe(v.string(),v.isoTimestamp()),movie:v.nullish(title),show:v.nullish(title),episode:v.nullish(episode)}),await this.call('/checkin',{method:'POST',body:JSON.stringify({[kind]:{ids:traktIds},sharing:{twitter:false,tumblr:false,mastodon:false},app_version:'0.1.0'})}));
+  }
+  async cancelCheckin(){await this.call('/checkin',{method:'DELETE'});}
+  async recentHistory(since:string) {
+    return this.readPages(`/sync/history?extended=full&start_at=${encodeURIComponent(since)}`,raw=>v.parse(v.array(traktRecordSchema),raw));
+  }
   async scrobble(
     event: 'start' | 'pause' | 'stop',
     kind: 'movie' | 'episode',
@@ -363,7 +374,7 @@ export class TraktAdapter {
   ) {
     if (!Number.isFinite(progress) || progress < 0 || progress > 100)
       throw new Error('Invalid playback progress.');
-    await this.call(`/scrobble/${event}`, {
+    return this.call(`/scrobble/${event}`, {
       method: 'POST',
       body: JSON.stringify({ [kind]: { ids: traktIds }, progress, app_version: '0.1.0' }),
     });

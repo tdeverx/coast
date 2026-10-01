@@ -1,3 +1,4 @@
+import {profileVisibility,requireVisible} from '$lib/social/privacy.server';
 import { recordedWatches as watches } from '$lib/core/tracking/recorded-watches';
 import { libraryTrackingCondition } from './library';
 import { periodStart, type ProfilePeriod } from '$lib/profile/period';
@@ -53,16 +54,19 @@ export async function profileData(
   userId: string,
   input: unknown = {},
   now = new Date(),
-  viewerId = userId
+  viewerId: string | null = userId
 ) {
   const options = v.parse(profileOptionsSchema, input);
+  const visibility=await profileVisibility(userId,viewerId);
+  if(!Object.values(visibility).some(Boolean))throw new (await import('../security/errors')).AppError(404,'Profile not found.');
+  if(options.view!=='overview')await requireVisible(userId,viewerId,options.view==='history'?'activity':options.view,'screen');
   const db = getDb();
   const [user] = await db
     .select({ settings: s.users.settings })
     .from(s.users)
     .where(eq(s.users.id, userId));
-  const profile = user?.settings.profile ?? {};
-  const periodEvents = periodHistory(userId, options.period, now);
+  const profile = visibility.details ? user?.settings.profile ?? {} : {};
+  const periodEvents = sql`select * from (${periodHistory(userId, options.period, now)}) h where ${visibility.activity}`;
   const genreMatches = genreRows(periodEvents);
   const genreFilter = !options.genre
     ? sql`true`
@@ -75,6 +79,7 @@ export async function profileData(
     : sql`true`;
   const history = sql`select * from (${periodEvents}) p where ${genreFilter} and ${matching} and ${options.activityKind === 'all' ? sql`true` : sql`kind=${options.activityKind}`} and ${options.repeats ? sql`rewatched` : sql`true`}`;
   const ratingFilter = and(
+    sql`${visibility.ratings}`,
     eq(s.ratings.userId, userId),
     sql`${s.ratings.updatedAt} <= ${now.toISOString()}::timestamptz`,
     options.period === 'all'
@@ -85,8 +90,9 @@ export async function profileData(
   const dates = sql`${options.from || options.to ? sql`occurred_at_known` : sql`true`} and ${options.from ? sql`occurred_at >= (${options.from}::date::timestamp at time zone 'UTC')` : sql`true`} and ${options.to ? sql`occurred_at < ((${options.to}::date + interval '1 day') at time zone 'UTC')` : sql`true`}`;
   const favouriteFilter = and(
     eq(s.trackingState.userId, userId),
+    sql`${visibility.favourites}`,
     eq(s.trackingState.favourite, true),
-    options.scope === 'available' ? hasPermittedMediaSource(viewerId) : undefined,
+    options.scope === 'available' ? viewerId ? hasPermittedMediaSource(viewerId) : sql`false` : undefined,
     options.kind === 'movie'
       ? eq(s.media.kind, 'movie')
       : options.kind === 'show'
@@ -99,7 +105,7 @@ export async function profileData(
         favourites: sql<number>`count(*) filter (where ${s.trackingState.favourite})::int`,
       })
       .from(s.trackingState)
-      .where(eq(s.trackingState.userId, userId)),
+      .where(and(eq(s.trackingState.userId, userId),sql`${visibility.favourites}`)),
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(s.ratings)
@@ -213,6 +219,7 @@ export async function profileData(
     ])
   );
   return {
+    visibility,
     view: options.view,
     page,
     pages,
@@ -235,12 +242,12 @@ export async function profileData(
     ratedTitles: ratedItems.flatMap((row) => (byId.has(row.id) ? [byId.get(row.id)!] : [])),
     background: profile.backgroundMediaId ? (byId.get(profile.backgroundMediaId) ?? null) : null,
     totals: {
-      movies: historyCounts[0].movies,
-      episodes: historyCounts[0].episodes,
-      unique: historyCounts[0].unique,
-      watches: historyCounts[0].total,
-      favourites: counts.favourites,
-      rated: rated.count,
+      movies: visibility.insights?historyCounts[0].movies:0,
+      episodes: visibility.insights?historyCounts[0].episodes:0,
+      unique: visibility.insights?historyCounts[0].unique:0,
+      watches: visibility.insights?historyCounts[0].total:0,
+      favourites: visibility.insights?counts.favourites:0,
+      rated: visibility.insights?rated.count:0,
     },
     history: Array.from(events).flatMap((row) =>
       byId.has(row.id)
@@ -276,12 +283,15 @@ export async function profileData(
 export async function profileActivity(
   userId: string,
   now = new Date(),
-  period: ProfilePeriod = 'all'
+  period: ProfilePeriod = 'all',
+  viewerId: string | null = userId
 ) {
-  const history = periodHistory(userId, period, now);
+  await requireVisible(userId,viewerId,'insights','screen');
+  const visibility=await profileVisibility(userId,viewerId);
+  const history = sql`select * from (${periodHistory(userId, period, now)}) h where ${visibility.activity}`;
   const previousNow =
     period === 'all' ? undefined : new Date(Date.parse(periodStart(period, now)!) - 1);
-  const previousHistory = previousNow ? periodHistory(userId, period, previousNow) : null;
+  const previousHistory = previousNow ? sql`select * from (${periodHistory(userId,period,previousNow)}) h where ${visibility.activity}` : null;
   const [days, genres, ratings, seasonRows, previousRows] = await Promise.all([
     getDb().execute(
       sql`select to_char(occurred_at at time zone 'UTC','YYYY-MM-DD') as date, count(*) filter(where kind='movie')::int as movies,count(*) filter(where kind='episode')::int as episodes from (${history}) h where occurred_at_known group by 1 order by 1`
@@ -294,6 +304,7 @@ export async function profileActivity(
       .from(s.ratings)
       .where(
         and(
+          sql`${visibility.ratings}`,
           eq(s.ratings.userId, userId),
           sql`${s.ratings.updatedAt} <= ${now.toISOString()}::timestamptz`,
           period === 'all'
@@ -309,7 +320,7 @@ export async function profileActivity(
       where ep.season_id is not null and not ep.is_special
       group by ep.season_id having bool_and(t.watched) and bool_and(t.last_watched_at is not null)
       and count(*)=(select count(*) from episodes all_ep where all_ep.season_id=ep.season_id and not all_ep.is_special)
-    ) seasons where completed_at<=${now.toISOString()}::timestamptz and ${period === 'all' ? sql`true` : sql`completed_at>=(${periodStart(period, now)}::date::timestamp at time zone 'UTC')`}`),
+    ) seasons where ${visibility.activity} and completed_at<=${now.toISOString()}::timestamptz and ${period === 'all' ? sql`true` : sql`completed_at>=(${periodStart(period, now)}::date::timestamp at time zone 'UTC')`}`),
     previousHistory
       ? getDb().execute(
           sql`select count(*)::int as count from (${previousHistory}) p where occurred_at_known`

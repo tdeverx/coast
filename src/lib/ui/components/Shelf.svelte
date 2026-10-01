@@ -10,6 +10,7 @@
   import SequenceControl from './SequenceControl.svelte';
   import Button from './Button.svelte';
   import { page } from '$app/state';
+  import {api} from '$lib/ui/client';
   import AvailabilityToggle from './AvailabilityToggle.svelte';
   import { mediaTypeOptions } from '$lib/ui/filter-options';
   import RowFilter from './RowFilter.svelte';
@@ -66,6 +67,8 @@
     onpage?: (page: number) => void;
     pageUrl?: (page: number) => string;
   } = $props();
+  let socialActive=$state(false);
+  let social=$state<Record<string,{friends:{username:string;avatar?:string|null}[];total:number}>>({});
   const adapter = untrack(() => source ? createShelfSource(() => source!) : undefined);
   const filterMode = $derived(adapter?.filterBy ?? filterBy);
   const inputItems = $derived(adapter ? adapter.items as T[] : items);
@@ -78,6 +81,19 @@
   }), value => { availableOnly = value; });
   const displayItems = $derived(selection.items);
   const key = (item: T) => item.entryId ?? ('href' in item ? item.href : item.id);
+
+  $effect(()=>{
+    const ids=[...new Set(displayItems.map(item=>'workId' in item?item.workId??item.id:item.id).filter(id=>/^[0-9a-f-]{36}$/.test(id)))];
+    social={};if(!socialActive||!page.data.user||!ids.length)return;
+    const controller=new AbortController();
+    void (async()=>{
+      const batches=[];
+      for(let offset=0;offset<ids.length;offset+=60)batches.push(ids.slice(offset,offset+60));
+      const results=await Promise.all(batches.map(batch=>api<typeof social>(`social/works?ids=${batch.join(',')}`,undefined,'GET',{signal:controller.signal})));
+      if(!controller.signal.aborted)social=Object.assign({},...results);
+    })().catch(()=>{});
+    return ()=>controller.abort();
+  });
 
   const entries = $derived<{ key: string; item: T | JournalCard['item']; activity?: JournalCard['activity']; note?: JournalCard['note']; run?: JournalCard['run'] }[]>(
     journal ? journalCards(journal.runs, !!journal.selection).map(entry => entry) : displayItems.map(item => ({ key: key(item), item }))
@@ -130,11 +146,11 @@
   {#each adapter?.actions ?? [] as action}<Button variant="ghost" onclick={action.run}>{action.label}</Button>{/each}
   {@render actions?.()}
 {/snippet}
-<div use:lazyContent={{load: () => adapter?.load(), enabled: () => !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
+<div use:lazyContent={{load: () => {socialActive=true;if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
   {#snippet cards(style: MediaRowStyle)}
     {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
     {#each entries as entry (entry.key)}{@const item = entry.item}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'}>
-      <MediaCard {item} {...style}
+      <MediaCard {item} {...style} social={social['workId' in item?item.workId??item.id:item.id]}
         shape={!journal && rail.overrideShape === null && shape === undefined && adapter?.shape === undefined && ['album', 'track', 'game'].includes(item.kind) ? 'square' : style.shape} />
       {#if entry.run}<details class="journal-run">
         <summary>Show {entry.run.length} episodes</summary>

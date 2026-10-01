@@ -9,7 +9,7 @@ import {
   syncListValues,
   systemSettings,
 } from '$lib/server/db/schema';
-import { decideSync } from './values';
+import { decideSync, sameValue } from './values';
 import { enqueueInTransaction } from './changes';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -184,11 +184,14 @@ export async function acknowledgeProviderList(
   listId: string,
   value: ListValue
 ) {
-  await getDb()
-    .insert(syncListValues)
-    .values({ connectionId, listId, remote: value, agreed: value })
-    .onConflictDoUpdate({
-      target: [syncListValues.connectionId, syncListValues.listId],
-      set: { remote: value, agreed: value, updatedAt: new Date() },
+  await getDb().transaction(async tx => {
+    const [connection] = await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId));
+    if(!connection)throw new Error('Connection not found.');
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${connection.userId},0))`);
+    const local=await localListValue(tx,connection.userId,listId);
+    await tx.insert(syncListValues).values({connectionId,listId,remote:value,agreed:value}).onConflictDoUpdate({
+      target:[syncListValues.connectionId,syncListValues.listId],
+      set:{remote:value,agreed:value,...(sameValue(local,value)?{conflict:false}:{}),updatedAt:new Date()},
     });
+  });
 }

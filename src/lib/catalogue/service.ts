@@ -250,14 +250,14 @@ export async function ingestMetadata(
 export async function importTmdb(
   kind: DiscoverKind,
   id: string,
-  options: { includeEpisodes?: boolean; language?: string; region?: string } = {}
+  options: { includeEpisodes?: boolean; includeRecommendations?: boolean; language?: string; region?: string } = {}
 ) {
   const adapter = await getTmdb(options.language, options.region);
   if (!adapter) throw new Error('Configure TMDB in Settings to add global catalogue titles.');
-  const snapshot = await adapter.details(kind, id);
+  const snapshot = await adapter.details(kind, id, options.includeRecommendations !== false);
   const saved = await ingestMetadata(snapshot);
   const recommendations: (typeof mediaRelationships.$inferInsert)[] = [];
-  const relatedItems = await mapConcurrent(snapshot.recommendations ?? [], 4, (item) =>
+  const relatedItems = await mapConcurrent(options.includeRecommendations === false ? [] : snapshot.recommendations ?? [], 4, (item) =>
     ingestMetadata(item)
   );
   for (const [position, related] of relatedItems.entries()) {
@@ -361,10 +361,10 @@ async function refreshChildDetails(id: string, region: string) {
 }
 
 const sharedRefresh = singleFlight<Awaited<ReturnType<typeof importTmdb>>>();
-export function refreshMedia(id: string, region = 'GB') {
-  return sharedRefresh(`${id}:${region}`, () => refreshMediaNow(id, region));
+export function refreshMedia(id: string, region = 'GB', includeRecommendations = true) {
+  return sharedRefresh(`${id}:${region}:${includeRecommendations}`, () => refreshMediaNow(id, region, includeRecommendations));
 }
-async function refreshMediaNow(id: string, region = 'GB') {
+async function refreshMediaNow(id: string, region = 'GB', includeRecommendations = true) {
   const [identity] = await getDb()
     .select()
     .from(externalIds)
@@ -380,7 +380,7 @@ async function refreshMediaNow(id: string, region = 'GB') {
     return refreshChildDetails(id, region);
   if (!identity || (identity.mediaKind !== 'show' && identity.mediaKind !== 'movie'))
     throw new Error('This title has no refreshable TMDB identity.');
-  return importTmdb(identity.mediaKind, identity.externalId, { region });
+  return importTmdb(identity.mediaKind, identity.externalId, { region, includeRecommendations });
 }
 /** Refresh only a relevant detail page when its regional snapshot is missing or stale. */
 export async function ensureDetails(userId: string, id: string) {
@@ -458,9 +458,9 @@ export async function searchMedia(userId: string, query: string) {
   const items = await mediaViews(userId, { query: needle, availableFirst: true, limit: 101 });
   return { items: items.slice(0, 100), providerUnavailable, truncated: items.length > 100 };
 }
-export async function discoverMedia(userId: string) {
+export async function discoverMedia(userId: string | null) {
   const tmdb = await getTmdb();
-  const adapter = tmdb || (await seerrDiscovery(userId));
+  const adapter = tmdb || (userId ? await seerrDiscovery(userId) : null);
   let providerUnavailable = false;
   const trending: string[] = [],
     recent: string[] = [];

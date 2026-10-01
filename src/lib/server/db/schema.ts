@@ -36,6 +36,7 @@ export type ProfileSettings = {
   favouriteOrder?: string[];
 };
 export type UserSettings = {
+  social?: import('../../social/model').SocialSettings;
   profile?: ProfileSettings;
   shareDemand?: boolean;
   listenThreshold?: number;
@@ -709,6 +710,7 @@ export const notifications = pgTable(
     level: text('level').$type<'silent' | 'normal' | 'persistent'>().notNull().default('normal'),
     locked: boolean('locked').notNull().default(false),
     sourceKey: text('source_key'),
+    data: jsonb('data').$type<import('../../social/model').NotificationData>(),
     readAt: timestamp('read_at', { withTimezone: true }),
     dismissedAt: timestamp('dismissed_at', { withTimezone: true }),
     createdAt: createdAt(),
@@ -997,3 +999,58 @@ export const collectionProjectionPreviews = pgTable('collection_projection_previ
   approved: boolean('approved').notNull().default(false),
   createdAt: createdAt(),
 });
+
+
+export const friendships = pgTable('friendships', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userA: uuid('user_a').notNull().references(() => users.id, {onDelete:'cascade'}),
+  userB: uuid('user_b').notNull().references(() => users.id, {onDelete:'cascade'}),
+  requestedBy: uuid('requested_by').notNull().references(() => users.id, {onDelete:'cascade'}),
+  state: text('state').notNull().default('pending'),
+  createdAt: createdAt(), updatedAt: updatedAt(),
+}, t => [uniqueIndex('friendships_pair_unique').on(t.userA,t.userB),check('friendships_pair_order',sql`${t.userA}<${t.userB}`),check('friendships_state',sql`${t.state} in ('pending','accepted','declined','cancelled','removed')`)]);
+export const socialActivity = pgTable('social_activity', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id,{onDelete:'cascade'}),
+  workId: uuid('work_id').notNull().references(() => works.id,{onDelete:'cascade'}),
+  eventKind: text('event_kind').notNull(), section: text('section').notNull(),
+  source: text('source').notNull(), sourceKey: text('source_key').notNull(),
+  batchKey: text('batch_key'), dateKnown: boolean('date_known').notNull().default(true),
+  occurredAt: timestamp('occurred_at', {withTimezone:true}).notNull().defaultNow(), createdAt: createdAt(),
+}, t=>[uniqueIndex('social_activity_source_unique').on(t.userId,t.sourceKey),index('social_activity_feed_idx').on(t.userId,t.occurredAt,t.id)]);
+export const socialReactions = pgTable('social_reactions', {
+  userId: uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),
+  targetKind: text('target_kind').notNull(), targetId: uuid('target_id').notNull(), emoji:text('emoji').notNull(),updatedAt:updatedAt(),
+},t=>[primaryKey({columns:[t.userId,t.targetKind,t.targetId]}),check('social_reaction_kind',sql`${t.targetKind} in ('work','activity')`),check('social_reaction_emoji',sql`${t.emoji} in ('❤️','😂','😮','😢','🔥')`)]);
+export const socialRecommendations = pgTable('social_recommendations', {
+  id:uuid('id').primaryKey().defaultRandom(), senderId:uuid('sender_id').notNull().references(()=>users.id,{onDelete:'cascade'}),
+  recipientId:uuid('recipient_id').notNull().references(()=>users.id,{onDelete:'cascade'}),workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),
+  state:text('state').notNull().default('pending'),createdAt:createdAt(),updatedAt:updatedAt(),
+},t=>[uniqueIndex('social_recommendation_pending_unique').on(t.senderId,t.recipientId,t.workId).where(sql`${t.state}='pending'`),check('social_recommendation_state',sql`${t.state} in ('pending','saved','dismissed')`)]);
+export const socialCheckins = pgTable('social_checkins',{
+  id:uuid('id').primaryKey().defaultRandom(),userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),
+  workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),state:text('state').notNull().default('active'),
+  expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),createdAt:createdAt(),updatedAt:updatedAt(),
+},t=>[uniqueIndex('social_checkin_active_unique').on(t.userId).where(sql`${t.state}='active'`),check('social_checkin_state',sql`${t.state} in ('active','cancelled','completed')`)]);
+export const socialLiveState = pgTable('social_live_state',{
+  connectionId:uuid('connection_id').primaryKey().references(()=>providerConnections.id,{onDelete:'cascade'}),
+  accountGeneration:uuid('account_generation').notNull(),workId:uuid('work_id').references(()=>works.id,{onDelete:'set null'}),
+  remoteId:text('remote_id'),expiresAt:timestamp('expires_at',{withTimezone:true}),checkedAt:timestamp('checked_at',{withTimezone:true}).notNull().defaultNow(),historyCursor:timestamp('history_cursor',{withTimezone:true}),
+});
+export const socialLiveDeliveries=pgTable('social_live_deliveries',{
+ connectionId:uuid('connection_id').notNull().references(()=>providerConnections.id,{onDelete:'cascade'}),
+ checkinId:uuid('checkin_id').notNull().references(()=>socialCheckins.id,{onDelete:'cascade'}),
+ accountGeneration:uuid('account_generation').notNull(),remoteId:text('remote_id'),remoteStartedAt:timestamp('remote_started_at',{withTimezone:true}),
+ state:text('state').notNull().default('uncertain'),updatedAt:updatedAt(),
+},t=>[primaryKey({columns:[t.connectionId,t.checkinId]})]);
+
+/** Completion evidence survives outbox housekeeping and is scoped to the actual account. */
+export const socialScrobbleDeliveries = pgTable('social_scrobble_deliveries', {
+  connectionId: uuid('connection_id').notNull().references(() => providerConnections.id, {onDelete:'cascade'}),
+  sessionId: uuid('session_id').notNull(),
+  workId: uuid('work_id').notNull().references(() => works.id, {onDelete:'cascade'}),
+  accountGeneration: uuid('account_generation').notNull(),
+  remoteId: text('remote_id'),
+  state: text('state').notNull().default('uncertain'),
+  updatedAt: updatedAt(),
+}, t => [primaryKey({columns:[t.connectionId,t.sessionId]})]);

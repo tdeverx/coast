@@ -49,7 +49,7 @@
         title={data.recommendations.title}
         href="/for-you?section=recommendations"
         items={data.recommendations.items}
-      filterBy="type" />{/if}<Shelf title="From your library" items={data.library} href="/library" filterBy="type" />{#each homeShelves(data.mediaRows, true) as source}<Shelf {source} />{/each}{#if data.hero}<div class="section row">
+      filterBy="type" />{/if}<Shelf source={{type:"social"}} /><Shelf title="From your library" items={data.library} href="/library" filterBy="type" />{#each homeShelves(data.mediaRows, true) as source}<Shelf {source} />{/each}{#if data.hero}<div class="section row">
         <Button variant="ghost" icon="plus" onclick={() => (addOpen = true)}>Add a title</Button
         ><Button variant="ghost" href="/lists" icon="list">Your lists</Button>
       </div>{/if}

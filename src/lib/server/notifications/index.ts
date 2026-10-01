@@ -1,6 +1,6 @@
 import { diagnosticStore } from '../diagnostics';
 import * as v from 'valibot';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNull,sql } from 'drizzle-orm';
 import { getDb, getSql } from '../db';
 import { notifications } from '../db/schema';
 import { getConfig } from '../config';
@@ -15,11 +15,13 @@ export interface NotificationInput {
   level?: 'silent' | 'normal' | 'persistent';
   locked?: boolean;
   sourceKey?: string;
+  data?: import('../../social/model').NotificationData;
 }
 export async function notify(input: NotificationInput, database = getSql()) {
   const config = await getConfig(database);
   const [user] = await database`SELECT settings FROM users WHERE id = ${input.userId}`;
   if (!user) return;
+  if (input.data && user.settings?.social?.notifications?.[input.kind] === false) return;
   const maySilence = config.allowNotificationSilencing && !input.locked;
   const userLevel = user.settings?.notificationsSilenced
     ? 'silent'
@@ -30,9 +32,9 @@ export async function notify(input: NotificationInput, database = getSql()) {
       : input.level || config.notificationLevel;
   const level = input.locked && requestedLevel === 'silent' ? 'normal' : requestedLevel;
   const [row] =
-    await database`INSERT INTO notifications (user_id, kind, title, body, level, locked, source_key)
-    VALUES (${input.userId}, ${input.kind}, ${input.title.slice(0, 160)}, ${input.body?.slice(0, 2000) || null}, ${level}, ${input.locked || false}, ${input.sourceKey || null})
-    ON CONFLICT (user_id, source_key) DO UPDATE SET title = EXCLUDED.title, body = EXCLUDED.body, level = EXCLUDED.level, locked = EXCLUDED.locked
+    await database`INSERT INTO notifications (user_id, kind, title, body, level, locked, source_key, data)
+    VALUES (${input.userId}, ${input.kind}, ${input.title.slice(0, 160)}, ${input.body?.slice(0, 2000) || null}, ${level}, ${input.locked || false}, ${input.sourceKey || null}, ${input.data??null}::jsonb)
+    ON CONFLICT (user_id, source_key) DO UPDATE SET title = EXCLUDED.title, body = EXCLUDED.body, level = EXCLUDED.level, locked = EXCLUDED.locked, data = EXCLUDED.data
     RETURNING id`;
   return row.id as string;
 }
@@ -40,12 +42,13 @@ export async function notify(input: NotificationInput, database = getSql()) {
 export async function resolveNotification(userId: string, sourceKey: string, database = getSql()) {
   await database`DELETE FROM notifications WHERE user_id = ${userId} AND source_key = ${sourceKey}`;
 }
-export async function inbox(actor: SessionUser | null, limit = 50) {
+export async function inbox(actor: SessionUser | null, limit = 50,filters:{kind?:string;unread?:boolean}={}) {
   const user = requireUser(actor);
-  return getDb()
+  const rows = await getDb()
     .select({
       id: notifications.id,
       kind: notifications.kind,
+      data: notifications.data,
       title: notifications.title,
       body: notifications.body,
       level: notifications.level,
@@ -54,9 +57,10 @@ export async function inbox(actor: SessionUser | null, limit = 50) {
       createdAt: notifications.createdAt,
     })
     .from(notifications)
-    .where(and(eq(notifications.userId, user.id), isNull(notifications.dismissedAt)))
+    .where(and(eq(notifications.userId, user.id), isNull(notifications.dismissedAt),sql`social_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data})`,filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread?isNull(notifications.readAt):undefined))
     .orderBy(desc(notifications.createdAt))
     .limit(Math.max(1, Math.min(200, limit)));
+  return rows;
 }
 export async function markNotification(
   actor: SessionUser | null,

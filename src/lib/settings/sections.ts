@@ -2,6 +2,7 @@
 export const personalSettings = [
   ['appearance', 'Appearance'],
   ['playback', 'Playback'],
+  ['privacy','Privacy & social'],
   ['account', 'Account'],
   ['connections', 'Connections'],
   ['pending', 'Sync conflicts'],
@@ -20,6 +21,7 @@ export const settingsTitles: Record<string, string> = Object.fromEntries(setting
 export const settingsDescriptions: Record<string, string> = {
   appearance: 'Choose how Coast displays your library and optional notifications.',
   playback: 'Set subtitle and music listening preferences for your next playback session.',
+  privacy:'Choose who can see your profile and activity, and which social notifications you receive.',
   account: 'Review your account, change your password and restore preferences.',
   connections: 'Link your personal service accounts and choose what they sync.',
   pending: 'Review conflicting changes before they replace your saved tracking data.',
@@ -32,6 +34,7 @@ export const settingsDescriptions: Record<string, string> = {
 };
 
 export const preferenceFields = {
+  privacy:['social'],
   appearance: ['shareDemand', 'fullWidth', 'originalTitles', 'region', 'notificationsSilenced'],
   playback: ['listenThreshold', 'subtitlesAlways', 'subtitleLanguages', 'subtitlePrompt'],
   connections: ['syncConflictWinner'],
@@ -47,6 +50,7 @@ export const policyGroups = [
 ] as const;
 
 export const policyFields = [
+  'siteAccess',
   'experimentalFeatures',
   'sessionLifetimeDays',
   'playbackDelivery',

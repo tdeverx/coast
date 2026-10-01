@@ -1,4 +1,7 @@
 <script lang="ts">
+  import {page as route} from '$app/state';
+  import {api} from '$lib/ui/client';
+  import Heading from './Heading.svelte';
   import type { Snippet } from 'svelte';
   import type { MediaView } from '$lib/ui/types';
   import type { HeroItem } from '$lib/ui/heroes/presentation.svelte';
@@ -34,6 +37,15 @@
     class?: string;
   } = $props();
   const hasHero = $derived(hero && (collection ? heroTitleIds(collection.items).length > 0 : !!item || items.length > 0));
+  let friendDetails=$state<{userId:string;username:string;rating:number|null;watched:boolean;progress:number}[]>([]);
+  let friendTotal=$state(0);
+  const socialWork=$derived(item ? ('workId' in item ? item.workId??item.id : item.id) : '');
+  $effect(()=>{
+    const id=socialWork;friendDetails=[];friendTotal=0;if(!route.data.user||!/^[0-9a-f-]{36}$/.test(id))return;
+    const controller=new AbortController();
+    void api<Record<string,{friends:typeof friendDetails;total:number}>>(`social/works?ids=${id}`,undefined,'GET',{signal:controller.signal}).then(result=>{friendDetails=result[id]?.friends??[];friendTotal=result[id]?.total??0;}).catch(()=>{});
+    return ()=>controller.abort();
+  });
 </script>
 
 {#snippet actionControls()}
@@ -52,6 +64,7 @@
     {#snippet actions()}<RowFeedback error={section.error} retry={section.retry} />{/snippet}
     {#snippet empty()}{#if !section.error && section.empty}<EmptyState {...section.empty} icon="library" />{/if}{/snippet}
   </Shelf>{/each}
+  {#if friendDetails.length}<section class="section"><Heading title="Friends on this title" /><div class="row">{#each friendDetails as friend}<Button variant="ghost" href={`/profile/${encodeURIComponent(friend.username)}`}>{friend.username}{friend.rating!==null?` · ${friend.rating} stars`:''}{friend.watched?' · Completed':friend.progress?' · In progress':''}</Button>{/each}{#if friendTotal>friendDetails.length}<span class="small quiet">+{friendTotal-friendDetails.length} more friends</span>{/if}</div></section>{/if}
   {@render children?.()}
 </div>
 <style>

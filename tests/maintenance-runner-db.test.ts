@@ -169,19 +169,20 @@ run('permanent provider failures require attention without endless retry', async
   });
 });
 run(
-  'Trakt separates selected tracking from lists and skips accounts with no import categories',
+  'Trakt separates tracking, lists and live reads; import opt-outs do not disable live presence',
   async () => {
     const result = await scheduleProviderMaintenance({ instanceId: instances[2] });
-    expect(result.queued).toBe(2);
+    expect(result.queued).toBe(3);
     const jobs =
       await getSql()`SELECT kind FROM outbox_actions WHERE connection_id = ${connections[3]}`;
     expect(jobs.map((job: { kind: string }) => job.kind).sort()).toEqual([
       'trakt.import',
       'trakt.lists-import',
+      'trakt.live',
     ]);
     await getSql()`DELETE FROM outbox_actions WHERE connection_id = ${connections[3]}`;
     await getSql()`UPDATE provider_connections SET settings = '{"sync":{"scrobble":true}}'::jsonb WHERE id = ${connections[3]}`;
-    expect((await runProviderJob(users[0], instances[2])).queued).toBe(0);
+    expect((await runProviderJob(users[0], instances[2])).queued).toBe(1);
   }
 );
 run(
@@ -195,7 +196,7 @@ run(
         libraryConnectionId: connections[2],
       })
     ).rejects.toThrow('Choose a connected account');
-    expect((await runProviderJob(users[0], instances[0], 'users')).queued).toBe(2);
+    expect((await runProviderJob(users[0], instances[0], 'users')).queued).toBe(1);
     let jobs =
       await getSql()`SELECT kind FROM outbox_actions WHERE connection_id IN (${connections[0]}, ${connections[1]})`;
     expect(jobs.every((job: { kind: string }) => job.kind === 'jellyfin.sync')).toBe(true);
@@ -206,3 +207,9 @@ run(
     await expect(runProviderJob(users[0], instances[1], 'library')).rejects.toThrow('unavailable');
   }
 );
+run('concurrent account requests cannot queue the same service task twice', async()=>{
+ const ids=await Promise.all(Array.from({length:12},(_,i)=>queue(i%2,'jellyfin.sync')));
+ expect(new Set(ids).size).toBe(1);
+ const actions=await getSql()`select id from outbox_actions where kind='jellyfin.sync' and connection_id in (${connections[0]},${connections[1]}) and state in ('pending','running')`;
+ expect(actions).toHaveLength(1);
+});

@@ -47,6 +47,7 @@ export async function enqueueAction(input: {
   )
     throw new AppError(400, 'Invalid external action.');
   return getSql().begin(async (sql) => {
+    if (maintenanceKinds.includes(input.kind)) await sql`SELECT pg_advisory_xact_lock(hashtextextended('provider-maintenance',0))`;
     await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.userId}:${input.connectionId || 'local'}`}, 0))`;
     if (input.connectionId) {
       const [connection] =
@@ -55,7 +56,14 @@ export async function enqueueAction(input: {
     }
     if (maintenanceKinds.includes(input.kind)) {
       const [existing] =
-        await sql`SELECT id FROM outbox_actions WHERE user_id = ${input.userId} AND connection_id IS NOT DISTINCT FROM ${input.connectionId || null}::uuid AND kind = ${input.kind} AND state IN ('pending','running','failed') LIMIT 1`;
+        await sql`SELECT a.id FROM outbox_actions a LEFT JOIN provider_connections c ON c.id=a.connection_id
+          WHERE a.kind=${input.kind} AND (
+            (a.user_id=${input.userId} AND a.connection_id IS NOT DISTINCT FROM ${input.connectionId||null}::uuid AND a.state IN ('pending','running','failed')) OR
+            (a.state IN ('pending','running') AND (
+              (${input.connectionId||null}::uuid IS NOT NULL AND c.instance_id=(SELECT instance_id FROM provider_connections WHERE id=${input.connectionId||null}::uuid)) OR
+              (${input.kind}='tmdb.refresh' AND a.payload->>'instanceId'=${typeof input.payload.instanceId==='string'?input.payload.instanceId:null})
+            ))
+          ) LIMIT 1`;
       if (existing) return existing.id;
     }
     if (input.compactionKey) {
@@ -133,7 +141,7 @@ export async function claimNextAction(): Promise<OutboxAction | null> {
       WHERE id = (
         SELECT candidate.id FROM outbox_actions candidate
         LEFT JOIN provider_connections connection ON connection.id = candidate.connection_id
-        LEFT JOIN provider_instances instance ON instance.id = connection.instance_id
+        LEFT JOIN provider_instances instance ON instance.id = connection.instance_id OR (candidate.kind = 'tmdb.refresh' AND instance.provider = 'tmdb' AND instance.id::text = candidate.payload->>'instanceId')
         WHERE candidate.state = 'pending' AND candidate.next_attempt_at <= NOW()
           AND (instance.settings->>'jobsRetryAt' IS NULL OR (instance.settings->>'jobsRetryAt')::timestamptz <= NOW())
           AND NOT EXISTS (SELECT 1 FROM outbox_actions earlier
@@ -142,10 +150,10 @@ export async function claimNextAction(): Promise<OutboxAction | null> {
             AND (earlier.kind NOT IN ${sql(maintenanceKinds)} OR earlier.state = 'running' OR
               (candidate.kind IN ${sql(maintenanceKinds)} AND earlier.state = 'pending' AND earlier.next_attempt_at <= NOW())))
           AND (candidate.kind NOT IN ${sql(serviceTraversalKinds)} OR NOT EXISTS (
-            SELECT 1 FROM outbox_actions busy JOIN provider_connections busy_connection ON busy_connection.id = busy.connection_id
-            WHERE busy_connection.instance_id = connection.instance_id AND busy.kind IN ${sql(serviceTraversalKinds)} AND busy.state = 'running'))
+            SELECT 1 FROM outbox_actions busy LEFT JOIN provider_connections busy_connection ON busy_connection.id = busy.connection_id
+            WHERE (busy_connection.instance_id = instance.id OR (busy.kind = 'tmdb.refresh' AND busy.payload->>'instanceId' = instance.id::text)) AND busy.kind IN ${sql(serviceTraversalKinds)} AND busy.state = 'running'))
         ORDER BY candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
-      ) RETURNING *, (SELECT instance_id FROM provider_connections WHERE id = connection_id) AS instance_id`;
+      ) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind='tmdb.refresh' AND provider='tmdb' AND id::text=payload->>'instanceId')) AS instance_id`;
     return row
       ? {
           id: row.id,
@@ -355,7 +363,7 @@ export async function listActions(actor: SessionUser | null) {
         processed?: number;
         total?: number | null;
         phase?: string;
-      } | null>`case when ${outboxActions.kind}='jellyfin.library' and (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} then ${providerInstances.settings}->'libraryScan' when ${outboxActions.kind}='jellyfin.sync' and (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} then ${providerConnections.settings}->'userSync' else null end`,
+      } | null>`case when ${outboxActions.kind}='tmdb.refresh' and (${providerInstances.settings}->'metadataScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} then ${providerInstances.settings}->'metadataScan' when ${outboxActions.kind}='jellyfin.library' and (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} then ${providerInstances.settings}->'libraryScan' when ${outboxActions.kind}='jellyfin.sync' and (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} then ${providerConnections.settings}->'userSync' else null end`,
       instanceId: providerInstances.id,
       provider: providerInstances.provider,
       updatedAt: outboxActions.updatedAt,
@@ -373,7 +381,7 @@ export async function listActions(actor: SessionUser | null) {
     .from(outboxActions)
     .innerJoin(users, eq(users.id, outboxActions.userId))
     .leftJoin(providerConnections, eq(providerConnections.id, outboxActions.connectionId))
-    .leftJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
+    .leftJoin(providerInstances, sql`${providerInstances.id}=${providerConnections.instanceId} or (${outboxActions.kind}='tmdb.refresh' and ${providerInstances.provider}='tmdb' and ${providerInstances.id}::text=${outboxActions.payload}->>'instanceId')`)
     .where(inArray(outboxActions.id, ids))
     .orderBy(
       sql`case when ${outboxActions.state} in ('running', 'pending', 'failed') then 0 else 1 end`,
@@ -396,7 +404,15 @@ export async function cancelAction(actor: SessionUser | null, id: string) {
 }
 export async function retryAction(actor: SessionUser | null, id: string) {
   const user = requireAdmin(actor);
-  const [row] =
-    await getSql()`UPDATE outbox_actions SET state = 'pending', next_attempt_at = NOW(), updated_at = NOW() WHERE id = ${id} AND (user_id = ${user.id} OR ${user.role === 'admin'}) AND state IN ('pending', 'failed') RETURNING id`;
-  if (!row) throw new AppError(409, 'This action cannot be retried.');
+  await getSql().begin(async sql=>{
+    await sql`SELECT pg_advisory_xact_lock(hashtextextended('provider-maintenance',0))`;
+    const [action]=await sql`select a.*,coalesce(c.instance_id::text,a.payload->>'instanceId') as instance from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id=${id}`;
+    if(!action)throw new AppError(409,'This action cannot be retried.');
+    if(maintenanceKinds.includes(action.kind)&&action.instance){
+      const [busy]=await sql`select a.id from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id<>${id} and a.kind=${action.kind} and a.state in ('pending','running') and coalesce(c.instance_id::text,a.payload->>'instanceId')=${action.instance} limit 1`;
+      if(busy)throw new AppError(409,'This task is already queued or running for this service.');
+    }
+    const [row]=await sql`UPDATE outbox_actions SET state='pending',next_attempt_at=NOW(),updated_at=NOW() WHERE id=${id} AND (user_id=${user.id} OR ${user.role==='admin'}) AND state IN ('pending','failed') RETURNING id`;
+    if(!row)throw new AppError(409,'This action cannot be retried.');
+  });
 }

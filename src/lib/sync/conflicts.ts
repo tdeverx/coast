@@ -1,5 +1,5 @@
 import { resolveListConflict, localListValue } from './list-values';
-import { applySyncValue, localSyncValue, valueCategories, type ValueCategory } from './values';
+import { applySyncValue, localSyncValue, valueCategories, decideSync, sameValue, type ValueCategory } from './values';
 import { enqueueSyncValueInTransaction, enqueueInTransaction } from './changes';
 import * as v from 'valibot';
 import { and, eq, isNull, desc, sql } from 'drizzle-orm';
@@ -128,6 +128,45 @@ export async function getPendingConflicts(userId: string) {
       localValue: undefined,
     })),
   ];
+}
+/** Reclassify saved observations only; never import state or write to a provider. */
+export async function refreshConflictStatus(userId:string) {
+  return getDb().transaction(async tx=>{
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
+    const entries=await tx.select({entry:syncValues}).from(syncValues)
+      .innerJoin(providerConnections,eq(providerConnections.id,syncValues.connectionId))
+      .where(and(eq(providerConnections.userId,userId),eq(syncValues.conflict,true))).limit(100);
+    let cleared=0;
+    for(const {entry} of entries){
+      if(!valueCategories.includes(entry.category as ValueCategory))continue;
+      const local=await localSyncValue(tx,userId,entry.mediaId,entry.category as ValueCategory);
+      const decision=decideSync(local,entry.remote,entry);
+      if(decision!=='agree'&&decision!=='local')continue;
+      await tx.update(syncValues).set({conflict:false,agreed:decision==='agree'?local:entry.agreed,updatedAt:new Date()}).where(eq(syncValues.id,entry.id));
+      cleared++;
+    }
+    const listEntries=await tx.select({entry:syncListValues}).from(syncListValues)
+      .innerJoin(providerConnections,eq(providerConnections.id,syncListValues.connectionId))
+      .where(and(eq(providerConnections.userId,userId),eq(syncListValues.conflict,true))).limit(100);
+    for(const {entry} of listEntries){
+      const local=await localListValue(tx,userId,entry.listId);
+      if(!sameValue(local,entry.remote))continue;
+      await tx.update(syncListValues).set({conflict:false,agreed:local,updatedAt:new Date()}).where(eq(syncListValues.id,entry.id));
+      cleared++;
+    }
+    return cleared;
+  });
+}
+/** Repair only imported completions held by the obsolete episode-order warning. */
+export async function repairImportedOrderReviews(userId:string) {
+  const events=await getDb().select({id:trackingEvents.id}).from(trackingEvents).where(and(
+    eq(trackingEvents.userId,userId),eq(trackingEvents.action,'watch'),eq(trackingEvents.applied,false),
+    isNull(trackingEvents.reviewedAt),sql`${trackingEvents.source} in ('jellyfin','trakt')`,
+    eq(trackingEvents.reviewReason,'Earlier episodes are still unwatched. Mark this episode watched anyway?')
+  )).orderBy(trackingEvents.occurredAt,trackingEvents.createdAt).limit(100);
+  let repaired=0;
+  for(const event of events)if(!(await resolveConflict(userId,event.id,'accepted')).alreadyReviewed)repaired++;
+  return repaired;
 }
 /** Accept appends an acknowledged event; ignore preserves Coast and the original evidence. */
 export async function resolveConflict(

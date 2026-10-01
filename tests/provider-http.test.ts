@@ -1,6 +1,7 @@
 import { addListItem, createList, getList, deleteList } from '../src/lib/core/lists/service';
 import { restartPlaylist, sequenceEntries } from '../src/lib/core/lists/sequence';
 import { track } from '../src/lib/core/tracking/service';
+import {profileAvatarChoices,providerProfileAvatar} from '../src/lib/core/profile/avatars.server';
 import { streamArtwork } from '../src/lib/providers/artwork.server';
 import { verifyTraktIdentity } from '../src/lib/providers/trakt/connection.server';
 import { afterAll, beforeAll, test, expect } from 'bun:test';
@@ -71,6 +72,7 @@ let server: ReturnType<typeof Bun.serve>,
   traktConnectionId: string;
 let scanMode: 'normal' | 'broken' | 'empty' = 'normal';
 let productName = 'Jellyfin Server';
+let avatarGif = false;
 let requestCalls = 0;
 let seerrOffline = false;
 const externalRequests: Record<string, unknown>[] = [];
@@ -197,6 +199,7 @@ beforeAll(async () => {
               ? { Items: [], TotalRecordCount: 2 }
               : { Items: [], TotalRecordCount: 0 }
         );
+      if(path==='/Users/fixture-user/Images/Primary')return new Response(Buffer.from(avatarGif?'R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7':'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6j1sAAAAASUVORK5CYII=','base64'),{headers:{'Content-Type':avatarGif?'image/gif':'image/png'}});
       if (path === '/Items/abc123/Images/Logo/0')
         return new Response(new TextEncoder().encode('RIFF0000WEBP'), {
           headers: { 'Content-Type': 'image/webp' },
@@ -367,6 +370,25 @@ afterAll(async () => {
       .where(inArray(providerInstances.id, [instanceId, seerrId, traktInstanceId]));
   if (mediaId) await getDb().delete(media).where(eq(media.id, mediaId));
   if (dataDir) await rm(dataDir, { recursive: true, force: true });
+});
+run('connected profile icons are imported only for their owner without exposing tokens',async()=>{
+ expect((await profileAvatarChoices(actorId)).some(choice=>choice.id===connectionId)).toBe(true);
+ const response=await providerProfileAvatar(actorId,connectionId,new Request('http://coast.test/profile-icon'));
+ expect(response.headers.get('content-type')).toBe('image/png');expect(response.headers.get('cache-control')).toBe('private, no-store');
+ expect(new Uint8Array(await response.arrayBuffer()).slice(0,4)).toEqual(new Uint8Array([137,80,78,71]));
+ const before=seenPaths.length;
+ await expect(providerProfileAvatar(otherId,connectionId,new Request('http://coast.test/profile-icon'))).rejects.toThrow('not found');
+ expect(seenPaths).toHaveLength(before);
+});
+run('Jellyfin GIF profile icons survive its WebP conversion bypass',async()=>{
+ avatarGif=true;
+ try{
+  const response=await providerProfileAvatar(actorId,connectionId,new Request('http://coast.test/profile-icon'));
+  expect(response.headers.get('content-type')).toBe('image/gif');
+  expect(response.headers.get('cache-control')).toBe('private, no-store');
+  const bytes=await response.arrayBuffer();
+  expect(Buffer.from(bytes).toString('ascii',0,6)).toBe('GIF89a');
+ }finally{avatarGif=false;}
 });
 run('Jellyfin artwork always fetches upstream and never creates a disk cache', async () => {
   const before = seenPaths.filter((path) => path.includes('/Images/')).length;

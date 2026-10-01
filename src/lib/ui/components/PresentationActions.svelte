@@ -11,6 +11,8 @@
   import ContextMenu from './ContextMenu.svelte';
   import MenuAction from './MenuAction.svelte';
   import Rating from './Rating.svelte';
+  import RecommendAction from './RecommendAction.svelte';
+  import ReactionActions from './ReactionActions.svelte';
   let { item }: { item: MediaCardPresentation } = $props();
   let menu = $state<ContextMenu>();
   let music = $state<MusicItem>();
@@ -125,6 +127,7 @@
   <MenuAction icon="arrow" href={item.href}
     >Open {item.kind === 'game' ? 'game' : item.kind}</MenuAction
   >
+  {#if workId}<RecommendAction {workId} disabled={busy||loading} /><ReactionActions targetId={workId} disabled={busy||loading} />{/if}
   {#if storedGame}<MenuAction icon="plus" href={gameAction('start')}
       >Start {playthrough ? 'another ' : ''}playthrough…</MenuAction
     >{/if}

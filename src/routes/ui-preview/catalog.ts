@@ -45,12 +45,15 @@ export const components = [
   'Rating',
   'RelationshipActions',
   'RequestDialog',
+  'RecommendAction',
+  'ReactionActions',
   'RowFeedback',
   'RowFilter',
   'RowStyleMenu',
   'SegmentedControl',
   'SequenceControl',
   'Shelf',
+  'SocialControls',
 ] as const;
 
 export const referenceSections = [

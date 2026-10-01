@@ -91,6 +91,7 @@
     lists: false,
     scrobble: false,
   };
+  let liveRead=$state(untrack(()=>provider.connection?.settings.liveRead!==false));
   let reconcileTracking=$state(untrack(()=>provider.connection?.settings.reconcileTracking===true));
   let importPlayback = $state(
     untrack(() => provider.connection?.settings.importPlayback !== false)
@@ -100,6 +101,7 @@
     const key = `${provider.connection?.id}:${provider.connection?.status}:${provider.connection?.accountGeneration}`;
     if (key === initialized) return;
     initialized = key;
+    liveRead=provider.connection?.settings.liveRead!==false;
     importPlayback = provider.connection?.settings.importPlayback !== false;
     reconcileTracking = provider.connection?.settings.reconcileTracking === true;
     sync = {
@@ -225,6 +227,7 @@
         <div><Button variant="secondary" disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/reconciliation`,{enabled:reconcileTracking},'Reconciliation preference saved.')}>Save reconciliation preference</Button></div>
       </div>{/if}
     {#if provider.provider === 'trakt'}<div class="sync-options">
+        <label class="check"><input type="checkbox" bind:checked={liveRead} disabled={busy} />Read live watching activity</label>
         {#each Object.entries(labels) as [key, label]}<label class="check"
             ><input type="checkbox" bind:checked={sync[key]} disabled={busy} />{label}</label
           >{/each}
@@ -234,7 +237,7 @@
           variant="secondary"
           disabled={busy}
           onclick={() =>
-            action(`providers/${provider.connection!.id}/sync`, sync, 'Sync preferences saved.')}
+            action(`providers/${provider.connection!.id}/sync`, {...sync,liveRead}, 'Sync preferences saved.')}
           >Save sync preferences</Button
         >
       </div>

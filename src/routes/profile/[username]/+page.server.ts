@@ -6,9 +6,9 @@ import { profilePath } from '$lib/profile/url';
 import { AppError } from '$lib/server/security/errors';
 import { error, redirect } from '@sveltejs/kit';
 import { profileData, profileActivity, profileOptionsSchema } from '$lib/server/queries/profile';
-import { requireUser } from '$lib/server/auth';
+import {profileVisibility} from '$lib/social/privacy.server';
 export const load = (async ({ locals, url, params }) => {
-  const viewer = requireUser(locals.user);
+  const viewer = locals.user;
   let user;
   try {
     user = await profileUser(params.username);
@@ -35,15 +35,18 @@ export const load = (async ({ locals, url, params }) => {
   if (parsed.output.from && parsed.output.to && parsed.output.from > parsed.output.to)
     error(400, 'The start date must be before the end date.');
   const { view } = parsed.output;
+  const visibility=await profileVisibility(user.id,viewer?.id??null);
+  if(!Object.values(visibility).some(Boolean))error(404,'Profile not found.');
+  if(view==='history'&&!visibility.activity||view==='ratings'&&!visibility.ratings||view==='favourites'&&!visibility.favourites)error(404,'Profile section not found.');
   const activity =
-    view === 'overview'
-      ? profileActivity(user.id, new Date(), parsed.output.period).catch(() => null)
+    view === 'overview' && visibility.insights
+      ? profileActivity(user.id, new Date(), parsed.output.period,viewer?.id??null).catch(() => null)
       : Promise.resolve(null);
   return {
-    ...(await profileData(user.id, parsed.output, new Date(), viewer.id)),
+    ...(await profileData(user.id, parsed.output, new Date(), viewer?.id??null).catch(cause=>{if(cause instanceof AppError)error(cause.status,cause.message);throw cause;})),
     username: user.username,
-    isOwner: user.id === viewer.id,
+    isOwner: user.id === viewer?.id,
     activity,
-    mediaRows: view === 'overview' && user.id === viewer.id ? await mediaRows(true) : null,
+    mediaRows: view === 'overview' && user.id === viewer?.id ? await mediaRows(true) : null,
   };
 }) satisfies PageServerLoad;

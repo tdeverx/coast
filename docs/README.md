@@ -7,9 +7,12 @@
 - [Behaviour](behaviour.md): tracking, metadata, playback and queue semantics.
 - [Canonical domain](domain-model.md): schema, transactions and read models.
 - [Collection and Library](collection.md): personal membership, user access, missing demand and Trakt projection.
+- [Background catalogue maintenance](catalogue-maintenance.md): missing user-linked TMDB records and shared metadata refresh.
+- [Sync conflict repair](sync-review.md): comparison fixes and the approved dev-data repair.
 - [Provider boundaries](providers.md): adapter behavior and verification limits.
 - [Music](music.md): persisted identities, browsing, listening, audio playback and verification limits.
 - [Games](games.md): metadata, shared relationships and private playthrough details.
+- [Social target and roadmap](social.md): first-pass implementation, privacy decisions and deferred social work.
 - [Future connector contract](connectors.md): proposed HTTP/webhook boundary; not implemented.
 - [Deployment](deployment.md): container, storage, accounts and recovery.
 - [Design](design.md): inherited visual language and UI composition.

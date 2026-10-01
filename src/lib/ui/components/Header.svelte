@@ -8,15 +8,15 @@
   import { player } from '$lib/playback/client.svelte';
   import { slidingPill } from '$lib/ui/materials/sliding-pill';
   import { liquidGlass } from '$lib/ui/materials/glass';
-  let { user, unread = 0 }: { user: { username: string; role: string }; unread?: number } =
+  let { user, unread = 0 }: { user: { username: string; role: string; settings?:import('$lib/server/db/schema').UserSettings } | null; unread?: number } =
     $props();
-  const nav: { label: string; href: string }[] = [
+  const nav = $derived(user ? [
     { label: 'For You', href: '/for-you' },
     { label: 'Collection', href: '/collection' },
     { label: 'Library', href: '/library' },
     { label: 'Discover', href: '/discover' },
     { label: 'Search', href: '/search' },
-  ];
+  ] : [{label:'Discover',href:'/discover'}]);
 </script>
 
 <a class="skip" href="#main-content">Skip to content</a>
@@ -25,7 +25,7 @@
   inert={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
 >
   <div class="header-inner content">
-    <a class="brand-home" href="/for-you" aria-label="Coast home"><Brand compact size={44} /></a>
+    <a class="brand-home" href={user?'/for-you':'/discover'} aria-label="Coast home"><Brand compact size={44} /></a>
     <nav
       use:liquidGlass
       use:slidingPill
@@ -40,15 +40,17 @@
         >{/each}
     </nav>
     <div class="account">
+      {#if user}
       <a
         class="icon-button notification"
         href="/notifications"
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
         ><Icon name="bell" size={21} />{#if unread}<i></i>{/if}</a
       ><ContextMenu label="Account menu"
-        >{#snippet trigger()}<span class="avatar">{user.username.slice(0, 1).toUpperCase()}</span
+        >{#snippet trigger()}<span class="avatar">{#if user.settings?.profile?.avatar}<img src={user.settings?.profile.avatar} alt="Your profile" />{:else}{user.username.slice(0, 1).toUpperCase()}{/if}</span
           >{/snippet}{#snippet children()}
           <MenuAction icon="user" href={profilePath(user.username)}>Your profile</MenuAction>
+          <MenuAction icon="user" href="/friends">Friends</MenuAction>
           <MenuAction icon="list" href="/lists">Your lists</MenuAction>
           <MenuAction icon="request" href="/requests">Requests</MenuAction>
           <div class="menu-divider" role="separator"></div>
@@ -63,6 +65,7 @@
             >
           </form>{/snippet}</ContextMenu
       >
+      {:else}<a class="button" href="/login">Sign in</a>{/if}
     </div>
   </div>
 </header>
@@ -118,6 +121,7 @@
     gap: 8px;
     align-items: center;
   }
+  .avatar img{width:28px;height:28px;border-radius:50%;object-fit:cover;display:block}
   .avatar {
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);

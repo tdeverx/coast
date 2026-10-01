@@ -1,3 +1,4 @@
+import {isPublicReadPath} from '$lib/social/public.server';
 import { context, logDiagnostic, classifyFailure, diagnosticStore } from '$lib/server/diagnostics';
 import { correlationId } from '$lib/diagnostics';
 import { isExperimentalPath } from '$lib/server/experimental';
@@ -38,7 +39,8 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     if (session.token) setSessionCookie(event.cookies, session.token, session.expiresAt, event.url);
   }
   event.locals.setup = await setupRequired();
-  const isPublic = ['/login', '/setup', '/recovery'].includes(event.url.pathname);
+  const config=await getConfig();
+  const isPublic = ['/login', '/setup', '/recovery'].includes(event.url.pathname) || (config.siteAccess==='public-read-only' && ['GET','HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname));
   if (!event.locals.user && !isPublic) {
     if (event.url.pathname.startsWith('/api/'))
       return json({ error: 'Your session has expired. Sign in to continue.' }, { status: 401 });
@@ -63,7 +65,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     'X-Frame-Options',
     event.locals.user?.role === 'admin' && event.url.pathname === '/ui-preview/demo' ? 'SAMEORIGIN' : 'DENY'
   );
-  if (event.locals.user) response.headers.set('Cache-Control', 'private, no-store');
+  response.headers.set('Cache-Control', 'private, no-store');
   return response;
 };
 

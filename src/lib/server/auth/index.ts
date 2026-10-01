@@ -1,3 +1,4 @@
+import { socialSettingsSchema } from '$lib/social/model';
 import * as v from 'valibot';
 import { asc, and, eq, sql } from 'drizzle-orm';
 import { getDb, getSql } from '../db';
@@ -303,6 +304,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
           v.literal('coast'),
           v.pipe(v.string(), v.uuid()),
         ]),
+        social: socialSettingsSchema,
         shareDemand: v.boolean(),
         listenThreshold: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
         fullWidth: v.boolean(),

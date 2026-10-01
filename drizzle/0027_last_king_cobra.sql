@@ -1,0 +1,1 @@
+ALTER TABLE "social_live_deliveries" ADD COLUMN "remote_started_at" timestamp with time zone;

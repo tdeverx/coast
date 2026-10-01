@@ -17,11 +17,14 @@
       ? [
           { key: 'libraryEnabled' as const, label: 'Shared library scans' },
           { key: 'userSyncEnabled' as const, label: 'User activity imports' },
+          { key: 'catalogueEnabled' as const, label: 'Discover user-linked titles' },
         ]
       : instance.provider === 'trakt'
         ? [
+            {key:'liveEnabled' as const,label:'Live activity checks'},
             { key: 'trackingEnabled' as const, label: 'Tracking imports' },
             { key: 'listsEnabled' as const, label: 'List imports' },
+            { key: 'catalogueEnabled' as const, label: 'Discover user-linked titles' },
           ]
         : []
   );
@@ -43,7 +46,7 @@
   }
 </script>
 
-{#if ['jellyfin', 'trakt', 'seerr'].includes(instance.provider)}
+{#if ['jellyfin', 'trakt', 'seerr', 'tmdb'].includes(instance.provider)}
   <div class="automation stack">
     <Heading title="Automatic work"
       >{#snippet actions()}<a class="small text-accent" href="/settings/jobs"

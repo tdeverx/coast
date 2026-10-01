@@ -167,12 +167,12 @@ export class TmdbAdapter implements MetadataProvider {
     );
     return data.results.map((x) => mapItem(x, kind, this.language, this.region));
   }
-  async details(kind: DiscoverKind, id: string): Promise<Metadata> {
+  async details(kind: DiscoverKind, id: string, includeRecommendations = true): Promise<Metadata> {
     const data = v.parse(
       detail,
       await this.request(
         this.path(`/3/${kind === 'show' ? 'tv' : 'movie'}/${encodeURIComponent(id)}`, {
-          append_to_response: `external_ids,videos,release_dates,content_ratings,images,recommendations,${kind === 'show' ? 'aggregate_credits' : 'credits'}`,
+          append_to_response: `external_ids,videos,release_dates,content_ratings,images,${includeRecommendations ? 'recommendations,' : ''}${kind === 'show' ? 'aggregate_credits' : 'credits'}`,
           include_image_language: `${this.language.split('-')[0]},en,null`,
         })
       )
