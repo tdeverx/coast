@@ -24,7 +24,6 @@
     onopen,
     panel = false,
     disabled = false,
-    danger = false,
   }: {
     label?: string;
     icon?: IconName;
@@ -37,7 +36,6 @@
     onopen?: () => void;
     panel?: boolean;
     disabled?: boolean;
-    danger?: boolean;
   } = $props();
   let root: HTMLDivElement;
   let triggerNode: HTMLButtonElement;
@@ -297,7 +295,6 @@
     type="button"
     hidden={hideTrigger}
     class={triggerClass}
-    class:menu-row-danger={danger}
     {disabled}
     role={parent ? 'menuitem' : undefined}
     aria-label={label}
@@ -319,7 +316,7 @@
   <div
     bind:this={surface}
     id={`${id}-menu`}
-    use:liquidGlass={{ variant: 'opaqueDark' }}
+    use:liquidGlass={{ variant: 'glassDark' }}
     class="menu-surface glass"
     class:menu-panel={panel}
     class:drill-hidden={childHidden}

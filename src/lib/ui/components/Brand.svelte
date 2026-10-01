@@ -16,9 +16,9 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    font-weight: 750;
-    letter-spacing: -0.045em;
-    font-size: 20px;
+    font-weight: var(--weight-bold);
+    letter-spacing: var(--tracking-tight);
+    font-size: var(--text-xl);
     color: var(--ink);
   }
 </style>

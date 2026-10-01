@@ -5,7 +5,7 @@
   import type {SourceImpact} from '$lib/collection/source-changes.server';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
-  import RowHeader from './RowHeader.svelte';
+  import Heading from './Heading.svelte';
   import ContextMenu from './ContextMenu.svelte';
   import MenuAction from './MenuAction.svelte';
   import ProviderAutomation from './ProviderAutomation.svelte';
@@ -91,13 +91,13 @@
 </script>
 
 <div class="stack form-width">
-  <RowHeader title="Integrations"
+  <Heading title="Integrations"
     >{#snippet actions()}<Button
         variant="ghost"
         disabled={busy}
         icon="plus"
         onclick={() => edit(null)}>Add integration</Button
-      >{/snippet}</RowHeader
+      >{/snippet}</Heading
   >
   <p class="small">
     <a class="text-accent" href="/settings/connections">Link your account in Connections</a>
@@ -105,7 +105,7 @@
   </p>
   {#if error && !open}<div class="notice error" role="alert">{error}</div>{/if}
   {#each providers as instance (instance.id)}<div class="panel stack">
-      <RowHeader title={instance.name}>
+      <Heading title={instance.name}>
         {#snippet filters()}<span class="badge">{instance.enabled ? 'Enabled' : 'Disabled'}</span
           >{/snippet}
         {#snippet actions()}<ContextMenu
@@ -122,7 +122,7 @@
               >{instance.enabled ? 'Disable integration' : 'Enable integration'}</MenuAction
             >
           </ContextMenu>{/snippet}
-      </RowHeader>
+      </Heading>
       <p class="small">{displayLabel(instance.provider)} · {instance.baseUrl}</p>
       <p class="small">
         {instance.enabled

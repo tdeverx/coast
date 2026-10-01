@@ -1,30 +1,28 @@
 <script lang="ts">
-  import MediaRows from '$lib/ui/components/MediaRows.svelte';
+  import { homeShelves } from '$lib/ui/shelves/home';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';
-  import CollectionPage from '$lib/ui/components/CollectionPage.svelte';
+  import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
   import { periodLabel, type ProfilePeriod } from '$lib/profile/period';
-  import ProgressShelf from '$lib/ui/components/ProgressShelf.svelte';
   import ProfileRecap from '$lib/ui/components/ProfileRecap.svelte';
   import ProfileFeatureEditor from '$lib/ui/components/ProfileFeatureEditor.svelte';
   import { api } from '$lib/ui/client';
-  import ContentRow from '$lib/ui/components/ContentRow.svelte';
-  import MediaTypePicker from '$lib/ui/components/MediaTypePicker.svelte';
-  import RowHeader from '$lib/ui/components/RowHeader.svelte';
+  import { mediaTypeOptions } from '$lib/ui/filter-options';
+  import RowFilter from '$lib/ui/components/RowFilter.svelte';
+  import Heading from '$lib/ui/components/Heading.svelte';
   import { untrack, setContext } from 'svelte';
   import { change, message } from '$lib/ui/client';
   import Shelf from '$lib/ui/components/Shelf.svelte';
+  import AvailabilityToggle from '$lib/ui/components/AvailabilityToggle.svelte';
   import MediaCard from '$lib/ui/components/MediaCard.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
-  import ProfileActivity from '$lib/ui/components/ProfileActivity.svelte';
+  import { profileActivityPanels, profileBreakdownPanels } from '$lib/ui/insights/profile';
   import ProfileEditor from '$lib/ui/components/ProfileEditor.svelte';
-  import ProfileBreakdowns from '$lib/ui/components/ProfileBreakdowns.svelte';
-  import LazyWatchJournal from '$lib/ui/components/LazyWatchJournal.svelte';
   let { data } = $props();
   const profileUrl = $derived('/profile/' + encodeURIComponent(data.username));
   setContext('profile-read-only', () => !data.isOwner);
@@ -239,8 +237,7 @@
   title={featureTitle}
   note={featureId === data.profile.featuredMediaId ? (data.profile.featuredNote ?? '') : ''}
 />
-{#snippet favouriteFilters()}<MediaTypePicker
-    compact
+{#snippet favouriteFilters()}<RowFilter options={mediaTypeOptions()}
     label="Favourites media type"
     value={favouriteKind}
     onchange={(kind) => chooseFavourites(kind)}
@@ -289,15 +286,13 @@
     href={layout === 'row' ? url('favourites') : undefined}
     {layout}
     busy={favouriteLoading}
-    availableOnly={favouriteAvailable}
-    onavailability={(available) => {
-      favouriteAvailable = available;
-      void chooseFavourites(favouriteKind);
-    }}
     pageNumber={favouriteData.page}
     pages={favouriteData.pages}
     onpage={layout === 'grid' ? (number) => chooseFavourites(favouriteKind, number) : undefined}
   >
+    {#snippet filters()}<AvailabilityToggle value={favouriteAvailable} onchange={available => {
+      favouriteAvailable = available; void chooseFavourites(favouriteKind);
+    }} />{/snippet}
     {#snippet controls()}{@render favouriteFilters()}{/snippet}
     {#snippet actions()}{#if data.isOwner}<Button
           variant="ghost"
@@ -315,8 +310,7 @@
 {/snippet}
 {#snippet activity(layout: 'row' | 'grid')}
   <section class="section">
-    {#snippet activityFilters()}<MediaTypePicker
-        compact
+    {#snippet activityFilters()}<RowFilter options={mediaTypeOptions()}
         label="Activity media type"
         bind:value={activityType}
         onchange={() => {
@@ -328,7 +322,7 @@
           }
         }}
       />{/snippet}
-    {#if layout === 'grid'}<RowHeader title="Activity" filters={activityFilters} />{/if}
+    {#if layout === 'grid'}<Heading title="Activity" filters={activityFilters} />{/if}
     {#if layout === 'grid' && data.filters.genre}<p class="small">
         Genre: {data.filters.genre === '__other__' ? 'Other genres' : data.filters.genre} · {periodLabel(
           data.filters.period
@@ -370,37 +364,28 @@
       </form>{/if}
     <div class="activity-preview">
       {#key data}{#key activityType}
-          <LazyWatchJournal
-            preview={layout === 'row'
+          <Shelf source={{ type: 'journal', preview: layout === 'row'
               ? { href: url('history'), filters: activityFilters }
-              : undefined}
-            {layout}
-            maxDays={layout === 'row' ? 1 : Infinity}
-            initial={layout === 'grid' &&
+              : undefined, layout: layout, maxDays: layout === 'row' ? 1 : Infinity, items: layout === 'grid' &&
             activityType ===
               (data.filters.activityKind === 'episode' ? 'show' : data.filters.activityKind)
               ? data.history
-              : []}
-            page={layout === 'grid' &&
+              : [], page: layout === 'grid' &&
             activityType ===
               (data.filters.activityKind === 'episode' ? 'show' : data.filters.activityKind)
               ? data.page
-              : 0}
-            pages={Math.max(1, data.pages)}
-            today={data.today}
-            filters={{
+              : 0, pages: Math.max(1, data.pages), today: data.today, filters: {
               ...data.filters,
               username: data.username,
               period: layout === 'row' ? 'all' : data.filters.period,
               activityKind: activityType === 'show' ? 'episode' : activityType,
-            }}
-          />
+            } }} />
         {/key}{/key}
     </div>
   </section>
 {/snippet}
 {#snippet statisticsRow(layout: 'row' | 'grid')}
-  <ContentRow
+  <Shelf
     title={data.isOwner ? 'Your activity, in perspective' : 'Activity, in perspective'}
     size="panel"
     {layout}
@@ -444,23 +429,17 @@
       {/snippet}
     </DetailCard>
     {#await insights.activity then activity}{#if activity}
-        <ProfileActivity {...activity} period={insightPeriod} {profileUrl} />
-        <ProfileBreakdowns
-          {profileUrl}
-          genres={activity.genres}
-          ratings={activity.ratings}
-          period={insightPeriod}
-        />
+        {#each [...profileActivityPanels(activity.days,activity.today,insightPeriod,profileUrl),
+          ...profileBreakdownPanels(activity.genres,activity.ratings,insightPeriod,profileUrl)] as panel}<DetailCard {...panel} />{/each}
       {:else}<DetailCard title="Activity unavailable">
           <Button variant="ghost" onclick={() => choosePeriod(insightPeriod)}>Retry</Button>
         </DetailCard>{/if}{/await}
-  </ContentRow>
+  </Shelf>
 {/snippet}
-<CollectionPage
+<MediaPage
   hero={data.view === 'favourites' || data.view === 'ratings'}
-  items={heroItems}
-  selection={`${data.view}:${favouriteKind}`}
-  busy={data.view === 'favourites' && favouriteLoading}
+  collection={{items:heroItems,selection:`${data.view}:${favouriteKind}`,busy:data.view === 'favourites' && favouriteLoading}}
+  context="home"
   class="profile"
 >
   {#if error}<p class="notice error" role="alert">{error}</p>{/if}
@@ -550,9 +529,9 @@
         </div>
       </section>{/if}
     {@render favourites('row')}
-    <ProgressShelf surface="profile" username={data.username} />
-    <ProgressShelf surface="watchlist" username={data.username} />
-    {#if data.mediaRows}<MediaRows rows={data.mediaRows} personal />{/if}
+    <Shelf source={{ type: 'progress', surface: "profile", username: data.username }} />
+    <Shelf source={{ type: 'progress', surface: "watchlist", username: data.username }} />
+    {#if data.mediaRows}{#each homeShelves(data.mediaRows, true) as source}<Shelf {source} />{/each}{/if}
     {@render activity('row')}
     {@render statisticsRow('row')}
   {:else}
@@ -564,7 +543,7 @@
           data.filters.period
         )}
       </p>
-      <Shelf availability={false} title="Rated titles" items={data.ratedTitles} layout="grid" />
+      <Shelf availability={false} title="Rated titles" items={data.ratedTitles} layout="grid" filterBy="type" />
       {#if !data.ratedTitles.length}<EmptyState
           icon="star"
           title="No ratings in this period."
@@ -579,7 +558,7 @@
         label={`${data.view} pages`}
       />{/if}
   {/if}
-</CollectionPage>
+</MediaPage>
 
 <style>
   .activity-preview {
@@ -602,7 +581,7 @@
     max-width: 560px;
     white-space: pre-wrap;
     overflow-wrap: anywhere;
-    line-height: 1.7;
+    line-height: var(--leading-relaxed);
     color: var(--muted);
     margin-bottom: 14px;
   }
@@ -666,7 +645,7 @@
   .backdrop > div {
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, #0003, transparent 25%, #0007 60%, #000 100%);
+    background: linear-gradient(180deg, color-mix(in srgb, var(--canvas) calc(51 / 255 * 100%), transparent), transparent 25%, color-mix(in srgb, var(--canvas) calc(119 / 255 * 100%), transparent) 60%, var(--canvas) 100%);
   }
   .profile-heading {
     display: flex;
@@ -681,10 +660,10 @@
     display: grid;
     place-items: center;
     border-radius: 50%;
-    border: 1px solid #ffffff28;
-    background: #ffffff10;
+    border: 1px solid color-mix(in srgb, var(--white) calc(40 / 255 * 100%), transparent);
+    background: color-mix(in srgb, var(--white) calc(16 / 255 * 100%), transparent);
     color: var(--muted);
-    font-size: 40px;
+    font-size: var(--text-2xl);
     overflow: hidden;
   }
   .avatar img {
@@ -697,7 +676,7 @@
   }
   .eyebrow,
   .handle {
-    font-size: 12px;
+    font-size: var(--text-sm);
     color: var(--muted);
   }
   .eyebrow {
@@ -717,8 +696,8 @@
     flex-wrap: wrap;
   }
   h2 {
-    font-size: var(--row-title-size);
-    font-weight: var(--row-title-weight);
+    font-size: var(--text-xl);
+    font-weight: var(--weight-bold);
   }
   .back {
     margin-bottom: 20px;
@@ -733,7 +712,7 @@
   .favourite-controls :global(.button) {
     min-height: 28px;
     padding: 4px 8px;
-    font-size: 12px;
+    font-size: var(--text-sm);
   }
   .favourite-controls .row {
     gap: 0;
@@ -762,7 +741,7 @@
     .avatar {
       width: 76px;
       height: 76px;
-      font-size: 30px;
+      font-size: var(--text-2xl);
     }
   }
 </style>

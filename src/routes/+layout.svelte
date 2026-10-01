@@ -7,7 +7,7 @@
   import NotificationToasts from '$lib/ui/components/NotificationToasts.svelte';
   import Header from '$lib/ui/components/Header.svelte';
   import PersistentPlayer from '$lib/ui/components/PersistentPlayer.svelte';
-  import HeroPlayer from '$lib/ui/components/HeroPlayer.svelte';
+  import MediaHero from '$lib/ui/components/MediaHero.svelte';
   import { player, pausePlayback } from '$lib/playback/client.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   let { data, children } = $props();
@@ -75,7 +75,7 @@
   class:audio-active={player.session?.mediaType === 'audio'}
   class:watching
 >
-  <PersistentPlayer /><HeroPlayer />
+  <PersistentPlayer /><MediaHero mode="player" />
   {#if data.user}<Header
       user={data.user}
       unread={data.notifications.filter((notification) => !notification.readAt).length}
@@ -136,7 +136,7 @@
     gap: 18px;
   }
   .session-notice p {
-    font-size: 11px;
+    font-size: var(--text-sm);
   }
   .session-notice :global(.button) {
     white-space: nowrap;

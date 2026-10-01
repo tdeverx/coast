@@ -1,48 +1,44 @@
 <script lang="ts">
+  import type { InsightContent } from '$lib/ui/insights/types';
+  import BarChart from './BarChart.svelte';
+  import BreakdownChart from './BreakdownChart.svelte';
+  import ProgressChart from './ProgressChart.svelte';
+  import FactList from './FactList.svelte';
+  import MetricGrid from './MetricGrid.svelte';
   import type { Snippet } from 'svelte';
-  let {
-    title,
-    description,
-    value,
-    unit,
-    textValue = false,
-    href,
-    children,
-    footer,
-  }: {
+  let { title, description, children, footer, content, footerText, footerLink }: {
+    content?: InsightContent;
+    footerText?: string;
+    footerLink?: {href:string;label:string;external?:boolean};
     title: string;
     description?: string;
-    value?: string;
-    unit?: string;
-    textValue?: boolean;
-    href?: string;
     children?: Snippet;
     footer?: Snippet;
   } = $props();
 </script>
 
-{#snippet content()}
+<section class="detail-card" aria-label={title}>
   <header>
     <h3>{title}</h3>
     {#if description}<p class="description">{description}</p>{/if}
   </header>
-  {#if value !== undefined}<p class="value" class:text-value={textValue}>
-      {value}{#if unit}<span class="unit">{unit}</span>{/if}
-    </p>{/if}
-  {#if children}<div class="body">{@render children()}</div>{/if}
-  {#if footer}<footer>{@render footer()}</footer>{/if}
-{/snippet}
-
-{#if href}<a class="detail-card" {href} target="_blank" rel="noreferrer" aria-label={title}
-    >{@render content()}</a
-  >
-{:else}<section class="detail-card" aria-label={title}>{@render content()}</section>{/if}
+  {#if children || content}<div class="body">
+    {#if content?.kind === 'bar'}<BarChart {...content.props} />
+    {:else if content?.kind === 'breakdown'}<BreakdownChart {...content.props} />
+    {:else if content?.kind === 'progress'}<ProgressChart {...content.props} />
+    {:else if content?.kind === 'facts'}<FactList {...content.props} />
+    {:else if content?.kind === 'metrics'}<MetricGrid {...content.props} />
+    {:else if content?.kind === 'text'}<p class:muted={content.muted}>{content.text}</p>
+    {:else}{@render children?.()}{/if}
+  </div>{/if}
+  {#if footer || footerText || footerLink}<footer>
+    {#if footer}{@render footer()}{:else}{footerText ?? ''}{#if footerLink}<a href={footerLink.href}
+      target={footerLink.external ? '_blank' : undefined} rel={footerLink.external ? 'noreferrer' : undefined}>{footerLink.label}</a>{/if}{/if}
+  </footer>{/if}
+</section>
 
 <style>
   .detail-card {
-    --detail-value-size: 28px;
-    --detail-value-weight: 650;
-    --detail-copy-size: 12px;
     position: relative;
     isolation: isolate;
     display: flex;
@@ -53,7 +49,7 @@
     margin: 0;
     padding: 24px;
     border-radius: 12px;
-    background: rgb(255 255 255 / 5%);
+    background: color-mix(in srgb, var(--white) 5%, transparent);
     color: var(--ink);
     scroll-snap-align: start;
     overflow-wrap: anywhere;
@@ -62,57 +58,30 @@
     content: '';
     position: absolute;
     inset: 0;
-    border: 1.5px solid rgb(255 255 255 / 50%);
+    border: 1.5px solid color-mix(in srgb, var(--white) 50%, transparent);
     border-radius: inherit;
     mix-blend-mode: overlay;
     pointer-events: none;
   }
-  a.detail-card {
-    transition: background var(--fast);
-  }
-  a.detail-card:hover,
-  a.detail-card:focus-visible {
-    background: rgb(255 255 255 / 8%);
-  }
   h3 {
     margin: 0;
-    font-size: 13px;
-    font-weight: 650;
-    line-height: 1.4;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-normal);
   }
   .description,
   footer {
     color: var(--muted);
-    font-size: 11px;
-    line-height: 1.6;
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
   }
   .description {
     margin: 6px 0 0;
   }
-  .value {
-    margin: 0;
-    font-size: var(--detail-value-size);
-    font-weight: var(--detail-value-weight);
-    line-height: 1.2;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.025em;
-  }
-  .text-value {
-    font-size: 18px;
-    line-height: 1.4;
-    letter-spacing: -0.015em;
-  }
-  .unit {
-    margin-left: 6px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--muted);
-    letter-spacing: normal;
-  }
   .body {
     min-width: 0;
-    font-size: var(--detail-copy-size);
-    line-height: 1.6;
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
   }
   footer {
     margin-top: auto;
@@ -120,11 +89,6 @@
   @media (max-width: 600px) {
     .detail-card {
       padding: 20px;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    a.detail-card {
-      transition: none;
     }
   }
 </style>

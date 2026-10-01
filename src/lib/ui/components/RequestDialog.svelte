@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import type { MediaView } from '$lib/ui/types';
   import { api, change, message } from '$lib/ui/client';
   import Dialog from './Dialog.svelte';
@@ -77,7 +78,9 @@
     if (open) {
       item.id;
       seasonNumber;
-      void load();
+      options;
+      initial4k;
+      untrack(() => void load());
     }
     return () => {
       generation++;

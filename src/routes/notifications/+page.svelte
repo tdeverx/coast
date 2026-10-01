@@ -1,5 +1,5 @@
 <script lang="ts">
-  import PageHeader from '$lib/ui/components/PageHeader.svelte';
+  import Heading from '$lib/ui/components/Heading.svelte';
   import { change, message } from '$lib/ui/client';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Button from '$lib/ui/components/Button.svelte';
@@ -10,7 +10,7 @@
 
 <svelte:head><title>Notifications · Coast</title></svelte:head>
 <div class="content page">
-  <PageHeader title="Notifications" description="Updates from your connected services and Coast." />
+  <Heading variant="page" title="Notifications" description="Updates from your connected services and Coast." />
   {#if error}<div class="notice error" role="alert">{error}</div>{/if}{#if data.inbox.length}<div
       class="inbox"
     >
@@ -64,11 +64,11 @@
     display: flex;
     gap: 20px;
     padding: 24px 18px;
-    border-bottom: 1px solid var(--line-soft);
+    border-bottom: 1px solid var(--line);
     align-items: flex-start;
   }
   .inbox article.unread {
-    background: #b3c6ff05;
+    background: color-mix(in srgb, var(--accent) calc(5 / 255 * 100%), transparent);
   }
   .notification-copy {
     flex: 1;
@@ -80,14 +80,14 @@
     padding: 2px;
   }
   .inbox h3 {
-    font-size: 13px;
+    font-size: var(--text-sm);
   }
   .inbox p {
-    font-size: 11px;
+    font-size: var(--text-sm);
     margin: 6px 0 9px;
   }
   .inbox small {
-    font-size: 9px;
+    font-size: var(--text-sm);
   }
   @media (max-width: 600px) {
     .inbox article {

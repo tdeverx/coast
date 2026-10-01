@@ -58,7 +58,6 @@ export const traktRecordSchema = v.object({
   ),
 });
 export type TraktRecord = v.InferOutput<typeof traktRecordSchema>;
-export type TraktTokens = v.InferOutput<typeof tokens>;
 export class TraktAdapter {
   constructor(
     private request: ProviderTransport,

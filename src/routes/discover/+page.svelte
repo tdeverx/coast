@@ -1,6 +1,6 @@
 <script lang="ts">
-  import MediaRows from '$lib/ui/components/MediaRows.svelte';
-  import PageHeader from '$lib/ui/components/PageHeader.svelte';
+  import { homeShelves } from '$lib/ui/shelves/home';
+  import Heading from '$lib/ui/components/Heading.svelte';
   import { isHeroTitle } from '$lib/media/hero';
   import MediaHero from '$lib/ui/components/MediaHero.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
@@ -31,11 +31,11 @@
             ? data.trending
             : data.items}
         layout="grid"
-      />{/key}
+      filterBy="type" />{/key}
   {:else}
     {#if data.providerUnavailable}<div class="notice">
         Discovery is temporarily unavailable. Your saved titles are still here.
-      </div>{/if}{#if !featured.length}<PageHeader
+      </div>{/if}{#if !featured.length}<Heading variant="page"
         title="Discover"
         description="Find your next movie or show."
       />
@@ -53,11 +53,11 @@
       title="Trending now"
       href="/discover?section=trending"
       items={data.trending.length ? data.trending : data.items}
-    /><Shelf
+    filterBy="type" /><Shelf
       href="/discover?section=recent"
       title="Recently released"
       items={data.recent}
-    /><MediaRows rows={data.mediaRows} />{#if featured.length}<p
+    filterBy="type" />{#each homeShelves(data.mediaRows) as source}<Shelf {source} />{/each}{#if featured.length}<p
         class="small quiet"
         style="margin-top:50px"
       >

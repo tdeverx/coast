@@ -107,7 +107,7 @@
     overflow: visible;
   }
   path {
-    stroke: #0d0d0d;
+    stroke: color-mix(in srgb, var(--canvas) 95%, var(--ink));
     stroke-width: 2px;
     transition: opacity var(--fast);
   }
@@ -126,16 +126,16 @@
     pointer-events: none;
   }
   .centre strong {
-    font-size: 26px;
-    font-weight: 650;
-    line-height: 1.1;
+    font-size: var(--text-2xl);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-tight);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.03em;
+    letter-spacing: var(--tracking-tight);
   }
   .centre span {
-    font-size: 10px;
+    font-size: var(--text-sm);
     color: var(--muted);
-    line-height: 1.3;
+    line-height: var(--leading-normal);
   }
   ul {
     flex: 1;
@@ -157,7 +157,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 11px;
+    font-size: var(--text-sm);
     min-height: 24px;
   }
   a:hover .label {
@@ -181,7 +181,7 @@
     width: 30px;
     text-align: right;
     color: var(--quiet);
-    font-size: 10px;
+    font-size: var(--text-sm);
   }
   @media (prefers-reduced-motion: reduce) {
     path {

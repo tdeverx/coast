@@ -20,7 +20,7 @@
     grid-template-columns: minmax(70px, 1fr) minmax(0, 1.8fr);
     gap: 20px;
     padding: 12px 0;
-    border-bottom: 1px solid #ffffff0d;
+    border-bottom: 1px solid color-mix(in srgb, var(--white) calc(13 / 255 * 100%), transparent);
   }
   dl > div:first-child {
     padding-top: 0;
@@ -30,13 +30,13 @@
     border-bottom: 0;
   }
   dt {
-    font-size: 11px;
+    font-size: var(--text-sm);
     color: var(--muted);
   }
   dd {
     margin: 0;
-    font-size: 12px;
-    font-weight: 550;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
     text-align: right;
     overflow-wrap: anywhere;
   }

@@ -2,7 +2,10 @@
   import { getContext } from 'svelte';
   import { page } from '$app/state';
   import { invalidateAll } from '$app/navigation';
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
+  import { createMutation } from '$lib/ui/mutation.svelte';
+  import { setRelationship } from '$lib/ui/relationships';
+  import RelationshipActions from './RelationshipActions.svelte';
+  import ListMembershipActions from './ListMembershipActions.svelte';
   import { trackingLanguage } from '$lib/media/model';
   import { sequencePath } from '$lib/media/sequence';
   import {
@@ -60,13 +63,14 @@
   let menu = $state<ContextMenu>(),
     sequenceControl = $state<SequenceControl>(),
     requestMenu = $state<MediaRequestMenu>();
-  let data = $state<MediaActionData | null>(null),
-    busy = $state(false),
-    loading = $state(false),
-    error = $state('');
+  let data = $state<MediaActionData | null>(null), loading = $state(false);
+  const mutation = createMutation(loadActions);
+  const busy = $derived(mutation.busy);
+  const error = $derived(mutation.error);
   let generation = 0;
+  const identity = $derived(item.id);
   $effect(() => {
-    item.id;
+    identity;
     generation++;
     data = null;
     loading = false;
@@ -160,7 +164,7 @@
     const id = item.id;
     const token = ++generation;
     loading = true;
-    error = '';
+    mutation.error = '';
     try {
       const result = await api<MediaActionData>(`media/${id}/actions`, undefined, 'GET');
       if (id === item.id && item.sequence) {
@@ -178,7 +182,7 @@
       }
       return result;
     } catch (cause) {
-      if (token === generation) error = message(cause);
+      if (token === generation) mutation.error = message(cause);
       return null;
     } finally {
       if (token === generation) loading = false;
@@ -193,27 +197,7 @@
   export function openAt(point: { x: number; y: number }) {
     menu?.openAt(point);
   }
-  async function perform(
-    task: () => Promise<unknown>,
-    success = 'Saved.',
-    undo?: () => Promise<void>
-  ) {
-    if (busy) return false;
-    busy = true;
-    error = '';
-    try {
-      if ((await task()) === false) return false;
-      await loadActions();
-      await invalidateAll();
-      notifyAction(success, undo);
-      return true;
-    } catch (cause) {
-      error = message(cause);
-      return false;
-    } finally {
-      busy = false;
-    }
-  }
+  const perform = mutation.run;
   function confirm(title: string, text: string, run: () => Promise<void>, danger = true) {
     confirmation = { title, text, run, danger };
     confirmOpen = true;
@@ -308,7 +292,7 @@
     return isMediaGroup(item) ? (await loadActions())?.playable : data?.playable ?? item;
   }
   async function play(edition?: string, fromStart = false) {
-    error = '';
+    mutation.error = '';
     try {
       const target = await resolvedPlayback();
       if (!target?.available) throw new Error('The next item is not available to play.');
@@ -319,7 +303,7 @@
         continuationId: isGroup ? active.id : target.showId,
       });
     } catch (cause) {
-      error = message(cause);
+      mutation.error = message(cause);
       playbackErrorOpen = true;
     }
   }
@@ -347,7 +331,7 @@
     date = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
       .toISOString()
       .slice(0, 16);
-    error = '';
+    mutation.error = '';
     includeSpecials = false;
     form = value;
   }
@@ -446,10 +430,7 @@
     const previous = !!target[action];
     const label =
       action === 'watchlist' ? 'Watchlist' : action === 'favourite' ? 'Favourites' : 'Next';
-    const write = (value: boolean) =>
-      action === 'queued'
-        ? api('up-next', { mediaId: target.id, queued: value })
-        : api('tracking', { mediaId: target.id, action, value });
+    const write = (value: boolean) => setRelationship(target.id, action, value);
     void perform(
       () => write(!previous),
       `${target.title} · ${previous ? 'Removed from' : 'Added to'} ${label}`,
@@ -536,25 +517,20 @@
     <MenuAction icon="list" disabled={busy || loading} onclick={toggleContinue}
       >{continuing ? 'Remove from Continue' : 'Add to Continue'}</MenuAction
     >
-    <MenuAction
-      icon="bookmark"
-      checked={active.watchlist}
-      showCheckmark={false}
-      disabled={busy || loading}
-      onclick={() => toggleSaved('watchlist')}
-      >{active.watchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}</MenuAction
-    >
-    <MenuAction icon="plus" checked={active.collected} disabled={busy} onclick={()=>perform(async()=>{await api(`collection/${active.id}`,{collected:!active.collected});await invalidateAll();},active.collected?'Removed Collected status. Other relationships and history are preserved.':'Added to Collection.')}>
-      {active.collected?'Remove from':'Add to'} Collection
-    </MenuAction>
-    <MenuAction
-      icon="heart"
-      checked={active.favourite}
-      showCheckmark={false}
-      disabled={busy || loading}
-      onclick={() => toggleSaved('favourite')}
-      >{active.favourite ? 'Remove from Favourites' : 'Add to Favourites'}</MenuAction
-    >
+    <RelationshipActions disabled={busy || loading} items={[
+      { kind: 'watchlist', value: active.watchlist, icon: 'bookmark', showCheckmark: false,
+        label: active.watchlist ? 'Remove from Watchlist' : 'Add to Watchlist' },
+      { kind: 'collected', value: active.collected, icon: 'plus',
+        label: `${active.collected ? 'Remove from' : 'Add to'} Collection` },
+      { kind: 'favourite', value: active.favourite, icon: 'heart', showCheckmark: false,
+        label: active.favourite ? 'Remove from Favourites' : 'Add to Favourites' },
+    ]} onchange={relationship => {
+      if (relationship === 'collected') void perform(
+        () => setRelationship(active.id, relationship, !active.collected),
+        active.collected ? 'Removed Collected status. Other relationships and history are preserved.' : 'Added to Collection.'
+      );
+      else toggleSaved(relationship);
+    }} />
     {#if data?.lists.length}
       {@render branch('Lists', 'saved', 'list')}
     {:else}
@@ -615,15 +591,10 @@
     {/if}
   {:else if view === 'saved'}
     <div class="menu-lists">
-      {#each data?.lists ?? [] as list (list.id)}
-        <MenuAction
-          icon={list.playlist ? 'plus' : 'list'}
-          checked={list.playlist ? undefined : !!list.entries.length}
-          disabled={busy || loading}
-          onclick={() => toggleList(list)}
-          >{list.playlist ? `Add to ${list.name}` : list.name}</MenuAction
-        >
-      {:else}<div class="menu-label">No lists yet</div>{/each}
+      <ListMembershipActions lists={data?.lists ?? []} member={list => !!list.entries.length}
+        disabled={busy || loading} onchange={toggleList}>
+        {#snippet empty()}<div class="menu-label">No lists yet</div>{/snippet}
+      </ListMembershipActions>
     </div>
     {#if item.listContext}<div class="menu-divider" role="separator"></div>
       {@render branch('This list entry', 'list-entry', 'list')}

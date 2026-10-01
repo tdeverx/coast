@@ -253,7 +253,7 @@
     aspect-ratio: 2/3;
     border-radius: 12px;
     isolation: isolate;
-    background: var(--surface-soft);
+    background: var(--surface);
     transition: transform var(--fast) var(--ease);
   }
   .art.square {
@@ -313,7 +313,7 @@
     position: absolute;
     inset: 0;
     border-radius: inherit;
-    background: #000;
+    background: var(--canvas);
     opacity: 0;
     pointer-events: none;
     transition: opacity var(--fast);
@@ -426,20 +426,20 @@
     text-align: center;
   }
   .fallback span {
-    font-size: 16px;
-    font-weight: 550;
-    letter-spacing: -0.02em;
+    font-size: var(--text-md);
+    font-weight: var(--weight-regular);
+    letter-spacing: var(--tracking-tight);
   }
   .title {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: var(--text-md);
+    font-weight: var(--weight-regular);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     margin-top: 12px;
   }
   .meta {
-    font-size: 12px;
+    font-size: var(--text-sm);
     color: var(--muted);
     display: flex;
     gap: 7px;
@@ -458,7 +458,7 @@
     height: 6px;
     border-radius: 99px;
     overflow: hidden;
-    background: #ffffff45;
+    background: color-mix(in srgb, var(--white) calc(69 / 255 * 100%), transparent);
     position: absolute;
     bottom: 10px;
     left: 10px;

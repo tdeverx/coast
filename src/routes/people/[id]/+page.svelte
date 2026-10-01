@@ -1,8 +1,8 @@
 <script lang="ts">
+  import Shelf from '$lib/ui/components/Shelf.svelte';
   import { page } from '$app/state';
   import Button from '$lib/ui/components/Button.svelte';
-  import PageHeader from '$lib/ui/components/PageHeader.svelte';
-  import PersonCredits from '$lib/ui/components/PersonCredits.svelte';
+  import Heading from '$lib/ui/components/Heading.svelte';
   let { data } = $props();
   const section = $derived(
     ['all', 'library', 'known'].includes(page.url.searchParams.get('section') ?? '')
@@ -27,7 +27,7 @@
           onerror={() => (failed = true)}
         />{/if}
       <div class="bio">
-        <PageHeader title={data.person.name} description={data.person.department} />
+        <Heading variant="page" title={data.person.name} description={data.person.department} />
         <dl>
           {#if data.person.birthday}<div>
               <dt>Born</dt>
@@ -58,24 +58,12 @@
       >{data.person.name}</Button
     >{/if}
   {#key `${data.person.id}:${section}`}
-    {#if section}<PersonCredits
-        personId={data.person.id}
-        scope={section as 'all' | 'library' | 'known'}
-        layout="grid"
-        title={section === 'all'
+    {#if section}<Shelf source={{ type: 'credits', personId: data.person.id, scope: section as 'all' | 'library' | 'known', layout: "grid", title: section === 'all'
           ? 'All credits'
           : section === 'known'
             ? 'Known for'
-            : 'In your library'}
-      />
-    {:else}<PersonCredits
-        personId={data.person.id}
-        title="In your library"
-        scope="library"
-      /><PersonCredits personId={data.person.id} title="Known for" scope="known" /><PersonCredits
-        personId={data.person.id}
-        title="All credits"
-      />{/if}{/key}
+            : 'In your library' }} />
+    {:else}<Shelf source={{ type: 'credits', personId: data.person.id, title: "In your library", scope: "library" }} /><Shelf source={{ type: 'credits', personId: data.person.id, title: "Known for", scope: "known" }} /><Shelf source={{ type: 'credits', personId: data.person.id, title: "All credits" }} />{/if}{/key}
 </div>
 
 <style>
@@ -105,8 +93,8 @@
   }
   .bio p {
     white-space: pre-line;
-    line-height: 1.8;
-    font-size: 13px;
+    line-height: var(--leading-relaxed);
+    font-size: var(--text-sm);
     margin-top: 16px;
   }
   summary {
@@ -117,11 +105,11 @@
     gap: 12px;
   }
   dt {
-    font-size: 11px;
+    font-size: var(--text-sm);
     color: var(--muted);
   }
   dd {
-    font-size: 12px;
+    font-size: var(--text-sm);
     margin-top: 4px;
   }
   @media (max-width: 600px) {

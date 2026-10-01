@@ -3,7 +3,7 @@
   import type { ProviderSchedule } from '$lib/providers/schedule';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { change, message } from '$lib/ui/client';
-  import RowHeader from './RowHeader.svelte';
+  import Heading from './Heading.svelte';
   let {
     instance,
   }: { instance: { id: string; provider: string; enabled: boolean; schedule: ProviderSchedule } } =
@@ -45,10 +45,10 @@
 
 {#if ['jellyfin', 'trakt', 'seerr'].includes(instance.provider)}
   <div class="automation stack">
-    <RowHeader title="Automatic work"
+    <Heading title="Automatic work"
       >{#snippet actions()}<a class="small text-accent" href="/settings/jobs"
           >View tasks & schedules</a
-        >{/snippet}</RowHeader
+        >{/snippet}</Heading
     >
     <label class="check"
       ><input
@@ -79,7 +79,7 @@
 
 <style>
   .automation {
-    border-top: 1px solid var(--line-soft);
+    border-top: 1px solid var(--line);
     padding-top: 20px;
     gap: 12px;
   }

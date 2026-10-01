@@ -158,8 +158,8 @@
     overflow: hidden;
     display: grid;
     place-items: center;
-    background: #ffffff12;
-    font-size: 30px;
+    background: color-mix(in srgb, var(--white) calc(18 / 255 * 100%), transparent);
+    font-size: var(--text-2xl);
   }
   .preview img {
     width: 100%;
@@ -168,7 +168,7 @@
   }
   input[type='file'] {
     max-width: 100%;
-    font-size: 12px;
+    font-size: var(--text-sm);
   }
   textarea {
     width: 100%;

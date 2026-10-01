@@ -1,18 +1,17 @@
 <script lang="ts">
-  import { onMount, untrack, type Snippet } from 'svelte';
+  import { untrack, type Snippet } from 'svelte';
   import { blackFadeGradient } from '$lib/ui/materials/black-fade';
-  import { api } from '$lib/ui/client';
-  import type { MediaView, MediaHeroPresentation } from '$lib/ui/types';
-  import { heroPlayer, presentTrailer, setHeroMuted } from '$lib/playback/client.svelte';
+  import type { MediaView } from '$lib/ui/types';
+  import { createHeroPresentation, screenItem, type HeroItem } from '$lib/ui/heroes/presentation.svelte';
+  import { createHeroPlayback } from '$lib/ui/heroes/playback.svelte';
+  import { heroPlayer, setHeroMuted } from '$lib/playback/client.svelte';
   import MediaActions from './MediaActions.svelte';
   import Icon from './Icon.svelte';
   import Button from './Button.svelte';
-  type HeroItem = MediaView | MediaHeroPresentation;
-  function screenItem(item: HeroItem): item is MediaView {
-    return 'available' in item;
-  }
   let {
+    mode = 'content',
     item,
+    collection,
     parents = [],
     items = [],
     context = 'details',
@@ -20,7 +19,9 @@
     requestable = false,
     actions,
   }: {
-    item: HeroItem;
+    mode?: 'content' | 'player';
+    item?: HeroItem;
+    collection?: { items: MediaView[]; selection: string; busy?: boolean };
     actions?: Snippet;
     parents?: MediaView[];
     items?: HeroItem[];
@@ -28,215 +29,97 @@
     next?: MediaView | null;
     requestable?: boolean;
   } = $props();
-  let current = $state(0),
-    host: HTMLElement,
-    backdropFailed = $state(false),
-    posterFailed = $state(false),
-    logoFailed = $state(false),
-    fading = $state(false),
-    gestureLocked = false,
-    gestureDistance = 0,
-    gestureTimer: ReturnType<typeof setTimeout>;
-  const active = $derived(items.length ? items[current % items.length] : item);
-  const presentation = $derived(parents.find((parent) => parent.kind === 'show') ?? active);
-  const titleLogo = $derived(active.logo ?? presentation.logo);
-  const hasTrailer = $derived(heroPlayer.id === active.id && !!heroPlayer.url);
-  const showingTrailer = $derived(
-    hasTrailer && heroPlayer.playing && heroPlayer.ready && heroPlayer.visible
-  );
-  let mouseIdle = $state(false);
-  let controlFocused = $state(false);
-  let idleTimer: ReturnType<typeof setTimeout>;
-  const chromeDimmed = $derived(showingTrailer && mouseIdle && !controlFocused);
-  function noteActivity(event?: PointerEvent) {
-    if (event && event.pointerType !== 'mouse') return;
-    clearTimeout(idleTimer);
-    mouseIdle = false;
-    idleTimer = setTimeout(() => (mouseIdle = true), 2200);
-  }
-  async function step(by: number) {
-    if (fading || items.length < 2) return;
-    fading = true;
-    await new Promise((resolve) => setTimeout(resolve, 160));
-    current = (current + by + items.length) % items.length;
-    backdropFailed = false;
-    posterFailed = false;
-    logoFailed = false;
-    fading = false;
-  }
-  function wheel(e: WheelEvent) {
-    if (items.length < 2 || Math.abs(e.deltaX) < Math.abs(e.deltaY)) return;
-    e.preventDefault();
-    clearTimeout(gestureTimer);
-    gestureTimer = setTimeout(() => {
-      gestureLocked = false;
-      gestureDistance = 0;
-    }, 220);
-    if (gestureLocked) return;
-    gestureDistance += e.deltaX;
-    if (Math.abs(gestureDistance) < 45) return;
-    gestureLocked = true;
-    void step(gestureDistance > 0 ? 1 : -1);
-  }
-  $effect(() => {
-    const title = active;
-    backdropFailed = false;
-    posterFailed = false;
-    logoFailed = false;
-    if (!host || !screenItem(title) || (!title.available && !title.trailer)) return;
-    let visible = true,
-      cancelled = false,
-      delayPassed = false,
-      attaching = false;
-    const existing = untrack(() => (heroPlayer.id === title.id ? heroPlayer.url : null));
-    const attach = async () => {
-      if (
-        cancelled ||
-        attaching ||
-        !visible ||
-        document.hidden ||
-        matchMedia('(prefers-reduced-motion: reduce)').matches
-      )
-        return;
-      attaching = true;
-      const url =
-        existing ||
-        title.trailer ||
-        (
-          await api<{ url: string | null }>(`media/${title.id}/trailer`, undefined, 'GET').catch(
-            () => ({ url: null })
-          )
-        ).url;
-      attaching = false;
-      if (url && !cancelled && visible) presentTrailer(title.id, url, host.getBoundingClientRect());
-    };
-    const observer = new IntersectionObserver(
-      (entries) => {
-        visible = entries[0].isIntersecting;
-        if (heroPlayer.id === title.id) heroPlayer.visible = visible;
-        if (visible && delayPassed) void attach();
-      },
-      { threshold: 0.3 }
-    );
-    observer.observe(host);
-    const timer = setTimeout(
-      () => {
-        delayPassed = true;
-        void attach();
-      },
-      existing ? 0 : 3000
-    );
-    const reposition = () => {
-      if (heroPlayer.id === title.id) heroPlayer.rect = host.getBoundingClientRect();
-    };
-    window.addEventListener('scroll', reposition, { passive: true });
-    window.addEventListener('resize', reposition);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-      observer.disconnect();
-      window.removeEventListener('scroll', reposition);
-      window.removeEventListener('resize', reposition);
-      requestAnimationFrame(() => {
-        if (heroPlayer.id === title.id && !document.querySelector(`[data-hero-id="${title.id}"]`))
-          heroPlayer.visible = false;
-      });
-    };
-  });
-  onMount(() => {
-    host.addEventListener('wheel', wheel, { passive: false });
-    document.addEventListener('pointermove', noteActivity);
-    noteActivity();
-    const shell = host.closest<HTMLElement>('.page-shell');
-    const resize = new ResizeObserver(() => {
-      const rect = host.getBoundingClientRect();
-      shell?.style.setProperty('--active-hero-height', `${rect.height}px`);
-      if (heroPlayer.id === active.id) heroPlayer.rect = rect;
-    });
-    resize.observe(host);
-    return () => {
-      host.removeEventListener('wheel', wheel);
-      document.removeEventListener('pointermove', noteActivity);
-      clearTimeout(idleTimer);
-      clearTimeout(gestureTimer);
-      resize.disconnect();
-      shell?.style.removeProperty('--active-hero-height');
-    };
-  });
+  // These roles have different lifetimes: the root owns playback, routes own content.
+  const playback = untrack(() => mode === 'player' ? createHeroPlayback() : undefined);
+  const hero = untrack(() => mode === 'content' ? createHeroPresentation(() => ({ item, items, parents, collection })) : undefined);
 </script>
 
-<section
+{#if playback}
+<div class="hero-player" class:visible={playback.visible} style={playback.surfaceStyle} aria-hidden="true">
+  <video bind:this={playback.video} data-player="hero" muted={heroPlayer.muted} playsinline preload="metadata" tabindex="-1"
+    class:positioned={!!playback.videoStyle} style={playback.videoStyle}
+    onloadedmetadata={playback.loadedMetadata}
+    onplaying={() => (heroPlayer.playing = true)}
+    onpause={() => (heroPlayer.playing = false)}
+    onended={() => { heroPlayer.playing = false; heroPlayer.paused = true; }}
+    onerror={playback.failed}
+  ></video>
+</div>
+
+
+
+{:else if hero && hero.active && hero.presentation}<section
   class="hero"
-  class:fading
-  bind:this={host}
-  data-hero-id={active.id}
-  aria-label={active.title}
+  class:fading={hero.fading}
+  bind:this={hero.host}
+  data-hero-id={hero.active.id}
+  aria-label={hero.active.title}
   onfocusin={() => {
-    controlFocused = true;
-    noteActivity();
+    hero.controlFocused = true;
+    hero.noteActivity();
   }}
   onfocusout={(event) => {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      controlFocused = false;
-      noteActivity();
+      hero.controlFocused = false;
+      hero.noteActivity();
     }
   }}
   style:--hero-fade={blackFadeGradient('bottom')}
 >
-  <div class="art" class:video-visible={showingTrailer}>
-    {#key active.id}{#if active.backdrop && !backdropFailed}<img
-          src={active.backdrop}
+  <div class="art" class:video-visible={hero.showingTrailer}>
+    {#key hero.active.id}{#if hero.active.backdrop && !hero.backdropFailed}<img
+          src={hero.active.backdrop}
           alt=""
           fetchpriority="high"
-          onerror={() => (backdropFailed = true)}
-        />{:else if active.poster && !posterFailed}<img
+          onerror={() => (hero.backdropFailed = true)}
+        />{:else if hero.active.poster && !hero.posterFailed}<img
           class="poster-art"
-          src={active.poster}
+          src={hero.active.poster}
           alt=""
-          onerror={() => (posterFailed = true)}
+          onerror={() => (hero.posterFailed = true)}
         />{/if}{/key}
   </div>
-  <div class="gradient" class:dimmed={chromeDimmed} aria-hidden="true"></div>
-  <div class="content hero-inner" class:dimmed={chromeDimmed}>
+  <div class="gradient" class:dimmed={hero.chromeDimmed} aria-hidden="true"></div>
+  <div class="content hero-inner" class:dimmed={hero.chromeDimmed}>
     <div class="hero-copy">
-      <h1 class:sr-only={titleLogo && !logoFailed}>{presentation.title}</h1>
-      {#if titleLogo && !logoFailed}<div class="title-artwork">
-          <img class="title-logo" src={titleLogo} alt="" onerror={() => (logoFailed = true)} />
+      <h1 class:sr-only={hero.titleLogo && !hero.logoFailed}>{hero.presentation.title}</h1>
+      {#if hero.titleLogo && !hero.logoFailed}<div class="title-artwork">
+          <img class="title-logo" src={hero.titleLogo} alt="" onerror={() => (hero.logoFailed = true)} />
         </div>{/if}
       {#if parents.length}<nav class="genres hero-path" aria-label="Show, season and episode">
           {#each parents as parent}<a href={`/media/${parent.id}`}
               >{parent.kind === 'show' ? 'Show' : parent.title}</a
-            ><span aria-hidden="true">›</span>{/each}<span aria-current="page">{active.title}</span>
-        </nav>{:else if active.genres?.length}<div class="genres">
-          {#each active.genres.slice(0, 4) as genre}{#if screenItem(active)}<a
+            ><span aria-hidden="true">›</span>{/each}<span aria-current="page">{hero.active.title}</span>
+        </nav>{:else if hero.active.genres?.length}<div class="genres">
+          {#each hero.active.genres.slice(0, 4) as genre}{#if screenItem(hero.active)}<a
                 href={`/library?scope=all&genre=${encodeURIComponent(genre)}`}>{genre}</a
               >{:else}<span>{genre}</span>{/if}{/each}
         </div>{/if}
       <div class="metadata">
-        {#if active.kind === 'episode'}<span
-            >S{String(active.seasonNumber ?? 0).padStart(2, '0')}E{String(
-              active.episodeNumber ?? 0
+        {#if hero.active.kind === 'episode'}<span
+            >S{String(hero.active.seasonNumber ?? 0).padStart(2, '0')}E{String(
+              hero.active.episodeNumber ?? 0
             ).padStart(2, '0')}</span
           >{/if}
-        {#if !screenItem(active)}<span>{active.captionSubtitle}</span>{/if}
-        {#if active.year}<span>{active.year}</span>{/if}
-        {#if active.certification}<span>{active.certification}</span>{/if}
-        {#if active.runtimeMinutes}<span>{active.runtimeMinutes} min</span>{/if}
+        {#if !screenItem(hero.active)}<span>{hero.active.captionSubtitle}</span>{/if}
+        {#if hero.active.year}<span>{hero.active.year}</span>{/if}
+        {#if hero.active.certification}<span>{hero.active.certification}</span>{/if}
+        {#if hero.active.runtimeMinutes}<span>{hero.active.runtimeMinutes} min</span>{/if}
       </div>
-      {#if active.overview}<p class="overview">{active.overview}</p>{/if}
+      {#if hero.active.overview}<p class="overview">{hero.active.overview}</p>{/if}
     </div>
     <div class="hero-action-row">
       {#if actions}{@render actions()}
-      {:else if screenItem(active)}<MediaActions
-          item={active}
+      {:else if screenItem(hero.active)}<MediaActions
+          item={hero.active}
           {context}
           {next}
           {requestable}
           hero
         />
-      {:else}<Button href={active.href} variant="hero">View {active.kind}</Button>{/if}
-      {#if items.length > 1 || hasTrailer}<div class="hero-pagination">
-          {#if hasTrailer}<button
+      {:else}<Button href={hero.active.href} variant="hero">View {hero.active.kind}</Button>{/if}
+      {#if items.length > 1 || hero.hasTrailer}<div class="hero-pagination">
+          {#if hero.hasTrailer}<button
               class="icon-button"
               aria-label={heroPlayer.playing ? 'Pause trailer' : 'Play trailer'}
               onclick={() => (heroPlayer.paused = !heroPlayer.paused)}
@@ -247,21 +130,21 @@
               onclick={() => setHeroMuted(!heroPlayer.muted)}
               ><Icon name={heroPlayer.muted ? 'muted' : 'volume'} size={18} /></button
             >{/if}{#if items.length > 1}<span
-              >{String(current + 1).padStart(2, '0')}<i>/</i>{String(items.length).padStart(
+              >{String(hero.current + 1).padStart(2, '0')}<i>/</i>{String(items.length).padStart(
                 2,
                 '0'
               )}</span
             ><button
               class="icon-button"
               aria-label="Previous featured title"
-              onclick={() => step(-1)}><Icon name="left" size={18} /></button
-            ><button class="icon-button" aria-label="Next featured title" onclick={() => step(1)}
+              onclick={() => hero.step(-1)}><Icon name="left" size={18} /></button
+            ><button class="icon-button" aria-label="Next featured title" onclick={() => hero.step(1)}
               ><Icon name="right" size={18} /></button
             >{/if}
         </div>{/if}
     </div>
   </div>
-</section>
+</section>{/if}
 
 <style>
   .hero-copy,
@@ -295,7 +178,7 @@
     inset: 0;
     z-index: -3;
     overflow: hidden;
-    background: #111722;
+    background: var(--surface);
     transition: opacity var(--cinematic);
   }
   .art.video-visible {
@@ -354,10 +237,10 @@
     max-width: 768px;
   }
   .hero h1 {
-    font-size: 58px;
-    line-height: 1;
-    letter-spacing: -0.025em;
-    font-weight: 800;
+    font-size: var(--text-hero);
+    line-height: var(--leading-solid);
+    letter-spacing: var(--tracking-tight);
+    font-weight: var(--weight-bold);
     text-wrap: balance;
   }
   .metadata {
@@ -366,9 +249,9 @@
     flex-wrap: wrap;
     column-gap: 20px;
     row-gap: 8px;
-    color: rgb(255 255 255 / 90%);
-    font-size: 16px;
-    font-weight: 700;
+    color: color-mix(in srgb, var(--white) 90%, transparent);
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
     margin-top: 10px;
   }
   .genres a:hover {
@@ -383,14 +266,14 @@
     flex-wrap: wrap;
     gap: 8px 20px;
     margin-top: 28px;
-    font-size: 16px;
-    font-weight: 700;
-    color: rgb(255 255 255 / 90%);
+    font-size: var(--text-md);
+    font-weight: var(--weight-semibold);
+    color: color-mix(in srgb, var(--white) 90%, transparent);
   }
   .overview {
-    font-size: 16px;
-    line-height: 1.625;
-    color: rgb(255 255 255 / 75%);
+    font-size: var(--text-md);
+    line-height: var(--leading-relaxed);
+    color: color-mix(in srgb, var(--white) 75%, transparent);
     max-width: 672px;
     display: -webkit-box;
     line-clamp: 3;
@@ -414,8 +297,8 @@
     gap: 10px;
   }
   .hero-pagination > span {
-    font-size: 9px;
-    letter-spacing: 0.08em;
+    font-size: var(--text-sm);
+    letter-spacing: var(--tracking-wide);
     margin-right: 12px;
   }
   .hero-pagination i {
@@ -448,7 +331,7 @@
       max-width: 100%;
     }
     .hero h1 {
-      font-size: 34px;
+      font-size: var(--text-hero-mobile);
     }
     .hero-pagination > span {
       display: none;
@@ -458,16 +341,22 @@
     }
     .metadata,
     .genres {
-      font-size: 14px;
+      font-size: var(--text-md);
     }
     .title-artwork {
       height: 144px;
       max-width: 100%;
     }
     .overview {
-      font-size: 14px;
+      font-size: var(--text-md);
       line-clamp: 3;
       -webkit-line-clamp: 3;
     }
   }
+
+  .hero-player { position: fixed; z-index: 1; overflow: hidden; pointer-events: none; visibility: hidden; }
+  .hero-player.visible { visibility: visible; }
+  video { position: absolute; width: 100%; height: 100%; object-fit: cover; }
+  video.positioned { max-width: none; object-fit: fill; }
+
 </style>

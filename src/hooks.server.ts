@@ -58,7 +58,11 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
   const response = await resolve(event);
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'same-origin');
-  response.headers.set('X-Frame-Options', 'DENY');
+  // Only administrators may embed the isolated UI examples on this origin.
+  response.headers.set(
+    'X-Frame-Options',
+    event.locals.user?.role === 'admin' && event.url.pathname === '/ui-preview/demo' ? 'SAMEORIGIN' : 'DENY'
+  );
   if (event.locals.user) response.headers.set('Cache-Control', 'private, no-store');
   return response;
 };

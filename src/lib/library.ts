@@ -31,3 +31,20 @@ export const librarySelections = {
     { value: 'dropped', label: 'Dropped' },
   ],
 };
+
+/** Shared request vocabulary for library browsing and its home-page previews. */
+export function libraryPath(options: {
+  surface: LibrarySurface;
+  selection?: string;
+  kind?: string;
+  scope?: string;
+  genre?: string;
+  page?: number;
+  preview?: boolean;
+  personal?: boolean;
+}) {
+  const parameters = new URLSearchParams();
+  for (const [key, value] of Object.entries(options))
+    if (value !== undefined) parameters.set(key, String(value));
+  return `library?${parameters}`;
+}

@@ -5,9 +5,11 @@
   import { playMedia } from '$lib/playback/client.svelte';
   import { change, message } from '$lib/ui/client';
   import MediaActions from '$lib/ui/components/MediaActions.svelte';
-  import MediaHero from '$lib/ui/components/MediaHero.svelte';
+  import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
-  import EpisodeShelf from '$lib/ui/components/EpisodeShelf.svelte';
+  import { createEpisodeTracking } from '$lib/ui/shelves/episodes.svelte';
+  import Icon from '$lib/ui/components/Icon.svelte';
+  import Rating from '$lib/ui/components/Rating.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   let { data } = $props();
@@ -32,20 +34,14 @@
       current = false;
     };
   });
+  const episodeTracking = createEpisodeTracking();
   let error = $state(''),
     episodesOpen = $state(false),
     seasonNumber = $state(1),
     episodeCount = $state(10);
 </script>
 
-<svelte:head><title>{view.item.title} · Coast</title></svelte:head>{#if !section}<MediaHero
-    item={view.item}
-    parents={view.parents}
-    next={view.next}
-    requestable={view.requestable}
-  />
-{/if}
-<div class="content details" class:page={!!section}>
+<svelte:head><title>{view.item.title} · Coast</title></svelte:head><MediaPage details hero={!section} item={view.item} parents={view.parents} next={view.next} requestable={view.requestable} page={!!section}>
   {#if section}<Button variant="ghost" href={`/media/${view.item.id}`} icon="left"
       >{view.item.title}</Button
     >{/if}
@@ -95,11 +91,39 @@
           onclick={() => (episodesOpen = true)}>Add a season</Button
         >{/if}
     {:else if view.item.kind === 'season' && (!section || section === 'episodes')}
-      {#if view.episodes.length}<EpisodeShelf
+      {#if view.episodes.length}<Shelf
+          title="Episodes"
           layout={section ? 'grid' : 'row'}
           href={!section ? rowHref('episodes') : undefined}
-          episodes={view.episodes}
-        />{:else}<EmptyState
+          items={view.episodes}
+          filterBy="watched"
+          shape="fanart"
+          artworkStyle="thumb"
+        >
+          {#snippet details(episode)}
+            <div class="episode-details">
+              {#if episode.overview}<details>
+                  <summary>Episode overview</summary>
+                  <p>{episode.overview}</p>
+                </details>{/if}
+              <div class="episode-meta">
+                {#if episode.runtimeMinutes}<small>{episode.runtimeMinutes} min</small>{/if}
+                <Rating mediaId={episode.id} value={episode.rating} />
+                <button
+                  class="icon-button"
+                  class:selected={episode.watched}
+                  aria-pressed={episode.watched}
+                  disabled={episodeTracking.busy}
+                  aria-label={`${episode.watched ? 'Mark unwatched' : 'Mark watched'}: ${episode.title}`}
+                  onclick={() => episodeTracking.watch(episode.id, episode.watched)}><Icon name="check" /></button
+                >
+              </div>
+            </div>
+          {/snippet}
+          {#snippet empty()}<p class="muted">No episodes in this season yet.</p>{/snippet}
+        </Shelf>
+        {#if episodeTracking.error}<div class="notice error" role="alert">{episodeTracking.error}</div>{/if}
+      {:else}<EmptyState
           title="No episodes yet"
           description="Episodes will appear when this season’s guide is available."
         />{/if}
@@ -136,7 +160,15 @@
         ? view.members
         : view.related.filter((item) => item.kind !== 'collection')}
     />{/if}
-</div>
+</MediaPage>
+<Dialog bind:open={episodeTracking.confirm} title="Review episode change">
+  <div class="stack">
+    <p>{episodeTracking.warning}</p>
+    <Button variant="danger" disabled={episodeTracking.busy} onclick={episodeTracking.approve}>
+      Confirm change
+    </Button>
+  </div>
+</Dialog>
 <Dialog bind:open={episodesOpen} title="Add a season"
   ><form
     class="stack"
@@ -168,10 +200,28 @@
   .edition-details {
     padding: 24px 0;
   }
-  .details {
-    padding-bottom: 90px;
-  }
   .episode-section {
     margin-top: 40px;
+  }
+  .episode-details {
+    display: grid;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .episode-details p {
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+  }
+  .episode-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .episode-meta small {
+    color: var(--muted);
+  }
+  .episode-meta .icon-button {
+    margin-left: auto;
   }
 </style>

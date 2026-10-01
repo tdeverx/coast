@@ -1,12 +1,12 @@
 <script lang="ts">
+  import Shelf from '$lib/ui/components/Shelf.svelte';
   import { untrack } from 'svelte';
   import { invalidateAll } from '$app/navigation';
   import { api, message } from '$lib/ui/client';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import type { JournalEntry } from '$lib/profile/journal';
-  import CollectionPage from '$lib/ui/components/CollectionPage.svelte';
-  import LazyWatchJournal from '$lib/ui/components/LazyWatchJournal.svelte';
-  import RowHeader from '$lib/ui/components/RowHeader.svelte';
+  import MediaPage from '$lib/ui/components/MediaPage.svelte';
+  import Heading from '$lib/ui/components/Heading.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   let { data } = $props();
@@ -75,9 +75,9 @@
 </script>
 
 <svelte:head><title>{data.item.title} · History · Coast</title></svelte:head>
-<CollectionPage>
+<MediaPage>
   <section class="section">
-    <RowHeader title={`${data.item.title} · History`}>
+    <Heading title={`${data.item.title} · History`}>
       {#snippet actions()}
         {#if data.selecting}<Button href={`/media/${data.item.id}/history`} variant="ghost"
             >Done</Button
@@ -87,7 +87,7 @@
           >{/if}
         <Button href={`/media/${data.item.id}`} variant="ghost" icon="left">View details</Button>
       {/snippet}
-    </RowHeader>
+    </Heading>
     {#if data.selecting}
       <div class="selection-tools stack">
         <p>
@@ -126,20 +126,10 @@
       </div>
     {/if}
     {#key `${data.item.id}:${data.selecting}:${revision}`}
-      <LazyWatchJournal
-        layout="grid"
-        initial={data.activity.items}
-        page={data.activity.page}
-        pages={data.activity.pages}
-        today={data.today}
-        endpoint={`media/${data.item.id}/activity`}
-        filters={{}}
-        onitems={(items) => (loaded = items)}
-        selection={data.selecting ? { checked, toggle, disabled: busy } : undefined}
-      />
+      <Shelf source={{ type: 'journal', layout: "grid", items: data.activity.items, page: data.activity.page, pages: data.activity.pages, today: data.today, endpoint: `media/${data.item.id}/activity`, filters: {}, onitems: (items) => (loaded = items), selection: data.selecting ? { checked, toggle, disabled: busy } : undefined }} />
     {/key}
   </section>
-</CollectionPage>
+</MediaPage>
 <Dialog bind:open={confirming} title="Remove from history?">
   <div class="stack">
     <p>

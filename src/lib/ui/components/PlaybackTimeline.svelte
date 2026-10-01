@@ -54,15 +54,15 @@
   .now-playing { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; height: 44px; margin-inline: 8px; }
   .seek-area { position: relative; flex: 1; min-width: 0; height: 44px; border-radius: 6px; }
   .track-info { position: absolute; inset: 1px 0 9px; display: flex; align-items: center; gap: 9px; pointer-events: none; transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease); }
-  .artwork { position: relative; opacity: 0.7; transition: opacity var(--fast), transform var(--fast) var(--ease); width: 28px; height: 42px; flex: none; display: grid; place-items: center; overflow: hidden; border-radius: 4px; background: var(--surface-soft); }
+  .artwork { position: relative; opacity: 0.7; transition: opacity var(--fast), transform var(--fast) var(--ease); width: 28px; height: 42px; flex: none; display: grid; place-items: center; overflow: hidden; border-radius: 4px; background: var(--surface); }
   .artwork:is(:hover, :focus-visible) { transform: scale(1.08); opacity: 1; }
   .artwork img { width: 100%; height: 100%; object-fit: cover; }
-  .track-copy { display: grid; min-width: 0; font-size: 10px; line-height: 1.25; }
+  .track-copy { display: grid; min-width: 0; font-size: var(--text-sm); line-height: var(--leading-normal); }
   .track-copy strong, .track-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .track-copy strong { font-size: 11px; font-weight: 650; }
+  .track-copy strong { font-size: var(--text-sm); font-weight: var(--weight-semibold); }
   .track-copy span { opacity: .72; margin-top: 2px; }
-  .times { position: absolute; inset: 7px 0 auto; display: flex; justify-content: space-between; gap: 8px; font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums; opacity: 0; transform: translateY(3px); transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease); pointer-events: none; }
-  .progress-track { position: absolute; bottom: 3px; width: 100%; height: 3px; border-radius: 99px; overflow: hidden; background: #ffffff45; transition: height var(--fast) var(--ease); pointer-events: none; }
+  .times { position: absolute; inset: 7px 0 auto; display: flex; justify-content: space-between; gap: 8px; font-size: var(--text-sm); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; opacity: 0; transform: translateY(3px); transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease); pointer-events: none; }
+  .progress-track { position: absolute; bottom: 3px; width: 100%; height: 3px; border-radius: 99px; overflow: hidden; background: color-mix(in srgb, var(--white) calc(69 / 255 * 100%), transparent); transition: height var(--fast) var(--ease); pointer-events: none; }
   .progress-fill { width: var(--progress); height: 100%; background: currentColor; border-radius: inherit; }
   input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; touch-action: pan-y; }
   .seek-area:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 4px; }
@@ -74,6 +74,6 @@
     .times { opacity: 1; transform: none; }
     .progress-track { height: 8px; }
   }
-  @media (max-width: 639px) { .now-playing { margin-inline: 4px; gap: 10px; } .track-copy strong { font-size: 10px; } .track-copy span { font-size: 9px; } }
+  @media (max-width: 639px) { .now-playing { margin-inline: 4px; gap: 10px; } .track-copy strong { font-size: var(--text-sm); } .track-copy span { font-size: var(--text-sm); } }
   @media (prefers-reduced-motion: reduce) { .track-info, .times, .progress-track, .artwork { transition: none; } }
 </style>

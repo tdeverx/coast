@@ -41,17 +41,6 @@ export interface MetadataProvider {
   trending(page?: number): Promise<Metadata[]>;
   details(kind: DiscoverKind, id: string): Promise<Metadata>;
 }
-export interface ProviderIdentity {
-  id: string;
-  name: string;
-  version?: string;
-}
-export interface ProviderAccount {
-  id: string;
-  username: string;
-  accessToken: string;
-  serverId?: string;
-}
 export interface MediaStream {
   index: number;
   type: 'Video' | 'Audio' | 'Subtitle';

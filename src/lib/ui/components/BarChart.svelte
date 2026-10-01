@@ -77,12 +77,12 @@
     min-height: 40px;
   }
   .summary strong {
-    font-size: 18px;
-    font-weight: 650;
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
     font-variant-numeric: tabular-nums;
   }
   .summary span {
-    font-size: 11px;
+    font-size: var(--text-sm);
     color: var(--muted);
   }
   .plot {
@@ -99,19 +99,19 @@
     min-width: 20px;
     text-align: right;
     color: var(--quiet);
-    font-size: 10px;
+    font-size: var(--text-sm);
   }
   .bars {
     display: flex;
     gap: clamp(2px, 0.5vw, 9px);
     flex: 1;
     min-width: 0;
-    border-bottom: 1px solid #ffffff15;
+    border-bottom: 1px solid color-mix(in srgb, var(--white) calc(21 / 255 * 100%), transparent);
     background: repeating-linear-gradient(
       to top,
       transparent 0,
       transparent calc(50% - 1px),
-      #ffffff08 50%
+      color-mix(in srgb, var(--white) calc(8 / 255 * 100%), transparent) 50%
     );
   }
   .target {
@@ -130,7 +130,7 @@
     max-width: 24px;
     min-height: 2px;
     border-radius: 5px 5px 0 0;
-    background: linear-gradient(to top, #ffffff70, #ffffffd9);
+    background: linear-gradient(to top, color-mix(in srgb, var(--white) calc(112 / 255 * 100%), transparent), color-mix(in srgb, var(--white) calc(217 / 255 * 100%), transparent));
     transition: opacity var(--fast);
   }
   .bar.zero {
@@ -145,7 +145,7 @@
     justify-content: space-between;
     gap: 4px;
     margin: 10px 0 0 32px;
-    font-size: 10px;
+    font-size: var(--text-sm);
     color: var(--quiet);
   }
   .labels.all span {
@@ -157,7 +157,7 @@
     inset: 42px 16px auto 40px;
     text-align: center;
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--text-sm);
     pointer-events: none;
   }
   @media (prefers-reduced-motion: reduce) {

@@ -45,13 +45,13 @@
     max-width: 760px;
   }
   .recap p {
-    font-size: var(--detail-copy-size);
-    font-weight: 500;
-    line-height: 1.6;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-regular);
+    line-height: var(--leading-relaxed);
   }
   .recap span {
     display: block;
-    font-size: 11px;
+    font-size: var(--text-sm);
     color: var(--quiet);
     margin-top: 6px;
   }

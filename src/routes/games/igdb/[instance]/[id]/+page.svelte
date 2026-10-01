@@ -1,11 +1,14 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { api, message } from '$lib/ui/client';
-  import MediaHero from '$lib/ui/components/MediaHero.svelte';
+  import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import { gameHero } from '$lib/games/presentation';
   import Button from '$lib/ui/components/Button.svelte';
-  import GameOverview from '$lib/ui/components/GameOverview.svelte';
+  import { overviewPanels } from '$lib/ui/insights/overview';
+  import { gameFacts } from '$lib/games/presentation';
+  import Shelf from '$lib/ui/components/Shelf.svelte';
   let { data } = $props();
+  const overview = $derived(overviewPanels(data.item.overview,gameFacts(data.item)));
   let busy = $state(false),
     failure = $state('');
   async function add() {
@@ -26,13 +29,13 @@
 </script>
 
 <svelte:head><title>{data.item.title} · Games · Coast</title></svelte:head>
-<MediaHero
+<MediaPage details
   item={gameHero(
     { ...data.item, id: data.item.externalId },
     `/games/igdb/${data.instanceId}/${data.item.externalId}`
   )}
 >
-  {#snippet actions()}
+  {#snippet heroActions()}
     <Button variant="ghost" href={`/games?view=igdb&instance=${data.instanceId}`} icon="left"
       >Games</Button
     >
@@ -40,8 +43,8 @@
       >{busy ? 'Adding…' : 'Add game'}</Button
     >
   {/snippet}
-</MediaHero>
-<div class="content" style="padding-bottom:90px">
+
+
   {#if failure}<div class="notice error" role="alert">{failure}</div>{/if}
-  <GameOverview item={data.item} />
-</div>
+  {#if overview.length}<Shelf title="Overview" size="panel" artworkOptions={false} panels={overview} />{/if}
+</MediaPage>

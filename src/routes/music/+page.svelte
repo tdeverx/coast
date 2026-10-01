@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto, invalidateAll } from '$app/navigation';
-  import BrowseHeader from '$lib/ui/components/BrowseHeader.svelte';
+  import Heading from '$lib/ui/components/Heading.svelte';
+  import { browseHeading } from '$lib/ui/headings';
   import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
@@ -19,8 +20,7 @@
 
 <svelte:head><title>Music · Coast</title></svelte:head>
 <div class="content page route-content">
-  <BrowseHeader surface="listen" enabled={data.experimentalFeatures}>
-    {#snippet filters()}<RowFilter
+  <Heading {...browseHeading("listen", data.experimentalFeatures)}>{#snippet actions()}<RowFilter
         label="Music type"
         value={data.filters.kind}
         options={[
@@ -31,8 +31,7 @@
         ]}
         onchange={(kind) =>
           goto(pageUrl(1, kind as typeof data.filters.kind), { keepFocus: true, noScroll: true })}
-      />{/snippet}
-  </BrowseHeader>
+      />{/snippet}</Heading>
   <form class="filter-row browse-search" action="/music" method="GET">
     <input type="hidden" name="kind" value={data.filters.kind} />
     <input type="hidden" name="connection" value={data.connectionId} />

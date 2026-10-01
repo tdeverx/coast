@@ -47,27 +47,27 @@
     justify-content: space-between;
     gap: 12px;
     margin-bottom: 8px;
-    font-size: 12px;
+    font-size: var(--text-sm);
   }
   small {
     flex: none;
     color: var(--muted);
-    font-size: 10px;
+    font-size: var(--text-sm);
     font-variant-numeric: tabular-nums;
   }
   .track {
     height: 6px;
     border-radius: 999px;
-    background: #ffffff18;
+    background: color-mix(in srgb, var(--white) calc(24 / 255 * 100%), transparent);
     overflow: hidden;
   }
   .track span {
     display: block;
     height: 100%;
     border-radius: inherit;
-    background: linear-gradient(to right, #ffffff80, var(--ink));
+    background: linear-gradient(to right, color-mix(in srgb, var(--white) calc(128 / 255 * 100%), transparent), var(--ink));
   }
   a:hover .heading {
-    color: white;
+    color: var(--ink);
   }
 </style>

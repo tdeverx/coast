@@ -1,4 +1,4 @@
-<script lang="ts">
+<script lang="ts" generics="T extends string = string">
   import ContextMenu from './ContextMenu.svelte';
   import MenuAction from './MenuAction.svelte';
   let {
@@ -8,9 +8,9 @@
     onchange,
   }: {
     label: string;
-    value: string;
+    value: T;
     options: { value: string; label: string }[];
-    onchange?: (value: string) => void;
+    onchange?: (value: T) => void;
   } = $props();
   const selected = $derived(options.find((option) => option.value === value)?.label ?? label);
 </script>
@@ -25,7 +25,7 @@
         keepOpen={false}
         onclick={() => {
           if (value === option.value) return;
-          value = option.value;
+          value = option.value as T;
           onchange?.(value);
         }}
       >{option.label}</MenuAction>
@@ -47,8 +47,8 @@
     background: transparent;
     color: var(--muted);
     font: inherit;
-    font-size: var(--text-small, 11px);
-    font-weight: 600;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
     cursor: pointer;
     box-shadow: none;
   }
