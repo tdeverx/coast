@@ -9,6 +9,7 @@ export type QueueAction = {
     nextAttemptAt?: Date | string;
     connectionLabel?: string;
     instanceId?: string | null;
+    failure?: { code: string; remedy: 'connection' | 'permissions' | 'metadata' | 'retry'; retryable: boolean } | null;
     outcome?: { checked?: number; added?: number; refreshed?: number; deferred?: number } | null;
     progress?: { processed?: number; total?: number | null; phase?: string; failed?: number } | null;
   };
@@ -27,6 +28,7 @@ export function jobOutcome(action: QueueAction) {
   return 'Completed successfully';
 }
 export function jobRemedy(action: QueueAction) {
+  if (action.failure) return action.failure.remedy;
   if (action.lastError?.includes('Authentication failed')) return 'connection';
   if (action.lastError?.includes('Access denied')) return 'permissions';
   if (action.lastError?.includes('metadata identities')) return 'metadata';

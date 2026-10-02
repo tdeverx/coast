@@ -1,6 +1,6 @@
 import { untrack } from 'svelte';
 import { page } from '$app/state';
-import { invalidateAll } from '$app/navigation';
+import { invalidate } from '$app/navigation';
 import { libraryTitles, librarySelections, type LibrarySurface } from '$lib/library';
 import type { ShelfItem, ShelfSource, ShelfControl } from './types';
 export type SearchOptions = {
@@ -16,6 +16,7 @@ export function createSearchSource(getOptions: () => SearchOptions): ShelfSource
   let { surface, query, items, busy = false, failure = '', truncated = false, layout = 'row' } = $derived(getOptions());
   let kind = $state(untrack(() => layout === 'grid' ? page.url.searchParams.get('kind') ?? 'all' : 'all'));
   return {
+    get pagination() { return { kind: 'local' as const }; },
     get title() { return libraryTitles[surface]; },
     get items() { return surface === 'watch' ? items : items.filter(item => 'href' in item && (kind === 'all' || item.kind === kind)); },
     get busy() { return busy; }, get ready() { return !busy; }, get error() { return failure; }, activated: true,
@@ -27,6 +28,6 @@ export function createSearchSource(getOptions: () => SearchOptions): ShelfSource
     get mediaKind() { return surface === 'listen' ? 'music' : surface === 'play' ? 'game' : 'screen'; },
     get notice() { return truncated ? 'Refine your search for more results.' : ''; },
     get empty() { return busy ? 'Searching…' : 'No titles in this selection.'; },
-    load: async () => invalidateAll(),
+    load: async () => invalidate('coast:tracking'),
   };
 }

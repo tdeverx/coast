@@ -1,5 +1,5 @@
 import { onDestroy, untrack, type Snippet } from 'svelte';
-import { api } from '$lib/ui/client';
+import { useClient } from '$lib/ui/client-context';
 import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
 import { journalGroups, type JournalEntry } from '$lib/profile/journal';
 import type { ShelfSource } from './types';
@@ -21,6 +21,8 @@ export type JournalOptions = {
     preview?: { href: string; filters: Snippet };
   };
 export function createJournalSource(getOptions:()=>JournalOptions):ShelfSource {
+  const { api } = useClient();
+
   let {
     items = [],
     endpoint = 'profile/activity', maxDays = Infinity, page = 0, pages = 1, filters, onitems,
@@ -81,13 +83,14 @@ export function createJournalSource(getOptions:()=>JournalOptions):ShelfSource {
               timeZone: 'UTC',
             });
   return {
+    get pagination() { return { kind: 'cursor' as const, hasMore }; },
     title:'Activity', get items() { return visible; }, get busy() { return loading; }, get ready() { return resource.ready; },
     get error() { return error; }, get activated() { return resource.activated; }, filters:[], controls:[],
     get groups() { return visibleGroups.map(group=>({title:preview ? previewTitle(group.date) : `${dayLabel(group.date)} activity`,
       heading:preview ? undefined : dayLabel(group.date), count:preview ? undefined : group.count,
       items:group.runs.flat(), runs:group.runs, href:preview?.href, controls:preview?.filters,
       preserveHeight:!!preview, selection})); },
-    get appendOnly() { return !!filters; }, get hasMore() { return hasMore; }, get page() { return current; }, get pages() { return last; },
+    get appendOnly() { return !!filters; },
     get empty() { return !hasMore && !loadedItems.length ? 'No recorded activity in this period.' : ''; },
     loadMoreLabel:'Load more activity', load:more,
   };

@@ -5,20 +5,15 @@
   import { browserDiagnostic } from '$lib/ui/diagnostics';
   import { sequencePath } from '$lib/media/sequence';
   import { onMount, untrack, tick } from 'svelte';
-  import { invalidateAll } from '$app/navigation';
-  import {
-    player,
-    advanceMusic,
-    playSavedMusicQueue,
-    playMedia,
-    registerPlaybackController,
-    setPlaybackMuted,
-  } from '$lib/playback/client.svelte';
+  import { refreshAfterChange } from '$lib/ui/client';
+  import { advanceMusic, playSavedMusicQueue, playMedia, registerPlaybackController, setPlaybackMuted } from '$lib/playback/client.svelte';
+  import { usePlayback } from '$lib/playback/context.svelte';
   import { bufferedAhead, streamHasStopped, playbackFailureMessage } from '$lib/playback/failures';
   import { actualPlayedDelta } from '$lib/playback/listening';
   import { noCrop, videoFitStyle, type FrameCrop } from '$lib/playback/crop';
   import { observeVideoCrop } from '$lib/playback/observe-crop';
-  import { api, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import type { MediaView } from '$lib/ui/types';
   import { liquidGlass } from '$lib/ui/materials/glass';
   import Icon from './Icon.svelte';
@@ -27,6 +22,11 @@
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   import PlaybackTimeline from './PlaybackTimeline.svelte';
+
+  const { api, change } = useClient();
+
+  const { player, preview } = usePlayback();
+
   let syncControls = $state<{show:()=>Promise<void>}>();
   let video = $state<HTMLVideoElement>(null!);
   let audio = $state<HTMLAudioElement>(null!);
@@ -122,6 +122,7 @@
     armIdle();
   }
   $effect(() => {
+    if (preview) return;
     active;
     player.paused;
     player.role;
@@ -130,6 +131,7 @@
     return () => clearTimeout(idleTimer);
   });
   async function report(event = 'progress') {
+    if (preview) return false;
     const session = player.session;
     if (!session || !active) return false;
     const started = startedSessionId === session.id;
@@ -146,14 +148,14 @@
     reports = reports.then(async () => {
       try {
         if (started && event !== 'start' && acknowledgedSessionId !== session.id) {
-          await api(`playback/${session.id}/progress`, {
+          await change(`playback/${session.id}/progress`, {
             ...payload,
             event: 'start',
             paused: false,
           });
           acknowledgedSessionId = session.id;
         }
-        await api(`playback/${session.id}/progress`, payload);
+        await change(`playback/${session.id}/progress`, payload);
         trackingNotice = '';
         if (event === 'start') acknowledgedSessionId = session.id;
         return true;
@@ -191,7 +193,7 @@
     player.subtitlePrompt = false;
     error = '';
     closed = false;
-    void invalidateAll();
+    void refreshAfterChange('tracking');
   }
   async function toggle() {
     if (!media) return;
@@ -215,8 +217,8 @@
     }
   }
   function streamInterrupted(reason: { status?: number; code?: number } = {}) {
+    if (!streamFailure) lastMovement = performance.now();
     streamFailure = reason;
-    lastMovement = performance.now();
     if (!failureTimer) failureTimer = setInterval(checkStreamFailure, 1000);
   }
   function nativeFailure() {
@@ -228,7 +230,7 @@
     tracePlayback('playback.failed');
     error = playbackFailureMessage(reason.status, reason.code ?? media?.error?.code);
     if (player.session)
-      await api(`playback/${player.session.id}/error`, { code: media?.error?.code ?? 0 }).catch(
+      await change(`playback/${player.session.id}/error`, { code: media?.error?.code ?? 0 }).catch(
         () => {}
       );
   }
@@ -269,7 +271,7 @@
     saving = false;
     player.role = 'postplay';
     player.paused = true;
-    void invalidateAll();
+    void refreshAfterChange('tracking');
     if (!saved || !player.session) return;
     try {
       if (player.session.sequence) {
@@ -325,6 +327,7 @@
     }
   }
   $effect(() => {
+    if (preview) return;
     const session = player.session;
     if (session) {
       playedSeconds = 0; playedPosition = session.startSeconds; playedAt = 0; wasPlaying = false; seeking = false;
@@ -340,6 +343,7 @@
     }
   });
   $effect(() => {
+    if (preview) return;
     const url = src,
       kind = player.session?.kind,
       element = media;
@@ -399,9 +403,11 @@
     };
   });
   $effect(() => {
+    if (preview) return;
     if (media) { media.muted = player.muted; media.volume = volume; }
   });
   onMount(() => {
+    if (preview) return;
     const unregister = registerPlaybackController({
       stop: close,
       pause,
@@ -676,6 +682,7 @@
               min="0"
               max="1"
               step="0.05"
+              aria-valuetext={`${Math.round(volume * 100)} percent`}
               bind:value={volume}
               oninput={() => {
                 media.volume = volume;

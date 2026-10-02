@@ -1,7 +1,7 @@
 
   import { page as route } from '$app/state';
   import { onDestroy, untrack } from 'svelte';
-  import { api } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
   import type { MediaView } from '$lib/ui/types';
   import type { creditRoles } from '$lib/media/credits';
@@ -14,6 +14,8 @@ export type CreditsOptions = {
     scope?: 'all' | 'library' | 'known';
   };
 export function createCreditsSource(getOptions: () => CreditsOptions): ShelfSource {
+  const { api } = useClient();
+
   let {
     personId,
     title,
@@ -74,11 +76,12 @@ export function createCreditsSource(getOptions: () => CreditsOptions): ShelfSour
 
 
   return {
+    get pagination() { return { kind: 'pages' as const, page: result.page, pages: result.pages, append: layout === 'row' && scope !== 'known', controls: layout === 'grid' ? 'header' as const : 'none' as const }; },
     get title() { return title; }, get items() { return result.items; }, get busy() { return busy; }, get ready() { return ready; },
     get error() { return error; }, get activated() { return resource.activated; },
     get href() { return layout === 'row' ? `/people/${personId}?${new URLSearchParams({section:scope,type,department,available:String(available)})}` : undefined; },
-    get page() { return result.page; }, get pages() { return result.pages; }, get headerPagination() { return layout === 'grid'; },
-    get rows() { return scope === 'all' ? 2 : 1; }, get hasMore() { return layout==='row' && scope!=='known' && result.page<result.pages; },
+
+    get rows() { return scope === 'all' ? 2 : 1; },
     get resetKey() { return `${type}:${department}`; },
     get filters(): ShelfControl[] { return [
       {type:'segments' as const,label:`${title} roles`,value:department,options:[{value:'all',label:'All'},...(result.departments??['Acting','Crew']).map(label=>({value:label,label}))],change:(value:string)=>{department=value;void load();}},

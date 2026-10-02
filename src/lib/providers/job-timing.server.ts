@@ -17,26 +17,32 @@ export async function jobTimings(): Promise<JobTiming[]> {
     sql<Account[]>`select c.id,c.instance_id,c.external_user_id,c.settings,
       exists(select 1 from social_live_state s where s.connection_id=c.id and s.account_generation=c.account_generation and s.expires_at>now())
       or exists(select 1 from playback_sessions p where p.user_id=c.user_id and p.state='active' and p.updated_at>now()-interval '2 minutes')
-      or exists(select 1 from social_checkins s where s.user_id=c.user_id and s.state='active') as live,
+      or exists(select 1 from social_checkins s where s.user_id=c.user_id and s.state='active' and s.expires_at>now()) as live,
       (select completed_at from sync_checkpoints s where s.connection_id=c.id and s.kind='jellyfin-user') as user_completed,
       (select count(distinct media_id)::int from sync_values s where s.connection_id=c.id and s.conflict) as reviews
       from provider_connections c join users u on u.id=c.user_id where c.status='connected' and not u.disabled order by c.created_at,c.id`,
     sql<Evidence[]>`select c.id as connection_id,k.kind,null::text as instance_id,
       (select a.updated_at from outbox_actions a where a.connection_id=c.id and a.kind=k.kind and a.state='succeeded' and (a.account_generation is null or a.account_generation=c.account_generation) order by a.updated_at desc limit 1) as completed,
       exists(select 1 from outbox_actions a where a.connection_id=c.id and a.kind=k.kind and a.state in ('pending','running','failed') and (a.account_generation is null or a.account_generation=c.account_generation)) as blocked
-      from provider_connections c join users u on u.id=c.user_id cross join unnest(${sql.array(maintenanceKinds, 'TEXT')}) as k(kind) where c.status='connected' and not u.disabled
+      from provider_connections c join users u on u.id=c.user_id join provider_instances i on i.id=c.instance_id cross join unnest(${sql.array(maintenanceKinds, 'TEXT')}) as k(kind) where c.status='connected' and not u.disabled
+      and (k.kind like i.provider||'.%' or k.kind='catalogue.user-scan' and i.provider in ('jellyfin','trakt'))
       union all select null::uuid,'tmdb.refresh',i.id::text,
       (select updated_at from outbox_actions a where a.kind='tmdb.refresh' and a.payload->>'instanceId'=i.id::text and a.state='succeeded' order by updated_at desc limit 1),
       exists(select 1 from outbox_actions a where a.kind='tmdb.refresh' and a.payload->>'instanceId'=i.id::text and a.state in ('pending','running','failed'))
       from provider_instances i where i.provider='tmdb'`,
-    sql<{ instance_id: string; due: Date | null }[]>`with candidates as (
-      select i.id as instance_id,e.media_id,coalesce(s.region,'GB') as region,
+    sql<{ instance_id: string; due: Date | null }[]>`with pool as materialized (
+      select e.media_id,coalesce(s.region,'GB') as region,
         max(s.updated_at) filter(where s.raw->>'detailLoaded'='true') as refreshed,
-        max(s.raw->>'maintenanceRetryAt') as retry_at,
-        coalesce((i.settings->'schedule'->>'intervalMinutes')::int,10080) as interval
-      from provider_instances i cross join (select distinct media_id from external_ids where provider='tmdb' and media_kind in ('movie','show','collection')) e
+        max(s.raw->>'maintenanceRetryAt') as retry_at
+      from (select distinct media_id from external_ids where provider='tmdb' and media_kind in ('movie','show','collection')) e
       left join metadata_snapshots s on s.media_id=e.media_id and s.provider='tmdb'
-      where i.provider='tmdb' group by i.id,e.media_id,s.region
+      group by e.media_id,s.region
+    ), candidates as (
+      select i.id as instance_id,p.*,
+        coalesce((i.settings->'schedule'->>'intervalMinutes')::int,10080) as interval
+      from provider_instances i cross join pool p
+      where i.provider='tmdb' and i.enabled and i.credentials is not null
+        and coalesce((i.settings->'schedule'->>'enabled')::boolean,true)
     ) select instance_id,min(greatest(coalesce(refreshed+make_interval(mins=>interval),now()),coalesce(retry_at::timestamptz,now()))) as due from candidates group by instance_id`,
   ]);
   const result: JobTiming[] = [];

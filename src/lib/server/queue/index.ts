@@ -95,6 +95,20 @@ export function jobFailureMessage(error: unknown, permanent: boolean) {
   return permanent ? 'This action could not be accepted. Review the connection and diagnostics before retrying.' : 'The connection was interrupted. Coast will retry automatically.';
 }
 
+export type JobFailure = { code: string; remedy: 'connection' | 'permissions' | 'metadata' | 'retry'; retryable: boolean };
+export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure {
+  const status = error instanceof ProviderHttpError ? error.status : undefined;
+  if (status === 401) return { code: 'provider.authentication', remedy: 'connection', retryable: false };
+  if (status === 403) return { code: 'provider.permission', remedy: 'permissions', retryable: false };
+  if (status === 404 || status === 410) return { code: 'provider.item-unavailable', remedy: 'metadata', retryable: false };
+  if (status === 429) return { code: 'provider.rate-limit', remedy: 'retry', retryable: true };
+  if (status && status >= 500) return { code: 'provider.unavailable', remedy: 'retry', retryable: true };
+  if (error instanceof v.ValiError) return { code: 'provider.invalid-data', remedy: 'metadata', retryable: false };
+  const code = safeDiagnosticErrorCode(error);
+  if (code === 'catalogue.identity-conflict') return { code, remedy: 'metadata', retryable: false };
+  return { code: code ?? (permanent ? 'action.rejected' : 'provider.interrupted'), remedy: 'retry', retryable: !permanent };
+}
+
 export function retryDelayMs(attempt: number): number {
   return Math.min(6 * 60 * 60_000, 5000 * 2 ** Math.min(13, Math.max(0, attempt - 1)));
 }
@@ -232,31 +246,35 @@ export async function runQueueOnce(): Promise<boolean> {
         const outcome = await handler(action);
         await getSql().begin(async (sql) => {
           const completed =
-            await sql`UPDATE outbox_actions SET state = 'succeeded', locked_at = NULL, last_error = NULL, payload = payload || ${outcome ? { _jobOutcome: outcome } : {}}::jsonb, updated_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
+            await sql`UPDATE outbox_actions SET state = 'succeeded', locked_at = NULL, last_error = NULL, payload = (payload - '_jobFailure') || ${outcome ? { _jobOutcome: outcome } : {}}::jsonb, updated_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
           if (completed.length)
             await resolveNotification(action.userId, `outbox:${action.id}`, sql);
         });
         void logDiagnostic('info', 'job.complete', {
           actionId: action.id,
+          accountGeneration: action.accountGeneration,
           attempts: action.attempts,
           durationMs: performance.now() - started,
         });
       } catch (error) {
         void logDiagnostic('error', 'job.failed', {
           actionId: action.id,
+          accountGeneration: action.accountGeneration,
           attempts: action.attempts,
           failure: classifyFailure(error),
           status: error instanceof ProviderHttpError ? error.status : undefined,
-          errorCode: safeDiagnosticErrorCode(error),
+          errorCode: safeDiagnosticErrorCode(error) ?? jobFailureDetail(error, error instanceof PermanentActionError).code,
           stage: safeDiagnosticStage(error),
           durationMs: performance.now() - started,
         });
         const permanent =
+          safeDiagnosticErrorCode(error) === 'catalogue.identity-conflict' ||
           error instanceof PermanentActionError ||
           error instanceof v.ValiError ||
           (error instanceof ProviderHttpError &&
             [400, 401, 403, 404, 405, 409, 410, 422].includes(error.status));
         const message = jobFailureMessage(error, permanent);
+        const failure = jobFailureDetail(error, permanent);
         const retryAfter =
           error instanceof ProviderHttpError
             ? Math.min(86_400_000, Math.max(0, (error.retryAfterSeconds || 0) * 1000))
@@ -273,7 +291,7 @@ export async function runQueueOnce(): Promise<boolean> {
             await sql`UPDATE provider_instances SET settings = jsonb_set(settings, '{jobsRetryAt}', to_jsonb(GREATEST(COALESCE(settings->>'jobsRetryAt', ''), ${until})::text), true) WHERE id = ${action.instanceId}`;
           }
           const failed =
-            await sql`UPDATE outbox_actions SET state = ${permanent ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, updated_at = NOW()
+            await sql`UPDATE outbox_actions SET state = ${permanent ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, payload = payload || ${{ _jobFailure: failure }}::jsonb, updated_at = NOW()
         WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
           if (!failed.length) return; // A recovered lease owns the outcome now.
           if (permanent || action.attempts >= 3)
@@ -377,6 +395,7 @@ export async function listActions(actor: SessionUser | null) {
         total?: number | null;
         phase?: string;
       } | null>`case when ${outboxActions.kind}='tmdb.refresh' and (${providerInstances.settings}->'metadataScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerInstances.settings}->'metadataScan'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerInstances.settings}->'metadataScan' when ${outboxActions.kind}='jellyfin.library' and (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerInstances.settings}->'libraryScan' when ${outboxActions.kind}='jellyfin.sync' and (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerConnections.settings}->'userSync' else null end`,
+      failure: sql<JobFailure | null>`${outboxActions.payload}->'_jobFailure'`,
       outcome: sql<JobOutcome | null>`${outboxActions.payload}->'_jobOutcome'`,
       instanceId: providerInstances.id,
       provider: providerInstances.provider,

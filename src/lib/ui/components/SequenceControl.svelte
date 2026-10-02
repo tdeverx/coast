@@ -1,12 +1,16 @@
 <script lang="ts">
-  import { invalidateAll } from '$app/navigation';
-  import { api, message, change } from '$lib/ui/client';
+  import { refreshAfterChange } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { sequencePath, type SequenceSource } from '$lib/media/sequence';
   import type { MediaView } from '$lib/ui/types';
   import { playMedia,playMusicQueue } from '$lib/playback/client.svelte';
   import {page} from '$app/state';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
+
+  const { api, change, preview } = useClient();
+
   let {
     source,
     from,
@@ -17,6 +21,7 @@
     error = $state(''),
     next = $state<MediaView | null>(null);
   export async function start(restart = false, after?: string) {
+    if (preview) return;
     busy = true;
     error = '';
     try {
@@ -25,8 +30,8 @@
           const music=await api<Parameters<typeof playMusicQueue>[0]|null>(`music/queue?listId=${source.id}`,undefined,'GET');
           if(music){await playMusicQueue(music);open=false;return;}
         }
-        await api(`lists/${source.id}/playback`, { restart });
-        void invalidateAll();
+        await change(`lists/${source.id}/playback`, { restart });
+        void refreshAfterChange('tracking');
       }
       if (source.kind === 'collection' && restart)
         await change('rewatch', { mediaId: source.id, startedAt: new Date().toISOString() });

@@ -65,7 +65,7 @@
     childClose = null;
     childHidden = false;
     parent?.showChild(null, false);
-    if (focus) (returnFocus ?? triggerNode).focus({ preventScroll: true });
+    if (focus) (returnFocus?.isConnected ? returnFocus : triggerNode)?.focus({ preventScroll: true });
     point = undefined;
     returnFocus = null;
   }

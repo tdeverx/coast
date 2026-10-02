@@ -5,7 +5,9 @@ import { missingDemand } from '$lib/collection/demand.server';
 import { profileUser } from '$lib/server/queries/profile-user';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({locals, url, depends}) => {
+  depends('coast:tracking');
+
   if (!locals.user) error(401, 'Sign in to browse Collection.');
   const view = url.searchParams.get('view') ?? 'overview';
   if (!['overview', 'watch', 'listen', 'play'].includes(view)) error(400, 'Choose a valid Collection view.');

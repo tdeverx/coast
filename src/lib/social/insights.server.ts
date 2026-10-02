@@ -4,7 +4,14 @@ import {requireVisible} from './privacy.server';
 import {median,tasteSignals,type TasteWork} from './taste';
 export async function friendInsights(viewerId:string,friendId:string) {
  await requireFriend(viewerId,friendId);await requireVisible(friendId,viewerId,'insights');
- const rows=await getSql()`select u.id as "userId",w.id,case when w.kind='movie' then 'movies' when w.category='screen' then 'tv' else w.category end as medium,
+ const rows=await getSql()`with candidates as (
+ select user_id,media_id as work_id from tracking_state where user_id in (${viewerId},${friendId}) and (collected or watchlist or favourite or watched or play_count>0 or position_seconds>0)
+ union select user_id,media_id from ratings where user_id in (${viewerId},${friendId})
+ union select user_id,target_id from social_reactions where user_id in (${viewerId},${friendId}) and target_kind='work'
+ union select user_id,track_id from music_listens where user_id in (${viewerId},${friendId})
+ union select user_id,track_id from music_progress where user_id in (${viewerId},${friendId}) and position_seconds>0
+ union select user_id,game_id from game_playthroughs where user_id in (${viewerId},${friendId})
+ ) select u.id as "userId",w.id,case when w.kind='movie' then 'movies' when w.category='screen' then 'tv' else w.category end as medium,
  coalesce(m.genres,mu.genres,g.genres,'{}'::text[]) as genres,
  case when social_visible(u.id,${viewerId}::uuid,'progress',w.category) then coalesce(t.position_seconds,mp.position_seconds,0) else 0 end as "positionSeconds",
  case when social_visible(u.id,${viewerId}::uuid,'progress',w.category) then coalesce(t.duration_seconds,mp.duration_seconds,0) else 0 end as "durationSeconds",
@@ -14,7 +21,7 @@ export async function friendInsights(viewerId:string,friendId:string) {
  case when social_visible(u.id,${viewerId}::uuid,'reactions',w.category) then reaction.emoji end as reaction,
  (social_visible(u.id,${viewerId}::uuid,'collection',w.category) and (coalesce(t.collected,false) or coalesce(t.watchlist,false))) or (social_visible(u.id,${viewerId}::uuid,'favourites',w.category) and coalesce(t.favourite,false)) as interest,
  social_visible(u.id,${viewerId}::uuid,'activity',w.category) and (coalesce(t.watched,false) or coalesce(t.play_count,0)>0 or exists(select 1 from music_listens where user_id=u.id and track_id=w.id) or exists(select 1 from game_playthroughs where user_id=u.id and game_id=w.id and status='completed')) as consumed
- from users u cross join works w left join media m on m.id=w.id left join music_works mu on mu.id=w.id left join games g on g.id=w.id
+ from candidates c join users u on u.id=c.user_id join works w on w.id=c.work_id left join media m on m.id=w.id left join music_works mu on mu.id=w.id left join games g on g.id=w.id
  left join music_progress mp on mp.user_id=u.id and mp.track_id=w.id
  left join lateral(select progress_percent,status from game_playthroughs where user_id=u.id and game_id=w.id order by created_at desc,id desc limit 1) gp on true
  left join tracking_state t on t.user_id=u.id and t.media_id=w.id left join ratings r on r.user_id=u.id and r.media_id=w.id

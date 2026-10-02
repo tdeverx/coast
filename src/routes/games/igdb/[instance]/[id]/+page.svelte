@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { api, message } from '$lib/ui/client';
+  import { change, message } from '$lib/ui/client';
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import { gameHero, gameFacts } from '$lib/games/presentation';
   import Button from '$lib/ui/components/Button.svelte';
@@ -14,7 +14,7 @@
     busy = true;
     failure = '';
     try {
-      const game = await api<{ id: string }>('games/import', {
+      const game = await change<{ id: string }>('games/import', {
         instanceId: data.instanceId,
         externalId: data.item.externalId,
       });

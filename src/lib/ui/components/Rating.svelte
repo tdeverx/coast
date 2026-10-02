@@ -1,7 +1,11 @@
 <script lang="ts">
-  import { change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import Icon from './Icon.svelte';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
+
+  const { change } = useClient();
+
   let {
     mediaId,
     value = null,

@@ -5,7 +5,9 @@ import { listsData, listsOptionsSchema } from '$lib/server/queries/lists';
 import { AppError } from '$lib/server/security/errors';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({locals, url, depends}) => {
+  depends('coast:tracking');
+
   if (!locals.user) error(401, 'Sign in to browse your lists.');
   const parameters = url.searchParams;
   if (!parameters.has('view')) return { lists: await getLists(locals.user.id), detail: null };

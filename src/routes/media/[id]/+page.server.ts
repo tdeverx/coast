@@ -3,7 +3,9 @@ import { detailsData } from '$lib/server/queries/media';
 import { requestOptions } from '$lib/providers/seerr/requests.server';
 import { ensureDetails } from '$lib/catalogue/service';
 
-export const load = (async ({ locals, params }) => {
+export const load = (async ({locals, params, depends}) => {
+  depends('coast:tracking');
+
   if(!locals.user){const initial={...(await (await import('$lib/social/public.server')).publicDetails(params.id)),requestable:false,refreshUnavailable:false};return {...initial,enhancement:Promise.resolve(initial)};}
   const userId = locals.user.id;
   const initial = {

@@ -2,14 +2,15 @@
   import { onMount } from 'svelte';
   import Heading from '$lib/ui/components/Heading.svelte';
   import PreviewSlot from './PreviewSlot.svelte';
-  import { installFixtures } from './demo/fixtures';
+  import { providePreviewClient } from '$lib/ui/client-context';
+  import { fixtureFetch } from './demo/fixtures';
   import MaterialTweaker from '$lib/ui/materials/MaterialTweaker.svelte';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import Button from '$lib/ui/components/Button.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
-  import { components, elements, composedComponents, referenceSections, referenceSection } from './catalog';
+  import { manifest, components, elements, composedComponents, referenceSections, referenceSection } from './catalog';
   let search = $state('');
   const section = $derived(referenceSection(page.url.searchParams.get('section')));
   const inventory = $derived(section === 'elements' ? elements : composedComponents);
@@ -19,13 +20,8 @@
     url.searchParams.set('section', value);
     void goto(url, { noScroll: true, keepFocus: true });
   }
-  let previewsReady = $state(false);
-  $effect(() => {
-    if (section !== 'elements' && section !== 'components') return;
-    const restore = installFixtures();
-    previewsReady = true;
-    return () => { previewsReady = false; restore(); };
-  });
+  providePreviewClient(fixtureFetch);
+  const previewsReady = true;
   const large = new Set(['DetailCard','Heading','MediaHero','MediaPage','MediaDetailRows','IntegrationSettings','JobsSettings','Dialog','AddTitle','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog']);
   const textSizes = ['--text-sm','--text-md','--text-xl','--text-2xl','--text-hero-mobile','--text-hero'];
   const weights = ['--weight-regular','--weight-semibold','--weight-bold'];
@@ -130,12 +126,23 @@
   </div>
   <div class="inventory">
     {#each visible as name (name)}
-      <section class="specimen" aria-labelledby={`label-${name}`}>
+      <section class="specimen" id={`component-${name}`} aria-labelledby={`label-${name}`}>
         <Heading title={name}>
           {#snippet heading()}<h2 id={`label-${name}`}>{name}{name==='SocialControls'?' · Non-approved':''}</h2>{/snippet}
           {#snippet actions()}<a class="small quiet" href={`/ui-preview/demo?component=${name}`} target="_blank" rel="noreferrer">Open ↗</a>{/snippet}
         </Heading>
-        <p class="small quiet">src/lib/ui/components/{name}.svelte</p>
+        <p class="small quiet">{manifest[name].path}</p>
+        {#if manifest[name].elements.length}
+          <div class="row small"><span class="quiet">Built with</span>
+            {#each manifest[name].elements as element}<a href={`/ui-preview?section=${elements.some(value=>value===element)?'elements':'components'}#component-${element}`}>{element}</a>{/each}
+          </div>
+        {/if}
+        {#if manifest[name].dynamicComposition}<p class="small quiet">Also accepts composition through snippets or dynamic content.</p>{/if}
+        {#if manifest[name].usedBy.length}
+          <details class="small"><summary>Used by {manifest[name].usedBy.length} components / pages</summary>
+            {#each manifest[name].usedBy as consumer}<p class="small quiet"><code>{consumer}</code></p>{/each}
+          </details>
+        {/if}
         {#if previewsReady}<PreviewSlot {name} minimum={large.has(name)?780:360} />{/if}
       </section>
     {:else}<p class="quiet">No matching {section === 'elements' ? 'elements' : 'components'}.</p>{/each}

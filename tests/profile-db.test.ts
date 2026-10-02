@@ -594,3 +594,22 @@ run(
     }
   }
 );
+
+run('shared profile details do not serialize private favourite ordering or pins', async () => {
+  const db = getDb();
+  const [saved] = await db.select({ settings: users.settings }).from(users).where(eq(users.id, owner));
+  const profile = { displayName: 'Shared name', favouriteOrder: [ids[0]], pinnedFavourites: [ids[0]] };
+  try {
+    await db.update(users).set({ settings: { ...saved.settings, profile, social: { audience: 'public', sections: { favourites: 'private' } } } }).where(eq(users.id, owner));
+    for (const viewer of [other, null]) {
+      const result = await profileData(owner, {}, new Date(), viewer);
+      expect(result.profile.displayName).toBe('Shared name');
+      expect(result.profile.favouriteOrder).toBeUndefined();
+      expect(result.profile.pinnedFavourites).toBeUndefined();
+      expect(JSON.stringify(result.profile)).not.toContain(ids[0]);
+    }
+    expect((await profileData(owner)).profile.favouriteOrder).toEqual([ids[0]]);
+    await db.update(users).set({ settings: { ...saved.settings, profile, social: { audience: 'public' } } }).where(eq(users.id, owner));
+    expect((await profileData(owner, {}, new Date(), other)).profile.pinnedFavourites).toEqual([ids[0]]);
+  } finally { await db.update(users).set({ settings: saved.settings }).where(eq(users.id, owner)); }
+});

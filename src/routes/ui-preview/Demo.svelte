@@ -5,74 +5,76 @@
   import type { MediaCardShape } from '$lib/ui/types';
   import { serviceTasks } from '$lib/providers/tasks';
   import { liquidGlass } from '$lib/ui/materials/glass';
-  import { player } from '$lib/playback/client.svelte';
+  import { providePreviewPlayback } from '$lib/playback/context.svelte';
+  const { player } = providePreviewPlayback();
   import { id,today,movie,show,episode,items,facts,chart,days,journal,provider,job,music,track,actionData } from './demo/fixtures';
-  import AddTitle from '$lib/ui/components/AddTitle.svelte';
-  import AvailabilityToggle from '$lib/ui/components/AvailabilityToggle.svelte';
-  import BarChart from '$lib/ui/components/BarChart.svelte';
-  import Brand from '$lib/ui/components/Brand.svelte';
-  import BreakdownChart from '$lib/ui/components/BreakdownChart.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import CollectionProjectionSettings from '$lib/ui/components/CollectionProjectionSettings.svelte';
-  import ConflictList from '$lib/ui/components/ConflictList.svelte';
-  import ConnectionCard from '$lib/ui/components/ConnectionCard.svelte';
-  import ContextMenu from '$lib/ui/components/ContextMenu.svelte';
-  import DetailCard from '$lib/ui/components/DetailCard.svelte';
-  import Dialog from '$lib/ui/components/Dialog.svelte';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import FactList from '$lib/ui/components/FactList.svelte';
-  import Header from '$lib/ui/components/Header.svelte';
-  import Icon from '$lib/ui/components/Icon.svelte';
-  import IntegrationSettings from '$lib/ui/components/IntegrationSettings.svelte';
-  import JobSchedule from '$lib/ui/components/JobSchedule.svelte';
-  import JobsSettings from '$lib/ui/components/JobsSettings.svelte';
-  import MediaActions from '$lib/ui/components/MediaActions.svelte';
-  import MediaActivity from '$lib/ui/components/MediaActivity.svelte';
-  import MediaCard from '$lib/ui/components/MediaCard.svelte';
-  import MediaDetailRows from '$lib/ui/components/MediaDetailRows.svelte';
-  import MediaHero from '$lib/ui/components/MediaHero.svelte';
-  import MediaRequestMenu from '$lib/ui/components/MediaRequestMenu.svelte';
-  import MenuAction from '$lib/ui/components/MenuAction.svelte';
-  import MetadataEditor from '$lib/ui/components/MetadataEditor.svelte';
-  import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
-  import NotificationToasts from '$lib/ui/components/NotificationToasts.svelte';
-  import Pagination from '$lib/ui/components/Pagination.svelte';
-  import PlaybackTimeline from '$lib/ui/components/PlaybackTimeline.svelte';
-  import PresentationActions from '$lib/ui/components/PresentationActions.svelte';
-  import ProfileEditor from '$lib/ui/components/ProfileEditor.svelte';
-  import ProfileFeatureEditor from '$lib/ui/components/ProfileFeatureEditor.svelte';
-  import ProfileRecap from '$lib/ui/components/ProfileRecap.svelte';
-  import ProgressChart from '$lib/ui/components/ProgressChart.svelte';
-  import ProviderAutomation from '$lib/ui/components/ProviderAutomation.svelte';
-  import QueueList from '$lib/ui/components/QueueList.svelte';
-  import Rating from '$lib/ui/components/Rating.svelte';
-  import RequestDialog from '$lib/ui/components/RequestDialog.svelte';
-  import RowFilter from '$lib/ui/components/RowFilter.svelte';
+  let AddTitle = $state<typeof import('$lib/ui/components/AddTitle.svelte').default>(null!);
+  let AvailabilityToggle = $state<typeof import('$lib/ui/components/AvailabilityToggle.svelte').default>(null!);
+  let BarChart = $state<typeof import('$lib/ui/components/BarChart.svelte').default>(null!);
+  let Brand = $state<typeof import('$lib/ui/components/Brand.svelte').default>(null!);
+  let BreakdownChart = $state<typeof import('$lib/ui/components/BreakdownChart.svelte').default>(null!);
+  let Button = $state<typeof import('$lib/ui/components/Button.svelte').default>(null!);
+  let CollectionProjectionSettings = $state<typeof import('$lib/ui/components/CollectionProjectionSettings.svelte').default>(null!);
+  let ConflictList = $state<typeof import('$lib/ui/components/ConflictList.svelte').default>(null!);
+  let ConnectionCard = $state<typeof import('$lib/ui/components/ConnectionCard.svelte').default>(null!);
+  let ContextMenu = $state<typeof import('$lib/ui/components/ContextMenu.svelte').default>(null!);
+  let DetailCard = $state<typeof import('$lib/ui/components/DetailCard.svelte').default>(null!);
+  let Dialog = $state<typeof import('$lib/ui/components/Dialog.svelte').default>(null!);
+  let EmptyState = $state<typeof import('$lib/ui/components/EmptyState.svelte').default>(null!);
+  let FactList = $state<typeof import('$lib/ui/components/FactList.svelte').default>(null!);
+  let Header = $state<typeof import('$lib/ui/components/Header.svelte').default>(null!);
+  let Icon = $state<typeof import('$lib/ui/components/Icon.svelte').default>(null!);
+  let IntegrationSettings = $state<typeof import('$lib/ui/components/IntegrationSettings.svelte').default>(null!);
+  let JobSchedule = $state<typeof import('$lib/ui/components/JobSchedule.svelte').default>(null!);
+  let JobsSettings = $state<typeof import('$lib/ui/components/JobsSettings.svelte').default>(null!);
+  let MediaActions = $state<typeof import('$lib/ui/components/MediaActions.svelte').default>(null!);
+  let MediaActivity = $state<typeof import('$lib/ui/components/MediaActivity.svelte').default>(null!);
+  let MediaCard = $state<typeof import('$lib/ui/components/MediaCard.svelte').default>(null!);
+  let MediaDetailRows = $state<typeof import('$lib/ui/components/MediaDetailRows.svelte').default>(null!);
+  let MediaHero = $state<typeof import('$lib/ui/components/MediaHero.svelte').default>(null!);
+  let MediaRequestMenu = $state<typeof import('$lib/ui/components/MediaRequestMenu.svelte').default>(null!);
+  let MenuAction = $state<typeof import('$lib/ui/components/MenuAction.svelte').default>(null!);
+  let MetadataEditor = $state<typeof import('$lib/ui/components/MetadataEditor.svelte').default>(null!);
+  let MetricGrid = $state<typeof import('$lib/ui/components/MetricGrid.svelte').default>(null!);
+  let NotificationToasts = $state<typeof import('$lib/ui/components/NotificationToasts.svelte').default>(null!);
+  let Pagination = $state<typeof import('$lib/ui/components/Pagination.svelte').default>(null!);
+  let PersistentPlayer = $state<typeof import('$lib/ui/components/PersistentPlayer.svelte').default>(null!);
+  let PlaybackTimeline = $state<typeof import('$lib/ui/components/PlaybackTimeline.svelte').default>(null!);
+  let PresentationActions = $state<typeof import('$lib/ui/components/PresentationActions.svelte').default>(null!);
+  let ProfileEditor = $state<typeof import('$lib/ui/components/ProfileEditor.svelte').default>(null!);
+  let ProfileFeatureEditor = $state<typeof import('$lib/ui/components/ProfileFeatureEditor.svelte').default>(null!);
+  let ProfileRecap = $state<typeof import('$lib/ui/components/ProfileRecap.svelte').default>(null!);
+  let ProgressChart = $state<typeof import('$lib/ui/components/ProgressChart.svelte').default>(null!);
+  let ProviderAutomation = $state<typeof import('$lib/ui/components/ProviderAutomation.svelte').default>(null!);
+  let QueueList = $state<typeof import('$lib/ui/components/QueueList.svelte').default>(null!);
+  let Rating = $state<typeof import('$lib/ui/components/Rating.svelte').default>(null!);
+  let RequestDialog = $state<typeof import('$lib/ui/components/RequestDialog.svelte').default>(null!);
+  let RowFilter = $state<typeof import('$lib/ui/components/RowFilter.svelte').default>(null!);
   import { browseHeading } from '$lib/ui/headings';
   import { mediaTypeOptions } from '$lib/ui/filter-options';
   import { mediaOverviewPanels } from '$lib/ui/insights/media';
   import { profileActivityPanels, profileBreakdownPanels } from '$lib/ui/insights/profile';
   import { overviewPanels } from '$lib/ui/insights/overview';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import RowStyleMenu from '$lib/ui/components/RowStyleMenu.svelte';
-  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
-  import SequenceControl from '$lib/ui/components/SequenceControl.svelte';
-  import RelationshipActions from '$lib/ui/components/RelationshipActions.svelte';
-  import ListMembershipActions from '$lib/ui/components/ListMembershipActions.svelte';
-  import RowFeedback from '$lib/ui/components/RowFeedback.svelte';
-  import MediaPage from '$lib/ui/components/MediaPage.svelte';
+  let Heading = $state<typeof import('$lib/ui/components/Heading.svelte').default>(null!);
+  let RowStyleMenu = $state<typeof import('$lib/ui/components/RowStyleMenu.svelte').default>(null!);
+  let SegmentedControl = $state<typeof import('$lib/ui/components/SegmentedControl.svelte').default>(null!);
+  let SequenceControl = $state<typeof import('$lib/ui/components/SequenceControl.svelte').default>(null!);
+  let RelationshipActions = $state<typeof import('$lib/ui/components/RelationshipActions.svelte').default>(null!);
+  let ListMembershipActions = $state<typeof import('$lib/ui/components/ListMembershipActions.svelte').default>(null!);
+  let RowFeedback = $state<typeof import('$lib/ui/components/RowFeedback.svelte').default>(null!);
+  let MediaPage = $state<typeof import('$lib/ui/components/MediaPage.svelte').default>(null!);
   import { createMusicPage } from '$lib/ui/pages/music.svelte';
   import type { ComponentProps } from 'svelte';
-  import RecommendAction from '$lib/ui/components/RecommendAction.svelte';
-  import ReactionActions from '$lib/ui/components/ReactionActions.svelte';
-  import SocialControls from '$lib/ui/components/SocialControls.svelte';
-  import SyncedControls from '$lib/ui/components/SyncedControls.svelte';
-  let syncedControls = $state<SyncedControls>();
-  import Shelf from '$lib/ui/components/Shelf.svelte';
+  let RecommendAction = $state<typeof import('$lib/ui/components/RecommendAction.svelte').default>(null!);
+  let ReactionActions = $state<typeof import('$lib/ui/components/ReactionActions.svelte').default>(null!);
+  let SocialControls = $state<typeof import('$lib/ui/components/SocialControls.svelte').default>(null!);
+  let SyncedControls = $state<typeof import('$lib/ui/components/SyncedControls.svelte').default>(null!);
+  let syncedControls = $state<ReturnType<typeof SyncedControls>>();
+  let Shelf = $state<typeof import('$lib/ui/components/Shelf.svelte').default>(null!);
   import type { ShelfConfig } from '$lib/ui/shelves';
   let { name, initialOpen = false }: { name: string; initialOpen?: boolean } = $props();
-  let ready=$state(true),open=$state(untrack(() => initialOpen)),available=$state(false),number=$state(1),choice=$state('all'),position=$state(1800);
-  let styleMenu = $state<RowStyleMenu>();
+  let failure=$state(''),ready=$state(false),open=$state(untrack(() => initialOpen)),available=$state(false),number=$state(1),choice=$state('all'),position=$state(1800);
+  let styleMenu = $state<ReturnType<typeof RowStyleMenu>>();
   let shelfExample = $state('cards');
   let pageExample = $state('screen');
   const musicPage = createMusicPage(() => ({ item: { ...music, workId: id }, connectionId: id, children: { items: [track], total: 1, nextOffset: null }, failure: '', page: 1, pages: 1 }), () => page.url);
@@ -93,19 +95,93 @@
   const options=[{value:'all',label:'All'},{value:'watching',label:'Watching'},{value:'completed',label:'Completed'}];
   const materials=[{variant:'clear',label:'Clear glass'},{variant:'clearBlur',label:'Blurred clear glass'},{variant:'glassLight',label:'Glass light'},{variant:'glassDark',label:'Glass dark'},{variant:'blurLight',label:'Blur light'},{variant:'blurDark',label:'Blur dark'}] as const;
   onMount(()=>{
-    const previous = { session: player.session, role: player.role, paused: player.paused };
-    if(name==='PersistentPlayer' && initialOpen && !player.session){
+    if(name==='PersistentPlayer' && !player.session){
       player.session={id,mediaId:id,mediaType:'audio',title:'Preview track',detail:'Preview artist · Preview album',artwork:'/coast-mark.png',url:'',kind:'direct',startSeconds:0,durationSeconds:240,provider:'Preview',defaultSubtitleIndex:null,subtitlePrompt:false,subtitles:[],sources:[]};
       player.role='playback';player.paused=true;
     }
-    ready=true;
-    if (name === 'RowStyleMenu' && initialOpen) void tick().then(() => requestAnimationFrame(openStyleMenu));
-    return ()=>{if(name==='PersistentPlayer' && initialOpen && player.session?.id===id){player.session=previous.session;player.role=previous.role;player.paused=previous.paused;}};
+
+
+
+  });
+
+  const loaders = import.meta.glob<{default: any}>('/src/lib/ui/components/*.svelte');
+  const recipes: Record<string,string[]> = {"RecommendAction": ["Button", "ContextMenu", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "SyncedControls": ["Button", "SyncedControls"], "Glass": ["Button"], "AddTitle": ["AddTitle", "Button"], "AvailabilityToggle": ["AvailabilityToggle", "Button"], "BarChart": ["BarChart", "Button"], "Brand": ["Brand", "Button"], "BreakdownChart": ["BreakdownChart", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "ContextMenu": ["Button", "ContextMenu", "MenuAction"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["AvailabilityToggle", "Button", "Heading", "Pagination"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "MediaActions": ["Button", "MediaActions"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MediaRequestMenu": ["Button", "ContextMenu", "MediaRequestMenu"], "MenuAction": ["Button", "MenuAction"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PersistentPlayer": ["Button", "PersistentPlayer"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "PresentationActions": ["Button", "PresentationActions"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileFeatureEditor": ["Button", "ProfileFeatureEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProgressChart": ["Button", "ProgressChart"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "SequenceControl": ["Button", "SequenceControl"], "RelationshipActions": ["Button", "ContextMenu", "RelationshipActions"], "ListMembershipActions": ["Button", "ContextMenu", "ListMembershipActions"], "RowFeedback": ["Button", "RowFeedback"], "Shelf": ["Button", "RowFilter", "Shelf"]};
+  $effect(() => {
+    const selected = name;
+    ready = false;
+    failure = '';
+    let cancelled = false;
+    void Promise.all((recipes[selected] ?? []).map(async component => {
+      const module = await loaders[`/src/lib/ui/components/${component}.svelte`]();
+      if (cancelled) return;
+      switch(component) {
+        case 'AddTitle': AddTitle = module.default; break;
+        case 'AvailabilityToggle': AvailabilityToggle = module.default; break;
+        case 'BarChart': BarChart = module.default; break;
+        case 'Brand': Brand = module.default; break;
+        case 'BreakdownChart': BreakdownChart = module.default; break;
+        case 'Button': Button = module.default; break;
+        case 'CollectionProjectionSettings': CollectionProjectionSettings = module.default; break;
+        case 'ConflictList': ConflictList = module.default; break;
+        case 'ConnectionCard': ConnectionCard = module.default; break;
+        case 'ContextMenu': ContextMenu = module.default; break;
+        case 'DetailCard': DetailCard = module.default; break;
+        case 'Dialog': Dialog = module.default; break;
+        case 'EmptyState': EmptyState = module.default; break;
+        case 'FactList': FactList = module.default; break;
+        case 'Header': Header = module.default; break;
+        case 'Icon': Icon = module.default; break;
+        case 'IntegrationSettings': IntegrationSettings = module.default; break;
+        case 'JobSchedule': JobSchedule = module.default; break;
+        case 'JobsSettings': JobsSettings = module.default; break;
+        case 'MediaActions': MediaActions = module.default; break;
+        case 'MediaActivity': MediaActivity = module.default; break;
+        case 'MediaCard': MediaCard = module.default; break;
+        case 'MediaDetailRows': MediaDetailRows = module.default; break;
+        case 'MediaHero': MediaHero = module.default; break;
+        case 'MediaRequestMenu': MediaRequestMenu = module.default; break;
+        case 'MenuAction': MenuAction = module.default; break;
+        case 'MetadataEditor': MetadataEditor = module.default; break;
+        case 'MetricGrid': MetricGrid = module.default; break;
+        case 'NotificationToasts': NotificationToasts = module.default; break;
+        case 'Pagination': Pagination = module.default; break;
+        case 'PersistentPlayer': PersistentPlayer = module.default; break;
+        case 'PlaybackTimeline': PlaybackTimeline = module.default; break;
+        case 'PresentationActions': PresentationActions = module.default; break;
+        case 'ProfileEditor': ProfileEditor = module.default; break;
+        case 'ProfileFeatureEditor': ProfileFeatureEditor = module.default; break;
+        case 'ProfileRecap': ProfileRecap = module.default; break;
+        case 'ProgressChart': ProgressChart = module.default; break;
+        case 'ProviderAutomation': ProviderAutomation = module.default; break;
+        case 'QueueList': QueueList = module.default; break;
+        case 'Rating': Rating = module.default; break;
+        case 'RequestDialog': RequestDialog = module.default; break;
+        case 'RowFilter': RowFilter = module.default; break;
+        case 'Heading': Heading = module.default; break;
+        case 'RowStyleMenu': RowStyleMenu = module.default; break;
+        case 'SegmentedControl': SegmentedControl = module.default; break;
+        case 'SequenceControl': SequenceControl = module.default; break;
+        case 'RelationshipActions': RelationshipActions = module.default; break;
+        case 'ListMembershipActions': ListMembershipActions = module.default; break;
+        case 'RowFeedback': RowFeedback = module.default; break;
+        case 'MediaPage': MediaPage = module.default; break;
+        case 'RecommendAction': RecommendAction = module.default; break;
+        case 'ReactionActions': ReactionActions = module.default; break;
+        case 'SocialControls': SocialControls = module.default; break;
+        case 'SyncedControls': SyncedControls = module.default; break;
+        case 'Shelf': Shelf = module.default; break;
+      }
+    })).then(() => { if(!cancelled) ready = true; }).catch(error => { if(!cancelled) failure = error instanceof Error ? error.message : 'Preview could not load.'; });
+    return () => { cancelled = true; };
+  });
+  $effect(() => {
+    if (ready && name === 'RowStyleMenu' && initialOpen) void tick().then(openStyleMenu);
   });
 </script>
 
 
-<div class="demo" class:header-demo={name==='Header'}>
+<div class="demo" onclickcapture={event => { const link = (event.target as Element).closest('a'); if(link && !link.hasAttribute('data-preview-navigation'))event.preventDefault(); }} class:header-demo={name==='Header'}>
+  {#if failure}<p role="alert">{failure}</p>{/if}
   {#if ready}
     {#if ['AddTitle','Dialog','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog'].includes(name)}
       <Button variant="secondary" onclick={() => open = true}>Open example</Button>
@@ -191,8 +267,9 @@
     {:else if name==='Pagination'}
       <Pagination page={number} pages={5} onchange={(value)=>number=value} label="Preview pages" />
     {:else if name==='PersistentPlayer'}
+      <fieldset disabled><PersistentPlayer /></fieldset>
       {#if initialOpen}<p class="notice">The existing persistent controller is shown below in its idle audio state. No media or tracking is sent.</p>
-      {:else}<p class="notice">The persistent controller uses the application playback session. Open its standalone example to test it.</p><a class="button secondary" href="/ui-preview/demo?component=PersistentPlayer" target="_blank" rel="noreferrer" data-preview-navigation>Open controller example</a>{/if}
+      {:else}<p class="notice">This example uses an isolated preview playback session. Open its standalone example to test it.</p><a class="button secondary" href="/ui-preview/demo?component=PersistentPlayer" target="_blank" rel="noreferrer" data-preview-navigation>Open controller example</a>{/if}
     {:else if name==='PlaybackTimeline'}
       <PlaybackTimeline mediaId={id} title={movie.title} detail="2026 · Movie" current={position} duration={6600} onseek={(value)=>position=value} />
     {:else if name==='PresentationActions'}

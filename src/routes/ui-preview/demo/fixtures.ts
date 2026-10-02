@@ -20,13 +20,10 @@ export const music:MusicItem={id,kind:'album',title:'Preview album',artists:[{id
 export const track:MusicItem={...music,id:episode.id,kind:'track',title:'Preview track',durationSeconds:240,trackNumber:1,album:music.title,albumId:id};
 export const actionData:MediaActionData={item:movie,wholeWork:movie,releaseDate:'2026-01-01',hasReleaseDate:true,progressTargetIds:[id],hasPersonalOverrides:false,ownRewatchStartedAt:null,rewatchTargetIds:[id],targets:[movie],children:[],requestTarget:movie,requestsEnabled:false,refreshTarget:null,playable:null,editions:[],lists:[],requests:[]};
 
-/** Isolated, explicitly synthetic previews never send API calls to the application. */
-export function installFixtures() {
-  const original=window.fetch;
-  window.fetch=Object.assign(async(input:RequestInfo | URL,init?:RequestInit)=>{
+/** Synthetic transport is injected only into preview descendants. */
+export const fixtureFetch: import('$lib/ui/client').ApiTransport = async (input, init) => {
     const url=new URL(input instanceof Request?input.url:String(input),location.href);
-    if(!url.pathname.startsWith('/api/'))return original(input,init);
-    if ((init?.method ?? 'GET').toUpperCase() === 'GET' && url.pathname.startsWith('/api/v1/notifications')) return original(input, init);
+    if(!url.pathname.startsWith('/api/'))return new Response('Preview only', {status:409});
     const method=(init?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
     if(method!=='GET')return Response.json({error:'Preview only — changes are not saved.'},{status:409});
     const path=url.pathname;
@@ -46,9 +43,4 @@ export function installFixtures() {
     if(path.endsWith('/content'))return Response.json({...content,kind:'all',filter:'all'});
     if(path.endsWith('/history'))return Response.json({items:[],page:1,pages:1,total:0});
     return Response.json({error:'This action requires a live session outside the component preview.'},{status:409});
-  },original);
-  // Keep links inside each labeled preview rather than changing the outer application.
-  const blockNavigation=(event:MouseEvent)=>{const link=(event.target as Element).closest('.demo a');if(link && !link.hasAttribute('data-preview-navigation'))event.preventDefault();};
-  document.addEventListener('click',blockNavigation,true);
-  return ()=>{window.fetch=original;document.removeEventListener('click',blockNavigation,true);};
-}
+};

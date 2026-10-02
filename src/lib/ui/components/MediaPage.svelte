@@ -1,6 +1,6 @@
 <script lang="ts">
   import {page as route} from '$app/state';
-  import {api} from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import Heading from './Heading.svelte';
   import type { Snippet } from 'svelte';
   import type { MediaView } from '$lib/ui/types';
@@ -12,6 +12,9 @@
   import Button from './Button.svelte';
   import RowFeedback from './RowFeedback.svelte';
   import EmptyState from './EmptyState.svelte';
+
+  const { api } = useClient();
+
   let {
     children, hero = true, item, items = [], collection, parents = [], context = 'details', next = null,
     requestable = false, heroActions, commands = [], links = [], sections = [], error = '', back,

@@ -6,7 +6,9 @@ import {musicWorks,mediaRelationships,providerItems,providerConnections,provider
 import {PAGE_SIZE,pagination,pageNumberSchema} from '$lib/server/queries/pagination';
 import type {MusicItem} from '$lib/music/model';
 import type {PageServerLoad} from './$types';
-export const load:PageServerLoad=async({locals,params,url})=>{
+export const load:PageServerLoad=async({locals,params,url, depends})=>{
+  depends('coast:tracking');
+
  const id=v.parse(v.pipe(v.string(),v.uuid()),params.id),requested=v.parse(pageNumberSchema,Number(url.searchParams.get('page')??1)),db=getDb();
  const [work]=await db.select().from(musicWorks).where(eq(musicWorks.id,id));if(!work)error(404,'Music not found.');
  const [parent]=await db.select({id:musicWorks.id,title:musicWorks.title}).from(mediaRelationships).innerJoin(musicWorks,eq(musicWorks.id,mediaRelationships.parentId)).where(and(eq(mediaRelationships.childId,id),eq(mediaRelationships.kind,'contains'),eq(musicWorks.kind,'album'))).limit(1);

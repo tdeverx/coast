@@ -1,7 +1,8 @@
 <script lang="ts">
   import { displayLabel } from '$lib/ui/labels';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { api,change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import type {SourceImpact} from '$lib/collection/source-changes.server';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
@@ -10,6 +11,9 @@
   import MenuAction from './MenuAction.svelte';
   import ProviderAutomation from './ProviderAutomation.svelte';
   import type { ProviderSchedule } from '$lib/providers/schedule';
+
+  const { api, change } = useClient();
+
   type Instance = {
     id: string;
     provider: string;

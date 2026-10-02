@@ -2,7 +2,9 @@ import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { libraryData, libraryOptionsSchema } from '$lib/server/queries/library';
 import type { PageServerLoad } from './$types';
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({locals, url, depends}) => {
+  depends('coast:tracking');
+
   if (!locals.user) error(401, 'Sign in to browse your library.');
   const parameters = url.searchParams;
   const view =

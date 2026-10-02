@@ -14,8 +14,12 @@
     "start": "bun build/index.js",
     "check": "bun --bun svelte-kit sync && bun --bun svelte-check --tsconfig ./tsconfig.json",
     "test": "bun test tests",
+    "ui:inventory": "bun scripts/ui-inventory.ts",
+    "ui:inventory:check": "bun scripts/ui-inventory.ts --check",
+    "test:db": "bun scripts/test-database.ts",
     "db:generate": "bun --bun drizzle-kit generate",
-    "db:migrate": "bun scripts/migrate.ts"
+    "db:migrate": "bun scripts/migrate.ts",
+    "test:recovery": "bun scripts/test-recovery.ts"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.5",

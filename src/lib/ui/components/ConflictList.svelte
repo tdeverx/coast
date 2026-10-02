@@ -1,8 +1,12 @@
 <script lang="ts">
   import { displayLabel } from '$lib/ui/labels';
-  import { change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
+
+  const { change } = useClient();
+
   type Conflict = {
     id: string;
     mediaId: string;

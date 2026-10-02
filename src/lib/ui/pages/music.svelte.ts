@@ -1,6 +1,7 @@
-import { invalidateAll } from '$app/navigation';
+import { refreshAfterChange } from '$lib/ui/client';
 import { playMusic } from '$lib/playback/client.svelte';
-import { api, message } from '$lib/ui/client';
+import { message } from '$lib/ui/client';
+import { useClient } from '$lib/ui/client-context';
 import { musicCard, musicDuration, musicHero, musicHref } from '$lib/music/presentation';
 import type { MusicItem, MusicPage } from '$lib/music/model';
 import { overviewPanels } from '$lib/ui/insights/overview';
@@ -9,6 +10,8 @@ export type MusicPageData = { item: MusicItem; connectionId: string; children: M
 
 /** Music supplies data and commands to the same hero/content/shelf page as other media. */
 export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, canAct:()=>boolean=()=>true) {
+  const { preview, change } = useClient();
+
   let failure = $state('');
   let busy = $state(false);
   const item = $derived(get().item);
@@ -31,10 +34,10 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
   }
   const commands = $derived<PageCommand[]>(canAct() ? [
     ...(item.workId ? [
-      { label: 'Play', icon: 'play' as const, disabled: busy, run: () => act(() => playMusic(item.workId!, false)) },
-      { label: 'Continue', variant: 'secondary' as const, disabled: busy, run: () => act(() => playMusic(item.workId!, true)) },
+      { label: 'Play', icon: 'play' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, false)) },
+      { label: 'Continue', variant: 'secondary' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, true)) },
       { label: item.kind === 'album' ? 'Log album' : 'Log listen', icon: 'clock' as const, variant: 'ghost' as const, disabled: busy,
-        run: () => act(async () => { await api(`music/${item.workId}/log`, { batchId: crypto.randomUUID() }); await invalidateAll(); }) },
+        run: () => act(async () => { await change(`music/${item.workId}/log`, { batchId: crypto.randomUUID() }); }) },
     ] : []),
     { label: 'Music', variant: 'ghost', icon: 'left', href: `/music?connection=${get().connectionId}` },
   ] : []);
@@ -47,7 +50,7 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
       key, title: item.kind === 'artist' ? 'Albums' : 'Tracks', items: data.children.items.map(child => musicCard(child, data.connectionId)),
       shape: 'square', mediaKind: 'music', layout: section ? 'grid' : 'row', href: !section ? `${path}?section=${key}` : undefined,
       page: data.page, pages: data.pages, pageUrl: number => `${path}?section=${key}&page=${number}`,
-      error: data.failure, retry: () => invalidateAll(),
+      error: data.failure, retry: () => refreshAfterChange('music'),
       empty: { title: item.kind === 'artist' ? 'No albums available' : 'No tracks available', description: 'This Jellyfin account has no matching music here.' },
     });
     return result;

@@ -3,7 +3,7 @@ import {getDb,getSql} from '$lib/server/db';
 import {socialLiveState,socialLiveDeliveries,providerConnections,externalIds} from '$lib/server/db/schema';
 import {getTrakt} from '$lib/providers/trakt/connection.server';
 import {providerSchedule} from '$lib/providers/schedule';
-import {resolveTrakt} from '$lib/sync/trakt-import';
+import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
 import {reconcileProviderValue} from '$lib/sync/values';
 import {trackInTransaction} from '$lib/core/tracking/service';
 import {PermanentActionError} from '$lib/server/queue';

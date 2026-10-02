@@ -4,7 +4,7 @@
   let visible = $state(false);
   function observe(node: HTMLElement) {
     const observer = new IntersectionObserver(entries => {
-      visible = entries.some(entry => entry.isIntersecting);
+      if (entries.some(entry => entry.isIntersecting)) { visible = true; observer.disconnect(); }
     }, { rootMargin: '300px 0px' });
     observer.observe(node);
     return { destroy() { observer.disconnect(); } };

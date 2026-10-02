@@ -15,7 +15,8 @@ import {
   runProviderJob,
   updateProviderSchedule,
 } from '../src/lib/providers/maintenance.server';
-import { getConfig, updateConfig, type CoastConfig } from '../src/lib/server/config';
+import { getConfig, type CoastConfig } from '../src/lib/server/config';
+import { updateConfig } from '../src/lib/application/configuration.server';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const users = Array.from({ length: 3 }, () => crypto.randomUUID());
 const instances = Array.from({ length: 3 }, () => crypto.randomUUID());
@@ -236,4 +237,17 @@ run('successful delivery retains its measured outcome for run history', async ()
   await runQueueOnce();
   const [row]=await getSql()`select payload->'_jobOutcome' as outcome from outbox_actions where id=${id}`;
   expect(row.outcome).toEqual({added:84});
+});
+
+run('stored failure codes drive remedies and disappear after successful retry',async()=>{
+ const id=await queue(0,'fixture.failure');
+ registerActionHandler('fixture.failure',async()=>{throw new ProviderHttpError(403);});
+ await runQueueOnce();
+ const [failed]=await getSql()`select state,payload from outbox_actions where id=${id}`;
+ expect(failed.state).toBe('failed');expect(failed.payload._jobFailure).toEqual({code:'provider.permission',remedy:'permissions',retryable:false});
+ registerActionHandler('fixture.failure',async()=>{});
+ await getSql()`update outbox_actions set state='pending',next_attempt_at=now() where id=${id}`;
+ await runQueueOnce();
+ const [completed]=await getSql()`select state,payload from outbox_actions where id=${id}`;
+ expect(completed.state).toBe('succeeded');expect(completed.payload._jobFailure).toBeUndefined();
 });

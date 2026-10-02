@@ -5,7 +5,8 @@ import { join } from 'node:path';
 import { enabled, diagnosticLevels, safeFields, correlationId } from '../src/lib/diagnostics';
 import { DiagnosticStore, storageLimits, context } from '../src/lib/server/diagnostics';
 import { listDiagnostics } from '../src/lib/server/notifications';
-import { updateConfig, defaultConfig } from '../src/lib/server/config';
+import { defaultConfig } from '../src/lib/server/config';
+import { updateConfig } from '../src/lib/application/configuration.server';
 
 test('all levels filter in order, with verbose events disabled by default', () => {
   for (const threshold of diagnosticLevels)

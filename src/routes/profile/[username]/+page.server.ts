@@ -7,7 +7,9 @@ import { AppError } from '$lib/server/security/errors';
 import { error, redirect } from '@sveltejs/kit';
 import { profileData, profileActivity, profileOptionsSchema } from '$lib/server/queries/profile';
 import {profileVisibility} from '$lib/social/privacy.server';
-export const load = (async ({ locals, url, params }) => {
+export const load = (async ({locals, url, params, depends}) => {
+  depends('coast:tracking');
+
   const viewer = locals.user;
   let user;
   try {

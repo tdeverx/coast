@@ -18,7 +18,12 @@ export type ShelfGroup = {
   href?:string; controls?:Snippet; preserveHeight?:boolean;
   selection?:{checked:(id:string)=>boolean;toggle:(id:string)=>void;disabled?:boolean};
 };
+export type ShelfPagination =
+  | { kind: 'local' }
+  | { kind: 'cursor'; hasMore: boolean }
+  | { kind: 'pages'; page: number; pages: number; append: boolean; controls: 'none' | 'header' | 'footer' | 'both'; url?: (page: number) => string };
 export interface ShelfSource {
+  readonly pagination: ShelfPagination;
   readonly groups?: ShelfGroup[];
   readonly appendOnly?: boolean;
   readonly loadMoreLabel?: string;
@@ -36,12 +41,6 @@ export interface ShelfSource {
   readonly artworkPriority?: ArtworkPriority;
   readonly mediaKind?: 'screen' | 'music' | 'game';
   readonly rows?: 1 | 2;
-  readonly page?: number;
-  readonly pages?: number;
-  readonly headerPagination?: boolean;
-  readonly footerPagination?: boolean;
-  readonly pageUrl?: (page: number) => string;
-  readonly hasMore?: boolean;
   readonly resetKey?: string;
   readonly empty?: string;
   readonly emptyHref?: string;

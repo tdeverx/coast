@@ -8,7 +8,8 @@ import {
   resetUserSettings,
   type SessionUser,
 } from '../src/lib/server/auth';
-import { defaultConfig, getConfig, updateConfig } from '../src/lib/server/config';
+import { defaultConfig, getConfig } from '../src/lib/server/config';
+import { updateConfig } from '../src/lib/application/configuration.server';
 import { diagnosticStore } from '../src/lib/server/diagnostics';
 
 const target = process.env.TEST_DATABASE_URL;

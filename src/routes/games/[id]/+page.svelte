@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { goto, invalidateAll, replaceState } from '$app/navigation';
+  import { goto, replaceState } from '$app/navigation';
   import { page } from '$app/state';
   import {setContext} from 'svelte';
   import { untrack } from 'svelte';
   import { randomId } from '$lib/diagnostics';
-  import { api, message } from '$lib/ui/client';
+  import { change, message } from '$lib/ui/client';
   import { gameStatuses, type GameStatus } from '$lib/games/model';
   import { displayLabel } from '$lib/ui/labels';
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
@@ -69,7 +69,7 @@
   function selectedUrl(id: string, page = 1) { return `/games/${data.item.id}?${new URLSearchParams({ playthrough: id, page: String(page) })}`; }
   async function start() {
     await act(async () => {
-      const created = await api<{ id: string }>(`games/${data.item.id}/playthroughs`, { platform: platform || undefined, repeat, status: 'in-progress' });
+      const created = await change<{ id: string }>(`games/${data.item.id}/playthroughs`, { platform: platform || undefined, repeat, status: 'in-progress' });
       startOpen = false;
       await goto(selectedUrl(created.id), { invalidateAll: true });
     });
@@ -77,24 +77,21 @@
   async function update(nextStatus: GameStatus, progressPercent?: number) {
     if (!playthrough) return;
     await act(async () => {
-      await api(`game-playthroughs/${playthrough.id}`, { status: nextStatus, progressPercent }, 'PATCH');
+      await change(`game-playthroughs/${playthrough.id}`, { status: nextStatus, progressPercent }, 'PATCH');
       progressOpen = false;
-      await invalidateAll();
     });
   }
   async function log() {
     if (!playthrough) return;
     await act(async () => {
-      await api(`game-playthroughs/${playthrough.id}/sessions`, { id: sessionId, minutesPlayed: minutes, playedAt: new Date(playedAt).toISOString(), note: note || undefined });
+      await change(`game-playthroughs/${playthrough.id}/sessions`, { id: sessionId, minutesPlayed: minutes, playedAt: new Date(playedAt).toISOString(), note: note || undefined });
       sessionOpen = false;
-      await invalidateAll();
     });
   }
   async function refresh() {
     if (!identity || !refreshInstance) return;
     await act(async () => {
-      await api('games/import', { instanceId: refreshInstance, externalId: identity.externalId });
-      await invalidateAll();
+      await change('games/import', { instanceId: refreshInstance, externalId: identity.externalId });
     });
   }
 </script>

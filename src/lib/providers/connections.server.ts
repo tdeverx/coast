@@ -8,7 +8,6 @@ import {
   syncCheckpoints,
 } from '$lib/server/db/schema';
 import { encryptCredential } from '$lib/server/security/credentials';
-import { resolveNotification } from '$lib/server/notifications';
 import { getInstance } from '$lib/providers/instances.server';
 
 export async function connectionFor(userId: string, connectionId: string, provider?: string) {
@@ -82,33 +81,4 @@ export async function saveConnection(
     return connection;
   });
   return { id: connection.id, username: connection.username, status: connection.status };
-}
-
-export async function disconnectProvider(userId: string, connectionId: string,previewId?:string) {
-  const {instance}=await connectionFor(userId, connectionId);
-  const {validateSourceChange,markSourceChange,notifySourceChange}=await import('$lib/collection/source-changes.server');
-  if(instance.provider==='jellyfin')await validateSourceChange(userId,connectionId,'connection',previewId);
-  const cancelled = await getDb().transaction(async (tx) => {
-    if(instance.provider==='jellyfin')await markSourceChange(tx,[connectionId],true);
-    await tx
-      .update(providerConnections)
-      .set({ status: 'disconnected', credentials: null, updatedAt: new Date() })
-      .where(and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId)));
-    await tx
-      .update(availability)
-      .set({ state: 'unknown' })
-      .where(and(eq(availability.connectionId, connectionId), eq(availability.userId, userId)));
-    return tx
-      .update(outboxActions)
-      .set({ state: 'cancelled', updatedAt: new Date() })
-      .where(
-        and(
-          eq(outboxActions.connectionId, connectionId),
-          sql`${outboxActions.state} in ('pending','failed')`
-        )
-      )
-      .returning({ id: outboxActions.id });
-  });
-  for (const action of cancelled) await resolveNotification(userId, `outbox:${action.id}`);
-  if(instance.provider==='jellyfin')await notifySourceChange([connectionId]);
 }

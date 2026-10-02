@@ -4,7 +4,9 @@ import { gameDetails, playthroughDetails } from '$lib/core/games/service';
 import { listProviders } from '$lib/providers/instances.server';
 import { DomainError } from '$lib/core/errors';
 import type { PageServerLoad } from './$types';
-export const load: PageServerLoad = async ({ locals, params, url, depends }) => {
+export const load: PageServerLoad = async ({locals, params, url, depends}) => {
+  depends('coast:tracking');
+
   depends('coast:games');
   try {
     const item = await gameDetails(locals.user?.id??null, params.id);

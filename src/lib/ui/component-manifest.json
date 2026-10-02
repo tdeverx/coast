@@ -1,0 +1,877 @@
+{
+  "AddTitle": {
+    "path": "src/lib/ui/components/AddTitle.svelte",
+    "elements": [
+      "Button",
+      "Dialog"
+    ],
+    "usedBy": [
+      "src/routes/for-you/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "AvailabilityToggle": {
+    "path": "src/lib/ui/components/AvailabilityToggle.svelte",
+    "elements": [
+      "Icon"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/Shelf.svelte",
+      "src/routes/profile/[username]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "BarChart": {
+    "path": "src/lib/ui/components/BarChart.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/lib/ui/components/DetailCard.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "Brand": {
+    "path": "src/lib/ui/components/Brand.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/lib/ui/components/Header.svelte",
+      "src/routes/login/+page.svelte",
+      "src/routes/onboarding/+page.svelte",
+      "src/routes/recovery/+page.svelte",
+      "src/routes/register/+page.svelte",
+      "src/routes/setup/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "BreakdownChart": {
+    "path": "src/lib/ui/components/BreakdownChart.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/lib/ui/components/DetailCard.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "Button": {
+    "path": "src/lib/ui/components/Button.svelte",
+    "elements": [
+      "Icon"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/AddTitle.svelte",
+      "src/lib/ui/components/CollectionProjectionSettings.svelte",
+      "src/lib/ui/components/ConflictList.svelte",
+      "src/lib/ui/components/ConnectionCard.svelte",
+      "src/lib/ui/components/IntegrationSettings.svelte",
+      "src/lib/ui/components/JobSchedule.svelte",
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/MediaActivity.svelte",
+      "src/lib/ui/components/MediaDetailRows.svelte",
+      "src/lib/ui/components/MediaHero.svelte",
+      "src/lib/ui/components/MediaPage.svelte",
+      "src/lib/ui/components/MetadataEditor.svelte",
+      "src/lib/ui/components/Pagination.svelte",
+      "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/ProfileEditor.svelte",
+      "src/lib/ui/components/ProfileFeatureEditor.svelte",
+      "src/lib/ui/components/RecommendAction.svelte",
+      "src/lib/ui/components/RequestDialog.svelte",
+      "src/lib/ui/components/RowFeedback.svelte",
+      "src/lib/ui/components/SequenceControl.svelte",
+      "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/components/SocialControls.svelte",
+      "src/lib/ui/components/SyncedControls.svelte",
+      "src/lib/ui/materials/MaterialTweaker.svelte",
+      "src/routes/+error.svelte",
+      "src/routes/+layout.svelte",
+      "src/routes/collection/+page.svelte",
+      "src/routes/discover/+page.svelte",
+      "src/routes/for-you/+page.svelte",
+      "src/routes/friends/+page.svelte",
+      "src/routes/games/+page.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/games/igdb/[instance]/[id]/+page.svelte",
+      "src/routes/library/+page.svelte",
+      "src/routes/lists/+page.svelte",
+      "src/routes/login/+page.svelte",
+      "src/routes/media/[id]/+page.svelte",
+      "src/routes/media/[id]/history/+page.svelte",
+      "src/routes/music/+page.svelte",
+      "src/routes/notifications/+page.svelte",
+      "src/routes/onboarding/+page.svelte",
+      "src/routes/people/[id]/+page.svelte",
+      "src/routes/profile/[username]/+page.svelte",
+      "src/routes/progress/+page.svelte",
+      "src/routes/recovery/+page.svelte",
+      "src/routes/register/+page.svelte",
+      "src/routes/requests/+page.svelte",
+      "src/routes/search/+page.svelte",
+      "src/routes/settings/[[section]]/+page.svelte",
+      "src/routes/setup/+page.svelte",
+      "src/routes/synced/[id]/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "CollectionProjectionSettings": {
+    "path": "src/lib/ui/components/CollectionProjectionSettings.svelte",
+    "elements": [
+      "Button",
+      "Dialog"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/ConnectionCard.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "ConflictList": {
+    "path": "src/lib/ui/components/ConflictList.svelte",
+    "elements": [
+      "Button",
+      "Dialog"
+    ],
+    "usedBy": [
+      "src/routes/settings/[[section]]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "ConnectionCard": {
+    "path": "src/lib/ui/components/ConnectionCard.svelte",
+    "elements": [
+      "Button",
+      "CollectionProjectionSettings",
+      "Dialog",
+      "Icon"
+    ],
+    "usedBy": [
+      "src/routes/settings/[[section]]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "ContextMenu": {
+    "path": "src/lib/ui/components/ContextMenu.svelte",
+    "elements": [
+      "Icon"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/Header.svelte",
+      "src/lib/ui/components/IntegrationSettings.svelte",
+      "src/lib/ui/components/JobSchedule.svelte",
+      "src/lib/ui/components/JobsSettings.svelte",
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/MediaRequestMenu.svelte",
+      "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/PresentationActions.svelte",
+      "src/lib/ui/components/QueueList.svelte",
+      "src/lib/ui/components/ReactionActions.svelte",
+      "src/lib/ui/components/RowFilter.svelte",
+      "src/lib/ui/components/RowStyleMenu.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/music/work/[id]/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "DetailCard": {
+    "path": "src/lib/ui/components/DetailCard.svelte",
+    "elements": [
+      "BarChart",
+      "BreakdownChart",
+      "FactList",
+      "MetricGrid",
+      "ProgressChart"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaActivity.svelte",
+      "src/lib/ui/components/MediaDetailRows.svelte",
+      "src/lib/ui/components/Shelf.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/profile/[username]/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "Dialog": {
+    "path": "src/lib/ui/components/Dialog.svelte",
+    "elements": [
+      "Icon"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/AddTitle.svelte",
+      "src/lib/ui/components/CollectionProjectionSettings.svelte",
+      "src/lib/ui/components/ConflictList.svelte",
+      "src/lib/ui/components/ConnectionCard.svelte",
+      "src/lib/ui/components/IntegrationSettings.svelte",
+      "src/lib/ui/components/JobSchedule.svelte",
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/MetadataEditor.svelte",
+      "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/ProfileEditor.svelte",
+      "src/lib/ui/components/ProfileFeatureEditor.svelte",
+      "src/lib/ui/components/RecommendAction.svelte",
+      "src/lib/ui/components/RequestDialog.svelte",
+      "src/lib/ui/components/SequenceControl.svelte",
+      "src/lib/ui/components/SyncedControls.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/lists/+page.svelte",
+      "src/routes/media/[id]/+page.svelte",
+      "src/routes/media/[id]/history/+page.svelte",
+      "src/routes/requests/+page.svelte",
+      "src/routes/settings/[[section]]/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "EmptyState": {
+    "path": "src/lib/ui/components/EmptyState.svelte",
+    "elements": [
+      "Icon"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaPage.svelte",
+      "src/lib/ui/components/QueueList.svelte",
+      "src/routes/+error.svelte",
+      "src/routes/discover/+page.svelte",
+      "src/routes/for-you/+page.svelte",
+      "src/routes/friends/+page.svelte",
+      "src/routes/games/+page.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/media/[id]/+page.svelte",
+      "src/routes/music/+page.svelte",
+      "src/routes/notifications/+page.svelte",
+      "src/routes/profile/[username]/+page.svelte",
+      "src/routes/requests/+page.svelte",
+      "src/routes/search/+page.svelte",
+      "src/routes/settings/[[section]]/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "FactList": {
+    "path": "src/lib/ui/components/FactList.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/lib/ui/components/DetailCard.svelte",
+      "src/lib/ui/components/MediaDetailRows.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "Header": {
+    "path": "src/lib/ui/components/Header.svelte",
+    "elements": [
+      "Brand",
+      "ContextMenu",
+      "Icon",
+      "MenuAction"
+    ],
+    "usedBy": [
+      "src/routes/+layout.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "Heading": {
+    "path": "src/lib/ui/components/Heading.svelte",
+    "elements": [
+      "Icon",
+      "SegmentedControl"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/IntegrationSettings.svelte",
+      "src/lib/ui/components/JobSchedule.svelte",
+      "src/lib/ui/components/JobsSettings.svelte",
+      "src/lib/ui/components/MediaPage.svelte",
+      "src/lib/ui/components/ProviderAutomation.svelte",
+      "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/materials/MaterialTweaker.svelte",
+      "src/routes/collection/+page.svelte",
+      "src/routes/discover/+page.svelte",
+      "src/routes/for-you/+page.svelte",
+      "src/routes/friends/+page.svelte",
+      "src/routes/games/+page.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/library/+page.svelte",
+      "src/routes/lists/+page.svelte",
+      "src/routes/media/[id]/history/+page.svelte",
+      "src/routes/music/+page.svelte",
+      "src/routes/notifications/+page.svelte",
+      "src/routes/people/[id]/+page.svelte",
+      "src/routes/profile/[username]/+page.svelte",
+      "src/routes/requests/+page.svelte",
+      "src/routes/search/+page.svelte",
+      "src/routes/settings/[[section]]/+page.svelte",
+      "src/routes/synced/[id]/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "Icon": {
+    "path": "src/lib/ui/components/Icon.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/lib/ui/components/AvailabilityToggle.svelte",
+      "src/lib/ui/components/Button.svelte",
+      "src/lib/ui/components/ConnectionCard.svelte",
+      "src/lib/ui/components/ContextMenu.svelte",
+      "src/lib/ui/components/Dialog.svelte",
+      "src/lib/ui/components/EmptyState.svelte",
+      "src/lib/ui/components/Header.svelte",
+      "src/lib/ui/components/Heading.svelte",
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/MediaCard.svelte",
+      "src/lib/ui/components/MediaHero.svelte",
+      "src/lib/ui/components/MediaRequestMenu.svelte",
+      "src/lib/ui/components/MenuAction.svelte",
+      "src/lib/ui/components/NotificationToasts.svelte",
+      "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/PlaybackTimeline.svelte",
+      "src/lib/ui/components/Rating.svelte",
+      "src/lib/ui/components/Shelf.svelte",
+      "src/routes/media/[id]/+page.svelte",
+      "src/routes/notifications/+page.svelte",
+      "src/routes/search/+page.svelte",
+      "src/routes/settings/[[section]]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "IntegrationSettings": {
+    "path": "src/lib/ui/components/IntegrationSettings.svelte",
+    "elements": [
+      "Button",
+      "ContextMenu",
+      "Dialog",
+      "Heading",
+      "MenuAction",
+      "ProviderAutomation"
+    ],
+    "usedBy": [
+      "src/routes/settings/[[section]]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "JobSchedule": {
+    "path": "src/lib/ui/components/JobSchedule.svelte",
+    "elements": [
+      "Button",
+      "ContextMenu",
+      "Dialog",
+      "Heading",
+      "MenuAction",
+      "QueueList",
+      "RowFilter"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/JobsSettings.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "JobsSettings": {
+    "path": "src/lib/ui/components/JobsSettings.svelte",
+    "elements": [
+      "ContextMenu",
+      "Heading",
+      "JobSchedule",
+      "MenuAction",
+      "QueueList",
+      "RowFilter",
+      "SegmentedControl"
+    ],
+    "usedBy": [
+      "src/routes/settings/[[section]]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "ListMembershipActions": {
+    "path": "src/lib/ui/components/ListMembershipActions.svelte",
+    "elements": [
+      "MenuAction"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/PresentationActions.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "MediaActions": {
+    "path": "src/lib/ui/components/MediaActions.svelte",
+    "elements": [
+      "Button",
+      "ContextMenu",
+      "Dialog",
+      "Icon",
+      "ListMembershipActions",
+      "MediaRequestMenu",
+      "MenuAction",
+      "MetadataEditor",
+      "Rating",
+      "ReactionActions",
+      "RecommendAction",
+      "RelationshipActions",
+      "RequestDialog",
+      "SequenceControl"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaCard.svelte",
+      "src/lib/ui/components/MediaHero.svelte",
+      "src/routes/media/[id]/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "MediaActivity": {
+    "path": "src/lib/ui/components/MediaActivity.svelte",
+    "elements": [
+      "Button",
+      "DetailCard"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaDetailRows.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "MediaCard": {
+    "path": "src/lib/ui/components/MediaCard.svelte",
+    "elements": [
+      "Icon",
+      "MediaActions",
+      "PresentationActions",
+      "SocialControls"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/Shelf.svelte",
+      "src/routes/games/+page.svelte",
+      "src/routes/music/+page.svelte",
+      "src/routes/profile/[username]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "MediaDetailRows": {
+    "path": "src/lib/ui/components/MediaDetailRows.svelte",
+    "elements": [
+      "Button",
+      "DetailCard",
+      "FactList",
+      "MediaActivity",
+      "RowFilter",
+      "SegmentedControl",
+      "Shelf"
+    ],
+    "usedBy": [
+      "src/routes/media/[id]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "MediaHero": {
+    "path": "src/lib/ui/components/MediaHero.svelte",
+    "elements": [
+      "Button",
+      "Icon",
+      "MediaActions"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaPage.svelte",
+      "src/routes/+layout.svelte",
+      "src/routes/discover/+page.svelte",
+      "src/routes/for-you/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "MediaPage": {
+    "path": "src/lib/ui/components/MediaPage.svelte",
+    "elements": [
+      "Button",
+      "EmptyState",
+      "Heading",
+      "MediaHero",
+      "RowFeedback",
+      "Shelf"
+    ],
+    "usedBy": [
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/games/igdb/[instance]/[id]/+page.svelte",
+      "src/routes/lists/+page.svelte",
+      "src/routes/media/[id]/+page.svelte",
+      "src/routes/media/[id]/history/+page.svelte",
+      "src/routes/music/[connection]/[id]/+page.svelte",
+      "src/routes/music/work/[id]/+page.svelte",
+      "src/routes/profile/[username]/+page.svelte",
+      "src/routes/progress/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "MediaRequestMenu": {
+    "path": "src/lib/ui/components/MediaRequestMenu.svelte",
+    "elements": [
+      "ContextMenu",
+      "Icon",
+      "MenuAction"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaActions.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "MenuAction": {
+    "path": "src/lib/ui/components/MenuAction.svelte",
+    "elements": [
+      "Icon"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/Header.svelte",
+      "src/lib/ui/components/IntegrationSettings.svelte",
+      "src/lib/ui/components/JobSchedule.svelte",
+      "src/lib/ui/components/JobsSettings.svelte",
+      "src/lib/ui/components/ListMembershipActions.svelte",
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/MediaRequestMenu.svelte",
+      "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/PresentationActions.svelte",
+      "src/lib/ui/components/QueueList.svelte",
+      "src/lib/ui/components/ReactionActions.svelte",
+      "src/lib/ui/components/RecommendAction.svelte",
+      "src/lib/ui/components/RelationshipActions.svelte",
+      "src/lib/ui/components/RowFilter.svelte",
+      "src/lib/ui/components/RowStyleMenu.svelte",
+      "src/routes/games/[id]/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "MetadataEditor": {
+    "path": "src/lib/ui/components/MetadataEditor.svelte",
+    "elements": [
+      "Button",
+      "Dialog"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaActions.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "MetricGrid": {
+    "path": "src/lib/ui/components/MetricGrid.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/lib/ui/components/DetailCard.svelte",
+      "src/routes/friends/+page.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/profile/[username]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "NotificationToasts": {
+    "path": "src/lib/ui/components/NotificationToasts.svelte",
+    "elements": [
+      "Icon"
+    ],
+    "usedBy": [
+      "src/routes/+layout.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "Pagination": {
+    "path": "src/lib/ui/components/Pagination.svelte",
+    "elements": [
+      "Button"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/Shelf.svelte",
+      "src/routes/collection/+page.svelte",
+      "src/routes/games/+page.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/music/+page.svelte",
+      "src/routes/profile/[username]/+page.svelte",
+      "src/routes/requests/+page.svelte",
+      "src/routes/settings/[[section]]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "PersistentPlayer": {
+    "path": "src/lib/ui/components/PersistentPlayer.svelte",
+    "elements": [
+      "Button",
+      "ContextMenu",
+      "Dialog",
+      "Icon",
+      "MenuAction",
+      "PlaybackTimeline",
+      "SyncedControls"
+    ],
+    "usedBy": [
+      "src/routes/+layout.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "PlaybackTimeline": {
+    "path": "src/lib/ui/components/PlaybackTimeline.svelte",
+    "elements": [
+      "Icon"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/PersistentPlayer.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "PresentationActions": {
+    "path": "src/lib/ui/components/PresentationActions.svelte",
+    "elements": [
+      "ContextMenu",
+      "ListMembershipActions",
+      "MenuAction",
+      "Rating",
+      "ReactionActions",
+      "RecommendAction",
+      "RelationshipActions"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaCard.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "ProfileEditor": {
+    "path": "src/lib/ui/components/ProfileEditor.svelte",
+    "elements": [
+      "Button",
+      "Dialog",
+      "RowFilter"
+    ],
+    "usedBy": [
+      "src/routes/profile/[username]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "ProfileFeatureEditor": {
+    "path": "src/lib/ui/components/ProfileFeatureEditor.svelte",
+    "elements": [
+      "Button",
+      "Dialog"
+    ],
+    "usedBy": [
+      "src/routes/profile/[username]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "ProfileRecap": {
+    "path": "src/lib/ui/components/ProfileRecap.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/routes/profile/[username]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "ProgressChart": {
+    "path": "src/lib/ui/components/ProgressChart.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/lib/ui/components/DetailCard.svelte",
+      "src/routes/games/[id]/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "ProviderAutomation": {
+    "path": "src/lib/ui/components/ProviderAutomation.svelte",
+    "elements": [
+      "Heading"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/IntegrationSettings.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "QueueList": {
+    "path": "src/lib/ui/components/QueueList.svelte",
+    "elements": [
+      "ContextMenu",
+      "EmptyState",
+      "MenuAction"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/JobSchedule.svelte",
+      "src/lib/ui/components/JobsSettings.svelte",
+      "src/routes/settings/[[section]]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "Rating": {
+    "path": "src/lib/ui/components/Rating.svelte",
+    "elements": [
+      "Icon"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/PresentationActions.svelte",
+      "src/routes/media/[id]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "ReactionActions": {
+    "path": "src/lib/ui/components/ReactionActions.svelte",
+    "elements": [
+      "ContextMenu",
+      "MenuAction"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/PresentationActions.svelte",
+      "src/routes/friends/+page.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/music/work/[id]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "RecommendAction": {
+    "path": "src/lib/ui/components/RecommendAction.svelte",
+    "elements": [
+      "Button",
+      "Dialog",
+      "MenuAction",
+      "RowFilter"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/PresentationActions.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/music/work/[id]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "RelationshipActions": {
+    "path": "src/lib/ui/components/RelationshipActions.svelte",
+    "elements": [
+      "MenuAction"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/PresentationActions.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "RequestDialog": {
+    "path": "src/lib/ui/components/RequestDialog.svelte",
+    "elements": [
+      "Button",
+      "Dialog"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaActions.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "RowFeedback": {
+    "path": "src/lib/ui/components/RowFeedback.svelte",
+    "elements": [
+      "Button"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaPage.svelte",
+      "src/lib/ui/components/Shelf.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "RowFilter": {
+    "path": "src/lib/ui/components/RowFilter.svelte",
+    "elements": [
+      "ContextMenu",
+      "MenuAction"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/JobSchedule.svelte",
+      "src/lib/ui/components/JobsSettings.svelte",
+      "src/lib/ui/components/MediaDetailRows.svelte",
+      "src/lib/ui/components/ProfileEditor.svelte",
+      "src/lib/ui/components/RecommendAction.svelte",
+      "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/components/SyncedControls.svelte",
+      "src/routes/friends/+page.svelte",
+      "src/routes/games/+page.svelte",
+      "src/routes/music/+page.svelte",
+      "src/routes/notifications/+page.svelte",
+      "src/routes/profile/[username]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "RowStyleMenu": {
+    "path": "src/lib/ui/components/RowStyleMenu.svelte",
+    "elements": [
+      "ContextMenu",
+      "MenuAction"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/Shelf.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "SegmentedControl": {
+    "path": "src/lib/ui/components/SegmentedControl.svelte",
+    "elements": [],
+    "usedBy": [
+      "src/lib/ui/components/Heading.svelte",
+      "src/lib/ui/components/JobsSettings.svelte",
+      "src/lib/ui/components/MediaDetailRows.svelte",
+      "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/materials/MaterialTweaker.svelte",
+      "src/routes/profile/[username]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "SequenceControl": {
+    "path": "src/lib/ui/components/SequenceControl.svelte",
+    "elements": [
+      "Button",
+      "Dialog"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/Shelf.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "Shelf": {
+    "path": "src/lib/ui/components/Shelf.svelte",
+    "elements": [
+      "AvailabilityToggle",
+      "Button",
+      "DetailCard",
+      "Heading",
+      "Icon",
+      "MediaCard",
+      "Pagination",
+      "RowFeedback",
+      "RowFilter",
+      "RowStyleMenu",
+      "SegmentedControl",
+      "SequenceControl"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaDetailRows.svelte",
+      "src/lib/ui/components/MediaPage.svelte",
+      "src/routes/collection/+page.svelte",
+      "src/routes/discover/+page.svelte",
+      "src/routes/for-you/+page.svelte",
+      "src/routes/friends/+page.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/games/igdb/[instance]/[id]/+page.svelte",
+      "src/routes/library/+page.svelte",
+      "src/routes/lists/+page.svelte",
+      "src/routes/media/[id]/+page.svelte",
+      "src/routes/media/[id]/history/+page.svelte",
+      "src/routes/people/[id]/+page.svelte",
+      "src/routes/profile/[username]/+page.svelte",
+      "src/routes/progress/+page.svelte",
+      "src/routes/requests/+page.svelte",
+      "src/routes/search/+page.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "SocialControls": {
+    "path": "src/lib/ui/components/SocialControls.svelte",
+    "elements": [
+      "Button"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/MediaCard.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "SyncedControls": {
+    "path": "src/lib/ui/components/SyncedControls.svelte",
+    "elements": [
+      "Button",
+      "Dialog",
+      "RowFilter"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/PersistentPlayer.svelte"
+    ],
+    "dynamicComposition": false
+  }
+}

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { getContext } from 'svelte';
   import { page } from '$app/state';
-  import { invalidateAll } from '$app/navigation';
   import { createMutation } from '$lib/ui/mutation.svelte';
   import { setRelationship } from '$lib/ui/relationships';
   import RelationshipActions from './RelationshipActions.svelte';
@@ -16,9 +15,11 @@
   } from '$lib/media/actions';
   import type { RequestDestination } from '$lib/media/requests';
   import type { MediaView } from '$lib/ui/types';
-  import { api, change, message, ApiError } from '$lib/ui/client';
+  import { message, ApiError } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { playbackTime } from '$lib/playback/time';
-  import { playMedia, player } from '$lib/playback/client.svelte';
+  import { playMedia } from '$lib/playback/client.svelte';
+  import { usePlayback } from '$lib/playback/context.svelte';
   import Button from './Button.svelte';
   import Icon from './Icon.svelte';
   import ContextMenu from './ContextMenu.svelte';
@@ -34,6 +35,11 @@
   const readOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
   import RecommendAction from './RecommendAction.svelte';
   import ReactionActions from './ReactionActions.svelte';
+
+  const { api, change } = useClient();
+
+  const { player, preview } = usePlayback();
+
   let {
     item,
     context = 'details',
@@ -149,7 +155,7 @@
       async () => {
         if (
           await perform(
-            () => api(`requests/${request.id}`, { action }),
+            () => change(`requests/${request.id}`, { action }),
             'Request update queued.'
           )
         ) {
@@ -215,7 +221,7 @@
         ? 'tracking/bulk'
         : 'tracking';
     try {
-      return await api<{ removedQueueIds?: string[] }>(path, {
+      return await change<{ removedQueueIds?: string[] }>(path, {
         mediaId: target.id,
         action,
         acknowledged,
@@ -294,6 +300,7 @@
     return isMediaGroup(item) ? (await loadActions())?.playable : data?.playable ?? item;
   }
   async function play(edition?: string, fromStart = false) {
+    if (preview) return;
     mutation.error = '';
     try {
       const target = await resolvedPlayback();
@@ -343,7 +350,7 @@
       if (
         await perform(
           () =>
-            api('rewatch', { mediaId: formTarget.id, startedAt: new Date(date).toISOString() }),
+            change('rewatch', { mediaId: formTarget.id, startedAt: new Date(date).toISOString() }),
           'Rewatch started.'
         )
       )
@@ -358,27 +365,25 @@
       let added: { entryId: string; added: boolean } | undefined;
       await perform(
         async () => {
-          added = await api(`lists/${list.id}/items`, { mediaId: target.id });
+          added = await change(`lists/${list.id}/items`, { mediaId: target.id });
         },
         `${target.title} · Added to ${list.name}`,
         async () => {
           if (added?.added)
-            await api(`lists/${list.id}/items`, { entryId: added.entryId }, 'DELETE');
+            await change(`lists/${list.id}/items`, { entryId: added.entryId }, 'DELETE');
           await loadActions();
-          await invalidateAll();
         }
       );
     } else {
       await perform(
-        () => api(`lists/${list.id}/items`, { entryId: list.entries[0].id }, 'DELETE'),
+        () => change(`lists/${list.id}/items`, { entryId: list.entries[0].id }, 'DELETE'),
         `${target.title} · Removed from ${list.name}`,
         async () => {
-          await api(`lists/${list.id}/items`, {
+          await change(`lists/${list.id}/items`, {
             mediaId: target.id,
             restorePosition: list.entries[0].position,
           });
           await loadActions();
-          await invalidateAll();
         }
       );
     }
@@ -390,7 +395,7 @@
       async () => {
         if (
           await perform(
-            () => api(`lists/${listId}/items`, { entryId }, 'DELETE'),
+            () => change(`lists/${listId}/items`, { entryId }, 'DELETE'),
             'Entry removed.'
           )
         ) {
@@ -407,7 +412,7 @@
       | undefined;
     await perform(
       async () => {
-        result = await api('continue', {
+        result = await change('continue', {
           mediaId: target.id,
           action: removing ? 'remove' : 'add',
         });
@@ -415,16 +420,15 @@
       `${target.title} · ${removing ? 'Removed from Continue · Rewatch ended · History preserved' : target.dropped ? 'Restored to Continue' : 'Added to Next'}`,
       removing
         ? async () => {
-            await api('continue', { mediaId: target.id, action: 'undo', ...result });
+            await change('continue', { mediaId: target.id, action: 'undo', ...result });
             await loadActions();
-            await invalidateAll();
-          }
+            }
         : undefined
     );
   }
   async function startRewatchNow() {
     await perform(
-      () => api('rewatch', { mediaId: wholeWork.id, startedAt: new Date().toISOString() }),
+      () => change('rewatch', { mediaId: wholeWork.id, startedAt: new Date().toISOString() }),
       `${wholeWork.title} · Rewatch started`
     );
   }
@@ -432,21 +436,20 @@
     const previous = !!target[action];
     const label =
       action === 'watchlist' ? 'Watchlist' : action === 'favourite' ? 'Favourites' : 'Next';
-    const write = (value: boolean) => setRelationship(target.id, action, value);
+    const write = (value: boolean) => setRelationship(target.id, action, value, change);
     void perform(
       () => write(!previous),
       `${target.title} · ${previous ? 'Removed from' : 'Added to'} ${label}`,
       async () => {
         await write(previous);
         await loadActions();
-        await invalidateAll();
       }
     );
   }
   function refresh() {
     const target = data?.refreshTarget;
     if (target)
-      void perform(() => api(`media/${target.id}/refresh`, {}), 'Metadata refreshed.');
+      void perform(() => change(`media/${target.id}/refresh`, {}), 'Metadata refreshed.');
   }
   async function checkIn(){try{await change('social/checkins',{workId:active.id});}catch(cause){mutation.error=message(cause);}}
 </script>
@@ -532,7 +535,7 @@
         label: active.favourite ? 'Remove from Favourites' : 'Add to Favourites' },
     ]} onchange={relationship => {
       if (relationship === 'collected') void perform(
-        () => setRelationship(active.id, relationship, !active.collected),
+        () => setRelationship(active.id, relationship, !active.collected, change),
         active.collected ? 'Removed Collected status. Other relationships and history are preserved.' : 'Added to Collection.'
       );
       else toggleSaved(relationship);

@@ -18,9 +18,13 @@
 - [Design](design.md): inherited visual language and UI composition.
 - [Open questions](open-questions.md): unresolved product and validation needs.
 - [Readiness](readiness.md): evidence, known gaps and post-1.0 work.
+- [Audit implementation](audits/2026-10-02-implementation.md): immediate repairs, consolidation, measured query improvements and verification limits.
+- [Whole-codebase audit — 2 October 2026](audits/2026-10-02.md): findings, coverage, ownership recommendations and ordered follow-up passes.
 
 Keep the readiness report honest: implementation is not proof of a live provider journey.
 
 - [App follow-up roadmap](roadmap.md): agreed priorities and deferred UX exploration.
 
 - [Synced experiences and invitation onboarding](synced-experiences.md) — experimental playback sessions and initial-import registration.
+
+- [Audit follow-up verification](audits/2026-10-02-follow-up.md): retention/recovery, accessibility, playback lifecycle, provider parity and failure remedies.

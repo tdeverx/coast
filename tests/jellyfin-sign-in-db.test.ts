@@ -10,7 +10,8 @@ import {
   type SessionUser,
 } from '../src/lib/server/auth';
 import { loginJellyfin, jellyfinSignInServices } from '../src/lib/server/auth/jellyfin';
-import { defaultConfig, getConfig, updateConfig, type CoastConfig } from '../src/lib/server/config';
+import { defaultConfig, getConfig, type CoastConfig } from '../src/lib/server/config';
+import { updateConfig } from '../src/lib/application/configuration.server';
 import { configureInstance } from '../src/lib/providers/instances.server';
 import { listProviders } from '../src/lib/providers/instances.server';
 import { updateJellyfinPlaybackImport } from '../src/lib/providers/jellyfin/connection.server';

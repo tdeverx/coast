@@ -45,3 +45,17 @@ One OCI container starts PostgreSQL and Bun under minimal supervision. `/data` s
 ## Future connector contract
 
 `/api/v1` is the versioned authenticated HTTP boundary. Future webhook connectors must have explicit capability grants, per-user/instance identities, request IDs, bounded validated payloads and replay protection. Arbitrary executable code is out of scope. No generic plugin platform is implemented. The [proposed connector protocol](connectors.md) defines the versioned endpoints, scoped credentials, idempotency and webhook verification without shipping that future runtime.
+
+## Ownership and naming conventions
+
+`application/*.server.ts` owns a focused workflow spanning domains, such as configuration changes or disconnecting/disabling a source with Collection cleanup approval. Provider repositories own instance/account storage and adapter access; they do not call Collection workflows. Canonical Trakt identity resolution lives in `catalogue/trakt-identity.server.ts`, below import, list and projection callers. Pure TMDB artwork URL construction lives beside its adapter without importing server ingestion.
+
+`server/api/index.server.ts` retains the common authentication, viewer/subject, body-size and error boundary. Domain handlers in `server/api` dispatch existing commands and read projections. The route file exports the existing HTTP methods; URLs, account-generation checks and outbox ordering remain stable. This is not a universal data orchestrator or a second scheduler.
+
+Use `.server.ts` for new server-only services and `.svelte.ts` for reactive component resources. Pure contracts/mapping helpers use `.ts`; rendered components use PascalCase `.svelte`. Existing `core` and `server/queries` modules keep their established ownership until a bounded domain change warrants moving them. Do not cosmetically rename persisted identifiers, migrations, UUIDs or routes.
+
+Use `workId` for shared work identities, `instanceId` for a configured service, `connectionId` for a user's linked account, `subjectId`/`ownerId` for whose relationships are displayed, and `viewerId` for whose permissions apply. Existing `mediaId` database/API contracts remain unchanged. A provider's external ID is not a Coast UUID and server IDs require an instance scope.
+
+The shared Shelf renderer consumes a discriminated local/page/cursor pagination contract. Pure Library/Collection filter mapping lives in `library.ts`; source adapters own cancellable loading and medium-specific data, rather than separate rendering implementations. Mutations use the injected client, targeted `coast:*` route dependencies and one local resource refresh. The viewer injects local API and playback contexts without replacing global fetch or the real controller.
+
+`bun run ui:inventory` generates rendered component composition and production consumers using the Svelte compiler. `bun run ui:inventory:check` validates the saved manifest and preview recipe coverage in CI. Preview components load only when needed, retain state after first viewport activation, and link to their direct composition and consumers.

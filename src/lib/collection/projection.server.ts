@@ -3,7 +3,7 @@ import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { providerConnections, collectionProjectionEntries as ledger, collectionProjectionPreviews as previews, media, episodes } from '$lib/server/db/schema';
 import { getTrakt } from '$lib/providers/trakt/connection.server';
-import { resolveTrakt } from '$lib/sync/trakt-import';
+import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
 import { exportIdentity } from '$lib/sync/trakt-identity';
 import { ingestMetadata } from '$lib/catalogue/service';
 import { PermanentActionError } from '$lib/server/queue';

@@ -29,3 +29,12 @@ External actions remain durable in PostgreSQL without a default expiry. Transien
 Install the locked Bun dependencies, set `DATABASE_URL` for a development database, set `COAST_DATA_DIR` to a writable local directory such as `.data`, run `bun run db:migrate`, then `bun run dev`. The dev server listens on all network interfaces; use the Network URL printed by Vite (usually `http://<your-LAN-IP>:5173`) from another device on the same LAN. Sign in separately on each device. `bun run build` does not require a database connection. The development data directory and secrets are excluded from the OCI build context.
 
 `bun test tests/platform-security.test.ts` checks the local security boundaries. The transactional platform suite requires a separate database whose name begins `coast_platform_test`: set `TEST_DATABASE_URL`, then run `bun test tests/platform-db.test.ts`. That suite resets its isolated database. Never point it at real data.
+
+
+## Recovery verification
+
+Back up the database and `secrets/` together. A logical database restore without the original credential key cannot recover provider tokens. Use a private backup directory (`umask 077`), and preserve secret-file permissions. Keep backups outside the application's transient/cache retention directories.
+
+`TEST_DATABASE_URL=… bun run test:recovery` exercises a logical PostgreSQL dump/restore using only newly created disposable databases and fixture credentials. It requires matching `pg_dump`/`pg_restore` tools and permission to create databases. It verifies fresh-process decryption with the restored key, rejection with a different key, and retention of queued work. It does not restore an installation or alter its configured database. See [the audit follow-up](audits/2026-10-02-follow-up.md) for tested scope and the optional local container workflow.
+
+Transient cleanup runs through existing provider maintenance: expired login sessions, unapproved previews, old unused invites, ended synced rooms and diagnostics. History, playback evidence, redeemed invites, approved cleanup previews and completed outbox evidence remain durable. Artwork cache has a separate bounded eviction policy.

@@ -1,13 +1,17 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import EmptyState from './EmptyState.svelte';
   import { jobWaiting, jobOutcome, jobRemedy, type QueueAction } from '$lib/ui/queue';
   import { displayLabel } from '$lib/ui/labels';
   import { contextGesture } from '$lib/ui/context-gesture';
   import ContextMenu from './ContextMenu.svelte';
   import MenuAction from './MenuAction.svelte';
+
+  const { change } = useClient();
+
   let {
     actions,
     compact = false,
@@ -74,7 +78,8 @@
       {#if jobRemedy(action) === 'connection'}<MenuAction icon="user" href="/settings/connections" keepOpen={false}>Reconnect account</MenuAction>
       {:else if jobRemedy(action) === 'permissions'}<MenuAction icon="settings" href="/settings/integrations" keepOpen={false}>Review permissions</MenuAction>
       {:else if jobRemedy(action) === 'metadata'}<MenuAction icon="list" href="/settings/activity" keepOpen={false}>Review diagnostics</MenuAction>
-      {:else if action.state === 'failed' || action.attempts > 0}<MenuAction
+      {/if}
+      {#if action.state === 'failed' || action.attempts > 0}<MenuAction
           icon="refresh"
           keepOpen={false}
           onclick={() => void update(action.id, 'retry')}

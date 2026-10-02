@@ -19,8 +19,9 @@ import {
 import { eq, desc } from 'drizzle-orm';
 import { jobTimings } from '$lib/providers/job-timing.server';
 import { adminDemand } from '$lib/collection/demand.server';
-export const load = (async ({ locals, params, depends, url }) => {
-  depends('coast:settings');
+export const load = (async ({locals, params, depends, url}) => {
+  depends('coast:settings'); depends('coast:providers');
+
   const section = params.section ?? 'appearance';
   if (!settingsSections.some(([id]) => id === section)) error(404, 'Settings page not found.');
   const admin = administratorSettings.some(([id]) => id === section);

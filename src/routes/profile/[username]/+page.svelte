@@ -8,12 +8,11 @@
   import { periodLabel, type ProfilePeriod } from '$lib/profile/period';
   import ProfileRecap from '$lib/ui/components/ProfileRecap.svelte';
   import ProfileFeatureEditor from '$lib/ui/components/ProfileFeatureEditor.svelte';
-  import { api } from '$lib/ui/client';
   import { mediaTypeOptions } from '$lib/ui/filter-options';
   import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Heading from '$lib/ui/components/Heading.svelte';
   import { untrack, setContext } from 'svelte';
-  import { change, message } from '$lib/ui/client';
+  import { api, change, message } from '$lib/ui/client';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import AvailabilityToggle from '$lib/ui/components/AvailabilityToggle.svelte';
   import MediaCard from '$lib/ui/components/MediaCard.svelte';
@@ -79,7 +78,7 @@
     if (!data.isOwner) return Promise.resolve();
     preferenceWrites = preferenceWrites
       .catch(() => undefined)
-      .then(() => api('profile', { action: 'preferences', ...patch }));
+      .then(() => change('profile', { action: 'preferences', ...patch }));
     return preferenceWrites;
   }
   $effect(() => {
