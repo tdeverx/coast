@@ -6,7 +6,9 @@ import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
 import type { MusicPage } from '$lib/music/model';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals, params, url }) => {
+export const load: PageServerLoad = async ({locals, params, url, depends}) => {
+  depends('coast:tracking');
+
   if (!locals.user) error(401, 'Sign in to browse music.');
   if (
     !v.safeParse(v.pipe(v.string(), v.uuid()), params.connection).success ||

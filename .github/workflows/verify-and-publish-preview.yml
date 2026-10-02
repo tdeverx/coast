@@ -13,14 +13,30 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: coast_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.2
       - run: bun install --frozen-lockfile
+      - run: bun run ui:inventory:check
       - run: bun run check
       - run: bun test
+      - run: bun run test:db
+        env:
+          TEST_DATABASE_URL: postgres://postgres:coast_test@localhost:5432/postgres
       - run: bun run build
 
   image:

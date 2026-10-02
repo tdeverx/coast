@@ -1,8 +1,12 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { api, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
+
+  const { change } = useClient();
+
   let { open = $bindable(false) }: { open: boolean } = $props();
   let title = $state(''),
     kind = $state('movie'),
@@ -12,7 +16,7 @@
   async function save() {
     busy = true;
     try {
-      const item = await api<{ id: string }>('media', { title, kind, year });
+      const item = await change<{ id: string }>('media', { title, kind, year });
       open = false;
       await goto(`/media/${item.id}`, { invalidateAll: true });
     } catch (e) {

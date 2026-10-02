@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "revision": "5ee9a0de7bdc08ff3a1367201cd435b5396265fc",
+  "date": "2026-10-02",
+  "scope": "Original audit with approved immediate repair/refactor dispositions; later investigations deferred",
+  "findings": [
+    {
+      "id": "AUD-01",
+      "priority": "P1",
+      "category": "privacy",
+      "title": "Profile metadata exposes private favourite IDs",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/lib/server/queries/profile.ts",
+          "line": 68
+        },
+        {
+          "path": "src/lib/core/profile/service.ts",
+          "line": 113
+        },
+        {
+          "path": "src/routes/profile/[username]/+page.server.ts",
+          "line": 46
+        }
+      ],
+      "observation": "Details visibility returns saved profile metadata including favouriteOrder and pinnedFavourites independently of favourites visibility. Custom ordering contains the favourite UUIDs. Conditional on the viewer having details access; public-read mode can make the viewer anonymous. Security scan: csf_39f1de0b5fc509144c9fe080, medium severity.",
+      "recommendation": "Return an explicit nonowner profile DTO; omit owner-only ordering/pinning identifiers or gate them on favourites privacy.",
+      "acceptance": "Owner ordering survives; friends/public/private combinations do not reveal denied favourite IDs.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-02",
+      "priority": "P1",
+      "category": "privacy",
+      "title": "Paused Collection filter bypasses progress privacy",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/lib/collection/query.server.ts",
+          "line": 188
+        },
+        {
+          "path": "src/routes/api/v1/[...path]/+server.ts",
+          "line": 199
+        }
+      ],
+      "observation": "The paused predicate reads the latest raw game playthrough status. Visible collected/watchlisted games can therefore expose private paused progress through returned identities and counts. Requires experimental features and Collection access. Security scan: csf_eaa9cb6c6c44ea299fa24c20, medium severity.",
+      "recommendation": "Use a privacy-filtered paused assessment consistently in predicates, returned fields and totals.",
+      "acceptance": "A shared collected game with private progress is not discoverable with activity=paused; owner filtering remains correct.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-03",
+      "priority": "P1",
+      "category": "resource limits",
+      "title": "Artwork cache has no total storage budget",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/lib/providers/tmdb/artwork.server.ts",
+          "line": 35
+        },
+        {
+          "path": "src/lib/providers/tmdb/artwork.server.ts",
+          "line": 49
+        },
+        {
+          "path": "src/lib/social/public.server.ts",
+          "line": 8
+        }
+      ],
+      "observation": "Valid distinct TMDB image requests create persistent files without quota, eviction or free-space guard. Each download is bounded and paths are hashed; this is aggregate disk growth, not path traversal or SSRF. Public-read plus caching exposes it anonymously; caching defaults off. Bundled PostgreSQL shares the data volume. Security scan: csf_0a3b57c6c31a0846ff35add9, medium severity.",
+      "recommendation": "Add a measured cache budget, eviction/free-space floor and bounded, deduplicated misses. Constrain public cache creation to catalogued assets or a request budget.",
+      "acceptance": "Distinct valid images and concurrent misses respect byte/file limits; cached reads and disabled-cache behavior still work.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-04",
+      "priority": "P1",
+      "category": "verification",
+      "title": "CI skips database behavior and a privacy fixture is stale",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": ".github/workflows/verify-and-publish-preview.yml",
+          "line": 21
+        },
+        {
+          "path": "tests/domain-application-db.test.ts",
+          "line": 216
+        }
+      ],
+      "observation": "The normal suite passes 181 tests and skips 241 without database flags. Isolated runs of 27 database suites produce 199 passes and one reproducible failure: a fixture expects another user's favourites without establishing friendship/public privacy. CI has no PostgreSQL service or database test configuration.",
+      "recommendation": "Repair the fixture by explicitly establishing authorized sharing, and separately assert the friends-only denial. Run the supported isolated PostgreSQL suites in CI with explicit environment flags and deterministic cleanup.",
+      "acceptance": "CI exercises database suites without silent skips; both permitted profile viewing and denied default viewing pass. Never relax privacy to satisfy the fixture.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-05",
+      "priority": "P2",
+      "category": "authorization consistency",
+      "title": "API profile gate hardcodes screen for other categories",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/routes/api/v1/[...path]/+server.ts",
+          "line": 199
+        },
+        {
+          "path": "src/lib/social/privacy.server.ts",
+          "line": 11
+        }
+      ],
+      "observation": "The generic cross-user API gate checks screen access before category-aware Collection reads. A user sharing game/music Collection while keeping screen private can be denied an otherwise permitted view. profileVisibility also projects section visibility using screen.",
+      "recommendation": "Resolve requested category and section once at the application boundary; use the same policy in pages, queries and APIs. Keep subject identity separate from viewer access.",
+      "acceptance": "Game-only and music-only sharing work; screen denial and owner-only game notes remain enforced.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-06",
+      "priority": "P2",
+      "category": "query correctness",
+      "title": "Admin demand paginates users before removing empty demand",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/lib/collection/demand.server.ts",
+          "line": 35
+        }
+      ],
+      "observation": "adminDemand selects up to 60 opted-in users, computes demand, then removes users with zero results. Its page count counts all opted-in users. This can produce empty pages before later users with demand.",
+      "recommendation": "Define pagination around users with demand, or explicitly expose user traversal semantics; prefer filtering/counting demand before page selection and batching the demand projection.",
+      "acceptance": "A population over 60 with demand only on later users produces discoverable, correctly counted results; opt-outs remain absent.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-07",
+      "priority": "P2",
+      "category": "architecture",
+      "title": "Integration side effects form a broad dependency loop",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/lib/providers/connections.server.ts",
+          "line": 89
+        },
+        {
+          "path": "src/lib/providers/instances.server.ts",
+          "line": 255
+        },
+        {
+          "path": "src/lib/collection/projection.server.ts",
+          "line": 6
+        },
+        {
+          "path": "src/lib/sync/trakt-import.ts",
+          "line": 17
+        }
+      ],
+      "observation": "The structural graph connects instance/account configuration, source changes, Collection projection, Trakt import and catalogue ingestion in one cycle. Some edges are deferred imports; this is ownership coupling, not proof of a startup failure. Additional eager cycles connect auth/config and TMDB adapter/details.",
+      "recommendation": "Place source-change workflows in focused application services above provider repositories and domain services. Move shared identity resolution below import/export; extract pure configuration reads below auth-admin commands.",
+      "acceptance": "A connection/source change invokes one application workflow; providers do not import Collection workflows; eager cycles are removed with behavior-preserving fixtures.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-08",
+      "priority": "P2",
+      "category": "API boundaries",
+      "title": "Catch-all API mixes transport and domain orchestration",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/routes/api/v1/[...path]/+server.ts",
+          "line": 199
+        }
+      ],
+      "observation": "The 606-line handler dispatches unrelated domains and combines policy, validation, direct queries and mutations. Large settings and action components similarly mix many independent responsibilities. File length alone is not a defect, but the ownership overlap makes shared public API behavior difficult to define.",
+      "recommendation": "Extract domain handlers with explicit commands/query DTOs while retaining one transport/auth/error boundary. Introduce application workflows only for multi-domain operations, not a universal orchestrator or second scheduler.",
+      "acceptance": "Existing routes and URLs remain stable; equivalent page/API calls use one policy and domain implementation; account-generation and outbox ordering guarantees stay intact.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-09",
+      "priority": "P2",
+      "category": "client lifecycle",
+      "title": "Social feed does not use the common request lifecycle",
+      "status": "implemented",
+      "kind": "structural risk",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/lib/ui/shelves/social.svelte.ts",
+          "line": 6
+        },
+        {
+          "path": "src/lib/ui/resource.svelte.ts",
+          "line": 21
+        }
+      ],
+      "observation": "The social source maintains its own busy/error/cursor state, drops load requests while busy and lacks cancellation or request-generation checks. Other adapters use the existing resource helper. Late results can outlive the source; whether a current page triggers a category race needs an interaction test.",
+      "recommendation": "Use the common cancellable resource lifecycle with explicit replace/append semantics and source teardown.",
+      "acceptance": "Rapid category changes and unmounts cannot publish old results; cursor append deduplicates without skipping a pending reset.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-10",
+      "priority": "P2",
+      "category": "client consistency",
+      "title": "Reactions retain target state without stale-response protection",
+      "status": "implemented",
+      "kind": "structural risk",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/lib/ui/components/ReactionActions.svelte",
+          "line": 7
+        }
+      ],
+      "observation": "ReactionActions owns its own load/write state and has no target-generation/reset logic or abort signal. A reused instance can retain selection/counts from an earlier target or accept its late response.",
+      "recommendation": "Use createResource keyed by target kind/id and the existing mutation primitive; share accepted-friends loading between recommendation/session controls where contracts match.",
+      "acceptance": "Target changes clear old counts and ignore late results; one reaction per target and lazy action loading remain intact.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-11",
+      "priority": "P2",
+      "category": "preview isolation",
+      "title": "Preview fixtures replace global fetch and player state",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/routes/ui-preview/demo/fixtures.ts",
+          "line": 24
+        },
+        {
+          "path": "src/routes/ui-preview/Demo.svelte",
+          "line": 96
+        }
+      ],
+      "observation": "The viewer replaces window.fetch for all API traffic while mounted, permits live notification reads and blocks non-GET calls. Its player preview uses the real playback singleton. This can interfere with background playback/heartbeat/notification work; the fixture isolation comment overstates isolation.",
+      "recommendation": "Inject preview-local transport, fixture stores and player state into demos. Use the same real components with isolated dependencies; no iframes.",
+      "acceptance": "Opening/closing the viewer during real playback leaves its session and network requests untouched; synthetic actions cannot write live data.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-12",
+      "priority": "P2",
+      "category": "component library",
+      "title": "Viewer inventory and lazy loading are manually maintained",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/routes/ui-preview/catalog.ts",
+          "line": 1
+        },
+        {
+          "path": "src/routes/ui-preview/Demo.svelte",
+          "line": 10
+        },
+        {
+          "path": "src/routes/ui-preview/PreviewSlot.svelte",
+          "line": 1
+        }
+      ],
+      "observation": "One Demo statically imports the catalogue; viewport mounting does not make those imports lazy. PreviewSlot destroys demos out of view. The inventory does not expose actual element composition or reverse usage. All 55 UI component files have production import references in the structural graph; no deletion is justified by this audit alone.",
+      "recommendation": "Generate a validated composition/used-by manifest from source imports and rendered tags; retain hand-authored preview recipes and labels. Load recipes by module and preserve user-opened preview state.",
+      "acceptance": "Each component links to used elements and application consumers; missing/stale entries fail a lightweight check; offscreen demos avoid eager code loading and unexpected state resets.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-13",
+      "priority": "P2",
+      "category": "component reuse",
+      "title": "Shelf adapters combine query mapping and presentation decisions",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/lib/ui/shelves/types.ts",
+          "line": 25
+        },
+        {
+          "path": "src/lib/ui/shelves/library.svelte.ts",
+          "line": 32
+        },
+        {
+          "path": "src/lib/ui/components/Shelf.svelte",
+          "line": 1
+        }
+      ],
+      "observation": "Shelf is a genuinely shared renderer, not repeated versions pasted into one file. Library source mixes Collection/Library filter mapping, routes and medium choices. The broad optional source contract allows combinations that are hard to validate.",
+      "recommendation": "Keep one Shelf renderer. Extract pure filter/query mapping and a small shared loading/pagination resource; use discriminated source capabilities for cursor/page/local modes. Extract repeated controls only when their semantics match.",
+      "acceptance": "Library, Collection, journal, episodes and feed keep their current layout, lazy behavior, filters and page controls; no repeated rendering implementations or new wrapper-per-variant components.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-14",
+      "priority": "P2",
+      "category": "performance",
+      "title": "Global invalidation is the default after writes",
+      "status": "implemented",
+      "kind": "structural risk",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/lib/ui/client.ts",
+          "line": 39
+        },
+        {
+          "path": "src/lib/ui/mutation.svelte.ts",
+          "line": 15
+        }
+      ],
+      "observation": "change invalidates every active route load. createMutation also invalidates all and refreshes its own resource. Callers use differing write paths. This creates a potential broad reload cost; no production latency measurement was performed.",
+      "recommendation": "Standardize mutation completion and invalidate specific resource dependencies, keeping one authoritative local refresh. First measure request counts for representative writes.",
+      "acceptance": "Favourite/reaction/rating changes update affected cards and counts once without unnecessary page-wide queries; background state is not stale.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-15",
+      "priority": "P2",
+      "category": "database performance",
+      "title": "Small returned pages still perform broad computation",
+      "status": "implemented",
+      "kind": "measurement required",
+      "confidence": "medium",
+      "evidence": [
+        {
+          "path": "src/lib/providers/job-timing.server.ts",
+          "line": 17
+        },
+        {
+          "path": "src/lib/social/insights.server.ts",
+          "line": 17
+        },
+        {
+          "path": "src/lib/collection/demand.server.ts",
+          "line": 35
+        }
+      ],
+      "observation": "Job timings enumerate connections and maintenance kinds, metadata due groups the shared TMDB pool per instance, taste reads join users and the work pool, and admin demand repeats its CTE per selected user. Bounded output does not establish bounded query work. PostgreSQL may optimize parts of these plans.",
+      "recommendation": "Capture EXPLAIN ANALYZE with production-sized disposable fixtures, then start from relationship/account-specific candidate IDs and batch relevant aggregates. Add indexes only when plans justify them.",
+      "acceptance": "Record query counts, rows scanned and timings at realistic scale; privacy predicates and counts remain correct.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-16",
+      "priority": "P3",
+      "category": "naming and structure",
+      "title": "Server ownership and domain vocabulary vary by folder",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "src/lib/catalogue/service.ts",
+          "line": 1
+        },
+        {
+          "path": "src/lib/core/tracking/service.ts",
+          "line": 1
+        },
+        {
+          "path": "src/lib/providers/connections.server.ts",
+          "line": 1
+        },
+        {
+          "path": "src/lib/ui/shelves/types.ts",
+          "line": 1
+        }
+      ],
+      "observation": "Server-only code uses directory conventions in some areas and .server.ts in others. core, server/queries and standalone domain folders overlap. mediaId sometimes refers to a shared work UUID. Existing route/component naming is mostly consistent, and generated migration names are not actionable trash.",
+      "recommendation": "Adopt a short ownership glossary and conventions for new/touched files: domain model/presentation, server commands/queries, reactive .svelte.ts resources and PascalCase components. Rename in small domain passes with import updates, preserving UUIDs/URLs/schema.",
+      "acceptance": "New names communicate subject/work/source meaning and execution boundary; no compatibility shims, speculative folder framework or cosmetic database renames.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-17",
+      "priority": "P2",
+      "category": "build hygiene",
+      "title": "Docker context includes local generated output",
+      "status": "implemented",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": ".dockerignore",
+          "line": 1
+        },
+        {
+          "path": "Dockerfile",
+          "line": 1
+        }
+      ],
+      "observation": "The local checkout has pre-existing untracked output/ and a malformed .data directory whose name includes a newline. .dockerignore excludes normal .data but not output/ or that malformed name. COPY/build context can include unintended local artifacts. Contents were not inspected or modified.",
+      "recommendation": "Exclude designated generated outputs from build context and reconcile the malformed directory with its owner. Keep fixture assets intentionally stored elsewhere. Do not delete user data as unused code.",
+      "acceptance": "A Docker context inventory contains only intended distributable files; existing local data remains preserved until its owner decides how to handle it.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    },
+    {
+      "id": "AUD-18",
+      "priority": "P3",
+      "category": "dependencies",
+      "title": "Two transitive dependency advisories need review",
+      "status": "reviewed-justified",
+      "kind": "observed",
+      "confidence": "high",
+      "evidence": [
+        {
+          "path": "bun.lock",
+          "line": 1
+        },
+        {
+          "path": "package.json",
+          "line": 1
+        }
+      ],
+      "observation": "bun audit reports cookie <0.7.0 (low, GHSA-pxg6-pf52-xh8x) and esbuild <=0.24.2 (moderate, GHSA-67mh-4wv8-2f99). cookie is a SvelteKit transitive dependency; old esbuild is in a development tooling subtree. No attacker-controlled cookie name/path/domain or active old esbuild serve use was established.",
+      "recommendation": "Upgrade compatible parent packages when available and verify the lockfile paths. Record reachability and avoid blind overrides or new dependencies.",
+      "acceptance": "Audit paths are removed or explicitly justified; cookie/security behavior and migrations/build remain verified. Advisory presence alone is not a confirmed Coast exploit.",
+      "resolutionEvidence": "2026-10-02-implementation.md"
+    }
+  ],
+  "implementation": "2026-10-02-implementation.md",
+  "verification": {
+    "defaultTests": {
+      "pass": 184,
+      "skip": 244,
+      "fail": 0
+    },
+    "databaseSuites": {
+      "count": 27,
+      "pass": 203,
+      "skip": 0,
+      "fail": 0
+    },
+    "typeCheck": "0 errors, 0 warnings",
+    "build": "passed",
+    "uiInventory": "55 components and recipe coverage checked",
+    "browser": "desktop/mobile current browse and viewer; 55 recipes; active fixture audio isolation; no live provider acceptance"
+  }
+}

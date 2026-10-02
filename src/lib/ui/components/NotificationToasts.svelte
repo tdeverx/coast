@@ -1,8 +1,11 @@
 <script lang="ts">
   import { actionFeedback, undoAction } from '$lib/ui/action-feedback.svelte';
   import { onMount } from 'svelte';
-  import { change } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import Icon from './Icon.svelte';
+
+  const { preview, change } = useClient();
+
   type InboxNotification = {
     id: string;
     title: string;
@@ -15,13 +18,14 @@
   let hidden = $state<string[]>([]),
     mounted = $state(false);
   const observed = new Set<string>();
+  const feedback = $derived(preview ? null : actionFeedback.current);
   onMount(() => {
     hidden = notifications
       .filter((n) => n.level === 'normal' && Date.now() - new Date(n.createdAt).getTime() > 30000)
       .map((n) => n.id);
     mounted = true;
     return () => {
-      actionFeedback.current = null;
+      if (!preview) actionFeedback.current = null;
     };
   });
   const visible = $derived(
@@ -43,21 +47,21 @@
   });
 </script>
 
-{#if visible.length || actionFeedback.current}<div class="toasts" aria-live="polite">
-    {#if actionFeedback.current}<div class="toast solid-surface" role="status">
+{#if visible.length || feedback}<div class="toasts" aria-live="polite">
+    {#if feedback}<div class="toast solid-surface" role="status">
         <div class="action-message">
-          <p>{actionFeedback.current.text}</p>
-          {#if actionFeedback.current.error}<p role="alert">{actionFeedback.current.error}</p>{/if}
-          {#if actionFeedback.current.undo}<button
+          <p>{feedback.text}</p>
+          {#if feedback.error}<p role="alert">{feedback.error}</p>{/if}
+          {#if feedback.undo}<button
               class="button ghost"
-              disabled={actionFeedback.current.busy}
+              disabled={feedback.busy}
               onclick={undoAction}>Undo</button
             >{/if}
         </div>
         <button
           class="icon-button"
           aria-label="Dismiss action feedback"
-          disabled={actionFeedback.current.busy}
+          disabled={feedback.busy}
           onclick={() => (actionFeedback.current = null)}><Icon name="close" size={17} /></button
         >
       </div>{/if}

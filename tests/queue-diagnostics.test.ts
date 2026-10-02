@@ -40,3 +40,19 @@ test('job rejection messages distinguish authentication, access and absent metad
   expect(jobFailureMessage(new ProviderHttpError(404), true)).toContain('unavailable');
   expect(jobFailureMessage(new ProviderHttpError(429), false)).toContain('cooldown');
 });
+
+test('stable job remedies do not depend on arbitrary provider error messages', async () => {
+  const { jobFailureDetail } = await import('../src/lib/server/queue');
+  const { jobRemedy } = await import('../src/lib/ui/queue');
+  for (const [status, code, remedy, retryable] of [[401,'provider.authentication','connection',false],[403,'provider.permission','permissions',false],[404,'provider.item-unavailable','metadata',false],[429,'provider.rate-limit','retry',true],[503,'provider.unavailable','retry',true]] as const) {
+    const failure = jobFailureDetail(new ProviderHttpError(status), !retryable);
+    expect(failure).toEqual({code, remedy, retryable});
+    expect(jobRemedy({id:'fixture',kind:'fixture',state:'failed',attempts:1,lastError:'translated message',failure})).toBe(remedy);
+  }
+  expect(jobFailureDetail(new Error('private provider message'), false).code).not.toContain('Conflicting');
+});
+
+test('identity conflicts require mapping review rather than automatic retries', async()=>{
+ const {jobFailureDetail}=await import('../src/lib/server/queue');
+ expect(jobFailureDetail(new Error('Conflicting provider identities require administrator review.'),true)).toEqual({code:'catalogue.identity-conflict',remedy:'metadata',retryable:false});
+});

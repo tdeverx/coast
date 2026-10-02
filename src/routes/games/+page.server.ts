@@ -6,7 +6,9 @@ import { searchIgdb } from '$lib/providers/igdb/service.server';
 import { listProviders } from '$lib/providers/instances.server';
 import { gameCard } from '$lib/games/presentation';
 import type { PageServerLoad } from './$types';
-export const load: PageServerLoad = async ({ locals, url, depends }) => {
+export const load: PageServerLoad = async ({locals, url, depends}) => {
+  depends('coast:tracking');
+
   depends('coast:games');
   if (!locals.user) error(401, 'Sign in to browse games.');
   const parsed = v.safeParse(

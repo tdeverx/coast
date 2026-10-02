@@ -66,7 +66,9 @@ async function searchPresentations(
     truncated: local.total > local.items.length || result.some((row) => row.truncated),
   };
 }
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({locals, url, depends}) => {
+  depends('coast:tracking');
+
   if (!locals.user) error(401, 'Sign in to search.');
   const query = (url.searchParams.get('q') ?? '').trim().slice(0, 200);
   const view = v.safeParse(

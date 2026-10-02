@@ -1,8 +1,7 @@
 <script lang="ts">
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import { untrack } from 'svelte';
-  import { invalidateAll } from '$app/navigation';
-  import { api, message } from '$lib/ui/client';
+  import { change, message } from '$lib/ui/client';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import type { JournalEntry } from '$lib/profile/journal';
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
@@ -48,7 +47,7 @@
     busy = true;
     error = '';
     try {
-      const result = await api<{ removed: number; queued: number }>(
+      const result = await change<{ removed: number; queued: number }>(
         `media/${data.item.id}/history`,
         {
           eventIds: selected,
@@ -61,7 +60,6 @@
       );
       confirming = false;
       clear();
-      await invalidateAll();
       revision += 1;
       notifyAction(
         `Removed ${result.removed} ${result.removed === 1 ? 'entry' : 'entries'} from history.${result.queued ? ' Connected-service updates queued.' : ''}`

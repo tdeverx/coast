@@ -2,8 +2,12 @@
   import { tick } from 'svelte';
   import type { ProviderSchedule } from '$lib/providers/schedule';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import Heading from './Heading.svelte';
+
+  const { change } = useClient();
+
   let {
     instance,
   }: { instance: { id: string; provider: string; enabled: boolean; schedule: ProviderSchedule } } =

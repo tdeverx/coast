@@ -10,7 +10,7 @@
   import SequenceControl from './SequenceControl.svelte';
   import Button from './Button.svelte';
   import { page } from '$app/state';
-  import {api} from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import AvailabilityToggle from './AvailabilityToggle.svelte';
   import { mediaTypeOptions } from '$lib/ui/filter-options';
   import RowFilter from './RowFilter.svelte';
@@ -26,6 +26,9 @@
   import DetailCard from './DetailCard.svelte';
   import type { InsightPanel } from '$lib/ui/insights/types';
   import MediaCard from './MediaCard.svelte';
+
+  const { api } = useClient();
+
   let {
     title = '', items = [], source, panels, journal, href, children, heading, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle = 'auto', artworkPriority,
     mediaKind = 'screen', filters, controls, actions, empty, details,
@@ -108,12 +111,13 @@
   const displayMediaKind = $derived(adapter?.mediaKind ?? mediaKind);
   const displayPreserveHeight = $derived(preserveHeight ?? (!children && !panels));
   const displayRows = $derived(adapter?.rows ?? rows);
-  const displayHasMore = $derived(adapter?.hasMore ?? hasMore);
-  const displayOnend = $derived(adapter ? () => {if(!adapter.busy) void adapter.load((adapter.page ?? 1)+1,true);} : onend);
+  const pagination = $derived(adapter?.pagination);
+  const displayHasMore = $derived(pagination?.kind === 'cursor' ? pagination.hasMore : pagination?.kind === 'pages' ? pagination.append && pagination.page < pagination.pages : hasMore);
+  const displayOnend = $derived(adapter ? () => {if(!adapter.busy) void adapter.load((pagination?.kind === 'pages' ? pagination.page : 1)+1,true);} : onend);
   const displayResetKey = $derived(adapter?.resetKey ?? resetKey ?? (filterMode !== 'none' ? selection.resetKey : undefined));
-  const displayPageNumber = $derived(adapter?.page ?? pageNumber ?? 1);
-  const displayPages = $derived(adapter?.pages ?? pages ?? 1);
-  const displayOnpage = $derived(adapter ? (adapter.headerPagination ? adapter.load : undefined) : onpage);
+  const displayPageNumber = $derived(pagination?.kind === 'pages' ? pagination.page : pageNumber ?? 1);
+  const displayPages = $derived(pagination?.kind === 'pages' ? pagination.pages : pages ?? 1);
+  const displayOnpage = $derived(adapter ? (pagination?.kind === 'pages' && ['header','both'].includes(pagination.controls) ? adapter.load : undefined) : onpage);
   let styleMenu = $state<RowStyleMenu>();
   const rail = createShelfLayout(() => ({
     size: displaySize, artworkStyle: displayArtworkStyle, artworkPriority: displayArtworkPriority,
@@ -141,7 +145,7 @@
 {#snippet adapterControls()}{@render renderControls(adapter?.controls ?? [])}{/snippet}
 {#snippet adapterActions()}
   {#if adapter?.sequence}<SequenceControl source={adapter.sequence} />{/if}
-  <RowFeedback error={adapter?.error} retry={() => adapter?.load(adapter.page)} retryLabel={adapter?.retryLabel ?? 'Try again'} />
+  <RowFeedback error={adapter?.error} retry={() => adapter?.load(pagination?.kind === 'pages' ? pagination.page : 1)} retryLabel={adapter?.retryLabel ?? 'Try again'} />
   {#if adapter?.notice}<span class="small muted">{adapter.notice}</span>{/if}
   {#each adapter?.actions ?? [] as action}<Button variant="ghost" onclick={action.run}>{action.label}</Button>{/each}
   {@render actions?.()}
@@ -243,11 +247,11 @@
 {/if}
 {#if adapter?.appendOnly}<div class="load-more" use:lazyContent={{load:()=>adapter.load(),enabled:()=>!adapter.error,repeat:true}} aria-busy={adapter.busy} aria-live="polite">
   {#if adapter.error}<p role="alert">{adapter.error}</p>{/if}
-  {#if adapter.hasMore && !adapter.busy}<Button variant="ghost" onclick={()=>adapter.load()}>{adapter.error?'Retry':adapter.loadMoreLabel}</Button>
-  {:else if !adapter.hasMore && !adapter.items.length}<p class="muted">{adapter.empty}</p>{/if}
+  {#if displayHasMore && !adapter.busy}<Button variant="ghost" onclick={()=>adapter.load()}>{adapter.error?'Retry':adapter.loadMoreLabel}</Button>
+  {:else if !displayHasMore && !adapter.items.length}<p class="muted">{adapter.empty}</p>{/if}
 </div>{/if}
-{#if (adapter?.footerPagination || pageUrl) && displayLayout === 'grid'}<Pagination page={displayPageNumber} pages={displayPages}
-  busy={displayBusy} onchange={adapter?.pageUrl || pageUrl ? undefined : adapter?.load} pageUrl={adapter?.pageUrl ?? pageUrl} label={`${displayTitle} pages`} />{/if}
+{#if (pagination?.kind === 'pages' && ['footer','both'].includes(pagination.controls) || pageUrl) && displayLayout === 'grid'}<Pagination page={displayPageNumber} pages={displayPages}
+  busy={displayBusy} onchange={(pagination?.kind === 'pages' ? pagination.url : undefined) || pageUrl ? undefined : adapter?.load} pageUrl={(pagination?.kind === 'pages' ? pagination.url : undefined) ?? pageUrl} label={`${displayTitle} pages`} />{/if}
 </div>
 <style>
   .journal { min-width:0; }

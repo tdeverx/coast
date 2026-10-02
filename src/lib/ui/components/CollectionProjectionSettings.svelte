@@ -1,16 +1,19 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { invalidateAll } from '$app/navigation';
-  import { api,message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import type { ProjectionConfig,ProjectionPreview } from '$lib/collection/projection.server';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
+
+  const { change } = useClient();
+
   let {connectionId,settings,sources=[]}:{connectionId:string;settings:Record<string,unknown>;sources?:{id:string;name:string}[]}=$props();
   let config=$state<ProjectionConfig>(untrack(()=>({enabled:false,source:'collected',availableOnly:false,scope:'dynamic',sourceIds:[],...(settings.collectionProjection as Partial<ProjectionConfig>)})));
   let busy=$state(false),failure=$state(''),open=$state(false),preview=$state<ProjectionPreview|null>(null);
-  async function prepare(){busy=true;failure='';try{preview=await api(`providers/${connectionId}/collection-preview`,config);open=true;}catch(e){failure=message(e);}finally{busy=false;}}
-  async function approve(choice:string){if(!preview)return;busy=true;failure='';try{await api(`providers/${connectionId}/collection-approve`,{previewId:preview.id,choice});open=false;await invalidateAll();}catch(e){failure=message(e);}finally{busy=false;}}
-  async function review(workId:string,choice:'remote'|'coast'){if(!preview)return;busy=true;failure='';try{await api(`providers/${connectionId}/collection-review`,{previewId:preview.id,workId,choice});preview={...preview,conflicts:preview.conflicts.filter(e=>e.workId!==workId),uncertain:preview.uncertain.filter(e=>e.workId!==workId)};}catch(e){failure=message(e);}finally{busy=false;}}
+  async function prepare(){busy=true;failure='';try{preview=await change(`providers/${connectionId}/collection-preview`,config);open=true;}catch(e){failure=message(e);}finally{busy=false;}}
+  async function approve(choice:string){if(!preview)return;busy=true;failure='';try{await change(`providers/${connectionId}/collection-approve`,{previewId:preview.id,choice});open=false;}catch(e){failure=message(e);}finally{busy=false;}}
+  async function review(workId:string,choice:'remote'|'coast'){if(!preview)return;busy=true;failure='';try{await change(`providers/${connectionId}/collection-review`,{previewId:preview.id,workId,choice});preview={...preview,conflicts:preview.conflicts.filter(e=>e.workId!==workId),uncertain:preview.uncertain.filter(e=>e.workId!==workId)};}catch(e){failure=message(e);}finally{busy=false;}}
 </script>
 <div class="stack">
   <h3>Export Trakt Collection</h3>

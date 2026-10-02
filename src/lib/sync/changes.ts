@@ -126,7 +126,8 @@ export async function enqueueTraktChangeInTransaction(
   userId: string,
   change: ExportChange
 ) {
-  if (!supportsProviderField('trakt', 'screen', change.category, 'write')) return;
+  const [work] = await tx.select({ category: works.category }).from(works).where(eq(works.id, change.mediaId));
+  if (!work || !supportsProviderField('trakt', work.category as MediaCategory, change.category, 'write')) return;
   let occurredAt = change.occurredAt;
   if (change.category === 'history' && !change.remove && !change.eventId && !occurredAt) {
     const [state] = await tx

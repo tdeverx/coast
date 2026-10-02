@@ -1,4 +1,3 @@
-import { invalidateAll } from '$app/navigation';
 import { notifyAction } from './action-feedback.svelte';
 import { message } from './client';
 
@@ -12,7 +11,6 @@ export function createMutation(refresh: () => Promise<unknown>) {
     error = '';
     try {
       if ((await task()) === false) return false;
-      await invalidateAll();
       await refresh();
       notifyAction(success, undo);
       return true;

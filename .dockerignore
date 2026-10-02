@@ -14,3 +14,7 @@ data
 playwright-report
 test-results
 *.log
+
+# Generated local artifacts and malformed local data directory names
+output
+.data*

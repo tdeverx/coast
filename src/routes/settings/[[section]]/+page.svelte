@@ -17,10 +17,10 @@
   import ConflictList from '$lib/ui/components/ConflictList.svelte';
   import { page } from '$app/state';
   import { untrack } from 'svelte';
-  import { beforeNavigate, goto, invalidateAll } from '$app/navigation';
+  import { beforeNavigate, goto } from '$app/navigation';
 
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { api, change, message } from '$lib/ui/client';
+  import { change, message } from '$lib/ui/client';
   import Button from '$lib/ui/components/Button.svelte';
   import Icon from '$lib/ui/components/Icon.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
@@ -371,7 +371,7 @@
                   error = '';
                   success = '';
                   try {
-                    await api('settings/password', values(form));
+                    await change('settings/password', values(form));
                     form.reset();
                     busy = false;
                     await goto('/login?passwordChanged=1', {
@@ -717,7 +717,7 @@
           </div>
           <div class="panel stack form-width">
             <h3>Invite someone</h3><p class="small">Single-use codes let someone register and import their Jellyfin progress before accessing Coast.</p>
-            <form class="stack" onsubmit={async(e)=>{e.preventDefault();try{const result=await api<{code:string}>('admin/invites',{days:Number(new FormData(e.currentTarget).get('days'))});inviteCode=result.code;await invalidateAll();}catch(cause){error=message(cause);}}}>
+            <form class="stack" onsubmit={async(e)=>{e.preventDefault();try{const result=await change<{code:string}>('admin/invites',{days:Number(new FormData(e.currentTarget).get('days'))});inviteCode=result.code;}catch(cause){error=message(cause);}}}>
               <label class="field">Expires after<select name="days"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="30">30 days</option></select></label><Button type="submit">Create invite code</Button>
             </form>
             {#if inviteCode}<label class="field">Copy this code — shown once<input readonly value={inviteCode} onclick={(e)=>e.currentTarget.select()} /></label><a href="/register">Registration page</a>{/if}

@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { page } from '$app/state';
+    import { page } from '$app/state';
   import Demo from '../Demo.svelte';
-  import { installFixtures } from './fixtures';
-  let ready = $state(false);
+  import { providePreviewClient } from '$lib/ui/client-context';
+  import { fixtureFetch } from './fixtures';
+  const ready = true;
+  providePreviewClient(fixtureFetch);
   const name = $derived(page.url.searchParams.get('component') ?? 'Button');
-  onMount(() => { const restore = installFixtures(); ready = true; return restore; });
 </script>
 <svelte:head><title>{name} · UI preview</title></svelte:head>
 {#if ready}{#key name}<Demo {name} initialOpen />{/key}{/if}

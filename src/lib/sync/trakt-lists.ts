@@ -23,7 +23,7 @@ import {
   traktPlurals,
   exportIdentity,
 } from '$lib/sync/trakt-identity';
-import { resolveTrakt } from '$lib/sync/trakt-import';
+import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
 
 export async function queueTraktListChange(userId: string, listId: string) {
   const [list] = await getDb()

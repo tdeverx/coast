@@ -79,6 +79,8 @@ export function safeFields(input: Record<string, unknown> = {}) {
     'attempts',
     'code',
     'bufferedSeconds',
+    'count',
+    'expired',
   ]) {
     const value = input[key];
     if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1e12)
@@ -110,6 +112,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
     result.operation = String(input.operation);
   if (
     [
+      'retention',
       'connection',
       'identity',
       'checkpoint-read',
@@ -123,6 +126,14 @@ export function safeFields(input: Record<string, unknown> = {}) {
     result.stage = String(input.stage);
   if (
     [
+      'provider.authentication',
+      'provider.permission',
+      'provider.item-unavailable',
+      'provider.rate-limit',
+      'provider.unavailable',
+      'provider.invalid-data',
+      'provider.interrupted',
+      'action.rejected',
       'jellyfin.incomplete-library-page',
       'jellyfin.cyclic-media-hierarchy',
       'jellyfin.item-missing-show-identity',
@@ -136,7 +147,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
     result.provider = String(input.provider);
   if (typeof input.stream === 'boolean') result.stream = input.stream;
   // Session and job IDs are random system IDs, not user/provider/media IDs.
-  for (const key of ['sessionId', 'actionId']) {
+  for (const key of ['sessionId', 'actionId', 'accountGeneration']) {
     const value = input[key];
     if (typeof value === 'string' && /^[0-9a-f-]{36}$/i.test(value)) result[key] = value;
   }

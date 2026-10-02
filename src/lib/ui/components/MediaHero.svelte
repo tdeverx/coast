@@ -4,10 +4,14 @@
   import type { MediaView } from '$lib/ui/types';
   import { createHeroPresentation, screenItem, type HeroItem } from '$lib/ui/heroes/presentation.svelte';
   import { createHeroPlayback } from '$lib/ui/heroes/playback.svelte';
-  import { heroPlayer, setHeroMuted } from '$lib/playback/client.svelte';
+  import { setHeroMuted } from '$lib/playback/client.svelte';
+  import { usePlayback } from '$lib/playback/context.svelte';
   import MediaActions from './MediaActions.svelte';
   import Icon from './Icon.svelte';
   import Button from './Button.svelte';
+
+  const { heroPlayer, preview } = usePlayback();
+
   let {
     mode = 'content',
     item,
@@ -127,7 +131,7 @@
             ><button
               class="icon-button"
               aria-label={heroPlayer.muted ? 'Unmute trailer' : 'Mute trailer'}
-              onclick={() => setHeroMuted(!heroPlayer.muted)}
+              onclick={() => preview ? heroPlayer.muted = !heroPlayer.muted : setHeroMuted(!heroPlayer.muted)}
               ><Icon name={heroPlayer.muted ? 'muted' : 'volume'} size={18} /></button
             >{/if}{#if items.length > 1}<span
               >{String(hero.current + 1).padStart(2, '0')}<i>/</i>{String(items.length).padStart(

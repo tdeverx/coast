@@ -1,7 +1,11 @@
 <script lang="ts">
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
-  import { change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
+
+  const { change } = useClient();
+
   let {
     open = $bindable(false),
     mediaId,

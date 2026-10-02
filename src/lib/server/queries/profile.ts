@@ -65,7 +65,11 @@ export async function profileData(
     .select({ settings: s.users.settings })
     .from(s.users)
     .where(eq(s.users.id, userId));
-  const profile = visibility.details ? user?.settings.profile ?? {} : {};
+  const profile = visibility.details ? { ...user?.settings.profile } : {};
+  if (!visibility.favourites) {
+    delete profile.favouriteOrder;
+    delete profile.pinnedFavourites;
+  }
   const periodEvents = sql`select * from (${periodHistory(userId, options.period, now)}) h where ${visibility.activity}`;
   const genreMatches = genreRows(periodEvents);
   const genreFilter = !options.genre

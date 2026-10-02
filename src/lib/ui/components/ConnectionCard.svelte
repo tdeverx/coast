@@ -3,10 +3,14 @@
   import type {SourceImpact} from '$lib/collection/source-changes.server';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { onMount, untrack } from 'svelte';
-  import { api, change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import Button from './Button.svelte';
   import Icon from './Icon.svelte';
   import Dialog from './Dialog.svelte';
+
+  const { api, change } = useClient();
+
   let {
     provider,
     sources = [],
@@ -135,7 +139,7 @@
     busy = true;
     error = '';
     try {
-      device = await api('providers/trakt/start', { instanceId: provider.id });
+      device = await change('providers/trakt/start', { instanceId: provider.id });
     } catch (e) {
       error = message(e);
     } finally {

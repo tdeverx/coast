@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import type { MediaInsights, PersonDetails } from '$lib/media/details';
 import type { ProviderTransport } from '../contracts';
-import { tmdbArtwork } from './adapter.server';
+import { tmdbArtwork } from './artwork';
 const text = v.nullish(v.string());
 const num = v.nullish(v.number());
 const person = v.object({

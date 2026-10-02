@@ -5,7 +5,9 @@ import { requireUser } from '$lib/server/auth';
 import { mediaViewsForIds } from '$lib/server/queries/media';
 import { mediaActivity } from '$lib/server/queries/media-actions';
 
-export const load: PageServerLoad = async ({ locals, params, url }) => {
+export const load: PageServerLoad = async ({locals, params, url, depends}) => {
+  depends('coast:tracking');
+
   const user = requireUser(locals.user);
   if (!v.is(v.pipe(v.string(), v.uuid()), params.id)) error(404, 'Title not found.');
   const [item] = await mediaViewsForIds(user.id, [params.id]);

@@ -1,9 +1,11 @@
 import { onMount, untrack } from 'svelte';
-import { heroPlayer, player } from '$lib/playback/client.svelte';
+import { usePlayback } from '$lib/playback/context.svelte';
 import { noCrop, videoFitStyle, type FrameCrop } from '$lib/playback/crop';
 import { observeVideoCrop } from '$lib/playback/observe-crop';
 /** A single root-owned video surface survives hero and route changes. */
 export function createHeroPlayback() {
+  const { heroPlayer, player, preview } = usePlayback();
+
   let video = $state<HTMLVideoElement>();
   let foreground = $state(true);
   let frame = $state({ width: 0, height: 0 });
@@ -20,6 +22,7 @@ export function createHeroPlayback() {
     heroPlayer.paused = true;
   }
   $effect(() => {
+    if (preview) return;
     const url = heroPlayer.url, id = heroPlayer.id, element = video;
     if (!element || !url || !id) return;
     crop = noCrop;
@@ -39,6 +42,7 @@ export function createHeroPlayback() {
     };
   });
   $effect(() => {
+    if (preview) return;
     const element = video, url = heroPlayer.url;
     const shouldPlay = visible && foreground && !heroPlayer.paused;
     if (!element) return;
@@ -47,7 +51,8 @@ export function createHeroPlayback() {
     else untrack(() => void element.play().catch(() => { if (!cancelled) failed(); }));
     return () => { cancelled = true; };
   });
-  $effect(() => { if (video) video.muted = heroPlayer.muted; });
+  $effect(() => {
+    if (preview) return; if (video) video.muted = heroPlayer.muted; });
   onMount(() => {
     const update = () => (foreground = !document.hidden);
     update();

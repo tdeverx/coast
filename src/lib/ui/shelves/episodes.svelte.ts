@@ -1,7 +1,10 @@
-import { change, message, ApiError } from '$lib/ui/client';
+import { message, ApiError } from '$lib/ui/client';
+import { useClient } from '$lib/ui/client-context';
 
 /** Episode controls retain conflict acknowledgement independently of row rendering. */
 export function createEpisodeTracking() {
+  const { change } = useClient();
+
   let error = $state('');
   let busy = $state(false);
   let confirm = $state(false);

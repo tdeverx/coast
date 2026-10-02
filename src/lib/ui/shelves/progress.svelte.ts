@@ -9,7 +9,7 @@
     type ProgressContent,
     type ProgressOptions,
   } from '$lib/progress';
-  import { api } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { createResource } from '$lib/ui/resource.svelte';
   import type { MediaView } from '$lib/ui/types';
   import type { ShelfSource, ShelfControl } from './types';
@@ -22,6 +22,8 @@ export type ProgressSourceOptions = {
     onitems?: (items: MediaView[], selection: string) => void;
   };
 export function createProgressSource(getOptions: () => ProgressSourceOptions): ShelfSource {
+  const { api } = useClient();
+
   let {
     initial,
     surface = 'continue',
@@ -111,13 +113,14 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
 
 
   return {
+    get pagination() { return { kind: 'pages' as const, page: content.page, pages: content.pages, append: false, controls: layout === 'grid' ? 'both' as const : 'none' as const }; },
     get title() { return title; }, get items() { return visible; }, get busy() { return busy; },
     get ready() { return ready; }, get error() { return error; }, get activated() { return resource.activated; },
     get href() { return layout === 'row' ? href() : undefined; },
     get shape() { return saved ? 'poster' : 'fanart'; }, get artworkStyle() { return saved ? 'auto' : 'thumb'; },
     get artworkPriority() { return ['watching','up-next'].includes(content.view) ? 'season-show-episode' : undefined; },
-    get page() { return content.page; }, get pages() { return content.pages; },
-    get headerPagination() { return layout === 'grid'; }, get footerPagination() { return layout === 'grid'; },
+
+
     get filters(): ShelfControl[] { return [
       ...(!saved ? [{type:'segments' as const, label:`${title} selection`, value:tab, options, change:(value:string)=>{tab=value;void select();}}] : []),
       ...(surface !== 'profile' ? [{type:'availability' as const,label:'Available to play only',value:current.scope,change:(value:string)=>update({scope:value as Filters['scope']})}] : []),

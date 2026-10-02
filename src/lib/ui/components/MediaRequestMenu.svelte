@@ -2,10 +2,14 @@
   import type { MediaActionData } from '$lib/media/actions';
   import type { MediaView } from '$lib/ui/types';
   import { requestScope, type RequestDestination } from '$lib/media/requests';
-  import { api, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import ContextMenu from './ContextMenu.svelte';
   import MenuAction from './MenuAction.svelte';
   import Icon from './Icon.svelte';
+
+  const { api } = useClient();
+
   let {
     item,
     data,

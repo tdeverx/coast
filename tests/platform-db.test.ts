@@ -22,7 +22,8 @@ import {
   PermanentActionError,
 } from '../src/lib/server/queue';
 import { notify, inbox, listDiagnostics } from '../src/lib/server/notifications';
-import { defaultConfig, getConfig, updateConfig } from '../src/lib/server/config';
+import { defaultConfig, getConfig } from '../src/lib/server/config';
+import { updateConfig } from '../src/lib/application/configuration.server';
 import {
   initializeRecovery,
   recoveryLogin,

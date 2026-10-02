@@ -211,6 +211,13 @@
       "when": 1790916297328,
       "tag": "0029_youthful_blade",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1790954055522,
+      "tag": "0030_serious_giant_man",
+      "breakpoints": true
     }
   ]
 }

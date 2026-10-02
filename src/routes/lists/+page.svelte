@@ -3,7 +3,7 @@
   import Heading from '$lib/ui/components/Heading.svelte';
   import { goto } from '$app/navigation';
   import { untrack } from 'svelte';
-  import { api, change, message } from '$lib/ui/client';
+  import { change, message } from '$lib/ui/client';
   import type { MediaView } from '$lib/ui/types';
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import Button from '$lib/ui/components/Button.svelte';
@@ -101,7 +101,7 @@
         variant="danger"
         onclick={async () => {
           try {
-            await api(`lists/${deleteId}`, {}, 'DELETE');
+            await change(`lists/${deleteId}`, {}, 'DELETE');
             deleteId = '';
             await goto('/lists', { invalidateAll: true });
           } catch (cause) {

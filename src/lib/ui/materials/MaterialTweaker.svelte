@@ -108,7 +108,7 @@
     </div>
     <div class="preview-options">
       <SegmentedControl label="Preview background" value={background} options={[{ value: 'pattern', label: 'Pattern' }, { value: 'plain', label: 'Plain' }]} onchange={value => background = value} />
-      <label class="field">Preview corner radius · {radius}px<input type="range" min="0" max="80" step="1" bind:value={radius} /></label>
+      <label class="field">Preview corner radius · {radius}px<input type="range" min="0" max="80" step="1" aria-valuetext={`${radius} pixels`} bind:value={radius} /></label>
     </div>
     <p class="quiet">Both previews update live. Native refraction depends on your browser; CSS fallback has no refraction. Preview radius and background do not change presets.</p>
     <p role="status" class="quiet">{message}</p>
@@ -121,7 +121,7 @@
           <div class="control-grid">
             {#each group.controls as control}
               <label class="field slider"><span>{control.label}<output>{effects[control.key]}{control.unit}</output></span>
-                <input type="range" aria-label={`${group.title}: ${control.label}`} min={control.min} max={control.max} step={control.step} bind:value={effects[control.key]} />
+                <input type="range" aria-label={`${group.title}: ${control.label}`} min={control.min} max={control.max} step={control.step} aria-valuetext={`${effects[control.key]}${control.unit}`} bind:value={effects[control.key]} />
               </label>
             {/each}
           </div>
@@ -155,7 +155,7 @@
           {#each group.controls as control}
             <label class="field slider">
               <span>{control.label} <output>{surface[control.key]}{control.unit}</output></span>
-              <input type="range" aria-label={`${group.title}: ${control.label}`} min={control.min} max={control.max} step={control.step} bind:value={surface[control.key]} disabled={group.title === 'Refraction' && layer === 'fallbacks'} />
+              <input type="range" aria-label={`${group.title}: ${control.label}`} min={control.min} max={control.max} step={control.step} aria-valuetext={`${surface[control.key]}${control.unit}`} bind:value={surface[control.key]} disabled={group.title === 'Refraction' && layer === 'fallbacks'} />
             </label>
           {/each}
         </div>

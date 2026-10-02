@@ -3,7 +3,8 @@
   import { onMount, untrack } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { contextGesture } from '$lib/ui/context-gesture';
   import type { ServiceTask } from '$lib/providers/tasks';
   import type { ProviderSchedule } from '$lib/providers/schedule';
@@ -15,6 +16,9 @@
   import QueueList from './QueueList.svelte';
   import { jobOutcome, jobRemedy, jobWaiting, type QueueAction } from '$lib/ui/queue';
   import type { JobTiming } from '$lib/providers/job-timing.server';
+
+  const { change } = useClient();
+
   let {
     provider,
     task,

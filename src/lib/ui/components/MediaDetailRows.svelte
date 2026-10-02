@@ -5,7 +5,7 @@
   import type { CastMember } from '$lib/providers/contracts';
   import type { MediaInsights } from '$lib/media/details';
   import type { ProfilePeriod } from '$lib/profile/period';
-  import { api } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
   import { lazyContent } from '$lib/ui/lazy-content';
   import Shelf from './Shelf.svelte';
@@ -20,6 +20,9 @@
   import DetailCard from './DetailCard.svelte';
   import FactList from './FactList.svelte';
   import Button from './Button.svelte';
+
+  const { api } = useClient();
+
   let {
     item,
     members = [],

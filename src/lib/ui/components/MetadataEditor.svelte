@@ -1,7 +1,11 @@
 <script lang="ts">
-  import { api, change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
+
+  const { api, change } = useClient();
+
   type MetadataFields = {
     title?: string | null;
     overview?: string | null;

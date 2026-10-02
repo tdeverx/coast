@@ -1,9 +1,13 @@
 <script lang="ts">
   import type { ProfileSettings } from '$lib/server/db/schema';
-  import { api, change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
   import RowFilter from './RowFilter.svelte';
+
+  const { api, change } = useClient();
+
   let {
     open = $bindable(false),
     profile,

@@ -1,8 +1,9 @@
 import { onMount, untrack } from 'svelte';
-import { api } from '$lib/ui/client';
+import { useClient } from '$lib/ui/client-context';
 import { heroTitleIds, isHeroTitle } from '$lib/media/hero';
 import type { MediaView, MediaHeroPresentation } from '$lib/ui/types';
-import { heroPlayer, presentTrailer } from '$lib/playback/client.svelte';
+import { presentTrailer } from '$lib/playback/client.svelte';
+import { usePlayback } from '$lib/playback/context.svelte';
 export type HeroItem = MediaView | MediaHeroPresentation;
 export type HeroOptions = {
   item?: HeroItem;
@@ -13,6 +14,10 @@ export type HeroOptions = {
 export function screenItem(item: HeroItem): item is MediaView { return 'available' in item; }
 /** Selection, artwork fallbacks and trailer attachment for a visible hero slot. */
 export function createHeroPresentation(get: () => HeroOptions) {
+  const { heroPlayer, preview } = usePlayback();
+
+  const { api } = useClient();
+
   let { item, items = [], parents = [], collection } = $derived(get());
   let current = $state(0),
     host = $state<HTMLElement | null>(null),
@@ -97,7 +102,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
     backdropFailed = false;
     posterFailed = false;
     logoFailed = false;
-    if (!title || !host || !screenItem(title) || (!title.available && !title.trailer)) return;
+    if (preview || !title || !host || !screenItem(title) || (!title.available && !title.trailer)) return;
     const element = host;
     let visible = true,
       cancelled = false,

@@ -2,11 +2,14 @@
   import { onDestroy, untrack } from 'svelte';
   import type { ProfilePeriod } from '$lib/profile/period';
   import type { MediaStatistics } from '$lib/media/statistics';
-  import { api } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { createResource } from '$lib/ui/resource.svelte';
   import { mediaActivityPanels } from '$lib/ui/insights/media';
   import DetailCard from './DetailCard.svelte';
   import Button from './Button.svelte';
+
+  const { api } = useClient();
+
   let { mediaId, period }: { mediaId: string; period: ProfilePeriod } = $props();
   const resource = createResource<MediaStatistics | null>(null);
   const data = $derived(resource.data);

@@ -83,7 +83,7 @@ export const sessions = pgTable(
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
     createdAt: createdAt(),
   },
-  (t) => [index('sessions_user_idx').on(t.userId)]
+  (t) => [index('sessions_user_idx').on(t.userId), index('sessions_expiry_idx').on(t.expiresAt)]
 );
 export const systemSettings = pgTable('system_settings', {
   key: text('key').primaryKey(),
@@ -727,7 +727,7 @@ export const diagnostics = pgTable('diagnostics', {
   message: text('message').notNull(),
   detail: jsonb('detail').$type<JsonObject>().notNull().default({}),
   createdAt: createdAt(),
-});
+}, t => [index('diagnostics_retention_idx').on(t.createdAt)]);
 export const playbackSessions = pgTable('playback_sessions', {
   mediaType: text('media_type').$type<'audio' | 'video'>().notNull().default('video'),
   playedSeconds: real('played_seconds').notNull().default(0),
@@ -998,7 +998,7 @@ export const collectionProjectionPreviews = pgTable('collection_projection_previ
   snapshot: jsonb('snapshot').$type<JsonObject>().notNull(),
   approved: boolean('approved').notNull().default(false),
   createdAt: createdAt(),
-});
+}, t => [index('collection_projection_preview_expiry_idx').on(t.createdAt).where(sql`${t.approved}=false`)]);
 
 
 export const friendships = pgTable('friendships', {
@@ -1065,7 +1065,7 @@ export const registrationInvites = pgTable('registration_invites', {
   usedAt: timestamp('used_at', { withTimezone: true }),
   revokedAt: timestamp('revoked_at', { withTimezone: true }),
   createdAt: createdAt(),
-});
+}, t => [index('registration_invite_expiry_idx').on(t.expiresAt).where(sql`${t.usedAt} is null`), index('registration_invite_revoked_idx').on(t.revokedAt).where(sql`${t.usedAt} is null and ${t.revokedAt} is not null`)]);
 export const userOnboarding = pgTable('user_onboarding', {
   userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   connectionId: uuid('connection_id').references(() => providerConnections.id, { onDelete: 'set null' }),
@@ -1090,7 +1090,7 @@ export const syncedRooms = pgTable('synced_rooms', {
   endedAt: timestamp('ended_at', { withTimezone: true }),
   updatedAt: updatedAt(),
   createdAt: createdAt(),
-}, t => [index('synced_rooms_host_idx').on(t.hostId)]);
+}, t => [index('synced_rooms_host_idx').on(t.hostId), index('synced_rooms_expiry_idx').on(t.createdAt).where(sql`${t.endedAt} is null`), index('synced_rooms_retention_idx').on(t.endedAt).where(sql`${t.endedAt} is not null`)]);
 export const syncedParticipants = pgTable('synced_participants', {
   roomId: uuid('room_id').notNull().references(() => syncedRooms.id, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),

@@ -48,3 +48,27 @@ export function libraryPath(options: {
     if (value !== undefined) parameters.set(key, String(value));
   return `library?${parameters}`;
 }
+
+/** URL and API filter vocabulary stay together; sources only manage reactive state. */
+export function libraryBrowsePaths(options: {
+  surface: LibrarySurface; collection: boolean; selection: string; kind: string; scope: string;
+  genre: string; relationship: string; source: string; availability: string; username: string; page: number;
+}, preview?: { personal?: boolean }) {
+  const { surface, collection, selection, kind, scope, genre, relationship, source, availability, username, page } = options;
+  if (preview) return {
+    api: libraryPath({ preview: true, surface, selection, personal: preview.personal ?? false }),
+    href: surface === 'listen' ? `/music?kind=${selection}` : `/games${preview.personal ? '?personal=true' : ''}`,
+  };
+  if (collection) {
+    const parameters = new URLSearchParams({ category: surface === 'watch' ? 'screen' : surface === 'listen' ? 'music' : 'game', level: 'root',
+      activity: surface === 'listen' ? 'all' : selection === 'progress' || selection === 'in-progress' ? 'active' : selection === 'watched' ? 'completed' : selection,
+      kind: surface === 'listen' ? selection : surface === 'play' ? 'all' : kind, relationship, source, availability, ...(username ? { username } : {}), page: String(page) });
+    const api = `collection?${parameters}`;
+    parameters.set('view', surface);
+    return { api, href: `/collection?${parameters}` };
+  }
+  const href = surface === 'watch' ? '/library?' + new URLSearchParams({ view: 'watch', tracking: selection, kind, scope, genre, page: String(page) })
+    : surface === 'listen' ? '/music?' + new URLSearchParams({ kind: selection, page: String(page) })
+    : '/games?' + new URLSearchParams({ state: selection, page: String(page) });
+  return { api: libraryPath({ surface, selection, kind, scope, genre, page }), href };
+}

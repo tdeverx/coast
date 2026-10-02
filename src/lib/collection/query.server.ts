@@ -27,7 +27,7 @@ export type WorkAssessment = { id: string; category: string; kind: string; title
 export async function collectionRead(statement:SQL){return getDb().transaction(async tx=>{await tx.execute(sql`set local jit=off`);return tx.execute(statement);});}
 
 /** All personal predicates and access assessment happen before the 60-item card query. */
-export function collectionCTE(ownerId: string, viewerId: string, source = 'all') {
+export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, source = 'all') {
   return sql`with recursive
   edges as (
     select parent_id,child_id from media_relationships where kind in ('contains','collection','sequence')
@@ -185,7 +185,7 @@ export async function collectionData(viewerId: string, raw: unknown={}, username
     and (${input.activity}='all' or (${input.activity}='active' and c.active and not c.dropped and not c.completed)
       or (${input.activity}='unwatched' and not c.completed and not c.dropped)
       or (${input.activity}='planned' and not c.active and not c.completed and not c.dropped)
-      or (${input.activity}='paused' and (select p.status from game_playthroughs p where p.user_id=${ownerId} and p.game_id=c.id order by p.created_at desc,p.id desc limit 1)='paused')
+      or (${input.activity}='paused' and social_visible(${ownerId}::uuid,${viewerId}::uuid,'progress',c.category) and (select p.status from game_playthroughs p where p.user_id=${ownerId} and p.game_id=c.id order by p.created_at desc,p.id desc limit 1)='paused')
       or (${input.activity}='completed' and c.completed) or (${input.activity}='dropped' and c.dropped))
     and (${input.availability}='all' or (${input.availability}='available' and c.availability in ('available','partial')) or c.availability=${input.availability} or
       (${input.availability}='ready' and exists(select 1 from assessments a where a.id=c.next_id and a.availability='available')))

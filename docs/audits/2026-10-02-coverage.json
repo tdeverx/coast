@@ -1,0 +1,4586 @@
+{
+  "schemaVersion": 1,
+  "revision": "5ee9a0de7bdc08ff3a1367201cd435b5396265fc",
+  "structuralInventoryMethod": "Regex local-import and rendered-component graph; includes deferred/type imports, not proof of runtime cycles or unused exports.",
+  "completeness": "partial semantic review; complete listed source structural inventory",
+  "sourceFiles": 321,
+  "uiComponents": 55,
+  "routeFiles": 73,
+  "reviewedSecurityFiles": [
+    ".dockerignore",
+    ".github/SECURITY.md",
+    ".github/workflows/verify-and-publish-preview.yml",
+    "Dockerfile",
+    "compose.yaml",
+    "drizzle/0024_pretty_hedge_knight.sql",
+    "drizzle/0025_social_notification_visibility.sql",
+    "package.json",
+    "scripts/container-entrypoint.sh",
+    "scripts/container-storage.sh",
+    "scripts/migrate.ts",
+    "src/hooks.server.ts",
+    "src/lib/catalogue/overrides/service.ts",
+    "src/lib/collection/query.server.ts",
+    "src/lib/core/games/service.ts",
+    "src/lib/core/lists/service.ts",
+    "src/lib/core/media/service.ts",
+    "src/lib/core/profile/avatars.server.ts",
+    "src/lib/core/profile/gif-avatar.server.ts",
+    "src/lib/core/profile/service.ts",
+    "src/lib/diagnostics.ts",
+    "src/lib/music/artwork.server.ts",
+    "src/lib/playback/server.ts",
+    "src/lib/playback/synced/service.server.ts",
+    "src/lib/providers/actions.server.ts",
+    "src/lib/providers/artwork.server.ts",
+    "src/lib/providers/connections.server.ts",
+    "src/lib/providers/instances.server.ts",
+    "src/lib/providers/jellyfin/connection.server.ts",
+    "src/lib/providers/seerr/adapter.server.ts",
+    "src/lib/providers/seerr/connection.server.ts",
+    "src/lib/providers/seerr/requests.server.ts",
+    "src/lib/providers/tmdb/artwork.server.ts",
+    "src/lib/providers/trakt/connection.server.ts",
+    "src/lib/server/auth/cookies.ts",
+    "src/lib/server/auth/index.ts",
+    "src/lib/server/auth/jellyfin.ts",
+    "src/lib/server/auth/onboarding.ts",
+    "src/lib/server/auth/recovery.ts",
+    "src/lib/server/config.ts",
+    "src/lib/server/db/index.ts",
+    "src/lib/server/diagnostics/index.ts",
+    "src/lib/server/experimental.ts",
+    "src/lib/server/notifications/index.ts",
+    "src/lib/server/queries/lists.ts",
+    "src/lib/server/queries/media.ts",
+    "src/lib/server/queries/profile-user.ts",
+    "src/lib/server/queries/profile.ts",
+    "src/lib/server/queries/progress.ts",
+    "src/lib/server/queue/index.ts",
+    "src/lib/server/security/credentials.ts",
+    "src/lib/server/security/csrf.ts",
+    "src/lib/server/security/errors.ts",
+    "src/lib/server/security/provider-fetch.ts",
+    "src/lib/server/startup.ts",
+    "src/lib/social/insights.server.ts",
+    "src/lib/social/model.ts",
+    "src/lib/social/presence.server.ts",
+    "src/lib/social/privacy.server.ts",
+    "src/lib/social/public.server.ts",
+    "src/lib/social/queries.server.ts",
+    "src/lib/social/service.server.ts",
+    "src/routes/+layout.server.ts",
+    "src/routes/api/v1/[...path]/+server.ts",
+    "src/routes/api/v1/diagnostics/+server.ts",
+    "src/routes/api/v1/media/[id]/insights/+server.ts",
+    "src/routes/api/v1/media/[id]/statistics/+server.ts",
+    "src/routes/api/v1/people/[id]/credits/+server.ts",
+    "src/routes/login/+page.server.ts",
+    "src/routes/logout/+server.ts",
+    "src/routes/profile/[username]/+page.server.ts",
+    "src/routes/recovery/+page.server.ts",
+    "src/routes/register/+page.server.ts",
+    "src/routes/settings/[[section]]/+page.server.ts",
+    "src/routes/setup/+page.server.ts",
+    "src/routes/ui-preview/+layout.server.ts",
+    "svelte.config.js"
+  ],
+  "files": [
+    {
+      "path": "src/app.css",
+      "lines": 745,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/app.d.ts",
+      "lines": 3,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/auth/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/hooks.server.ts",
+      "lines": 140,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/diagnostics.ts",
+        "src/lib/providers/actions.server.ts",
+        "src/lib/server/auth/cookies.ts",
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/auth/onboarding.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/experimental.ts",
+        "src/lib/server/security/csrf.ts",
+        "src/lib/server/startup.ts",
+        "src/lib/social/public.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/artwork.ts",
+      "lines": 22,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/catalogue/maintenance.server.ts",
+      "lines": 353,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/catalogue/service.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/jellyfin/adapter.server.ts",
+        "src/lib/providers/jellyfin/connection.server.ts",
+        "src/lib/providers/schedule.ts",
+        "src/lib/providers/trakt/adapter.server.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/catalogue/metadata/resolve.ts",
+      "lines": 106,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/catalogue/overrides/service.ts",
+      "lines": 216,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/catalogue/metadata/resolve.ts",
+        "src/lib/core/errors.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/catalogue/service.ts",
+      "lines": 505,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/seerr/connection.server.ts",
+        "src/lib/providers/tmdb/adapter.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/provider-fetch.ts",
+        "src/lib/server/utils/async.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/collection/demand.server.ts",
+      "lines": 39,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/collection/query.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/queries/pagination.ts",
+        "src/lib/server/utils/async.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/collection/projection.server.ts",
+      "lines": 189,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/catalogue/service.ts",
+        "src/lib/collection/query.server.ts",
+        "src/lib/providers/trakt/adapter.server.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/sync/changes.ts",
+        "src/lib/sync/trakt-identity.ts",
+        "src/lib/sync/trakt-import.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/collection/query.server.ts",
+      "lines": 208,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/experimental.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/queries/pagination.ts",
+        "src/lib/server/queries/profile-user.ts",
+        "src/lib/social/privacy.server.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/collection/source-changes.server.ts",
+      "lines": 56,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/collection/projection.server.ts",
+        "src/lib/core/errors.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/notifications/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/errors.ts",
+      "lines": 16,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/games/service.ts",
+      "lines": 170,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/games/model.ts",
+        "src/lib/providers/igdb/adapter.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/pagination.ts",
+        "src/lib/sync/changes.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/lists/sequence.ts",
+      "lines": 133,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/media/sequence.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/lists/service.ts",
+      "lines": 253,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/sync/changes.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/lists/up-next.ts",
+      "lines": 26,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/sync/changes.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/media/service.ts",
+      "lines": 127,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/profile/avatars.server.ts",
+      "lines": 45,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/jellyfin/adapter.server.ts",
+        "src/lib/providers/jellyfin/connection.server.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/profile/gif-avatar.server.ts",
+      "lines": 65,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/privacy.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/profile/service.ts",
+      "lines": 135,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/core/profile/gif-avatar.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/ratings/service.ts",
+      "lines": 56,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/tracking/continue.ts",
+      "lines": 151,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/tracking/history-scope.ts",
+      "lines": 7,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/tracking/recorded-watches.ts",
+      "lines": 12,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/tracking/history-scope.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/tracking/rewatch.ts",
+      "lines": 76,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/tracking/service.ts",
+      "lines": 779,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/core/lists/sequence.ts",
+        "src/lib/core/tracking/rewatch.ts",
+        "src/lib/core/tracking/state.ts",
+        "src/lib/media/sequence.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/core/tracking/state.ts",
+      "lines": 155,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/model.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/diagnostics.ts",
+      "lines": 144,
+      "review": "security investigator full-source review",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/games/model.ts",
+      "lines": 38,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/games/presentation.ts",
+      "lines": 50,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/library.ts",
+      "lines": 50,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/media/actions.ts",
+      "lines": 58,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/media/credits.ts",
+      "lines": 28,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/media/details.ts",
+      "lines": 41,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/contracts.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/media/hero.ts",
+      "lines": 19,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/media/model.ts",
+      "lines": 118,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/media/requests.ts",
+      "lines": 24,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/actions.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/media/sequence.ts",
+      "lines": 27,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/media/statistics.ts",
+      "lines": 10,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/profile/activity.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/music/artwork.server.ts",
+      "lines": 51,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/jellyfin/adapter.server.ts",
+        "src/lib/providers/jellyfin/connection.server.ts",
+        "src/lib/providers/jellyfin/music.server.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/music/model.ts",
+      "lines": 37,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/music/persistence.server.ts",
+      "lines": 76,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/music/model.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/sync/changes.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/music/presentation.ts",
+      "lines": 45,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/music/model.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/music/queue.server.ts",
+      "lines": 35,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/collection/query.server.ts",
+        "src/lib/core/errors.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/music/service.server.ts",
+      "lines": 45,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/music/persistence.server.ts",
+        "src/lib/providers/jellyfin/connection.server.ts",
+        "src/lib/providers/jellyfin/music.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/sync/changes.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/client.svelte.ts",
+      "lines": 176,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/sequence.ts",
+        "src/lib/playback/synced/client.svelte.ts",
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/diagnostics.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/crop.ts",
+      "lines": 96,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/failures.ts",
+      "lines": 14,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/listening.ts",
+      "lines": 10,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/observe-crop.ts",
+      "lines": 40,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/crop.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/planning.ts",
+      "lines": 61,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/contracts.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/server.ts",
+      "lines": 798,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/core/lists/sequence.ts",
+        "src/lib/core/tracking/rewatch.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/diagnostics.ts",
+        "src/lib/media/sequence.ts",
+        "src/lib/music/persistence.server.ts",
+        "src/lib/playback/listening.ts",
+        "src/lib/playback/planning.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/jellyfin/adapter.server.ts",
+        "src/lib/providers/jellyfin/connection.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/provider-fetch.ts",
+        "src/lib/sync/changes.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/synced/client.svelte.ts",
+      "lines": 77,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/playback/synced/model.ts",
+        "src/lib/ui/client.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/synced/model.ts",
+      "lines": 12,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/synced/service.server.ts",
+      "lines": 126,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/playback/synced/model.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/experimental.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/service.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/playback/time.ts",
+      "lines": 6,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/profile/activity.ts",
+      "lines": 34,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/profile/journal.ts",
+      "lines": 40,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/model.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/profile/period.ts",
+      "lines": 10,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/profile/url.ts",
+      "lines": 1,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/progress.ts",
+      "lines": 49,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/actions.server.ts",
+      "lines": 306,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/catalogue/maintenance.server.ts",
+        "src/lib/collection/projection.server.ts",
+        "src/lib/providers/connections.server.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/maintenance.server.ts",
+        "src/lib/providers/seerr/connection.server.ts",
+        "src/lib/providers/seerr/requests.server.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/social/presence.server.ts",
+        "src/lib/social/trakt.server.ts",
+        "src/lib/sync/history-removal.ts",
+        "src/lib/sync/jellyfin.ts",
+        "src/lib/sync/preference.ts",
+        "src/lib/sync/trakt-export.ts",
+        "src/lib/sync/trakt-import.ts",
+        "src/lib/sync/trakt-lists.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/artwork.server.ts",
+      "lines": 89,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/artwork.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/jellyfin/adapter.server.ts",
+        "src/lib/providers/jellyfin/connection.server.ts",
+        "src/lib/providers/tmdb/fallback.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/capabilities.ts",
+      "lines": 51,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/model.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/connections.server.ts",
+      "lines": 114,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/collection/source-changes.server.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/lib/server/security/credentials.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/contracts.ts",
+      "lines": 160,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/artwork.ts",
+        "src/lib/media/model.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/igdb/adapter.server.ts",
+      "lines": 145,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/contracts.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/igdb/service.server.ts",
+      "lines": 44,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/games/service.ts",
+        "src/lib/providers/igdb/adapter.server.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/instances.server.ts",
+      "lines": 264,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/collection/source-changes.server.ts",
+        "src/lib/providers/igdb/adapter.server.ts",
+        "src/lib/providers/jellyfin/adapter.server.ts",
+        "src/lib/providers/schedule.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/experimental.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/jellyfin/adapter.server.ts",
+      "lines": 472,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/artwork.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/jellyfin/music.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/jellyfin/connection.server.ts",
+      "lines": 79,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/providers/connections.server.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/jellyfin/adapter.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/server/security/credentials.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/jellyfin/music.server.ts",
+      "lines": 167,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/music/model.ts",
+        "src/lib/providers/contracts.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/job-timing.server.ts",
+      "lines": 97,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/schedule.ts",
+        "src/lib/providers/tasks.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/maintenance.server.ts",
+      "lines": 322,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/catalogue/maintenance.server.ts",
+        "src/lib/diagnostics.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/schedule.ts",
+        "src/lib/providers/tasks.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/diagnostics/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/schedule.ts",
+      "lines": 44,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/seerr/adapter.server.ts",
+      "lines": 336,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/providers/contracts.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/seerr/connection.server.ts",
+      "lines": 74,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/providers/connections.server.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/seerr/adapter.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/credentials.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/seerr/requests.server.ts",
+      "lines": 544,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/catalogue/service.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/diagnostics.ts",
+        "src/lib/providers/connections.server.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/seerr/adapter.server.ts",
+        "src/lib/providers/seerr/connection.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/sync/conflicts.ts",
+        "src/lib/sync/preference.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/tasks.ts",
+      "lines": 145,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/schedule.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/tmdb/adapter.server.ts",
+      "lines": 316,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/tmdb/details.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/tmdb/artwork.server.ts",
+      "lines": 74,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/config.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/tmdb/details.server.ts",
+      "lines": 215,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/details.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/tmdb/adapter.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/tmdb/fallback.server.ts",
+      "lines": 118,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/artwork.ts",
+        "src/lib/catalogue/service.ts",
+        "src/lib/providers/tmdb/artwork.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/trakt/adapter.server.ts",
+      "lines": 382,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/details.ts",
+        "src/lib/providers/contracts.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/providers/trakt/connection.server.ts",
+      "lines": 264,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/providers/connections.server.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/trakt/adapter.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/credentials.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/auth/cookies.ts",
+      "lines": 16,
+      "review": "security investigator full-source review",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/auth/index.ts",
+      "lines": 349,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/model.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/auth/jellyfin.ts",
+      "lines": 151,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/jellyfin/adapter.server.ts",
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/auth/onboarding.ts",
+      "lines": 92,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/providers/jellyfin/connection.server.ts",
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/sync/jellyfin.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/auth/recovery.ts",
+      "lines": 75,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/security/credentials.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/config.ts",
+      "lines": 87,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/diagnostics.ts",
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/diagnostics/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/db/index.ts",
+      "lines": 36,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/db/jsonb.ts",
+      "lines": 16,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/db/schema.ts",
+      "lines": 1101,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/games/model.ts",
+        "src/lib/media/model.ts",
+        "src/lib/server/db/jsonb.ts",
+        "src/lib/social/model.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/diagnostics/index.ts",
+      "lines": 153,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/diagnostics.ts",
+        "src/lib/server/security/credentials.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/experimental.ts",
+      "lines": 21,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/config.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/media-details.ts",
+      "lines": 166,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/catalogue/service.ts",
+        "src/lib/media/credits.ts",
+        "src/lib/media/details.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/utils/async.ts",
+        "src/lib/server/utils/provider-cache.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/notifications/index.ts",
+      "lines": 119,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/model.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/continuations.ts",
+      "lines": 161,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/lists/sequence.ts",
+        "src/lib/core/tracking/rewatch.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/media.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/home.ts",
+      "lines": 120,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/hero.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/queries/progress.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/library-content.ts",
+      "lines": 46,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/library.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/experimental.ts",
+        "src/lib/server/queries/library.ts",
+        "src/lib/server/queries/media-rows.ts",
+        "src/lib/server/queries/music.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/library.ts",
+      "lines": 107,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/tracking/rewatch.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/queries/pagination.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/lists.ts",
+      "lines": 233,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/collection/query.server.ts",
+        "src/lib/core/lists/sequence.ts",
+        "src/lib/core/lists/service.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/queries/pagination.ts",
+        "src/lib/server/queries/viewing-recency.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/media-actions.ts",
+      "lines": 311,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/tracking/continue.ts",
+        "src/lib/core/tracking/history-scope.ts",
+        "src/lib/core/tracking/rewatch.ts",
+        "src/lib/media/actions.ts",
+        "src/lib/providers/seerr/adapter.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/queries/pagination.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/media-rows.ts",
+      "lines": 97,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/games/presentation.ts",
+        "src/lib/music/presentation.ts",
+        "src/lib/music/service.server.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/experimental.ts",
+        "src/lib/server/utils/async.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/media-statistics.ts",
+      "lines": 37,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/tracking/recorded-watches.ts",
+        "src/lib/media/statistics.ts",
+        "src/lib/profile/period.ts",
+        "src/lib/server/db/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/media.ts",
+      "lines": 763,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/artwork.ts",
+        "src/lib/catalogue/metadata/resolve.ts",
+        "src/lib/core/lists/sequence.ts",
+        "src/lib/core/tracking/rewatch.ts",
+        "src/lib/media/model.ts",
+        "src/lib/media/sequence.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/tmdb/artwork.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/privacy.server.ts",
+        "src/lib/social/public.server.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/music.ts",
+      "lines": 76,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/music/presentation.ts",
+        "src/lib/music/service.server.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/jellyfin/music.server.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/queries/pagination.ts",
+        "src/lib/server/utils/async.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/pagination.ts",
+      "lines": 15,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/profile-user.ts",
+      "lines": 16,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/profile.ts",
+      "lines": 468,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/core/tracking/recorded-watches.ts",
+        "src/lib/profile/period.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/library.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/queries/pagination.ts",
+        "src/lib/server/queries/viewing-recency.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/privacy.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/progress.ts",
+      "lines": 169,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/core/tracking/rewatch.ts",
+        "src/lib/progress.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/continuations.ts",
+        "src/lib/server/queries/lists.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/queries/pagination.ts",
+        "src/lib/server/queries/profile.ts",
+        "src/lib/server/queries/viewing-recency.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/requests.ts",
+      "lines": 51,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/queries/pagination.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queries/viewing-recency.ts",
+      "lines": 16,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/queue/index.ts",
+      "lines": 432,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/diagnostics.ts",
+        "src/lib/providers/tasks.ts",
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/security/credentials.ts",
+      "lines": 61,
+      "review": "security investigator full-source review",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/security/csrf.ts",
+      "lines": 14,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/security/errors.ts",
+      "lines": 10,
+      "review": "security investigator full-source review",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/security/provider-fetch.ts",
+      "lines": 311,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/startup.ts",
+      "lines": 20,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/auth/recovery.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/server/security/credentials.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/utils/async.ts",
+      "lines": 43,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/server/utils/provider-cache.ts",
+      "lines": 25,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/settings/sections.ts",
+      "lines": 73,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/social/insights.server.ts",
+      "lines": 41,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/db/index.ts",
+        "src/lib/social/privacy.server.ts",
+        "src/lib/social/service.server.ts",
+        "src/lib/social/taste.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/social/model.ts",
+      "lines": 26,
+      "review": "security investigator full-source review",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/social/presence.server.ts",
+      "lines": 60,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/core/tracking/service.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/sync/changes.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/social/privacy.server.ts",
+      "lines": 14,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/db/index.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/model.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/social/public.server.ts",
+      "lines": 23,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/providers/tmdb/artwork.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/social/queries.server.ts",
+      "lines": 89,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/collection/query.server.ts",
+        "src/lib/server/db/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/social/service.server.ts",
+      "lines": 116,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/collection/query.server.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/model.ts",
+        "src/lib/sync/changes.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/social/taste.ts",
+      "lines": 24,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/social/trakt.server.ts",
+      "lines": 72,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/tracking/service.ts",
+        "src/lib/providers/schedule.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/sync/trakt-import.ts",
+        "src/lib/sync/values.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/changes.ts",
+      "lines": 428,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/ratings/service.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/diagnostics.ts",
+        "src/lib/media/model.ts",
+        "src/lib/providers/capabilities.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/sync/values.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/conflicts.ts",
+      "lines": 304,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/sync/changes.ts",
+        "src/lib/sync/list-values.ts",
+        "src/lib/sync/values.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/history-removal.ts",
+      "lines": 355,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/core/tracking/history-scope.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/providers/jellyfin/connection.server.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/sync/changes.ts",
+        "src/lib/sync/values.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/jellyfin-playback.ts",
+      "lines": 62,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/contracts.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/sync/values.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/jellyfin.ts",
+      "lines": 637,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/artwork.ts",
+        "src/lib/catalogue/service.ts",
+        "src/lib/music/persistence.server.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/jellyfin/connection.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/sync/changes.ts",
+        "src/lib/sync/jellyfin-playback.ts",
+        "src/lib/sync/values.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/list-values.ts",
+      "lines": 197,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/sync/changes.ts",
+        "src/lib/sync/preference.ts",
+        "src/lib/sync/values.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/preference.ts",
+      "lines": 34,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/trakt-export.ts",
+      "lines": 340,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/trakt/adapter.server.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/sync/trakt-identity.ts",
+        "src/lib/sync/values.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/trakt-identity.ts",
+      "lines": 47,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/trakt/adapter.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/trakt-import.ts",
+      "lines": 405,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/catalogue/service.ts",
+        "src/lib/collection/projection.server.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/trakt/adapter.server.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/lib/sync/list-values.ts",
+        "src/lib/sync/trakt-identity.ts",
+        "src/lib/sync/values.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/trakt-lists.ts",
+      "lines": 292,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/diagnostics.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/trakt/adapter.server.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/sync/list-values.ts",
+        "src/lib/sync/trakt-identity.ts",
+        "src/lib/sync/trakt-import.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/sync/values.ts",
+      "lines": 335,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/ratings/service.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/sync/changes.ts",
+        "src/lib/sync/preference.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/action-feedback.svelte.ts",
+      "lines": 20,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/artwork-priority.ts",
+      "lines": 63,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/artwork.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/charts/activity.ts",
+      "lines": 43,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/profile/activity.ts",
+        "src/lib/profile/period.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/charts/types.ts",
+      "lines": 17,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/client.ts",
+      "lines": 45,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/diagnostics.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/AddTitle.svelte",
+      "lines": 50,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte"
+      ],
+      "renderedComponents": {
+        "Dialog": "./Dialog.svelte",
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/AvailabilityToggle.svelte",
+      "lines": 36,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Icon.svelte"
+      ],
+      "renderedComponents": {
+        "Icon": "./Icon.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/BarChart.svelte",
+      "lines": 168,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/charts/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/Brand.svelte",
+      "lines": 24,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/BreakdownChart.svelte",
+      "lines": 191,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/charts/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/Button.svelte",
+      "lines": 63,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/materials/glass.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/CollectionProjectionSettings.svelte",
+      "lines": 39,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/collection/projection.server.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte"
+      ],
+      "renderedComponents": {
+        "Button": "./Button.svelte",
+        "Dialog": "./Dialog.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/ConflictList.svelte",
+      "lines": 109,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/labels.ts"
+      ],
+      "renderedComponents": {
+        "Button": "./Button.svelte",
+        "Dialog": "./Dialog.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/ConnectionCard.svelte",
+      "lines": 432,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/collection/source-changes.server.ts",
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/CollectionProjectionSettings.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/Icon.svelte"
+      ],
+      "renderedComponents": {
+        "CollectionProjectionSettings": "./CollectionProjectionSettings.svelte",
+        "Button": "./Button.svelte",
+        "Icon": "./Icon.svelte",
+        "Dialog": "./Dialog.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/ContextMenu.svelte",
+      "lines": 368,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/materials/glass.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/DetailCard.svelte",
+      "lines": 94,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/BarChart.svelte",
+        "src/lib/ui/components/BreakdownChart.svelte",
+        "src/lib/ui/components/FactList.svelte",
+        "src/lib/ui/components/MetricGrid.svelte",
+        "src/lib/ui/components/ProgressChart.svelte",
+        "src/lib/ui/insights/types.ts"
+      ],
+      "renderedComponents": {
+        "BarChart": "./BarChart.svelte",
+        "BreakdownChart": "./BreakdownChart.svelte",
+        "ProgressChart": "./ProgressChart.svelte",
+        "FactList": "./FactList.svelte",
+        "MetricGrid": "./MetricGrid.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/Dialog.svelte",
+      "lines": 72,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Icon.svelte"
+      ],
+      "renderedComponents": {
+        "Icon": "./Icon.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/EmptyState.svelte",
+      "lines": 24,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Icon.svelte"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/FactList.svelte",
+      "lines": 43,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/Header.svelte",
+      "lines": 169,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/profile/url.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/ui/components/Brand.svelte",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/materials/glass.ts",
+        "src/lib/ui/materials/sliding-pill.ts"
+      ],
+      "renderedComponents": {
+        "Icon": "./Icon.svelte",
+        "Brand": "./Brand.svelte",
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/Heading.svelte",
+      "lines": 119,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/SegmentedControl.svelte",
+        "src/lib/ui/headings.ts"
+      ],
+      "renderedComponents": {
+        "Icon": "./Icon.svelte",
+        "SegmentedControl": "./SegmentedControl.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/Icon.svelte",
+      "lines": 107,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/IntegrationSettings.svelte",
+      "lines": 232,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/collection/source-changes.server.ts",
+        "src/lib/providers/schedule.ts",
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/components/ProviderAutomation.svelte",
+        "src/lib/ui/labels.ts"
+      ],
+      "renderedComponents": {
+        "Button": "./Button.svelte",
+        "Dialog": "./Dialog.svelte",
+        "Heading": "./Heading.svelte",
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte",
+        "ProviderAutomation": "./ProviderAutomation.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/JobSchedule.svelte",
+      "lines": 305,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/job-timing.server.ts",
+        "src/lib/providers/schedule.ts",
+        "src/lib/providers/tasks.ts",
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/components/QueueList.svelte",
+        "src/lib/ui/components/RowFilter.svelte",
+        "src/lib/ui/context-gesture.ts",
+        "src/lib/ui/queue.ts"
+      ],
+      "renderedComponents": {
+        "Heading": "./Heading.svelte",
+        "Button": "./Button.svelte",
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte",
+        "Dialog": "./Dialog.svelte",
+        "RowFilter": "./RowFilter.svelte",
+        "QueueList": "./QueueList.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/JobsSettings.svelte",
+      "lines": 204,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/job-timing.server.ts",
+        "src/lib/providers/schedule.ts",
+        "src/lib/providers/tasks.ts",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/JobSchedule.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/components/QueueList.svelte",
+        "src/lib/ui/components/RowFilter.svelte",
+        "src/lib/ui/components/SegmentedControl.svelte",
+        "src/lib/ui/labels.ts",
+        "src/lib/ui/queue.ts"
+      ],
+      "renderedComponents": {
+        "Heading": "./Heading.svelte",
+        "RowFilter": "./RowFilter.svelte",
+        "JobSchedule": "./JobSchedule.svelte",
+        "QueueList": "./QueueList.svelte",
+        "SegmentedControl": "./SegmentedControl.svelte",
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/ListMembershipActions.svelte",
+      "lines": 18,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/MenuAction.svelte"
+      ],
+      "renderedComponents": {
+        "MenuAction": "./MenuAction.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/MediaActions.svelte",
+      "lines": 897,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/tracking/continue.ts",
+        "src/lib/media/actions.ts",
+        "src/lib/media/model.ts",
+        "src/lib/media/requests.ts",
+        "src/lib/media/sequence.ts",
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/playback/time.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/ListMembershipActions.svelte",
+        "src/lib/ui/components/MediaRequestMenu.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/components/MetadataEditor.svelte",
+        "src/lib/ui/components/Rating.svelte",
+        "src/lib/ui/components/ReactionActions.svelte",
+        "src/lib/ui/components/RecommendAction.svelte",
+        "src/lib/ui/components/RelationshipActions.svelte",
+        "src/lib/ui/components/RequestDialog.svelte",
+        "src/lib/ui/components/SequenceControl.svelte",
+        "src/lib/ui/mutation.svelte.ts",
+        "src/lib/ui/relationships.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "RelationshipActions": "./RelationshipActions.svelte",
+        "ListMembershipActions": "./ListMembershipActions.svelte",
+        "Button": "./Button.svelte",
+        "Icon": "./Icon.svelte",
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte",
+        "Dialog": "./Dialog.svelte",
+        "RequestDialog": "./RequestDialog.svelte",
+        "MediaRequestMenu": "./MediaRequestMenu.svelte",
+        "SequenceControl": "./SequenceControl.svelte",
+        "MetadataEditor": "./MetadataEditor.svelte",
+        "Rating": "./Rating.svelte",
+        "RecommendAction": "./RecommendAction.svelte",
+        "ReactionActions": "./ReactionActions.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/MediaActivity.svelte",
+      "lines": 34,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/statistics.ts",
+        "src/lib/profile/period.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/DetailCard.svelte",
+        "src/lib/ui/insights/media.ts",
+        "src/lib/ui/resource.svelte.ts"
+      ],
+      "renderedComponents": {
+        "DetailCard": "./DetailCard.svelte",
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/MediaCard.svelte",
+      "lines": 503,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/artwork.ts",
+        "src/lib/media/model.ts",
+        "src/lib/ui/artwork-priority.ts",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/MediaActions.svelte",
+        "src/lib/ui/components/PresentationActions.svelte",
+        "src/lib/ui/components/SocialControls.svelte",
+        "src/lib/ui/context-gesture.ts",
+        "src/lib/ui/lazy-image.ts",
+        "src/lib/ui/materials/glass.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "Icon": "./Icon.svelte",
+        "SocialControls": "./SocialControls.svelte",
+        "MediaActions": "./MediaActions.svelte",
+        "PresentationActions": "./PresentationActions.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/MediaDetailRows.svelte",
+      "lines": 322,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/credits.ts",
+        "src/lib/media/details.ts",
+        "src/lib/profile/period.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/DetailCard.svelte",
+        "src/lib/ui/components/FactList.svelte",
+        "src/lib/ui/components/MediaActivity.svelte",
+        "src/lib/ui/components/RowFilter.svelte",
+        "src/lib/ui/components/SegmentedControl.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/insights/community.ts",
+        "src/lib/ui/insights/media.ts",
+        "src/lib/ui/lazy-content.ts",
+        "src/lib/ui/lazy-image.ts",
+        "src/lib/ui/resource.svelte.ts",
+        "src/lib/ui/shelves/cast.svelte.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "Shelf": "./Shelf.svelte",
+        "SegmentedControl": "./SegmentedControl.svelte",
+        "RowFilter": "./RowFilter.svelte",
+        "MediaActivity": "./MediaActivity.svelte",
+        "DetailCard": "./DetailCard.svelte",
+        "FactList": "./FactList.svelte",
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/MediaHero.svelte",
+      "lines": 362,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/MediaActions.svelte",
+        "src/lib/ui/heroes/playback.svelte.ts",
+        "src/lib/ui/heroes/presentation.svelte.ts",
+        "src/lib/ui/materials/black-fade.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "MediaActions": "./MediaActions.svelte",
+        "Icon": "./Icon.svelte",
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/MediaPage.svelte",
+      "lines": 73,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/hero.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MediaHero.svelte",
+        "src/lib/ui/components/RowFeedback.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/heroes/presentation.svelte.ts",
+        "src/lib/ui/pages/types.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "Heading": "./Heading.svelte",
+        "MediaHero": "./MediaHero.svelte",
+        "Shelf": "./Shelf.svelte",
+        "Button": "./Button.svelte",
+        "RowFeedback": "./RowFeedback.svelte",
+        "EmptyState": "./EmptyState.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/MediaRequestMenu.svelte",
+      "lines": 191,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/actions.ts",
+        "src/lib/media/requests.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte",
+        "Icon": "./Icon.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/MenuAction.svelte",
+      "lines": 81,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/components/Icon.svelte"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/MetadataEditor.svelte",
+      "lines": 173,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte"
+      ],
+      "renderedComponents": {
+        "Dialog": "./Dialog.svelte",
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/MetricGrid.svelte",
+      "lines": 58,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/NotificationToasts.svelte",
+      "lines": 134,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Icon.svelte"
+      ],
+      "renderedComponents": {
+        "Icon": "./Icon.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/Pagination.svelte",
+      "lines": 34,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte"
+      ],
+      "renderedComponents": {
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/PersistentPlayer.svelte",
+      "lines": 878,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/diagnostics.ts",
+        "src/lib/media/sequence.ts",
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/playback/crop.ts",
+        "src/lib/playback/failures.ts",
+        "src/lib/playback/listening.ts",
+        "src/lib/playback/observe-crop.ts",
+        "src/lib/playback/synced/client.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/components/PlaybackTimeline.svelte",
+        "src/lib/ui/components/SyncedControls.svelte",
+        "src/lib/ui/diagnostics.ts",
+        "src/lib/ui/materials/glass.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "SyncedControls": "./SyncedControls.svelte",
+        "Icon": "./Icon.svelte",
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte",
+        "Button": "./Button.svelte",
+        "Dialog": "./Dialog.svelte",
+        "PlaybackTimeline": "./PlaybackTimeline.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/PlaybackTimeline.svelte",
+      "lines": 80,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/time.ts",
+        "src/lib/ui/components/Icon.svelte"
+      ],
+      "renderedComponents": {
+        "Icon": "./Icon.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/PresentationActions.svelte",
+      "lines": 197,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/games/model.ts",
+        "src/lib/music/model.ts",
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/ListMembershipActions.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/components/Rating.svelte",
+        "src/lib/ui/components/ReactionActions.svelte",
+        "src/lib/ui/components/RecommendAction.svelte",
+        "src/lib/ui/components/RelationshipActions.svelte",
+        "src/lib/ui/mutation.svelte.ts",
+        "src/lib/ui/relationships.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "RelationshipActions": "./RelationshipActions.svelte",
+        "ListMembershipActions": "./ListMembershipActions.svelte",
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte",
+        "Rating": "./Rating.svelte",
+        "RecommendAction": "./RecommendAction.svelte",
+        "ReactionActions": "./ReactionActions.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/ProfileEditor.svelte",
+      "lines": 208,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/db/schema.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/RowFilter.svelte"
+      ],
+      "renderedComponents": {
+        "Dialog": "./Dialog.svelte",
+        "Button": "./Button.svelte",
+        "RowFilter": "./RowFilter.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/ProfileFeatureEditor.svelte",
+      "lines": 64,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte"
+      ],
+      "renderedComponents": {
+        "Dialog": "./Dialog.svelte",
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/ProfileRecap.svelte",
+      "lines": 58,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/profile/period.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/ProgressChart.svelte",
+      "lines": 73,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/ProviderAutomation.svelte",
+      "lines": 92,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/schedule.ts",
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Heading.svelte"
+      ],
+      "renderedComponents": {
+        "Heading": "./Heading.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/QueueList.svelte",
+      "lines": 123,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/context-gesture.ts",
+        "src/lib/ui/labels.ts",
+        "src/lib/ui/queue.ts"
+      ],
+      "renderedComponents": {
+        "EmptyState": "./EmptyState.svelte",
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/Rating.svelte",
+      "lines": 191,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Icon.svelte"
+      ],
+      "renderedComponents": {
+        "Icon": "./Icon.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/ReactionActions.svelte",
+      "lines": 25,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/social/model.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/MenuAction.svelte"
+      ],
+      "renderedComponents": {
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/RecommendAction.svelte",
+      "lines": 34,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/components/RowFilter.svelte"
+      ],
+      "renderedComponents": {
+        "MenuAction": "./MenuAction.svelte",
+        "Dialog": "./Dialog.svelte",
+        "RowFilter": "./RowFilter.svelte",
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/RelationshipActions.svelte",
+      "lines": 15,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/relationships.ts"
+      ],
+      "renderedComponents": {
+        "MenuAction": "./MenuAction.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/RequestDialog.svelte",
+      "lines": 172,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/requests.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "Dialog": "./Dialog.svelte",
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/RowFeedback.svelte",
+      "lines": 17,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte"
+      ],
+      "renderedComponents": {
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/RowFilter.svelte",
+      "lines": 59,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/MenuAction.svelte"
+      ],
+      "renderedComponents": {
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/RowStyleMenu.svelte",
+      "lines": 142,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/artwork.ts",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "ContextMenu": "./ContextMenu.svelte",
+        "MenuAction": "./MenuAction.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/SegmentedControl.svelte",
+      "lines": 47,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/materials/sliding-pill.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/components/SequenceControl.svelte",
+      "lines": 75,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/sequence.ts",
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "Button": "./Button.svelte",
+        "Dialog": "./Dialog.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/Shelf.svelte",
+      "lines": 403,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/AvailabilityToggle.svelte",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/DetailCard.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/MediaCard.svelte",
+        "src/lib/ui/components/Pagination.svelte",
+        "src/lib/ui/components/RowFeedback.svelte",
+        "src/lib/ui/components/RowFilter.svelte",
+        "src/lib/ui/components/RowStyleMenu.svelte",
+        "src/lib/ui/components/SegmentedControl.svelte",
+        "src/lib/ui/components/SequenceControl.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/context-gesture.ts",
+        "src/lib/ui/filter-options.ts",
+        "src/lib/ui/insights/types.ts",
+        "src/lib/ui/lazy-content.ts",
+        "src/lib/ui/shelves/index.ts",
+        "src/lib/ui/shelves/journal-cards.ts",
+        "src/lib/ui/shelves/layout.svelte.ts",
+        "src/lib/ui/shelves/local.svelte.ts",
+        "src/lib/ui/shelves/types.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "RowFeedback": "./RowFeedback.svelte",
+        "Pagination": "./Pagination.svelte",
+        "SequenceControl": "./SequenceControl.svelte",
+        "Button": "./Button.svelte",
+        "AvailabilityToggle": "./AvailabilityToggle.svelte",
+        "RowFilter": "./RowFilter.svelte",
+        "SegmentedControl": "./SegmentedControl.svelte",
+        "RowStyleMenu": "./RowStyleMenu.svelte",
+        "Heading": "./Heading.svelte",
+        "Icon": "./Icon.svelte",
+        "Shelf": "./Shelf.svelte",
+        "DetailCard": "./DetailCard.svelte",
+        "MediaCard": "./MediaCard.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/SocialControls.svelte",
+      "lines": 18,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/social/model.ts",
+        "src/lib/ui/components/Button.svelte"
+      ],
+      "renderedComponents": {
+        "Button": "./Button.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/components/SyncedControls.svelte",
+      "lines": 26,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/synced/client.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/RowFilter.svelte"
+      ],
+      "renderedComponents": {
+        "Dialog": "./Dialog.svelte",
+        "Button": "./Button.svelte",
+        "RowFilter": "./RowFilter.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/context-gesture.ts",
+      "lines": 82,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/diagnostics.ts",
+      "lines": 70,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/diagnostics.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/filter-options.ts",
+      "lines": 13,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/headings.ts",
+      "lines": 20,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/filter-options.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/heroes/playback.svelte.ts",
+      "lines": 65,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/playback/crop.ts",
+        "src/lib/playback/observe-crop.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/heroes/presentation.svelte.ts",
+      "lines": 199,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/hero.ts",
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/insights/community.ts",
+      "lines": 19,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/details.ts",
+        "src/lib/ui/insights/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/insights/media.ts",
+      "lines": 101,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/statistics.ts",
+        "src/lib/profile/period.ts",
+        "src/lib/ui/charts/activity.ts",
+        "src/lib/ui/insights/types.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/insights/overview.ts",
+      "lines": 8,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/insights/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/insights/profile.ts",
+      "lines": 29,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/profile/activity.ts",
+        "src/lib/profile/period.ts",
+        "src/lib/ui/charts/activity.ts",
+        "src/lib/ui/insights/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/insights/types.ts",
+      "lines": 20,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/BarChart.svelte",
+        "src/lib/ui/components/BreakdownChart.svelte",
+        "src/lib/ui/components/FactList.svelte",
+        "src/lib/ui/components/MetricGrid.svelte",
+        "src/lib/ui/components/ProgressChart.svelte"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/labels.ts",
+      "lines": 60,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/lazy-content.ts",
+      "lines": 19,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/lazy-image.ts",
+      "lines": 42,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/materials/MaterialTweaker.svelte",
+      "lines": 200,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/SegmentedControl.svelte",
+        "src/lib/ui/materials/experimental.ts",
+        "src/lib/ui/materials/glass.ts",
+        "src/lib/ui/materials/presets.ts",
+        "src/lib/ui/materials/tuning.ts"
+      ],
+      "renderedComponents": {
+        "Heading": "../components/Heading.svelte",
+        "Button": "../components/Button.svelte",
+        "SegmentedControl": "../components/SegmentedControl.svelte"
+      }
+    },
+    {
+      "path": "src/lib/ui/materials/black-fade.ts",
+      "lines": 11,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/materials/experimental.ts",
+      "lines": 119,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/materials/glass.ts",
+      "lines": 309,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/materials/presets.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/materials/presets.ts",
+      "lines": 110,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/materials/sliding-pill.ts",
+      "lines": 68,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/materials/tuning.ts",
+      "lines": 80,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/materials/presets.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/mutation.svelte.ts",
+      "lines": 32,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/pages/music.svelte.ts",
+      "lines": 61,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/music/model.ts",
+        "src/lib/music/presentation.ts",
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/insights/overview.ts",
+        "src/lib/ui/pages/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/pages/types.ts",
+      "lines": 22,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/insights/types.ts",
+        "src/lib/ui/shelves/types.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/queue.ts",
+      "lines": 34,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/relationships.ts",
+      "lines": 9,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/resource.svelte.ts",
+      "lines": 67,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/cast.svelte.ts",
+      "lines": 27,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/contracts.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/credits.svelte.ts",
+      "lines": 91,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/credits.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/resource.svelte.ts",
+        "src/lib/ui/shelves/types.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/episodes.svelte.ts",
+      "lines": 41,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/home.ts",
+      "lines": 12,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/queries/media-rows.ts",
+        "src/lib/ui/shelves/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/index.ts",
+      "lines": 27,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/shelves/credits.svelte.ts",
+        "src/lib/ui/shelves/journal.svelte.ts",
+        "src/lib/ui/shelves/library.svelte.ts",
+        "src/lib/ui/shelves/list.svelte.ts",
+        "src/lib/ui/shelves/progress.svelte.ts",
+        "src/lib/ui/shelves/search.svelte.ts",
+        "src/lib/ui/shelves/social.svelte.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/journal-cards.ts",
+      "lines": 37,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/model.ts",
+        "src/lib/profile/journal.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/journal.svelte.ts",
+      "lines": 94,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/profile/journal.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/resource.svelte.ts",
+        "src/lib/ui/shelves/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/layout.svelte.ts",
+      "lines": 92,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/library.svelte.ts",
+      "lines": 146,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/library.ts",
+        "src/lib/server/queries/media-rows.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/resource.svelte.ts",
+        "src/lib/ui/shelves/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/list.svelte.ts",
+      "lines": 93,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/resource.svelte.ts",
+        "src/lib/ui/shelves/types.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/local.svelte.ts",
+      "lines": 88,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/shelves/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/progress.svelte.ts",
+      "lines": 129,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/progress.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/resource.svelte.ts",
+        "src/lib/ui/shelves/types.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/search.svelte.ts",
+      "lines": 32,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/library.ts",
+        "src/lib/ui/shelves/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/social.svelte.ts",
+      "lines": 14,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/shelves/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/shelves/types.ts",
+      "lines": 56,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/sequence.ts",
+        "src/lib/profile/journal.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/lib/ui/types.ts",
+      "lines": 120,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/artwork.ts",
+        "src/lib/media/model.ts",
+        "src/lib/media/sequence.ts",
+        "src/lib/music/model.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/+error.svelte",
+      "lines": 16,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/EmptyState.svelte"
+      ],
+      "renderedComponents": {
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "Button": "$lib/ui/components/Button.svelte"
+      }
+    },
+    {
+      "path": "src/routes/+layout.server.ts",
+      "lines": 14,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/config.ts",
+        "src/lib/server/notifications/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/+layout.svelte",
+      "lines": 161,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/app.css",
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/playback/synced/client.svelte.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Header.svelte",
+        "src/lib/ui/components/MediaHero.svelte",
+        "src/lib/ui/components/NotificationToasts.svelte",
+        "src/lib/ui/components/PersistentPlayer.svelte",
+        "src/lib/ui/diagnostics.ts"
+      ],
+      "renderedComponents": {
+        "NotificationToasts": "$lib/ui/components/NotificationToasts.svelte",
+        "Header": "$lib/ui/components/Header.svelte",
+        "PersistentPlayer": "$lib/ui/components/PersistentPlayer.svelte",
+        "MediaHero": "$lib/ui/components/MediaHero.svelte",
+        "Button": "$lib/ui/components/Button.svelte"
+      }
+    },
+    {
+      "path": "src/routes/+page.server.ts",
+      "lines": 3,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/api/v1/[...path]/+server.ts",
+      "lines": 606,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/catalogue/overrides/service.ts",
+        "src/lib/catalogue/service.ts",
+        "src/lib/collection/demand.server.ts",
+        "src/lib/collection/projection.server.ts",
+        "src/lib/collection/query.server.ts",
+        "src/lib/collection/source-changes.server.ts",
+        "src/lib/core/errors.ts",
+        "src/lib/core/games/service.ts",
+        "src/lib/core/lists/sequence.ts",
+        "src/lib/core/lists/service.ts",
+        "src/lib/core/lists/up-next.ts",
+        "src/lib/core/media/service.ts",
+        "src/lib/core/profile/avatars.server.ts",
+        "src/lib/core/profile/gif-avatar.server.ts",
+        "src/lib/core/profile/service.ts",
+        "src/lib/core/tracking/continue.ts",
+        "src/lib/core/tracking/rewatch.ts",
+        "src/lib/core/tracking/service.ts",
+        "src/lib/media/hero.ts",
+        "src/lib/media/sequence.ts",
+        "src/lib/music/artwork.server.ts",
+        "src/lib/music/persistence.server.ts",
+        "src/lib/music/queue.server.ts",
+        "src/lib/music/service.server.ts",
+        "src/lib/playback/server.ts",
+        "src/lib/playback/synced/service.server.ts",
+        "src/lib/progress.ts",
+        "src/lib/providers/artwork.server.ts",
+        "src/lib/providers/connections.server.ts",
+        "src/lib/providers/contracts.ts",
+        "src/lib/providers/igdb/service.server.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/jellyfin/connection.server.ts",
+        "src/lib/providers/maintenance.server.ts",
+        "src/lib/providers/seerr/requests.server.ts",
+        "src/lib/providers/tmdb/artwork.server.ts",
+        "src/lib/providers/tmdb/fallback.server.ts",
+        "src/lib/providers/trakt/connection.server.ts",
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/auth/onboarding.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/experimental.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/lib/server/queries/library-content.ts",
+        "src/lib/server/queries/lists.ts",
+        "src/lib/server/queries/media-actions.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/server/queries/profile-user.ts",
+        "src/lib/server/queries/profile.ts",
+        "src/lib/server/queries/progress.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/insights.server.ts",
+        "src/lib/social/presence.server.ts",
+        "src/lib/social/privacy.server.ts",
+        "src/lib/social/public.server.ts",
+        "src/lib/social/queries.server.ts",
+        "src/lib/social/service.server.ts",
+        "src/lib/sync/changes.ts",
+        "src/lib/sync/conflicts.ts",
+        "src/lib/sync/history-removal.ts",
+        "src/lib/sync/jellyfin.ts",
+        "src/lib/sync/trakt-lists.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/api/v1/diagnostics/+server.ts",
+      "lines": 81,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/diagnostics.ts",
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/api/v1/media/[id]/insights/+server.ts",
+      "lines": 17,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/media-details.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/api/v1/media/[id]/statistics/+server.ts",
+      "lines": 13,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/profile/period.ts",
+        "src/lib/server/queries/media-statistics.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/api/v1/people/[id]/credits/+server.ts",
+      "lines": 27,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/media-details.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/collection/+page.server.ts",
+      "lines": 25,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/collection/demand.server.ts",
+        "src/lib/collection/query.server.ts",
+        "src/lib/server/queries/profile-user.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/collection/+page.svelte",
+      "lines": 39,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/Pagination.svelte",
+        "src/lib/ui/components/Shelf.svelte"
+      ],
+      "renderedComponents": {
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "Pagination": "$lib/ui/components/Pagination.svelte"
+      }
+    },
+    {
+      "path": "src/routes/discover/+page.server.ts",
+      "lines": 21,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/catalogue/service.ts",
+        "src/lib/server/queries/media-rows.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/social/public.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/discover/+page.svelte",
+      "lines": 69,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/hero.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MediaHero.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/shelves/home.ts"
+      ],
+      "renderedComponents": {
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "MediaHero": "$lib/ui/components/MediaHero.svelte",
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "Button": "$lib/ui/components/Button.svelte"
+      }
+    },
+    {
+      "path": "src/routes/for-you/+page.server.ts",
+      "lines": 7,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/queries/home.ts",
+        "src/lib/server/queries/media-rows.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/for-you/+page.svelte",
+      "lines": 58,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/AddTitle.svelte",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MediaHero.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/shelves/home.ts"
+      ],
+      "renderedComponents": {
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "MediaHero": "$lib/ui/components/MediaHero.svelte",
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "AddTitle": "$lib/ui/components/AddTitle.svelte"
+      }
+    },
+    {
+      "path": "src/routes/friends/+page.server.ts",
+      "lines": 29,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/collection/query.server.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/insights.server.ts",
+        "src/lib/social/presence.server.ts",
+        "src/lib/social/queries.server.ts",
+        "src/lib/social/service.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/friends/+page.svelte",
+      "lines": 54,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MetricGrid.svelte",
+        "src/lib/ui/components/ReactionActions.svelte",
+        "src/lib/ui/components/RowFilter.svelte",
+        "src/lib/ui/components/Shelf.svelte"
+      ],
+      "renderedComponents": {
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "ReactionActions": "$lib/ui/components/ReactionActions.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "MetricGrid": "$lib/ui/components/MetricGrid.svelte",
+        "RowFilter": "$lib/ui/components/RowFilter.svelte"
+      }
+    },
+    {
+      "path": "src/routes/games/+page.server.ts",
+      "lines": 79,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/games/service.ts",
+        "src/lib/games/presentation.ts",
+        "src/lib/providers/igdb/service.server.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/games/+page.svelte",
+      "lines": 129,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MediaCard.svelte",
+        "src/lib/ui/components/Pagination.svelte",
+        "src/lib/ui/components/RowFilter.svelte",
+        "src/lib/ui/headings.ts"
+      ],
+      "renderedComponents": {
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "RowFilter": "$lib/ui/components/RowFilter.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "MediaCard": "$lib/ui/components/MediaCard.svelte",
+        "Pagination": "$lib/ui/components/Pagination.svelte"
+      }
+    },
+    {
+      "path": "src/routes/games/[id]/+page.server.ts",
+      "lines": 21,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/errors.ts",
+        "src/lib/core/games/service.ts",
+        "src/lib/providers/instances.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/games/[id]/+page.svelte",
+      "lines": 184,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/diagnostics.ts",
+        "src/lib/games/model.ts",
+        "src/lib/games/presentation.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/DetailCard.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MediaPage.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/components/MetricGrid.svelte",
+        "src/lib/ui/components/Pagination.svelte",
+        "src/lib/ui/components/ProgressChart.svelte",
+        "src/lib/ui/components/ReactionActions.svelte",
+        "src/lib/ui/components/RecommendAction.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/insights/overview.ts",
+        "src/lib/ui/labels.ts"
+      ],
+      "renderedComponents": {
+        "MediaPage": "$lib/ui/components/MediaPage.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "DetailCard": "$lib/ui/components/DetailCard.svelte",
+        "MetricGrid": "$lib/ui/components/MetricGrid.svelte",
+        "ProgressChart": "$lib/ui/components/ProgressChart.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "ContextMenu": "$lib/ui/components/ContextMenu.svelte",
+        "MenuAction": "$lib/ui/components/MenuAction.svelte",
+        "Dialog": "$lib/ui/components/Dialog.svelte",
+        "RecommendAction": "$lib/ui/components/RecommendAction.svelte",
+        "ReactionActions": "$lib/ui/components/ReactionActions.svelte",
+        "Pagination": "$lib/ui/components/Pagination.svelte"
+      }
+    },
+    {
+      "path": "src/routes/games/igdb/[instance]/[id]/+page.server.ts",
+      "lines": 9,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/providers/igdb/service.server.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/games/igdb/[instance]/[id]/+page.svelte",
+      "lines": 49,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/games/presentation.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/MediaPage.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/insights/overview.ts"
+      ],
+      "renderedComponents": {
+        "MediaPage": "$lib/ui/components/MediaPage.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "Shelf": "$lib/ui/components/Shelf.svelte"
+      }
+    },
+    {
+      "path": "src/routes/library/+page.server.ts",
+      "lines": 25,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/queries/library.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/library/+page.svelte",
+      "lines": 28,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/Shelf.svelte"
+      ],
+      "renderedComponents": {
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "Button": "$lib/ui/components/Button.svelte"
+      }
+    },
+    {
+      "path": "src/routes/lists/+page.server.ts",
+      "lines": 27,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/core/lists/service.ts",
+        "src/lib/server/queries/lists.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/lists/+page.svelte",
+      "lines": 124,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MediaPage.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "MediaPage": "$lib/ui/components/MediaPage.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "Dialog": "$lib/ui/components/Dialog.svelte"
+      }
+    },
+    {
+      "path": "src/routes/login/+page.server.ts",
+      "lines": 50,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/auth/cookies.ts",
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/auth/jellyfin.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/login/+page.svelte",
+      "lines": 76,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Brand.svelte",
+        "src/lib/ui/components/Button.svelte"
+      ],
+      "renderedComponents": {
+        "Brand": "$lib/ui/components/Brand.svelte",
+        "Button": "$lib/ui/components/Button.svelte"
+      }
+    },
+    {
+      "path": "src/routes/logout/+server.ts",
+      "lines": 9,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/auth/cookies.ts",
+        "src/lib/server/auth/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/media/[id]/+page.server.ts",
+      "lines": 32,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/catalogue/service.ts",
+        "src/lib/providers/seerr/requests.server.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/social/public.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/media/[id]/+page.svelte",
+      "lines": 229,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/MediaActions.svelte",
+        "src/lib/ui/components/MediaDetailRows.svelte",
+        "src/lib/ui/components/MediaPage.svelte",
+        "src/lib/ui/components/Rating.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/shelves/episodes.svelte.ts"
+      ],
+      "renderedComponents": {
+        "MediaDetailRows": "$lib/ui/components/MediaDetailRows.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "MediaActions": "$lib/ui/components/MediaActions.svelte",
+        "MediaPage": "$lib/ui/components/MediaPage.svelte",
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "Icon": "$lib/ui/components/Icon.svelte",
+        "Rating": "$lib/ui/components/Rating.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "Dialog": "$lib/ui/components/Dialog.svelte"
+      }
+    },
+    {
+      "path": "src/routes/media/[id]/history/+page.server.ts",
+      "lines": 20,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/queries/media-actions.ts",
+        "src/lib/server/queries/media.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/media/[id]/history/+page.svelte",
+      "lines": 165,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/profile/journal.ts",
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MediaPage.svelte",
+        "src/lib/ui/components/Shelf.svelte"
+      ],
+      "renderedComponents": {
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "MediaPage": "$lib/ui/components/MediaPage.svelte",
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "Dialog": "$lib/ui/components/Dialog.svelte"
+      }
+    },
+    {
+      "path": "src/routes/music/+page.server.ts",
+      "lines": 7,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/queries/music.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/music/+page.svelte",
+      "lines": 96,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MediaCard.svelte",
+        "src/lib/ui/components/Pagination.svelte",
+        "src/lib/ui/components/RowFilter.svelte",
+        "src/lib/ui/headings.ts"
+      ],
+      "renderedComponents": {
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "RowFilter": "$lib/ui/components/RowFilter.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "MediaCard": "$lib/ui/components/MediaCard.svelte",
+        "Pagination": "$lib/ui/components/Pagination.svelte"
+      }
+    },
+    {
+      "path": "src/routes/music/[connection]/[id]/+page.server.ts",
+      "lines": 52,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/music/model.ts",
+        "src/lib/music/service.server.ts",
+        "src/lib/providers/jellyfin/music.server.ts",
+        "src/lib/server/diagnostics/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/music/[connection]/[id]/+page.svelte",
+      "lines": 9,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/MediaPage.svelte",
+        "src/lib/ui/pages/music.svelte.ts"
+      ],
+      "renderedComponents": {
+        "MediaPage": "$lib/ui/components/MediaPage.svelte"
+      }
+    },
+    {
+      "path": "src/routes/music/work/[id]/+page.server.ts",
+      "lines": 23,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/music/model.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/queries/pagination.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/music/work/[id]/+page.svelte",
+      "lines": 16,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/MediaPage.svelte",
+        "src/lib/ui/components/ReactionActions.svelte",
+        "src/lib/ui/components/RecommendAction.svelte",
+        "src/lib/ui/pages/music.svelte.ts"
+      ],
+      "renderedComponents": {
+        "MediaPage": "$lib/ui/components/MediaPage.svelte",
+        "ContextMenu": "$lib/ui/components/ContextMenu.svelte",
+        "RecommendAction": "$lib/ui/components/RecommendAction.svelte",
+        "ReactionActions": "$lib/ui/components/ReactionActions.svelte"
+      }
+    },
+    {
+      "path": "src/routes/notifications/+page.server.ts",
+      "lines": 5,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/notifications/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/notifications/+page.svelte",
+      "lines": 106,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/RowFilter.svelte"
+      ],
+      "renderedComponents": {
+        "RowFilter": "$lib/ui/components/RowFilter.svelte",
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "Icon": "$lib/ui/components/Icon.svelte"
+      }
+    },
+    {
+      "path": "src/routes/onboarding/+page.server.ts",
+      "lines": 14,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/auth/onboarding.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/onboarding/+page.svelte",
+      "lines": 30,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Brand.svelte",
+        "src/lib/ui/components/Button.svelte"
+      ],
+      "renderedComponents": {
+        "Brand": "$lib/ui/components/Brand.svelte",
+        "Button": "$lib/ui/components/Button.svelte"
+      }
+    },
+    {
+      "path": "src/routes/people/[id]/+page.server.ts",
+      "lines": 9,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/media-details.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/people/[id]/+page.svelte",
+      "lines": 127,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/Shelf.svelte"
+      ],
+      "renderedComponents": {
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "Heading": "$lib/ui/components/Heading.svelte"
+      }
+    },
+    {
+      "path": "src/routes/profile/+page.server.ts",
+      "lines": 7,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/profile/url.ts",
+        "src/lib/server/auth/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/profile/[username]/+page.server.ts",
+      "lines": 52,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/profile/url.ts",
+        "src/lib/server/queries/media-rows.ts",
+        "src/lib/server/queries/profile-user.ts",
+        "src/lib/server/queries/profile.ts",
+        "src/lib/server/security/errors.ts",
+        "src/lib/social/privacy.server.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/profile/[username]/+page.svelte",
+      "lines": 747,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/profile/period.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/AvailabilityToggle.svelte",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/DetailCard.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MediaCard.svelte",
+        "src/lib/ui/components/MediaPage.svelte",
+        "src/lib/ui/components/MetricGrid.svelte",
+        "src/lib/ui/components/Pagination.svelte",
+        "src/lib/ui/components/ProfileEditor.svelte",
+        "src/lib/ui/components/ProfileFeatureEditor.svelte",
+        "src/lib/ui/components/ProfileRecap.svelte",
+        "src/lib/ui/components/RowFilter.svelte",
+        "src/lib/ui/components/SegmentedControl.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/filter-options.ts",
+        "src/lib/ui/insights/profile.ts",
+        "src/lib/ui/shelves/home.ts"
+      ],
+      "renderedComponents": {
+        "MetricGrid": "$lib/ui/components/MetricGrid.svelte",
+        "DetailCard": "$lib/ui/components/DetailCard.svelte",
+        "MediaPage": "$lib/ui/components/MediaPage.svelte",
+        "ProfileRecap": "$lib/ui/components/ProfileRecap.svelte",
+        "ProfileFeatureEditor": "$lib/ui/components/ProfileFeatureEditor.svelte",
+        "RowFilter": "$lib/ui/components/RowFilter.svelte",
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "AvailabilityToggle": "$lib/ui/components/AvailabilityToggle.svelte",
+        "MediaCard": "$lib/ui/components/MediaCard.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "Pagination": "$lib/ui/components/Pagination.svelte",
+        "SegmentedControl": "$lib/ui/components/SegmentedControl.svelte",
+        "ProfileEditor": "$lib/ui/components/ProfileEditor.svelte"
+      }
+    },
+    {
+      "path": "src/routes/progress/+page.server.ts",
+      "lines": 28,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/progress.ts",
+        "src/lib/server/queries/profile-user.ts",
+        "src/lib/server/queries/progress.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/progress/+page.svelte",
+      "lines": 25,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/profile/url.ts",
+        "src/lib/progress.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/MediaPage.svelte",
+        "src/lib/ui/components/Shelf.svelte"
+      ],
+      "renderedComponents": {
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "MediaPage": "$lib/ui/components/MediaPage.svelte"
+      }
+    },
+    {
+      "path": "src/routes/recovery/+page.server.ts",
+      "lines": 19,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/auth/recovery.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/recovery/+page.svelte",
+      "lines": 41,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Brand.svelte",
+        "src/lib/ui/components/Button.svelte"
+      ],
+      "renderedComponents": {
+        "Brand": "$lib/ui/components/Brand.svelte",
+        "Button": "$lib/ui/components/Button.svelte"
+      }
+    },
+    {
+      "path": "src/routes/register/+page.server.ts",
+      "lines": 14,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/auth/cookies.ts",
+        "src/lib/server/auth/onboarding.ts",
+        "src/lib/server/security/errors.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/register/+page.svelte",
+      "lines": 17,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Brand.svelte",
+        "src/lib/ui/components/Button.svelte"
+      ],
+      "renderedComponents": {
+        "Brand": "$lib/ui/components/Brand.svelte",
+        "Button": "$lib/ui/components/Button.svelte"
+      }
+    },
+    {
+      "path": "src/routes/requests/+page.server.ts",
+      "lines": 17,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/server/queries/pagination.ts",
+        "src/lib/server/queries/requests.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/requests/+page.svelte",
+      "lines": 113,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/Pagination.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/labels.ts"
+      ],
+      "renderedComponents": {
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "Dialog": "$lib/ui/components/Dialog.svelte",
+        "Pagination": "$lib/ui/components/Pagination.svelte"
+      }
+    },
+    {
+      "path": "src/routes/search/+page.server.ts",
+      "lines": 116,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/catalogue/service.ts",
+        "src/lib/core/games/service.ts",
+        "src/lib/games/presentation.ts",
+        "src/lib/providers/igdb/service.server.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/queries/media-rows.ts",
+        "src/lib/server/queries/media.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/search/+page.svelte",
+      "lines": 161,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/Shelf.svelte"
+      ],
+      "renderedComponents": {
+        "Shelf": "$lib/ui/components/Shelf.svelte",
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "Icon": "$lib/ui/components/Icon.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte"
+      }
+    },
+    {
+      "path": "src/routes/settings/[[section]]/+page.server.ts",
+      "lines": 107,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/collection/demand.server.ts",
+        "src/lib/providers/instances.server.ts",
+        "src/lib/providers/job-timing.server.ts",
+        "src/lib/server/auth/index.ts",
+        "src/lib/server/auth/onboarding.ts",
+        "src/lib/server/config.ts",
+        "src/lib/server/db/index.ts",
+        "src/lib/server/db/schema.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/lib/server/queue/index.ts",
+        "src/lib/settings/sections.ts",
+        "src/lib/sync/conflicts.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/settings/[[section]]/+page.svelte",
+      "lines": 1203,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/settings/sections.ts",
+        "src/lib/social/model.ts",
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/ConflictList.svelte",
+        "src/lib/ui/components/ConnectionCard.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/IntegrationSettings.svelte",
+        "src/lib/ui/components/JobsSettings.svelte",
+        "src/lib/ui/components/Pagination.svelte",
+        "src/lib/ui/components/QueueList.svelte"
+      ],
+      "renderedComponents": {
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "JobsSettings": "$lib/ui/components/JobsSettings.svelte",
+        "Pagination": "$lib/ui/components/Pagination.svelte",
+        "IntegrationSettings": "$lib/ui/components/IntegrationSettings.svelte",
+        "ConflictList": "$lib/ui/components/ConflictList.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "Icon": "$lib/ui/components/Icon.svelte",
+        "Dialog": "$lib/ui/components/Dialog.svelte",
+        "ConnectionCard": "$lib/ui/components/ConnectionCard.svelte",
+        "QueueList": "$lib/ui/components/QueueList.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte"
+      }
+    },
+    {
+      "path": "src/routes/setup/+page.server.ts",
+      "lines": 25,
+      "review": "security investigator full-source review",
+      "imports": [
+        "src/lib/server/auth/cookies.ts",
+        "src/lib/server/auth/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/setup/+page.svelte",
+      "lines": 57,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Brand.svelte",
+        "src/lib/ui/components/Button.svelte"
+      ],
+      "renderedComponents": {
+        "Brand": "$lib/ui/components/Brand.svelte",
+        "Button": "$lib/ui/components/Button.svelte"
+      }
+    },
+    {
+      "path": "src/routes/synced/[id]/+page.server.ts",
+      "lines": 4,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/synced/service.server.ts",
+        "src/lib/server/auth/index.ts"
+      ],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/synced/[id]/+page.svelte",
+      "lines": 13,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/synced/client.svelte.ts",
+        "src/lib/playback/synced/model.ts",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/Heading.svelte"
+      ],
+      "renderedComponents": {
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "Button": "$lib/ui/components/Button.svelte"
+      }
+    },
+    {
+      "path": "src/routes/ui-preview/+layout.server.ts",
+      "lines": 8,
+      "review": "security investigator full-source review",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/ui-preview/+page.svelte",
+      "lines": 168,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/DetailCard.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/MetricGrid.svelte",
+        "src/lib/ui/materials/MaterialTweaker.svelte",
+        "src/routes/ui-preview/PreviewSlot.svelte",
+        "src/routes/ui-preview/catalog.ts",
+        "src/routes/ui-preview/demo/fixtures.ts"
+      ],
+      "renderedComponents": {
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "PreviewSlot": "./PreviewSlot.svelte",
+        "MaterialTweaker": "$lib/ui/materials/MaterialTweaker.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "DetailCard": "$lib/ui/components/DetailCard.svelte",
+        "MetricGrid": "$lib/ui/components/MetricGrid.svelte"
+      }
+    },
+    {
+      "path": "src/routes/ui-preview/Demo.svelte",
+      "lines": 254,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/providers/tasks.ts",
+        "src/lib/ui/components/AddTitle.svelte",
+        "src/lib/ui/components/AvailabilityToggle.svelte",
+        "src/lib/ui/components/BarChart.svelte",
+        "src/lib/ui/components/Brand.svelte",
+        "src/lib/ui/components/BreakdownChart.svelte",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/CollectionProjectionSettings.svelte",
+        "src/lib/ui/components/ConflictList.svelte",
+        "src/lib/ui/components/ConnectionCard.svelte",
+        "src/lib/ui/components/ContextMenu.svelte",
+        "src/lib/ui/components/DetailCard.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/EmptyState.svelte",
+        "src/lib/ui/components/FactList.svelte",
+        "src/lib/ui/components/Header.svelte",
+        "src/lib/ui/components/Heading.svelte",
+        "src/lib/ui/components/Icon.svelte",
+        "src/lib/ui/components/IntegrationSettings.svelte",
+        "src/lib/ui/components/JobSchedule.svelte",
+        "src/lib/ui/components/JobsSettings.svelte",
+        "src/lib/ui/components/ListMembershipActions.svelte",
+        "src/lib/ui/components/MediaActions.svelte",
+        "src/lib/ui/components/MediaActivity.svelte",
+        "src/lib/ui/components/MediaCard.svelte",
+        "src/lib/ui/components/MediaDetailRows.svelte",
+        "src/lib/ui/components/MediaHero.svelte",
+        "src/lib/ui/components/MediaPage.svelte",
+        "src/lib/ui/components/MediaRequestMenu.svelte",
+        "src/lib/ui/components/MenuAction.svelte",
+        "src/lib/ui/components/MetadataEditor.svelte",
+        "src/lib/ui/components/MetricGrid.svelte",
+        "src/lib/ui/components/NotificationToasts.svelte",
+        "src/lib/ui/components/Pagination.svelte",
+        "src/lib/ui/components/PlaybackTimeline.svelte",
+        "src/lib/ui/components/PresentationActions.svelte",
+        "src/lib/ui/components/ProfileEditor.svelte",
+        "src/lib/ui/components/ProfileFeatureEditor.svelte",
+        "src/lib/ui/components/ProfileRecap.svelte",
+        "src/lib/ui/components/ProgressChart.svelte",
+        "src/lib/ui/components/ProviderAutomation.svelte",
+        "src/lib/ui/components/QueueList.svelte",
+        "src/lib/ui/components/Rating.svelte",
+        "src/lib/ui/components/ReactionActions.svelte",
+        "src/lib/ui/components/RecommendAction.svelte",
+        "src/lib/ui/components/RelationshipActions.svelte",
+        "src/lib/ui/components/RequestDialog.svelte",
+        "src/lib/ui/components/RowFeedback.svelte",
+        "src/lib/ui/components/RowFilter.svelte",
+        "src/lib/ui/components/RowStyleMenu.svelte",
+        "src/lib/ui/components/SegmentedControl.svelte",
+        "src/lib/ui/components/SequenceControl.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/components/SocialControls.svelte",
+        "src/lib/ui/components/SyncedControls.svelte",
+        "src/lib/ui/filter-options.ts",
+        "src/lib/ui/headings.ts",
+        "src/lib/ui/insights/media.ts",
+        "src/lib/ui/insights/overview.ts",
+        "src/lib/ui/insights/profile.ts",
+        "src/lib/ui/materials/glass.ts",
+        "src/lib/ui/pages/music.svelte.ts",
+        "src/lib/ui/shelves/index.ts",
+        "src/lib/ui/types.ts",
+        "src/routes/ui-preview/demo/fixtures.ts"
+      ],
+      "renderedComponents": {
+        "AddTitle": "$lib/ui/components/AddTitle.svelte",
+        "AvailabilityToggle": "$lib/ui/components/AvailabilityToggle.svelte",
+        "BarChart": "$lib/ui/components/BarChart.svelte",
+        "Brand": "$lib/ui/components/Brand.svelte",
+        "BreakdownChart": "$lib/ui/components/BreakdownChart.svelte",
+        "Button": "$lib/ui/components/Button.svelte",
+        "CollectionProjectionSettings": "$lib/ui/components/CollectionProjectionSettings.svelte",
+        "ConflictList": "$lib/ui/components/ConflictList.svelte",
+        "ConnectionCard": "$lib/ui/components/ConnectionCard.svelte",
+        "ContextMenu": "$lib/ui/components/ContextMenu.svelte",
+        "DetailCard": "$lib/ui/components/DetailCard.svelte",
+        "Dialog": "$lib/ui/components/Dialog.svelte",
+        "EmptyState": "$lib/ui/components/EmptyState.svelte",
+        "FactList": "$lib/ui/components/FactList.svelte",
+        "Header": "$lib/ui/components/Header.svelte",
+        "Icon": "$lib/ui/components/Icon.svelte",
+        "IntegrationSettings": "$lib/ui/components/IntegrationSettings.svelte",
+        "JobSchedule": "$lib/ui/components/JobSchedule.svelte",
+        "JobsSettings": "$lib/ui/components/JobsSettings.svelte",
+        "MediaActions": "$lib/ui/components/MediaActions.svelte",
+        "MediaActivity": "$lib/ui/components/MediaActivity.svelte",
+        "MediaCard": "$lib/ui/components/MediaCard.svelte",
+        "MediaDetailRows": "$lib/ui/components/MediaDetailRows.svelte",
+        "MediaHero": "$lib/ui/components/MediaHero.svelte",
+        "MediaRequestMenu": "$lib/ui/components/MediaRequestMenu.svelte",
+        "MenuAction": "$lib/ui/components/MenuAction.svelte",
+        "MetadataEditor": "$lib/ui/components/MetadataEditor.svelte",
+        "MetricGrid": "$lib/ui/components/MetricGrid.svelte",
+        "NotificationToasts": "$lib/ui/components/NotificationToasts.svelte",
+        "Pagination": "$lib/ui/components/Pagination.svelte",
+        "PlaybackTimeline": "$lib/ui/components/PlaybackTimeline.svelte",
+        "PresentationActions": "$lib/ui/components/PresentationActions.svelte",
+        "ProfileEditor": "$lib/ui/components/ProfileEditor.svelte",
+        "ProfileFeatureEditor": "$lib/ui/components/ProfileFeatureEditor.svelte",
+        "ProfileRecap": "$lib/ui/components/ProfileRecap.svelte",
+        "ProgressChart": "$lib/ui/components/ProgressChart.svelte",
+        "ProviderAutomation": "$lib/ui/components/ProviderAutomation.svelte",
+        "QueueList": "$lib/ui/components/QueueList.svelte",
+        "Rating": "$lib/ui/components/Rating.svelte",
+        "RequestDialog": "$lib/ui/components/RequestDialog.svelte",
+        "RowFilter": "$lib/ui/components/RowFilter.svelte",
+        "Heading": "$lib/ui/components/Heading.svelte",
+        "RowStyleMenu": "$lib/ui/components/RowStyleMenu.svelte",
+        "SegmentedControl": "$lib/ui/components/SegmentedControl.svelte",
+        "SequenceControl": "$lib/ui/components/SequenceControl.svelte",
+        "RelationshipActions": "$lib/ui/components/RelationshipActions.svelte",
+        "ListMembershipActions": "$lib/ui/components/ListMembershipActions.svelte",
+        "RowFeedback": "$lib/ui/components/RowFeedback.svelte",
+        "MediaPage": "$lib/ui/components/MediaPage.svelte",
+        "RecommendAction": "$lib/ui/components/RecommendAction.svelte",
+        "ReactionActions": "$lib/ui/components/ReactionActions.svelte",
+        "SocialControls": "$lib/ui/components/SocialControls.svelte",
+        "SyncedControls": "$lib/ui/components/SyncedControls.svelte",
+        "Shelf": "$lib/ui/components/Shelf.svelte"
+      }
+    },
+    {
+      "path": "src/routes/ui-preview/PreviewSlot.svelte",
+      "lines": 19,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/routes/ui-preview/Demo.svelte"
+      ],
+      "renderedComponents": {
+        "Demo": "./Demo.svelte"
+      }
+    },
+    {
+      "path": "src/routes/ui-preview/catalog.ts",
+      "lines": 81,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/ui-preview/demo/+page.svelte",
+      "lines": 15,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/routes/ui-preview/Demo.svelte",
+        "src/routes/ui-preview/demo/fixtures.ts"
+      ],
+      "renderedComponents": {
+        "Demo": "../Demo.svelte"
+      }
+    },
+    {
+      "path": "src/routes/ui-preview/demo/+page.ts",
+      "lines": 2,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [],
+      "renderedComponents": {}
+    },
+    {
+      "path": "src/routes/ui-preview/demo/fixtures.ts",
+      "lines": 54,
+      "review": "structural inventory; targeted flow review may also apply",
+      "imports": [
+        "src/lib/media/actions.ts",
+        "src/lib/music/model.ts",
+        "src/lib/profile/journal.ts",
+        "src/lib/providers/schedule.ts",
+        "src/lib/ui/types.ts"
+      ],
+      "renderedComponents": {}
+    }
+  ],
+  "cycles": [
+    [
+      "src/lib/server/config.ts",
+      "src/lib/server/auth/index.ts"
+    ],
+    [
+      "src/lib/sync/changes.ts",
+      "src/lib/sync/values.ts"
+    ],
+    [
+      "src/lib/providers/tmdb/details.server.ts",
+      "src/lib/providers/tmdb/adapter.server.ts"
+    ],
+    [
+      "src/lib/providers/seerr/connection.server.ts",
+      "src/lib/catalogue/service.ts",
+      "src/lib/sync/trakt-import.ts",
+      "src/lib/providers/connections.server.ts",
+      "src/lib/providers/trakt/connection.server.ts",
+      "src/lib/collection/projection.server.ts",
+      "src/lib/collection/source-changes.server.ts",
+      "src/lib/providers/instances.server.ts"
+    ],
+    [
+      "src/lib/playback/client.svelte.ts",
+      "src/lib/playback/synced/client.svelte.ts"
+    ]
+  ],
+  "deferred": [
+    "Every-line semantic review of remaining files",
+    "Live provider and real social-account acceptance",
+    "Desktop/mobile playback and keyboard/screen-reader journeys",
+    "Production-sized query plans and browser profiling",
+    "Container backup/restore and reverse-proxy runtime validation",
+    "Full token/export reachability using compiler-aware tooling"
+  ],
+  "verification": {
+    "check": "0 errors, 0 warnings",
+    "build": "passed",
+    "defaultTests": {
+      "pass": 181,
+      "skip": 241,
+      "fail": 0
+    },
+    "isolatedDatabaseTests": {
+      "suites": 27,
+      "pass": 199,
+      "skip": 0,
+      "fail": 1,
+      "failure": "domain-application-db: profile fixture does not establish sharing"
+    },
+    "dependencyAudit": "two transitive advisories; reachability not established"
+  }
+}

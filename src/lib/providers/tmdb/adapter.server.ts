@@ -1,3 +1,4 @@
+import { tmdbArtwork } from './artwork';
 import * as v from 'valibot';
 import { tmdbInsights, tmdbPerson } from './details.server';
 import type { DiscoverKind, Metadata, MetadataProvider, ProviderTransport } from '../contracts';
@@ -107,14 +108,6 @@ function mapItem(
     seasonNumber: data.season_number ?? undefined,
     episodeNumber: data.episode_number ?? undefined,
   };
-}
-export function tmdbArtwork(
-  path: string | null | undefined,
-  size: 'w342' | 'w780' | 'w1280' | 'original' = 'w780'
-) {
-  return path && /^\/[a-zA-Z0-9_.-]+$/.test(path)
-    ? `https://image.tmdb.org/t/p/${size}${path}`
-    : undefined;
 }
 export class TmdbAdapter implements MetadataProvider {
   constructor(

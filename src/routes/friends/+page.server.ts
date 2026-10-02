@@ -7,7 +7,9 @@ import {friendInsights,friendDiscovery} from '$lib/social/insights.server';
 import {workCards} from '$lib/collection/query.server';
 import {presence} from '$lib/social/presence.server';
 import type {PageServerLoad} from './$types';
-export const load:PageServerLoad=async({locals,url})=>{
+export const load:PageServerLoad=async({locals,url, depends})=>{
+  depends('coast:social');
+
  const user=locals.user!;const view=url.searchParams.get('view')??'activity',page=Number(url.searchParams.get('page')??1);
  if(!['activity','friends','recommendations','insights'].includes(view)||!Number.isInteger(page)||page<1||page>100000)error(400,'Choose a valid friends view and page.');
  const roster=await friends(user.id,page),recs=view==='recommendations'?await recommendations(user.id,page,url.searchParams.get('available')==='true'):[];

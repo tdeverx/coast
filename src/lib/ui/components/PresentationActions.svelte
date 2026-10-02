@@ -3,7 +3,8 @@
   import type { MediaCardPresentation } from '$lib/ui/types';
   import type { MusicItem } from '$lib/music/model';
   import type { GameStatus } from '$lib/games/model';
-  import { api, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { createMutation } from '$lib/ui/mutation.svelte';
   import { setRelationship, type Relationship } from '$lib/ui/relationships';
   import RelationshipActions from './RelationshipActions.svelte';
@@ -13,6 +14,9 @@
   import Rating from './Rating.svelte';
   import RecommendAction from './RecommendAction.svelte';
   import ReactionActions from './ReactionActions.svelte';
+
+  const { preview, api, change } = useClient();
+
   let { item }: { item: MediaCardPresentation } = $props();
   let menu = $state<ContextMenu>();
   let music = $state<MusicItem>();
@@ -93,15 +97,15 @@
     queued = result.queued;
     lists = result.lists;
   }
-  async function toggleList(list:typeof lists[number]){await save(()=>list.entryId&&!list.playlist?api(`lists/${list.id}/items`,{entryId:list.entryId},'DELETE'):api(`lists/${list.id}/items`,{mediaId:workId}),'List updated.');}
+  async function toggleList(list:typeof lists[number]){await save(()=>list.entryId&&!list.playlist?change(`lists/${list.id}/items`,{entryId:list.entryId},'DELETE'):change(`lists/${list.id}/items`,{mediaId:workId}),'List updated.');}
   async function relationship(kind: Relationship) {
     if (!workId) return;
     const id = workId;
     const previous = kind === 'queued' ? queued : relationships[kind];
-    await save(() => setRelationship(id, kind, !previous), kind === 'queued' ? 'Queue updated.'
+    await save(() => setRelationship(id, kind, !previous, change), kind === 'queued' ? 'Queue updated.'
       : previous ? 'Relationship removed. History is preserved.' : 'Saved to Collection.');
   }
-  async function listen(){if(workId)await save(()=>api(`music/${workId}/log`,{batchId:crypto.randomUUID()}),'Listen logged.');}
+  async function listen(){if(workId)await save(()=>change(`music/${workId}/log`,{batchId:crypto.randomUUID()}),'Listen logged.');}
   function gameAction(action: 'start' | 'progress' | 'log') {
     const params = new URLSearchParams({ action });
     if (action !== 'start' && playthrough) params.set('playthrough', playthrough.id);
@@ -112,14 +116,14 @@
     if (!music || !musicPath) return;
     const value = !music.favourite;
     await save(
-      () => api(`${musicPath}/favourite`, { favourite: value }),
+      () => change(`${musicPath}/favourite`, { favourite: value }),
       value ? 'Added to favourites.' : 'Removed from favourites.'
     );
   }
   async function updateState(status: GameStatus) {
     if (!playthrough) return;
     const id = playthrough.id;
-    await save(() => api(`game-playthroughs/${id}`, { status }, 'PATCH'), 'Playthrough updated.');
+    await save(() => change(`game-playthroughs/${id}`, { status }, 'PATCH'), 'Playthrough updated.');
   }
 </script>
 
@@ -167,7 +171,7 @@
   {/if}
   {#if !loading && workId}
     <div class="menu-divider" role="separator"></div>
-    {#if item.kind==='track'||item.kind==='album'}<MenuAction icon="play" disabled={busy} onclick={()=>playMusic(workId!).catch(e=>mutation.error = message(e))}>Play</MenuAction><MenuAction icon="clock" disabled={busy} onclick={listen}>Log {item.kind==='album'?'album':'listen'}</MenuAction>{/if}
+    {#if item.kind==='track'||item.kind==='album'}<MenuAction icon="play" disabled={busy || preview} onclick={()=>playMusic(workId!).catch(e=>mutation.error = message(e))}>Play</MenuAction><MenuAction icon="clock" disabled={busy} onclick={listen}>Log {item.kind==='album'?'album':'listen'}</MenuAction>{/if}
     <RelationshipActions disabled={busy} onchange={relationship} items={[
       { kind: 'collected', value: relationships.collected, icon: 'plus', label: `${relationships.collected ? 'Remove from' : 'Add to'} Collection` },
       { kind: 'watchlist', value: relationships.watchlist, icon: 'list', label: `${relationships.watchlist ? 'Remove from' : 'Save for'} later` },

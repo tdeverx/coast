@@ -1,3 +1,4 @@
+import { pruneTransientRecords } from '$lib/server/storage/retention.server';
 import { serviceTasks } from './tasks';
 import { providerSchedule, providerScheduleSchema } from '$lib/providers/schedule';
 import * as v from 'valibot';
@@ -252,7 +253,7 @@ export async function scheduleProviderMaintenance(
       if (instance.provider === 'trakt') {
         if((!options.task||['all','live'].includes(options.task))&&(options.force||schedule.liveEnabled)&&connection.settings.liveRead!==false){
           const live=jobsByKey.get(`${connection.id}:trakt.live`);
-          const [presence]=await tx.execute<{active:boolean}>(sql`select exists(select 1 from social_live_state where connection_id=${connection.id} and account_generation=${connection.accountGeneration} and expires_at>now()) or exists(select 1 from playback_sessions where user_id=${connection.userId} and state='active' and updated_at>now()-interval '2 minutes') or exists(select 1 from social_checkins where user_id=${connection.userId} and state='active') as active`);
+          const [presence]=await tx.execute<{active:boolean}>(sql`select exists(select 1 from social_live_state where connection_id=${connection.id} and account_generation=${connection.accountGeneration} and expires_at>now()) or exists(select 1 from playback_sessions where user_id=${connection.userId} and state='active' and updated_at>now()-interval '2 minutes') or exists(select 1 from social_checkins where user_id=${connection.userId} and state='active' and expires_at>now()) as active`);
           const interval=presence?.active?schedule.liveActiveMinutes:schedule.liveIdleMinutes;
           if(!live?.active&&(options.force||!live?.last||now-new Date(live.last).getTime()>=interval*60000))await queue(connection,'trakt.live');
         }
@@ -306,17 +307,28 @@ export async function scheduleProviderMaintenance(
   });
 }
 
+let retentionDue = 0;
+async function maintenanceTick() {
+  await scheduleProviderMaintenance();
+  if (Date.now() < retentionDue) return;
+  const result = await pruneTransientRecords();
+  if (!result.busy) {
+    retentionDue = Date.now() + (result.more ? 60_000 : 3600_000);
+    if (result.removed || result.expired) logDiagnostic('info', 'job.complete', { stage: 'retention', count: result.removed, expired: result.expired });
+  }
+}
+
 export function startProviderMaintenance() {
   if (maintenanceTimer) return;
   maintenanceTimer = setInterval(() => {
-    void scheduleProviderMaintenance().catch(() =>
+    void maintenanceTick().catch(() =>
       logDiagnostic('error', 'job.failed', { stage: 'maintenance', failure: 'unexpected' })
     );
   }, 60000);
   maintenanceTimer.unref();
   process.once('SIGTERM', stopProviderMaintenance);
   process.once('SIGINT', stopProviderMaintenance);
-  void scheduleProviderMaintenance().catch(() =>
+  void maintenanceTick().catch(() =>
     logDiagnostic('error', 'job.failed', { stage: 'maintenance', failure: 'unexpected' })
   );
 }

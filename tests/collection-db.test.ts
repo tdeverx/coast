@@ -121,3 +121,42 @@ run('album playback and logging include contained tracks, not other related trac
     await db.delete(works).where(eq(works.id, related.id));
   }
 });
+
+run('paused filtering respects game progress privacy and category-specific sharing', async () => {
+  const db = getDb();
+  const { games, gamePlaythroughs, systemSettings } = await import('../src/lib/server/db/schema');
+  const config = await getConfig();
+  const [saved] = await db.select({ settings: users.settings }).from(users).where(eq(users.id, owner));
+  const [game] = await db.insert(games).values({ title: 'Private paused game' }).returning();
+  try {
+    await db.update(systemSettings).set({ value: { ...config, experimentalFeatures: true } }).where(eq(systemSettings.key, 'coast'));
+    await db.insert(trackingState).values({ userId: owner, mediaId: game.id, collected: true });
+    await db.insert(gamePlaythroughs).values({ userId: owner, gameId: game.id, status: 'paused' });
+    await db.update(users).set({ settings: { social: { audience: 'public', categories: { screen: 'private', game: 'public' }, sections: { progress: 'private', activity: 'private' } } } }).where(eq(users.id, owner));
+    const [u] = await db.select().from(users).where(eq(users.id, owner));
+    const all = await collectionData(viewer, { category: 'game' }, u.username);
+    expect(all.items.map(i => i.id)).toContain(game.id);
+    expect((await collectionData(viewer, { category: 'game', activity: 'paused' }, u.username)).total).toBe(0);
+    expect((await collectionData(owner, { category: 'game', activity: 'paused' })).items.map(i => i.id)).toContain(game.id);
+    await db.update(users).set({ settings: { social: { audience: 'public', categories: { screen: 'private', game: 'public' } } } }).where(eq(users.id, owner));
+    expect((await collectionData(viewer, { category: 'game', activity: 'paused' }, u.username)).items.map(i => i.id)).toContain(game.id);
+  } finally {
+    await db.delete(games).where(eq(games.id, game.id));
+    await db.update(users).set({ settings: saved.settings }).where(eq(users.id, owner));
+    await db.update(systemSettings).set({ value: config }).where(eq(systemSettings.key, 'coast'));
+  }
+});
+
+run('administrator demand filters empty users before pagination and totals',async()=>{
+ const {adminDemand}=await import('../src/lib/collection/demand.server');const db=getDb();
+ const population=await db.insert(users).values(Array.from({length:65},(_,i)=>({username:`aaa-empty-${i}-${tag}`}))).returning();
+ const [needed]=await db.insert(users).values({username:`zzz-demand-${tag}`}).returning();
+ try{
+  await db.insert(trackingState).values({userId:needed.id,mediaId:movie,watchlist:true});
+  const first=await adminDemand(new URL('http://fixture/admin/demand'));
+  expect(first.users.map(u=>u.userId)).toContain(needed.id);expect(first.pages).toBe(1);
+  expect(first.users.every(u=>u.total>0)).toBe(true);
+  const clamped=await adminDemand(new URL('http://fixture/admin/demand?page=99'));
+  expect(clamped.page).toBe(1);expect(clamped.users.map(u=>u.userId)).toContain(needed.id);
+ }finally{await db.delete(users).where(inArray(users.id,[...population.map(u=>u.id),needed.id]));}
+});

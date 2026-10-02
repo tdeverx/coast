@@ -5,7 +5,8 @@ import * as v from 'valibot';
 import { progressOptionsSchema, progressParameters, progressSurface } from '$lib/progress';
 import { progressData } from '$lib/server/queries/progress';
 import type { PageServerLoad } from './$types';
-export const load: PageServerLoad = async ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url, depends }) => {
+  depends('coast:tracking');
   if (!locals.user) error(401, 'Sign in to view your progress.');
   const options = v.safeParse(progressOptionsSchema, progressParameters(url));
   if (!options.success) error(400, 'Choose a valid progress view and filters.');

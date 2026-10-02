@@ -223,6 +223,8 @@ suite('application PostgreSQL read models', () => {
       });
     const subject = await profileUser(('app-' + b).toUpperCase());
     expect(subject.id).toBe(b);
+    await expect(profileData(b, { view: 'favourites' }, new Date(), a)).rejects.toThrow();
+    await getDb().update(s.users).set({ settings: { social: { audience: 'public' } } }).where(eq(s.users.id, b));
     const profile = await profileData(b, { view: 'favourites' }, new Date(), a);
     const card = profile.favourites.find((item) => item.id === privateMovie);
     expect(card?.favourite).toBe(true);

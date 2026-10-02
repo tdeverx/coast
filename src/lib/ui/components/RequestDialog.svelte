@@ -1,10 +1,14 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import type { MediaView } from '$lib/ui/types';
-  import { api, change, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
   import type { RequestDestination } from '$lib/media/requests';
+
+  const { api, change } = useClient();
+
   let {
     item,
     seasonNumber,

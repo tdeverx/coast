@@ -3,7 +3,8 @@
   import { replaceState } from '$app/navigation';
   import { page } from '$app/state';
   import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
-  import { api, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+import { useClient } from '$lib/ui/client-context';
   import { createResource } from '$lib/ui/resource.svelte';
   type Content = {
     selected?: { playlist: boolean } | null;
@@ -27,6 +28,8 @@ export type ListSourceOptions = {
     ondelete?: () => void;
   };
 export function createListSource(getOptions: () => ListSourceOptions): ShelfSource {
+  const { api, change } = useClient();
+
   let {
     view,
     title,
@@ -61,8 +64,8 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
   }
   async function edit(id: string, direction?: number) {
     try {
-      if (direction) await api(`lists/${view}/move`, { entryId: id, direction });
-      else await api(`lists/${view}/items`, { entryId: id }, 'DELETE');
+      if (direction) await change(`lists/${view}/move`, { entryId: id, direction });
+      else await change(`lists/${view}/items`, { entryId: id }, 'DELETE');
       await load(content.page);
     } catch (cause) {
       resource.error = message(cause);
@@ -72,10 +75,11 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
 
 
   return {
+    get pagination() { return { kind: 'pages' as const, page: content.page, pages: content.pages, append: false, controls: layout === 'grid' ? 'both' as const : 'none' as const, url: href }; },
     get title() { return title; }, get items() { return layout === 'row' ? content.items.slice(0,20) : content.items; },
     get busy() { return busy; }, get ready() { return ready; }, get error() { return error; }, get activated() { return resource.activated; },
-    get href() { return layout === 'row' ? href() : undefined; }, get page() { return content.page; }, get pages() { return content.pages; },
-    get headerPagination() { return layout === 'grid'; }, get footerPagination() { return layout === 'grid'; }, get pageUrl() { return href; },
+    get href() { return layout === 'row' ? href() : undefined; },
+
     get filters(): ShelfControl[] { return [{type:'availability',label:'Available to play only',value:scope,change:value=>{scope=value as typeof scope;void load();}}]; },
     get controls(): ShelfControl[] { return [{type:'media-type',includeOtherMedia:!!page.data.experimentalFeatures,label:`${title} media type`,value:kind,change:value=>{kind=value as Content['kind'];void load();}}]; },
     get sequence() { return content.selected?.playlist ? {kind:'playlist' as const,id:view} : undefined; },

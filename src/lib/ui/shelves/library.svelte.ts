@@ -3,10 +3,10 @@
   import { page as route } from '$app/state';
   import { replaceState } from '$app/navigation';
   import type { PresentationRow } from '$lib/server/queries/media-rows';
-  import { api } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
   import {
-    libraryPath,
+    libraryBrowsePaths,
     libraryTitles,
     librarySelections,
     type LibraryContent,
@@ -30,6 +30,8 @@ export type LibrarySourceOptions = {
     initialAvailability?: string;
   };
 export function createLibrarySource(getOptions: () => LibrarySourceOptions): ShelfSource {
+  const { api } = useClient();
+
   let {
     surface,
     initial,
@@ -62,33 +64,10 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
   const failure = $derived(resource.error);
   const ready = $derived(resource.ready);
   const selections = $derived(collection && surface === 'listen' ? librarySelections.listen.filter(option => option.value !== 'artist') : librarySelections[surface]);
-  const parameters = (number = 1) => collection
-    ? new URLSearchParams({category:surface==='watch'?'screen':surface==='listen'?'music':'game',level:'root',
-      activity:surface==='listen'?'all':selection==='progress'||selection==='in-progress'?'active':selection==='watched'?'completed':selection,
-      kind:surface==='listen'?selection:surface==='play'?'all':kind,relationship,source,availability,...(username?{username}:{}),page:String(number)})
-    : new URLSearchParams({ surface, selection, kind, scope, genre, page: String(number) });
-  function href(number = 1) {
-    if (preview) return surface === 'listen' ? `/music?kind=${selection}` : `/games${preview.personal ? '?personal=true' : ''}`;
-    if (collection) {const params=parameters(number);params.set('view',surface);return `/collection?${params}`;}
-    if (surface === 'watch')
-      return (
-        '/library?' +
-        new URLSearchParams({
-          view: 'watch',
-          tracking: selection,
-          kind,
-          scope,
-          genre,
-          page: String(number),
-        })
-      );
-    if (surface === 'listen')
-      return '/music?' + new URLSearchParams({ kind: selection, page: String(number) });
-    return '/games?' + new URLSearchParams({ state: selection, page: String(number) });
-  }
+  const paths = (number = 1) => libraryBrowsePaths({ surface, collection, selection, kind, scope, genre, relationship, source, availability, username, page: number }, preview);
+  const href = (number = 1) => paths(number).href;
   async function load(number = 1, append = false) {
-    const path = collection ? `collection?${parameters(number)}`
-      : libraryPath(preview ? { preview: true, surface, selection, personal: preview.personal ?? false } : { surface, selection, kind, scope, genre, page: number });
+    const path = paths(number).api;
     const result = await resource.load(async signal => {
       if (!preview) return api<Content>(path, undefined, 'GET', { signal });
       const result = await api<PresentationRow>(path, undefined, 'GET', { signal });
@@ -116,12 +95,13 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
 
 
   return {
+    get pagination() { return { kind: 'pages' as const, page: content.page, pages: content.pages, append: true, controls: layout === 'grid' ? 'footer' as const : 'none' as const }; },
     get title() { return title; }, get items() { return content.items; }, get busy() { return busy; }, get ready() { return ready; },
     get error() { return failure; }, get activated() { return resource.activated; },
     get href() { return layout === 'row' ? href() : undefined; },
     get shape() { return surface==='listen' ? 'square' : 'poster'; }, get mediaKind() { return surface==='listen' ? 'music' : surface==='play' ? 'game' : 'screen'; },
-    get rows() { return preview ? 1 : 2; }, get page() { return content.page; }, get pages() { return content.pages; },
-    get footerPagination() { return layout==='grid'; }, get hasMore() { return content.page<content.pages; },
+    get rows() { return preview ? 1 : 2; },
+
     get resetKey() { return preview ? selection : `${selection}:${kind}:${scope}:${relationship}:${source}:${availability}`; },
     get filters(): ShelfControl[] { return preview ? [] : [
       {type:'segments' as const,label:`${title} selection`,value:selection,options:selections,change:(value:string)=>{selection=value;void load();}},
