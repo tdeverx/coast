@@ -138,7 +138,7 @@ export function decideSync(
   // An initial import can fill empty state; existing divergent user choices require review.
   return emptySyncValue(local) ? 'remote' : emptySyncValue(remote) ? 'local' : 'conflict';
 }
-export function emptySyncValue(value: JsonObject) {
+function emptySyncValue(value: JsonObject) {
   return Object.entries(value).every(([key, value]) => key === 'durationSeconds' || !value);
 }
 export async function reconcileProviderValue(

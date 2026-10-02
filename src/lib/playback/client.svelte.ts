@@ -32,6 +32,8 @@ type PlaybackController = {
   stop: () => Promise<void>;
   pause: () => void;
   resume: () => Promise<void>;
+  snapshot: () => {positionSeconds:number;buffering:boolean};
+  align: (state:{positionSeconds:number;paused:boolean}) => void;
 };
 let controller: PlaybackController | undefined;
 export function registerPlaybackController(next: PlaybackController) {
@@ -40,6 +42,8 @@ export function registerPlaybackController(next: PlaybackController) {
     if (controller === next) controller = undefined;
   };
 }
+export function playbackSnapshot(){return controller?.snapshot();}
+export function alignPlayback(state:{positionSeconds:number;paused:boolean}){controller?.align(state);}
 export function pausePlayback() {
   controller?.pause();
 }
@@ -57,6 +61,7 @@ export async function playMedia(
     mediaType?: 'audio' | 'video';
     sourceId?: string;
     edition?: string;
+    expectedDuration?: number;
     fromStart?: boolean;
     subtitleIndex?: number;
     maxBitrate?: number;
@@ -65,6 +70,12 @@ export async function playMedia(
   } = {}
 ) {
   if (player.loading) return;
+  const {syncedPlayer,isSyncHost,syncedCommand}=await import('./synced/client.svelte');
+  if(player.loading)return;
+  const room=syncedPlayer.room;
+  if(room&&!syncedPlayer.changing&&!isSyncHost()){syncedPlayer.notice='Playback is controlled by the host.';return;}
+  const syncSwitch=!!room&&!syncedPlayer.changing;
+  if(syncSwitch)syncedPlayer.changing=true;
   if (
     player.session?.mediaId === mediaId &&
     player.role === 'playback' &&
@@ -72,10 +83,12 @@ export async function playMedia(
     !options.fromStart &&
     options.sourceId === undefined &&
     options.edition === undefined &&
+    options.expectedDuration === undefined &&
     options.subtitleIndex === undefined &&
     options.maxBitrate === undefined
   ) {
     player.controlsVisible = true;
+    if(syncSwitch)syncedPlayer.changing=false;
     await controller?.resume();
     return;
   }
@@ -108,11 +121,13 @@ export async function playMedia(
     player.paused = true;
     player.controlsVisible = true;
     setPlaybackMuted(false);
+    if(syncSwitch)await syncedCommand('item',{playbackId:session.id,queueIndex:Math.max(0,player.audioIndex),...(session.mediaType==='audio'?{queue:player.audioQueue.map(item=>item.id)}:{})});
   } catch (error) {
     browserDiagnostic('playback.failed', { failure: 'unexpected' });
     throw error;
   } finally {
     player.loading = false;
+    if(syncSwitch)syncedPlayer.changing=false;
   }
 }
 export function presentTrailer(
@@ -137,11 +152,16 @@ export async function playMusic(workId:string,continuing=false){
   return playMusicQueue(result,continuing);
 }
 export async function playMusicQueue(result:{items:{id:string;title:string;availability:string}[];continueId:string|null},continuing=false){
+  const {syncedPlayer,isSyncHost}=await import('./synced/client.svelte');
+  if(syncedPlayer.room&&!isSyncHost()){syncedPlayer.notice='Playback is controlled by the host.';return;}
   player.audioQueue=result.items;player.audioIndex=continuing?Math.max(0,result.items.findIndex(item=>item.id===result.continueId))-1:-1;player.audioNotice='';
-  return advanceMusic(1,continuing);
+  return advanceMusic(1,continuing,true);
 }
 export async function playSavedMusicQueue(){return playMusicQueue(await api('music/queue',undefined,'GET'));}
-export async function advanceMusic(direction:1|-1=1,continuing=false){
+export async function advanceMusic(direction:1|-1=1,continuing=false,replacingQueue=false){
+  const {syncedPlayer,isSyncHost}=await import('./synced/client.svelte');
+  if(syncedPlayer.room&&!isSyncHost())return;
+  if(syncedPlayer.room&&!replacingQueue)player.audioQueue=syncedPlayer.room.queueItems;
   let index=player.audioIndex+direction;
   const skipped:string[]=[];
   while(index>=0&&index<player.audioQueue.length){

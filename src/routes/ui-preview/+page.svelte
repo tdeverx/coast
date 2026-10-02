@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import Heading from '$lib/ui/components/Heading.svelte';
+  import PreviewSlot from './PreviewSlot.svelte';
+  import { installFixtures } from './demo/fixtures';
+  import MaterialTweaker from '$lib/ui/materials/MaterialTweaker.svelte';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import Button from '$lib/ui/components/Button.svelte';
@@ -16,35 +19,13 @@
     url.searchParams.set('section', value);
     void goto(url, { noScroll: true, keepFocus: true });
   }
-  // Examples keep their own runtime while their content determines the frame height.
-  function fitExample(frame: HTMLIFrameElement) {
-    let observer: ResizeObserver | undefined;
-    let mounting: MutationObserver | undefined;
-    function fit() {
-      observer?.disconnect();
-      mounting?.disconnect();
-      const document = frame.contentDocument;
-      if (!document?.body) return;
-      const observeDemo = () => {
-        const demo = document.querySelector('.demo');
-        if (!demo) return;
-        mounting?.disconnect();
-        const resize = () => {
-          frame.style.height = `${Math.max(Number(frame.dataset.minimumHeight), Math.ceil(demo.getBoundingClientRect().bottom) + 24)}px`;
-        };
-        observer = new ResizeObserver(resize);
-        observer.observe(demo);
-        resize();
-      };
-      // Client-rendered examples can mount after the frame's load event.
-      mounting = new MutationObserver(observeDemo);
-      mounting.observe(document.body, { childList: true, subtree: true });
-      observeDemo();
-    }
-    frame.addEventListener('load', fit);
-    if (frame.contentDocument?.readyState === 'complete') fit();
-    return { destroy() { frame.removeEventListener('load', fit); observer?.disconnect(); mounting?.disconnect(); } };
-  }
+  let previewsReady = $state(false);
+  $effect(() => {
+    if (section !== 'elements' && section !== 'components') return;
+    const restore = installFixtures();
+    previewsReady = true;
+    return () => { previewsReady = false; restore(); };
+  });
   const large = new Set(['DetailCard','Heading','MediaHero','MediaPage','MediaDetailRows','IntegrationSettings','JobsSettings','Dialog','AddTitle','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog']);
   const textSizes = ['--text-sm','--text-md','--text-xl','--text-2xl','--text-hero-mobile','--text-hero'];
   const weights = ['--weight-regular','--weight-semibold','--weight-bold'];
@@ -140,8 +121,7 @@
   </section>
   {:else if section === 'materials'}
   <section class="section" aria-label="Materials">
-    <Heading title="Glass" description="Six shared treatments: clear glass, clear blur, glass light, glass dark, blur light and blur dark." />
-    <iframe title="Six glass treatments" src="/ui-preview/demo?component=Glass" loading="lazy" data-minimum-height="360" use:fitExample style:height="360px"></iframe>
+    <MaterialTweaker />
   </section>
   {:else}
   <div class="row preview-filters">
@@ -149,14 +129,14 @@
     <span class="quiet" role="status">{visible.length} / {inventory.length}</span>
   </div>
   <div class="inventory">
-    {#each visible as name}
+    {#each visible as name (name)}
       <section class="specimen" aria-labelledby={`label-${name}`}>
         <Heading title={name}>
           {#snippet heading()}<h2 id={`label-${name}`}>{name}{name==='SocialControls'?' · Non-approved':''}</h2>{/snippet}
           {#snippet actions()}<a class="small quiet" href={`/ui-preview/demo?component=${name}`} target="_blank" rel="noreferrer">Open ↗</a>{/snippet}
         </Heading>
         <p class="small quiet">src/lib/ui/components/{name}.svelte</p>
-        <iframe title={`${name} preview`} src={`/ui-preview/demo?component=${name}`} loading="lazy" data-minimum-height={large.has(name)?780:360} use:fitExample style:height={`${large.has(name)?780:360}px`}></iframe>
+        {#if previewsReady}<PreviewSlot {name} minimum={large.has(name)?780:360} />{/if}
       </section>
     {:else}<p class="quiet">No matching {section === 'elements' ? 'elements' : 'components'}.</p>{/each}
   </div>
@@ -184,6 +164,5 @@
   .color-specimen { min-width:0; display:grid; gap:10px; }
   .color-specimen code { overflow-wrap:anywhere; }
   .swatch { height:64px; border:1px solid var(--line); border-radius:8px; }
-  iframe { display:block; width:100%; border:0; margin-top:16px; background:var(--canvas); }
   @media(max-width:900px) { .token-grid { grid-template-columns:1fr; } .color-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 </style>

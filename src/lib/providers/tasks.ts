@@ -22,7 +22,7 @@ export type ServiceTask = {
   interval?: 'intervalMinutes' | 'userIntervalMinutes' | 'listsIntervalMinutes' | 'liveIdleMinutes' | 'catalogueIntervalMinutes';
   enabled?: keyof ProviderSchedule;
 };
-export function serviceTasks(provider: string): ServiceTask[] {
+function groupedServiceTasks(provider: string): ServiceTask[] {
   const changes: ServiceTask = {
     id: 'changes',
     title: 'Changes & playback',
@@ -124,4 +124,22 @@ export function serviceTasks(provider: string): ServiceTask[] {
       kinds: [],
     },
   ];
+}
+
+/** One card describes one outbox job kind; shared schedule fields remain shared. */
+export function serviceTasks(provider: string): ServiceTask[] {
+  const titles: Record<string, string> = {
+    'trakt.import': 'Tracking imports', 'trakt.collection-project': 'Collection export',
+    'jellyfin.user-state': 'Tracking delivery', 'jellyfin.reconcile': 'Tracking reconciliation',
+    'jellyfin.scrobble': 'Playback reports', 'history.remove': 'History removal',
+    'trakt.checkin': 'Check-in delivery', 'trakt.export': 'Tracking delivery',
+    'trakt.collection-cleanup': 'Collection cleanup', 'trakt.collection-review': 'Collection review',
+    'trakt.progress': 'Progress delivery', 'trakt.scrobble': 'Playback reports',
+    'trakt.list-export': 'List delivery', 'trakt.list-delete': 'List removal',
+    'seerr.request': 'Request delivery', 'seerr.manage': 'Request management',
+  };
+  return groupedServiceTasks(provider).flatMap(task => task.kinds.length <= 1 ? [task] : task.kinds.map(kind => ({
+    ...task, id: kind, title: titles[kind] ?? task.title, kinds: [kind],
+    description: kind === 'trakt.import' ? 'Import the tracking categories selected by each connected account.' : kind === 'trakt.collection-project' ? 'Export each account’s opted-in Collection projection.' : task.description,
+  })));
 }

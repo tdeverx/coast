@@ -167,16 +167,19 @@ export async function scanUserCatalogue(action: OutboxAction) {
       eq(providerConnections.instanceId, providerInstances.id)
     )
     .where(eq(providerConnections.id, action.connectionId));
+  let added = 0;
+  const save: typeof persistMissingTmdb = async (...args) => { const created = await persistMissingTmdb(...args); if (created) added++; return created; };
   if (instance?.provider === 'trakt') {
     const { adapter } = await getTrakt(action.userId, action.connectionId);
-    await scanTraktCatalogue(adapter);
+    await scanTraktCatalogue(adapter, save);
   } else if (instance?.provider === 'jellyfin') {
     const { adapter, connection } = await getJellyfin(
       action.userId,
       action.connectionId
     );
-    await scanJellyfinCatalogue(adapter, connection.externalUserId!);
+    await scanJellyfinCatalogue(adapter, connection.externalUserId!, save);
   }
+  return { added };
 }
 
 /** Shared batches use one durable job; item failures retain retry state in their metadata snapshot. */
@@ -346,4 +349,5 @@ export async function refreshSharedMetadata(
   ]);
   await progress();
   if (fatal) throw fatal;
+  return { refreshed: processed - failed, deferred: failed };
 }

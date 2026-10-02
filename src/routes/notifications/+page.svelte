@@ -14,7 +14,7 @@
 <svelte:head><title>Notifications · Coast</title></svelte:head>
 <div class="content page">
   <Heading variant="page" title="Notifications" description="Updates from your connected services and Coast." />
-  <RowFilter label="Notification type" value={page.url.searchParams.get('kind')??'all'} options={[{value:'all',label:'All notifications'},{value:'friend-request',label:'Friend requests'},{value:'friend-accepted',label:'Friend accepted'},{value:'recommendation',label:'Recommendations'},{value:'reaction',label:'Reactions'},{value:'request',label:'Requests'},{value:'administrator',label:'Administrator'}]} onchange={kind=>goto('/notifications?kind='+kind)} />
+  <RowFilter label="Notification type" value={page.url.searchParams.get('kind')??'all'} options={[{value:'all',label:'All notifications'},{value:'friend-request',label:'Friend requests'},{value:'friend-accepted',label:'Friend accepted'},{value:'recommendation',label:'Recommendations'},{value:'reaction',label:'Reactions'},{value:'synced-invite',label:'Synced sessions'},{value:'request',label:'Requests'},{value:'administrator',label:'Administrator'}]} onchange={kind=>goto('/notifications?kind='+kind)} />
   {#if error}<div class="notice error" role="alert">{error}</div>{/if}{#if data.inbox.length}<div
       class="inbox"
     >

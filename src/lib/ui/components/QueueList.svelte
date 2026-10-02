@@ -3,7 +3,7 @@
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { change, message } from '$lib/ui/client';
   import EmptyState from './EmptyState.svelte';
-  import { jobWaiting, type QueueAction } from '$lib/ui/queue';
+  import { jobWaiting, jobOutcome, jobRemedy, type QueueAction } from '$lib/ui/queue';
   import { displayLabel } from '$lib/ui/labels';
   import { contextGesture } from '$lib/ui/context-gesture';
   import ContextMenu from './ContextMenu.svelte';
@@ -62,11 +62,7 @@
         Queued {new Date(action.createdAt).toLocaleString()}{#if waiting && action.nextAttemptAt}
           · Next attempt {new Date(action.nextAttemptAt).toLocaleString()}{/if}
       </p>{/if}
-    {#if action.progress && ['running', 'succeeded'].includes(action.state)}<p>
-        {action.progress.processed ?? 0} items{#if action.progress.total != null}
-          / {action.progress.total}{/if}{#if action.progress.phase === 'reconciling'}
-          · Finishing{/if}
-      </p>{/if}
+    {#if jobOutcome(action)}<p>{jobOutcome(action)}</p>{/if}
     {#if action.lastError}<p class="job-error">{action.lastError}</p>{/if}
   </div>
   {#if ['pending', 'failed'].includes(action.state)}
@@ -75,7 +71,10 @@
       label={`${displayLabel(action.kind)} job actions`}
       disabled={pending.includes(action.id)}
     >
-      {#if action.state === 'failed' || action.attempts > 0}<MenuAction
+      {#if jobRemedy(action) === 'connection'}<MenuAction icon="user" href="/settings/connections" keepOpen={false}>Reconnect account</MenuAction>
+      {:else if jobRemedy(action) === 'permissions'}<MenuAction icon="settings" href="/settings/integrations" keepOpen={false}>Review permissions</MenuAction>
+      {:else if jobRemedy(action) === 'metadata'}<MenuAction icon="list" href="/settings/activity" keepOpen={false}>Review diagnostics</MenuAction>
+      {:else if action.state === 'failed' || action.attempts > 0}<MenuAction
           icon="refresh"
           keepOpen={false}
           onclick={() => void update(action.id, 'retry')}

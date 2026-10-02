@@ -1,3 +1,5 @@
+import * as synced from '$lib/playback/synced/service.server';
+import {createInvite,listInvites,revokeInvite} from '$lib/server/auth/onboarding';
 import {isPublicReadPath} from '$lib/social/public.server';
 import {profileAvatarChoices,providerProfileAvatar} from '$lib/core/profile/avatars.server';
 import {avatarRequestLimit,streamGifAvatar} from '$lib/core/profile/gif-avatar.server';
@@ -156,6 +158,24 @@ const handler: RequestHandler = async (event) => {
       url.searchParams.has('username')
         ? (await profileUser(url.searchParams.get('username')!)).id
         : uid;
+    if(path[0]==='admin' && path[1]==='invites') {
+      if(method==='GET')return json(await listInvites(user));
+      if(method==='POST')return json(await createInvite(user,await readBody(request)));
+      if(method==='DELETE'&&path[2]){await revokeInvite(user,uuid(path[2]));return json({revoked:true});}
+    }
+    if(path[0]==='synced') {
+      if(path.length===1&&method==='POST')return json(await synced.createRoom(uid,await readBody(request)));
+      const id=uuid(path[1]);
+      if(path.length===2&&method==='GET')return json(await synced.roomState(uid,id));
+      if(method==='POST') {
+        const body=await readBody(request);
+        if(path[2]==='heartbeat')return json(await synced.roomState(uid,id,body));
+        if(path[2]==='join')return json(await synced.joinRoom(uid,id,body));
+        if(path[2]==='invite')return json(await synced.inviteParticipant(uid,id,body));
+        if(path[2]==='command')return json(await synced.commandRoom(uid,id,body));
+        if(path[2]==='leave')return json(await synced.leaveRoom(uid,id));
+      }
+    }
     if(path[0]==='profile'&&path[1]==='avatars'&&method==='GET')return path[2]?await providerProfileAvatar(uid,uuid(path[2]),request):json(await profileAvatarChoices(uid));
     if(path[0]==='social') {
       const action=path[1], id=path[2], page=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(100000)),Number(url.searchParams.get('page')??1));
@@ -472,7 +492,7 @@ const handler: RequestHandler = async (event) => {
         result = await updateProviderSchedule(uid, uuid(path[1]), body);
       } else if (path[2] === 'run-job' && method === 'POST') {
         requireAdmin(user);
-        result = await runProviderJob(uid, uuid(path[1]), v.parse(v.optional(v.picklist(['all','library','users','tracking','lists','live','catalogue','metadata']), 'all'), body.task));
+        result = await runProviderJob(uid, uuid(path[1]), v.parse(v.optional(v.picklist(['all','library','users','tracking','lists','live','catalogue','metadata']), 'all'), body.task), v.parse(v.optional(v.string()), body.kind));
       } else if (path[2] === 'playback-import' && method === 'POST')
         result = await updateJellyfinPlaybackImport(uid, uuid(path[1]), body);
       else if (path[2] === 'sync' && method === 'POST')

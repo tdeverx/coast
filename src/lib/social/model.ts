@@ -8,7 +8,7 @@ export type SocialSettings = {
   audience?: Audience;
   sections?: Partial<Record<SocialSection,Audience>>;
   categories?: Partial<Record<typeof socialCategories[number],Audience>>;
-  notifications?: Partial<Record<'friend-request'|'friend-accepted'|'recommendation'|'reaction',boolean>>;
+  notifications?: Partial<Record<'friend-request'|'friend-accepted'|'recommendation'|'reaction'|'synced-invite',boolean>>;
 };
 export const socialSettingsSchema = v.object({
   audience:v.optional(v.picklist(audiences),'friends'),
@@ -20,7 +20,7 @@ export const socialSettingsSchema = v.object({
     insights:v.optional(v.picklist(audiences)),
   }),{}),
   categories:v.optional(v.object({screen:v.optional(v.picklist(audiences)),music:v.optional(v.picklist(audiences)),game:v.optional(v.picklist(audiences))}),{}),
-  notifications:v.optional(v.object({'friend-request':v.optional(v.boolean()),'friend-accepted':v.optional(v.boolean()),recommendation:v.optional(v.boolean()),reaction:v.optional(v.boolean())}),{}),
+  notifications:v.optional(v.object({'friend-request':v.optional(v.boolean()),'friend-accepted':v.optional(v.boolean()),recommendation:v.optional(v.boolean()),reaction:v.optional(v.boolean()),'synced-invite':v.optional(v.boolean())}),{}),
 });
 export const emojis = ['❤️','😂','😮','😢','🔥'] as const;
 export type NotificationData = {actorId:string; subjectId:string; destination:string; actions?: ('accept'|'decline'|'save'|'dismiss')[]; workId?:string};

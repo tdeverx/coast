@@ -42,7 +42,7 @@ async function jellyfinContext(userId:string,connectionId:string,provided?:Jelly
   return {...current,adapter:provided.adapter};
 }
 
-export async function libraryScanProgress(userId: string, connectionId: string) {
+export async function libraryScanProgress(userId: string, connectionId: string, since?:Date) {
   const { connection } = await getJellyfin(userId, connectionId);
   const [job] = await getDb()
     .select()
@@ -51,7 +51,8 @@ export async function libraryScanProgress(userId: string, connectionId: string) 
       and(
         eq(outboxActions.userId, userId),
         eq(outboxActions.connectionId, connectionId),
-        eq(outboxActions.kind, 'jellyfin.sync')
+        eq(outboxActions.kind, 'jellyfin.sync'),
+        since ? sql`${outboxActions.createdAt} >= ${since}` : undefined
       )
     )
     .orderBy(desc(outboxActions.createdAt))
@@ -504,7 +505,7 @@ async function runJellyfinScan(
       })
       .where(eq(providerInstances.id, instance.id));
   }
-  return { count, full };
+  return { count, full, checked: processed };
 }
 
 export async function executeJellyfinUserState(

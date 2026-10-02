@@ -312,7 +312,7 @@ export async function importTmdb(
   });
   return saved;
 }
-export async function importTmdbCollection(id: string, region = 'GB') {
+async function importTmdbCollection(id: string, region = 'GB') {
   const adapter = await getTmdb('en-US', region);
   if (!adapter) throw new Error('Configure TMDB to refresh collection details.');
   const snapshot = await adapter.collection(id),

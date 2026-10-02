@@ -1,3 +1,4 @@
+import {onboardingPending} from '$lib/server/auth/onboarding';
 import {isPublicReadPath} from '$lib/social/public.server';
 import { context, logDiagnostic, classifyFailure, diagnosticStore } from '$lib/server/diagnostics';
 import { correlationId } from '$lib/diagnostics';
@@ -40,7 +41,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
   }
   event.locals.setup = await setupRequired();
   const config=await getConfig();
-  const isPublic = ['/login', '/setup', '/recovery'].includes(event.url.pathname) || (config.siteAccess==='public-read-only' && ['GET','HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname));
+  const isPublic = ['/login', '/setup', '/recovery', '/register'].includes(event.url.pathname) || (config.siteAccess==='public-read-only' && ['GET','HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname));
   if (!event.locals.user && !isPublic) {
     if (event.url.pathname.startsWith('/api/'))
       return json({ error: 'Your session has expired. Sign in to continue.' }, { status: 401 });
@@ -48,6 +49,10 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
   }
   if (event.locals.setup && !['/setup', '/recovery'].includes(event.url.pathname))
     redirect(303, '/setup');
+  if (event.locals.user && !['/onboarding','/logout'].includes(event.url.pathname) && await onboardingPending(event.locals.user.id)) {
+    if (event.url.pathname.startsWith('/api/')) return json({error:'Finish your initial Jellyfin import before continuing.',code:'onboarding_required'},{status:403});
+    redirect(303,'/onboarding');
+  }
   if (isExperimentalPath(event.url.pathname) && !(await getConfig()).experimentalFeatures) {
     if (event.url.pathname.startsWith('/api/'))
       return json(

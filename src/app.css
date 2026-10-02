@@ -249,6 +249,16 @@ form.stack,
   backdrop-filter: var(--coast-glass-filter);
   -webkit-backdrop-filter: var(--coast-glass-filter);
 }
+/* Below surface content, above its backdrop; never changes layout or hit targets. */
+.coast-glass-grain {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-repeat: repeat;
+  background-blend-mode: multiply;
+}
 .glass::before,
 .glass::after {
   content: '';

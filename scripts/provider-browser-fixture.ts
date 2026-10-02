@@ -130,12 +130,14 @@ const server = Bun.serve({
         ProductName: 'Jellyfin Server',
         Version: '10.11.0',
       });
-    if (path === '/Users/AuthenticateByName')
+    if (path === '/Users/AuthenticateByName') {
+      const account=process.env.COAST_FIXTURE_MULTIPLE_USERS==='1' ? String((await request.json()).Username||'fixture') : 'fixture';
       return json({
         AccessToken: 'synthetic-fixture-token',
         ServerId: 'coast-browser-fixture',
-        User: { Id: 'fixture-user', Name: 'Fixture viewer' },
+        User: { Id: account==='fixture'?'fixture-user':`fixture-${account}`, Name: 'Fixture viewer' },
       });
+    }
     if (path === '/Items') {
       if(/Music|Audio/.test(url.searchParams.get('includeItemTypes')??'')){
         const types=(url.searchParams.get('includeItemTypes')??'').split(',');
@@ -150,7 +152,7 @@ const server = Bun.serve({
         StartIndex: offset,
       });
     }
-    const itemPath = /^\/Users\/fixture-user\/Items\/([^/]+)$/.exec(path);
+    const itemPath = /^\/Users\/fixture-[^/]+\/Items\/([^/]+)$/.exec(path);
     if (itemPath) {
       const item = [...library,...musicItems].find((item) => item.Id === itemPath[1]);
       return item ? json(item) : new Response('Fixture item not found', { status: 404 });

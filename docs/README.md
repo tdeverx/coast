@@ -20,3 +20,7 @@
 - [Readiness](readiness.md): evidence, known gaps and post-1.0 work.
 
 Keep the readiness report honest: implementation is not proof of a live provider journey.
+
+- [App follow-up roadmap](roadmap.md): agreed priorities and deferred UX exploration.
+
+- [Synced experiences and invitation onboarding](synced-experiences.md) — experimental playback sessions and initial-import registration.

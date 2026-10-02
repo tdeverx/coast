@@ -5,7 +5,7 @@ import { users, providerConnections, providerInstances } from '$lib/server/db/sc
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 /** Only a fresh observation from the preferred account can supply its winning value. */
-export function preferredConflictSide(preference: string | undefined, connectionId: string) {
+function preferredConflictSide(preference: string | undefined, connectionId: string) {
   if (preference === 'coast') return 'local';
   if (preference === connectionId) return 'remote';
   return 'manual';

@@ -26,6 +26,7 @@ export function installFixtures() {
   window.fetch=Object.assign(async(input:RequestInfo | URL,init?:RequestInit)=>{
     const url=new URL(input instanceof Request?input.url:String(input),location.href);
     if(!url.pathname.startsWith('/api/'))return original(input,init);
+    if ((init?.method ?? 'GET').toUpperCase() === 'GET' && url.pathname.startsWith('/api/v1/notifications')) return original(input, init);
     const method=(init?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
     if(method!=='GET')return Response.json({error:'Preview only — changes are not saved.'},{status:409});
     const path=url.pathname;
@@ -47,7 +48,7 @@ export function installFixtures() {
     return Response.json({error:'This action requires a live session outside the component preview.'},{status:409});
   },original);
   // Keep links inside each labeled preview rather than changing the outer application.
-  const blockNavigation=(event:MouseEvent)=>{if((event.target as Element).closest('a'))event.preventDefault();};
+  const blockNavigation=(event:MouseEvent)=>{const link=(event.target as Element).closest('.demo a');if(link && !link.hasAttribute('data-preview-navigation'))event.preventDefault();};
   document.addEventListener('click',blockNavigation,true);
   return ()=>{window.fetch=original;document.removeEventListener('click',blockNavigation,true);};
 }

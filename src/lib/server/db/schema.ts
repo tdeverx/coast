@@ -1054,3 +1054,48 @@ export const socialScrobbleDeliveries = pgTable('social_scrobble_deliveries', {
   state: text('state').notNull().default('uncertain'),
   updatedAt: updatedAt(),
 }, t => [primaryKey({columns:[t.connectionId,t.sessionId]})]);
+
+/** Invite redemption and onboarding are server-owned, never editable user preferences. */
+export const registrationInvites = pgTable('registration_invites', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tokenHash: text('token_hash').notNull().unique(),
+  createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedBy: uuid('used_by').references(() => users.id, { onDelete: 'set null' }),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  createdAt: createdAt(),
+});
+export const userOnboarding = pgTable('user_onboarding', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  connectionId: uuid('connection_id').references(() => providerConnections.id, { onDelete: 'set null' }),
+  accountGeneration: uuid('account_generation'),
+  requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+});
+export const syncedRooms = pgTable('synced_rooms', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  hostId: uuid('host_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  mediaId: uuid('media_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
+  mediaType: text('media_type').$type<'audio' | 'video'>().notNull(),
+  edition: text('edition').notNull().default(''),
+  durationSeconds: real('duration_seconds').notNull(),
+  positionSeconds: real('position_seconds').notNull().default(0),
+  paused: boolean('paused').notNull().default(true),
+  bufferingPaused: boolean('buffering_paused').notNull().default(false),
+  bufferingPolicy: text('buffering_policy').$type<'together' | 'catch-up'>().notNull().default('together'),
+  queue: jsonb('queue').$type<string[]>().notNull().default([]),
+  queueIndex: integer('queue_index').notNull().default(0),
+  revision: integer('revision').notNull().default(1),
+  endedAt: timestamp('ended_at', { withTimezone: true }),
+  updatedAt: updatedAt(),
+  createdAt: createdAt(),
+}, t => [index('synced_rooms_host_idx').on(t.hostId)]);
+export const syncedParticipants = pgTable('synced_participants', {
+  roomId: uuid('room_id').notNull().references(() => syncedRooms.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  playbackId: uuid('playback_id').references(() => playbackSessions.id, { onDelete: 'set null' }),
+  joined: boolean('joined').notNull().default(false),
+  buffering: boolean('buffering').notNull().default(false),
+  heartbeatAt: timestamp('heartbeat_at', { withTimezone: true }),
+}, t => [primaryKey({ columns: [t.roomId, t.userId] }), index('synced_participants_user_idx').on(t.userId)]);

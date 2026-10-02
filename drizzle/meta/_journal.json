@@ -197,6 +197,20 @@
       "when": 1790878898425,
       "tag": "0027_last_king_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1790915501273,
+      "tag": "0028_careless_lady_mastermind",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1790916297328,
+      "tag": "0029_youthful_blade",
+      "breakpoints": true
     }
   ]
 }

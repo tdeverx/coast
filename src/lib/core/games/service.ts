@@ -42,7 +42,9 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
     if (tracking.status !== undefined) v.parse(v.picklist(['planned', 'in-progress', 'completed', 'paused', 'dropped']), tracking.status);
   }
   const where = and(query ? ilike(games.title, `%${query.replace(/[\\%_]/g, '\\$&')}%`) : undefined,
-    tracking ? sql`exists(select 1 from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId} and ${tracking.status ? sql`status = ${tracking.status}` : sql`true`})` : undefined);
+    tracking ? (tracking.status
+      ? sql`(select status from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId} order by created_at desc, id desc limit 1) = ${tracking.status}`
+      : sql`exists(select 1 from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId})`) : undefined);
   const db = getDb();
   const [totals] = await db.select({ total: count() }).from(games).where(where);
   const { page, pages } = pagination(totals.total, requestedPage);

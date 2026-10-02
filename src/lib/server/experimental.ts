@@ -10,8 +10,8 @@ export function isExperimentalPath(path: string) {
     return false;
   }
   return (
-    /^\/(?:music|games)(?:\/|$)/.test(path) ||
-    /^\/api\/v1\/(?:music|games|game-playthroughs)(?:\/|$)/.test(path) ||
+    /^\/(?:music|games|synced)(?:\/|$)/.test(path) ||
+    /^\/api\/v1\/(?:music|games|game-playthroughs|synced)(?:\/|$)/.test(path) ||
     /^\/api\/v1\/providers\/[^/]+\/music(?:\/|$)/.test(path)
   );
 }

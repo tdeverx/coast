@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { AppError } from '$lib/server/security/errors';
 import * as v from 'valibot';
 import { listGames } from '$lib/core/games/service';
 import { searchIgdb } from '$lib/providers/igdb/service.server';
@@ -59,8 +60,10 @@ export const load: PageServerLoad = async ({ locals, url, depends }) => {
         gameCard({ ...item, id: item.externalId }, `/games/igdb/${instanceId}/${item.externalId}`)
       );
       hasMore = result.hasMore;
-    } catch {
-      failure = 'IGDB search could not be loaded. Please try again.';
+    } catch (cause) {
+      failure = cause instanceof AppError
+        ? cause.message
+        : 'IGDB search could not be loaded. Please try again.';
     }
   }
   return {

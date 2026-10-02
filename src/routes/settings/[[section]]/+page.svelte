@@ -17,7 +17,7 @@
   import ConflictList from '$lib/ui/components/ConflictList.svelte';
   import { page } from '$app/state';
   import { untrack } from 'svelte';
-  import { beforeNavigate, goto } from '$app/navigation';
+  import { beforeNavigate, goto, invalidateAll } from '$app/navigation';
 
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { api, change, message } from '$lib/ui/client';
@@ -28,6 +28,7 @@
   import QueueList from '$lib/ui/components/QueueList.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   let { data } = $props();
+  let inviteCode=$state('');
   let error = $state(''),
     success = $state(''),
     busy = $state(false),
@@ -217,7 +218,7 @@
   {#each socialSections as section}<label class="field">{section}<select value={prefs.social.sections?.[section]??'default'} onchange={event=>{const value=event.currentTarget.value;prefs.social={...prefs.social,sections:{...prefs.social.sections,[section]:value==='default'?undefined:value as Audience}};}}><option value="default">Use profile audience</option>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>{/each}
   {#each socialCategories as category}<label class="field">{category} sharing<select value={prefs.social.categories?.[category]??'public'} onchange={event=>{prefs.social={...prefs.social,categories:{...prefs.social.categories,[category]:event.currentTarget.value as Audience}};}}>{#each audiences as audience}<option value={audience}>{audience==='public'?'Use section audience':audience}</option>{/each}</select></label>{/each}
   <Heading title="Social notifications" />
-  {#each ['friend-request','friend-accepted','recommendation','reaction'] as const as kind}<label class="check"><input type="checkbox" checked={prefs.social.notifications?.[kind]!==false} onchange={event=>{prefs.social={...prefs.social,notifications:{...prefs.social.notifications,[kind]:event.currentTarget.checked}};}} />{kind}</label>{/each}
+  {#each ['friend-request','friend-accepted','recommendation','reaction','synced-invite'] as const as kind}<label class="check"><input type="checkbox" checked={prefs.social.notifications?.[kind]!==false} onchange={event=>{prefs.social={...prefs.social,notifications:{...prefs.social.notifications,[kind]:event.currentTarget.checked}};}} />{kind==='synced-invite'?'Synced session invitations':kind}</label>{/each}
   <p class="small">Friend requests still arrive in Friends when alerts are silenced.</p>
   {@render saveControls('Save privacy preferences')}
   </fieldset></form>
@@ -492,6 +493,7 @@
             >{/if}
         </div>
       {:else if data.section === 'jobs'}<JobsSettings
+          timing={data.jobTiming}
           providers={data.providers}
           actions={data.actions}
         />
@@ -712,6 +714,14 @@
                   >{/each}</tbody
               >
             </table>
+          </div>
+          <div class="panel stack form-width">
+            <h3>Invite someone</h3><p class="small">Single-use codes let someone register and import their Jellyfin progress before accessing Coast.</p>
+            <form class="stack" onsubmit={async(e)=>{e.preventDefault();try{const result=await api<{code:string}>('admin/invites',{days:Number(new FormData(e.currentTarget).get('days'))});inviteCode=result.code;await invalidateAll();}catch(cause){error=message(cause);}}}>
+              <label class="field">Expires after<select name="days"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="30">30 days</option></select></label><Button type="submit">Create invite code</Button>
+            </form>
+            {#if inviteCode}<label class="field">Copy this code — shown once<input readonly value={inviteCode} onclick={(e)=>e.currentTarget.select()} /></label><a href="/register">Registration page</a>{/if}
+            {#each data.invites as invite}<div class="spread"><span class="small">{invite.usedAt?`Used by ${invite.username||'deleted account'}`:invite.revokedAt?'Revoked':`Expires ${new Date(invite.expiresAt).toLocaleString()}`}</span>{#if !invite.usedAt&&!invite.revokedAt}<Button variant="ghost" onclick={()=>save(`admin/invites/${invite.id}`,{},'Invite revoked.','DELETE')}>Revoke</Button>{/if}</div>{/each}
           </div>
           <div class="panel stack form-width">
             <h3>Create a Coast account</h3>
