@@ -1,6 +1,6 @@
 <script lang="ts">
   import Heading from './Heading.svelte';
-  import { untrack } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { change, message } from '$lib/ui/client';
@@ -13,12 +13,13 @@
   import Dialog from './Dialog.svelte';
   import RowFilter from './RowFilter.svelte';
   import QueueList from './QueueList.svelte';
-  import type { QueueAction } from '$lib/ui/queue';
+  import { jobOutcome, jobRemedy, jobWaiting, type QueueAction } from '$lib/ui/queue';
+  import type { JobTiming } from '$lib/providers/job-timing.server';
   let {
     provider,
     task,
     jobs,
-    filter = 'active',
+    timing,
   }: {
     provider: {
       id: string;
@@ -32,8 +33,17 @@
     };
     task: ServiceTask;
     jobs: QueueAction[];
-    filter?: string;
+    timing?: JobTiming;
   } = $props();
+  let now = $state(Date.now());
+  onMount(() => { const timer = setInterval(() => now = Date.now(), 1000); return () => clearInterval(timer); });
+  const countdown = $derived(timing?.nextAt ? Math.max(0, Math.ceil((new Date(timing.nextAt).getTime() - now) / 1000)) : null);
+  function durationLabel(seconds: number) { const minutes = Math.floor(seconds / 60); return `${Math.floor(minutes / 60) ? `${Math.floor(minutes / 60)}h ` : ''}${minutes % 60 ? `${minutes % 60}m ` : ''}${seconds % 60}s`; }
+  async function retry(id: string) {
+    if (busy) return; busy = true; error = '';
+    try { await change(`queue/${id}/retry`, {}); notifyAction('Job queued for retry.'); }
+    catch (cause) { error = message(cause); } finally { busy = false; }
+  }
   let open = $state(false),
     history = $state(false),
     busy = $state(false),
@@ -51,17 +61,9 @@
   const active = $derived(
     jobs.filter((job) => ['pending', 'running', 'failed'].includes(job.state))
   );
-  const visible = $derived(
-    jobs.filter(
-      (job) =>
-        filter === 'all' ||
-        (filter === 'attention'
-          ? job.state === 'failed'
-          : filter === 'finished'
-            ? ['succeeded', 'cancelled'].includes(job.state)
-            : ['pending', 'running', 'failed'].includes(job.state))
-    )
-  );
+  const running = $derived(active.find(job => job.state === 'running'));
+  const failed = $derived(active.filter(job => job.state === 'failed'));
+  const queued = $derived(active.filter(job => job.state === 'pending'));
   const latest = $derived(jobs.find((job) => job.state === 'succeeded'));
   const progress = $derived(
     provider.libraryScan as
@@ -105,7 +107,7 @@
     try {
       const result = await change<{ queued: number; active: number; busy?: boolean }>(
         `providers/${provider.id}/run-job`,
-        { task: task.scope }
+        { task: task.scope, kind: task.kinds[0] }
       );
       notifyAction(
         result.busy
@@ -172,7 +174,7 @@
           ? 'On demand'
           : 'On changes'}</span
     >
-    {#if task.scope}<span>Every {interval} {interval === 1 ? 'minute' : 'minutes'}</span>{/if}
+    {#if task.scope}<span>{task.scope === 'metadata' ? 'Each title every' : 'Every'} {interval} {interval === 1 ? 'minute' : 'minutes'}{task.scope === 'live' ? ` idle · Every ${provider.schedule.liveActiveMinutes} ${provider.schedule.liveActiveMinutes === 1 ? 'minute' : 'minutes'} active` : ''}</span>{/if}
     {#if active.some((job) => job.state === 'running')}<span class="text-accent">Running</span>{/if}
     {#if active.some((job) => job.state === 'failed')}<span class="text-danger"
         >Needs attention</span
@@ -182,31 +184,34 @@
       Full scan every {provider.schedule.fullIntervalHours} hours{#if progress?.fullCompletedAt}
         · Last full scan {new Date(progress.fullCompletedAt).toLocaleString()}{/if}
     </p>
-  {:else if latest?.updatedAt}<p class="small">
-      Last successful run {new Date(latest.updatedAt).toLocaleString()}
-    </p>{/if}
-  {#if visible.length}<QueueList
-      actions={visible.slice(0, 3)}
-      compact
-    />{:else if task.id !== 'metadata'}<p class="small quiet">
-      {filter === 'attention'
-        ? 'No runs need attention.'
-        : filter === 'finished'
-          ? 'No finished runs.'
-          : filter === 'all'
-            ? 'No recent runs.'
-            : 'No active runs.'}
-    </p>{/if}
+{/if}
+  {#if running}
+    <p class="small" role="status">Running{#if running.connectionLabel} · {running.connectionLabel}{/if}</p>
+    {#if jobOutcome(running)}<p class="small">{jobOutcome(running)}</p>{/if}
+  {:else if queued.length}
+    <p class="small" role="status">{queued.some(jobWaiting) ? 'Waiting for service cooldown' : 'Queued · waiting for an available worker'}</p>
+    {#each queued.filter(jobWaiting) as job (job.id)}<p class="small">{job.connectionLabel} · Retry {new Date(job.nextAttemptAt!).toLocaleString()}</p>{/each}
+  {:else if task.scope}
+    <p class="small" role="status">{timing?.reason ?? (countdown === 0 ? 'Due now · checked within one minute' : countdown !== null ? `Next run in ${durationLabel(countdown)}` : 'Schedule assessment unavailable')}</p>
+    {#if timing?.nextAt && countdown !== null && countdown > 0}<p class="small">Next eligible {task.scope === 'metadata' ? 'batch' : 'account'} · {new Date(timing.nextAt).toLocaleString()}</p>{/if}
+  {:else}<p class="small">{task.id === 'metadata' ? 'Fetched when requested.' : 'Runs when a change needs delivery.'}</p>{/if}
+  {#if latest}<p class="small">{jobOutcome(latest)}</p>{/if}
+  {#if timing?.lastAt}<p class="small">Freshness · Last successful {provider.provider === 'tmdb' ? 'batch' : 'account'} {new Date(timing.lastAt).toLocaleString()}</p>{/if}
+  {#if timing && provider.provider !== 'tmdb' && timing.eligible}<p class="small">{timing.fresh} of {timing.eligible} eligible accounts current · Within two schedule intervals</p>{/if}
+  {#if timing?.reviews}<p class="small">{timing.reviews} titles need tracking review · Each owner can review them in <a href="/settings/pending" class="text-accent">Sync conflicts</a>.</p>{/if}
+  {#each failed as job (job.id)}
+    <div class="stack small">
+      <p>{job.connectionLabel} · {job.lastError || 'The failure reason was not retained. Review diagnostics.'}</p>
+      {#if jobRemedy(job) === 'connection'}<a href="/settings/connections" class="text-accent">Reconnect account</a>
+      {:else if jobRemedy(job) === 'permissions'}<a href="/settings/integrations" class="text-accent">Review service permissions</a>
+      {:else if jobRemedy(job) === 'metadata'}<a href="/settings/activity" class="text-accent">Review metadata diagnostics</a>
+      {:else}<Button variant="ghost" disabled={busy || running != null || queued.length > 0} onclick={() => retry(job.id)}>Retry {job.connectionLabel}</Button>{/if}
+    </div>
+  {/each}
   <div class="row task-controls">
-    {#if task.scope}<Button
-        variant="ghost"
-        icon="clock"
-        disabled={busy || !provider.enabled}
-        onclick={editSchedule}>Schedule</Button
-      >{/if}
-    {#if visible.length > 3}<Button variant="ghost" onclick={() => (history = true)}
-        >View all {visible.length} runs</Button
-      >{/if}
+    {#if task.scope}<Button variant="secondary" icon="refresh" disabled={busy || !provider.enabled || running != null || queued.length > 0 || (!provider.connectedAccounts && provider.provider !== 'tmdb')} onclick={() => void run()}>Run now</Button>
+      <Button variant="ghost" icon="clock" disabled={busy || !provider.enabled} onclick={editSchedule}>Edit schedule</Button>{/if}
+    {#if jobs.length}<Button variant="ghost" onclick={() => history = true}>Run history</Button>{/if}
   </div>
   {#if error && !open}<p class="notice error" role="alert">{error}</p>{/if}
 </article>
@@ -296,8 +301,5 @@
   }
   .task-controls {
     margin-top: auto;
-  }
-  .quiet {
-    color: var(--muted);
   }
 </style>

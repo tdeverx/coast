@@ -118,3 +118,12 @@ Edit profile can import the owner's profile icon from a connected Jellyfin or Tr
 Jellyfin source formats use its WebP conversion path. GIF is a deliberate upstream conversion exception, so the relay also accepts GIF87a/GIF89a bytes. GIF upload and provider import keep the original animation with the existing 5 MB limit. GIFs are stored under the Coast data directory and served through profile visibility checks; social responses carry a local URL. Other images retain the existing square WebP crop. Replaced GIF files are removed after successful profile saves.
 
 Provider behavior has fixture coverage. Live Trakt acceptance remains deferred and must be reported separately from fixtures.
+
+## Follow-up sequencing — 2 October 2026
+
+Real-account social validation and friend-avatar meanings remain deferred. Avatar design changes require the user's explicit approval. See [the app follow-up roadmap](roadmap.md) for the current priorities.
+
+
+### Follow-up implementation — 2 October 2026
+
+Private friend video/music sessions are now implemented behind the existing Experimental features policy. Simple expiring single-use invitation codes and existing-account Jellyfin onboarding are implemented separately, with main-site access gated on the initial user activity import. See [synced experiences and onboarding](synced-experiences.md). Public disposable item links, Jellyfin account provisioning, chat overlays and future-media synchronization remain roadmap work.

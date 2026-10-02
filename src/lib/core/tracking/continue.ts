@@ -30,7 +30,7 @@ export async function wholeWorkId(db: Database | Transaction, mediaId: string) {
   }
   return mediaId;
 }
-export async function rewatchScope(db: Database | Transaction, mediaId: string) {
+async function rewatchScope(db: Database | Transaction, mediaId: string) {
   const [item] = await db.select().from(s.media).where(eq(s.media.id, mediaId));
   if (item?.kind !== 'show') return [mediaId];
   const children = await db.execute<{ id: string }>(

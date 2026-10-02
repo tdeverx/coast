@@ -52,11 +52,12 @@ const playbackInput = v.object({
   sequence: v.optional(sequenceContextSchema),
   sourceId: v.optional(v.string()),
   edition: v.optional(v.string()),
+  expectedDuration: v.optional(v.pipe(v.number(),v.minValue(0.01),v.maxValue(604800))),
   fromStart: v.optional(v.boolean(), false),
   subtitleIndex: v.optional(v.number()),
   browser: browserSchema,
 });
-export async function getPlaybackSourceOptions(userId: string, mediaId: string) {
+async function getPlaybackSourceOptions(userId: string, mediaId: string) {
   const rows = await getDb()
     .select({ source: availability, provider: providerInstances.name })
     .from(availability)
@@ -208,6 +209,10 @@ export async function startPlayback(
             (r.availability.sourceId === source.id || r.availability.sourceId === 'default')
         );
         if (!sourceRow) continue;
+        if(data.expectedDuration!==undefined){
+          const duration=source.durationSeconds||sourceRow.availability.durationSeconds||item.runtimeMinutes! * 60;
+          if(!duration||Math.abs(duration-data.expectedDuration)>2)continue;
+        }
         try {
           const plan = planPlayback([source], data.browser, {
             delivery: config.playbackDelivery === 'relay-only' ? 'relay-only' : 'allow-direct',
@@ -227,7 +232,7 @@ export async function startPlayback(
   const best = candidates[0];
   if (!best)
     throw new Error(
-      'No available version can play on this device under the current playback policy.'
+      data.expectedDuration!==undefined ? 'No accessible source matches the synced session edition and duration.' : 'No available version can play on this device under the current playback policy.'
     );
   const { source } = best.plan;
   const query = new URLSearchParams({

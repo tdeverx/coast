@@ -2,10 +2,11 @@
   import Icon from './Icon.svelte';
   import { playbackTime as time } from '$lib/playback/time';
 
-  let { mediaId, href, audio = false, title, detail, artwork, current, duration, onseek, scrubbing = $bindable(false) }: {
+  let { mediaId, href, audio = false, disabled = false, title, detail, artwork, current, duration, onseek, scrubbing = $bindable(false) }: {
     mediaId: string;
     href?: string;
     audio?: boolean;
+    disabled?: boolean;
     title: string;
     detail: string;
     artwork?: string | null;
@@ -39,7 +40,7 @@
     type="range"
     aria-label="Playback position"
     aria-valuetext={`${time(position)} elapsed, ${time(length - position)} remaining`}
-    min="0" max={length} step="1" value={position} disabled={length === 0}
+    min="0" max={length} step="1" value={position} disabled={disabled || length === 0}
     onpointerdown={() => { preview = current; scrubbing = true; }}
     oninput={(event) => { preview = Number(event.currentTarget.value); scrubbing = true; }}
     onchange={(event) => { if (scrubbing) commit(event.currentTarget.value); }}

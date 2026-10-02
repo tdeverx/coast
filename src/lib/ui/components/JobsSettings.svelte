@@ -15,6 +15,7 @@
   let {
     providers,
     actions,
+    timing = [],
   }: {
     providers: {
       id: string;
@@ -27,8 +28,9 @@
       schedule: ProviderSchedule;
     }[];
     actions: QueueAction[];
+    timing?: import('$lib/providers/job-timing.server').JobTiming[];
   } = $props();
-  let filter = $state('active'),
+  let filter = $state('all'),
     service = $state('all'),
     type = $state('all');
   function matchesType(kind: string) {
@@ -54,22 +56,19 @@
           : ['pending', 'running', 'failed'].includes(job.state))
     );
   }
-  const sections = $derived(
-    providers
-      .filter((provider) => service === 'all' || provider.id === service)
-      .map((provider) => ({
+  const sections = $derived.by(() => {
+    const selectedStatus = filter;
+    const selectedService = service;
+    const matching = actions.filter(job => matchesType(job.kind)).filter(matchesState);
+    return providers.filter(provider => selectedService === 'all' || provider.id === selectedService).map(provider => {
+      const registered = serviceTasks(provider.provider);
+      return {
         provider,
-        tasks: serviceTasks(provider.provider).filter(matchesTask),
-        other: actions.filter(
-          (job) =>
-            job.instanceId === provider.id &&
-            !serviceTasks(provider.provider).some((task) => task.kinds.includes(job.kind)) &&
-            matchesType(job.kind) &&
-            matchesState(job)
-        ),
-      }))
-      .filter((section) => section.tasks.length || section.other.length)
-  );
+        tasks: registered.filter(task => task.kinds.length > 0 && matchesTask(task) && (selectedStatus === 'all' || matching.some(job => job.instanceId === provider.id && task.kinds.includes(job.kind)))),
+        other: matching.filter(job => job.instanceId === provider.id && !registered.some(task => task.kinds.includes(job.kind))),
+      };
+    }).filter(section => section.tasks.length || section.other.length);
+  });
   const orphaned = $derived(
     service === 'all'
       ? actions.filter(
@@ -133,7 +132,7 @@
       />{/snippet}
   </Heading>
   <p class="small intro">
-    {visible.length} matching runs · Up to 200 recent jobs, with active work first. Automatic-run toggles
+    One card per job · {visible.length} matching recent runs. Automatic-run toggles
     are in <a class="text-accent" href="/settings/integrations">Integrations</a>.
   </p>
   {#each sections as section (section.provider.id)}
@@ -161,7 +160,7 @@
                 task.kinds.includes(job.kind) &&
                 matchesType(job.kind)
             )}
-            {filter}
+            timing={timing.find(entry => entry.instanceId === section.provider.id && task.kinds.includes(entry.kind))}
           />{/each}
       </div>
       {#if section.other.length}<div class="panel">

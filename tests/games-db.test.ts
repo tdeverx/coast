@@ -47,7 +47,10 @@ suite('game catalog and private playthroughs', () => {
     await expect(logGameSession(owner, playthrough.id, { ...session, id: crypto.randomUUID() })).rejects.toThrow('Resume');
     await updatePlaythrough(owner, playthrough.id, { status: 'in-progress' });
     expect((await playthroughDetails(owner, playthrough.id)).completedAt).toBeNull();
+    await updatePlaythrough(owner, playthrough.id, { status: 'completed' });
     const replay = await createPlaythrough(owner, gameId, { repeat: true, status: 'in-progress' });
+    expect((await listGames('', 1, { userId: owner, status: 'completed' })).items.some((item) => item.id === gameId)).toBe(false);
+    expect((await listGames('', 1, { userId: owner, status: 'in-progress' })).items.some((item) => item.id === gameId)).toBe(true);
     expect((await playthroughDetails(owner, replay.id)).minutesPlayed).toBe(0);
     expect((await playthroughDetails(owner, replay.id)).startedAt).not.toBeNull();
     expect((await playthroughDetails(owner, replay.id)).status).toBe('in-progress');

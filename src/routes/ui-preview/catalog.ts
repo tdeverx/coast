@@ -54,6 +54,7 @@ export const components = [
   'SequenceControl',
   'Shelf',
   'SocialControls',
+  'SyncedControls',
 ] as const;
 
 export const referenceSections = [

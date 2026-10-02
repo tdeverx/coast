@@ -1,6 +1,7 @@
+import { ProviderHttpError } from '../src/lib/server/security/provider-fetch';
 import { describe, expect, test } from 'bun:test';
 import * as v from 'valibot';
-import { safeDiagnosticErrorCode, validationDiagnostic } from '../src/lib/server/queue';
+import { jobFailureMessage, safeDiagnosticErrorCode, validationDiagnostic } from '../src/lib/server/queue';
 
 describe('queue validation diagnostics', () => {
   test('records failing field paths and types without recording provider values', () => {
@@ -31,4 +32,11 @@ describe('queue validation diagnostics', () => {
     );
     expect(safeDiagnosticErrorCode(new Error('private error details'))).toBeUndefined();
   });
+});
+
+test('job rejection messages distinguish authentication, access and absent metadata', () => {
+  expect(jobFailureMessage(new ProviderHttpError(401), true)).toContain('Reconnect');
+  expect(jobFailureMessage(new ProviderHttpError(403), true)).toContain('permissions');
+  expect(jobFailureMessage(new ProviderHttpError(404), true)).toContain('unavailable');
+  expect(jobFailureMessage(new ProviderHttpError(429), false)).toContain('cooldown');
 });

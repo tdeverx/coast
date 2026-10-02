@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, expect, test } from 'bun:test';
+import { jobTimings } from '../src/lib/providers/job-timing.server';
 import { getSql } from '../src/lib/server/db';
 import {
   enqueueAction,
@@ -212,4 +213,27 @@ run('concurrent account requests cannot queue the same service task twice', asyn
  expect(new Set(ids).size).toBe(1);
  const actions=await getSql()`select id from outbox_actions where kind='jellyfin.sync' and connection_id in (${connections[0]},${connections[1]}) and state in ('pending','running')`;
  expect(actions).toHaveLength(1);
+});
+
+run('Run now targets the selected card rather than its shared schedule siblings', async () => {
+  await getSql()`update provider_connections set settings = ${{ sync: {history: true, lists: true}, collectionProjection: {enabled:true} }}::jsonb where id=${connections[3]}`;
+  await runProviderJob(users[0], instances[2], 'tracking', 'trakt.import');
+  const rows = await getSql()`select kind from outbox_actions where connection_id=${connections[3]}`;
+  expect(rows.map((row: { kind: string }) => row.kind)).toEqual(['trakt.import']);
+  await expect(runProviderJob(users[0], instances[2], 'tracking', 'jellyfin.sync')).rejects.toThrow('unavailable');
+});
+
+run('Jobs timing uses every eligible account rather than one recent successful scan', async () => {
+  await getSql()`insert into sync_checkpoints(connection_id,kind,completed_at) values(${connections[0]},'jellyfin-user',now()) on conflict(connection_id,kind) do update set completed_at=now()`;
+  const timing = (await jobTimings()).find(entry => entry.instanceId === instances[0] && entry.kind === 'jellyfin.sync');
+  expect(timing?.eligible).toBe(2);
+  expect(timing?.fresh).toBe(1);
+  expect(new Date(timing!.nextAt!).getTime()).toBeLessThanOrEqual(Date.now()+1000);
+});
+run('successful delivery retains its measured outcome for run history', async () => {
+  registerActionHandler('fixture.outcome', async () => ({added:84}));
+  const id=await queue(0,'fixture.outcome');
+  await runQueueOnce();
+  const [row]=await getSql()`select payload->'_jobOutcome' as outcome from outbox_actions where id=${id}`;
+  expect(row.outcome).toEqual({added:84});
 });

@@ -1,3 +1,4 @@
+import {listInvites} from '$lib/server/auth/onboarding';
 import { settingsSections, administratorSettings } from '$lib/settings/sections';
 import type { PageServerLoad } from './$types';
 import { getPendingConflicts } from '$lib/sync/conflicts';
@@ -16,6 +17,7 @@ import {
   users,
 } from '$lib/server/db/schema';
 import { eq, desc } from 'drizzle-orm';
+import { jobTimings } from '$lib/providers/job-timing.server';
 import { adminDemand } from '$lib/collection/demand.server';
 export const load = (async ({ locals, params, depends, url }) => {
   depends('coast:settings');
@@ -32,6 +34,7 @@ export const load = (async ({ locals, params, depends, url }) => {
   const config = await getConfig();
   return {
     section,
+    invites: section==='users'?await listInvites(locals.user):[],
     hasLocalPassword:
       section === 'account'
         ? (
@@ -71,6 +74,7 @@ export const load = (async ({ locals, params, depends, url }) => {
     health: section === 'admin' ? await systemHealth(locals.user) : null,
     demand: section === 'admin' ? adminDemand(url) : null,
     users: section === 'users' ? await listUsers(locals.user) : [],
+    jobTiming: section === 'jobs' ? await jobTimings() : [],
     actions: ['admin', 'jobs'].includes(section) ? await listActions(locals.user) : [],
     loggingAudit:
       section === 'activity'

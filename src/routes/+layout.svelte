@@ -1,5 +1,6 @@
 <script lang="ts">
   import '../app.css';
+  import {syncedPlayer,pollSynced,restoreSynced,leaveSynced} from '$lib/playback/synced/client.svelte';
   import { installBrowserDiagnostics } from '$lib/ui/diagnostics';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
@@ -15,6 +16,7 @@
   let content: HTMLElement;
   const watching = $derived(!!data.user && !!player.session && player.session.mediaType!=='audio' && !player.paused);
   onNavigate(async (navigation) => {
+    if(player.session&&player.session.mediaType!=='audio'&&syncedPlayer.room)await leaveSynced();
     if (player.session && player.session.mediaType!=='audio' && !player.paused) pausePlayback();
     const hero = document.querySelector<HTMLElement>('[data-hero-id]');
     if (
@@ -38,7 +40,10 @@
       document.documentElement.style.overflow = previous;
     };
   });
+  $effect(()=>{syncedPlayer.userId=data.user?.id||'';});
   onMount(() => {
+    if(data.user&&data.experimentalFeatures)void restoreSynced();
+    const syncTimer=setInterval(()=>{if(data.user&&data.experimentalFeatures)void pollSynced();},2000);
     const stopDiagnostics = data.user ? installBrowserDiagnostics() : () => {};
     const expire = () => (expired = true);
     window.addEventListener('coast:auth-expired', expire);
@@ -58,6 +63,7 @@
       stopDiagnostics();
       window.removeEventListener('coast:auth-expired', expire);
       clearInterval(timer);
+      clearInterval(syncTimer);
     };
   });
 </script>
@@ -76,7 +82,7 @@
   class:watching
 >
   <PersistentPlayer /><MediaHero mode="player" />
-  {#if data.user || data.publicRead}<Header
+  {#if (data.user || data.publicRead) && page.url.pathname !== '/onboarding'}<Header
       user={data.user}
       unread={data.notifications.filter((notification) => !notification.readAt).length}
     />{/if}

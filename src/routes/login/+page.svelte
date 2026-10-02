@@ -69,6 +69,7 @@
       ><Button type="submit" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</Button>
     </form>
     <div class="auth-footer">
+      <a href="/register">Join with an invite code</a>
       <a href="/recovery">Administrator recovery</a>
     </div>
   </div>

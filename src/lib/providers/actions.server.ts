@@ -26,17 +26,17 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
         const config = await getConfig();
         if ((action.kind.startsWith('trakt.') && !config.enableTrakt) || (action.kind.startsWith('seerr.') && !config.enableRequests))
           throw new PermanentActionError('This service is disabled by the administrator.');
-        await handler(action);
+        return await handler(action);
       } catch (error) {
         if (error instanceof ProviderActionError) throw new PermanentActionError(error.message);
         throw error;
       }
     });
   if (options.maintenance !== false) startProviderMaintenance();
-  register('catalogue.user-scan', async action => { await (await import('$lib/catalogue/maintenance.server')).scanUserCatalogue(action); });
+  register('catalogue.user-scan', async action => (await import('$lib/catalogue/maintenance.server')).scanUserCatalogue(action));
   register('tmdb.refresh', async action => {
     v.parse(v.object({ instanceId: uuid, force: v.optional(v.boolean(), false) }), action.payload);
-    await (await import('$lib/catalogue/maintenance.server')).refreshSharedMetadata(action);
+    return (await import('$lib/catalogue/maintenance.server')).refreshSharedMetadata(action);
   });
   register('social.checkin-complete',async action=>{await (await import('$lib/social/presence.server')).completeCheckin(action.userId,v.parse(uuid,action.payload.checkinId));});
   register('trakt.live',async action=>{if(action.connectionId)await (await import('$lib/social/trakt.server')).pollLive(action.userId,action.connectionId);});
@@ -226,7 +226,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     const { scanJellyfinLibrary } = await import('$lib/sync/jellyfin');
     let stage = 'connection';
     try {
-      await scanJellyfinLibrary(
+      const result = await scanJellyfinLibrary(
         action.userId,
         action.connectionId,
         action.payload.full !== false,
@@ -234,6 +234,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
           stage = next;
         }
       );
+      return { checked: result.checked };
     } catch (error) {
       tagDiagnosticStage(error, stage);
       throw error;
@@ -243,7 +244,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     if (!action.connectionId) throw new PermanentActionError('The Jellyfin connection is unavailable.');
     const { syncJellyfinUser } = await import('$lib/sync/jellyfin');
     let stage = 'connection';
-    try { await syncJellyfinUser(action.userId, action.connectionId, next => { stage = next; }); }
+    try { const result = await syncJellyfinUser(action.userId, action.connectionId, next => { stage = next; }); return { checked: result.checked }; }
     catch (error) { tagDiagnosticStage(error, stage); throw error; }
   });
   register('trakt.import', async (action) => {

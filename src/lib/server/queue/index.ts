@@ -22,7 +22,8 @@ export interface OutboxAction {
   correlationId: string;
   instanceId?: string | null;
 }
-export type ActionHandler = (action: OutboxAction) => Promise<void>;
+export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number };
+export type ActionHandler = (action: OutboxAction) => Promise<void | JobOutcome>;
 
 const handlers = new Map<string, ActionHandler>();
 export class PermanentActionError extends Error {
@@ -78,6 +79,20 @@ export async function enqueueAction(input: {
       VALUES (${input.userId}, ${input.connectionId || null}, ${input.kind}, ${input.payload}::jsonb, ${input.compactionKey || null}, clock_timestamp(), ${correlationId(context.getStore())}) RETURNING id`;
     return row.id;
   });
+}
+
+/** Safe, actionable descriptions without leaking provider response bodies. */
+export function jobFailureMessage(error: unknown, permanent: boolean) {
+  if (error instanceof ProviderHttpError) {
+    if (error.status === 401) return 'Authentication failed. Reconnect this account in Connections before retrying.';
+    if (error.status === 403) return 'Access denied. Check this account’s service permissions before retrying.';
+    if ([404, 410].includes(error.status)) return 'The requested item or endpoint is unavailable. Check the source or metadata mapping.';
+    if (error.status === 429) return 'Service rate limit reached. Coast will retry after the service cooldown.';
+    if (error.status >= 500) return 'The service is unavailable. Coast will retry automatically.';
+  }
+  if (error instanceof v.ValiError) return 'The service returned unsupported data. Review diagnostics before retrying.';
+  if (safeDiagnosticErrorCode(error) === 'catalogue.identity-conflict') return 'Conflicting metadata identities need administrator review. Retrying cannot resolve the mapping.';
+  return permanent ? 'This action could not be accepted. Review the connection and diagnostics before retrying.' : 'The connection was interrupted. Coast will retry automatically.';
 }
 
 export function retryDelayMs(attempt: number): number {
@@ -214,10 +229,10 @@ export async function runQueueOnce(): Promise<boolean> {
         }
         const handler = handlers.get(action.kind);
         if (!handler) throw new PermanentActionError('This action type is no longer supported.');
-        await handler(action);
+        const outcome = await handler(action);
         await getSql().begin(async (sql) => {
           const completed =
-            await sql`UPDATE outbox_actions SET state = 'succeeded', locked_at = NULL, last_error = NULL, updated_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
+            await sql`UPDATE outbox_actions SET state = 'succeeded', locked_at = NULL, last_error = NULL, payload = payload || ${outcome ? { _jobOutcome: outcome } : {}}::jsonb, updated_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
           if (completed.length)
             await resolveNotification(action.userId, `outbox:${action.id}`, sql);
         });
@@ -241,9 +256,7 @@ export async function runQueueOnce(): Promise<boolean> {
           error instanceof v.ValiError ||
           (error instanceof ProviderHttpError &&
             [400, 401, 403, 404, 405, 409, 410, 422].includes(error.status));
-        const message = permanent
-          ? 'The connected service could not accept this action. An administrator can review the connection and retry it.'
-          : 'The connected service is unavailable. Coast will retry automatically.';
+        const message = jobFailureMessage(error, permanent);
         const retryAfter =
           error instanceof ProviderHttpError
             ? Math.min(86_400_000, Math.max(0, (error.retryAfterSeconds || 0) * 1000))
@@ -363,7 +376,8 @@ export async function listActions(actor: SessionUser | null) {
         processed?: number;
         total?: number | null;
         phase?: string;
-      } | null>`case when ${outboxActions.kind}='tmdb.refresh' and (${providerInstances.settings}->'metadataScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} then ${providerInstances.settings}->'metadataScan' when ${outboxActions.kind}='jellyfin.library' and (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} then ${providerInstances.settings}->'libraryScan' when ${outboxActions.kind}='jellyfin.sync' and (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} then ${providerConnections.settings}->'userSync' else null end`,
+      } | null>`case when ${outboxActions.kind}='tmdb.refresh' and (${providerInstances.settings}->'metadataScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerInstances.settings}->'metadataScan'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerInstances.settings}->'metadataScan' when ${outboxActions.kind}='jellyfin.library' and (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerInstances.settings}->'libraryScan' when ${outboxActions.kind}='jellyfin.sync' and (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerConnections.settings}->'userSync' else null end`,
+      outcome: sql<JobOutcome | null>`${outboxActions.payload}->'_jobOutcome'`,
       instanceId: providerInstances.id,
       provider: providerInstances.provider,
       updatedAt: outboxActions.updatedAt,

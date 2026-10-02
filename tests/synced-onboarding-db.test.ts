@@ -1,0 +1,106 @@
+import {enqueueAction} from '../src/lib/server/queue';
+import {encryptCredential} from '../src/lib/server/security/credentials';
+import {beforeAll,afterAll,expect,test} from 'bun:test';
+import {getSql} from '../src/lib/server/db';
+import {getConfig,updateConfig,type CoastConfig} from '../src/lib/server/config';
+import {createInvite,redeemInvite,onboardingPending,onboardingStatus,revokeInvite,retryOnboarding} from '../src/lib/server/auth/onboarding';
+import {createRoom,inviteParticipant,joinRoom,roomState,commandRoom,leaveRoom} from '../src/lib/playback/synced/service.server';
+const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
+const ids=Array.from({length:3},()=>crypto.randomUUID()),instance=crypto.randomUUID(),work=crypto.randomUUID();
+const musicIds=[crypto.randomUUID(),crypto.randomUUID()];
+const conn=ids.map(()=>crypto.randomUUID()),play=ids.map(()=>crypto.randomUUID());
+const admin={id:ids[0],username:'sync-host',role:'admin' as const,email:null,settings:{}};
+let config:CoastConfig;const extra:string[]=[];
+beforeAll(async()=>{
+ if(process.env.COAST_DB_TEST!=='1')return;config=await getConfig();
+ for(const [i,id]of ids.entries())await getSql()`INSERT INTO users (id,username,role) VALUES (${id},${`sync-${id}`},${i===0?'admin':'user'})`;
+ await updateConfig(admin,{experimentalFeatures:true});
+ await getSql()`INSERT INTO works (id,category,kind) VALUES (${work},'screen','movie')`;
+ await getSql()`INSERT INTO provider_instances (id,provider,name,base_url,server_identity) VALUES (${instance},'jellyfin','Sync fixture','https://fixture.invalid','fixture')`;
+ for(const [i,id] of conn.entries()){
+  await getSql()`INSERT INTO provider_connections (id,user_id,instance_id,status,external_user_id,credentials) VALUES (${id},${ids[i]},${instance},'connected',${ids[i]},${await encryptCredential(JSON.stringify({accessToken:'fixture'}))})`;
+  const [p]=await getSql()`INSERT INTO provider_items (instance_id,external_id,media_id,kind) VALUES (${instance},${ids[i]},${work},'movie') RETURNING id`;
+  await getSql()`INSERT INTO playback_sessions (id,user_id,media_id,connection_id,provider_item_id,source_id,delivery,stream_path,duration_seconds,expires_at) VALUES (${play[i]},${ids[i]},${work},${id},${p.id},'source','direct','/stream',120,NOW()+INTERVAL '1 hour')`;
+ }
+ await getSql()`INSERT INTO friendships (user_a,user_b,requested_by,state) VALUES (least(${ids[0]}::uuid,${ids[1]}::uuid),greatest(${ids[0]}::uuid,${ids[1]}::uuid),${ids[0]},'accepted')`;
+});
+afterAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;await updateConfig(admin,config);for(const id of [work,...musicIds])await getSql()`DELETE FROM works WHERE id=${id}`;await getSql()`DELETE FROM provider_instances WHERE id=${instance}`;for(const id of [...extra,...ids])await getSql()`DELETE FROM users WHERE id=${id}`;});
+run('invites are hashed, single-use under concurrency, and create restricted normal accounts',async()=>{
+ const invite=await createInvite(admin,{days:7});
+ const [stored]=await getSql()`SELECT token_hash FROM registration_invites WHERE id=${invite.id}`;expect(stored.token_hash).not.toBe(invite.code);
+ const attempts=await Promise.allSettled([0,1].map(i=>redeemInvite({code:invite.code,username:`invite-${crypto.randomUUID()}`.slice(0,32),password:'a strong fixture password'},`fixture-${i}`)));
+ const accepted=attempts.filter(x=>x.status==='fulfilled');expect(accepted).toHaveLength(1);
+ const user=(accepted[0] as PromiseFulfilledResult<Awaited<ReturnType<typeof redeemInvite>>>).value.user;extra.push(user.id);expect(user.role).toBe('user');expect(await onboardingPending(user.id)).toBe(true);
+ const revoked=await createInvite(admin,{days:1});await revokeInvite(admin,revoked.id);await expect(redeemInvite({code:revoked.code,username:'revoked-fixture',password:'a strong fixture password'},'fixture-revoked')).rejects.toThrow('invalid');
+ const expired=await createInvite(admin,{days:1});await getSql()`UPDATE registration_invites SET expires_at=NOW()-INTERVAL '1 second' WHERE id=${expired.id}`;
+ await expect(redeemInvite({code:expired.code,username:'expired-fixture',password:'a strong fixture password'},'fixture-expired')).rejects.toThrow('invalid');
+});
+run('shared scan cannot complete onboarding; fresh current-account user traversal can',async()=>{
+ await getSql()`INSERT INTO user_onboarding (user_id,connection_id,account_generation,requested_at) SELECT ${ids[1]},id,account_generation,NOW()-INTERVAL '1 minute' FROM provider_connections WHERE id=${conn[1]}`;
+ await getSql()`INSERT INTO sync_checkpoints (connection_id,kind,completed_at) VALUES (${conn[1]},'jellyfin-full',NOW())`;
+ expect((await onboardingStatus(ids[1])).complete).toBe(false);
+ await getSql()`INSERT INTO sync_checkpoints (connection_id,kind,completed_at) VALUES (${conn[1]},'jellyfin-user',NOW()-INTERVAL '1 hour')`;
+ expect((await onboardingStatus(ids[1])).complete).toBe(false);
+ await getSql()`UPDATE sync_checkpoints SET completed_at=NOW(),scan_id=gen_random_uuid() WHERE connection_id=${conn[1]} AND kind='jellyfin-user'`;
+ expect((await onboardingStatus(ids[1])).complete).toBe(false);
+ await getSql()`UPDATE sync_checkpoints SET scan_id=NULL WHERE connection_id=${conn[1]} AND kind='jellyfin-user'`;
+ await getSql()`UPDATE user_onboarding SET account_generation=gen_random_uuid() WHERE user_id=${ids[1]}`;
+ const switched=await onboardingStatus(ids[1]);expect(switched.complete).toBe(false);expect(switched.reconnect).toBe(true);
+ await getSql()`UPDATE user_onboarding o SET account_generation=c.account_generation FROM provider_connections c WHERE o.user_id=${ids[1]} AND c.id=o.connection_id`;
+ expect((await onboardingStatus(ids[1])).complete).toBe(true);
+});
+run('private friend membership, own source, revision control, buffering and revocation',async()=>{
+ let r=await createRoom(ids[0],{playbackId:play[0],positionSeconds:20});
+ await expect(inviteParticipant(ids[0],r.id,{friendId:ids[2]})).rejects.toThrow('friends');
+ await expect(roomState(ids[2],r.id)).rejects.toThrow('not found');
+ await getSql()`UPDATE users SET settings=${{social:{audience:'private'}}}::jsonb WHERE id=${ids[0]}`;
+ await inviteParticipant(ids[0],r.id,{friendId:ids[1]});
+ const [notice]=await getSql()`SELECT social_notification_visible(user_id,kind,data) AS visible FROM notifications WHERE source_key=${`synced:${r.id}`} AND user_id=${ids[1]}`;expect(notice.visible).toBe(true);
+ await getSql()`UPDATE users SET settings='{}'::jsonb WHERE id=${ids[0]}`;
+ await expect(joinRoom(ids[1],r.id,{playbackId:play[0],revision:r.revision})).rejects.toThrow('own');
+ await getSql()`UPDATE playback_sessions SET duration_seconds=130 WHERE id=${play[1]}`;
+ await expect(joinRoom(ids[1],r.id,{playbackId:play[1],revision:r.revision})).rejects.toThrow('different');
+ await getSql()`UPDATE playback_sessions SET duration_seconds=120 WHERE id=${play[1]}`;
+ r=await joinRoom(ids[1],r.id,{playbackId:play[1],revision:r.revision});
+ await expect(commandRoom(ids[1],r.id,{action:'play',revision:r.revision})).rejects.toThrow('host');
+ const old=r.revision;r=await commandRoom(ids[0],r.id,{action:'play',revision:r.revision});
+ await expect(commandRoom(ids[0],r.id,{action:'pause',revision:old})).rejects.toThrow('changed');
+ r=await roomState(ids[1],r.id,{buffering:true});expect(r.bufferingPaused).toBe(true);
+ r=await roomState(ids[1],r.id,{buffering:false});expect(r.bufferingPaused).toBe(false);
+ r=await commandRoom(ids[0],r.id,{action:'policy',policy:'catch-up',revision:r.revision});
+ r=await roomState(ids[1],r.id,{buffering:true});expect(r.bufferingPaused).toBe(false);
+ await getSql()`UPDATE synced_participants SET heartbeat_at=NOW()-INTERVAL '30 seconds' WHERE room_id=${r.id} AND user_id=${ids[0]}`;
+ r=await roomState(ids[1],r.id,{buffering:false});expect(r.bufferingPaused).toBe(true);
+ r=await roomState(ids[0],r.id,{buffering:false});expect(r.bufferingPaused).toBe(false);
+ await getSql()`UPDATE provider_connections SET external_user_id='replacement-account' WHERE id=${conn[1]}`;
+ r=await roomState(ids[0],r.id);expect(r.participants.find(p=>p.userId===ids[1])?.joined).toBe(false);
+ await leaveRoom(ids[0],r.id);expect((await roomState(ids[0],r.id)).ended).toBe(true);
+ await updateConfig(admin,{experimentalFeatures:false});await expect(createRoom(ids[0],{playbackId:play[0],positionSeconds:0})).rejects.toThrow('disabled');await updateConfig(admin,{experimentalFeatures:true});
+});
+
+run('music queue keeps gaps, order and repeated track positions',async()=>{
+ const playbackIds:string[]=[];
+ for(const [i,id]of musicIds.entries()){
+  await getSql()`INSERT INTO works (id,category,kind) VALUES (${id},'music','track')`;
+  await getSql()`INSERT INTO music_works (id,title,kind,duration_seconds) VALUES (${id},${`Track ${i}`},'track',12)`;
+  const [item]=await getSql()`INSERT INTO provider_items (instance_id,external_id,media_id,kind) VALUES (${instance},${id},${id},'track') RETURNING id`;
+  const [p]=await getSql()`INSERT INTO playback_sessions (user_id,media_id,media_type,connection_id,provider_item_id,source_id,delivery,stream_path,duration_seconds,expires_at) VALUES (${ids[0]},${id},'audio',${conn[0]},${item.id},'source','direct','/audio',12,NOW()+INTERVAL '1 hour') RETURNING id`;
+  playbackIds.push(p.id);
+ }
+ let r=await createRoom(ids[0],{playbackId:playbackIds[0],positionSeconds:0,queue:[musicIds[0],musicIds[1],musicIds[0]],queueIndex:2});
+ expect(r.queueItems.map(i=>i.id)).toEqual([musicIds[0],musicIds[1],musicIds[0]]);expect(r.queueIndex).toBe(2);expect(r.queueItems[1].availability).toBe('unknown');
+ r=await commandRoom(ids[0],r.id,{action:'item',revision:r.revision,playbackId:playbackIds[1],queueIndex:1});expect(r.mediaId).toBe(musicIds[1]);expect(r.queueIndex).toBe(1);
+ await leaveRoom(ids[0],r.id);
+});
+
+run('onboarding ignores obsolete jobs and owner retries respect the service lane',async()=>{
+ await getSql()`UPDATE outbox_actions SET state='cancelled' WHERE connection_id=ANY(${getSql().array(conn,'TEXT')}::uuid[]) AND state IN ('pending','running')`;
+ await getSql()`INSERT INTO user_onboarding (user_id,connection_id,account_generation) SELECT ${ids[2]},id,account_generation FROM provider_connections WHERE id=${conn[2]}`;
+ await getSql()`INSERT INTO outbox_actions (user_id,connection_id,kind,payload,state,created_at) VALUES (${ids[2]},${conn[2]},'jellyfin.sync','{}'::jsonb,'cancelled',NOW()-INTERVAL '2 hours')`;
+ const busy=await enqueueAction({userId:ids[0],connectionId:conn[0],kind:'jellyfin.sync',payload:{}});
+ const waiting=await onboardingStatus(ids[2]);expect(waiting.complete).toBe(false);expect(waiting.progress).toBeNull();
+ await expect(retryOnboarding(ids[2])).rejects.toThrow('already queued or running');
+ await getSql()`UPDATE outbox_actions SET state='cancelled' WHERE id=${busy}`;
+ await retryOnboarding(ids[2]);expect((await onboardingStatus(ids[2])).progress?.state).toBe('pending');
+ const [count]=await getSql()`SELECT count(*)::int AS total FROM outbox_actions WHERE user_id=${ids[2]} AND kind='jellyfin.sync' AND state IN ('pending','running')`;expect(count.total).toBe(1);
+});

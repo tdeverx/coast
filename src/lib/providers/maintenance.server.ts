@@ -1,3 +1,4 @@
+import { serviceTasks } from './tasks';
 import { providerSchedule, providerScheduleSchema } from '$lib/providers/schedule';
 import * as v from 'valibot';
 import { and, eq, sql, inArray } from 'drizzle-orm';
@@ -61,7 +62,8 @@ export async function updateProviderSchedule(adminId: string, instanceId: string
 export async function runProviderJob(
   adminId: string,
   instanceId: string,
-  task: 'all' | 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'catalogue' | 'metadata' = 'all'
+  task: 'all' | 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'catalogue' | 'metadata' = 'all',
+  kind?: string
 ) {
   await requireProviderAdmin(adminId);
   const instance = await getInstance(instanceId);
@@ -78,7 +80,8 @@ export async function runProviderJob(
     ).includes(task)
   )
     throw new Error('This task is unavailable for the selected service.');
-  return scheduleProviderMaintenance({ instanceId, force: true, task, adminId });
+  if (kind && !serviceTasks(instance.provider).some(entry => entry.scope === task && entry.kinds.includes(kind))) throw new Error('This job is unavailable for the selected service.');
+  return scheduleProviderMaintenance({ instanceId, force: true, task, adminId, kind });
 }
 
 let maintenanceTimer: ReturnType<typeof setInterval> | undefined;
@@ -95,6 +98,7 @@ export function stopProviderMaintenance() {
 export async function scheduleProviderMaintenance(
   options: {
     instanceId?: string;
+    kind?: string;
     adminId?: string;
     force?: boolean;
     task?: 'all' | 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'catalogue' | 'metadata';
@@ -193,6 +197,7 @@ export async function scheduleProviderMaintenance(
     const handledLibraries = new Set<string>();
     const requests = new Map<string, { connection: (typeof eligible)[number]['connection']; kind: string; payload: Record<string, unknown>; last: number }[]>();
     async function queue(connection: (typeof eligible)[number]['connection'], kind: string, payload: Record<string, unknown> = {}) {
+      if (options.kind && options.kind !== kind) return;
       const key=`${connection.instanceId}:${kind}`;
       const last=kind==='jellyfin.sync' ? checkpointByKey.get(`${connection.id}:jellyfin-user`)??0 : new Date(jobsByKey.get(`${connection.id}:${kind}`)?.last??0).getTime();
       const candidates=requests.get(key)??[];

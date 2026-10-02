@@ -1,9 +1,15 @@
-import { glassPresets, type GlassVariant } from './presets';
+import { glassPresets, type GlassVariant, type GlassSurface } from './presets';
+import grainUrl from './grain.png';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export type LiquidGlassOptions = {
   variant?: GlassVariant;
   enabled?: boolean;
+  surface?: Partial<GlassSurface>;
+  fallback?: Partial<GlassSurface>;
+  renderer?: 'auto' | 'css';
+  /** UI reference previews are independent of the user's experimental glass switch. */
+  preview?: boolean;
 };
 
 let filterSequence = 0;
@@ -94,7 +100,7 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     definition: SVGSVGElement | null = null;
   const settings = () => {
     const options = typeof requested === 'boolean' ? { enabled: requested } : requested;
-    const preset = glassPresets.materials[options.variant ?? 'clear'];
+    const preset = { ...glassPresets.materials[options.variant ?? 'clear'], ...options.surface };
     return {
       ...preset,
       refraction: preset.refraction,
@@ -106,11 +112,33 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       ...options,
     };
   };
+  let grain: HTMLSpanElement | undefined;
+  let mapCache: { key: string; url: string | null } | undefined;
   const materialProperties = new Set<string>();
   function applySurface(enhanced: boolean) {
     const variant = settings().variant ?? 'clear';
-    const surface = glassPresets[enhanced ? 'materials' : 'fallbacks'][variant];
+    const options = settings();
+    const surface = { ...glassPresets[enhanced ? 'materials' : 'fallbacks'][variant], ...(enhanced ? options.surface : options.fallback) };
     node.dataset.coastGlassVariant = variant;
+    if (surface.noiseOpacity > 0) {
+      if (!grain) {
+        grain = document.createElement('span');
+        grain.className = 'coast-glass-grain';
+        grain.setAttribute('aria-hidden', 'true');
+        grain.style.backgroundImage = `url("${grainUrl}")`;
+        node.prepend(grain);
+      }
+      grain.style.opacity = `${surface.noiseOpacity / 100}`;
+      grain.style.backgroundSize = `${128 * surface.noiseScale}px ${128 * surface.noiseScale}px`;
+      grain.style.backgroundColor = surface.noiseColor;
+      grain.style.mixBlendMode = surface.noiseBlend;
+      grain.style.maskImage = surface.noiseCoverage === 'edges'
+        ? 'radial-gradient(closest-side, transparent 40%, black 100%)'
+        : 'none';
+    } else {
+      grain?.remove();
+      grain = undefined;
+    }
     const values = {
       fill: `color-mix(in srgb, ${surface.tint} ${surface.fillOpacity}%, transparent)`,
       filter: `blur(${surface.blur}px) saturate(${surface.saturation}%) brightness(${surface.brightness}%)`,
@@ -147,11 +175,12 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     const options = settings();
     const enabled =
       nativeSupported &&
+      options.renderer !== 'css' &&
       options.refraction > 0 &&
       options.enabled !== false &&
-      document.querySelector('[data-coast-glass="on"]');
+      (options.preview || document.querySelector('[data-coast-glass="on"]'));
     if (!enabled) {
-      clearNative(!nativeSupported || options.refraction === 0 ? 'css' : 'disabled');
+      clearNative(options.renderer === 'css' || !nativeSupported || options.refraction === 0 ? 'css' : 'disabled');
       return;
     }
     const width = Math.round(node.offsetWidth),
@@ -166,7 +195,10 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       width / 2,
       height / 2
     );
-    const mapUrl = displacementMap(width, height, padding, radius, options.depth);
+    const mapKey = `${width}:${height}:${padding}:${radius}:${options.depth}`;
+    if (mapCache?.key !== mapKey)
+      mapCache = { key: mapKey, url: displacementMap(width, height, padding, radius, options.depth) };
+    const mapUrl = mapCache.url;
     if (!mapUrl) {
       clearNative('css');
       return;
@@ -261,6 +293,8 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       cancelAnimationFrame(frame);
       resize.disconnect();
       setting.disconnect();
+      grain?.remove();
+      grain = undefined;
       node.style.removeProperty('-webkit-backdrop-filter');
       node.style.removeProperty('backdrop-filter');
       node.classList.remove('liquid-glass-active');

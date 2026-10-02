@@ -24,7 +24,7 @@ export interface AuthenticatedSession {
   expiresAt: Date;
 }
 
-const accountSchema = v.object({
+export const accountSchema = v.object({
   username: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.regex(/^[a-z0-9][a-z0-9_.-]{2,31}$/)),
   password: v.pipe(v.string(), v.minLength(12), v.maxLength(128)),
   email: v.optional(v.union([v.pipe(v.string(), v.email(), v.maxLength(254)), v.literal('')])),

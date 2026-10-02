@@ -1,6 +1,6 @@
 export type TasteWork={id:string;rating?:number|null;reaction?:string|null;genres:string[];interest:boolean;consumed:boolean};
-export type TasteSignal={score:number|null;shared:number;left:number;right:number;weight:number};
-export function cosine(a:Map<string,number>,b:Map<string,number>) {
+type TasteSignal={score:number|null;shared:number;left:number;right:number;weight:number};
+function cosine(a:Map<string,number>,b:Map<string,number>) {
  const dot=[...a].reduce((s,[k,n])=>s+n*(b.get(k)??0),0),norm=Math.sqrt([...a.values()].reduce((s,n)=>s+n*n,0)*[...b.values()].reduce((s,n)=>s+n*n,0));
  return norm?100*dot/norm:null;
 }

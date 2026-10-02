@@ -6,13 +6,11 @@
   import { randomId } from '$lib/diagnostics';
   import { api, message } from '$lib/ui/client';
   import { gameStatuses, type GameStatus } from '$lib/games/model';
-  import { gameMinutes } from '$lib/games/presentation';
   import { displayLabel } from '$lib/ui/labels';
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
-  import { gameHero } from '$lib/games/presentation';
+  import { gameHero, gameFacts, gameMinutes } from '$lib/games/presentation';
   import Button from '$lib/ui/components/Button.svelte';
   import { overviewPanels } from '$lib/ui/insights/overview';
-  import { gameFacts } from '$lib/games/presentation';
   import Heading from '$lib/ui/components/Heading.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';

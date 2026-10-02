@@ -1,5 +1,15 @@
+// Static monochrome grain is optional and shared by native glass and CSS fallbacks.
+const texture = {
+  noiseOpacity: 0,
+  noiseScale: 1,
+  noiseColor: 'var(--white)',
+  noiseBlend: 'soft-light',
+  noiseCoverage: 'uniform',
+} as const;
+
 /** Six glass treatments share the same palette and physical surface parameters. */
 const clear = {
+  ...texture,
   tint: 'var(--canvas)',
   fillOpacity: 5,
   blur: 2,
@@ -26,6 +36,7 @@ const clear = {
 } as const;
 
 const glassDark = {
+  ...texture,
   tint: 'color-mix(in srgb, var(--surface) 80%, var(--canvas))',
   fillOpacity: 56,
   blur: 18,
@@ -88,3 +99,12 @@ export const glassPresets = {
   },
 } as const;
 export type GlassVariant = keyof typeof glassPresets.materials;
+
+/** Editable physical parameters; preset literals remain the application defaults. */
+export type GlassSurface = {
+  -readonly [Key in keyof typeof clear]: Key extends 'strokeAlignment'
+    ? 'internal' | 'external'
+    : Key extends 'noiseBlend' ? 'normal' | 'soft-light'
+    : Key extends 'noiseCoverage' ? 'uniform' | 'edges'
+    : (typeof clear)[Key] extends number ? number : string;
+};
