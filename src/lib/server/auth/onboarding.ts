@@ -158,7 +158,8 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
    const done=jf&&!!checkpoint;
    if(!done&&jf){await enqueueAction({userId,connectionId:row.connection_id,kind:'jellyfin.sync',payload:{},compactionKey:'jellyfin.sync'});progress=await libraryScanProgress(userId,row.connection_id,new Date(row.requested_at));}
    jfAuthFailed=!!progress?.authenticationFailed;reconnect||=jfAuthFailed;
-   imports.push({label:'Jellyfin',state:done?'succeeded':reconnect?'failed':progress?.state??'pending',processed:progress?.processed??0,total:progress?.total??null,error:reconnect?'Reconnect Jellyfin to continue.':progress?.error??null});ready&&=done;
+   const jfReconnect=!jf||jfAuthFailed;
+   imports.push({label:'Jellyfin',state:done?'succeeded':jfReconnect?'failed':progress?.state??'pending',processed:progress?.processed??0,total:progress?.total??null,error:jfReconnect?'Reconnect Jellyfin to continue.':progress?.error??null});ready&&=done;
   }
   if(row.trakt_account_generation){
    if(trakt)await ensureTraktImports(userId,row);
