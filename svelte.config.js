@@ -3,5 +3,5 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 export default {
   preprocess: vitePreprocess(),
-  kit: { adapter: adapter() },
+  kit: { adapter: adapter(), output: { preloadStrategy: 'preload-js' } },
 };

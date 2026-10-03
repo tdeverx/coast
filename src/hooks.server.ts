@@ -63,6 +63,10 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     error(404, 'Experimental features are disabled.');
   }
   const response = await resolve(event);
+  // Page preload hints also live in the HTML. Duplicating every shared UI chunk
+  // in Link can overflow ordinary reverse-proxy response-header buffers.
+  if (response.headers.get('content-type')?.startsWith('text/html'))
+    response.headers.delete('link');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'same-origin');
   // Only administrators may embed the isolated UI examples on this origin.
