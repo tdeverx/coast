@@ -1,6 +1,7 @@
+import {progressData} from '../src/lib/server/queries/progress';
 import {beforeAll,afterAll,test,expect} from 'bun:test';
 import {getSql} from '../src/lib/server/db';
-import {requestFriend,changeFriend,react,recommend,respondRecommendation} from '../src/lib/social/service.server';
+import {friends,requestFriend,changeFriend,react,recommend,respondRecommendation} from '../src/lib/social/service.server';
 import {activityFeed,workSocial,reactionSummary} from '../src/lib/social/queries.server';
 import {canView} from '../src/lib/social/privacy.server';
 import {startCheckin,cancelCheckin,completeCheckin} from '../src/lib/social/presence.server';
@@ -15,8 +16,12 @@ run('case-insensitive requests are deduplicated and default sharing is friends o
  expect(await canView(ids[0],ids[1],'activity')).toBe(false);
  const requests=await Promise.all([requestFriend(ids[0],{username:(prefix+'-1').toUpperCase()}),requestFriend(ids[0],{username:prefix+'-1'})]);
  expect(requests[0].id).toBe(requests[1].id);friendId=requests[0].id;
+ expect((await friends(ids[0],1,'pending')).map(friend=>friend.id)).toEqual([friendId]);
+ expect(await friends(ids[0],1,'accepted')).toHaveLength(0);
  await expect(changeFriend(ids[0],friendId,{action:'accept'})).rejects.toThrow();
  await changeFriend(ids[1],friendId,{action:'accept'});expect(await canView(ids[0],ids[1],'activity')).toBe(true);
+ expect(await friends(ids[0],1,'pending')).toHaveLength(0);
+ expect((await friends(ids[0],1,'accepted')).map(friend=>friend.id)).toEqual([friendId]);
  expect(await canView(ids[0],null,'activity')).toBe(false);
 });
 run('canonical activity appears once and private categories cannot leak through indicators',async()=>{
@@ -43,14 +48,14 @@ run('check-in cancellation and repeated completion cannot manufacture extra watc
  await Promise.all([completeCheckin(ids[2],next.id),completeCheckin(ids[2],next.id)]);
  expect((await getSql()`select id from tracking_events where user_id=${ids[2]} and action='watch'`)).toHaveLength(1);
 });
-run('import batches group above the threshold without exposing private members',async()=>{
+run('imported watches remain ordinary dated activity without exposing private members',async()=>{
  const db=getSql(),batch='social-import-'+crypto.randomUUID();
  for(let i=0;i<21;i++)await db`insert into social_activity(user_id,work_id,source_key,event_kind,section,source,batch_key,occurred_at) values(${ids[0]},${work},${batch+':'+i},'watch','activity','trakt',${batch},now()-interval '2 years')`;
  try{
-  const imports=(await activityFeed(ids[1])).events.filter(e=>e.eventKind==='import');
-  expect(imports).toHaveLength(1);expect(imports[0].count).toBe(21);
+  const imports=(await activityFeed(ids[1])).events.filter(e=>e.workId===work && new Date(e.occurredAt).getFullYear()===new Date().getFullYear()-2);
+  expect(imports).toHaveLength(21);expect(imports.every(e=>e.eventKind==='watch'&&e.count===1)).toBe(true);
   await db`update users set settings=${{social:{sections:{activity:'private'}}}}::jsonb where id=${ids[0]}`;
-  expect((await activityFeed(ids[1])).events.filter(e=>e.eventKind==='import')).toHaveLength(0);
+  expect((await activityFeed(ids[1])).events.filter(e=>e.workId===work && new Date(e.occurredAt).getFullYear()===new Date().getFullYear()-2)).toHaveLength(0);
  }finally{await db`delete from social_activity where batch_key=${batch}`;await db`update users set settings='{}'::jsonb where id=${ids[0]}`;}
 });
 run('private favourites do not erase an independently shared collection relationship',async()=>{
@@ -98,4 +103,19 @@ run('private profile wins and friend removal revokes derived access',async()=>{
  expect(await canView(ids[0],null,'activity')).toBe(true);expect(await canView(ids[0],null,'ratings')).toBe(false);
  await changeFriend(ids[1],friendId,{action:'remove'});expect(await canView(ids[0],ids[1],'ratings')).toBe(false);
  await expect(recommend(ids[1],{recipientId:ids[0],workId:work})).rejects.toThrow();
+});
+
+run('Next recommendations survive notification dismissal and obey recipient, kind, availability and response filters',async()=>{
+ const db=getSql();const rec=await recommend(ids[1],{recipientId:ids[2],workId:work});
+ await db`delete from notifications where user_id=${ids[2]} and source_key=${'recommendation:'+rec.id}`;
+ const result=await progressData(ids[2],{view:'recommendations'});
+ expect(result.total).toBe(1);expect(result.items[0].id).toBe(work);
+ expect(result.items[0].captionSubtitle).toBe(`Recommended by ${prefix}-1`);
+ expect(result.items[0].recommendationIds).toEqual([rec.id]);
+ expect((await progressData(ids[1],{view:'recommendations'})).items.some(item=>item.recommendationIds?.includes(rec.id))).toBe(false);
+ expect((await progressData(ids[2],{view:'recommendations',kind:'show'})).total).toBe(0);
+ expect((await progressData(ids[2],{view:'recommendations',scope:'available'})).total).toBe(0);
+ await expect(progressData(ids[2],{view:'recommendations'},ids[1])).rejects.toThrow('private');
+ await respondRecommendation(ids[2],rec.id,{action:'dismiss'});
+ expect((await progressData(ids[2],{view:'recommendations'})).total).toBe(0);
 });

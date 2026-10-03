@@ -324,7 +324,7 @@ async function runJellyfinScan(
         width: video?.width,
         height: video?.height,
         durationSeconds: source.durationSeconds,
-        source: { ...source.raw },
+        source: { ...source.raw, ...(scope==='user' ? {coastUserData:item.userData??null} : {}) },
         state: 'available' as const,
         verifiedAt: new Date(),
         scanId,
@@ -354,9 +354,10 @@ async function runJellyfinScan(
           title: `${saved.title} is available`,
           body: 'A title on your watchlist is now in your library.',
           sourceKey: `available:${saved.id}`,
+          data:{actorId:userId,subjectId:saved.id,workId:saved.id,destination:`/media/${saved.id}`},
         });
     }
-    if (importPlayback) await importJellyfinPlayback(userId, connectionId, saved.id, item);
+
     return saved.id;
   };
   let count = 0,
@@ -419,6 +420,30 @@ async function runJellyfinScan(
       break;
     }
     offset = page.nextOffset;
+  }
+  // Multiple accessible editions may disagree. Apply one account-level observation
+  // per canonical title after a complete traversal; persisted access snapshots also
+  // survive checkpoints/retries without retaining the entire catalogue in memory.
+  if(scope==='user' && (await ensureConnected()).settings.importPlayback!==false) {
+    const observed=await db.execute<{id:string;kind:AvailableItem['kind'];played:boolean;favourite:boolean|null;position:number;playCount:number;lastPlayedAt:string|null;duration:number|null}>(sql`
+      select a.media_id as id,m.kind,bool_or((a.source->'coastUserData'->>'played')::boolean) as played,
+        bool_or((a.source->'coastUserData'->>'favourite')::boolean) as favourite,
+        coalesce((array_agg((a.source->'coastUserData'->>'positionSeconds')::double precision order by
+          case when (a.source->'coastUserData'->>'positionSeconds')::double precision>0 then 1 else 0 end desc,
+          a.source->'coastUserData'->>'lastPlayedAt' desc nulls last,a.verified_at desc,a.provider_item_id))[1],0) as position,
+        max((a.source->'coastUserData'->>'playCount')::integer) as "playCount",
+        max(a.source->'coastUserData'->>'lastPlayedAt') as "lastPlayedAt",max(a.duration_seconds) as duration
+      from availability a join media m on m.id=a.media_id
+      where a.user_id=${userId} and a.connection_id=${connectionId} and a.scan_id=${scanId} and a.state='available'
+        and jsonb_typeof(a.source->'coastUserData')='object'
+      group by a.media_id,m.kind order by a.media_id`);
+    for(const row of observed) {
+      if((await ensureConnected()).settings.importPlayback===false)break;
+      await importJellyfinPlayback(userId,connectionId,row.id,{
+        kind:row.kind,metadata:{},sources:row.duration===null?[]:[{durationSeconds:row.duration}],
+        userData:{played:row.played,favourite:row.favourite??undefined,positionSeconds:row.position,playCount:row.playCount,lastPlayedAt:row.lastPlayedAt??undefined},
+      },connection.accountGeneration);
+    }
   }
   // Metadata and per-user access remain separate for music, within the same service task.
   for(const musicKind of (await getConfig()).experimentalFeatures?['album','track'] as const:[]){

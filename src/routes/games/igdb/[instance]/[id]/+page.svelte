@@ -35,10 +35,10 @@
   )}
 >
   {#snippet heroActions()}
-    <Button variant="ghost" href={`/games?view=igdb&instance=${data.instanceId}`} icon="left"
+    <Button emphasis="subtle" href={`/games?view=igdb&instance=${data.instanceId}`} icon="left"
       >Games</Button
     >
-    <Button variant="hero" icon="plus" disabled={busy} onclick={add}
+    <Button size="hero" icon="plus" disabled={busy} onclick={add}
       >{busy ? 'Adding…' : 'Add game'}</Button
     >
   {/snippet}

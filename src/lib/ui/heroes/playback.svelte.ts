@@ -30,6 +30,7 @@ export function createHeroPlayback() {
     heroPlayer.ready = false;
     element.src = url;
     const stopCrop = observeVideoCrop(element, {
+      continuous: true,
       enabled: () => visible,
       onCrop: (next) => (crop = next),
       onReady: () => (heroPlayer.ready = true),

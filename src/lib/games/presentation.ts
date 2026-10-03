@@ -1,5 +1,6 @@
 import type { MediaCardPresentation, MediaHeroPresentation } from '../ui/types';
 export type GameMetadata = {
+  available?: boolean;
   title: string;
   overview?: string | null;
   releaseDate?: string | null;
@@ -22,7 +23,8 @@ export function gameCard(
     poster: item.posterPath,
     backdrop: item.backdropPath,
     year: item.releaseDate ? Number(item.releaseDate.slice(0, 4)) : null,
-    captionSubtitle: item.platforms.join(' · ') || 'Game',
+    available: item.available ?? false,
+    captionSubtitle: item.available ? 'Owned on Steam' : item.platforms.join(' · ') || 'Game',
   };
 }
 export function gameFacts(item: GameMetadata) {

@@ -17,15 +17,19 @@
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
   import ProgressChart from '$lib/ui/components/ProgressChart.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import ContextMenu from '$lib/ui/components/ContextMenu.svelte';
-  import MenuAction from '$lib/ui/components/MenuAction.svelte';
+
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import RecommendAction from '$lib/ui/components/RecommendAction.svelte';
   import ReactionActions from '$lib/ui/components/ReactionActions.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   let { data } = $props();
   setContext('profile-read-only',()=>!page.data.user);
-  const overview = $derived(overviewPanels(data.item.overview,gameFacts(data.item)));
+  const overview = $derived([...overviewPanels(data.item.overview,gameFacts(data.item)),...data.item.steam.map(account=>({
+    title:`Steam · ${account.username}`,description:account.owned?'Owned on Steam · installation unknown':'Last imported Steam progress',
+    content:{kind:'metrics' as const,props:{items:[{label:'Steam playtime',value:gameMinutes(account.minutes_played)},{label:'Last two weeks',value:gameMinutes(account.recent_minutes)},
+      ...(account.achievements_at?[{label:'Achievements',value:`${account.unlocked} / ${account.total}`,detail:`Updated ${new Date(account.achievements_at).toLocaleDateString()}`}]:[])]}},
+    footerText:`Ownership checked ${new Date(account.observed_at).toLocaleDateString()}`,
+  }))]);
   let busy = $state(false), failure = $state('');
   let startOpen = $state(false), progressOpen = $state(false), sessionOpen = $state(false);
   let platform = $state(''), repeat = $state(false), percent = $state(0), status = $state<GameStatus>('in-progress');
@@ -98,25 +102,24 @@
 <svelte:head><title>{data.item.title} · Games · Coast</title></svelte:head>
 <MediaPage details item={gameHero(data.item)}>
     {#snippet heroActions()}{#if page.data.user}
-      <Button variant="ghost" href="/games" icon="left">Games</Button>
-      {#if loggingAllowed}<Button variant="hero" icon="plus" disabled={busy} onclick={openSession}>Log a play session</Button>
-      {:else if playthrough && playthrough.status !== 'completed'}<Button variant="hero" icon="play" disabled={busy} onclick={() => update('in-progress')}>Resume playthrough</Button>
-      {:else}<Button variant="hero" icon="plus" disabled={busy} onclick={() => openStart(!!playthrough)}>Start {playthrough ? 'replaying' : 'playthrough'}</Button>{/if}
-      <ContextMenu label="Game actions" disabled={busy}>
+      <Button emphasis="subtle" href="/games" icon="left">Games</Button>
+      {#if loggingAllowed}<Button size="hero" icon="plus" disabled={busy} onclick={openSession}>Log a play session</Button>
+      {:else if playthrough && playthrough.status !== 'completed'}<Button size="hero" icon="play" disabled={busy} onclick={() => update('in-progress')}>Resume playthrough</Button>
+      {:else}<Button size="hero" icon="plus" disabled={busy} onclick={() => openStart(!!playthrough)}>Start {playthrough ? 'replaying' : 'playthrough'}</Button>{/if}
+      <Button menu label="Game actions" disabled={busy}>
         <RecommendAction workId={data.item.id} disabled={busy} /><ReactionActions targetId={data.item.id} disabled={busy} />
-        <MenuAction icon="plus" keepOpen={false} onclick={() => openStart(!!playthrough)}>Start another playthrough</MenuAction>
+        <Button item icon="plus" keepOpen={false} onclick={() => openStart(!!playthrough)}>Start another playthrough</Button>
         {#if playthrough}
-          <MenuAction icon="clock" keepOpen={false} onclick={openProgress}>Update progress…</MenuAction>
-          <MenuAction icon="check" keepOpen={false} onclick={() => update(playthrough!.status === 'completed' ? 'in-progress' : 'completed')}>
+          <Button item icon="clock" keepOpen={false} onclick={openProgress}>Update progress…</Button>
+          <Button item icon="check" keepOpen={false} onclick={() => update(playthrough!.status === 'completed' ? 'in-progress' : 'completed')}>
             {playthrough.status === 'completed' ? 'Mark unfinished' : 'Mark completed'}
-          </MenuAction>
-          {#if playthrough.status === 'in-progress'}<MenuAction icon="pause" keepOpen={false} onclick={() => update('paused')}>Pause playthrough</MenuAction>{/if}
-          {#if playthrough.status !== 'dropped'}<MenuAction icon="close" keepOpen={false} onclick={() => update('dropped')}>Drop playthrough</MenuAction>{/if}
+          </Button>
+          {#if playthrough.status === 'in-progress'}<Button item icon="pause" keepOpen={false} onclick={() => update('paused')}>Pause playthrough</Button>{/if}
+          {#if playthrough.status !== 'dropped'}<Button item icon="close" keepOpen={false} onclick={() => update('dropped')}>Drop playthrough</Button>{/if}
         {/if}
-        {#if identity && data.sources.length}<MenuAction icon="refresh" keepOpen={false} onclick={refresh}>Refresh metadata</MenuAction>{/if}
-      </ContextMenu>
-    {:else}<Button href="/login" variant="hero">Sign in to track</Button>{/if}{/snippet}
-
+        {#if identity && data.sources.length}<Button item icon="refresh" keepOpen={false} onclick={refresh}>Refresh metadata</Button>{/if}
+      </Button>
+    {:else}<Button href="/login" size="hero">Sign in to track</Button>{/if}{/snippet}
 
   {#if failure && !startOpen && !progressOpen && !sessionOpen}<div class="notice error" role="alert">{failure}</div>{/if}
   {#if overview.length}<Shelf title="Overview" size="panel" artworkOptions={false} panels={overview} />{/if}
@@ -149,7 +152,7 @@
       <Pagination page={playthrough.page} pages={playthrough.pages} pageUrl={(page) => selectedUrl(playthrough!.id, page)} label="Play history pages" />
       {:else}<EmptyState title="No play sessions yet" description="Log a session to record your time played." icon="clock" />{/if}
     {:else}<EmptyState title="Start your first playthrough" description="Track completion and log the time you spend playing." icon="library">
-      <Button variant="secondary" icon="plus" onclick={() => openStart()}>Start playthrough</Button>
+      <Button  icon="plus" onclick={() => openStart()}>Start playthrough</Button>
     </EmptyState>{/if}
   </section>
 </MediaPage>

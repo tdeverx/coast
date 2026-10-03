@@ -1,6 +1,6 @@
 <script lang="ts">
   import {page} from '$app/state';
-  import {syncedPlayer,isSyncHost,syncedCommand,leaveSynced,joinSynced} from '$lib/playback/synced/client.svelte';
+  import {syncedPlayer,isSyncHost,canControlPlayback,syncedCommand,leaveSynced,joinSynced} from '$lib/playback/synced/client.svelte';
   import SyncedControls from './SyncedControls.svelte';
   import { browserDiagnostic } from '$lib/ui/diagnostics';
   import { sequencePath } from '$lib/media/sequence';
@@ -17,8 +17,7 @@
   import type { MediaView } from '$lib/ui/types';
   import { liquidGlass } from '$lib/ui/materials/glass';
   import Icon from './Icon.svelte';
-  import ContextMenu from './ContextMenu.svelte';
-  import MenuAction from './MenuAction.svelte';
+
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
   import PlaybackTimeline from './PlaybackTimeline.svelte';
@@ -53,7 +52,7 @@
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   let keyboardInteraction = false;
   let scrubbing = $state(false);
-  const followingHost=$derived(!!syncedPlayer.room&&!isSyncHost());
+  const followingHost=$derived(!!syncedPlayer.room&&!canControlPlayback());
   const audioMode = $derived(player.session?.mediaType === 'audio');
   const media = $derived<HTMLMediaElement>(audioMode ? audio : video);
   let playedSeconds = 0, playedPosition = 0, playedAt = 0, wasPlaying = false, seeking = false;
@@ -101,13 +100,14 @@
     revealControls();
     void report();
   }
+  function toggleUi(){player.browsing=!player.browsing;revealControls();}
   function fullscreen() {
     if (document.fullscreenElement) void document.exitFullscreen();
     else void document.documentElement.requestFullscreen();
   }
   function armIdle() {
     clearTimeout(idleTimer);
-    if (!active || audioMode || player.paused || player.role === 'postplay' || error) return;
+    if (!active || audioMode || player.browsing || player.paused || player.role === 'postplay' || error) return;
     idleTimer = setTimeout(() => {
       const focused =
         keyboardInteraction && document.activeElement?.closest('.playback-chrome, header');
@@ -125,6 +125,7 @@
     if (preview) return;
     active;
     player.paused;
+    player.browsing;
     player.role;
     error;
     untrack(() => revealControls());
@@ -181,15 +182,25 @@
     lastReport = Date.now();
     void report('start');
   }
+  let lastTouchTap:{at:number;x:number;y:number}|null=null;
+  let lastTouchAt=0;
+  function toggleCrop(){crop=!crop;revealControls();}
+  function playerTap(event:PointerEvent){
+    if(event.pointerType!=='touch'||!event.isPrimary||!active||audioMode)return;
+    const now=performance.now();lastTouchAt=now;
+    if(lastTouchTap&&now-lastTouchTap.at<=350&&Math.hypot(event.clientX-lastTouchTap.x,event.clientY-lastTouchTap.y)<=24){lastTouchTap=null;toggleCrop();}
+    else lastTouchTap={at:now,x:event.clientX,y:event.clientY};
+  }
   async function close() {
     if (closed) return;
     closed = true;
-    if(syncedPlayer.room&&!syncedPlayer.changing)await leaveSynced();
+    if(syncedPlayer.room&&!syncedPlayer.changing){if(isSyncHost())await syncedCommand('stop');else await leaveSynced();}
     pause(true);
     await report('stop');
     player.role = 'idle';
     player.paused = true;
     player.session = null;
+    player.browsing = false;
     player.subtitlePrompt = false;
     error = '';
     closed = false;
@@ -197,7 +208,7 @@
   }
   async function toggle() {
     if (!media) return;
-    if(syncedPlayer.room){if(!isSyncHost()&&media.paused){try{await media.play();}catch(cause){syncedPlayer.notice=message(cause);}return;}await syncedCommand(player.paused?'play':'pause');return;}
+    if(syncedPlayer.room){if(!canControlPlayback()&&media.paused){try{await media.play();}catch(cause){syncedPlayer.notice=message(cause);}return;}await syncedCommand(player.paused?'play':'pause');return;}
     if (media.paused) {
       try {
         await media.play();
@@ -409,18 +420,28 @@
   onMount(() => {
     if (preview) return;
     const unregister = registerPlaybackController({
+      beginPlaybackGesture: type => {
+        const element=type==='audio'?audio:video;
+        if(element?.currentSrc)void element.play().catch(()=>{/* Preparation may replace the current stream. */});
+      },
       stop: close,
       pause,
       resume: () => syncedPlayer.room ? syncedCommand('play') : media.play(),
-      snapshot: () => ({positionSeconds:media?.currentTime||0,buffering:!media||media.readyState<3||!!media.error}),
+      snapshot: () => ({positionSeconds:media?.currentTime||0,buffering:!media||media.readyState<3||!!media.error,unavailable:!!error}),
       align: state => {
         if(!media||media.readyState<1)return;
-        if(Math.abs(media.currentTime-state.positionSeconds)>1.5)seek(state.positionSeconds,true);
+        if(state.force||Math.abs(media.currentTime-state.positionSeconds)>1.5)seek(state.positionSeconds,true);
         if(state.paused){media.playbackRate=1;pause(true);}
         else {
           const drift=state.positionSeconds-media.currentTime;
           media.playbackRate=Math.abs(drift)>0.25?(drift>0?1.03:0.97):1;
-          if(media.paused)void media.play().catch(()=>syncedPlayer.notice='Press Play to allow playback in this browser.');
+          if(media.paused)void media.play().catch(cause=>{
+            if(cause instanceof DOMException&&cause.name==='NotAllowedError'&&!media.muted){
+              // Muted playback is permitted when async source preparation outlasts the Join gesture.
+              player.muted=true;media.muted=true;
+              void media.play().catch(()=>{player.paused=true;});
+            }
+          });
         }
       },
     });
@@ -432,7 +453,6 @@
     const key = (e: KeyboardEvent) => {
       if (
         !active ||
-        player.paused ||
         e.defaultPrevented ||
         ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON', 'A'].includes((e.target as HTMLElement)?.tagName)
       )
@@ -441,8 +461,8 @@
         e.preventDefault();
         void toggle();
       }
-      if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
-        pause();
+      if (e.key === 'Escape' && !audioMode && !document.querySelector('dialog[open]')) {
+        toggleUi();
       }
     };
     document.addEventListener('keydown', key);
@@ -483,6 +503,9 @@
   <video
     bind:this={video}
     data-player="playback"
+    ondblclick={()=>{if(performance.now()-lastTouchAt>500)toggleCrop();}}
+    onpointerup={playerTap}
+    onpointercancel={()=>lastTouchTap=null}
     aria-label={player.session?.title ?? 'Title playback'}
     class:positioned={!!videoStyle}
     style={videoStyle}
@@ -512,7 +535,7 @@
   <div
     class="playback-chrome"
     class:chrome-hidden={!player.controlsVisible && !player.paused}
-    class:browsing={player.paused}
+    class:browsing={player.browsing}
     inert={!player.controlsVisible && !player.paused}
   >
     {#if syncedPlayer.notice}<p class="small" role="status">{syncedPlayer.notice}</p>{/if}
@@ -521,7 +544,7 @@
         <p>{error}</p>
         <div class="row">
           <Button onclick={() => switchEdition()}>Try again</Button><Button
-            variant="secondary"
+
             onclick={close}>Close</Button
           >
         </div>
@@ -538,7 +561,7 @@
         </p>
         {#if next && !next.available}<p>{next.title} is next, but unavailable.</p>
           <Button
-            variant="secondary"
+
             onclick={() =>
               next?.sequence &&
               loadSequenceNext(next.sequence.entryId).catch((e) => (error = message(e)))}
@@ -554,7 +577,7 @@
             >{next.kind === 'episode'
               ? `Play S${String(next.seasonNumber ?? 0).padStart(2, '0')}E${String(next.episodeNumber ?? 0).padStart(2, '0')}`
               : `Play ${next.title}`}</Button
-          >{/if}<Button variant={next ? 'secondary' : 'primary'} onclick={close}
+          >{/if}<Button  onclick={close}
           >Back to Coast</Button
         >
       </div>{/if}
@@ -565,34 +588,30 @@
       aria-label={`Playback controls: ${player.session?.title}`}
     >
       <div class="transport">
-        <button
-          class="icon-button" class:skip-back={!audioMode}
+        <Button size="icon"
+          class={`icon-button ${!audioMode ? 'skip-back' : ''}`}
           disabled={followingHost}
-          aria-label={audioMode ? 'Previous track' : 'Back 10 seconds'}
+          label={audioMode ? 'Previous track' : 'Back 10 seconds'}
           title={audioMode ? 'Previous track' : 'Back 10 seconds'}
-          onclick={() => audioMode ? advanceMusic(-1) : seek(current - 10)}><Icon name={audioMode ? 'left' : 'rewind'} size={20} /></button
-        >
-        <button
-          class="icon-button play-toggle"
+          onclick={() => audioMode ? advanceMusic(-1) : seek(current - 10)} icon={audioMode ? 'left' : 'rewind'} iconSize={20} />
+        <Button size="icon" class="icon-button play-toggle"
           disabled={followingHost&&(!player.paused||syncedPlayer.room!.paused||syncedPlayer.room!.bufferingPaused)}
           title={followingHost?'Playback is controlled by the host':undefined}
-          aria-label={player.paused ? 'Play' : 'Pause'}
-          onclick={toggle}><Icon name={player.paused ? 'play' : 'pause'} size={28} /></button
-        >
-        <button
-          class="icon-button" class:skip-forward={!audioMode}
+          label={player.paused ? 'Play' : 'Pause'}
+          onclick={toggle} icon={player.paused ? 'play' : 'pause'} iconSize={28} />
+        <Button size="icon"
+          class={`icon-button ${!audioMode ? 'skip-forward' : ''}`}
           disabled={followingHost}
-          aria-label={audioMode ? 'Next track' : 'Forward 30 seconds'}
+          label={audioMode ? 'Next track' : 'Forward 30 seconds'}
           title={audioMode ? 'Next track' : 'Forward 30 seconds'}
-          onclick={() => audioMode ? advanceMusic() : seek(current + 30)}><Icon name={audioMode ? 'right' : 'forward'} size={20} /></button
-        >
+          onclick={() => audioMode ? advanceMusic() : seek(current + 30)} icon={audioMode ? 'right' : 'forward'} iconSize={20} />
       </div>
       <PlaybackTimeline
         mediaId={player.session!.mediaId}
         href={audioMode ? `/music/work/${player.session!.mediaId}` : undefined}
         audio={audioMode}
         title={player.session?.title ?? 'Now playing'}
-        detail={`${player.session?.detail ?? ''}${syncedPlayer.room ? followingHost?' · Following host':' · Synced host':''}`}
+        detail={`${player.session?.detail ?? ''}${syncedPlayer.room ? isSyncHost()?' · Synced host':' · Synced member':''}`}
         disabled={followingHost}
         artwork={player.session?.artwork}
         {current}
@@ -600,80 +619,73 @@
         onseek={seek}
         bind:scrubbing
       />
-      <ContextMenu label="Playback options" upward>
-        {#if page.data.experimentalFeatures}<MenuAction icon="user" disabled={syncedPlayer.busy} onclick={()=>syncControls?.show()}>{syncedPlayer.room?'Synced session…':'Start synced session…'}</MenuAction>{/if}
+      {#if !audioMode}<Button size="icon" icon="home" label={player.browsing?'Hide UI':'Show UI'} pressed={player.browsing} onclick={toggleUi}/>{/if}
+      <Button menu label="Playback options" upward>
+        {#if page.data.experimentalFeatures}<Button item icon="party" disabled={syncedPlayer.busy} onclick={()=>syncControls?.show()}>{syncedPlayer.room?'Synced session…':'Start synced session…'}</Button>{/if}
         {#if audioMode}
-          <MenuAction icon="list" disabled={followingHost} disabledReason="Playback is controlled by the host" onclick={()=>playSavedMusicQueue().catch(cause=>error=message(cause))}>Play saved music queue</MenuAction>
+          <Button item icon="list" disabled={followingHost} disabledReason="Playback is controlled by the host" onclick={()=>playSavedMusicQueue().catch(cause=>error=message(cause))}>Play saved music queue</Button>
           {#if player.audioNotice}<p class="menu-status" role="status">{player.audioNotice}</p>{/if}
-          <ContextMenu label="Queue" icon="list" upward panel>
+          <Button menu label="Queue" icon="list" upward panel>
             {#each player.audioQueue as entry, index}
-              <MenuAction selection="radio" checked={index === player.audioIndex} disabled={followingHost||entry.availability !== 'available'} disabledReason={followingHost?'Playback is controlled by the host':entry.availability === 'unknown' ? 'Availability unresolved' : entry.availability !== 'available' ? 'Unavailable' : undefined}
-                onclick={() => { player.audioIndex = index - 1; void advanceMusic(); }}>{entry.title}</MenuAction>
+              <Button item selection="radio" checked={index === player.audioIndex} disabled={followingHost||entry.availability !== 'available'} disabledReason={followingHost?'Playback is controlled by the host':entry.availability === 'unknown' ? 'Availability unresolved' : entry.availability !== 'available' ? 'Unavailable' : undefined}
+                onclick={() => { player.audioIndex = index - 1; void advanceMusic(); }}>{entry.title}</Button>
             {/each}
-          </ContextMenu>
+          </Button>
         {:else}
         {#if tracks.length}
-          <ContextMenu label="Subtitles" icon="subtitles" upward panel>
-            <MenuAction
+          <Button menu label="Subtitles" icon="subtitles" upward panel>
+            <Button item
               selection="radio"
               checked={subtitle === -1}
               onclick={() => {
                 subtitle = -1;
                 applySubtitles();
-              }}>Off</MenuAction
-            >
+              }}>Off</Button>
             <div class="menu-divider" role="separator"></div>
-            {#each tracks as track}<MenuAction
+            {#each tracks as track}<Button item
                 selection="radio"
                 checked={subtitle === track.index}
                 onclick={() => {
                   subtitle = track.index;
                   applySubtitles();
-                }}>{track.label}</MenuAction
-              >{/each}
-          </ContextMenu>
-        {:else}<MenuAction
+                }}>{track.label}</Button>{/each}
+          </Button>
+        {:else}<Button item
             icon="subtitles"
             branch
             disabled
-            disabledReason="No subtitle tracks available">Subtitles</MenuAction
-          >{/if}
-        {#if editions.length > 1}<ContextMenu label="Version" icon="film" upward panel>
-            {#each editions as edition}<MenuAction
+            disabledReason="No subtitle tracks available">Subtitles</Button>{/if}
+        {#if editions.length > 1}<Button menu label="Version" icon="film" upward panel>
+            {#each editions as edition}<Button item
                 selection="radio"
                 checked={edition === (player.session?.edition ?? '')}
                 disabled={followingHost} disabledReason="Playback is controlled by the host"
-                onclick={() => switchEdition(edition)}>{edition || 'Original'}</MenuAction
-              >{/each}
-          </ContextMenu>{/if}
+                onclick={() => switchEdition(edition)}>{edition || 'Original'}</Button>{/each}
+          </Button>{/if}
         <div class="menu-divider" role="separator"></div>
-        <MenuAction icon="crop" checked={crop} showCheckmark={false} onclick={() => (crop = !crop)}
-          >{crop ? 'Fit video' : 'Crop black bars'}</MenuAction
-        >
-        <MenuAction icon="fullscreen" onclick={fullscreen}>Full screen</MenuAction>
+        <Button item icon="crop" checked={crop} showCheckmark={false} onclick={toggleCrop}
+          >{crop ? 'Fit video' : 'Crop black bars'}</Button>
+        <Button item icon="fullscreen" onclick={fullscreen}>Full screen</Button>
         {/if}
-      </ContextMenu>
+      </Button>
       {#if !audioMode}<div class="control-divider" aria-hidden="true"></div>
-      <button
-        class="icon-button fullscreen-button"
-        aria-label="Toggle fullscreen"
+      <Button size="icon" class="icon-button fullscreen-button"
+        label="Toggle fullscreen"
         title="Toggle fullscreen"
-        onclick={fullscreen}><Icon name="fullscreen" size={20} /></button
-      >
+        onclick={fullscreen} icon="fullscreen" iconSize={20} />
       {/if}
-      <ContextMenu label="Volume" upward>
+      <Button menu label="Volume" upward>
         {#snippet trigger()}<Icon
             name={player.muted || volume === 0 ? 'muted' : 'volume'}
             size={21}
           />{/snippet}
         {#snippet children()}
-          <MenuAction
+          <Button item
             icon={player.muted ? 'muted' : 'volume'}
             checked={player.muted}
             showCheckmark={false}
             onclick={() => setPlaybackMuted(!player.muted)}
-            >{player.muted ? 'Unmute' : 'Mute'}</MenuAction
-          >
+            >{player.muted ? 'Unmute' : 'Mute'}</Button>
           <div class="menu-divider" role="separator"></div>
           <label class="volume" data-menu-interactive
             >Volume<input
@@ -691,10 +703,9 @@
             /></label
           >
         {/snippet}
-      </ContextMenu>
-      <button class="icon-button" aria-label="Close player" title="Close player" onclick={close}
-        ><Icon name="close" size={20} /></button
-      >
+      </Button>
+      <Button size="icon" class="icon-button" label="Close player" title="Close player" onclick={close}
+         icon="close" iconSize={20} />
     </section>
   </div>
 {/if}
@@ -749,11 +760,14 @@
     pointer-events: auto;
   }
   .player video {
+    touch-action:manipulation;
+    transition:width var(--motion) var(--ease),height var(--motion) var(--ease),left var(--motion) var(--ease),top var(--motion) var(--ease);
     position: absolute;
     width: 100%;
     height: 100%;
     object-fit: contain;
   }
+  @media(prefers-reduced-motion:reduce){.player video{transition:none;}}
   .player video.positioned {
     /* Tailwind's video max-width:100% would clamp the oversized crop placement. */
     max-width: none;
@@ -766,9 +780,9 @@
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 8px;
     border-radius: 999px;
-    padding: 6px 14px;
+    padding: 6px 12px;
     height: 56px;
     width: min(760px, calc(100% - 32px));
     color: var(--ink);
@@ -776,7 +790,7 @@
   .transport {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
     flex: none;
   }
   .controls :global(.icon-button) {
@@ -786,7 +800,7 @@
     color: var(--ink);
     transition: transform var(--fast) var(--ease);
   }
-  .controls .play-toggle {
+  .controls :global(.play-toggle) {
     width: 36px;
   }
   @media (pointer: coarse) {
@@ -848,7 +862,7 @@
       width: calc(100% - 24px);
       bottom: calc(76px + env(safe-area-inset-bottom));
     }
-    .controls .fullscreen-button,
+    .controls :global(.fullscreen-button),
     .control-divider {
       display: none;
     }
@@ -862,11 +876,11 @@
   @media (max-width: 479px) {
     .controls {
       display: grid;
-      grid-template-columns: repeat(4, 44px);
+      grid-template-columns: repeat(5, 44px);
       justify-content: space-between;
       gap: 8px;
       height: auto;
-      padding: 10px 16px 8px;
+      padding: 12px;
       border-radius: 24px;
     }
     .controls :global(.now-playing) {
@@ -877,8 +891,8 @@
     .controls.audio {
       grid-template-columns: minmax(0, 1fr) repeat(3, 44px);
     }
-    .skip-back,
-    .skip-forward {
+    .controls :global(.skip-back),
+    .controls :global(.skip-forward) {
       display: none;
     }
   }

@@ -3,6 +3,7 @@ import {
   IGDB_BASE_URL,
   igdbCredentialsSchema,
 } from '$lib/providers/igdb/adapter.server';
+import { STEAM_BASE_URL } from './steam/adapter.server';
 import { AppError } from '$lib/server/security/errors';
 import { providerSchedule } from '$lib/providers/schedule';
 import * as v from 'valibot';
@@ -20,7 +21,7 @@ import { JellyfinAdapter } from '$lib/providers/jellyfin/adapter.server';
 
 const uuid = v.pipe(v.string(), v.uuid());
 
-const providerSchema = v.picklist(['tmdb', 'jellyfin', 'trakt', 'seerr', 'igdb']);
+const providerSchema = v.picklist(['tmdb', 'jellyfin', 'trakt', 'seerr', 'igdb', 'steam']);
 
 const configureSchema = v.object({
   id: v.optional(uuid),
@@ -44,13 +45,13 @@ export async function configureInstance(adminId: string, input: unknown) {
   await requireProviderAdmin(adminId);
   const data = v.parse(configureSchema, input);
   const config = await getConfig();
-  if (data.provider === 'igdb') requireExperimentalFeatures(config);
+  if (['igdb','steam'].includes(data.provider)) requireExperimentalFeatures(config);
   const baseUrl =
     data.provider === 'tmdb'
       ? 'https://api.themoviedb.org'
       : data.provider === 'igdb'
         ? IGDB_BASE_URL
-        : data.provider === 'trakt'
+        : data.provider === 'steam' ? STEAM_BASE_URL : data.provider === 'trakt'
           ? 'https://api.trakt.tv'
           : data.baseUrl;
   if (!baseUrl) throw new Error('The server URL is required.');
@@ -67,7 +68,7 @@ export async function configureInstance(adminId: string, input: unknown) {
       );
   }
   if (
-    !['tmdb', 'trakt', 'igdb'].includes(data.provider) &&
+    !['tmdb', 'trakt', 'igdb', 'steam'].includes(data.provider) &&
     config.serverAllowlist.length &&
     !config.serverAllowlist.some(
       (entry) => entry === new URL(baseUrl).hostname || entry === baseUrl.replace(/\/$/, '')
@@ -81,7 +82,7 @@ export async function configureInstance(adminId: string, input: unknown) {
     allowPrivateNetwork: data.allowPrivateNetwork,
     allowedPorts: config.allowedProviderPorts,
   });
-  let serverIdentity: string | undefined;
+  let serverIdentity: string | undefined = data.provider === 'steam' ? 'steam' : undefined;
   if (data.provider === 'jellyfin')
     serverIdentity = (
       await new JellyfinAdapter(transport, 'coast-verify').identity(
@@ -112,6 +113,11 @@ export async function configureInstance(adminId: string, input: unknown) {
       }).filter(([, value]) => !!value)
     ),
   };
+  if (data.provider === 'steam') {
+    const key = secret.apiKey ?? (previous?.credentials ? JSON.parse(await decryptCredential(previous.credentials)).apiKey : undefined);
+    if (typeof key !== 'string' || !/^[a-f0-9]{32}$/i.test(key)) throw new AppError(400,'Steam requires a 32-character Web API key.');
+    for(const name of Object.keys(secret))if(name!=='apiKey')delete secret[name];
+  }
   if (data.provider === 'igdb') {
     const parsed = v.safeParse(igdbCredentialsSchema, secret);
     if (!parsed.success)
@@ -165,7 +171,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
     .where(and(eq(providerConnections.status, 'connected'), eq(users.disabled, false)))
     .orderBy(providerConnections.createdAt, providerConnections.id) : [];
   return instances
-    .filter((instance) => config.experimentalFeatures || instance.provider !== 'igdb')
+    .filter((instance) => config.experimentalFeatures || !['igdb','steam'].includes(instance.provider))
     .map((instance) => {
       const connection = connections.find((connection) => connection.instanceId === instance.id);
       return {
@@ -189,6 +195,9 @@ export async function listProviders(userId: string, includeDisabled = false) {
               status: connection.status,
               settings: {
                 sync: connection.settings.sync,
+                importOwned: connection.settings.importOwned,
+                importPlaytime: connection.settings.importPlaytime,
+                importAchievements: connection.settings.importAchievements,
                 reconcileTracking: connection.settings.reconcileTracking,
                 collectionProjection: connection.settings.collectionProjection,
                 collectionProjectionVersion: connection.settings.collectionProjectionVersion,
@@ -215,8 +224,8 @@ export async function instanceFetchConfig(
   instance: typeof providerInstances.$inferSelect
 ): Promise<ProviderFetchConfig> {
   const config = await getConfig();
-  if (instance.provider === 'igdb') requireExperimentalFeatures(config);
-  const fixed = ['tmdb', 'trakt', 'igdb'].includes(instance.provider);
+  if (['igdb','steam'].includes(instance.provider)) requireExperimentalFeatures(config);
+  const fixed = ['tmdb', 'trakt', 'igdb', 'steam'].includes(instance.provider);
   if (
     fixed &&
     instance.baseUrl !==
@@ -224,7 +233,7 @@ export async function instanceFetchConfig(
         ? 'https://api.themoviedb.org'
         : instance.provider === 'igdb'
           ? IGDB_BASE_URL
-          : 'https://api.trakt.tv')
+          : instance.provider === 'steam' ? STEAM_BASE_URL : 'https://api.trakt.tv')
   )
     throw new Error('This global provider URL is not allowed.');
   const host = new URL(instance.baseUrl).hostname;

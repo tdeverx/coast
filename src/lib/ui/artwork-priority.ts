@@ -61,3 +61,16 @@ export function overlayArtwork(
     ),
   ];
 }
+
+/** Episode Primary artwork is a still; playback's portrait uses its show's poster. */
+export function playbackArtwork(item:ArtworkItem&{kind:string}) {
+  return item.kind==='episode'
+    ? item.artworkSources?.show?.primary||item.artworkSources?.season?.primary
+    : item.poster||item.artwork?.primary;
+}
+
+/** Party backgrounds prefer the series artwork over an episode still. */
+export function playbackBackground(item:ArtworkItem&{kind:string}) {
+  const show=item.kind==='episode'?item.artworkSources?.show:undefined;
+  return show?.backdrop||show?.primary||item.backdrop||item.artwork?.backdrop||item.poster||item.artwork?.primary;
+}

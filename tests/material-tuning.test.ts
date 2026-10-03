@@ -1,8 +1,16 @@
 import { describe, expect, test } from 'bun:test';
 import { glassPresets } from '../src/lib/ui/materials/presets';
-import { defaultMaterialDrafts, readMaterialDrafts, sliderGroups, colorControls } from '../src/lib/ui/materials/tuning';
+import { materialNames, defaultMaterialDrafts, readMaterialDrafts, sliderGroups, colorControls } from '../src/lib/ui/materials/tuning';
 
 describe('material drafts', () => {
+  test('only three materials are exposed, each with its own blur fallback', () => {
+    expect(materialNames.map(entry => entry.value)).toEqual(['clear', 'glassLight', 'glassDark']);
+    expect(Object.keys(glassPresets.materials)).toEqual(Object.keys(glassPresets.fallbacks));
+    for (const entry of materialNames) {
+      expect(glassPresets.fallbacks[entry.value].refraction).toBe(0);
+      expect(glassPresets.fallbacks[entry.value].blur).toBeGreaterThan(glassPresets.materials[entry.value].blur);
+    }
+  });
   test('every surface field is editable and drafts never mutate presets', () => {
     const keys = ['strokeAlignment', 'noiseBlend', 'noiseCoverage', ...colorControls.map(control => control.key), ...sliderGroups.flatMap(group => group.controls.map(control => control.key))];
     expect(keys.sort()).toEqual(Object.keys(glassPresets.materials.clear).sort());

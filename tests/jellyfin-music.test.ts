@@ -6,6 +6,21 @@ const artistId = 'a'.repeat(32),
   trackId = 'c'.repeat(32);
 
 describe('Jellyfin music browsing', () => {
+  test('available-only excludes artists before pagination and does not fetch artist rows', async () => {
+    const adapter = new JellyfinAdapter(async (path) => {
+      const query = new URL(path, 'https://jellyfin.test').searchParams;
+      expect(query.get('includeItemTypes')).toBe('MusicAlbum,Audio');
+      expect(query.get('startIndex')).toBe('50');
+      return { Items: [], TotalRecordCount: 0 };
+    }, 'device');
+    await adapter.musicLibrary('user', {kind: 'all', availableOnly: true, offset: 50});
+    const artists = new JellyfinAdapter(async () => {
+      throw new Error('Artist-only available rows must not query remote browsing');
+    }, 'device');
+    expect(await artists.musicLibrary('user', {kind: 'artist', availableOnly: true}))
+      .toEqual({items: [], total: 0, nextOffset: null});
+  });
+
   test('album-artist browsing uses the linked user and authenticated transport', async () => {
     const adapter = new JellyfinAdapter(
       async (path, init) => {

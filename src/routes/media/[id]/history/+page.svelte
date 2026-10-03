@@ -77,13 +77,13 @@
   <section class="section">
     <Heading title={`${data.item.title} · History`}>
       {#snippet actions()}
-        {#if data.selecting}<Button href={`/media/${data.item.id}/history`} variant="ghost"
+        {#if data.selecting}<Button href={`/media/${data.item.id}/history`} emphasis="subtle"
             >Done</Button
           >
-        {:else}<Button href={`/media/${data.item.id}/history?remove=1`} variant="ghost"
+        {:else}<Button href={`/media/${data.item.id}/history?remove=1`} emphasis="subtle"
             >Remove entries…</Button
           >{/if}
-        <Button href={`/media/${data.item.id}`} variant="ghost" icon="left">View details</Button>
+        <Button href={`/media/${data.item.id}`} emphasis="subtle" icon="left">View details</Button>
       {/snippet}
     </Heading>
     {#if data.selecting}
@@ -94,7 +94,7 @@
         </p>
         <div class="row">
           <Button
-            variant="ghost"
+            emphasis="subtle"
             disabled={busy || !loaded.length}
             onclick={() => {
               all = false;
@@ -103,7 +103,7 @@
             }}>Select shown</Button
           >
           <Button
-            variant="ghost"
+            emphasis="subtle"
             disabled={busy || !data.activity.total}
             onclick={() => {
               all = true;
@@ -111,9 +111,9 @@
               excluded = [];
             }}>Select all {data.activity.total} entries</Button
           >
-          <Button variant="ghost" disabled={busy || !count} onclick={clear}>Clear selection</Button>
+          <Button emphasis="subtle" disabled={busy || !count} onclick={clear}>Clear selection</Button>
           <Button
-            variant="danger"
+            danger
             disabled={busy || !count}
             onclick={() => {
               error = '';
@@ -144,9 +144,9 @@
     </p>
     {#if error}<p class="text-danger" role="alert">{error}</p>{/if}
     <div class="row">
-      <Button variant="danger" disabled={busy || !count} onclick={remove}
+      <Button danger disabled={busy || !count} onclick={remove}
         >Remove from history</Button
-      ><Button variant="ghost" disabled={busy} onclick={() => (confirming = false)}
+      ><Button emphasis="subtle" disabled={busy} onclick={() => (confirming = false)}
         >Keep entries</Button
       >
     </div>

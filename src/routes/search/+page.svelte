@@ -57,7 +57,10 @@
   function submit() {
     clearTimeout(timer);
     submitted = query.trim();
-    void goto('/search?' + new URLSearchParams({ q: submitted }), {
+    // Row filters use shallow routing; preserve the currently displayed URL.
+    const parameters = new URLSearchParams(window.location.search);
+    parameters.set('q', submitted);
+    void goto('/search?' + parameters, {
       keepFocus: true,
       noScroll: true,
       replaceState: true,
@@ -71,7 +74,7 @@
   <Heading title="Search"
     >{#snippet heading()}<h1>Search</h1>{/snippet}
     {#snippet actions()}{#if data.view !== 'all'}<Button
-          variant="ghost"
+          emphasis="subtle"
           icon="left"
           href={'/search?' + new URLSearchParams({ q: data.query })}>All results</Button
         >{/if}{/snippet}
@@ -100,7 +103,7 @@
         }}
       /></label
     >
-    <Button variant="secondary" type="submit">Search</Button>
+    <Button  type="submit">Search</Button>
   </form>
   {#if !data.query}<EmptyState
       title="Find your next story"

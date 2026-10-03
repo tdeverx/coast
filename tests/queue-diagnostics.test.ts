@@ -56,3 +56,19 @@ test('identity conflicts require mapping review rather than automatic retries', 
  const {jobFailureDetail}=await import('../src/lib/server/queue');
  expect(jobFailureDetail(new Error('Conflicting provider identities require administrator review.'),true)).toEqual({code:'catalogue.identity-conflict',remedy:'metadata',retryable:false});
 });
+
+test('retry backoff is not labelled a service cooldown',async()=>{
+  const {jobWaiting,jobServiceWaiting}=await import('../src/lib/ui/queue');
+  const retry={id:'retry',kind:'steam.sync',state:'pending',attempts:1,lastError:null,nextAttemptAt:new Date(Date.now()+60000)};
+  expect(jobWaiting(retry)).toBe(true);expect(jobServiceWaiting(retry)).toBe(false);
+  expect(jobServiceWaiting({...retry,serviceRetryAt:new Date(Date.now()+60000)})).toBe(true);
+  expect(jobServiceWaiting({...retry,serviceRetryAt:new Date(Date.now()-1000)})).toBe(false);
+});
+
+test('private Steam libraries need permissions rather than repeated retries',async()=>{
+  const {AppError}=await import('../src/lib/server/security/errors');
+  const {jobFailureDetail}=await import('../src/lib/server/queue');
+  const failure=new AppError(409,'private data','steam_private');
+  expect(jobFailureDetail(failure,true)).toEqual({code:'provider.permission',remedy:'permissions',retryable:false});
+  expect(jobFailureMessage(failure,true)).toContain('Steam privacy');
+});

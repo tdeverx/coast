@@ -1,10 +1,15 @@
 <script lang="ts">
+  import RowFeedback from './RowFeedback.svelte';
+  import { createOperation } from '$lib/ui/operation.svelte';
+  import Field from './Field.svelte';
+  import FormActions from './FormActions.svelte';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
-  import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
 
   const { change } = useClient();
+  const operation = createOperation();
+  const busy = $derived(operation.busy);
 
   let {
     open = $bindable(false),
@@ -13,7 +18,6 @@
     note,
   }: { open: boolean; mediaId: string; title: string; note: string } = $props();
   let draft = $state(''),
-    busy = $state(false),
     error = $state('');
   $effect(() => {
     if (open) {
@@ -22,15 +26,14 @@
     }
   });
   async function save() {
-    busy = true;
-    try {
+    if (busy) return;
+
+    error = '';
+    const completed = await operation.run(async () => {
       await change('profile', { action: 'feature', mediaId, note: draft });
       open = false;
-    } catch (e) {
-      error = message(e);
-    } finally {
-      busy = false;
-    }
+    });
+    if (!completed) error = operation.error;
   }
 </script>
 
@@ -42,21 +45,14 @@
       void save();
     }}
   >
-    {#if error}<p role="alert">{error}</p>{/if}<label
-      >Why this one?<textarea
+    {#if error}<RowFeedback error={error} tag="p" class="" />{/if}<Field label="Why this one?" class=""><textarea
         bind:value={draft}
         maxlength="300"
         rows="3"
         placeholder="An optional note about why this is a favourite."
-      ></textarea></label
-    >
+      ></textarea></Field>
     <p class="small">Featured separately from your profile background.</p>
-    <div class="row">
-      <Button type="submit" variant="primary" disabled={busy}>Save feature</Button><Button
-        variant="ghost"
-        onclick={() => (open = false)}>Cancel</Button
-      >
-    </div>
+    <FormActions cancel={() => open = false}><Button type="submit" disabled={busy}>Save feature</Button></FormActions>
   </form></Dialog
 >
 

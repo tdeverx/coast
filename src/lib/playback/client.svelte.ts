@@ -11,6 +11,7 @@ export const player = $state({
   role: 'idle' as 'idle' | 'playback' | 'postplay',
   paused: true,
   controlsVisible: true,
+  browsing: false,
   subtitlePrompt: false,
   continuationId: '',
   muted: true,
@@ -29,11 +30,12 @@ export const heroPlayer = $state({
 });
 
 type PlaybackController = {
+  beginPlaybackGesture: (type:'audio'|'video') => void;
   stop: () => Promise<void>;
   pause: () => void;
   resume: () => Promise<void>;
-  snapshot: () => {positionSeconds:number;buffering:boolean};
-  align: (state:{positionSeconds:number;paused:boolean}) => void;
+  snapshot: () => {positionSeconds:number;buffering:boolean;unavailable?:boolean};
+  align: (state:{positionSeconds:number;paused:boolean;force?:boolean}) => void;
 };
 let controller: PlaybackController | undefined;
 export function registerPlaybackController(next: PlaybackController) {
@@ -42,8 +44,10 @@ export function registerPlaybackController(next: PlaybackController) {
     if (controller === next) controller = undefined;
   };
 }
+export function beginPlaybackGesture(type:'audio'|'video'){controller?.beginPlaybackGesture(type);}
+export async function stopPlayback(){await controller?.stop();}
 export function playbackSnapshot(){return controller?.snapshot();}
-export function alignPlayback(state:{positionSeconds:number;paused:boolean}){controller?.align(state);}
+export function alignPlayback(state:{positionSeconds:number;paused:boolean;force?:boolean}){controller?.align(state);}
 export function pausePlayback() {
   controller?.pause();
 }
@@ -70,10 +74,10 @@ export async function playMedia(
   } = {}
 ) {
   if (player.loading) return;
-  const {syncedPlayer,isSyncHost,syncedCommand}=await import('./synced/client.svelte');
+  const {syncedPlayer,canControlPlayback,syncedCommand}=await import('./synced/client.svelte');
   if(player.loading)return;
   const room=syncedPlayer.room;
-  if(room&&!syncedPlayer.changing&&!isSyncHost()){syncedPlayer.notice='Playback is controlled by the host.';return;}
+  if(room&&!syncedPlayer.changing&&!canControlPlayback()){syncedPlayer.notice='Playback is controlled by the host.';return;}
   const syncSwitch=!!room&&!syncedPlayer.changing;
   if(syncSwitch)syncedPlayer.changing=true;
   if (
@@ -119,6 +123,7 @@ export async function playMedia(
     player.subtitlePrompt = session.subtitlePrompt;
     player.role = 'playback';
     player.paused = true;
+    player.browsing = false;
     player.controlsVisible = true;
     setPlaybackMuted(false);
     if(syncSwitch)await syncedCommand('item',{playbackId:session.id,queueIndex:Math.max(0,player.audioIndex),...(session.mediaType==='audio'?{queue:player.audioQueue.map(item=>item.id)}:{})});
@@ -152,15 +157,16 @@ export async function playMusic(workId:string,continuing=false){
   return playMusicQueue(result,continuing);
 }
 export async function playMusicQueue(result:{items:{id:string;title:string;availability:string}[];continueId:string|null},continuing=false){
-  const {syncedPlayer,isSyncHost}=await import('./synced/client.svelte');
-  if(syncedPlayer.room&&!isSyncHost()){syncedPlayer.notice='Playback is controlled by the host.';return;}
+  const {syncedPlayer,canControlPlayback,canEditPartyQueue}=await import('./synced/client.svelte');
+  if(syncedPlayer.room&&!canControlPlayback()){syncedPlayer.notice='Playback is controlled by the host.';return;}
+  if(syncedPlayer.room&&!canEditPartyQueue()){syncedPlayer.notice='Only the host can replace this queue.';return;}
   player.audioQueue=result.items;player.audioIndex=continuing?Math.max(0,result.items.findIndex(item=>item.id===result.continueId))-1:-1;player.audioNotice='';
   return advanceMusic(1,continuing,true);
 }
 export async function playSavedMusicQueue(){return playMusicQueue(await api('music/queue',undefined,'GET'));}
 export async function advanceMusic(direction:1|-1=1,continuing=false,replacingQueue=false){
-  const {syncedPlayer,isSyncHost}=await import('./synced/client.svelte');
-  if(syncedPlayer.room&&!isSyncHost())return;
+  const {syncedPlayer,canControlPlayback}=await import('./synced/client.svelte');
+  if(syncedPlayer.room&&!canControlPlayback())return;
   if(syncedPlayer.room&&!replacingQueue)player.audioQueue=syncedPlayer.room.queueItems;
   let index=player.audioIndex+direction;
   const skipped:string[]=[];

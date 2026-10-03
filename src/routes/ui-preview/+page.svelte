@@ -22,7 +22,7 @@
   }
   providePreviewClient(fixtureFetch);
   const previewsReady = true;
-  const large = new Set(['DetailCard','Heading','MediaHero','MediaPage','MediaDetailRows','IntegrationSettings','JobsSettings','Dialog','AddTitle','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog']);
+  const large = new Set(['DetailCard','Heading','MediaHero','MediaPage','MediaDetailRows','IntegrationSettings','JobsSettings','Dialog','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog']);
   const textSizes = ['--text-sm','--text-md','--text-xl','--text-2xl','--text-hero-mobile','--text-hero'];
   const weights = ['--weight-regular','--weight-semibold','--weight-bold'];
   const palette = [
@@ -44,7 +44,7 @@
 <svelte:head><title>UI reference · Coast</title></svelte:head>
 <div class="content page">
   <Heading level={1} title="UI reference" selection={{label:'UI reference section',value:section,options:referenceSections,change:changeSection}}>
-    {#snippet actions()}<Button href="/settings/admin" variant="ghost">Admin settings</Button>{/snippet}
+    {#snippet actions()}<Button href="/settings/admin" emphasis="subtle">Admin settings</Button>{/snippet}
   </Heading>
   <p class="small reference-description">Shared styles and all {components.length} reusable elements and components. Examples use isolated demo data.</p>
   {#if section === 'typography'}
@@ -128,7 +128,7 @@
     {#each visible as name (name)}
       <section class="specimen" id={`component-${name}`} aria-labelledby={`label-${name}`}>
         <Heading title={name}>
-          {#snippet heading()}<h2 id={`label-${name}`}>{name}{name==='SocialControls'?' · Non-approved':''}</h2>{/snippet}
+          {#snippet heading()}<h2 id={`label-${name}`}>{name}{['SocialControls','NotificationInbox'].includes(name)?' · Non-approved':''}</h2>{/snippet}
           {#snippet actions()}<a class="small quiet" href={`/ui-preview/demo?component=${name}`} target="_blank" rel="noreferrer">Open ↗</a>{/snippet}
         </Heading>
         <p class="small quiet">{manifest[name].path}</p>

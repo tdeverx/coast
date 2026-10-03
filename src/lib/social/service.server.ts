@@ -8,12 +8,20 @@ import {enqueueTraktChangeInTransaction,enqueueCollectionProjectionInTransaction
 import {notify,resolveNotification} from '$lib/server/notifications';
 import {AppError} from '$lib/server/security/errors';
 import {emojis} from './model';
+import {friendStatusSql} from './status.server';
 const uuid=v.pipe(v.string(),v.uuid());
-export async function friends(userId:string,page=1) {
+export async function incomingFriendRequests(userId:string){
+ const [row]=await getSql()`select count(*)::int as count from friendships f join users u on u.id=f.requested_by where f.state='pending' and f.requested_by<>${userId}::uuid and (${userId}::uuid=f.user_a or ${userId}::uuid=f.user_b) and not u.disabled`;
+ return Number(row.count);
+}
+export async function friends(userId:string,page=1,state:'all'|'accepted'|'pending'='all',userIds?:string[]):Promise<import('./model').FriendEntry[]> {
  return await getSql()`select f.id,f.state,f.requested_by as "requestedBy",f.created_at as "createdAt",u.id as "userId",u.username,
- case when social_visible(u.id,${userId}::uuid,'details') then u.settings->'profile'->>'avatar' end as avatar
- from friendships f join users u on u.id=case when f.user_a=${userId}::uuid then f.user_b else f.user_a end
- where (f.user_a=${userId}::uuid or f.user_b=${userId}::uuid) and not u.disabled and f.state in ('pending','accepted') order by f.state desc,u.username,f.id limit 61 offset ${(page-1)*60}`;
+ case when social_visible(u.id,${userId}::uuid,'details') then u.settings->'profile'->>'avatar' end as avatar, social_visible(u.id,${userId}::uuid,'insights') as "canCompare", ${friendStatusSql(userId)} as "activityStatus",
+ case when social_visible(u.id,${userId}::uuid,'details') then case when coalesce(u.settings->'profile'->>'backgroundMode',case when u.settings->'profile'->>'backgroundMediaId' is not null then 'fixed' else 'activity' end)='activity' then
+ (select a.work_id::text from social_activity a join works w on w.id=a.work_id where a.user_id=u.id and a.date_known and a.event_kind in ('watch','listen','play','played','session') and a.occurred_at<=now() and social_visible(u.id,${userId}::uuid,a.section,w.category) and (w.category='screen' or coalesce((select value->>'experimentalFeatures' from system_settings where key='coast'),'false')='true') order by a.occurred_at desc,a.id desc limit 1)
+ else u.settings->'profile'->>'backgroundMediaId' end end as "backgroundWorkId"
+ from friendships f join users u on u.id=case when f.user_a=${userId}::uuid then f.user_b else f.user_a end left join user_presence up on up.user_id=u.id
+ where (f.user_a=${userId}::uuid or f.user_b=${userId}::uuid) and not u.disabled and f.state in ('pending','accepted') and (${state}='all' or f.state=${state}) and (${userIds===undefined} or u.id=any(${getSql().array(userIds??[],'TEXT')}::uuid[])) order by f.state desc,u.username,f.id limit 61 offset ${(page-1)*60}`;
 }
 export async function requestFriend(userId:string,raw:unknown) {
  const input=v.parse(v.object({username:v.pipe(v.string(),v.trim(),v.minLength(1),v.maxLength(100))}),raw);
@@ -26,7 +34,6 @@ export async function requestFriend(userId:string,raw:unknown) {
   const [existing]=await db`select * from friendships where user_a=${a} and user_b=${b} for update`;
   if(existing&&['pending','accepted'].includes(existing.state))return {id:existing.id,state:existing.state};
   const [row]=await db`insert into friendships(user_a,user_b,requested_by) values(${a},${b},${userId}) on conflict(user_a,user_b) do update set requested_by=excluded.requested_by,state='pending',created_at=now(),updated_at=now() returning id,state`;
-  await notify({userId:other.id,kind:'friend-request',title:'New friend request',sourceKey:'friend-request:'+row.id,data:{actorId:userId,subjectId:row.id,destination:'/friends?view=friends',actions:['accept','decline']}},db);
   return row;
  });
 }
@@ -41,7 +48,7 @@ export async function changeFriend(userId:string,id:string,raw:unknown) {
   await db`update friendships set state=${target},updated_at=now() where id=${id}`;
   const recipient=f.requested_by===f.user_a?f.user_b:f.user_a;
   await resolveNotification(recipient,'friend-request:'+id,db);
-  if(action==='accept')await notify({userId:f.requested_by,kind:'friend-accepted',title:'Friend request accepted',sourceKey:'friend-accepted:'+id,data:{actorId:userId,subjectId:id,destination:'/friends?view=friends'}},db);
+  if(action==='accept')await notify({userId:f.requested_by,kind:'friend-accepted',title:'Friend request accepted',sourceKey:'friend-accepted:'+id,data:{actorId:userId,subjectId:id,destination:'/for-you?friends=true'}},db);
   return {state:target};
  });
 }
@@ -66,7 +73,7 @@ export async function react(userId:string,raw:unknown) {
    const key=`reaction:${userId}:${input.targetId}`;
    if(input.emoji===null)await resolveNotification(owner,key,db);
    else if((await db`select social_visible(${userId}::uuid,${owner}::uuid,'reactions',(select category from works where id=${workId})) as allowed`)[0].allowed)
-    await notify({userId:owner,kind:'reaction',title:`Reacted ${input.emoji} to your activity`,sourceKey:key,data:{actorId:userId,subjectId:input.targetId,workId,destination:'/friends?view=activity'}},db);
+    await notify({userId:owner,kind:'reaction',title:`Reacted ${input.emoji} to your activity`,sourceKey:key,data:{actorId:userId,subjectId:input.targetId,workId,destination:'/for-you?section=activity'}},db);
   }
   return {emoji:input.emoji};
  });
@@ -90,7 +97,7 @@ export async function recommend(userId:string,raw:unknown) {
   if(!f)throw new AppError(403,'This action is available between friends.');
   const [work]=await db`select id from works where id=${input.workId}`;if(!work)throw new AppError(404,'Media not found.');
   const [r]=await db`insert into social_recommendations(sender_id,recipient_id,work_id) values(${userId},${input.recipientId},${input.workId}) on conflict(sender_id,recipient_id,work_id) where state='pending' do update set work_id=excluded.work_id returning id,state`;
-  await notify({userId:input.recipientId,kind:'recommendation',title:'A friend recommended something',sourceKey:'recommendation:'+r.id,data:{actorId:userId,subjectId:r.id,workId:input.workId,destination:'/friends?view=recommendations',actions:['save','dismiss']}},db);
+  await notify({userId:input.recipientId,kind:'recommendation',title:'A friend recommended something',sourceKey:'recommendation:'+r.id,data:{actorId:userId,subjectId:r.id,workId:input.workId,destination:'/for-you?notifications=true&notificationKind=recommendation',actions:['save','dismiss']}},db);
   return r;
  });
 }

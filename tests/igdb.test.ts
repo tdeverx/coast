@@ -96,3 +96,18 @@ test('invalid OAuth responses and repeated rejection do not reveal secrets or lo
   await expect(rejected.search('Game')).rejects.toMatchObject({ status: 502, code: 'igdb_rejected' });
   expect(calls).toBe(2);
 });
+
+test('discovery uses ranked IGDB visits, preserves rank and excludes future releases from recent queries',async()=>{
+  const calls:{path:string;body:string}[]=[];
+  const adapter=new IgdbAdapter(credentials(),async(path,init)=>{
+    calls.push({path,body:String(init?.body)});
+    if(path==='/v4/popularity_primitives')return [{game_id:2},{game_id:1},{game_id:2}];
+    return [{id:1,name:'First'},{id:2,name:'Second'}];
+  },async()=>token);
+  expect((await adapter.discover('trending')).map(g=>g.externalId)).toEqual(['2','1']);
+  expect(calls[0].body).toContain('popularity_type = 1');
+  expect(calls[1].body).toContain('id = (2,1)');
+  await adapter.discover('recent');
+  expect(calls[2].body).toContain('first_release_date <=');
+  expect(calls[2].body).toContain('sort first_release_date desc');
+});

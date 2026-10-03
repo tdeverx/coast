@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Button from './Button.svelte';
+  import ProgressBar from './ProgressBar.svelte';
   import { primaryMediaAction, progressFraction } from '$lib/media/model';
   import { goto } from '$app/navigation';
   import { cardArtwork, overlayArtwork } from '$lib/ui/artwork-priority';
@@ -15,18 +17,28 @@
   import { lazyImage } from '$lib/ui/lazy-image';
   import { contextGesture, type MenuPoint } from '$lib/ui/context-gesture';
   import { liquidGlass } from '$lib/ui/materials/glass';
+  import {useClock} from '$lib/ui/clock.svelte';
+  import {activityDateLabel} from '$lib/social/model';
+  import ReactionActions from './ReactionActions.svelte';
+  const clock=useClock();
   import Icon from './Icon.svelte';
+  import ActivityHeader from './ActivityHeader.svelte';
   import SocialControls from './SocialControls.svelte';
   import MediaActions from './MediaActions.svelte';
   import PresentationActions from './PresentationActions.svelte';
   let {
     item,
-    shape = 'poster',
+    shape = item.kind==='person'?'circle':'poster',
     artworkStyle = 'auto',
     overlay = 'none',
     artworkPriority,
     onselect,
     social,
+    wrapActivity = false,
+    showActivityContext = true,
+    showCaption = true,
+    showPrimaryAction = true,
+    primaryMenu,
   }: {
     item: MediaView | MediaCardPresentation;
     shape?: MediaCardShape;
@@ -34,7 +46,12 @@
     overlay?: MediaCardOverlay;
     artworkPriority?: ArtworkPriority;
     onselect?: (item: MediaView) => void;
-    social?:{friends:{username:string;avatar?:string|null}[];total:number};
+    wrapActivity?: boolean;
+    showActivityContext?: boolean;
+    showCaption?:boolean;
+    showPrimaryAction?:boolean;
+    primaryMenu?:import('svelte').Snippet;
+    social?:{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number};
   } = $props();
   const readOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
   const trackedItem = $derived('href' in item ? undefined : item);
@@ -48,6 +65,7 @@
   });
   let imageIndex = $state(0);
   let active = $state(false);
+  let primaryMenuButton=$state<Button>();
   let actions = $state<MediaActions>();
   let presentationActions = $state<PresentationActions>();
   const selectedType = $derived(
@@ -79,10 +97,11 @@
     imageIndex = 0;
   });
   async function openMenu(point: MenuPoint) {
-    if (readOnly()) return;
+    if (readOnly() || item.kind === 'person'&&!primaryMenu) return;
     active = true;
     await tick();
-    if (trackedItem) actions?.openAt(point);
+    if(primaryMenu) primaryMenuButton?.openAt(point);
+    else if (trackedItem) actions?.openAt(point);
     else presentationActions?.openAt(point);
   }
   const completion = $derived(
@@ -114,9 +133,11 @@
       progress: 'Update progress',
     }[primaryAction]
   );
-  async function activate() {
+  async function activate(event:MouseEvent) {
+    const rect=event.currentTarget instanceof HTMLElement?event.currentTarget.getBoundingClientRect():null;
     active = true;
     await tick();
+    if(primaryMenu&&rect){primaryMenuButton?.openAt({x:rect.left,y:rect.bottom});return;}
     if (primaryAction === 'play') await actions?.start();
     else if (primaryAction === 'request') actions?.request();
     else await goto(href);
@@ -138,6 +159,13 @@
   onpointerenter={() => (active = true)}
   onfocusin={() => (active = true)}
 >
+  {#if showActivityContext && item.captionActor}
+    <div class="activity-context">
+      <ActivityHeader username={item.captionActor.username} avatar={item.captionActor.avatar} status={item.captionActor.status} nonApproved>
+        {#snippet trailing()}{#if item.captionActivity}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{item.captionActivity.kind==='watch'?'Watch':'Activity'} date unknown</span>{/if}{/if}{/snippet}
+      </ActivityHeader>
+    </div>
+  {/if}
   <div
     class="art {shape}"
     class:unavailable={trackedItem && !trackedItem.available}
@@ -164,7 +192,7 @@
                   ? 'library'
                   : 'film'}
             size={32}
-          /><span>{item.title}</span>
+          />{#if showCaption}<span>{item.title}</span>{/if}
         </div>{/if}
     </a>
     {#if overlayImage}
@@ -179,21 +207,23 @@
         onerror={() => (overlayIndex += 1)}
       />
     {/if}
-    {#if !readOnly()}<button
+    {#if !readOnly()}{#if showPrimaryAction}<button
         class="play glass icon-button"
         use:liquidGlass={{ enabled: active }}
-        aria-label={`${primaryLabel} ${item.title}`}
+        aria-label={primaryMenu?`Actions for ${item.title}`:`${primaryLabel} ${item.title}`}
+        aria-haspopup={primaryMenu?'menu':undefined}
         onclick={activate}
         ><Icon
-          name={primaryAction === 'play'
+          name={primaryMenu?'more':primaryAction === 'play'
             ? 'play'
             : primaryAction === 'request'
               ? 'request'
               : 'arrow'}
           size={28}
         /></button
-      >
-      <div class="card-menu">
+      >{/if}
+      {#if primaryMenu}<Button menu hideTrigger bind:this={primaryMenuButton} label={`Actions for ${item.title}`}>{@render primaryMenu()}</Button>{/if}
+      {#if item.kind !== 'person'}<div class="card-menu">
         <button
           class="icon-button"
           aria-label={`Actions for ${item.title}`}
@@ -212,22 +242,29 @@
               {item}
             />{/if}{/if}
       </div>
-    {/if}
-    {#if social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} showLabel={false} showReactions={false} /></div>{/if}
-    {#if completion !== null && completion > 0 && completion < 0.9}<div
-        class="progress"
-        role="progressbar"
-        aria-label={`${item.title} progress`}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(completion * 100)}
-      >
-        <span style:width={`${completion * 100}%`}></span>
+    {/if}{/if}
+    {#if social?.total && !item.captionActor}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} showLabel={false} showReactions={false} /></div>{/if}
+    {#if !item.captionActor && completion !== null && completion > 0 && completion < 0.9}<div
+        class="progress">
+        <ProgressBar progress={completion} label={`${item.title} progress`} />
       </div>{/if}
   </div>
-  <a class="caption" {href} onclick={select}>
+  {#if showCaption}<div class="caption-row">
+  {#if item.captionActor}
+    <div class="activity-attribution" class:wrap-activity={wrapActivity}>
+
+      <div class="activity-body">
+        <div class="activity-details">
+          <a class="activity-media" {href} onclick={select}>{item.captionTitle ?? item.title}</a>
+          {#if item.captionActivity?.action || item.captionSubtitle}<div class="activity-detail">{item.captionActivity?.action ?? item.captionSubtitle}{#if item.captionActivity?.detail}{' '}{item.captionActivity.detail}{/if}</div>{/if}
+        </div>
+        {#if showActivityContext && item.captionActivity}<div class="activity-reaction"><ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} /></div>{/if}
+      </div>
+    </div>
+  {:else}
+    <a class="caption" {href} onclick={select}>
     <div class="title">{item.captionTitle ?? item.title}</div>
-    <div class="meta">
+    {#if !item.captionActor&&(item.kind!=='person'||item.captionSubtitle)}<div class="meta">
       {#if item.captionSubtitle}<span class="subtitle">{item.captionSubtitle}</span
         >{:else if item.kind === 'season' && trackedItem?.seasonNumber !== undefined}{item.captionTitle
           ? item.title
@@ -240,14 +277,31 @@
           ? 'Show'
           : item.kind === 'movie'
             ? 'Movie'
-            : item.kind}{/if}{#if trackedItem?.rating}<span>·</span><span class="rating"
+            : item.kind}{/if}{#if !item.captionActor && trackedItem?.rating}<span>·</span><span class="rating"
           ><Icon name="star" size={14} filled /> {trackedItem.rating}</span
         >{/if}
-    </div>
+    </div>{/if}
   </a>
+  {/if}
+  </div>{/if}
+  {#if showActivityContext && item.captionActivity && !item.captionActor}
+    <div class="activity-reactions small quiet">
+      {#if !item.captionActor}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{item.captionActivity.kind==='watch'?'Watch':'Activity'} date unknown</span>{/if}{/if}
+      <ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} />
+    </div>
+  {/if}
 </article>
 
 <style>
+  .activity-attribution{margin-top:12px;}
+  .activity-context{margin-bottom:8px;}
+  .activity-body{display:flex;align-items:flex-start;gap:8px;margin-top:4px;}
+  .activity-details{min-width:0;flex:1;}
+  .activity-media{display:block;font-size:var(--text-md);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .activity-detail{font-size:var(--text-sm);color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .wrap-activity .activity-detail,.wrap-activity .activity-media{white-space:normal;overflow:visible;overflow-wrap:anywhere;}
+  .activity-reaction{flex-shrink:0;}
+  .activity-reactions{margin-top:6px;}
   .card-friends{position:absolute;bottom:8px;left:8px;z-index:3;}
 
   .media-card {
@@ -262,6 +316,10 @@
     background: var(--surface);
     transition: transform var(--fast) var(--ease);
   }
+  .art.circle{aspect-ratio:1;border-radius:50%;}
+  .art.circle .art-link{border-radius:50%;}
+  .media-card:has(.art.circle) .caption-row{text-align:center;}
+  .media-card:has(.art.circle) .meta{justify-content:center;}
   .art.square {
     aspect-ratio: 1;
   }
@@ -462,9 +520,6 @@
   }
   .progress {
     height: 6px;
-    border-radius: 99px;
-    overflow: hidden;
-    background: color-mix(in srgb, var(--white) calc(69 / 255 * 100%), transparent);
     position: absolute;
     bottom: 10px;
     left: 10px;
@@ -472,12 +527,7 @@
     z-index: 2;
     pointer-events: none;
   }
-  .progress span {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: currentColor;
-  }
+
   .rating :global(svg) {
     width: 1em;
     height: 1em;

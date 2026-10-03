@@ -2,8 +2,8 @@ import { expect, test } from 'bun:test';
 import { compileModule } from 'svelte/compiler';
 const moduleUrl = (code:string)=>`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
 const clientUrl = moduleUrl(`export let respond=async()=>{}; export function delivery(fn){respond=fn;} export function api(...args){return respond(...args);} export const message=e=>e.message; export class ApiError extends Error {constructor(status){super('fixture');this.status=status;}}`);
-const playbackUrl = moduleUrl(`export const player={session:{id:'playback',mediaId:'media'},audioQueue:[],audioIndex:0};export const playMedia=async()=>{};export const playbackSnapshot=()=>({positionSeconds:10,buffering:false});export const alignPlayback=()=>{};`);
-const modelUrl = moduleUrl('export const timelinePosition=()=>10;');
+const playbackUrl = moduleUrl(`export const player={session:{id:'playback',mediaId:'media'},audioQueue:[],audioIndex:0};export const alignments=[];export let stops=0;export const playMedia=async()=>{};export const playbackSnapshot=()=>({positionSeconds:10,buffering:false});export const alignPlayback=state=>alignments.push(state);export const stopPlayback=async()=>{stops++;};`);
+const modelUrl = moduleUrl('export const timelinePosition=()=>10;export const canControl=(r,u)=>r.hostId===u||r.participants.some(p=>p.userId===u&&p.joined)&&(r.settings.playback==="everyone"||r.settings.playback==="selected"&&r.settings.controllers.includes(u));');
 const source = await Bun.file(new URL('../src/lib/playback/synced/client.svelte.ts',import.meta.url)).text();
 const code = compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:'client.svelte.js',generate:'client'}).js.code
  .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
@@ -12,7 +12,7 @@ const client = await import(clientUrl);
 const sync:typeof import('../src/lib/playback/synced/client.svelte') = await import(moduleUrl(code));
 const stored = new Map<string,string>();
 globalThis.sessionStorage = {getItem:key=>stored.get(key)??null,setItem:(key,value)=>{stored.set(key,value);},removeItem:key=>{stored.delete(key);},clear:()=>stored.clear(),key:i=>[...stored.keys()][i]??null,get length(){return stored.size;}};
-const room:any = {id:'room',mediaId:'media',mediaType:'audio',hostId:'host',serverTime:new Date().toISOString(),durationSeconds:100,queueItems:[],queueIndex:0,participants:[{userId:'host',joined:true}]};
+const room:any = {id:'room',mediaId:'media',mediaType:'audio',hostId:'host',serverTime:new Date().toISOString(),durationSeconds:100,queueItems:[],queueIndex:0,settings:{playback:'host',controllers:[],queue:'host'},participants:[{userId:'host',joined:true}]};
 test('a heartbeat delivered after leaving cannot resurrect a synced room',async()=>{
  sync.syncedPlayer.room=room; sync.syncedPlayer.userId='host';
  let complete!:(value:unknown)=>void;
@@ -31,4 +31,25 @@ test('temporary restore failure retains room identity, authoritative rejection r
  stored.set('coast:synced','room'); client.delivery(()=>Promise.reject(new TypeError('offline')));
  await sync.restoreSynced(); expect(stored.get('coast:synced')).toBe('room');
  client.delivery(()=>Promise.reject(new client.ApiError(403)));await sync.restoreSynced();expect(stored.has('coast:synced')).toBe(false);
+});
+
+test('creating a party sends the current playback state',async()=>{
+ const playback=await import(playbackUrl);
+ for(const paused of [false,true]){
+  playback.player.paused=paused;
+  let payload:any;
+  client.delivery((_path:string,body:unknown)=>{payload=body;return Promise.resolve({...room,paused});});
+  await sync.startSynced();
+  expect(payload.paused).toBe(paused);
+ }
+ await sync.leaveSynced();
+});
+test('resync forces alignment using the personal offset and leaving honors the playback preference',async()=>{
+ const playback=await import(playbackUrl);
+ sync.syncedPlayer.userId='host';sync.syncedPlayer.room=room;
+ client.delivery((path:string)=>Promise.resolve(path.endsWith('/heartbeat')?room:{}));
+ sync.setSyncPreferences({offsetSeconds:2,keepPlaying:false});
+ await sync.resyncNow();expect(playback.alignments.at(-1)).toMatchObject({positionSeconds:12,force:true});
+ const before=playback.stops;await sync.leaveSynced();expect(playback.stops).toBe(before+1);
+ sync.setSyncPreferences({offsetSeconds:0,keepPlaying:true});
 });

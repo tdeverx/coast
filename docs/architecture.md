@@ -24,7 +24,7 @@ Provider definitions, service instances, per-user connections and per-user avail
 
 Native title creation belongs to `core/media`, alongside its transactional subtype and tracking writes. Query modules only read state. Collection, Library, Lists and Requests filter and count before selecting bounded 60-item pages and resolving media cards. Explicit detail queries retain complete membership. Collection uses the profile owner's personal reasons and the visitor's source permissions. Ordinary inbox, action and user projections use Drizzle column selection, so their camelCase field names and types match the UI without conversion fallbacks.
 
-Settings navigation labels and administrator-only section membership come from `settings/sections.ts`, shared by the page and its server loader. `MediaActions` owns tracking and playback actions; `MediaRequestMenu` owns request-option loading and menu presentation, while confirmation and request dialogs retain their existing placement.
+Settings navigation labels and administrator-only section membership come from `settings/sections.ts`, shared by the page and its server loader. `MediaActions` owns tracking and playback actions; `controls/requests.svelte.ts` owns lazy request-option loading, with Button supplying menu presentation, while confirmation and request dialogs retain their existing placement.
 
 Provider objects and unvalidated JSON do not cross into the UI. JSON is reserved for provider boundary snapshots, constrained settings and action payloads; core identity and tracking are concrete columns.
 
@@ -59,3 +59,13 @@ Use `workId` for shared work identities, `instanceId` for a configured service, 
 The shared Shelf renderer consumes a discriminated local/page/cursor pagination contract. Pure Library/Collection filter mapping lives in `library.ts`; source adapters own cancellable loading and medium-specific data, rather than separate rendering implementations. Mutations use the injected client, targeted `coast:*` route dependencies and one local resource refresh. The viewer injects local API and playback contexts without replacing global fetch or the real controller.
 
 `bun run ui:inventory` generates rendered component composition and production consumers using the Svelte compiler. `bun run ui:inventory:check` validates the saved manifest and preview recipe coverage in CI. Preview components load only when needed, retain state after first viewport activation, and link to their direct composition and consumers.
+
+## Steam games
+
+Steam uses Valve OpenID to link the authenticated Coast user to a verified SteamID64; the administrator's Web API key is encrypted and sent only in the `x-webapi-key` header to Valve's fixed API origin. Linking does not create a Coast sign-in identity. Single-use challenges pin the callback, issuer, signed account, nonce and owner. Same-account reconnect retains the existing synchronization-account evidence and import preferences; account switches invalidate queued work through existing account generations.
+
+`steam.sync` imports a complete owned-game response into the shared games registry, personal Collected state and account-scoped cumulative playtime. Exact Steam AppIDs link to IGDB only through matching verified Steam store URLs. A metadata outage leaves minimal Steam records that later syncs can enrich without changing their UUIDs. A complete traversal publishes negative ownership; private, incomplete and failed reads retain previous positive evidence. Ownership is availability evidence, with installation explicitly unknown. Imported totals never manufacture dated sessions or completion.
+
+`steam.achievements` rotates through at most 20 eligible owned games per run, retaining per-account unlock state and reported dates. Missing dates remain unknown. Failed titles retain prior progress and rotate rather than starving the batch. The existing Connections preferences, experimental gate, Jobs schedules and outbox provide controls and durable execution; no second scheduler or production dependency is introduced.
+
+Provider traversal Jobs run sequentially across services. Atomic claims and a held PostgreSQL advisory lock prevent overlap even during stale-lease recovery. Playback reports and user edits keep their existing connection lanes. Retry backoff and actual provider cooldown are reported separately; only an active worker's confirmed rate-limit/service response can publish a service cooldown.

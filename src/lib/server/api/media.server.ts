@@ -3,7 +3,7 @@ import { mediaActionData, mediaHistory, mediaActivity } from '$lib/server/querie
 import { json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { AppError } from '$lib/server/security/errors';
-import { addLocalSeasonEpisodes, createLocalMedia } from '$lib/core/media/service';
+import { addLocalSeasonEpisodes } from '$lib/core/media/service';
 import { getMetadataEditor, getPresentationEditor, saveMetadataOverrides, savePresentationPreference, resetPresentationPreference } from '$lib/catalogue/overrides/service';
 import { detailsData } from '$lib/server/queries/media';
 import { refreshMedia } from '$lib/catalogue/service';
@@ -14,8 +14,7 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
  const { user, uid, path, method, url, body } = context;
  let result: unknown;
  if (path[0] === 'media') {
-      if (path.length === 1 && method === 'POST') result = await createLocalMedia(uid, body);
-      else if (path.length === 2 && method === 'GET')
+      if (path.length === 2 && method === 'GET')
         result = await detailsData(uid, uuid(path[1]));
       else if (path[2] === 'actions' && method === 'GET')
         result = await mediaActionData(uid, uuid(path[1]));

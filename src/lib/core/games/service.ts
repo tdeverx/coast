@@ -1,5 +1,6 @@
-import { and, asc, count, desc, eq, ilike, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, ilike, sql, getTableColumns } from 'drizzle-orm';
 import * as v from 'valibot';
+import { ownedGameAvailable } from '../../games/availability.server';
 import { getDb, type Database } from '../../server/db';
 import { games, gameExternalIds, gamePlaythroughs, gameSessions } from '../../server/db/schema';
 import { PAGE_SIZE, pageNumberSchema, pagination } from '../../server/queries/pagination';
@@ -34,7 +35,7 @@ export async function createGame(raw: unknown) {
   });
 }
 
-export async function listGames(search = '', requestedPage = 1, tracking?: { userId: string; status?: import('../../games/model').GameStatus }) {
+export async function listGames(search = '', requestedPage = 1, tracking?: { userId: string; status?: import('../../games/model').GameStatus; personal?:boolean; availableOnly?:boolean }) {
   v.parse(pageNumberSchema, requestedPage);
   const query = v.parse(v.pipe(v.string(), v.trim(), v.maxLength(250)), search);
   if (tracking) {
@@ -42,13 +43,14 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
     if (tracking.status !== undefined) v.parse(v.picklist(['planned', 'in-progress', 'completed', 'paused', 'dropped']), tracking.status);
   }
   const where = and(query ? ilike(games.title, `%${query.replace(/[\\%_]/g, '\\$&')}%`) : undefined,
-    tracking ? (tracking.status
+    tracking && (tracking.personal !== false || tracking.status) ? (tracking.status
       ? sql`(select status from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId} order by created_at desc, id desc limit 1) = ${tracking.status}`
-      : sql`exists(select 1 from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId})`) : undefined);
+      : sql`(exists(select 1 from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId}) or exists(select 1 from tracking_state where media_id=${games.id} and user_id=${tracking.userId} and (collected or watchlist or favourite)))`) : undefined,
+    tracking?.availableOnly ? ownedGameAvailable(tracking.userId) : undefined);
   const db = getDb();
   const [totals] = await db.select({ total: count() }).from(games).where(where);
   const { page, pages } = pagination(totals.total, requestedPage);
-  const items = await db.select().from(games).where(where).orderBy(asc(games.title), asc(games.id))
+  const items = await db.select({...getTableColumns(games),available:tracking?ownedGameAvailable(tracking.userId):sql<boolean>`false`}).from(games).where(where).orderBy(asc(games.title), asc(games.id))
     .limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE);
   return { items: items.map((item) => ({ ...item, category: 'game' as const })), total: totals.total, page, pages };
 }
@@ -63,7 +65,13 @@ export async function gameDetails(userId: string | null, gameId: string) {
   const playthroughs = userId ? await db.select(playthroughFields).from(gamePlaythroughs)
     .where(and(eq(gamePlaythroughs.userId, userId), eq(gamePlaythroughs.gameId, gameId)))
     .orderBy(desc(gamePlaythroughs.createdAt), desc(gamePlaythroughs.id)).limit(PAGE_SIZE) : [];
-  return { ...game, category: 'game' as const, identities, playthroughs };
+  const steam = userId ? await db.execute<{username:string;owned:boolean;minutes_played:number;recent_minutes:number;observed_at:Date;achievements_at:Date|null;unlocked:number;total:number}>(sql`
+    select c.username,a.owned,a.minutes_played,a.recent_minutes,a.observed_at,a.achievements_at,
+      (select count(*)::int from game_achievement_progress p join game_achievements g on g.id=p.achievement_id where p.account_id=a.account_id and g.game_id=a.game_id and p.unlocked) as unlocked,
+      (select count(*)::int from game_achievements g where g.game_id=a.game_id and g.provider='steam') as total
+    from game_account_state a join provider_connections c on c.sync_account_id=a.account_id join provider_instances i on i.id=c.instance_id
+    where c.user_id=${userId} and c.status='connected' and i.provider='steam' and i.enabled and a.game_id=${gameId}`) : [];
+  return { ...game, steam: Array.from(steam), category: 'game' as const, identities, playthroughs };
 }
 
 export async function createPlaythrough(userId: string, gameId: string, raw: unknown) {
@@ -148,23 +156,26 @@ export async function playthroughDetails(userId: string, id: string, requestedPa
 
 /** Refresh provider-owned metadata while retaining the game's ID and all private playthroughs. */
 export async function importIgdbMetadata(metadata: import('../../providers/igdb/adapter.server').IgdbGame) {
-  const { category, provider, externalId, ...values } = metadata;
+  const { category, provider, externalId, identities: linked = [], ...values } = metadata;
+  const identities=[{provider,externalId},...linked];
   return getDb().transaction(async (tx) => {
-    await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`game:igdb:${externalId}`}, 0))`);
-    const [identity] = await tx.select().from(gameExternalIds).where(and(
-      eq(gameExternalIds.provider, provider), eq(gameExternalIds.externalId, externalId),
-    ));
+    for(const key of identities.map(i=>`game:${i.provider}:${i.externalId}`).sort())
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${key}, 0))`);
+    const known = await tx.select().from(gameExternalIds).where(sql`(${sql.join(identities.map(i=>sql`(provider=${i.provider} and external_id=${i.externalId})`),sql` or `)})`);
+    if(new Set(known.map(i=>i.gameId)).size>1)throw new DomainError('Verified game identities refer to different records. Review the mapping.',409,'identity_conflict');
+    const identity=known[0];
     let game: typeof games.$inferSelect;
     if (identity) {
       [game] = await tx.update(games).set({ ...values, updatedAt: new Date() })
         .where(eq(games.id, identity.gameId)).returning();
     } else {
       [game] = await tx.insert(games).values(values).returning();
-      // A concurrent manual insert can claim this identity; roll the game insert back on conflict.
-      const inserted = await tx.insert(gameExternalIds).values({ gameId: game.id, provider, externalId })
-        .onConflictDoNothing().returning();
-      if (!inserted.length) throw new DomainError('This game identity changed. Retry the import.', 409, 'identity_conflict');
     }
-    return { ...game, category, identities: [{ provider, externalId }] };
+    for (const id of identities) {
+      await tx.insert(gameExternalIds).values({gameId:game.id,...id}).onConflictDoNothing();
+      const [saved]=await tx.select().from(gameExternalIds).where(and(eq(gameExternalIds.provider,id.provider),eq(gameExternalIds.externalId,id.externalId)));
+      if(saved.gameId!==game.id)throw new DomainError('This game identity changed. Retry the import.',409,'identity_conflict');
+    }
+    return { ...game, category, identities };
   });
 }

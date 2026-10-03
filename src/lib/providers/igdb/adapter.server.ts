@@ -22,13 +22,14 @@ const remoteGame = v.object({
   first_release_date: v.optional(v.pipe(v.number(), v.integer(), v.minValue(-62135596800), v.maxValue(253402300799))),
   cover: v.optional(image),
   artworks: v.optional(v.pipe(v.array(image), v.maxLength(500)), []),
+  external_games: v.optional(v.array(v.object({uid:v.string(),url:v.optional(v.string())})), []),
   platforms: v.optional(v.pipe(v.array(name), v.maxLength(100)), []),
   genres: v.optional(v.pipe(v.array(name), v.maxLength(100)), []),
   involved_companies: v.optional(v.pipe(v.array(v.object({
     company: name, developer: v.optional(v.boolean(), false), publisher: v.optional(v.boolean(), false),
   })), v.maxLength(500)), []),
 });
-const fields = 'name,summary,first_release_date,cover.image_id,artworks.image_id,platforms.name,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher';
+const fields = 'external_games.uid,external_games.url,name,summary,first_release_date,cover.image_id,artworks.image_id,platforms.name,genres.name,involved_companies.company.name,involved_companies.developer,involved_companies.publisher';
 const pageSchema = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000));
 export const IGDB_PAGE_SIZE = 60;
 
@@ -36,6 +37,11 @@ export function mapIgdbGame(raw: unknown) {
   const game = v.parse(remoteGame, raw);
   const companies = game.involved_companies;
   return {
+    identities: game.external_games.flatMap(item => {
+      try { const url=new URL(item.url??'');const id=url.pathname.match(/^\/app\/([1-9][0-9]*)(?:\/|$)/)?.[1];
+        return url.hostname==='store.steampowered.com' && id===item.uid ? [{provider:'steam',externalId:id}] : [];
+      } catch { return []; }
+    }),
     category: 'game' as const, provider: 'igdb' as const, externalId: String(game.id),
     title: game.name, overview: game.summary ?? null,
     releaseDate: game.first_release_date === undefined ? null : new Date(game.first_release_date * 1000).toISOString().slice(0, 10),
@@ -111,10 +117,10 @@ export class IgdbAdapter {
     })();
     try { return await this.tokenRequest; } finally { this.tokenRequest = undefined; }
   }
-  private async query(body: string) {
+  private async requestQuery(body: string, endpoint: string) {
     try {
       let token = await this.accessToken();
-      const send = () => inLane(this.credentials.clientId, () => this.request('/v4/games', {
+      const send = () => inLane(this.credentials.clientId, () => this.request(`/v4/${endpoint}`, {
         method: 'POST', headers: { 'Client-ID': this.credentials.clientId, Authorization: `Bearer ${token}`, accept: 'application/json', 'content-type': 'text/plain' }, body,
       }));
       let raw: unknown;
@@ -124,8 +130,27 @@ export class IgdbAdapter {
         token = await this.accessToken();
         raw = await send();
       }
-      return v.parse(v.pipe(v.array(remoteGame), v.maxLength(IGDB_PAGE_SIZE)), raw).map(mapIgdbGame);
+      return raw;
     } catch (error) { providerError(error); }
+  }
+  private async query(body: string) {
+    try {return v.parse(v.pipe(v.array(remoteGame), v.maxLength(IGDB_PAGE_SIZE)),await this.requestQuery(body,'games')).map(mapIgdbGame);} catch(error){providerError(error);}
+  }
+  async discover(section: 'trending' | 'recent') {
+    if(section==='recent')return this.query(`fields ${fields}; where version_parent = null & first_release_date != null & first_release_date <= ${Math.floor(Date.now()/1000)}; sort first_release_date desc; limit ${IGDB_PAGE_SIZE};`);
+    const parsed=v.safeParse(v.pipe(v.array(v.object({game_id:v.pipe(v.number(),v.integer(),v.minValue(1))})),v.maxLength(IGDB_PAGE_SIZE)),await this.requestQuery(`fields game_id; where popularity_type = 1; sort value desc; limit ${IGDB_PAGE_SIZE};`,'popularity_primitives'));
+    if(!parsed.success)throw new AppError(502,'IGDB returned invalid popularity data.','igdb_unavailable');
+    const popularity=parsed.output;
+    const ids=[...new Set(popularity.map(p=>p.game_id))];
+    if(!ids.length)return [];
+    const games=await this.query(`fields ${fields}; where id = (${ids.join(',')}); limit ${IGDB_PAGE_SIZE};`);
+    const byId=new Map(games.map(g=>[Number(g.externalId),g]));
+    return ids.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]);
+  }
+  async steamMatches(ids:string[]) {
+    const selected=ids.slice(0,50).map(id=>v.parse(v.pipe(v.string(),v.regex(/^[1-9][0-9]*$/)),id));
+    if(!selected.length)return [];
+    return this.query(`fields ${fields}; where external_games.uid = (${selected.map(id=>JSON.stringify(id)).join(',')}); limit ${IGDB_PAGE_SIZE};`);
   }
   async verify() {
     await this.query('fields name; limit 1;');

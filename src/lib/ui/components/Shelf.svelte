@@ -1,4 +1,5 @@
 <script lang="ts" generics="T extends MediaView | MediaCardPresentation">
+ import { availabilityControl, collectionControl } from '$lib/ui/controls/actions';
   import { untrack, type Snippet } from 'svelte';
   import { createShelfSource, type ShelfConfig } from '$lib/ui/shelves';
   import type { ShelfControl } from '$lib/ui/shelves/types';
@@ -7,18 +8,18 @@
   import { lazyContent } from '$lib/ui/lazy-content';
   import RowFeedback from './RowFeedback.svelte';
   import Pagination from './Pagination.svelte';
-  import SequenceControl from './SequenceControl.svelte';
+  import { createSequencePlayback } from '$lib/ui/controls/sequence.svelte';
+  import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
   import { page } from '$app/state';
   import { useClient } from '$lib/ui/client-context';
-  import AvailabilityToggle from './AvailabilityToggle.svelte';
+
   import { mediaTypeOptions } from '$lib/ui/filter-options';
   import RowFilter from './RowFilter.svelte';
   import SegmentedControl from './SegmentedControl.svelte';
   import type { ArtworkPriority, MediaView, MediaCardPresentation, MediaCardShape, MediaCardArtwork } from '$lib/ui/types';
   import RowStyleMenu from './RowStyleMenu.svelte';
   import Heading from './Heading.svelte';
-  import Icon from './Icon.svelte';
   import { contextGesture } from '$lib/ui/context-gesture';
   import type { MediaRowStyle, MediaCardOverlay } from '$lib/ui/types';
   import Shelf from './Shelf.svelte';
@@ -27,7 +28,8 @@
   import type { InsightPanel } from '$lib/ui/insights/types';
   import MediaCard from './MediaCard.svelte';
 
-  const { api } = useClient();
+  const { api, change, preview } = useClient();
+  const sequence = createSequencePlayback({source: () => adapter?.sequence, experimental: () => !!page.data.experimentalFeatures, preview, api, change});
 
   let {
     title = '', items = [], source, panels, journal, href, children, heading, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle = 'auto', artworkPriority,
@@ -40,7 +42,7 @@
     availableOnly?: boolean;
     children?: Snippet<[MediaRowStyle]>;
     heading?: Snippet;
-    size?: 'poster' | 'square' | 'fanart' | 'banner' | 'panel';
+    size?: MediaCardShape | 'panel';
     overlay?: MediaCardOverlay;
     artworkOptions?: boolean;
     title?: string;
@@ -71,7 +73,7 @@
     pageUrl?: (page: number) => string;
   } = $props();
   let socialActive=$state(false);
-  let social=$state<Record<string,{friends:{username:string;avatar?:string|null}[];total:number}>>({});
+  let social=$state<Record<string,{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number}>>({});
   const adapter = untrack(() => source ? createShelfSource(() => source!) : undefined);
   const filterMode = $derived(adapter?.filterBy ?? filterBy);
   const inputItems = $derived(adapter ? adapter.items as T[] : items);
@@ -86,7 +88,7 @@
   const key = (item: T) => item.entryId ?? ('href' in item ? item.href : item.id);
 
   $effect(()=>{
-    const ids=[...new Set(displayItems.map(item=>'workId' in item?item.workId??item.id:item.id).filter(id=>/^[0-9a-f-]{36}$/.test(id)))];
+    const ids=[...new Set(displayItems.filter(item=>!item.captionActor).map(item=>'workId' in item?item.workId??item.id:item.id).filter(id=>/^[0-9a-f-]{36}$/.test(id)))];
     social={};if(!socialActive||!page.data.user||!ids.length)return;
     const controller=new AbortController();
     void (async()=>{
@@ -103,13 +105,13 @@
   );
   const displayHref = $derived(selection.href);
   const displayFilters = $derived(adapter && filterMode === 'none' ? (adapter.filters.length ? adapterFilters : undefined) : filterMode === 'none' ? filters : filters || filterMode === 'watched' || availability ? localFilters : undefined);
-  const displayControls = $derived(adapter && filterMode === 'none' ? (adapter.controls.length ? adapterControls : undefined) : filterMode === 'none' ? controls : localControls);
+  const displayControls = $derived(adapter && filterMode === 'none' ? (adapter.controls.length || adapter.filters.some(control => !['segments', 'availability'].includes(control.type)) ? adapterControls : undefined) : filterMode === 'none' ? controls : localControls);
   const displayActions = $derived(adapter ? adapterActions : actions);
   const displaySize = $derived(adapter?.shape ?? shape ?? size);
   const displayArtworkStyle = $derived(adapter?.artworkStyle ?? artworkStyle);
   const displayArtworkPriority = $derived(adapter?.artworkPriority ?? artworkPriority);
   const displayMediaKind = $derived(adapter?.mediaKind ?? mediaKind);
-  const displayPreserveHeight = $derived(preserveHeight ?? (!children && !panels));
+  const displayPreserveHeight = $derived(preserveHeight ?? (!children && !panels && (displayBusy || !!displayItems.length || !!adapter && !adapter.ready)));
   const displayRows = $derived(adapter?.rows ?? rows);
   const pagination = $derived(adapter?.pagination);
   const displayHasMore = $derived(pagination?.kind === 'cursor' ? pagination.hasMore : pagination?.kind === 'pages' ? pagination.append && pagination.page < pagination.pages : hasMore);
@@ -131,30 +133,34 @@
 
 {#snippet localFilters()}
   {@render filters?.()}
-  {@render renderControls(selection.filters)}
+  {@render renderControls(selection.filters, [], false)}
 {/snippet}
-{#snippet localControls()}{@render renderControls(selection.controls)}{/snippet}
-{#snippet renderControls(options: ShelfControl[])}
+{#snippet localControls()}{@render renderControls(selection.controls, selection.filters)}{/snippet}
+{#snippet renderControls(options: ShelfControl[], extra: ShelfControl[] = [], showGroups = true)}
   {#each options as control (control.label)}
     {#if control.type === 'segments'}<SegmentedControl label={control.label} value={control.value} options={control.options ?? []} onchange={control.change} />
-    {:else if control.type === 'availability'}<AvailabilityToggle value={control.value === 'available'} onchange={value => control.change(value ? 'available' : 'all')} />
-    {:else}<RowFilter label={control.label} value={control.value} options={control.type === 'media-type' ? mediaTypeOptions(control.includeOtherMedia) : control.options ?? []} onchange={control.change} />{/if}
+    {:else if control.type === 'collection'}<Button {...collectionControl(control.value === 'collection', value => control.change(value ? 'collection' : 'all'))} />
+    {:else if control.type === 'availability'}<Button {...availabilityControl(control.value === 'available', value => control.change(value ? 'available' : 'all'))} />
+    {/if}
   {/each}
+  {@const groups = [...options, ...extra].filter(control => control.type !== 'segments' && control.type !== 'availability' && control.type !== 'collection').map(control => ({label: control.label, value: control.value, options: control.type === 'media-type' ? mediaTypeOptions(control.includeOtherMedia) : control.options ?? [], change: control.change}))}
+  {#if showGroups && groups.length}<RowFilter {groups} />{/if}
 {/snippet}
-{#snippet adapterFilters()}{@render renderControls(adapter?.filters ?? [])}{/snippet}
-{#snippet adapterControls()}{@render renderControls(adapter?.controls ?? [])}{/snippet}
+{#snippet adapterFilters()}{@render renderControls(adapter?.filters ?? [], [], false)}{/snippet}
+{#snippet adapterControls()}{@render renderControls(adapter?.controls ?? [], adapter?.filters ?? [])}{/snippet}
+{#if adapter?.sequence}<Dialog bind:open={sequence.open} title={sequence.title} message={sequence.message} alert={!!sequence.error} actions={sequence.actions} />{/if}
 {#snippet adapterActions()}
-  {#if adapter?.sequence}<SequenceControl source={adapter.sequence} />{/if}
+  {#if adapter?.sequence}<Button emphasis="subtle" icon="play" disabled={sequence.busy} onclick={() => sequence.start()}>Play playlist</Button>{/if}
   <RowFeedback error={adapter?.error} retry={() => adapter?.load(pagination?.kind === 'pages' ? pagination.page : 1)} retryLabel={adapter?.retryLabel ?? 'Try again'} />
   {#if adapter?.notice}<span class="small muted">{adapter.notice}</span>{/if}
-  {#each adapter?.actions ?? [] as action}<Button variant="ghost" onclick={action.run}>{action.label}</Button>{/each}
+  {#each adapter?.actions ?? [] as action}<Button emphasis="subtle" onclick={action.run}>{action.label}</Button>{/each}
   {@render actions?.()}
 {/snippet}
 <div use:lazyContent={{load: () => {socialActive=true;if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
   {#snippet cards(style: MediaRowStyle)}
     {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
     {#each entries as entry (entry.key)}{@const item = entry.item}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'}>
-      <MediaCard {item} {...style} social={social['workId' in item?item.workId??item.id:item.id]}
+      <MediaCard {item} {...style} wrapActivity={displayLayout === 'grid'} social={social['workId' in item?item.workId??item.id:item.id]}
         shape={!journal && rail.overrideShape === null && shape === undefined && adapter?.shape === undefined && ['album', 'track', 'game'].includes(item.kind) ? 'square' : style.shape} />
       {#if entry.run}<details class="journal-run">
         <summary>Show {entry.run.length} episodes</summary>
@@ -169,7 +175,7 @@
         </p>
       {/if}
       {#if extra?.summary}<details class="credit-roles"><summary>{extra.summary}</summary><p>{extra.body}</p></details>{/if}
-      {#if extra?.actions}<div class="order">{#each extra.actions as action}<Button variant="ghost" icon={action.icon} label={action.label} disabled={action.disabled} onclick={action.run} />{/each}</div>{/if}
+      {#if extra?.actions}<div class="order">{#each extra.actions as action}<Button emphasis="subtle" icon={action.icon} label={action.label} disabled={action.disabled} onclick={action.run} />{/each}</div>{/if}
       {#if !entry.activity}{@render details?.(item as T)}{/if}
     </div>{/each}
     {#if adapter && !displayItems.length && !adapter.error}<div class="row-empty" aria-live="polite"><RowFeedback message={adapter.empty}>
@@ -193,31 +199,27 @@
     <Heading title={displayTitle} {heading} filters={displayFilters} actions={displayActions} href={displayHref}>
       {#snippet navigation()}{#if displayLayout === 'row' || displayControls || displayOnpage}<div class="navigation">
             {#if displayLayout === 'row' || displayOnpage}
-              <button
+              <Button size="icon"
                 class="icon-button"
-                aria-label={displayLayout === 'grid' ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}
+                label={displayLayout === 'grid' ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}
                 disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber <= 1 : !rail.previous}
                 onclick={() => (displayLayout === 'grid' ? displayOnpage?.(displayPageNumber - 1) : rail.scroll(-1))}
-                ><Icon name="left" /></button
-              >{/if}
+                 icon="left" iconSize={20} />{/if}
             {#if displayControls}<div class="row-controls">{@render displayControls()}</div>{/if}
             {#if displayLayout === 'row' || displayOnpage}
-              <button
+              <Button size="icon"
                 class="icon-button"
-                aria-label={displayLayout === 'grid' ? `Next ${displayTitle} page` : `Scroll ${displayTitle} right`}
+                label={displayLayout === 'grid' ? `Next ${displayTitle} page` : `Scroll ${displayTitle} right`}
                 disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber >= displayPages : !rail.next && !displayHasMore}
                 onclick={() => (displayLayout === 'grid' ? displayOnpage?.(displayPageNumber + 1) : rail.scroll(1))}
-                ><Icon name="right" /></button
-              >{/if}
+                 icon="right" iconSize={20} />{/if}
           </div>{/if}{/snippet}
     </Heading>
   </div>
   {#if displaySize !== 'panel'}<RowStyleMenu
       bind:this={styleMenu}
       title={displayTitle}
-      shape={displaySize}
-      artworkStyle={displayArtworkStyle}
-      {overlay}
+
       {artworkOptions}
       mediaKind={displayMediaKind}
       bind:overridePriority={rail.overridePriority}
@@ -230,7 +232,7 @@
     class:two-rows={displayRows === 2 && displayLayout === 'row'}
     class:grid-layout={displayLayout === 'grid'}
     class:preserve={displayPreserveHeight}
-    class:square={rail.size === 'square'}
+    class:square={rail.size === 'square'||rail.size==='circle'}
     style:min-height={displayLayout === 'row' && displayPreserveHeight && rail.size === 'panel' && rail.savedHeight
       ? `${rail.savedHeight}px`
       : undefined}
@@ -245,9 +247,14 @@
 </section>
 
 {/if}
+{#if adapter && !adapter.appendOnly && pagination?.kind === 'cursor' && displayLayout === 'grid' && displayHasMore}
+<div class="load-more" use:lazyContent={{load:()=>{if(!adapter.busy)void adapter.load(1,true);},enabled:()=>!adapter.busy&&!adapter.error,repeat:true}} aria-busy={displayBusy}>
+ <Button emphasis="subtle" disabled={displayBusy} onclick={()=>adapter.load(1,true)}>{displayBusy?'Loading…':adapter.error?'Retry':'Load more'}</Button>
+</div>
+{/if}
 {#if adapter?.appendOnly}<div class="load-more" use:lazyContent={{load:()=>adapter.load(),enabled:()=>!adapter.error,repeat:true}} aria-busy={adapter.busy} aria-live="polite">
-  {#if adapter.error}<p role="alert">{adapter.error}</p>{/if}
-  {#if displayHasMore && !adapter.busy}<Button variant="ghost" onclick={()=>adapter.load()}>{adapter.error?'Retry':adapter.loadMoreLabel}</Button>
+  {#if adapter.error}<RowFeedback error={adapter.error} tag="p" />{/if}
+  {#if displayHasMore && !adapter.busy}<Button emphasis="subtle" onclick={()=>adapter.load()}>{adapter.error?'Retry':adapter.loadMoreLabel}</Button>
   {:else if !displayHasMore && !adapter.items.length}<p class="muted">{adapter.empty}</p>{/if}
 </div>{/if}
 {#if (pagination?.kind === 'pages' && ['footer','both'].includes(pagination.controls) || pageUrl) && displayLayout === 'grid'}<Pagination page={displayPageNumber} pages={displayPages}
@@ -257,7 +264,6 @@
   .journal { min-width:0; }
   .journal :global(.content-row:first-child) { margin-top:0; }
   .load-more { display:grid; justify-items:center; gap:10px; padding-block:18px; }
-
 
   .content-row {
     min-width: 0;
@@ -341,12 +347,12 @@
     display: flex;
     gap: 2px;
   }
-  .navigation .icon-button {
+  .navigation :global(.icon-button) {
     width: var(--control-compact-height);
     height: var(--control-compact-height);
     color: var(--muted);
   }
-  .navigation .icon-button:disabled {
+  .navigation :global(.icon-button:disabled) {
     opacity: 0.25;
   }
   @media (max-width: 500px) {
@@ -363,8 +369,6 @@
   .credit-roles summary { cursor:pointer; font-weight:var(--weight-semibold); }
   .credit-roles p { margin-top:8px; line-height:var(--leading-relaxed); overflow-wrap:anywhere; }
   .order { display:flex; align-items:center; gap:4px; margin-top:8px; }
-
-
 
   .episode-run {
     min-width: 0;

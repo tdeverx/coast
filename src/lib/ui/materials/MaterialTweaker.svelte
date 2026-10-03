@@ -69,24 +69,24 @@
   }
   async function copy() {
     exported = true;
-    try { await navigator.clipboard.writeText(source); message = experimental ? 'Copied the temporary experiment.' : 'Copied all six materials and fallbacks.'; }
+    try { await navigator.clipboard.writeText(source); message = experimental ? 'Copied the temporary experiment.' : 'Copied all three materials and their blur fallbacks.'; }
     catch { message = 'Clipboard unavailable. Select the export below to copy it.'; }
   }
   function download() {
     const url = URL.createObjectURL(new Blob([source], { type: 'application/json' }));
     const link = document.createElement('a'); link.href = url; link.download = experimental ? 'coast-material-experiment.json' : 'coast-materials.json'; link.click(); URL.revokeObjectURL(url);
-    message = experimental ? 'Downloaded the temporary experiment.' : 'Downloaded all six materials and fallbacks.';
+    message = experimental ? 'Downloaded the temporary experiment.' : 'Downloaded all three materials and their blur fallbacks.';
   }
 </script>
 
 <Heading title="Material tweaker" description="Non-approved drafts · saved in this browser. Current app presets stay unchanged."
   selection={{ label: 'Glass treatment', value: variant, options: choices, change: value => { variant = value as typeof variant; } }}>
   {#snippet actions()}
-    {#if experimental}<Button variant="secondary" onclick={tryTogether}>Try together</Button>{/if}
-    <Button variant="ghost" onclick={() => reset()}>Reset selected</Button>
-    <Button variant="ghost" onclick={() => reset(true)}>{experimental ? 'Reset experiment' : 'Reset all'}</Button>
-    <Button variant="secondary" onclick={copy}>Copy presets</Button>
-    <Button variant="secondary" onclick={download}>Download</Button>
+    {#if experimental}<Button  onclick={tryTogether}>Try together</Button>{/if}
+    <Button emphasis="subtle" onclick={() => reset()}>Reset selected</Button>
+    <Button emphasis="subtle" onclick={() => reset(true)}>{experimental ? 'Reset experiment' : 'Reset all'}</Button>
+    <Button  onclick={copy}>Copy presets</Button>
+    <Button  onclick={download}>Download</Button>
   {/snippet}
 </Heading>
 <div class="tweaker">
@@ -94,7 +94,7 @@
     <div class="preview" class:plain={background === 'plain'} style:--preview-radius={`${radius}px`}>
       <div class="scene" aria-hidden="true"><span>COAST</span><div></div><span>Glass / light / motion</span></div>
       {#each previewModes as mode}
-        <div class="sample glass" class:light={variant === 'glassLight' || variant === 'blurLight'}
+        <div class="sample glass" class:light={variant === 'glassLight'}
           data-material-sample={mode}
           role={experimental ? 'group' : undefined}
           aria-label={experimental ? `${mode === 'materials' ? 'Native' : 'Fallback'} experimental material sample` : undefined}
@@ -102,7 +102,7 @@
           use:liquidGlass={{ variant: baseVariant, preview: true, surface: selected.materials, fallback: mode === 'materials' && selected.materials.refraction === 0 ? selected.materials : selected.fallbacks, renderer: mode === 'fallbacks' ? 'css' : 'auto' }}>
           <strong>{title}</strong><span>{mode === 'materials' ? 'Material · native where supported' : 'Fallback · CSS blur'}</span>
           <span class="sample-detail">{experimental ? 'Non-approved · hover or focus to test interaction light' : 'Artwork, controls and content beneath the surface'}</span>
-          {#if experimental}<Button variant="secondary">Focus highlight</Button>{/if}
+          {#if experimental}<Button >Focus highlight</Button>{/if}
         </div>
       {/each}
     </div>
@@ -163,7 +163,7 @@
     {/each}
   </div>
 </div>
-{#if exported}<section class="export"><Heading title="Preset export" description={experimental ? 'Temporary experiment, effects and both base surfaces.' : 'All material and fallback drafts. Copy this configuration when you want it applied to the app.'} /><textarea aria-label="Preset export" readonly value={source} rows="12"></textarea></section>{/if}
+{#if exported}<section class="export"><Heading title="Preset export" description={experimental ? 'Temporary experiment, effects and both base surfaces.' : 'All three material and blur-fallback drafts. Copy this configuration when you want it applied to the app.'} /><textarea aria-label="Preset export" readonly value={source} rows="12"></textarea></section>{/if}
 
 <style>
   .tweaker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }

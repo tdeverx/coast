@@ -1,14 +1,12 @@
 <script lang="ts">
+  import ChoiceGroup from './ChoiceGroup.svelte';
+  import Button from '$lib/ui/components/Button.svelte';
   import type { ArtworkPriority } from '$lib/ui/types';
-  import ContextMenu from './ContextMenu.svelte';
-  import MenuAction from './MenuAction.svelte';
+
   import { artworkTypes } from '$lib/artwork';
   import type { MediaCardShape, MediaCardArtwork, MediaCardOverlay } from '$lib/ui/types';
   let {
     title,
-    shape = 'poster',
-    artworkStyle = 'auto',
-    overlay = 'none',
     artworkOptions = true,
     mediaKind = 'screen',
     overridePriority = $bindable(null),
@@ -17,9 +15,6 @@
     overrideOverlay = $bindable(null),
   }: {
     title: string;
-    shape?: MediaCardShape;
-    artworkStyle?: MediaCardArtwork;
-    overlay?: MediaCardOverlay;
     artworkOptions?: boolean;
     mediaKind?: 'screen' | 'music' | 'game';
     overridePriority?: ArtworkPriority | null;
@@ -31,19 +26,19 @@
     shapeMenu?.openAt(point);
   }
 
-  const currentShape = $derived(overrideShape ?? shape);
 
-  const currentOverlay = $derived(overrideOverlay ?? overlay);
+
+
   const overlays: { value: MediaCardOverlay; label: string }[] = [
     { value: 'none', label: 'None' },
     { value: 'logo', label: 'Logo' },
     { value: 'art', label: 'Clear art' },
     { value: 'disc', label: 'Disc' },
   ];
-  let shapeMenu = $state<ContextMenu>();
-  const shapes: MediaCardShape[] = ['poster', 'square', 'fanart', 'banner'];
+  let shapeMenu = $state<Button>();
+  const shapes: MediaCardShape[] = ['poster', 'square', 'circle', 'fanart', 'banner'];
 
-  const currentArtwork = $derived(overrideArtwork ?? artworkStyle);
+
   const artworkStyles = $derived([
     { value: 'auto', label: 'Automatic' },
     { value: 'none', label: 'None' },
@@ -67,68 +62,25 @@
   ];
 </script>
 
-<ContextMenu bind:this={shapeMenu} label={`${title} style`} hideTrigger>
-  <ContextMenu label="Shape" panel>
-    <MenuAction
-      selection="radio"
-      checked={overrideShape === null}
-      onclick={() => (overrideShape = null)}>Use default</MenuAction
-    >
-    <div class="menu-divider" role="separator"></div>
-    {#each shapes as option}<MenuAction
-        selection="radio"
-        checked={overrideShape !== null && currentShape === option}
-        onclick={() => (overrideShape = option)}
-        >{option === 'fanart' ? 'Landscape' : option[0].toUpperCase() + option.slice(1)}</MenuAction
-      >{/each}
-  </ContextMenu>
+<Button menu bind:this={shapeMenu} label={`${title} style`} hideTrigger>
+  <Button menu label="Shape" panel>
+    <ChoiceGroup label="Shape" value={overrideShape} options={shapes.map(value => ({ value, label: value === 'fanart' ? 'Landscape' : value[0].toUpperCase() + value.slice(1) }))} defaultOption change={value => overrideShape = value as typeof overrideShape} />
+  </Button>
   {#if artworkOptions}
-    <ContextMenu label="Artwork" panel>
-      <MenuAction
-        selection="radio"
-        checked={overrideArtwork === null}
-        onclick={() => (overrideArtwork = null)}>Use default</MenuAction
-      >
-      <div class="menu-divider" role="separator"></div>
-      {#each artworkStyles as option}<MenuAction
-          selection="radio"
-          checked={overrideArtwork !== null && currentArtwork === option.value}
-          onclick={() => (overrideArtwork = option.value)}>{option.label}</MenuAction
-        >{/each}
-    </ContextMenu>
-    {#if mediaKind === 'screen'}<ContextMenu label="Prefer artwork from" panel>
-        <MenuAction
-          selection="radio"
-          checked={overridePriority === null}
-          onclick={() => (overridePriority = null)}>Use default</MenuAction
-        >
-        <div class="menu-divider" role="separator"></div>
-        {#each priorities as priority}<MenuAction
-            selection="radio"
-            checked={overridePriority === priority}
-            onclick={() => (overridePriority = priority)}
-            >{priority
-              .split('-')
-              .map((level) => level[0].toUpperCase() + level.slice(1))
-              .join(' → ')}</MenuAction
-          >{/each}
-      </ContextMenu>
-      <ContextMenu label="Overlay" panel>
-        <MenuAction
-          selection="radio"
-          checked={overrideOverlay === null}
-          onclick={() => (overrideOverlay = null)}>Use default</MenuAction
-        >
-        <div class="menu-divider" role="separator"></div>
-        {#each overlays as option}<MenuAction
-            selection="radio"
-            checked={overrideOverlay !== null && currentOverlay === option.value}
-            onclick={() => (overrideOverlay = option.value)}>{option.label}</MenuAction
-          >{/each}
-      </ContextMenu>{/if}
+    <Button menu label="Artwork" panel>
+      <ChoiceGroup label="Artwork" value={overrideArtwork} options={artworkStyles} defaultOption change={value => overrideArtwork = value as typeof overrideArtwork} />
+    </Button>
+    {#if mediaKind === 'screen'}
+      <Button menu label="Prefer artwork from" panel>
+        <ChoiceGroup label="Prefer artwork from" value={overridePriority} options={priorities.map(value => ({value, label: value.split('-').map(part => part[0].toUpperCase() + part.slice(1)).join(' → ')}))} defaultOption change={value => overridePriority = value as typeof overridePriority} />
+      </Button>
+      <Button menu label="Overlay" panel>
+        <ChoiceGroup label="Overlay" value={overrideOverlay} options={overlays} defaultOption change={value => overrideOverlay = value as typeof overrideOverlay} />
+      </Button>
+    {/if}
   {/if}
   <div class="menu-divider" role="separator"></div>
-  <MenuAction
+  <Button item
     icon="refresh"
     disabled={!overridePriority && !overrideShape && !overrideArtwork && !overrideOverlay}
     disabledReason="Already using the default style"
@@ -137,6 +89,5 @@
       overrideShape = null;
       overrideArtwork = null;
       overrideOverlay = null;
-    }}>Reset to default</MenuAction
-  >
-</ContextMenu>
+    }}>Reset to default</Button>
+</Button>

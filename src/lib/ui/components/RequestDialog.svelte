@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Field from './Field.svelte';
+  import RowFeedback from './RowFeedback.svelte';
+  import { createOperation } from '$lib/ui/operation.svelte';
   import { untrack } from 'svelte';
   import type { MediaView } from '$lib/ui/types';
   import { message } from '$lib/ui/client';
@@ -8,6 +11,8 @@
   import type { RequestDestination } from '$lib/media/requests';
 
   const { api, change } = useClient();
+  const operation = createOperation();
+  const busy = $derived(operation.busy);
 
   let {
     item,
@@ -29,7 +34,6 @@
     is4k = $state(false),
     watchlist = $state(true),
     selected = $state<number[]>([]),
-    busy = $state(false),
     error = $state(''),
     loaded = $state(false);
   const active = $derived(destinations.find((d) => d.id === destination));
@@ -91,9 +95,10 @@
     };
   });
   async function submit() {
-    busy = true;
+    if (busy) return;
+
     error = '';
-    try {
+    const completed = await operation.run(async () => {
       await change('requests', {
         mediaId: item.id,
         instanceId: destination,
@@ -103,11 +108,8 @@
       });
       open = false;
       onsent?.();
-    } catch (e) {
-      error = message(e);
-    } finally {
-      busy = false;
-    }
+    });
+    if (!completed) error = operation.error;
   }
 </script>
 
@@ -122,14 +124,12 @@
     <p class="small">
       Choose where you’d like to watch. Your request stays here while the server prepares it.
     </p>
-    {#if error}<div class="notice error" role="alert">{error}</div>
-      <Button variant="ghost" onclick={load}>Retry</Button>{/if}
+    {#if error}<RowFeedback error={error} tag="div" class="notice error" />
+      <Button emphasis="subtle" onclick={load}>Retry</Button>{/if}
     {#if destinations.length}
-      <label class="field"
-        >Destination server<select bind:value={destination} onchange={chooseDestination}
+      <Field label="Destination server"><select bind:value={destination} onchange={chooseDestination}
           >{#each destinations as d}<option value={d.id}>{d.name}</option>{/each}</select
-        ></label
-      >
+        ></Field>
       {#if active?.variants.fourK}<label class="check"
           ><input
             type="checkbox"

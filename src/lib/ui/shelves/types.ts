@@ -4,7 +4,7 @@ import type { MediaView, MediaCardPresentation, MediaCardShape, MediaCardArtwork
 import type { SequenceContext } from '$lib/media/sequence';
 export type ShelfItem = MediaView | MediaCardPresentation;
 export type ShelfControl = {
-  type: 'segments' | 'select' | 'availability' | 'media-type';
+  type: 'segments' | 'select' | 'availability' | 'collection' | 'media-type';
   label: string;
   value: string;
   options?: { value: string; label: string }[];

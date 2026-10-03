@@ -3,6 +3,9 @@
   import { goto, invalidateAll } from '$app/navigation';
   import Heading from '$lib/ui/components/Heading.svelte';
   import { browseHeading } from '$lib/ui/headings';
+  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
+  import { librarySelections } from '$lib/library';
+  import { availabilityControl } from '$lib/ui/controls/actions';
   import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
@@ -13,25 +16,22 @@
     page: number,
     view = data.filters.view,
     state = data.filters.state,
-    personal = data.filters.personal
+    personal = data.filters.personal,
+    scope = data.filters.scope
   ) {
-    return `/games?${new URLSearchParams({ view, state, personal: String(personal), instance: data.instanceId, search: data.filters.search, page: String(page) })}`;
+    return `/games?${new URLSearchParams({ view, state, scope, personal: String(personal), instance: data.instanceId, search: data.filters.search, page: String(page) })}`;
   }
 </script>
 
 <svelte:head><title>Games · Coast</title></svelte:head>
 <div class="content page route-content">
-  <Heading {...browseHeading("play", data.experimentalFeatures)}>{#snippet actions()}<RowFilter
-        label="Games view"
-        value={data.filters.view === 'library' && data.filters.personal
+  <Heading {...browseHeading("play", data.experimentalFeatures)}>{#snippet filters()}{#if data.filters.view === 'library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state => goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{keepFocus:true,noScroll:true})} /><Button {...availabilityControl(data.filters.scope === 'available', value => goto(pageUrl(1,data.filters.view,data.filters.state,data.filters.personal,value?'available':'all'),{keepFocus:true,noScroll:true}))} />{/if}{/snippet}{#snippet actions()}<RowFilter groups={[{label:"Games view", value:data.filters.view === 'library' && data.filters.personal
           ? 'personal'
-          : data.filters.view}
-        options={[
+          : data.filters.view, options:[
           { value: 'library', label: 'All games' },
           { value: 'personal', label: 'Your games' },
           { value: 'igdb', label: 'Discover' },
-        ]}
-        onchange={(view) =>
+        ], change:(view) =>
           goto(
             pageUrl(
               1,
@@ -40,31 +40,15 @@
               view === 'personal'
             ),
             { keepFocus: true, noScroll: true }
-          )}
-      />{#if data.filters.view === 'library'}<RowFilter
-          label="Play state"
-          value={data.filters.state}
-          options={[
-            { value: 'all', label: 'All states' },
-            { value: 'planned', label: 'Planned' },
-            { value: 'in-progress', label: 'In progress' },
-            { value: 'paused', label: 'Paused' },
-            { value: 'completed', label: 'Completed' },
-            { value: 'dropped', label: 'Dropped' },
-          ]}
-          onchange={(state) =>
-            goto(pageUrl(1, data.filters.view, state as typeof data.filters.state), {
-              noScroll: true,
-              keepFocus: true,
-            })}
-        />{/if}{#if page.data.user?.role === 'admin'}<Button
-          variant="ghost"
+          )}]} />{#if page.data.user?.role === 'admin'}<Button
+          emphasis="subtle"
           href="/settings/integrations"
           icon="server">Integrations</Button
         >{/if}{/snippet}</Heading>
   <form class="filter-row browse-search" action="/games" method="GET">
     <input type="hidden" name="view" value={data.filters.view} />
     <input type="hidden" name="personal" value={String(data.filters.personal)} />
+    <input type="hidden" name="scope" value={data.filters.scope} />
     <input type="hidden" name="state" value={data.filters.state} />
     <input type="hidden" name="instance" value={data.instanceId} />
     <input
@@ -75,10 +59,10 @@
       value={data.filters.search}
       maxlength="250"
     />
-    <Button type="submit" variant="secondary" icon="search">Search</Button>
+    <Button type="submit"  icon="search">Search</Button>
   </form>
   {#if data.failure}<div class="notice error" role="alert">{data.failure}</div>
-    <Button variant="secondary" icon="refresh" onclick={() => invalidateAll()}>Try again</Button>
+    <Button  icon="refresh" onclick={() => invalidateAll()}>Try again</Button>
   {:else if data.items.length}
     <p class="small" style="margin-bottom:22px">
       {data.total}
@@ -88,6 +72,8 @@
       {#each data.items as item (item.id)}<MediaCard {item} shape="poster" />{/each}
     </div>
     <Pagination page={data.page} pages={data.pages} {pageUrl} label="Games pages" />
+  {:else if data.filters.view === 'library' && data.filters.scope === 'available'}
+    <EmptyState title="No owned games in this selection" description="Steam ownership provides availability; installation is unknown. Turn off Available to browse all games." icon="library" />
   {:else if data.filters.view === 'igdb' && !data.sources.length}
     <EmptyState
       title="Connect IGDB"
@@ -95,7 +81,7 @@
       icon="library"
     >
       {#if page.data.user?.role === 'admin'}<Button
-          variant="secondary"
+
           href="/settings/integrations">Configure IGDB</Button
         >{/if}
     </EmptyState>
@@ -115,7 +101,7 @@
       description="Discover games with IGDB and add them to start tracking."
       icon="library"
     >
-      <Button variant="secondary" href="/games?view=igdb">Discover games</Button>
+      <Button  href="/games?view=igdb">Discover games</Button>
     </EmptyState>
   {/if}
 </div>

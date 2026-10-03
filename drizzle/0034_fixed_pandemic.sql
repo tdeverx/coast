@@ -1,0 +1,3 @@
+ALTER TABLE "synced_participants" ADD COLUMN "ready" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "synced_participants" ADD COLUMN "unavailable" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+ALTER TABLE "synced_rooms" ADD COLUMN "settings" jsonb DEFAULT '{"playback":"host","controllers":[],"invitations":"host","acceptInvites":true,"readyCheck":false,"hostDisconnect":"wait","queue":"host"}'::jsonb NOT NULL;

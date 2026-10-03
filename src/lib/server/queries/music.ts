@@ -14,6 +14,7 @@ export async function musicBrowseData(userId: string, url: URL) {
   if (!requestedPage.success) error(400, 'Choose a positive music page number.');
   const options = v.safeParse(musicBrowseSchema, {
     kind: url.searchParams.get('kind') ?? 'all',
+    availableOnly: url.searchParams.get('scope') === 'available',
     search: url.searchParams.get('search') ?? undefined,
     offset: (requestedPage.output - 1) * 50,
   });
@@ -71,6 +72,6 @@ export async function musicBrowseData(userId: string, url: URL) {
       .join(' '),
     page,
     pages: Math.max(page, pages),
-    filters: { kind: options.output.kind, search: options.output.search ?? '' },
+    filters: { kind: options.output.kind, search: options.output.search ?? '', scope: options.output.availableOnly ? 'available' as const : 'all' as const },
   };
 }

@@ -19,7 +19,7 @@ import { requireProviderAdmin, getInstance } from '$lib/providers/instances.serv
 export async function updateProviderSchedule(adminId: string, instanceId: string, input: unknown) {
   await requireProviderAdmin(adminId);
   const instance = await getInstance(instanceId);
-  if (!['jellyfin', 'seerr', 'trakt', 'tmdb'].includes(instance.provider))
+  if (!['jellyfin', 'seerr', 'trakt', 'tmdb', 'steam'].includes(instance.provider))
     throw new Error('This integration has no scheduled jobs.');
   const patch = v.parse(v.partial(providerScheduleSchema), input);
   if (!Object.keys(patch).length) throw new Error('Choose a schedule setting to update.');
@@ -68,7 +68,7 @@ export async function runProviderJob(
 ) {
   await requireProviderAdmin(adminId);
   const instance = await getInstance(instanceId);
-  if (!['jellyfin', 'seerr', 'trakt', 'tmdb'].includes(instance.provider))
+  if (!['jellyfin', 'seerr', 'trakt', 'tmdb', 'steam'].includes(instance.provider))
     throw new Error('This integration has no scheduled jobs.');
   if (
     task !== 'all' &&
@@ -77,7 +77,7 @@ export async function runProviderJob(
         ? ['library', 'users', 'catalogue']
         : instance.provider === 'trakt'
           ? ['tracking', 'lists', 'live', 'catalogue']
-          : instance.provider === 'tmdb' ? ['metadata'] : []
+          : instance.provider === 'tmdb' ? ['metadata'] : instance.provider === 'steam' ? ['tracking','users'] : []
     ).includes(task)
   )
     throw new Error('This task is unavailable for the selected service.');
@@ -146,7 +146,7 @@ export async function scheduleProviderMaintenance(
           eq(providerInstances.enabled, true),
           eq(users.disabled, false),
           options.instanceId ? eq(providerInstances.id, options.instanceId) : undefined,
-          inArray(providerInstances.provider, ['jellyfin', 'trakt', 'seerr'])
+          inArray(providerInstances.provider, ['jellyfin', 'trakt', 'seerr', 'steam'])
         )
       )
       .orderBy(providerConnections.createdAt, providerConnections.id);
@@ -154,6 +154,7 @@ export async function scheduleProviderMaintenance(
       ({ instance }) =>
         (instance.provider !== 'trakt' || config.enableTrakt) &&
         (instance.provider !== 'seerr' || config.enableRequests) &&
+        (instance.provider !== 'steam' || config.experimentalFeatures) &&
         (options.force || providerSchedule(instance.provider, instance.settings.schedule).enabled)
     );
     if (!eligible.length) return { ...metadata, connections: 0, busy: false };
@@ -179,6 +180,8 @@ export async function scheduleProviderMaintenance(
               'trakt.lists-import',
               'trakt.collection-project',
               'seerr.sync',
+              'steam.sync',
+              'steam.achievements',
             ])
           )
         )
@@ -247,6 +250,14 @@ export async function scheduleProviderMaintenance(
           if (jobsByKey.get(`${connection.id}:jellyfin.sync`)?.active) active++;
           else if (options.force || now - last >= schedule.userIntervalMinutes * 60000)
             await queue(connection, 'jellyfin.sync');
+        }
+        continue;
+      }
+      if(instance.provider==='steam'){
+        for(const [kind,task,enabled,interval] of [['steam.sync','tracking',schedule.trackingEnabled,schedule.intervalMinutes],['steam.achievements','users',schedule.userSyncEnabled,schedule.userIntervalMinutes]] as const){
+          if(options.task && !['all',task].includes(options.task)||!options.force&&!enabled||kind==='steam.achievements'&&connection.settings.importAchievements===false)continue;
+          const job=jobsByKey.get(`${connection.id}:${kind}`);
+          if(job?.active)active++;else if(options.force||!job?.last||now-new Date(job.last).getTime()>=interval*60000)await queue(connection,kind);
         }
         continue;
       }

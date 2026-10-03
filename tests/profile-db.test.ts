@@ -2,7 +2,7 @@ import { setRewatch } from '../src/lib/core/tracking/rewatch';
 import { mediaViewsForIds } from '../src/lib/server/queries/media';
 import { beforeAll, afterAll, test, expect } from 'bun:test';
 import { eq, inArray } from 'drizzle-orm';
-import { getDb } from '../src/lib/server/db';
+import { getDb,getSql } from '../src/lib/server/db';
 import {
   users,
   media,
@@ -190,7 +190,7 @@ run(
     expect(view.favourites.slice(0, 2).map((i) => i.id)).toEqual([ids[2], ids[1]]);
     const [saved] = await getDb().select().from(users).where(eq(users.id, owner));
     expect(saved.settings.fullWidth).toBe(true);
-    expect((await profileData(other)).profile).toEqual({});
+    expect((await profileData(other)).profile).toEqual({backgroundMode:'activity'});
     await expect(
       updateProfile(other, { action: 'pin', mediaId: ids[1], value: true })
     ).rejects.toThrow();
@@ -612,4 +612,21 @@ run('shared profile details do not serialize private favourite ordering or pins'
     await db.update(users).set({ settings: { ...saved.settings, profile, social: { audience: 'public' } } }).where(eq(users.id, owner));
     expect((await profileData(owner, {}, new Date(), other)).profile.pinnedFavourites).toEqual([ids[0]]);
   } finally { await db.update(users).set({ settings: saved.settings }).where(eq(users.id, owner)); }
+});
+
+run('last activity is the default background and respects viewer activity privacy',async()=>{
+ const db=getDb(),[saved]=await db.select().from(users).where(eq(users.id,owner));
+ const eventId=crypto.randomUUID();
+ try{
+  await db.update(users).set({settings:{profile:{},social:{audience:'public',sections:{activity:'private'}}}}).where(eq(users.id,owner));
+  await getSql()`insert into social_activity(id,user_id,work_id,event_kind,section,source,source_key,occurred_at) values(${eventId},${owner},${ids[0]},'watch','activity','coast',${'background:'+eventId},now())`;
+  const own=await profileData(owner);
+  expect(own.profile.backgroundMode).toBe('activity');expect(own.background?.id).toBe(ids[0]);
+  expect((await profileData(owner,{},new Date(),other)).background).toBeNull();
+  expect((await profileData(owner,{},new Date(),null)).background).toBeNull();
+  await updateProfile(owner,{action:'background',mediaId:ids[1]});
+  expect((await profileData(owner)).background?.id).toBe(ids[1]);
+  await updateProfile(owner,{action:'background-mode',mode:'activity'});
+  expect((await profileData(owner)).background?.id).toBe(ids[0]);
+ }finally{await getSql()`delete from social_activity where id=${eventId}`;await db.update(users).set({settings:saved.settings}).where(eq(users.id,owner));}
 });

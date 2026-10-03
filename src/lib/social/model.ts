@@ -24,3 +24,23 @@ export const socialSettingsSchema = v.object({
 });
 export const emojis = ['❤️','😂','😮','😢','🔥'] as const;
 export type NotificationData = {actorId:string; subjectId:string; destination:string; actions?: ('accept'|'decline'|'save'|'dismiss')[]; workId?:string};
+
+export function activityAction(kind:string) {
+ return ({watch:'Watched',listen:'Listened',rating:'Rated',favourite:'Favourited',collect:'Collected',collected:'Collected',watchlist:'Saved',play:'Played',played:'Played',session:'Played','game-completed':'Completed','game-in-progress':'Started','game-paused':'Paused','game-dropped':'Stopped',drop:'Stopped',restore:'Resumed',progress:'Progressed',reaction:'Reacted',checkin:'Checked-in'} as Record<string,string>)[kind] ?? kind.replaceAll('-', ' ').replace(/^./, c=>c.toUpperCase());
+}
+export function activityDateLabel(date:string,now:number) {
+ const seconds=Math.max(0,Math.floor((now-new Date(date).getTime())/1000));
+ if(seconds>=7*86400){
+  const occurred=new Date(date);
+  return occurred.toLocaleDateString(undefined,{day:'numeric',month:'short',...(occurred.getFullYear()!==new Date(now).getFullYear()?{year:'numeric'}:{})});
+ }
+ if(seconds<60)return 'Just now';
+ const [value,unit]=seconds<3600?[Math.floor(seconds/60),'m']:seconds<86400?[Math.floor(seconds/3600),'h']:[Math.floor(seconds/86400),'d'];
+ return `${value}${unit} ago`;
+}
+export type FriendEntry = {
+ id:string;state:'pending'|'accepted';requestedBy:string;userId:string;username:string;
+ avatar:string|null;canCompare:boolean;activityStatus:import('./status').ActivityStatus;
+ activity?:{title:string;href:string;label:string;artwork?:string;progress?:number|null};
+ backgroundWorkId?:string|null;backgroundArtwork?:string;
+};

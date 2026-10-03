@@ -218,6 +218,34 @@
       "when": 1790954055522,
       "tag": "0030_serious_giant_man",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1790962620694,
+      "tag": "0031_absurd_puma",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1790972810542,
+      "tag": "0032_hesitant_dazzler",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1790986415643,
+      "tag": "0033_massive_the_executioner",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790995544324,
+      "tag": "0034_fixed_pandemic",
+      "breakpoints": true
     }
   ]
 }

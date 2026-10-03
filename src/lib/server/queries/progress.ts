@@ -8,17 +8,29 @@ import { progressOptionsSchema, type ProgressContent } from '../../progress';
 import { continuationIds } from './continuations';
 import { profileProgress } from './profile';
 import { listsData } from './lists';
+import { getConfig } from '../config';
+import { AppError } from '../security/errors';
+import { requireVisible } from '$lib/social/privacy.server';
+import { workAssessments, workCards } from '$lib/collection/query.server';
 import { applySequenceEntry, hasPermittedMediaSource, mediaViewsForIds } from './media';
 import { viewingRecency } from './viewing-recency';
 import { pagination, PAGE_SIZE } from './pagination';
 
 /** Plan using lightweight IDs; hydrate only the filtered, visible page. */
+export function progressData(userId:string, raw?:Partial<import('$lib/progress').ProgressOptions> & {category?:'screen'}, viewerId?:string):Promise<Omit<ProgressContent,'items'> & {items:MediaView[]}>;
+export function progressData(userId:string, raw:unknown, viewerId?:string):Promise<ProgressContent>;
 export async function progressData(
   userId: string,
   raw: unknown = {},
   viewerId = userId
 ): Promise<ProgressContent> {
   const options = v.parse(progressOptionsSchema, raw);
+  if(options.view === 'recommendations') return recommendationProgress(userId,viewerId,options);
+  if(userId!==viewerId) {
+    await requireVisible(userId,viewerId,options.view==='favourites'?'favourites':['next','watchlist'].includes(options.view)?'collection':'progress',options.category);
+    if(options.view==='next')await requireVisible(userId,viewerId,'progress',options.category);
+  }
+  if (options.category !== 'screen') return mediumProgress(userId, viewerId, options);
   if (options.view === 'watchlist' || options.view === 'favourites') {
     const list = await listsData(userId, { ...options, filter: 'to-watch',category:'screen' }, viewerId);
     return { ...options, page: list.page, pages: list.pages, total: list.total, items: list.items.filter((item):item is MediaView=>!('href' in item)) };
@@ -73,18 +85,25 @@ export async function progressData(
       activeIds.push(next.entry.mediaId);
   }
   const queued =
-    options.view === 'up-next'
+    (options.view === 'up-next' || options.view === 'next')
       ? await db
           .select({ id: s.upNext.mediaId })
           .from(s.upNext)
           .where(eq(s.upNext.userId, userId))
           .orderBy(desc(s.upNext.addedAt), s.upNext.mediaId)
       : [];
+  const saved = options.view === 'next' ? await db.select({ id:s.media.id }).from(s.trackingState)
+    .innerJoin(s.media,eq(s.media.id,s.trackingState.mediaId))
+    .where(and(eq(s.trackingState.userId,userId),eq(s.trackingState.watchlist,true),eq(s.trackingState.watched,false),eq(s.trackingState.dropped,false),inArray(s.media.kind,['movie','show','collection']),
+      sql`(${s.media.kind}<>'show' or (${s.trackingState.positionSeconds}=0 and ${s.trackingState.completedEpisodes}=0 and not exists(
+        select 1 from episodes e join tracking_state child on child.media_id=e.media_id and child.user_id=${userId}
+        where e.show_id=${s.media.id} and not e.is_special and (child.watched or child.position_seconds>0))))`)) : [];
   const candidateIds = [
     ...new Set(
       options.view === 'watching'
         ? [...activeIds, ...planned.nextIds]
         : [
+            ...saved.map(row=>row.id),
             ...queued.map((row) => row.id),
             ...planned.newSeasonIds,
             ...planned.nextIds,
@@ -94,7 +113,7 @@ export async function progressData(
   ];
   if (!candidateIds.length) return { ...options, items: [], total: 0, page: 1, pages: 1 };
   const active = new Set(activeIds),
-    manual = new Set(queued.map((row) => row.id));
+    manual = new Set([...queued,...saved].map((row) => row.id));
   const candidates = await db
     .select({ id: s.media.id, kind: s.media.kind })
     .from(s.media)
@@ -127,14 +146,19 @@ export async function progressData(
           : !active.has(row.id) &&
             (manual.has(row.id) ||
               sequenceById.has(row.id) ||
+              (options.view === 'next' && row.kind === 'episode') ||
               row.kind === 'season' ||
               row.kind === 'movie')
       )
       .map((row) => row.id)
   );
-  const ids = (options.view === 'watching' ? candidates.map((row) => row.id) : candidateIds).filter(
-    (id) => eligible.has(id)
-  );
+  let ids = (options.view === 'watching' ? candidates.map((row) => row.id) : candidateIds).filter(id => eligible.has(id));
+  if(options.view==='next' && ids.length) {
+    // An exact next episode represents its saved parent without a duplicate show card.
+    const represented=await db.select({id:s.episodes.showId}).from(s.episodes).where(inArray(s.episodes.mediaId,ids));
+    const parents=new Set(represented.map(row=>row.id));
+    ids=ids.filter(id=>!parents.has(id));
+  }
   const { page, pages } = pagination(ids.length, options.page);
   const visibleIds = ids.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const views = new Map(
@@ -166,4 +190,60 @@ export async function progressData(
     if (item.rewatchStartedAt) item.captionSubtitle += ' · Rewatching';
   }
   return { ...options, page, pages, total: ids.length, items };
+}
+
+/** Concrete game/music activity stays in its own tables; only presentation is shared. */
+async function mediumProgress(userId:string, viewerId:string, options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
+  if(!(await getConfig()).experimentalFeatures) throw new AppError(404,'This medium is not enabled.');
+  if(['finished','dropped'].includes(options.view))throw new AppError(400,'Choose Continue, Next or a saved view for this medium.');
+  const saved=options.view==='watchlist'||options.view==='favourites';
+  if(saved) {
+    const list=await listsData(userId,{...options,filter:'to-watch'},viewerId);
+    return {...options,page:list.page,pages:list.pages,total:list.total,items:list.items};
+  }
+  const active=options.category==='game'
+    ? sql`(select g.status from game_playthroughs g where g.user_id=${userId} and g.game_id=w.id order by g.created_at desc,g.id desc limit 1) in ('in-progress','paused')`
+    : sql`exists(select 1 from music_progress p where p.user_id=${userId} and p.track_id=w.id and p.position_seconds>0 and (p.duration_seconds is null or p.position_seconds<p.duration_seconds))`;
+  const planned=sql`exists(select 1 from tracking_state t where t.user_id=${userId} and t.media_id=w.id and t.watchlist and not t.dropped)
+    or exists(select 1 from up_next n where n.user_id=${userId} and n.media_id=w.id)
+    or (${options.category}='game' and (select g.status from game_playthroughs g where g.user_id=${userId} and g.game_id=w.id order by g.created_at desc,g.id desc limit 1)='planned')`;
+  const available=sql`exists(select 1 from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id
+    where a.user_id=${viewerId} and c.user_id=${viewerId} and c.status='connected' and i.enabled and a.state='available' and
+    (a.media_id=w.id or exists(select 1 from media_relationships r where r.parent_id=w.id and r.child_id=a.media_id and r.kind='contains')))`;
+  const where=sql`w.category=${options.category} and social_visible(${userId}::uuid,${viewerId}::uuid,${options.view==='watching'?'progress':'collection'},${options.category})
+    and (${options.scope}='all' or ${available}) and ${options.view==='watching'?sql`coalesce((${active}),false)`:sql`(${planned}) and not coalesce((${active}),false)`}`;
+  const db=getDb();
+  const [count]=await db.execute<{total:number}>(sql`select count(*)::int as total from works w where ${where}`);
+  const {page,pages}=pagination(count.total,options.page);
+  const rows=await db.execute<{id:string;available:boolean}>(sql`select w.id,${available} as available from works w where ${where} order by
+    greatest((select max(g.updated_at) from game_playthroughs g where g.user_id=${userId} and g.game_id=w.id),
+      (select p.updated_at from music_progress p where p.user_id=${userId} and p.track_id=w.id),
+      (select t.updated_at from tracking_state t where t.user_id=${userId} and t.media_id=w.id)) desc nulls last,w.id
+    limit ${PAGE_SIZE} offset ${(page-1)*PAGE_SIZE}`);
+  const availability=new Map(Array.from(rows).map(row=>[row.id,row.available]));
+  const cards=await workCards(userId,viewerId,Array.from(rows).map(row=>row.id));
+  return {...options,page,pages,total:count.total,items:cards.map(card=>({...card,available:availability.get(('workId' in card ? card.workId : undefined)??card.id)??false}))};
+}
+
+/** Received recommendations outlive notification delivery; filter IDs before hydrating a page. */
+async function recommendationProgress(userId:string,viewerId:string,options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
+  if(userId!==viewerId)throw new AppError(403,'Recommendations are private to their recipient.');
+  if(options.category!=='screen'&&!(await getConfig()).experimentalFeatures)throw new AppError(404,'This medium is not enabled.');
+  const rows=await getDb().execute<{workId:string;ids:string[];names:string[]}>(sql`
+    select r.work_id as "workId",array_agg(r.id::text order by r.created_at desc,r.id desc) as ids,
+      array_agg(u.username order by r.created_at desc,r.id desc) as names
+    from social_recommendations r join users u on u.id=r.sender_id join works w on w.id=r.work_id
+    where r.recipient_id=${userId} and r.state='pending' and not u.disabled and w.category=${options.category}
+      and (${options.kind}='all' or w.kind=${options.kind})
+      and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(r.sender_id,r.recipient_id) and f.user_b=greatest(r.sender_id,r.recipient_id))
+    group by r.work_id order by max(r.created_at) desc,r.work_id`);
+  let candidates=Array.from(rows);
+  if(options.scope==='available'&&candidates.length){
+    const available=new Set((await workAssessments(userId,viewerId,candidates.map(r=>r.workId))).filter(a=>['available','partial'].includes(a.availability)).map(a=>a.id));
+    candidates=candidates.filter(r=>available.has(r.workId));
+  }
+  const {page,pages}=pagination(candidates.length,options.page),visible=candidates.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE);
+  const cards=new Map((await workCards(userId,viewerId,visible.map(r=>r.workId))).map(card=>['workId' in card?card.workId??card.id:card.id,card]));
+  const items=visible.flatMap(row=>{const card=cards.get(row.workId);return card?[{...card,recommendationIds:row.ids,captionSubtitle:`Recommended by ${[...new Set(row.names)].join(', ')}`}]:[];});
+  return {...options,page,pages,total:candidates.length,items};
 }

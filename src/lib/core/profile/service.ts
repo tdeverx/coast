@@ -27,6 +27,7 @@ const profileInput = v.variant('action', [
     value: v.pipe(v.number(), v.finite(), v.minValue(0), v.maxValue(100)),
   }),
   v.object({ action: v.literal('background'), mediaId: v.nullable(uuid) }),
+  v.object({ action: v.literal('background-mode'), mode: v.picklist(['fixed','activity']) }),
   v.object({ action: v.literal('pin'), mediaId: uuid, value: v.boolean() }),
   v.object({ action: v.literal('move'), mediaId: uuid, beforeId: v.nullable(uuid) }),
 ]);
@@ -78,6 +79,8 @@ export async function updateProfile(userId: string, input: unknown) {
       }
       profile.featuredMediaId = data.mediaId;
       profile.featuredNote = data.note;
+    } else if (data.action === 'background-mode') {
+      profile.backgroundMode = data.mode;
     } else if (data.action === 'background') {
       if (data.mediaId) {
         const [item] = await tx
@@ -87,6 +90,7 @@ export async function updateProfile(userId: string, input: unknown) {
         if (!item) throw new AppError(404, 'Title not found.');
       }
       profile.backgroundMediaId = data.mediaId;
+      profile.backgroundMode = 'fixed';
       profile.backgroundPosition = 50;
     } else {
       const favourites = await tx

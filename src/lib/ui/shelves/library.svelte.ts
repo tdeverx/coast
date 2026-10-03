@@ -39,8 +39,8 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     layout = 'row',
     initialSelection = 'all',
     initialKind = 'all',
-    initialScope = 'available',
-    collection = false,
+    initialScope = getOptions().preview ? 'all' : 'available',
+    collection: initialCollection = false,
     username = '',
     initialRelationship = 'all',
     initialSource = 'all',
@@ -48,10 +48,11 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     preview,
   } = $derived(getOptions());
 
+  let collection = $state(untrack(() => initialCollection));
   const title = $derived(preview?.title ?? libraryTitles[surface]);
   let selection = $state(untrack(() => initialSelection)),
     kind = $state(untrack(() => initialKind)),
-    scope = $state(untrack(() => initialScope));
+    scope = $state<'all' | 'available'>(untrack(() => collection ? initialAvailability === 'available' ? 'available' : 'all' : initialScope));
   let relationship = $state(untrack(() => initialRelationship)),
     source = $state(untrack(() => initialSource)),
     availability = $state(untrack(() => initialAvailability));
@@ -102,16 +103,15 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     get shape() { return surface==='listen' ? 'square' : 'poster'; }, get mediaKind() { return surface==='listen' ? 'music' : surface==='play' ? 'game' : 'screen'; },
     get rows() { return preview ? 1 : 2; },
 
-    get resetKey() { return preview ? selection : `${selection}:${kind}:${scope}:${relationship}:${source}:${availability}`; },
-    get filters(): ShelfControl[] { return preview ? [] : [
+    get resetKey() { return preview ? `${selection}:${scope}` : `${collection}:${selection}:${kind}:${scope}:${relationship}:${source}:${availability}`; },
+    get filters(): ShelfControl[] { return [
       {type:'segments' as const,label:`${title} selection`,value:selection,options:selections,change:(value:string)=>{selection=value;void load();}},
-      ...(surface==='watch' ? [{type:'availability' as const,label:'Available to play only',value:scope,change:(value:string)=>{scope=value as typeof scope;if(collection) availability=value==='available'?'available':'all';void load();}}] : []),
+      ...(!preview ? [{type:'collection' as const,label:'In my Collection only',value:collection ? 'collection' : 'all',change:(value:string)=>{collection=value==='collection';if(collection && selection==='artist') selection='all';if(collection) availability=scope==='available'?'available':availability==='available'?'all':availability;void load();}}] : []),
+      {type:'availability' as const,label:'Available to play only',value:scope,change:(value:string)=>{scope=value as typeof scope;if(collection) availability=value==='available'?'available':'all';void load();}},
     ]; },
     get controls(): ShelfControl[] {
-      if(preview) return surface==='listen' ? [{type:'select',label:`${title} type`,value:selection,options:librarySelections.listen,change:value=>{selection=value;void load();}}] : [];
       return [
-        ...(surface==='watch' ? [{type:'media-type' as const,label:'Watch type',value:kind,change:(value:string)=>{kind=value as typeof kind;void load();}}]
-          : collection ? [{type:'availability' as const,label:'Available to play only',value:availability,change:(value:string)=>{availability=value;void load();}}] : []),
+        ...(surface==='watch' ? [{type:'media-type' as const,label:'Watch type',value:kind,change:(value:string)=>{kind=value as typeof kind;void load();}}] : []),
         ...(collection ? [
           {type:'select' as const,label:`${title} relationships`,value:relationship,options:[{value:'all',label:'All relationships'},{value:'collected',label:'Collected'},{value:'watchlist',label:'Watchlist'},{value:'favourite',label:'Favourites'},{value:'rating',label:'Rated'},{value:'list',label:'Lists'},{value:'queue',label:'Queued'},{value:'activity',label:'Activity'}],change:(value:string)=>{relationship=value;void load();}},
           {type:'select' as const,label:`${title} availability`,value:availability,options:[{value:'all',label:'All availability'},{value:'available',label:'Available'},{value:'partial',label:'Partial'},{value:'unavailable',label:'Missing'},{value:'unknown',label:'Unknown'},{value:'ready',label:'Ready to continue'}],change:(value:string)=>{availability=value;scope=value==='available'?'available':'all';void load();}},
@@ -119,7 +119,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
         ] : []),
       ];
     },
-    get empty() { return preview ? busy || !ready ? `Loading ${title.toLowerCase()}…` : preview.empty : ready ? 'No titles in this selection.' : 'Loading titles…'; },
+    get empty() { return surface === 'play' && scope === 'available' ? 'No owned games match this selection. Turn off Available to browse all games.' : preview ? busy || !ready ? `Loading ${title.toLowerCase()}…` : preview.empty : ready ? 'No titles in this selection.' : 'Loading titles…'; },
     get emptyHref() { return preview && ready && !busy ? href() : undefined; },
     get emptyLink() { return `Browse ${surface==='listen'?'music':'games'}`; }, load,
   };

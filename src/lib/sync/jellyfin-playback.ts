@@ -9,12 +9,14 @@ export async function importJellyfinPlayback(
   userId: string,
   connectionId: string,
   mediaId: string,
-  item: AvailableItem
+  item: Pick<AvailableItem,'kind'|'userData'> & {sources:{durationSeconds?:number}[];metadata:{runtimeMinutes?:number|null}},
+  accountGeneration?:string
 ) {
   const remote = item.userData;
   if (!remote) return;
   const options = {
     source: 'jellyfin',
+    accountGeneration,
     occurredAt:
       remote.lastPlayedAt && Number.isFinite(Date.parse(remote.lastPlayedAt))
         ? new Date(remote.lastPlayedAt).toISOString()
@@ -27,7 +29,7 @@ export async function importJellyfinPlayback(
       mediaId,
       'favourite',
       { value: remote.favourite },
-      { source: 'jellyfin' }
+      { source: 'jellyfin',accountGeneration }
     );
   if (!['movie', 'episode'].includes(item.kind)) return;
   const duration =

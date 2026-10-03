@@ -7,7 +7,6 @@
   import { setHeroMuted } from '$lib/playback/client.svelte';
   import { usePlayback } from '$lib/playback/context.svelte';
   import MediaActions from './MediaActions.svelte';
-  import Icon from './Icon.svelte';
   import Button from './Button.svelte';
 
   const { heroPlayer, preview } = usePlayback();
@@ -43,14 +42,13 @@
   <video bind:this={playback.video} data-player="hero" muted={heroPlayer.muted} playsinline preload="metadata" tabindex="-1"
     class:positioned={!!playback.videoStyle} style={playback.videoStyle}
     onloadedmetadata={playback.loadedMetadata}
+    onresize={playback.loadedMetadata}
     onplaying={() => (heroPlayer.playing = true)}
     onpause={() => (heroPlayer.playing = false)}
     onended={() => { heroPlayer.playing = false; heroPlayer.paused = true; }}
     onerror={playback.failed}
   ></video>
 </div>
-
-
 
 {:else if hero && hero.active && hero.presentation}<section
   class="hero"
@@ -121,30 +119,26 @@
           {requestable}
           hero
         />
-      {:else}<Button href={hero.active.href} variant="hero">View {hero.active.kind}</Button>{/if}
+      {:else}<Button href={hero.active.href} size="hero">View {hero.active.kind}</Button>{/if}
       {#if items.length > 1 || hero.hasTrailer}<div class="hero-pagination">
-          {#if hero.hasTrailer}<button
+          {#if hero.hasTrailer}<Button size="icon"
               class="icon-button"
-              aria-label={heroPlayer.playing ? 'Pause trailer' : 'Play trailer'}
+              label={heroPlayer.playing ? 'Pause trailer' : 'Play trailer'}
               onclick={() => (heroPlayer.paused = !heroPlayer.paused)}
-              ><Icon name={heroPlayer.playing ? 'pause' : 'play'} size={18} /></button
-            ><button
+               icon={heroPlayer.playing ? 'pause' : 'play'} iconSize={18} /><Button size="icon"
               class="icon-button"
-              aria-label={heroPlayer.muted ? 'Unmute trailer' : 'Mute trailer'}
+              label={heroPlayer.muted ? 'Unmute trailer' : 'Mute trailer'}
               onclick={() => preview ? heroPlayer.muted = !heroPlayer.muted : setHeroMuted(!heroPlayer.muted)}
-              ><Icon name={heroPlayer.muted ? 'muted' : 'volume'} size={18} /></button
-            >{/if}{#if items.length > 1}<span
+               icon={heroPlayer.muted ? 'muted' : 'volume'} iconSize={18} />{/if}{#if items.length > 1}<span
               >{String(hero.current + 1).padStart(2, '0')}<i>/</i>{String(items.length).padStart(
                 2,
                 '0'
               )}</span
-            ><button
+            ><Button size="icon"
               class="icon-button"
-              aria-label="Previous featured title"
-              onclick={() => hero.step(-1)}><Icon name="left" size={18} /></button
-            ><button class="icon-button" aria-label="Next featured title" onclick={() => hero.step(1)}
-              ><Icon name="right" size={18} /></button
-            >{/if}
+              label="Previous featured title"
+              onclick={() => hero.step(-1)} icon="left" iconSize={18} /><Button size="icon"  class="icon-button" label="Next featured title" onclick={() => hero.step(1)}
+               icon="right" iconSize={18} />{/if}
         </div>{/if}
     </div>
   </div>

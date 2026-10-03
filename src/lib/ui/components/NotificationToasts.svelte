@@ -1,8 +1,11 @@
 <script lang="ts">
+  import {openNotifications} from '$lib/notifications/client.svelte';
+  import RowFeedback from './RowFeedback.svelte';
   import { actionFeedback, undoAction } from '$lib/ui/action-feedback.svelte';
   import { onMount } from 'svelte';
   import { useClient } from '$lib/ui/client-context';
   import Icon from './Icon.svelte';
+  import Button from './Button.svelte';
 
   const { preview, change } = useClient();
 
@@ -51,11 +54,11 @@
     {#if feedback}<div class="toast solid-surface" role="status">
         <div class="action-message">
           <p>{feedback.text}</p>
-          {#if feedback.error}<p role="alert">{feedback.error}</p>{/if}
-          {#if feedback.undo}<button
-              class="button ghost"
+          {#if feedback.error}<RowFeedback error={feedback.error} tag="p" />{/if}
+          {#if feedback.undo}<Button
+              emphasis="subtle"
               disabled={feedback.busy}
-              onclick={undoAction}>Undo</button
+              onclick={undoAction}>Undo</Button
             >{/if}
         </div>
         <button
@@ -66,9 +69,9 @@
         >
       </div>{/if}
     {#each visible as n (n.id)}<div class="toast solid-surface">
-        <a href="/notifications"
+        <button class="toast-open" onclick={()=>{if(!preview)openNotifications();}}
           ><h3>{n.title}</h3>
-          {#if n.body}<p>{n.body}</p>{/if}</a
+          {#if n.body}<p>{n.body}</p>{/if}</button
         ><button
           class="icon-button"
           aria-label={`Dismiss notification: ${n.title}`}
@@ -105,9 +108,10 @@
     bottom: calc(96px + env(safe-area-inset-bottom));
   }
   .action-message,
-  .toast > a {
+  .toast > .toast-open {
     flex: 1;
   }
+  .toast-open {text-align:left;color:inherit;cursor:pointer;}
   .toast h3 {
     font-size: var(--text-sm);
   }

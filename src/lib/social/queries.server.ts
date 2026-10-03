@@ -1,45 +1,70 @@
+import {statusesForUsers} from './status.server';
+import {activityAction} from './model';
 import {getDb} from '$lib/server/db';
 import {sql} from 'drizzle-orm';
 import * as v from 'valibot';
 import {workCards} from '$lib/collection/query.server';
 const uuid=v.pipe(v.string(),v.uuid());
-export const feedOptionsSchema=v.object({category:v.optional(v.picklist(['all','screen','music','game']),'all'),kind:v.optional(v.pipe(v.string(),v.maxLength(40)),'all'),friendId:v.optional(uuid),period:v.optional(v.picklist(['month','year','all']),'month'),before:v.optional(v.pipe(v.string(),v.isoTimestamp())),beforeId:v.optional(uuid)});
-export async function activityFeed(userId:string,raw:unknown={}) {
+export const feedOptionsSchema=v.object({category:v.optional(v.picklist(['all','screen','music','game']),'all'),kind:v.optional(v.pipe(v.string(),v.maxLength(40)),'all'),friendId:v.optional(uuid),beforeKnown:v.optional(v.picklist(['true','false'])),period:v.optional(v.picklist(['month','year','all']),'all'),before:v.optional(v.pipe(v.string(),v.isoTimestamp())),beforeId:v.optional(uuid)});
+export async function activityFeed(userId:string,raw:unknown={},activityIds?:string[]) {
+ if(activityIds)v.parse(v.pipe(v.array(uuid),v.maxLength(60)),activityIds);
  const o=v.parse(feedOptionsSchema,raw);
- const rows=await getDb().execute<{id:string;userId:string;username:string;workId:string;eventKind:string;occurredAt:string;count:number;members:string[];dateKnown:boolean}>(sql`
- with visible as (
-  select a.*,w.category,w.kind,u.username,coalesce(e.show_id,r.parent_id,a.work_id) as root_id,
-   count(*) over(partition by a.user_id,a.batch_key) as batch_count,
-   lag(a.occurred_at) over(partition by a.user_id,e.show_id order by a.occurred_at,a.id) as previous_date
+ const rows=await getDb().execute<{id:string;userId:string;username:string;workId:string;eventKind:string;occurredAt:string;count:number;members:string[];dateKnown:boolean;displayWorkId:string;rootId:string;avatar:string|null;episodeCodes:string[];rating:number|null;minutes:number|null;rewatch:boolean;trackTitle:string|null;listenNumber:number}>(sql`
+ with visible_raw as (
+  select a.*,w.category,w.kind,u.username,coalesce(e.show_id,se.show_id,r.parent_id,a.work_id) as root_id,
+   case when e.media_id is not null then 'S'||lpad(e.season_number::text,greatest(2,length(e.season_number::text)),'0')||'E'||lpad(e.episode_number::text,greatest(2,length(e.episode_number::text)),'0') end as episode_code,
+   rating.value as rating, session.minutes_played as minutes,coalesce(tracking.rewatch,false) as rewatch,music.title as track_title
   from social_activity a join works w on w.id=a.work_id join users u on u.id=a.user_id
+  left join music_works music on music.id=a.work_id
+  left join ratings rating on a.event_kind='rating' and rating.user_id=a.user_id and rating.media_id=a.work_id
+  left join game_sessions session on session.id=substring(a.source_key from '^game_sessions:([0-9a-f-]{36})$')::uuid
+  left join tracking_events tracking on tracking.id=substring(a.source_key from '^tracking_events:([0-9a-f-]{36})$')::uuid
   left join episodes e on e.media_id=a.work_id
+  left join seasons se on se.media_id=a.work_id
   left join lateral(select parent_id from media_relationships where child_id=a.work_id and kind='contains' order by position limit 1) r on true
-  where exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,a.user_id) and f.user_b=greatest(${userId}::uuid,a.user_id))
+  where (a.user_id=${userId}::uuid or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,a.user_id) and f.user_b=greatest(${userId}::uuid,a.user_id)))
    and social_visible(a.user_id,${userId}::uuid,a.section,w.category)
+   and (${activityIds===undefined} or a.id in (${activityIds?.length?sql.join(activityIds.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))
    and (${o.category}='all' or w.category=${o.category}) and (${o.kind}='all' or a.event_kind=${o.kind})
    and (${o.friendId??null}::uuid is null or a.user_id=${o.friendId??null}::uuid)
    and (w.category='screen' or coalesce((select value->>'experimentalFeatures' from system_settings where key='coast'),'false')='true')
- ), numbered as (
-  select *,sum(case when previous_date is null or occurred_at-previous_date>interval '1 hour' then 1 else 0 end) over(partition by user_id,root_id order by occurred_at,id) as run from visible
+ ), deduplicated as (
+ select *,row_number() over(partition by user_id,case when source='jellyfin' and event_kind='watch' and date_known then work_id::text||':'||occurred_at::text else id::text end order by created_at,id) as observation_rank from visible_raw
+ ), visible as (select *,sum(case when event_kind='listen' and date_known then 1 else 0 end) over(partition by user_id,work_id order by occurred_at,id) as listen_number,lag(occurred_at) over(partition by user_id,root_id order by occurred_at,id) as previous_date from deduplicated where observation_rank=1), numbered as (
+  select *,sum(case when previous_date is null or occurred_at-previous_date>interval '3 hours' then 1 else 0 end) over(partition by user_id,root_id order by occurred_at,id) as run from visible
  ), keyed as (
- select *,case when batch_key is not null and source<>'coast' and batch_count>20 then 'import' else event_kind end as display_kind,
- case when batch_key is not null and source<>'coast' and batch_count>20 then 'import:'||batch_key
- when event_kind='listen' and batch_key is not null then 'album:'||batch_key
- when kind='episode' and event_kind='watch' then 'episode:'||root_id||':'||run else id::text end as group_key from numbered
+ select *,event_kind as display_kind,
+ case when ${activityIds!==undefined} then id::text when event_kind='listen' and batch_key is not null and date_known then 'album:'||batch_key
+ when kind='episode' and event_kind='watch' and date_known then 'episode:'||root_id||':'||run else id::text end as group_key from numbered
  ), grouped as (
  select (array_agg(id order by occurred_at desc,id desc))[1] as id,user_id,username,
- (array_agg(work_id order by occurred_at desc,id desc))[1] as work_id,display_kind as event_kind,
- case when display_kind='import' then max(created_at) else max(occurred_at) end as occurred_at,
- count(*)::int as count,array_agg(id order by occurred_at,id) as members,bool_and(date_known) as date_known
+ (array_agg(work_id order by occurred_at desc,id desc))[1] as work_id,
+ (array_agg(root_id order by occurred_at desc,id desc))[1] as root_id,
+ case when count(*)=1 and bool_or(kind='episode') then (array_agg(work_id order by occurred_at desc,id desc))[1] else (array_agg(root_id order by occurred_at desc,id desc))[1] end as display_work_id,
+ coalesce(array_agg(episode_code order by occurred_at,id) filter(where episode_code is not null),'{}'::text[]) as episode_codes,display_kind as event_kind,
+ max(occurred_at) as occurred_at,
+ max(track_title) as track_title,max(listen_number)::int as listen_number,max(rating) as rating,sum(minutes)::int as minutes,bool_or(rewatch) as rewatch,count(*)::int as count,array_agg(id order by occurred_at,id) as members,bool_and(date_known) as date_known
  from keyed group by user_id,username,display_kind,group_key
  )
- select id,user_id as "userId",username,work_id as "workId",event_kind as "eventKind",occurred_at as "occurredAt",count,members,date_known as "dateKnown" from grouped
- where (${o.period}='all' or occurred_at>=now()-case when ${o.period}='year' then interval '1 year' else interval '30 days' end) and (${o.before??null}::timestamptz is null or (occurred_at,id)<(${o.before??null}::timestamptz,coalesce(${o.beforeId??null}::uuid,'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid)))
- order by occurred_at desc,id desc limit 61`);
- const page=Array.from(rows).slice(0,60),cards=await workCards(userId,userId,[...new Set(page.map(r=>r.workId))]);
- const items=page.flatMap(event=>{const item=cards.find(c=>('workId' in c?c.workId??c.id:c.id)===event.workId);return item?[{...item,entryId:event.id,captionSubtitle:`${event.username} · ${event.eventKind==='import'?`Imported ${event.count} items`:event.eventKind}${event.count>1&&event.eventKind!=='import'?` · ${event.count} items`:''}${!event.dateKnown?' · Date unknown':''}`}]:[];});
+ select id,user_id as "userId",username,work_id as "workId",event_kind as "eventKind",occurred_at as "occurredAt",count,members,rating,minutes,rewatch,track_title as "trackTitle",listen_number as "listenNumber",date_known as "dateKnown",display_work_id as "displayWorkId",root_id as "rootId",episode_codes as "episodeCodes",
+ case when social_visible(user_id,${userId}::uuid,'details') then (select settings->'profile'->>'avatar' from users where users.id=grouped.user_id) end as avatar from grouped
+ where (${o.period}='all' or occurred_at>=now()-case when ${o.period}='year' then interval '1 year' else interval '30 days' end) and (${o.before??null}::timestamptz is null or
+ (date_known,occurred_at,id)<(coalesce(${o.beforeKnown??null}::boolean,true),${o.before??null}::timestamptz,coalesce(${o.beforeId??null}::uuid,'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid)))
+ order by date_known desc,occurred_at desc,id desc limit 61`);
+ const page=Array.from(rows).slice(0,60),cards=await workCards(userId,userId,[...new Set(page.flatMap(r=>[r.displayWorkId,r.rootId]))]);
+ const [statuses,reactions]=await Promise.all([statusesForUsers(userId,page.map(event=>event.userId)),reactionSummary(userId,'activity',page.map(event=>event.id))]);
+ const items=page.flatMap(event=>{
+   const item=cards.find(c=>('workId' in c?c.workId??c.id:c.id)===event.displayWorkId);
+   if(!item)return [];
+   const extras=[event.eventKind==='listen'&&event.count===1?event.trackTitle:null,event.eventKind==='listen'&&event.count===1&&event.listenNumber>1?`Listen ${event.listenNumber}`:null,event.rating!=null?`${event.rating}/5`:null,event.minutes!=null?`${event.minutes} minutes`:null,event.rewatch?'Rewatch':null].filter(Boolean);
+   const episodeCount=new Set(event.episodeCodes).size;
+   const action=event.eventKind==='watch'&&episodeCount>0?`Watched ${episodeCount} ${episodeCount===1?'episode':'episodes'}`:activityAction(event.eventKind);
+   const root=cards.find(c=>('workId' in c?c.workId??c.id:c.id)===event.rootId);
+   const detail=[event.eventKind==='watch'&&episodeCount>0?`${episodeCount} ${episodeCount===1?'episode':'episodes'}`:event.count>1?`${event.count} ${event.eventKind==='listen'?'tracks':'items'}`:null,...extras].filter(Boolean).join(' · ');
+   return [{...item,captionTitle:item.kind==='episode'?root?.title??item.title:item.title,entryId:event.id,captionActivity:{myReaction:reactions[event.id]?.find(reaction=>reaction.mine)?.emoji??null,id:event.id,occurredAt:new Date(event.occurredAt).toISOString(),dateKnown:event.dateKnown,kind:event.eventKind,action:activityAction(event.eventKind),detail},captionActor:{username:event.username,avatar:event.avatar,status:statuses[event.userId]??'offline'},captionSubtitle:`${action}${episodeCount===0&&event.count>1?` · ${event.count} ${event.eventKind==='listen'?'tracks':'items'}`:''}${extras.length?` · ${extras.join(' · ')}`:''}`}];
+ });
  const last=page.at(-1);
- return {items,events:page,hasMore:rows.length>60,next:last?{before:new Date(last.occurredAt).toISOString(),beforeId:last.id}:null};
+ return {items,events:page,hasMore:rows.length>60,next:last?{before:new Date(last.occurredAt).toISOString(),beforeId:last.id,beforeKnown:String(last.dateKnown)}:null};
 }
 export async function workSocial(userId:string,ids:string[]) {
  v.parse(v.pipe(v.array(uuid),v.maxLength(60)),ids);if(!ids.length)return {};
@@ -68,7 +93,9 @@ export async function workSocial(userId:string,ids:string[]) {
  where (w.category='screen' or coalesce((select value->>'experimentalFeatures' from system_settings where key='coast'),'false')='true') and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,u.id) and f.user_b=greatest(${userId}::uuid,u.id)) and social_visible(u.id,${userId}::uuid,r.section,w.category)
  order by d.root,u.username`);
  const reactions=await getDb().execute<{targetId:string;emoji:string;count:number}>(sql`select r.target_id as "targetId",r.emoji,count(*)::int as count from social_reactions r join works w on w.id=r.target_id where r.target_kind='work' and r.target_id in (${list}) and social_visible(r.user_id,${userId}::uuid,'reactions',w.category) group by r.target_id,r.emoji`);
- return Object.fromEntries(ids.map(id=>{const friends=Array.from(rows).filter(r=>r.workId===id);return [id,{friends:friends.slice(0,3),total:friends.length,reactions:Array.from(reactions).filter(r=>r.targetId===id)}];}));
+ const socialFriends=Array.from(rows) as {workId:string;userId:string;username:string;avatar:string|null;rating:number|null;watched:boolean;progress:number}[];
+ const statuses=await statusesForUsers(userId,socialFriends.map(row=>row.userId));
+ return Object.fromEntries(ids.map(id=>{const friends=socialFriends.filter(r=>r.workId===id).map(row=>({...row,status:statuses[row.userId]??'offline'}));return [id,{friends:friends.slice(0,3),total:friends.length,reactions:Array.from(reactions).filter(r=>r.targetId===id)}];}));
 }
 
 /** Batch reads share the same visibility predicate as activity and media indicators. */

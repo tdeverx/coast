@@ -2,6 +2,7 @@ import { expect, test } from 'bun:test';
 import { progressParameters, progressSurface } from '../src/lib/progress';
 
 test('saved rows and profile-only statuses select their own presentation', () => {
+  expect(progressSurface('recommendations', false)).toBe('recommendations');
   expect(progressSurface('watching', false)).toBe('continue');
   expect(progressSurface('watching', true)).toBe('profile');
   for (const view of ['finished', 'dropped']) expect(progressSurface(view, false)).toBe('profile');
@@ -23,6 +24,7 @@ test('availability follows playable shelves while profile progress stays all', (
     expect(params('view=' + view + '&scope=available').scope).toBe('all');
   expect(params('username=admin&view=finished&kind=show&page=2')).toEqual({
     view: 'finished',
+    category: undefined,
     kind: 'show',
     scope: 'all',
     page: 2,

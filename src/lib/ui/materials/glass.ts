@@ -1,5 +1,33 @@
 import { glassPresets, type GlassVariant, type GlassSurface } from './presets';
 import grainUrl from './grain.png';
+
+const settingWatchers = new Set<() => void>();
+let settingObserver: MutationObserver | undefined;
+const pendingSurfaces = new Set<() => void>();
+let surfaceFrame = 0;
+function scheduleSurface(render: () => void) {
+  pendingSurfaces.add(render);
+  if (!surfaceFrame) surfaceFrame = requestAnimationFrame(() => {
+    surfaceFrame = 0;
+    const batch = [...pendingSurfaces];
+    pendingSurfaces.clear();
+    for (const update of batch) update();
+  });
+}
+function watchSetting(update: () => void) {
+  if (!settingWatchers.size) {
+    const root = document.querySelector('[data-coast-glass]');
+    if (root) {
+      settingObserver = new MutationObserver(() => { for (const watcher of settingWatchers) watcher(); });
+      settingObserver.observe(root, { attributes: true, attributeFilter: ['data-coast-glass'] });
+    }
+  }
+  settingWatchers.add(update);
+  return () => {
+    settingWatchers.delete(update);
+    if (!settingWatchers.size) { settingObserver?.disconnect(); settingObserver = undefined; }
+  };
+}
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export type LiquidGlassOptions = {
@@ -96,8 +124,7 @@ function supported() {
 export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassOptions = true) {
   const nativeSupported = supported();
   const filterId = `coast-liquid-glass-${Date.now()}-${++filterSequence}`;
-  let frame = 0,
-    definition: SVGSVGElement | null = null;
+  let definition: SVGSVGElement | null = null;
   const settings = () => {
     const options = typeof requested === 'boolean' ? { enabled: requested } : requested;
     const preset = { ...glassPresets.materials[options.variant ?? 'clear'], ...options.surface };
@@ -273,15 +300,10 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     node.classList.add('liquid-glass-active');
     node.dataset.coastGlassRenderer = 'original-svg-backdrop';
   }
-  const schedule = () => {
-    cancelAnimationFrame(frame);
-    frame = requestAnimationFrame(render);
-  };
-  const resize = new ResizeObserver(schedule),
-    setting = new MutationObserver(schedule);
+  const schedule = () => scheduleSurface(render);
+  const resize = new ResizeObserver(schedule);
   resize.observe(node);
-  const root = document.querySelector('[data-coast-glass]');
-  if (root) setting.observe(root, { attributes: true, attributeFilter: ['data-coast-glass'] });
+  const stopSetting = watchSetting(schedule);
   applySurface(false);
   render();
   return {
@@ -290,9 +312,9 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       schedule();
     },
     destroy() {
-      cancelAnimationFrame(frame);
+      pendingSurfaces.delete(render);
       resize.disconnect();
-      setting.disconnect();
+      stopSetting();
       grain?.remove();
       grain = undefined;
       node.style.removeProperty('-webkit-backdrop-filter');

@@ -1,3 +1,4 @@
+import {playbackBackground} from '$lib/ui/artwork-priority';
 import { uuid, text } from './context.server';
 import * as synced from '$lib/playback/synced/service.server';
 import { createInvite, listInvites, revokeInvite } from '$lib/server/auth/onboarding';
@@ -11,10 +12,11 @@ import { requireVisible } from '$lib/social/privacy.server';
 import { previewProjection, approveProjection, reviewProjection } from '$lib/collection/projection.server';
 import { previewSourceChange } from '$lib/collection/source-changes.server';
 import { musicQueue, savedMusicQueue } from '$lib/music/queue.server';
-import { collectionData, collectionParameters, workActionData } from '$lib/collection/query.server';
+import { collectionData, collectionParameters, workActionData, workCards } from '$lib/collection/query.server';
 import { missingDemand, adminDemand } from '$lib/collection/demand.server';
 import { logMusic } from '$lib/music/persistence.server';
 import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
+import { discoveryContent, discoveryParameters } from '$lib/server/queries/discovery';
 import { libraryContent } from '$lib/server/queries/library-content';
 import { sequenceSourceSchema } from '$lib/media/sequence';
 import { isHeroTitle } from '$lib/media/hero';
@@ -39,7 +41,7 @@ import { DomainError } from '$lib/core/errors';
 import { ProviderActionError } from '$lib/providers/contracts';
 import { trackWithExports } from '$lib/sync/changes';
 import { updateJellyfinReconciliation } from '$lib/providers/jellyfin/connection.server';
-import { streamPlayback, streamTrailer } from '$lib/playback/server';
+import { playbackDetails, streamPlayback, streamTrailer } from '$lib/playback/server';
 import { streamArtwork } from '$lib/providers/artwork.server';
 import { handleUpNext } from './up-next.server';
 import { handleGames } from './games.server';
@@ -127,15 +129,23 @@ export const handler: RequestHandler = async (event) => {
       if(method==='DELETE'&&path[2]){await revokeInvite(user,uuid(path[2]));return json({revoked:true});}
     }
     if(path[0]==='synced') {
+      if(path.length===1&&method==='GET'){
+        const rooms=await synced.listRooms(uid),hosts=await social.friends(uid,1,'accepted',[...new Set(rooms.filter(room=>room.hostId!==uid).map(room=>room.hostId))]);
+        const cards=await workCards(uid,uid,[...new Set(rooms.flatMap(room=>room.mediaId?[room.mediaId]:[]))]);
+        const details=await playbackDetails(cards);
+        return json(rooms.map(room=>{const friend=hosts.find(host=>host.userId===room.hostId),card=cards.find(card=>('workId' in card?card.workId??card.id:card.id)===room.mediaId);return {...room,backgroundArtwork:room.mediaId&&card?playbackBackground(card):undefined,playingItem:card?{...card,captionSubtitle:details.get(card.id)}:null,nowPlaying:room.mediaId?card?.title??'Unknown title':null,friend:friend??null};}));
+      }
       if(path.length===1&&method==='POST')return json(await synced.createRoom(uid,await readBody(request)));
       const id=uuid(path[1]);
       if(path.length===2&&method==='GET')return json(await synced.roomState(uid,id));
+      if(path[2]==='media'&&method==='GET'){const room=await synced.roomState(uid,id);const cards=room.mediaId?await workCards(uid,uid,[room.mediaId]):[],card=cards[0];const details=await playbackDetails(cards);return json(card?{...card,captionSubtitle:details.get(card.id)}:null);}
       if(method==='POST') {
         const body=await readBody(request);
         if(path[2]==='heartbeat')return json(await synced.roomState(uid,id,body));
         if(path[2]==='join')return json(await synced.joinRoom(uid,id,body));
         if(path[2]==='invite')return json(await synced.inviteParticipant(uid,id,body));
         if(path[2]==='command')return json(await synced.commandRoom(uid,id,body));
+        if(path[2]==='decline')return json(await synced.declineInvitation(uid,id));
         if(path[2]==='leave')return json(await synced.leaveRoom(uid,id));
       }
     }
@@ -143,13 +153,26 @@ export const handler: RequestHandler = async (event) => {
     if(path[0]==='social') {
       const action=path[1], id=path[2], page=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(100000)),Number(url.searchParams.get('page')??1));
       if(method==='GET') {
-        if(action==='friends')return json(await social.friends(uid,page));
+        if(action==='friends'){
+          const roster=await social.friends(uid,page,v.parse(v.picklist(['all','accepted','pending']),url.searchParams.get('state')??'all'));
+          const cards=await workCards(uid,uid,[...new Set(roster.flatMap(friend=>friend.backgroundWorkId?[friend.backgroundWorkId]:[]))]);
+          return json(roster.map(friend=>{const card=cards.find(card=>('workId' in card?card.workId??card.id:card.id)===friend.backgroundWorkId);return {...friend,backgroundArtwork:card?.backdrop||card?.poster};}));
+        }
         if(action==='feed')return json(await activityFeed(uid,Object.fromEntries(url.searchParams)));
+        if(action==='popular'){
+          const category=v.parse(v.picklist(['all','screen','game','music']),url.searchParams.get('category')??'screen');
+          const ranked=await friendDiscovery(uid,category),cards=await workCards(uid,uid,ranked.map(row=>row.workId));
+          return json({items:ranked.flatMap(row=>{const item=cards.find(card=>card.id===row.workId);return item?[{...item,captionSubtitle:`${row.friends} ${row.friends===1?'friend':'friends'}`}]:[];}),hasMore:false,next:null});
+        }
         if(action==='reactions')return json(await reactionSummary(uid,v.parse(v.picklist(['work','activity']),url.searchParams.get('targetKind')),(url.searchParams.get('ids')??'').split(',').filter(Boolean)));
         if(action==='works')return json(await workSocial(uid,(url.searchParams.get('ids')??'').split(',').filter(Boolean)));
         if(action==='recommendations')return json(await social.recommendations(uid,page,url.searchParams.get('available')==='true'));
         if(action==='insights')return json(url.searchParams.has('friendId')?await friendInsights(uid,uuid(url.searchParams.get('friendId'))):await friendDiscovery(uid));
-        if(action==='checkins')return json(await (await import('$lib/social/presence.server')).presence(uid));
+        if(action==='checkins'){
+          const live=await (await import('$lib/social/presence.server')).presence(uid);
+          const cards=await workCards(uid,uid,live.map((item:{workId:string})=>item.workId));
+          return json(live.map((item:{workId:string})=>{const card=cards.find(card=>('workId' in card?card.workId??card.id:card.id)===item.workId);return {...item,category:card?.kind==='game'?'game':['album','track'].includes(card?.kind??'')?'music':'screen',artwork:card?.backdrop||card?.poster};}));
+        }
       } else if(method==='POST') {
         const input=await readBody(request);
         if(action==='friends')return json(id?await social.changeFriend(uid,uuid(id),input):await social.requestFriend(uid,input));
@@ -192,6 +215,7 @@ export const handler: RequestHandler = async (event) => {
         ),
       });
     }
+    if(path[0]==='discover' && path.length===1 && method==='GET')return json(await discoveryContent(uid,discoveryParameters(url)));
     if (path[0] === 'library' && path.length === 1 && method === 'GET')
       return json(await libraryContent(uid, url));
     if (path[0] === 'progress' && path.length === 1 && method === 'GET')

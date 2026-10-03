@@ -44,7 +44,7 @@
 </script>
 
 <svelte:head><title>{view.item.title} · Coast</title></svelte:head><MediaPage details hero={!section} item={view.item} parents={view.parents} next={view.next} requestable={view.requestable} page={!!section}>
-  {#if section}<Button variant="ghost" href={`/media/${view.item.id}`} icon="left"
+  {#if section}<Button emphasis="subtle" href={`/media/${view.item.id}`} icon="left"
       >{view.item.title}</Button
     >{/if}
   {#if selectedEdition !== null}<section class="row edition-details" aria-label="Selected edition">
@@ -62,7 +62,7 @@
             playMedia(view.item.id, { edition: selectedEdition }).catch(
               (cause) => (error = message(cause))
             )}>Play this edition</Button
-        >{/if}<Button variant="ghost" href={`/media/${view.item.id}`}>All details</Button>
+        >{/if}<Button emphasis="subtle" href={`/media/${view.item.id}`}>All details</Button>
     </section>{/if}
   {#if view.refreshUnavailable}<div class="notice" style="margin-bottom:24px">
       Metadata could not be refreshed. Showing the saved details.
@@ -88,7 +88,7 @@
             : 'Add a season to start tracking episodes.'}
         />{/if}
       {#if !view.item.tmdbId}<Button
-          variant="ghost"
+          emphasis="subtle"
           icon="plus"
           onclick={() => (episodesOpen = true)}>Add a season</Button
         >{/if}
@@ -166,7 +166,7 @@
 <Dialog bind:open={episodeTracking.confirm} title="Review episode change">
   <div class="stack">
     <p>{episodeTracking.warning}</p>
-    <Button variant="danger" disabled={episodeTracking.busy} onclick={episodeTracking.approve}>
+    <Button danger disabled={episodeTracking.busy} onclick={episodeTracking.approve}>
       Confirm change
     </Button>
   </div>

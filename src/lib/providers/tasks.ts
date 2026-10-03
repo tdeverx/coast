@@ -9,6 +9,8 @@ export const maintenanceKinds = [
   'trakt.lists-import',
   'trakt.collection-project',
   'seerr.sync',
+  'steam.sync',
+  'steam.achievements',
 ];
 // Cleanup/review traverse remote collections too, but retain per-preview/per-work
 // queue identities rather than maintenance's one-job-per-kind deduplication.
@@ -100,6 +102,10 @@ function groupedServiceTasks(provider: string): ServiceTask[] {
       catalogue,
       changes,
     ];
+  if (provider === 'steam')return [
+    {id:'tracking',title:'Owned games & playtime',description:'Import owned Steam games and cumulative playtime. Ownership does not establish installation.',kinds:['steam.sync'],scope:'tracking',interval:'intervalMinutes',enabled:'trackingEnabled'},
+    {id:'users',title:'Game achievements',description:'Refresh achievement progress for up to 20 owned games per run. Failed titles retain previous progress.',kinds:['steam.achievements'],scope:'users',interval:'userIntervalMinutes',enabled:'userSyncEnabled'},
+  ];
   if (provider === 'seerr')
     return [
       {

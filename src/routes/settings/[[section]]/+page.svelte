@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { collectionCategories, collectionRules } from '$lib/collection/preferences';
   import {audiences,socialSections,socialCategories,type Audience} from '$lib/social/model';
   import {
     personalSettings as links,
@@ -32,7 +33,7 @@
   let error = $state(''),
     success = $state(''),
     busy = $state(false),
-    prefs = $state(untrack(() => ({ ...data.defaults, ...page.data.user?.settings }))),
+    prefs = $state(untrack(() => structuredClone({ ...data.defaults, ...page.data.user?.settings }))),
     policy = $state(untrack(() => (data.config ? structuredClone(data.config) : null))),
     deleteId = $state(''),
     resetOpen = $state(false),
@@ -91,7 +92,7 @@
   });
   const dirty = $derived(fields.length > 0 && JSON.stringify(draft) !== saved);
   function restoreDraft() {
-    prefs = { ...data.defaults, ...page.data.user?.settings };
+    prefs = structuredClone({ ...data.defaults, ...page.data.user?.settings });
     policy = data.config ? structuredClone(data.config) : null;
     subtitleLanguagesText = prefs.subtitleLanguages.join(', ');
     policyLanguagesText = policy?.subtitleLanguages.join(', ') ?? '';
@@ -175,7 +176,7 @@
       </div>{/if}
     <div class="row">
       <Button type="submit" disabled={busy || !dirty}>{busy ? 'Saving…' : label}</Button>
-      <Button variant="ghost" disabled={busy || !dirty} onclick={restoreDraft}
+      <Button emphasis="subtle" disabled={busy || !dirty} onclick={restoreDraft}
         >Discard changes</Button
       >
     </div>
@@ -203,6 +204,8 @@
     </nav>
     <section class="settings-main" aria-label={titles[data.section]}>
       <Heading title={titles[data.section]} />
+
+
       <p class="section-description small">{descriptions[data.section]}</p>
       {#if error && !fields.length && !['account', 'users'].includes(data.section) && !deleteId && !resetOpen}<div
           class="notice error"
@@ -211,15 +214,28 @@
         >
           {error}
         </div>{/if}
-      {#if data.section==='privacy'}
+      {#if data.section === 'collection'}
+        <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}>
+        <p class="small">Explicitly collected items always stay in Collection. These rules only control automatic membership.</p>
+        {#each collectionCategories as category}
+          <fieldset class="panel stack" disabled={busy}>
+            <legend class="sr-only">{category.label}</legend><h3>{category.label}</h3>
+            {#each collectionRules as rule}
+              <label class="check"><input type="checkbox" bind:checked={prefs.collection[category.value][rule.value]} />{rule.label}</label>
+            {/each}
+          </fieldset>
+        {/each}
+        {@render saveControls('Save Collection preferences')}
+        </form>
+      {:else if data.section==='privacy'}
   <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}><fieldset class="panel stack" disabled={busy}><legend class="sr-only">Privacy & social</legend>
   <label class="field">Profile audience<select bind:value={prefs.social.audience}>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>
   <p class="small">A private profile is hidden from everyone else. Other sections can have their own audience.</p>
   {#each socialSections as section}<label class="field">{section}<select value={prefs.social.sections?.[section]??'default'} onchange={event=>{const value=event.currentTarget.value;prefs.social={...prefs.social,sections:{...prefs.social.sections,[section]:value==='default'?undefined:value as Audience}};}}><option value="default">Use profile audience</option>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>{/each}
   {#each socialCategories as category}<label class="field">{category} sharing<select value={prefs.social.categories?.[category]??'public'} onchange={event=>{prefs.social={...prefs.social,categories:{...prefs.social.categories,[category]:event.currentTarget.value as Audience}};}}>{#each audiences as audience}<option value={audience}>{audience==='public'?'Use section audience':audience}</option>{/each}</select></label>{/each}
   <Heading title="Social notifications" />
-  {#each ['friend-request','friend-accepted','recommendation','reaction','synced-invite'] as const as kind}<label class="check"><input type="checkbox" checked={prefs.social.notifications?.[kind]!==false} onchange={event=>{prefs.social={...prefs.social,notifications:{...prefs.social.notifications,[kind]:event.currentTarget.checked}};}} />{kind==='synced-invite'?'Synced session invitations':kind}</label>{/each}
-  <p class="small">Friend requests still arrive in Friends when alerts are silenced.</p>
+  {#each ['friend-accepted','recommendation','reaction','synced-invite'] as const as kind}<label class="check"><input type="checkbox" checked={prefs.social.notifications?.[kind]!==false} onchange={event=>{prefs.social={...prefs.social,notifications:{...prefs.social.notifications,[kind]:event.currentTarget.checked}};}} />{kind==='synced-invite'?'Synced session invitations':kind}</label>{/each}
+  <p class="small">Incoming friend requests appear in Friends.</p>
   {@render saveControls('Save privacy preferences')}
   </fieldset></form>
 {:else if data.section === 'appearance'}<form
@@ -417,7 +433,7 @@
             </p>
             <div>
               <Button
-                variant="secondary"
+
                 disabled={busy}
                 onclick={() => {
                   error = '';
@@ -543,7 +559,7 @@
           <p class="small">Released next-needed items and saved titles that are missing or uncertain for each account. Users who opt out are excluded.</p>
           {#await data.demand}<p class="small" role="status">Checking personal demand…</p>{:then demand}
             {#if demand?.users.length}<div class="overflow"><table class="table"><thead><tr><th>User</th><th>Needed title</th><th>Reason</th><th>Availability</th><th>Source coverage</th><th>Request</th></tr></thead><tbody>
-              {#each demand.users as person}{#each person.items as item}<tr><td><a href={`/collection?username=${encodeURIComponent(person.username)}`}>{person.username}</a></td><td><a href={item.href}>{item.neededTitle}</a>{#if item.dateUnknown}<small> · Release date unknown</small>{/if}</td><td>{item.reason}</td><td>{item.availability==='unknown'?'Uncertain':'Missing for this user'}</td><td>{item.sources.map((source:{name:string;fresh:boolean})=>`${source.name}: ${source.fresh?'current':'not current'}`).join(', ')||'No applicable sources'}</td><td>{item.requests.map((request:{state:string})=>request.state).join(', ')||'No request'}</td></tr>{/each}{#if person.pages>1}<tr><td colspan="6"><Pagination page={person.page} pages={person.pages} pageUrl={number=>`/settings/admin?userId=${person.userId}&itemsPage=${number}`} label={`${person.username} demand pages`} /></td></tr>{/if}{/each}
+              {#each demand.users as person}{#each person.items as item}<tr><td><a href={`/library?collection=true&username=${encodeURIComponent(person.username)}`}>{person.username}</a></td><td><a href={item.href}>{item.neededTitle}</a>{#if item.dateUnknown}<small> · Release date unknown</small>{/if}</td><td>{item.reason}</td><td>{item.availability==='unknown'?'Uncertain':'Missing for this user'}</td><td>{item.sources.map((source:{name:string;fresh:boolean})=>`${source.name}: ${source.fresh?'current':'not current'}`).join(', ')||'No applicable sources'}</td><td>{item.requests.map((request:{state:string})=>request.state).join(', ')||'No request'}</td></tr>{/each}{#if person.pages>1}<tr><td colspan="6"><Pagination page={person.page} pages={person.pages} pageUrl={number=>`/settings/admin?userId=${person.userId}&itemsPage=${number}`} label={`${person.username} demand pages`} /></td></tr>{/if}{/each}
             </tbody></table></div>{:else}<p class="small">No missing demand on this page.</p>{/if}
             {#if demand}<Pagination page={demand.page} pages={demand.pages} pageUrl={number=>`/settings/admin?page=${number}`} label="Demand pages" />{/if}
           {:catch}<p class="notice error" role="alert">Demand could not be loaded. Try again.</p>{/await}
@@ -559,7 +575,7 @@
                       ><td>{r.title}</td><td>{r.username}</td><td>{r.destination}</td><td
                         ><div class="row">
                           <Button
-                            variant="secondary"
+
                             disabled={busy}
                             onclick={() =>
                               save(
@@ -568,7 +584,7 @@
                                 'Approval queued.'
                               )}>Approve</Button
                           ><Button
-                            variant="ghost"
+                            emphasis="subtle"
                             disabled={busy}
                             onclick={() =>
                               save(
@@ -690,7 +706,7 @@
                         </div>{/each}</td
                     ><td
                       ><Button
-                        variant="ghost"
+                        emphasis="subtle"
                         disabled={busy}
                         onclick={() => {
                           error = '';
@@ -704,7 +720,7 @@
                           };
                         }}>Edit</Button
                       >{#if user.id !== page.data.user?.id}<Button
-                          variant="ghost"
+                          emphasis="subtle"
                           onclick={() => {
                             error = '';
                             deleteId = user.id;
@@ -721,7 +737,7 @@
               <label class="field">Expires after<select name="days"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="30">30 days</option></select></label><Button type="submit">Create invite code</Button>
             </form>
             {#if inviteCode}<label class="field">Copy this code — shown once<input readonly value={inviteCode} onclick={(e)=>e.currentTarget.select()} /></label><a href="/register">Registration page</a>{/if}
-            {#each data.invites as invite}<div class="spread"><span class="small">{invite.usedAt?`Used by ${invite.username||'deleted account'}`:invite.revokedAt?'Revoked':`Expires ${new Date(invite.expiresAt).toLocaleString()}`}</span>{#if !invite.usedAt&&!invite.revokedAt}<Button variant="ghost" onclick={()=>save(`admin/invites/${invite.id}`,{},'Invite revoked.','DELETE')}>Revoke</Button>{/if}</div>{/each}
+            {#each data.invites as invite}<div class="spread"><span class="small">{invite.usedAt?`Used by ${invite.username||'deleted account'}`:invite.revokedAt?'Revoked':`Expires ${new Date(invite.expiresAt).toLocaleString()}`}</span>{#if !invite.usedAt&&!invite.revokedAt}<Button emphasis="subtle" onclick={()=>save(`admin/invites/${invite.id}`,{},'Invite revoked.','DELETE')}>Revoke</Button>{/if}</div>{/each}
           </div>
           <div class="panel stack form-width">
             <h3>Create a Coast account</h3>
@@ -995,7 +1011,7 @@
             resetOpen = false;
           }
         }}>{busy ? 'Restoring…' : 'Restore all preferences'}</Button
-      ><Button variant="secondary" disabled={busy} onclick={() => (resetOpen = false)}
+      ><Button  disabled={busy} onclick={() => (resetOpen = false)}
         >Keep preferences</Button
       >
     </div>
@@ -1011,13 +1027,13 @@
     <p class="small">External account deletion is not supported by the current adapters.</p>
     <div class="row">
       <Button
-        variant="danger"
+        danger
         disabled={busy}
         onclick={async () => {
           if (await save(`admin/users/${deleteId}`, {}, 'Account deleted.', 'DELETE'))
             deleteId = '';
         }}>Delete Coast account</Button
-      ><Button variant="secondary" disabled={busy} onclick={() => (deleteId = '')}>Cancel</Button>
+      ><Button  disabled={busy} onclick={() => (deleteId = '')}>Cancel</Button>
     </div>
   </div></Dialog
 >
@@ -1086,7 +1102,7 @@
         >{/if}
       <div class="row">
         <Button type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save account'}</Button><Button
-          variant="secondary"
+
           disabled={busy}
           onclick={() => (editing = null)}>Cancel</Button
         >

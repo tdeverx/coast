@@ -29,7 +29,7 @@ async function searchPresentations(
     const result = await musicRow(userId, query, kind as 'all' | 'album' | 'artist' | 'track', 100);
     return { ...result, discover: [], truncated: result.items.length >= 100 };
   }
-  const local = await listGames(query);
+  const local = await listGames(query,1,{userId,personal:false});
   const sources = (await listProviders(userId)).filter(
     (source) => source.provider === 'igdb' && source.enabled && source.configured
   );

@@ -1,8 +1,9 @@
+import { collectionPreferences } from '../src/lib/collection/preferences';
 import { afterAll,beforeAll,expect,test } from 'bun:test';
 import { eq,sql,inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import { users,media,providerInstances,providerConnections,providerItems,availability,syncCheckpoints,trackingState,episodes,shows,works,musicWorks,mediaRelationships,musicListens } from '../src/lib/server/db/schema';
-import { collectionData,workAssessments } from '../src/lib/collection/query.server';
+import { collectionData,workAssessments,collectionCTE,collectionRead } from '../src/lib/collection/query.server';
 import { logMusic } from '../src/lib/music/persistence.server';
 import { trackWithExports } from '../src/lib/sync/changes';
 import { getConfig } from '../src/lib/server/config';
@@ -159,4 +160,56 @@ run('administrator demand filters empty users before pagination and totals',asyn
   const clamped=await adminDemand(new URL('http://fixture/admin/demand?page=99'));
   expect(clamped.page).toBe(1);expect(clamped.users.map(u=>u.userId)).toContain(needed.id);
  }finally{await db.delete(users).where(inArray(users.id,[...population.map(u=>u.id),needed.id]));}
+});
+
+run('scoped Collection reads retain the same reasons and assessments as a full inventory read',async()=>{
+ for(const category of ['all','screen','music','game']){
+  const read=async(scope:'all'|'personal')=>Array.from(await collectionRead(sql`${collectionCTE(owner,owner,'all',scope,category)} select * from collection where (${category}='all' or category=${category}) order by id`));
+  expect(await read('personal')).toEqual(await read('all'));
+ }
+});
+
+run('automatic Collection rules are owner-specific and keep explicit collection and history intact',async()=>{
+ const db=getDb();const [item]=await db.insert(media).values({kind:'movie',title:`preferences-${tag}`}).returning();extraMedia.push(item.id);
+ await db.insert(trackingState).values({userId:owner,mediaId:item.id,watched:true,playCount:1,watchlist:true});
+ const preferences=collectionPreferences();preferences.screen.history=false;preferences.screen.watchlist=false;
+ try{
+  await db.update(users).set({settings:{collection:preferences}}).where(eq(users.id,owner));
+  expect((await workAssessments(owner,owner,[item.id]))[0].reasons).toHaveLength(0);
+  preferences.screen.watchlist=true;
+  await db.update(users).set({settings:{collection:preferences}}).where(eq(users.id,owner));
+  expect((await workAssessments(owner,owner,[item.id]))[0].reasons.some(r=>r.relationship==='watchlist')).toBe(true);
+  await db.update(trackingState).set({dropped:true}).where(sql`${trackingState.userId}=${owner} and ${trackingState.mediaId}=${item.id}`);
+  expect((await workAssessments(owner,owner,[item.id]))[0].reasons).toHaveLength(0);
+  preferences.screen.dropped=true;
+  await db.update(users).set({settings:{collection:preferences}}).where(eq(users.id,owner));
+  expect((await workAssessments(owner,owner,[item.id]))[0].reasons.length).toBeGreaterThan(0);
+  preferences.screen.dropped=false;preferences.screen.watchlist=false;
+  await db.update(users).set({settings:{collection:preferences}}).where(eq(users.id,owner));
+  await db.update(trackingState).set({collected:true}).where(sql`${trackingState.userId}=${owner} and ${trackingState.mediaId}=${item.id}`);
+  expect((await workAssessments(owner,owner,[item.id]))[0].reasons.some(r=>r.relationship==='collected')).toBe(true);
+  const [state]=await db.select().from(trackingState).where(sql`${trackingState.userId}=${owner} and ${trackingState.mediaId}=${item.id}`);
+  expect(state.watched).toBe(true);expect(state.watchlist).toBe(true);expect(state.playCount).toBe(1);
+ }finally{await db.update(users).set({settings:{}}).where(eq(users.id,owner));}
+});
+run('Listen history can be excluded independently of Watch and explicit collection',async()=>{
+ const db=getDb();const screenBefore=(await workAssessments(owner,owner,[movie]))[0].reasons;const preferences=collectionPreferences();preferences.music.history=false;preferences.music.active=false;
+ await db.insert(musicListens).values({userId:owner,trackId:track,batchId:crypto.randomUUID(),occurredAt:new Date(),source:'coast'});
+ try{
+  await db.update(users).set({settings:{collection:preferences}}).where(eq(users.id,owner));
+  expect((await workAssessments(owner,owner,[track]))[0].reasons.filter(r=>r.relationship==='activity')).toHaveLength(0);
+  expect((await workAssessments(owner,owner,[movie]))[0].reasons).toEqual(screenBefore);
+ }finally{await db.update(users).set({settings:{}}).where(eq(users.id,owner));}
+});
+
+run('in-progress shows remain included when completed history is excluded',async()=>{
+ const db=getDb();const preferences=collectionPreferences();preferences.screen.history=false;preferences.screen.favourite=false;
+ await db.update(trackingState).set({watched:true}).where(sql`${trackingState.userId}=${owner} and ${trackingState.mediaId}=${child}`);
+ try{
+  await db.update(users).set({settings:{collection:preferences}}).where(eq(users.id,owner));
+  expect((await workAssessments(owner,owner,[show]))[0].reasons.some(r=>r.relationship==='activity')).toBe(true);
+  preferences.screen.active=false;
+  await db.update(users).set({settings:{collection:preferences}}).where(eq(users.id,owner));
+  expect((await workAssessments(owner,owner,[show]))[0].reasons.some(r=>r.relationship==='activity')).toBe(false);
+ }finally{await db.update(users).set({settings:{}}).where(eq(users.id,owner));}
 });

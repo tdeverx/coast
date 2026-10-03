@@ -2,9 +2,9 @@ import { glassPresets, type GlassSurface, type GlassVariant } from './presets';
 
 type NumericKey = { [K in keyof GlassSurface]: GlassSurface[K] extends number ? K : never }[keyof GlassSurface];
 export const materialNames: { value: GlassVariant; label: string }[] = [
-  { value: 'clear', label: 'Clear glass' }, { value: 'clearBlur', label: 'Clear blur' },
-  { value: 'glassLight', label: 'Glass light' }, { value: 'glassDark', label: 'Glass dark' },
-  { value: 'blurLight', label: 'Blur light' }, { value: 'blurDark', label: 'Blur dark' },
+  { value: 'clear', label: 'Clear glass' },
+  { value: 'glassLight', label: 'Light glass' },
+  { value: 'glassDark', label: 'Dark glass' },
 ];
 export const sliderGroups: { title: string; controls: { key: NumericKey; label: string; min: number; max: number; step: number; unit: string }[] }[] = [
   { title: 'Fill and filter', controls: [

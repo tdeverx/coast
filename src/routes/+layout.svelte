@@ -1,5 +1,8 @@
 <script lang="ts">
   import '../app.css';
+  import {closeNotifications} from '$lib/notifications/client.svelte';
+  import {closeFriends} from '$lib/social/panel.svelte';
+  import {startPresence,userStatus} from '$lib/social/status.svelte';
   import {syncedPlayer,pollSynced,restoreSynced,leaveSynced} from '$lib/playback/synced/client.svelte';
   import { installBrowserDiagnostics } from '$lib/ui/diagnostics';
   import { onMount } from 'svelte';
@@ -14,7 +17,14 @@
   let { data, children } = $props();
   let expired = $state(false);
   let content: HTMLElement;
-  const watching = $derived(!!data.user && !!player.session && player.session.mediaType!=='audio' && !player.paused);
+  const notificationOpen=$derived(!!data.user&&(page.state.notificationPopover??page.url.searchParams.get('notifications')==='true'));
+  const friendsOpen=$derived(!!data.user&&(page.state.friendsPopover??page.url.searchParams.get('friends')==='true'));
+  let NotificationInbox=$state<typeof import('$lib/ui/components/NotificationInbox.svelte').default>();
+  let FriendsPanel=$state<typeof import('$lib/ui/components/FriendsPanel.svelte').default>();
+  let notificationLoading=false,friendsLoading=false;
+  $effect(()=>{if(notificationOpen&&!NotificationInbox&&!notificationLoading){notificationLoading=true;void import('$lib/ui/components/NotificationInbox.svelte').then(module=>NotificationInbox=module.default).finally(()=>notificationLoading=false);}});
+  $effect(()=>{if(friendsOpen&&!FriendsPanel&&!friendsLoading){friendsLoading=true;void import('$lib/ui/components/FriendsPanel.svelte').then(module=>FriendsPanel=module.default).finally(()=>friendsLoading=false);}});
+  const watching = $derived(!!data.user && !!player.session && player.session.mediaType!=='audio' && !player.browsing);
   onNavigate(async (navigation) => {
     if(player.session&&player.session.mediaType!=='audio'&&syncedPlayer.room)await leaveSynced();
     if (player.session && player.session.mediaType!=='audio' && !player.paused) pausePlayback();
@@ -41,6 +51,15 @@
     };
   });
   $effect(()=>{syncedPlayer.userId=data.user?.id||'';});
+  const presenceUserId=$derived(data.user?.id);
+  $effect(()=>{
+    userStatus.preference=data.user?.settings?.activityStatus??'automatic';
+    userStatus.sharePresence=(data.user?.settings?.social?.sections?.presence??data.user?.settings?.social?.audience??'friends')!=='private';
+  });
+  $effect(()=>{
+    if(!presenceUserId)return;
+    return startPresence(()=>!!player.session&&!player.paused,()=>false);
+  });
   onMount(() => {
     if(data.user&&data.experimentalFeatures)void restoreSynced();
     const syncTimer=setInterval(()=>{if(data.user&&data.experimentalFeatures)void pollSynced();},2000);
@@ -84,11 +103,14 @@
   <PersistentPlayer /><MediaHero mode="player" />
   {#if (data.user || data.publicRead) && page.url.pathname !== '/onboarding'}<Header
       user={data.user}
-      unread={data.notifications.filter((notification) => !notification.readAt).length}
+      unread={data.unreadNotifications}
+      friendRequests={data.friendRequestCount}
     />{/if}
   <div class="page-shell" class:watching inert={watching} aria-hidden={watching}>
     <main bind:this={content} id="main-content">{@render children()}</main>
   </div>
+  {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??page.url.searchParams.get('notificationKind')??'all'} onclose={closeNotifications}/>{/if}
+  {#if friendsOpen&&FriendsPanel}<FriendsPanel open={true} onclose={closeFriends}/>{/if}
   {#if data.user}<NotificationToasts notifications={data.notifications} />{/if}{#if expired}<div
       class="session-notice solid-surface"
       role="alert"

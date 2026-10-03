@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RowFeedback from './RowFeedback.svelte';
   import { displayLabel } from '$lib/ui/labels';
   import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
@@ -55,7 +56,7 @@
 </script>
 
 <div class="stack">
-  {#if error}<div class="notice error" role="alert">{error}</div>{/if}
+  {#if error}<RowFeedback error={error} tag="div" class="notice error" />{/if}
   {#each conflicts as conflict}<article class="panel stack">
       <div class="spread">
         <div>
@@ -80,9 +81,9 @@
           Imported progress: {Math.floor(conflict.positionSeconds / 60)} minutes
         </p>{/if}
       <div class="row">
-        <Button variant="secondary" disabled={busy} onclick={() => resolve(conflict, 'ignored')}
+        <Button  disabled={busy} onclick={() => resolve(conflict, 'ignored')}
           >Use Coast everywhere</Button
-        ><Button variant="ghost" disabled={busy} onclick={() => (selected = conflict)}
+        ><Button emphasis="subtle" disabled={busy} onclick={() => (selected = conflict)}
           >Use {displayLabel(conflict.source)} everywhere</Button
         >
       </div>
@@ -103,11 +104,11 @@
     </p>
     <div class="row">
       <Button
-        variant="danger"
+        danger
         disabled={busy}
         onclick={() => selected && resolve(selected, 'accepted')}
         >Use {displayLabel(selected?.source ?? '')} everywhere</Button
-      ><Button variant="secondary" onclick={() => (selected = null)}>Cancel</Button>
+      ><Button  onclick={() => (selected = null)}>Cancel</Button>
     </div>
   </div></Dialog
 >

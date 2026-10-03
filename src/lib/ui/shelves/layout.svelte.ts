@@ -67,12 +67,17 @@ export function createShelfLayout(get: () => LayoutOptions) {
   $effect(() => {
     if (!scroller) return;
     return untrack(() => {
-      const resize = new ResizeObserver(measure);
-      const changes = new MutationObserver(measure);
+      let frame = 0;
+      const schedule = () => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(measure);
+      };
+      const resize = new ResizeObserver(schedule);
+      const changes = new MutationObserver(schedule);
       resize.observe(scroller!);
       changes.observe(scroller!, { childList: true, subtree: true });
       measure();
-      return () => { resize.disconnect(); changes.disconnect(); };
+      return () => { cancelAnimationFrame(frame); resize.disconnect(); changes.disconnect(); };
     });
   });
 

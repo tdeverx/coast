@@ -6,7 +6,7 @@ import { progressOptionsSchema, progressParameters, progressSurface } from '$lib
 import { progressData } from '$lib/server/queries/progress';
 import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals, url, depends }) => {
-  depends('coast:tracking');
+  depends('coast:tracking', 'coast:social');
   if (!locals.user) error(401, 'Sign in to view your progress.');
   const options = v.safeParse(progressOptionsSchema, progressParameters(url));
   if (!options.success) error(400, 'Choose a valid progress view and filters.');

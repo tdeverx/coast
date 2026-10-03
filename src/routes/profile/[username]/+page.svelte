@@ -1,5 +1,7 @@
 <script lang="ts">
+ import { availabilityControl } from '$lib/ui/controls/actions';
   import { homeShelves } from '$lib/ui/shelves/home';
+  import Avatar from '$lib/ui/components/Avatar.svelte';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
@@ -14,7 +16,7 @@
   import { untrack, setContext } from 'svelte';
   import { api, change, message } from '$lib/ui/client';
   import Shelf from '$lib/ui/components/Shelf.svelte';
-  import AvailabilityToggle from '$lib/ui/components/AvailabilityToggle.svelte';
+
   import MediaCard from '$lib/ui/components/MediaCard.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
@@ -236,12 +238,8 @@
   title={featureTitle}
   note={featureId === data.profile.featuredMediaId ? (data.profile.featuredNote ?? '') : ''}
 />
-{#snippet favouriteFilters()}<RowFilter options={mediaTypeOptions()}
-    label="Favourites media type"
-    value={favouriteKind}
-    onchange={(kind) => chooseFavourites(kind)}
-  />{#if favouriteError}<span role="alert">{favouriteError}</span><Button
-      variant="ghost"
+{#snippet favouriteFilters()}<RowFilter groups={[{label:"Favourites media type", value:favouriteKind, options:mediaTypeOptions(), change:(kind) => chooseFavourites(kind as typeof favouriteKind)}]} />{#if favouriteError}<span role="alert">{favouriteError}</span><Button
+      emphasis="subtle"
       onclick={() => chooseFavourites(favouriteKind)}>Retry</Button
     >{/if}{/snippet}
 {#snippet favouriteActions(id: string)}
@@ -249,26 +247,26 @@
     neighbours(id)}
   {#if arranging}<div class="favourite-controls">
       <Button
-        variant="ghost"
+        emphasis="subtle"
         disabled={busy}
         label={`${item.pinned ? 'Unpin' : 'Pin'} ${item.title}`}
         onclick={() => update({ action: 'pin', mediaId: id, value: !item.pinned })}
         >{item.pinned ? 'Unpin' : 'Pin'}</Button
       >
       <Button
-        variant="ghost"
+        emphasis="subtle"
         label={`Feature ${item.title}`}
         onclick={() => feature(item.id, item.title)}>Feature</Button
       >
       <div class="row">
         <Button
-          variant="ghost"
+          emphasis="subtle"
           icon="left"
           label={`Move ${item.title} earlier`}
           disabled={busy || !adjacent.previous}
           onclick={() => update({ action: 'move', mediaId: id, beforeId: adjacent.previous.id })}
         /><Button
-          variant="ghost"
+          emphasis="subtle"
           icon="right"
           label={`Move ${item.title} later`}
           disabled={busy || !adjacent.next}
@@ -289,12 +287,12 @@
     pages={favouriteData.pages}
     onpage={layout === 'grid' ? (number) => chooseFavourites(favouriteKind, number) : undefined}
   >
-    {#snippet filters()}<AvailabilityToggle value={favouriteAvailable} onchange={available => {
+    {#snippet filters()}<Button {...availabilityControl(favouriteAvailable, available => {
       favouriteAvailable = available; void chooseFavourites(favouriteKind);
-    }} />{/snippet}
+    })} />{/snippet}
     {#snippet controls()}{@render favouriteFilters()}{/snippet}
     {#snippet actions()}{#if data.isOwner}<Button
-          variant="ghost"
+          emphasis="subtle"
           onclick={() => (arranging = !arranging)}>{arranging ? 'Done' : 'Arrange'}</Button
         >{/if}{/snippet}
     {#snippet details(item)}{@render favouriteActions(item.id)}{/snippet}
@@ -309,18 +307,7 @@
 {/snippet}
 {#snippet activity(layout: 'row' | 'grid')}
   <section class="section">
-    {#snippet activityFilters()}<RowFilter options={mediaTypeOptions()}
-        label="Activity media type"
-        bind:value={activityType}
-        onchange={() => {
-          if (layout === 'grid') {
-            const next = new URL(page.url);
-            next.searchParams.set('type', activityType === 'show' ? 'episode' : activityType);
-            next.searchParams.delete('page');
-            replaceState(next, page.state);
-          }
-        }}
-      />{/snippet}
+    {#snippet activityFilters()}<RowFilter groups={[{label:"Activity media type", value:activityType, options:mediaTypeOptions(), change:next=>{activityType=next as typeof activityType; if (layout === 'grid') { const url = new URL(page.url); url.searchParams.set('type', activityType === 'show' ? 'episode' : activityType); url.searchParams.delete('page'); replaceState(url, page.state); }}}]} />{/snippet}
     {#if layout === 'grid'}<Heading title="Activity" filters={activityFilters} />{/if}
     {#if layout === 'grid' && data.filters.genre}<p class="small">
         Genre: {data.filters.genre === '__other__' ? 'Other genres' : data.filters.genre} · {periodLabel(
@@ -359,7 +346,7 @@
             value="true"
             checked={data.filters.repeats}
           />Rewatches only</label
-        ><Button type="submit" variant="secondary">Apply</Button>
+        ><Button type="submit" >Apply</Button>
       </form>{/if}
     <div class="activity-preview">
       {#key data}{#key activityType}
@@ -405,7 +392,7 @@
     {/snippet}
     {#snippet actions()}
       {#if insightError}<span role="alert">{insightError}</span><Button
-          variant="ghost"
+          emphasis="subtle"
           onclick={() => choosePeriod(insightPeriod)}>Retry</Button
         >{/if}
     {/snippet}
@@ -431,7 +418,7 @@
         {#each [...profileActivityPanels(activity.days,activity.today,insightPeriod,profileUrl),
           ...profileBreakdownPanels(activity.genres,activity.ratings,insightPeriod,profileUrl)] as panel}<DetailCard {...panel} />{/each}
       {:else}<DetailCard title="Activity unavailable">
-          <Button variant="ghost" onclick={() => choosePeriod(insightPeriod)}>Retry</Button>
+          <Button emphasis="subtle" onclick={() => choosePeriod(insightPeriod)}>Retry</Button>
         </DetailCard>{/if}{/await}
   </Shelf>
 {/snippet}
@@ -442,7 +429,7 @@
   class="profile"
 >
   {#if error}<p class="notice error" role="alert">{error}</p>{/if}
-  {#if expandedStats}<Button href={profileUrl} variant="ghost" icon="left">Profile</Button
+  {#if expandedStats}<Button href={profileUrl} emphasis="subtle" icon="left">Profile</Button
     >{@render statisticsRow('grid')}
   {:else if data.view === 'overview'}
     {#if data.visibility.details}<header class="profile-header" class:with-background={!!background}>
@@ -457,10 +444,7 @@
         </div>{/if}
       <div class="profile-heading">
         <div class="avatar">
-          {#if data.profile.avatar}<img
-              src={data.profile.avatar}
-              alt={`${name}'s avatar`}
-            />{:else}<span aria-hidden="true">{name.slice(0, 1).toUpperCase()}</span>{/if}
+          <Avatar name={name} src={data.profile.avatar} label={`${name}'s avatar`} class="profile-icon" size={104} />
         </div>
         <div class="identity">
           <p class="eyebrow">{data.isOwner ? 'Your profile' : 'Profile'}</p>
@@ -470,15 +454,18 @@
             {data.profile.bio || (data.isOwner ? 'Your life in stories.' : 'A life in stories.')}
           </p>
           {#if data.isOwner}<div class="row actions">
-              <Button variant="hero" onclick={() => (editing = true)}>Edit profile</Button
-              >{#if data.profile.backgroundMediaId}<Button
-                  variant="ghost"
+              <Button size="hero" onclick={() => (editing = true)}>Edit profile</Button
+              ><Button menu text="Background" label="Profile background">
+                <Button item selection="radio" checked={data.profile.backgroundMode==='activity'} disabled={busy} keepOpen={false} onclick={()=>update({action:'background-mode',mode:'activity'})}>Last activity</Button>
+                <Button item selection="radio" checked={data.profile.backgroundMode!=='activity'} disabled={busy} keepOpen={false} onclick={()=>update({action:'background-mode',mode:'fixed'})}>Selected title</Button>
+              </Button>{#if data.profile.backgroundMediaId||data.profile.backgroundMode==='activity'}<Button
+                  emphasis="subtle"
                   disabled={busy}
                   onclick={() => update({ action: 'background', mediaId: null })}
                   >Clear background</Button
                 >{/if}
               {#if background}<Button
-                  variant="ghost"
+                  emphasis="subtle"
                   onclick={() => {
                     position = data.profile.backgroundPosition ?? 50;
                     positioning = !positioning;
@@ -495,13 +482,13 @@
                   bind:value={position}
                 /></label
               ><Button
-                variant="ghost"
+                emphasis="subtle"
                 disabled={busy}
                 onclick={async () => {
                   await update({ action: 'position', value: position });
                   if (!error) positioning = false;
                 }}>Save position</Button
-              ><Button variant="ghost" onclick={() => (positioning = false)}>Cancel</Button>
+              ><Button emphasis="subtle" onclick={() => (positioning = false)}>Cancel</Button>
             </div>{/if}
         </div>
       </div>
@@ -516,10 +503,10 @@
             </p>{/if}
           {#if data.isOwner}<div class="row">
               <Button
-                variant="ghost"
+                emphasis="subtle"
                 onclick={() => feature(data.featured!.id, data.featured!.title)}>Edit note</Button
               ><Button
-                variant="ghost"
+                emphasis="subtle"
                 disabled={busy}
                 onclick={() => update({ action: 'feature', mediaId: null, note: '' })}
                 >Remove feature</Button
@@ -535,7 +522,7 @@
     {#if data.visibility.insights}{@render statisticsRow('row')}{/if}
   {:else}
     <div class="back">
-      <Button href={profileUrl} variant="ghost" icon="left">Profile</Button>
+      <Button href={profileUrl} emphasis="subtle" icon="left">Profile</Button>
     </div>
     {#if data.view === 'ratings'}<p class="small rating-filter">
         {data.filters.rating === undefined ? 'All ratings' : `${data.filters.rating} stars`} · {periodLabel(
@@ -665,10 +652,8 @@
     font-size: var(--text-2xl);
     overflow: hidden;
   }
-  .avatar img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+  .avatar :global(.profile-icon) {
+    width:100%; height:100%; background:transparent; color:inherit; font:inherit;
   }
   .identity {
     min-width: 0;

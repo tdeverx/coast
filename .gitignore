@@ -2,7 +2,8 @@ node_modules/
 .svelte-kit/
 build/
 .env
-.data/
+.data*/
+output/
 .tools/
 test-results/
 playwright-report/

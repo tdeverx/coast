@@ -1,10 +1,12 @@
 <script lang="ts">
+  import RowFeedback from './RowFeedback.svelte';
+  import WorkActions from './WorkActions.svelte';
+  import { relationshipControls, listMembershipControls } from '$lib/ui/controls/actions';
   import { getContext } from 'svelte';
   import { page } from '$app/state';
   import { createMutation } from '$lib/ui/mutation.svelte';
   import { setRelationship } from '$lib/ui/relationships';
-  import RelationshipActions from './RelationshipActions.svelte';
-  import ListMembershipActions from './ListMembershipActions.svelte';
+
   import { trackingLanguage } from '$lib/media/model';
   import { sequencePath } from '$lib/media/sequence';
   import {
@@ -22,19 +24,15 @@
   import { usePlayback } from '$lib/playback/context.svelte';
   import Button from './Button.svelte';
   import Icon from './Icon.svelte';
-  import ContextMenu from './ContextMenu.svelte';
-  import MenuAction from './MenuAction.svelte';
+
   import Dialog from './Dialog.svelte';
   import RequestDialog from './RequestDialog.svelte';
-  import MediaRequestMenu from './MediaRequestMenu.svelte';
+  import { createRequestControls } from '$lib/ui/controls/requests.svelte';
   import { requestScope } from '$lib/media/requests';
-  import SequenceControl from './SequenceControl.svelte';
+  import { createSequencePlayback } from '$lib/ui/controls/sequence.svelte';
   import MetadataEditor from './MetadataEditor.svelte';
-  import Rating from './Rating.svelte';
 
   const readOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
-  import RecommendAction from './RecommendAction.svelte';
-  import ReactionActions from './ReactionActions.svelte';
 
   const { api, change } = useClient();
 
@@ -68,9 +66,8 @@
     | 'personalise'
     | 'admin'
     | 'list-entry';
-  let menu = $state<ContextMenu>(),
-    sequenceControl = $state<SequenceControl>(),
-    requestMenu = $state<MediaRequestMenu>();
+  let menu = $state<Button>();
+  const sequenceControl = createSequencePlayback({ source: () => item.kind === 'collection' || item.sequence ? item.sequence ?? {kind: 'collection', id: item.id} : undefined, from: () => item.sequence?.entryId, experimental: () => !!page.data.experimentalFeatures, preview, api, change });
   let data = $state<MediaActionData | null>(null), loading = $state(false);
   const mutation = createMutation(loadActions);
   const busy = $derived(mutation.busy);
@@ -116,6 +113,7 @@
   const requestItem = $derived(
     data ? data.requestTarget : ['movie', 'show'].includes(item.kind) ? item : null
   );
+  const requests = createRequestControls({item: () => requestItem, data: () => data, api, onrequest: () => (fourK = false, options) => {requestOptions = options; openRequest(fourK);}});
   const primaryLabel = $derived(
     (next ?? item).kind === 'episode'
       ? `${isResumable(next ?? item) ? 'Resume' : 'Play'} S${String((next ?? item).seasonNumber ?? 0).padStart(2, '0')}E${String((next ?? item).episodeNumber ?? 0).padStart(2, '0')}`
@@ -161,7 +159,7 @@
         ) {
           confirmOpen = false;
           requestOptions = undefined;
-          requestMenu?.resetOptions();
+          requests.resetOptions();
         }
       },
       action !== 'approve'
@@ -199,7 +197,7 @@
   function openMenu() {
     data = null;
     requestOptions = undefined;
-    requestMenu?.resetOptions();
+    requests.resetOptions();
     void loadActions();
   }
   export function openAt(point: { x: number; y: number }) {
@@ -454,96 +452,172 @@
   async function checkIn(){try{await change('social/checkins',{workId:active.id});}catch(cause){mutation.error=message(cause);}}
 </script>
 
+{#snippet requestManagement(request: MediaActionData['requests'][number])}
+  {#if request.canApprove}<Button item
+      icon="check"
+      disabled={busy}
+      onclick={() => manageRequest(request, 'approve')}>Approve request…</Button>{/if}
+  <Button item icon="arrow" href={`/requests?request=${request.id}`}
+    >View request · {request.state === 'pending'
+      ? 'Pending'
+      : request.state === 'approved'
+        ? 'Approved'
+        : request.state === 'available'
+          ? 'Available'
+          : 'Failed'}</Button>
+  {#if request.canCancel || request.canDecline}<div
+      class="menu-divider"
+      role="separator"
+    ></div>{/if}
+  {#if request.canDecline}<Button item
+      icon="close"
+      danger
+      disabled={busy}
+      onclick={() => manageRequest(request, 'decline')}>Decline request…</Button>{/if}
+  {#if request.canCancel}<Button item
+      icon="close"
+      danger
+      disabled={busy}
+      onclick={() => manageRequest(request, 'cancel')}>Cancel request…</Button>{/if}
+{/snippet}
+{#snippet choices()}
+  {#if error}<RowFeedback error={error} tag="div" class="menu-feedback text-danger" />{/if}
+  {#if requests.canRequestStandard}
+    <Button item icon="request" onclick={() => requests.openRequest()}
+      >{requestItem?.kind === 'show'
+        ? 'Request remaining seasons…'
+        : 'Request standard version…'}</Button>
+  {/if}
+  {#if requests.canRequest4k}<Button item icon="request" onclick={() => requests.openRequest(true)}
+      >Request 4K…</Button>{/if}
+  {#if requests.requestOptionsError}<Button item icon="refresh" onclick={requests.loadRequestOptions}
+      >Retry request options</Button>{/if}
+  {#if requests.existingRequests.length}
+    {#if requests.canRequestStandard || requests.canRequest4k || requests.requestOptionsError}<div
+        class="menu-divider"
+        role="separator"
+      ></div>{/if}
+    {#if requests.existingRequests.length === 1}
+      {@render requestManagement(requests.existingRequests[0])}
+    {:else}
+      {#each requests.existingRequests as request (request.id)}
+        <Button menu label={requestScope(request, requests.existingRequests)} panel>
+          {#snippet trigger()}<Icon name="request" /><span class="menu-action-label"
+              >{requestScope(request, requests.existingRequests)}</span
+            ><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
+          {@render requestManagement(request)}
+        </Button>
+      {/each}
+    {/if}
+  {:else}
+    {#if requests.canRequestStandard || requests.canRequest4k}<div
+        class="menu-divider"
+        role="separator"
+      ></div>{/if}
+    <Button item icon="arrow" href="/requests">View requests</Button>
+    {#if requests.requestOptions && !requests.canRequestStandard && !requests.canRequest4k}<Button item
+        disabled
+        disabledReason="Already available, requested, or not permitted for your account"
+        >Nothing more to request</Button>{/if}
+  {/if}
+{/snippet}
+
+{#snippet requestControls()}
+{#if requests.canManageRequests || (!requests.requestDisabledReason && requests.requestLabel !== 'Request')}
+  <Button menu
+    label={requests.requestLabel}
+    icon="request"
+    panel
+    disabled={busy || loading}
+    onopen={() => void requests.loadRequestOptions()}
+  >
+    {@render choices()}
+  </Button>
+{:else}
+  <Button item
+    icon="request"
+    disabled={loading || busy || !!requests.requestDisabledReason}
+    disabledReason={requests.requestDisabledReason}
+    onclick={() => requests.openRequest()}>{requests.requestLabel}…</Button>
+{/if}
+
+{/snippet}
+
 {#snippet branch(label: string, to: View, icon: import('./Icon.svelte').IconName)}
-  <ContextMenu {label} {icon} panel disabled={busy || loading}>
+  <Button menu {label} {icon} panel disabled={busy || loading}>
     {@render content(to)}
-  </ContextMenu>
+  </Button>
 {/snippet}
 {#snippet playbackChoices(edition?: string)}
-  <MenuAction
+  <Button item
     icon="play"
     disabled={player.loading || !playable?.available}
     disabledReason={!playable?.available ? 'Not available to play' : undefined}
     onclick={() => (edition === undefined ? startTarget() : play(edition))}
   >
     {resumable ? `Resume from ${playbackTime(playable!.progress)}` : 'Play'}
-  </MenuAction>
+  </Button>
   {#if resumable}
-    <MenuAction
+    <Button item
       icon="rewind"
       disabled={player.loading}
       onclick={() => play(edition ?? selectedEdition, true)}
     >
       Play from beginning
-    </MenuAction>
+    </Button>
   {/if}
 {/snippet}
 {#snippet content(view: View)}
   {#if view !== 'root'}
-    {#if error}<div class="menu-feedback text-danger" role="alert">{error}</div>{/if}
+    {#if error}<RowFeedback error={error} tag="div" class="menu-feedback text-danger" />{/if}
   {/if}
   {#if view === 'root'}
     {#if active.available || data?.progressTargetIds.includes(active.id)}
       {@render branch(playLabel, 'play', 'play')}
     {:else}
-      <MenuAction
+      <Button item
         icon="play"
         disabled={loading || player.loading || !active.available || !playable}
         disabledReason={!active.available || !playable ? 'Not available to play' : undefined}
-        onclick={startTarget}>{playLabel}</MenuAction
-      >
+        onclick={startTarget}>{playLabel}</Button>
     {/if}
-    <MediaRequestMenu
-      bind:this={requestMenu}
-      item={requestItem}
-      {data}
-      {busy}
-      {loading}
-      {error}
-      onrequest={(fourK = false, options) => {
-        requestOptions = options;
-        openRequest(fourK);
-      }}
-      onmanage={manageRequest}
-    />
-    <RecommendAction workId={active.id} disabled={busy||loading} />
-    <ReactionActions targetId={active.id} disabled={busy||loading} />
-    {#if ['movie','episode'].includes(active.kind)}<MenuAction icon="clock" disabled={busy||loading||!active.runtimeMinutes} onclick={checkIn}>Check in</MenuAction>{/if}
+    {@render requestControls()}
+    {#if item.recommendationIds?.length}<WorkActions section="recommendations" workId={active.id} recommendationIds={item.recommendationIds} disabled={busy||loading} />{/if}
+    <WorkActions section="social" workId={active.id} disabled={busy||loading} />
+    {#if ['movie','episode'].includes(active.kind)}<Button item icon="clock" disabled={busy||loading||!active.runtimeMinutes} onclick={checkIn}>Check in</Button>{/if}
     <div class="menu-divider" role="separator"></div>
     {@render branch(language.mark, 'watched', 'check')}
     {@render branch('Rewatch', 'rewatch', 'refresh')}
     {@render branch('History', 'history', 'clock')}
-    <Rating
-      mediaId={active.id}
-      value={active.rating}
-      menu
+    <WorkActions section="rating"
+      workId={active.id}
+      rating={active.rating}
       onrated={(value) => {
         if (data) data.item.rating = value;
       }}
     />
 
     <div class="menu-divider" role="separator"></div>
-    <MenuAction icon="list" disabled={busy || loading} onclick={toggleContinue}
-      >{continuing ? 'Remove from Continue' : 'Add to Continue'}</MenuAction
-    >
-    <RelationshipActions disabled={busy || loading} items={[
+    <Button item icon="list" disabled={busy || loading} onclick={toggleContinue}
+      >{continuing ? 'Remove from Continue' : 'Add to Continue'}</Button>
+    <WorkActions section="relationships" workId={active.id} controls={relationshipControls([
       { kind: 'watchlist', value: active.watchlist, icon: 'bookmark', showCheckmark: false,
         label: active.watchlist ? 'Remove from Watchlist' : 'Add to Watchlist' },
       { kind: 'collected', value: active.collected, icon: 'plus',
         label: `${active.collected ? 'Remove from' : 'Add to'} Collection` },
       { kind: 'favourite', value: active.favourite, icon: 'heart', showCheckmark: false,
         label: active.favourite ? 'Remove from Favourites' : 'Add to Favourites' },
-    ]} onchange={relationship => {
+    ], relationship => {
       if (relationship === 'collected') void perform(
         () => setRelationship(active.id, relationship, !active.collected, change),
         active.collected ? 'Removed Collected status. Other relationships and history are preserved.' : 'Added to Collection.'
       );
       else toggleSaved(relationship);
-    }} />
+    }, busy || loading)} />
     {#if data?.lists.length}
       {@render branch('Lists', 'saved', 'list')}
     {:else}
-      <MenuAction icon="list" branch disabled disabledReason="No lists yet">Lists</MenuAction>
+      <Button item icon="list" branch disabled disabledReason="No lists yet">Lists</Button>
     {/if}
     <div class="menu-divider" role="separator"></div>
     {#if detailTargets.length || editions.length > 1}{@render branch(
@@ -558,7 +632,7 @@
     {/if}
   {:else if view === 'details'}
     {#each detailTargets as target (target.id)}
-      <MenuAction
+      <Button item
         icon={target.kind === 'show' ? 'library' : 'film'}
         href={`/media/${target.id}`}
       >
@@ -567,22 +641,21 @@
           : target.kind === 'show'
             ? 'Show'
             : target.kind[0].toUpperCase() + target.kind.slice(1)} · {target.title}
-      </MenuAction>
+      </Button>
     {/each}
     {#if editions.length > 1}
       {#if detailTargets.length}<div class="menu-divider" role="separator"></div>{/if}
-      {#each editions as edition}<MenuAction
+      {#each editions as edition}<Button item
           icon="film"
           href={`/media/${playable?.id ?? active.id}?${new URLSearchParams({ edition })}`}
-          >{edition || 'Original'} version</MenuAction
-        >{/each}
+          >{edition || 'Original'} version</Button>{/each}
     {/if}
   {:else if view === 'play'}
     {@render playbackChoices()}
     {#if editions.length > 1}
       <div class="menu-divider" role="separator"></div>
       {#each editions as edition}
-        {#if resumable}<ContextMenu
+        {#if resumable}<Button menu
             label={`${edition || 'Original'} version`}
             panel
             disabled={player.loading}
@@ -591,42 +664,35 @@
                 >{edition || 'Original'} version</span
               ><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
             {@render playbackChoices(edition)}
-          </ContextMenu>{:else}<MenuAction
+          </Button>{:else}<Button item
             icon="play"
             disabled={player.loading}
-            onclick={() => play(edition)}>Play {edition || 'Original'} version</MenuAction
-          >{/if}
+            onclick={() => play(edition)}>Play {edition || 'Original'} version</Button>{/if}
       {/each}
     {/if}
   {:else if view === 'saved'}
     <div class="menu-lists">
-      <ListMembershipActions lists={data?.lists ?? []} member={list => !!list.entries.length}
-        disabled={busy || loading} onchange={toggleList}>
-        {#snippet empty()}<div class="menu-label">No lists yet</div>{/snippet}
-      </ListMembershipActions>
+      <WorkActions section="lists" workId={active.id} controls={listMembershipControls(data?.lists ?? [], list => !!list.entries.length, toggleList, busy || loading, 'Add to', 'plus')}>{#snippet empty()}<div class="menu-label">No lists yet</div>{/snippet}</WorkActions>
     </div>
     {#if item.listContext}<div class="menu-divider" role="separator"></div>
       {@render branch('This list entry', 'list-entry', 'list')}
     {/if}
   {:else if view === 'watched'}
-    <MenuAction icon="check" disabled={busy || loading} onclick={() => recordWatch('now')}
-      >Right now</MenuAction
-    >
-    {#if data?.hasReleaseDate}<MenuAction
+    <Button item icon="check" disabled={busy || loading} onclick={() => recordWatch('now')}
+      >Right now</Button>
+    {#if data?.hasReleaseDate}<Button item
         icon="clock"
         disabled={busy}
         onclick={() => recordWatch('release')}
         >{['show', 'season', 'episode'].includes(active.kind)
           ? 'On air date'
-          : 'On release date'}</MenuAction
-      >{/if}
-    <MenuAction icon="clock" disabled={busy} onclick={() => openForm('log')}
-      >Choose date…</MenuAction
-    >
+          : 'On release date'}</Button>{/if}
+    <Button item icon="clock" disabled={busy} onclick={() => openForm('log')}
+      >Choose date…</Button>
   {:else if view === 'history'}
-    <MenuAction icon="clock" href={`/media/${active.id}/history`}>View history</MenuAction>
+    <Button item icon="clock" href={`/media/${active.id}/history`}>View history</Button>
     <div class="menu-divider" role="separator"></div>
-    <MenuAction
+    <Button item
       icon="check"
       disabled={busy ||
         loading ||
@@ -648,47 +714,40 @@
               confirmOpen = false;
           },
           false
-        )}>Mark unwatched…</MenuAction
-    >
-    <MenuAction
+        )}>Mark unwatched…</Button>
+    <Button item
       icon="rewind"
       danger
       disabled={busy || !data?.progressTargetIds.includes(active.id)}
       disabledReason="Nothing to reset"
-      onclick={() => resetProgress(active)}>Reset playback position…</MenuAction
-    >
+      onclick={() => resetProgress(active)}>Reset playback position…</Button>
     <div class="menu-divider" role="separator"></div>
-    <MenuAction icon="close" danger href={`/media/${active.id}/history?remove=1`}
-      >Remove from history…</MenuAction
-    >
+    <Button item icon="close" danger href={`/media/${active.id}/history?remove=1`}
+      >Remove from history…</Button>
   {:else if view === 'rewatch'}
-    <MenuAction icon="refresh" disabled={busy || loading} onclick={startRewatchNow}
-      >Start now</MenuAction
-    >
-    <MenuAction
+    <Button item icon="refresh" disabled={busy || loading} onclick={startRewatchNow}
+      >Start now</Button>
+    <Button item
       icon="clock"
       disabled={busy || loading}
-      onclick={() => openForm('rewatch', wholeWork)}>Choose date…</MenuAction
-    >
+      onclick={() => openForm('rewatch', wholeWork)}>Choose date…</Button>
   {:else if view === 'personalise'}
-    <MenuAction
+    <Button item
       icon="user"
       disabled={busy}
       onclick={() =>
         perform(
           () => api('profile', { action: 'background', mediaId: active.id }),
           'Profile background updated.'
-        )}>Set as profile background</MenuAction
-    >
-    <MenuAction
+        )}>Set as profile background</Button>
+    <Button item
       icon="film"
       onclick={() => {
         editAdmin = false;
         editOpen = true;
-      }}>Change artwork or title…</MenuAction
-    >
+      }}>Change artwork or title…</Button>
     {#if data?.hasPersonalOverrides}
-      <MenuAction
+      <Button item
         icon="refresh"
         danger
         disabled={busy}
@@ -700,25 +759,22 @@
               if (await perform(() => api(`media/${active.id}/presentation`, {}, 'DELETE')))
                 confirmOpen = false;
             }
-          )}>Reset my changes…</MenuAction
-      >
+          )}>Reset my changes…</Button>
     {/if}
   {:else if view === 'admin' && isAdmin}
-    {#if data?.refreshTarget}<MenuAction icon="refresh" disabled={busy} onclick={refresh}
+    {#if data?.refreshTarget}<Button item icon="refresh" disabled={busy} onclick={refresh}
         >Refresh {data.refreshTarget.id === active.id
           ? 'title details'
-          : `show details · ${data.refreshTarget.title}`}</MenuAction
-      >{/if}
-    {#if page.data.user?.role === 'admin'}<MenuAction
+          : `show details · ${data.refreshTarget.title}`}</Button>{/if}
+    {#if page.data.user?.role === 'admin'}<Button item
         icon="settings"
         onclick={() => {
           editAdmin = true;
           editOpen = true;
-        }}>Edit title details…</MenuAction
-      >{/if}
+        }}>Edit title details…</Button>{/if}
   {:else if view === 'list-entry'}
     {#if item.listContext && active.id === item.id}
-      <MenuAction
+      <Button item
         icon="left"
         disabled={busy}
         onclick={() =>
@@ -727,9 +783,8 @@
               entryId: item.listContext!.entryId,
               direction: -1,
             })
-          )}>Move this entry earlier</MenuAction
-      >
-      <MenuAction
+          )}>Move this entry earlier</Button>
+      <Button item
         icon="right"
         disabled={busy}
         onclick={() =>
@@ -738,34 +793,32 @@
               entryId: item.listContext!.entryId,
               direction: 1,
             })
-          )}>Move this entry later</MenuAction
-      >
-      <MenuAction
+          )}>Move this entry later</Button>
+      <Button item
         icon="close"
         danger
         disabled={busy}
         onclick={() => removeEntry(item.listContext!.listId, item.listContext!.entryId)}
-        >Remove from this list…</MenuAction
-      >
+        >Remove from this list…</Button>
     {/if}
   {/if}
 {/snippet}
-{#if readOnly()}<Button href={`/media/${item.id}`} variant="hero">Learn more</Button>{:else}
+{#if readOnly()}<Button href={`/media/${item.id}`} size="hero">Learn more</Button>{:else}
   <div class="row actions">
     {#if !menuOnly}
       {#if context === 'discover' || (hero && context !== 'details')}<Button
-          variant={hero ? 'hero' : 'primary'}
+          size={hero ? "hero" : "standard"}
           href={`/media/${item.id}`}
           icon="arrow">Learn more</Button
         >
       {:else if (next ?? item).available}<Button
-          variant={hero ? 'hero' : 'primary'}
+          size={hero ? "hero" : "standard"}
           icon="play"
           disabled={player.loading}
           onclick={start}>{primaryLabel}</Button
         >
       {:else if requestable || ['season', 'episode'].includes(item.kind)}<Button
-          variant={hero ? 'hero' : 'primary'}
+          size={hero ? "hero" : "standard"}
           icon="request"
           onclick={request}>Request</Button
         >
@@ -791,7 +844,7 @@
         ><Icon name="heart" filled={item.favourite} /></button
       >
     {/if}
-    <ContextMenu
+    <Button menu
       bind:this={menu}
       panel
       hideTrigger={menuOnly && !showMenuTrigger}
@@ -801,17 +854,12 @@
       upward={hero}
       triggerClass={hero ? 'icon-button hero-icon-action' : 'icon-button'}
     >
-      {#if error}<div class="menu-feedback text-danger" role="alert">{error}</div>
-        <MenuAction icon="refresh" onclick={() => loadActions()}>Retry</MenuAction>{/if}
+      {#if error}<RowFeedback error={error} tag="div" class="menu-feedback text-danger" />
+        <Button item icon="refresh" onclick={() => loadActions()}>Retry</Button>{/if}
       {@render content('root')}
-    </ContextMenu>
+    </Button>
   </div>
-  {#if item.kind === 'collection' || item.sequence}<SequenceControl
-      bind:this={sequenceControl}
-      source={item.sequence ?? { kind: 'collection', id: item.id }}
-      from={item.sequence?.entryId}
-      hidden
-    />{/if}
+  {#if item.kind === 'collection' || item.sequence}<Dialog bind:open={sequenceControl.open} title={sequenceControl.title} message={sequenceControl.message} alert={!!sequenceControl.error} actions={sequenceControl.actions} />{/if}
   {#if requestItem}<RequestDialog
       item={requestItem}
       initial4k={request4k}
@@ -826,19 +874,19 @@
       bind:open={requestOpen}
     />{/if}
   <Dialog bind:open={playbackErrorOpen} title="Playback unavailable"
-    ><p role="alert">{error}</p></Dialog
+    ><RowFeedback error={error} tag="p" class="" /></Dialog
   >
   <MetadataEditor mediaId={active.id} admin={editAdmin} bind:open={editOpen} />
   <Dialog bind:open={confirmOpen} title={confirmation?.title ?? 'Confirm change'}
     ><div class="stack">
       <p>{confirmation?.text}</p>
-      {#if error}<p role="alert" class="text-danger">{error}</p>{/if}
+      {#if error}<RowFeedback error={error} tag="p" class="text-danger" />{/if}
       <div class="row">
         <Button
-          variant={confirmation?.danger ? 'danger' : 'primary'}
+          danger={confirmation?.danger}
           disabled={busy}
           onclick={() => confirmation?.run()}>Confirm</Button
-        ><Button variant="ghost" onclick={() => (confirmOpen = false)}>Cancel</Button>
+        ><Button emphasis="subtle" onclick={() => (confirmOpen = false)}>Cancel</Button>
       </div>
     </div></Dialog
   >
@@ -858,7 +906,7 @@
         void submitForm();
       }}
     >
-      {#if error}<p role="alert" class="text-danger">{error}</p>{/if}
+      {#if error}<RowFeedback error={error} tag="p" class="text-danger" />{/if}
       <label class="field"
         >{form === 'log' ? 'Watched at' : 'Start date and time'}<input
           type="datetime-local"
@@ -882,7 +930,7 @@
       <div class="row">
         <Button type="submit" disabled={busy}
           >{form === 'rewatch' ? 'Start rewatch' : 'Mark watched'}</Button
-        ><Button variant="ghost" onclick={() => (form = null)}>Cancel</Button>
+        ><Button emphasis="subtle" onclick={() => (form = null)}>Cancel</Button>
       </div>
     </form>
   </Dialog>
