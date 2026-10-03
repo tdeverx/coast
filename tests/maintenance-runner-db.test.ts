@@ -67,7 +67,7 @@ run('repeated maintenance requests preserve one durable job in every active stat
   }
 });
 run(
-  'parallel claims serialize provider jobs globally while user edits proceed',
+  'parallel claims allow unrelated jobs but preserve mutable account ordering',
   async () => {
     const library = await queue(0, 'jellyfin.library');
     const user = await queue(1, 'jellyfin.sync');
@@ -79,12 +79,11 @@ run(
         .filter(Boolean)
         .map((job) => job!.id)
         .sort()
-    ).toEqual([library, edit].sort());
-    await getSql()`UPDATE outbox_actions SET state = 'succeeded' WHERE id IN (${library}, ${edit})`;
-    expect((await claimNextAction())?.id).toBe(user);
+    ).toEqual([library, user, request].sort());
+    await getSql()`UPDATE outbox_actions SET state = 'succeeded' WHERE id = ${library}`;
     expect(await claimNextAction()).toBeNull();
     await getSql()`UPDATE outbox_actions SET state='succeeded' WHERE id=${user}`;
-    expect((await claimNextAction())?.id).toBe(request);
+    expect((await claimNextAction())?.id).toBe(edit);
   }
 );
 run('failed and backed-off maintenance does not block other users or later edits', async () => {
@@ -114,15 +113,15 @@ run('shared rate-limit cooldown protects all queued accounts on the affected ser
   await getSql()`UPDATE outbox_actions SET state='succeeded' WHERE id=${unrelated}`;
   expect((await claimNextAction())?.id).toBe(other);
 });
-run('Collection cleanup and entry reviews share the existing service traversal lock without deduplicating separate reviews',async()=>{
+run('Collection cleanup and reviews preserve account ordering without globally blocking other accounts',async()=>{
  const db=getSql(),other=crypto.randomUUID();
  await db`insert into provider_connections(id,user_id,instance_id,external_user_id,credentials) values(${other},${users[1]},${instances[2]},'review-fixture','fixture')`;
  try{
   const cleanup=await queue(3,'trakt.collection-cleanup');
   const first=await enqueueAction({userId:users[1],connectionId:other,kind:'trakt.collection-review',payload:{workId:crypto.randomUUID()}});
   const second=await enqueueAction({userId:users[1],connectionId:other,kind:'trakt.collection-review',payload:{workId:crypto.randomUUID()}});
-  expect(first).not.toBe(second);expect((await claimNextAction())?.id).toBe(cleanup);expect(await claimNextAction()).toBeNull();
-  await db`update outbox_actions set state='succeeded' where id=${cleanup}`;expect((await claimNextAction())?.id).toBe(first);
+  expect(first).not.toBe(second);expect((await claimNextAction())?.id).toBe(cleanup);expect((await claimNextAction())?.id).toBe(first);expect(await claimNextAction()).toBeNull();
+  await db`update outbox_actions set state='succeeded' where id in (${cleanup},${first})`;expect((await claimNextAction())?.id).toBe(second);
  }finally{await db`delete from provider_connections where id=${other}`;}
 });
 run(
@@ -265,4 +264,18 @@ run('a cancelled or replaced worker cannot publish a service cooldown',async()=>
   const [service]=await getSql()`select settings->>'jobsRetryAt' as retry from provider_instances where id=${instances[0]}`;
   expect(service.retry).toBeNull();
   const unrelated=await queue(2,'seerr.sync');expect((await claimNextAction())?.id).toBe(unrelated);
+});
+run('the urgent worker can observe live state between import requests without reordering account writes',async()=>{
+ const library=await queue(0,'jellyfin.library');expect((await claimNextAction())?.id).toBe(library);
+ const live=await queue(0,'jellyfin.live');const edit=await queue(0,'jellyfin.user-state');
+ expect((await claimNextAction(true))?.id).toBe(live);expect(await claimNextAction(true)).toBeNull();
+ await getSql()`update outbox_actions set state='succeeded' where id=${library}`;
+ expect((await claimNextAction(true))?.id).toBe(edit);
+});
+run('initial import priority remains completed after old job history is pruned',async()=>{
+ registerActionHandler('jellyfin.sync',async()=>{});
+ const initial=await queue(0,'jellyfin.sync');await runQueueOnce();
+ await getSql()`delete from outbox_actions where id=${initial}`;
+ const next=await queue(0,'jellyfin.sync');const claimed=await claimNextAction();
+ expect(claimed?.id).toBe(next);expect(claimed?.priority).toBe(3);
 });

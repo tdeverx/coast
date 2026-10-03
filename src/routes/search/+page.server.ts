@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { publicSearch } from '$lib/social/public.server';
 import * as v from 'valibot';
 import { searchMedia } from '$lib/catalogue/service';
 import { mediaViews } from '$lib/server/queries/media';
@@ -69,13 +70,21 @@ async function searchPresentations(
 export const load: PageServerLoad = async ({locals, url, depends}) => {
   depends('coast:tracking');
 
-  if (!locals.user) error(401, 'Sign in to search.');
+
   const query = (url.searchParams.get('q') ?? '').trim().slice(0, 200);
   const view = v.safeParse(
     v.picklist(['all', 'watch', 'listen', 'play']),
     url.searchParams.get('view') ?? 'all'
   );
   if (!view.success) error(400, 'Choose a valid search view.');
+  if (!locals.user) {
+    if ((await getConfig()).siteAccess !== 'public-read-only') error(401, 'Sign in to search.');
+    const items = query ? await publicSearch(query) : [];
+    const initial = {items:items.slice(0,100),providerUnavailable:false,truncated:items.length>100};
+    const empty = {items:[],discover:[],failure:'',truncated:false};
+    return {query,view:'watch',initial,watch:Promise.resolve(initial),listen:Promise.resolve(empty),play:Promise.resolve(empty)};
+  }
+
   const enabled = (await getConfig()).experimentalFeatures;
   if (['listen', 'play'].includes(view.output) && !enabled)
     error(404, 'This search view is unavailable.');

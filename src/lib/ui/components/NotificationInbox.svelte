@@ -177,8 +177,8 @@
  time{white-space:nowrap;color:var(--quiet);font-size:var(--text-sm);}
 
  .loading{display:grid;gap:12px;}
- .skeleton{height:112px;border-radius:8px;background:var(--surface);animation:pulse 1.5s ease-in-out infinite alternate;}
- @keyframes pulse{to{opacity:.5;}}
- @media(prefers-reduced-motion:reduce){.skeleton{animation:none;}}
+ .skeleton{height:112px;border-radius:8px;}
+
+
  @media(max-width:479px){.notice-row{gap:8px;}}
 </style>

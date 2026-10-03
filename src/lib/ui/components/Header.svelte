@@ -22,10 +22,9 @@
     { label: 'Library', href: '/library',icon:'library' as const },
     { label: 'Discover', href: '/discover',icon:'discover' as const },
     { label: 'Search', href: '/search',icon:'search' as const },
-  ] : [{label:'Discover',href:'/discover',icon:'discover' as const}]);
+  ] : [{label:'Discover',href:'/discover',icon:'discover' as const},{label:'Search',href:'/search',icon:'search' as const}]);
 </script>
 
-<a class="skip" href="#main-content">Skip to content</a>
 <header
   class:chrome-hidden={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
   inert={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
@@ -157,19 +156,6 @@
     height: 5px;
     background: var(--accent);
     border-radius: 50%;
-  }
-  .skip {
-    position: fixed;
-    top: -60px;
-    left: 20px;
-    z-index: 300;
-    background: var(--ink);
-    color: var(--canvas);
-    padding: 12px;
-    border-radius: 8px;
-  }
-  .skip:focus {
-    top: 10px;
   }
   @media (max-width: 639px) {
     .header-inner {

@@ -210,6 +210,7 @@ export async function updatePassword(
   await getSql().begin(async (sql) => {
     await sql`UPDATE users SET password_hash = ${hash} WHERE id = ${user.id}`;
     await sql`DELETE FROM sessions WHERE user_id = ${user.id}`;
+    await sql`UPDATE api_tokens SET revoked_at=now() WHERE user_id=${user.id} AND revoked_at IS NULL`;
   });
 }
 
@@ -290,8 +291,10 @@ export async function updateUser(actor: SessionUser | null, userId: string, inpu
     }
     const [row] =
       await transaction`UPDATE users SET email = ${patch.email === undefined ? target.email : patch.email || null}, role = ${role}, disabled = ${disabled}, password_hash = ${hash ?? target.password_hash} WHERE id = ${userId} RETURNING *`;
-    if (role !== target.role || disabled !== target.disabled || hash)
+    if (role !== target.role || disabled !== target.disabled || hash) {
       await transaction`DELETE FROM sessions WHERE user_id = ${userId}`;
+      await transaction`UPDATE api_tokens SET revoked_at=now() WHERE user_id=${userId} AND revoked_at IS NULL`;
+    }
     return { ...publicUser(row), disabled: row.disabled, hasLocalPassword: !!row.password_hash };
   });
 }
@@ -312,6 +315,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
         listenThreshold: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
         fullWidth: v.boolean(),
         originalTitles: v.boolean(),
+        monochromeMissing: v.boolean(),
         region: v.pipe(v.string(), v.regex(/^[A-Z]{2}$/)),
         theme: v.optional(v.picklist(['dark', 'light', 'system'])),
         notificationLevel: v.optional(v.picklist(['silent', 'normal', 'persistent'])),

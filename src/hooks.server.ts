@@ -19,6 +19,8 @@ export const init: import('@sveltejs/kit').ServerInit = async () => {
 const applicationHandle: Handle = async ({ event, resolve }) => {
   if (building) return resolve(event);
   await initializePlatform(registerProviderActions);
+  // Public API handlers authenticate only scoped machine tokens, never browser cookies.
+  if (event.url.pathname.startsWith('/api/public/v1/')) return resolve(event);
   if (!['GET', 'HEAD', 'OPTIONS'].includes(event.request.method)) {
     try {
       assertSameOrigin(event.request);

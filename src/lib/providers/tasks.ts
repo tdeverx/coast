@@ -5,6 +5,8 @@ export const maintenanceKinds = [
   'jellyfin.library',
   'jellyfin.sync',
   'trakt.live',
+  'jellyfin.live',
+  'steam.live',
   'trakt.import',
   'trakt.lists-import',
   'trakt.collection-project',
@@ -71,6 +73,7 @@ function groupedServiceTasks(provider: string): ServiceTask[] {
         interval: 'userIntervalMinutes',
         enabled: 'userSyncEnabled',
       },
+      {id:'live',title:'Live activity',description:'Read this account’s current Jellyfin playback sessions.',kinds:['jellyfin.live'],scope:'live',interval:'liveIdleMinutes',enabled:'liveEnabled'},
       catalogue,
       changes,
     ];
@@ -103,6 +106,7 @@ function groupedServiceTasks(provider: string): ServiceTask[] {
       changes,
     ];
   if (provider === 'steam')return [
+    {id:'live',title:'Live activity',description:'Read the current game when Steam account privacy permits it.',kinds:['steam.live'],scope:'live',interval:'liveIdleMinutes',enabled:'liveEnabled'},
     {id:'tracking',title:'Owned games & playtime',description:'Import owned Steam games and cumulative playtime. Ownership does not establish installation.',kinds:['steam.sync'],scope:'tracking',interval:'intervalMinutes',enabled:'trackingEnabled'},
     {id:'users',title:'Game achievements',description:'Refresh achievement progress for up to 20 owned games per run. Failed titles retain previous progress.',kinds:['steam.achievements'],scope:'users',interval:'userIntervalMinutes',enabled:'userSyncEnabled'},
   ];

@@ -41,8 +41,8 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
   });
   test('concurrent first-run setup creates exactly one administrator', async () => {
     const results = await Promise.allSettled([
-      createFirstAdmin({ username: 'administrator', password: 'a-secure-passphrase-123' }),
-      createFirstAdmin({ username: 'other-admin', password: 'another-password-123' }),
+      createFirstAdmin({ username: 'administrator', password: 'A-secure-passphrase-123!' }),
+      createFirstAdmin({ username: 'other-admin', password: 'Another-password-123!' }),
     ]);
     const success = results.filter((result) => result.status === 'fulfilled');
     expect(success.length).toBe(1);
@@ -52,22 +52,22 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
     expect(requireAdmin(admin).role).toBe('admin');
     const [count] = await getSql()`SELECT count(*)::int AS total FROM users`;
     expect(count.total).toBe(1);
-    member = await createUser(admin, { username: 'member', password: 'member-passphrase-123' });
+    member = await createUser(admin, { username: 'member', password: 'Member-passphrase-123!' });
   });
   test('only an administrator can create accounts or read diagnostics', async () => {
     await expect(
-      createUser(member, { username: 'intruder', password: 'another-password-123' })
+      createUser(member, { username: 'intruder', password: 'Another-password-123!' })
     ).rejects.toThrow('Administrator');
     await expect(listDiagnostics(member)).rejects.toThrow('Administrator');
     await expect(
       login({ username: 'member', password: 'wrong-password' }, 'test-invalid')
     ).rejects.toThrow('incorrect');
     await expect(
-      createUser(admin, { username: 'member', password: 'another-password-123' })
+      createUser(admin, { username: 'member', password: 'Another-password-123!' })
     ).rejects.toThrow('already in use');
     const additional = await createUser(admin, {
       username: 'additional-admin',
-      password: 'additional-admin-password',
+      password: 'Additional-admin-password!',
       role: 'admin',
     });
     expect(additional.role).toBe('admin');
@@ -109,7 +109,7 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
   });
   test('sessions rotate with a brief concurrent-request grace period and expire server-side', async () => {
     const session = await login(
-      { username: 'member', password: 'member-passphrase-123' },
+      { username: 'member', password: 'Member-passphrase-123!' },
       'test-session'
     );
     const storedHash = await hashToken(session.token);

@@ -11,7 +11,7 @@ import { configureInstance } from '../src/lib/providers/instances.server';
 import { connectJellyfin } from '../src/lib/providers/jellyfin/connection.server';
 import { scanJellyfinLibrary, syncJellyfinUser } from '../src/lib/sync/jellyfin';
 
-if (!/\/(coast_browser_test|coast_collection_test)$/.test(process.env.DATABASE_URL??''))
+if (!/\/(coast_browser_test(?:_audit_[a-f0-9]{32})?|coast_collection_test)$/.test(process.env.DATABASE_URL??''))
   throw new Error('Use only the disposable coast_browser_test or coast_collection_test database.');
 if (!process.env.COAST_DATA_DIR?.includes('coast-browser'))
   throw new Error('Use an isolated COAST_DATA_DIR containing coast-browser.');
@@ -173,6 +173,7 @@ const server = Bun.serve({
       else item.UserData.IsFavorite=request.method==='POST';
       return json(item.UserData);
     }
+    if (path === '/Sessions') return Response.json([]);
     if (path.startsWith('/Sessions/')) return new Response(null, { status: 204 });
     const trailerPath = /^\/Items\/([^/]+)\/LocalTrailers$/.exec(path);
     if (trailerPath)
@@ -268,6 +269,8 @@ const canonical = (externalId: string) => {
   return mapping.mediaId;
 };
 const mediaId = canonical(movie.Id);
+// Seeding is complete; serving synthetic HTTP media does not need a database pool.
+await closeDb();
 console.info(
   JSON.stringify({
     username,

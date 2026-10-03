@@ -28,3 +28,7 @@ Keep the readiness report honest: implementation is not proof of a live provider
 - [Synced experiences and invitation onboarding](synced-experiences.md) — experimental playback sessions and initial-import registration.
 
 - [Audit follow-up verification](audits/2026-10-02-follow-up.md): retention/recovery, accessibility, playback lifecycle, provider parity and failure remedies.
+
+- [Public API](public-api.md): scoped read-only tokens, endpoints, pagination and errors.
+
+- [Selected audit follow-ups — 3 October](audits/2026-10-03-selected-follow-ups.md): read-only API, consolidation, accessibility, empty shelves and playback evidence.

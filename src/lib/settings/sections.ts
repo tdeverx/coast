@@ -5,6 +5,7 @@ export const personalSettings = [
   ['collection', 'Collection'],
   ['privacy','Privacy & social'],
   ['account', 'Account'],
+  ['api', 'API access'],
   ['connections', 'Connections'],
   ['pending', 'Sync conflicts'],
 ] as const;
@@ -24,6 +25,7 @@ export const settingsDescriptions: Record<string, string> = {
   collection: 'Choose what automatically appears in your Collection for each medium. History and relationships are preserved.',
   playback: 'Set subtitle and music listening preferences for your next playback session.',
   privacy:'Choose who can see your profile and activity, and which social notifications you receive.',
+  api: 'Create scoped, read-only tokens for your applications. Tokens are shown once and can be revoked.',
   account: 'Review your account, change your password and restore preferences.',
   connections: 'Link your personal service accounts and choose what they sync.',
   pending: 'Review conflicting changes before they replace your saved tracking data.',
@@ -38,7 +40,7 @@ export const settingsDescriptions: Record<string, string> = {
 export const preferenceFields = {
   collection: ['collection'],
   privacy:['social'],
-  appearance: ['shareDemand', 'fullWidth', 'originalTitles', 'region', 'notificationsSilenced'],
+  appearance: ['shareDemand', 'fullWidth', 'originalTitles', 'monochromeMissing', 'region', 'notificationsSilenced'],
   playback: ['listenThreshold', 'subtitlesAlways', 'subtitleLanguages', 'subtitlePrompt'],
   connections: ['syncConflictWinner'],
 } as const;
@@ -65,6 +67,7 @@ export const policyFields = [
   'subtitleLanguages',
   'metadataSource',
   'cacheTmdbArtwork',
+  'cacheServerArtwork',
   'enableTrakt',
   'enableRequests',
   'allowedProviderPorts',

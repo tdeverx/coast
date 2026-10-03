@@ -35,6 +35,7 @@ run('Next combines saved and queued titles once, filters before 60-item paginati
 run('Playing and Listening use concrete activity and retain feature/privacy gates',async()=>{
  const db=getDb();await db.insert(s.gamePlaythroughs).values({userId:user,gameId:game,status:'in-progress'});
  await db.insert(s.musicProgress).values({userId:user,trackId:track,positionSeconds:50,durationSeconds:200});
+ expect((await progressData(user,{category:'screen'})).emptyAllMedia).toBe(false);
  expect((await progressData(user,{category:'game'})).items.map(i=>i.id)).toEqual([game]);
  expect((await progressData(user,{category:'music'})).items.map(i=>'workId' in i?i.workId:i.id)).toEqual([track]);
  expect((await progressData(user,{category:'music',scope:'available'})).items).toHaveLength(0);

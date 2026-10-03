@@ -34,7 +34,7 @@
   let {
     title = '', items = [], source, panels, journal, href, children, heading, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle = 'auto', artworkPriority,
     mediaKind = 'screen', filters, controls, actions, empty, details,
-    busy = false, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
+    busy = false, hideEmpty = true, itemCount, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
     pageNumber, pages, onpage, pageUrl, filterBy = 'none', availability = true, availableOnly = $bindable(false),
   }: {
     filterBy?: 'none' | 'type' | 'watched';
@@ -62,6 +62,8 @@
     empty?: Snippet;
     details?: Snippet<[T]>;
     busy?: boolean;
+    hideEmpty?: boolean;
+    itemCount?: number;
     preserveHeight?: boolean;
     rows?: 1 | 2;
     hasMore?: boolean;
@@ -72,6 +74,7 @@
     onpage?: (page: number) => void;
     pageUrl?: (page: number) => string;
   } = $props();
+  let selected = $state(false);
   let socialActive=$state(false);
   let social=$state<Record<string,{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number}>>({});
   const adapter = untrack(() => source ? createShelfSource(() => source!) : undefined);
@@ -85,6 +88,11 @@
     availability, availableOnly, title: displayTitle, href: adapter?.href ?? href, url: page.url,
   }), value => { availableOnly = value; });
   const displayItems = $derived(selection.items);
+  const count = $derived(panels?.length ?? itemCount ?? (children ? null : journal ? journal.runs.length : displayItems.length));
+  const loading = $derived(count === 0 && (displayBusy || !!adapter && !adapter.ready && !adapter.error));
+  // Keep failed rows and user-selected empty filters reachable; never hide a grid page.
+  const hidden = $derived(hideEmpty && displayLayout === 'row' && !loading && !selected && !selection.filtered && count === 0 && !adapter?.error && !adapter?.notice && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false);
+  function selectControl(control: ShelfControl, value: string) { selected = true; control.change(value); }
   const key = (item: T) => item.entryId ?? ('href' in item ? item.href : item.id);
 
   $effect(()=>{
@@ -138,12 +146,12 @@
 {#snippet localControls()}{@render renderControls(selection.controls, selection.filters)}{/snippet}
 {#snippet renderControls(options: ShelfControl[], extra: ShelfControl[] = [], showGroups = true)}
   {#each options as control (control.label)}
-    {#if control.type === 'segments'}<SegmentedControl label={control.label} value={control.value} options={control.options ?? []} onchange={control.change} />
-    {:else if control.type === 'collection'}<Button {...collectionControl(control.value === 'collection', value => control.change(value ? 'collection' : 'all'))} />
-    {:else if control.type === 'availability'}<Button {...availabilityControl(control.value === 'available', value => control.change(value ? 'available' : 'all'))} />
+    {#if control.type === 'segments'}<SegmentedControl label={control.label} value={control.value} options={control.options ?? []} onchange={value => selectControl(control, value)} />
+    {:else if control.type === 'collection'}<Button {...collectionControl(control.value === 'collection', value => selectControl(control, value ? 'collection' : 'all'))} />
+    {:else if control.type === 'availability'}<Button {...availabilityControl(control.value === 'available', value => selectControl(control, value ? 'available' : 'all'))} />
     {/if}
   {/each}
-  {@const groups = [...options, ...extra].filter(control => control.type !== 'segments' && control.type !== 'availability' && control.type !== 'collection').map(control => ({label: control.label, value: control.value, options: control.type === 'media-type' ? mediaTypeOptions(control.includeOtherMedia) : control.options ?? [], change: control.change}))}
+  {@const groups = [...options, ...extra].filter(control => control.type !== 'segments' && control.type !== 'availability' && control.type !== 'collection').map(control => ({label: control.label, value: control.value, options: control.type === 'media-type' ? mediaTypeOptions(control.includeOtherMedia) : control.options ?? [], change: (value: string) => selectControl(control, value)}))}
   {#if showGroups && groups.length}<RowFilter {groups} />{/if}
 {/snippet}
 {#snippet adapterFilters()}{@render renderControls(adapter?.filters ?? [], [], false)}{/snippet}
@@ -178,10 +186,10 @@
       {#if extra?.actions}<div class="order">{#each extra.actions as action}<Button emphasis="subtle" icon={action.icon} label={action.label} disabled={action.disabled} onclick={action.run} />{/each}</div>{/if}
       {#if !entry.activity}{@render details?.(item as T)}{/if}
     </div>{/each}
-    {#if adapter && !displayItems.length && !adapter.error}<div class="row-empty" aria-live="polite"><RowFeedback message={adapter.empty}>
+    {#if !loading && adapter && !displayItems.length && !adapter.error}<div class="row-empty" aria-live="polite"><RowFeedback message={adapter.empty}>
       {#if adapter.emptyHref}<a href={adapter.emptyHref}>{adapter.emptyLink}</a>{/if}
     </RowFeedback></div>
-    {:else if !adapter && !displayItems.length && (empty || filterMode !== 'none') && (filterMode === 'none' || !busy)}<div class="row-empty" aria-live="polite">
+    {:else if !loading && !adapter && !displayItems.length && (empty || filterMode !== 'none') && (filterMode === 'none' || !busy)}<div class="row-empty" aria-live="polite">
       {#if filterMode !== 'none' && selection.filtered}<p class="muted">No titles in this selection.</p>
       {:else}{@render empty?.()}{/if}
     </div>{/if}
@@ -194,7 +202,7 @@
   </Shelf>{/each}
 </div>
 {:else if children || adapter || filterMode === 'none' || selection.sourceItems.length || filters || empty}
-<section class="content-row section" aria-label={displayTitle} aria-busy={displayBusy}>
+<section hidden={hidden} class="content-row section" aria-label={displayTitle} aria-busy={displayBusy}>
   <div use:styleGesture>
     <Heading title={displayTitle} {heading} filters={displayFilters} actions={displayActions} href={displayHref}>
       {#snippet navigation()}{#if displayLayout === 'row' || displayControls || displayOnpage}<div class="navigation">
@@ -242,7 +250,10 @@
     bind:this={rail.scroller}
     onscroll={rail.reachedEnd}
   >
-    {#if children}{@render children(rail.style)}{:else}{@render cards(rail.style)}{/if}
+    {#if loading}
+    <span class="sr-only" role="status">Loading {displayTitle || 'titles'}…</span>
+    {#each Array.from({length:displayLayout === 'grid' ? 60 : 12},(_,i)=>i) as placeholder (placeholder)}<div class="shelf-skeleton" aria-hidden="true">{#if source?.type === 'social' && source.surface !== 'popular'}<div class="activity-placeholder"><div class="skeleton avatar-placeholder"></div><div class="skeleton name-placeholder"></div><div class="skeleton time-placeholder"></div></div>{/if}<div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div><div class="skeleton text-placeholder"></div><div class="placeholder-caption"><div class="placeholder-copy"><div class="skeleton text-placeholder short"></div></div>{#if source?.type === 'social' && source.surface !== 'popular'}<div class="skeleton reaction-placeholder"></div>{/if}</div></div>{/each}
+  {:else if children}{@render children(rail.style)}{:else}{@render cards(rail.style)}{/if}
   </div>
 </section>
 
@@ -261,6 +272,19 @@
   busy={displayBusy} onchange={(pagination?.kind === 'pages' ? pagination.url : undefined) || pageUrl ? undefined : adapter?.load} pageUrl={(pagination?.kind === 'pages' ? pagination.url : undefined) ?? pageUrl} label={`${displayTitle} pages`} />{/if}
 </div>
 <style>
+  .activity-placeholder{display:flex;align-items:center;gap:8px;margin-bottom:8px;height:24px;}
+  .avatar-placeholder{width:20px;height:20px;border-radius:50%;flex-shrink:0;}
+  .name-placeholder{height:12px;width:40%;border-radius:4px;}
+  .time-placeholder{height:12px;width:20%;border-radius:4px;margin-left:auto;}
+  .placeholder-caption{display:flex;align-items:center;gap:8px;}
+  .placeholder-copy{flex:1;}
+  .reaction-placeholder{width:28px;height:28px;border-radius:50%;}
+  .content-row[hidden] { display:none; }
+  .artwork-placeholder { aspect-ratio:calc(1 / var(--row-art-ratio));border-radius:8px; }
+  .artwork-placeholder.round { border-radius:50%; }
+  .panel-row .artwork-placeholder { aspect-ratio:auto;height:260px; }
+  .text-placeholder { height:var(--text-sm);margin-top:10px;width:80%;border-radius:4px; }
+  .text-placeholder.short { width:55%; }
   .journal { min-width:0; }
   .journal :global(.content-row:first-child) { margin-top:0; }
   .load-more { display:grid; justify-items:center; gap:10px; padding-block:18px; }

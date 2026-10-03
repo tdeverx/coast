@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import { getDb } from '../db';
 import * as s from '../db/schema';
 import { heroTitleIds, isHeroTitle } from '../../media/hero';
@@ -63,58 +63,11 @@ export async function homeData(userId: string) {
     : null;
   const hero = heroCandidate && isHeroTitle(heroCandidate) ? heroCandidate : null;
   const heroNext = hero ? await nextPlayable(userId, hero) : null;
-  const anchor = ordered.find(
-    (item) =>
-      item.watched && (item.genres?.length ?? 0) > 0 && ['movie', 'show'].includes(item.kind)
-  );
-  let recommendations: { because: string; title: string; items: MediaView[] } | null = null;
-  if (anchor?.genres?.length) {
-    const genres = sql`array[${sql.join(
-      anchor.genres.map((genre) => sql`${genre}`),
-      sql`, `
-    )}]::text[]`;
-    const ids = await getDb()
-      .select({ id: s.media.id })
-      .from(s.media)
-      .leftJoin(
-        s.trackingState,
-        and(eq(s.trackingState.mediaId, s.media.id), eq(s.trackingState.userId, userId))
-      )
-      .where(
-        and(
-          ne(s.media.id, anchor.id),
-          inArray(s.media.kind, ['movie', 'show']),
-          sql`not coalesce(${s.trackingState.watched}, false)`,
-          sql`not coalesce(${s.trackingState.dropped}, false)`,
-          sql`${s.media.id} in (
-            select id from media where genres && ${genres}
-            union select media_id from metadata_snapshots where genres && ${genres}
-            union select media_id from metadata_overrides where genres && ${genres}
-          )`
-        )
-      )
-      .orderBy(desc(s.media.updatedAt))
-      .limit(30);
-    const items = await mediaViews(userId, { ids: ids.map((row) => row.id), limit: 30 });
-    const shared = (item: MediaView) =>
-      item.genres?.filter((genre) => anchor.genres!.includes(genre)).length ?? 0;
-    const matching = items.filter((item) => shared(item) > 0);
-    matching.sort((a, b) => shared(b) - shared(a) || Number(b.available) - Number(a.available));
-    if (matching.length)
-      recommendations = {
-        because: anchor.title,
-        title: `Because you watched ${anchor.title}`,
-        items: matching.slice(0, 12),
-      };
-  }
   return {
     continueWatching,
-    progress,
     watchlist,
-    recentlyWatched,
-    library,
+    progress,
     hero,
     heroNext,
-    recommendations,
   };
 }

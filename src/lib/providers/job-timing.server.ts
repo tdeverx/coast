@@ -56,7 +56,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
       let eligible = linked.filter(c => {
         if (kind === 'catalogue.user-scan') return tmdb;
         if (kind === 'steam.achievements') return c.settings.importAchievements !== false;
-        if (kind === 'trakt.live') return c.settings.liveRead !== false;
+        if (kind.endsWith('.live')) return c.settings.liveRead !== false;
         if (kind === 'trakt.collection-project') return c.settings.collectionProjection?.enabled === true;
         if (kind === 'trakt.lists-import') return c.settings.sync?.lists === true;
         if (kind === 'trakt.import') return ['history','progress','collection','ratings','watchlist'].some(k => c.settings.sync?.[k]);
@@ -78,7 +78,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
         let interval = Number(task.interval ? schedule[task.interval] : 0) * 60000;
         if (kind === 'jellyfin.sync') completed = new Date(c.user_completed ?? 0).getTime();
         if (kind === 'seerr.sync') completed = Date.parse(c.settings.requestsVerifiedAt ?? '') || 0;
-        if (kind === 'trakt.live') interval = (c.live ? schedule.liveActiveMinutes : schedule.liveIdleMinutes) * 60000;
+        if (kind.endsWith('.live')) interval = (c.live ? schedule.liveActiveMinutes : schedule.liveIdleMinutes) * 60000;
         if (kind === 'jellyfin.library') {
           if (library.connectionId !== c.id || library.externalUserId !== c.external_user_id) return [Date.now()];
           const full = Date.parse(library.fullCompletedAt ?? '') || 0;

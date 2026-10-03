@@ -1,7 +1,10 @@
+import * as v from 'valibot';
+import { AppError } from '$lib/server/security/errors';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import {
   providerConnections,
+  providerInstances,
   userIdentities,
   availability,
   outboxActions,
@@ -81,4 +84,13 @@ export async function saveConnection(
     return connection;
   });
   return { id: connection.id, username: connection.username, status: connection.status };
+}
+
+export async function updateLiveRead(userId:string,connectionId:string,input:unknown){
+ const {enabled}=v.parse(v.object({enabled:v.boolean()}),input);
+ const [row]=await getDb().select({provider:providerInstances.provider}).from(providerConnections).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId)).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId)));
+ if(!row || !['jellyfin','steam'].includes(row.provider))throw new AppError(404,'Connection not found.');
+ const {connection}=await connectionFor(userId,connectionId,row.provider as 'jellyfin'|'steam');
+ await getDb().update(providerConnections).set({settings:sql`${providerConnections.settings} || jsonb_build_object('liveRead',${enabled}::boolean)`,updatedAt:new Date()}).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.accountGeneration,connection.accountGeneration!)));
+ return {enabled};
 }

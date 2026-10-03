@@ -194,6 +194,11 @@ export class JellyfinAdapter {
       },
     });
   }
+  async sessions(userId:string) {
+    const sessions=v.parse(v.array(v.object({UserId:v.optional(v.string()),NowPlayingItem:v.optional(v.nullable(v.object({Id:v.string()}))),PlayState:v.optional(v.nullable(v.object({IsPaused:v.optional(v.boolean(),false)})))})),await this.call('/Sessions?ActiveWithinSeconds=120'));
+    // Administrator accounts may see everyone; never import another user's live session.
+    return sessions.filter(session=>session.UserId===userId);
+  }
   async identity(expectedId?: string) {
     const info = v.parse(identitySchema, await this.call('/System/Info/Public'));
     if (info.ProductName !== 'Jellyfin Server')

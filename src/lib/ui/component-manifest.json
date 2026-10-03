@@ -745,13 +745,16 @@
     "usedBy": [
       "src/lib/ui/components/IdentityCard.svelte",
       "src/lib/ui/components/MediaCard.svelte",
-      "src/lib/ui/components/PlaybackTimeline.svelte"
+      "src/lib/ui/components/PlaybackTimeline.svelte",
+      "src/lib/ui/components/ProgressChart.svelte"
     ],
     "dynamicComposition": false
   },
   "ProgressChart": {
     "path": "src/lib/ui/components/ProgressChart.svelte",
-    "elements": [],
+    "elements": [
+      "ProgressBar"
+    ],
     "usedBy": [
       "src/lib/ui/components/DetailCard.svelte",
       "src/routes/games/[id]/+page.svelte"

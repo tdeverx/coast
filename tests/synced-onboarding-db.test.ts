@@ -30,16 +30,16 @@ afterAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;await updateConfig(
 run('invites are hashed, single-use under concurrency, and create restricted normal accounts',async()=>{
  const invite=await createInvite(admin,{days:7});
  const [stored]=await getSql()`SELECT token_hash FROM registration_invites WHERE id=${invite.id}`;expect(stored.token_hash).not.toBe(invite.code);
- const attempts=await Promise.allSettled([0,1].map(i=>registerAccount({code:invite.code,username:`invite-${crypto.randomUUID()}`.slice(0,32),displayName:'Fixture user',passwordConfirmation:'a strong fixture password',password:'a strong fixture password'},`fixture-${i}`)));
+ const attempts=await Promise.allSettled([0,1].map(i=>registerAccount({code:invite.code,username:`invite-${crypto.randomUUID()}`.slice(0,32),displayName:'Fixture user',passwordConfirmation:'A strong fixture password!',password:'A strong fixture password!'},`fixture-${i}`)));
  const accepted=attempts.filter(x=>x.status==='fulfilled');expect(accepted).toHaveLength(1);
  const user=(accepted[0] as PromiseFulfilledResult<Awaited<ReturnType<typeof registerAccount>>>).value.user;extra.push(user.id);expect(user.role).toBe('user');expect(await onboardingPending(user.id)).toBe(true);
- const revoked=await createInvite(admin,{days:1});await revokeInvite(admin,revoked.id);await expect(registerAccount({code:revoked.code,username:'revoked-fixture',displayName:'Fixture user',passwordConfirmation:'a strong fixture password',password:'a strong fixture password'},'fixture-revoked')).rejects.toThrow('invalid');
+ const revoked=await createInvite(admin,{days:1});await revokeInvite(admin,revoked.id);await expect(registerAccount({code:revoked.code,username:'revoked-fixture',displayName:'Fixture user',passwordConfirmation:'A strong fixture password!',password:'A strong fixture password!'},'fixture-revoked')).rejects.toThrow('invalid');
  const expired=await createInvite(admin,{days:1});await getSql()`UPDATE registration_invites SET expires_at=NOW()-INTERVAL '1 second' WHERE id=${expired.id}`;
- await expect(registerAccount({code:expired.code,username:'expired-fixture',displayName:'Fixture user',passwordConfirmation:'a strong fixture password',password:'a strong fixture password'},'fixture-expired')).rejects.toThrow('invalid');
+ await expect(registerAccount({code:expired.code,username:'expired-fixture',displayName:'Fixture user',passwordConfirmation:'A strong fixture password!',password:'A strong fixture password!'},'fixture-expired')).rejects.toThrow('invalid');
 });
 run('open registration captures policy, validates confirmation, and requires explicit completion',async()=>{
  await updateConfig(admin,{registrationMode:'open',registrationProvider:'none'});
- const input={username:'Open.Fixture',displayName:'Open Fixture',password:'a strong fixture password',passwordConfirmation:'wrong confirmation'};
+ const input={username:'Open.Fixture',displayName:'Open Fixture',password:'A strong fixture password!',passwordConfirmation:'wrong confirmation'};
  await expect(registerAccount(input,'open-mismatch')).rejects.toThrow('Passwords must match');
  const session=await registerAccount({...input,passwordConfirmation:input.password},'open-success');extra.push(session.user.id);
  expect(session.user.username).toBe('open.fixture');expect(session.user.settings.profile?.displayName).toBe('Open Fixture');
@@ -50,14 +50,14 @@ run('open registration captures policy, validates confirmation, and requires exp
  await expect(registerAccount({...input,username:'invite-required',passwordConfirmation:input.password},'open-rejected')).rejects.toThrow('invite');
 });
 run('required connections cannot be bypassed and a deleted selected account cannot complete',async()=>{
- const invite=await createInvite(admin,{days:1});const session=await registerAccount({code:invite.code,username:'required-fixture',displayName:'Required Fixture',password:'a strong fixture password',passwordConfirmation:'a strong fixture password'},'required');extra.push(session.user.id);
+ const invite=await createInvite(admin,{days:1});const session=await registerAccount({code:invite.code,username:'required-fixture',displayName:'Required Fixture',password:'A strong fixture password!',passwordConfirmation:'A strong fixture password!'},'required');extra.push(session.user.id);
  await expect(beginOnboardingImports(session.user.id)).rejects.toThrow('required');
  await getSql()`update user_onboarding set required_provider='none',imports_started_at=now(),account_generation=gen_random_uuid() where user_id=${session.user.id}`;
  const status=await onboardingStatus(session.user.id);expect(status.complete).toBe(false);expect(status.reconnect).toBe(true);
 });
 run('Trakt onboarding requires both pinned import outcomes and leaves export preferences untouched',async()=>{
  await updateConfig(admin,{registrationMode:'open',registrationProvider:'trakt'});
- const session=await registerAccount({username:'trakt-fixture',displayName:'Trakt Fixture',password:'a strong fixture password',passwordConfirmation:'a strong fixture password'},'trakt-onboarding');extra.push(session.user.id);
+ const session=await registerAccount({username:'trakt-fixture',displayName:'Trakt Fixture',password:'A strong fixture password!',passwordConfirmation:'A strong fixture password!'},'trakt-onboarding');extra.push(session.user.id);
  const service=crypto.randomUUID(),connection=crypto.randomUUID();
  try{
   await getSql()`insert into provider_instances(id,provider,name,base_url) values(${service},'trakt','Onboarding fixture','https://api.trakt.tv')`;

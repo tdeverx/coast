@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { page } from '$app/state';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import { untrack, onDestroy } from 'svelte';
   import { goto } from '$app/navigation';
@@ -73,7 +74,7 @@
 <div class="content page route-content" aria-busy={busy}>
   <Heading title="Search"
     >{#snippet heading()}<h1>Search</h1>{/snippet}
-    {#snippet actions()}{#if data.view !== 'all'}<Button
+    {#snippet actions()}{#if page.data.user && data.view !== 'all'}<Button
           emphasis="subtle"
           icon="left"
           href={'/search?' + new URLSearchParams({ q: data.query })}>All results</Button
@@ -92,8 +93,8 @@
       ><Icon name="search" /><input
         type="search"
         name="q"
-        aria-label="Search your library and beyond"
-        placeholder="Search your library and beyond"
+        aria-label={page.data.user ? "Search your library and beyond" : "Search movies and shows"}
+        placeholder={page.data.user ? "Search your library and beyond" : "Search movies and shows"}
         autocomplete="off"
         maxlength="200"
         bind:value={query}
@@ -123,7 +124,7 @@
       />{/if}
     {#key `${data.query}:${data.view}`}
       {#if ['all', 'watch'].includes(data.view) && (!watch || watchResults.items.length || (data.view === 'watch' && !noResults))}
-        <Shelf source={{ type: 'search', surface: "watch", query: data.query, items: watchResults.items, busy: !watch, truncated: watchResults.truncated, layout: data.view === 'all' ? 'row' : 'grid' }} />
+        <Shelf availability={!!page.data.user} source={{ type: 'search', surface: "watch", query: data.query, items: watchResults.items, busy: !watch, truncated: watchResults.truncated, layout: data.view === 'all' ? 'row' : 'grid' }} />
       {/if}
       {#if data.experimentalFeatures && ['all', 'listen'].includes(data.view) && (!listen || listen.items.length || listen.failure)}
         <Shelf source={{ type: 'search', surface: "listen", query: data.query, items: listen?.items ?? [], busy: !listen, failure: listen?.failure, truncated: listen?.truncated, layout: data.view === 'all' ? 'row' : 'grid' }} />

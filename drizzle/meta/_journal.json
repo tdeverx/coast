@@ -253,6 +253,13 @@
       "when": 1791002506925,
       "tag": "0035_strange_stephen_strange",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791006448856,
+      "tag": "0036_glorious_lady_mastermind",
+      "breakpoints": true
     }
   ]
 }

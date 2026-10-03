@@ -47,6 +47,7 @@ export type UserSettings = {
   syncConflictWinner?: string;
   fullWidth?: boolean;
   originalTitles?: boolean;
+  monochromeMissing?: boolean;
   region?: string;
   theme?: 'dark' | 'light' | 'system';
   subtitleLanguages?: string[];
@@ -95,6 +96,20 @@ export const sessions = pgTable(
   },
   (t) => [index('sessions_user_idx').on(t.userId), index('sessions_expiry_idx').on(t.expiresAt)]
 );
+export const apiTokens = pgTable('api_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  tokenHash: text('token_hash').notNull().unique(),
+  scopes: jsonb('scopes').$type<string[]>().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone:true }).notNull(),
+  revokedAt: timestamp('revoked_at', { withTimezone:true }),
+  lastUsedAt: timestamp('last_used_at', { withTimezone:true }),
+  windowStartedAt: timestamp('window_started_at', { withTimezone:true }).notNull().defaultNow(),
+  windowRequests: integer('window_requests').notNull().default(0),
+  createdAt: createdAt(),
+}, t => [index('api_tokens_user_idx').on(t.userId)]);
+
 export const systemSettings = pgTable('system_settings', {
   key: text('key').primaryKey(),
   value: jsonb('value').$type<unknown>().notNull(),

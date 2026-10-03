@@ -83,5 +83,5 @@
  .request-form .field{flex:1;min-width:160px;}
  .paging{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
  .loading{display:grid;gap:12px;}
- .skeleton{height:66px;background:var(--surface);border-radius:12px;}
+ .skeleton{height:66px;border-radius:12px;}
 </style>

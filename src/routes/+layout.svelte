@@ -101,13 +101,14 @@
   class:watching
 >
   <PersistentPlayer /><MediaHero mode="player" />
+  {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
   {#if (data.user || data.publicRead) && page.url.pathname !== '/onboarding'}<Header
       user={data.user}
       unread={data.unreadNotifications}
       friendRequests={data.friendRequestCount}
     />{/if}
   <div class="page-shell" class:watching inert={watching} aria-hidden={watching}>
-    <main bind:this={content} id="main-content">{@render children()}</main>
+    <main bind:this={content} id="main-content" tabindex="-1">{@render children()}</main>
   </div>
   {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??page.url.searchParams.get('notificationKind')??'all'} onclose={closeNotifications}/>{/if}
   {#if friendsOpen&&FriendsPanel}<FriendsPanel open={true} onclose={closeFriends}/>{/if}

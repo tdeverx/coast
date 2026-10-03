@@ -165,7 +165,7 @@
     </section>{/if}
   <p class="small">
     Schedules are checked once a minute while Coast is running. Provider Jobs run one at
-    a time across all services; playback and live updates continue independently. Retries respect service rate limits. Pausing
+    a time per service request lane. First imports take priority, and interactive requests can run between background requests. Playback streams continue independently. Retries respect service rate limits. Pausing
     automatic work keeps already queued jobs available to review.
   </p>
 </div>

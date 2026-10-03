@@ -235,6 +235,7 @@
         <p class="small">Fill empty supported fields. Divergent server state follows your conflict preference. This setting is independent of imports.</p>
         <div><Button  disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/reconciliation`,{enabled:reconcileTracking},'Reconciliation preference saved.')}>Save reconciliation preference</Button></div>
       </div>{/if}
+    {#if ['jellyfin','steam'].includes(provider.provider)}<div class="stack"><label class="check"><input type="checkbox" bind:checked={liveRead} disabled={busy} />Read live activity</label><div><Button disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/live-read`,{enabled:liveRead},'Live activity preference saved.')}>Save live activity preference</Button></div></div>{/if}
     {#if provider.provider === 'steam'}<div class="stack">
       <label class="check"><input type="checkbox" bind:checked={steamImports.importOwned} disabled={busy} />Add newly imported owned games to Collection</label>
       <label class="check"><input type="checkbox" bind:checked={steamImports.importPlaytime} disabled={busy} />Import Steam playtime totals</label>

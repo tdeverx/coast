@@ -121,6 +121,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   return {
     get pagination() { return { kind: 'pages' as const, page: content.page, pages: content.pages, append: false, controls: layout === 'grid' ? 'both' as const : 'none' as const }; },
     get title() { return title; }, get items() { return content.category === category ? visible : []; }, get busy() { return busy; },
+    get emptyConfirmed() { return !mediums || content.emptyAllMedia === true; },
     get ready() { return ready; }, get error() { return error; }, get activated() { return resource.activated; },
     get href() { return layout === 'row' ? href() : undefined; },
     get shape() { return category === 'music' ? 'square' : saved ? 'poster' : 'fanart'; }, get mediaKind() { return category; }, get artworkStyle() { return category !== 'screen' || saved ? 'auto' : 'thumb'; },

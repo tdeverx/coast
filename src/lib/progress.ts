@@ -15,6 +15,7 @@ export type ProgressOptions = v.InferOutput<typeof progressOptionsSchema>;
 export type ProgressContent = ProgressOptions & {
   items: (MediaView | MediaCardPresentation)[];
   total: number;
+  emptyAllMedia?: boolean;
   pages: number;
 };
 export const progressTabs = [

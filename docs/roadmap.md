@@ -1,13 +1,31 @@
 # App follow-up roadmap
 
-Updated 2 October 2026. These entries record deferred work, not implementation authorization.
+Updated 3 October 2026. Parked entries record deferred work, not implementation authorization.
 
-- Explore media detail pages in a modal view before deciding how filters, loaded rows and scroll should survive opening/closing details. Browsing-context implementation is deferred.
-- Validate social privacy, activity grouping, recommendations and taste scores with real accounts in a later pass. The wider social roadmap remains in [social.md](social.md).
-- Revisit friend-avatar meanings and obtain explicit approval before changing the design.
-- Revisit empty-row behavior in an upcoming pass: hide confirmed empty rows; show skeletons while loading.
-- Finish component-library consolidation last, focusing on duplicated logic rather than file counts.
-- Invite-code onboarding now uses existing Jellyfin accounts and waits for the initial user import. Jellyfin account provisioning, richer onboarding and disposable public sharing remain future work.
-- Experimental friend video/music synchronization is implemented; synced chat/reaction overlays, books/comics and guest/public sessions remain future work.
-- Park the Jellyfin sign-in replacement decision and token-recovery changes for later discussion. Stored tokens currently rejected by Jellyfin need account attention; the login system has not been removed.
-- For You next-item prioritisation was explained as the exact next episode, track or resumable item. The user has not selected this pass yet.
+## Selected audit pass — implemented
+
+- Audit unused modules/exports/props/styles and consolidate repeated component logic while preserving the approved design.
+- Improve keyboard, focus, loading announcements and responsive accessibility; verify representative journeys.
+- Exercise actual audio/video playback on desktop/mobile layouts, buffered outages and transitions; distinguish synthetic browser evidence from live-device acceptance.
+- Ship a scoped, token-authenticated read-only public API for catalogue, Collection, Library and personal progress. Writes and provider connector APIs remain outside this first pass.
+- Hide confirmed empty default rows; show skeletons while loading; retain errors and user-selected empty filters so recovery remains reachable.
+
+Implementation and verification limits: [selected follow-ups](audits/2026-10-03-selected-follow-ups.md). Live-device/provider acceptance is separate from the completed fixture checks.
+
+## Parked audit follow-ups
+
+- Real-account provider/social certification: reconnects/account switching, projection cleanup, genuine sync conflicts, social privacy and taste results across actual integrations.
+- Exercise the bundled-volume backup/restore procedure on the actual deployment. Logical database/key recovery was already tested.
+- Revisit reviewed transitive dependency advisories when compatible parent upgrades are available.
+- Dynamic For You: explore useful personalised rows and exact-next-item prioritisation. “Recently watched”, “From your library” and “Because you watched” have been removed; Activity remains the last row.
+- Explore modal media details and preservation of filters, loaded rows and scroll.
+- Revisit friend-avatar meanings with explicit design approval.
+- Public API writes, webhook/idempotency support, external provider connector grants and protocol negotiation.
+
+## Existing future work
+
+- Wider social roadmap: see [social.md](social.md), including recaps, collaborative lists, groups, gamification and possible chat features.
+- Jellyfin account provisioning, richer invitations and disposable public sharing.
+- Synced chat/reaction overlays, books/comics, guest/public sessions and wider real-device parity.
+
+Coast username/password registration, removal of Jellyfin sign-in, administrator signup/provider requirements, initial Jellyfin/Trakt import gating and optional uploaded/connected-service profile pictures have shipped. These are no longer pending roadmap decisions.
