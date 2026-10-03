@@ -61,7 +61,7 @@ gosu(){
  case "$program" in
   bun) case "$1" in
    /app/scripts/migrate.ts) exec /bin/bash "$fixture_dir/child.sh" migration;;
-   /app/build/index.js) exec /bin/bash "$fixture_dir/child.sh" application;;
+   /app/scripts/container-application.ts) exec /bin/bash "$fixture_dir/child.sh" application;;
    /app/scripts/container-child-exit.ts)
     shift
     [[ "$FIXTURE_SCENARIO" != writer-failed ]] || return 1

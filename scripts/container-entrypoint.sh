@@ -94,7 +94,7 @@ if wait "$migration_pid"; then
 else
   exit "$?"
 fi
-gosu coast bun /app/build/index.js &
+gosu coast bun /app/scripts/container-application.ts "$data_dir" bun /app/build/index.js &
 application_pid=$!
 # If either child dies, stop the other and let the container restart as a unit.
 set +e

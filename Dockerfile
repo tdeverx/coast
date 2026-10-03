@@ -25,6 +25,7 @@ COPY --from=build /app/src/lib/server/db ./src/lib/server/db
 COPY --from=build /app/src/lib/server/build-identity.ts ./src/lib/server/build-identity.ts
 COPY --from=build /app/scripts/migrate.ts ./scripts/migrate.ts
 COPY --from=build /app/scripts/container-child-exit.ts ./scripts/container-child-exit.ts
+COPY --from=build /app/scripts/container-application.ts ./scripts/container-application.ts
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/LICENSE /app/NOTICE.md /app/THIRD_PARTY_NOTICES.md ./
 COPY scripts/container-entrypoint.sh /usr/local/bin/coast-entrypoint

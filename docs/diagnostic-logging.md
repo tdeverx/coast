@@ -15,3 +15,9 @@ Logging-setting changes are recorded transactionally in `diagnostic_setting_audi
 Apply the generated database migrations through the normal Coast migration workflow before running the updated app. No production dependencies were added.
 
 Focused validation: `bun test tests/diagnostic-logging.test.ts`, the isolated `tests/platform-db.test.ts` suite, and `bun scripts/browser-diagnostics-check.ts`. The browser harness targets only localhost:5175 and expects a disposable installation; it creates synthetic admin/member accounts and verifies controls, runtime changes, persistence, download redaction and admin authorization. Use the existing fixture harness for actual provider/media playback checks.
+
+## Container crash evidence
+
+The container retains application stderr in `COAST_DATA_DIR/runtime/application-stderr.log` and one rotated `.1` segment, each limited to 256 KiB. These owner-only files survive restarts and include a timestamp for each application start. Stderr still reaches the container console; unavailable diagnostic storage does not change application exit status. Shutdown signals are forwarded to the application and stderr is drained before its exit is reported.
+
+Unlike the structured diagnostic export, these files contain raw runtime errors and may include sensitive details. They are local operator diagnostics and are never included in the web diagnostic download. Inspect them privately alongside `runtime/child-exits.jsonl` after an unexpected shutdown.
