@@ -105,7 +105,7 @@
   const example = $derived(shelfExamples.find(option => option.value === shelfExample)!);
   function openStyleMenu() { styleMenu?.openAt({ x: 24, y: 84 }); }
   const options=[{value:'all',label:'All'},{value:'watching',label:'Watching'},{value:'completed',label:'Completed'}];
-  const materials=[{variant:'clear',label:'Clear glass'},{variant:'glassLight',label:'Light glass'},{variant:'glassDark',label:'Dark glass'}] as const;
+  const materials=[{variant:'clear',label:'Clear glass'},{variant:'glassLight',label:'Light glass'},{variant:'glassDark',label:'Dark glass'},{variant:'glassProminent',label:'Prominent glass'}] as const;
   onMount(()=>{
     if(name==='PersistentPlayer' && !player.session){
       player.session={id,mediaId:id,mediaType:'audio',title:'Preview track',detail:'Preview artist · Preview album',artwork:'/coast-mark.png',url:'',kind:'direct',startSeconds:0,durationSeconds:240,provider:'Preview',defaultSubtitleIndex:null,subtitlePrompt:false,subtitles:[],sources:[]};

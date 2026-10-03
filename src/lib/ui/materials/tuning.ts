@@ -1,10 +1,11 @@
-import { glassPresets, type GlassSurface, type GlassVariant } from './presets';
+import { blendModes, glassPresets, type BlendMode, type GlassSurface, type GlassVariant } from './presets';
 
 type NumericKey = { [K in keyof GlassSurface]: GlassSurface[K] extends number ? K : never }[keyof GlassSurface];
 export const materialNames: { value: GlassVariant; label: string }[] = [
   { value: 'clear', label: 'Clear glass' },
   { value: 'glassLight', label: 'Light glass' },
   { value: 'glassDark', label: 'Dark glass' },
+  { value: 'glassProminent', label: 'Prominent glass' },
 ];
 export const sliderGroups: { title: string; controls: { key: NumericKey; label: string; min: number; max: number; step: number; unit: string }[] }[] = [
   { title: 'Fill and filter', controls: [
@@ -18,18 +19,23 @@ export const sliderGroups: { title: string; controls: { key: NumericKey; label: 
     { key: 'strokeOpacity', label: 'Stroke opacity', min: 0, max: 100, step: 1, unit: '%' },
   ] },
   ...(['top', 'bottom'] as const).map(side => ({ title: `${side === 'top' ? 'Top' : 'Bottom'} inner light`, controls: [
-    { key: `${side}InnerWidth` as NumericKey, label: 'Width', min: 0, max: 30, step: .5, unit: 'px' },
+    { key: `${side}InnerWidth` as NumericKey, label: 'Vertical depth', min: 0, max: 30, step: .5, unit: 'px' },
+    { key: `${side}InnerOffsetX` as NumericKey, label: 'Horizontal offset', min: -40, max: 40, step: .5, unit: 'px' },
     { key: `${side}InnerOpacity` as NumericKey, label: 'Opacity', min: 0, max: 100, step: 1, unit: '%' },
     { key: `${side}InnerSoftness` as NumericKey, label: 'Softness', min: 0, max: 30, step: .5, unit: 'px' },
+    { key: `${side}InnerSpread` as NumericKey, label: 'Spread', min: -40, max: 40, step: .5, unit: 'px' },
   ] })),
   { title: 'Shadow', controls: [
     { key: 'shadowOffsetX', label: 'Horizontal offset', min: -40, max: 40, step: 1, unit: 'px' },
     { key: 'shadowOffsetY', label: 'Vertical offset', min: -40, max: 40, step: 1, unit: 'px' },
+    { key: 'shadowBlur', label: 'Blur', min: 0, max: 100, step: .5, unit: 'px' },
+    { key: 'shadowSpread', label: 'Spread', min: -40, max: 40, step: .5, unit: 'px' },
     { key: 'shadowOpacity', label: 'Shadow opacity', min: 0, max: 100, step: 1, unit: '%' },
   ] },
   { title: 'Texture', controls: [
     { key: 'noiseOpacity', label: 'Grain amount', min: 0, max: 100, step: .5, unit: '%' },
     { key: 'noiseScale', label: 'Grain scale', min: .25, max: 4, step: .05, unit: '×' },
+    { key: 'noiseEdgeStart', label: 'Edge fade start', min: 0, max: 99, step: 1, unit: '%' },
   ] },
   { title: 'Refraction', controls: [
     { key: 'refraction', label: 'Refraction strength', min: 0, max: 2, step: .01, unit: '' },
@@ -40,6 +46,7 @@ export const sliderGroups: { title: string; controls: { key: NumericKey; label: 
 export const colorControls = [
   { key: 'noiseColor', label: 'Grain tint' },
   { key: 'tint', label: 'Fill tint' }, { key: 'strokeColor', label: 'Stroke color' },
+  { key: 'shadowColor', label: 'Shadow color' },
   { key: 'topInnerColor', label: 'Top light color' }, { key: 'bottomInnerColor', label: 'Bottom light color' },
 ] as const;
 export type MaterialDrafts = Record<'materials' | 'fallbacks', Record<GlassVariant, GlassSurface>>;
@@ -68,8 +75,11 @@ export function readMaterialDrafts(value: unknown): MaterialDrafts {
         const color = fields[key];
         if (typeof color === 'string' && color.length <= 200) result[layer][variant][key] = color;
       }
-      if (fields.noiseBlend === 'normal' || fields.noiseBlend === 'soft-light')
-        result[layer][variant].noiseBlend = fields.noiseBlend;
+      for (const key of ['noiseBlend', 'noiseTintBlend', 'strokeBlend'] as const) {
+        if (blendModes.includes(fields[key] as BlendMode)) result[layer][variant][key] = fields[key] as BlendMode;
+      }
+      if (fields.shadowPosition === 'outer' || fields.shadowPosition === 'inner')
+        result[layer][variant].shadowPosition = fields.shadowPosition;
       if (fields.noiseCoverage === 'uniform' || fields.noiseCoverage === 'edges')
         result[layer][variant].noiseCoverage = fields.noiseCoverage;
       if (fields.strokeAlignment === 'internal' || fields.strokeAlignment === 'external')

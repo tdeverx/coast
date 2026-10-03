@@ -1,35 +1,34 @@
+import { blendModes, type BlendMode } from './presets';
+
 /** Temporary UI-reference-only effects. These are deliberately outside app presets. */
 export const experimentalDefaults = {
-  sheenAmount: 0, sheenAngle: 135, sheenSpread: 70,
-  vignetteAmount: 0, vignetteSpread: 45,
-  edgeAmount: 0, edgeAngle: 135, edgeWidth: 1,
-  frostAmount: 0, frostBlur: 8, frostSpread: 70, frostX: 35, frostY: 35,
-  interactionAmount: 0, interactionSpread: 65,
+  sheenAmount: 0, sheenAngle: 135, sheenSpread: 70, sheenPosition: 50, sheenColor: 'var(--white)', sheenBlend: 'normal' as BlendMode,
+  vignetteAmount: 0, vignetteSpread: 45, vignetteColor: 'var(--canvas)', vignetteBlend: 'normal' as BlendMode,
+  edgeAmount: 0, edgeAngle: 135, edgeWidth: 1, edgeSpread: 65, edgeColor: 'var(--white)', edgeBlend: 'normal' as BlendMode,
+  interactionAmount: 0, interactionSpread: 65, interactionColor: 'var(--white)', interactionBlend: 'normal' as BlendMode,
 };
 export type ExperimentalEffects = typeof experimentalDefaults;
-export const effectGroups: { title: string; description: string; controls: { key: keyof ExperimentalEffects; label: string; min: number; max: number; step: number; unit: string }[] }[] = [
-  { title: 'Directional sheen', description: 'Broad static light over the surface.', controls: [
+export type EffectColorKey = 'sheenColor' | 'vignetteColor' | 'edgeColor' | 'interactionColor';
+export type EffectBlendKey = 'sheenBlend' | 'vignetteBlend' | 'edgeBlend' | 'interactionBlend';
+type NumericKey = { [K in keyof ExperimentalEffects]: ExperimentalEffects[K] extends number ? K : never }[keyof ExperimentalEffects];
+export const effectGroups: { title: string; description: string; color: EffectColorKey; blend: EffectBlendKey; controls: { key: NumericKey; label: string; min: number; max: number; step: number; unit: string }[] }[] = [
+  { title: 'Directional sheen', description: 'Broad static light over the surface.', color: 'sheenColor', blend: 'sheenBlend', controls: [
     { key: 'sheenAmount', label: 'Amount', min: 0, max: 100, step: 1, unit: '%' },
     { key: 'sheenAngle', label: 'Angle', min: 0, max: 360, step: 1, unit: '°' },
+    { key: 'sheenPosition', label: 'Position', min: 0, max: 100, step: 1, unit: '%' },
     { key: 'sheenSpread', label: 'Spread', min: 1, max: 100, step: 1, unit: '%' },
   ] },
-  { title: 'Edge vignette', description: 'Soft darkening towards the perimeter.', controls: [
+  { title: 'Edge vignette', description: 'Soft darkening towards the perimeter.', color: 'vignetteColor', blend: 'vignetteBlend', controls: [
     { key: 'vignetteAmount', label: 'Amount', min: 0, max: 100, step: 1, unit: '%' },
     { key: 'vignetteSpread', label: 'Spread', min: 1, max: 100, step: 1, unit: '%' },
   ] },
-  { title: 'Directional edge light', description: 'A thin rim with adjustable lighting direction.', controls: [
+  { title: 'Directional edge light', description: 'A thin rim with adjustable lighting direction.', color: 'edgeColor', blend: 'edgeBlend', controls: [
     { key: 'edgeAmount', label: 'Amount', min: 0, max: 100, step: 1, unit: '%' },
     { key: 'edgeAngle', label: 'Angle', min: 0, max: 360, step: 1, unit: '°' },
+    { key: 'edgeSpread', label: 'Fade extent', min: 1, max: 100, step: 1, unit: '%' },
     { key: 'edgeWidth', label: 'Width', min: .25, max: 8, step: .25, unit: 'px' },
   ] },
-  { title: 'Frost variation', description: 'Experimental extra blur in a soft patch; compare performance and both renderers.', controls: [
-    { key: 'frostAmount', label: 'Amount', min: 0, max: 100, step: 1, unit: '%' },
-    { key: 'frostBlur', label: 'Extra blur', min: 0, max: 30, step: .5, unit: 'px' },
-    { key: 'frostSpread', label: 'Spread', min: 10, max: 150, step: 1, unit: '%' },
-    { key: 'frostX', label: 'Horizontal position', min: 0, max: 100, step: 1, unit: '%' },
-    { key: 'frostY', label: 'Vertical position', min: 0, max: 100, step: 1, unit: '%' },
-  ] },
-  { title: 'Interaction sheen', description: 'Move over or focus the sample. Touch and reduced motion use a static highlight.', controls: [
+  { title: 'Interaction sheen', description: 'Move over or focus the sample. Touch and reduced motion use a static highlight.', color: 'interactionColor', blend: 'interactionBlend', controls: [
     { key: 'interactionAmount', label: 'Amount', min: 0, max: 100, step: 1, unit: '%' },
     { key: 'interactionSpread', label: 'Spread', min: 10, max: 150, step: 1, unit: '%' },
   ] },
@@ -41,35 +40,17 @@ export function readExperimentalEffects(value: unknown): ExperimentalEffects {
     const number = (value as Record<string, unknown>)[key];
     if (typeof number === 'number' && Number.isFinite(number)) result[key] = Math.min(max, Math.max(min, number));
   }
+  for (const { color, blend } of effectGroups) {
+    const fields = value as Record<string, unknown>;
+    if (typeof fields[color] === 'string' && fields[color].length <= 200) result[color] = fields[color];
+    if (blendModes.includes(fields[blend] as BlendMode)) result[blend] = fields[blend] as BlendMode;
+  }
   return result;
 }
 
-type LayerName = 'sheen' | 'vignette' | 'edge' | 'frost' | 'interaction';
+type LayerName = 'sheen' | 'vignette' | 'edge' | 'interaction';
 export function experimentalMaterial(node: HTMLElement, options: { enabled: boolean; effects: ExperimentalEffects }) {
   const layers = new Map<LayerName, HTMLSpanElement>();
-  let base: HTMLSpanElement | undefined;
-  function syncBase() {
-    if (!base) return;
-    // Keep base and patch as siblings: a filtered ancestor would cut the patch's
-    // backdrop off at the ancestor (Filter Effects 2, Backdrop Root).
-    const filter = node.style.getPropertyValue('backdrop-filter') || 'var(--coast-glass-filter)';
-    base.style.setProperty('-webkit-backdrop-filter', filter);
-    base.style.setProperty('backdrop-filter', filter);
-  }
-  const surfaceObserver = new MutationObserver(syncBase);
-  surfaceObserver.observe(node, { attributes: true, attributeFilter: ['style'] });
-  function frostBase(enabled: boolean) {
-    node.classList.toggle('coast-material-frost', enabled);
-    if (!enabled) { base?.remove(); base = undefined; return; }
-    if (!base) {
-      base = document.createElement('span');
-      base.dataset.materialEffect = 'base';
-      base.setAttribute('aria-hidden', 'true');
-      Object.assign(base.style, { position: 'absolute', inset: '0', zIndex: '-2', borderRadius: 'inherit', pointerEvents: 'none', background: 'var(--coast-glass-fill)' });
-      node.prepend(base);
-    }
-    syncBase();
-  }
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const touch = matchMedia('(hover: none)');
   let hovering = false, focused = false, x = 50, y = 50, frame = 0;
@@ -92,18 +73,17 @@ export function experimentalMaterial(node: HTMLElement, options: { enabled: bool
     element.style.opacity = active ? `${options.effects.interactionAmount / 100}` : '0';
     const px = motion.matches || touch.matches ? 50 : x;
     const py = motion.matches || touch.matches ? 50 : y;
-    element.style.background = `radial-gradient(ellipse ${options.effects.interactionSpread}% ${options.effects.interactionSpread}% at ${px}% ${py}%, var(--white), transparent)`;
+    element.style.background = `radial-gradient(ellipse ${options.effects.interactionSpread}% ${options.effects.interactionSpread}% at ${px}% ${py}%, ${options.effects.interactionColor}, transparent)`;
   }
   function render() {
     const e = options.effects;
-    frostBase(options.enabled && e.frostAmount > 0 && e.frostBlur > 0);
     const sheen = layer('sheen', e.sheenAmount);
-    if (sheen) sheen.style.background = `linear-gradient(${e.sheenAngle}deg, transparent ${50 - e.sheenSpread / 2}%, var(--white) 50%, transparent ${50 + e.sheenSpread / 2}%)`;
+    if (sheen) sheen.style.background = `linear-gradient(${e.sheenAngle}deg, transparent ${e.sheenPosition - e.sheenSpread / 2}%, ${e.sheenColor} ${e.sheenPosition}%, transparent ${e.sheenPosition + e.sheenSpread / 2}%)`;
     const vignette = layer('vignette', e.vignetteAmount);
-    if (vignette) vignette.style.background = `radial-gradient(closest-side, transparent ${100 - e.vignetteSpread}%, var(--canvas) 100%)`;
+    if (vignette) vignette.style.background = `radial-gradient(closest-side, transparent ${100 - e.vignetteSpread}%, ${e.vignetteColor} 100%)`;
     const edge = layer('edge', e.edgeAmount);
     if (edge) Object.assign(edge.style, {
-      background: `linear-gradient(${e.edgeAngle}deg, var(--white), transparent 65%)`,
+      background: `linear-gradient(${e.edgeAngle}deg, ${e.edgeColor}, transparent ${e.edgeSpread}%)`,
       padding: `${e.edgeWidth}px`,
       maskImage: 'linear-gradient(black, black), linear-gradient(black, black)',
       maskClip: 'content-box, border-box', maskComposite: 'exclude',
@@ -114,13 +94,12 @@ export function experimentalMaterial(node: HTMLElement, options: { enabled: bool
       edge.style.setProperty('-webkit-mask-composite', 'xor');
       edge.style.maskComposite = 'exclude';
     }
-    const frost = layer('frost', e.frostAmount);
-    if (frost) Object.assign(frost.style, {
-      backdropFilter: `blur(${e.frostBlur}px)`, webkitBackdropFilter: `blur(${e.frostBlur}px)`,
-      maskImage: `radial-gradient(ellipse ${e.frostSpread}% ${e.frostSpread}% at ${e.frostX}% ${e.frostY}%, black 10%, transparent 100%)`,
-    });
-    if (frost) frost.style.setProperty('-webkit-mask-image', frost.style.maskImage);
-    layer('interaction', e.interactionAmount); interaction();
+    layer('interaction', e.interactionAmount);
+    for (const name of ['sheen', 'vignette', 'edge', 'interaction'] as const) {
+      const element = layers.get(name);
+      if (element) element.style.mixBlendMode = e[`${name}Blend`];
+    }
+    interaction();
   }
   function move(event: PointerEvent) {
     if (!options.enabled || options.effects.interactionAmount <= 0 || motion.matches || touch.matches || event.pointerType === 'touch') return;
@@ -141,7 +120,6 @@ export function experimentalMaterial(node: HTMLElement, options: { enabled: bool
   return {
     update(next: typeof options) { options = next; render(); },
     destroy() {
-      surfaceObserver.disconnect(); frostBase(false);
       cancelAnimationFrame(frame); for (const element of layers.values()) element.remove(); layers.clear();
       node.removeEventListener('pointermove', move); node.removeEventListener('pointerleave', leave);
       node.removeEventListener('focusin', focus); node.removeEventListener('focusout', blur);

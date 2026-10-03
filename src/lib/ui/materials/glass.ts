@@ -163,8 +163,9 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       grain.style.backgroundSize = `${128 * surface.noiseScale}px ${128 * surface.noiseScale}px`;
       grain.style.backgroundColor = surface.noiseColor;
       grain.style.mixBlendMode = surface.noiseBlend;
+      grain.style.backgroundBlendMode = surface.noiseTintBlend;
       const mask = surface.noiseCoverage === 'edges'
-        ? 'radial-gradient(closest-side, transparent 40%, black 100%)'
+        ? `radial-gradient(closest-side, transparent ${surface.noiseEdgeStart}%, black 100%)`
         : 'none';
       grain.style.setProperty('-webkit-mask-image', mask);
       grain.style.maskImage = mask;
@@ -174,21 +175,26 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     }
     const values = {
       fill: `color-mix(in srgb, ${surface.tint} ${surface.fillOpacity}%, transparent)`,
-      'solid-fill': variant === 'glassLight' ? 'var(--white)' : 'var(--surface-hover)',
+      'solid-fill': variant === 'glassLight' ? 'var(--white)' : variant === 'glassProminent' ? 'var(--accent)' : 'var(--surface-hover)',
       filter: `blur(${surface.blur}px) saturate(${surface.saturation}%) brightness(${surface.brightness}%)`,
       stroke: surface.strokeColor,
       'stroke-opacity': `${surface.strokeOpacity}%`,
+      'stroke-blend': surface.strokeBlend,
       'stroke-inner-width': `${surface.strokeAlignment === 'internal' ? surface.strokeWidth : 0}px`,
       'stroke-outer-width': `${surface.strokeAlignment === 'external' ? surface.strokeWidth : 0}px`,
       'top-inner-color': surface.topInnerColor,
       'top-inner-depth': `${surface.topInnerWidth}px`,
       'top-inner-opacity': `${surface.topInnerOpacity}%`,
       'top-inner-softness': `${surface.topInnerSoftness}px`,
+      'top-inner-x': `${surface.topInnerOffsetX}px`,
+      'top-inner-spread': `${surface.topInnerSpread}px`,
       'bottom-inner-color': surface.bottomInnerColor,
       'bottom-inner-depth': `${surface.bottomInnerWidth}px`,
       'bottom-inner-opacity': `${surface.bottomInnerOpacity}%`,
       'bottom-inner-softness': `${surface.bottomInnerSoftness}px`,
-      shadow: `0 0 0 ${surface.strokeAlignment === 'external' ? surface.strokeWidth : 0}px color-mix(in srgb, ${surface.strokeColor} ${surface.strokeOpacity}%, transparent), ${surface.shadowOffsetX}px ${surface.shadowOffsetY}px 0.9375rem color-mix(in srgb, var(--canvas) ${surface.shadowOpacity}%, transparent)`,
+      'bottom-inner-x': `${surface.bottomInnerOffsetX}px`,
+      'bottom-inner-spread': `${surface.bottomInnerSpread}px`,
+      shadow: `0 0 0 ${surface.strokeAlignment === 'external' ? surface.strokeWidth : 0}px color-mix(in srgb, ${surface.strokeColor} ${surface.strokeOpacity}%, transparent), ${surface.shadowPosition === 'inner' ? 'inset ' : ''}${surface.shadowOffsetX}px ${surface.shadowOffsetY}px ${surface.shadowBlur}px ${surface.shadowSpread}px color-mix(in srgb, ${surface.shadowColor} ${surface.shadowOpacity}%, transparent)`,
     };
     for (const [key, value] of Object.entries(values)) {
       const property = `--coast-glass-${key}`;
