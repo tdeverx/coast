@@ -4,6 +4,8 @@ The default image contains Bun, Coast and PostgreSQL. `compose.yaml` builds it l
 
 Coast supports ordinary HTTP on trusted local networks. Terminate public TLS at your reverse proxy and set Compose `ORIGIN` to the public HTTPS origin; HTTPS session cookies are Secure. Do not configure forwarded-header trust unless the proxy removes incoming client-supplied versions of those headers. Coast has no telemetry.
 
+Page asset preload hints are carried in HTML rather than a large duplicate `Link` response header, keeping ordinary reverse-proxy header buffers sufficient. If an older image returns nginx's “upstream sent too big header” error, updating Coast resolves it; a host-specific `proxy_buffer_size 16k`, `proxy_buffers 8 16k`, and `proxy_busy_buffers_size 32k` also accommodates that image.
+
 ## Storage and PostgreSQL
 
 The mount contains `postgres/`, `artwork/`, `secrets/` and `runtime/`. Credentials are encrypted using `secrets/credentials.key`; losing that key makes saved provider credentials unreadable. Back up the database and the entire secrets directory together. Stop the container before a filesystem-level database backup, or use PostgreSQL's supported logical backup tools while running. Keep the mount private to the installation administrator. Coast sets `secrets/`, `artwork/` and `runtime/` to mode `700`; secret files and recovery credentials use mode `600`.
