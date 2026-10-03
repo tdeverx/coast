@@ -1,3 +1,4 @@
+import { categoryEnabled } from '$lib/experimental';
 import * as v from 'valibot';
 import { getSql } from '$lib/server/db';
 import { getConfig } from '$lib/server/config';
@@ -12,10 +13,10 @@ export async function createShare(actor:SessionUser|null,input:unknown){
  const user=requireUser(actor),config=await getConfig();
  if(!config.allowPlaybackSharing||(user.role!=='admin'&&user.settings.allowPlaybackSharing!==true))throw new AppError(403,'Playback sharing requires administrator permission.');
  const data=v.parse(v.strictObject({workId:uuid,connectionId:uuid,hours:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(24)),6),together:v.optional(v.boolean(),false)}),input);
- if(data.together&&!config.experimentalFeatures)throw new AppError(400,'Synced playback is experimental. Enable it before sharing together.');
+ if(data.together&&!config.experimentalParties)throw new AppError(400,'Synced playback is experimental. Enable it before sharing together.');
  const context=await getJellyfin(user.id,data.connectionId);
  await context.adapter.identity(context.instance.serverIdentity??undefined);
- const db=getSql(),[access]=await db`select a.id,pi.external_id from availability a join provider_items pi on pi.id=a.provider_item_id join works w on w.id=a.media_id where a.user_id=${user.id} and a.connection_id=${data.connectionId} and a.media_id=${data.workId} and a.state='available' and w.kind in ('movie','episode','track') and (w.category='screen' or ${config.experimentalFeatures}) limit 1`;
+ const db=getSql(),[access]=await db`select a.id,pi.external_id from availability a join provider_items pi on pi.id=a.provider_item_id join works w on w.id=a.media_id where a.user_id=${user.id} and a.connection_id=${data.connectionId} and a.media_id=${data.workId} and a.state='available' and w.kind in ('movie','episode','track') and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming})) limit 1`;
  if(!access)throw new AppError(403,'Choose one playable item from your accessible source.');
  // Item-level evidence confirms this account's access before issuing the capability.
  if((await db`select kind from works where id=${data.workId}`)[0].kind==='track')await context.adapter.musicItem(context.connection.externalUserId!,access.external_id);
@@ -50,7 +51,7 @@ export async function claimShare(input:unknown,actor:SessionUser|null,previous?:
 async function assertShare(share:Record<string,any>,db=getSql()){
  const config=await getConfig(db);
  const [work]=await db`select category from works where id=${share.work_id}`;
- if(!work||(work.category!=='screen'||share.together)&&!config.experimentalFeatures)throw new AppError(410,'This medium is disabled.');
+ if(!work||(!categoryEnabled(config,work.category)||share.together&&!config.experimentalParties))throw new AppError(410,'This medium is disabled.');
  if(!config.allowPlaybackSharing||share.revoked_at||new Date(share.expires_at)<=new Date())throw new AppError(410,'This playback invitation has expired or was revoked.');
  const [access]=await db`select c.id from provider_connections c join provider_instances i on i.id=c.instance_id join users u on u.id=c.user_id where c.id=${share.connection_id} and c.user_id=${share.owner_id} and c.account_generation=${share.account_generation} and c.status='connected' and i.enabled and not u.disabled and (u.role='admin' or u.settings->>'allowPlaybackSharing'='true') and exists(select 1 from availability a where a.user_id=u.id and a.connection_id=c.id and a.media_id=${share.work_id} and a.state='available')`;
  if(!access)throw new AppError(410,'The shared source is no longer accessible.');

@@ -1,3 +1,4 @@
+import { categoryEnabled } from '$lib/experimental';
 import { getSql } from '$lib/server/db';
 import { getConfig } from '$lib/server/config';
 import { AppError } from '$lib/server/security/errors';
@@ -13,7 +14,7 @@ export async function experimentalRows(userId:string,feature:string,url:URL){
  const genre=feature==='row'?v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(100)),url.searchParams.get('genre')):null;
  const available=url.searchParams.get('available')==='true';
  const requested=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10000)),Number(url.searchParams.get('page')??1));
- if(category!=='screen'&&!config.experimentalFeatures)return {items:[],total:0,page:1,pages:1};
+ if(!categoryEnabled(config,category))return {items:[],total:0,page:1,pages:1};
  const sql=getSql();
  const [result]=await sql`with evidence as (
   select w.id,w.kind,coalesce(m.title,g.title,a.title) as title,coalesce(m.genres,g.genres,a.genres,'{}'::text[]) as genres,

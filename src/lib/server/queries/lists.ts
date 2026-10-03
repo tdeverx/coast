@@ -1,3 +1,4 @@
+import { enabledCategories } from '../experimental';
 import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
 import { workCards } from '$lib/collection/query.server';
 import { getConfig } from '../config';
@@ -38,7 +39,7 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
   if (!selected && !['watchlist', 'favourites'].includes(input.view))
     throw new AppError(404, 'This list was not found.');
   const config=await getConfig();
-  const categoryAllowed=!config.experimentalFeatures ? eq(s.works.category,'screen') : input.category==='all' ? undefined : eq(s.works.category,input.category);
+  const categoryAllowed=and(enabledCategories(sql`${s.works.category}`,config),input.category==='all' ? undefined : eq(s.works.category,input.category));
   const available = input.scope === 'available' ? or(hasPermittedMediaSource(viewerId),sql`exists(
     with recursive scope(id,path) as (select ${s.works.id},array[${s.works.id}] union all select r.child_id,d.path||r.child_id from scope d join media_relationships r on r.parent_id=d.id where r.kind in ('contains','collection','sequence') and not r.child_id=any(d.path) and cardinality(d.path)<20)
     select 1 from scope d join availability a on a.media_id=d.id join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${viewerId} and c.user_id=${viewerId} and a.state='available' and c.status='connected' and i.enabled

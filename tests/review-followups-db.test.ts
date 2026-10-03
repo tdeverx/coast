@@ -14,7 +14,7 @@ beforeAll(async()=>{
  if(!enabled)return;
  const db=getSql();
  await db`insert into users(id,username) values(${user},${'review-'+user})`;
- await db`insert into system_settings(key,value) values('coast',${{experimentalFeatures:true}}::jsonb) on conflict(key) do update set value=excluded.value`;
+ await db`insert into system_settings(key,value) values('coast',${{experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}::jsonb) on conflict(key) do update set value=excluded.value`;
  await db`insert into media(id,kind,title) values(${show},'show','Public show'),(${season},'season','First season')`;
  await db`insert into shows(media_id) values(${show})`;
  await db`insert into seasons(media_id,show_id,season_number) values(${season},${show},1)`;

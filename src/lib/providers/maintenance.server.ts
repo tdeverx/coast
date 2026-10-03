@@ -156,7 +156,7 @@ export async function scheduleProviderMaintenance(
       ({ instance }) =>
         (instance.provider !== 'trakt' || config.enableTrakt) &&
         (instance.provider !== 'seerr' || config.enableRequests) &&
-        (instance.provider !== 'steam' || config.experimentalFeatures) &&
+        (instance.provider !== 'steam' || config.experimentalGaming) &&
         (options.force || providerSchedule(instance.provider, instance.settings.schedule).enabled)
     );
     if (!eligible.length) return { ...metadata, connections: 0, busy: false };

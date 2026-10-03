@@ -108,9 +108,7 @@
   </form>
   {#if !data.query}<EmptyState
       title="Find your next story"
-      description={data.experimentalFeatures
-        ? 'Search movies, shows, music and games together.'
-        : 'Search movies and shows in your library and beyond.'}
+      description={`Search movies and shows${data.experimentalMusic ? ', music' : ''}${data.experimentalGaming ? ' and games' : ''} in your library and beyond.`}
       icon="search"
     />
   {:else}
@@ -126,10 +124,10 @@
       {#if ['all', 'watch'].includes(data.view) && (!watch || watchResults.items.length || (data.view === 'watch' && !noResults))}
         <Shelf availability={!!page.data.user} source={{ type: 'search', surface: "watch", query: data.query, items: watchResults.items, busy: !watch, truncated: watchResults.truncated, layout: data.view === 'all' ? 'row' : 'grid' }} />
       {/if}
-      {#if data.experimentalFeatures && ['all', 'listen'].includes(data.view) && (!listen || listen.items.length || listen.failure)}
+      {#if data.experimentalMusic && ['all', 'listen'].includes(data.view) && (!listen || listen.items.length || listen.failure)}
         <Shelf source={{ type: 'search', surface: "listen", query: data.query, items: listen?.items ?? [], busy: !listen, failure: listen?.failure, truncated: listen?.truncated, layout: data.view === 'all' ? 'row' : 'grid' }} />
       {/if}
-      {#if data.experimentalFeatures && ['all', 'play'].includes(data.view) && (!play || playItems.length || play.failure)}
+      {#if data.experimentalGaming && ['all', 'play'].includes(data.view) && (!play || playItems.length || play.failure)}
         <Shelf source={{ type: 'search', surface: "play", query: data.query, items: playItems, busy: !play, failure: play?.failure, truncated: play?.truncated, layout: data.view === 'all' ? 'row' : 'grid' }} />
       {/if}
     {/key}

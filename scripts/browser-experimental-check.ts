@@ -25,11 +25,12 @@ try {
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/for-you$/);
   await page.goto(`${origin}/settings/policies`);
-  const toggle = page.getByRole('checkbox', { name: 'Enable experimental music and gaming' });
+  const toggles = ['Music','Gaming','Parties'].map(name=>page.getByRole('checkbox',{name,exact:true}));
+  const toggle=toggles[0];
   await expect(toggle).not.toBeChecked();
   const setEnabled = async (enabled: boolean) => {
     await page.goto(`${origin}/settings/policies`);
-    await toggle.setChecked(enabled);
+    for(const control of toggles)await control.setChecked(enabled);
     const saved = page.waitForResponse(
       (response) =>
         response.url().endsWith('/api/v1/settings/system') && response.request().method() === 'POST'
@@ -37,7 +38,8 @@ try {
     await page.getByRole('button', { name: 'Save system policies' }).click();
     const response = await saved;
     expect(response.ok()).toBe(true);
-    expect((await response.json()).experimentalFeatures).toBe(enabled);
+    const config=await response.json();
+    for(const field of ['experimentalMusic','experimentalGaming','experimentalParties'])expect(config[field]).toBe(enabled);
     await expect(page.getByRole('status')).toHaveText('Saved.');
   };
   for (const path of gatedPaths)
@@ -101,7 +103,7 @@ try {
     (
       await memberContext.request.post(`${origin}/api/v1/settings/system`, {
         headers: { origin },
-        data: { experimentalFeatures: false },
+        data: { experimentalGaming: false },
       })
     ).status()
   ).toBe(403);

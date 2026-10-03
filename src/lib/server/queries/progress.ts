@@ -1,3 +1,4 @@
+import { enabledCategories, requireEnabledCategory } from '../experimental';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch';
 import type { MediaView } from '$lib/ui/types';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
@@ -23,10 +24,11 @@ export async function progressData(userId:string, raw:unknown = {}, viewerId=use
   const result=await readProgressData(userId,raw,viewerId);
   // Do not probe private activity in another medium when viewing someone else's profile.
   if(userId!==viewerId)return {...result,emptyAllMedia:false};
-  if(result.total || !(await getConfig()).experimentalFeatures)return {...result,emptyAllMedia:result.total===0};
+  if(result.total)return {...result,emptyAllMedia:false};
+  const config=await getConfig();
   // An empty default medium cannot hide another medium's personal content.
   // Check lightweight relationship/activity evidence instead of hydrating extra card pages.
-  const [other]=await getDb().execute<{present:boolean}>(sql`select exists(select 1 from works w where w.category in ('screen','game','music') and w.category<>${result.category} and (
+  const [other]=await getDb().execute<{present:boolean}>(sql`select exists(select 1 from works w where ${enabledCategories(sql`w.category`,config)} and w.category<>${result.category} and (
     (${result.view}='favourites' and exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.favourite))
     or (${result.view} in ('watchlist','next','up-next') and (exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.watchlist and not t.dropped)
       or exists(select 1 from up_next n where n.media_id=w.id and n.user_id=${userId}) or exists(select 1 from game_playthroughs g where g.game_id=w.id and g.user_id=${userId} and g.status='planned')))
@@ -212,7 +214,7 @@ async function readProgressData(
 
 /** Concrete game/music activity stays in its own tables; only presentation is shared. */
 async function mediumProgress(userId:string, viewerId:string, options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
-  if(!(await getConfig()).experimentalFeatures) throw new AppError(404,'This medium is not enabled.');
+  requireEnabledCategory(await getConfig(),options.category);
   if(['finished','dropped'].includes(options.view))throw new AppError(400,'Choose Continue, Next or a saved view for this medium.');
   const saved=options.view==='watchlist'||options.view==='favourites';
   if(saved) {
@@ -246,7 +248,7 @@ async function mediumProgress(userId:string, viewerId:string, options:import('$l
 /** Received recommendations outlive notification delivery; filter IDs before hydrating a page. */
 async function recommendationProgress(userId:string,viewerId:string,options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
   if(userId!==viewerId)throw new AppError(403,'Recommendations are private to their recipient.');
-  if(options.category!=='screen'&&!(await getConfig()).experimentalFeatures)throw new AppError(404,'This medium is not enabled.');
+  requireEnabledCategory(await getConfig(),options.category);
   const rows=await getDb().execute<{workId:string;ids:string[];names:string[]}>(sql`
     select r.work_id as "workId",array_agg(r.id::text order by r.created_at desc,r.id desc) as ids,
       array_agg(u.username order by r.created_at desc,r.id desc) as names

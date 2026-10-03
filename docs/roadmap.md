@@ -14,6 +14,8 @@ Implementation and verification limits: [selected follow-ups](audits/2026-10-03-
 
 ## Parked audit follow-ups
 
+- Next major pass: codebase-wide optimisation and performance profiling, with focused automated tests and optional user-assisted acceptance. Measure CPU/RAM spikes, query latency and concurrency, provider/background work, rendering, playback and caches under realistic workloads. Prioritise slow Collection requests, the production HTTP idle timeout, and durable child-process exit diagnostics from the live outage investigation; compare measured before/after results. Follow the [isolated investigation and repair plan](audits/2026-10-03-performance-plan.md).
+- Add an administrator benchmarking section to the performance pass: one Run benchmark button, recorded results and durable run history to compare performance drift over time. Use repeatable workloads and record build, environment, duration, query latency, CPU/RAM and failures so comparisons remain meaningful.
 - Real-account provider/social certification: reconnects/account switching, projection cleanup, genuine sync conflicts, social privacy and taste results across actual integrations.
 - Exercise the bundled-volume backup/restore procedure on the actual deployment. Logical database/key recovery was already tested.
 - Revisit reviewed transitive dependency advisories when compatible parent upgrades are available.

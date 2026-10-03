@@ -15,7 +15,7 @@ import {
   type ProviderFetchConfig,
 } from '$lib/server/security/provider-fetch';
 import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
-import { requireExperimentalFeatures } from '$lib/server/experimental';
+import { requireExperimentalFeature } from '$lib/server/experimental';
 import { getConfig } from '$lib/server/config';
 import { JellyfinAdapter } from '$lib/providers/jellyfin/adapter.server';
 
@@ -45,7 +45,7 @@ export async function configureInstance(adminId: string, input: unknown) {
   await requireProviderAdmin(adminId);
   const data = v.parse(configureSchema, input);
   const config = await getConfig();
-  if (['igdb','steam'].includes(data.provider)) requireExperimentalFeatures(config);
+  if (['igdb','steam'].includes(data.provider)) requireExperimentalFeature(config, 'gaming');
   const baseUrl =
     data.provider === 'tmdb'
       ? 'https://api.themoviedb.org'
@@ -171,7 +171,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
     .where(and(eq(providerConnections.status, 'connected'), eq(users.disabled, false)))
     .orderBy(providerConnections.createdAt, providerConnections.id) : [];
   return instances
-    .filter((instance) => config.experimentalFeatures || !['igdb','steam'].includes(instance.provider))
+    .filter((instance) => config.experimentalGaming || !['igdb','steam'].includes(instance.provider))
     .map((instance) => {
       const connection = connections.find((connection) => connection.instanceId === instance.id);
       return {
@@ -224,7 +224,7 @@ export async function instanceFetchConfig(
   instance: typeof providerInstances.$inferSelect
 ): Promise<ProviderFetchConfig> {
   const config = await getConfig();
-  if (['igdb','steam'].includes(instance.provider)) requireExperimentalFeatures(config);
+  if (['igdb','steam'].includes(instance.provider)) requireExperimentalFeature(config, 'gaming');
   const fixed = ['tmdb', 'trakt', 'igdb', 'steam'].includes(instance.provider);
   if (
     fixed &&

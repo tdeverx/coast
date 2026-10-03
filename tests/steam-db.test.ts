@@ -30,7 +30,7 @@ suite('Steam account imports and ownership availability',()=>{
   beforeAll(async()=>{
     await closeDb();process.env.DATABASE_URL=process.env.TEST_DATABASE_URL;
     await getDb().insert(s.users).values([{id:owner,username:`steam-${owner}`,role:'admin',passwordHash:'fixture'},{id:viewer,username:`steam-${viewer}`,passwordHash:'fixture'}]);
-    const config=await getConfig();await getDb().insert(s.systemSettings).values({key:'coast',value:{...config,experimentalFeatures:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...config,experimentalFeatures:true}}});
+    const config=await getConfig();await getDb().insert(s.systemSettings).values({key:'coast',value:{...config,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...config,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}});
     instanceId=(await configureInstance(owner,{provider:'steam',name:'Fixture Steam',apiKey:key})).id;
     globalThis.fetch=(async(input,init)=>{
       const url=new URL(input instanceof Request?input.url:String(input)),headers=new Headers(init?.headers);

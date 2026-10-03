@@ -24,7 +24,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     registerActionHandler(kind, async (action) => {
       try {
         const config = await getConfig();
-        if ((action.kind.startsWith('trakt.') && !config.enableTrakt) || (action.kind.startsWith('seerr.') && !config.enableRequests) || (action.kind.startsWith('steam.') && !config.experimentalFeatures))
+        if ((action.kind.startsWith('trakt.') && !config.enableTrakt) || (action.kind.startsWith('seerr.') && !config.enableRequests) || (action.kind.startsWith('steam.') && !config.experimentalGaming))
           throw new PermanentActionError('This service is disabled by the administrator.');
         return await handler(action);
       } catch (error) {

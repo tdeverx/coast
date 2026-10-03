@@ -5,7 +5,7 @@ import { useClient } from '$lib/ui/client-context';
 import { createResource } from '$lib/ui/resource.svelte';
 import { discoverySegments, discoveryTitles, type DiscoveryContent, type DiscoverySurface, type DiscoverySection } from '$lib/discovery';
 import type { ShelfSource, ShelfControl } from './types';
-export type DiscoveryOptions={type:'discovery';section:DiscoverySection;initial?:DiscoveryContent;surface?:DiscoverySurface;otherMedia?:boolean;layout?:'row'|'grid'};
+export type DiscoveryOptions={type:'discovery';section:DiscoverySection;initial?:DiscoveryContent;surface?:DiscoverySurface;mediums?:import('$lib/experimental').MediumFeatures;layout?:'row'|'grid'};
 export function createDiscoverySource(get:()=>DiscoveryOptions):ShelfSource{
   const {api}=useClient();
   const initial=untrack(get);
@@ -38,7 +38,7 @@ export function createDiscoverySource(get:()=>DiscoveryOptions):ShelfSource{
     get shape(){return surface==='listen'?'square':'poster';},get mediaKind(){return surface==='listen'?'music':surface==='play'?'game':'screen';},
     get resetKey(){return `${surface}:${kind}:${available}`;},
     get filters():ShelfControl[]{return [
-      {type:'segments',label:`${title} medium`,value:surface,options:get().otherMedia?discoverySegments:[discoverySegments[0]],change:select},
+      {type:'segments',label:`${title} medium`,value:surface,options:discoverySegments.filter(option=>option.value==='watch'||option.value==='play'&&get().mediums?.experimentalGaming||option.value==='listen'&&get().mediums?.experimentalMusic),change:select},
       {type:'availability',label:'Available to play only',value:available?'available':'all',change:value=>{available=value==='available';}},
     ];},
     get controls():ShelfControl[]{return surface==='watch'?[{type:'media-type',label:`${title} type`,value:kind,change:value=>{kind=value;}}]:[];},

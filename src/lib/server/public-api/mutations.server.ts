@@ -1,3 +1,4 @@
+import { categoryEnabled } from '$lib/experimental';
 import { readJsonBody } from '$lib/server/security/request-body';
 import { encryptCredential,decryptCredential } from '$lib/server/security/credentials';
 import * as v from 'valibot';
@@ -51,12 +52,12 @@ export async function publicMutation(user:Awaited<ReturnType<typeof authenticate
    result={changed};
   }else if(scope==='relationships:write'||scope==='ratings:write'||scope==='music:write'){
    const id=v.parse(uuid,path[1]);const [work]=await tx.select().from(works).where(eq(works.id,id));
-   if(!work||work.category!=='screen'&&!config.experimentalFeatures)throw new AppError(404,'Work not found.','not_found');
+   if(!work||!categoryEnabled(config,work.category))throw new AppError(404,'Work not found.','not_found');
    if(scope==='relationships:write'){const input=v.parse(v.strictObject({relationship:v.picklist(['collected','saved','favourite']),value:v.boolean()}),data);const action=({collected:'collect',saved:'watchlist',favourite:'favourite'} as const)[input.relationship];const changed=await trackWithExports(user.id,{mediaId:id,action,value:input.value},tx);result={changed:changed.changed};}
    else if(scope==='ratings:write'){const input=v.parse(v.strictObject({value:ratingInputSchema.entries.value}),data);await rateWithExports(user.id,{mediaId:id,value:input.value},tx);result={workId:id,value:input.value};}
    else result=await logMusic(user.id,id,data,tx);
   }else if(scope==='games:write'){
-   if(!config.experimentalFeatures)throw new AppError(404,'Games are disabled.','not_found');
+   if(!config.experimentalGaming)throw new AppError(404,'Games are disabled.','not_found');
    const id=v.parse(uuid,path[1]);const row=path[0]==='games'?await createPlaythrough(user.id,id,data,tx):method==='PATCH'?await updatePlaythrough(user.id,id,data,tx):await logGameSession(user.id,id,data,tx);
    result={id:row.id};
   }else result=method==='POST'?await createWebhook(tx,user.id,user.tokenId,data):await removeWebhook(tx,user.id,v.parse(uuid,path[1]));

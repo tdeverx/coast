@@ -483,7 +483,7 @@
     browserDiagnostic(event, { sessionId: player.session?.id, durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0, bufferedSeconds: media?.buffered.length ? Math.max(0, media.buffered.end(media.buffered.length - 1) - media.currentTime) : 0, positionSeconds: media?.currentTime, readyState: media?.readyState, networkState: media?.networkState, code: media?.error?.code });
   }
 </script>
-{#if page.data.experimentalFeatures}<SyncedControls bind:this={syncControls} />{/if}
+{#if page.data.experimentalParties}<SyncedControls bind:this={syncControls} />{/if}
 
 <audio
   bind:this={audio}
@@ -621,7 +621,7 @@
       />
       {#if !audioMode}<Button size="icon" icon="home" label={player.browsing?'Hide UI':'Show UI'} pressed={player.browsing} onclick={toggleUi}/>{/if}
       <Button menu label="Playback options" upward>
-        {#if page.data.experimentalFeatures}<Button item icon="party" disabled={syncedPlayer.busy} onclick={()=>syncControls?.show()}>{syncedPlayer.room?'Synced session…':'Start synced session…'}</Button>{/if}
+        {#if page.data.experimentalParties}<Button item icon="party" disabled={syncedPlayer.busy} onclick={()=>syncControls?.show()}>{syncedPlayer.room?'Synced session…':'Start synced session…'}</Button>{/if}
         {#if audioMode}
           <Button item icon="list" disabled={followingHost} disabledReason="Playback is controlled by the host" onclick={()=>playSavedMusicQueue().catch(cause=>error=message(cause))}>Play saved music queue</Button>
           {#if player.audioNotice}<p class="menu-status" role="status">{player.audioNotice}</p>{/if}

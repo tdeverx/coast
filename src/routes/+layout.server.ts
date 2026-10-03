@@ -10,7 +10,9 @@ export const load = (async ({ locals, depends }) => {
   return {
     publicRead:config.siteAccess==='public-read-only',
     publicProfiles:config.siteAccess==='public-profiles',
-    experimentalFeatures: config.experimentalFeatures,
+    experimentalMusic: config.experimentalMusic,
+    experimentalGaming: config.experimentalGaming,
+    experimentalParties: config.experimentalParties,
     experiments:{dynamicForYou:config.experimentalDynamicForYou,planning:config.experimentalPlanning,recommendations:config.experimentalRecommendations,mediaModal:config.experimentalMediaModal},
     playbackSharing:config.allowPlaybackSharing && !!locals.user && (locals.user.role==='admin'||locals.user.settings.allowPlaybackSharing===true),
     user: locals.user,

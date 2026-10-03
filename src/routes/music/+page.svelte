@@ -23,7 +23,7 @@
 
 <svelte:head><title>Music · Coast</title></svelte:head>
 <div class="content page route-content">
-  <Heading {...browseHeading("listen", data.experimentalFeatures)}>{#snippet filters()}<SegmentedControl label="Listen type" value={data.filters.kind} options={librarySelections.listen} onchange={kind => goto(pageUrl(1,kind as typeof data.filters.kind),{keepFocus:true,noScroll:true})} /><Button {...availabilityControl(data.filters.scope === 'available', value => goto(pageUrl(1,data.filters.kind,value?'available':'all'),{keepFocus:true,noScroll:true}))} />{/snippet}</Heading>
+  <Heading {...browseHeading("listen", data.experimentalMusic)}>{#snippet filters()}<SegmentedControl label="Listen type" value={data.filters.kind} options={librarySelections.listen} onchange={kind => goto(pageUrl(1,kind as typeof data.filters.kind),{keepFocus:true,noScroll:true})} /><Button {...availabilityControl(data.filters.scope === 'available', value => goto(pageUrl(1,data.filters.kind,value?'available':'all'),{keepFocus:true,noScroll:true}))} />{/snippet}</Heading>
   <form class="filter-row browse-search" action="/music" method="GET">
     <input type="hidden" name="kind" value={data.filters.kind} />
     <input type="hidden" name="scope" value={data.filters.scope} />

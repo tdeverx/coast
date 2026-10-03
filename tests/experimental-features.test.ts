@@ -1,42 +1,38 @@
 import { expect, test } from 'bun:test';
 import { defaultConfig } from '../src/lib/server/config';
-import { isExperimentalPath, requireExperimentalFeatures } from '../src/lib/server/experimental';
+import { categoryEnabled, mediumOptions, surfaceEnabled, type ExperimentalFeature } from '../src/lib/experimental';
+import { experimentalPathFeature, requireExperimentalFeature } from '../src/lib/server/experimental';
+import { mediaTypeOptions } from '../src/lib/ui/filter-options';
 
-test('experimental features default off and can be enabled and disabled', () => {
-  expect(defaultConfig.experimentalFeatures).toBe(false);
-  expect(() => requireExperimentalFeatures(defaultConfig)).toThrow(
-    'Experimental features are disabled'
-  );
-  expect(() => requireExperimentalFeatures({ experimentalFeatures: true })).not.toThrow();
-  expect(() => requireExperimentalFeatures({ experimentalFeatures: false })).toThrow();
+test('Music, Gaming and Parties default off and enable independently', () => {
+  for (const feature of ['music','gaming','parties'] as const) {
+    expect(() => requireExperimentalFeature(defaultConfig,feature)).toThrow('disabled');
+    const config={...defaultConfig,[{music:'experimentalMusic',gaming:'experimentalGaming',parties:'experimentalParties'}[feature]]:true};
+    for(const other of ['music','gaming','parties'] as const) {
+      if(other===feature)expect(()=>requireExperimentalFeature(config,other)).not.toThrow();
+      else expect(()=>requireExperimentalFeature(config,other)).toThrow('disabled');
+    }
+  }
 });
-test('gate covers all music/game pages and API reads, writes, details and artwork', () => {
-  for (const path of [
-    '/g%61mes',
-    '/api/v1/%67ames',
-    '/api/v1/providers/id%2Fmusic',
-    '/music',
-    '/music/connection/item',
-    '/music/__data.json',
-    '/games',
-    '/games/igdb/source/item',
-    '/games/__data.json',
-    '/api/v1/games',
-    '/api/v1/games/import',
-    '/api/v1/game-playthroughs/id/sessions',
-    '/api/v1/providers/id/music',
-    '/api/v1/providers/id/music/item/artwork',
-  ])
-    expect(isExperimentalPath(path)).toBe(true);
-  for (const path of [
-    '/library',
-    '/settings/policies',
-    '/api/v1/playback',
-    '/api/v1/providers/id/scan',
-    '/api/v1/requests',
-    '/music-other',
-    '/games-other',
-    '/api/v1/games-other',
-  ])
-    expect(isExperimentalPath(path)).toBe(false);
+test('pages, encoded paths and nested API routes resolve to their own gate', () => {
+  const paths:Record<ExperimentalFeature,string[]>={
+    music:['/music','/music/connection/item','/music/__data.json','/api/v1/music/queue','/api/v1/providers/id%2Fmusic','/api/v1/providers/id/music/item/artwork'],
+    gaming:['/g%61mes','/games','/games/__data.json','/games/igdb/source/item','/api/v1/%67ames','/api/v1/games/import','/api/v1/game-playthroughs/id/sessions'],
+    parties:['/synced/id','/api/v1/synced','/api/v1/synced/id/heartbeat']
+  };
+  for(const [feature,routes] of Object.entries(paths))for(const path of routes)expect(experimentalPathFeature(path)).toBe(feature as ExperimentalFeature);
+  for(const path of ['/library','/settings/policies','/api/v1/playback','/api/v1/providers/id/scan','/api/v1/requests','/music-other','/games-other','/api/v1/games-other','/%zz'])expect(experimentalPathFeature(path)).toBeNull();
+});
+test('medium segments and list filters cannot expose a disabled medium', () => {
+  const music={...defaultConfig,experimentalMusic:true},gaming={...defaultConfig,experimentalGaming:true},parties={...defaultConfig,experimentalParties:true};
+  expect(mediumOptions(music).map(o=>o.value)).toEqual(['screen','music']);
+  expect(mediumOptions(gaming).map(o=>o.value)).toEqual(['screen','game']);
+  expect(mediumOptions(parties).map(o=>o.value)).toEqual(['screen']);
+  expect(mediaTypeOptions(music).map(o=>o.value)).toEqual(['all','movie','show','album','track']);
+  expect(mediaTypeOptions(gaming).map(o=>o.value)).toEqual(['all','movie','show','game']);
+  expect(surfaceEnabled(music,'listen')).toBe(true);
+  expect(surfaceEnabled(music,'play')).toBe(false);
+  expect(categoryEnabled(gaming,'music')).toBe(false);
+  expect(categoryEnabled(parties,'screen')).toBe(true);
+  expect(categoryEnabled(music,'unknown')).toBe(false);
 });

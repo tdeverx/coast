@@ -27,7 +27,7 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
    and (${activityIds===undefined} or a.id in (${activityIds?.length?sql.join(activityIds.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))
    and (${o.category}='all' or w.category=${o.category}) and (${o.kind}='all' or a.event_kind=${o.kind})
    and (${o.friendId??null}::uuid is null or a.user_id=${o.friendId??null}::uuid)
-   and (w.category='screen' or coalesce((select value->>'experimentalFeatures' from system_settings where key='coast'),'false')='true')
+   and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true'))
  ), deduplicated as (
  select *,row_number() over(partition by user_id,case when source='jellyfin' and event_kind='watch' and date_known then work_id::text||':'||occurred_at::text else id::text end order by created_at,id) as observation_rank from visible_raw
  ), visible as (select *,sum(case when event_kind='listen' and date_known then 1 else 0 end) over(partition by user_id,work_id order by occurred_at,id) as listen_number,lag(occurred_at) over(partition by user_id,root_id order by occurred_at,id) as previous_date from deduplicated where observation_rank=1), numbered as (
@@ -90,7 +90,7 @@ export async function workSocial(userId:string,ids:string[]) {
  case when social_visible(u.id,${userId}::uuid,'progress',w.category) then coalesce(t.position_seconds,0) else 0 end as progress
  from descendants d join reasons r on r.id=d.id join works w on w.id=d.id join users u on u.id=r.user_id
  left join ratings rating on rating.user_id=u.id and rating.media_id=d.root left join tracking_state t on t.user_id=u.id and t.media_id=d.root
- where (w.category='screen' or coalesce((select value->>'experimentalFeatures' from system_settings where key='coast'),'false')='true') and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,u.id) and f.user_b=greatest(${userId}::uuid,u.id)) and social_visible(u.id,${userId}::uuid,r.section,w.category)
+ where (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true')) and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,u.id) and f.user_b=greatest(${userId}::uuid,u.id)) and social_visible(u.id,${userId}::uuid,r.section,w.category)
  order by d.root,u.username`);
  const reactions=await getDb().execute<{targetId:string;emoji:string;count:number}>(sql`select r.target_id as "targetId",r.emoji,count(*)::int as count from social_reactions r join works w on w.id=r.target_id where r.target_kind='work' and r.target_id in (${list}) and social_visible(r.user_id,${userId}::uuid,'reactions',w.category) group by r.target_id,r.emoji`);
  const socialFriends=Array.from(rows) as {workId:string;userId:string;username:string;avatar:string|null;rating:number|null;watched:boolean;progress:number}[];
@@ -110,7 +110,7 @@ export async function reactionSummary(userId:string,targetKind:'work'|'activity'
  where r.target_kind=${targetKind} and r.target_id in (${targets})
  and (r.target_kind='work' or social_visible(a.user_id,${userId}::uuid,a.section,w.category))
  and social_visible(r.user_id,${userId}::uuid,'reactions',w.category)
- and (w.category='screen' or coalesce((select value->>'experimentalFeatures' from system_settings where key='coast'),'false')='true')
+ and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true'))
  group by r.target_id,r.emoji`);
  return Object.fromEntries(ids.map(id=>[id,Array.from(rows).filter(row=>row.targetId===id)]));
 }

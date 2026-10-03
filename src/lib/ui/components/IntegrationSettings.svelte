@@ -27,8 +27,8 @@
   };
   let {
     providers,
-    experimentalFeatures = false,
-  }: { providers: Instance[]; experimentalFeatures?: boolean } = $props();
+    experimentalGaming = false,
+  }: { providers: Instance[]; experimentalGaming?: boolean } = $props();
   let open = $state(false),
     editing = $state<Instance | null>(null),
     provider = $state('tmdb'),
@@ -200,7 +200,7 @@
       <Field label="Provider"><select bind:value={provider} disabled={!!editing}
           ><option value="tmdb">TMDB</option><option value="jellyfin">Jellyfin</option><option
             value="trakt">Trakt</option
-          ><option value="seerr">Seerr</option>{#if experimentalFeatures}<option value="igdb"
+          ><option value="seerr">Seerr</option>{#if experimentalGaming}<option value="igdb"
               >IGDB</option
             ><option value="steam">Steam</option>{/if}</select
         ></Field>

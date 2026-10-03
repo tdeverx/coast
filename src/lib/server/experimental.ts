@@ -1,21 +1,23 @@
-import type { CoastConfig } from './config';
+import type { ExperimentalFeatures, ExperimentalFeature, MediumFeatures } from '$lib/experimental';
+import { featureEnabled, categoryEnabled } from '$lib/experimental';
+import { sql, type SQL } from 'drizzle-orm';
 import { AppError } from './security/errors';
 
-/** Cover pages, nested details, provider music/artwork and all game API mutations. */
-export function isExperimentalPath(path: string) {
-  // SvelteKit decodes catch-all parameters before the API handler splits them.
-  try {
-    path = decodeURIComponent(path);
-  } catch {
-    return false;
-  }
-  return (
-    /^\/(?:music|games|synced)(?:\/|$)/.test(path) ||
-    /^\/api\/v1\/(?:music|games|game-playthroughs|synced)(?:\/|$)/.test(path) ||
-    /^\/api\/v1\/providers\/[^/]+\/music(?:\/|$)/.test(path)
-  );
+/** Decode catch-all paths before identifying their independent feature gate. */
+export function experimentalPathFeature(path: string): ExperimentalFeature | null {
+  try { path = decodeURIComponent(path); } catch { return null; }
+  if (/^\/(?:music)(?:\/|$)/.test(path) || /^\/api\/v1\/music(?:\/|$)/.test(path) || /^\/api\/v1\/providers\/[^/]+\/music(?:\/|$)/.test(path)) return 'music';
+  if (/^\/games(?:\/|$)/.test(path) || /^\/api\/v1\/(?:games|game-playthroughs)(?:\/|$)/.test(path)) return 'gaming';
+  if (/^\/synced(?:\/|$)/.test(path) || /^\/api\/v1\/synced(?:\/|$)/.test(path)) return 'parties';
+  return null;
 }
-export function requireExperimentalFeatures(config: Pick<CoastConfig, 'experimentalFeatures'>) {
-  if (!config.experimentalFeatures)
-    throw new AppError(404, 'Experimental features are disabled.', 'experimental_disabled');
+export function requireExperimentalFeature(config: ExperimentalFeatures, feature: ExperimentalFeature) {
+  if (!featureEnabled(config, feature)) throw new AppError(404, `${feature === 'music' ? 'Music' : feature === 'gaming' ? 'Gaming' : 'Parties'} is disabled.`, 'experimental_disabled');
+}
+export function requireEnabledCategory(config: MediumFeatures, category: string) {
+  if (!categoryEnabled(config, category)) throw new AppError(404, 'This medium is disabled.', 'experimental_disabled');
+}
+/** Filter before counting/pagination; disabled media remain stored. */
+export function enabledCategories(category: SQL, config: MediumFeatures) {
+  return sql`(${category}='screen' or (${category}='music' and ${config.experimentalMusic}) or (${category}='game' and ${config.experimentalGaming}))`;
 }

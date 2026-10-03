@@ -451,7 +451,7 @@ async function runJellyfinScan(
     }
   }
   // Metadata and per-user access remain separate for music, within the same service task.
-  for(const musicKind of (await getConfig()).experimentalFeatures?['album','track'] as const:[]){
+  for(const musicKind of (await getConfig()).experimentalMusic?['album','track'] as const:[]){
     let musicOffset=0;for(;;){
       importPlayback=(await ensureConnected()).settings.importPlayback!==false;
       const page=await adapter.musicLibrary(connection.externalUserId!,{kind:musicKind,offset:musicOffset,limit:100});
@@ -479,7 +479,7 @@ async function runJellyfinScan(
     }
   }
   // Complete known membership is a metadata property; this never grants another user access.
-  if ((await getConfig()).experimentalFeatures) await db.execute(sql`update music_works m set membership_complete=exists(select 1 from provider_items pi where pi.media_id=m.id and pi.instance_id=${instance.id} and (pi.snapshot->>'expectedMembers')::integer=(select count(*) from media_relationships r join music_works t on t.id=r.child_id where r.parent_id=m.id and r.kind='contains' and t.kind='track')) where m.kind='album' and exists(select 1 from provider_items pi where pi.media_id=m.id and pi.instance_id=${instance.id} and pi.snapshot->>'expectedMembers' is not null)`);
+  if ((await getConfig()).experimentalMusic) await db.execute(sql`update music_works m set membership_complete=exists(select 1 from provider_items pi where pi.media_id=m.id and pi.instance_id=${instance.id} and (pi.snapshot->>'expectedMembers')::integer=(select count(*) from media_relationships r join music_works t on t.id=r.child_id where r.parent_id=m.id and r.kind='contains' and t.kind='track')) where m.kind='album' and exists(select 1 from provider_items pi where pi.media_id=m.id and pi.instance_id=${instance.id} and pi.snapshot->>'expectedMembers' is not null)`);
   // A complete traversal can confirm a provider's advertised known membership, not server-wide coverage.
   await db.execute(sql`update provider_items pi set snapshot=pi.snapshot || jsonb_build_object('membershipComplete',(pi.snapshot->>'expectedMembers')::integer=(select count(*) from episodes e where (pi.kind='show' and e.show_id=pi.media_id or pi.kind='season' and e.season_id=pi.media_id)))
     where pi.instance_id=${instance.id} and pi.kind in ('show','season') and pi.snapshot->>'expectedMembers' is not null`);

@@ -11,7 +11,7 @@ const show=crypto.randomUUID(),season=crypto.randomUUID(),episodes=[crypto.rando
 beforeAll(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;
  const db=getDb(),config=await getConfig();
- await db.insert(s.systemSettings).values({key:'coast',value:{...config,experimentalFeatures:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...config,experimentalFeatures:true}}});
+ await db.insert(s.systemSettings).values({key:'coast',value:{...config,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...config,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}});
  await db.insert(s.users).values([{id:user,username:`for-you-${user}`},{id:friend,username:`for-you-${friend}`,settings:{profile:{avatar:'/fixture-avatar.gif'}}}]);
  await db.insert(s.friendships).values({userA:[user,friend].sort()[0],userB:[user,friend].sort()[1],state:'accepted',requestedBy:user});
  await db.insert(s.media).values([{id:show,kind:'show',title:'Friend show'},{id:season,kind:'season',title:'Season one'},...episodes.map((id,index)=>({id,kind:'episode' as const,title:`Episode ${index+1}`,runtimeMinutes:30}))]);

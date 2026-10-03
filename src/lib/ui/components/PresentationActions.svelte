@@ -180,7 +180,7 @@
     <Button item icon="refresh" disabled={busy} onclick={load}>Try again</Button>{/if}
 </Button>
 
-{#if workId&&page.data.experiments?.planning}<PlanAction bind:open={planningOpen} {workId} title={item.title} partyAllowed={page.data.experimentalFeatures&&item.kind==='track'}/>{/if}
+{#if workId&&page.data.experiments?.planning}<PlanAction bind:open={planningOpen} {workId} title={item.title} partyAllowed={page.data.experimentalParties&&item.kind==='track'}/>{/if}
 {#if workId&&page.data.playbackSharing&&item.kind==='track'}<ShareAction bind:open={sharingOpen} {workId} title={item.title}/>{/if}
 
 <style>

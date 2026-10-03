@@ -1,13 +1,13 @@
 export type FilterOption = { value: string; label: string };
-export function mediaTypeOptions(includeOtherMedia = false): FilterOption[] {
+export function mediaTypeOptions(features: Partial<import('$lib/experimental').MediumFeatures> = {}): FilterOption[] {
   return [
     { value: 'all', label: 'All' },
     { value: 'movie', label: 'Movies' },
     { value: 'show', label: 'Shows' },
-    ...(includeOtherMedia ? [
+    ...(features.experimentalMusic ? [
       { value: 'album', label: 'Albums' },
       { value: 'track', label: 'Tracks' },
-      { value: 'game', label: 'Games' },
     ] : []),
+    ...(features.experimentalGaming ? [{ value: 'game', label: 'Games' }] : []),
   ];
 }

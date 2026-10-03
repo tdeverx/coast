@@ -1,7 +1,15 @@
-# Experimental music and gaming
+# Experimental features
 
-Administrators can enable **Experimental features** in Settings → Policies. The single system-wide toggle defaults to Off. Enabling it makes music browsing and gaming available to signed-in users; only administrators can save the policy.
+Administrators manage independent feature switches in Settings → Policies → Experimental features. All experiments default to Off. Music, Gaming and Parties each have their own switch; existing installations migrate the previous shared switch to all three without changing its enabled state.
 
-When Off, Library hides Music and Games, integration settings hide IGDB, and direct music/game pages and APIs (including artwork, import and play-session writes) return 404. The gate also blocks IGDB configuration and provider transport. Film/TV and Jellyfin connections remain available. Toggling Off preserves music connections, games, playthroughs and sessions.
+- **Music:** album/track browsing, listen tracking, audio playback and Jellyfin music imports.
+- **Gaming:** game discovery, playthroughs/sessions, IGDB and Steam integrations and Steam jobs.
+- **Parties:** synced video/audio sessions and invitations. Video parties work independently of Music and Gaming; music playback also requires Music.
+- **Dynamic For You:** personalised horizontal rows loaded as you scroll.
+- **Planning & calendar:** scheduled plans, reminders and upcoming releases.
+- **Personalised recommendations:** suggestions based on personal activity and shared genres.
+- **Media detail overlay:** the existing hero and details over the current page.
 
-Changes use the existing database-backed system configuration and apply to subsequent requests without a restart. Saving policies refreshes navigation in the current tab; other tabs refresh with navigation or their normal session polling. No migration or new production dependency is needed.
+Disabled media are hidden from rows, search, social activity and public API results before pagination. Direct pages and APIs are gated independently. Disabling a feature preserves saved relationships, history, games, connections and sessions. Film/TV and ordinary Jellyfin connections remain available.
+
+Policies use the existing database-backed configuration and apply to subsequent requests without a restart. Saving refreshes the current tab; other tabs update through navigation or session polling. Site access, registration and disposable playback links live separately under Access & registration.

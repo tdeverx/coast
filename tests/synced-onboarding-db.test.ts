@@ -16,7 +16,7 @@ let config:CoastConfig;const extra:string[]=[];
 beforeAll(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;config=await getConfig();
  for(const [i,id]of ids.entries())await getSql()`INSERT INTO users (id,username,role) VALUES (${id},${`sync-${id}`},${i===0?'admin':'user'})`;
- await updateConfig(admin,{experimentalFeatures:true});
+ await updateConfig(admin,{experimentalMusic:true,experimentalGaming:true,experimentalParties:true});
  await getSql()`INSERT INTO works (id,category,kind) VALUES (${work},'screen','movie')`;
  await getSql()`INSERT INTO provider_instances (id,provider,name,base_url,server_identity) VALUES (${instance},'jellyfin','Sync fixture','https://fixture.invalid','fixture')`;
  for(const [i,id] of conn.entries()){
@@ -120,7 +120,7 @@ run('private friend membership, own source, revision control, buffering and revo
  await getSql()`UPDATE provider_connections SET external_user_id='replacement-account' WHERE id=${conn[1]}`;
  r=await roomState(ids[0],r.id);expect(r.participants.find(p=>p.userId===ids[1])?.joined).toBe(false);
  await leaveRoom(ids[0],r.id);expect((await roomState(ids[0],r.id)).ended).toBe(true);
- await updateConfig(admin,{experimentalFeatures:false});await expect(createRoom(ids[0],{playbackId:play[0],positionSeconds:0})).rejects.toThrow('disabled');await updateConfig(admin,{experimentalFeatures:true});
+ await updateConfig(admin,{experimentalMusic:false,experimentalGaming:false,experimentalParties:false});await expect(createRoom(ids[0],{playbackId:play[0],positionSeconds:0})).rejects.toThrow('disabled');await updateConfig(admin,{experimentalMusic:true,experimentalGaming:true,experimentalParties:true});
 });
 
 run('music queue keeps gaps, order and repeated track positions',async()=>{

@@ -1,3 +1,4 @@
+import { mediumOptions } from '$lib/experimental';
 
   import { onDestroy, untrack } from 'svelte';
   import { replaceState } from '$app/navigation';
@@ -129,7 +130,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
 
 
     get filters(): ShelfControl[] { return [
-      ...(mediums ? [{type:'segments' as const,label:`${title} medium`,value:category,options:[{value:'screen',label:'Watching'},...(route.data.experimentalFeatures?[{value:'game',label:'Playing'},{value:'music',label:'Listening'}]:[])],change:(value:string)=>{category=value as ProgressOptions['category'];void select();}}] : []),
+      ...(mediums ? [{type:'segments' as const,label:`${title} medium`,value:category,options:mediumOptions(route.data),change:(value:string)=>{category=value as ProgressOptions['category'];void select();}}] : []),
       ...(!saved && !mediums ? [{type:'segments' as const, label:`${title} selection`, value:tab, options, change:(value:string)=>{tab=value;void select();}}] : []),
       ...(surface !== 'profile' ? [{type:'availability' as const,label:'Available to play only',value:current.scope,change:(value:string)=>update({scope:value as Filters['scope']})}] : []),
     ]; },

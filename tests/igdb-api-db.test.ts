@@ -43,7 +43,7 @@ suite('IGDB authenticated API and provider persistence', () => {
     await migrate(getDb(), { migrationsFolder: `${import.meta.dir}/../drizzle` });
     await getDb().insert(users).values([admin, member].map((user) => ({ id: user.id, username: user.username, role: user.role, passwordHash: 'fixture' })));
     previousConfig = await getConfig();
-    await updateConfig(admin, { ...previousConfig, experimentalFeatures: true });
+    await updateConfig(admin, { ...previousConfig, experimentalMusic:true,experimentalGaming:true,experimentalParties:true });
     // Exercise the actual fixed-origin transport and parsers, but never send credentials to a service.
     globalThis.fetch = (async (input, init) => {
       const url = new URL(input instanceof Request ? input.url : String(input));

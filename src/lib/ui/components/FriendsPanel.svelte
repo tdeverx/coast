@@ -48,7 +48,7 @@
 </script>
 {#snippet activeParty()}<SyncedControls inline embedded/>{/snippet}
 <Dialog bind:open title="Friends" popover={true} anchor="#friends-trigger" {onclose} footer={syncedPlayer.room?activeParty:undefined}>
- {#snippet heading()}<Heading title="Friends">{#snippet heading()}<SegmentedControl label="Friends view" value={segment} options={[{value:'accepted',label:'Friends'},{value:'pending',label:page.data.friendRequestCount?`Requests (${page.data.friendRequestCount})`:'Requests'},...(page.data.experimentalFeatures?[{value:'party',label:'Parties'}]:[])]} onchange={value=>{segment=value;number=1;}}/>{/snippet}
+ {#snippet heading()}<Heading title="Friends">{#snippet heading()}<SegmentedControl label="Friends view" value={segment} options={[{value:'accepted',label:'Friends'},{value:'pending',label:page.data.friendRequestCount?`Requests (${page.data.friendRequestCount})`:'Requests'},...(page.data.experimentalParties?[{value:'party',label:'Parties'}]:[])]} onchange={value=>{segment=value;number=1;}}/>{/snippet}
   {#snippet actions()}<div class="header-actions"><Button menu label="Friend options"><Button item icon="refresh" text="Refresh" disabled={busy||roster.busy} keepOpen={false} onclick={()=>void (segment==='party'?loadParties():load())}/><Button item icon="settings" href="/settings/privacy">Privacy & social</Button></Button><Button size="icon" icon="close" label="Close friends" onclick={()=>{open=false;onclose?.();}}/></div>{/snippet}
  </Heading>{/snippet}
  {#if failure||roster.error}<p class="notice error" role="alert">{failure||roster.error}</p><Button emphasis="subtle" onclick={()=>void (segment==='party'?loadParties():load())}>Retry</Button>{/if}
@@ -70,7 +70,7 @@
  {:else}
  {#if segment==='pending'}<form class="request-form" onsubmit={event=>{event.preventDefault();void act('social/friends',{username});}}><label class="field">Add by username<input bind:value={username} required maxlength="100" autocomplete="off"/></label><Button type="submit" disabled={busy||!username.trim()}>Send request</Button></form>{/if}
  {#if roster.busy&&loadedKey!==`${segment}:${number}`}<div class="loading" aria-label="Loading friends">{#each [0,1,2] as item (item)}<div class="skeleton"></div>{/each}</div>
- {:else if roster.data.length&&loadedKey===`${segment}:${number}`}<FriendRoster friends={roster.data.slice(0,60)} userId={page.data.user!.id} busy={busy||syncedPlayer.busy} {act} oninvite={page.data.experimentalFeatures?inviteFriend:undefined} inviteDisabled={!canInviteToParty()}/>
+ {:else if roster.data.length&&loadedKey===`${segment}:${number}`}<FriendRoster friends={roster.data.slice(0,60)} userId={page.data.user!.id} busy={busy||syncedPlayer.busy} {act} oninvite={page.data.experimentalParties?inviteFriend:undefined} inviteDisabled={!canInviteToParty()}/>
  {:else if !roster.error}<EmptyState title={segment==='pending'?'No friend requests':'Add your first friend'} description={segment==='pending'?'Incoming and sent requests appear here.':'Exchange usernames in Requests to connect.'} icon="user"/>{/if}
  {#if number>1||roster.data.length>60}<div class="paging"><Button emphasis="subtle" disabled={number===1||roster.busy} onclick={()=>number--}>Previous</Button><span class="small quiet">Page {number}</span><Button emphasis="subtle" disabled={roster.data.length<=60||roster.busy} onclick={()=>number++}>Next</Button></div>{/if}
  {/if}

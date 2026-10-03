@@ -5,7 +5,9 @@ import { getSql } from './db';
 
 export const configSchema = v.object({
   siteAccess: v.optional(v.picklist(['private','public-profiles','public-read-only']),'private'),
-  experimentalFeatures: v.boolean(),
+  experimentalMusic: v.optional(v.boolean(),false),
+  experimentalGaming: v.optional(v.boolean(),false),
+  experimentalParties: v.optional(v.boolean(),false),
   experimentalDynamicForYou: v.optional(v.boolean(),false),
   experimentalPlanning: v.optional(v.boolean(),false),
   experimentalRecommendations: v.optional(v.boolean(),false),
@@ -34,7 +36,7 @@ export const configSchema = v.object({
 export type CoastConfig = v.InferOutput<typeof configSchema>;
 export const defaultConfig: CoastConfig = {
   siteAccess:'private',
-  experimentalFeatures: false,
+  experimentalMusic: false, experimentalGaming: false, experimentalParties: false,
   experimentalDynamicForYou:false, experimentalPlanning:false, experimentalRecommendations:false, experimentalMediaModal:false,
   allowPlaybackSharing:false,
   registrationMode: 'invite',

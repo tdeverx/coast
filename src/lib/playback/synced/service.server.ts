@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import {getSql} from '$lib/server/db';
 import {getConfig} from '$lib/server/config';
-import {requireExperimentalFeatures} from '$lib/server/experimental';
+import {requireExperimentalFeature} from '$lib/server/experimental';
 import {AppError} from '$lib/server/security/errors';
 import {requireFriend} from '$lib/social/service.server';
 import {notify} from '$lib/server/notifications';
@@ -19,7 +19,7 @@ async function validOwner(sql:ReturnType<typeof getSql>,id:string,userId:string)
  const [unconnected]=await sql`SELECT 1 FROM synced_participants p WHERE p.room_id=${id} AND p.user_id<>${userId} AND NOT EXISTS(SELECT 1 FROM friendships f WHERE f.user_a=least(p.user_id,${userId}::uuid) AND f.user_b=greatest(p.user_id,${userId}::uuid) AND f.state='accepted') LIMIT 1`;
  return !unconnected;
 }
-async function enabled(){requireExperimentalFeatures(await getConfig());}
+async function enabled(){requireExperimentalFeature(await getConfig(), 'parties');}
 async function authorized(userId:string,id:string){
   await enabled();
   const [room]=await getSql()`SELECT r.*,p.joined AS viewer_joined FROM synced_rooms r JOIN synced_participants p ON p.room_id=r.id
@@ -32,6 +32,7 @@ async function playback(userId:string,id:string){
   const [p]=await getSql()`SELECT p.* FROM playback_sessions p JOIN provider_connections c ON c.id=p.connection_id JOIN provider_instances i ON i.id=c.instance_id
     WHERE p.share_id IS NULL AND p.id=${v.parse(uuid,id)} AND p.user_id=${userId} AND p.expires_at>NOW() AND p.state<>'stopped' AND c.status='connected' AND i.enabled`;
   if(!p)throw new AppError(409,'Prepare your own playable source before joining.');
+  if(p.media_type==='audio')requireExperimentalFeature(await getConfig(), 'music');
   return p;
 }
 function descriptor(p:Record<string,any>){return {mediaId:p.media_id,mediaType:p.media_type,edition:p.edition||'',durationSeconds:Number(p.duration_seconds)};}

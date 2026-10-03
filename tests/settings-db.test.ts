@@ -64,12 +64,12 @@ describe.skipIf(!enabled)('settings persistence', () => {
 
   test('concurrent policy and logging patches preserve both updates and apply logging immediately', async () => {
     await Promise.all([
-      updateConfig(admin, { experimentalFeatures: true, maxBitrateMbps: 42 }),
+      updateConfig(admin, { experimentalMusic:true,experimentalGaming:true,experimentalParties:true, maxBitrateMbps: 42 }),
       updateConfig(admin, { diagnosticLevel: 'debug' }),
     ]);
     expect(await getConfig()).toEqual({
       ...defaultConfig,
-      experimentalFeatures: true,
+      experimentalMusic:true,experimentalGaming:true,experimentalParties:true,
       maxBitrateMbps: 42,
       diagnosticLevel: 'debug',
     });
@@ -88,7 +88,7 @@ describe.skipIf(!enabled)('settings persistence', () => {
 
   test('invalid and non-admin patches leave system policies untouched', async () => {
     const previous = await getConfig();
-    await expect(updateConfig(member, { experimentalFeatures: false })).rejects.toThrow(
+    await expect(updateConfig(member, { experimentalMusic:false,experimentalGaming:false,experimentalParties:false })).rejects.toThrow(
       'Administrator'
     );
     await expect(updateConfig(admin, { allowedProviderPorts: [0] })).rejects.toThrow();

@@ -26,7 +26,7 @@ export async function friendInsights(viewerId:string,friendId:string) {
  left join lateral(select progress_percent,status from game_playthroughs where user_id=u.id and game_id=w.id order by created_at desc,id desc limit 1) gp on true
  left join tracking_state t on t.user_id=u.id and t.media_id=w.id left join ratings r on r.user_id=u.id and r.media_id=w.id
  left join social_reactions reaction on reaction.user_id=u.id and reaction.target_kind='work' and reaction.target_id=w.id
- where u.id in (${viewerId},${friendId}) and not u.disabled and (w.category='screen' or coalesce((select value->>'experimentalFeatures' from system_settings where key='coast'),'false')='true')
+ where u.id in (${viewerId},${friendId}) and not u.disabled and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true'))
  and (t.collected or t.watchlist or t.favourite or t.watched or t.play_count>0 or r.value is not null or reaction.emoji is not null or exists(select 1 from music_listens where user_id=u.id and track_id=w.id) or coalesce(t.position_seconds,mp.position_seconds,0)>0 or gp.status in ('in-progress','paused','completed','dropped'))`;
  const media=['movies','tv','music','game'].map(medium=>{
   type ComparedWork=TasteWork&{positionSeconds:number;durationSeconds:number;gameProgress:number|null;gameStatus:string|null};
@@ -49,7 +49,7 @@ export async function friendDiscovery(viewerId:string,category:'all'|'screen'|'g
  left join lateral(select parent_id from media_relationships where child_id=a.work_id and kind='contains' order by position limit 1) r on w.category='music'
  where a.occurred_at>=now()-interval '30 days' and a.date_known and social_visible(a.user_id,${viewerId}::uuid,a.section,w.category)
  and (${category}='all' or w.category=${category})
- and (w.category='screen' or coalesce((select value->>'experimentalFeatures' from system_settings where key='coast'),'false')='true')
+ and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true'))
  and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(a.user_id,${viewerId}::uuid) and f.user_b=greatest(a.user_id,${viewerId}::uuid))
  ) select root_id as "workId",count(distinct user_id)::int as friends,max(occurred_at) as "discoveredAt"
  from visible group by root_id order by count(distinct user_id) desc,max(occurred_at) desc,root_id limit 60`;

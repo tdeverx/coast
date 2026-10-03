@@ -6,7 +6,7 @@ import { playMedia, playMusicQueue } from '$lib/playback/client.svelte';
 /** Playback state supplies ordinary buttons and a Dialog, never a second control renderer. */
 export function createSequencePlayback(options: {
   source: () => SequenceSource | undefined; from?: () => string | undefined;
-  experimental: () => boolean; preview: boolean; api: typeof api; change: typeof change;
+  experimentalMusic: () => boolean; preview: boolean; api: typeof api; change: typeof change;
 }) {
   let open = $state(false), busy = $state(false), error = $state(''), next = $state<MediaView | null>(null);
   async function start(restart = false, after?: string) {
@@ -15,7 +15,7 @@ export function createSequencePlayback(options: {
     busy = true; error = '';
     try {
       if (source.kind === 'playlist' && !after) {
-        if (options.experimental()) {
+        if (options.experimentalMusic()) {
           const music = await options.api<Parameters<typeof playMusicQueue>[0] | null>(`music/queue?listId=${source.id}`, undefined, 'GET');
           if (music) { await playMusicQueue(music); open = false; return; }
         }

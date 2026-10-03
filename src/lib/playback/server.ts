@@ -152,7 +152,7 @@ export async function startPlayback(
   const item=screen??(music?{...music,runtimeMinutes:(music.durationSeconds??0)/60}:undefined);
   const mediaType=music?'audio':'video';
   if(!item || !['movie','episode','track'].includes(item.kind))throw new Error('Choose a movie, episode or track to play.');
-  if(music && !config.experimentalFeatures)throw new Error('Music is disabled by the administrator.');
+  if(music && !config.experimentalMusic)throw new Error('Music is disabled by the administrator.');
   const sequenceEntry = data.sequence
     ? (await sequenceEntries(userId, data.sequence)).find(
         (entry) => entry.entryId === data.sequence!.entryId && entry.mediaId === item.id

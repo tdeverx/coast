@@ -18,7 +18,7 @@ export const load = (async ({locals, depends,url}) => {
   });
   return {
     items,selection,selected,
-    mediaRows: locals.user ? await mediaRows() : {enabled:false,personal:false},
+    mediaRows: locals.user ? await mediaRows() : {experimentalMusic:false,experimentalGaming:false,personal:false},
     trending: selectItems(result.trending),
     recent: selectItems(result.recent),
     configured: result.configured,
