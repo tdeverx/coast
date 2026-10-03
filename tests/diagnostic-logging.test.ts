@@ -24,6 +24,10 @@ test('safe fields discard secrets, personal data, URLs, bodies and raw exception
       status: 503,
       durationMs: 1.234,
       failure: 'network',
+      operation: 'collection',
+      stage: 'card-hydration',
+      sql: 'select private data',
+      parameters: ['private title'],
       token: 'SECRET',
       cookie: 'SECRET',
       body: { password: 'SECRET' },
@@ -36,7 +40,7 @@ test('safe fields discard secrets, personal data, URLs, bodies and raw exception
       code: Infinity,
       positionSeconds: -1,
     })
-  ).toEqual({ status: 503, durationMs: 1.23, failure: 'network' });
+  ).toEqual({ status: 503, durationMs: 1.23, failure: 'network', operation: 'collection', stage: 'card-hydration' });
   expect(correlationId('private arbitrary text')).not.toBe('private arbitrary text');
 });
 test('diagnostic reads and configuration updates require an administrator before IO', async () => {

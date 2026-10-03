@@ -3,6 +3,7 @@ import { page } from '$app/state';
 import { onDestroy, untrack } from 'svelte';
 import { useClient } from '$lib/ui/client-context';
 import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
+import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
 import type { ShelfSource, ShelfItem, ShelfControl } from './types';
 export type ExperimentalOptions = {type:'experimental';feature:'row'|'recommendations'|'upcoming';category?:'screen'|'game'|'music';genre?:string;title?:string;layout?:'row'|'grid'};
 export function createExperimentalSource(get:()=>ExperimentalOptions):ShelfSource {
@@ -19,7 +20,13 @@ export function createExperimentalSource(get:()=>ExperimentalOptions):ShelfSourc
    merge:append?(old,next)=>({...next,items:uniqueItems([...old.items,...next.items],item=>'workId' in item?item.workId??item.id:item.id)}):undefined
   });
  }
- $effect(()=>{page.data;untrack(()=>{if(resource.activated)void load();});});
+ const refreshKey=$derived(JSON.stringify([
+  contentRevisionKey(page.data,get().feature==='upcoming'?['tracking','planning']:['tracking','social']),
+  page.data.experimentalMusic,page.data.experimentalGaming,
+  get().feature==='upcoming'?page.data.experiments.planning:get().feature==='row'?page.data.experiments.dynamicForYou:page.data.experiments.recommendations,
+  get().feature,get().genre,get().category,
+ ]));
+ $effect(()=>{refreshKey;untrack(()=>{if(resource.activated)void load();});});
  onDestroy(resource.cancel);
  const selectMedium=(value:string)=>{category=value;void load();};
  return {

@@ -67,7 +67,8 @@
       {:else if jobRemedy(action) === 'permissions'}<Button item icon="settings" href="/settings/integrations" keepOpen={false}>Review permissions</Button>
       {:else if jobRemedy(action) === 'metadata'}<Button item icon="list" href="/settings/activity" keepOpen={false}>Review diagnostics</Button>
       {/if}
-      {#if action.state === 'failed' || action.attempts > 0}<Button item
+      {#if action.kind === 'benchmark.run'}<Button item icon="refresh" href="/settings/benchmarks" keepOpen={false}>Run a new benchmark</Button>
+      {:else if action.state === 'failed' || action.attempts > 0}<Button item
           icon="refresh"
           keepOpen={false}
           onclick={() => void update(action.id, 'retry')}

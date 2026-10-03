@@ -430,7 +430,10 @@ async function runJellyfinScan(
   // per canonical title after a complete traversal; persisted access snapshots also
   // survive checkpoints/retries without retaining the entire catalogue in memory.
   if(scope==='user' && (await ensureConnected()).settings.importPlayback!==false) {
-    const observed=await db.execute<{id:string;kind:AvailableItem['kind'];played:boolean;favourite:boolean|null;position:number;playCount:number;lastPlayedAt:string|null;duration:number|null}>(sql`
+    type PlaybackObservation = {id:string;kind:AvailableItem['kind'];played:boolean;favourite:boolean|null;position:number;playCount:number;lastPlayedAt:string|null;duration:number|null};
+    let after: string | null = null;
+    observationPages: for (;;) {
+    const observed: PlaybackObservation[]=await db.execute<PlaybackObservation>(sql`
       select a.media_id as id,m.kind,bool_or((a.source->'coastUserData'->>'played')::boolean) as played,
         bool_or((a.source->'coastUserData'->>'favourite')::boolean) as favourite,
         coalesce((array_agg((a.source->'coastUserData'->>'positionSeconds')::double precision order by
@@ -441,13 +444,17 @@ async function runJellyfinScan(
       from availability a join media m on m.id=a.media_id
       where a.user_id=${userId} and a.connection_id=${connectionId} and a.scan_id=${scanId} and a.state='available'
         and jsonb_typeof(a.source->'coastUserData')='object'
-      group by a.media_id,m.kind order by a.media_id`);
+        ${after === null ? sql`` : sql`and a.media_id > ${after}::uuid`}
+      group by a.media_id,m.kind order by a.media_id limit 100`) as PlaybackObservation[];
     for(const row of observed) {
-      if((await ensureConnected()).settings.importPlayback===false)break;
+      if((await ensureConnected()).settings.importPlayback===false)break observationPages;
       await importJellyfinPlayback(userId,connectionId,row.id,{
         kind:row.kind,metadata:{},sources:row.duration===null?[]:[{durationSeconds:row.duration}],
         userData:{played:row.played,favourite:row.favourite??undefined,positionSeconds:row.position,playCount:row.playCount,lastPlayedAt:row.lastPlayedAt??undefined},
       },connection.accountGeneration);
+    }
+    if (observed.length < 100) break;
+    after = observed[observed.length - 1].id;
     }
   }
   // Metadata and per-user access remain separate for music, within the same service task.

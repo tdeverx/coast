@@ -5,6 +5,7 @@ export const diagnosticEvents = [
   'request.complete',
   'request.start',
   'request.failed',
+  'query.timing',
   'provider.complete',
   'provider.start',
   'provider.failed',
@@ -28,6 +29,7 @@ export const eventMessages: Record<DiagnosticEvent, string> = {
   'request.complete': 'Request completed.',
   'request.start': 'Request started.',
   'request.failed': 'Request failed.',
+  'query.timing': 'Local query phase measured.',
   'provider.complete': 'Provider response received.',
   'provider.start': 'Provider call started.',
   'provider.failed': 'Provider call failed.',
@@ -102,6 +104,9 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'settings',
       'admin',
       'media',
+      'collection',
+      'library',
+      'progress',
       'lists',
       'notifications',
       'requests',
@@ -121,6 +126,8 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'checkpoint-write',
       'reconcile',
       'complete',
+      'assessment',
+      'card-hydration',
     ].includes(String(input.stage))
   )
     result.stage = String(input.stage);

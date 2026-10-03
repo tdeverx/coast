@@ -7,7 +7,9 @@ export function contextGesture(node: HTMLElement, open: (point: MenuPoint) => vo
   let suppressClick = false;
   const cancel = () => {
     clearTimeout(timer);
+    timer = undefined;
     origin = undefined;
+    window.removeEventListener('scroll', cancel, true);
   };
   const insideMenu = (target: EventTarget | null) =>
     target instanceof Element && !!target.closest('[role="menu"], dialog');
@@ -19,6 +21,7 @@ export function contextGesture(node: HTMLElement, open: (point: MenuPoint) => vo
     suppressClick = true;
   };
   const down = (event: PointerEvent) => {
+    cancel();
     suppressClick = false;
     if (
       event.pointerType === 'mouse' ||
@@ -27,6 +30,7 @@ export function contextGesture(node: HTMLElement, open: (point: MenuPoint) => vo
     )
       return;
     origin = { x: event.clientX, y: event.clientY };
+    window.addEventListener('scroll', cancel, true);
     timer = setTimeout(() => {
       if (!origin) return;
       suppressClick = true;
@@ -61,7 +65,6 @@ export function contextGesture(node: HTMLElement, open: (point: MenuPoint) => vo
   node.addEventListener('pointerleave', cancel);
   node.addEventListener('click', click, true);
   node.addEventListener('keydown', key);
-  window.addEventListener('scroll', cancel, true);
   return {
     update(callback: typeof open) {
       open = callback;

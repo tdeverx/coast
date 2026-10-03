@@ -12,6 +12,7 @@ const tag=crypto.randomUUID(),albumExternal='a'.repeat(32),trackExternal='b'.rep
 const remote={Played:false,PlayCount:0,PlaybackPositionTicks:0,IsFavorite:false};
 const writes:Record<string,unknown>[]=[];
 let screenCopies:Record<string,unknown>[]=[];
+let screenPageSize=1;
 let failure=false,userId:string,trackId:string,albumId:string,connection:typeof s.providerConnections.$inferSelect,instance:typeof s.providerInstances.$inferSelect,oldConfig:Record<string,unknown>|null=null;
 const album={Id:albumExternal,Type:'MusicAlbum',Name:'Reconciliation album',ChildCount:1,ProviderIds:{MusicBrainzReleaseGroup:crypto.randomUUID()}};
 const track={Id:trackExternal,Type:'Audio',Name:'Reconciliation track',AlbumId:albumExternal,IndexNumber:1,RunTimeTicks:120000000,ProviderIds:{MusicBrainzTrack:crypto.randomUUID()},UserData:remote};
@@ -23,7 +24,7 @@ const adapter=new JellyfinAdapter(async(path,init)=>{
   const type=url.searchParams.get('includeItemTypes')??'';
   const items=type==='MusicAlbum'?[album]:type==='Audio'?[track]:screenCopies;
   const offset=Number(url.searchParams.get('startIndex')??0);
-  return {Items:items===screenCopies?items.slice(offset,offset+1):items,TotalRecordCount:items.length,StartIndex:offset};
+  return {Items:items===screenCopies?items.slice(offset,offset+screenPageSize):items,TotalRecordCount:items.length,StartIndex:offset};
  }
  if(url.pathname===`/Users/${tag}/Items/${trackExternal}`)return track;
  if(url.pathname.startsWith('/UserItems/')){const body=JSON.parse(String(init?.body));writes.push(body);Object.assign(remote,body);return remote;}
@@ -118,4 +119,25 @@ run('duplicate accessible copies reconcile once after a complete, paginated user
   await syncJellyfinUser(userId,connection.id,undefined,context());
   expect((await db.select().from(s.trackingState).where(and(eq(s.trackingState.userId,userId),eq(s.trackingState.mediaId,movie))))[0].watched).toBe(false);
  }finally{screenCopies=[];await db.delete(s.media).where(eq(s.media.id,movie));await db.delete(s.works).where(eq(s.works.id,movie));}
+});
+
+run('screen reconciliation crosses its 100-title boundary without skipping or repeating history',async()=>{
+ const db=getDb(),titles=Array.from({length:101},(_,index)=>({id:crypto.randomUUID(),kind:'movie' as const,title:`Paged observation ${index}`}));
+ await db.insert(s.media).values(titles);await db.insert(s.movies).values(titles.map(title=>({mediaId:title.id})));
+ const copies=titles.map(title=>({externalId:crypto.randomUUID().replaceAll('-',''),mediaId:title.id}));
+ copies.push({externalId:crypto.randomUUID().replaceAll('-',''),mediaId:titles[100].id});
+ await db.insert(s.providerItems).values(copies.map(copy=>({...copy,instanceId:instance.id,kind:'movie' as const})));
+ screenCopies=copies.map(copy=>({Id:copy.externalId,Type:'Movie',Name:'Paged observation',UserData:{Played:true,IsFavorite:false,PlayCount:1,PlaybackPositionTicks:0,LastPlayedDate:'2025-01-01T00:00:00Z'}}));
+ screenPageSize=100;
+ try{
+  await settings({importPlayback:true,reconcileTracking:false});
+  await syncJellyfinUser(userId,connection.id,undefined,context());
+  await syncJellyfinUser(userId,connection.id,undefined,context());
+  const events=await db.select().from(s.trackingEvents).where(and(eq(s.trackingEvents.userId,userId),inArray(s.trackingEvents.mediaId,titles.map(title=>title.id)),eq(s.trackingEvents.action,'watch')));
+  expect(events).toHaveLength(101);expect(new Set(events.map(event=>event.mediaId)).size).toBe(101);
+ }finally{
+  screenCopies=[];screenPageSize=1;
+  await db.delete(s.media).where(inArray(s.media.id,titles.map(title=>title.id)));
+  await db.delete(s.works).where(inArray(s.works.id,titles.map(title=>title.id)));
+ }
 });

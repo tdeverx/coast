@@ -17,6 +17,7 @@ import { trackInTransaction } from '$lib/core/tracking/service';
 import type { Metadata, SyncCategory, SyncPreferences } from '$lib/providers/contracts';
 import type { TraktRecord, TraktAdapter } from '$lib/providers/trakt/adapter.server';
 import { traktEntry } from '$lib/sync/trakt-identity';
+import { compactTraktHistory, type TraktHistoryTitles } from '$lib/sync/trakt-history';
 
 export async function importTrakt(
   userId: string,
@@ -149,14 +150,17 @@ export async function importTraktFromAdapter(
     if (!sync[category]) continue;
     seen.clear();
     const history: TraktRecord[] = [];
+    const historyTitles: TraktHistoryTitles = new Map();
     for (let page = 1; ; page++) {
       const records = await adapter.read(category, page);
-      if (category === 'history') history.push(...records);
+      if (category === 'history')
+        for (const record of records) history.push(compactTraktHistory(record, historyTitles));
       else for (const record of records) await apply(category, record);
       if (records.length < 100) break;
       if (page >= 10000) throw new Error('Trakt import exceeded the supported page bound.');
     }
     if (category === 'history') {
+      historyTitles.clear();
       history.sort((a, b) => (a.watched_at || '').localeCompare(b.watched_at || ''));
       for (const record of history) await apply(category, record);
     }

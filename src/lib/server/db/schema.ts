@@ -655,6 +655,7 @@ export const availability = pgTable(
       t.sourceId
     ),
     index('availability_user_media_idx').on(t.userId, t.mediaId),
+    index('availability_expiry_idx').on(t.userId,t.connectionId,t.verifiedAt).where(sql`${t.state}='available' or (${t.state}='unavailable' and ${t.source}->>'authoritative'='true')`),
   ]
 );
 export const outboxActions = pgTable(
@@ -1210,3 +1211,35 @@ export const shareViewers = pgTable('share_viewers',{
  preparingUntil:timestamp('preparing_until',{withTimezone:true}),
  playbackId:uuid('playback_id').references(()=>playbackSessions.id,{onDelete:'set null'}),createdAt:createdAt(),
 });
+
+export const contentRevisions = pgTable('content_revisions', {
+  scope: text('scope').notNull(), domain: text('domain').notNull(),
+  revision: bigint('revision', { mode: 'bigint' }).notNull(),
+}, t => [primaryKey({columns:[t.scope,t.domain]})]);
+
+// Transaction-local staging is deleted by the deferred commit trigger. It keeps
+// shared revision locks out of long imports and applies them in one stable order.
+export const contentRevisionChanges = pgTable('content_revision_changes', {
+  transactionId: bigint('transaction_id',{mode:'bigint'}).primaryKey(),
+  changes: jsonb('changes').$type<Record<string,boolean>>().notNull(),
+});
+
+/** Results outlive outbox retention and account deletion. */
+export const benchmarkRuns = pgTable('benchmark_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(()=>users.id,{onDelete:'set null'}),
+  actionId: uuid('action_id').references(()=>outboxActions.id,{onDelete:'set null'}),
+  workloadVersion: text('workload_version').notNull(),
+  state: text('state').$type<import('$lib/benchmarks/model').BenchmarkState>().notNull().default('queued'),
+  createdAt: createdAt(), startedAt: timestamp('started_at',{withTimezone:true}),
+  finishedAt: timestamp('finished_at',{withTimezone:true}),
+  context: jsonb('context').$type<import('$lib/benchmarks/model').BenchmarkContext>(),
+  measurements: jsonb('measurements').$type<import('$lib/benchmarks/model').BenchmarkMeasurements>(),
+  comparisonKey: text('comparison_key'), errors: jsonb('errors').$type<string[]>().notNull().default([]),
+}, t => [
+  uniqueIndex('benchmark_one_active_idx').on(sql`(true)`).where(sql`${t.state} in ('queued','running')`),
+  index('benchmark_history_idx').on(t.createdAt,t.id),
+  index('benchmark_comparison_idx').on(t.comparisonKey,t.createdAt),
+  index('benchmark_dataset_comparison_idx').on(t.comparisonKey,sql`(${t.context}->>'datasetFingerprint')`,t.createdAt),
+  check('benchmark_state_check',sql`${t.state} in ('queued','running','completed','failed','cancelled')`),
+]);

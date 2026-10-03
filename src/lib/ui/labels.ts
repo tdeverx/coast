@@ -52,6 +52,7 @@ const labels: Record<string, string> = {
   'seerr.request': 'Send request',
   'seerr.manage': 'Update request',
   'history.remove': 'Remove matching history',
+  'benchmark.run': 'Local performance benchmark',
 };
 export function displayLabel(value: string): string {
   return (

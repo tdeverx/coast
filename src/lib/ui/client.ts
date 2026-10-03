@@ -1,5 +1,6 @@
 import { diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
 import { invalidate } from '$app/navigation';
+import { invalidateContentRevision, type ContentDomain } from './content-revision.svelte';
 
 let playbackApi = '/api/v1/';
 export function setPlaybackApi(shared:boolean){playbackApi=shared?'/api/share/':'/api/v1/';}
@@ -67,6 +68,7 @@ export async function refreshAfterChange(path: string) {
     : ['settings', 'profile', 'admin'].includes(domain) ? ['session', 'settings', 'tracking', 'social']
     : ['tracking', 'ratings', 'collection', 'music', 'games', 'game-playthroughs', 'lists', 'up-next', 'continue', 'rewatch', 'media'].includes(domain) ? ['tracking', 'social']
     : [];
+  invalidateContentRevision(dependencies.filter((key): key is ContentDomain => ['tracking','social','planning'].includes(key)));
   await Promise.all(dependencies.map(key => invalidate(`coast:${key}`)));
 }
 export const message = (error: unknown) =>

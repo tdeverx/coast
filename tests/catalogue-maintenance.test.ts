@@ -95,6 +95,30 @@ test('Jellyfin discovery only uses meaningful personal activity and follows epis
   expect(itemReads.some((p) => p.includes('server-only'))).toBe(false);
 });
 
+test('Jellyfin catalogue checks root identities by page and reads only unresolved roots', async () => {
+  const saved: string[] = [], reads: string[] = [], batches: string[][] = [];
+  const adapter = new JellyfinAdapter(async (path) => {
+    const url = new URL(path, 'https://fixture.invalid');
+    if (url.pathname === '/Items') {
+      const offset = Number(url.searchParams.get('startIndex') ?? 0);
+      const all = [
+        { Id: 'known', Type: 'Movie', Name: 'Known', UserData: { Played: true } },
+        { Id: 'episode-one', Type: 'Episode', Name: 'One', SeriesId: 'new-show', UserData: { Played: true } },
+        { Id: 'episode-two', Type: 'Episode', Name: 'Two', SeriesId: 'new-show', UserData: { Played: true } },
+      ];
+      return { Items: all.slice(offset, offset + 2), TotalRecordCount: all.length, StartIndex: offset };
+    }
+    reads.push(path);
+    return { Id: 'new-show', Type: 'Series', Name: 'New show', ProviderIds: { Tmdb: '42' } };
+  }, 'client', 'token');
+  await scanJellyfinCatalogue(adapter, 'remote', async (kind, id) => {
+    saved.push(`${kind}:${id}`); return true;
+  }, async (ids) => { batches.push(ids); return new Set(['known']); });
+  expect(batches).toEqual([['known', 'new-show']]);
+  expect(reads).toEqual(['/Users/remote/Items/new-show']);
+  expect(saved).toEqual(['show:42']);
+});
+
 test('background metadata refresh omits recommendation fetching without changing normal detail reads', async () => {
   const { TmdbAdapter } =
     await import('../src/lib/providers/tmdb/adapter.server');

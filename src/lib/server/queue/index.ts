@@ -27,7 +27,7 @@ export interface OutboxAction {
 export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number };
 export type ActionHandler = (action: OutboxAction) => Promise<void | JobOutcome>;
 
-const independentQueueKinds=['webhook.deliver','planning.reminder'];
+const independentQueueKinds=['webhook.deliver','planning.reminder','benchmark.run'];
 const handlers = new Map<string, ActionHandler>();
 export class PermanentActionError extends Error {
   constructor(message: string) {
@@ -451,6 +451,7 @@ export async function retryAction(actor: SessionUser | null, id: string) {
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('provider-maintenance',0))`;
     const [action]=await sql`select a.*,coalesce(c.instance_id::text,a.payload->>'instanceId') as instance from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id=${id}`;
     if(!action)throw new AppError(409,'This action cannot be retried.');
+    if(action.kind==='benchmark.run')throw new AppError(409,'Run a new benchmark in Benchmarking settings to preserve the recorded result.');
     if(maintenanceKinds.includes(action.kind)&&action.instance){
       const [busy]=await sql`select a.id from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id<>${id} and a.kind=${action.kind} and a.state in ('pending','running') and coalesce(c.instance_id::text,a.payload->>'instanceId')=${action.instance} limit 1`;
       if(busy)throw new AppError(409,'This task is already queued or running for this service.');

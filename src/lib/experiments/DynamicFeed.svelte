@@ -3,6 +3,7 @@
  import {page} from '$app/state';
  import {useClient} from '$lib/ui/client-context';
  import {createResource} from '$lib/ui/resource.svelte';
+ import {contentRevisionKey} from '$lib/ui/content-revision.svelte';
  import {lazyContent} from '$lib/ui/lazy-content';
  import Shelf from '$lib/ui/components/Shelf.svelte';
  import Button from '$lib/ui/components/Button.svelte';
@@ -16,7 +17,8 @@
   const offset=resource.data.nextOffset;
   await resource.load(signal=>api<typeof resource.data>(`experiments/feed?offset=${offset}`,undefined,'GET',{signal}),{merge:(previous,next)=>({...next,rows:[...previous.rows,...next.rows.filter(row=>!previous.rows.some(existing=>existing.key===row.key))]})});
  }
- $effect(()=>{page.data;untrack(()=>{revision++;resource.replace({rows:[],nextOffset:0});});});
+ const refreshKey=$derived(JSON.stringify([contentRevisionKey(page.data,['tracking']),page.data.experimentalMusic,page.data.experimentalGaming,page.data.experiments.dynamicForYou]));
+ $effect(()=>{refreshKey;untrack(()=>{revision++;resource.replace({rows:[],nextOffset:0});});});
  onDestroy(resource.cancel);
 </script>
 <div aria-label="Dynamic For You" class="dynamic-feed">

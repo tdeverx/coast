@@ -274,6 +274,20 @@
       "when": 1791043227415,
       "tag": "0038_split_experimental_features",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791047137584,
+      "tag": "0039_performance_benchmarks",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791049511508,
+      "tag": "0040_collection_freshness",
+      "breakpoints": true
     }
   ]
 }

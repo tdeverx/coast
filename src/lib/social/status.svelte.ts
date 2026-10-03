@@ -1,5 +1,6 @@
 import { api } from '$lib/ui/client';
 import { invalidate } from '$app/navigation';
+import { invalidateContentRevision } from '$lib/ui/content-revision.svelte';
 import type { ActivityStatus, StatusPreference } from './status';
 export const userStatus = $state<{preference:StatusPreference; status:ActivityStatus; busy:boolean; error:string; sharePresence:boolean}>({preference:'automatic',status:'offline',busy:false,error:'',sharePresence:true});
 export function chooseStatus(preference:StatusPreference) {return updateStatus('status',{preference});}
@@ -10,6 +11,7 @@ async function updateStatus(action:string,body:unknown) {
  try {
   const result=await api<{preference:StatusPreference;status:ActivityStatus;sharePresence:boolean}>(`session/${action}`,body);
   Object.assign(userStatus,result);
+  invalidateContentRevision(['social']);
   await Promise.all([invalidate('coast:session'),invalidate('coast:social')]);
  } catch(error) {userStatus.error=error instanceof Error?error.message:'Could not update your status.';}
  finally {userStatus.busy=false;}
@@ -28,7 +30,7 @@ export function startPresence(isPlaying:()=>boolean,refreshFriends:()=>boolean) 
    const result=await api<{preference:StatusPreference;status:ActivityStatus;sharePresence:boolean}>('session/heartbeat',{active:isPlaying()||observedInput>acknowledgedInput},'POST',{signal:controller.signal});
    acknowledgedInput=observedInput;
    if(!userStatus.busy)Object.assign(userStatus,result);
-   if(refreshFriends())await invalidate('coast:social');
+   if(refreshFriends()){invalidateContentRevision(['social']);await invalidate('coast:social');}
   } catch { /* Presence expires naturally if a connection is interrupted. */ }
   finally {inFlight=false;}
  }

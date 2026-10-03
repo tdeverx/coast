@@ -8,13 +8,16 @@ prepare_coast_storage "$data_dir"
 
 database_pid=""
 application_pid=""
+termination_signal=""
 shutdown() {
   trap - TERM INT
   if [[ -n "$application_pid" ]]; then kill -TERM "$application_pid" 2>/dev/null || true; fi
   if [[ -n "$database_pid" ]]; then kill -TERM "$database_pid" 2>/dev/null || true; fi
   wait 2>/dev/null || true
 }
-trap shutdown TERM INT EXIT
+trap 'termination_signal="TERM"; shutdown' TERM
+trap 'termination_signal="INT"; shutdown' INT
+trap shutdown EXIT
 
 if [[ -z "${DATABASE_URL:-}" ]]; then
   pg_bin="$(find /usr/lib/postgresql -mindepth 2 -maxdepth 2 -type d -name bin | sort -V | tail -1)"
@@ -65,7 +68,14 @@ gosu coast bun /app/build/index.js &
 application_pid=$!
 # If either child dies, stop the other and let the container restart as a unit.
 set +e
-if [[ -n "$database_pid" ]]; then wait -n "$database_pid" "$application_pid"; else wait "$application_pid"; fi
-exit_code=$?
+source /usr/local/lib/coast-container-wait.sh
+wait_for_coast_children
 set -e
+# Persist a bounded lifecycle record independently of replaceable container stdout.
+# A diagnostic write must never prevent shutdown; only fixed fields are included.
+child="unknown"
+if [[ -n "$termination_signal" ]]; then child="termination"
+elif [[ "$completed_pid" == "$database_pid" && -n "$database_pid" ]]; then child="database"
+elif [[ "$completed_pid" == "$application_pid" ]]; then child="application"; fi
+gosu coast bun /app/scripts/container-child-exit.ts "$data_dir" "$child" "$completed_pid" "$exit_code" "$termination_signal" || true
 exit "$exit_code"

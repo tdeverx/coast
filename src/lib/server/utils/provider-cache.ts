@@ -7,8 +7,12 @@ export function providerCache<T>(
   const values = new Map<string, { value: T; expires: number }>();
   const pending = new Map<string, Promise<T>>();
   return async (key: string, fetcher: () => Promise<T>): Promise<T> => {
+    // Lookups also release expired entries for other keys, including after outages.
+    // Capacity bounds this sweep; no background timer or retained stale fallback.
+    const now = Date.now();
+    for (const [id, entry] of values) if (entry.expires <= now) values.delete(id);
     const cached = values.get(key);
-    if (cached && cached.expires > Date.now()) return cached.value;
+    if (cached) return cached.value;
     const existing = pending.get(key);
     if (existing) return existing;
     const request = fetcher()

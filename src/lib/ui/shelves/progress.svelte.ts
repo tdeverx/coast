@@ -12,6 +12,7 @@ import { mediumOptions } from '$lib/experimental';
   } from '$lib/progress';
   import { useClient } from '$lib/ui/client-context';
   import { createResource } from '$lib/ui/resource.svelte';
+  import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
   import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
   import type { ShelfSource, ShelfControl } from './types';
 
@@ -83,13 +84,24 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
       page: String(number),
     });
   const href = (number = 1) => '/progress?' + parameters(number);
+  const refreshKey = $derived(JSON.stringify([contentRevisionKey(route.data, ['tracking', 'social']), username, surface, route.data.experimentalMusic, route.data.experimentalGaming]));
+  let previousRefreshKey = untrack(() => refreshKey);
+  let previousInitial = untrack(() => initial);
   $effect(() => {
     const next = initial;
-    // Refresh an activated shelf after route data is invalidated by a tracking change.
-    route.data;
+    const key = refreshKey;
     untrack(() => {
+      const revisionChanged = key !== previousRefreshKey;
+      const initialChanged = next !== previousInitial;
+      previousRefreshKey = key;
+      previousInitial = next;
       if (!next) {
         if (resource.activated) void select(content.page);
+        return;
+      }
+      // A session poll can report provider changes without re-running the page's initial load.
+      if (revisionChanged && !initialChanged) {
+        void select(content.page);
         return;
       }
       if (layout === 'grid') {

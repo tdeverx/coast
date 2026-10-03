@@ -15,6 +15,7 @@
   } from '$lib/settings/sections';
   import Heading from '$lib/ui/components/Heading.svelte';
   import JobsSettings from '$lib/ui/components/JobsSettings.svelte';
+  import BenchmarkSettings from '$lib/benchmarks/BenchmarkSettings.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   import IntegrationSettings from '$lib/ui/components/IntegrationSettings.svelte';
   import ConflictList from '$lib/ui/components/ConflictList.svelte';
@@ -539,6 +540,7 @@
           providers={data.providers}
           actions={data.actions}
         />
+      {:else if data.section === 'benchmarks' && data.benchmarks}<BenchmarkSettings history={data.benchmarks} />
       {:else if data.section === 'pending'}<p class="small" style="margin-bottom:20px">
           Choose which service should win when saved changes disagree. Background sync is managed by
           your administrator.
