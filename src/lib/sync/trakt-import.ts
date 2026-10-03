@@ -21,14 +21,16 @@ import { traktEntry } from '$lib/sync/trakt-identity';
 export async function importTrakt(
   userId: string,
   connectionId: string,
-  scope: 'tracking' | 'lists'
+  scope: 'tracking' | 'lists',
+  initialImport = false
 ) {
   const context = await getTrakt(userId, connectionId);
+  const preferences=initialImport?{...context.sync,history:true,progress:true,ratings:true,watchlist:true,lists:true}:context.sync;
   const sync =
     scope === 'tracking'
-      ? { ...context.sync, lists: false }
+      ? { ...preferences, lists: false }
       : {
-          ...context.sync,
+          ...preferences,
           history: false,
           progress: false,
           collection: false,

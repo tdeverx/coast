@@ -54,6 +54,8 @@ export const policyGroups = [
 
 export const policyFields = [
   'siteAccess',
+  'registrationMode',
+  'registrationProvider',
   'experimentalFeatures',
   'sessionLifetimeDays',
   'playbackDelivery',

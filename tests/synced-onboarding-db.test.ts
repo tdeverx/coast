@@ -1,11 +1,11 @@
 import {presence} from '../src/lib/social/presence.server';
-import {enqueueAction} from '../src/lib/server/queue';
+import {enqueueAction,runQueueOnce,registerActionHandler} from '../src/lib/server/queue';
 import {encryptCredential} from '../src/lib/server/security/credentials';
 import {beforeAll,afterAll,expect,test} from 'bun:test';
 import {getSql} from '../src/lib/server/db';
 import { getConfig, type CoastConfig } from '../src/lib/server/config';
 import { updateConfig } from '../src/lib/application/configuration.server';
-import {createInvite,redeemInvite,onboardingPending,onboardingStatus,revokeInvite,retryOnboarding} from '../src/lib/server/auth/onboarding';
+import {createInvite,registerAccount,onboardingPending,onboardingStatus,revokeInvite,retryOnboarding,beginOnboardingImports} from '../src/lib/server/auth/onboarding';
 import {createRoom,inviteParticipant,joinRoom,roomState,commandRoom,leaveRoom,declineInvitation,listRooms} from '../src/lib/playback/synced/service.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const ids=Array.from({length:3},()=>crypto.randomUUID()),instance=crypto.randomUUID(),work=crypto.randomUUID();
@@ -30,15 +30,56 @@ afterAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;await updateConfig(
 run('invites are hashed, single-use under concurrency, and create restricted normal accounts',async()=>{
  const invite=await createInvite(admin,{days:7});
  const [stored]=await getSql()`SELECT token_hash FROM registration_invites WHERE id=${invite.id}`;expect(stored.token_hash).not.toBe(invite.code);
- const attempts=await Promise.allSettled([0,1].map(i=>redeemInvite({code:invite.code,username:`invite-${crypto.randomUUID()}`.slice(0,32),password:'a strong fixture password'},`fixture-${i}`)));
+ const attempts=await Promise.allSettled([0,1].map(i=>registerAccount({code:invite.code,username:`invite-${crypto.randomUUID()}`.slice(0,32),displayName:'Fixture user',passwordConfirmation:'a strong fixture password',password:'a strong fixture password'},`fixture-${i}`)));
  const accepted=attempts.filter(x=>x.status==='fulfilled');expect(accepted).toHaveLength(1);
- const user=(accepted[0] as PromiseFulfilledResult<Awaited<ReturnType<typeof redeemInvite>>>).value.user;extra.push(user.id);expect(user.role).toBe('user');expect(await onboardingPending(user.id)).toBe(true);
- const revoked=await createInvite(admin,{days:1});await revokeInvite(admin,revoked.id);await expect(redeemInvite({code:revoked.code,username:'revoked-fixture',password:'a strong fixture password'},'fixture-revoked')).rejects.toThrow('invalid');
+ const user=(accepted[0] as PromiseFulfilledResult<Awaited<ReturnType<typeof registerAccount>>>).value.user;extra.push(user.id);expect(user.role).toBe('user');expect(await onboardingPending(user.id)).toBe(true);
+ const revoked=await createInvite(admin,{days:1});await revokeInvite(admin,revoked.id);await expect(registerAccount({code:revoked.code,username:'revoked-fixture',displayName:'Fixture user',passwordConfirmation:'a strong fixture password',password:'a strong fixture password'},'fixture-revoked')).rejects.toThrow('invalid');
  const expired=await createInvite(admin,{days:1});await getSql()`UPDATE registration_invites SET expires_at=NOW()-INTERVAL '1 second' WHERE id=${expired.id}`;
- await expect(redeemInvite({code:expired.code,username:'expired-fixture',password:'a strong fixture password'},'fixture-expired')).rejects.toThrow('invalid');
+ await expect(registerAccount({code:expired.code,username:'expired-fixture',displayName:'Fixture user',passwordConfirmation:'a strong fixture password',password:'a strong fixture password'},'fixture-expired')).rejects.toThrow('invalid');
+});
+run('open registration captures policy, validates confirmation, and requires explicit completion',async()=>{
+ await updateConfig(admin,{registrationMode:'open',registrationProvider:'none'});
+ const input={username:'Open.Fixture',displayName:'Open Fixture',password:'a strong fixture password',passwordConfirmation:'wrong confirmation'};
+ await expect(registerAccount(input,'open-mismatch')).rejects.toThrow('Passwords must match');
+ const session=await registerAccount({...input,passwordConfirmation:input.password},'open-success');extra.push(session.user.id);
+ expect(session.user.username).toBe('open.fixture');expect(session.user.settings.profile?.displayName).toBe('Open Fixture');
+ await updateConfig(admin,{registrationMode:'invite',registrationProvider:'jellyfin'});
+ expect((await onboardingStatus(session.user.id)).requiredProvider).toBe('none');
+ expect((await onboardingStatus(session.user.id)).complete).toBe(false);
+ expect((await beginOnboardingImports(session.user.id)).complete).toBe(true);
+ await expect(registerAccount({...input,username:'invite-required',passwordConfirmation:input.password},'open-rejected')).rejects.toThrow('invite');
+});
+run('required connections cannot be bypassed and a deleted selected account cannot complete',async()=>{
+ const invite=await createInvite(admin,{days:1});const session=await registerAccount({code:invite.code,username:'required-fixture',displayName:'Required Fixture',password:'a strong fixture password',passwordConfirmation:'a strong fixture password'},'required');extra.push(session.user.id);
+ await expect(beginOnboardingImports(session.user.id)).rejects.toThrow('required');
+ await getSql()`update user_onboarding set required_provider='none',imports_started_at=now(),account_generation=gen_random_uuid() where user_id=${session.user.id}`;
+ const status=await onboardingStatus(session.user.id);expect(status.complete).toBe(false);expect(status.reconnect).toBe(true);
+});
+run('Trakt onboarding requires both pinned import outcomes and leaves export preferences untouched',async()=>{
+ await updateConfig(admin,{registrationMode:'open',registrationProvider:'trakt'});
+ const session=await registerAccount({username:'trakt-fixture',displayName:'Trakt Fixture',password:'a strong fixture password',passwordConfirmation:'a strong fixture password'},'trakt-onboarding');extra.push(session.user.id);
+ const service=crypto.randomUUID(),connection=crypto.randomUUID();
+ try{
+  await getSql()`insert into provider_instances(id,provider,name,base_url) values(${service},'trakt','Onboarding fixture','https://api.trakt.tv')`;
+  const [c]=await getSql()`insert into provider_connections(id,user_id,instance_id,status,external_user_id,settings) values(${connection},${session.user.id},${service},'connected','fixture-account',${{sync:{history:false,lists:false}}}::jsonb) returning account_generation`;
+  const jobs:Record<string,string>={};for(const kind of ['trakt.import','trakt.lists-import']){const [job]=await getSql()`insert into outbox_actions(user_id,connection_id,kind,payload,state) values(${session.user.id},${connection},${kind},${{initialImport:true}}::jsonb,'pending') returning id`;jobs[kind]=job.id;}
+  await getSql()`update user_onboarding set trakt_connection_id=${connection},trakt_account_generation=${c.account_generation},import_jobs=${jobs}::jsonb where user_id=${session.user.id}`;
+  expect((await beginOnboardingImports(session.user.id)).complete).toBe(false);
+  await getSql()`update outbox_actions set state='succeeded' where id=${jobs['trakt.import']}`;
+  expect((await onboardingStatus(session.user.id)).complete).toBe(false);
+  await getSql()`update outbox_actions set state='failed' where id=${jobs['trakt.lists-import']}`;
+  expect((await onboardingStatus(session.user.id)).imports.some(i=>i.state==='failed')).toBe(true);
+  await getSql()`update outbox_actions set state='succeeded' where id=${jobs['trakt.lists-import']}`;
+  const [preferences]=await getSql()`select settings from provider_connections where id=${connection}`;expect(preferences.settings.sync).toEqual({history:false,lists:false});
+  await getSql()`update provider_connections set account_generation=gen_random_uuid() where id=${connection}`;
+  expect((await onboardingStatus(session.user.id)).complete).toBe(false);
+  await getSql()`update user_onboarding set trakt_account_generation=${c.account_generation} where user_id=${session.user.id}`;
+  await getSql()`update provider_connections set account_generation=${c.account_generation} where id=${connection}`;
+  expect((await onboardingStatus(session.user.id)).complete).toBe(true);
+ }finally{await getSql()`delete from provider_instances where id=${service}`;await updateConfig(admin,{registrationMode:'invite',registrationProvider:'jellyfin'});}
 });
 run('shared scan cannot complete onboarding; fresh current-account user traversal can',async()=>{
- await getSql()`INSERT INTO user_onboarding (user_id,connection_id,account_generation,requested_at) SELECT ${ids[1]},id,account_generation,NOW()-INTERVAL '1 minute' FROM provider_connections WHERE id=${conn[1]}`;
+ await getSql()`INSERT INTO user_onboarding (user_id,connection_id,account_generation,imports_started_at,requested_at) SELECT ${ids[1]},id,account_generation,NOW(),NOW()-INTERVAL '1 minute' FROM provider_connections WHERE id=${conn[1]}`;
  await getSql()`INSERT INTO sync_checkpoints (connection_id,kind,completed_at) VALUES (${conn[1]},'jellyfin-full',NOW())`;
  expect((await onboardingStatus(ids[1])).complete).toBe(false);
  await getSql()`INSERT INTO sync_checkpoints (connection_id,kind,completed_at) VALUES (${conn[1]},'jellyfin-user',NOW()-INTERVAL '1 hour')`;
@@ -97,7 +138,7 @@ run('music queue keeps gaps, order and repeated track positions',async()=>{
 
 run('onboarding ignores obsolete jobs and owner retries respect the service lane',async()=>{
  await getSql()`UPDATE outbox_actions SET state='cancelled' WHERE connection_id=ANY(${getSql().array(conn,'TEXT')}::uuid[]) AND state IN ('pending','running')`;
- await getSql()`INSERT INTO user_onboarding (user_id,connection_id,account_generation) SELECT ${ids[2]},id,account_generation FROM provider_connections WHERE id=${conn[2]}`;
+ await getSql()`INSERT INTO user_onboarding (user_id,connection_id,account_generation,imports_started_at) SELECT ${ids[2]},id,account_generation,NOW() FROM provider_connections WHERE id=${conn[2]}`;
  await getSql()`INSERT INTO outbox_actions (user_id,connection_id,kind,payload,state,created_at) VALUES (${ids[2]},${conn[2]},'jellyfin.sync','{}'::jsonb,'cancelled',NOW()-INTERVAL '2 hours')`;
  const busy=await enqueueAction({userId:ids[0],connectionId:conn[0],kind:'jellyfin.sync',payload:{}});
  const waiting=await onboardingStatus(ids[2]);expect(waiting.complete).toBe(false);expect(waiting.progress).toBeNull();
@@ -231,4 +272,13 @@ run('music queue edits preserve playback and enforce queue permissions',async()=
  r=await commandRoom(ids[0],r.id,{action:'settings',settings:{...r.settings,queue:'everyone'},revision:r.revision});
  r=await commandRoom(ids[1],r.id,{action:'queue',queue:[...musicIds].reverse(),queueIndex:1,revision:r.revision});expect(r.queueIndex).toBe(1);expect(r.mediaId).toBe(musicIds[0]);
  await expect(commandRoom(ids[1],r.id,{action:'queue',queue:[musicIds[1]],queueIndex:0,revision:r.revision})).rejects.toThrow('playing track');
+});
+
+run('initial imports take priority without overlapping service work',async()=>{
+ await getSql()`update outbox_actions set state='cancelled' where state in ('pending','running','failed')`;
+ const calls:string[]=[];registerActionHandler('fixture.normal',async()=>{calls.push('ordinary');});registerActionHandler('jellyfin.sync',async()=>{calls.push('initial');});
+ await enqueueAction({userId:ids[0],kind:'fixture.normal',payload:{}});
+ await enqueueAction({userId:ids[2],connectionId:conn[2],kind:'jellyfin.sync',payload:{}});
+ expect(await runQueueOnce()).toBe(true);expect(calls).toEqual(['initial']);
+ expect(await runQueueOnce()).toBe(true);expect(calls).toEqual(['initial','ordinary']);
 });

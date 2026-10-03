@@ -307,15 +307,7 @@ Implement sessions using:
 
 If a session expires while a page is already open, allow that loaded session to continue safely where possible, notify the user that authentication has expired and require reauthentication on reload or before a sensitive operation. Offer an immediate reauthentication action.
 
-Password recovery should support an optional single-use recovery credential file in the persistent configuration mount:
-
-- read only during application startup
-- consume and delete it immediately
-- require a restart to introduce a new recovery credential
-- create only a temporary disposable recovery identity/session
-- never persist the recovery session across restarts
-
-Use Bun’s secure password hashing facilities and authenticated encryption for stored provider credentials.
+Registration uses Coast credentials with password confirmation. Administrators choose open or invite-only registration and required onboarding connections (Jellyfin, Trakt, either, or none). Initial selected imports finish before browsing. No administrator recovery route or Jellyfin sign-in.
 
 ## Provider model
 

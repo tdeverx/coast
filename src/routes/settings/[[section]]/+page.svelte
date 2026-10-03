@@ -60,9 +60,7 @@
       ? policyFields
       : data.section === 'activity'
         ? ['diagnosticLevel']
-        : data.section === 'users'
-          ? ['jellyfinAutoCreateUsers', 'jellyfinSyncAdmins']
-          : (preferenceFields[data.section as keyof typeof preferenceFields] ?? [])
+        : (preferenceFields[data.section as keyof typeof preferenceFields] ?? [])
   );
   let saved = $state(
     untrack(() =>
@@ -641,43 +639,6 @@
           experimentalFeatures={data.config?.experimentalFeatures ?? false}
         />
       {:else if data.section === 'users'}<div class="stack">
-          {#if policy}<form
-              class="panel stack form-width"
-              onsubmit={(event) => {
-                event.preventDefault();
-                void saveDraft();
-              }}
-            >
-              <h3>Jellyfin sign-in</h3>
-              <p class="small">
-                Only enabled Jellyfin services verified by an administrator can be used to sign in.
-              </p>
-              <label class="check"
-                ><input
-                  type="checkbox"
-                  bind:checked={policy.jellyfinAutoCreateUsers}
-                  disabled={busy}
-                />Create Coast accounts on first Jellyfin sign-in</label
-              >
-              <p class="small">
-                Creates a separate Coast account and connects it to Jellyfin. Existing linked
-                accounts are reused. Jellyfin validates its own passwords; Coast does not store
-                them.
-              </p>
-              <label class="check"
-                ><input
-                  type="checkbox"
-                  bind:checked={policy.jellyfinSyncAdmins}
-                  disabled={busy}
-                />Sync administrator roles from Jellyfin at sign-in</label
-              >
-              <p class="small">
-                Grants or removes Coast administrator access to match Jellyfin at each Jellyfin
-                sign-in. Disabled Coast accounts stay disabled. Keep an active Coast administrator
-                before demoting the last one.
-              </p>
-              {@render saveControls('Save sign-in policies')}
-            </form>{/if}
           <div class="overflow">
             <table class="table">
               <thead
@@ -799,6 +760,9 @@
             <legend class="sr-only">Experimental features</legend>
             <h3>Experimental features</h3>
             <label class="field">Website access<select bind:value={policy.siteAccess}><option value="private">Private · sign-in required</option><option value="public-read-only">Public read-only · profiles, Discover and media details</option></select></label>
+            <label class="field">Registration<select bind:value={policy.registrationMode}><option value="invite">Invite code required</option><option value="open">Open sign-ups</option></select></label>
+            <label class="field">Required connection<select bind:value={policy.registrationProvider}><option value="jellyfin">Jellyfin</option><option value="trakt">Trakt</option><option value="either">Jellyfin or Trakt</option><option value="none">None</option></select></label>
+            <p class="small">New accounts complete their selected data imports before entering Coast. Provider availability is managed in Integrations.</p>
             <label class="check"
               ><input type="checkbox" bind:checked={policy.experimentalFeatures} />Enable
               experimental music and gaming</label

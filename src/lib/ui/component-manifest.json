@@ -1,4 +1,15 @@
 {
+  "AccountFields": {
+    "path": "src/lib/ui/components/AccountFields.svelte",
+    "elements": [
+      "Field"
+    ],
+    "usedBy": [
+      "src/routes/register/+page.svelte",
+      "src/routes/setup/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
   "ActivityHeader": {
     "path": "src/lib/ui/components/ActivityHeader.svelte",
     "elements": [
@@ -39,7 +50,6 @@
       "src/lib/ui/components/Header.svelte",
       "src/routes/login/+page.svelte",
       "src/routes/onboarding/+page.svelte",
-      "src/routes/recovery/+page.svelte",
       "src/routes/register/+page.svelte",
       "src/routes/setup/+page.svelte"
     ],
@@ -116,7 +126,6 @@
       "src/routes/people/[id]/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/progress/+page.svelte",
-      "src/routes/recovery/+page.svelte",
       "src/routes/register/+page.svelte",
       "src/routes/requests/+page.svelte",
       "src/routes/search/+page.svelte",
@@ -262,11 +271,13 @@
     "path": "src/lib/ui/components/Field.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/ui/components/AccountFields.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/MetadataEditor.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
-      "src/lib/ui/components/RequestDialog.svelte"
+      "src/lib/ui/components/RequestDialog.svelte",
+      "src/routes/login/+page.svelte"
     ],
     "dynamicComposition": true
   },
