@@ -10,6 +10,7 @@
     preferenceFields,
     policyFields,
     policyGroups,
+    experimentalPolicies,
     selectSettings,
   } from '$lib/settings/sections';
   import Heading from '$lib/ui/components/Heading.svelte';
@@ -334,7 +335,7 @@
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">Subtitles</legend>
             <h3>Subtitles</h3>
-            {#if data.experimentalFeatures}<label class="field">Listen threshold (%)<input type="number" min="1" max="100" step="1" bind:value={prefs.listenThreshold} /><small>Count a listen after this percentage is actually played. Captured when playback starts.</small></label>{/if}
+            {#if data.experimentalMusic}<label class="field">Listen threshold (%)<input type="number" min="1" max="100" step="1" bind:value={prefs.listenThreshold} /><small>Count a listen after this percentage is actually played. Captured when playback starts.</small></label>{/if}
             <div class="setting">
               <div>
                 <h3>Always enable subtitles</h3>
@@ -663,7 +664,7 @@
         </div>
       {:else if data.section === 'integrations'}<IntegrationSettings
           providers={data.providers}
-          experimentalFeatures={data.config?.experimentalFeatures ?? false}
+          experimentalGaming={data.config?.experimentalGaming ?? false}
         />
       {:else if data.section === 'users'}<div class="stack">
           <div class="overflow">
@@ -787,30 +788,21 @@
           <nav class="policy-links" aria-label="Policy groups">
             {#each policyGroups as [key, label]}<a class="badge" href="#{key}">{label}</a>{/each}
           </nav>
+          <fieldset class="panel stack" id="access" disabled={busy}>
+            <legend class="sr-only">Access & registration</legend>
+            <h3>Access & registration</h3>
+            <label class="field">Website access<select bind:value={policy.siteAccess}><option value="private">Private · sign-in required</option><option value="public-profiles">Private site · public profiles only</option><option value="public-read-only">Public read-only · profiles, Discover and media details</option></select><small>Public profiles respect each user’s privacy settings.</small></label>
+            <label class="field">Registration<select bind:value={policy.registrationMode}><option value="invite">Invite code required</option><option value="open">Open sign-ups</option></select></label>
+            <label class="field">Required connection<select bind:value={policy.registrationProvider}><option value="jellyfin">Jellyfin</option><option value="trakt">Trakt</option><option value="either">Jellyfin or Trakt</option><option value="none">None</option></select><small>New accounts complete their selected imports before entering Coast. Manage providers in Integrations.</small></label>
+            <div class="setting"><div><h3>Disposable playback links</h3><p>Administrators can share one accessible item. Other accounts require a sharing grant.</p></div><input type="checkbox" aria-label="Disposable playback links" bind:checked={policy.allowPlaybackSharing}/></div>
+          </fieldset>
           <fieldset class="panel stack" id="features" disabled={busy}>
             <legend class="sr-only">Experimental features</legend>
             <h3>Experimental features</h3>
-            <label class="field">Website access<select bind:value={policy.siteAccess}><option value="private">Private · sign-in required</option><option value="public-profiles">Private site · public profiles only</option><option value="public-read-only">Public read-only · profiles, Discover and media details</option></select></label>
-            <p class="small">Public profile access respects each user’s privacy settings. Friends-only and private sections still require permission.</p>
-            <label class="field">Registration<select bind:value={policy.registrationMode}><option value="invite">Invite code required</option><option value="open">Open sign-ups</option></select></label>
-            <label class="field">Required connection<select bind:value={policy.registrationProvider}><option value="jellyfin">Jellyfin</option><option value="trakt">Trakt</option><option value="either">Jellyfin or Trakt</option><option value="none">None</option></select></label>
-            <p class="small">New accounts complete their selected data imports before entering Coast. Provider availability is managed in Integrations.</p>
-            <label class="check"
-              ><input type="checkbox" bind:checked={policy.experimentalFeatures} />Enable
-              experimental music and gaming</label
-            >
-            <label class="check"><input type="checkbox" bind:checked={policy.experimentalDynamicForYou}/>Dynamic For You</label>
-            <label class="check"><input type="checkbox" bind:checked={policy.experimentalPlanning}/>Planning/calendar</label>
-            <label class="check"><input type="checkbox" bind:checked={policy.experimentalRecommendations}/>Personalised recommendations</label>
-            <label class="check"><input type="checkbox" bind:checked={policy.experimentalMediaModal}/>Modal media details</label>
-            <p class="small">Separate first-pass experiments. New visual treatments remain unapproved; turning a feature off keeps its saved data.</p>
-            <label class="check"><input type="checkbox" bind:checked={policy.allowPlaybackSharing}/>Allow disposable playback links</label>
-            <p class="small">Administrators can share one accessible item. Other accounts require an explicit sharing grant.</p>
-            <p class="small">
-              Enable music browsing and gaming for signed-in users. These features are still in
-              development. Turning this off hides their screens and blocks their APIs without
-              deleting existing data.
-            </p>
+            <p class="small">Enable each feature separately. Turning one off hides its controls and blocks access without deleting saved data.</p>
+            {#each experimentalPolicies as [field, title, description]}
+              <div class="setting"><div><h3>{title}</h3><p>{description}</p></div><input type="checkbox" aria-label={title} bind:checked={policy[field]}/></div>
+            {/each}
           </fieldset>
           <fieldset class="panel stack" id="sessions" disabled={busy}>
             <legend class="sr-only">Sessions</legend>

@@ -3,7 +3,7 @@ import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { games, gameExternalIds, providerInstances } from '$lib/server/db/schema';
 import { getConfig } from '$lib/server/config';
-import { requireExperimentalFeatures } from '$lib/server/experimental';
+import { requireExperimentalFeature } from '$lib/server/experimental';
 import { AppError } from '$lib/server/security/errors';
 import { discoverIgdb } from '$lib/providers/igdb/service.server';
 import { gameCard } from '$lib/games/presentation';
@@ -14,7 +14,7 @@ import { mediaViews } from './media';
 import type { DiscoveryContent, DiscoverySection, DiscoverySurface } from '$lib/discovery';
 export async function discoveryContent(userId:string,raw:unknown):Promise<DiscoveryContent>{
   const input=v.parse(v.object({surface:v.picklist(['watch','play','listen']),section:v.picklist(['trending','recent'])}),raw);
-  if(input.surface!=='watch')requireExperimentalFeatures(await getConfig());
+  if(input.surface!=='watch')requireExperimentalFeature(await getConfig(), input.surface === 'listen' ? 'music' : 'gaming');
   return input.surface==='watch'?screenDiscovery(userId,input.section):input.surface==='play'?gameDiscovery(userId,input.section):musicDiscovery(userId,input.section);
 }
 async function screenDiscovery(userId:string,section:DiscoverySection):Promise<DiscoveryContent>{

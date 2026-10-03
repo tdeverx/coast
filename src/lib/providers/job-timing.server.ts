@@ -70,7 +70,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
       }
       const rows = evidence.filter(e => e.kind === kind && (eligible.some(c => c.id === e.connection_id) || e.instance_id === instance.id));
       const last = rows.map(e => new Date(e.completed ?? 0).getTime()).filter(Boolean);
-      const enabled = instance.enabled && schedule.enabled && (!task.enabled || schedule[task.enabled]) && (instance.provider !== 'trakt' || config.enableTrakt) && (instance.provider !== 'seerr' || config.enableRequests) && (instance.provider !== 'steam' || config.experimentalFeatures);
+      const enabled = instance.enabled && schedule.enabled && (!task.enabled || schedule[task.enabled]) && (instance.provider !== 'trakt' || config.enableTrakt) && (instance.provider !== 'seerr' || config.enableRequests) && (instance.provider !== 'steam' || config.experimentalGaming);
       const due = eligible.flatMap(c => {
         const entry = rows.find(e => e.connection_id === c.id);
         if (entry?.blocked) return [];

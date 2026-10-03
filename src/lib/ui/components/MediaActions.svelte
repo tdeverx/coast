@@ -69,7 +69,7 @@
     | 'admin'
     | 'list-entry';
   let menu = $state<Button>();
-  const sequenceControl = createSequencePlayback({ source: () => item.kind === 'collection' || item.sequence ? item.sequence ?? {kind: 'collection', id: item.id} : undefined, from: () => item.sequence?.entryId, experimental: () => !!page.data.experimentalFeatures, preview, api, change });
+  const sequenceControl = createSequencePlayback({ source: () => item.kind === 'collection' || item.sequence ? item.sequence ?? {kind: 'collection', id: item.id} : undefined, from: () => item.sequence?.entryId, experimentalMusic: () => !!page.data.experimentalMusic, preview, api, change });
   let data = $state<MediaActionData | null>(null), loading = $state(false);
   const mutation = createMutation(loadActions);
   const busy = $derived(mutation.busy);
@@ -881,7 +881,7 @@
   <Dialog bind:open={playbackErrorOpen} title="Playback unavailable"
     ><RowFeedback error={error} tag="p" class="" /></Dialog
   >
-  {#if page.data.experiments?.planning}<PlanAction bind:open={planningOpen} workId={active.id} title={active.title} partyAllowed={page.data.experimentalFeatures&&['movie','episode','track'].includes(active.kind)}/>{/if}
+  {#if page.data.experiments?.planning}<PlanAction bind:open={planningOpen} workId={active.id} title={active.title} partyAllowed={page.data.experimentalParties&&['movie','episode','track'].includes(active.kind)}/>{/if}
   {#if page.data.playbackSharing}<ShareAction bind:open={sharingOpen} workId={active.id} title={active.title}/>{/if}
   <MetadataEditor mediaId={active.id} admin={editAdmin} bind:open={editOpen} />
   <Dialog bind:open={confirmOpen} title={confirmation?.title ?? 'Confirm change'}

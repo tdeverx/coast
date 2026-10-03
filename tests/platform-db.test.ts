@@ -73,15 +73,15 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
     expect(additional.role).toBe('admin');
   });
   test('only administrators can persist and change the experimental gate at runtime', async () => {
-    expect((await getConfig()).experimentalFeatures).toBe(false);
+    expect((await getConfig()).experimentalGaming).toBe(false);
     await expect(
-      updateConfig(member, { ...defaultConfig, experimentalFeatures: true })
+      updateConfig(member, { ...defaultConfig, experimentalMusic:true,experimentalGaming:true,experimentalParties:true })
     ).rejects.toThrow('Administrator');
-    expect((await getConfig()).experimentalFeatures).toBe(false);
-    await updateConfig(admin, { ...defaultConfig, experimentalFeatures: true });
-    expect((await getConfig()).experimentalFeatures).toBe(true);
+    expect((await getConfig()).experimentalGaming).toBe(false);
+    await updateConfig(admin, { ...defaultConfig, experimentalMusic:true,experimentalGaming:true,experimentalParties:true });
+    expect((await getConfig()).experimentalGaming).toBe(true);
     await updateConfig(admin, defaultConfig);
-    expect((await getConfig()).experimentalFeatures).toBe(false);
+    expect((await getConfig()).experimentalGaming).toBe(false);
   });
   test('diagnostic settings apply immediately and audit changes even when disabled', async () => {
     expect((await getConfig()).diagnosticLevel).toBe('info');

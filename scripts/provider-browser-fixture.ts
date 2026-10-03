@@ -234,12 +234,12 @@ await getDb()
   .insert(systemSettings)
   .values({
     key: 'coast',
-    value: { ...defaultConfig, experimentalFeatures:true, allowedProviderPorts: [server.port!], serverAllowlist: [address] },
+    value: { ...defaultConfig, experimentalMusic:true,experimentalGaming:true,experimentalParties:true, allowedProviderPorts: [server.port!], serverAllowlist: [address] },
   })
   .onConflictDoUpdate({
     target: systemSettings.key,
     set: {
-      value: { ...defaultConfig, experimentalFeatures:true, allowedProviderPorts: [server.port!], serverAllowlist: [address] },
+      value: { ...defaultConfig, experimentalMusic:true,experimentalGaming:true,experimentalParties:true, allowedProviderPorts: [server.port!], serverAllowlist: [address] },
     },
   });
 // This named disposable installation keeps a single synthetic source across reruns.

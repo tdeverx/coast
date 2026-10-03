@@ -8,7 +8,7 @@ export type ShelfControl = {
   label: string;
   value: string;
   options?: { value: string; label: string }[];
-  includeOtherMedia?: boolean;
+  mediums?: import('$lib/experimental').MediumFeatures;
   change: (value: string) => unknown;
 };
 export type ShelfAction = { label: string; run: () => unknown };

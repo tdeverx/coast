@@ -12,9 +12,9 @@
   let { data } = $props();
   setContext('profile-read-only',()=>!page.data.user);
   const section = $derived(page.url.searchParams.get('section'));
-  const otherMedia=$derived(!!data.mediaRows.enabled&&!!page.data.user);
+  const mediums=$derived(data.mediaRows);
   function discoverSource(row:DiscoverySection,grid=false):ShelfConfig {
-    return {type:'discovery',section:row,layout:grid?'grid':'row',otherMedia,surface:grid?data.selection.surface:'watch',initial:grid&&data.selected?data.selected:{items:row==='recent'?data.recent:data.trending.length?data.trending:data.items,failure:data.providerUnavailable?'Some discovery providers are unavailable. Please try again.':''}};
+    return {type:'discovery',section:row,layout:grid?'grid':'row',mediums,surface:grid?data.selection.surface:'watch',initial:grid&&data.selected?data.selected:{items:row==='recent'?data.recent:data.trending.length?data.trending:data.items,failure:data.providerUnavailable?'Some discovery providers are unavailable. Please try again.':''}};
   }
   const featured = $derived(
     (data.trending.length ? data.trending : data.items).filter(isHeroTitle).slice(0, 5)

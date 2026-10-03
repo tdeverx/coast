@@ -29,7 +29,7 @@
   import MediaCard from './MediaCard.svelte';
 
   const { api, change, preview } = useClient();
-  const sequence = createSequencePlayback({source: () => adapter?.sequence, experimental: () => !!page.data.experimentalFeatures, preview, api, change});
+  const sequence = createSequencePlayback({source: () => adapter?.sequence, experimentalMusic: () => !!page.data.experimentalMusic, preview, api, change});
 
   let {
     title = '', items = [], source, panels, journal, href, children, heading, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle = 'auto', artworkPriority,
@@ -151,7 +151,7 @@
     {:else if control.type === 'availability'}<Button {...availabilityControl(control.value === 'available', value => selectControl(control, value ? 'available' : 'all'))} />
     {/if}
   {/each}
-  {@const groups = [...options, ...extra].filter(control => control.type !== 'segments' && control.type !== 'availability' && control.type !== 'collection').map(control => ({label: control.label, value: control.value, options: control.type === 'media-type' ? mediaTypeOptions(control.includeOtherMedia) : control.options ?? [], change: (value: string) => selectControl(control, value)}))}
+  {@const groups = [...options, ...extra].filter(control => control.type !== 'segments' && control.type !== 'availability' && control.type !== 'collection').map(control => ({label: control.label, value: control.value, options: control.type === 'media-type' ? mediaTypeOptions(control.mediums) : control.options ?? [], change: (value: string) => selectControl(control, value)}))}
   {#if showGroups && groups.length}<RowFilter {groups} />{/if}
 {/snippet}
 {#snippet adapterFilters()}{@render renderControls(adapter?.filters ?? [], [], false)}{/snippet}

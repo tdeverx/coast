@@ -2,7 +2,8 @@ import {onboardingPending} from '$lib/server/auth/onboarding';
 import {isPublicReadPath} from '$lib/social/public.server';
 import { context, logDiagnostic, classifyFailure, diagnosticStore } from '$lib/server/diagnostics';
 import { correlationId } from '$lib/diagnostics';
-import { isExperimentalPath } from '$lib/server/experimental';
+import { featureEnabled } from '$lib/experimental';
+import { experimentalPathFeature } from '$lib/server/experimental';
 import { refreshDiagnosticConfig, getConfig } from '$lib/server/config';
 import { building } from '$app/environment';
 import { redirect, json, error, isRedirect, isHttpError, type Handle } from '@sveltejs/kit';
@@ -68,7 +69,8 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     if (event.url.pathname.startsWith('/api/')) return json({error:'Finish account setup and your initial imports before continuing.',code:'onboarding_required'},{status:403});
     redirect(303,'/onboarding');
   }
-  if (isExperimentalPath(event.url.pathname) && !(await getConfig()).experimentalFeatures) {
+  const experimentalFeature = experimentalPathFeature(event.url.pathname);
+  if (experimentalFeature && !featureEnabled(await getConfig(), experimentalFeature)) {
     if (event.url.pathname.startsWith('/api/'))
       return json(
         { error: 'Experimental features are disabled.', code: 'experimental_disabled' },

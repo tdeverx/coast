@@ -1,3 +1,4 @@
+import { surfaceEnabled } from '$lib/experimental';
 import { error } from '@sveltejs/kit';
 import { publicSearch } from '$lib/social/public.server';
 import * as v from 'valibot';
@@ -85,8 +86,8 @@ export const load: PageServerLoad = async ({locals, url, depends}) => {
     return {query,view:'watch',initial,watch:Promise.resolve(initial),listen:Promise.resolve(empty),play:Promise.resolve(empty)};
   }
 
-  const enabled = (await getConfig()).experimentalFeatures;
-  if (['listen', 'play'].includes(view.output) && !enabled)
+  const config = await getConfig();
+  if (view.output !== 'all' && !surfaceEnabled(config,view.output))
     error(404, 'This search view is unavailable.');
   const items =
     query && ['all', 'watch'].includes(view.output)
@@ -110,14 +111,14 @@ export const load: PageServerLoad = async ({locals, url, depends}) => {
           }))
         : Promise.resolve(initial),
     listen:
-      enabled && ['all', 'listen'].includes(view.output)
+      config.experimentalMusic && ['all', 'listen'].includes(view.output)
         ? searchPresentations(locals.user.id, 'listen', query, 'all').catch(() => ({
             ...empty,
             failure: 'Music search could not be loaded. Please try again.',
           }))
         : Promise.resolve(empty),
     play:
-      enabled && ['all', 'play'].includes(view.output)
+      config.experimentalGaming && ['all', 'play'].includes(view.output)
         ? searchPresentations(locals.user.id, 'play', query, 'all').catch(() => ({
             ...empty,
             failure: 'Game search could not be loaded. Please try again.',

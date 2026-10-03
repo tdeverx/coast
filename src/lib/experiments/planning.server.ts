@@ -1,3 +1,4 @@
+import { categoryEnabled } from '$lib/experimental';
 import * as v from 'valibot';
 import { getSql } from '$lib/server/db';
 import { getConfig } from '$lib/server/config';
@@ -12,8 +13,8 @@ export async function createPlan(userId:string,input:unknown){
  const config=await enabled();
  const data=v.parse(v.strictObject({workId:uuid,startsAt:v.pipe(v.string(),v.isoTimestamp(),v.check(value=>Date.parse(value)>Date.now()&&Date.parse(value)<Date.now()+365*86400000,'Plan within the next year.')),party:v.optional(v.boolean(),false),friends:v.optional(v.pipe(v.array(uuid),v.maxLength(20)),[])}),input);
  const db=getSql(),[work]=await db`select category,kind from works where id=${data.workId}`;
- if(!work||work.category!=='screen'&&!config.experimentalFeatures)throw new AppError(404,'Work not found.');
- if(data.party&&(!config.experimentalFeatures||!['movie','episode','track'].includes(work.kind)))throw new AppError(400,'Parties require experimental playback and a movie, episode or track.');
+ if(!work||!categoryEnabled(config,work.category))throw new AppError(404,'Work not found.');
+ if(data.party&&(!config.experimentalParties||!['movie','episode','track'].includes(work.kind)))throw new AppError(400,'Enable Parties and choose a movie, episode or track.');
  for(const friend of data.friends)await requireFriend(userId,friend);
  return db.begin(async tx=>{
   await tx`select pg_advisory_xact_lock(hashtextextended(${userId},0))`;
@@ -32,14 +33,14 @@ export async function planningData(userId:string,url:URL){
  const requested=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10000)),Number(url.searchParams.get('page')??1));
  const db=getSql();
  if(view==='plans'){
-  const [count]=await db`select count(*)::int as total from media_plans p join works w on w.id=p.work_id where p.user_id=${userId} and p.state='scheduled' and (w.category='screen' or ${config.experimentalFeatures})`;
+  const [count]=await db`select count(*)::int as total from media_plans p join works w on w.id=p.work_id where p.user_id=${userId} and p.state='scheduled' and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming}))`;
   const paging=pagination(count.total,requested);
-  const rows=await db<{id:string;workId:string;startsAt:Date;party:boolean;friends:string[]}[]>`select p.id,p.work_id as "workId",p.starts_at as "startsAt",p.party,p.friends from media_plans p join works w on w.id=p.work_id where p.user_id=${userId} and p.state='scheduled' and (w.category='screen' or ${config.experimentalFeatures}) order by p.starts_at,p.id limit ${PAGE_SIZE} offset ${(paging.page-1)*PAGE_SIZE}`;
+  const rows=await db<{id:string;workId:string;startsAt:Date;party:boolean;friends:string[]}[]>`select p.id,p.work_id as "workId",p.starts_at as "startsAt",p.party,p.friends from media_plans p join works w on w.id=p.work_id where p.user_id=${userId} and p.state='scheduled' and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming})) order by p.starts_at,p.id limit ${PAGE_SIZE} offset ${(paging.page-1)*PAGE_SIZE}`;
   const cards=await workCards(userId,userId,[...new Set(rows.map(row=>row.workId as string))]);
   const cardsById=new Map(cards.map(card=>[(('workId' in card?card.workId:undefined)??card.id),card]));
   return {view,category,...paging,total:count.total,plans:rows,items:rows.flatMap(row=>{const card=cardsById.get(row.workId);return card?[{...card,captionSubtitle:new Date(row.startsAt).toLocaleString(),entryId:row.id}]:[];})};
  }
- if(category!=='screen'&&!config.experimentalFeatures)return {view,category,page:1,pages:1,total:0,plans:[],items:[]};
+ if(!categoryEnabled(config,category))return {view,category,page:1,pages:1,total:0,plans:[],items:[]};
  const [result]=await db`with upcoming as (
   select w.id,coalesce(m.release_date,g.release_date,a.release_date) as release from works w left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id
   where w.category=${category} and w.kind in ('movie','show','episode','game','album') and coalesce(m.release_date,g.release_date,a.release_date) between current_date and current_date+90

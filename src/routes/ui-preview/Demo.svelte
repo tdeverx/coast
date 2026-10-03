@@ -260,7 +260,7 @@
     {:else if name==='Icon'}
       <div class="row">{#each ["play","pause","heart","star","bookmark","filter","user","library","search","more","left","right","settings","volume"] as name}<div class="icon-sample"><Icon name={name as IconName} /><small>{name}</small></div>{/each}</div>
     {:else if name==='IntegrationSettings'}
-      <IntegrationSettings providers={[provider]} experimentalFeatures />
+      <IntegrationSettings providers={[provider]} experimentalGaming />
     {:else if name==='JobSchedule'}
       <JobSchedule {provider} task={serviceTasks("jellyfin")[0]} jobs={[job]} />
     {:else if name==='JobsSettings'}
@@ -331,7 +331,7 @@
     {:else if name==='RequestDialog'}
       <RequestDialog bind:open item={movie} options={[]} />
     {:else if name==='RowFilter'}
-      <RowFilter groups={[{label:"Media type", value:mediaType, options:mediaTypeOptions(true), change:value=>mediaType=value}, {label:"Preview filter", value:choice, options:options, change:(value)=>choice=value}]} />
+      <RowFilter groups={[{label:"Media type", value:mediaType, options:mediaTypeOptions({experimentalMusic:true,experimentalGaming:true}), change:value=>mediaType=value}, {label:"Preview filter", value:choice, options:options, change:(value)=>choice=value}]} />
     {:else if name==='RowStyleMenu'}
       <p class="small">Opened from a shelf heading by right-click, long-press or Shift+F10.</p>
       <Button  onclick={openStyleMenu}>Open style menu</Button>

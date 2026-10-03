@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { getConfig } from '$lib/server/config';
-import { requireExperimentalFeatures } from '$lib/server/experimental';
+import { requireExperimentalFeature } from '$lib/server/experimental';
 import { libraryData } from './library';
 import { presentationContent } from './media-rows';
 import { listGames } from '$lib/core/games/service';
@@ -26,7 +26,7 @@ export async function libraryContent(userId: string, url: URL): Promise<LibraryC
       genre: url.searchParams.get('genre') ?? '',
       page: Number(url.searchParams.get('page') ?? 1),
     });
-  requireExperimentalFeatures(await getConfig());
+  requireExperimentalFeature(await getConfig(), surface === 'listen' ? 'music' : 'gaming');
   if (surface === 'listen') {
     const musicUrl = new URL(url);
     musicUrl.searchParams.set('kind', selection);

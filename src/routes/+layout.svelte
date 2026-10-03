@@ -61,8 +61,8 @@
     return startPresence(()=>!!player.session&&!player.paused,()=>false);
   });
   onMount(() => {
-    if(data.user&&data.experimentalFeatures)void restoreSynced();
-    const syncTimer=setInterval(()=>{if(data.user&&data.experimentalFeatures)void pollSynced();},2000);
+    if(data.user&&data.experimentalParties)void restoreSynced();
+    const syncTimer=setInterval(()=>{if(data.user&&data.experimentalParties)void pollSynced();},2000);
     const stopDiagnostics = data.user ? installBrowserDiagnostics() : () => {};
     const expire = () => (expired = true);
     window.addEventListener('coast:auth-expired', expire);

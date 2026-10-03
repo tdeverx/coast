@@ -87,7 +87,7 @@ run('administrator demand respects opt-out without removing profile relationship
 run('a partly listened album needs its next unlistened track while finished tracks stay completed',async()=>{
  const db=getDb();const {musicProgress}=await import('../src/lib/server/db/schema');const {missingDemand}=await import('../src/lib/collection/demand.server');
  const {systemSettings}=await import('../src/lib/server/db/schema');const config=await getConfig();
- await db.insert(systemSettings).values({key:'coast',value:{...config,experimentalFeatures:true}}).onConflictDoUpdate({target:systemSettings.key,set:{value:{...config,experimentalFeatures:true}}});
+ await db.insert(systemSettings).values({key:'coast',value:{...config,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}).onConflictDoUpdate({target:systemSettings.key,set:{value:{...config,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}});
  const rows=await db.insert(works).values([{category:'music',kind:'album'},{category:'music',kind:'track'},{category:'music',kind:'track'}]).returning();const [parent,first,next]=rows.map(w=>w.id);
  try{
   await db.insert(musicWorks).values([{id:parent,kind:'album',title:'Partly listened album',membershipComplete:true},{id:first,kind:'track',title:'Finished track'},{id:next,kind:'track',title:'Next track'}]);
@@ -130,7 +130,7 @@ run('paused filtering respects game progress privacy and category-specific shari
   const [saved] = await db.select({ settings: users.settings }).from(users).where(eq(users.id, owner));
   const [game] = await db.insert(games).values({ title: 'Private paused game' }).returning();
   try {
-    await db.update(systemSettings).set({ value: { ...config, experimentalFeatures: true } }).where(eq(systemSettings.key, 'coast'));
+    await db.update(systemSettings).set({ value: { ...config, experimentalMusic:true,experimentalGaming:true,experimentalParties:true } }).where(eq(systemSettings.key, 'coast'));
     await db.insert(trackingState).values({ userId: owner, mediaId: game.id, collected: true });
     await db.insert(gamePlaythroughs).values({ userId: owner, gameId: game.id, status: 'paused' });
     await db.update(users).set({ settings: { social: { audience: 'public', categories: { screen: 'private', game: 'public' }, sections: { progress: 'private', activity: 'private' } } } }).where(eq(users.id, owner));

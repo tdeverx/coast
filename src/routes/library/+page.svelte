@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { surfaceEnabled } from '$lib/experimental';
   import { setContext } from 'svelte';
   import { page } from '$app/state';
   import Shelf from '$lib/ui/components/Shelf.svelte';
@@ -26,7 +27,7 @@
   {#if data.filters.genre}<div class="row section"><p class="small">Genre: {data.filters.genre}</p><Button href="/library?view=watch&scope=all" emphasis="subtle" icon="close">Clear genre</Button></div>{/if}
   {#key `${data.view}:${data.collection}:${data.username}:${JSON.stringify(data.filters)}`}
     {#each ['watch', 'listen', 'play'] as surface}
-      {#if (surface === 'watch' || data.experimentalFeatures) && (data.view === 'overview' || data.view === surface)}
+      {#if surfaceEnabled(data,surface) && (data.view === 'overview' || data.view === surface)}
         <Shelf source={{ type: 'library', surface: surface as LibrarySurface, collection: data.collection,
           username: data.username ?? '', layout: data.view === surface ? 'grid' : 'row',
           initial: data.view === surface ? data.content ?? undefined : undefined,

@@ -20,7 +20,7 @@ export async function dynamicFeed(userId:string,url:URL) {
  ), seeds as (
   select w.category,coalesce(m.genres,g.genres,a.genres,'{}'::text[]) as genres,p.updated
   from recent p join works w on w.id=p.id left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id
-  where w.kind in ('movie','show','game','album','track') and (w.category='screen' or ${config.experimentalFeatures})
+  where w.kind in ('movie','show','game','album','track') and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming}))
  ), genres as (
   select category,genre,max(updated) as updated from seeds cross join lateral unnest(genres) genre
   where length(trim(genre)) between 1 and 100 group by category,genre

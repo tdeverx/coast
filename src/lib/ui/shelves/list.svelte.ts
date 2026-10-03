@@ -81,7 +81,7 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
     get href() { return layout === 'row' ? href() : undefined; },
 
     get filters(): ShelfControl[] { return [{type:'availability',label:'Available to play only',value:scope,change:value=>{scope=value as typeof scope;void load();}}]; },
-    get controls(): ShelfControl[] { return [{type:'media-type',includeOtherMedia:!!page.data.experimentalFeatures,label:`${title} media type`,value:kind,change:value=>{kind=value as Content['kind'];void load();}}]; },
+    get controls(): ShelfControl[] { return [{type:'media-type',mediums:page.data,label:`${title} media type`,value:kind,change:value=>{kind=value as Content['kind'];void load();}}]; },
     get sequence() { return content.selected?.playlist ? {kind:'playlist' as const,id:view} : undefined; },
     get actions(): ShelfAction[] { return custom && layout === 'grid' ? [
       {label:arranging?'Done':'Arrange',run:()=>{arranging=!arranging;}},

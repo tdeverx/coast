@@ -1,3 +1,4 @@
+import { mediumOptions } from '$lib/experimental';
 import { page } from '$app/state';
 import { onDestroy, untrack } from 'svelte';
 import { useClient } from '$lib/ui/client-context';
@@ -32,7 +33,7 @@ export function createExperimentalSource(get:()=>ExperimentalOptions):ShelfSourc
   get pagination(){return {kind:'pages' as const,page:resource.data.page,pages:resource.data.pages,append:get().layout!=='grid',controls:'header' as const};},
   get controls(){return [];},
   get filters():ShelfControl[]{return get().feature==='row'?[]:[
-   {type:'segments',label:`${get().feature} medium`,value:category,options:[{value:'screen',label:'Watching'},...(page.data.experimentalFeatures?[{value:'game',label:'Playing'},{value:'music',label:'Listening'}]:[])],change:selectMedium},
+   {type:'segments',label:`${get().feature} medium`,value:category,options:mediumOptions(page.data),change:selectMedium},
    ...(get().feature==='recommendations'?[{type:'availability' as const,label:'Available',value:available?'available':'all',change:(value:string)=>{available=value==='available';void load();}}]:[])
   ];},load
  };

@@ -1,3 +1,4 @@
+import { categoryEnabled } from '$lib/experimental';
 import { openApi } from './openapi';
 import { publicMutation } from './mutations.server';
 import { listWebhooks } from './webhooks.server';
@@ -44,15 +45,15 @@ export const publicApiHandler:RequestHandler=async event=>{
     const id=v.parse(v.pipe(v.string(),v.uuid()),path[1]);
     const item=(await workCards(user.id,user.id,[id]))[0];
     if(!item)throw new AppError(404,'Work not found.','not_found');
-    if(item.kind!=='movie'&&item.kind!=='show'&&item.kind!=='season'&&item.kind!=='episode'&&item.kind!=='collection'&&!(await getConfig()).experimentalFeatures)throw new AppError(404,'Work not found.','not_found');
+    if(!categoryEnabled(await getConfig(),item.kind==='game'?'game':['album','track'].includes(item.kind)?'music':'screen'))throw new AppError(404,'Work not found.','not_found');
     return json(publicWork(item),{headers});
    }
    const category=v.parse(v.picklist(['all','screen','game','music']),url.searchParams.get('category')??'all');
    const kind=v.parse(v.picklist(['all','movie','show','season','episode','collection','game','album','track']),url.searchParams.get('kind')??'all');
-   const experimental=(await getConfig()).experimentalFeatures;
-   const [count]=await getSql()`select count(*)::int as total from works where category in ('screen','game','music') and (${category}='all' or category=${category}) and (${kind}='all' or kind=${kind}) and (${experimental} or category='screen')`;
+   const config=await getConfig();
+   const [count]=await getSql()`select count(*)::int as total from works where category in ('screen','game','music') and (${category}='all' or category=${category}) and (${kind}='all' or kind=${kind}) and (category='screen' or (category='music' and ${config.experimentalMusic}) or (category='game' and ${config.experimentalGaming}))`;
    const paging=pagination(count.total,page);
-   const rows=await getSql()`select id from works where category in ('screen','game','music') and (${category}='all' or category=${category}) and (${kind}='all' or kind=${kind}) and (${experimental} or category='screen') order by id limit ${PAGE_SIZE} offset ${(paging.page-1)*PAGE_SIZE}`;
+   const rows=await getSql()`select id from works where category in ('screen','game','music') and (${category}='all' or category=${category}) and (${kind}='all' or kind=${kind}) and (category='screen' or (category='music' and ${config.experimentalMusic}) or (category='game' and ${config.experimentalGaming})) order by id limit ${PAGE_SIZE} offset ${(paging.page-1)*PAGE_SIZE}`;
    const cards=await workCards(user.id,user.id,rows.map((row:{id:string})=>row.id));
    return json(publicPage(cards.map(item=>publicWork(item)),{...paging,total:count.total},url),{headers});
   }

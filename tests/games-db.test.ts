@@ -71,7 +71,7 @@ suite('game catalog and private playthroughs', () => {
   });
   test('game previews honour personal state; unknown availability is an empty selection rather than a failed job',async()=>{
     const saved=await getConfig();
-    await getDb().insert(systemSettings).values({key:'coast',value:{...saved,experimentalFeatures:true}}).onConflictDoUpdate({target:systemSettings.key,set:{value:{...saved,experimentalFeatures:true}}});
+    await getDb().insert(systemSettings).values({key:'coast',value:{...saved,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}).onConflictDoUpdate({target:systemSettings.key,set:{value:{...saved,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}});
     try{
       const browse=(user:string,parameters:string)=>libraryContent(user,new URL(`http://coast/library?surface=play&${parameters}`));
       expect((await browse(owner,'preview=true&personal=true&selection=in-progress')).items.map(item=>item.id)).toEqual([gameId]);

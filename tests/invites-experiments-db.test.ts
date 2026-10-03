@@ -45,7 +45,7 @@ run('expired links, account replacement and policy changes invalidate grants',as
  }
 });
 run('guest progress cannot alter owner history or another viewer session',async()=>{
- await updateConfig(admin,{experimentalFeatures:true});
+ await updateConfig(admin,{experimentalMusic:true,experimentalGaming:true,experimentalParties:true});
  await updateConfig(admin,{allowPlaybackSharing:true});const token='x'.repeat(43),id=await link(token,true),grant=await claimShare({token},null),host=await claimShare({id},admin);
  const playback=crypto.randomUUID();await getSql()`insert into playback_sessions(id,user_id,media_id,share_id,connection_id,provider_item_id,source_id,delivery,stream_path,duration_seconds,expires_at) values(${playback},${ownerId},${movie},${id},${connection},${providerItem},'source','direct','/stream',120,now()+interval '1 hour')`;
  await getSql()`update share_viewers set playback_id=${playback} where token_hash=${await hashToken(grant.token)}`;
@@ -56,13 +56,13 @@ run('guest progress cannot alter owner history or another viewer session',async(
  await expect(progressPlayback(ownerId,playback,{event:'start',positionSeconds:0})).rejects.toThrow('expired');
 });
 run('together links follow the synced playback gate while solo invitations remain available',async()=>{
- await updateConfig(admin,{allowPlaybackSharing:true,experimentalFeatures:false});
+ await updateConfig(admin,{allowPlaybackSharing:true,experimentalMusic:false,experimentalGaming:false,experimentalParties:false});
  const token='t'.repeat(43);await link(token,true);
  await expect(claimShare({token},null)).rejects.toThrow('disabled');
  const solo='s'.repeat(43);await link(solo);expect((await claimShare({token:solo},null)).token).toHaveLength(43);
- await updateConfig(admin,{experimentalFeatures:true});const grant=await claimShare({token},null);
- await updateConfig(admin,{experimentalFeatures:false});await expect(sharedState(grant.token)).rejects.toThrow('disabled');
- await updateConfig(admin,{experimentalFeatures:true});
+ await updateConfig(admin,{experimentalMusic:true,experimentalGaming:true,experimentalParties:true});const grant=await claimShare({token},null);
+ await updateConfig(admin,{experimentalMusic:false,experimentalGaming:false,experimentalParties:false});await expect(sharedState(grant.token)).rejects.toThrow('disabled');
+ await updateConfig(admin,{experimentalMusic:true,experimentalGaming:true,experimentalParties:true});
 });
 run('ordinary preferences cannot grant playback sharing; administrator can',async()=>{
  const user={...admin,id:otherId,role:'user' as const};await updateUserSettings(user,{allowPlaybackSharing:true});
@@ -101,7 +101,7 @@ run('Upcoming follows watchlist and tracked shows without requiring unreleased C
  await db`update media set release_date=null where id=${movie}`;
 });
 run('Dynamic For You pages distinct horizontal row definitions and loads cards separately',async()=>{
- await updateConfig(admin,{experimentalDynamicForYou:true,experimentalFeatures:true,experimentalRecommendations:false});const db=getSql(),game=crypto.randomUUID(),candidate=crypto.randomUUID(),track=crypto.randomUUID();
+ await updateConfig(admin,{experimentalDynamicForYou:true,experimentalMusic:true,experimentalGaming:true,experimentalParties:true,experimentalRecommendations:false});const db=getSql(),game=crypto.randomUUID(),candidate=crypto.randomUUID(),track=crypto.randomUUID();
  await db`insert into games(id,title,genres) values(${game},'Played',ARRAY['Adventure','Action','Strategy','Puzzle']),(${candidate},'New game',ARRAY['Adventure'])`;
  await db`insert into game_playthroughs(user_id,game_id,status) values(${ownerId},${game},'in-progress')`;
  await db`insert into works(id,category,kind) values(${track},'music','track')`;
@@ -115,7 +115,7 @@ run('Dynamic For You pages distinct horizontal row definitions and loads cards s
  await updateConfig(admin,{experimentalDynamicForYou:false});await expect(dynamicFeed(ownerId,new URL('http://fixture.test'))).rejects.toThrow('disabled');await expect(experimentalRows(ownerId,'row',new URL('http://fixture.test?category=game&genre=Adventure'))).rejects.toThrow('disabled');
 });
 run('music recommendation explanations use the shared work ID despite provider IDs',async()=>{
- await updateConfig(admin,{experimentalDynamicForYou:true,experimentalFeatures:true});const album=crypto.randomUUID(),db=getSql();
+ await updateConfig(admin,{experimentalDynamicForYou:true,experimentalMusic:true,experimentalGaming:true,experimentalParties:true});const album=crypto.randomUUID(),db=getSql();
  await db`insert into works(id,category,kind) values(${album},'music','album')`;
  await db`insert into music_works(id,title,kind,genres) values(${album},'Recommended album','album',ARRAY['Ambient'])`;
  await db`insert into provider_items(instance_id,media_id,external_id,kind) values(${instance},${album},'remote-album','album')`;

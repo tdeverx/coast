@@ -1,5 +1,5 @@
 import { getConfig } from '$lib/server/config';
-import { requireExperimentalFeatures } from '$lib/server/experimental';
+import { requireEnabledCategory } from '$lib/server/experimental';
 import { sql, eq, inArray, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
@@ -217,8 +217,8 @@ export async function collectionData(viewerId: string, raw: unknown={}, username
   const owner=username?await profileUser(username):null, ownerId=owner?.id??viewerId;
   const input=v.parse(collectionOptionsSchema,raw);
   if(ownerId!==viewerId)await (await import('$lib/social/privacy.server')).requireVisible(ownerId,viewerId,'collection',input.category==='all'?undefined:input.category);
-  const config=await getConfig();if(['music','game'].includes(input.category))requireExperimentalFeatures(config);
-  const condition=sql`social_visible(${ownerId}::uuid,${viewerId}::uuid,'collection',c.category) and (${config.experimentalFeatures} or c.category='screen') and (${input.category}='all' or c.category=${input.category}) and (${input.kind}='all' or c.kind=${input.kind})
+  const config=await getConfig();if(input.category!=='all')requireEnabledCategory(config,input.category);
+  const condition=sql`social_visible(${ownerId}::uuid,${viewerId}::uuid,'collection',c.category) and (c.category='screen' or (c.category='music' and ${config.experimentalMusic}) or (c.category='game' and ${config.experimentalGaming})) and (${input.category}='all' or c.category=${input.category}) and (${input.kind}='all' or c.kind=${input.kind})
     and (${input.level}='all' or (c.kind not in ('episode','season') and not exists(select 1 from edges e join works parent on parent.id=e.parent_id where e.child_id=c.id and parent.kind in ('show','season','album'))))
     and (${input.relationship}='all' or exists(select 1 from jsonb_array_elements(c.reasons) r where r->>'relationship'=${input.relationship}))
     and (${input.activity}='all' or (${input.activity}='active' and c.active and not c.dropped and not c.completed)

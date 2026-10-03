@@ -10,7 +10,7 @@ let album:string,track:string,inaccessible:string,future:string,instance:string,
 beforeAll(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;
  const db=getDb(),config=await getConfig();
- await db.insert(s.systemSettings).values({key:'coast',value:{...config,experimentalFeatures:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...config,experimentalFeatures:true}}});
+ await db.insert(s.systemSettings).values({key:'coast',value:{...config,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...config,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}});
  await db.insert(s.users).values([{id:user,username:`discovery-${user}`,passwordHash:'fixture'},{id:other,username:`discovery-${other}`,passwordHash:'fixture',settings:{social:{audience:'private'}}}]);
  [instance]=(await db.insert(s.providerInstances).values({provider:'jellyfin',name:'Fixture',baseUrl:'https://fixture.invalid'}).returning()).map(r=>r.id);
  [connection]=(await db.insert(s.providerConnections).values({instanceId:instance,userId:user,status:'connected',externalUserId:'fixture',credentials:'fixture'}).returning()).map(r=>r.id);
@@ -32,7 +32,7 @@ run('music popularity respects activity privacy and unknown import dates',async(
  expect((await discoveryContent(user,{surface:'listen',section:'trending'})).items.map(i=>'workId' in i?i.workId:i.id)).toEqual([album]);
 });
 run('disabled experimental discovery and invalid segments reject without provider requests',async()=>{
- const config=await getConfig();await getDb().update(s.systemSettings).set({value:{...config,experimentalFeatures:false}}).where(eq(s.systemSettings.key,'coast'));
+ const config=await getConfig();await getDb().update(s.systemSettings).set({value:{...config,experimentalMusic:false,experimentalGaming:false,experimentalParties:false}}).where(eq(s.systemSettings.key,'coast'));
  await expect(discoveryContent(user,{surface:'play',section:'trending'})).rejects.toThrow('disabled');
  await expect(discoveryContent(user,{surface:'listen',section:'recent'})).rejects.toThrow('disabled');
  await expect(discoveryContent(user,{surface:'invalid',section:'recent'})).rejects.toThrow();

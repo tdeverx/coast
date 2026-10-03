@@ -35,7 +35,7 @@ async function settings(patch:Record<string,unknown>){[connection]=await getDb()
 beforeAll(async()=>{
  if(!enabled)return;const db=getDb();
  const [config]=await db.select().from(s.systemSettings).where(eq(s.systemSettings.key,'coast'));oldConfig=(config?.value as Record<string,unknown>)??null;
- await db.insert(s.systemSettings).values({key:'coast',value:{...oldConfig,experimentalFeatures:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...oldConfig,experimentalFeatures:true}}});
+ await db.insert(s.systemSettings).values({key:'coast',value:{...oldConfig,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...oldConfig,experimentalMusic:true,experimentalGaming:true,experimentalParties:true}}});
  const [user]=await db.insert(s.users).values({username:`music-reconcile-${tag}`}).returning();userId=user.id;
  [instance]=await db.insert(s.providerInstances).values({provider:'jellyfin',name:tag,baseUrl:'https://fixture.invalid',serverIdentity:tag}).returning();
  [connection]=await db.insert(s.providerConnections).values({userId,instanceId:instance.id,externalUserId:tag,settings:{importPlayback:false,reconcileTracking:true}}).returning();

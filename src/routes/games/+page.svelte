@@ -25,7 +25,7 @@
 
 <svelte:head><title>Games · Coast</title></svelte:head>
 <div class="content page route-content">
-  <Heading {...browseHeading("play", data.experimentalFeatures)}>{#snippet filters()}{#if data.filters.view === 'library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state => goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{keepFocus:true,noScroll:true})} /><Button {...availabilityControl(data.filters.scope === 'available', value => goto(pageUrl(1,data.filters.view,data.filters.state,data.filters.personal,value?'available':'all'),{keepFocus:true,noScroll:true}))} />{/if}{/snippet}{#snippet actions()}<RowFilter groups={[{label:"Games view", value:data.filters.view === 'library' && data.filters.personal
+  <Heading {...browseHeading("play", data.experimentalGaming)}>{#snippet filters()}{#if data.filters.view === 'library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state => goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{keepFocus:true,noScroll:true})} /><Button {...availabilityControl(data.filters.scope === 'available', value => goto(pageUrl(1,data.filters.view,data.filters.state,data.filters.personal,value?'available':'all'),{keepFocus:true,noScroll:true}))} />{/if}{/snippet}{#snippet actions()}<RowFilter groups={[{label:"Games view", value:data.filters.view === 'library' && data.filters.personal
           ? 'personal'
           : data.filters.view, options:[
           { value: 'library', label: 'All games' },

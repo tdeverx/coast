@@ -40,7 +40,7 @@ import { getDb, getSql } from '$lib/server/db';
 import { requireUser, requireAdmin } from '$lib/server/auth';
 import { works } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { requireExperimentalFeatures } from '$lib/server/experimental';
+import { requireEnabledCategory } from '$lib/server/experimental';
 import { getConfig } from '$lib/server/config';
 import { AppError } from '$lib/server/security/errors';
 import { DomainError } from '$lib/core/errors';
@@ -171,7 +171,7 @@ export const handler: RequestHandler = async (event) => {
     if(path[0]==='music' && path[1]==='queue' && method==='GET')return json(await savedMusicQueue(uid,url.searchParams.has('listId')?uuid(url.searchParams.get('listId')):undefined));
     if (path[0] === 'collection' && path.length === 1 && method === 'GET') return json(await collectionData(uid,collectionParameters(url),url.searchParams.get('username')??undefined));
     if (path[0] === 'collection' && path[1] && path.length === 2 && method === 'GET') {
-      const [work]=await getDb().select().from(works).where(eq(works.id,uuid(path[1])));if(work?.category!=='screen')requireExperimentalFeatures(await getConfig());
+      const [work]=await getDb().select().from(works).where(eq(works.id,uuid(path[1])));if(work)requireEnabledCategory(await getConfig(),work.category);
       return json(await workActionData(uid,uuid(path[1])));
     }
     if (path[0] === 'missing' && method === 'GET') return json(await missingDemand(uid,url));
@@ -226,7 +226,7 @@ export const handler: RequestHandler = async (event) => {
       return streamArtwork(uid, uuid(path[1]), text(path[2]), text(path[3]), request);
     const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method) ? await readBody(request, path[0]==='profile'&&path.length===1&&method==='POST'?avatarRequestLimit:1_048_576) : {};
     const relationshipWork=path[0]==='collection'&&path.length===2?path[1]:['tracking','ratings','up-next','lists'].includes(path[0])?body.mediaId:undefined;
-    if(relationshipWork){const [work]=await getDb().select().from(works).where(eq(works.id,uuid(relationshipWork)));if(work&&work.category!=='screen')requireExperimentalFeatures(await getConfig());}
+    if(relationshipWork){const [work]=await getDb().select().from(works).where(eq(works.id,uuid(relationshipWork)));if(work)requireEnabledCategory(await getConfig(),work.category);}
     if(path[0]==='providers' && path[2]==='reconciliation' && method==='POST') return json(await updateJellyfinReconciliation(uid,uuid(path[1]),body));
     if(path[0]==='providers'&&path[2]==='collection-preview'&&method==='POST')return json(await previewProjection(uid,uuid(path[1]),body));
     if(path[0]==='providers'&&path[2]==='collection-approve'&&method==='POST')return json(await approveProjection(uid,uuid(path[1]),body));

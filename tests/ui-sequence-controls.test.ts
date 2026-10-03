@@ -19,7 +19,7 @@ test('an unavailable sequence member requires an explicit skip before playing th
   const blocked = {id:'episode-one', title:'Episode one', available:false, sequence:{kind:'playlist',id:'playlist',entryId:'entry-one'}} as MediaView;
   const playable = {...blocked, id:'episode-two', available:true, sequence:{...blocked.sequence!,entryId:'entry-two'}};
   playback.plays.length=0;
-  const sequence=createSequencePlayback({source:()=>({kind:'playlist',id:'playlist'}), experimental:()=>false, preview:false,
+  const sequence=createSequencePlayback({source:()=>({kind:'playlist',id:'playlist'}), experimentalMusic:()=>false, preview:false,
     api: (async (path: string) => {paths.push(path);return {next:paths.length===1?blocked:playable};}) as typeof api,
     change: (async()=>{}) as typeof change});
   await sequence.start();
@@ -34,7 +34,7 @@ test('an unavailable sequence member requires an explicit skip before playing th
 
 test('sequence playback ignores preview controls and suppresses duplicate starts while loading', async () => {
   let calls=0, complete!: (value:{next:null})=>void;
-  const options={source:()=>({kind:'playlist' as const,id:'playlist'}), experimental:()=>false,
+  const options={source:()=>({kind:'playlist' as const,id:'playlist'}), experimentalMusic:()=>false,
     api: (()=>{calls++;return new Promise<{next:null}>(resolve=>{complete=resolve;});}) as typeof api,
     change: (async()=>{}) as typeof change};
   await createSequencePlayback({...options,preview:true}).start();
