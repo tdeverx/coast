@@ -12,7 +12,8 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:17
@@ -41,23 +42,108 @@ jobs:
       - run: bun run build
 
   image:
+    name: Build ${{ matrix.arch }} image
     needs: verify
     if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     permissions:
       contents: read
       packages: write
-      attestations: write
-      id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push native image by digest
+        uses: docker/build-push-action@v6
+        id: build
+        with:
+          context: .
+          platforms: linux/${{ matrix.arch }}
+          outputs: type=image,name=ghcr.io/${{ github.repository }},push-by-digest=true,name-canonical=true,push=true
+          labels: |
+            org.opencontainers.image.title=Coast
+            org.opencontainers.image.description=Self-hosted media tracker
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.licenses=AGPL-3.0-only
+          cache-from: type=gha,scope=image-${{ matrix.arch }}
+          cache-to: type=gha,mode=max,scope=image-${{ matrix.arch }}
+          provenance: mode=max
+          sbom: true
+      - name: Check container startup and health
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cleanup() {
+            docker logs coast-smoke || true
+            docker rm -fv coast-smoke || true
+          }
+          trap cleanup EXIT
+          docker run -d --name coast-smoke "$IMAGE"
+          for attempt in $(seq 1 60); do
+            state=$(docker inspect --format '{{.State.Status}}' coast-smoke)
+            health=$(docker inspect --format '{{.State.Health.Status}}' coast-smoke)
+            if [ "$health" = healthy ]; then
+              exit 0
+            fi
+            if [ "$state" != running ] || [ "$health" = unhealthy ]; then
+              exit 1
+            fi
+            sleep 2
+          done
+          echo 'Container did not become healthy within two minutes.' >&2
+          exit 1
+      - name: Export image digest
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: digest-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish multi-platform image
+    needs: image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Serialize tag updates without cancelling a running publish.
+    concurrency:
+      group: coast-image-publish
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digest-*
+          merge-multiple: true
       - uses: docker/metadata-action@v5
         id: meta
         with:
@@ -66,19 +152,26 @@ jobs:
             type=raw,value=preview
             type=sha,prefix=sha-
             type=ref,event=tag
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: |
-            org.opencontainers.image.title=Coast
-            org.opencontainers.image.description=Self-hosted movie and television tracker
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.licenses=AGPL-3.0-only
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: mode=max
-          sbom: true
+      - name: Assemble and verify image manifest
+        working-directory: ${{ runner.temp }}/digests
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}
+          METADATA: ${{ steps.meta.outputs.json }}
+        run: |
+          set -euo pipefail
+          mapfile -t tags < <(jq -r '.tags[]' <<< "$METADATA")
+          args=()
+          for tag in "${tags[@]}"; do
+            args+=(--tag "$tag")
+          done
+          digests=()
+          for digest in *; do
+            [[ "$digest" =~ ^[0-9a-f]{64}$ ]]
+            digests+=("$IMAGE@sha256:$digest")
+          done
+          [ "${#digests[@]}" -eq 2 ]
+          docker buildx imagetools create "${args[@]}" "${digests[@]}"
+          docker buildx imagetools inspect "${tags[0]}" --raw > manifest.json
+          jq -e '[.manifests[].platform | select(.os == "linux") | .architecture] | sort == ["amd64", "arm64"]' manifest.json
+          printf 'Published native AMD64 and ARM64 images.\n' >> "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "${tags[@]}" >> "$GITHUB_STEP_SUMMARY"
