@@ -1,3 +1,4 @@
+import { serverArtwork } from '$lib/providers/server-artwork.server';
 import * as v from 'valibot';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { jellyfinMusicIdSchema } from '$lib/providers/jellyfin/music.server';
@@ -19,7 +20,7 @@ export async function streamMusicArtwork(
   const credentials = JSON.parse(await decryptCredential(connection.credentials!)) as {
     accessToken: string;
   };
-  const response = await secureProviderFetch(
+  return serverArtwork([instance.id,instance.serverIdentity??'',instance.baseUrl,connection.id,String(connection.accountGeneration),id,'Primary','780',String(Math.floor(Date.now()/3600000))],async()=>secureProviderFetch(
     await instanceFetchConfig(instance),
     `/Items/${encodeURIComponent(id)}/Images/Primary/0?format=Webp&maxWidth=780&quality=85`,
     {
@@ -29,23 +30,5 @@ export async function streamMusicArtwork(
       signal: request.signal,
     },
     { maxBytes: 10 * 1024 * 1024 }
-  );
-  if (!response.ok || !response.headers.get('content-type')?.startsWith('image/')) {
-    await response.body?.cancel();
-    return new Response('Image unavailable.', { status: 404 });
-  }
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (
-    bytes.length < 12 ||
-    String.fromCharCode(...bytes.slice(0, 4)) !== 'RIFF' ||
-    String.fromCharCode(...bytes.slice(8, 12)) !== 'WEBP'
-  )
-    return new Response('Image unavailable.', { status: 404 });
-  return new Response(bytes, {
-    headers: {
-      'Content-Type': 'image/webp',
-      'Cache-Control': 'private, max-age=3600',
-      'X-Content-Type-Options': 'nosniff',
-    },
-  });
+  ));
 }

@@ -66,6 +66,8 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
         result = await runProviderJob(uid, uuid(path[1]), v.parse(v.optional(v.picklist(['all','library','users','tracking','lists','live','catalogue','metadata']), 'all'), body.task), v.parse(v.optional(v.string()), body.kind));
       } else if (path[2] === 'playback-import' && method === 'POST')
         result = await updateJellyfinPlaybackImport(uid, uuid(path[1]), body);
+      else if (path[2] === 'live-read' && method === 'POST')
+        result = await (await import('$lib/providers/connections.server')).updateLiveRead(uid,uuid(path[1]),body);
       else if (path[2] === 'steam-imports' && method === 'POST')
         result = await (await import('$lib/providers/steam/connection.server')).updateSteamImports(uid,uuid(path[1]),body);
       else if (path[2] === 'sync' && method === 'POST')

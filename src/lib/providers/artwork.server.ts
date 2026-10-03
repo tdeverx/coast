@@ -1,3 +1,4 @@
+import { serverArtwork } from './server-artwork.server';
 import { fallbackArtwork } from './tmdb/fallback.server';
 import { artworkTypes, isArtworkType } from '$lib/artwork';
 import { and, eq } from 'drizzle-orm';
@@ -39,11 +40,6 @@ export async function streamArtwork(
   const index = params.get('index') || '0';
   if (!/^\d{1,5}$/.test(index)) return new Response('Invalid image index.', { status: 400 });
   if (tag.length > 100) return new Response('Invalid image.', { status: 400 });
-  const headers = {
-    'Content-Type': 'image/webp',
-    'Cache-Control': 'private, max-age=3600',
-    'X-Content-Type-Options': 'nosniff',
-  };
   const credentials = JSON.parse(await decryptCredential(connection.credentials!)) as {
     accessToken: string;
   };
@@ -61,7 +57,7 @@ export async function streamArtwork(
       : new Response('Image unavailable.', { status: 404 });
   let response: Response;
   try {
-    response = await secureProviderFetch(
+    response = await serverArtwork([instance.id,instance.serverIdentity??'',instance.baseUrl,connection.id,String(connection.accountGeneration),itemId,type,index,query.toString(),tag || String(Math.floor(Date.now()/3600000))],async()=>secureProviderFetch(
       await instanceFetchConfig(instance),
       `/Items/${encodeURIComponent(itemId)}/Images/${artworkTypes[type].jellyfin}/${Number(index)}?${query}`,
       {
@@ -69,21 +65,10 @@ export async function streamArtwork(
         signal: request.signal,
       },
       { maxBytes: 10 * 1024 * 1024 }
-    );
+    ));
   } catch (error) {
     if (request.signal.aborted) throw error;
     return unavailable();
   }
-  if (!response.ok || !response.headers.get('content-type')?.startsWith('image/')) {
-    await response.body?.cancel().catch(() => {});
-    return unavailable();
-  }
-  const bytes = new Uint8Array(await response.arrayBuffer());
-  if (
-    bytes.length < 12 ||
-    String.fromCharCode(...bytes.slice(0, 4)) !== 'RIFF' ||
-    String.fromCharCode(...bytes.slice(8, 12)) !== 'WEBP'
-  )
-    return unavailable();
-  return new Response(bytes, { headers });
+  return response.ok ? response : unavailable();
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import {onDestroy} from 'svelte';
+  import {onDestroy,tick} from 'svelte';
   import Button from './Button.svelte';
   import { liquidGlass } from '$lib/ui/materials/glass';
   import type { ComponentProps } from 'svelte';
@@ -19,6 +19,11 @@
   } = $props();
   let dialog: HTMLElement;
   let destroyed = false;
+  let returnFocus:HTMLElement|null=null;
+  function closed() {
+    if(dialog?.contains(document.activeElement)&&returnFocus?.isConnected)returnFocus.focus({preventScroll:true});
+    returnFocus=null;open=false;onclose?.();
+  }
   onDestroy(() => {destroyed = true;});
   function placePopover() {
     const target = anchor ? document.querySelector(anchor) : null;
@@ -32,7 +37,11 @@
   $effect(() => {
     if (!dialog) return;
     if (popover) {
-      if (open && !dialog.matches(':popover-open')) dialog.showPopover();
+      if (open && !dialog.matches(':popover-open')) {
+        returnFocus=document.activeElement instanceof HTMLElement?document.activeElement:null;
+        dialog.showPopover();
+        void tick().then(()=>{if(!destroyed&&dialog.matches(':popover-open'))dialog.querySelector<HTMLElement>('button:not(:disabled),a[href],input:not(:disabled)')?.focus({preventScroll:true});});
+      }
       if (!open && dialog.matches(':popover-open')) dialog.hidePopover();
       if (!open) return;
       placePopover();
@@ -58,14 +67,10 @@
   role={popover ? 'dialog' : undefined}
   aria-label={title}
   bind:this={dialog}
-  onclose={() => {
-    open = false;
-    onclose?.();
-  }}
+  onclose={closed}
   ontoggle={(event: ToggleEvent) => {
     if (!destroyed && popover && event.oldState === 'open' && event.newState === 'closed') {
-      open = false;
-      onclose?.();
+      closed();
     }
   }}
   class:wide class:notification-popover={popover}

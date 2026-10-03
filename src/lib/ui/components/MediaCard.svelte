@@ -1,5 +1,6 @@
 <script lang="ts">
   import Button from './Button.svelte';
+  import { page } from '$app/state';
   import ProgressBar from './ProgressBar.svelte';
   import { primaryMediaAction, progressFraction } from '$lib/media/model';
   import { goto } from '$app/navigation';
@@ -53,7 +54,8 @@
     primaryMenu?:import('svelte').Snippet;
     social?:{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number};
   } = $props();
-  const readOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
+  const contextReadOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
+  const readOnly = () => !page.data.user || contextReadOnly();
   const trackedItem = $derived('href' in item ? undefined : item);
   const href = $derived('href' in item ? item.href : `/media/${item.id}`);
   let overlayIndex = $state(0);
@@ -168,7 +170,7 @@
   {/if}
   <div
     class="art {shape}"
-    class:unavailable={trackedItem && !trackedItem.available}
+    class:unavailable={!!page.data.user && page.data.user.settings?.monochromeMissing !== false && trackedItem && !trackedItem.available}
     class:contained
     title={artworkHint}
   >
@@ -243,11 +245,10 @@
             />{/if}{/if}
       </div>
     {/if}{/if}
-    {#if social?.total && !item.captionActor}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} showLabel={false} showReactions={false} /></div>{/if}
-    {#if !item.captionActor && completion !== null && completion > 0 && completion < 0.9}<div
-        class="progress">
-        <ProgressBar progress={completion} label={`${item.title} progress`} />
-      </div>{/if}
+    {#if !item.captionActor && (social?.total || completion !== null && completion > 0 && completion < 0.9)}<div class="card-status">
+      {#if social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} showLabel={false} showReactions={false} /></div>{/if}
+      {#if completion !== null && completion > 0 && completion < 0.9}<div class="card-progress"><ProgressBar progress={completion} label={`${item.title} progress`} /></div>{/if}
+    </div>{/if}
   </div>
   {#if showCaption}<div class="caption-row">
   {#if item.captionActor}
@@ -302,7 +303,9 @@
   .wrap-activity .activity-detail,.wrap-activity .activity-media{white-space:normal;overflow:visible;overflow-wrap:anywhere;}
   .activity-reaction{flex-shrink:0;}
   .activity-reactions{margin-top:6px;}
-  .card-friends{position:absolute;bottom:8px;left:8px;z-index:3;}
+  .card-status{position:absolute;bottom:8px;left:8px;right:8px;z-index:3;display:flex;align-items:flex-end;gap:8px;}
+  .card-friends{flex-shrink:0;max-width:65%;}
+  .card-progress{flex:1;min-width:0;height:6px;pointer-events:none;}
 
   .media-card {
     display: block;
@@ -518,15 +521,6 @@
   .rating {
     flex-shrink: 0;
   }
-  .progress {
-    height: 6px;
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
-    z-index: 2;
-    pointer-events: none;
-  }
 
   .rating :global(svg) {
     width: 1em;
@@ -544,7 +538,6 @@
     .art::after,
     .art.unavailable img,
     .hover-stroke,
-    .progress,
     .play,
     .card-menu {
       transition: none;

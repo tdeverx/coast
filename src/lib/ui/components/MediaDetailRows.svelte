@@ -148,6 +148,8 @@
       layout={section ? 'grid' : 'row'}
       href={!section ? `/media/${item.id}?section=reviews&source=${reviewSource}` : undefined}
       title="Reviews"
+      itemCount={reviews.reduce((count,source)=>count+(data[source]?.reviews.length??0)+(errors[source]?1:0),0)}
+      hideEmpty={reviewSource==='all'}
       size="panel"
       preserveHeight
       busy={reviews.some((s) => busy[s])}
@@ -198,6 +200,8 @@
   {/if}
   {#if !section || section === 'credits'}<Shelf
       title="Credits"
+      itemCount={credits.people.length+(errors.tmdb?1:0)}
+      hideEmpty={credits.selection==='cast' && !data.tmdb?.crew.length}
       size="circle"
       layout={section ? 'grid' : 'row'}
       href={credits.href}
@@ -218,7 +222,8 @@
             captionSubtitle: roles.preview + (roles.remaining ? ` · +${roles.remaining} roles` : '') + (roles.voice ? ' · Voice' : ''),
           }} shape={style.shape} artworkStyle={style.artworkStyle} overlay={style.overlay} />
         {/each}
-        {#if !credits.people.length && !busy.tmdb}<div class="row-empty">
+        {#if errors.tmdb}<div class="row-empty"><p role="alert">{errors.tmdb}</p><Button emphasis="subtle" onclick={()=>load('tmdb')}>Retry</Button></div>{/if}
+        {#if !errors.tmdb && !credits.people.length && !busy.tmdb}<div class="row-empty">
             <p class="muted">No {credits.selection} credits are available for this title.</p>
           </div>{/if}
       {/snippet}

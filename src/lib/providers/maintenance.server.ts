@@ -176,6 +176,8 @@ export async function scheduleProviderMaintenance(
               'jellyfin.library',
               'jellyfin.sync',
               'trakt.live',
+              'jellyfin.live',
+              'steam.live',
               'trakt.import',
               'trakt.lists-import',
               'trakt.collection-project',
@@ -215,6 +217,15 @@ export async function scheduleProviderMaintenance(
         else if (options.force || !job?.last || now - new Date(job.last).getTime() >= schedule.catalogueIntervalMinutes * 60000) await queue(connection, 'catalogue.user-scan');
       }
       if (options.task === 'catalogue' || options.task === 'metadata') continue;
+      if (['jellyfin','trakt','steam'].includes(instance.provider)) {
+        if((!options.task||['all','live'].includes(options.task))&&(options.force||schedule.liveEnabled)&&connection.settings.liveRead!==false){
+          const live=jobsByKey.get(`${connection.id}:${instance.provider}.live`);
+          const [presence]=await tx.execute<{active:boolean}>(sql`select exists(select 1 from social_live_state where connection_id=${connection.id} and account_generation=${connection.accountGeneration} and expires_at>now()) or exists(select 1 from playback_sessions where user_id=${connection.userId} and state='active' and updated_at>now()-interval '2 minutes') or exists(select 1 from social_checkins where user_id=${connection.userId} and state='active' and expires_at>now()) as active`);
+          const interval=presence?.active?schedule.liveActiveMinutes:schedule.liveIdleMinutes;
+          if(live?.active)active++;else if(options.force||!live?.last||now-new Date(live.last).getTime()>=interval*60000)await queue(connection,`${instance.provider}.live`);
+        }
+        if(options.task==='live')continue;
+      }
       if (instance.provider === 'jellyfin') {
         if (!handledLibraries.has(instance.id)) {
           handledLibraries.add(instance.id);
@@ -262,13 +273,6 @@ export async function scheduleProviderMaintenance(
         continue;
       }
       if (instance.provider === 'trakt') {
-        if((!options.task||['all','live'].includes(options.task))&&(options.force||schedule.liveEnabled)&&connection.settings.liveRead!==false){
-          const live=jobsByKey.get(`${connection.id}:trakt.live`);
-          const [presence]=await tx.execute<{active:boolean}>(sql`select exists(select 1 from social_live_state where connection_id=${connection.id} and account_generation=${connection.accountGeneration} and expires_at>now()) or exists(select 1 from playback_sessions where user_id=${connection.userId} and state='active' and updated_at>now()-interval '2 minutes') or exists(select 1 from social_checkins where user_id=${connection.userId} and state='active' and expires_at>now()) as active`);
-          const interval=presence?.active?schedule.liveActiveMinutes:schedule.liveIdleMinutes;
-          if(!live?.active&&(options.force||!live?.last||now-new Date(live.last).getTime()>=interval*60000))await queue(connection,'trakt.live');
-        }
-        if(options.task==='live')continue;
         if(options.task !== 'lists' && (options.force || schedule.trackingEnabled) && (connection.settings.collectionProjection as {enabled?:boolean})?.enabled){
           const projectionJob=jobsByKey.get(`${connection.id}:trakt.collection-project`);
           if(!projectionJob?.active && (options.force||!projectionJob?.last||now-new Date(projectionJob.last).getTime()>=schedule.intervalMinutes*60000))await queue(connection,'trakt.collection-project');
@@ -312,7 +316,7 @@ export async function scheduleProviderMaintenance(
       const [existing]=await tx.select({id:outboxActions.id}).from(outboxActions).innerJoin(providerConnections,eq(providerConnections.id,outboxActions.connectionId)).where(and(eq(providerConnections.instanceId,connection.instanceId),eq(outboxActions.kind,kind),inArray(outboxActions.state,['pending','running']))).limit(1);
       if(existing)continue;
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${connection.userId}:${connection.id}`},0))`);
-      await tx.insert(outboxActions).values({userId:connection.userId,connectionId:connection.id,kind,payload,compactionKey:kind,correlationId:correlationId(context.getStore()),createdAt:sql`clock_timestamp()`});queued++;
+      await tx.insert(outboxActions).values({userId:connection.userId,connectionId:connection.id,accountGeneration:connection.accountGeneration,kind,payload,compactionKey:kind,correlationId:correlationId(context.getStore()),createdAt:sql`clock_timestamp()`});queued++;
     }
     return { queued, active, connections: eligible.length, busy: false };
   });

@@ -31,6 +31,7 @@ jobs:
         with:
           bun-version: 1.4.2
       - run: bun install --frozen-lockfile
+      - run: bun run code:inventory
       - run: bun run ui:inventory:check
       - run: bun run check
       - run: bun test

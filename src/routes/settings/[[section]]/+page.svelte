@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {apiScopes,apiScopeLabels,type ApiScope} from '$lib/public-api';
   import { collectionCategories, collectionRules } from '$lib/collection/preferences';
   import {audiences,socialSections,socialCategories,type Audience} from '$lib/social/model';
   import {
@@ -30,6 +31,7 @@
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   let { data } = $props();
   let inviteCode=$state('');
+  let apiToken=$state(''), apiName=$state(''), apiDays=$state(90), apiGrants=$state<ApiScope[]>(['catalogue:read']);
   let error = $state(''),
     success = $state(''),
     busy = $state(false),
@@ -104,6 +106,7 @@
     );
     error = '';
     success = '';
+    apiToken = '';
   }
   beforeNavigate(({ cancel, to }) => {
     if (to?.url.pathname === page.url.pathname) return;
@@ -152,6 +155,7 @@
     busy = true;
     error = '';
     success = '';
+    apiToken = '';
     try {
       await change(path, body, method);
       success = label;
@@ -270,6 +274,7 @@
                 bind:checked={prefs.originalTitles}
               />
             </div>
+          <div class="setting"><div><h3>Black and white missing artwork</h3><p>Show unavailable media in black and white.</p></div><input type="checkbox" aria-label="Black and white missing artwork" bind:checked={prefs.monochromeMissing}/></div>
           </fieldset>
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">Regional metadata</legend>
@@ -361,6 +366,21 @@
           </p>
           {@render saveControls('Save playback preferences')}
         </form>
+      {:else if data.section === 'api'}<div class="stack form-width">
+        <form class="panel stack" onsubmit={async event=>{
+          event.preventDefault();if(busy)return;busy=true;error='';apiToken='';
+          try {const result=await change<{token:string}>('settings/tokens',{name:apiName,scopes:apiGrants,days:apiDays});apiToken=result.token;apiName='';}
+          catch(cause){error=message(cause);}finally{busy=false;}
+        }}>
+          <label class="field">Token name<input required maxlength="60" bind:value={apiName}/></label>
+          <label class="field">Expires in days<input type="number" min="1" max="365" required bind:value={apiDays}/></label>
+          <fieldset class="stack"><legend>Read permissions</legend>{#each apiScopes as scope}<label class="check"><input type="checkbox" bind:group={apiGrants} value={scope}/>{apiScopeLabels[scope]}</label>{/each}</fieldset>
+          <Button type="submit" disabled={busy||!apiGrants.length}>Create token</Button>
+        </form>
+        {#if apiToken}<div class="panel stack"><p role="status">Copy this token now. It will not be shown again.</p><label class="field">API token<input readonly autocomplete="off" spellcheck={false} value={apiToken} onclick={event=>event.currentTarget.select()}/></label><Button emphasis="subtle" onclick={()=>apiToken=''}>Hide</Button></div>{/if}
+        {#each data.apiTokens as token (token.id)}<div class="panel stack"><div class="spread"><strong>{token.name}</strong><Button emphasis="subtle" danger disabled={busy||!!token.revokedAt} onclick={async()=>{if(busy)return;busy=true;error='';try{await change(`settings/tokens/${token.id}`,undefined,'DELETE');}catch(cause){error=message(cause);}finally{busy=false;}}}>{token.revokedAt?'Revoked':'Revoke'}</Button></div><p class="small muted">{token.scopes.join(', ')} · Expires {new Date(token.expiresAt).toLocaleDateString()}</p></div>{/each}
+        <p class="small muted">Use Bearer authentication at /api/public/v1. See the public API documentation for endpoints and paging.</p>
+      </div>
       {:else if data.section === 'account'}<div class="stack form-width">
           <div class="panel">
             <h3>{page.data.user?.username}</h3>
@@ -373,7 +393,7 @@
           <div class="panel stack">
             {#if data.hasLocalPassword}<h3>Change password</h3>
               <p class="small">
-                Use at least 12 characters. Changing your password signs you out on every device.
+                Use at least 8 characters with uppercase, lowercase and a special character. Changing your password signs you out on every device and revokes your API tokens.
               </p>
               <form
                 class="stack"
@@ -413,15 +433,12 @@
                     type="password"
                     name="password"
                     autocomplete="new-password"
-                    minlength="12"
+                    minlength="8"
                     required
                   /></label
                 ><Button type="submit" disabled={busy}>Update password</Button>
-              </form>{:else}<h3>Jellyfin sign-in</h3>
-              <p class="small">
-                Change your Jellyfin password through your Jellyfin service. An administrator can
-                add a separate Coast password if you need local sign-in.
-              </p>{/if}
+              </form>{:else}<h3>Coast password</h3>
+              <p class="small">Ask an administrator to set your Coast password before using local sign-in.</p>{/if}
           </div>
           <div class="panel stack">
             <h3>Restore preferences</h3>
@@ -732,7 +749,7 @@
                   name="password"
                   type="password"
                   required
-                  minlength="12"
+                  minlength="8"
                   autocomplete="new-password"
                 /></label
               ><label class="field"
@@ -837,11 +854,7 @@
               ><input type="checkbox" bind:checked={policy.cacheTmdbArtwork} />Cache TMDB artwork on
               this server</label
             >
-            <p class="small muted">
-              Off by default. Save local copies of TMDB images when viewed. Jellyfin images always
-              come from your media server; browser caching still applies. Turning this off bypasses
-              saved TMDB copies and stops new disk writes.
-            </p>
+            <label class="check"><input type="checkbox" bind:checked={policy.cacheServerArtwork}/>Cache media server artwork on this server</label><p class="small muted">Save local copies when viewed. Media server images remain permission checked and served through Coast. Turning either cache off bypasses saved copies and stops new disk writes.</p>
           </fieldset>
           <fieldset class="panel stack" id="network" disabled={busy}>
             <legend class="sr-only">Integrations & network</legend>
@@ -1052,11 +1065,11 @@
         applies again at its next Jellyfin sign-in.
       </p>
       {#if editing.id !== page.data.user?.id}<label class="field"
-          >New Coast password <small>Optional · at least 12 characters</small><input
+          >New Coast password <small>Optional · 8+ characters, uppercase, lowercase and special character</small><input
             type="password"
             autocomplete="new-password"
             bind:value={editing.password}
-            minlength="12"
+            minlength="8"
             maxlength="128"
             disabled={busy}
           /><small

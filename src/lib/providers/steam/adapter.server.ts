@@ -19,10 +19,10 @@ export class SteamAdapter {
   }
   async profile(steamId: string) {
     v.parse(steamIdSchema,steamId);
-    const result = v.parse(v.object({response:v.object({players:v.array(v.object({steamid:steamIdSchema,personaname:v.string()}))})}),await this.get('/ISteamUser/GetPlayerSummaries/v2/',{steamids:steamId}));
+    const result = v.parse(v.object({response:v.object({players:v.array(v.object({steamid:steamIdSchema,personaname:v.string(),gameid:v.optional(v.string())}))})}),await this.get('/ISteamUser/GetPlayerSummaries/v2/',{steamids:steamId}));
     const profile=result.response.players.find(p=>p.steamid===steamId);
     if(!profile)throw new AppError(502,'Steam did not return this account.');
-    return {id:profile.steamid,username:profile.personaname};
+    return {id:profile.steamid,username:profile.personaname,playingId:profile.gameid ?? null};
   }
   async ownedGames(steamId:string) {
     v.parse(steamIdSchema,steamId);

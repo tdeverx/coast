@@ -1,4 +1,5 @@
-import { maintenanceKinds,serviceTraversalKinds } from '$lib/providers/tasks';
+import { maintenanceKinds } from '$lib/providers/tasks';
+import { requestPriority, type RequestPriority } from '../security/request-priority';
 import { context, logDiagnostic, classifyFailure } from '../diagnostics';
 import { refreshDiagnosticConfig } from '../config';
 import { correlationId } from '../../diagnostics';
@@ -21,6 +22,7 @@ export interface OutboxAction {
   attempts: number;
   correlationId: string;
   instanceId?: string | null;
+  priority?: RequestPriority;
 }
 export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number };
 export type ActionHandler = (action: OutboxAction) => Promise<void | JobOutcome>;
@@ -161,9 +163,11 @@ function safeDiagnosticStage(error: unknown) {
   return typeof stage === 'string' && /^[a-z-]{1,40}$/.test(stage) ? stage : undefined;
 }
 
-export async function claimNextAction(): Promise<OutboxAction | null> {
-  // Serialize claims and allow only one provider traversal across all services.
+export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | null> {
+  // Serialize claims, preserve mutable account ordering, and prioritize initial imports.
+
   return getSql().begin(async (sql) => {
+  const priority=sql`CASE WHEN candidate.kind IN ('jellyfin.sync','trakt.import','trakt.lists-import','steam.sync') AND NOT EXISTS (SELECT 1 FROM sync_checkpoints checkpoint WHERE checkpoint.connection_id=candidate.connection_id AND checkpoint.kind='initial:'||candidate.kind||':'||coalesce(candidate.account_generation,connection.account_generation)::text AND checkpoint.completed_at IS NOT NULL) AND NOT EXISTS (SELECT 1 FROM outbox_actions completed WHERE completed.connection_id=candidate.connection_id AND completed.kind=candidate.kind AND completed.account_generation IS NOT DISTINCT FROM candidate.account_generation AND completed.state='succeeded') THEN 0 WHEN candidate.kind NOT IN ${sql(maintenanceKinds)} THEN 1 WHEN candidate.kind LIKE '%.live' THEN 2 ELSE 3 END`;
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('queue-claim', 0))`;
     await sql`UPDATE outbox_actions SET state = 'pending', locked_at = NULL, next_attempt_at = NOW(), updated_at = NOW()
       WHERE state = 'running' AND locked_at < NOW() - INTERVAL '5 minutes'`;
@@ -174,17 +178,17 @@ export async function claimNextAction(): Promise<OutboxAction | null> {
         LEFT JOIN provider_connections connection ON connection.id = candidate.connection_id
         LEFT JOIN provider_instances instance ON instance.id = connection.instance_id OR (candidate.kind = 'tmdb.refresh' AND instance.provider = 'tmdb' AND instance.id::text = candidate.payload->>'instanceId')
         WHERE candidate.state = 'pending' AND candidate.next_attempt_at <= NOW()
+          AND (${urgentOnly} = false OR ${priority} < 3)
           AND (instance.settings->>'jobsRetryAt' IS NULL OR (instance.settings->>'jobsRetryAt')::timestamptz <= NOW())
-          AND NOT EXISTS (SELECT 1 FROM outbox_actions earlier
+          AND (candidate.kind LIKE '%.live' OR NOT EXISTS (SELECT 1 FROM outbox_actions earlier
             WHERE earlier.user_id = candidate.user_id AND earlier.connection_id IS NOT DISTINCT FROM candidate.connection_id
-            AND earlier.state IN ('pending', 'running', 'failed') AND (earlier.created_at, earlier.id) < (candidate.created_at, candidate.id)
+            AND earlier.kind NOT LIKE '%.live' AND earlier.state IN ('pending', 'running', 'failed') AND (earlier.created_at, earlier.id) < (candidate.created_at, candidate.id)
             AND (earlier.kind NOT IN ${sql(maintenanceKinds)} OR earlier.state = 'running' OR
-              (candidate.kind IN ${sql(maintenanceKinds)} AND earlier.state = 'pending' AND earlier.next_attempt_at <= NOW())))
-          AND (candidate.kind NOT IN ${sql(serviceTraversalKinds)} OR NOT EXISTS (
-            SELECT 1 FROM outbox_actions busy
-            WHERE busy.kind IN ${sql(serviceTraversalKinds)} AND busy.state = 'running'))
-        ORDER BY CASE WHEN candidate.kind in ('jellyfin.sync','trakt.import','trakt.lists-import') AND EXISTS(SELECT 1 FROM user_onboarding o WHERE o.user_id=candidate.user_id AND o.completed_at IS NULL AND candidate.connection_id in (o.connection_id,o.trakt_connection_id)) THEN 0 ELSE 1 END, candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
+              (${priority} <> 0 AND candidate.kind IN ${sql(maintenanceKinds)} AND earlier.state = 'pending' AND earlier.next_attempt_at <= NOW()))))
+        ORDER BY ${priority}, candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
       ) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind='tmdb.refresh' AND provider='tmdb' AND id::text=payload->>'instanceId')) AS instance_id`;
+    const initial = row && ['jellyfin.sync','trakt.import','trakt.lists-import','steam.sync'].includes(row.kind)
+      ? (await sql`SELECT NOT EXISTS(SELECT 1 FROM outbox_actions WHERE connection_id=${row.connection_id} AND kind=${row.kind} AND account_generation IS NOT DISTINCT FROM ${row.account_generation}::uuid AND state='succeeded') AND NOT EXISTS(SELECT 1 FROM sync_checkpoints WHERE connection_id=${row.connection_id} AND kind=${'initial:'+row.kind+':'+row.account_generation} AND completed_at IS NOT NULL) AS first`)[0].first : false;
     return row
       ? {
           id: row.id,
@@ -196,20 +200,18 @@ export async function claimNextAction(): Promise<OutboxAction | null> {
           attempts: row.attempts,
           correlationId: row.correlation_id,
           instanceId: row.instance_id,
+          priority: initial ? 0 : !maintenanceKinds.includes(row.kind) ? 1 : row.kind.endsWith('.live') ? 2 : 3,
         }
       : null;
   });
 }
 
-export async function runQueueOnce(): Promise<boolean> {
-  const action = await claimNextAction();
+export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
+  const action = await claimNextAction(urgentOnly);
   if (!action) return false;
-  // Hold the connection lane across stale-lease recovery for every action. Maintenance
-  // also holds the global traversal lock, while playback and edits remain independent.
+  // Keep account writes ordered. Read-only live observations can interleave with imports.
   const reserved = await getSql().reserve();
-  const lockKeys = [`queue-lane:${action.userId}:${action.connectionId ?? 'local'}`];
-  if (serviceTraversalKinds.includes(action.kind))
-    lockKeys.push('provider-traversal');
+  const lockKeys = [`queue-lane:${action.userId}:${action.connectionId ?? 'local'}${action.kind.endsWith('.live') ? ':live' : ''}`];
   const held: string[] = [];
   try {
     for (const key of lockKeys) {
@@ -222,7 +224,7 @@ export async function runQueueOnce(): Promise<boolean> {
       held.push(key);
     }
     await refreshDiagnosticConfig();
-    return await context.run(action.correlationId, async () => {
+    return await requestPriority.run(action.priority??1, () => context.run(action.correlationId, async () => {
       const started = performance.now();
       void logDiagnostic('debug', 'job.start', { actionId: action.id, attempts: action.attempts });
       const heartbeat = setInterval(() => {
@@ -249,6 +251,8 @@ export async function runQueueOnce(): Promise<boolean> {
         await getSql().begin(async (sql) => {
           const completed =
             await sql`UPDATE outbox_actions SET state = 'succeeded', locked_at = NULL, last_error = NULL, payload = (payload - '_jobFailure') || ${outcome ? { _jobOutcome: outcome } : {}}::jsonb, updated_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
+          if (completed.length && action.priority===0 && action.connectionId && action.accountGeneration)
+            await sql`INSERT INTO sync_checkpoints(connection_id,kind,completed_at) VALUES(${action.connectionId},${'initial:'+action.kind+':'+action.accountGeneration},NOW()) ON CONFLICT(connection_id,kind) DO UPDATE SET completed_at=NOW(),updated_at=NOW()`;
           if (completed.length)
             await resolveNotification(action.userId, `outbox:${action.id}`, sql);
         });
@@ -317,7 +321,7 @@ export async function runQueueOnce(): Promise<boolean> {
         clearInterval(heartbeat);
       }
       return true;
-    });
+    }));
   } finally {
     try {
       for (const key of held.reverse())
@@ -336,25 +340,25 @@ export function startQueueWorker() {
   if (running) return;
   running = true;
   const generation = ++workerGeneration;
-  const schedule = (delay: number) => {
+  const schedule = (delay: number, urgentOnly=false) => {
     const timer = setTimeout(() => {
       timers.delete(timer);
-      void tick();
+      void tick(urgentOnly);
     }, delay);
     timers.add(timer);
     timer.unref();
   };
-  const tick = async () => {
+  const tick = async (urgentOnly:boolean) => {
     if (!running || generation !== workerGeneration) return;
     let worked = false;
     try {
-      worked = await runQueueOnce();
+      worked = await runQueueOnce(urgentOnly);
     } catch {
       /* Retain work during database outages. */
     }
-    if (running && generation === workerGeneration) schedule(worked ? 20 : 2000);
+    if (running && generation === workerGeneration) schedule(worked ? 20 : 2000,urgentOnly);
   };
-  for (let worker = 0; worker < 3; worker++) schedule(worker * 50);
+  for (let worker = 0; worker < 3; worker++) schedule(worker * 50,worker===0);
 }
 export function stopQueueWorker() {
   running = false;

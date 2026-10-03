@@ -95,13 +95,12 @@ describe('provider network boundary', () => {
       globalThis.fetch = Object.assign(async () => new Response('more than four bytes'), {
         preconnect: original.preconnect,
       });
-      const response = await secureProviderFetch(
+      await expect(secureProviderFetch(
         { baseUrl: 'https://1.1.1.1', approved: true },
         '/x',
         {},
         { maxBytes: 4 }
-      );
-      await expect(response.text()).rejects.toThrow('size limit');
+      )).rejects.toThrow('size limit');
     } finally {
       globalThis.fetch = original;
     }

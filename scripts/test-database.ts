@@ -5,7 +5,7 @@ import { join } from 'node:path';
 // The configured URL is only used to create/drop isolated databases, never as a test target.
 const target = process.env.TEST_DATABASE_URL;
 if (!target) throw new Error('Set TEST_DATABASE_URL to a PostgreSQL account allowed to create disposable databases.');
-const admin = new Bun.SQL(target);
+const admin = new Bun.SQL(target, { max: 1 });
 const selected = process.argv.slice(2);
 const files = (await readdir('tests')).filter(file => file.endsWith('-db.test.ts') && (!selected.length || selected.includes(file))).sort();
 if (!files.length) throw new Error('No database test suites selected.');

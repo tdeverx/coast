@@ -722,3 +722,11 @@ form.stack,
 .status-dot[data-status="away"] {background:var(--rating);}
 .status-dot[data-status="busy"] {background:var(--danger);}
 .status-choice .status-dot[data-status="offline"] {background:transparent;box-shadow:inset 0 0 0 1.5px var(--quiet);}
+
+/* Shared loading treatment for shelves and popovers; geometry belongs to the consumer. */
+.skeleton { background:var(--surface);animation:coast-loading 1.5s ease-in-out infinite alternate; }
+@keyframes coast-loading { to { opacity:.5; } }
+@media(prefers-reduced-motion:reduce) { .skeleton { animation:none; } }
+
+.skip-link { position:fixed;top:-60px;left:20px;z-index:10000;padding:12px;border-radius:8px;background:var(--ink);color:var(--canvas); }
+.skip-link:focus { top:10px; }

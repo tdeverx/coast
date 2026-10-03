@@ -19,7 +19,8 @@
     "test:db": "bun scripts/test-database.ts",
     "db:generate": "bun --bun drizzle-kit generate",
     "db:migrate": "bun scripts/migrate.ts",
-    "test:recovery": "bun scripts/test-recovery.ts"
+    "test:recovery": "bun scripts/test-recovery.ts",
+    "code:inventory": "bun scripts/code-inventory.ts --check"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.5",

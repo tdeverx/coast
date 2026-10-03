@@ -1,3 +1,4 @@
+import {listApiTokens} from '$lib/server/public-api/tokens.server';
 import { collectionPreferences } from '$lib/collection/preferences';
 import {listInvites} from '$lib/server/auth/onboarding';
 import { settingsSections, administratorSettings } from '$lib/settings/sections';
@@ -36,6 +37,7 @@ export const load = (async ({locals, params, depends, url}) => {
   const config = await getConfig();
   return {
     section,
+    apiTokens:section==='api'?await listApiTokens(locals.user):[],
     invites: section==='users'?await listInvites(locals.user):[],
     hasLocalPassword:
       section === 'account'
@@ -68,6 +70,7 @@ export const load = (async ({locals, params, depends, url}) => {
       listenThreshold:50,
       fullWidth: true,
       originalTitles: false,
+      monochromeMissing: true,
       region: 'GB',
       subtitleLanguages: config.subtitleLanguages,
       subtitlesAlways: config.subtitleDefault === 'always',

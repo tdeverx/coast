@@ -6,6 +6,6 @@
  <span style:width={`${percentage}%`}></span>
 </div>
 <style>
- .progress-bar{height:100%;border-radius:99px;overflow:hidden;background:color-mix(in srgb,var(--white) calc(69 / 255 * 100%),transparent);pointer-events:none;}
- span{display:block;height:100%;border-radius:inherit;background:currentColor;}
+ .progress-bar{height:100%;border-radius:99px;overflow:hidden;background:var(--progress-track-background,color-mix(in srgb,var(--white) calc(69 / 255 * 100%),transparent));pointer-events:none;}
+ span{display:block;height:100%;border-radius:inherit;background:var(--progress-fill-background,currentColor);}
 </style>

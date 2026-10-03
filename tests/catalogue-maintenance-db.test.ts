@@ -194,7 +194,7 @@ run(
       enabled: true,
       catalogueEnabled: false,
       libraryEnabled: false,
-      userSyncEnabled: false,
+      userSyncEnabled: false, liveEnabled:false,
     });
     expect(
       (await scheduleProviderMaintenance({ instanceId: jellyfin })).queued

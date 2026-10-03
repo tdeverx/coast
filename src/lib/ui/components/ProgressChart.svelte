@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ProgressBar from './ProgressBar.svelte';
   let {
     items,
     label,
@@ -15,16 +16,8 @@
             : 'Count unavailable'}</small
         >
       </div>
-      <div
-        class="track"
-        role={item.total ? 'progressbar' : undefined}
-        aria-label={item.label}
-        aria-valuenow={item.total ? Math.min(item.value, item.total) : undefined}
-        aria-valuemin={item.total ? 0 : undefined}
-        aria-valuemax={item.total}
-      >
-        <span style:width={`${item.total ? Math.min(100, (item.value / item.total) * 100) : 0}%`}
-        ></span>
+      <div class="track">
+        {#if item.total && item.total > 0}<ProgressBar progress={item.value / item.total} label={`${item.label}: ${item.value} of ${item.total}`} />{:else}<span aria-hidden="true"></span>{/if}
       </div>{/snippet}
     {#if item.href}<a href={item.href}>{@render content()}</a>{:else}<div>
         {@render content()}
@@ -58,14 +51,10 @@
   .track {
     height: 6px;
     border-radius: 999px;
-    background: color-mix(in srgb, var(--white) calc(24 / 255 * 100%), transparent);
+    --progress-track-background: color-mix(in srgb, var(--white) calc(24 / 255 * 100%), transparent);
+    background: var(--progress-track-background);
+    --progress-fill-background: linear-gradient(to right, color-mix(in srgb, var(--white) calc(128 / 255 * 100%), transparent), var(--ink));
     overflow: hidden;
-  }
-  .track span {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: linear-gradient(to right, color-mix(in srgb, var(--white) calc(128 / 255 * 100%), transparent), var(--ink));
   }
   a:hover .heading {
     color: var(--ink);

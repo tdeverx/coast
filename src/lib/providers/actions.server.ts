@@ -41,6 +41,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     return (await import('$lib/catalogue/maintenance.server')).refreshSharedMetadata(action);
   });
   register('social.checkin-complete',async action=>{await (await import('$lib/social/presence.server')).completeCheckin(action.userId,v.parse(uuid,action.payload.checkinId));});
+  for(const provider of ['jellyfin','steam'] as const)register(`${provider}.live`,async action=>{if(action.connectionId)return (await import('$lib/social/provider-live.server')).pollProviderLive(action.userId,action.connectionId,provider);});
   register('trakt.live',async action=>{if(action.connectionId)await (await import('$lib/social/trakt.server')).pollLive(action.userId,action.connectionId);});
   register('trakt.checkin',async action=>{if(action.connectionId)await (await import('$lib/social/trakt.server')).deliverCheckin(action.userId,action.connectionId,v.parse(uuid,action.payload.checkinId));});
   register('seerr.manage', async (action) => {

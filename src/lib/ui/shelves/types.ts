@@ -31,6 +31,7 @@ export interface ShelfSource {
   readonly items: ShelfItem[];
   readonly busy: boolean;
   readonly ready: boolean;
+  readonly emptyConfirmed?: boolean;
   readonly error: string;
   readonly activated: boolean;
   readonly href?: string;

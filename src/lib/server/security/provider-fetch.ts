@@ -2,6 +2,7 @@ import { logDiagnostic, classifyFailure, context } from '../diagnostics';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import { AppError } from './errors';
+import { queueProviderRequest, deferProviderRequests, retryAfterSeconds } from './request-priority';
 
 export interface ProviderFetchConfig {
   baseUrl: string;
@@ -263,7 +264,7 @@ export function createProviderTransport(config: ProviderFetchConfig) {
       await response.body?.cancel();
       throw new ProviderHttpError(
         response.status,
-        Number(response.headers.get('retry-after')) || null
+        retryAfterSeconds(response.headers.get('retry-after'))
       );
     }
     if (response.status === 204 || response.headers.get('content-length') === '0') return null;
@@ -290,7 +291,16 @@ export async function secureProviderFetch(
     stream: !!options.stream,
   });
   try {
-    const response = await providerFetch(config, path, init, options);
+    const perform = async () => {
+      const response = await providerFetch(config, path, init, options);
+      if (options.stream) return response;
+      // Buffer the bounded body before releasing the lane, not a multi-hour media stream.
+      const bytes = await response.arrayBuffer();
+      if(response.status===429)deferProviderRequests(new URL(config.baseUrl).origin,(retryAfterSeconds(response.headers.get('retry-after'))??60)*1000);
+      return new Response([204,205,304].includes(response.status) ? null : bytes, {status:response.status,statusText:response.statusText,headers:response.headers});
+    };
+    const interval = config.provider === 'igdb' ? 260 : ['trakt','steam','tmdb'].includes(config.provider ?? '') ? 250 : 0;
+    const response = options.stream ? await perform() : await queueProviderRequest(new URL(config.baseUrl).origin,interval,perform,init.signal ?? undefined);
     void logDiagnostic(response.ok ? 'info' : 'warn', 'provider.complete', {
       provider: config.provider,
       method: init.method || 'GET',

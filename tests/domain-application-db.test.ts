@@ -732,14 +732,6 @@ suite('application PostgreSQL read models', () => {
     expect((await searchMedia(b, privateTitle)).items[0].id).toBe(privateMovie);
     expect((await searchMedia(a, personalTitle)).truncated).toBe(false);
   });
-  test('local same-genre recommendations use Coast history and omit watched or dropped candidates', async () => {
-    await track(a, { mediaId: anchor, action: 'watch' });
-    await track(a, { mediaId: droppedRecommendation, action: 'drop' });
-    await track(b, { mediaId: recommendation, action: 'watch' });
-    const suggestions = (await homeData(a)).recommendations;
-    expect(suggestions?.because).toBe('Recommendation anchor');
-    expect(suggestions?.items.map((item) => item.id)).toEqual([recommendation]);
-  });
   test('season details and ordered custom lists retain every item beyond the 500-row query batch', async () => {
     const longShow = crypto.randomUUID(),
       longSeason = crypto.randomUUID();

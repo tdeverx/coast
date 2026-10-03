@@ -19,7 +19,25 @@ import { pagination, PAGE_SIZE } from './pagination';
 /** Plan using lightweight IDs; hydrate only the filtered, visible page. */
 export function progressData(userId:string, raw?:Partial<import('$lib/progress').ProgressOptions> & {category?:'screen'}, viewerId?:string):Promise<Omit<ProgressContent,'items'> & {items:MediaView[]}>;
 export function progressData(userId:string, raw:unknown, viewerId?:string):Promise<ProgressContent>;
-export async function progressData(
+export async function progressData(userId:string, raw:unknown = {}, viewerId=userId):Promise<ProgressContent> {
+  const result=await readProgressData(userId,raw,viewerId);
+  // Do not probe private activity in another medium when viewing someone else's profile.
+  if(userId!==viewerId)return {...result,emptyAllMedia:false};
+  if(result.total || !(await getConfig()).experimentalFeatures)return {...result,emptyAllMedia:result.total===0};
+  // An empty default medium cannot hide another medium's personal content.
+  // Check lightweight relationship/activity evidence instead of hydrating extra card pages.
+  const [other]=await getDb().execute<{present:boolean}>(sql`select exists(select 1 from works w where w.category in ('screen','game','music') and w.category<>${result.category} and (
+    (${result.view}='favourites' and exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.favourite))
+    or (${result.view} in ('watchlist','next','up-next') and (exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.watchlist and not t.dropped)
+      or exists(select 1 from up_next n where n.media_id=w.id and n.user_id=${userId}) or exists(select 1 from game_playthroughs g where g.game_id=w.id and g.user_id=${userId} and g.status='planned')))
+    or (${result.view}='watching' and (exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.position_seconds>0 and not t.dropped)
+      or exists(select 1 from music_progress p where p.track_id=w.id and p.user_id=${userId} and p.position_seconds>0)
+      or exists(select 1 from game_playthroughs g where g.game_id=w.id and g.user_id=${userId} and g.status in ('in-progress','paused'))))
+    or (${result.view}='recommendations' and exists(select 1 from social_recommendations r where r.work_id=w.id and r.recipient_id=${userId} and r.state='pending'))
+  )) as present`);
+  return {...result,emptyAllMedia:!other.present};
+}
+async function readProgressData(
   userId: string,
   raw: unknown = {},
   viewerId = userId

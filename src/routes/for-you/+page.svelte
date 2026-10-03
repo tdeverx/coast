@@ -6,7 +6,7 @@
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   let { data } = $props();
-  const section = $derived(page.url.searchParams.get('section'));
+  const section = $derived(page.url.searchParams.get('section') === 'activity');
 </script>
 
 <svelte:head><title>For You · Coast</title></svelte:head>
@@ -14,13 +14,7 @@
 <div class="content" class:page={!data.hero || !!section} style="padding-bottom:90px">
   {#if section}
     <Button href="/for-you" emphasis="subtle" icon="left">For You</Button>
-    {#if section === 'activity'}<Shelf source={{type:'social',layout:'grid',mediums:true,category:page.url.searchParams.get('category')??'screen'}} />{:else}{#key section}<Shelf
-        title={section === 'recent'
-          ? 'Recently watched'
-          : (data.recommendations?.title ?? 'Recommendations')}
-        items={section === 'recent' ? data.recentlyWatched : (data.recommendations?.items ?? [])}
-        layout="grid"
-      filterBy="type" />{/key}{/if}
+    <Shelf source={{type:'social',layout:'grid',mediums:true,category:page.url.searchParams.get('category')??'screen'}} />
   {:else}
     {#if !data.hero}<Heading variant="page" title="For You" description="Your stories, all together.">
       </Heading>
@@ -31,14 +25,5 @@
         ><div class="row" style="justify-content:center">
           <Button href="/discover">Find something to watch</Button>
         </div></EmptyState
-      >{/if}<Shelf source={{ type: 'progress', mediums: true, initial: data.progress }} /><Shelf source={{ type: 'progress', surface: "next", mediums: true }} /><Shelf source={{ type: 'progress', surface: "recommendations", mediums: true }} /><Shelf source={{ type: 'progress', surface: "favourites", mediums: true }} /><Shelf
-      title="Recently watched"
-      href="/for-you?section=recent"
-      items={data.recentlyWatched}
-      shape="fanart"
-    filterBy="type" />{#if data.recommendations}<Shelf
-        title={data.recommendations.title}
-        href="/for-you?section=recommendations"
-        items={data.recommendations.items}
-      filterBy="type" />{/if}<Shelf source={{type:"social",mediums:true}} /><Shelf source={{type:"social",surface:"popular",mediums:true}} /><Shelf title="From your library" items={data.library} href="/library" filterBy="type" />  {/if}
+      >{/if}<Shelf source={{ type: 'progress', mediums: true, initial: data.progress }} /><Shelf source={{ type: 'progress', surface: "next", mediums: true }} /><Shelf source={{ type: 'progress', surface: "recommendations", mediums: true }} /><Shelf source={{ type: 'progress', surface: "favourites", mediums: true }} /><Shelf source={{type:"social",surface:"popular",mediums:true}} /><Shelf source={{type:"social",mediums:true}} />  {/if}
 </div>
