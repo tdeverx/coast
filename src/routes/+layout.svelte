@@ -94,7 +94,7 @@
   /></svelte:head
 >
 <div
-  data-coast-glass="on"
+  data-coast-glass={data.user?.settings?.liquidGlass === false ? 'off' : 'on'}
   data-width={data.user?.settings?.fullWidth === false ? 'constrained' : 'full'}
   class:player-active={!!player.session}
   class:audio-active={player.session?.mediaType === 'audio'}
@@ -102,8 +102,9 @@
 >
   {#if data.user&&data.experiments.mediaModal}<MediaModal />{/if}<PersistentPlayer /><MediaHero mode="player" />
   {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
-  {#if (data.user || data.publicRead) && page.url.pathname !== '/onboarding' && page.url.pathname !== '/share'}<Header
+  {#if (data.user || data.publicRead || data.publicProfiles) && page.url.pathname !== '/onboarding' && page.url.pathname !== '/share'}<Header
       user={data.user}
+      publicBrowse={data.publicRead}
       unread={data.unreadNotifications}
       friendRequests={data.friendRequestCount}
     />{/if}

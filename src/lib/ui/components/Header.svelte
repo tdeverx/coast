@@ -15,14 +15,14 @@
   import { player } from '$lib/playback/client.svelte';
   import { slidingPill } from '$lib/ui/materials/sliding-pill';
   import { liquidGlass } from '$lib/ui/materials/glass';
-  let { user, unread = 0, friendRequests = 0 }: { user: { username: string; role: string; settings?:import('$lib/server/db/schema').UserSettings } | null; unread?: number; friendRequests?:number } =
+  let { user, unread = 0, friendRequests = 0, publicBrowse = true }: { user: { username: string; role: string; settings?:import('$lib/server/db/schema').UserSettings } | null; unread?: number; friendRequests?:number; publicBrowse?:boolean } =
     $props();
   const nav = $derived(user ? [
     { label: 'For You', href: '/for-you', icon:'home' as const },
     { label: 'Library', href: '/library',icon:'library' as const },
     { label: 'Discover', href: '/discover',icon:'discover' as const },
     { label: 'Search', href: '/search',icon:'search' as const },
-  ] : [{label:'Discover',href:'/discover',icon:'discover' as const},{label:'Search',href:'/search',icon:'search' as const}]);
+  ] : publicBrowse ? [{label:'Discover',href:'/discover',icon:'discover' as const},{label:'Search',href:'/search',icon:'search' as const}] : []);
 </script>
 
 <header
@@ -30,7 +30,8 @@
   inert={!!player.session && player.session.mediaType!=='audio' && !player.paused && !player.controlsVisible}
 >
   <div class="header-inner content">
-    <a class="brand-home" href={user?'/for-you':'/discover'} aria-label="Coast home"><Brand compact size={44} /></a>
+    <a class="brand-home" href={user?'/for-you':publicBrowse?'/discover':'/login'} aria-label="Coast home"><Brand compact size={44} /></a>
+    {#if nav.length}
     <nav
       use:liquidGlass
       use:slidingPill
@@ -44,6 +45,7 @@
           aria-label={item.label}><span class="nav-icon"><Icon name={item.icon} size={24}/></span><span class="nav-label">{item.label}</span></a
         >{/each}
     </nav>
+    {/if}
     <div class="account">
       {#if user}
       <button type="button" id="friends-trigger" class="icon-button notification" aria-label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</button>

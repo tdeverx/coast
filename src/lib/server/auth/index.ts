@@ -315,6 +315,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
         shareDemand: v.boolean(),
         listenThreshold: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
         fullWidth: v.boolean(),
+        liquidGlass: v.boolean(),
         originalTitles: v.boolean(),
         monochromeMissing: v.boolean(),
         region: v.pipe(v.string(), v.regex(/^[A-Z]{2}$/)),

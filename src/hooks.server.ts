@@ -52,7 +52,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
   }
   event.locals.setup = await setupRequired();
   const config=await getConfig();
-  const isPublic = ['/login', '/setup', '/register'].includes(event.url.pathname) || (config.siteAccess==='public-read-only' && ['GET','HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname));
+  const isPublic = ['/login', '/setup', '/register'].includes(event.url.pathname) || (['GET','HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname,config.siteAccess));
   if (!event.locals.user && !isPublic) {
     if (event.url.pathname.startsWith('/api/'))
       return json({ error: 'Your session has expired. Sign in to continue.' }, { status: 401 });

@@ -16,7 +16,7 @@ Recorded 1 October 2026. The user subsequently authorized implementation of this
 
 ## Website access and profile audience
 
-Administrators can choose an entirely private website or enable public read-only access to designated surfaces such as public profiles and trending. The existing authenticated-only behavior is the private mode; enabling public access is an administrator choice. Public read access does not open registration or add user discovery.
+Administrators can choose an entirely private website, a private website with public profiles only, or public read-only browsing. Public-profile-only access permits shared profile links and their profile sections/images; Discover, Search, media details and the rest of the app require sign-in. The existing authenticated-only behavior is the private mode; enabling public access is an administrator choice. Public read access does not open registration or add user discovery.
 
 Profile audiences default to Friends only and offer Public and Private. Public means visible to anyone allowed to read that surface under the administrator's website mode: signed-in users in private-site mode and anonymous visitors on designated public surfaces when public access is enabled. Friends-only information remains restricted to accepted friends, and Private remains owner-only. Public website mode does not override a user's audience or category opt-outs.
 

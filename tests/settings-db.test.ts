@@ -41,13 +41,14 @@ describe.skipIf(!enabled)('settings persistence', () => {
       region: 'US',
     });
     await getSql()`UPDATE users SET settings = settings || '{"profile":{"bio":"Kept"}}'::jsonb WHERE id = ${member.id}`;
-    await updateUserSettings(member, { fullWidth: false });
+    await updateUserSettings(member, { fullWidth: false, liquidGlass: false });
     await updateUserSettings(member, { subtitleLanguages: ['fr', 'en'] });
     const [row] = await getSql()`SELECT settings FROM users WHERE id = ${member.id}`;
     expect(row.settings).toEqual({
       syncConflictWinner: 'coast',
       region: 'US',
       fullWidth: false,
+      liquidGlass: false,
       subtitleLanguages: ['fr', 'en'],
       profile: { bio: 'Kept' },
     });
@@ -55,6 +56,7 @@ describe.skipIf(!enabled)('settings persistence', () => {
       updateUserSettings(member, { syncConflictWinner: crypto.randomUUID() })
     ).rejects.toThrow('connected accounts');
     await expect(updateUserSettings(member, { region: 'invalid' })).rejects.toThrow();
+    await expect(updateUserSettings(member, { liquidGlass: 'off' })).rejects.toThrow();
     expect(
       (await getSql()`SELECT settings FROM users WHERE id = ${member.id}`)[0].settings
     ).toEqual(row.settings);
@@ -93,6 +95,15 @@ describe.skipIf(!enabled)('settings persistence', () => {
     expect(await getConfig()).toEqual(previous);
   });
 
+  test('public-profile-only access persists independently of registration and other policies', async () => {
+    const previous = await getConfig();
+    await updateConfig(admin, { siteAccess: 'public-profiles' });
+    expect(await getConfig()).toEqual({ ...previous, siteAccess: 'public-profiles' });
+    await expect(updateConfig(member, { siteAccess: 'public-read-only' })).rejects.toThrow('Administrator');
+    expect((await getConfig()).siteAccess).toBe('public-profiles');
+    await updateConfig(admin, { siteAccess: previous.siteAccess });
+  });
+
   test('restoring preferences keeps the profile and resumes inheritance from current system defaults', async () => {
     await updateConfig(admin, {
       subtitleLanguages: ['de'],
@@ -101,6 +112,7 @@ describe.skipIf(!enabled)('settings persistence', () => {
     await resetUserSettings(member);
     const [row] = await getSql()`SELECT settings FROM users WHERE id = ${member.id}`;
     expect(row.settings).toEqual({ profile: { bio: 'Kept' } });
+    expect(row.settings.liquidGlass ?? true).toBe(true);
     expect(row.settings.subtitleLanguages ?? (await getConfig()).subtitleLanguages).toEqual(['de']);
     expect((await getSql()`SELECT count(*)::int AS count FROM users`)[0].count).toBe(2);
   });

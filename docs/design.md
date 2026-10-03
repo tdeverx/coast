@@ -12,6 +12,7 @@ The original Coast project informed this visual language and interaction pattern
 - Production glass matches the reference's 2px frost, 120% saturation, 5% black fill, 0.25px outer stroke and separate top/bottom highlights. Clear, Light and Dark glass each have a paired blur fallback; blur is not a separate material. The temporary experiment remains isolated. The original SVG refraction action is retained, with CSS blur where SVG backdrop filters are unsupported and a solid fallback where backdrop filters are unavailable.
 - 160ms feedback, 240ms ordinary transitions, 1100ms cinematic fades; reduced-motion support.
 - Full-width content default; optional constrained width. Heroes are always edge-to-edge behind header.
+- Appearance → **Liquid glass** defaults on. Turning it off selects each material's paired blur fallback. SVG displacement is limited to Blink; Safari/WebKit and Firefox keep standard blur, tint, strokes, highlights and texture. Prefixed WebKit declarations accompany standard backdrop and mask properties; reduced-transparency and forced-color preferences select readable solid surfaces where supported. See [WebKit's SVG backdrop issue](https://bugs.webkit.org/show_bug.cgi?id=245510), [Firefox's SVG backdrop issue](https://bugzilla.mozilla.org/show_bug.cgi?id=1961378) and [backdrop roots](https://drafts.csswg.org/filter-effects-2/#backdrop-root). The temporary frost experiment separates its base and patch filters so the patch can access the backdrop.
 
 ## Reusable components
 

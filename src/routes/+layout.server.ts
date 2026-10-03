@@ -9,6 +9,7 @@ export const load = (async ({ locals, depends }) => {
   const [notifications,unreadNotifications,friendRequestCount]=locals.user?await Promise.all([inbox(locals.user),notificationUnread(locals.user),incomingFriendRequests(locals.user.id)]):[[],0,0];
   return {
     publicRead:config.siteAccess==='public-read-only',
+    publicProfiles:config.siteAccess==='public-profiles',
     experimentalFeatures: config.experimentalFeatures,
     experiments:{dynamicForYou:config.experimentalDynamicForYou,planning:config.experimentalPlanning,recommendations:config.experimentalRecommendations,mediaModal:config.experimentalMediaModal},
     playbackSharing:config.allowPlaybackSharing && !!locals.user && (locals.user.role==='admin'||locals.user.settings.allowPlaybackSharing===true),

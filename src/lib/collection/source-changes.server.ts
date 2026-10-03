@@ -52,5 +52,8 @@ export async function markSourceChange(tx:Transaction,sourceIds:string[],exclude
 export async function notifySourceChange(sourceIds:string[]){
   if(!sourceIds.length)return;
   const rows=await getDb().select({userId:providerConnections.userId}).from(providerConnections).where(inArray(providerConnections.id,sourceIds));
-  for(const userId of new Set(rows.map(r=>r.userId)))await notify({userId,kind:'sync',title:'Collection source selection changed',body:'Review Trakt Collection export in Settings. Existing remote entries remain until you approve cleanup.',sourceKey:`collection-source-review:${userId}`});
+  await notifySourceChangeUsers(rows.map(r=>r.userId));
+}
+export async function notifySourceChangeUsers(userIds:string[]){
+  for(const userId of new Set(userIds))await notify({userId,kind:'sync',title:'Collection source selection changed',body:'Review Trakt Collection export in Settings. Existing remote entries remain until you approve cleanup.',sourceKey:`collection-source-review:${userId}`});
 }

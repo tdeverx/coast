@@ -3,7 +3,7 @@ import * as v from 'valibot';
 import { requireAdmin } from '$lib/server/auth';
 import { AppError } from '$lib/server/security/errors';
 import { listProviders, configureInstance } from '$lib/providers/instances.server';
-import { setInstanceEnabled } from '$lib/application/provider-sources.server';
+import { setInstanceEnabled, deleteInstance } from '$lib/application/provider-sources.server';
 import { connectJellyfin, updateJellyfinPlaybackImport } from '$lib/providers/jellyfin/connection.server';
 import { startTraktDevice, finishTraktDevice, updateSyncPreferences } from '$lib/providers/trakt/connection.server';
 import { disconnectProvider } from '$lib/application/provider-sources.server';
@@ -21,6 +21,9 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
       else if (path.length === 1 && method === 'POST') {
         requireAdmin(user);
         result = await configureInstance(uid, body);
+      } else if (path.length === 2 && method === 'DELETE') {
+        requireAdmin(user);
+        result = await deleteInstance(uid, uuid(path[1]), typeof body.previewId === 'string' ? uuid(body.previewId) : undefined);
       } else if (path[1] === 'jellyfin' && method === 'POST')
         result = await connectJellyfin(
           uid,
