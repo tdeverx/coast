@@ -19,7 +19,8 @@ export async function contentRevision(userId: string, viewedUsername: string|nul
   select concat_ws(':',current_date::text,
     coalesce((select revision from own where domain='tracking'),'0'),
     coalesce((select revision from shared where domain='tracking'),'0'),
-    coalesce((select r.revision::text from content_revisions r join watched w on r.scope=w.id::text where r.domain='tracking'),'0'),${collectionFreshnessSql(userId)}) as tracking,
+    coalesce((select md5(w.id::text||':'||coalesce(r.revision::text,'0')) from watched w
+      left join content_revisions r on r.scope=w.id::text and r.domain='tracking'),'none'),${collectionFreshnessSql(userId)}) as tracking,
     concat_ws(':',current_date::text,
       coalesce((select md5(string_agg(r.scope||':'||r.revision::text,',' order by r.scope)) from content_revisions r join peers p on r.scope=p.id::text where r.domain='social'),'0'),
       coalesce((select revision from shared where domain='social'),'0'),

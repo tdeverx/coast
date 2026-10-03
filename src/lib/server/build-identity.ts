@@ -5,7 +5,9 @@ import { join } from 'node:path';
 /** Includes executable chunks and manifests, with stable relative paths/order.
  * Maps and browser assets cannot identify the server workload. */
 export async function serverBuildIdentity(directory: string) {
-  const paths = ['index.js'];
+  const paths = (await readdir(directory, { withFileTypes: true }))
+    .filter(entry => entry.isFile() && entry.name.endsWith('.js'))
+    .map(entry => entry.name);
   async function visit(relative: string) {
     for (const entry of await readdir(join(directory, relative), { withFileTypes: true })) {
       const path = join(relative, entry.name);

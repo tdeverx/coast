@@ -219,6 +219,36 @@ run('public non-friend reactions and the viewed profile owner invalidate their v
  await db`insert into tracking_state(user_id,media_id,collected) values(${hiddenOwner.id},${movie},true)`;
  expect(await contentRevision(actor.id,hiddenOwner.username)).toEqual(hiddenWatch);
 });
+run('pre-migration profile visibility changes without a seeded owner revision',async()=>{
+ const db=getSql();
+ const policy={social:{audience:'friends',sections:{progress:'public',reactions:'friends'}}};
+ const [owner]=await db`insert into users(username,settings) values('unseeded-revision-owner',${policy}::jsonb) returning id,username`;
+ await db`insert into tracking_state(user_id,media_id,position_seconds) values(${owner.id},${movie},30)`;
+ // 0039 creates an empty revision table for users/content already present.
+ await db`delete from content_revisions where scope=${owner.id}`;
+ const shown=await contentRevision(actor.id,owner.username);
+ await db`update users set settings='{"social":{"audience":"private"}}'::jsonb where id=${owner.id}`;
+ const hidden=await contentRevision(actor.id,owner.username);
+ expect(hidden.tracking).not.toBe(shown.tracking);expect(hidden.social).toBe(shown.social);
+ await db`update tracking_state set position_seconds=45 where user_id=${owner.id}`;
+ expect(await contentRevision(actor.id,owner.username)).toEqual(hidden);
+ await db`update users set settings=${policy}::jsonb where id=${owner.id}`;
+ const restored=await contentRevision(actor.id,owner.username);expect(restored.tracking).not.toBe(hidden.tracking);
+ await db`delete from content_revisions where scope=${owner.id}`;
+ const unseeded=await contentRevision(actor.id,owner.username);
+ await db`delete from tracking_state where user_id=${owner.id}`;
+ expect((await contentRevision(actor.id,owner.username)).tracking).not.toBe(unseeded.tracking);
+ await db`delete from content_revisions where scope=${owner.id}`;
+ const beforeDisable=await contentRevision(actor.id,owner.username);
+ await db`update users set disabled=true where id=${owner.id}`;
+ expect((await contentRevision(actor.id,owner.username)).tracking).not.toBe(beforeDisable.tracking);
+ await db`update users set disabled=false where id=${owner.id}`;
+ await db`delete from content_revisions where scope=${owner.id}`;
+ const beforeDelete=await contentRevision(actor.id,owner.username);
+ await db`delete from users where id=${owner.id}`;
+ const deleted=await contentRevision(actor.id,owner.username);
+ expect(deleted.tracking).not.toBe(beforeDelete.tracking);expect(deleted.social).toBe(beforeDelete.social);
+});
 run('private Steam content invalidates its owner while observation bookkeeping leaves all shelves stable',async()=>{
  const db=getSql();
  const [game]=await db`insert into games(title) values('Private revision fixture') returning id`;

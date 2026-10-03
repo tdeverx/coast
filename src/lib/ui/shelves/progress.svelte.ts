@@ -11,6 +11,7 @@ import { mediumOptions } from '$lib/experimental';
     type ProgressOptions,
   } from '$lib/progress';
   import { useClient } from '$lib/ui/client-context';
+  import { ApiError } from '$lib/ui/client';
   import { createResource } from '$lib/ui/resource.svelte';
   import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
   import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
@@ -121,7 +122,16 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   });
   async function select(number = 1) {
     const path = `progress?${parameters(number)}`;
-    const result = await resource.load(signal => api<ProgressContent>(path, undefined, 'GET', { signal }));
+    const owner = username;
+    const result = await resource.load(async signal => {
+      try {
+        return await api<ProgressContent>(path, undefined, 'GET', { signal });
+      } catch (cause) {
+        if (owner && owner === username && !signal.aborted && cause instanceof ApiError && [403, 404].includes(cause.status))
+          resource.replace({ ...resource.data, items: [], total: 0, page: 1, pages: 1 }, cause.message);
+        throw cause;
+      }
+    });
     if (result && layout === 'grid') replaceState(href(result.page), route.state);
   }
   function update(patch: Partial<Filters>) {
