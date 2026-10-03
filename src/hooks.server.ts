@@ -41,6 +41,15 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     event.locals.expiresAt = session.expiresAt;
     if (session.token) setSessionCookie(event.cookies, session.token, session.expiresAt, event.url);
   }
+  if (event.url.pathname === '/share' || event.url.pathname.startsWith('/api/share/')) {
+    const response=await resolve(event);
+    response.headers.set('Cache-Control','private, no-store');
+    response.headers.set('Referrer-Policy','no-referrer');
+    response.headers.set('X-Content-Type-Options','nosniff');
+    response.headers.set('X-Frame-Options','DENY');
+    response.headers.delete('link');
+    return response;
+  }
   event.locals.setup = await setupRequired();
   const config=await getConfig();
   const isPublic = ['/login', '/setup', '/register'].includes(event.url.pathname) || (config.siteAccess==='public-read-only' && ['GET','HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname));

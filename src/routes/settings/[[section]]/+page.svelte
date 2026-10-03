@@ -19,10 +19,10 @@
   import ConflictList from '$lib/ui/components/ConflictList.svelte';
   import { page } from '$app/state';
   import { untrack } from 'svelte';
-  import { beforeNavigate, goto } from '$app/navigation';
+  import { beforeNavigate, goto, invalidate } from '$app/navigation';
 
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { change, message } from '$lib/ui/client';
+  import { api, change, message } from '$lib/ui/client';
   import Button from '$lib/ui/components/Button.svelte';
   import Icon from '$lib/ui/components/Icon.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
@@ -30,7 +30,8 @@
   import QueueList from '$lib/ui/components/QueueList.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   let { data } = $props();
-  let inviteCode=$state('');
+  let inviteCode=$state(''),inviteConnection=$state(''),inviteFolders=$state<string[]>([]),inviteLibraries=$state<{ItemId:string;Name?:string}[]>([]),inviteLoading=$state(false);
+  $effect(()=>{const id=inviteConnection;inviteFolders=[];inviteLibraries=[];if(!id)return;const controller=new AbortController();inviteLoading=true;void api<typeof inviteLibraries>(`admin/invites/libraries?connectionId=${id}`,undefined,'GET',{signal:controller.signal}).then(value=>inviteLibraries=value).catch(cause=>{if(!controller.signal.aborted)error=message(cause);}).finally(()=>{if(!controller.signal.aborted)inviteLoading=false;});return ()=>controller.abort();});
   let apiToken=$state(''), apiName=$state(''), apiDays=$state(90), apiGrants=$state<ApiScope[]>(['catalogue:read']);
   let error = $state(''),
     success = $state(''),
@@ -55,6 +56,7 @@
     role: 'admin' | 'user';
     disabled: boolean;
     password: string;
+    allowPlaybackSharing: boolean;
   } | null>(null);
   let initializedSection = untrack(() => data.section);
   const fields = $derived(
@@ -366,6 +368,7 @@
           </p>
           {@render saveControls('Save playback preferences')}
         </form>
+        {#if data.playbackLinks.length}<div class="stack form-width"><Heading title="Playback invitations"/>{#each data.playbackLinks as link}<div class="panel spread"><div><a href={`/share?id=${link.id}`}>Open invitation</a><p class="small muted">{link.revokedAt?'Revoked':new Date(link.expiresAt)<=new Date()?'Expired':link.claimedAt?'Claimed':'Available'} · {link.together?'Together':'Single item'} · {new Date(link.expiresAt).toLocaleString()}</p></div><Button disabled={busy||!!link.revokedAt} onclick={async()=>{if(busy)return;busy=true;try{await change(`sharing/${link.id}`,undefined,'DELETE');await invalidate('coast:settings');}catch(cause){error=message(cause);}finally{busy=false;}}}>Revoke</Button></div>{/each}</div>{/if}
       {:else if data.section === 'api'}<div class="stack form-width">
         <form class="panel stack" onsubmit={async event=>{
           event.preventDefault();if(busy)return;busy=true;error='';apiToken='';
@@ -374,12 +377,12 @@
         }}>
           <label class="field">Token name<input required maxlength="60" bind:value={apiName}/></label>
           <label class="field">Expires in days<input type="number" min="1" max="365" required bind:value={apiDays}/></label>
-          <fieldset class="stack"><legend>Read permissions</legend>{#each apiScopes as scope}<label class="check"><input type="checkbox" bind:group={apiGrants} value={scope}/>{apiScopeLabels[scope]}</label>{/each}</fieldset>
+          <fieldset class="stack"><legend>Permissions</legend>{#each apiScopes as scope}<label class="check"><input type="checkbox" bind:group={apiGrants} value={scope}/>{apiScopeLabels[scope]}</label>{/each}</fieldset>
           <Button type="submit" disabled={busy||!apiGrants.length}>Create token</Button>
         </form>
         {#if apiToken}<div class="panel stack"><p role="status">Copy this token now. It will not be shown again.</p><label class="field">API token<input readonly autocomplete="off" spellcheck={false} value={apiToken} onclick={event=>event.currentTarget.select()}/></label><Button emphasis="subtle" onclick={()=>apiToken=''}>Hide</Button></div>{/if}
         {#each data.apiTokens as token (token.id)}<div class="panel stack"><div class="spread"><strong>{token.name}</strong><Button emphasis="subtle" danger disabled={busy||!!token.revokedAt} onclick={async()=>{if(busy)return;busy=true;error='';try{await change(`settings/tokens/${token.id}`,undefined,'DELETE');}catch(cause){error=message(cause);}finally{busy=false;}}}>{token.revokedAt?'Revoked':'Revoke'}</Button></div><p class="small muted">{token.scopes.join(', ')} · Expires {new Date(token.expiresAt).toLocaleDateString()}</p></div>{/each}
-        <p class="small muted">Use Bearer authentication at /api/public/v1. See the public API documentation for endpoints and paging.</p>
+        <p class="small muted">Use Bearer authentication at /api/public/v1. <a href="/api/public/v1/openapi.json" target="_blank" rel="noopener">OpenAPI reference</a> covers the endpoints.</p>
       </div>
       {:else if data.section === 'account'}<div class="stack form-width">
           <div class="panel">
@@ -695,6 +698,7 @@
                             role: user.role,
                             disabled: user.disabled,
                             password: '',
+                            allowPlaybackSharing: user.settings.allowPlaybackSharing === true,
                           };
                         }}>Edit</Button
                       >{#if user.id !== page.data.user?.id}<Button
@@ -711,11 +715,14 @@
           </div>
           <div class="panel stack form-width">
             <h3>Invite someone</h3><p class="small">Single-use codes let someone register and import their Jellyfin progress before accessing Coast.</p>
-            <form class="stack" onsubmit={async(e)=>{e.preventDefault();try{const result=await change<{code:string}>('admin/invites',{days:Number(new FormData(e.currentTarget).get('days'))});inviteCode=result.code;}catch(cause){error=message(cause);}}}>
-              <label class="field">Expires after<select name="days"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="30">30 days</option></select></label><Button type="submit">Create invite code</Button>
+            <form class="stack" onsubmit={async(e)=>{e.preventDefault();if(busy)return;busy=true;error='';try{const form=new FormData(e.currentTarget);const result=await change<{code:string}>('admin/invites',{days:Number(form.get('days')),...(inviteConnection?{provisionConnectionId:inviteConnection,folders:inviteFolders}:{})});inviteCode=result.code;}catch(cause){error=message(cause);}finally{busy=false;}}}>
+              <label class="field">Expires after<select name="days"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="30">30 days</option></select></label>
+              <label class="field">Jellyfin provisioning<select bind:value={inviteConnection}><option value="">Connect an existing account</option>{#each data.providers.filter(provider=>provider.provider==='jellyfin'&&provider.connection?.status==='connected') as provider}<option value={provider.connection!.id}>{provider.name} · {provider.connection!.username}</option>{/each}</select></label>
+              {#if inviteConnection}<fieldset class="stack"><legend>Permitted libraries</legend>{#if inviteLoading}<p role="status">Loading libraries…</p>{/if}{#each inviteLibraries as library}<label class="check"><input type="checkbox" bind:group={inviteFolders} value={library.ItemId}/>{library.Name??library.ItemId}</label>{/each}<small>Only these libraries are granted. An enabled Jellyfin administrator connection is required.</small></fieldset>{/if}
+              <Button type="submit" disabled={busy||inviteLoading||!!inviteConnection&&!inviteFolders.length}>Create invite</Button>
             </form>
-            {#if inviteCode}<label class="field">Copy this code — shown once<input readonly value={inviteCode} onclick={(e)=>e.currentTarget.select()} /></label><a href="/register">Registration page</a>{/if}
-            {#each data.invites as invite}<div class="spread"><span class="small">{invite.usedAt?`Used by ${invite.username||'deleted account'}`:invite.revokedAt?'Revoked':`Expires ${new Date(invite.expiresAt).toLocaleString()}`}</span>{#if !invite.usedAt&&!invite.revokedAt}<Button emphasis="subtle" onclick={()=>save(`admin/invites/${invite.id}`,{},'Invite revoked.','DELETE')}>Revoke</Button>{/if}</div>{/each}
+            {#if inviteCode}<label class="field">Copy this code — shown once<input readonly value={inviteCode} onclick={(e)=>e.currentTarget.select()} /></label><label class="field">Invite link<input readonly value={`${page.url.origin}/register#invite=${inviteCode}`} onclick={event=>event.currentTarget.select()}/></label>{/if}
+            {#each data.invites as invite}<div class="spread"><span class="small">{invite.usedAt?`Used by ${invite.username||'deleted account'}`:invite.revokedAt?'Revoked':new Date(invite.expiresAt)<=new Date()?'Expired':`Expires ${new Date(invite.expiresAt).toLocaleString()}`}</span>{#if !invite.usedAt&&!invite.revokedAt}<Button emphasis="subtle" onclick={()=>save(`admin/invites/${invite.id}`,{},'Invite revoked.','DELETE')}>Revoke</Button>{/if}</div>{/each}
           </div>
           <div class="panel stack form-width">
             <h3>Create a Coast account</h3>
@@ -784,6 +791,13 @@
               ><input type="checkbox" bind:checked={policy.experimentalFeatures} />Enable
               experimental music and gaming</label
             >
+            <label class="check"><input type="checkbox" bind:checked={policy.experimentalDynamicForYou}/>Dynamic For You</label>
+            <label class="check"><input type="checkbox" bind:checked={policy.experimentalPlanning}/>Planning/calendar</label>
+            <label class="check"><input type="checkbox" bind:checked={policy.experimentalRecommendations}/>Personalised recommendations</label>
+            <label class="check"><input type="checkbox" bind:checked={policy.experimentalMediaModal}/>Modal media details</label>
+            <p class="small">Separate first-pass experiments. New visual treatments remain unapproved; turning a feature off keeps its saved data.</p>
+            <label class="check"><input type="checkbox" bind:checked={policy.allowPlaybackSharing}/>Allow disposable playback links</label>
+            <p class="small">Administrators can share one accessible item. Other accounts require an explicit sharing grant.</p>
             <p class="small">
               Enable music browsing and gaming for signed-in users. These features are still in
               development. Turning this off hides their screens and blocks their APIs without
@@ -1027,11 +1041,11 @@
       onsubmit={async (event) => {
         event.preventDefault();
         if (!editing) return;
-        const { email, role, disabled, password, id } = editing;
+        const { email, role, disabled, password, id, allowPlaybackSharing } = editing;
         if (
           await save(
             `admin/users/${id}`,
-            { email, role, disabled, ...(password ? { password } : {}) },
+            { email, role, disabled, allowPlaybackSharing, ...(password ? { password } : {}) },
             'Account updated.',
             'PATCH'
           )
@@ -1060,6 +1074,7 @@
           disabled={busy || editing.id === page.data.user?.id}
         />Disable Coast account</label
       >
+      <label class="check"><input type="checkbox" bind:checked={editing.allowPlaybackSharing} disabled={busy}/>Allow disposable playback sharing</label>
       <p class="small">
         Role, access and password changes sign this account out on every device. Jellyfin role sync
         applies again at its next Jellyfin sign-in.

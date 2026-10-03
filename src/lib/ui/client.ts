@@ -1,6 +1,9 @@
 import { diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
 import { invalidate } from '$app/navigation';
 
+let playbackApi = '/api/v1/';
+export function setPlaybackApi(shared:boolean){playbackApi=shared?'/api/share/':'/api/v1/';}
+
 export type ApiTransport = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
 export class ApiError extends Error {
@@ -21,7 +24,8 @@ export async function api<T = unknown>(
   return requestApi<T>(fetch, path, body, method, options);
 }
 async function requestApi<T>(transport: ApiTransport, path: string, body: unknown, method: string, options: Pick<RequestInit, 'signal'>): Promise<T> {
-  const response = await transport(`/api/v1/${path}`, {
+  const sharedPlayback = playbackApi === '/api/share/' && (path === 'playback' || path.startsWith('playback/'));
+  const response = await transport(`${sharedPlayback ? '/api/share/' : '/api/v1/'}${path}`, {
     ...options,
     method,
     headers: { ...diagnosticHeaders(), ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
@@ -32,7 +36,7 @@ async function requestApi<T>(transport: ApiTransport, path: string, body: unknow
     .json()
     .catch(() => ({ error: 'The server could not complete this request.' }));
   if (!response.ok) {
-    if (response.status === 401) window.dispatchEvent(new CustomEvent('coast:auth-expired'));
+    if (response.status === 401 && !sharedPlayback) window.dispatchEvent(new CustomEvent('coast:auth-expired'));
     throw new ApiError(
       payload.error ?? 'Something went wrong. Please try again.',
       response.status,
@@ -57,7 +61,7 @@ export async function change<T = unknown>(path: string, body?: unknown, method =
 }
 export async function refreshAfterChange(path: string) {
   const domain = path.split('/')[0];
-  const dependencies = domain === 'social' ? ['social', 'notifications']
+  const dependencies = domain === 'planning' ? ['planning'] : domain === 'social' ? ['social', 'notifications']
     : domain === 'notifications' ? ['notifications']
     : ['providers', 'queue', 'conflicts', 'requests'].includes(domain) ? ['providers', 'tracking', 'notifications']
     : ['settings', 'profile', 'admin'].includes(domain) ? ['session', 'settings', 'tracking', 'social']

@@ -26,20 +26,57 @@ describe.skipIf(!enabled)('scoped public API',()=>{
   const created=await createApiToken(other,{name:'Reader',scopes:['collection:read']});
   const rows=await listApiTokens(other);expect(JSON.stringify(rows)).not.toContain(created.token);expect(rows[0].id).toBe(created.id);
   const [stored]=await getSql()`select token_hash from api_tokens where id=${created.id}`;expect(stored.token_hash).not.toContain(created.token);
-  const response=await read(created.token);expect(response.status).toBe(200);expect((await response.json()).id).toBe(other.id);
+  const response=await read(created.token);expect(response.status).toBe(200);const identity=await response.json();expect(identity.id).toBe(other.id);expect(identity.scopes).toEqual(['collection:read']);
   expect((await read(created.token,'catalogue')).status).toBe(403);
   expect((await read(created.token,'collection','GET','?username=api-owner')).status).toBe(400);
   expect((await read(created.token,'collection','GET','?page=1&page=2')).status).toBe(400);
   expect((await read(created.token,'collection','GET','?page=0')).status).toBe(400);
   const page=await read(created.token,'collection');expect(page.status).toBe(200);expect((await page.json()).pagination.pageSize).toBe(60);
  });
- test('never accepts browser cookies or writes; rejects unknown grants',async()=>{
+ test('never accepts browser cookies; authenticates before dispatch and rejects unknown grants',async()=>{
   const request=new Request('http://coast.test/api/public/v1/me',{headers:{cookie:'coast_session=fake'}});
   const response=await publicApiHandler({request,url:new URL(request.url),params:{path:'me'}} as Parameters<typeof publicApiHandler>[0]);
   expect(response.status).toBe(401);expect(response.headers.get('www-authenticate')).toContain('Bearer');
-  expect((await read('irrelevant','collection','POST')).status).toBe(405);
-  expect((await read('irrelevant','collection','HEAD')).status).toBe(405);
+  expect((await read('irrelevant','collection','POST')).status).toBe(401);
+  expect((await read('irrelevant','collection','HEAD')).status).toBe(401);
   await expect(createApiToken(owner,{name:'Bad',scopes:['admin:write']})).rejects.toThrow();
+ });
+ test('writes are scoped, atomic and replay without duplicate events or deliveries',async()=>{
+  const db=getDb(),[movie]=await db.insert(s.media).values({kind:'movie',title:'Mutation fixture'}).returning();
+  const reader=await createApiToken(other,{name:'Read only',scopes:['collection:read']});
+  const writer=await createApiToken(other,{name:'Writer',scopes:['tracking:write','relationships:write','ratings:write','webhooks:manage']});
+  async function write(token:string,path:string,data:unknown,key:string,method='POST'){
+   const request=new Request(`http://coast.test/api/public/v1/${path}`,{method,headers:{authorization:`Bearer ${token}`,'content-type':'application/json','idempotency-key':key},body:JSON.stringify(data)});
+   return publicApiHandler({request,url:new URL(request.url),params:{path}} as Parameters<typeof publicApiHandler>[0]);
+  }
+  expect((await write(reader.token,'tracking',{mediaId:movie.id,action:'watch'},'no-grant')).status).toBe(403);
+  const subscribed=await write(writer.token,'webhooks',{url:'https://example.com/coast-events',events:['tracking.changed','relationship.changed']},'subscription');
+  expect(subscribed.status).toBe(201);const subscription=await subscribed.json();expect(subscription.secret).toHaveLength(43);
+  const [stored]=await getSql()`select response from api_idempotency where token_id=${writer.id} and key='subscription'`;
+  expect(stored.response).not.toContain(subscription.secret);
+  const first=await write(writer.token,'tracking',{mediaId:movie.id,action:'watch'},'watch-1');expect(first.status).toBe(200);expect(await first.json()).toEqual({changed:true});
+  const parallel=await Promise.all(Array.from({length:3},()=>write(writer.token,'tracking',{action:'watch',mediaId:movie.id},'watch-1')));
+  for(const response of parallel){expect(response.status).toBe(200);expect(response.headers.get('idempotency-replayed')).toBe('true');}
+  const [events]=await getSql()`select count(*)::int as total from tracking_events where user_id=${other.id} and media_id=${movie.id}`;expect(events.total).toBe(1);
+  const deliveries=await getSql()`select payload from outbox_actions where user_id=${other.id} and kind='webhook.deliver'`;expect(deliveries).toHaveLength(1);expect(deliveries[0].payload.event.data.workId).toBe(movie.id);
+  expect((await write(writer.token,'tracking',{mediaId:movie.id,action:'unwatch'},'watch-1')).status).toBe(409);
+  expect((await write(writer.token,'tracking',{mediaId:movie.id,action:'collect'},'scope-bypass')).status).toBe(400);
+  expect((await write(writer.token,'tracking',{mediaId:movie.id,action:'watch',source:'jellyfin'},'source-bypass')).status).toBe(400);
+  expect((await write(writer.token,`relationships/${movie.id}`,{relationship:'saved',value:true},'save','PUT')).status).toBe(200);
+  expect((await write(writer.token,`ratings/${movie.id}`,{value:4.5},'rating','PUT')).status).toBe(200);
+  expect((await write(writer.token,'webhooks',{url:'https://127.0.0.1/events',events:['tracking.changed']},'private-endpoint')).status).toBe(400);
+  expect((await write(writer.token,'tracking',{mediaId:crypto.randomUUID(),action:'watch'},'missing-work')).status).toBe(404);
+  const [failed]=await getSql()`select count(*)::int as total from api_idempotency where token_id=${writer.id} and key='missing-work'`;expect(failed.total).toBe(0);
+ });
+ test('migration repairs old serialized read grants and malformed grants remain rejected',async()=>{
+  const legacy=await createApiToken(other,{name:'Legacy storage',scopes:['collection:read']});
+  await getSql()`update api_tokens set scopes=${JSON.stringify(['collection:read'])}::jsonb where id=${legacy.id}`;
+  expect((await read(legacy.token)).status).toBe(401);
+  const migration=await Bun.file('drizzle/0037_foamy_unicorn.sql').text();
+  const repair=migration.slice(migration.indexOf('UPDATE api_tokens SET scopes=')).split('--> statement-breakpoint')[0];
+  await getSql().unsafe(repair);const identity=await (await read(legacy.token)).json();expect(identity.scopes).toEqual(['collection:read']);
+  await getSql()`update api_tokens set scopes=${'admin:write'}::jsonb where id=${legacy.id}`;
+  expect((await read(legacy.token)).status).toBe(401);
  });
  test('owner-only revocation, expiry and disabled users reject previously valid tokens',async()=>{
   const created=await createApiToken(other,{name:'Revocable',scopes:['catalogue:read']});
@@ -79,8 +116,13 @@ describe.skipIf(!enabled)('scoped public API',()=>{
   const [movie]=await db.insert(s.media).values({kind:'movie',title:'Accessible API movie'}).returning();
   const [item]=await db.insert(s.providerItems).values({instanceId:instance.id,mediaId:movie.id,externalId:'movie',kind:'movie'}).returning();
   await db.insert(s.availability).values({userId:other.id,connectionId:connection.id,providerItemId:item.id,mediaId:movie.id});
+  await db.insert(s.trackingState).values({userId:other.id,mediaId:movie.id,positionSeconds:120,favourite:true});
   const reader=await createApiToken(other,{name:'Library',scopes:['library:read']});const stranger=await createApiToken(owner,{name:'Library',scopes:['library:read']});
   const own=await read(reader.token,'library');expect(own.status).toBe(200);const body=await own.json();expect(body.items.map((item:{id:string})=>item.id)).toEqual([movie.id]);expect(body.pagination.pageSize).toBe(60);
+  expect(body.items).toEqual([{id:movie.id,kind:'movie',title:movie.title,year:null}]);
+  expect(Object.keys(body.pagination).sort()).toEqual(['next','page','pageSize','pages','previous','total']);
+  expect(JSON.stringify(body)).not.toContain(connection.id);
+  expect((await read(reader.token,'progress')).status).toBe(403);
   expect((await (await read(stranger.token,'library')).json()).items).toHaveLength(0);
   expect((await read(reader.token,'library','GET','?selection=watched')).status).toBe(400);
  });

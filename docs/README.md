@@ -29,6 +29,7 @@ Keep the readiness report honest: implementation is not proof of a live provider
 
 - [Audit follow-up verification](audits/2026-10-02-follow-up.md): retention/recovery, accessibility, playback lifecycle, provider parity and failure remedies.
 
-- [Public API](public-api.md): scoped read-only tokens, endpoints, pagination and errors.
+- [Invitations and experiments](invitations.md): signup links, provisioning, disposable playback and four first passes.
+- [Public API](public-api.md): scoped tokens, reads, writes, signed webhooks, pagination and errors.
 
 - [Selected audit follow-ups — 3 October](audits/2026-10-03-selected-follow-ups.md): read-only API, consolidation, accessibility, empty shelves and playback evidence.

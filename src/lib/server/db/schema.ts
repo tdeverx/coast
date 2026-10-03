@@ -43,6 +43,7 @@ export type UserSettings = {
   social?: import('../../social/model').SocialSettings;
   profile?: ProfileSettings;
   shareDemand?: boolean;
+  allowPlaybackSharing?: boolean;
   listenThreshold?: number;
   syncConflictWinner?: string;
   fullWidth?: boolean;
@@ -754,6 +755,7 @@ export const diagnostics = pgTable('diagnostics', {
   createdAt: createdAt(),
 }, t => [index('diagnostics_retention_idx').on(t.createdAt)]);
 export const playbackSessions = pgTable('playback_sessions', {
+  shareId:uuid('share_id'),
   mediaType: text('media_type').$type<'audio' | 'video'>().notNull().default('video'),
   playedSeconds: real('played_seconds').notNull().default(0),
   listenThreshold: integer('listen_threshold').notNull().default(50),
@@ -1084,6 +1086,9 @@ export const socialScrobbleDeliveries = pgTable('social_scrobble_deliveries', {
 export const registrationInvites = pgTable('registration_invites', {
   id: uuid('id').primaryKey().defaultRandom(),
   tokenHash: text('token_hash').notNull().unique(),
+  provisionConnectionId:uuid('provision_connection_id').references(()=>providerConnections.id,{onDelete:'set null'}),
+  provisionGeneration:uuid('provision_generation'),
+  provisionFolders:jsonb('provision_folders').$type<string[]>(),
   createdBy: uuid('created_by').references(() => users.id, { onDelete: 'set null' }),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   usedBy: uuid('used_by').references(() => users.id, { onDelete: 'set null' }),
@@ -1160,3 +1165,47 @@ export const gameAchievementProgress = pgTable('game_achievement_progress', {
   achievementId: uuid('achievement_id').notNull().references(()=>gameAchievements.id,{onDelete:'cascade'}),
   unlocked: boolean('unlocked').notNull(), unlockedAt: timestamp('unlocked_at',{withTimezone:true}), updatedAt: updatedAt(),
 },t=>[primaryKey({columns:[t.accountId,t.achievementId]})]);
+
+/** Replay evidence and deliveries commit with their domain mutation. */
+export const apiIdempotency = pgTable('api_idempotency', {
+ tokenId: uuid('token_id').notNull().references(()=>apiTokens.id,{onDelete:'cascade'}),
+ key: text('key').notNull(), requestHash:text('request_hash').notNull(),
+ response:text('response').notNull(), status:integer('status').notNull(),
+ createdAt:createdAt(),
+},t=>[primaryKey({columns:[t.tokenId,t.key]})]);
+export const apiWebhooks = pgTable('api_webhooks', {
+ id:uuid('id').primaryKey().defaultRandom(),userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),
+ tokenId:uuid('token_id').notNull().references(()=>apiTokens.id,{onDelete:'cascade'}),
+ url:text('url').notNull(),secret:text('secret').notNull(),events:jsonb('events').$type<string[]>().notNull(),
+ enabled:boolean('enabled').notNull().default(true),createdAt:createdAt(),
+},t=>[index('api_webhooks_user_idx').on(t.userId)]);
+
+export const onboardingProvisioning = pgTable('onboarding_provisioning',{
+ userId:uuid('user_id').primaryKey().references(()=>users.id,{onDelete:'cascade'}),
+ connectionId:uuid('connection_id').references(()=>providerConnections.id,{onDelete:'set null'}),
+ accountGeneration:uuid('account_generation').notNull(),folders:jsonb('folders').$type<string[]>().notNull(),
+ remoteId:text('remote_id'),state:text('state').notNull().default('pending'),updatedAt:updatedAt(),
+});
+
+export const mediaPlans = pgTable('media_plans',{
+ id:uuid('id').primaryKey().defaultRandom(),userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),
+ workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),startsAt:timestamp('starts_at',{withTimezone:true}).notNull(),
+ party:boolean('party').notNull().default(false),friends:jsonb('friends').$type<string[]>().notNull().default([]),
+ state:text('state').notNull().default('scheduled'),createdAt:createdAt(),
+},t=>[index('media_plans_user_start_idx').on(t.userId,t.startsAt)]);
+
+export const playbackShares = pgTable('playback_shares',{
+ id:uuid('id').primaryKey().defaultRandom(),ownerId:uuid('owner_id').notNull().references(()=>users.id,{onDelete:'cascade'}),
+ workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),connectionId:uuid('connection_id').notNull().references(()=>providerConnections.id,{onDelete:'cascade'}),
+ sourceId:text('source_id'),edition:text('edition'),
+ accountGeneration:uuid('account_generation').notNull(),tokenHash:text('token_hash').notNull().unique(),
+ together:boolean('together').notNull().default(false),expiresAt:timestamp('expires_at',{withTimezone:true}).notNull(),
+ claimedAt:timestamp('claimed_at',{withTimezone:true}),revokedAt:timestamp('revoked_at',{withTimezone:true}),
+ positionSeconds:real('position_seconds').notNull().default(0),durationSeconds:real('duration_seconds').notNull().default(0),paused:boolean('paused').notNull().default(true),updatedAt:updatedAt(),createdAt:createdAt(),
+},t=>[index('playback_shares_owner_idx').on(t.ownerId)]);
+export const shareViewers = pgTable('share_viewers',{
+ id:uuid('id').primaryKey().defaultRandom(),shareId:uuid('share_id').notNull().references(()=>playbackShares.id,{onDelete:'cascade'}),
+ tokenHash:text('token_hash').notNull().unique(),host:boolean('host').notNull().default(false),
+ preparingUntil:timestamp('preparing_until',{withTimezone:true}),
+ playbackId:uuid('playback_id').references(()=>playbackSessions.id,{onDelete:'set null'}),createdAt:createdAt(),
+});

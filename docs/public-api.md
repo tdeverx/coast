@@ -1,8 +1,8 @@
-# Read-only public API
+# Public API
 
 Coast exposes a token-authenticated API at `/api/public/v1`. Browser `/api/v1` routes remain private application interfaces. Public API tokens never grant browser access, administrator privileges, provider credentials, playback streams or another user's data.
 
-Create a token in **Settings → API access**, choose its read permissions and expiry (1–365 days, default 90), and copy the secret once. Coast stores only its SHA-256 hash. Revocation takes effect on the next request. Disabled accounts cannot use tokens; password changes and administrator account credential/role changes revoke them. Up to 20 active tokens are allowed per account.
+Create a token in **Settings → API access**, choose its permissions and expiry (1–365 days, default 90), and copy the secret once. Coast stores only its SHA-256 hash. Revocation takes effect on the next request. Disabled accounts cannot use tokens; password changes and administrator account credential/role changes revoke them. Up to 20 active tokens are allowed per account.
 
 ```sh
 curl --header "Authorization: Bearer $COAST_API_TOKEN" \
@@ -32,6 +32,36 @@ Requests are limited atomically to **120 per token per minute**, shared across w
 {"error":{"code":"insufficient_scope","message":"This endpoint requires collection:read."}}
 ```
 
-Statuses: 400 invalid input, 401 invalid/revoked/expired token (with `WWW-Authenticate: Bearer`), 403 insufficient scope/onboarding incomplete, 404 missing endpoint/work or disabled medium, 405 non-GET method, 429 quota, 503 unavailable read model. Request correlation IDs remain in response headers. No history/relationship writes, webhooks, connector claims, CORS grants or mutation idempotency are shipped by this read-only API.
+Statuses: 400 invalid input, 401 invalid/revoked/expired token (with `WWW-Authenticate: Bearer`), 403 insufficient scope/onboarding incomplete, 404 missing endpoint/work or disabled medium, 405 unsupported method, 429 quota, 503 unavailable read model. Request correlation IDs remain in response headers. Provider connector claims and CORS grants are not exposed.
 
 The proposed external provider connector protocol in [connectors.md](connectors.md) is separate and remains on the roadmap.
+
+
+## Writes and retries
+
+Every mutation requires its own permission, `Content-Type: application/json`, and an `Idempotency-Key` containing 1–128 letters, numbers, dots, underscores, colons or hyphens. The key is bound to the token, method, endpoint and canonical JSON body. Repeating that request returns the original response with `Idempotency-Replayed: true`, without another event or delivery. Reusing the key for a different request returns 409. Failed transactions leave no replay record. Responses, including subscription secrets, are encrypted at rest. Keys persist until their token is deleted; use a fresh key for each intended change.
+
+| Method and endpoint | Permission | Body |
+| --- | --- | --- |
+| `POST /tracking` | `tracking:write` | `mediaId`, `action` (watch/unwatch/progress/drop/restore), optional position/duration, occurrence date, rewatch and acknowledgement |
+| `POST /tracking/bulk` | `tracking:write` | Parent `mediaId`, action watch/unwatch/progress; optional includeSpecials, onReleaseDate, occurredAt, rewatch, acknowledged |
+| `PUT /relationships/{workId}` | `relationships:write` | relationship collected/saved/favourite, boolean value |
+| `PUT /ratings/{workId}` | `ratings:write` | value 0.5–5 in half-star steps, or null to remove |
+| `POST /music/{workId}/listens` | `music:write` | Caller UUID batchId, optional occurredAt; albums atomically log known tracks |
+| `POST /games/{gameId}/playthroughs` | `games:write` | Optional status planned/in-progress, platform, repeat |
+| `PATCH /playthroughs/{playthroughId}` | `games:write` | status and/or progressPercent 0–100 |
+| `POST /playthroughs/{playthroughId}/sessions` | `games:write` | UUID id, minutesPlayed 1–1440, past playedAt, optional owner-only note |
+| `POST /webhooks` | `webhooks:manage` | url and events |
+| `DELETE /webhooks/{webhookId}` | `webhooks:manage` | No body |
+
+The authenticated account owns every change. Provider provenance and another user's identity cannot be supplied. Existing domain validation, history retention, conflict acknowledgement and provider delivery rules apply. Music and games require the installation's experimental gate. Machine credentials cannot change administrators, credentials, installation policy or another account.
+
+The machine-readable description is available at `/api/public/v1/openapi.json`.
+
+## Webhooks
+
+`GET /webhooks` lists your subscriptions without their signing secrets. Subscribe to `tracking.changed`, `relationship.changed`, `rating.changed`, `music.listened`, and `game.changed`. Creation returns a random signing secret once (an idempotent replay returns the same secret). Up to ten enabled subscriptions per account are allowed. Endpoints must use public HTTPS on port 443, without credentials, query or fragment. Every delivery rechecks DNS/network policy; redirects and restricted addresses are rejected.
+
+Changes and delivery intents commit together. The existing outbox retries independently of provider synchronization. Delivery is at least once: deduplicate the envelope's `id`. Each body has `id`, `type`, `occurredAt` and a small `data` object with relevant work/activity IDs and state. Private notes, provider credentials and unrelated account data are excluded. Imported events use their concrete domain change path; the envelope date is the emission time, not an invented historical watch date.
+
+Verify `X-Coast-Signature: sha256=<hex>` using HMAC-SHA256 with the subscription secret over `X-Coast-Timestamp + "." + raw request body`. Reject old timestamps and compare signatures in constant time; do not reserialize JSON before verification. `X-Coast-Event-Id` matches the envelope ID. Reply with a 2xx status after safely accepting the event. Connection failures, 408, 429 and 5xx retry with the outbox's backoff; other 4xx and repeated failures require review in Jobs. Revocation/expiry of the creating token, disabling its account, or deleting the subscription prevents further delivery.

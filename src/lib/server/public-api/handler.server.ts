@@ -1,3 +1,6 @@
+import { openApi } from './openapi';
+import { publicMutation } from './mutations.server';
+import { listWebhooks } from './webhooks.server';
 import { json,type RequestHandler } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { getSql } from '$lib/server/db';
@@ -19,9 +22,11 @@ const headers={'cache-control':'private, no-store','x-content-type-options':'nos
 export const publicApiHandler:RequestHandler=async event=>{
  const {request,url}=event;
  try {
-  if(request.method!=='GET')return json({error:{code:'method_not_allowed',message:'This API is read-only.'}},{status:405,headers:{...headers,allow:'GET'}});
+  if(request.method==='GET'&&event.params.path==='openapi.json')return json(openApi,{headers});
   const user=await authenticateApiToken(request);
   const path=(event.params.path??'').split('/');
+  if(request.method!=='GET'){const result=await publicMutation(user,request,url,path);return json(result.response,{status:result.status,headers:{...headers,'idempotency-replayed':String(result.replayed)}});}
+  if(path.join('/')==='webhooks'){if(!user.scopes.includes('webhooks:manage'))throw new AppError(403,'This endpoint requires webhooks:manage.','insufficient_scope');if(url.searchParams.size)throw new AppError(400,'This endpoint does not accept query parameters.','invalid_input');return json({items:await listWebhooks(user.id)},{headers});}
   const allowed:Record<string,ApiScope>={catalogue:'catalogue:read',collection:'collection:read',library:'library:read',progress:'progress:read'};
   if(path.length===1&&path[0]==='me'){
    if(url.searchParams.size)throw new AppError(400,'This endpoint does not accept query parameters.','invalid_input');

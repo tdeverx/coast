@@ -3,7 +3,7 @@
   import { page } from '$app/state';
   import ProgressBar from './ProgressBar.svelte';
   import { primaryMediaAction, progressFraction } from '$lib/media/model';
-  import { goto } from '$app/navigation';
+  import { goto,pushState } from '$app/navigation';
   import { cardArtwork, overlayArtwork } from '$lib/ui/artwork-priority';
   import type { ArtworkPriority } from '$lib/ui/types';
   import { artworkTypes } from '$lib/artwork';
@@ -145,9 +145,10 @@
     else await goto(href);
   }
   function cardGesture(node: HTMLElement) {
-    if (!readOnly()) return contextGesture(node, openMenu);
+    return contextGesture(node, openMenu);
   }
   function select(event: MouseEvent) {
+    if(!onselect&&page.data.user&&page.data.experiments?.mediaModal&&/^\/media\/[0-9a-f-]{36}$/.test(href)&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey&&event.button===0){event.preventDefault();pushState(page.url,{...page.state,mediaModalId:href.split('/')[2]});return;}
     if (onselect && trackedItem) {
       event.preventDefault();
       onselect(trackedItem);

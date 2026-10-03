@@ -25,7 +25,7 @@ export async function createApiToken(actor: SessionUser|null,input:unknown) {
     if(!active.length)throw new AppError(401,'Account unavailable.','invalid_token');
     const [count]=await sql`select count(*)::int as total from api_tokens where user_id=${user.id} and revoked_at is null and expires_at>now()`;
     if(count.total>=20) throw new AppError(409,'Revoke an existing token before creating another.','token_limit');
-    const [row]=await sql`insert into api_tokens(user_id,name,token_hash,scopes,expires_at) values(${user.id},${settings.name},${hash},${JSON.stringify([...new Set(settings.scopes)])}::jsonb,${expiresAt}) returning id`;
+    const [row]=await sql`insert into api_tokens(user_id,name,token_hash,scopes,expires_at) values(${user.id},${settings.name},${hash},${JSON.stringify([...new Set(settings.scopes)])}::text::jsonb,${expiresAt}) returning id`;
     return row.id as string;
   });
   return {id,token,expiresAt};
@@ -48,5 +48,6 @@ export async function authenticateApiToken(request:Request) {
     window_started_at=case when window_started_at<=now()-interval '1 minute' then now() else window_started_at end,last_used_at=now()
     where id=${row.id} and revoked_at is null and expires_at>now() and (window_started_at<=now()-interval '1 minute' or window_requests<120) returning id`;
   if(!accepted.length) throw new AppError(429,'Wait a minute before making more requests.','rate_limited');
-  return {id:row.userId as string,username:row.username as string,scopes:row.scopes as string[]};
+  if(!Array.isArray(row.scopes)||row.scopes.some((scope:unknown)=>typeof scope!=='string'||!apiScopes.includes(scope as typeof apiScopes[number])))throw new AppError(401,'This token has invalid permissions.','invalid_token');
+  return {tokenId:row.id as string,id:row.userId as string,username:row.username as string,scopes:row.scopes as string[]};
 }

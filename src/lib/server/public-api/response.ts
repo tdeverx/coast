@@ -13,5 +13,5 @@ export function publicWork(item:MediaView|MediaCardPresentation,personal=false) 
 }
 export function publicPage(items:unknown[],input:{page:number;pages:number;total:number},url:URL) {
   const link=(page:number)=>{const next=new URL(url);next.searchParams.set('page',String(page));return next.pathname+next.search;};
-  return {items,pagination:{...input,pageSize:PAGE_SIZE,next:input.page<input.pages?link(input.page+1):null,previous:input.page>1?link(input.page-1):null}};
+  return {items,pagination:{page:input.page,pages:input.pages,total:input.total,pageSize:PAGE_SIZE,next:input.page<input.pages?link(input.page+1):null,previous:input.page>1?link(input.page-1):null}};
 }

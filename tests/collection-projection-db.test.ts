@@ -86,7 +86,9 @@ for(const choice of ['leave','remove-managed','clear-all'] as const)run(`disabli
  expect(remote.size).toBe(choice==='leave'?3:choice==='remove-managed'?2:0);if(choice==='remove-managed'){expect(remote.has(base+1)).toBe(true);expect(remote.has(base+2)).toBe(true);}
 });
 run('Replace all removes obsolete external entries while keeping exact desired membership',async()=>{
- await seedRemote();await getDb().insert(s.trackingState).values({userId,mediaId:movieIds[0],collected:true});const {action}=await approve(config(),'replace-all');await executeProjection(userId,connection.id,action.payload,context());expect([...remote.keys()]).toEqual([base]);
+ await seedRemote();await getDb().insert(s.trackingState).values({userId,mediaId:movieIds[0],collected:true});const {action}=await approve(config(),'replace-all');paths.length=0;await executeProjection(userId,connection.id,action.payload,context());expect([...remote.keys()]).toEqual([base]);
+ expect(paths.filter(path=>path==='/sync/collection/remove')).toHaveLength(1);
+ expect(paths.filter(path=>path.startsWith('/sync/collection/movies?'))).toHaveLength(2);
 });
 run('managed removal refuses direct remote changes and stale approval snapshots',async()=>{
  await seedRemote();remote.get(base)!.metadata={resolution:'1080p'};const {action}=await approve(config({enabled:false}),'remove-managed');await executeProjection(userId,connection.id,action.payload,context());expect(remote.size).toBe(3);

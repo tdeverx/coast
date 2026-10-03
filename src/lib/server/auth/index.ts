@@ -257,6 +257,7 @@ export async function updateUser(actor: SessionUser | null, userId: string, inpu
         email: accountSchema.entries.email,
         role: v.picklist(['admin', 'user']),
         disabled: v.boolean(),
+        allowPlaybackSharing: v.boolean(),
         password: passwordSchema,
       })
     ),
@@ -290,7 +291,7 @@ export async function updateUser(actor: SessionUser | null, userId: string, inpu
       if (!count.total) throw new AppError(409, 'Keep at least one active administrator account.');
     }
     const [row] =
-      await transaction`UPDATE users SET email = ${patch.email === undefined ? target.email : patch.email || null}, role = ${role}, disabled = ${disabled}, password_hash = ${hash ?? target.password_hash} WHERE id = ${userId} RETURNING *`;
+      await transaction`UPDATE users SET email = ${patch.email === undefined ? target.email : patch.email || null}, role = ${role}, disabled = ${disabled}, settings = ${{...target.settings,...(patch.allowPlaybackSharing===undefined?{}:{allowPlaybackSharing:patch.allowPlaybackSharing})}}::jsonb, password_hash = ${hash ?? target.password_hash} WHERE id = ${userId} RETURNING *`;
     if (role !== target.role || disabled !== target.disabled || hash) {
       await transaction`DELETE FROM sessions WHERE user_id = ${userId}`;
       await transaction`UPDATE api_tokens SET revoked_at=now() WHERE user_id=${userId} AND revoked_at IS NULL`;

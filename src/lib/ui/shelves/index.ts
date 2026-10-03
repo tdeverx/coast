@@ -1,3 +1,4 @@
+import {createExperimentalSource,type ExperimentalOptions} from './experimental.svelte';
 import {createDiscoverySource,type DiscoveryOptions} from './discovery.svelte';
 import {createSocialSource,type SocialShelfOptions} from './social.svelte';
 import { createJournalSource, type JournalOptions } from './journal.svelte';
@@ -7,6 +8,7 @@ import { createListSource, type ListSourceOptions } from './list.svelte';
 import { createCreditsSource, type CreditsOptions } from './credits.svelte';
 import { createLibrarySource, type LibrarySourceOptions } from './library.svelte';
 export type ShelfConfig =
+  | ExperimentalOptions
   | DiscoveryOptions
   | SocialShelfOptions
   | ({type:'journal'} & JournalOptions)
@@ -18,6 +20,7 @@ export type ShelfConfig =
 export function createShelfSource(get: () => ShelfConfig) {
   // The source type is fixed for a mounted shelf; changing features mounts a new shelf.
   switch (get().type) {
+    case 'experimental':return createExperimentalSource(()=>get() as ExperimentalOptions);
     case 'discovery':return createDiscoverySource(()=>get() as DiscoveryOptions);
     case 'social':return createSocialSource(()=>get() as SocialShelfOptions);
     case 'journal': return createJournalSource(() => get() as Extract<ShelfConfig,{type:'journal'}>);

@@ -1,3 +1,4 @@
+import { provisioningAuthority } from '$lib/providers/jellyfin/provisioning.server';
 import * as v from 'valibot';
 import { getSql } from '../db';
 import { registrationSchema } from '$lib/auth/registration';
@@ -11,14 +12,17 @@ import { enqueueAction } from '../queue';
 
 export async function listInvites(actor: SessionUser | null) {
   requireAdmin(actor);
-  return getSql()`SELECT i.id, i.expires_at AS "expiresAt", i.used_at AS "usedAt", i.revoked_at AS "revokedAt", u.username FROM registration_invites i LEFT JOIN users u ON u.id=i.used_by ORDER BY i.created_at DESC LIMIT 100`;
+  return getSql()`SELECT i.id, i.provision_connection_id AS "provisionConnectionId", i.expires_at AS "expiresAt", i.used_at AS "usedAt", i.revoked_at AS "revokedAt", u.username FROM registration_invites i LEFT JOIN users u ON u.id=i.used_by ORDER BY i.created_at DESC LIMIT 100`;
 }
 export async function createInvite(actor: SessionUser | null, input: unknown) {
   const admin = requireAdmin(actor);
-  const { days } = v.parse(v.object({ days: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(30)) }), input);
+  const { days,provisionConnectionId,folders } = v.parse(v.strictObject({ days: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(30)),provisionConnectionId:v.optional(v.pipe(v.string(),v.uuid())),folders:v.optional(v.pipe(v.array(v.pipe(v.string(),v.regex(/^(?:[a-f0-9]{32}|[a-f0-9-]{36})$/i))),v.maxLength(100)),[]) }), input);
+  const authority=provisionConnectionId?await provisioningAuthority(admin.id,provisionConnectionId):null;
+  if(authority){const known=await authority.adapter.virtualFolders();if(!folders.length||folders.some(id=>!known.some(folder=>folder.ItemId===id)))throw new AppError(400,'Select at least one existing Jellyfin library for the invitation.');}
+
   const code = randomToken();
   const expiresAt = new Date(Date.now() + days * 86400000);
-  const [row] = await getSql()`INSERT INTO registration_invites (token_hash,created_by,expires_at) VALUES (${await hashToken(code)},${admin.id},${expiresAt}) RETURNING id`;
+  const [row] = await getSql()`INSERT INTO registration_invites (token_hash,created_by,expires_at,provision_connection_id,provision_generation,provision_folders) VALUES (${await hashToken(code)},${admin.id},${expiresAt},${provisionConnectionId??null},${authority?.connection.accountGeneration??null},${authority?JSON.stringify(folders):null}::text::jsonb) RETURNING id`;
   return { id: row.id, code, expiresAt };
 }
 export async function revokeInvite(actor: SessionUser | null, id: string) {
@@ -35,10 +39,11 @@ export async function registerAccount(input: unknown, client: string) {
   try {
     const user = await getSql().begin(async sql => {
       const current=await getConfig(sql);
-      const [invite]=data.code?await sql`SELECT id FROM registration_invites WHERE token_hash=${tokenHash} AND used_at IS NULL AND revoked_at IS NULL AND expires_at>NOW() FOR UPDATE`:[];
+      const [invite]=data.code?await sql`SELECT * FROM registration_invites WHERE token_hash=${tokenHash} AND used_at IS NULL AND revoked_at IS NULL AND expires_at>NOW() FOR UPDATE`:[];
       if((data.code||current.registrationMode==='invite')&&!invite)throw new AppError(400,'This invite code has expired, was used, or is invalid.');
       const [row] = await sql`INSERT INTO users (username,password_hash,role,settings) VALUES (${data.username},${passwordHash},'user',${{profile:{displayName:data.displayName}}}::jsonb) RETURNING id,username,email,role,settings`;
-      await sql`INSERT INTO user_onboarding (user_id,required_provider) VALUES (${row.id},${current.registrationProvider})`;
+      await sql`INSERT INTO user_onboarding (user_id,required_provider) VALUES (${row.id},${invite?.provision_generation?'jellyfin':current.registrationProvider})`;
+      if(invite?.provision_generation){if(!invite.provision_connection_id)throw new AppError(409,'This invitation’s provisioning account is unavailable.');await sql`insert into onboarding_provisioning(user_id,connection_id,account_generation,folders) values(${row.id},${invite.provision_connection_id},${invite.provision_generation},${JSON.stringify(invite.provision_folders)}::text::jsonb)`;}
       if(invite)await sql`UPDATE registration_invites SET used_by=${row.id},used_at=NOW() WHERE id=${invite.id}`;
       return row as SessionUser;
     });
@@ -143,7 +148,8 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
  if(!row||row.completed_at)return {complete:true,phase:'complete' as const,progress:null,imports:[],reconnect:false,linked:false,traktLinked:false,requiredProvider:'none'};
  const jf=row.connection_status==='connected'&&row.current_generation===row.account_generation;
  const trakt=row.trakt_status==='connected'&&row.current_trakt_generation===row.trakt_account_generation;
- const reconnect=!!row.account_generation&&!jf;
+ let jfAuthFailed=false,traktAuthFailed=false;
+ let reconnect=!!row.account_generation&&!jf || !!row.trakt_account_generation&&!trakt;
  const imports:{label:string;state:string;processed:number;total:number|null;error:string|null}[]=[];
  let ready=true,progress=null;
  if(row.imports_started_at){
@@ -151,6 +157,7 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
    const [checkpoint]=await getSql()`select completed_at from sync_checkpoints where connection_id=${row.connection_id} and kind='jellyfin-user' and completed_at>=${row.requested_at} and scan_id is null`;
    const done=jf&&!!checkpoint;
    if(!done&&jf){await enqueueAction({userId,connectionId:row.connection_id,kind:'jellyfin.sync',payload:{},compactionKey:'jellyfin.sync'});progress=await libraryScanProgress(userId,row.connection_id,new Date(row.requested_at));}
+   jfAuthFailed=!!progress?.authenticationFailed;reconnect||=jfAuthFailed;
    imports.push({label:'Jellyfin',state:done?'succeeded':reconnect?'failed':progress?.state??'pending',processed:progress?.processed??0,total:progress?.total??null,error:reconnect?'Reconnect Jellyfin to continue.':progress?.error??null});ready&&=done;
   }
   if(row.trakt_account_generation){
@@ -160,7 +167,8 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
    row.import_jobs=refreshed.import_jobs;
    for(const kind of ['trakt.import','trakt.lists-import']){
     const id=row.import_jobs?.[kind];
-    const [job]=id?await getSql()`select state,last_error from outbox_actions where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation}`:[];
+    const [job]=id?await getSql()`select state,last_error,payload from outbox_actions where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation}`:[];
+    traktAuthFailed||=job?.payload?._jobFailure?.code==='provider.authentication';reconnect||=traktAuthFailed;
     const done=trakt&&job?.state==='succeeded';ready&&=done;
     imports.push({label:kind==='trakt.import'?'Trakt tracking':'Trakt lists',state:trakt?job?.state??'pending':'failed',processed:0,total:null,error:trakt?job?.last_error??null:'Reconnect Trakt to continue.'});
    }
@@ -170,7 +178,7 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
    if(completed.length)return {...await onboardingStatus(userId)};
   }
  }
- return {complete:false,phase:row.imports_started_at?'importing' as const:'connections' as const,progress,imports,reconnect,linked:jf,traktLinked:trakt,requiredProvider:row.required_provider};
+ return {complete:false,phase:row.imports_started_at?'importing' as const:'connections' as const,progress,imports,reconnect,linked:jf&&!jfAuthFailed,traktLinked:trakt&&!traktAuthFailed,requiredProvider:row.required_provider};
 }
 export async function retryInitialImports(userId:string) {
  const row=await pendingOnboarding(userId);

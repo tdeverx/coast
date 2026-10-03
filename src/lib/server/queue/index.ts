@@ -27,6 +27,7 @@ export interface OutboxAction {
 export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number };
 export type ActionHandler = (action: OutboxAction) => Promise<void | JobOutcome>;
 
+const independentQueueKinds=['webhook.deliver','planning.reminder'];
 const handlers = new Map<string, ActionHandler>();
 export class PermanentActionError extends Error {
   constructor(message: string) {
@@ -180,9 +181,9 @@ export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | 
         WHERE candidate.state = 'pending' AND candidate.next_attempt_at <= NOW()
           AND (${urgentOnly} = false OR ${priority} < 3)
           AND (instance.settings->>'jobsRetryAt' IS NULL OR (instance.settings->>'jobsRetryAt')::timestamptz <= NOW())
-          AND (candidate.kind LIKE '%.live' OR NOT EXISTS (SELECT 1 FROM outbox_actions earlier
+          AND (candidate.kind IN ${sql(independentQueueKinds)} OR candidate.kind LIKE '%.live' OR NOT EXISTS (SELECT 1 FROM outbox_actions earlier
             WHERE earlier.user_id = candidate.user_id AND earlier.connection_id IS NOT DISTINCT FROM candidate.connection_id
-            AND earlier.kind NOT LIKE '%.live' AND earlier.state IN ('pending', 'running', 'failed') AND (earlier.created_at, earlier.id) < (candidate.created_at, candidate.id)
+            AND earlier.kind NOT IN ${sql(independentQueueKinds)} AND earlier.kind NOT LIKE '%.live' AND earlier.state IN ('pending', 'running', 'failed') AND (earlier.created_at, earlier.id) < (candidate.created_at, candidate.id)
             AND (earlier.kind NOT IN ${sql(maintenanceKinds)} OR earlier.state = 'running' OR
               (${priority} <> 0 AND candidate.kind IN ${sql(maintenanceKinds)} AND earlier.state = 'pending' AND earlier.next_attempt_at <= NOW()))))
         ORDER BY ${priority}, candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
@@ -211,7 +212,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
   if (!action) return false;
   // Keep account writes ordered. Read-only live observations can interleave with imports.
   const reserved = await getSql().reserve();
-  const lockKeys = [`queue-lane:${action.userId}:${action.connectionId ?? 'local'}${action.kind.endsWith('.live') ? ':live' : ''}`];
+  const lockKeys = [independentQueueKinds.includes(action.kind)?`queue-action:${action.id}`:`queue-lane:${action.userId}:${action.connectionId ?? 'local'}${action.kind.endsWith('.live') ? ':live' : ''}`];
   const held: string[] = [];
   try {
     for (const key of lockKeys) {

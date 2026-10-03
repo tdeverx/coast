@@ -10,6 +10,8 @@ export const load = (async ({ locals, depends }) => {
   return {
     publicRead:config.siteAccess==='public-read-only',
     experimentalFeatures: config.experimentalFeatures,
+    experiments:{dynamicForYou:config.experimentalDynamicForYou,planning:config.experimentalPlanning,recommendations:config.experimentalRecommendations,mediaModal:config.experimentalMediaModal},
+    playbackSharing:config.allowPlaybackSharing && !!locals.user && (locals.user.role==='admin'||locals.user.settings.allowPlaybackSharing===true),
     user: locals.user,
     expiresAt: locals.expiresAt?.toISOString() ?? null,
     unreadNotifications,

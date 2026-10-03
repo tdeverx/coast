@@ -8,13 +8,13 @@
     open = $bindable(false),
     title,
     children, message, actions, alert = false,
-    wide = false, popover = false, anchor, heading, footer,
+    wide = false, edgeToEdge = false, popover = false, anchor, heading, footer,
     onclose,
   }: {
     open: boolean;
     title: string;
     children?: Snippet; message?: string; alert?: boolean; actions?: ComponentProps<typeof Button>[];
-    wide?: boolean; popover?: boolean; anchor?:string; heading?:Snippet; footer?:Snippet;
+    wide?: boolean; edgeToEdge?: boolean; popover?: boolean; anchor?:string; heading?:Snippet; footer?:Snippet;
     onclose?: () => void;
   } = $props();
   let dialog: HTMLElement;
@@ -53,7 +53,10 @@
       };
     }
     const modal = dialog as HTMLDialogElement;
-    if (open && !modal.open) modal.showModal();
+    if (open && !modal.open) {
+      returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      modal.showModal();
+    }
     if (!open && modal.open) modal.close();
   });
 </script>
@@ -73,7 +76,7 @@
       closed();
     }
   }}
-  class:wide class:notification-popover={popover}
+  class:wide class:edge-to-edge={edgeToEdge} class:notification-popover={popover}
   onclick={(e: MouseEvent) => {
     if (e.target === dialog) {
       const r = dialog.getBoundingClientRect();
@@ -115,6 +118,8 @@
     border-radius: 16px;
     width: min(864px, calc(100vw - 32px));
   }
+  .dialog.edge-to-edge {padding:0;}
+  .edge-to-edge .heading {padding:16px 24px;margin-bottom:0;}
   .notification-popover {--popover-inset:16px;position:fixed;inset:auto;top:var(--popover-top,16px);left:var(--popover-left,16px);width:min(560px,calc(100vw - 32px));max-height:min(640px,calc(100dvh - var(--popover-top,16px) - 16px));margin:0;border-radius:16px;padding:0;overflow:hidden;}
   .notification-popover:popover-open{display:flex;flex-direction:column;}
   .popover-heading{flex:none;padding:12px var(--popover-inset);border-bottom:1px solid var(--line);}

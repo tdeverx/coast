@@ -92,6 +92,8 @@ export function stopProviderMaintenance() {
     clearInterval(maintenanceTimer);
     maintenanceTimer = undefined;
   }
+  process.off('SIGTERM',stopProviderMaintenance);
+  process.off('SIGINT',stopProviderMaintenance);
 }
 
 /** Idempotent maintenance scheduling; durable work remains in the PostgreSQL outbox. */

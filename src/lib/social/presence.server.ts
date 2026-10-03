@@ -7,7 +7,7 @@ import {trackInTransaction} from '$lib/core/tracking/service';
 import {enqueueInTransaction,enqueueTraktChangeInTransaction} from '$lib/sync/changes';
 export async function presence(userId:string) {
  return getSql()`with candidates as (
- select user_id,media_id as work_id,'playback' as source,updated_at as observed_at,expires_at,0 as priority,position_seconds,duration_seconds from playback_sessions where state='active' and expires_at>now() and updated_at>now()-interval '2 minutes'
+ select user_id,media_id as work_id,'playback' as source,updated_at as observed_at,expires_at,0 as priority,position_seconds,duration_seconds from playback_sessions where share_id is null and state='active' and expires_at>now() and updated_at>now()-interval '2 minutes'
  union all select user_id,work_id,'checkin',created_at,expires_at,1,null,null from social_checkins where state='active' and expires_at>now()
  union all select c.user_id,s.work_id,i.provider,s.checked_at,s.expires_at,2,null,null from social_live_state s join provider_connections c on c.id=s.connection_id join provider_instances i on i.id=c.instance_id where c.status='connected' and i.enabled and s.account_generation=c.account_generation and s.expires_at>now() and s.work_id is not null)
  select distinct on (p.user_id) p.user_id as "userId",u.username,p.work_id as "workId",coalesce(m.title,music.title,g.title) as title,
@@ -26,7 +26,7 @@ export async function startCheckin(userId:string,raw:unknown) {
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
   const [work]=await tx.execute<{runtime:number|null;kind:string}>(sql`select kind,runtime_minutes as runtime from media where id=${workId}`);
   if(!work||!['movie','episode'].includes(work.kind)||!work.runtime||work.runtime<=0)throw new AppError(400,'Check-ins need a movie or episode with a known runtime.');
-  const [playing]=await tx.execute(sql`select id from playback_sessions where user_id=${userId} and state='active' and expires_at>now() and updated_at>now()-interval '2 minutes'`);
+  const [playing]=await tx.execute(sql`select id from playback_sessions where share_id is null and user_id=${userId} and state='active' and expires_at>now() and updated_at>now()-interval '2 minutes'`);
   if(playing)throw new AppError(409,'Stop playback before checking in.');
   const [current]=await tx.select().from(socialCheckins).where(and(eq(socialCheckins.userId,userId),eq(socialCheckins.state,'active'))).for('update');
   if(current){if(current.workId===workId)return current;throw new AppError(409,'Cancel your current check-in first.');}

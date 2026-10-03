@@ -30,7 +30,7 @@ async function authorized(userId:string,id:string){
 }
 async function playback(userId:string,id:string){
   const [p]=await getSql()`SELECT p.* FROM playback_sessions p JOIN provider_connections c ON c.id=p.connection_id JOIN provider_instances i ON i.id=c.instance_id
-    WHERE p.id=${v.parse(uuid,id)} AND p.user_id=${userId} AND p.expires_at>NOW() AND p.state<>'stopped' AND c.status='connected' AND i.enabled`;
+    WHERE p.share_id IS NULL AND p.id=${v.parse(uuid,id)} AND p.user_id=${userId} AND p.expires_at>NOW() AND p.state<>'stopped' AND c.status='connected' AND i.enabled`;
   if(!p)throw new AppError(409,'Prepare your own playable source before joining.');
   return p;
 }
@@ -62,7 +62,7 @@ export async function inviteParticipant(userId:string,id:string,input:unknown){
   if(room.ended_at)throw new AppError(409,'This session has ended.');
   const {friendId}=v.parse(v.object({friendId:uuid}),input);await requireFriend(userId,friendId);
   await getSql().begin(async sql=>{
-    const [r]=await sql`SELECT * FROM synced_rooms WHERE id=${id} AND ended_at IS NULL FOR UPDATE`;
+    const [r]=await sql`SELECT * FROM synced_rooms WHERE id=${id} AND ended_at IS NULL AND created_at>NOW()-INTERVAL '24 hours' FOR UPDATE`;
     if(!r)throw new AppError(409,'This session has ended.');
     const [member]=await sql`SELECT joined FROM synced_participants WHERE room_id=${id} AND user_id=${userId}`;
     if(!r.settings.acceptInvites)throw new AppError(409,'Invitations are closed for this party.');
@@ -71,6 +71,7 @@ export async function inviteParticipant(userId:string,id:string,input:unknown){
     const [count]=await sql`SELECT count(*)::int AS total FROM synced_participants WHERE room_id=${id}`;
     if(count.total>=16)throw new AppError(409,'This session already has 16 participants.');
     await sql`INSERT INTO synced_participants (room_id,user_id) VALUES (${id},${friendId}) ON CONFLICT DO NOTHING`;
+    await sql`DELETE FROM notifications WHERE user_id=${friendId} AND source_key=${`synced:${id}`}`;
     await notify({userId:friendId,kind:'synced-invite',title:'Join a party',sourceKey:`synced:${id}`,data:{actorId:userId,subjectId:id,workId:room.media_id,destination:`/synced/${id}`}},sql);
   });return {invited:true};
 }
