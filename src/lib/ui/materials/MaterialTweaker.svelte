@@ -5,8 +5,10 @@
   import SegmentedControl from '../components/SegmentedControl.svelte';
   import { liquidGlass } from './glass';
   import { experimentalMaterial, experimentalDefaults, effectGroups, readExperimentalEffects } from './experimental';
+  import { blendOptions } from './presets';
+  import { exportMaterialPreset } from './export';
   import { defaultMaterialDrafts, readMaterialDrafts, materialNames, sliderGroups, colorControls } from './tuning';
-  import type { GlassSurface, GlassVariant } from './presets';
+  import type { GlassVariant } from './presets';
   const previewModes = ['materials', 'fallbacks'] as const;
   const storageKey = 'coast.material-drafts.v1';
   let drafts = $state(defaultMaterialDrafts());
@@ -23,11 +25,17 @@
   let message = $state('');
   let exported = $state(false);
   let background = $state('pattern');
+  let backgroundColor = $state('#ffffff');
+  let backgroundImage = $state('');
   let radius = $state(24);
   const surface = $derived(selected[layer]);
   const title = $derived(experimental ? 'Temporary experiment' : materialNames.find(item => item.value === variant)?.label ?? 'Glass');
-  const source = $derived(JSON.stringify(experimental ? { temporary: { ...experiment, effects } } : drafts, null, 2));
+  let source = $state('');
+  let supportedBlends = $state(blendOptions.map(option => option.value));
+  let supportedTintBlends = $state(blendOptions.map(option => option.value));
   onMount(() => {
+    supportedBlends = blendOptions.filter(option => CSS.supports('mix-blend-mode', option.value)).map(option => option.value);
+    supportedTintBlends = blendOptions.filter(option => CSS.supports('background-blend-mode', option.value)).map(option => option.value);
     try { const saved = localStorage.getItem(storageKey); if (saved) drafts = readMaterialDrafts(JSON.parse(saved)); }
     catch { message = 'Saved drafts could not be loaded.'; }
     try {
@@ -40,6 +48,7 @@
       }
     } catch { message = 'Temporary experiment could not be loaded.'; }
     loaded = true;
+    return () => { if (backgroundImage) URL.revokeObjectURL(backgroundImage); };
   });
   $effect(() => {
     const current = JSON.stringify(drafts);
@@ -50,12 +59,17 @@
     if (loaded) try { localStorage.setItem(experimentKey, current); } catch { message = 'Browser storage is unavailable. Export your experiment to keep it.'; }
   });
   function tryTogether() {
-    effects = { ...experimentalDefaults, sheenAmount: 16, vignetteAmount: 12, edgeAmount: 28, frostAmount: 65, interactionAmount: 20 };
+    effects = { ...experimentalDefaults, sheenAmount: 16, vignetteAmount: 12, edgeAmount: 28, interactionAmount: 20 };
     experiment.materials.noiseOpacity = 4; experiment.fallbacks.noiseOpacity = 4;
     message = 'Non-approved combination. Tune or disable each effect below.';
   }
-  function setColor(key: keyof GlassSurface, value: string) {
-    if (CSS.supports('color', value)) { (surface[key] as string) = value; message = ''; }
+  function setBackgroundImage(file?: File) {
+    if (file && !file.type.startsWith('image/')) { message = 'Choose an image for the preview background.'; return; }
+    if (backgroundImage) URL.revokeObjectURL(backgroundImage);
+    backgroundImage = file ? URL.createObjectURL(file) : '';
+  }
+  function setColor(value: string, change: (value: string) => void) {
+    if (CSS.supports('color', value)) { change(value); message = ''; }
     else message = 'Enter a valid CSS color or theme token.';
   }
   function reset(all = false) {
@@ -67,15 +81,33 @@
     else drafts[layer][baseVariant] = defaultMaterialDrafts()[layer][baseVariant];
     message = all ? 'All drafts reset.' : `${title} ${layer === 'materials' ? 'material' : 'fallback'} reset.`;
   }
-  async function copy() {
+  function prepareExport() {
+    const probe = document.createElement('span');
+    probe.hidden = true;
+    document.body.append(probe);
+    try {
+      source = JSON.stringify(exportMaterialPreset(variant, selected, value => {
+        if (!CSS.supports('color', value)) throw new Error('A draft contains an invalid color. Correct it before exporting.');
+        probe.style.color = value;
+        return getComputedStyle(probe).color;
+      }, experimental ? effects : undefined), null, 2);
+    } catch (error) {
+      message = error instanceof Error ? error.message : 'The preset could not be exported.';
+      return false;
+    } finally { probe.remove(); }
     exported = true;
-    try { await navigator.clipboard.writeText(source); message = experimental ? 'Copied the temporary experiment.' : 'Copied all three materials and their blur fallbacks.'; }
+    return true;
+  }
+  async function copy() {
+    if (!prepareExport()) return;
+    try { await navigator.clipboard.writeText(source); message = `Copied ${title} with its fallback${experimental ? ' and effects' : ''}. All colors are resolved.`; }
     catch { message = 'Clipboard unavailable. Select the export below to copy it.'; }
   }
   function download() {
+    if (!prepareExport()) return;
     const url = URL.createObjectURL(new Blob([source], { type: 'application/json' }));
-    const link = document.createElement('a'); link.href = url; link.download = experimental ? 'coast-material-experiment.json' : 'coast-materials.json'; link.click(); URL.revokeObjectURL(url);
-    message = experimental ? 'Downloaded the temporary experiment.' : 'Downloaded all three materials and their blur fallbacks.';
+    const link = document.createElement('a'); link.href = url; link.download = `coast-material-${variant}.json`; link.click(); URL.revokeObjectURL(url);
+    message = `Downloaded ${title} with its fallback${experimental ? ' and effects' : ''}. All colors are resolved.`;
   }
 </script>
 
@@ -85,13 +117,14 @@
     {#if experimental}<Button  onclick={tryTogether}>Try together</Button>{/if}
     <Button emphasis="subtle" onclick={() => reset()}>Reset selected</Button>
     <Button emphasis="subtle" onclick={() => reset(true)}>{experimental ? 'Reset experiment' : 'Reset all'}</Button>
-    <Button  onclick={copy}>Copy presets</Button>
+    <Button  onclick={copy}>Copy preset</Button>
     <Button  onclick={download}>Download</Button>
   {/snippet}
 </Heading>
 <div class="tweaker">
   <div class="preview-column">
-    <div class="preview" class:plain={background === 'plain'} style:--preview-radius={`${radius}px`}>
+    <div class="preview" class:plain={background !== 'pattern'} style:--preview-radius={`${radius}px`} style:background={background === 'color' ? backgroundColor : undefined}>
+      {#if background === 'image' && backgroundImage}<img class="preview-image" src={backgroundImage} alt="" aria-hidden="true" />{/if}
       <div class="scene" aria-hidden="true"><span>COAST</span><div></div><span>Glass / light / motion</span></div>
       {#each previewModes as mode}
         <div class="sample glass" class:light={variant === 'glassLight'}
@@ -107,10 +140,16 @@
       {/each}
     </div>
     <div class="preview-options">
-      <SegmentedControl label="Preview background" value={background} options={[{ value: 'pattern', label: 'Pattern' }, { value: 'plain', label: 'Plain' }]} onchange={value => background = value} />
+      <SegmentedControl label="Preview background" value={background} options={[{ value: 'pattern', label: 'Pattern' }, { value: 'color', label: 'Color' }, { value: 'image', label: 'Image' }]} onchange={value => background = value} />
+      {#if background === 'color'}
+        <div class="background-color"><label class="field">Preview background color<input type="color" bind:value={backgroundColor} /></label><Button onclick={() => backgroundColor = '#ffffff'}>White</Button><Button onclick={() => backgroundColor = '#000000'}>Black</Button></div>
+      {:else if background === 'image'}
+        <label class="field">Preview background image<input type="file" accept="image/*" onchange={event => setBackgroundImage(event.currentTarget.files?.[0])} /></label>
+        {#if backgroundImage}<Button emphasis="subtle" onclick={() => setBackgroundImage()}>Remove image</Button>{/if}
+      {/if}
       <label class="field">Preview corner radius · {radius}px<input type="range" min="0" max="80" step="1" aria-valuetext={`${radius} pixels`} bind:value={radius} /></label>
     </div>
-    <p class="quiet">Both previews update live. Native refraction depends on your browser; CSS fallback has no refraction. Preview radius and background do not change presets.</p>
+    <p class="quiet">Both previews update live. Native refraction depends on your browser; CSS fallback has no refraction. Preview radius and background do not change presets. Preview images stay in this browser.</p>
     <p role="status" class="quiet">{message}</p>
   </div>
   <div class="controls">
@@ -119,6 +158,10 @@
       {#each effectGroups as group}
         <section><Heading title={group.title} level={3} description={group.description} />
           <div class="control-grid">
+            {@render colorControl(`effect-${group.color}`, `${group.title} color`, effects[group.color], value => effects[group.color] = value)}
+            <label class="field">Blend mode<select aria-label={`${group.title} blend`} bind:value={effects[group.blend]}>
+              {#each blendOptions as option}<option value={option.value} disabled={!supportedBlends.includes(option.value)}>{option.label}</option>{/each}
+            </select></label>
             {#each group.controls as control}
               <label class="field slider"><span>{control.label}<output>{effects[control.key]}{control.unit}</output></span>
                 <input type="range" aria-label={`${group.title}: ${control.label}`} min={control.min} max={control.max} step={control.step} aria-valuetext={`${effects[control.key]}${control.unit}`} bind:value={effects[control.key]} />
@@ -134,9 +177,11 @@
       <Heading title="Colors" level={3} />
       <div class="control-grid">
         {#each colorControls as control}
-          <div class="field"><label for={`material-${control.key}`}>{control.label}</label><div class="color-control"><span class="swatch" style:background={surface[control.key]}></span><input id={`material-${control.key}`} value={surface[control.key]} onchange={event => setColor(control.key, event.currentTarget.value)} /><input type="color" aria-label={`${control.label} picker`} value={/^#[0-9a-f]{6}$/i.test(surface[control.key]) ? surface[control.key] : '#ffffff'} oninput={event => setColor(control.key, event.currentTarget.value)} /></div></div>
+          {@render colorControl(`material-${control.key}`, control.label, surface[control.key], value => surface[control.key] = value)}
         {/each}
         <label class="field">Stroke alignment<select bind:value={surface.strokeAlignment}><option value="internal">Internal</option><option value="external">External</option></select></label>
+        <label class="field">Stroke blend<select aria-label="Stroke blend" bind:value={surface.strokeBlend}>{#each blendOptions as option}<option value={option.value} disabled={!supportedBlends.includes(option.value)}>{option.label}</option>{/each}</select></label>
+        <label class="field">Shadow position<select bind:value={surface.shadowPosition}><option value="outer">Outer</option><option value="inner">Inner</option></select></label>
       </div>
       <p class="quiet">Use any CSS color, including var(--white), var(--canvas), var(--surface) and color-mix().</p>
     </section>
@@ -147,7 +192,8 @@
         {#if group.title === 'Texture'}
           <p class="quiet">Non-approved · static monochrome grain sits beneath content. Amount zero keeps the current clean glass.</p>
           <div class="control-grid texture-options">
-            <label class="field">Grain blend<select aria-label="Grain blend" bind:value={surface.noiseBlend}><option value="soft-light">Soft light</option><option value="normal">Normal</option></select></label>
+            <label class="field">Grain blend<select aria-label="Grain blend" bind:value={surface.noiseBlend}>{#each blendOptions as option}<option value={option.value} disabled={!supportedBlends.includes(option.value)}>{option.label}</option>{/each}</select></label>
+            <label class="field">Grain tint blend<select aria-label="Grain tint blend" bind:value={surface.noiseTintBlend}>{#each blendOptions as option}<option value={option.value} disabled={!supportedTintBlends.includes(option.value)}>{option.label}</option>{/each}</select></label>
             <label class="field">Grain coverage<select aria-label="Grain coverage" bind:value={surface.noiseCoverage}><option value="uniform">Uniform</option><option value="edges">Stronger at edges</option></select></label>
           </div>
         {/if}
@@ -155,7 +201,7 @@
           {#each group.controls as control}
             <label class="field slider">
               <span>{control.label} <output>{surface[control.key]}{control.unit}</output></span>
-              <input type="range" aria-label={`${group.title}: ${control.label}`} min={control.min} max={control.max} step={control.step} aria-valuetext={`${surface[control.key]}${control.unit}`} bind:value={surface[control.key]} disabled={group.title === 'Refraction' && layer === 'fallbacks'} />
+              <input type="range" aria-label={`${group.title}: ${control.label}`} min={control.min} max={control.max} step={control.step} aria-valuetext={`${surface[control.key]}${control.unit}`} bind:value={surface[control.key]} disabled={(group.title === 'Refraction' && layer === 'fallbacks') || (control.key === 'noiseEdgeStart' && surface.noiseCoverage !== 'edges')} />
             </label>
           {/each}
         </div>
@@ -163,13 +209,18 @@
     {/each}
   </div>
 </div>
-{#if exported}<section class="export"><Heading title="Preset export" description={experimental ? 'Temporary experiment, effects and both base surfaces.' : 'All three material and blur-fallback drafts. Copy this configuration when you want it applied to the app.'} /><textarea aria-label="Preset export" readonly value={source} rows="12"></textarea></section>{/if}
+{#if exported}<section class="export"><Heading title="Preset export" description="Complete snapshot of the selected treatment and its fallback, with resolved colors. Copy again after further edits." /><textarea aria-label="Preset export" readonly value={source} rows="12"></textarea></section>{/if}
+
+{#snippet colorControl(id: string, label: string, value: string, change: (value: string) => void)}
+  <div class="field"><label for={id}>{label}</label><div class="color-control"><span class="swatch" style:background={value}></span><input {id} {value} onchange={event => setColor(event.currentTarget.value, change)} />{#if loaded}<input type="color" aria-label={`${label} picker`} value={/^#[0-9a-f]{6}$/i.test(value) ? value : '#ffffff'} oninput={event => setColor(event.currentTarget.value, change)} />{/if}</div></div>
+{/snippet}
 
 <style>
   .tweaker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
   .preview-column { position: sticky; top: 100px; min-width: 0; }
   .preview { position: relative; overflow: hidden; border-radius: 24px; min-height: 440px; padding: 40px 24px; display: grid; align-content: center; gap: 40px; background: linear-gradient(135deg, var(--surface), var(--accent), var(--canvas)); }
   .preview.plain { background: var(--surface); }
+  .preview-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
   .scene { position: absolute; inset: 0; display: grid; align-content: space-evenly; text-align: center; color: var(--white); font-size: var(--text-2xl); font-weight: var(--weight-bold); transform: rotate(-15deg); }
   .scene div { height: 70px; background: repeating-linear-gradient(90deg, var(--white) 0 5px, transparent 5px 30px); }
   .plain .scene { display: none; }
@@ -180,6 +231,8 @@
   .sample .sample-detail { font-size: var(--text-sm); }
   .preview-options { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 20px; align-items: center; }
   .preview-options .field { flex: 1; min-width: 160px; }
+  .background-color { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; }
+  .background-color input { height: 32px; padding: 2px; cursor: pointer; }
   .controls { min-width: 0; }
   section { padding-top: 24px; margin-top: 24px; border-top: 1px solid var(--line); }
   .control-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }

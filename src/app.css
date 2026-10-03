@@ -69,10 +69,15 @@
   --coast-glass-top-inner-depth: 6px;
   --coast-glass-top-inner-opacity: 20%;
   --coast-glass-top-inner-softness: 4px;
+  --coast-glass-top-inner-x: 0px;
+  --coast-glass-top-inner-spread: -4px;
   --coast-glass-bottom-inner-color: var(--white);
   --coast-glass-bottom-inner-depth: 7px;
   --coast-glass-bottom-inner-opacity: 10%;
   --coast-glass-bottom-inner-softness: 5px;
+  --coast-glass-bottom-inner-x: 0px;
+  --coast-glass-bottom-inner-spread: -5px;
+  --coast-glass-stroke-blend: soft-light;
   --coast-glass-shadow-x: 0px;
   --coast-glass-shadow-y: 0px;
   --coast-glass-shadow-opacity: 10%;
@@ -259,12 +264,6 @@ form.stack,
   background-repeat: repeat;
   background-blend-mode: multiply;
 }
-/* Only the temporary frost experiment needs sibling backdrop layers. */
-.glass.coast-material-frost {
-  background: transparent;
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
 .glass::before,
 .glass::after {
   content: '';
@@ -276,13 +275,13 @@ form.stack,
 .glass::before {
   z-index: 2;
   box-shadow:
-    inset 0 var(--coast-glass-top-inner-depth) var(--coast-glass-top-inner-softness) calc(-1 * var(--coast-glass-top-inner-softness)) color-mix(in srgb, var(--coast-glass-top-inner-color) var(--coast-glass-top-inner-opacity), transparent),
-    inset 0 calc(-1 * var(--coast-glass-bottom-inner-depth)) var(--coast-glass-bottom-inner-softness) calc(-1 * var(--coast-glass-bottom-inner-softness)) color-mix(in srgb, var(--coast-glass-bottom-inner-color) var(--coast-glass-bottom-inner-opacity), transparent);
+    inset var(--coast-glass-top-inner-x) var(--coast-glass-top-inner-depth) var(--coast-glass-top-inner-softness) var(--coast-glass-top-inner-spread) color-mix(in srgb, var(--coast-glass-top-inner-color) var(--coast-glass-top-inner-opacity), transparent),
+    inset var(--coast-glass-bottom-inner-x) calc(-1 * var(--coast-glass-bottom-inner-depth)) var(--coast-glass-bottom-inner-softness) var(--coast-glass-bottom-inner-spread) color-mix(in srgb, var(--coast-glass-bottom-inner-color) var(--coast-glass-bottom-inner-opacity), transparent);
 }
 .glass::after {
   z-index: 3;
   box-shadow: inset 0 0 0 var(--coast-glass-stroke-inner-width) color-mix(in srgb, var(--coast-glass-stroke) var(--coast-glass-stroke-opacity), transparent);
-  mix-blend-mode: soft-light;
+  mix-blend-mode: var(--coast-glass-stroke-blend);
 }
 .solid-surface {
   background: var(--surface);
