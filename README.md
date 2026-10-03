@@ -63,7 +63,7 @@ ORIGIN: http://192.168.1.20:3000
 
 Use your server's actual LAN address, then apply the change with `docker compose up -d --no-build`. Other devices can open that same address.
 
-For a public domain, terminate HTTPS at your reverse proxy and use its public address, such as `ORIGIN: https://coast.example.com`. Administrators can keep the website private or enable public read-only browsing; profile privacy still applies, and public browsing does not grant playback access. See [deployment](docs/deployment.md) for storage, proxy and external PostgreSQL configuration.
+For a public domain, terminate HTTPS at your reverse proxy and use its public address, such as `ORIGIN: https://coast.example.com`. Administrators can keep the website private, allow public profiles only, or enable public read-only browsing; profile privacy still applies, and public browsing does not grant playback access. See [deployment](docs/deployment.md) for storage, proxy and external PostgreSQL configuration.
 
 ### Services and new accounts
 

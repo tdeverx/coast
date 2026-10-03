@@ -47,6 +47,7 @@ export type UserSettings = {
   listenThreshold?: number;
   syncConflictWinner?: string;
   fullWidth?: boolean;
+  liquidGlass?: boolean;
   originalTitles?: boolean;
   monochromeMissing?: boolean;
   region?: string;

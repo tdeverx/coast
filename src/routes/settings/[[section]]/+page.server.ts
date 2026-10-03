@@ -71,6 +71,7 @@ export const load = (async ({locals, params, depends, url}) => {
       shareDemand:true,
       listenThreshold:50,
       fullWidth: true,
+      liquidGlass: true,
       originalTitles: false,
       monochromeMissing: true,
       region: 'GB',

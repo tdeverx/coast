@@ -80,7 +80,7 @@ export const handler: RequestHandler = async (event) => {
     }
     if(path[0]==='profile'&&path[1]==='avatar'&&path.length===4&&method==='GET')
       return await streamGifAvatar(uuid(path[2]),path[3],locals.user?.id??null);
-    if(!locals.user && method==='GET' && isPublicReadPath(url.pathname) && (await getConfig()).siteAccess==='public-read-only') {
+    if(!locals.user && method==='GET' && isPublicReadPath(url.pathname,'public-read-only') && isPublicReadPath(url.pathname,(await getConfig()).siteAccess)) {
       if(path[0]==='artwork'&&path[1]==='tmdb')return streamTmdbArtwork(path[2],path[3],request);
       if(path[0]==='profile' && ['section','activity'].includes(path[1]) && url.searchParams.has('username')) {
         const owner=await profileUser(url.searchParams.get('username')!);

@@ -246,8 +246,8 @@ form.stack,
   background: var(--coast-glass-fill);
   border: 0;
   box-shadow: var(--coast-glass-shadow);
-  backdrop-filter: var(--coast-glass-filter);
   -webkit-backdrop-filter: var(--coast-glass-filter);
+  backdrop-filter: var(--coast-glass-filter);
 }
 /* Below surface content, above its backdrop; never changes layout or hit targets. */
 .coast-glass-grain {
@@ -258,6 +258,12 @@ form.stack,
   pointer-events: none;
   background-repeat: repeat;
   background-blend-mode: multiply;
+}
+/* Only the temporary frost experiment needs sibling backdrop layers. */
+.glass.coast-material-frost {
+  background: transparent;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 .glass::before,
 .glass::after {
@@ -620,11 +626,31 @@ form.stack,
 }
 @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
   .glass {
-    background: var(--surface-hover);
+    /* Component hover/fill rules must not turn the no-filter surface transparent. */
+    background: var(--coast-glass-solid-fill, var(--surface-hover)) !important;
   }
   .button.hero {
     background: var(--surface-hover);
   }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--coast-glass-solid-fill, var(--surface-hover)) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .coast-glass-grain, [data-material-effect] { display: none; }
+}
+@media (forced-colors: active) {
+  .glass {
+    background: Canvas !important;
+    color: CanvasText !important;
+    border: 1px solid CanvasText;
+    box-shadow: none;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .glass::before, .glass::after, .coast-glass-grain, [data-material-effect] { display: none; }
 }
 @media (max-width: 700px) {
   :root {

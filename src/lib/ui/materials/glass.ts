@@ -3,6 +3,8 @@ import grainUrl from './grain.png';
 
 const settingWatchers = new Set<() => void>();
 let settingObserver: MutationObserver | undefined;
+let appearancePreferences: MediaQueryList | undefined;
+const refreshSurfaces = () => { for (const watcher of settingWatchers) watcher(); };
 const pendingSurfaces = new Set<() => void>();
 let surfaceFrame = 0;
 function scheduleSurface(render: () => void) {
@@ -16,16 +18,21 @@ function scheduleSurface(render: () => void) {
 }
 function watchSetting(update: () => void) {
   if (!settingWatchers.size) {
+    appearancePreferences = matchMedia('(prefers-reduced-transparency: reduce), (forced-colors: active)');
+    appearancePreferences.addEventListener('change', refreshSurfaces);
     const root = document.querySelector('[data-coast-glass]');
     if (root) {
-      settingObserver = new MutationObserver(() => { for (const watcher of settingWatchers) watcher(); });
+      settingObserver = new MutationObserver(refreshSurfaces);
       settingObserver.observe(root, { attributes: true, attributeFilter: ['data-coast-glass'] });
     }
   }
   settingWatchers.add(update);
   return () => {
     settingWatchers.delete(update);
-    if (!settingWatchers.size) { settingObserver?.disconnect(); settingObserver = undefined; }
+    if (!settingWatchers.size) {
+      settingObserver?.disconnect(); settingObserver = undefined;
+      appearancePreferences?.removeEventListener('change', refreshSurfaces); appearancePreferences = undefined;
+    }
   };
 }
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -36,7 +43,7 @@ export type LiquidGlassOptions = {
   surface?: Partial<GlassSurface>;
   fallback?: Partial<GlassSurface>;
   renderer?: 'auto' | 'css';
-  /** UI reference previews are independent of the user's experimental glass switch. */
+  /** UI reference previews are independent of the user's Liquid glass preference. */
   preview?: boolean;
 };
 
@@ -111,13 +118,10 @@ function supported() {
     CSS.supports('-webkit-backdrop-filter', 'url("#coast-liquid-glass-support-test")');
   if (!declaresSvgBackdrop) return false;
 
-  // Gecko accepts the syntax, and supports some SVG backdrop filters, but it
-  // still ignores filters such as Coast's when feImage supplies the generated
-  // displacement map (Mozilla bug 1961378). Do not let that false-positive
-  // replace the working CSS frost fallback with an invisible filter.
-  const isGecko =
-    /Gecko\//.test(navigator.userAgent) && !/(Chrome|Chromium|Edg)\//.test(navigator.userAgent);
-  return !isGecko;
+  // Syntax acceptance does not prove SVG displacement is painted. WebKit bug
+  // 245510 and Gecko bug 1961378 affect this exact feImage/displacement pipeline.
+  // Limit the optical enhancement to Blink; every engine keeps CSS blur.
+  return /(?:Chrome|Chromium|Edg|OPR)\//.test(navigator.userAgent) && !/iPad|iPhone|iPod/.test(navigator.userAgent);
 }
 
 /** The hard-pinned Coast SVG backdrop material. Unsupported browsers retain stylesheet frost. */
@@ -159,15 +163,18 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       grain.style.backgroundSize = `${128 * surface.noiseScale}px ${128 * surface.noiseScale}px`;
       grain.style.backgroundColor = surface.noiseColor;
       grain.style.mixBlendMode = surface.noiseBlend;
-      grain.style.maskImage = surface.noiseCoverage === 'edges'
+      const mask = surface.noiseCoverage === 'edges'
         ? 'radial-gradient(closest-side, transparent 40%, black 100%)'
         : 'none';
+      grain.style.setProperty('-webkit-mask-image', mask);
+      grain.style.maskImage = mask;
     } else {
       grain?.remove();
       grain = undefined;
     }
     const values = {
       fill: `color-mix(in srgb, ${surface.tint} ${surface.fillOpacity}%, transparent)`,
+      'solid-fill': variant === 'glassLight' ? 'var(--white)' : 'var(--surface-hover)',
       filter: `blur(${surface.blur}px) saturate(${surface.saturation}%) brightness(${surface.brightness}%)`,
       stroke: surface.strokeColor,
       'stroke-opacity': `${surface.strokeOpacity}%`,
@@ -190,11 +197,13 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     }
   }
   function clearNative(state: string) {
-    node.style.removeProperty('-webkit-backdrop-filter');
-    node.style.removeProperty('backdrop-filter');
     node.classList.remove('liquid-glass-active');
     node.dataset.coastGlassRenderer = state;
     applySurface(false);
+    // Literal values also avoid Safari 18/Sonoma's backdrop CSS-variable bug (297620).
+    const filter = node.style.getPropertyValue('--coast-glass-filter');
+    node.style.setProperty('-webkit-backdrop-filter', filter);
+    node.style.setProperty('backdrop-filter', filter);
     definition?.remove();
     definition = null;
   }
@@ -202,6 +211,7 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     const options = settings();
     const enabled =
       nativeSupported &&
+      !appearancePreferences?.matches &&
       options.renderer !== 'css' &&
       options.refraction > 0 &&
       options.enabled !== false &&

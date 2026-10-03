@@ -39,6 +39,7 @@
     busy = $state(false),
     error = $state('');
   let changing=$state<Instance|null>(null),impact=$state<SourceImpact|null>(null);
+  let deleting = $state<Instance | null>(null);
   function edit(instance: Instance | null) {
     editing = instance;
     provider = instance?.provider ?? 'tmdb';
@@ -93,6 +94,27 @@
       busy = false;
     }
   }
+  async function remove(instance: Instance, approved = false) {
+    if (busy) return;
+    busy = true;
+    error = '';
+    try {
+      if (!approved) {
+        impact = instance.provider === 'jellyfin'
+          ? await api(`providers/${instance.id}/instance-source-preview`, undefined, 'GET') : null;
+        deleting = instance;
+        return;
+      }
+      await change(`providers/${instance.id}`, { previewId: impact?.id }, 'DELETE');
+      deleting = null;
+      impact = null;
+      notifyAction(`${instance.name} deleted.`);
+    } catch (e) {
+      error = message(e);
+    } finally {
+      busy = false;
+    }
+  }
 </script>
 
 <div class="stack form-width">
@@ -124,6 +146,9 @@
               keepOpen={false}
               onclick={() => void toggle(instance)}
               >{instance.enabled ? 'Disable integration' : 'Enable integration'}</Button>
+            <div class="menu-divider" role="separator"></div>
+            <Button item danger keepOpen={false} onclick={() => void remove(instance)}
+              >Delete integration</Button>
           </Button>{/snippet}
       </Heading>
       <p class="small">{displayLabel(instance.provider)} · {instance.baseUrl}</p>
@@ -142,6 +167,24 @@
     {#each impact?.accounts??[] as account}<h3>{account.username}</h3><p>{account.removals.length} potential removals{account.uncertain?' · uncertain coverage or delivery':''} · {account.unresolved.length} unresolved identities.</p><ul>{#each account.removals.slice(0,60) as item}<li>{item.title}</li>{/each}</ul>{/each}
     {#if !impact?.accounts.length}<p>No active Trakt Collection export depends on this source.</p>{/if}
     <div class="row"><Button danger disabled={busy} onclick={()=>changing&&toggle(changing,true)}>Disable and leave Trakt entries</Button><Button  disabled={busy} onclick={()=>changing=null}>Keep enabled</Button></div>
+  </div>
+</Dialog>
+<Dialog open={!!deleting} onclose={() => { if (!busy) { deleting = null; impact = null; } }} title="Delete integration?">
+  <div class="stack">
+    <p>Delete {deleting?.name} and its account connections for everyone? Local titles, tracking and history stay in Coast. To use this integration again, add it and reconnect your accounts.</p>
+    {#if deleting?.provider === 'jellyfin'}
+      <p>Remote Trakt entries stay until their owner approves cleanup.</p>
+      {#each impact?.accounts ?? [] as account}
+        <h3>{account.username}</h3>
+        <p>{account.removals.length} potential removals{account.uncertain ? ' · uncertain coverage or delivery' : ''} · {account.unresolved.length} unresolved identities.</p>
+        <ul>{#each account.removals.slice(0,60) as item}<li>{item.title}</li>{/each}</ul>
+      {/each}
+    {/if}
+    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+    <div class="row">
+      <Button danger disabled={busy} onclick={() => deleting && remove(deleting, true)}>Delete integration</Button>
+      <Button disabled={busy} onclick={() => { deleting = null; impact = null; }}>Cancel</Button>
+    </div>
   </div>
 </Dialog>
 <Dialog bind:open title={editing ? 'Edit integration' : 'Add an integration'}>

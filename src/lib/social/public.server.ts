@@ -1,11 +1,14 @@
 import {getSql} from '$lib/server/db';
-import {getConfig} from '$lib/server/config';
+import {getConfig,type CoastConfig} from '$lib/server/config';
 import {AppError} from '$lib/server/security/errors';
 import type {MediaView} from '$lib/ui/types';
 import {tmdbArtworkUrl} from '$lib/providers/tmdb/artwork.server';
-export function isPublicReadPath(path:string) {
- if(/^\/api\/v1\/profile\/avatar\/[0-9a-f-]{36}\/[0-9a-f]{64}$/.test(path))return true;
- return path==='/'||path==='/discover'||path==='/search'||/^\/profile\/[^/]+$/.test(path)||/^\/media\/[0-9a-f-]{36}$/.test(path)||/^\/music\/work\/[0-9a-f-]{36}$/.test(path)||/^\/games\/[0-9a-f-]{36}$/.test(path)||/^\/api\/v1\/profile\/(activity|section)$/.test(path)||/^\/api\/v1\/artwork\/tmdb\/(w342|w780|w1280|original)\/[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp)$/.test(path);
+export function isPublicReadPath(path:string,access:CoastConfig['siteAccess']) {
+ if(access==='private')return false;
+ // Profile reads keep their own audience checks; only their safe image dependencies are public.
+ const profile=/^\/profile\/[^/]+$/.test(path)||/^\/api\/v1\/profile\/(activity|section)$/.test(path)||/^\/api\/v1\/profile\/avatar\/[0-9a-f-]{36}\/[0-9a-f]{64}$/.test(path)||/^\/api\/v1\/artwork\/tmdb\/(w342|w780|w1280|original)\/[a-zA-Z0-9_-]+\.(jpg|jpeg|png|webp)$/.test(path);
+ if(access==='public-profiles')return profile;
+ return profile||path==='/'||path==='/discover'||path==='/search'||/^\/media\/[0-9a-f-]{36}$/.test(path)||/^\/music\/work\/[0-9a-f-]{36}$/.test(path)||/^\/games\/[0-9a-f-]{36}$/.test(path);
 }
 export async function publicMedia(ids?:string[]):Promise<MediaView[]> {
  if(ids?.length===0)return [];

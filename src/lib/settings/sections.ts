@@ -40,7 +40,7 @@ export const settingsDescriptions: Record<string, string> = {
 export const preferenceFields = {
   collection: ['collection'],
   privacy:['social'],
-  appearance: ['shareDemand', 'fullWidth', 'originalTitles', 'monochromeMissing', 'region', 'notificationsSilenced'],
+  appearance: ['shareDemand', 'fullWidth', 'liquidGlass', 'originalTitles', 'monochromeMissing', 'region', 'notificationsSilenced'],
   playback: ['listenThreshold', 'subtitlesAlways', 'subtitleLanguages', 'subtitlePrompt'],
   connections: ['syncConflictWinner'],
 } as const;

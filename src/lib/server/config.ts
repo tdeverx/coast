@@ -4,7 +4,7 @@ import { diagnosticStore } from './diagnostics';
 import { getSql } from './db';
 
 export const configSchema = v.object({
-  siteAccess: v.optional(v.picklist(['private','public-read-only']),'private'),
+  siteAccess: v.optional(v.picklist(['private','public-profiles','public-read-only']),'private'),
   experimentalFeatures: v.boolean(),
   experimentalDynamicForYou: v.optional(v.boolean(),false),
   experimentalPlanning: v.optional(v.boolean(),false),

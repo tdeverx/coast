@@ -47,6 +47,29 @@ export function readExperimentalEffects(value: unknown): ExperimentalEffects {
 type LayerName = 'sheen' | 'vignette' | 'edge' | 'frost' | 'interaction';
 export function experimentalMaterial(node: HTMLElement, options: { enabled: boolean; effects: ExperimentalEffects }) {
   const layers = new Map<LayerName, HTMLSpanElement>();
+  let base: HTMLSpanElement | undefined;
+  function syncBase() {
+    if (!base) return;
+    // Keep base and patch as siblings: a filtered ancestor would cut the patch's
+    // backdrop off at the ancestor (Filter Effects 2, Backdrop Root).
+    const filter = node.style.getPropertyValue('backdrop-filter') || 'var(--coast-glass-filter)';
+    base.style.setProperty('-webkit-backdrop-filter', filter);
+    base.style.setProperty('backdrop-filter', filter);
+  }
+  const surfaceObserver = new MutationObserver(syncBase);
+  surfaceObserver.observe(node, { attributes: true, attributeFilter: ['style'] });
+  function frostBase(enabled: boolean) {
+    node.classList.toggle('coast-material-frost', enabled);
+    if (!enabled) { base?.remove(); base = undefined; return; }
+    if (!base) {
+      base = document.createElement('span');
+      base.dataset.materialEffect = 'base';
+      base.setAttribute('aria-hidden', 'true');
+      Object.assign(base.style, { position: 'absolute', inset: '0', zIndex: '-2', borderRadius: 'inherit', pointerEvents: 'none', background: 'var(--coast-glass-fill)' });
+      node.prepend(base);
+    }
+    syncBase();
+  }
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const touch = matchMedia('(hover: none)');
   let hovering = false, focused = false, x = 50, y = 50, frame = 0;
@@ -73,6 +96,7 @@ export function experimentalMaterial(node: HTMLElement, options: { enabled: bool
   }
   function render() {
     const e = options.effects;
+    frostBase(options.enabled && e.frostAmount > 0 && e.frostBlur > 0);
     const sheen = layer('sheen', e.sheenAmount);
     if (sheen) sheen.style.background = `linear-gradient(${e.sheenAngle}deg, transparent ${50 - e.sheenSpread / 2}%, var(--white) 50%, transparent ${50 + e.sheenSpread / 2}%)`;
     const vignette = layer('vignette', e.vignetteAmount);
@@ -84,11 +108,18 @@ export function experimentalMaterial(node: HTMLElement, options: { enabled: bool
       maskImage: 'linear-gradient(black, black), linear-gradient(black, black)',
       maskClip: 'content-box, border-box', maskComposite: 'exclude',
     });
+    if (edge) {
+      edge.style.setProperty('-webkit-mask-image', 'linear-gradient(black, black), linear-gradient(black, black)');
+      edge.style.setProperty('-webkit-mask-clip', 'content-box, border-box');
+      edge.style.setProperty('-webkit-mask-composite', 'xor');
+      edge.style.maskComposite = 'exclude';
+    }
     const frost = layer('frost', e.frostAmount);
     if (frost) Object.assign(frost.style, {
       backdropFilter: `blur(${e.frostBlur}px)`, webkitBackdropFilter: `blur(${e.frostBlur}px)`,
       maskImage: `radial-gradient(ellipse ${e.frostSpread}% ${e.frostSpread}% at ${e.frostX}% ${e.frostY}%, black 10%, transparent 100%)`,
     });
+    if (frost) frost.style.setProperty('-webkit-mask-image', frost.style.maskImage);
     layer('interaction', e.interactionAmount); interaction();
   }
   function move(event: PointerEvent) {
@@ -110,6 +141,7 @@ export function experimentalMaterial(node: HTMLElement, options: { enabled: bool
   return {
     update(next: typeof options) { options = next; render(); },
     destroy() {
+      surfaceObserver.disconnect(); frostBase(false);
       cancelAnimationFrame(frame); for (const element of layers.values()) element.remove(); layers.clear();
       node.removeEventListener('pointermove', move); node.removeEventListener('pointerleave', leave);
       node.removeEventListener('focusin', focus); node.removeEventListener('focusout', blur);

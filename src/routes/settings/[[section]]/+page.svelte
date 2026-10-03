@@ -254,6 +254,13 @@
             <h3>Display</h3>
             <div class="setting">
               <div>
+                <h3>Liquid glass</h3>
+                <p>Use glass effects where supported. Turn off to use the blur fallback.</p>
+              </div>
+              <input type="checkbox" aria-label="Liquid glass" bind:checked={prefs.liquidGlass} />
+            </div>
+            <div class="setting">
+              <div>
                 <h3>Full-width content</h3>
                 <p>
                   Let your library make the most of the screen. Heroes always stay edge-to-edge.
@@ -783,7 +790,8 @@
           <fieldset class="panel stack" id="features" disabled={busy}>
             <legend class="sr-only">Experimental features</legend>
             <h3>Experimental features</h3>
-            <label class="field">Website access<select bind:value={policy.siteAccess}><option value="private">Private · sign-in required</option><option value="public-read-only">Public read-only · profiles, Discover and media details</option></select></label>
+            <label class="field">Website access<select bind:value={policy.siteAccess}><option value="private">Private · sign-in required</option><option value="public-profiles">Private site · public profiles only</option><option value="public-read-only">Public read-only · profiles, Discover and media details</option></select></label>
+            <p class="small">Public profile access respects each user’s privacy settings. Friends-only and private sections still require permission.</p>
             <label class="field">Registration<select bind:value={policy.registrationMode}><option value="invite">Invite code required</option><option value="open">Open sign-ups</option></select></label>
             <label class="field">Required connection<select bind:value={policy.registrationProvider}><option value="jellyfin">Jellyfin</option><option value="trakt">Trakt</option><option value="either">Jellyfin or Trakt</option><option value="none">None</option></select></label>
             <p class="small">New accounts complete their selected data imports before entering Coast. Provider availability is managed in Integrations.</p>
