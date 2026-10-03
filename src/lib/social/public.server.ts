@@ -19,7 +19,9 @@ export async function publicDetails(id:string) {
  const related=await getSql()`select child_id from media_relationships where parent_id=${id} and kind in ('contains','collection','franchise') union select media_id from episodes where show_id=${id} or season_id=${id} union select media_id from seasons where show_id=${id} limit 500`;
  const children=await publicMedia(related.map((r:{child_id:string})=>r.child_id));
  const parentIds=await getSql()`select parent_id from media_relationships where child_id=${id} union select show_id from episodes where media_id=${id}`;
- return {item,episodes:children.filter(m=>m.kind==='episode'),members:children.filter(m=>!['season','episode'].includes(m.kind)),parents:await publicMedia(parentIds.map((r:{parent_id:string})=>r.parent_id)),cast:[],seasons:[],next:null,related:[],collections:[],availability:[],history:[]};
+ const seasonRows=await getSql()<{mediaId:string;showId:string;seasonNumber:number}[]>`select media_id as "mediaId",show_id as "showId",season_number as "seasonNumber" from seasons where show_id=${id} order by season_number,media_id limit 500`;
+ const seasonItems=new Map((await publicMedia(seasonRows.map((season:{mediaId:string})=>season.mediaId))).map(season=>[season.id,season]));
+ return {item,episodes:children.filter(m=>m.kind==='episode'),members:children.filter(m=>!['season','episode'].includes(m.kind)),parents:await publicMedia(parentIds.map((r:{parent_id:string})=>r.parent_id)),cast:[],seasons:seasonRows.map(season=>({...season,title:seasonItems.get(season.mediaId)?.title,item:seasonItems.get(season.mediaId)})),next:null,related:[],collections:[],availability:[],history:[]};
 }
 
 /** Guest searches never consult private provider accounts or expose server artwork. */

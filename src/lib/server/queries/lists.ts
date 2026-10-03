@@ -97,9 +97,10 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
       where (child_media.kind = 'movie' or e.media_id is not null) and not coalesce(e.is_special, false)
         and (child.position_seconds > 0 or (child.watched and coalesce(child.duration_seconds, e.runtime_minutes * 60, child_media.runtime_minutes * 60, 0) > 0))
     )))`;
-    const completed=sql`coalesce(${s.trackingState.watched},false) or exists(select 1 from music_listens ml where ml.user_id=${userId} and ml.track_id=${s.works.id}) or exists(select 1 from game_playthroughs gp where gp.user_id=${userId} and gp.game_id=${s.works.id} and gp.status='completed')`;
-    const dropped=sql`coalesce(${s.trackingState.dropped},false) or exists(select 1 from game_playthroughs gp where gp.user_id=${userId} and gp.game_id=${s.works.id} and gp.status='dropped')`;
-    const started=sql`(${progress}) or exists(select 1 from music_progress mp where mp.user_id=${userId} and mp.track_id=${s.works.id} and mp.position_seconds>0) or exists(select 1 from game_playthroughs gp where gp.user_id=${userId} and gp.game_id=${s.works.id} and gp.status in ('in-progress','paused'))`;
+    const gameStatus=sql`(select gp.status from game_playthroughs gp where gp.user_id=${userId} and gp.game_id=${s.works.id} order by gp.created_at desc,gp.id desc limit 1)`;
+    const completed=sql`coalesce(${s.trackingState.watched},false) or exists(select 1 from music_listens ml where ml.user_id=${userId} and ml.track_id=${s.works.id}) or coalesce(${gameStatus}='completed',false)`;
+    const dropped=sql`coalesce(${s.trackingState.dropped},false) or coalesce(${gameStatus}='dropped',false)`;
+    const started=sql`(${progress}) or exists(select 1 from music_progress mp where mp.user_id=${userId} and mp.track_id=${s.works.id} and mp.position_seconds>0) or coalesce(${gameStatus} in ('in-progress','paused'),false)`;
     const watchlistFilter =
       input.filter === 'complete'
         ? sql`(${completed})`

@@ -1,9 +1,10 @@
 <script lang="ts">
   import '../app.css';
+  import MediaModal from '$lib/experiments/MediaModal.svelte';
   import {closeNotifications} from '$lib/notifications/client.svelte';
   import {closeFriends} from '$lib/social/panel.svelte';
   import {startPresence,userStatus} from '$lib/social/status.svelte';
-  import {syncedPlayer,pollSynced,restoreSynced,leaveSynced} from '$lib/playback/synced/client.svelte';
+  import {syncedPlayer,pollSynced,restoreSynced} from '$lib/playback/synced/client.svelte';
   import { installBrowserDiagnostics } from '$lib/ui/diagnostics';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
@@ -24,10 +25,9 @@
   let notificationLoading=false,friendsLoading=false;
   $effect(()=>{if(notificationOpen&&!NotificationInbox&&!notificationLoading){notificationLoading=true;void import('$lib/ui/components/NotificationInbox.svelte').then(module=>NotificationInbox=module.default).finally(()=>notificationLoading=false);}});
   $effect(()=>{if(friendsOpen&&!FriendsPanel&&!friendsLoading){friendsLoading=true;void import('$lib/ui/components/FriendsPanel.svelte').then(module=>FriendsPanel=module.default).finally(()=>friendsLoading=false);}});
-  const watching = $derived(!!data.user && !!player.session && player.session.mediaType!=='audio' && !player.browsing);
+  const watching = $derived((!!data.user || page.url.pathname === '/share') && !!player.session && player.session.mediaType!=='audio' && !player.browsing);
   onNavigate(async (navigation) => {
-    if(player.session&&player.session.mediaType!=='audio'&&syncedPlayer.room)await leaveSynced();
-    if (player.session && player.session.mediaType!=='audio' && !player.paused) pausePlayback();
+    if (player.session && player.session.mediaType!=='audio' && !syncedPlayer.room && !player.paused) pausePlayback();
     const hero = document.querySelector<HTMLElement>('[data-hero-id]');
     if (
       !content ||
@@ -100,9 +100,9 @@
   class:audio-active={player.session?.mediaType === 'audio'}
   class:watching
 >
-  <PersistentPlayer /><MediaHero mode="player" />
+  {#if data.user&&data.experiments.mediaModal}<MediaModal />{/if}<PersistentPlayer /><MediaHero mode="player" />
   {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
-  {#if (data.user || data.publicRead) && page.url.pathname !== '/onboarding'}<Header
+  {#if (data.user || data.publicRead) && page.url.pathname !== '/onboarding' && page.url.pathname !== '/share'}<Header
       user={data.user}
       unread={data.unreadNotifications}
       friendRequests={data.friendRequestCount}

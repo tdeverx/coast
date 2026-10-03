@@ -497,6 +497,7 @@ export async function trackInTransaction(
   const result = await applyChange(tx, userId, input);
   if (result.progressChanged && !result.duplicate && !result.reviewRequired)
     await refreshAncestors(tx, userId, [input.mediaId]);
+  if(result.changed&&!result.reviewRequired&&!result.duplicate)await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,['collect','watchlist','favourite'].includes(input.action)?'relationship.changed':'tracking.changed',{workId:input.mediaId,action:input.action,...(input.value!==undefined?{value:input.value}:{}),...(input.positionSeconds!==undefined?{positionSeconds:input.positionSeconds}:{})});
   return result;
 }
 export const bulkTrackingInputSchema = v.object({

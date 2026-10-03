@@ -12,6 +12,7 @@ import {
 } from '$lib/server/db/schema';
 import { encryptCredential } from '$lib/server/security/credentials';
 import { getInstance } from '$lib/providers/instances.server';
+import { maintenanceKinds } from '$lib/providers/tasks';
 
 export async function connectionFor(userId: string, connectionId: string, provider?: string) {
   const [connection] = await getDb()
@@ -72,6 +73,10 @@ export async function saveConnection(
         },
       })
       .returning();
+    // A verified reconnect supersedes failed reads, while outbound intent keeps its order.
+    const superseded=await tx.update(outboxActions).set({state:'cancelled',lastError:'Superseded by a verified account reconnect.',updatedAt:new Date()})
+      .where(and(eq(outboxActions.connectionId,connection.id),eq(outboxActions.accountGeneration,connection.accountGeneration),eq(outboxActions.state,'failed'),sql`${outboxActions.kind} in (${sql.join(maintenanceKinds.map(kind=>sql`${kind}`),sql`,`)})`)).returning({id:outboxActions.id});
+    for(const action of superseded)await tx.execute(sql`delete from notifications where user_id=${userId} and source_key=${`outbox:${action.id}`}`);
     await tx
       .delete(userIdentities)
       .where(

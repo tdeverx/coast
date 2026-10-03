@@ -22,6 +22,8 @@
   import { playbackTime } from '$lib/playback/time';
   import { playMedia } from '$lib/playback/client.svelte';
   import { usePlayback } from '$lib/playback/context.svelte';
+  import ShareAction from '$lib/sharing/ShareAction.svelte';
+  import PlanAction from '$lib/experiments/PlanAction.svelte';
   import Button from './Button.svelte';
   import Icon from './Icon.svelte';
 
@@ -121,6 +123,7 @@
         ? 'Resume'
         : 'Play'
   );
+  let planningOpen=$state(false),sharingOpen=$state(false);
   let playbackErrorOpen = $state(false),
     requestOpen = $state(false),
     editOpen = $state(false),
@@ -582,6 +585,8 @@
         onclick={startTarget}>{playLabel}</Button>
     {/if}
     {@render requestControls()}
+    {#if page.data.playbackSharing&&['movie','episode','track'].includes(active.kind)}<Button item icon="friends" onclick={()=>sharingOpen=true}>Share</Button>{/if}
+    {#if page.data.experiments?.planning}<Button item icon="list" onclick={()=>planningOpen=true}>Plan</Button>{/if}
     {#if item.recommendationIds?.length}<WorkActions section="recommendations" workId={active.id} recommendationIds={item.recommendationIds} disabled={busy||loading} />{/if}
     <WorkActions section="social" workId={active.id} disabled={busy||loading} />
     {#if ['movie','episode'].includes(active.kind)}<Button item icon="clock" disabled={busy||loading||!active.runtimeMinutes} onclick={checkIn}>Check in</Button>{/if}
@@ -876,6 +881,8 @@
   <Dialog bind:open={playbackErrorOpen} title="Playback unavailable"
     ><RowFeedback error={error} tag="p" class="" /></Dialog
   >
+  {#if page.data.experiments?.planning}<PlanAction bind:open={planningOpen} workId={active.id} title={active.title} partyAllowed={page.data.experimentalFeatures&&['movie','episode','track'].includes(active.kind)}/>{/if}
+  {#if page.data.playbackSharing}<ShareAction bind:open={sharingOpen} workId={active.id} title={active.title}/>{/if}
   <MetadataEditor mediaId={active.id} admin={editAdmin} bind:open={editOpen} />
   <Dialog bind:open={confirmOpen} title={confirmation?.title ?? 'Confirm change'}
     ><div class="stack">

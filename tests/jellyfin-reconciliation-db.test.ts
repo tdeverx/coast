@@ -56,6 +56,14 @@ run('late mappings deliver retained music intent independently of import opt-out
  expect(await db.select().from(s.reconciliationIntents).where(eq(s.reconciliationIntents.connectionId,connection.id))).toHaveLength(0);
  expect((await db.select().from(s.musicListens).where(eq(s.musicListens.userId,userId)))).toHaveLength(2);
 });
+run('resuming a traversal preserves its original observation watermark',async()=>{
+ const scanId=crypto.randomUUID(),startedAt=new Date(Date.now()-120000).toISOString(),db=getDb();
+ await db.update(s.syncCheckpoints).set({cursor:'0',scanId}).where(and(eq(s.syncCheckpoints.connectionId,connection.id),eq(s.syncCheckpoints.kind,'jellyfin-user')));
+ await settings({...connection.settings,userSync:{scanId,startedAt,processed:0,total:null,phase:'scanning'}});
+ await syncJellyfinUser(userId,connection.id,undefined,context());
+ const [checkpoint]=await db.select().from(s.syncCheckpoints).where(and(eq(s.syncCheckpoints.connectionId,connection.id),eq(s.syncCheckpoints.kind,'jellyfin-user')));
+ expect(checkpoint.completedAt?.toISOString()).toBe(startedAt);expect(checkpoint.scanId).toBeNull();
+});
 run('acknowledged listening counts do not reimport Coast plays; new remote counts import once and remain undated',async()=>{
  await settings({importPlayback:true,reconcileTracking:true});await syncJellyfinUser(userId,connection.id,undefined,context());
  expect(await getDb().select().from(s.musicListens).where(eq(s.musicListens.userId,userId))).toHaveLength(2);

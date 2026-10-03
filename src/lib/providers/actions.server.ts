@@ -32,6 +32,8 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
         throw error;
       }
     });
+  register('planning.reminder',async action=>(await import('$lib/experiments/planning.server')).remindPlan(action.userId,v.parse(uuid,action.payload.planId)));
+  register('webhook.deliver', async action => (await import('$lib/server/public-api/webhooks.server')).deliverWebhook(action));
   if (options.maintenance !== false) startProviderMaintenance();
   register('steam.sync', async action => (await import('$lib/providers/steam/sync.server')).syncSteam(action));
   register('steam.achievements', async action => (await import('$lib/providers/steam/sync.server')).syncSteamAchievements(action));

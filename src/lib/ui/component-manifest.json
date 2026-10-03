@@ -83,6 +83,11 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/experiments/DynamicFeed.svelte",
+      "src/lib/experiments/MediaModal.svelte",
+      "src/lib/experiments/PlanAction.svelte",
+      "src/lib/media/Details.svelte",
+      "src/lib/sharing/ShareAction.svelte",
       "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/ChoiceGroup.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
@@ -133,12 +138,12 @@
       "src/routes/library/+page.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/login/+page.svelte",
-      "src/routes/media/[id]/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/music/work/[id]/+page.svelte",
       "src/routes/onboarding/+page.svelte",
       "src/routes/people/[id]/+page.svelte",
+      "src/routes/planning/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/progress/+page.svelte",
       "src/routes/register/+page.svelte",
@@ -146,6 +151,7 @@
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte",
       "src/routes/setup/+page.svelte",
+      "src/routes/share/+page.svelte",
       "src/routes/synced/[id]/+page.svelte",
       "src/routes/taste/[friendId]/+page.svelte"
     ],
@@ -224,6 +230,10 @@
       "Button"
     ],
     "usedBy": [
+      "src/lib/experiments/MediaModal.svelte",
+      "src/lib/experiments/PlanAction.svelte",
+      "src/lib/media/Details.svelte",
+      "src/lib/sharing/ShareAction.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
       "src/lib/ui/components/ConflictList.svelte",
       "src/lib/ui/components/ConnectionCard.svelte",
@@ -242,7 +252,6 @@
       "src/lib/ui/components/SyncedControls.svelte",
       "src/routes/games/[id]/+page.svelte",
       "src/routes/lists/+page.svelte",
-      "src/routes/media/[id]/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/requests/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
@@ -255,6 +264,7 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/media/Details.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/MediaPage.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
@@ -264,7 +274,6 @@
       "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/games/[id]/+page.svelte",
-      "src/routes/media/[id]/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/requests/+page.svelte",
@@ -377,10 +386,12 @@
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/people/[id]/+page.svelte",
+      "src/routes/planning/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/requests/+page.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte",
+      "src/routes/share/+page.svelte",
       "src/routes/synced/[id]/+page.svelte",
       "src/routes/taste/[friendId]/+page.svelte"
     ],
@@ -390,6 +401,7 @@
     "path": "src/lib/ui/components/Icon.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/media/Details.svelte",
       "src/lib/ui/components/Button.svelte",
       "src/lib/ui/components/ConnectionCard.svelte",
       "src/lib/ui/components/EmptyState.svelte",
@@ -403,7 +415,6 @@
       "src/lib/ui/components/PlaybackTimeline.svelte",
       "src/lib/ui/components/Rating.svelte",
       "src/lib/ui/components/ReactionActions.svelte",
-      "src/routes/media/[id]/+page.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
@@ -476,9 +487,9 @@
       "WorkActions"
     ],
     "usedBy": [
+      "src/lib/media/Details.svelte",
       "src/lib/ui/components/MediaCard.svelte",
-      "src/lib/ui/components/MediaHero.svelte",
-      "src/routes/media/[id]/+page.svelte"
+      "src/lib/ui/components/MediaHero.svelte"
     ],
     "dynamicComposition": true
   },
@@ -530,7 +541,7 @@
       "Shelf"
     ],
     "usedBy": [
-      "src/routes/media/[id]/+page.svelte"
+      "src/lib/media/Details.svelte"
     ],
     "dynamicComposition": false
   },
@@ -559,10 +570,10 @@
       "Shelf"
     ],
     "usedBy": [
+      "src/lib/media/Details.svelte",
       "src/routes/games/[id]/+page.svelte",
       "src/routes/games/igdb/[instance]/[id]/+page.svelte",
       "src/routes/lists/+page.svelte",
-      "src/routes/media/[id]/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/music/[connection]/[id]/+page.svelte",
       "src/routes/music/work/[id]/+page.svelte",
@@ -793,8 +804,8 @@
       "RowFeedback"
     ],
     "usedBy": [
-      "src/lib/ui/components/WorkActions.svelte",
-      "src/routes/media/[id]/+page.svelte"
+      "src/lib/media/Details.svelte",
+      "src/lib/ui/components/WorkActions.svelte"
     ],
     "dynamicComposition": false
   },
@@ -848,6 +859,7 @@
       "Button"
     ],
     "usedBy": [
+      "src/lib/experiments/DynamicFeed.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
       "src/lib/ui/components/ConflictList.svelte",
       "src/lib/ui/components/ConnectionCard.svelte",
@@ -936,6 +948,8 @@
       "SegmentedControl"
     ],
     "usedBy": [
+      "src/lib/experiments/DynamicFeed.svelte",
+      "src/lib/media/Details.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/MediaPage.svelte",
       "src/routes/discover/+page.svelte",
@@ -944,9 +958,9 @@
       "src/routes/games/igdb/[instance]/[id]/+page.svelte",
       "src/routes/library/+page.svelte",
       "src/routes/lists/+page.svelte",
-      "src/routes/media/[id]/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/people/[id]/+page.svelte",
+      "src/routes/planning/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/progress/+page.svelte",
       "src/routes/requests/+page.svelte",

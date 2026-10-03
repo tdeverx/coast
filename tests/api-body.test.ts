@@ -33,8 +33,8 @@ test('Up next rejects malformed and non-object JSON consistently', async () => {
     const response = await upNext(body);
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({
-      error: 'The request must contain valid JSON.',
-      code: 'request_failed',
+      error: 'Supply a JSON object.',
+      code: 'invalid_input',
     });
   }
 });

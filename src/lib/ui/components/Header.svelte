@@ -69,6 +69,7 @@
           <Button item icon="user" href={profilePath(user.username)}>Profile</Button>
           <Button item icon="list" href="/lists">Your lists</Button>
           <Button item icon="request" href="/requests">Requests</Button>
+          {#if page.data.experiments.planning}<Button item icon="list" href="/planning">Planning · experimental</Button>{/if}
           <div class="menu-divider" role="separator"></div>
           <Button item icon="settings" href="/settings">Settings</Button>
           {#if user.role === 'admin'}<Button item icon="shield" href="/settings/admin"

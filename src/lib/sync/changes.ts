@@ -294,8 +294,8 @@ export async function enqueueSyncValueInTransaction(
     excludeConnectionId,
   });
 }
-export async function trackWithExports(userId: string, input: TrackingInput) {
-  return getDb().transaction(async (tx) => {
+export async function trackWithExports(userId: string, input: TrackingInput, transaction?: Transaction) {
+  const apply = async (tx: Transaction) => {
     const result = await trackInTransaction(tx, userId, input);
     if (
       result.changed &&
@@ -327,15 +327,18 @@ export async function trackWithExports(userId: string, input: TrackingInput) {
       await enqueueCollectionProjectionInTransaction(tx,userId);
     }
     return result;
-  });
+  };
+  return transaction ? apply(transaction) : getDb().transaction(apply);
 }
 export async function bulkTrackWithExports(
   userId: string,
-  input: v.InferInput<typeof bulkTrackingInputSchema>
+  input: v.InferInput<typeof bulkTrackingInputSchema>,
+  transaction?: Transaction
 ) {
-  return getDb().transaction(async (tx) => {
+  const apply = async (tx: Transaction) => {
     const result = await bulkTrackInTransaction(tx, userId, input);
     for (const event of result.events) {
+      await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'tracking.changed',{workId:event.mediaId,action:event.action});
       await enqueueJellyfinChange(tx, userId, event.mediaId, event.action);
       if (event.action === 'progress') continue;
       await enqueueTraktChangeInTransaction(tx, userId, {
@@ -347,13 +350,15 @@ export async function bulkTrackWithExports(
     }
     if(result.changed)await enqueueCollectionProjectionInTransaction(tx,userId);
     return result;
-  });
+  };
+  return transaction ? apply(transaction) : getDb().transaction(apply);
 }
 export async function rateWithExports(
   userId: string,
-  input: v.InferInput<typeof ratingInputSchema>
+  input: v.InferInput<typeof ratingInputSchema>,
+  transaction?: Transaction
 ) {
-  return getDb().transaction(async (tx) => {
+  const apply = async (tx: Transaction) => {
     const result = await rateInTransaction(tx, userId, input);
     if (result.changed)
       await enqueueTraktChangeInTransaction(tx, userId, {
@@ -364,7 +369,8 @@ export async function rateWithExports(
       });
     if(result.changed)await enqueueCollectionProjectionInTransaction(tx,userId);
     return result.rating;
-  });
+  };
+  return transaction ? apply(transaction) : getDb().transaction(apply);
 }
 
 /** Called under the user's tracking lock so state and playback provider intent commit together. */

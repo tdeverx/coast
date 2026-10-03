@@ -1,3 +1,4 @@
+import {listShares} from '$lib/sharing/service.server';
 import {listApiTokens} from '$lib/server/public-api/tokens.server';
 import { collectionPreferences } from '$lib/collection/preferences';
 import {listInvites} from '$lib/server/auth/onboarding';
@@ -37,6 +38,7 @@ export const load = (async ({locals, params, depends, url}) => {
   const config = await getConfig();
   return {
     section,
+    playbackLinks:section==='playback'?await listShares(locals.user):[],
     apiTokens:section==='api'?await listApiTokens(locals.user):[],
     invites: section==='users'?await listInvites(locals.user):[],
     hasLocalPassword:

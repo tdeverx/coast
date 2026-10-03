@@ -1,3 +1,9 @@
+import { readJsonBody as readBody } from '$lib/server/security/request-body';
+import { provisioningAuthority } from '$lib/providers/jellyfin/provisioning.server';
+import { createShare,listShares,revokeShare } from '$lib/sharing/service.server';
+import { planningData,createPlan,cancelPlan,completePlan } from '$lib/experiments/planning.server';
+import { dynamicFeed } from '$lib/experiments/dynamic.server';
+import { experimentalRows } from '$lib/experiments/recommendations.server';
 import {playbackBackground} from '$lib/ui/artwork-priority';
 import { uuid, text } from './context.server';
 import * as synced from '$lib/playback/synced/service.server';
@@ -63,37 +69,6 @@ import { handleQueue } from './queue.server';
 import { handleSettings } from './settings.server';
 import { handleAdmin } from './admin.server';
 
-async function readBody(request: Request, maxBytes = 1_048_576): Promise<Record<string, unknown>> {
-  if (!request.headers.get('content-type')?.startsWith('application/json'))
-    throw new AppError(415, 'Send an application/json request.');
-  const reader = request.body?.getReader();
-  if (!reader) return {};
-  const chunks: Uint8Array[] = [];
-  let length = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    length += value.byteLength;
-    if (length > maxBytes) {
-      await reader.cancel();
-      throw new AppError(413, 'This request is too large.');
-    }
-    chunks.push(value);
-  }
-  const bytes = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  try {
-    const value: unknown = JSON.parse(new TextDecoder().decode(bytes));
-    if (Array.isArray(value)) throw new Error('Expected a JSON object.');
-    return v.parse(v.record(v.string(), v.unknown()), value);
-  } catch {
-    throw new AppError(400, 'The request must contain valid JSON.');
-  }
-}
 export const handler: RequestHandler = async (event) => {
   const { request, url, locals } = event;
   const path = (event.params.path ?? '').split('/');
@@ -124,10 +99,19 @@ export const handler: RequestHandler = async (event) => {
         ? (await profileUser(url.searchParams.get('username')!)).id
         : uid;
     if(path[0]==='admin' && path[1]==='invites') {
+      if(path.length===3&&path[2]==='libraries'&&method==='GET'){requireAdmin(user);const context=await provisioningAuthority(uid,uuid(url.searchParams.get('connectionId')??''));return json(await context.adapter.virtualFolders());}
       if(method==='GET')return json(await listInvites(user));
       if(method==='POST')return json(await createInvite(user,await readBody(request)));
       if(method==='DELETE'&&path[2]){await revokeInvite(user,uuid(path[2]));return json({revoked:true});}
     }
+    if(path[0]==='sharing') {
+      if(path.length===1&&method==='GET')return json(await listShares(user));
+      if(path.length===1&&method==='POST')return json(await createShare(user,await readBody(request)));
+      if(path.length===2&&method==='DELETE'){await revokeShare(user,path[1]);return json({revoked:true});}
+      if(path.length===2&&path[1]==='sources'&&method==='GET'){const workId=uuid(url.searchParams.get('workId')??'');return json(await getSql()`select distinct c.id,i.name from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${uid} and a.media_id=${workId} and a.state='available' and c.status='connected' and i.enabled`);}
+    }
+    if(path[0]==='planning'){if(method==='POST'&&path.length===3&&path[2]==='complete')return json(await completePlan(uid,path[1]));if(path.length===1&&method==='GET')return json(await planningData(uid,url));if(path.length===1&&method==='POST')return json(await createPlan(uid,await readBody(request)));if(method==='DELETE'&&path.length===2)return json(await cancelPlan(uid,path[1]));}
+    if(path[0]==='experiments'&&path.length===2&&method==='GET')return json(await (path[1]==='feed'?dynamicFeed(uid,url):experimentalRows(uid,path[1],url)));
     if(path[0]==='synced') {
       if(path.length===1&&method==='GET'){
         const rooms=await synced.listRooms(uid),hosts=await social.friends(uid,1,'accepted',[...new Set(rooms.filter(room=>room.hostId!==uid).map(room=>room.hostId))]);

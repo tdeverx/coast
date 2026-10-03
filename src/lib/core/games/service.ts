@@ -74,17 +74,19 @@ export async function gameDetails(userId: string | null, gameId: string) {
   return { ...game, steam: Array.from(steam), category: 'game' as const, identities, playthroughs };
 }
 
-export async function createPlaythrough(userId: string, gameId: string, raw: unknown) {
+export async function createPlaythrough(userId: string, gameId: string, raw: unknown, transaction?: Transaction) {
   uuid(userId); uuid(gameId);
   const input = v.parse(playthroughInputSchema, raw);
-  return getDb().transaction(async (tx) => {
+  const apply=async(tx:Transaction)=>{
     const [game] = await tx.select({ id: games.id }).from(games).where(eq(games.id, gameId));
     if (!game) throw new DomainError('Game not found.', 404, 'not_found');
     const [row] = await tx.insert(gamePlaythroughs).values({ userId, gameId, ...input, startedAt: input.status === 'in-progress' ? new Date() : null }).returning();
     if(input.status==='planned')await trackInTransaction(tx,userId,{mediaId:gameId,action:'watchlist',value:true});
     await enqueueCollectionProjectionInTransaction(tx,userId);
+    await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'game.changed',{workId:gameId,playthroughId:row.id,action:'created',status:row.status});
     return { ...row, minutesPlayed: 0 };
-  });
+  };
+  return transaction?apply(transaction):getDb().transaction(apply);
 }
 
 async function ownedPlaythrough(tx: Transaction, userId: string, id: string) {
@@ -94,10 +96,10 @@ async function ownedPlaythrough(tx: Transaction, userId: string, id: string) {
   return row;
 }
 
-export async function updatePlaythrough(userId: string, id: string, raw: unknown) {
+export async function updatePlaythrough(userId: string, id: string, raw: unknown, transaction?: Transaction) {
   uuid(userId); uuid(id);
   const input = v.parse(playthroughUpdateSchema, raw);
-  return getDb().transaction(async (tx) => {
+  const apply=async(tx:Transaction)=>{
     const current = await ownedPlaythrough(tx, userId, id);
     const status = input.status ?? current.status;
     const now = new Date();
@@ -108,15 +110,17 @@ export async function updatePlaythrough(userId: string, id: string, raw: unknown
       updatedAt: now,
     }).where(eq(gamePlaythroughs.id, id)).returning();
     await enqueueCollectionProjectionInTransaction(tx,userId);
+    await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'game.changed',{workId:current.gameId,playthroughId:id,action:'updated',status:row.status,progressPercent:row.progressPercent});
     return row;
-  });
+  };
+  return transaction?apply(transaction):getDb().transaction(apply);
 }
 
-export async function logGameSession(userId: string, id: string, raw: unknown) {
+export async function logGameSession(userId: string, id: string, raw: unknown, transaction?: Transaction) {
   uuid(userId); uuid(id);
   const input = v.parse(gameSessionInputSchema, raw);
   const playedAt = new Date(input.playedAt);
-  return getDb().transaction(async (tx) => {
+  const apply=async(tx:Transaction)=>{
     const current = await ownedPlaythrough(tx, userId, id);
     // Check retries before lifecycle: completing the playthrough must not invalidate a retry.
     const [existing] = await tx.select().from(gameSessions).where(eq(gameSessions.id, input.id));
@@ -137,8 +141,10 @@ export async function logGameSession(userId: string, id: string, raw: unknown) {
       updatedAt: new Date(),
     }).where(eq(gamePlaythroughs.id, id));
     await enqueueCollectionProjectionInTransaction(tx,userId);
+    await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'game.changed',{workId:current.gameId,playthroughId:id,sessionId:session.id,action:'session',minutesPlayed:session.minutesPlayed,playedAt:session.playedAt.toISOString()});
     return session;
-  });
+  };
+  return transaction?apply(transaction):getDb().transaction(apply);
 }
 
 export async function playthroughDetails(userId: string, id: string, requestedPage = 1) {

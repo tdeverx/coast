@@ -140,7 +140,8 @@ async function resourceUrl(sessionId: string, path: string, expiresAt: Date) {
 }
 export async function startPlayback(
   userId: string,
-  input: unknown
+  input: unknown,
+  share?: { id: string; connectionId: string; expiresAt: Date; sourceId?: string }
 ): Promise<PlaybackView & { defaultSubtitleIndex: number | null; subtitlePrompt: boolean }> {
   const started = performance.now();
   void logDiagnostic('debug', 'playback.start');
@@ -171,6 +172,7 @@ export async function startPlayback(
     );
   const rows = available.filter(
     (row) =>
+      (!share || row.availability.connectionId === share.connectionId) &&
       (!data.sourceId ||
         row.availability.id === data.sourceId ||
         row.availability.sourceId === data.sourceId) &&
@@ -203,6 +205,7 @@ export async function startPlayback(
         maximum
       );
       for (const source of info.sources) {
+        if(share?.sourceId && source.id!==share.sourceId)continue;
         const sourceRow = rows.find(
           (r) =>
             r.availability.connectionId === row.availability.connectionId &&
@@ -304,17 +307,20 @@ export async function startPlayback(
     (!savedDuration || savedPosition / savedDuration < (mediaType==='audio'?1:0.9))
       ? savedPosition
       : 0;
-  const expiresAt = new Date(Date.now() + 24 * 3600000);
+  const expiresAt = share?.expiresAt ?? new Date(Date.now() + 24 * 3600000);
   const [viewer] = await getDb().select().from(users).where(eq(users.id,userId));
   // A user has one prepared/active playback session across audio and video.
   const session=await getDb().transaction(async tx=>{
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
-  await tx.execute(sql`update social_checkins set state='cancelled',updated_at=now() where user_id=${userId} and state='active'`);
-  await tx.update(playbackSessions).set({state:'stopped',updatedAt:new Date()}).where(and(eq(playbackSessions.userId,userId),sql`${playbackSessions.state}<>'stopped'`));
+  if (!share) {
+    await tx.execute(sql`update social_checkins set state='cancelled',updated_at=now() where user_id=${userId} and state='active'`);
+    await tx.update(playbackSessions).set({state:'stopped',updatedAt:new Date()}).where(and(eq(playbackSessions.userId,userId),sql`${playbackSessions.shareId} is null`,sql`${playbackSessions.state}<>'stopped'`));
+  }
   const [prepared] = await tx
     .insert(playbackSessions)
     .values({
       userId,
+      shareId: share?.id,
       mediaId: item.id,
       mediaType,
       listenThreshold:Math.min(100,Math.max(1,Math.trunc(viewer.settings.listenThreshold??50))),
@@ -414,7 +420,7 @@ export async function progressPlayback(userId: string, sessionId: string, input:
           gt(playbackSessions.expiresAt, new Date())
         )
       );
-    if (!session) throw new Error('This playback session has expired.');
+    if (!session || session.shareId) throw new Error('This playback session has expired.');
     const stop = data.event === 'stop' || data.event === 'ended';
     if(data.event==='start')await tx.execute(sql`update social_checkins set state='cancelled',updated_at=now() where user_id=${userId} and state='active'`);
     const firstStart = session.state === 'prepared' && data.event === 'start';
@@ -536,7 +542,8 @@ export async function rewriteHlsManifest(
 export async function streamPlayback(
   userId: string,
   sessionId: string,
-  request: Request
+  request: Request,
+  shareId?: string
 ): Promise<Response> {
   const [session] = await getDb()
     .select()
@@ -548,7 +555,7 @@ export async function streamPlayback(
         gt(playbackSessions.expiresAt, new Date())
       )
     );
-  if (!session || session.state === 'stopped')
+  if (!session || (session.shareId ?? undefined) !== shareId || session.state === 'stopped')
     return new Response('Playback session expired.', { status: 410 });
   context.enterWith(session.correlationId);
   void logDiagnostic('trace', 'playback.timing', { sessionId: session.id });

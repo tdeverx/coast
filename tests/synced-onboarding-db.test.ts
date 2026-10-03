@@ -69,6 +69,8 @@ run('Trakt onboarding requires both pinned import outcomes and leaves export pre
   expect((await onboardingStatus(session.user.id)).complete).toBe(false);
   await getSql()`update outbox_actions set state='failed' where id=${jobs['trakt.lists-import']}`;
   expect((await onboardingStatus(session.user.id)).imports.some(i=>i.state==='failed')).toBe(true);
+  await getSql()`update outbox_actions set payload=payload||${{_jobFailure:{code:'provider.authentication'}}}::jsonb where id=${jobs['trakt.lists-import']}`;
+  const rejected=await onboardingStatus(session.user.id);expect(rejected.reconnect).toBe(true);expect(rejected.traktLinked).toBe(false);
   await getSql()`update outbox_actions set state='succeeded' where id=${jobs['trakt.lists-import']}`;
   const [preferences]=await getSql()`select settings from provider_connections where id=${connection}`;expect(preferences.settings.sync).toEqual({history:false,lists:false});
   await getSql()`update provider_connections set account_generation=gen_random_uuid() where id=${connection}`;
@@ -146,6 +148,8 @@ run('onboarding ignores obsolete jobs and owner retries respect the service lane
  await getSql()`UPDATE outbox_actions SET state='cancelled' WHERE id=${busy}`;
  await retryOnboarding(ids[2]);expect((await onboardingStatus(ids[2])).progress?.state).toBe('pending');
  const [count]=await getSql()`SELECT count(*)::int AS total FROM outbox_actions WHERE user_id=${ids[2]} AND kind='jellyfin.sync' AND state IN ('pending','running')`;expect(count.total).toBe(1);
+ await getSql()`update outbox_actions set state='failed',payload=payload||${{_jobFailure:{code:'provider.authentication'}}}::jsonb where user_id=${ids[2]} and kind='jellyfin.sync' and state='pending'`;
+ const authentication=await onboardingStatus(ids[2]);expect(authentication.reconnect).toBe(true);expect(authentication.linked).toBe(false);expect(authentication.complete).toBe(false);
 });
 
 run('declining a session removes invitation access without starting playback',async()=>{
@@ -156,6 +160,11 @@ run('declining a session removes invitation access without starting playback',as
  await expect(roomState(ids[1],room.id)).rejects.toThrow('not found');
  const [notice]=await getSql()`select dismissed_at from notifications where user_id=${ids[1]} and source_key=${'synced:'+room.id}`;
  expect(notice.dismissed_at).not.toBeNull();
+ await inviteParticipant(ids[0],room.id,{friendId:ids[1]});
+ const [renewed]=await getSql()`select read_at,dismissed_at from notifications where user_id=${ids[1]} and source_key=${'synced:'+room.id}`;
+ expect(renewed.read_at).toBeNull();expect(renewed.dismissed_at).toBeNull();
+ await getSql()`update synced_rooms set created_at=now()-interval '25 hours' where id=${room.id}`;
+ await expect(inviteParticipant(ids[0],room.id,{friendId:ids[1]})).rejects.toThrow('ended');
 });
 
 run('idle parties invite and join before playback, then retain membership through video/music switches',async()=>{

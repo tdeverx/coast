@@ -118,10 +118,18 @@ suite('Steam account imports and ownership availability',()=>{
   test('changed accounts reject old work and same-account reconnect keeps provenance and opt-outs',async()=>{
     const old=await job(),[before]=await getDb().select().from(s.providerConnections).where(eq(s.providerConnections.id,connectionId));
     await disconnectProvider(owner,connectionId);
+    const failed=crypto.randomUUID(),outbound=crypto.randomUUID();
+    await getDb().insert(s.outboxActions).values([
+      {id:failed,userId:owner,connectionId,accountGeneration:before.accountGeneration,kind:'steam.sync',state:'failed',payload:{}},
+      {id:outbound,userId:owner,connectionId,accountGeneration:before.accountGeneration,kind:'fixture.outbound',state:'failed',payload:{}}
+    ]);
     await saveConnection(owner,instanceId,steamId,'Fixture',{});
     const [same]=await getDb().select().from(s.providerConnections).where(eq(s.providerConnections.id,connectionId));
     expect(same.syncAccountId).toBe(before.syncAccountId);expect(same.settings.importPlaytime).toBe(false);
     expect(same.accountGeneration).toBe(before.accountGeneration);
+    const recovered=await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.id,failed));
+    expect(recovered[0].state).toBe('cancelled');
+    expect((await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.id,outbound)))[0].state).toBe('failed');
     await syncSteam(await job());
     await disconnectProvider(owner,connectionId);remoteId='76561198000000002';
     await saveConnection(owner,instanceId,remoteId,'Another',{});

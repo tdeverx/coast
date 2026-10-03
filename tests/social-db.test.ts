@@ -1,7 +1,7 @@
 import {progressData} from '../src/lib/server/queries/progress';
 import {beforeAll,afterAll,test,expect} from 'bun:test';
 import {getSql} from '../src/lib/server/db';
-import {friends,requestFriend,changeFriend,react,recommend,respondRecommendation} from '../src/lib/social/service.server';
+import {friends,requestFriend,changeFriend,react,recommend,recommendations,respondRecommendation} from '../src/lib/social/service.server';
 import {activityFeed,workSocial,reactionSummary} from '../src/lib/social/queries.server';
 import {canView} from '../src/lib/social/privacy.server';
 import {startCheckin,cancelCheckin,completeCheckin} from '../src/lib/social/presence.server';
@@ -38,6 +38,8 @@ run('reaction replacement and recommendation responses retain one durable result
  await react(ids[0],{targetKind:'work',targetId:work,emoji:'❤️'});await react(ids[0],{targetKind:'work',targetId:work,emoji:'🔥'});
  const reactions=await getSql()`select emoji from social_reactions where user_id=${ids[0]} and target_id=${work}`;expect(reactions).toHaveLength(1);expect(reactions[0].emoji).toBe('🔥');
  const rec=await recommend(ids[0],{recipientId:ids[1],workId:work});expect((await recommend(ids[0],{recipientId:ids[1],workId:work})).id).toBe(rec.id);
+ expect((await recommendations(ids[0])).find(item=>item.id===rec.id)?.username).toBe(prefix+'-1');
+ expect((await recommendations(ids[1])).find(item=>item.id===rec.id)?.username).toBe(prefix+'-0');
  await respondRecommendation(ids[1],rec.id,{action:'save'});await respondRecommendation(ids[1],rec.id,{action:'save'});
  expect((await getSql()`select watchlist from tracking_state where user_id=${ids[1]} and media_id=${work}`)[0].watchlist).toBe(true);
 });

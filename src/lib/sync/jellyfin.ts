@@ -89,6 +89,7 @@ export async function libraryScanProgress(userId: string, connectionId: string, 
     total: current?.total ?? null,
     phase: current?.phase ?? 'scanning',
     error: job.lastError,
+    authenticationFailed: (job.payload._jobFailure as {code?:string}|undefined)?.code==='provider.authentication',
     attempts: job.attempts,
   };
 }
@@ -142,9 +143,13 @@ async function runJellyfinScan(
       Date.parse(String(previousScan?.recentCompletedAt ?? '')) || 0
     );
   const since = !full && completedAt ? new Date(completedAt - 60000).toISOString() : undefined;
-  const startedAt = new Date().toISOString();
+  const scanProgress=(scope==='library'?previousScan:connection.settings.userSync) as {scanId?:string;startedAt?:string}|undefined;
+  const retainedStart=scanProgress?.startedAt;
+  const startedAt = checkpoint?.scanId===scanProgress?.scanId && retainedStart && Number.isFinite(Date.parse(retainedStart)) ? retainedStart : new Date().toISOString();
+  // If progress no longer belongs to this checkpoint, restart rather than skip changed pages.
+  if(offset>0 && startedAt!==retainedStart)offset=0;
   async function report(processed: number, total: number | null, phase = 'scanning') {
-    const progress = { processed, total, phase, startedAt };
+    const progress = { processed, total, phase, startedAt, scanId };
     if (scope === 'library')
       await db
         .update(providerInstances)

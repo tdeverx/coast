@@ -1,6 +1,6 @@
 # Future external connector contract
 
-This is a design for the versioned HTTP/webhook boundary requested in the brief, not a shipped connector runtime. First-party adapters remain explicit in-process TypeScript. The browser `/api/v1` routes use Coast sessions. The shipped [read-only public API](public-api.md) uses separate personal tokens; it does not implement this provider connector protocol.
+This is a design for the versioned HTTP/webhook boundary requested in the brief, not a shipped connector runtime. First-party adapters remain explicit in-process TypeScript. The browser `/api/v1` routes use Coast sessions. The shipped [public API](public-api.md) uses separate personal tokens; it does not implement this provider connector protocol.
 
 A future connector is an external process registered by an administrator for a particular service instance. It receives a revocable, server-held credential with explicit capability grants and selected Coast user connections. A provider identity never implicitly grants access to another user. Coast owns canonical media IDs and decides whether imported tracking changes apply.
 

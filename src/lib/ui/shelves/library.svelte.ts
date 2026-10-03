@@ -69,6 +69,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
   const href = (number = 1) => paths(number).href;
   async function load(number = 1, append = false) {
     const path = paths(number).api;
+    if (!append) resource.replace({ items: [], page: 1, pages: 1, total: 0 });
     const result = await resource.load(async signal => {
       if (!preview) return api<Content>(path, undefined, 'GET', { signal });
       const result = await api<PresentationRow>(path, undefined, 'GET', { signal });

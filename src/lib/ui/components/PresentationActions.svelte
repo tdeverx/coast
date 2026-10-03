@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { page } from '$app/state';
+  import PlanAction from '$lib/experiments/PlanAction.svelte';
+  import ShareAction from '$lib/sharing/ShareAction.svelte';
   import RowFeedback from './RowFeedback.svelte';
   import { createWorkActions } from '$lib/ui/controls/work.svelte';
   import { onDestroy } from 'svelte';
@@ -19,6 +22,7 @@
 
   let { item }: { item: MediaCardPresentation } = $props();
   let menu = $state<Button>();
+  let planningOpen=$state(false),sharingOpen=$state(false);
   let music = $state<MusicItem>();
   let playthrough = $state<{ id: string; status: GameStatus }>();
   const work = createWorkActions(() => workId);
@@ -124,6 +128,8 @@
   <Button item icon="arrow" href={item.href}
     >Open {item.kind === 'game' ? 'game' : item.kind}</Button>
   {#if item.recommendationIds?.length}<WorkActions section="recommendations" workId={workId??item.id} recommendationIds={item.recommendationIds} disabled={busy||loading} />{/if}
+  {#if workId&&page.data.experiments?.planning}<Button item icon="list" onclick={()=>planningOpen=true}>Plan</Button>{/if}
+  {#if workId&&page.data.playbackSharing&&item.kind==='track'}<Button item icon="friends" onclick={()=>sharingOpen=true}>Share</Button>{/if}
   {#if workId}<WorkActions section="social" {workId} disabled={busy||loading} />{/if}
   {#if storedGame}<Button item icon="plus" href={gameAction('start')}
       >Start {playthrough ? 'another ' : ''}playthrough…</Button>{/if}
@@ -173,6 +179,9 @@
   {#if failure}<RowFeedback error={failure} tag="p" class="menu-status notice error" />
     <Button item icon="refresh" disabled={busy} onclick={load}>Try again</Button>{/if}
 </Button>
+
+{#if workId&&page.data.experiments?.planning}<PlanAction bind:open={planningOpen} {workId} title={item.title} partyAllowed={page.data.experimentalFeatures&&item.kind==='track'}/>{/if}
+{#if workId&&page.data.playbackSharing&&item.kind==='track'}<ShareAction bind:open={sharingOpen} {workId} title={item.title}/>{/if}
 
 <style>
   :global(.menu-status) {

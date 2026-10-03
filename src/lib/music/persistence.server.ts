@@ -49,11 +49,12 @@ export async function observeMusicAccess(userId: string, connectionId: string, i
 export async function recordMusicListen(tx: Transaction,userId: string,trackId:string,batchId:string,source='coast',occurredAt?:Date,known=true){
   const [event]=await tx.insert(musicListens).values({userId,trackId,batchId,source,occurredAt,occurredAtKnown:known}).onConflictDoNothing().returning();
   if(event) await tx.insert(musicProgress).values({userId,trackId,playCount:1}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{playCount:sql`${musicProgress.playCount}+1`,positionSeconds:0,updatedAt:new Date()}});
+  if(event)await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'music.listened',{workId:trackId,listenId:event.id,occurredAt:occurredAt?.toISOString()??event.occurredAt?.toISOString()??null,occurredAtKnown:known});
   return event;
 }
-export async function logMusic(userId:string,workId:string,input:unknown){
-  const data=v.parse(v.object({batchId:v.pipe(v.string(),v.uuid()),occurredAt:v.optional(v.pipe(v.string(),v.isoTimestamp()))}),input);
-  return getDb().transaction(async tx=>{
+export async function logMusic(userId:string,workId:string,input:unknown,transaction?:Transaction){
+  const data=v.parse(v.strictObject({batchId:v.pipe(v.string(),v.uuid()),occurredAt:v.optional(v.pipe(v.string(),v.isoTimestamp()))}),input);
+  const apply=async(tx:Transaction)=>{
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const [previous]=await tx.select().from(musicListenBatches).where(and(eq(musicListenBatches.userId,userId),eq(musicListenBatches.batchId,data.batchId)));
     if(previous){if(previous.workId!==workId)throw new DomainError('This listen batch belongs to another work.',409);return {added:0,batchId:data.batchId};}
@@ -71,6 +72,7 @@ export async function logMusic(userId:string,workId:string,input:unknown){
     }
     if (added) await enqueueCollectionProjectionInTransaction(tx, userId);
     return {added,batchId:data.batchId};
-  });
+  };
+  return transaction?apply(transaction):getDb().transaction(apply);
 }
 export function importedListenBatch(connectionId:string,itemId:string,index:number){const h=createHash('sha256').update(`${connectionId}:${itemId}:${index}`).digest('hex');return `${h.slice(0,8)}-${h.slice(8,12)}-4${h.slice(13,16)}-a${h.slice(17,20)}-${h.slice(20,32)}`;}

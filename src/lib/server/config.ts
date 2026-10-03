@@ -6,6 +6,11 @@ import { getSql } from './db';
 export const configSchema = v.object({
   siteAccess: v.optional(v.picklist(['private','public-read-only']),'private'),
   experimentalFeatures: v.boolean(),
+  experimentalDynamicForYou: v.optional(v.boolean(),false),
+  experimentalPlanning: v.optional(v.boolean(),false),
+  experimentalRecommendations: v.optional(v.boolean(),false),
+  experimentalMediaModal: v.optional(v.boolean(),false),
+  allowPlaybackSharing: v.optional(v.boolean(),false),
   registrationMode: v.picklist(['invite','open']),
   registrationProvider: v.picklist(['jellyfin','trakt','either','none']),
   diagnosticLevel: v.picklist(diagnosticLevels),
@@ -30,6 +35,8 @@ export type CoastConfig = v.InferOutput<typeof configSchema>;
 export const defaultConfig: CoastConfig = {
   siteAccess:'private',
   experimentalFeatures: false,
+  experimentalDynamicForYou:false, experimentalPlanning:false, experimentalRecommendations:false, experimentalMediaModal:false,
+  allowPlaybackSharing:false,
   registrationMode: 'invite',
   registrationProvider: 'jellyfin',
   diagnosticLevel: 'info',

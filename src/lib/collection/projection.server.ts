@@ -1,4 +1,4 @@
-import { and,eq,sql } from 'drizzle-orm';
+import { and,eq,sql,inArray } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { providerConnections, collectionProjectionEntries as ledger, collectionProjectionPreviews as previews, media, episodes } from '$lib/server/db/schema';
@@ -118,15 +118,37 @@ export async function executeProjection(userId:string,connectionId:string,cleanu
     if(!approved||context.connection.settings.collectionProjectionVersion!==cleanup.version)throw new PermanentActionError('The approved cleanup configuration changed.');
   }
   const removals=approved?(approved.snapshot.removals as Entry[]):[];
+  const eligible:Entry[]=[];
   for(const entry of removals){
     const current=remote.get(entry.workId);if(!current)continue;
     const evidence=old.get(entry.workId),choice=cleanup?.choice;
     const permitted=choice==='replace-all'||choice==='clear-all'||choice==='remove-managed'&&evidence?.attribution==='coast-added'&&!evidence.conflict&&!evidence.suppressed&&same(evidence.remote,current.snapshot);
     if(!permitted)continue;
     if(desired.blocked||!same(current.snapshot,entry.snapshot)||config.enabled&&desired.entries.has(entry.workId))throw new PermanentActionError('Collection/source state changed. Preview removals again.');
-    await context.adapter.write('collection',entry.payload,true);
-    const confirmed=await readProjectionRemote(context.adapter);if(confirmed.has(entry.workId))throw new Error('Trakt did not confirm Collection removal.');
-    await getDb().update(ledger).set({desired:false}).where(and(eq(ledger.accountId,accountId),eq(ledger.workId,entry.workId)));
+    eligible.push(entry);
+  }
+  // Bound writes and confirmation traversals by batch, rather than by each leaf.
+  for(let offset=0;offset<eligible.length;offset+=50){
+    type ShowPayload={ids:Record<string,unknown>;seasons:{number:number;episodes:{number:number}[]}[]};
+    const batch=eligible.slice(offset,offset+50),movies:unknown[]=[],shows=new Map<string,ShowPayload>();
+    for(const entry of batch){
+      const payload=entry.payload as {movies?:unknown[];shows?:ShowPayload[]};
+      movies.push(...payload.movies??[]);
+      for(const incoming of payload.shows??[]){
+        const key=JSON.stringify(incoming.ids),show=shows.get(key)??{ids:incoming.ids,seasons:[]};
+        for(const incomingSeason of incoming.seasons??[]){
+          let season=show.seasons.find((value:{number:number})=>value.number===incomingSeason.number);
+          if(!season){season={number:incomingSeason.number,episodes:[]};show.seasons.push(season);}
+          season.episodes.push(...incomingSeason.episodes);
+        }
+        shows.set(key,show);
+      }
+    }
+    await context.adapter.write('collection',{movies,shows:[...shows.values()]},true);
+    const confirmed=await readProjectionRemote(context.adapter);
+    if(batch.some(entry=>confirmed.has(entry.workId)))throw new Error('Trakt did not confirm Collection removal.');
+    await getDb().update(ledger).set({desired:false}).where(and(eq(ledger.accountId,accountId),inArray(ledger.workId,batch.map(entry=>entry.workId))));
+    for(const entry of batch)remote.delete(entry.workId);
   }
   if(!config.enabled)return;
   for(const entry of desired.entries.values()){
