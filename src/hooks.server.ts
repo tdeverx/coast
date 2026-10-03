@@ -49,7 +49,11 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
   }
   if (event.locals.setup && !['/setup'].includes(event.url.pathname))
     redirect(303, '/setup');
-  if (event.locals.user && !['/onboarding','/logout'].includes(event.url.pathname) && await onboardingPending(event.locals.user.id)) {
+  const onboardingImageRead=event.request.method==='GET' && !!event.locals.user && (
+    /^\/api\/v1\/profile\/avatars(?:\/[0-9a-f-]{36})?$/.test(event.url.pathname) ||
+    event.url.pathname.startsWith(`/api/v1/profile/avatar/${event.locals.user.id}/`)
+  );
+  if (event.locals.user && !['/onboarding','/logout'].includes(event.url.pathname) && !onboardingImageRead && await onboardingPending(event.locals.user.id)) {
     if (event.url.pathname.startsWith('/api/')) return json({error:'Finish account setup and your initial imports before continuing.',code:'onboarding_required'},{status:403});
     redirect(303,'/onboarding');
   }
