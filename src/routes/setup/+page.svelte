@@ -2,6 +2,7 @@
   import { enhance } from '$app/forms';
   import Brand from '$lib/ui/components/Brand.svelte';
   import Button from '$lib/ui/components/Button.svelte';
+  import AccountFields from '$lib/ui/components/AccountFields.svelte';
   let { form } = $props();
   let busy = $state(false);
 </script>
@@ -25,30 +26,10 @@
         };
       }}
     >
-      {#if form?.error}<div class="notice error" role="alert">{form.error}</div>{/if}<label
-        class="field"
-        >Username<input
-          name="username"
-          autocomplete="username"
-          minlength="3"
-          maxlength="32"
-          required
-        /></label
-      ><label class="field"
-        >Password<input
-          name="password"
-          type="password"
-          autocomplete="new-password"
-          minlength="12"
-          required
-        /><small>Use at least 12 characters.</small></label
-      ><label class="field"
-        >Email <span class="quiet">Optional</span><input
-          name="email"
-          type="email"
-          autocomplete="email"
-        /></label
-      ><Button type="submit" disabled={busy}
+      {#if form?.error}<div class="notice error" role="alert">{form.error}</div>{/if}
+      <AccountFields />
+      <label class="field">Email <span class="quiet">Optional</span><input name="email" type="email" autocomplete="email" /></label>
+      <Button type="submit" disabled={busy}
         >{busy ? 'Creating your Coast…' : 'Create your Coast'}</Button
       >
     </form>

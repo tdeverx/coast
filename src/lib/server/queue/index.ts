@@ -183,7 +183,7 @@ export async function claimNextAction(): Promise<OutboxAction | null> {
           AND (candidate.kind NOT IN ${sql(serviceTraversalKinds)} OR NOT EXISTS (
             SELECT 1 FROM outbox_actions busy
             WHERE busy.kind IN ${sql(serviceTraversalKinds)} AND busy.state = 'running'))
-        ORDER BY candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
+        ORDER BY CASE WHEN candidate.kind in ('jellyfin.sync','trakt.import','trakt.lists-import') AND EXISTS(SELECT 1 FROM user_onboarding o WHERE o.user_id=candidate.user_id AND o.completed_at IS NULL AND candidate.connection_id in (o.connection_id,o.trakt_connection_id)) THEN 0 ELSE 1 END, candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
       ) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind='tmdb.refresh' AND provider='tmdb' AND id::text=payload->>'instanceId')) AS instance_id`;
     return row
       ? {

@@ -32,11 +32,11 @@ Provider objects and unvalidated JSON do not cross into the UI. JSON is reserved
 
 Passwords use Bun Argon2id. Random session secrets are hashed in storage and held in HTTP-only SameSite cookies, Secure on HTTPS; trusted LAN HTTP remains supported. Mutating requests check origin and authenticated permissions. Administrative checks live in services/routes. Sensitive operations require a current session; an already-loaded expired session can retain safe local presentation while displaying a reauthentication action, never bypass authorisation.
 
-Stored credentials use authenticated encryption with a persistent key under the single data mount. Startup-only recovery consumes a single-use file and creates an in-memory identity valid only for that process lifetime. No provider token is sent to browser code.
+Stored credentials use authenticated encryption with a persistent key under the single data mount. No provider token is sent to browser code.
 
 User-supplied provider URLs are server-policy controlled: HTTP(S), allowed ports/hosts, explicit LAN allowances, validated DNS targets, no unsafe redirects, bounded responses and deadlines. Identity checks bind Jellyfin connections to the expected server. Playback relays enforce ownership and target policy. Errors presented to users are concise; detailed diagnostic events are visible only to administrators and redact credentials.
 
-`user_identities` binds Jellyfin sign-in. Separate `sync_accounts` retain provider account and pinned-service evidence for baselines, delivery and projection ledgers. Account generations prevent queued or running work from using replacement credentials. Trakt uses its stable account UUID; a fresh authenticated matching profile can upgrade an older slug binding without losing same-account provenance.
+`user_identities` retains historical Jellyfin identity bindings; authentication now uses Coast credentials. Registration captures the configured connection requirement and onboarding gates access on successful account-scoped initial imports. Separate `sync_accounts` retain provider account and pinned-service evidence for baselines, delivery and projection ledgers. Account generations prevent queued or running work from using replacement credentials. Trakt uses its stable account UUID; a fresh authenticated matching profile can upgrade an older slug binding without losing same-account provenance.
 
 ## Deployment
 

@@ -81,14 +81,7 @@ prepare_coast_storage() {
   done
   private_secret_tree "$data_dir/secrets"
 
-  if [[ -e "$data_dir/recovery-credential" ]]; then
-    path="$data_dir/recovery-credential"
-    if [[ "$ownership_supported" == true ]]; then chown coast:coast -- "$path"; fi
-    secure_mode "$path" 600 'recovery credential'
-    if ! gosu coast test -r "$path"; then
-      storage_error "Coast cannot read $path. Set its host owner to UID $(id -u coast), keep mode 600, and restart."
-    fi
-  fi
+
 }
 
 prepare_postgres_storage() {

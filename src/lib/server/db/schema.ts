@@ -1077,6 +1077,11 @@ export const registrationInvites = pgTable('registration_invites', {
   createdAt: createdAt(),
 }, t => [index('registration_invite_expiry_idx').on(t.expiresAt).where(sql`${t.usedAt} is null`), index('registration_invite_revoked_idx').on(t.revokedAt).where(sql`${t.usedAt} is null and ${t.revokedAt} is not null`)]);
 export const userOnboarding = pgTable('user_onboarding', {
+  requiredProvider: text('required_provider').$type<'jellyfin'|'trakt'|'either'|'none'>().notNull().default('jellyfin'),
+  importsStartedAt: timestamp('imports_started_at', {withTimezone:true}),
+  traktConnectionId: uuid('trakt_connection_id').references(()=>providerConnections.id,{onDelete:'set null'}),
+  traktAccountGeneration: uuid('trakt_account_generation'),
+  importJobs: jsonb('import_jobs').$type<Record<string,string>>().notNull().default({}),
   userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
   connectionId: uuid('connection_id').references(() => providerConnections.id, { onDelete: 'set null' }),
   accountGeneration: uuid('account_generation'),

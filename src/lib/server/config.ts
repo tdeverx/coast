@@ -6,8 +6,8 @@ import { getSql } from './db';
 export const configSchema = v.object({
   siteAccess: v.optional(v.picklist(['private','public-read-only']),'private'),
   experimentalFeatures: v.boolean(),
-  jellyfinAutoCreateUsers: v.boolean(),
-  jellyfinSyncAdmins: v.boolean(),
+  registrationMode: v.picklist(['invite','open']),
+  registrationProvider: v.picklist(['jellyfin','trakt','either','none']),
   diagnosticLevel: v.picklist(diagnosticLevels),
   sessionLifetimeDays: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(365)),
   allowArbitraryServers: v.boolean(),
@@ -29,8 +29,8 @@ export type CoastConfig = v.InferOutput<typeof configSchema>;
 export const defaultConfig: CoastConfig = {
   siteAccess:'private',
   experimentalFeatures: false,
-  jellyfinAutoCreateUsers: false,
-  jellyfinSyncAdmins: false,
+  registrationMode: 'invite',
+  registrationProvider: 'jellyfin',
   diagnosticLevel: 'info',
   sessionLifetimeDays: 30,
   allowArbitraryServers: false,

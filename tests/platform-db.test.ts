@@ -24,15 +24,6 @@ import {
 import { notify, inbox, listDiagnostics } from '../src/lib/server/notifications';
 import { defaultConfig, getConfig } from '../src/lib/server/config';
 import { updateConfig } from '../src/lib/application/configuration.server';
-import {
-  initializeRecovery,
-  recoveryLogin,
-  resetAdministratorPassword,
-} from '../src/lib/server/auth/recovery';
-import { mkdtemp, writeFile, access, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-
 const target = process.env.TEST_DATABASE_URL;
 // This suite resets its named, isolated test database. It never uses DATABASE_URL implicitly.
 const enabled = !!target && new URL(target).pathname.startsWith('/coast_platform_test');
@@ -267,56 +258,5 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
     expect(await claimNextAction()).toBeNull();
     await getSql()`UPDATE outbox_actions SET state = 'succeeded' WHERE id = ${first}`;
     await cancelAction(admin, second);
-  });
-  test('startup recovery consumes its file, ignores new files until restart, and permits one reset', async () => {
-    const previous = process.env.COAST_DATA_DIR;
-    const directory = await mkdtemp(join(tmpdir(), 'coast-recovery-test-'));
-    process.env.COAST_DATA_DIR = directory;
-    const credential = 'one-time-startup-recovery-credential-123456';
-    try {
-      await writeFile(join(directory, 'recovery-credential'), credential, { mode: 0o600 });
-      await initializeRecovery();
-      await expect(access(join(directory, 'recovery-credential'))).rejects.toThrow();
-      await writeFile(
-        join(directory, 'recovery-credential'),
-        'different-recovery-credential-after-startup',
-        { mode: 0o600 }
-      );
-      await initializeRecovery();
-      await expect(
-        recoveryLogin('different-recovery-credential-after-startup', 'recovery-test')
-      ).rejects.toThrow('invalid');
-      const recovery = await recoveryLogin(credential, 'recovery-test');
-      await expect(recoveryLogin(credential, 'recovery-test')).rejects.toThrow('invalid');
-      await resetAdministratorPassword(
-        recovery.token,
-        admin.username,
-        'recovered-administrator-password'
-      );
-      await expect(
-        resetAdministratorPassword(recovery.token, admin.username, 'another-administrator-password')
-      ).rejects.toThrow('no longer');
-      expect(
-        (
-          await login(
-            { username: admin.username, password: 'recovered-administrator-password' },
-            'recovered-test'
-          )
-        ).user.id
-      ).toBe(admin.id);
-      const child = Bun.spawn(
-        [
-          process.execPath,
-          '-e',
-          `import { resetAdministratorPassword } from './src/lib/server/auth/recovery'; try { await resetAdministratorPassword(${JSON.stringify(recovery.token)}, 'administrator', 'next-password-123'); process.exit(1); } catch { process.exit(0); }`,
-        ],
-        { stdout: 'pipe', stderr: 'pipe' }
-      );
-      expect(await child.exited).toBe(0);
-    } finally {
-      if (previous === undefined) delete process.env.COAST_DATA_DIR;
-      else process.env.COAST_DATA_DIR = previous;
-      await rm(directory, { recursive: true, force: true });
-    }
   });
 });

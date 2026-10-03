@@ -1,3 +1,4 @@
+import { usernameSchema, passwordSchema } from '$lib/auth/registration';
 import { collectionPreferencesSchema } from '$lib/collection/preferences';
 import { socialSettingsSchema } from '$lib/social/model';
 import * as v from 'valibot';
@@ -26,8 +27,9 @@ export interface AuthenticatedSession {
 }
 
 export const accountSchema = v.object({
-  username: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.regex(/^[a-z0-9][a-z0-9_.-]{2,31}$/)),
-  password: v.pipe(v.string(), v.minLength(12), v.maxLength(128)),
+  username: usernameSchema,
+  password: passwordSchema,
+  displayName: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(60))),
   email: v.optional(v.union([v.pipe(v.string(), v.email(), v.maxLength(254)), v.literal('')])),
 });
 const createAccountSchema = v.object({
@@ -38,7 +40,6 @@ const loginSchema = v.object({
   username: v.pipe(v.string(), v.trim(), v.toLowerCase(), v.maxLength(32)),
   password: v.pipe(v.string(), v.maxLength(128)),
 });
-const passwordSchema = v.pipe(v.string(), v.minLength(12), v.maxLength(128));
 const attemptWindows = new Map<string, { count: number; start: number }>();
 let dummyPasswordHash: Promise<string> | undefined;
 
@@ -113,7 +114,7 @@ export async function createFirstAdmin(input: unknown): Promise<SessionResult> {
     const [count] = await sql`SELECT EXISTS (SELECT 1 FROM users) AS exists`;
     if (count.exists) throw new AppError(409, 'Coast has already been set up.');
     const [row] =
-      await sql`INSERT INTO users (username, password_hash, email, role) VALUES (${account.username}, ${passwordHash}, ${account.email || null}, 'admin') RETURNING *`;
+      await sql`INSERT INTO users (username, password_hash, email, role, settings) VALUES (${account.username}, ${passwordHash}, ${account.email || null}, 'admin', ${{profile:{displayName:account.displayName??account.username}}}::jsonb) RETURNING *`;
     return publicUser(row);
   });
   return newSession(user);

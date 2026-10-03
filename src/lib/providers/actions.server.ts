@@ -253,12 +253,12 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
     const { importTrakt } = await import('$lib/sync/trakt-import');
-    await importTrakt(action.userId, action.connectionId, 'tracking');
+    await importTrakt(action.userId, action.connectionId, 'tracking',action.payload.initialImport===true);
   });
   register('trakt.lists-import', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The Trakt connection is unavailable.');
     const { importTrakt } = await import('$lib/sync/trakt-import');
-    await importTrakt(action.userId, action.connectionId, 'lists');
+    await importTrakt(action.userId, action.connectionId, 'lists',action.payload.initialImport===true);
   });
   register('trakt.list-export', async (action) => {
     if (!action.connectionId)

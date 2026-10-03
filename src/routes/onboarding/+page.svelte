@@ -1,30 +1,38 @@
 <script lang="ts">
-  import {enhance} from '$app/forms'; import {invalidate} from '$app/navigation'; import {onMount} from 'svelte';
-  import Brand from '$lib/ui/components/Brand.svelte'; import Button from '$lib/ui/components/Button.svelte';
-  let {data,form}=$props(); let busy=$state(false);
-  onMount(()=>{let pending=false;const timer=setInterval(()=>{if(!pending){pending=true;void invalidate('coast:onboarding').finally(()=>pending=false);}},2000);return()=>clearInterval(timer);});
+ import {enhance,deserialize} from '$app/forms';import {invalidate} from '$app/navigation';import {onMount} from 'svelte';
+ import Brand from '$lib/ui/components/Brand.svelte';import Button from '$lib/ui/components/Button.svelte';
+ let {data,form}=$props();let busy=$state(false),deviceError=$state('');
+ $effect(()=>{if(form&&'device' in form)deviceError='';});
+ const device=$derived(form&&'device' in form?form.device:null);
+ const canContinue=$derived(data.requiredProvider==='none'||data.requiredProvider==='jellyfin'&&data.linked||data.requiredProvider==='trakt'&&data.traktLinked||data.requiredProvider==='either'&&(data.linked||data.traktLinked));
+ onMount(()=>{let pending=false,nextPoll=0;const timer=setInterval(async()=>{
+  if(pending)return;pending=true;
+  try{if(device&&!deviceError&&!data.traktLinked&&Date.now()>=nextPoll){nextPoll=Date.now()+device.interval*1000;const body=new FormData();body.set('instanceId',device.instanceId);const result=deserialize(await(await fetch('?/poll',{method:'POST',body,headers:{'x-sveltekit-action':'true'}})).text());if(result.type==='failure')deviceError=String(result.data?.error??'Could not connect Trakt.');if(result.type==='success'&&result.data?.pending===false)await invalidate('coast:onboarding');}
+   if(data.phase==='importing')await invalidate('coast:onboarding');
+  }catch{deviceError='Connection interrupted. Try connecting again.';}finally{pending=false;}
+ },2000);return()=>clearInterval(timer);});
 </script>
 <svelte:head><title>Set up your account · Coast</title></svelte:head>
 <div class="auth-page"><div class="auth-card"><div class="row brand"><Brand /></div>
-  {#if !data.linked||data.reconnect}
-    <h1>Connect Jellyfin.</h1><p>Use your existing Jellyfin account. Coast will securely save your connection and import your progress.</p>
-    {#if !data.services.length}<p class="notice" role="status">An administrator needs to enable a Jellyfin server before you can continue.</p>{:else}
-      <form method="POST" action="?/connect" class="stack" use:enhance={()=>{busy=true;return async({update})=>{await update();busy=false;};}}>
-        <label class="field">Server<select name="instanceId">{#each data.services as service}<option value={service.id}>{service.name}</option>{/each}</select></label>
-        <label class="field">Jellyfin username<input name="username" autocomplete="username" required maxlength="250" /></label>
-        <label class="field">Jellyfin password<input name="password" type="password" autocomplete="current-password" maxlength="4096" /></label>
-        <Button type="submit" disabled={busy}>{busy?'Connecting…':'Connect and import'}</Button>
-      </form>
-    {/if}
-  {:else}
-    <h1>Importing your progress.</h1><p>You can leave this page and return later. Your account will be ready when the initial import finishes.</p>
-    {#if data.progress}
-    <p role="status">{data.progress.state==='running'?'Import running':data.progress.state==='pending'?'Waiting for import':data.progress.state==='failed'?'Import needs attention':'Finishing import'} · {data.progress.processed} items{data.progress.total!==null?` of ${data.progress.total}`:''}</p>
-    {#if data.progress.total}<progress value={data.progress.processed} max={data.progress.total} aria-label="Import progress"></progress>{/if}
-    {#if data.progress.error}<p class="notice error" role="alert">{data.progress.error}</p>{/if}
-    {#if ['failed','cancelled'].includes(data.progress.state)}<form method="POST" action="?/retry" use:enhance><Button type="submit">Retry import</Button></form><a href="/onboarding?reconnect=1">Reconnect Jellyfin</a>{/if}
-    {:else}<p role="status">Waiting for the active Jellyfin task to finish before starting your import.</p>{/if}
-  {/if}
-  {#if form?.error}<p class="notice error" role="alert">{form.error}</p>{/if}
-  <div class="auth-footer"><form method="POST" action="/logout"><Button type="submit" emphasis="subtle">Sign out</Button></form></div>
+ {#if data.phase==='connections'||data.reconnect||data.imports.some(item=>item.error==='Reconnect Trakt to continue.')}
+ <h1>Connect your services.</h1><p>Import your history, progress, favourites and saved titles before you start browsing.</p>
+ {#if data.requiredProvider!=='none'}<p>{data.requiredProvider==='either'?'Connect Jellyfin or Trakt to continue.':`Connect ${data.requiredProvider==='jellyfin'?'Jellyfin':'Trakt'} to continue.`}</p>{/if}
+ {#if data.linked}<p role="status">Jellyfin connected.</p>{:else if data.services.length}
+ <form method="POST" action="?/connect" class="stack" use:enhance={()=>{busy=true;return async({update})=>{try{await update();}finally{busy=false;}};}}>
+ <label class="field">Jellyfin server<select name="instanceId">{#each data.services as service}<option value={service.id}>{service.name}</option>{/each}</select></label>
+ <label class="field">Jellyfin username<input name="username" autocomplete="username" required maxlength="250" /></label>
+ <label class="field">Jellyfin password<input name="password" type="password" autocomplete="current-password" maxlength="4096" /></label>
+ <Button type="submit" disabled={busy}>Connect Jellyfin</Button></form>
+ {:else if data.requiredProvider==='jellyfin'}<p class="notice">An administrator needs to enable a Jellyfin server.</p>{/if}
+ {#if data.traktLinked}<p role="status">Trakt connected.</p>{:else if data.traktServices.length}
+ {#if device}<p>Enter <strong>{device.userCode}</strong> on <a href={device.verificationUrl} target="_blank" rel="noreferrer">Trakt</a>. Waiting for authorization…</p>
+ {/if}<form method="POST" action="?/trakt" class="stack" use:enhance><label class="field">Trakt service<select name="instanceId">{#each data.traktServices as service}<option value={service.id}>{service.name}</option>{/each}</select></label><Button type="submit">{device?'New Trakt code':'Connect Trakt'}</Button></form>
+ {:else if data.requiredProvider==='trakt'}<p class="notice">An administrator needs to enable Trakt.</p>{/if}
+ <form method="POST" action="?/begin" use:enhance><Button type="submit" disabled={!canContinue}>{data.linked||data.traktLinked?'Import and continue':'Continue'}</Button></form>
+ {:else}<h1>Importing your data.</h1><p>You can leave this page and return later. Your account opens when these imports finish.</p>
+ {#each data.imports as item}<div class="stack"><p role="status">{item.label}: {item.state==='succeeded'?'Complete':item.state==='running'?'Importing':item.state==='failed'?'Needs attention':'Waiting'}{item.processed?` · ${item.processed} items`:''}</p>{#if item.total}<progress value={item.processed} max={item.total} aria-label={`${item.label} import progress`}></progress>{/if}{#if item.error}<p class="notice error">{item.error}</p>{/if}</div>{/each}
+ {#if data.imports.some(item=>['failed','cancelled'].includes(item.state))}<form method="POST" action="?/retry" use:enhance><Button type="submit">Retry import</Button></form>{/if}
+ {/if}
+ {#if form&&'error' in form&&form.error}<p class="notice error" role="alert">{form.error}</p>{/if}{#if deviceError}<p class="notice error">{deviceError}</p>{/if}
+ <div class="auth-footer"><form method="POST" action="/logout"><Button type="submit" emphasis="subtle">Sign out</Button></form></div>
 </div></div>

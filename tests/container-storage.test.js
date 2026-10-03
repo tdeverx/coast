@@ -125,11 +125,9 @@ test('ordinary volume with working chown supports bundled PostgreSQL', async () 
 test('writable mount with denied chown works with an external database', async () => {
   const setup = await fixture({ denyMountChown: true });
   try {
-    await writeFile(join(setup.mount, 'recovery-credential'), 'test recovery token', { mode: 0o644 });
     const result = run(setup, 'postgresql://external.example/coast');
     assert.equal(result.status, 0, result.stderr);
     assert.match(result.stdout, /storage-ready/);
-    assert.equal(((await stat(join(setup.mount, 'recovery-credential'))).mode & 0o777).toString(8), '600');
     await assert.rejects(access(join(setup.mount, 'postgres')));
   } finally {
     await setup.close();
