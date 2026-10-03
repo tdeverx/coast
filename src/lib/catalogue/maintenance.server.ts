@@ -1,9 +1,10 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import {
   externalIds,
   providerConnections,
   providerInstances,
+  providerItems,
   metadataSnapshots,
   media,
 } from '$lib/server/db/schema';
@@ -103,7 +104,8 @@ export async function scanTraktCatalogue(
 export async function scanJellyfinCatalogue(
   adapter: JellyfinAdapter,
   externalUserId: string,
-  save = persistMissingTmdb
+  save = persistMissingTmdb,
+  resolvedRoots: (ids: string[]) => Promise<Set<string>> = async () => new Set()
 ) {
   let offset = 0;
   const seen = new Set<string>();
@@ -114,6 +116,7 @@ export async function scanJellyfinCatalogue(
       undefined,
       'user'
     );
+    const roots = new Set<string>();
     for (const item of page.items) {
       if (
         !item.userData ||
@@ -130,6 +133,11 @@ export async function scanJellyfinCatalogue(
       if (!rootId || seen.has(rootId)) continue;
       if (seen.size >= 10000) seen.delete(seen.values().next().value!);
       seen.add(rootId);
+      roots.add(rootId);
+    }
+    const resolved = roots.size ? await resolvedRoots([...roots]) : new Set<string>();
+    for (const rootId of roots) {
+      if (resolved.has(rootId)) continue;
       const root = await adapter.item(externalUserId, rootId);
       const id = root.metadata.externalIds?.tmdb;
       if (id && (root.kind === 'movie' || root.kind === 'show'))
@@ -143,6 +151,25 @@ export async function scanJellyfinCatalogue(
       throw new Error('Jellyfin returned an incomplete library page.');
     offset = page.nextOffset;
   }
+}
+
+/** Canonical metadata is shared, but remote item IDs remain instance-specific. */
+export async function resolvedJellyfinCatalogueRoots(instanceId: string, ids: string[]) {
+  if (!ids.length) return new Set<string>();
+  const resolved = await getDb()
+    .selectDistinct({ id: providerItems.externalId })
+    .from(providerItems)
+    .innerJoin(externalIds, and(
+      eq(externalIds.mediaId, providerItems.mediaId),
+      eq(externalIds.provider, 'tmdb'),
+      eq(externalIds.mediaKind, providerItems.kind)
+    ))
+    .where(and(
+      eq(providerItems.instanceId, instanceId),
+      inArray(providerItems.externalId, ids),
+      inArray(providerItems.kind, ['movie', 'show'])
+    ));
+  return new Set(resolved.map((item) => item.id));
 }
 
 export async function scanUserCatalogue(action: OutboxAction) {
@@ -160,7 +187,7 @@ export async function scanUserCatalogue(action: OutboxAction) {
     .limit(1);
   if (!tmdb) return;
   const [instance] = await getDb()
-    .select({ provider: providerInstances.provider })
+    .select({ id: providerInstances.id, provider: providerInstances.provider })
     .from(providerInstances)
     .innerJoin(
       providerConnections,
@@ -177,7 +204,8 @@ export async function scanUserCatalogue(action: OutboxAction) {
       action.userId,
       action.connectionId
     );
-    await scanJellyfinCatalogue(adapter, connection.externalUserId!, save);
+    await scanJellyfinCatalogue(adapter, connection.externalUserId!, save,
+      (ids) => resolvedJellyfinCatalogueRoots(instance.id, ids));
   }
   return { added };
 }

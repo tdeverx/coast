@@ -31,6 +31,7 @@ export async function getTmdb(language = 'en-US', region = 'GB') {
     accessToken?: string;
   };
   const request = createProviderTransport({
+    provider: 'tmdb',
     baseUrl: 'https://api.themoviedb.org',
     approved: true,
     allowedPorts: [443],

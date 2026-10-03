@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect, spyOn } from 'bun:test';
 import { TmdbAdapter } from '../src/lib/providers/tmdb/adapter.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
 import { providerCache } from '../src/lib/server/utils/provider-cache';
@@ -162,6 +162,21 @@ describe('rich details', () => {
     ).rejects.toThrow('offline');
     expect(await cache('b', fetch)).toBe(2);
     expect(await cache('a', fetch)).toBe(1);
+  });
+  test('expired provider facts never survive an outage or an incomplete replacement', async () => {
+    let now = 100;
+    const clock = spyOn(Date, 'now').mockImplementation(() => now);
+    try {
+      const cache = providerCache<{ value: number; incomplete?: boolean }>(2, 10, value => !value.incomplete);
+      expect(await cache('title', async () => ({ value: 1 }))).toEqual({ value: 1 });
+      now = 110;
+      await expect(cache('title', async () => { throw new Error('offline'); })).rejects.toThrow('offline');
+      expect(await cache('title', async () => ({ value: 2, incomplete: true }))).toEqual({ value: 2, incomplete: true });
+      expect(await cache('title', async () => ({ value: 3 }))).toEqual({ value: 3 });
+      expect(await cache('title', async () => { throw new Error('should be cached'); })).toEqual({ value: 3 });
+    } finally {
+      clock.mockRestore();
+    }
   });
 });
 

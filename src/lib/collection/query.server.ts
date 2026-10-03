@@ -3,6 +3,7 @@ import { requireEnabledCategory } from '$lib/server/experimental';
 import { sql, eq, inArray, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
+import { logDiagnostic } from '$lib/server/diagnostics';
 import { games, musicWorks, providerItems, providerConnections, providerInstances, ratings, lists, listItems, upNext } from '$lib/server/db/schema';
 import { mediaViews } from '$lib/server/queries/media';
 import { profileUser } from '$lib/server/queries/profile-user';
@@ -26,7 +27,14 @@ export type WorkAssessment = { id: string; category: string; kind: string; title
 /** Materialized membership trees are small; the default recursive estimate explodes
  * after ancestor + descendant traversal and selects repeated scans. Keep this local
  * to Collection reads, alongside disabling JIT compilation for interactive shelves. */
-export async function collectionRead(statement:SQL){return getDb().transaction(async tx=>{await tx.execute(sql`set local jit=off`);await tx.execute(sql`set local recursive_worktable_factor=0.01`);return tx.execute(statement);});}
+export async function collectionRead(statement:SQL){
+  const started = performance.now();
+  try {
+    return await getDb().transaction(async tx=>{await tx.execute(sql`set local jit=off`);await tx.execute(sql`set local recursive_worktable_factor=0.01`);return tx.execute(statement);});
+  } finally {
+    void logDiagnostic('debug','query.timing',{operation:'collection',stage:'assessment',durationMs:performance.now()-started});
+  }
+}
 
 /** All personal predicates and access assessment happen before the 60-item card query. */
 export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, source = 'all', scope: 'all' | 'personal' | string[] = 'all', category = 'all') {
@@ -36,7 +44,15 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
     : scope === 'personal' ? sql`select distinct d.id from direct d join works w on w.id=d.id where (${category}='all' or w.category=${category})`
     : scope.length ? sql`select id from works where id in (${sql.join(scope.map(id => sql`${id}::uuid`), sql`,`)})` : sql`select id from works where false`;
   return sql`with recursive
-  edges as (
+  visibility as materialized (
+    select category,
+      social_visible(${ownerId}::uuid,${viewerId}::uuid,'collection',category) as collection_visible,
+      social_visible(${ownerId}::uuid,${viewerId}::uuid,'activity',category) as activity_visible,
+      social_visible(${ownerId}::uuid,${viewerId}::uuid,'progress',category) as progress_visible,
+      social_visible(${ownerId}::uuid,${viewerId}::uuid,'favourites',category) as favourites_visible,
+      social_visible(${ownerId}::uuid,${viewerId}::uuid,'ratings',category) as ratings_visible
+    from (select distinct category from works) categories
+  ), edges as (
     select parent_id,child_id from media_relationships where kind in ('contains','collection','sequence')
     union select show_id,media_id from episodes where not is_special
     union select season_id,media_id from episodes where season_id is not null and not is_special
@@ -77,12 +93,12 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
     union select track_id,'history' from music_progress where user_id=${ownerId} and play_count>0
   ), direct as (
     select d.id,case when d.relationship in ('active','history') then 'activity' else d.relationship end as relationship
-    from raw_direct d join works w on w.id=d.id join users u on u.id=${ownerId}
-    where social_visible(${ownerId}::uuid,${viewerId}::uuid,case when d.relationship in ('active','history') then 'activity' when d.relationship='favourite' then 'favourites' when d.relationship='rating' then 'ratings' else 'collection' end,w.category)
+    from raw_direct d join works w on w.id=d.id join users u on u.id=${ownerId} join visibility vis on vis.category=w.category
+    where (case when d.relationship in ('active','history') then vis.activity_visible when d.relationship='favourite' then vis.favourites_visible when d.relationship='rating' then vis.ratings_visible else vis.collection_visible end)
     and (d.relationship='collected' or (
       coalesce((u.settings->'collection'->w.category->>d.relationship)::boolean,true)
       and (coalesce((u.settings->'collection'->w.category->>'dropped')::boolean,false) or not (
-        exists(select 1 from tracking_state t where t.user_id=${ownerId} and t.dropped and (t.media_id=d.id or t.media_id in (select e.show_id from episodes e where e.media_id=d.id)))
+        (exists(select 1 from tracking_state t where t.user_id=${ownerId} and t.dropped and t.media_id=d.id) or exists(select 1 from episodes e join tracking_state t on t.media_id=e.show_id and t.user_id=${ownerId} and t.dropped where e.media_id=d.id))
         or coalesce((select p.status='dropped' from game_playthroughs p where p.user_id=${ownerId} and p.game_id=d.id order by p.created_at desc,p.id desc limit 1),false)
       ))
     ))
@@ -159,12 +175,12 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
           (c.available=c.total and km.complete)) then 'available'
         when c.available>0 then 'partial' when c.total>0 and c.assessed and
           (w.kind not in ('show','season','collection','album') or km.complete) then 'unavailable' else 'unknown' end as availability,
-      social_visible(${ownerId}::uuid,${viewerId}::uuid,'activity',w.category) and (coalesce(ts.dropped,false) or coalesce(gs.dropped,false)) as dropped,
-      social_visible(${ownerId}::uuid,${viewerId}::uuid,'activity',w.category) and (coalesce(ts.watched,false) or coalesce(gs.completed,false) or ((ml.track_id is not null or coalesce(mp.play_count,0)>0) and coalesce(mp.position_seconds,0)=0 and ar.root is null) or
+      vis.activity_visible and (coalesce(ts.dropped,false) or coalesce(gs.dropped,false)) as dropped,
+      vis.activity_visible and (coalesce(ts.watched,false) or coalesce(gs.completed,false) or ((ml.track_id is not null or coalesce(mp.play_count,0)>0) and coalesce(mp.position_seconds,0)=0 and ar.root is null) or
         (coalesce(mc.completed,false) and km.complete)) as completed,
-      social_visible(${ownerId}::uuid,${viewerId}::uuid,'progress',w.category) and (coalesce(ts.position_seconds,0)>0 or coalesce(mp.position_seconds,0)>0 or coalesce(ts.completed_episodes,0)>0 or ar.root is not null or coalesce(gs.active,false)) as active,
-      case when social_visible(${ownerId}::uuid,${viewerId}::uuid,'progress',w.category) then coalesce(ne.media_id,nm.id,w.id) else null end as next_id
-    from scoped_works w left join media m on m.id=w.id left join games g on g.id=w.id left join music_works mu on mu.id=w.id
+      vis.progress_visible and (coalesce(ts.position_seconds,0)>0 or coalesce(mp.position_seconds,0)>0 or coalesce(ts.completed_episodes,0)>0 or ar.root is not null or coalesce(gs.active,false)) as active,
+      case when vis.progress_visible then coalesce(ne.media_id,nm.id,w.id) else null end as next_id
+    from scoped_works w join visibility vis on vis.category=w.category left join media m on m.id=w.id left join games g on g.id=w.id left join music_works mu on mu.id=w.id
       left join tracking_state ts on ts.media_id=w.id and ts.user_id=${ownerId} left join coverage c on c.root=w.id
       left join active_roots ar on ar.root=w.id left join game_status gs on gs.game_id=w.id
       left join music_progress mp on mp.track_id=w.id and mp.user_id=${ownerId}
@@ -218,13 +234,13 @@ export async function collectionData(viewerId: string, raw: unknown={}, username
   const input=v.parse(collectionOptionsSchema,raw);
   if(ownerId!==viewerId)await (await import('$lib/social/privacy.server')).requireVisible(ownerId,viewerId,'collection',input.category==='all'?undefined:input.category);
   const config=await getConfig();if(input.category!=='all')requireEnabledCategory(config,input.category);
-  const condition=sql`social_visible(${ownerId}::uuid,${viewerId}::uuid,'collection',c.category) and (c.category='screen' or (c.category='music' and ${config.experimentalMusic}) or (c.category='game' and ${config.experimentalGaming})) and (${input.category}='all' or c.category=${input.category}) and (${input.kind}='all' or c.kind=${input.kind})
+  const condition=sql`(select collection_visible from visibility where category=c.category) and (c.category='screen' or (c.category='music' and ${config.experimentalMusic}) or (c.category='game' and ${config.experimentalGaming})) and (${input.category}='all' or c.category=${input.category}) and (${input.kind}='all' or c.kind=${input.kind})
     and (${input.level}='all' or (c.kind not in ('episode','season') and not exists(select 1 from edges e join works parent on parent.id=e.parent_id where e.child_id=c.id and parent.kind in ('show','season','album'))))
     and (${input.relationship}='all' or exists(select 1 from jsonb_array_elements(c.reasons) r where r->>'relationship'=${input.relationship}))
     and (${input.activity}='all' or (${input.activity}='active' and c.active and not c.dropped and not c.completed)
       or (${input.activity}='unwatched' and not c.completed and not c.dropped)
       or (${input.activity}='planned' and not c.active and not c.completed and not c.dropped)
-      or (${input.activity}='paused' and social_visible(${ownerId}::uuid,${viewerId}::uuid,'progress',c.category) and (select p.status from game_playthroughs p where p.user_id=${ownerId} and p.game_id=c.id order by p.created_at desc,p.id desc limit 1)='paused')
+      or (${input.activity}='paused' and (select progress_visible from visibility where category=c.category) and (select p.status from game_playthroughs p where p.user_id=${ownerId} and p.game_id=c.id order by p.created_at desc,p.id desc limit 1)='paused')
       or (${input.activity}='completed' and c.completed) or (${input.activity}='dropped' and c.dropped))
     and (${input.availability}='all' or (${input.availability}='available' and c.availability in ('available','partial')) or c.availability=${input.availability} or
       (${input.availability}='ready' and exists(select 1 from assessments a where a.id=c.next_id and a.availability='available')))
@@ -234,7 +250,10 @@ export async function collectionData(viewerId: string, raw: unknown={}, username
       (select * from filtered order by lower(title),id limit ${PAGE_SIZE}
         offset (least(${input.page},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int))-1)*${PAGE_SIZE}) selected),'[]'::jsonb) as items from totals`);
   const total=Number(result[0]?.total??0), {page,pages}=pagination(total,input.page);
-  const assessments=(result[0]?.items as Record<string,any>[]??[]).map(mapAssessment),cards=await workCards(ownerId,viewerId,assessments.map(r=>r.id));
+  const assessments=(result[0]?.items as Record<string,any>[]??[]).map(mapAssessment);
+  const hydrationStarted = performance.now();
+  const cards=await workCards(ownerId,viewerId,assessments.map(r=>r.id));
+  void logDiagnostic('debug','query.timing',{operation:'collection',stage:'card-hydration',durationMs:performance.now()-hydrationStarted});
   const byId=new Map(assessments.map(a=>[a.id,a]));
   const items=cards.map(item=>{
     const assessment=byId.get('workId' in item?item.workId??item.id:item.id);

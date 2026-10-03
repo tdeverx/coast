@@ -2,6 +2,7 @@ import { onDestroy, untrack, type Snippet } from 'svelte';
 import { useClient } from '$lib/ui/client-context';
 import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
 import { journalGroups, type JournalEntry } from '$lib/profile/journal';
+import { journalDay, visibleJournalEntries } from './journal-visible';
 import type { ShelfSource } from './types';
 export type JournalOptions = {
     items?: JournalEntry[];
@@ -38,10 +39,8 @@ export function createJournalSource(getOptions:()=>JournalOptions):ShelfSource {
   const last = $derived(resource.data.pages);
   const loading = $derived(resource.busy);
   const error = $derived(resource.error);
-  const dayOf = (item: JournalEntry) =>
-    item.dateKnown === false ? 'unknown' : item.watchedAt.slice(0, 10);
-  const days = $derived([...new Set(loadedItems.map(dayOf))]);
-  const visible = $derived(loadedItems.filter((item) => days.indexOf(dayOf(item)) < maxDays));
+  const days = $derived([...new Set(loadedItems.map(journalDay))]);
+  const visible = $derived(visibleJournalEntries(loadedItems, days, maxDays));
   const hasMore = $derived(!!filters && current < last && days.length <= maxDays);
   async function more() {
     if (loading || !hasMore) return;

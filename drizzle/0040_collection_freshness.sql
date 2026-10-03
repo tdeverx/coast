@@ -1,0 +1,1 @@
+CREATE INDEX "availability_expiry_idx" ON "availability" USING btree ("user_id","connection_id","verified_at") WHERE "availability"."state"='available' or ("availability"."state"='unavailable' and "availability"."source"->>'authoritative'='true');

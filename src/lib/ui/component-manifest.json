@@ -83,6 +83,7 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/experiments/DynamicFeed.svelte",
       "src/lib/experiments/MediaModal.svelte",
       "src/lib/experiments/PlanAction.svelte",
@@ -264,6 +265,7 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/media/Details.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/MediaPage.svelte",
@@ -368,6 +370,7 @@
       "SegmentedControl"
     ],
     "usedBy": [
+      "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
@@ -642,6 +645,7 @@
       "Button"
     ],
     "usedBy": [
+      "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/games/[id]/+page.svelte",

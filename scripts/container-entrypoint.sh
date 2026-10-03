@@ -8,13 +8,33 @@ prepare_coast_storage "$data_dir"
 
 database_pid=""
 application_pid=""
+migration_pid=""
+completed_pid=""
+termination_signal=""
 shutdown() {
-  trap - TERM INT
   if [[ -n "$application_pid" ]]; then kill -TERM "$application_pid" 2>/dev/null || true; fi
+  if [[ -n "$migration_pid" ]]; then kill -TERM "$migration_pid" 2>/dev/null || true; fi
   if [[ -n "$database_pid" ]]; then kill -TERM "$database_pid" 2>/dev/null || true; fi
   wait 2>/dev/null || true
 }
-trap shutdown TERM INT EXIT
+finish() {
+  local status=$? child="startup" pid="${completed_pid:-}"
+  trap - EXIT
+  trap '' TERM INT
+  if [[ -n "$termination_signal" ]]; then child="termination"; pid=""
+  elif [[ -n "$pid" && "$pid" == "$database_pid" ]]; then child="database"
+  elif [[ -n "$pid" && "$pid" == "$migration_pid" ]]; then child="migration"
+  elif [[ -n "$pid" && "$pid" == "$application_pid" ]]; then child="application"; fi
+  # Record startup failures as well as completed children, without replacing the
+  # original exit status when the independent diagnostic write fails. Persist
+  # before waiting for shutdown, which may itself outlast the container grace.
+  gosu coast bun /app/scripts/container-child-exit.ts "$data_dir" "$child" "$pid" "$status" "$termination_signal" || true
+  shutdown
+  exit "$status"
+}
+trap 'termination_signal="TERM"; exit 143' TERM
+trap 'termination_signal="INT"; exit 130' INT
+trap finish EXIT
 
 if [[ -z "${DATABASE_URL:-}" ]]; then
   pg_bin="$(find /usr/lib/postgresql -mindepth 2 -maxdepth 2 -type d -name bin | sort -V | tail -1)"
@@ -46,7 +66,12 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   database_ready=false
   for attempt in {1..60}; do
     if gosu postgres "$pg_bin/pg_isready" -q -h /var/run/postgresql -U postgres; then database_ready=true; break; fi
-    if ! kill -0 "$database_pid" 2>/dev/null; then echo 'Bundled PostgreSQL exited during startup.' >&2; exit 1; fi
+    if ! kill -0 "$database_pid" 2>/dev/null; then
+      completed_pid="$database_pid"
+      if wait "$database_pid"; then exit_code=0; else exit_code=$?; fi
+      echo 'Bundled PostgreSQL exited during startup.' >&2
+      exit "$exit_code"
+    fi
     sleep 1
   done
   if [[ "$database_ready" != true ]]; then echo 'Bundled PostgreSQL did not become ready.' >&2; exit 1; fi
@@ -60,12 +85,20 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   unset database_password
 fi
 
-gosu coast bun /app/scripts/migrate.ts
+gosu coast bun /app/scripts/migrate.ts &
+migration_pid=$!
+completed_pid="$migration_pid"
+if wait "$migration_pid"; then
+  migration_pid=""
+  completed_pid=""
+else
+  exit "$?"
+fi
 gosu coast bun /app/build/index.js &
 application_pid=$!
 # If either child dies, stop the other and let the container restart as a unit.
 set +e
-if [[ -n "$database_pid" ]]; then wait -n "$database_pid" "$application_pid"; else wait "$application_pid"; fi
-exit_code=$?
+source /usr/local/lib/coast-container-wait.sh
+wait_for_coast_children
 set -e
 exit "$exit_code"

@@ -1,6 +1,6 @@
 <script lang="ts" generics="T extends MediaView | MediaCardPresentation">
  import { availabilityControl, collectionControl } from '$lib/ui/controls/actions';
-  import { untrack, type Snippet } from 'svelte';
+  import { onDestroy, untrack, type Snippet } from 'svelte';
   import { createShelfSource, type ShelfConfig } from '$lib/ui/shelves';
   import type { ShelfControl } from '$lib/ui/shelves/types';
   import { createShelfSelection } from '$lib/ui/shelves/local.svelte';
@@ -13,6 +13,8 @@
   import Button from './Button.svelte';
   import { page } from '$app/state';
   import { useClient } from '$lib/ui/client-context';
+  import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
+  import { createSocialEnrichment, type SocialEnrichment } from '$lib/ui/social-enrichment';
 
   import { mediaTypeOptions } from '$lib/ui/filter-options';
   import RowFilter from './RowFilter.svelte';
@@ -76,7 +78,7 @@
   } = $props();
   let selected = $state(false);
   let socialActive=$state(false);
-  let social=$state<Record<string,{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number}>>({});
+  let social=$state<SocialEnrichment>({});
   const adapter = untrack(() => source ? createShelfSource(() => source!) : undefined);
   const filterMode = $derived(adapter?.filterBy ?? filterBy);
   const inputItems = $derived(adapter ? adapter.items as T[] : items);
@@ -95,18 +97,18 @@
   function selectControl(control: ShelfControl, value: string) { selected = true; control.change(value); }
   const key = (item: T) => item.entryId ?? ('href' in item ? item.href : item.id);
 
-  $effect(()=>{
-    const ids=[...new Set(displayItems.filter(item=>!item.captionActor).map(item=>'workId' in item?item.workId??item.id:item.id).filter(id=>/^[0-9a-f-]{36}$/.test(id)))];
-    social={};if(!socialActive||!page.data.user||!ids.length)return;
-    const controller=new AbortController();
-    void (async()=>{
-      const batches=[];
-      for(let offset=0;offset<ids.length;offset+=60)batches.push(ids.slice(offset,offset+60));
-      const results=await Promise.all(batches.map(batch=>api<typeof social>(`social/works?ids=${batch.join(',')}`,undefined,'GET',{signal:controller.signal})));
-      if(!controller.signal.aborted)social=Object.assign({},...results);
-    })().catch(()=>{});
-    return ()=>controller.abort();
+  const socialRevision = $derived(contentRevisionKey(page.data, ['social']));
+  const enrichment = createSocialEnrichment(
+    (ids, signal) => api<SocialEnrichment>(`social/works?ids=${ids.join(',')}`, undefined, 'GET', { signal }),
+    value => { social = value; },
+  );
+  $effect(() => {
+    const ids = [...new Set(displayItems.filter(item => !item.captionActor).map(item => 'workId' in item ? item.workId ?? item.id : item.id).filter(id => /^[0-9a-f-]{36}$/.test(id)))];
+    const scope = JSON.stringify([socialRevision, displayResetKey, selection.resetKey, adapter?.filters.map(control => [control.label, control.value]), adapter?.controls.map(control => [control.label, control.value])]);
+    const active = socialActive && !!page.data.user;
+    untrack(() => enrichment.update({ ids, scope, active }));
   });
+  onDestroy(enrichment.cancel);
 
   const entries = $derived<{ key: string; item: T | JournalCard['item']; activity?: JournalCard['activity']; note?: JournalCard['note']; run?: JournalCard['run'] }[]>(
     journal ? journalCards(journal.runs, !!journal.selection).map(entry => entry) : displayItems.map(item => ({ key: key(item), item }))

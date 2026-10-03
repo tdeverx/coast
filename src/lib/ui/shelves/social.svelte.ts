@@ -3,6 +3,7 @@ import {page} from '$app/state';
 import { onDestroy, untrack } from 'svelte';
 import { useClient } from '$lib/ui/client-context';
 import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
+import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
 import type { ShelfSource, ShelfItem } from './types';
 type Feed = { emptyAllMedia?:boolean; items: ShelfItem[]; hasMore: boolean; next: { before: string; beforeId: string; beforeKnown?:string } | null };
 export type SocialShelfOptions = { type: 'social'; layout?: 'row' | 'grid'; initial?: Feed; category?: string; mediums?:boolean; surface?:'activity'|'popular' };
@@ -21,7 +22,19 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
    merge: (previous, result) => ({ ...result, items: uniqueItems(append ? [...previous.items, ...result.items] : result.items, item => item.entryId ?? item.id) }),
   });
  }
- $effect(() => { get().category; untrack(() => { category=get().category??(get().mediums?'screen':'all'); if (resource.activated) void load(); }); });
+ const suppliedCategory=$derived(get().category??(get().mediums?'screen':'all'));
+ const refreshKey=$derived(JSON.stringify([contentRevisionKey(page.data,['social']),get().surface,page.data.experimentalMusic,page.data.experimentalGaming]));
+ let previousCategory=untrack(()=>suppliedCategory);
+ let previousRefresh=untrack(()=>refreshKey);
+ $effect(() => {
+  const nextCategory=suppliedCategory,key=refreshKey;
+  untrack(() => {
+   const changed=key!==previousRefresh||nextCategory!==previousCategory;
+   if(nextCategory!==previousCategory)category=nextCategory;
+   previousCategory=nextCategory;previousRefresh=key;
+   if(changed&&(resource.activated||resource.ready))void load();
+  });
+ });
  onDestroy(resource.cancel);
  return {
     get pagination() { return get().layout==='grid' ? { kind: 'cursor' as const, hasMore: resource.data.hasMore } : {kind:'local' as const}; }, get title(){return get().surface==='popular'?'Popular with friends':'Activity';}, get href(){return get().surface==='popular'?undefined:`/for-you?section=activity&category=${category}`;}, shape: 'fanart', artworkStyle:'thumb', artworkPriority:'episode-season-show', get resetKey(){return category;}, get filters(){return get().mediums?[{type:'segments' as const,label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptions(page.data),change:(value:string)=>{category=value;void load();}}]:[];}, controls: [],

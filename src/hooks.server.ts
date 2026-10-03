@@ -109,14 +109,19 @@ export const handle: Handle = async ({ event, resolve }) => {
       'settings',
       'admin',
       'media',
+      'collection',
+      'library',
+      'progress',
       'lists',
       'notifications',
       'requests',
     ].includes(segment)
       ? segment
-      : ['login', 'setup', 'logout'].includes(event.url.pathname.split('/')[1])
-        ? 'auth'
-        : 'other';
+      : ['collection', 'library', 'progress'].includes(event.url.pathname.split('/')[1])
+        ? event.url.pathname.split('/')[1]
+        : ['login', 'setup', 'logout'].includes(event.url.pathname.split('/')[1])
+          ? 'auth'
+          : 'other';
     if (!diagnosticRequest)
       void logDiagnostic('debug', 'request.start', { method: event.request.method, operation });
     try {

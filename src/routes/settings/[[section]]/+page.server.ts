@@ -22,6 +22,7 @@ import {
 import { eq, desc } from 'drizzle-orm';
 import { jobTimings } from '$lib/providers/job-timing.server';
 import { adminDemand } from '$lib/collection/demand.server';
+import { listBenchmarks } from '$lib/benchmarks/service.server';
 export const load = (async ({locals, params, depends, url}) => {
   depends('coast:settings'); depends('coast:providers');
 
@@ -38,6 +39,7 @@ export const load = (async ({locals, params, depends, url}) => {
   const config = await getConfig();
   return {
     section,
+    benchmarks:section==='benchmarks'?await listBenchmarks(locals.user,Number(url.searchParams.get('page'))||1):null,
     playbackLinks:section==='playback'?await listShares(locals.user):[],
     apiTokens:section==='api'?await listApiTokens(locals.user):[],
     invites: section==='users'?await listInvites(locals.user):[],
