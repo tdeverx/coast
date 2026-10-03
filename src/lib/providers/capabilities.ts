@@ -1,5 +1,6 @@
 import type { MediaCategory } from '$lib/media/model';
 export type ProviderField =
+  | 'achievements'
   | 'metadata'
   | 'availability'
   | 'history'
@@ -38,6 +39,7 @@ export const providerCapabilities = {
     playback: false,
   },
   tmdb: { categories: ['screen'], read: ['metadata'], write: [], playback: false },
+  steam: { categories:['game'], read:['metadata','availability','collection','progress','achievements'], write:[], playback:false },
   igdb: { categories: ['game'], read: ['metadata'], write: [], playback: false },
 } satisfies Record<string, Capability>;
 export function supportsProviderField(

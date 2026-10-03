@@ -13,8 +13,8 @@ const frame = (bar: number, brightness: number) => {
 describe('presentation crop', () => {
   test('only symmetric matte bars from bright frames establish a crop', () => {
     const measured = measureBlackBars(frame(10, 150), 160, 90);
-    expect(measured?.top).toBe(0.1);
-    expect(measured?.bottom).toBe(0.1);
+    expect(measured?.top).toBe(10 / 90);
+    expect(measured?.bottom).toBe(10 / 90);
     expect(measured?.left).toBe(0);
   });
   test('a dark scene leaves crop unresolved instead of cutting the image', () => {

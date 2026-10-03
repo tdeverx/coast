@@ -42,3 +42,11 @@ export async function importIgdbGame(raw: unknown) {
   // Fetch before opening the transaction; a failed provider call leaves catalog and history intact.
   return importIgdbMetadata(await igdbDetails(input.instanceId, input.externalId));
 }
+
+export async function igdbSteamMatches(instanceId:string,ids:string[]) {
+  return (await igdbAdapter(instanceId)).steamMatches(ids);
+}
+
+export async function discoverIgdb(instanceId:string,section:'trending'|'recent') {
+  return (await igdbAdapter(instanceId)).discover(section);
+}

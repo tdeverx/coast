@@ -1,22 +1,28 @@
 <script lang="ts">
+  import {userStatus,chooseStatus,sharePresence} from '$lib/social/status.svelte';
+  import {preferenceLabels,statusPreferences,statusLabels} from '$lib/social/status';
+  import {useClient} from '$lib/ui/client-context';
+  const {preview}=useClient();
+  import {openNotifications} from '$lib/notifications/client.svelte';
+  import {openFriends} from '$lib/social/panel.svelte';
+  import Avatar from './Avatar.svelte';
+  import Button from '$lib/ui/components/Button.svelte';
   import { profilePath } from '$lib/profile/url';
   import { page } from '$app/state';
   import Icon from './Icon.svelte';
   import Brand from './Brand.svelte';
-  import ContextMenu from './ContextMenu.svelte';
-  import MenuAction from './MenuAction.svelte';
+
   import { player } from '$lib/playback/client.svelte';
   import { slidingPill } from '$lib/ui/materials/sliding-pill';
   import { liquidGlass } from '$lib/ui/materials/glass';
-  let { user, unread = 0 }: { user: { username: string; role: string; settings?:import('$lib/server/db/schema').UserSettings } | null; unread?: number } =
+  let { user, unread = 0, friendRequests = 0 }: { user: { username: string; role: string; settings?:import('$lib/server/db/schema').UserSettings } | null; unread?: number; friendRequests?:number } =
     $props();
   const nav = $derived(user ? [
-    { label: 'For You', href: '/for-you' },
-    { label: 'Collection', href: '/collection' },
-    { label: 'Library', href: '/library' },
-    { label: 'Discover', href: '/discover' },
-    { label: 'Search', href: '/search' },
-  ] : [{label:'Discover',href:'/discover'}]);
+    { label: 'For You', href: '/for-you', icon:'home' as const },
+    { label: 'Library', href: '/library',icon:'library' as const },
+    { label: 'Discover', href: '/discover',icon:'discover' as const },
+    { label: 'Search', href: '/search',icon:'search' as const },
+  ] : [{label:'Discover',href:'/discover',icon:'discover' as const}]);
 </script>
 
 <a class="skip" href="#main-content">Skip to content</a>
@@ -36,41 +42,53 @@
           href={item.href}
           class:active={page.url.pathname === item.href || (item.href === '/library' && page.url.pathname.startsWith('/games'))}
           aria-current={page.url.pathname === item.href || (item.href === '/library' && page.url.pathname.startsWith('/games')) ? 'page' : undefined}
-          aria-label={item.label}><span>{item.label}</span></a
+          aria-label={item.label}><span class="nav-icon"><Icon name={item.icon} size={24}/></span><span class="nav-label">{item.label}</span></a
         >{/each}
     </nav>
     <div class="account">
       {#if user}
-      <a
+      <button type="button" id="friends-trigger" class="icon-button notification" aria-label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</button>
+      <button type="button"
+        id="notification-trigger"
         class="icon-button notification"
-        href="/notifications"
+        onclick={()=>{if(!preview)openNotifications();}}
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
-        ><Icon name="bell" size={21} />{#if unread}<i></i>{/if}</a
-      ><ContextMenu label="Account menu"
-        >{#snippet trigger()}<span class="avatar">{#if user.settings?.profile?.avatar}<img src={user.settings?.profile.avatar} alt="Your profile" />{:else}{user.username.slice(0, 1).toUpperCase()}{/if}</span
+        ><Icon name="bell" size={21} />{#if unread}<i></i>{/if}</button
+      ><Button menu label="Account menu"
+        >{#snippet trigger()}<span class="avatar"><Avatar name={user.username} src={user.settings?.profile?.avatar} label="Your profile" size={28} status={userStatus.status} class="header-icon" /></span
           >{/snippet}{#snippet children()}
-          <MenuAction icon="user" href={profilePath(user.username)}>Your profile</MenuAction>
-          <MenuAction icon="user" href="/friends">Friends</MenuAction>
-          <MenuAction icon="list" href="/lists">Your lists</MenuAction>
-          <MenuAction icon="request" href="/requests">Requests</MenuAction>
+          <Button menu label="Activity status">
+            {#snippet trigger()}{#if userStatus.status!=='offline'}<span class="status-dot" data-status={userStatus.status} aria-hidden="true"></span>{/if}<span class="menu-action-label">{userStatus.preference==='automatic'?statusLabels[userStatus.status]:preferenceLabels[userStatus.preference]}</span><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
+            {#snippet children()}
+              {#each statusPreferences as preference}<Button item selection="radio" checked={userStatus.preference===preference} disabled={userStatus.busy} onclick={()=>void chooseStatus(preference)}><span class="status-choice"><span class="status-dot" data-status={preference==='automatic'?'online':preference==='invisible'?'offline':preference} aria-hidden="true"></span>{preferenceLabels[preference]}</span></Button>{/each}
+              <div class="menu-divider" role="separator"></div>
+              <Button item checked={userStatus.sharePresence} disabled={userStatus.busy} onclick={()=>void sharePresence(!userStatus.sharePresence)}>Share activity</Button>
+              {#if userStatus.error}<p class="status-help error" role="alert">{userStatus.error}</p>{/if}
+            {/snippet}
+          </Button>
           <div class="menu-divider" role="separator"></div>
-          <MenuAction icon="settings" href="/settings">Settings</MenuAction>
-          {#if user.role === 'admin'}<MenuAction icon="shield" href="/settings/admin"
-              >Admin</MenuAction
-            >{/if}
+          <Button item icon="user" href={profilePath(user.username)}>Profile</Button>
+          <Button item icon="list" href="/lists">Your lists</Button>
+          <Button item icon="request" href="/requests">Requests</Button>
+          <div class="menu-divider" role="separator"></div>
+          <Button item icon="settings" href="/settings">Settings</Button>
+          {#if user.role === 'admin'}<Button item icon="shield" href="/settings/admin"
+              >Admin</Button>{/if}
           <div class="menu-divider" role="separator"></div>
           <form method="POST" action="/logout">
             <button type="submit" class="menu-row menu-row-danger" role="menuitem" data-menu-keep-open
               ><Icon name="logout" /><span class="menu-action-label">Sign out</span></button
             >
-          </form>{/snippet}</ContextMenu
+          </form>{/snippet}</Button
       >
-      {:else}<a class="button" href="/login">Sign in</a>{/if}
+      {:else}<Button href="/login">Sign in</Button>{/if}
     </div>
   </div>
 </header>
 
 <style>
+  .status-choice {display:inline-flex;align-items:center;gap:8px;}
+  .status-help {padding:8px 12px;margin:0;font-size:var(--text-sm);color:var(--muted);max-width:240px;}
   header {
     position: fixed;
     inset: 0 0 auto;
@@ -111,6 +129,7 @@
     left: 50%;
     transform: translateX(-50%);
   }
+  .nav-icon{display:none;}
   nav a {
     gap: 8px;
     padding-inline: 18px;
@@ -121,7 +140,7 @@
     gap: 8px;
     align-items: center;
   }
-  .avatar img{width:28px;height:28px;border-radius:50%;object-fit:cover;display:block}
+  .avatar :global(.header-icon) { background:transparent; font:inherit; }
   .avatar {
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
@@ -129,6 +148,7 @@
   .notification {
     position: relative;
   }
+  .friend-count{position:absolute;top:0;right:0;min-width:16px;height:16px;display:grid;place-items:center;padding-inline:3px;border-radius:8px;background:var(--accent);color:var(--canvas);font-size:var(--text-sm);font-weight:var(--weight-semibold);}
   .notification i {
     position: absolute;
     top: 9px;
@@ -160,7 +180,11 @@
       inset: auto 12px calc(env(safe-area-inset-bottom) + 12px);
       transform: none;
     }
+    .nav-label{display:none;}
+    .nav-icon{display:flex;}
+    .nav-icon :global(svg path),.nav-icon :global(svg circle),.nav-icon :global(svg rect){stroke-width:2.5;}
     nav a {
+      height:52px;
       flex: 1;
       min-width: 0;
       padding-inline: 12px;

@@ -5,11 +5,12 @@ export function observeVideoCrop(video: HTMLVideoElement, options: {
   enabled: () => boolean;
   onCrop: (crop: FrameCrop) => void;
   onReady?: () => void;
+  continuous?: boolean;
 }) {
   const observe = createCropTracker();
   const canvas = document.createElement('canvas');
-  canvas.width = 160;
-  canvas.height = 90;
+  canvas.width = 320;
+  canvas.height = 180;
   const context = canvas.getContext('2d', { willReadFrequently: true });
   let cancelled = false, ready = false, lastTime = -1;
   let timer: ReturnType<typeof setTimeout>;
@@ -23,12 +24,12 @@ export function observeVideoCrop(video: HTMLVideoElement, options: {
     lastTime = video.currentTime;
     try {
       if (!context) { options.onReady?.(); return; }
-      context.drawImage(video, 0, 0, 160, 90);
-      const pixels = context.getImageData(0, 0, 160, 90);
-      const result = observe(measureBlackBars(pixels.data, 160, 90));
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+      const result = observe(measureBlackBars(pixels.data, canvas.width, canvas.height));
       if (result.crop) options.onCrop(result.crop);
       if (!ready && result.ready) { ready = true; options.onReady?.(); }
-      if (result.complete) return;
+      if (result.complete && !options.continuous) return;
     } catch {
       options.onReady?.();
       return;

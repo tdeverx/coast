@@ -41,14 +41,15 @@ export function measureBlackBars(
   while (bottom < height * 0.22 && darkRow(height - bottom - 1)) bottom++;
   while (left < width * 0.22 && darkColumn(left)) left++;
   while (right < width * 0.22 && darkColumn(width - right - 1)) right++;
-  // Require matching bars on opposing edges. Keep a pixel inside the matte to avoid cutting content.
+  // Require matching bars on opposing edges; fit to the first content pixel.
+  // Leaving a sampled matte pixel becomes a visible strip after cover scaling.
   if (top < 2 || bottom < 2 || Math.abs(top - bottom) > 2) top = bottom = 0;
   if (left < 2 || right < 2 || Math.abs(left - right) > 2) left = right = 0;
   return {
-    top: Math.max(0, top - 1) / height,
-    bottom: Math.max(0, bottom - 1) / height,
-    left: Math.max(0, left - 1) / width,
-    right: Math.max(0, right - 1) / width,
+    top: top / height,
+    bottom: bottom / height,
+    left: left / width,
+    right: right / width,
   };
 }
 function sameCrop(a: FrameCrop, b: FrameCrop) {

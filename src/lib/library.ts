@@ -8,6 +8,12 @@ export type LibraryContent = {
   failure?: string;
 };
 export const libraryTitles = { watch: 'Watch', listen: 'Listen', play: 'Play' } as const;
+export function libraryBrowseDefaults(parameters: URLSearchParams, profile = false) {
+  return {
+    collection: profile || parameters.get('collection') !== 'false',
+    scope: parameters.get('scope') ?? (parameters.get('availability') === 'available' ? 'available' : 'all'),
+  };
+}
 export const librarySelections = {
   watch: [
     { value: 'all', label: 'All' },
@@ -56,8 +62,8 @@ export function libraryBrowsePaths(options: {
 }, preview?: { personal?: boolean }) {
   const { surface, collection, selection, kind, scope, genre, relationship, source, availability, username, page } = options;
   if (preview) return {
-    api: libraryPath({ preview: true, surface, selection, personal: preview.personal ?? false }),
-    href: surface === 'listen' ? `/music?kind=${selection}` : `/games${preview.personal ? '?personal=true' : ''}`,
+    api: libraryPath({ preview: true, surface, selection, scope, personal: preview.personal ?? false }),
+    href: surface === 'listen' ? '/music?' + new URLSearchParams({kind:selection,scope}) : '/games?' + new URLSearchParams({state: selection, scope, personal: String(preview.personal ?? false)}),
   };
   if (collection) {
     const parameters = new URLSearchParams({ category: surface === 'watch' ? 'screen' : surface === 'listen' ? 'music' : 'game', level: 'root',
@@ -65,10 +71,9 @@ export function libraryBrowsePaths(options: {
       kind: surface === 'listen' ? selection : surface === 'play' ? 'all' : kind, relationship, source, availability, ...(username ? { username } : {}), page: String(page) });
     const api = `collection?${parameters}`;
     parameters.set('view', surface);
-    return { api, href: `/collection?${parameters}` };
+    parameters.set('collection', 'true');
+    return { api, href: `/library?${parameters}` };
   }
-  const href = surface === 'watch' ? '/library?' + new URLSearchParams({ view: 'watch', tracking: selection, kind, scope, genre, page: String(page) })
-    : surface === 'listen' ? '/music?' + new URLSearchParams({ kind: selection, page: String(page) })
-    : '/games?' + new URLSearchParams({ state: selection, page: String(page) });
+  const href = '/library?' + new URLSearchParams({ view: surface, collection: 'false', tracking: selection, kind: surface === 'listen' ? selection : kind, scope, genre, page: String(page) });
   return { api: libraryPath({ surface, selection, kind, scope, genre, page }), href };
 }

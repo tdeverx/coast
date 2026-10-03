@@ -2,16 +2,19 @@
   import { goto, invalidateAll } from '$app/navigation';
   import Heading from '$lib/ui/components/Heading.svelte';
   import { browseHeading } from '$lib/ui/headings';
-  import RowFilter from '$lib/ui/components/RowFilter.svelte';
+  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
+  import { librarySelections } from '$lib/library';
+  import { availabilityControl } from '$lib/ui/controls/actions';
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import MediaCard from '$lib/ui/components/MediaCard.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   let { data } = $props();
-  function pageUrl(page: number, kind = data.filters.kind) {
+  function pageUrl(page: number, kind = data.filters.kind, scope = data.filters.scope) {
     return `/music?${new URLSearchParams({
       connection: data.connectionId,
       kind,
+      scope,
       search: data.filters.search,
       page: String(page),
     })}`;
@@ -20,20 +23,10 @@
 
 <svelte:head><title>Music · Coast</title></svelte:head>
 <div class="content page route-content">
-  <Heading {...browseHeading("listen", data.experimentalFeatures)}>{#snippet actions()}<RowFilter
-        label="Music type"
-        value={data.filters.kind}
-        options={[
-          { value: 'all', label: 'All' },
-          { value: 'album', label: 'Albums' },
-          { value: 'artist', label: 'Artists' },
-          { value: 'track', label: 'Tracks' },
-        ]}
-        onchange={(kind) =>
-          goto(pageUrl(1, kind as typeof data.filters.kind), { keepFocus: true, noScroll: true })}
-      />{/snippet}</Heading>
+  <Heading {...browseHeading("listen", data.experimentalFeatures)}>{#snippet filters()}<SegmentedControl label="Listen type" value={data.filters.kind} options={librarySelections.listen} onchange={kind => goto(pageUrl(1,kind as typeof data.filters.kind),{keepFocus:true,noScroll:true})} /><Button {...availabilityControl(data.filters.scope === 'available', value => goto(pageUrl(1,data.filters.kind,value?'available':'all'),{keepFocus:true,noScroll:true}))} />{/snippet}</Heading>
   <form class="filter-row browse-search" action="/music" method="GET">
     <input type="hidden" name="kind" value={data.filters.kind} />
+    <input type="hidden" name="scope" value={data.filters.scope} />
     <input type="hidden" name="connection" value={data.connectionId} />
     <input
       aria-label="Search music"
@@ -43,11 +36,11 @@
       value={data.filters.search}
       maxlength="200"
     />
-    <Button type="submit" variant="secondary" icon="search">Search</Button>
+    <Button type="submit"  icon="search">Search</Button>
   </form>
   {#if data.failure}
     <div class="notice error" role="alert">{data.failure}</div>
-    <Button variant="secondary" icon="refresh" onclick={() => invalidateAll()}>Try again</Button>
+    <Button  icon="refresh" onclick={() => invalidateAll()}>Try again</Button>
   {/if}
   {#if !data.sources.length}
     <EmptyState
@@ -55,7 +48,7 @@
       description="Link a Jellyfin account to browse its music."
       icon="library"
     >
-      <Button variant="secondary" href="/settings/connections">Connect a media server</Button>
+      <Button  href="/settings/connections">Connect a media server</Button>
     </EmptyState>
   {:else if data.items.length}
     <div class="spread" style="margin-bottom:22px">
@@ -80,7 +73,7 @@
       description="Try another music type or search."
       icon="library"
     >
-      <Button variant="secondary" href={`/music?connection=${data.connectionId}`}
+      <Button  href={`/music?connection=${data.connectionId}`}
         >Reset filters</Button
       >
     </EmptyState>

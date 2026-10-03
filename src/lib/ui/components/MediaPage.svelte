@@ -52,14 +52,14 @@
 </script>
 
 {#snippet actionControls()}
-  {#each commands as command}<Button icon={command.icon} variant={command.variant} disabled={command.disabled} href={command.href} onclick={command.run}>{command.label}</Button>{/each}
+  {#each commands as command}<Button icon={command.icon} emphasis={command.emphasis} disabled={command.disabled} href={command.href} onclick={command.run}>{command.label}</Button>{/each}
   {@render heroActions?.()}
 {/snippet}
 {#if hasHero}<MediaHero {item} {items} {collection} {parents} {context} {next} {requestable} actions={commands.length || heroActions ? actionControls : undefined} />{/if}
 <div class={`content ${className}`} class:details class:page={page ?? !hasHero} class:route-content={!hasHero && !details}>
-  {#if back}<Button variant="ghost" href={back.href} icon="left">{back.label}</Button>{/if}
-  {#if error}<p class="notice error" role="alert">{error}</p>{/if}
-  {#if links.length}<div class="row detail-links">{#each links as link}<Button variant="ghost" href={link.href}>{link.label}</Button>{/each}</div>{/if}
+  {#if back}<Button emphasis="subtle" href={back.href} icon="left">{back.label}</Button>{/if}
+  {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+  {#if links.length}<div class="row detail-links">{#each links as link}<Button emphasis="subtle" href={link.href}>{link.label}</Button>{/each}</div>{/if}
   {#each sections as section (section.key)}<Shelf title={section.title} items={section.items ?? []} panels={section.panels}
     size={section.panels ? 'panel' : section.shape ?? 'poster'} shape={section.shape} mediaKind={section.mediaKind}
     artworkOptions={!section.panels} layout={section.layout ?? 'row'} href={section.href}
@@ -67,7 +67,7 @@
     {#snippet actions()}<RowFeedback error={section.error} retry={section.retry} />{/snippet}
     {#snippet empty()}{#if !section.error && section.empty}<EmptyState {...section.empty} icon="library" />{/if}{/snippet}
   </Shelf>{/each}
-  {#if friendDetails.length}<section class="section"><Heading title="Friends on this title" /><div class="row">{#each friendDetails as friend}<Button variant="ghost" href={`/profile/${encodeURIComponent(friend.username)}`}>{friend.username}{friend.rating!==null?` · ${friend.rating} stars`:''}{friend.watched?' · Completed':friend.progress?' · In progress':''}</Button>{/each}{#if friendTotal>friendDetails.length}<span class="small quiet">+{friendTotal-friendDetails.length} more friends</span>{/if}</div></section>{/if}
+  {#if friendDetails.length}<section class="section"><Heading title="Friends on this title" /><div class="row">{#each friendDetails as friend}<Button emphasis="subtle" href={`/profile/${encodeURIComponent(friend.username)}`}>{friend.username}{friend.rating!==null?` · ${friend.rating} stars`:''}{friend.watched?' · Completed':friend.progress?' · In progress':''}</Button>{/each}{#if friendTotal>friendDetails.length}<span class="small quiet">+{friendTotal-friendDetails.length} more friends</span>{/if}</div></section>{/if}
   {@render children?.()}
 </div>
 <style>

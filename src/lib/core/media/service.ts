@@ -1,10 +1,8 @@
 import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../../server/db';
-import { episodes, externalIds, media, movies, seasons, shows, users } from '../../server/db/schema';
-import { AppError } from '../../server/security/errors';
+import { episodes, externalIds, media, seasons, users } from '../../server/db/schema';
 import { DomainError } from '../errors';
-import { trackInTransaction } from '../tracking/service';
 
 const uuidSchema = v.pipe(v.string(), v.uuid());
 export const localEpisodesInputSchema = v.object({
@@ -12,31 +10,6 @@ export const localEpisodesInputSchema = v.object({
   seasonNumber: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(1000)),
   episodeCount: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
 });
-export async function createLocalMedia(userId: string, raw: unknown) {
-  v.parse(uuidSchema, userId);
-  const input = v.parse(
-    v.object({
-      title: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(250)),
-      kind: v.picklist(['movie', 'show']),
-      year: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1800), v.maxValue(2200))),
-      overview: v.optional(v.pipe(v.string(), v.maxLength(5000))),
-    }),
-    raw
-  );
-  return getDb().transaction(async (tx) => {
-    const [user] = await tx
-      .select({ id: users.id })
-      .from(users)
-      .where(and(eq(users.id, userId), eq(users.disabled, false)));
-    if (!user) throw new AppError(401, 'Sign in to add a title.');
-    const [item] = await tx.insert(media).values(input).returning();
-    if (input.kind === 'movie') await tx.insert(movies).values({ mediaId: item.id });
-    else await tx.insert(shows).values({ mediaId: item.id });
-    await trackInTransaction(tx, userId, { mediaId: item.id, action: 'watchlist', value: true });
-    return item;
-  });
-}
-
 /** Extend a manual show to a desired episode count; existing canonical identities are never replaced. */
 export async function addLocalSeasonEpisodes(
   userId: string,

@@ -1,3 +1,4 @@
+import {playbackArtwork} from '$lib/ui/artwork-priority';
 import { acceptedPlayedTime, listenReached } from './listening';
 import { recordMusicListen } from '$lib/music/persistence.server';
 import { correlationId } from '$lib/diagnostics';
@@ -6,7 +7,7 @@ import { sequenceEntries } from '$lib/core/lists/sequence';
 import { rewatchBoundary, rewatchFields } from '$lib/core/tracking/rewatch';
 import { mediaViews } from '$lib/server/queries/media';
 import * as v from 'valibot';
-import { and, eq, gt, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import {
   availability,
@@ -367,22 +368,8 @@ export async function startPlayback(
       : enabled
         ? (preferred?.index ?? (always ? subtitles[0]?.index : null) ?? null)
         : null;
-  const [episode] =
-    item.kind === 'episode'
-      ? await getDb()
-          .select({
-            show: media.title,
-            season: episodes.seasonNumber,
-            number: episodes.episodeNumber,
-          })
-          .from(episodes)
-          .innerJoin(media, eq(media.id, episodes.showId))
-          .where(eq(episodes.mediaId, item.id))
-      : [];
   const [presentation] = await mediaViews(userId, { ids: [item.id], limit: 1 });
-  const detail = episode
-    ? `${episode.show} · S${String(episode.season).padStart(2, '0')} E${String(episode.number).padStart(2, '0')}`
-    : music?music.artistNames.join(', '):[item.year, item.kind === 'movie' ? 'Movie' : 'Episode'].filter(Boolean).join(' · ');
+  const detail=(await playbackDetails([{id:item.id,kind:item.kind,year:item.year,captionSubtitle:music?.artistNames.join(', ')}])).get(item.id)??'';
   return {
     id: session.id,
     mediaType,
@@ -390,7 +377,7 @@ export async function startPlayback(
     mediaId: item.id,
     detail,
     title: item.title,
-    artwork: music?(best.row.providerItem.snapshot.primaryImageTag?`/api/v1/providers/${best.row.availability.connectionId}/music/${best.row.providerItem.externalId}/artwork`:undefined):presentation?.poster ?? presentation?.backdrop,
+    artwork: music?(best.row.providerItem.snapshot.primaryImageTag?`/api/v1/providers/${best.row.availability.connectionId}/music/${best.row.providerItem.externalId}/artwork`:undefined):(presentation?playbackArtwork(presentation):undefined),
     url: `/api/v1/playback/${session.id}/stream`,
     kind: best.plan.useHls ? 'hls' : 'direct',
     startSeconds: position,
@@ -795,4 +782,16 @@ export async function recordPlaybackError(userId: string, sessionId: string, cod
     failure: 'media',
     code: typeof code === 'number' && Number.isInteger(code) && code >= 0 && code <= 4 ? code : 0,
   });
+}
+
+/** Shared now-playing metadata for the controller and party cards; episodes are resolved in one query. */
+export async function playbackDetails(items:{id:string;kind:string;year?:number|null;captionSubtitle?:string}[]) {
+ const episodeIds=items.filter(item=>item.kind==='episode').map(item=>item.id);
+ const episodeRows=episodeIds.length?await getDb().select({id:episodes.mediaId,show:media.title,season:episodes.seasonNumber,number:episodes.episodeNumber}).from(episodes).innerJoin(media,eq(media.id,episodes.showId)).where(inArray(episodes.mediaId,episodeIds)):[];
+ const episodesById=new Map(episodeRows.map(episode=>[episode.id,episode]));
+ return new Map(items.map(item=>{
+  const episode=episodesById.get(item.id);
+  const detail=episode?`${episode.show} · S${String(episode.season).padStart(2,'0')} E${String(episode.number).padStart(2,'0')}`:item.captionSubtitle??[item.year,item.kind==='movie'?'Movie':item.kind==='track'?'Track':item.kind==='album'?'Album':'Episode'].filter(Boolean).join(' · ');
+  return [item.id,detail];
+ }));
 }

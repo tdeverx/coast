@@ -1,32 +1,51 @@
 <script lang="ts">
-  import {syncedPlayer,startSynced,isSyncHost,syncedCommand,leaveSynced} from '$lib/playback/synced/client.svelte';
-  import { message } from '$lib/ui/client';
+  import {syncedPlayer,startSynced,joinSynced,isSyncHost,syncedCommand,leaveSynced} from '$lib/playback/synced/client.svelte';
   import { useClient } from '$lib/ui/client-context';
-  import { createFriendsResource } from '$lib/ui/friends.svelte';
-  import Dialog from './Dialog.svelte'; import Button from './Button.svelte'; import RowFilter from './RowFilter.svelte';
+  import {timelinePosition} from '$lib/playback/synced/model';
+  import {onDestroy} from 'svelte';
+  import {createResource} from '$lib/ui/resource.svelte';
+  import type {MediaCardPresentation} from '$lib/ui/types';
+  import PlaybackTimeline from './PlaybackTimeline.svelte';
+  import {playbackArtwork,playbackBackground} from '$lib/ui/artwork-priority';
+  import {useClock} from '$lib/ui/clock.svelte';
+  import {profilePath} from '$lib/profile/url';
+  import {playbackTime} from '$lib/playback/time';
+  import PartyCard from './PartyCard.svelte';
+  import PartyMenu from './PartyMenu.svelte';
+  import Dialog from './Dialog.svelte'; import Button from './Button.svelte';
 
-  const { preview, change } = useClient();
+  let {inline=false,embedded=false}:{inline?:boolean;embedded?:boolean}=$props();
+  const { preview,api } = useClient();
+  const clock=useClock();
 
-  const friends = createFriendsResource();
-  let open=$state(false),failure=$state(''),recipient=$state(''),sending=$state(false);
-  const busy=$derived(sending || friends.busy);
-  const load=(reset=false)=>friends.load(reset);
-  export async function show(){if(preview)return;open=true;failure='';if(!syncedPlayer.room)await startSynced();if(isSyncHost())await load(true);}
-  async function invite(){sending=true;try{await change(`synced/${syncedPlayer.room!.id}/invite`,{friendId:recipient});recipient='';}catch(cause){failure=message(cause);}finally{sending=false;}}
+  let open=$state(false);
+  const media=createResource<MediaCardPresentation|null>(null);
+  const members=$derived(syncedPlayer.room?.participants??[]);
+  const mediaId=$derived(syncedPlayer.room?.mediaId);
+  const roomId=$derived(syncedPlayer.room?.id);
+  $effect(()=>{if(mediaId&&roomId){media.replace(null);void media.load(signal=>api(`synced/${roomId}/media`,undefined,'GET',{signal}));}else media.replace(null);});
+  onDestroy(media.cancel);
+  export async function show(){if(preview)return;open=true;if(!syncedPlayer.room)await startSynced();}
+  async function retry(){try{await joinSynced(syncedPlayer.room!);}catch{/* The shared player retains the failure notice. */}}
 </script>
-<Dialog bind:open title="Synced session · Experimental">
-  <div class="stack">
-    {#if syncedPlayer.room}
-      <p class="small">{isSyncHost()?'You control playback.':'The host controls playback.'} {syncedPlayer.room.bufferingPaused?'Waiting for participants to be ready.':''}</p>
-      {#each syncedPlayer.room.participants as member}<div class="spread"><span>{member.username}{member.userId===syncedPlayer.room.hostId?' · Host':''}</span><span class="small">{!member.joined?'Invited':!member.online?'Disconnected':member.buffering?'Buffering':'Ready'}</span></div>{/each}
-      {#if isSyncHost()}
-        <RowFilter label="Buffering" value={syncedPlayer.room.bufferingPolicy} options={[{value:'together',label:'Pause together'},{value:'catch-up',label:'Continue and catch up'}]} onchange={policy=>syncedCommand('policy',{policy})} />
-        <RowFilter label="Invite a friend" value={recipient} options={[{value:'',label:'Choose a friend'},...friends.items.map(f=>({value:f.userId,label:f.username}))]} onchange={value=>recipient=value} />
-        {#if friends.more}<Button variant="ghost" disabled={busy} onclick={()=>load()}>Load more friends</Button>{/if}
-        <Button disabled={!recipient||busy} onclick={invite}>Invite</Button>
-      {/if}
-      <Button variant="ghost" onclick={async()=>{await leaveSynced();open=false;}}>{isSyncHost()?'End session':'Leave session'}</Button>
-    {/if}
-    {#if failure||friends.error||syncedPlayer.notice}<p class="notice" role="status">{failure||friends.error||syncedPlayer.notice}</p>{/if}
-  </div>
-</Dialog>
+{#snippet content()}
+  {#if syncedPlayer.room}
+    {#snippet partyBody()}
+      {#if syncedPlayer.unavailableMediaId}<Button disabled={syncedPlayer.busy} onclick={retry}>Retry playback</Button>{/if}
+      {#if syncedPlayer.notice}<p class="notice" role="status">{syncedPlayer.notice}</p>{/if}
+    {/snippet}
+    {#snippet partyFooter()}
+      <PlaybackTimeline mediaId={syncedPlayer.room?.mediaId??undefined} href={media.data?.href} audio={syncedPlayer.room?.mediaType==='audio'} title={media.data?.title??'Now playing'} detail={media.data?.captionSubtitle??''} artwork={media.data?playbackArtwork(media.data):undefined} current={mediaId&&syncedPlayer.room?timelinePosition(syncedPlayer.room,clock.now):0} duration={mediaId?syncedPlayer.room?.durationSeconds??0:0}/>
+    {/snippet}
+    <PartyCard inParty {embedded} footer={mediaId?partyFooter:undefined} {members} children={syncedPlayer.unavailableMediaId||syncedPlayer.notice?partyBody:undefined} label="Current party" background={mediaId&&media.data?playbackBackground(media.data):null}>
+
+      {#snippet memberActions(member)}<Button item icon="user" href={profilePath(member.username)}>Profile</Button>{#if isSyncHost()&&member.userId!==syncedPlayer.room?.hostId}<Button item disabled={syncedPlayer.busy||!member.joined} keepOpen={false} onclick={()=>syncedCommand('promote',{userId:member.userId})}>Promote to owner</Button><div class="menu-divider" role="separator"></div><Button item danger disabled={syncedPlayer.busy} keepOpen={false} onclick={()=>syncedCommand('kick',{userId:member.userId})}>Kick</Button>{/if}{/snippet}
+      {#snippet actions()}
+        <span class="small quiet" aria-label="Party duration">{playbackTime(Math.max(0,(clock.now-Date.parse(syncedPlayer.room?.createdAt??''))/1000))}</span>
+        <Button size="icon" icon="close" label="Leave party" title="Leave party" disabled={syncedPlayer.busy} onclick={async()=>{await leaveSynced();open=false;}}/>
+        <PartyMenu/>
+      {/snippet}
+    </PartyCard>
+  {:else if syncedPlayer.notice}<p class="notice" role="status">{syncedPlayer.notice}</p>{/if}
+{/snippet}
+{#if inline}{@render content()}{:else}<Dialog bind:open title="Party · Experimental">{@render content()}</Dialog>{/if}

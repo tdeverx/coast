@@ -25,7 +25,7 @@ export async function homeData(userId: string) {
   const ordered = states.flatMap((state) =>
     byId.get(state.mediaId) ? [byId.get(state.mediaId)!] : []
   );
-  const continueWatching = progress.items;
+  const continueWatching = progress.items.filter((item): item is MediaView => !('href' in item));
   const watchlist = ordered.filter(
     (item) =>
       item.watchlist &&

@@ -27,6 +27,7 @@ export type ProfileSettings = {
   bio?: string;
   avatar?: string | null;
   backgroundMediaId?: string | null;
+  backgroundMode?: 'fixed' | 'activity';
   backgroundPosition?: number;
   featuredMediaId?: string | null;
   featuredNote?: string;
@@ -36,6 +37,9 @@ export type ProfileSettings = {
   favouriteOrder?: string[];
 };
 export type UserSettings = {
+  collection?: import('../../collection/preferences').CollectionPreferences;
+  presenceAudience?: import('../../social/model').Audience;
+  activityStatus?: import('../../social/status').StatusPreference;
   social?: import('../../social/model').SocialSettings;
   profile?: ProfileSettings;
   shareDemand?: boolean;
@@ -69,6 +73,12 @@ export const users = pgTable(
     check('users_role_check', sql`${t.role} in ('admin', 'user')`),
   ]
 );
+export const userPresence = pgTable('user_presence', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  heartbeatAt: timestamp('heartbeat_at', { withTimezone: true }).notNull(),
+  activeAt: timestamp('active_at', { withTimezone: true }),
+});
+
 export const sessions = pgTable(
   'sessions',
   {
@@ -233,7 +243,7 @@ export const externalIds = pgTable(
 
 export const providerInstances = pgTable('provider_instances', {
   id: uuid('id').primaryKey().defaultRandom(),
-  provider: text('provider').$type<'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb'>().notNull(),
+  provider: text('provider').$type<'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb' | 'steam'>().notNull(),
   name: text('name').notNull(),
   baseUrl: text('base_url').notNull(),
   serverIdentity: text('server_identity'),
@@ -1076,7 +1086,7 @@ export const userOnboarding = pgTable('user_onboarding', {
 export const syncedRooms = pgTable('synced_rooms', {
   id: uuid('id').primaryKey().defaultRandom(),
   hostId: uuid('host_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  mediaId: uuid('media_id').notNull().references(() => works.id, { onDelete: 'cascade' }),
+  mediaId: uuid('media_id').references(() => works.id, { onDelete: 'cascade' }),
   mediaType: text('media_type').$type<'audio' | 'video'>().notNull(),
   edition: text('edition').notNull().default(''),
   durationSeconds: real('duration_seconds').notNull(),
@@ -1084,6 +1094,7 @@ export const syncedRooms = pgTable('synced_rooms', {
   paused: boolean('paused').notNull().default(true),
   bufferingPaused: boolean('buffering_paused').notNull().default(false),
   bufferingPolicy: text('buffering_policy').$type<'together' | 'catch-up'>().notNull().default('together'),
+  settings: jsonb('settings').$type<import('$lib/playback/synced/model').PartySettings>().notNull().default({playback:'host',controllers:[],invitations:'host',acceptInvites:true,readyCheck:false,hostDisconnect:'wait',queue:'host'}),
   queue: jsonb('queue').$type<string[]>().notNull().default([]),
   queueIndex: integer('queue_index').notNull().default(0),
   revision: integer('revision').notNull().default(1),
@@ -1097,5 +1108,35 @@ export const syncedParticipants = pgTable('synced_participants', {
   playbackId: uuid('playback_id').references(() => playbackSessions.id, { onDelete: 'set null' }),
   joined: boolean('joined').notNull().default(false),
   buffering: boolean('buffering').notNull().default(false),
+  ready: boolean('ready').notNull().default(false),
+  unavailable: boolean('unavailable').notNull().default(false),
   heartbeatAt: timestamp('heartbeat_at', { withTimezone: true }),
 }, t => [primaryKey({ columns: [t.roomId, t.userId] }), index('synced_participants_user_idx').on(t.userId)]);
+
+/** Provider totals are observations, never fabricated Coast play sessions. */
+export const gameAccountState = pgTable('game_account_state', {
+  accountId: uuid('account_id').notNull().references(() => syncAccounts.id, {onDelete:'cascade'}),
+  gameId: uuid('game_id').notNull().references(() => games.id, {onDelete:'cascade'}),
+  owned: boolean('owned').notNull().default(true),
+  minutesPlayed: integer('minutes_played').notNull().default(0),
+  recentMinutes: integer('recent_minutes').notNull().default(0),
+  lastPlayedAt: timestamp('last_played_at',{withTimezone:true}),
+  hasStats: boolean('has_stats').notNull().default(false),
+  observedAt: timestamp('observed_at', { withTimezone: true }).notNull().defaultNow(),
+  achievementsAt: timestamp('achievements_at',{withTimezone:true}),
+  achievementsAttemptedAt: timestamp('achievements_attempted_at',{withTimezone:true}),
+}, t => [primaryKey({columns:[t.accountId,t.gameId]}),index('game_account_state_game_idx').on(t.gameId)]);
+export const gameAchievements = pgTable('game_achievements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  gameId: uuid('game_id').notNull().references(() => games.id,{onDelete:'cascade'}),
+  provider: text('provider').notNull(),
+  externalId: text('external_id').notNull(),
+  name: text('name').notNull(), description: text('description').notNull().default(''),
+  hidden: boolean('hidden').notNull().default(false),
+  icon: text('icon'), lockedIcon: text('locked_icon'), updatedAt: updatedAt(),
+},t=>[uniqueIndex('game_achievement_identity_unique').on(t.gameId,t.provider,t.externalId)]);
+export const gameAchievementProgress = pgTable('game_achievement_progress', {
+  accountId: uuid('account_id').notNull().references(()=>syncAccounts.id,{onDelete:'cascade'}),
+  achievementId: uuid('achievement_id').notNull().references(()=>gameAchievements.id,{onDelete:'cascade'}),
+  unlocked: boolean('unlocked').notNull(), unlockedAt: timestamp('unlocked_at',{withTimezone:true}), updatedAt: updatedAt(),
+},t=>[primaryKey({columns:[t.accountId,t.achievementId]})]);

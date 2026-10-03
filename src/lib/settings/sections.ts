@@ -2,6 +2,7 @@
 export const personalSettings = [
   ['appearance', 'Appearance'],
   ['playback', 'Playback'],
+  ['collection', 'Collection'],
   ['privacy','Privacy & social'],
   ['account', 'Account'],
   ['connections', 'Connections'],
@@ -20,6 +21,7 @@ export const settingsTitles: Record<string, string> = Object.fromEntries(setting
 
 export const settingsDescriptions: Record<string, string> = {
   appearance: 'Choose how Coast displays your library and optional notifications.',
+  collection: 'Choose what automatically appears in your Collection for each medium. History and relationships are preserved.',
   playback: 'Set subtitle and music listening preferences for your next playback session.',
   privacy:'Choose who can see your profile and activity, and which social notifications you receive.',
   account: 'Review your account, change your password and restore preferences.',
@@ -34,6 +36,7 @@ export const settingsDescriptions: Record<string, string> = {
 };
 
 export const preferenceFields = {
+  collection: ['collection'],
   privacy:['social'],
   appearance: ['shareDemand', 'fullWidth', 'originalTitles', 'region', 'notificationsSilenced'],
   playback: ['listenThreshold', 'subtitlesAlways', 'subtitleLanguages', 'subtitlePrompt'],

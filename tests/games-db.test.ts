@@ -3,7 +3,9 @@ import { migrate } from 'drizzle-orm/bun-sql/migrator';
 import { eq, inArray } from 'drizzle-orm';
 import { closeDb, getDb } from '../src/lib/server/db';
 import { gameRow } from '../src/lib/server/queries/media-rows';
-import { users, games } from '../src/lib/server/db/schema';
+import { getConfig } from '../src/lib/server/config';
+import { libraryContent } from '../src/lib/server/queries/library-content';
+import { users, games, systemSettings } from '../src/lib/server/db/schema';
 import { createGame, createPlaythrough, gameDetails, logGameSession, playthroughDetails, updatePlaythrough, listGames } from '../src/lib/core/games/service';
 
 const target = process.env.TEST_DATABASE_URL;
@@ -67,4 +69,18 @@ suite('game catalog and private playthroughs', () => {
     expect((await listGames('', 1, { userId: owner, status: 'planned' })).items).toEqual([]);
     expect((await listGames('', 1, { userId: other, status: 'planned' })).items.map((item) => item.id)).toEqual([gameId]);
   });
+  test('game previews honour personal state; unknown availability is an empty selection rather than a failed job',async()=>{
+    const saved=await getConfig();
+    await getDb().insert(systemSettings).values({key:'coast',value:{...saved,experimentalFeatures:true}}).onConflictDoUpdate({target:systemSettings.key,set:{value:{...saved,experimentalFeatures:true}}});
+    try{
+      const browse=(user:string,parameters:string)=>libraryContent(user,new URL(`http://coast/library?surface=play&${parameters}`));
+      expect((await browse(owner,'preview=true&personal=true&selection=in-progress')).items.map(item=>item.id)).toEqual([gameId]);
+      expect((await browse(other,'preview=true&personal=true&selection=in-progress')).items).toEqual([]);
+      const unknown=await browse(owner,'preview=true&personal=true&scope=available');
+      expect(unknown.items).toEqual([]);expect(unknown.failure).toBeFalsy();
+      expect((await browse(owner,'scope=all')).items.map(item=>item.id)).toEqual([gameId]);
+      expect((await browse(owner,'scope=available')).failure).toBeUndefined();
+    }finally{await getDb().update(systemSettings).set({value:saved}).where(eq(systemSettings.key,'coast'));}
+  });
+
 });

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from '$lib/ui/components/Button.svelte';
   import { onMount } from 'svelte';
   import { invalidate } from '$app/navigation';
   import { maintenanceKinds, serviceTasks, type ServiceTask } from '$lib/providers/tasks';
@@ -10,8 +11,7 @@
   import QueueList from './QueueList.svelte';
   import type { QueueAction } from '$lib/ui/queue';
   import SegmentedControl from './SegmentedControl.svelte';
-  import ContextMenu from './ContextMenu.svelte';
-  import MenuAction from './MenuAction.svelte';
+
   let {
     providers,
     actions,
@@ -113,23 +113,15 @@
           { value: 'all', label: 'All' },
         ]}
       />{/snippet}
-    {#snippet actions()}<RowFilter
-        label="Job service"
-        bind:value={service}
-        options={[
+    {#snippet actions()}<RowFilter groups={[{label:"Job service", value:service, options:[
           { value: 'all', label: 'All services' },
           ...providers.map((provider) => ({ value: provider.id, label: provider.name })),
-        ]}
-      /><RowFilter
-        label="Job type"
-        bind:value={type}
-        options={[
+        ], change:next=>{service=next;}}, {label:"Job type", value:type, options:[
           { value: 'all', label: 'All tasks' },
           { value: 'maintenance', label: 'Imports and scans' },
           { value: 'changes', label: 'Tracking and requests' },
           { value: 'playback', label: 'Playback reports' },
-        ]}
-      />{/snippet}
+        ], change:next=>{type=next;}}]} />{/snippet}
   </Heading>
   <p class="small intro">
     One card per job · {visible.length} matching recent runs. Automatic-run toggles
@@ -142,12 +134,10 @@
             >{displayLabel(section.provider.provider)} · {section.provider.connectedAccounts} connected
             {section.provider.connectedAccounts === 1 ? 'account' : 'accounts'}</span
           >{#if !section.provider.enabled}<span class="badge">Disabled</span>{/if}{/snippet}
-        {#snippet actions()}<ContextMenu label={`${section.provider.name} service actions`}
-            ><MenuAction icon="settings" href="/settings/integrations" keepOpen={false}
-              >Manage integration</MenuAction
-            ><MenuAction icon="user" href="/settings/connections" keepOpen={false}
-              >Connections</MenuAction
-            ></ContextMenu
+        {#snippet actions()}<Button menu label={`${section.provider.name} service actions`}
+            ><Button item icon="settings" href="/settings/integrations" keepOpen={false}
+              >Manage integration</Button><Button item icon="user" href="/settings/connections" keepOpen={false}
+              >Connections</Button></Button
           >{/snippet}
       </Heading>
       <div class="task-grid">
@@ -174,8 +164,8 @@
       <Heading title="Other background work" /><QueueList actions={orphaned} />
     </section>{/if}
   <p class="small">
-    Schedules are checked once a minute while Coast is running. Each service imports one account at
-    a time; other services can continue independently. Retries respect service rate limits. Pausing
+    Schedules are checked once a minute while Coast is running. Provider Jobs run one at
+    a time across all services; playback and live updates continue independently. Retries respect service rate limits. Pausing
     automatic work keeps already queued jobs available to review.
   </p>
 </div>

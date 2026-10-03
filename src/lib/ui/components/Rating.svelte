@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RowFeedback from './RowFeedback.svelte';
   import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
   import Icon from './Icon.svelte';
@@ -117,7 +118,7 @@
         >{/each}<option value="">Remove rating</option></select
     >
   </div>{/if}
-{#if error}<p class="text-danger small" role="alert">{error}</p>{/if}
+{#if error}<RowFeedback error={error} tag="p" class="text-danger small" />{/if}
 
 <style>
   .menu-rating {

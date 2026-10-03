@@ -38,7 +38,7 @@ export function providerSchedule(provider: string, saved?: unknown): ProviderSch
         listsEnabled: true,
         libraryEnabled: true,
         userSyncEnabled: true,
-        userIntervalMinutes: 10,
+        userIntervalMinutes: provider === 'steam' ? 60 : 10,
         libraryConnectionId: null,
       };
 }

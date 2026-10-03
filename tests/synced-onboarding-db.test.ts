@@ -1,3 +1,4 @@
+import {presence} from '../src/lib/social/presence.server';
 import {enqueueAction} from '../src/lib/server/queue';
 import {encryptCredential} from '../src/lib/server/security/credentials';
 import {beforeAll,afterAll,expect,test} from 'bun:test';
@@ -5,7 +6,7 @@ import {getSql} from '../src/lib/server/db';
 import { getConfig, type CoastConfig } from '../src/lib/server/config';
 import { updateConfig } from '../src/lib/application/configuration.server';
 import {createInvite,redeemInvite,onboardingPending,onboardingStatus,revokeInvite,retryOnboarding} from '../src/lib/server/auth/onboarding';
-import {createRoom,inviteParticipant,joinRoom,roomState,commandRoom,leaveRoom} from '../src/lib/playback/synced/service.server';
+import {createRoom,inviteParticipant,joinRoom,roomState,commandRoom,leaveRoom,declineInvitation,listRooms} from '../src/lib/playback/synced/service.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const ids=Array.from({length:3},()=>crypto.randomUUID()),instance=crypto.randomUUID(),work=crypto.randomUUID();
 const musicIds=[crypto.randomUUID(),crypto.randomUUID()];
@@ -56,7 +57,7 @@ run('private friend membership, own source, revision control, buffering and revo
  await expect(roomState(ids[2],r.id)).rejects.toThrow('not found');
  await getSql()`UPDATE users SET settings=${{social:{audience:'private'}}}::jsonb WHERE id=${ids[0]}`;
  await inviteParticipant(ids[0],r.id,{friendId:ids[1]});
- const [notice]=await getSql()`SELECT social_notification_visible(user_id,kind,data) AS visible FROM notifications WHERE source_key=${`synced:${r.id}`} AND user_id=${ids[1]}`;expect(notice.visible).toBe(true);
+ const [notice]=await getSql()`SELECT social_notification_visible(user_id,kind,data) AS visible,data->>'workId' AS work_id FROM notifications WHERE source_key=${`synced:${r.id}`} AND user_id=${ids[1]}`;expect(notice.visible).toBe(true);expect(notice.work_id).toBe(work);
  await getSql()`UPDATE users SET settings='{}'::jsonb WHERE id=${ids[0]}`;
  await expect(joinRoom(ids[1],r.id,{playbackId:play[0],revision:r.revision})).rejects.toThrow('own');
  await getSql()`UPDATE playback_sessions SET duration_seconds=130 WHERE id=${play[1]}`;
@@ -104,4 +105,130 @@ run('onboarding ignores obsolete jobs and owner retries respect the service lane
  await getSql()`UPDATE outbox_actions SET state='cancelled' WHERE id=${busy}`;
  await retryOnboarding(ids[2]);expect((await onboardingStatus(ids[2])).progress?.state).toBe('pending');
  const [count]=await getSql()`SELECT count(*)::int AS total FROM outbox_actions WHERE user_id=${ids[2]} AND kind='jellyfin.sync' AND state IN ('pending','running')`;expect(count.total).toBe(1);
+});
+
+run('declining a session removes invitation access without starting playback',async()=>{
+ const room=await createRoom(ids[0],{playbackId:play[0],positionSeconds:0});
+ await inviteParticipant(ids[0],room.id,{friendId:ids[1]});
+ await expect(declineInvitation(ids[2],room.id)).rejects.toThrow('not found');
+ expect(await declineInvitation(ids[1],room.id)).toEqual({declined:true});
+ await expect(roomState(ids[1],room.id)).rejects.toThrow('not found');
+ const [notice]=await getSql()`select dismissed_at from notifications where user_id=${ids[1]} and source_key=${'synced:'+room.id}`;
+ expect(notice.dismissed_at).not.toBeNull();
+});
+
+run('idle parties invite and join before playback, then retain membership through video/music switches',async()=>{
+ let r=await createRoom(ids[0],{});
+ expect(r.mediaId).toBeNull();
+ await inviteParticipant(ids[0],r.id,{friendId:ids[1]});
+ const [notice]=await getSql()`SELECT social_notification_visible(user_id,kind,data) AS visible FROM notifications WHERE source_key=${'synced:'+r.id} AND user_id=${ids[1]}`;expect(notice.visible).toBe(true);
+ const invitation=(await listRooms(ids[1])).find(p=>p.id===r.id);expect(invitation?.mediaId).toBeNull();expect(invitation?.progress).toBeNull();expect(invitation?.participants.map(p=>p.userId)).toEqual([ids[0],ids[1]]);expect(invitation?.participants.find(p=>p.userId===ids[1])?.joined).toBe(false);
+ expect((await listRooms(ids[2])).some(p=>p.id===r.id)).toBe(false);
+ r=await joinRoom(ids[1],r.id,{revision:r.revision});
+ expect(r.participants.find(p=>p.userId===ids[1])?.joined).toBe(true);
+ expect((await listRooms(ids[1])).find(p=>p.id===r.id)?.participants).toHaveLength(2);
+ await expect(commandRoom(ids[1],r.id,{action:'item',playbackId:play[1],revision:r.revision})).rejects.toThrow('host');
+ r=await commandRoom(ids[0],r.id,{action:'item',playbackId:play[0],revision:r.revision});
+ expect(r.mediaId).toBe(work);
+ const [audio]=await getSql()`SELECT id FROM playback_sessions WHERE user_id=${ids[0]} AND media_type='audio' LIMIT 1`;
+ r=await commandRoom(ids[0],r.id,{action:'item',playbackId:audio.id,queue:[musicIds[0],musicIds[1]],queueIndex:0,revision:r.revision});
+ expect(r.mediaType).toBe('audio');
+ expect(r.participants.find(p=>p.userId===ids[1])?.joined).toBe(true);
+ r=await commandRoom(ids[0],r.id,{action:'item',playbackId:play[0],revision:r.revision});
+ expect(r.mediaType).toBe('video');expect(r.queue).toEqual([]);
+ r=await commandRoom(ids[0],r.id,{action:'stop',revision:r.revision});
+ expect(r.mediaId).toBeNull();expect(r.ended).toBe(false);
+ expect(r.participants.find(p=>p.userId===ids[1])?.joined).toBe(true);
+ await leaveRoom(ids[0],r.id);
+ expect((await listRooms(ids[1])).some(p=>p.id===r.id)).toBe(false);
+});
+
+run('live friend progress uses playback evidence and respects progress privacy',async()=>{
+ await getSql()`UPDATE playback_sessions SET state='active',position_seconds=25,duration_seconds=100,updated_at=NOW(),expires_at=NOW()+INTERVAL '1 hour' WHERE id=${play[0]}`;
+ const own=(await presence(ids[0])).find((row:{workId:string;progress:number|null})=>row.workId===work);
+ expect(own?.progress).toBe(0.25);
+ await getSql()`UPDATE users SET settings=jsonb_set(settings,'{social}', '{"audience":"friends","sections":{"progress":"private"}}'::jsonb) WHERE id=${ids[0]}`;
+ const friend=(await presence(ids[1])).find((row:{userId:string;progress:number|null})=>row.userId===ids[0]);
+ expect(friend).toBeDefined();
+ expect(friend?.progress).toBeNull();
+});
+
+run('party creation preserves playing and paused state; idle parties remain paused',async()=>{
+ const playing=await createRoom(ids[0],{playbackId:play[0],positionSeconds:25,paused:false});
+ expect(playing.paused).toBe(false);expect(playing.bufferingPaused).toBe(false);
+ const paused=await createRoom(ids[0],{playbackId:play[0],positionSeconds:25,paused:true});
+ expect(paused.paused).toBe(true);
+ const idle=await createRoom(ids[0],{paused:false});
+ expect(idle.mediaId).toBeNull();expect(idle.paused).toBe(true);
+});
+run('party owner can remove pending members and transfer ownership without changing playback',async()=>{
+ await getSql()`UPDATE playback_sessions SET state='active',duration_seconds=120,expires_at=NOW()+INTERVAL '1 hour' WHERE id IN (${play[0]},${play[1]})`;
+ await getSql()`INSERT INTO friendships (user_a,user_b,requested_by,state) VALUES (least(${ids[0]}::uuid,${ids[1]}::uuid),greatest(${ids[0]}::uuid,${ids[1]}::uuid),${ids[0]},'accepted') ON CONFLICT (user_a,user_b) DO UPDATE SET state='accepted'`;
+ let r=await createRoom(ids[0],{playbackId:play[0],positionSeconds:20,paused:false});
+ await inviteParticipant(ids[0],r.id,{friendId:ids[1]});
+ expect((await listRooms(ids[1])).find(room=>room.id===r.id)?.participants.find(member=>member.userId===ids[1])?.joined).toBe(false);
+ await expect(commandRoom(ids[1],r.id,{action:'kick',userId:ids[0],revision:r.revision})).rejects.toThrow('host');
+ await expect(commandRoom(ids[0],r.id,{action:'promote',userId:ids[1],revision:r.revision})).rejects.toThrow('joined');
+ r=await commandRoom(ids[0],r.id,{action:'kick',userId:ids[1],revision:r.revision});
+ await expect(roomState(ids[1],r.id)).rejects.toThrow('not found');
+ await inviteParticipant(ids[0],r.id,{friendId:ids[1]});
+ r=await joinRoom(ids[1],r.id,{playbackId:play[1],revision:r.revision});
+ r=await commandRoom(ids[0],r.id,{action:'promote',userId:ids[1],revision:r.revision});
+ expect(r.hostId).toBe(ids[1]);expect(r.mediaId).toBe(work);expect(r.paused).toBe(false);
+ await expect(commandRoom(ids[0],r.id,{action:'pause',revision:r.revision})).rejects.toThrow('host');
+ await expect(commandRoom(ids[1],r.id,{action:'kick',userId:ids[1],revision:r.revision})).rejects.toThrow('another');
+ r=await commandRoom(ids[1],r.id,{action:'kick',userId:ids[0],revision:r.revision});
+ expect(r.participants.some(member=>member.userId===ids[0])).toBe(false);
+});
+
+async function settingsParty(){
+ await getSql()`UPDATE provider_connections SET status='connected' WHERE id IN (${conn[0]},${conn[1]})`;
+ await getSql()`UPDATE playback_sessions SET state='active',duration_seconds=120,expires_at=NOW()+INTERVAL '1 hour' WHERE id IN (${play[0]},${play[1]})`;
+ for(const [a,b] of [[ids[0],ids[1]],[ids[0],ids[2]],[ids[1],ids[2]]])await getSql()`INSERT INTO friendships (user_a,user_b,requested_by,state) VALUES (least(${a}::uuid,${b}::uuid),greatest(${a}::uuid,${b}::uuid),${a},'accepted') ON CONFLICT (user_a,user_b) DO UPDATE SET state='accepted'`;
+ let r=await createRoom(ids[0],{playbackId:play[0],positionSeconds:20,paused:false});
+ await inviteParticipant(ids[0],r.id,{friendId:ids[1]});
+ return joinRoom(ids[1],r.id,{playbackId:play[1],revision:r.revision});
+}
+run('party settings authorize joined controllers without granting owner powers',async()=>{
+ let r=await settingsParty();
+ await expect(commandRoom(ids[1],r.id,{action:'pause',revision:r.revision})).rejects.toThrow('host');
+ r=await commandRoom(ids[0],r.id,{action:'settings',settings:{...r.settings,playback:'selected',controllers:[ids[1]],invitations:'everyone'},revision:r.revision});
+ r=await commandRoom(ids[1],r.id,{action:'pause',revision:r.revision});expect(r.paused).toBe(true);
+ await expect(commandRoom(ids[1],r.id,{action:'settings',settings:{...r.settings,playback:'everyone'},revision:r.revision})).rejects.toThrow('host');
+ await expect(commandRoom(ids[1],r.id,{action:'play',policy:'catch-up',revision:r.revision})).rejects.toThrow('matching');
+ await inviteParticipant(ids[1],r.id,{friendId:ids[2]});
+ await expect(commandRoom(ids[2],r.id,{action:'play',revision:r.revision})).rejects.toThrow('host');
+ r=await commandRoom(ids[0],r.id,{action:'settings',settings:{...r.settings,acceptInvites:false},revision:r.revision});
+ await expect(inviteParticipant(ids[1],r.id,{friendId:ids[2]})).rejects.toThrow('closed');
+ r=await commandRoom(ids[1],r.id,{action:'stop',revision:r.revision});
+ await expect(joinRoom(ids[2],r.id,{revision:r.revision})).rejects.toThrow('closed');
+});
+run('ready checks wait for each joined member and report unavailable playback',async()=>{
+ let r=await settingsParty();
+ r=await commandRoom(ids[0],r.id,{action:'settings',settings:{...r.settings,readyCheck:true},revision:r.revision});expect(r.bufferingPaused).toBe(true);
+ r=await commandRoom(ids[0],r.id,{action:'ready',ready:true,revision:r.revision});expect(r.bufferingPaused).toBe(true);
+ r=await commandRoom(ids[1],r.id,{action:'ready',ready:true,revision:r.revision});expect(r.bufferingPaused).toBe(false);
+ r=await roomState(ids[1],r.id,{buffering:false,unavailable:true});expect(r.bufferingPaused).toBe(true);expect(r.participants.find(p=>p.userId===ids[1])?.unavailable).toBe(true);
+ r=await roomState(ids[1],r.id,{buffering:false,unavailable:false});expect(r.bufferingPaused).toBe(false);
+ r=await commandRoom(ids[0],r.id,{action:'item',playbackId:play[0],revision:r.revision});expect(r.participants.every(p=>!p.ready)).toBe(true);
+});
+run('host disconnect policy waits, gives bounded grace, or transfers to an eligible member',async()=>{
+ let r=await settingsParty();
+ await getSql()`UPDATE synced_participants SET heartbeat_at=NOW()-INTERVAL '20 seconds' WHERE room_id=${r.id} AND user_id=${ids[0]}`;
+ r=await roomState(ids[1],r.id,{buffering:false});expect(r.bufferingPaused).toBe(true);
+ r=await commandRoom(ids[0],r.id,{action:'settings',settings:{...r.settings,hostDisconnect:'continue'},revision:r.revision});expect(r.bufferingPaused).toBe(false);
+ await getSql()`UPDATE synced_participants SET heartbeat_at=NOW()-INTERVAL '70 seconds' WHERE room_id=${r.id} AND user_id=${ids[0]}`;
+ r=await roomState(ids[1],r.id,{buffering:false});expect(r.bufferingPaused).toBe(true);
+ r=await commandRoom(ids[0],r.id,{action:'settings',settings:{...r.settings,hostDisconnect:'transfer'},revision:r.revision});expect(r.hostId).toBe(ids[1]);expect(r.bufferingPaused).toBe(false);
+ await expect(commandRoom(ids[0],r.id,{action:'settings',settings:r.settings,revision:r.revision})).rejects.toThrow('host');
+});
+run('music queue edits preserve playback and enforce queue permissions',async()=>{
+ let r=await settingsParty();
+ const [audio]=await getSql()`SELECT id FROM playback_sessions WHERE user_id=${ids[0]} AND media_type='audio' LIMIT 1`;
+ await getSql()`UPDATE playback_sessions SET state='active',expires_at=NOW()+INTERVAL '1 hour' WHERE id=${audio.id}`;
+ r=await commandRoom(ids[0],r.id,{action:'item',playbackId:audio.id,queue:musicIds,queueIndex:0,revision:r.revision});
+ await expect(commandRoom(ids[1],r.id,{action:'queue',queue:[...musicIds].reverse(),queueIndex:1,revision:r.revision})).rejects.toThrow('host');
+ r=await commandRoom(ids[0],r.id,{action:'settings',settings:{...r.settings,queue:'everyone'},revision:r.revision});
+ r=await commandRoom(ids[1],r.id,{action:'queue',queue:[...musicIds].reverse(),queueIndex:1,revision:r.revision});expect(r.queueIndex).toBe(1);expect(r.mediaId).toBe(musicIds[0]);
+ await expect(commandRoom(ids[1],r.id,{action:'queue',queue:[musicIds[1]],queueIndex:0,revision:r.revision})).rejects.toThrow('playing track');
 });

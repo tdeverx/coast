@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RowFeedback from './RowFeedback.svelte';
   import { untrack } from 'svelte';
   import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
@@ -25,8 +26,8 @@
     {#if config.scope==='fixed'}{#each sources as source}<label class="check"><input type="checkbox" bind:group={config.sourceIds} value={source.id} disabled={busy} />{source.name}</label>{/each}{/if}
   {/if}
   <p class="small">Personal Collection and server availability are separate. This export does not change history, ratings, watchlist or lists.</p>
-  <div><Button variant="secondary" disabled={busy} onclick={prepare}>Preview export changes</Button></div>
-  {#if failure&&!open}<p class="notice error" role="alert">{failure}</p>{/if}
+  <div><Button  disabled={busy} onclick={prepare}>Preview export changes</Button></div>
+  {#if failure&&!open}<RowFeedback error={failure} tag="p" class="notice error" />{/if}
 </div>
 <Dialog bind:open title="Trakt Collection preview">
   {#if preview}<div class="stack">
@@ -34,9 +35,9 @@
     {#if preview.blocked}<p class="notice">Source assessments are incomplete or stale. Removals are blocked until access is verified.</p>{/if}
     {#each [{title:'Additions',items:preview.additions},{title:'Obsolete entries',items:preview.removals},{title:'Uncertain attribution — review required',items:preview.uncertain},{title:'Remote changes — conflicts',items:preview.conflicts}] as group}{#if group.items.length}<div><h3>{group.title}</h3><ul>{#each group.items.slice(0,60) as item}<li>{item.title}</li>{/each}</ul></div>{/if}{/each}
     {#if preview.unresolved.length}<p class="small">Unresolved: {preview.unresolved.slice(0,60).join(', ')}</p>{/if}
-    {#each [...preview.conflicts,...preview.uncertain.filter(e=>!preview?.conflicts.some(c=>c.workId===e.workId))] as entry (entry.workId)}<div class="panel stack"><strong>{entry.title}</strong><p class="small">Keep the remote membership as it is, or confirm Coast may manage this entry. Delivery is queued and rechecks the account and remote state.</p><div class="row"><Button variant="secondary" disabled={busy} onclick={()=>review(entry.workId,'remote')}>Keep remote changes</Button><Button variant="ghost" disabled={busy} onclick={()=>review(entry.workId,'coast')}>Use Coast selection</Button></div></div>{/each}
+    {#each [...preview.conflicts,...preview.uncertain.filter(e=>!preview?.conflicts.some(c=>c.workId===e.workId))] as entry (entry.workId)}<div class="panel stack"><strong>{entry.title}</strong><p class="small">Keep the remote membership as it is, or confirm Coast may manage this entry. Delivery is queued and rechecks the account and remote state.</p><div class="row"><Button  disabled={busy} onclick={()=>review(entry.workId,'remote')}>Keep remote changes</Button><Button emphasis="subtle" disabled={busy} onclick={()=>review(entry.workId,'coast')}>Use Coast selection</Button></div></div>{/each}
     <p class="small">Managed cleanup removes confirmed Coast additions only. Pre-existing and uncertain entries stay. Replace/Clear all also removes entries created outside Coast.</p>
-    {#if failure}<p class="notice error" role="alert">{failure}</p>{/if}
-    <div class="row"><Button disabled={busy} onclick={()=>approve('leave')}>Leave existing entries</Button><Button variant="secondary" disabled={busy||preview.blocked} onclick={()=>approve('remove-managed')}>{config.enabled?'Remove obsolete Coast-added entries':'Remove Coast-added entries'}</Button><Button variant="danger" disabled={busy||preview.blocked} onclick={()=>approve(config.enabled?'replace-all':'clear-all')}>{config.enabled?'Replace all':'Clear all'}</Button></div>
+    {#if failure}<RowFeedback error={failure} tag="p" class="notice error" />{/if}
+    <div class="row"><Button disabled={busy} onclick={()=>approve('leave')}>Leave existing entries</Button><Button  disabled={busy||preview.blocked} onclick={()=>approve('remove-managed')}>{config.enabled?'Remove obsolete Coast-added entries':'Remove Coast-added entries'}</Button><Button danger disabled={busy||preview.blocked} onclick={()=>approve(config.enabled?'replace-all':'clear-all')}>{config.enabled?'Replace all':'Clear all'}</Button></div>
   </div>{/if}
 </Dialog>

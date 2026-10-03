@@ -1,16 +1,16 @@
 <script lang="ts">
+  import RowFeedback from './RowFeedback.svelte';
+  import Button from '$lib/ui/components/Button.svelte';
   import { untrack } from 'svelte';
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
+  import { createQueueActions } from '$lib/ui/controls/queue.svelte';
   import EmptyState from './EmptyState.svelte';
   import { jobWaiting, jobOutcome, jobRemedy, type QueueAction } from '$lib/ui/queue';
   import { displayLabel } from '$lib/ui/labels';
   import { contextGesture } from '$lib/ui/context-gesture';
-  import ContextMenu from './ContextMenu.svelte';
-  import MenuAction from './MenuAction.svelte';
+  const queue = createQueueActions();
 
-  const { change } = useClient();
+
+
 
   let {
     actions,
@@ -23,29 +23,17 @@
     emptyTitle?: string;
     emptyDescription?: string;
   } = $props();
-  let menus = $state<Record<string, ContextMenu | undefined>>({});
-  let error = $state('');
-  let pending = $state<string[]>([]);
+  let menus = $state<Record<string, Button | undefined>>({});
+  const error = $derived(queue.error);
   $effect(() => {
     const ids = new Set(actions.map(action => action.id));
     untrack(() => { for (const id of Object.keys(menus)) if (!ids.has(id)) delete menus[id]; });
   });
-  async function update(id: string, action: 'retry' | 'cancel') {
-    if (pending.includes(id)) return;
-    pending = [...pending, id];
-    error = '';
-    try {
-      await change(`queue/${id}/${action}`, {});
-      notifyAction(action === 'retry' ? 'Job queued for retry.' : 'Job cancelled.');
-    } catch (cause) {
-      error = message(cause);
-    } finally {
-      pending = pending.filter((value) => value !== id);
-    }
-  }
+  const update = queue.run;
+
 </script>
 
-{#if error}<div class="notice error" role="alert">{error}</div>{/if}
+{#if error}<RowFeedback error={error} tag="div" class="notice error" />{/if}
 {#if actions.length}<div class="queue">
     {#each actions as action (action.id)}{@const waiting = jobWaiting(action)}
 <div class="row action" class:compact use:contextGesture={(point) => menus[action.id]?.openAt(point)}>
@@ -70,28 +58,26 @@
     {#if action.lastError}<p class="job-error">{action.lastError}</p>{/if}
   </div>
   {#if ['pending', 'failed'].includes(action.state)}
-    <ContextMenu
+    <Button menu
       bind:this={menus[action.id]}
       label={`${displayLabel(action.kind)} job actions`}
-      disabled={pending.includes(action.id)}
+      disabled={queue.busy(action.id)}
     >
-      {#if jobRemedy(action) === 'connection'}<MenuAction icon="user" href="/settings/connections" keepOpen={false}>Reconnect account</MenuAction>
-      {:else if jobRemedy(action) === 'permissions'}<MenuAction icon="settings" href="/settings/integrations" keepOpen={false}>Review permissions</MenuAction>
-      {:else if jobRemedy(action) === 'metadata'}<MenuAction icon="list" href="/settings/activity" keepOpen={false}>Review diagnostics</MenuAction>
+      {#if jobRemedy(action) === 'connection'}<Button item icon="user" href="/settings/connections" keepOpen={false}>Reconnect account</Button>
+      {:else if jobRemedy(action) === 'permissions'}<Button item icon="settings" href="/settings/integrations" keepOpen={false}>Review permissions</Button>
+      {:else if jobRemedy(action) === 'metadata'}<Button item icon="list" href="/settings/activity" keepOpen={false}>Review diagnostics</Button>
       {/if}
-      {#if action.state === 'failed' || action.attempts > 0}<MenuAction
+      {#if action.state === 'failed' || action.attempts > 0}<Button item
           icon="refresh"
           keepOpen={false}
           onclick={() => void update(action.id, 'retry')}
-          >{action.state === 'failed' ? 'Retry' : 'Retry now'}</MenuAction
-        >{/if}
-      <MenuAction
+          >{action.state === 'failed' ? 'Retry' : 'Retry now'}</Button>{/if}
+      <Button item
         icon="close"
         keepOpen={false}
         danger
-        onclick={() => void update(action.id, 'cancel')}>Cancel job</MenuAction
-      >
-    </ContextMenu>
+        onclick={() => void update(action.id, 'cancel')}>Cancel job</Button>
+    </Button>
   {/if}
 </div>
 {/each}

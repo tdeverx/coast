@@ -57,7 +57,7 @@ export async function inbox(actor: SessionUser | null, limit = 50,filters:{kind?
       createdAt: notifications.createdAt,
     })
     .from(notifications)
-    .where(and(eq(notifications.userId, user.id), isNull(notifications.dismissedAt),sql`social_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data})`,filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread?isNull(notifications.readAt):undefined))
+    .where(and(eq(notifications.userId, user.id),sql`${notifications.kind}<>'friend-request'`, isNull(notifications.dismissedAt),sql`social_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data})`,sql`not exists(select 1 from outbox_actions job where ${notifications.kind}='external-action' and job.id::text=split_part(${notifications.sourceKey},':',2) and job.user_id=${notifications.userId} and job.state in ('cancelled','succeeded'))`,filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread?isNull(notifications.readAt):undefined))
     .orderBy(desc(notifications.createdAt))
     .limit(Math.max(1, Math.min(200, limit)));
   return rows;

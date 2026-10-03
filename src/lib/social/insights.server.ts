@@ -40,9 +40,17 @@ export async function friendInsights(viewerId:string,friendId:string) {
  });
  return {friendId,score:median(media.flatMap(m=>m.score===null?[]:[m.score])),media};
 }
-export async function friendDiscovery(viewerId:string) {
- return getSql()`select a.work_id as "workId",count(distinct a.user_id)::int as friends,max(a.occurred_at) as "discoveredAt" from social_activity a join works w on w.id=a.work_id
+export async function friendDiscovery(viewerId:string,category:'all'|'screen'|'game'|'music'='all'):Promise<{workId:string;friends:number;discoveredAt:Date}[]> {
+ return getSql()`with visible as (
+ select a.user_id,a.occurred_at,coalesce(e.show_id,se.show_id,r.parent_id,a.work_id) as root_id
+ from social_activity a join works w on w.id=a.work_id
+ left join episodes e on e.media_id=a.work_id
+ left join seasons se on se.media_id=a.work_id
+ left join lateral(select parent_id from media_relationships where child_id=a.work_id and kind='contains' order by position limit 1) r on w.category='music'
  where a.occurred_at>=now()-interval '30 days' and a.date_known and social_visible(a.user_id,${viewerId}::uuid,a.section,w.category)
+ and (${category}='all' or w.category=${category})
+ and (w.category='screen' or coalesce((select value->>'experimentalFeatures' from system_settings where key='coast'),'false')='true')
  and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(a.user_id,${viewerId}::uuid) and f.user_b=greatest(a.user_id,${viewerId}::uuid))
- group by a.work_id order by count(distinct a.user_id) desc,max(a.occurred_at) desc,a.work_id limit 60`;
+ ) select root_id as "workId",count(distinct user_id)::int as friends,max(occurred_at) as "discoveredAt"
+ from visible group by root_id order by count(distinct user_id) desc,max(occurred_at) desc,root_id limit 60`;
 }

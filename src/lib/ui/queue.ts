@@ -7,6 +7,7 @@ export type QueueAction = {
     createdAt?: Date | string;
     updatedAt?: Date | string;
     nextAttemptAt?: Date | string;
+    serviceRetryAt?: Date | string | null;
     connectionLabel?: string;
     instanceId?: string | null;
     failure?: { code: string; remedy: 'connection' | 'permissions' | 'metadata' | 'retry'; retryable: boolean } | null;
@@ -16,10 +17,13 @@ export type QueueAction = {
 
 export const jobWaiting = (action: QueueAction) => !!(action.state === 'pending' && action.nextAttemptAt && new Date(action.nextAttemptAt).getTime() > Date.now());
 
+export const jobServiceWaiting = (action: QueueAction) => !!(action.state === 'pending' && action.serviceRetryAt && new Date(action.serviceRetryAt).getTime() > Date.now());
+
 export function jobOutcome(action: QueueAction) {
   const progress = action.progress;
   if (action.state === 'running' && progress) return `${progress.processed ?? 0} items checked${progress.total == null ? '' : ` of ${progress.total}`}`;
   if (action.state !== 'succeeded') return null;
+  if (action.kind.startsWith('steam.') && action.outcome?.checked != null) return `${action.outcome.checked} games checked${action.outcome.added ? ` · Added ${action.outcome.added} to Collection` : ''}${action.outcome.deferred ? ` · ${action.outcome.deferred} ${action.kind === 'steam.achievements' ? 'achievement reads' : 'metadata matches'} deferred` : ''}`;
   if (action.outcome?.checked != null) return `${action.outcome.checked} items checked`;
   if (action.outcome?.added != null) return action.outcome.added ? `Added ${action.outcome.added} titles` : 'Nothing new to add';
   if (action.outcome?.refreshed != null) return `${action.outcome.refreshed ? `Refreshed ${action.outcome.refreshed} titles` : 'No titles due for refresh'}${action.outcome.deferred ? ` · ${action.outcome.deferred} metadata records deferred` : ''}`;

@@ -35,11 +35,11 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
   const commands = $derived<PageCommand[]>(canAct() ? [
     ...(item.workId ? [
       { label: 'Play', icon: 'play' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, false)) },
-      { label: 'Continue', variant: 'secondary' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, true)) },
-      { label: item.kind === 'album' ? 'Log album' : 'Log listen', icon: 'clock' as const, variant: 'ghost' as const, disabled: busy,
+      { label: 'Continue', disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, true)) },
+      { label: item.kind === 'album' ? 'Log album' : 'Log listen', icon: 'clock' as const, emphasis: 'subtle' as const, disabled: busy,
         run: () => act(async () => { await change(`music/${item.workId}/log`, { batchId: crypto.randomUUID() }); }) },
     ] : []),
-    { label: 'Music', variant: 'ghost', icon: 'left', href: `/music?connection=${get().connectionId}` },
+    { label: 'Music', emphasis: 'subtle', icon: 'left', href: `/music?connection=${get().connectionId}` },
   ] : []);
   const sections = $derived.by((): PageSection[] => {
     const data = get();

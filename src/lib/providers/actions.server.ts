@@ -24,7 +24,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     registerActionHandler(kind, async (action) => {
       try {
         const config = await getConfig();
-        if ((action.kind.startsWith('trakt.') && !config.enableTrakt) || (action.kind.startsWith('seerr.') && !config.enableRequests))
+        if ((action.kind.startsWith('trakt.') && !config.enableTrakt) || (action.kind.startsWith('seerr.') && !config.enableRequests) || (action.kind.startsWith('steam.') && !config.experimentalFeatures))
           throw new PermanentActionError('This service is disabled by the administrator.');
         return await handler(action);
       } catch (error) {
@@ -33,6 +33,8 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
       }
     });
   if (options.maintenance !== false) startProviderMaintenance();
+  register('steam.sync', async action => (await import('$lib/providers/steam/sync.server')).syncSteam(action));
+  register('steam.achievements', async action => (await import('$lib/providers/steam/sync.server')).syncSteamAchievements(action));
   register('catalogue.user-scan', async action => (await import('$lib/catalogue/maintenance.server')).scanUserCatalogue(action));
   register('tmdb.refresh', async action => {
     v.parse(v.object({ instanceId: uuid, force: v.optional(v.boolean(), false) }), action.payload);

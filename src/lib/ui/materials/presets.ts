@@ -7,7 +7,7 @@ const texture = {
   noiseCoverage: 'uniform',
 } as const;
 
-/** Six glass treatments share the same palette and physical surface parameters. */
+/** Three glass materials, each paired with its blur fallback. */
 const clear = {
   ...texture,
   tint: 'var(--canvas)',
@@ -83,19 +83,12 @@ const lightFallback = {
   topInnerOpacity: 24,
   bottomInnerOpacity: 24,
 };
-const clearBlur = { ...clear, blur: 12, refraction: 0 };
-const blurLight = { ...lightFallback, refraction: 0 };
-const blurDark = { ...darkFallback, refraction: 0 };
-
 export const glassPresets = {
-  materials: { clear, clearBlur, glassLight, glassDark, blurLight, blurDark },
+  materials: { clear, glassLight, glassDark },
   fallbacks: {
-    clear,
-    clearBlur,
-    glassLight: lightFallback,
-    glassDark: darkFallback,
-    blurLight,
-    blurDark,
+    clear: { ...clear, blur: 12, refraction: 0 },
+    glassLight: { ...lightFallback, refraction: 0 },
+    glassDark: { ...darkFallback, refraction: 0 },
   },
 } as const;
 export type GlassVariant = keyof typeof glassPresets.materials;

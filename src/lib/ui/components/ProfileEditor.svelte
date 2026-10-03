@@ -1,12 +1,19 @@
 <script lang="ts">
+  import FormActions from './FormActions.svelte';
+  import Field from './Field.svelte';
+  import RowFeedback from './RowFeedback.svelte';
+  import { createOperation } from '$lib/ui/operation.svelte';
   import type { ProfileSettings } from '$lib/server/db/schema';
   import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
+  import Avatar from './Avatar.svelte';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
   import RowFilter from './RowFilter.svelte';
 
   const { api, change } = useClient();
+  const operation = createOperation();
+  const busy = $derived(operation.busy);
 
   let {
     open = $bindable(false),
@@ -17,7 +24,7 @@
     bio = $state(''),
     avatar = $state<string | null>(null),
     error = $state(''),
-    busy = $state(false),
+
     reading = $state(false);
   let avatarVersion = 0;
   let iconChoices=$state<{id:string;provider:string;name:string}[]>([]),iconChoice=$state('');
@@ -101,16 +108,14 @@
     }catch(cause){error=message(cause);}finally{reading=false;}
   }
   async function save() {
-    busy = true;
+    if (busy) return;
+
     error = '';
-    try {
+    const completed = await operation.run(async () => {
       await change('profile', { action: 'edit', displayName, bio, avatar });
       open = false;
-    } catch (e) {
-      error = message(e);
-    } finally {
-      busy = false;
-    }
+    });
+    if (!completed) error = operation.error;
   }
 </script>
 
@@ -122,23 +127,17 @@
       void save();
     }}
   >
-    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
     <div class="avatar-row">
-      <div class="preview">
-        {#if avatar}<img src={avatar} alt="Avatar preview" />{:else}{(displayName || username)
-            .slice(0, 1)
-            .toUpperCase()}{/if}
-      </div>
+      <Avatar name={displayName || username} src={avatar} label="Avatar preview" class="preview" size={80} />
       <div class="stack">
-        <label
-          >Avatar<input
+        <Field label="Avatar" class=""><input
             type="file"
             accept="image/png,image/jpeg,image/webp,image/gif"
             onchange={selectAvatar}
             disabled={busy || reading}
-          /></label
-        >{#if avatar}<Button
-            variant="ghost"
+          /></Field>{#if avatar}<Button
+            emphasis="subtle"
             onclick={() => {
               avatarVersion++;
               avatar = null;
@@ -147,30 +146,24 @@
           >{/if}
       </div>
     </div>
-    {#if iconChoices.length}<RowFilter label="Connected profile icon" value={iconChoice} options={[{value:'',label:'Choose a connected service'},...iconChoices.map(choice=>({value:choice.id,label:`${choice.provider==='jellyfin'?'Jellyfin':'Trakt'} · ${choice.name}`}))]} onchange={value=>{if(!busy&&!reading)void selectProvider(value);}} />{/if}
+    {#if iconChoices.length}<RowFilter selection groups={[{label:"Connected profile icon", value:iconChoice, options:[{value:'',label:'Choose a connected service'},...iconChoices.map(choice=>({value:choice.id,label:`${choice.provider==='jellyfin'?'Jellyfin':'Trakt'} · ${choice.name}`}))], change:value=>{if(!busy&&!reading)void selectProvider(value);}}]} />{/if}
     <p class="small">Saved locally in Coast. GIFs keep their animation; other images are cropped to a square. Visibility follows your privacy settings.</p>
-    <label
-      >Display name<input
+    <Field label="Display name" class=""><input
         bind:value={displayName}
         maxlength="60"
         placeholder={username}
         autocomplete="nickname"
-      /></label
-    >
-    <label
-      >Bio<textarea
+      /></Field>
+    <Field label="Bio" class=""><textarea
         bind:value={bio}
         maxlength="240"
         rows="3"
         placeholder="A little about your taste in stories."
-      ></textarea></label
-    >
+      ></textarea></Field>
     <p class="small">{bio.length}/240</p>
-    <div class="row">
-      <Button type="submit" variant="primary" disabled={busy || reading}
-        >{reading ? 'Preparing avatar…' : busy ? 'Saving…' : 'Save profile'}</Button
-      ><Button variant="ghost" onclick={() => (open = false)}>Cancel</Button>
-    </div>
+    <FormActions cancel={() => open = false}>
+      <Button type="submit" disabled={busy || reading}>{reading ? 'Preparing avatar…' : busy ? 'Saving…' : 'Save profile'}</Button>
+    </FormActions>
   </form>
 </Dialog>
 
@@ -185,7 +178,7 @@
     min-width: 0;
     flex: 1;
   }
-  .preview {
+  :global(.avatar.preview) {
     width: 80px;
     height: 80px;
     flex: none;
@@ -196,7 +189,7 @@
     background: color-mix(in srgb, var(--white) calc(18 / 255 * 100%), transparent);
     font-size: var(--text-2xl);
   }
-  .preview img {
+  :global(.avatar.preview img) {
     width: 100%;
     height: 100%;
     object-fit: cover;

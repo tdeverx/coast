@@ -54,7 +54,7 @@
         >
       </div>
     </section>
-  {:else}<Button variant="ghost" href={`/people/${data.person.id}`} icon="left"
+  {:else}<Button emphasis="subtle" href={`/people/${data.person.id}`} icon="left"
       >{data.person.name}</Button
     >{/if}
   {#key `${data.person.id}:${section}`}

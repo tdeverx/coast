@@ -90,6 +90,7 @@ export function jobFailureMessage(error: unknown, permanent: boolean) {
     if (error.status === 429) return 'Service rate limit reached. Coast will retry after the service cooldown.';
     if (error.status >= 500) return 'The service is unavailable. Coast will retry automatically.';
   }
+  if (error instanceof AppError && error.code === 'steam_private') return 'Steam game details are private or unavailable. Make game details readable in Steam privacy settings; previous imports are retained.';
   if (error instanceof v.ValiError) return 'The service returned unsupported data. Review diagnostics before retrying.';
   if (safeDiagnosticErrorCode(error) === 'catalogue.identity-conflict') return 'Conflicting metadata identities need administrator review. Retrying cannot resolve the mapping.';
   return permanent ? 'This action could not be accepted. Review the connection and diagnostics before retrying.' : 'The connection was interrupted. Coast will retry automatically.';
@@ -97,6 +98,7 @@ export function jobFailureMessage(error: unknown, permanent: boolean) {
 
 export type JobFailure = { code: string; remedy: 'connection' | 'permissions' | 'metadata' | 'retry'; retryable: boolean };
 export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure {
+  if(error instanceof AppError && error.code === 'steam_private')return {code:'provider.permission',remedy:'permissions',retryable:false};
   const status = error instanceof ProviderHttpError ? error.status : undefined;
   if (status === 401) return { code: 'provider.authentication', remedy: 'connection', retryable: false };
   if (status === 403) return { code: 'provider.permission', remedy: 'permissions', retryable: false };
@@ -160,7 +162,7 @@ function safeDiagnosticStage(error: unknown) {
 }
 
 export async function claimNextAction(): Promise<OutboxAction | null> {
-  // Serialize only the short claim transaction. A service's network work remains independent.
+  // Serialize claims and allow only one provider traversal across all services.
   return getSql().begin(async (sql) => {
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('queue-claim', 0))`;
     await sql`UPDATE outbox_actions SET state = 'pending', locked_at = NULL, next_attempt_at = NOW(), updated_at = NOW()
@@ -179,8 +181,8 @@ export async function claimNextAction(): Promise<OutboxAction | null> {
             AND (earlier.kind NOT IN ${sql(maintenanceKinds)} OR earlier.state = 'running' OR
               (candidate.kind IN ${sql(maintenanceKinds)} AND earlier.state = 'pending' AND earlier.next_attempt_at <= NOW())))
           AND (candidate.kind NOT IN ${sql(serviceTraversalKinds)} OR NOT EXISTS (
-            SELECT 1 FROM outbox_actions busy LEFT JOIN provider_connections busy_connection ON busy_connection.id = busy.connection_id
-            WHERE (busy_connection.instance_id = instance.id OR (busy.kind = 'tmdb.refresh' AND busy.payload->>'instanceId' = instance.id::text)) AND busy.kind IN ${sql(serviceTraversalKinds)} AND busy.state = 'running'))
+            SELECT 1 FROM outbox_actions busy
+            WHERE busy.kind IN ${sql(serviceTraversalKinds)} AND busy.state = 'running'))
         ORDER BY candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
       ) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind='tmdb.refresh' AND provider='tmdb' AND id::text=payload->>'instanceId')) AS instance_id`;
     return row
@@ -203,11 +205,11 @@ export async function runQueueOnce(): Promise<boolean> {
   const action = await claimNextAction();
   if (!action) return false;
   // Hold the connection lane across stale-lease recovery for every action. Maintenance
-  // also holds the shared service lock, while other accounts' edits remain independent.
+  // also holds the global traversal lock, while playback and edits remain independent.
   const reserved = await getSql().reserve();
   const lockKeys = [`queue-lane:${action.userId}:${action.connectionId ?? 'local'}`];
-  if (action.instanceId && serviceTraversalKinds.includes(action.kind))
-    lockKeys.push(`maintenance:${action.instanceId}`);
+  if (serviceTraversalKinds.includes(action.kind))
+    lockKeys.push('provider-traversal');
   const held: string[] = [];
   try {
     for (const key of lockKeys) {
@@ -269,6 +271,7 @@ export async function runQueueOnce(): Promise<boolean> {
         });
         const permanent =
           safeDiagnosticErrorCode(error) === 'catalogue.identity-conflict' ||
+          (error instanceof AppError && error.code === 'steam_private') ||
           error instanceof PermanentActionError ||
           error instanceof v.ValiError ||
           (error instanceof ProviderHttpError &&
@@ -281,6 +284,10 @@ export async function runQueueOnce(): Promise<boolean> {
             : 0;
         const next = new Date(Date.now() + Math.max(retryDelayMs(action.attempts), retryAfter));
         await getSql().begin(async (sql) => {
+          const failed =
+            await sql`UPDATE outbox_actions SET state = ${permanent ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, payload = payload || ${{ _jobFailure: failure }}::jsonb, updated_at = NOW()
+        WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
+          if (!failed.length) return; // A recovered lease owns the outcome now.
           if (
             action.instanceId &&
             retryAfter > 0 &&
@@ -290,10 +297,6 @@ export async function runQueueOnce(): Promise<boolean> {
             const until = new Date(Date.now() + retryAfter).toISOString();
             await sql`UPDATE provider_instances SET settings = jsonb_set(settings, '{jobsRetryAt}', to_jsonb(GREATEST(COALESCE(settings->>'jobsRetryAt', ''), ${until})::text), true) WHERE id = ${action.instanceId}`;
           }
-          const failed =
-            await sql`UPDATE outbox_actions SET state = ${permanent ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, payload = payload || ${{ _jobFailure: failure }}::jsonb, updated_at = NOW()
-        WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
-          if (!failed.length) return; // A recovered lease owns the outcome now.
           if (permanent || action.attempts >= 3)
             await notify(
               {
@@ -305,6 +308,7 @@ export async function runQueueOnce(): Promise<boolean> {
                 body: message,
                 level: 'normal',
                 sourceKey: `outbox:${action.id}`,
+                data:{actorId:action.userId,subjectId:action.id,destination:'/settings/jobs'},
               },
               sql
             );
@@ -408,6 +412,7 @@ export async function listActions(actor: SessionUser | null) {
       state: outboxActions.state,
       attempts: outboxActions.attempts,
       lastError: outboxActions.lastError,
+      serviceRetryAt: sql<Date | null>`(${providerInstances.settings}->>'jobsRetryAt')::timestamptz`,
       nextAttemptAt: sql<Date>`greatest(${outboxActions.nextAttemptAt}, (${providerInstances.settings}->>'jobsRetryAt')::timestamptz)`,
       createdAt: outboxActions.createdAt,
     })

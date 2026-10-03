@@ -28,10 +28,10 @@
       : 'Track requested titles and their availability.'}
   >
     {#snippet actions()}
-      {#if data.requestId}<Button href="/requests" variant="secondary" icon="left"
+      {#if data.requestId}<Button href="/requests"  icon="left"
           >All requests</Button
         >
-      {:else}<Button href="/discover" variant="secondary" icon="discover">Discover titles</Button
+      {:else}<Button href="/discover"  icon="discover">Discover titles</Button
         >{/if}
     {/snippet}
   </Heading>
@@ -55,7 +55,7 @@
           </p>
           <p class="small">Requested {new Date(request.createdAt).toLocaleDateString()}</p>
           {#if ['pending', 'approved'].includes(request.state)}<Button
-              variant="danger"
+              danger
               disabled={busy}
               onclick={() => (cancelId = request.id)}>Cancel request</Button
             >{/if}
@@ -81,7 +81,7 @@
     </p>
     <div class="row">
       <Button
-        variant="danger"
+        danger
         disabled={busy}
         onclick={async () => {
           if (busy) return;
@@ -96,7 +96,7 @@
             busy = false;
           }
         }}>Cancel request</Button
-      ><Button variant="secondary" onclick={() => (cancelId = '')}>Keep request</Button>
+      ><Button  onclick={() => (cancelId = '')}>Keep request</Button>
     </div>
   </div></Dialog
 >

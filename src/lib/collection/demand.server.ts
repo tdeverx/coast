@@ -19,7 +19,7 @@ function demandStatement(userId:string|SQL,requested:number,source:string,experi
     from collection c join assessments a on a.id=c.next_id where c.kind<>'season' and not c.dropped and not c.completed
       and (c.active or exists(select 1 from up_next q where q.user_id=${userId} and q.media_id=c.id) or exists(select 1 from jsonb_array_elements(c.reasons) r where r->>'relationship'='watchlist' and r->>'origin'='direct'))
       and (a.release_date is null or a.release_date::date<=current_date) and a.availability in ('unknown','unavailable') and (${experimental} or c.category='screen')`;
-  return sql`${collectionCTE(userId,userId,source)}, demand as (select distinct on (next_id) * from (${candidates}) candidates order by next_id,reason,case when kind in ('show','album') then 0 else 1 end,id), totals as (select count(*)::int as total from demand)
+  return sql`${collectionCTE(userId,userId,source,'personal')}, demand as (select distinct on (next_id) * from (${candidates}) candidates order by next_id,reason,case when kind in ('show','album') then 0 else 1 end,id), totals as (select count(*)::int as total from demand)
     select totals.total,coalesce((select jsonb_agg(selected order by selected.reason,selected.title,selected.id) from (
       select d.*,
         (select jsonb_agg(jsonb_build_object('id',c.id,'name',c.name,'status',c.status,'enabled',c.enabled,'assessedAt',c.completed_at,'fresh',c.scan_id is null and c.completed_at>=now()-c.cadence*interval '2 minutes')) from connections c) as sources,

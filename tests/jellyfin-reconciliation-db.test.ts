@@ -11,6 +11,7 @@ const enabled=process.env.COAST_DB_TEST==='1',run=enabled?test:test.skip;
 const tag=crypto.randomUUID(),albumExternal='a'.repeat(32),trackExternal='b'.repeat(32);
 const remote={Played:false,PlayCount:0,PlaybackPositionTicks:0,IsFavorite:false};
 const writes:Record<string,unknown>[]=[];
+let screenCopies:Record<string,unknown>[]=[];
 let failure=false,userId:string,trackId:string,albumId:string,connection:typeof s.providerConnections.$inferSelect,instance:typeof s.providerInstances.$inferSelect,oldConfig:Record<string,unknown>|null=null;
 const album={Id:albumExternal,Type:'MusicAlbum',Name:'Reconciliation album',ChildCount:1,ProviderIds:{MusicBrainzReleaseGroup:crypto.randomUUID()}};
 const track={Id:trackExternal,Type:'Audio',Name:'Reconciliation track',AlbumId:albumExternal,IndexNumber:1,RunTimeTicks:120000000,ProviderIds:{MusicBrainzTrack:crypto.randomUUID()},UserData:remote};
@@ -20,7 +21,9 @@ const adapter=new JellyfinAdapter(async(path,init)=>{
  if(url.pathname==='/Items'){
   if(failure)throw new Error('Interrupted first page');
   const type=url.searchParams.get('includeItemTypes')??'';
-  const items=type==='MusicAlbum'?[album]:type==='Audio'?[track]:[];return {Items:items,TotalRecordCount:items.length,StartIndex:0};
+  const items=type==='MusicAlbum'?[album]:type==='Audio'?[track]:screenCopies;
+  const offset=Number(url.searchParams.get('startIndex')??0);
+  return {Items:items===screenCopies?items.slice(offset,offset+1):items,TotalRecordCount:items.length,StartIndex:offset};
  }
  if(url.pathname===`/Users/${tag}/Items/${trackExternal}`)return track;
  if(url.pathname.startsWith('/UserItems/')){const body=JSON.parse(String(init?.body));writes.push(body);Object.assign(remote,body);return remote;}
@@ -90,4 +93,21 @@ run('an explicit mapped music favourite can fill an empty server field with impo
  remote.IsFavorite=false;await trackWithExports(userId,{mediaId:trackId,action:'favourite',value:true});
  await executeJellyfinUserState(userId,connection.id,{mediaId:trackId,field:'favourite',value:true,backfill:false},context());
  expect(remote.IsFavorite).toBe(true);expect(connection.settings.importPlayback).toBe(false);expect(connection.settings.reconcileTracking).toBe(false);
+});
+
+run('duplicate accessible copies reconcile once after a complete, paginated user traversal',async()=>{
+ const db=getDb(),movie=crypto.randomUUID(),external=['c'.repeat(32),'d'.repeat(32)];
+ await db.insert(s.media).values({id:movie,kind:'movie',title:'Two editions'});await db.insert(s.movies).values({mediaId:movie});
+ for(const id of external)await db.insert(s.providerItems).values({instanceId:instance.id,mediaId:movie,externalId:id,kind:'movie'});
+ screenCopies=external.map((Id,index)=>({Id,Type:'Movie',Name:'Two editions',RunTimeTicks:1200000000,UserData:{Played:index===1,IsFavorite:index===1,PlayCount:index,PlaybackPositionTicks:0,...(index===1?{LastPlayedDate:'2025-01-01T00:00:00Z'}:{})}}));
+ try{
+  await settings({importPlayback:true,reconcileTracking:false});
+  await syncJellyfinUser(userId,connection.id,undefined,context());await syncJellyfinUser(userId,connection.id,undefined,context());
+  const events=await db.select().from(s.trackingEvents).where(and(eq(s.trackingEvents.userId,userId),eq(s.trackingEvents.mediaId,movie),eq(s.trackingEvents.action,'watch')));
+  expect(events).toHaveLength(1);expect((await db.select().from(s.trackingState).where(and(eq(s.trackingState.userId,userId),eq(s.trackingState.mediaId,movie))))[0].watched).toBe(true);
+  expect((await db.select().from(s.trackingState).where(and(eq(s.trackingState.userId,userId),eq(s.trackingState.mediaId,movie))))[0].favourite).toBe(true);
+  screenCopies.forEach(item=>Object.assign(item.UserData as object,{Played:false,IsFavorite:false}));
+  await syncJellyfinUser(userId,connection.id,undefined,context());
+  expect((await db.select().from(s.trackingState).where(and(eq(s.trackingState.userId,userId),eq(s.trackingState.mediaId,movie))))[0].watched).toBe(false);
+ }finally{screenCopies=[];await db.delete(s.media).where(eq(s.media.id,movie));await db.delete(s.works).where(eq(s.works.id,movie));}
 });

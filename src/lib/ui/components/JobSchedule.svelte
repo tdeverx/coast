@@ -1,6 +1,9 @@
 <script lang="ts">
+  import RowFeedback from './RowFeedback.svelte';
+  import { useClock } from '$lib/ui/clock.svelte';
+  import { createQueueActions } from '$lib/ui/controls/queue.svelte';
   import Heading from './Heading.svelte';
-  import { onMount, untrack } from 'svelte';
+  import { untrack } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { message } from '$lib/ui/client';
@@ -9,15 +12,15 @@
   import type { ServiceTask } from '$lib/providers/tasks';
   import type { ProviderSchedule } from '$lib/providers/schedule';
   import Button from './Button.svelte';
-  import ContextMenu from './ContextMenu.svelte';
-  import MenuAction from './MenuAction.svelte';
+
   import Dialog from './Dialog.svelte';
   import RowFilter from './RowFilter.svelte';
   import QueueList from './QueueList.svelte';
-  import { jobOutcome, jobRemedy, jobWaiting, type QueueAction } from '$lib/ui/queue';
+  import { jobOutcome, jobRemedy, jobWaiting, jobServiceWaiting, type QueueAction } from '$lib/ui/queue';
   import type { JobTiming } from '$lib/providers/job-timing.server';
 
   const { change } = useClient();
+  const queue = createQueueActions();
 
   let {
     provider,
@@ -39,14 +42,14 @@
     jobs: QueueAction[];
     timing?: JobTiming;
   } = $props();
-  let now = $state(Date.now());
-  onMount(() => { const timer = setInterval(() => now = Date.now(), 1000); return () => clearInterval(timer); });
-  const countdown = $derived(timing?.nextAt ? Math.max(0, Math.ceil((new Date(timing.nextAt).getTime() - now) / 1000)) : null);
+  const clock = useClock();
+  const countdown = $derived(timing?.nextAt ? Math.max(0, Math.ceil((new Date(timing.nextAt).getTime() - clock.now) / 1000)) : null);
   function durationLabel(seconds: number) { const minutes = Math.floor(seconds / 60); return `${Math.floor(minutes / 60) ? `${Math.floor(minutes / 60)}h ` : ''}${minutes % 60 ? `${minutes % 60}m ` : ''}${seconds % 60}s`; }
   async function retry(id: string) {
-    if (busy) return; busy = true; error = '';
-    try { await change(`queue/${id}/retry`, {}); notifyAction('Job queued for retry.'); }
-    catch (cause) { error = message(cause); } finally { busy = false; }
+    if (busy) return;
+    busy = true;
+    try { await queue.run(id, 'retry'); error = queue.error; }
+    finally { busy = false; }
   }
   let open = $state(false),
     history = $state(false),
@@ -54,7 +57,7 @@
     error = $state('');
   let draft = $state<ProviderSchedule>(untrack(() => ({ ...provider.schedule })));
   let saved = $state('');
-  let menu = $state<ContextMenu>();
+  let menu = $state<Button>();
   const dirty = $derived(open && JSON.stringify(draft) !== saved);
   const automatic = $derived(
     provider.enabled &&
@@ -134,11 +137,11 @@
   });
 </script>
 
-<article class="panel task-card" aria-label={`${provider.name}: ${task.title}`}>
+<article id={`job-${provider.id}-${task.id}`} class="panel task-card" aria-label={`${provider.name}: ${task.title}`}>
   <div class="spread task-heading" use:contextGesture={(point) => menu?.openAt(point)}>
     <Heading variant="title" title={task.title} />
-    <ContextMenu bind:this={menu} label={`${provider.name} ${task.title} actions`}>
-      {#if task.scope}<MenuAction
+    <Button menu bind:this={menu} label={`${provider.name} ${task.title} actions`}>
+      {#if task.scope}<Button item
           icon="refresh"
           keepOpen={false}
           disabled={busy || !provider.enabled || (!provider.connectedAccounts && provider.provider !== 'tmdb')}
@@ -147,25 +150,21 @@
             : (!provider.connectedAccounts && provider.provider !== 'tmdb')
               ? 'Connect an account before running this task.'
               : undefined}
-          onclick={() => void run()}>Run now</MenuAction
-        >
-        <MenuAction
+          onclick={() => void run()}>Run now</Button>
+        <Button item
           icon="clock"
           keepOpen={false}
           disabled={busy || !provider.enabled}
-          onclick={editSchedule}>Edit schedule</MenuAction
-        >{/if}
-      <MenuAction
+          onclick={editSchedule}>Edit schedule</Button>{/if}
+      <Button item
         icon="list"
         keepOpen={false}
         disabled={!jobs.length}
-        onclick={() => (history = true)}>View run history</MenuAction
-      >
+        onclick={() => (history = true)}>View run history</Button>
       <div class="menu-divider" role="separator"></div>
-      <MenuAction icon="settings" href="/settings/integrations" keepOpen={false}
-        >Manage integration</MenuAction
-      >
-    </ContextMenu>
+      <Button item icon="settings" href="/settings/integrations" keepOpen={false}
+        >Manage integration</Button>
+    </Button>
   </div>
   <p class="small task-description">{task.description}</p>
   <div class="row small">
@@ -193,7 +192,7 @@
     <p class="small" role="status">Running{#if running.connectionLabel} · {running.connectionLabel}{/if}</p>
     {#if jobOutcome(running)}<p class="small">{jobOutcome(running)}</p>{/if}
   {:else if queued.length}
-    <p class="small" role="status">{queued.some(jobWaiting) ? 'Waiting for service cooldown' : 'Queued · waiting for an available worker'}</p>
+    <p class="small" role="status">{queued.some(jobServiceWaiting) ? 'Waiting for service cooldown' : queued.some(jobWaiting) ? 'Waiting to retry' : 'Queued · waiting for the current job to finish'}</p>
     {#each queued.filter(jobWaiting) as job (job.id)}<p class="small">{job.connectionLabel} · Retry {new Date(job.nextAttemptAt!).toLocaleString()}</p>{/each}
   {:else if task.scope}
     <p class="small" role="status">{timing?.reason ?? (countdown === 0 ? 'Due now · checked within one minute' : countdown !== null ? `Next run in ${durationLabel(countdown)}` : 'Schedule assessment unavailable')}</p>
@@ -209,15 +208,15 @@
       {#if jobRemedy(job) === 'connection'}<a href="/settings/connections" class="text-accent">Reconnect account</a>
       {:else if jobRemedy(job) === 'permissions'}<a href="/settings/integrations" class="text-accent">Review service permissions</a>
       {:else if jobRemedy(job) === 'metadata'}<a href="/settings/activity" class="text-accent">Review metadata diagnostics</a>
-      {:else}<Button variant="ghost" disabled={busy || running != null || queued.length > 0} onclick={() => retry(job.id)}>Retry {job.connectionLabel}</Button>{/if}
+      {:else}<Button emphasis="subtle" disabled={busy || running != null || queued.length > 0} onclick={() => retry(job.id)}>Retry {job.connectionLabel}</Button>{/if}
     </div>
   {/each}
   <div class="row task-controls">
-    {#if task.scope}<Button variant="secondary" icon="refresh" disabled={busy || !provider.enabled || running != null || queued.length > 0 || (!provider.connectedAccounts && provider.provider !== 'tmdb')} onclick={() => void run()}>Run now</Button>
-      <Button variant="ghost" icon="clock" disabled={busy || !provider.enabled} onclick={editSchedule}>Edit schedule</Button>{/if}
-    {#if jobs.length}<Button variant="ghost" onclick={() => history = true}>Run history</Button>{/if}
+    {#if task.scope}<Button  icon="refresh" disabled={busy || !provider.enabled || running != null || queued.length > 0 || (!provider.connectedAccounts && provider.provider !== 'tmdb')} onclick={() => void run()}>Run now</Button>
+      <Button emphasis="subtle" icon="clock" disabled={busy || !provider.enabled} onclick={editSchedule}>Edit schedule</Button>{/if}
+    {#if jobs.length}<Button emphasis="subtle" onclick={() => history = true}>Run history</Button>{/if}
   </div>
-  {#if error && !open}<p class="notice error" role="alert">{error}</p>{/if}
+  {#if error && !open}<RowFeedback error={error} tag="p" class="notice error" />{/if}
 </article>
 <Dialog bind:open title={`${task.title} schedule · ${provider.name}`}>
   <form
@@ -264,15 +263,10 @@
         /></label
       >
       <div class="field">
-        <span>Library source account</span><RowFilter
-          label="Library source account"
-          value={draft.libraryConnectionId ?? 'auto'}
-          options={[
+        <span>Library source account</span><RowFilter selection groups={[{label:"Library source account", value:draft.libraryConnectionId ?? 'auto', options:[
             { value: 'auto', label: 'Automatic · first connected account' },
             ...provider.accounts.map((account) => ({ value: account.id, label: account.username })),
-          ]}
-          onchange={(value) => (draft.libraryConnectionId = value === 'auto' ? null : value)}
-        /><small
+          ], change:(value) => (draft.libraryConnectionId = value === 'auto' ? null : value)}]} /><small
           >Choose an account that can access every library you want to catalogue. Each user’s access
           is checked separately.</small
         >
@@ -280,9 +274,9 @@
     {/if}
     <div class="row">
       <Button type="submit" disabled={busy || !dirty}>{busy ? 'Saving…' : 'Save schedule'}</Button
-      ><Button variant="ghost" disabled={busy} onclick={() => (open = false)}>Cancel</Button>
+      ><Button emphasis="subtle" disabled={busy} onclick={() => (open = false)}>Cancel</Button>
     </div>
-    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
   </form>
 </Dialog>
 <Dialog bind:open={history} title={`${task.title} runs · ${provider.name}`} wide
@@ -295,6 +289,7 @@
 
 <style>
   .task-card {
+    scroll-margin-top:88px;
     display: flex;
     flex-direction: column;
     gap: 12px;

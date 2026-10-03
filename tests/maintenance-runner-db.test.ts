@@ -67,7 +67,7 @@ run('repeated maintenance requests preserve one durable job in every active stat
   }
 });
 run(
-  'parallel claims serialize scans per service while other services and user edits proceed',
+  'parallel claims serialize provider jobs globally while user edits proceed',
   async () => {
     const library = await queue(0, 'jellyfin.library');
     const user = await queue(1, 'jellyfin.sync');
@@ -79,9 +79,12 @@ run(
         .filter(Boolean)
         .map((job) => job!.id)
         .sort()
-    ).toEqual([library, request, edit].sort());
-    await getSql()`UPDATE outbox_actions SET state = 'succeeded' WHERE id IN (${library}, ${request}, ${edit})`;
+    ).toEqual([library, edit].sort());
+    await getSql()`UPDATE outbox_actions SET state = 'succeeded' WHERE id IN (${library}, ${edit})`;
     expect((await claimNextAction())?.id).toBe(user);
+    expect(await claimNextAction()).toBeNull();
+    await getSql()`UPDATE outbox_actions SET state='succeeded' WHERE id=${user}`;
+    expect((await claimNextAction())?.id).toBe(request);
   }
 );
 run('failed and backed-off maintenance does not block other users or later edits', async () => {
@@ -108,6 +111,7 @@ run('shared rate-limit cooldown protects all queued accounts on the affected ser
   expect(state.state).toBe('pending');
   expect(new Date(state.next_attempt_at).getTime()).toBeGreaterThan(Date.now() + 50000);
   await getSql()`UPDATE provider_instances SET settings = settings - 'jobsRetryAt' WHERE id = ${instances[0]}`;
+  await getSql()`UPDATE outbox_actions SET state='succeeded' WHERE id=${unrelated}`;
   expect((await claimNextAction())?.id).toBe(other);
 });
 run('Collection cleanup and entry reviews share the existing service traversal lock without deduplicating separate reviews',async()=>{
@@ -250,4 +254,15 @@ run('stored failure codes drive remedies and disappear after successful retry',a
  await runQueueOnce();
  const [completed]=await getSql()`select state,payload from outbox_actions where id=${id}`;
  expect(completed.state).toBe('succeeded');expect(completed.payload._jobFailure).toBeUndefined();
+});
+
+run('a cancelled or replaced worker cannot publish a service cooldown',async()=>{
+  registerActionHandler('jellyfin.library',async(action)=>{
+    await getSql()`update outbox_actions set state='cancelled' where id=${action.id}`;
+    throw new ProviderHttpError(429,60);
+  });
+  await queue(0,'jellyfin.library');await runQueueOnce();
+  const [service]=await getSql()`select settings->>'jobsRetryAt' as retry from provider_instances where id=${instances[0]}`;
+  expect(service.retry).toBeNull();
+  const unrelated=await queue(2,'seerr.sync');expect((await claimNextAction())?.id).toBe(unrelated);
 });

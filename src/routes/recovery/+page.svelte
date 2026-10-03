@@ -33,7 +33,7 @@
             autocomplete="new-password"
             required
           /></label
-        ><Button type="submit">Reset password</Button><Button variant="ghost" href="/login"
+        ><Button type="submit">Reset password</Button><Button emphasis="subtle" href="/login"
           >Back to sign in</Button
         >
       </form>{/if}

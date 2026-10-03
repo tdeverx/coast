@@ -5,7 +5,7 @@ import { AppError } from './errors';
 
 export interface ProviderFetchConfig {
   baseUrl: string;
-  provider?: 'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb';
+  provider?: 'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb' | 'steam';
   approved?: boolean;
   allowPrivateNetwork?: boolean;
   allowedPorts?: number[];

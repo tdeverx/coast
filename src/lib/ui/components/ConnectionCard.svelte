@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RowFeedback from './RowFeedback.svelte';
   import CollectionProjectionSettings from './CollectionProjectionSettings.svelte';
   import type {SourceImpact} from '$lib/collection/source-changes.server';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
@@ -135,6 +136,12 @@
     );
     password = '';
   }
+  async function startSteam() {
+    const result=await action<{url:string}>('providers/steam/start',{instanceId:provider.id});
+    if(result)window.location.assign(result.result.url);
+  }
+  let steamImports=$state({importOwned:true,importPlaytime:true,importAchievements:true});
+  $effect(()=>{const settings=provider.connection?.settings;steamImports={importOwned:settings?.importOwned!==false,importPlaytime:settings?.importPlaytime!==false,importAchievements:settings?.importAchievements!==false};});
   async function start() {
     busy = true;
     error = '';
@@ -186,7 +193,7 @@
             ? 'Your media server'
             : provider.provider === 'trakt'
               ? 'Optional tracking sync'
-              : 'Media requests'}
+              : provider.provider === 'steam' ? 'Owned games, playtime and achievements' : 'Media requests'}
         </p>
       </div>
     </div>
@@ -194,9 +201,7 @@
       >{provider.connection?.status === 'connected' ? 'Connected' : 'Not connected'}</span
     >
   </div>
-  {#if error && !disconnect}<div class="notice error" role="alert">
-      {error}
-    </div>{/if}{#if provider.connection?.status === 'connected'}<p class="small">
+  {#if error && !disconnect}<RowFeedback error={error} tag="div" class="notice error" />{/if}{#if provider.connection?.status === 'connected'}<p class="small">
       Connected as {provider.connection.username}
     </p>
     {#if provider.provider === 'jellyfin'}<div class="stack">
@@ -210,7 +215,7 @@
         </p>
         <div>
           <Button
-            variant="secondary"
+
             disabled={busy}
             onclick={() =>
               action(
@@ -228,8 +233,15 @@
         </p>
         <label class="check"><input type="checkbox" bind:checked={reconcileTracking} disabled={busy} />Apply Coast tracking when items become available</label>
         <p class="small">Fill empty supported fields. Divergent server state follows your conflict preference. This setting is independent of imports.</p>
-        <div><Button variant="secondary" disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/reconciliation`,{enabled:reconcileTracking},'Reconciliation preference saved.')}>Save reconciliation preference</Button></div>
+        <div><Button  disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/reconciliation`,{enabled:reconcileTracking},'Reconciliation preference saved.')}>Save reconciliation preference</Button></div>
       </div>{/if}
+    {#if provider.provider === 'steam'}<div class="stack">
+      <label class="check"><input type="checkbox" bind:checked={steamImports.importOwned} disabled={busy} />Add newly imported owned games to Collection</label>
+      <label class="check"><input type="checkbox" bind:checked={steamImports.importPlaytime} disabled={busy} />Import Steam playtime totals</label>
+      <label class="check"><input type="checkbox" bind:checked={steamImports.importAchievements} disabled={busy} />Import achievement progress</label>
+      <p class="small">Ownership availability is read from Steam. It does not establish installation. Turning imports off retains previous data; Coast never writes achievements or creates sessions from playtime totals.</p>
+      <div><Button disabled={busy} onclick={()=>action(`providers/${provider.connection!.id}/steam-imports`,steamImports,'Steam import preferences saved.')}>Save import preferences</Button></div>
+    </div>{/if}
     {#if provider.provider === 'trakt'}<div class="sync-options">
         <label class="check"><input type="checkbox" bind:checked={liveRead} disabled={busy} />Read live watching activity</label>
         {#each Object.entries(labels) as [key, label]}<label class="check"
@@ -238,7 +250,7 @@
       </div>
       <div class="row">
         <Button
-          variant="secondary"
+
           disabled={busy}
           onclick={() =>
             action(`providers/${provider.connection!.id}/sync`, {...sync,liveRead}, 'Sync preferences saved.')}
@@ -286,7 +298,7 @@
       </p>{/if}
     <div class="row">
       <Button
-        variant="ghost"
+        emphasis="subtle"
         disabled={busy}
         onclick={() => {
           error = '';
@@ -310,10 +322,10 @@
           autocomplete="current-password"
           maxlength="4096"
         /></label
-      ><Button variant="secondary" type="submit" disabled={busy}
+      ><Button  type="submit" disabled={busy}
         >{busy ? 'Connecting…' : 'Connect Jellyfin'}</Button
       >
-    </form>{:else if provider.provider === 'trakt'}{#if device}<div class="notice">
+    </form>{:else if provider.provider === 'steam'}<p class="small">Link your Steam account using Steam’s sign-in page. Game details must be readable for imports; signing in does not override Steam privacy.</p><Button disabled={busy||!provider.configured} onclick={startSteam}>Connect Steam</Button>{:else if provider.provider === 'trakt'}{#if device}<div class="notice">
         <p>
           Open <a class="text-accent" href={device.verificationUrl} target="_blank" rel="noreferrer"
             >Trakt’s activation page</a
@@ -323,9 +335,9 @@
       </div>
       {#if pending}<p class="small">
           Waiting for authorisation. Finish on Trakt, then check again.
-        </p>{/if}<Button variant="secondary" disabled={busy} onclick={finish}
+        </p>{/if}<Button  disabled={busy} onclick={finish}
         >I’ve authorised Coast</Button
-      >{:else}<Button variant="secondary" disabled={busy || !provider.configured} onclick={start}
+      >{:else}<Button  disabled={busy || !provider.configured} onclick={start}
         >Connect Trakt</Button
       >{/if}{:else}<p class="small">
       Your account is linked through the associated Jellyfin server. Connect Jellyfin to request
@@ -334,7 +346,7 @@
 </section>
 <Dialog bind:open={disconnect} title="Disconnect this account?"
   ><div class="stack">
-    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
     <p>
       Your imported tracking data stays in Coast. Pending external actions for this connection will
       be cancelled.
@@ -342,7 +354,7 @@
     {#if sourceImpact?.accounts.length}<h3>Collection export impact</h3>{#each sourceImpact.accounts as account}<p>{account.removals.length} potential removals{account.uncertain?' · uncertain coverage or delivery':''} · {account.unresolved.length} unresolved identities.</p><ul>{#each account.removals.slice(0,60) as item}<li>{item.title}</li>{/each}</ul>{/each}<p class="small">Remote entries stay. Review Trakt Collection in Connections to approve removal after a fresh remote read.</p>{/if}
     <div class="row">
       <Button
-        variant="danger"
+        danger
         disabled={busy}
         onclick={async () => {
           if (
@@ -354,7 +366,7 @@
           )
             disconnect = false;
         }}>Disconnect</Button
-      ><Button variant="secondary" onclick={() => (disconnect = false)}>Keep connected</Button>
+      ><Button  onclick={() => (disconnect = false)}>Keep connected</Button>
     </div>
   </div></Dialog
 >

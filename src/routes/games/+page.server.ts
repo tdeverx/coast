@@ -15,6 +15,7 @@ export const load: PageServerLoad = async ({locals, url, depends}) => {
     v.object({
       personal: v.boolean(),
       view: v.picklist(['library', 'igdb']),
+      scope: v.picklist(['all', 'available']),
       state: v.picklist(['all', 'planned', 'in-progress', 'completed', 'paused', 'dropped']),
       search: v.pipe(v.string(), v.maxLength(250)),
       page: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1000)),
@@ -22,6 +23,7 @@ export const load: PageServerLoad = async ({locals, url, depends}) => {
     {
       personal: url.searchParams.get('personal') === 'true',
       view: url.searchParams.get('view') ?? 'library',
+      scope: url.searchParams.get('scope') ?? 'all',
       state: url.searchParams.get('state') ?? 'all',
       search: (url.searchParams.get('search') ?? '').trim(),
       page: Number(url.searchParams.get('page') ?? 1),
@@ -39,9 +41,7 @@ export const load: PageServerLoad = async ({locals, url, depends}) => {
     const result = await listGames(
       filters.search,
       filters.page,
-      filters.state === 'all' && !filters.personal
-        ? undefined
-        : { userId: locals.user.id, ...(filters.state !== 'all' ? { status: filters.state } : {}) }
+      { userId: locals.user.id, personal: filters.personal, availableOnly: filters.scope === 'available', ...(filters.state !== 'all' ? { status: filters.state } : {}) }
     );
     return {
       ...result,

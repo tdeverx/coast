@@ -1,8 +1,19 @@
+export type PartySettings = {
+  playback: 'host' | 'everyone' | 'selected'; controllers: string[];
+  invitations: 'host' | 'everyone'; acceptInvites: boolean;
+  readyCheck: boolean; hostDisconnect: 'wait' | 'continue' | 'transfer';
+  queue: 'host' | 'everyone';
+};
+export const defaultPartySettings: PartySettings = {playback:'host',controllers:[],invitations:'host',acceptInvites:true,readyCheck:false,hostDisconnect:'wait',queue:'host'};
+export function canControl(room: Pick<RoomState,'hostId'|'settings'|'participants'>, userId:string) {
+  return room.hostId===userId || room.participants.some(p=>p.userId===userId&&p.joined) && (room.settings.playback==='everyone'||room.settings.playback==='selected'&&room.settings.controllers.includes(userId));
+}
 export type RoomState = {
-  id:string;hostId:string;mediaId:string;mediaType:'audio'|'video';edition:string;durationSeconds:number;
+  id:string;createdAt:string;hostId:string;mediaId:string|null;mediaType:'audio'|'video';edition:string;durationSeconds:number;
   positionSeconds:number;paused:boolean;bufferingPaused:boolean;bufferingPolicy:'together'|'catch-up';
   queue:string[];queueIndex:number;queueItems:{id:string;title:string;availability:string}[];revision:number;updatedAt:string;serverTime:string;ended:boolean;
-  participants:{userId:string;username:string;joined:boolean;buffering:boolean;online:boolean}[];
+  settings:PartySettings;
+  participants:{userId:string;username:string;avatar:string|null;joined:boolean;buffering:boolean;online:boolean;ready:boolean;unavailable:boolean}[];
 };
 export function timelinePosition(room:Pick<RoomState,'positionSeconds'|'paused'|'bufferingPaused'|'updatedAt'|'durationSeconds'>,now:number) {
   return Math.min(room.durationSeconds,Math.max(0,room.positionSeconds+(!room.paused&&!room.bufferingPaused?Math.max(0,now-Date.parse(room.updatedAt))/1000:0)));

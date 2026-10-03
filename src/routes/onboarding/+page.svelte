@@ -26,5 +26,5 @@
     {:else}<p role="status">Waiting for the active Jellyfin task to finish before starting your import.</p>{/if}
   {/if}
   {#if form?.error}<p class="notice error" role="alert">{form.error}</p>{/if}
-  <div class="auth-footer"><form method="POST" action="/logout"><Button type="submit" variant="ghost">Sign out</Button></form></div>
+  <div class="auth-footer"><form method="POST" action="/logout"><Button type="submit" emphasis="subtle">Sign out</Button></form></div>
 </div></div>

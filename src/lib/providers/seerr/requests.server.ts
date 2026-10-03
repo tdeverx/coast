@@ -392,6 +392,7 @@ export async function refreshRequests(userId: string, instanceId: string) {
             title:
               state === 'available' ? 'Your requested title is available' : `Request ${state}`,
             sourceKey: `seerr:${instanceId}:${remote.id}:${state}`,
+            data:{actorId:userId,subjectId:local.id,workId:local.mediaId,destination:'/requests'},
           });
         }
         continue;

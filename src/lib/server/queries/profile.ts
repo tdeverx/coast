@@ -1,4 +1,5 @@
 import {profileVisibility,requireVisible} from '$lib/social/privacy.server';
+import {workCards} from '$lib/collection/query.server';
 import { recordedWatches as watches } from '$lib/core/tracking/recorded-watches';
 import { libraryTrackingCondition } from './library';
 import { periodStart, type ProfilePeriod } from '$lib/profile/period';
@@ -66,6 +67,7 @@ export async function profileData(
     .from(s.users)
     .where(eq(s.users.id, userId));
   const profile = visibility.details ? { ...user?.settings.profile } : {};
+  if(visibility.details)profile.backgroundMode??=profile.backgroundMediaId?'fixed':'activity';
   if (!visibility.favourites) {
     delete profile.favouriteOrder;
     delete profile.pinnedFavourites;
@@ -222,6 +224,15 @@ export async function profileData(
         : item,
     ])
   );
+  let activityBackground = null;
+  if(profile.backgroundMode==='activity'){
+    const latest=await db.execute<{workId:string}>(sql`select a.work_id as "workId" from social_activity a join works w on w.id=a.work_id
+      where a.user_id=${userId}::uuid and a.date_known and a.event_kind in ('watch','listen','play','played','session') and a.occurred_at<=${now.toISOString()}::timestamptz
+      and social_visible(a.user_id,${viewerId}::uuid,a.section,w.category)
+      and (w.category='screen' or coalesce((select value->>'experimentalFeatures' from system_settings where key='coast'),'false')='true')
+      order by a.occurred_at desc,a.id desc limit 1`);
+    activityBackground=latest[0]?(await workCards(userId,viewerId,[latest[0].workId]))[0]??null:null;
+  }
   return {
     visibility,
     view: options.view,
@@ -244,7 +255,7 @@ export async function profileData(
       historyCounts[0].total || counts.favourites || rated.count ? (['screen'] as const) : [],
     featured: featuredState ? (byId.get(featuredState.id) ?? null) : null,
     ratedTitles: ratedItems.flatMap((row) => (byId.has(row.id) ? [byId.get(row.id)!] : [])),
-    background: profile.backgroundMediaId ? (byId.get(profile.backgroundMediaId) ?? null) : null,
+    background: profile.backgroundMode==='activity'?activityBackground:profile.backgroundMediaId ? (byId.get(profile.backgroundMediaId) ?? null) : null,
     totals: {
       movies: visibility.insights?historyCounts[0].movies:0,
       episodes: visibility.insights?historyCounts[0].episodes:0,

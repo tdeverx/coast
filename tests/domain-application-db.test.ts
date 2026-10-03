@@ -5,7 +5,6 @@ import { migrate } from 'drizzle-orm/bun-sql/migrator';
 import { and, eq, inArray } from 'drizzle-orm';
 import { closeDb, getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import { createLocalMedia } from '../src/lib/core/media/service';
 import { detailsData, mediaViews } from '../src/lib/server/queries/media';
 import { profileData } from '../src/lib/server/queries/profile';
 import { profileUser } from '../src/lib/server/queries/profile-user';
@@ -740,22 +739,6 @@ suite('application PostgreSQL read models', () => {
     const suggestions = (await homeData(a)).recommendations;
     expect(suggestions?.because).toBe('Recommendation anchor');
     expect(suggestions?.items.map((item) => item.id)).toEqual([recommendation]);
-  });
-  test('manual title creation stores its subtype and initial saved event atomically', async () => {
-    const created = await createLocalMedia(a, { title: 'Standalone test', kind: 'movie' });
-    ids.push(created.id);
-    expect(
-      await getDb().select().from(s.movies).where(eq(s.movies.mediaId, created.id))
-    ).toHaveLength(1);
-    const [event] = await getDb()
-      .select()
-      .from(s.trackingEvents)
-      .where(and(eq(s.trackingEvents.userId, a), eq(s.trackingEvents.mediaId, created.id)));
-    expect(event.action).toBe('watchlist');
-    await getDb().update(s.users).set({ disabled: true }).where(eq(s.users.id, b));
-    await expect(
-      createLocalMedia(b, { title: 'Should not exist', kind: 'show' })
-    ).rejects.toMatchObject({ status: 401 });
   });
   test('season details and ordered custom lists retain every item beyond the 500-row query batch', async () => {
     const longShow = crypto.randomUUID(),

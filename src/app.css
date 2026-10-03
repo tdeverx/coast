@@ -292,9 +292,9 @@ form.stack,
   display: grid;
   margin: 0;
   width: max-content;
-  min-width: min(224px, calc(100vw - 16px));
-  max-width: min(360px, calc(100vw - 16px));
-  max-height: calc(100dvh - 16px);
+  min-width: min(224px, calc(100vw - 32px));
+  max-width: min(360px, calc(100vw - 32px));
+  max-height: min(640px, calc(100dvh - 32px));
   overflow: auto;
   overscroll-behavior: contain;
   padding: var(--menu-inset);
@@ -351,9 +351,9 @@ form.stack,
   gap: 8px;
   padding: 7px 14px;
   border-radius: 8px;
-  border: 1px solid var(--accent);
-  background: var(--accent);
-  color: var(--canvas);
+  border: 0;
+  background: var(--surface);
+  color: var(--ink);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   line-height: var(--leading-normal);
@@ -362,38 +362,10 @@ form.stack,
     transform var(--fast);
 }
 .button:hover:not(:disabled):not([aria-disabled='true']) {
-  background: color-mix(in srgb, var(--accent) 60%, var(--ink));
-  border-color: color-mix(in srgb, var(--accent) 60%, var(--ink));
+  background: var(--surface-hover);
 }
 .button:active:not(:disabled):not([aria-disabled='true']) {
   transform: translateY(1px);
-}
-.button.secondary {
-  color: var(--ink);
-  background: var(--surface);
-  border-color: var(--line);
-}
-.button.secondary:hover:not(:disabled):not([aria-disabled='true']) {
-  background: var(--surface-hover);
-}
-.button.ghost {
-  color: var(--muted);
-  background: transparent;
-  border-color: transparent;
-}
-.button.ghost:hover:not(:disabled):not([aria-disabled='true']) {
-  color: var(--ink);
-  background: color-mix(in srgb, var(--white) calc(13 / 255 * 100%), transparent);
-}
-.button.danger {
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) calc(16 / 255 * 100%), transparent);
-  border-color: color-mix(in srgb, var(--danger) calc(53 / 255 * 100%), transparent);
-}
-.button.danger:hover:not(:disabled):not([aria-disabled='true']) {
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) calc(32 / 255 * 100%), transparent);
-  border-color: color-mix(in srgb, var(--danger) calc(96 / 255 * 100%), transparent);
 }
 .button.hero {
   border: 0;
@@ -735,7 +707,7 @@ form.stack,
 }
 
 /* Action menus fit their content while retaining room for labels and rating controls. */
-.menu-surface.menu-panel { max-width: min(288px, calc(100vw - 16px)); }
+.menu-surface.menu-panel { max-width: min(288px, calc(100vw - 32px)); }
 .menu-action-label { min-width: 0; flex: 1; overflow-wrap: anywhere; }
 .menu-row.menu-row-danger, .menu-row.menu-row-danger:hover:not(:disabled), .menu-row.menu-row-danger:focus-visible { color: var(--danger); }
 .menu-row.menu-row-danger:hover:not(:disabled), .menu-row.menu-row-danger:focus-visible { background: color-mix(in srgb, var(--danger) 12%, transparent); }
@@ -743,3 +715,10 @@ form.stack,
 .menu-feedback { padding: 6px var(--menu-item-inset); font-size: var(--text-sm); }
 
 .menu-row[aria-disabled="true"]:hover, .menu-row[aria-disabled="true"]:focus-visible { background: transparent; }
+
+/* Presence uses the existing status palette across menus and avatar heads. */
+.status-dot {display:inline-block;width:10px;height:10px;flex:none;border-radius:50%;background:var(--quiet);}
+.status-dot[data-status="online"] {background:var(--success);}
+.status-dot[data-status="away"] {background:var(--rating);}
+.status-dot[data-status="busy"] {background:var(--danger);}
+.status-choice .status-dot[data-status="offline"] {background:transparent;box-shadow:inset 0 0 0 1.5px var(--quiet);}

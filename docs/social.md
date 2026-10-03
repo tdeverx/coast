@@ -32,7 +32,7 @@ Incoming current playback/check-in state and confirmed provider completion must 
 
 This is an explicit user constraint, applying throughout implementation:
 
-- Inventory the approved components and their current usages before creating UI. Reuse the newer shared Shelf, Heading, MediaCard, MediaPage, DetailCard, Dialog, Button, ContextMenu, RowFilter, SegmentedControl and notification patterns wherever applicable.
+- Inventory the approved components and their current usages before creating UI. Reuse the newer shared Shelf, Heading, MediaCard, MediaPage, DetailCard, Dialog, Button, RowFilter, SegmentedControl and notification patterns wherever applicable.
 - Add domain data/state through the existing composition points. Do not create social-specific copies of shelves, cards, headers, menus, heroes, notification controls or settings layouts merely to add social behavior.
 - If an existing component is insufficient, extend the closest approved design while matching its structure, spacing, typography, palette, materials, controls and desktop/mobile behavior. Preserve existing approved uses.
 - A necessary new visual treatment or modified design variant must be clearly shown as **Non-approved** in the UI reference, beside the closest approved pattern when useful, so the user can inspect and decide. Do not silently promote a prototype or replace approved production design before its review.

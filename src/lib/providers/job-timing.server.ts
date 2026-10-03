@@ -3,7 +3,7 @@ import { getConfig } from '$lib/server/config';
 import { providerSchedule } from './schedule';
 import { serviceTasks, maintenanceKinds } from './tasks';
 
-type Settings = { schedule?: unknown; libraryScan?: { connectionId?: string; externalUserId?: string; fullCompletedAt?: string; recentCompletedAt?: string }; sync?: Record<string, boolean>; liveRead?: boolean; collectionProjection?: { enabled?: boolean }; requestsVerifiedAt?: string };
+type Settings = { schedule?: unknown; libraryScan?: { connectionId?: string; externalUserId?: string; fullCompletedAt?: string; recentCompletedAt?: string }; sync?: Record<string, boolean>; liveRead?: boolean; collectionProjection?: { enabled?: boolean }; importAchievements?: boolean; requestsVerifiedAt?: string };
 type Instance = { id: string; provider: string; enabled: boolean; settings: Settings; configured: boolean };
 type Account = { id: string; instance_id: string; external_user_id: string; settings: Settings; live: boolean; user_completed: Date | null; reviews: number };
 type Evidence = { connection_id: string | null; kind: string; instance_id: string | null; completed: Date | null; blocked: boolean };
@@ -55,6 +55,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
       if (!kind || !task.scope) continue;
       let eligible = linked.filter(c => {
         if (kind === 'catalogue.user-scan') return tmdb;
+        if (kind === 'steam.achievements') return c.settings.importAchievements !== false;
         if (kind === 'trakt.live') return c.settings.liveRead !== false;
         if (kind === 'trakt.collection-project') return c.settings.collectionProjection?.enabled === true;
         if (kind === 'trakt.lists-import') return c.settings.sync?.lists === true;
@@ -69,7 +70,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
       }
       const rows = evidence.filter(e => e.kind === kind && (eligible.some(c => c.id === e.connection_id) || e.instance_id === instance.id));
       const last = rows.map(e => new Date(e.completed ?? 0).getTime()).filter(Boolean);
-      const enabled = instance.enabled && schedule.enabled && (!task.enabled || schedule[task.enabled]) && (instance.provider !== 'trakt' || config.enableTrakt) && (instance.provider !== 'seerr' || config.enableRequests);
+      const enabled = instance.enabled && schedule.enabled && (!task.enabled || schedule[task.enabled]) && (instance.provider !== 'trakt' || config.enableTrakt) && (instance.provider !== 'seerr' || config.enableRequests) && (instance.provider !== 'steam' || config.experimentalFeatures);
       const due = eligible.flatMap(c => {
         const entry = rows.find(e => e.connection_id === c.id);
         if (entry?.blocked) return [];

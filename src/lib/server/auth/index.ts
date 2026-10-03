@@ -1,3 +1,4 @@
+import { collectionPreferencesSchema } from '$lib/collection/preferences';
 import { socialSettingsSchema } from '$lib/social/model';
 import * as v from 'valibot';
 import { asc, and, eq, sql } from 'drizzle-orm';
@@ -305,6 +306,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
           v.pipe(v.string(), v.uuid()),
         ]),
         social: socialSettingsSchema,
+        collection: collectionPreferencesSchema,
         shareDemand: v.boolean(),
         listenThreshold: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100)),
         fullWidth: v.boolean(),

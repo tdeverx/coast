@@ -4,19 +4,22 @@ import type { MusicKind } from '$lib/music/model';
 export type MediaCardPresentation = Pick<
   MediaView,
   | 'id'
+  | 'recommendationIds'
   | 'title'
   | 'captionTitle'
   | 'captionSubtitle'
+  | 'captionActor'
+  | 'captionActivity'
   | 'year'
   | 'poster'
   | 'backdrop'
   | 'artwork'
   | 'artworkSources'
   | 'logo'
-> & { kind: MusicKind | 'game'; href: string; connectionId?: string; workId?: string; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean };
+> & { kind: MusicKind | 'game' | 'person'; href: string; connectionId?: string; workId?: string; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean };
 export type MediaHeroPresentation = MediaCardPresentation &
   Pick<MediaView, 'overview' | 'genres' | 'runtimeMinutes' | 'certification'>;
-export type MediaCardShape = 'poster' | 'square' | 'fanart' | 'banner';
+export type MediaCardShape = 'poster' | 'square' | 'circle' | 'fanart' | 'banner';
 export type MediaCardArtwork =
   | 'auto'
   | 'none'
@@ -42,6 +45,7 @@ export interface MediaRowStyle {
   overlay: MediaCardOverlay;
 }
 export interface MediaView {
+  recommendationIds?: string[];
   id: string;
   kind: MediaKind;
   title: string;
@@ -50,6 +54,8 @@ export interface MediaView {
   sequence?: import('$lib/media/sequence').SequenceContext;
   captionTitle?: string;
   captionSubtitle?: string;
+  captionActivity?: {id:string;occurredAt:string;dateKnown:boolean;kind:string;action?:string;detail?:string;myReaction?:string|null};
+  captionActor?: {username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus};
   originalTitle?: string | null;
   overview?: string | null;
   year?: number | null;

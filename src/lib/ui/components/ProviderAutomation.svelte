@@ -1,4 +1,5 @@
 <script lang="ts">
+  import RowFeedback from './RowFeedback.svelte';
   import { tick } from 'svelte';
   import type { ProviderSchedule } from '$lib/providers/schedule';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
@@ -50,7 +51,7 @@
   }
 </script>
 
-{#if ['jellyfin', 'trakt', 'seerr', 'tmdb'].includes(instance.provider)}
+{#if ['jellyfin', 'trakt', 'seerr', 'tmdb', 'steam'].includes(instance.provider)}
   <div class="automation stack">
     <Heading title="Automatic work"
       >{#snippet actions()}<a class="small text-accent" href="/settings/jobs"
@@ -80,7 +81,7 @@
           ? 'Automatic work is paused. Your task settings are saved.'
           : 'Selected tasks run on their schedules.'} Already queued jobs remain available in Jobs.
     </p>
-    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
   </div>
 {/if}
 

@@ -46,7 +46,7 @@
 <MediaPage hero={!!data.detail} collection={{items:heroItems,selection}} context="home">
   {#if error}<p class="notice error" role="alert">{error}</p>{/if}
   {#if data.detail}
-    <Button href="/lists" variant="ghost" icon="left">Your lists</Button>
+    <Button href="/lists" emphasis="subtle" icon="left">Your lists</Button>
     {#if data.detail.selected?.description}<p class="description">
         {data.detail.selected.description}
       </p>{/if}
@@ -98,7 +98,7 @@
     <p>The list will be removed. Your titles and watch history will stay in Coast.</p>
     <div class="row">
       <Button
-        variant="danger"
+        danger
         onclick={async () => {
           try {
             await change(`lists/${deleteId}`, {}, 'DELETE');
@@ -110,7 +110,7 @@
           }
         }}>Delete list</Button
       >
-      <Button variant="secondary" onclick={() => (deleteId = '')}>Cancel</Button>
+      <Button  onclick={() => (deleteId = '')}>Cancel</Button>
     </div>
   </div>
 </Dialog>

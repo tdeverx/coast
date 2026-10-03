@@ -11,15 +11,16 @@
   } from '$lib/progress';
   import { useClient } from '$lib/ui/client-context';
   import { createResource } from '$lib/ui/resource.svelte';
-  import type { MediaView } from '$lib/ui/types';
+  import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
   import type { ShelfSource, ShelfControl } from './types';
 
 export type ProgressSourceOptions = {
     initial?: ProgressContent;
+    mediums?: boolean;
     surface?: ProgressSurface;
     username?: string;
     layout?: 'row' | 'grid';
-    onitems?: (items: MediaView[], selection: string) => void;
+    onitems?: (items: (MediaView | MediaCardPresentation)[], selection: string) => void;
   };
 export function createProgressSource(getOptions: () => ProgressSourceOptions): ShelfSource {
   const { api } = useClient();
@@ -30,10 +31,11 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     username,
     layout = 'row',
     onitems,
+    mediums = false,
   } = $derived(getOptions());
 
   const title = $derived(progressTitles[surface]);
-  const saved = $derived(surface === 'watchlist' || surface === 'favourites');
+  const saved = $derived(surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites');
   const options = $derived(
     progressTabs.filter(
       (option) =>
@@ -42,21 +44,23 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     )
   );
   const defaultView = (): ProgressOptions['view'] =>
-    surface === 'watchlist' || surface === 'favourites' ? surface : 'watching';
+    surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites' ? surface : 'watching';
   type Filters = Pick<ProgressOptions, 'kind' | 'scope'>;
   const defaults = (): Filters => ({ kind: 'all', scope: 'all' });
   const emptyContent = (): ProgressContent => ({
     view: defaultView(),
     kind: 'all',
+    category: 'screen',
     scope: 'all',
     page: 1,
     pages: 1,
     total: 0,
     items: [],
   });
+  let category = $state<ProgressOptions['category']>(untrack(() => initial?.category ?? 'screen'));
   let tab = $state<string>(untrack(() => initial?.view ?? defaultView()));
   let preferences = $state<Record<string, Filters>>(
-    Object.fromEntries(progressTabs.map((option) => [option.value, defaults()]))
+    Object.fromEntries([...progressTabs, {value:'next',label:'Next'}, {value:'recommendations',label:'Recommendations'}].map((option) => [option.value, defaults()]))
   );
   untrack(() => {
     if (initial) preferences[initial.view] = { kind: initial.kind, scope: initial.scope };
@@ -72,7 +76,8 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     new URLSearchParams({
       ...(username ? { username } : {}),
       view: tab,
-      kind: current.kind,
+      category,
+      kind: category === 'screen' ? current.kind : 'all',
       scope: surface === 'profile' ? 'all' : current.scope,
       page: String(number),
     });
@@ -88,9 +93,10 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
       }
       if (layout === 'grid') {
         tab = next.view;
+        category = next.category;
         preferences[tab] = { kind: next.kind, scope: next.scope };
         resource.replace(next);
-      } else if (tab === next.view && current.kind === next.kind && current.scope === next.scope) {
+      } else if (category === next.category && tab === next.view && current.kind === next.kind && current.scope === next.scope) {
         resource.replace(next);
       } else {
         void select();
@@ -98,7 +104,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     });
   });
   $effect(() => {
-    onitems?.(content.items, [content.view, content.kind, content.scope].join(':'));
+    onitems?.(content.items, [content.view, content.category, content.kind, content.scope].join(':'));
   });
   async function select(number = 1) {
     const path = `progress?${parameters(number)}`;
@@ -114,19 +120,20 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
 
   return {
     get pagination() { return { kind: 'pages' as const, page: content.page, pages: content.pages, append: false, controls: layout === 'grid' ? 'both' as const : 'none' as const }; },
-    get title() { return title; }, get items() { return visible; }, get busy() { return busy; },
+    get title() { return title; }, get items() { return content.category === category ? visible : []; }, get busy() { return busy; },
     get ready() { return ready; }, get error() { return error; }, get activated() { return resource.activated; },
     get href() { return layout === 'row' ? href() : undefined; },
-    get shape() { return saved ? 'poster' : 'fanart'; }, get artworkStyle() { return saved ? 'auto' : 'thumb'; },
+    get shape() { return category === 'music' ? 'square' : saved ? 'poster' : 'fanart'; }, get mediaKind() { return category; }, get artworkStyle() { return category !== 'screen' || saved ? 'auto' : 'thumb'; },
     get artworkPriority() { return ['watching','up-next'].includes(content.view) ? 'season-show-episode' : undefined; },
 
 
     get filters(): ShelfControl[] { return [
-      ...(!saved ? [{type:'segments' as const, label:`${title} selection`, value:tab, options, change:(value:string)=>{tab=value;void select();}}] : []),
+      ...(mediums ? [{type:'segments' as const,label:`${title} medium`,value:category,options:[{value:'screen',label:'Watching'},...(route.data.experimentalFeatures?[{value:'game',label:'Playing'},{value:'music',label:'Listening'}]:[])],change:(value:string)=>{category=value as ProgressOptions['category'];void select();}}] : []),
+      ...(!saved && !mediums ? [{type:'segments' as const, label:`${title} selection`, value:tab, options, change:(value:string)=>{tab=value;void select();}}] : []),
       ...(surface !== 'profile' ? [{type:'availability' as const,label:'Available to play only',value:current.scope,change:(value:string)=>update({scope:value as Filters['scope']})}] : []),
     ]; },
-    get controls(): ShelfControl[] { return [{type:'media-type',label:`${title} media type`,value:current.kind,change:value=>update({kind:value as Filters['kind']})}]; },
-    get empty() { return ready ? 'No titles in this selection.' : 'Loading titles…'; },
+    get controls(): ShelfControl[] { return category === 'screen' ? [{type:'media-type',label:`${title} media type`,value:current.kind,change:value=>update({kind:value as Filters['kind']})}] : []; },
+    get empty() { return busy ? 'Loading titles…' : ready ? 'No titles in this selection.' : 'Loading titles…'; },
     retryLabel:'Retry', load:select,
   };
 }

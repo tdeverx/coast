@@ -13,6 +13,7 @@ export const jellyfinMusicIdSchema = v.pipe(
 export const musicBrowseSchema = v.pipe(
   v.object({
     kind: v.optional(v.picklist(['all', 'artist', 'album', 'track']), 'album'),
+    availableOnly: v.optional(v.boolean(), false),
     offset: v.optional(v.pipe(count, v.maxValue(2147483647)), 0),
     limit: v.optional(v.pipe(count, v.minValue(1), v.maxValue(100)), 50),
     search: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(200))),
@@ -100,6 +101,8 @@ export async function browseMusic(
   input: MusicBrowseOptions = {}
 ): Promise<MusicPage> {
   const options = v.parse(musicBrowseSchema, input);
+  if (options.availableOnly && options.kind === 'artist')
+    return { items: [], total: 0, nextOffset: null };
   const query = new URLSearchParams({
     userId,
     recursive: 'true',
@@ -117,7 +120,7 @@ export async function browseMusic(
         : 'SortName',
     includeItemTypes:
       options.kind === 'all'
-        ? 'MusicArtist,MusicAlbum,Audio'
+        ? options.availableOnly ? 'MusicAlbum,Audio' : 'MusicArtist,MusicAlbum,Audio'
         : options.kind === 'artist'
           ? 'MusicAlbum,Audio'
           : options.kind === 'album'

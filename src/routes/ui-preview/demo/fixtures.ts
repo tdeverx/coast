@@ -1,3 +1,4 @@
+import type {NotificationEntry} from '$lib/notifications/model';
 import type { MediaView } from '$lib/ui/types';
 import type { JournalEntry } from '$lib/profile/journal';
 import type { MusicItem } from '$lib/music/model';
@@ -20,6 +21,14 @@ export const music:MusicItem={id,kind:'album',title:'Preview album',artists:[{id
 export const track:MusicItem={...music,id:episode.id,kind:'track',title:'Preview track',durationSeconds:240,trackNumber:1,album:music.title,albumId:id};
 export const actionData:MediaActionData={item:movie,wholeWork:movie,releaseDate:'2026-01-01',hasReleaseDate:true,progressTargetIds:[id],hasPersonalOverrides:false,ownRewatchStartedAt:null,rewatchTargetIds:[id],targets:[movie],children:[],requestTarget:movie,requestsEnabled:false,refreshTarget:null,playable:null,editions:[],lists:[],requests:[]};
 
+const notificationExamples:NotificationEntry[]=[
+ {id:'00000000-0000-4000-8000-000000000001',kind:'recommendation',title:'Recommended something to you',body:null,actor:{username:'Alice',avatar:null,status:'online'},media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:null,requestState:null,sessionState:null,actions:['save','dismiss'],subjectId:id},
+ {id:'00000000-0000-4000-8000-000000000006',kind:'synced-invite',title:'Join a synced session',body:null,actor:{username:'Alice',avatar:null,status:'online'},media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:`/synced/${id}`,requestState:null,sessionState:'Playing',actions:['decline'],subjectId:id},
+ {id:'00000000-0000-4000-8000-000000000002',kind:'friend-request',title:'Wants to be friends',body:null,actor:{username:'Sam',avatar:null,status:'away'},media:null,createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:'/for-you?friends=true',requestState:null,sessionState:null,actions:['accept','decline'],subjectId:id},
+ {id:'00000000-0000-4000-8000-000000000003',kind:'request',title:'Your requested title is available',body:'Ready to watch from your connected library.',actor:null,media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:'/requests',requestState:'available',sessionState:null,actions:[],subjectId:id},
+ {id:'00000000-0000-4000-8000-000000000004',kind:'external-action',title:'A connected service needs attention',body:'Reconnect this account to resume synchronization.',actor:null,media:null,createdAt:today,readAt:null,locked:false,sourceLabel:'Jellyfin · User synchronization',destination:'/settings/jobs',requestState:null,sessionState:null,actions:[],subjectId:null},
+ {id:'00000000-0000-4000-8000-000000000005',kind:'reaction',title:'Reacted ❤️ to your activity',body:null,actor:{username:'Taylor',avatar:null,status:'busy'},media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:'/for-you?section=activity',requestState:null,sessionState:null,actions:[],subjectId:id}
+];
 /** Synthetic transport is injected only into preview descendants. */
 export const fixtureFetch: import('$lib/ui/client').ApiTransport = async (input, init) => {
     const url=new URL(input instanceof Request?input.url:String(input),location.href);
@@ -27,6 +36,13 @@ export const fixtureFetch: import('$lib/ui/client').ApiTransport = async (input,
     const method=(init?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
     if(method!=='GET')return Response.json({error:'Preview only — changes are not saved.'},{status:409});
     const path=url.pathname;
+    if(path.endsWith('/social/friends'))return Response.json(url.searchParams.get('state')==='pending'?[]:[{id,userId:id,username:'Alice',state:'accepted',requestedBy:id,avatar:null,canCompare:true,activityStatus:'online',backgroundArtwork:movie.backdrop}]);
+    if(path.endsWith('/social/checkins'))return Response.json([]);
+    if(path.endsWith('/members'))return Response.json({items:[{...notificationExamples[4],count:1}],hasMore:false});
+    if(path.endsWith('/notifications')){
+      const segment=url.searchParams.get('segment'),kind=url.searchParams.get('kind');
+      return Response.json({items:notificationExamples.filter(n=>(!kind||kind==='all'||n.kind===kind)&&(!segment||segment==='all'||(segment==='social'?['recommendation','friend-request','reaction','synced-invite'].includes(n.kind):segment==='requests'?n.kind==='request':n.kind==='external-action'))),hasMore:false,next:null,unread:7,snapshot:new Date().toISOString()});
+    }
     if(path.endsWith('/statistics'))return Response.json({days,today,watches:13,unique:7,undated:0,first:today,last:today});
     if(path.endsWith('/trailer'))return Response.json({url:null});
     if(path.endsWith('/actions'))return Response.json(actionData);

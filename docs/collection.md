@@ -10,7 +10,9 @@ Collected, saved-for-later/watchlist, favourites, ratings, ordered lists and que
 
 Add to Collection sets direct Collected status. Remove from Collection removes only that status, preserving other relationships and history. Collecting a show or album follows newly discovered members. A relationship to one child can present its parent without selecting siblings. Assessments expose direct, inherited and member-derived reasons.
 
-Collection follows signed-in profile visibility. The profile owner supplies personal reasons; the visitor's permissions determine availability. Game session details and notes remain owner-only. The page reuses Library's lazy shelves, segments, filters, arrows and expanded grids, presenting root items rather than seasons or episodes. Filters and counts run before 60-item pagination.
+Collection follows signed-in profile visibility. The profile owner supplies personal reasons; the visitor's permissions determine availability. Game session details and notes remain owner-only. Library exposes Collection through a FolderLibrary toggle beside each row's independent Available toggle. Expanded Watch, Listen and Play rows remain under `/library`; `collection=true` selects personal membership and `username` optionally selects a profile. The shared lazy shelves, segments, filters, arrows and expanded grids present root items rather than seasons or episodes. Filters and counts run before 60-item pagination.
+
+Library defaults to Collection on and Available off; explicit URL filters take precedence. `/settings/collection` controls automatic membership separately for Watch, Play and Listen: saved items, favourites, ratings, lists, queue, in-progress tracking and retained activity. Dropped items default to excluded. Direct Collected status always qualifies. Exclusion changes derived reasons without deleting any relationships or activity. In-progress shows and albums can qualify independently of completed child history. Visitors use the profile owner’s membership rules. Trakt’s personal Collection projection uses the same reasons; managed removals still require its existing preview and revalidation.
 
 ## Availability and demand
 

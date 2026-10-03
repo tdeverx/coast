@@ -1,3 +1,4 @@
+import { collectionPreferences } from '$lib/collection/preferences';
 import {listInvites} from '$lib/server/auth/onboarding';
 import { settingsSections, administratorSettings } from '$lib/settings/sections';
 import type { PageServerLoad } from './$types';
@@ -60,6 +61,7 @@ export const load = (async ({locals, params, depends, url}) => {
     config: admin ? config : null,
     allowNotificationSilencing: config.allowNotificationSilencing,
     defaults: {
+      collection: collectionPreferences(locals.user?.settings.collection),
       social:{audience:'friends' as const,sections:{},categories:{},notifications:{}},
       syncConflictWinner: 'manual',
       shareDemand:true,
