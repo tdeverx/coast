@@ -26,12 +26,26 @@
     "elements": [],
     "usedBy": [
       "src/lib/ui/components/ActivityHeader.svelte",
+      "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/FriendRoster.svelte",
       "src/lib/ui/components/Header.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
-      "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/SocialControls.svelte",
       "src/routes/profile/[username]/+page.svelte"
+    ],
+    "dynamicComposition": false
+  },
+  "AvatarPicker": {
+    "path": "src/lib/ui/components/AvatarPicker.svelte",
+    "elements": [
+      "Avatar",
+      "Button",
+      "Field",
+      "RowFilter"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/ProfileEditor.svelte",
+      "src/routes/onboarding/+page.svelte"
     ],
     "dynamicComposition": false
   },
@@ -69,6 +83,7 @@
       "Icon"
     ],
     "usedBy": [
+      "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/ChoiceGroup.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
       "src/lib/ui/components/ConflictList.svelte",
@@ -272,6 +287,7 @@
     "elements": [],
     "usedBy": [
       "src/lib/ui/components/AccountFields.svelte",
+      "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/MetadataEditor.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
@@ -689,13 +705,12 @@
   "ProfileEditor": {
     "path": "src/lib/ui/components/ProfileEditor.svelte",
     "elements": [
-      "Avatar",
+      "AvatarPicker",
       "Button",
       "Dialog",
       "Field",
       "FormActions",
-      "RowFeedback",
-      "RowFilter"
+      "RowFeedback"
     ],
     "usedBy": [
       "src/routes/profile/[username]/+page.svelte"
@@ -862,11 +877,11 @@
       "ChoiceGroup"
     ],
     "usedBy": [
+      "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
       "src/lib/ui/components/JobsSettings.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
-      "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/RecommendAction.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/routes/games/+page.svelte",
