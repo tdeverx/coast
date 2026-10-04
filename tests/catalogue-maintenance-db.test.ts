@@ -99,7 +99,7 @@ run(
   'selected shared refresh respects pause, manual runs deduplicate, records attach to TMDB in Jobs',
   async () => {
     expect(
-      (await scheduleProviderMaintenance({ instanceId: instance })).queued
+      (await scheduleProviderMaintenance({ instanceId: instance, kind: 'tmdb.refresh' })).queued
     ).toBe(0);
     await expect(runProviderJob(member, instance, 'metadata')).rejects.toThrow(
       'Administrator'
@@ -302,7 +302,7 @@ run(
     });
     await updateProviderSchedule(admin, instance, { enabled: true });
     expect(
-      (await scheduleProviderMaintenance({ instanceId: instance })).queued
+      (await scheduleProviderMaintenance({ instanceId: instance, kind: 'tmdb.refresh' })).queued
     ).toBe(0);
   }
 );
