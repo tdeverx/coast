@@ -1,4 +1,4 @@
-import {beforeAll,afterAll,test,expect} from 'bun:test';
+import {beforeAll,afterAll,test,expect,spyOn} from 'bun:test';
 import {getSql,closeDb} from '../src/lib/server/db';
 import {getConfig} from '../src/lib/server/config';
 import {updateConfig} from '../src/lib/application/configuration.server';
@@ -9,6 +9,10 @@ import {dynamicFeed} from '../src/lib/experiments/dynamic.server';
 import {experimentalRows} from '../src/lib/experiments/recommendations.server';
 import {createPlan,planningData,cancelPlan,completePlan} from '../src/lib/experiments/planning.server';
 import {provisionPolicy} from '../src/lib/providers/jellyfin/provisioning.server';
+import {refreshProviderRecommendations} from '../src/lib/experiments/provider-recommendations.server';
+import {TraktAdapter} from '../src/lib/providers/trakt/adapter.server';
+import {encryptCredential} from '../src/lib/server/security/credentials';
+import type {OutboxAction} from '../src/lib/server/queue';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const ownerId=crypto.randomUUID(),otherId=crypto.randomUUID(),movie=crypto.randomUUID(),seed=crypto.randomUUID(),instance=crypto.randomUUID(),connection=crypto.randomUUID(),generation=crypto.randomUUID(),providerItem=crypto.randomUUID();
 const admin={id:ownerId,username:'invites-admin',role:'admin' as const,email:null,settings:{}};
@@ -209,6 +213,31 @@ run('provider suggestions work without genre overlap and remain account-generati
  expect((await experimentalRows(otherId,'recommendations',new URL('http://fixture.test'))).items.map(item=>item.id)).not.toContain(privateSuggestion);
  await db`insert into ratings(user_id,media_id,value) values(${ownerId},${suggestion},1)`;
  expect((await experimentalRows(ownerId,'row',new URL(`http://fixture.test?category=screen&work=${personal}`))).items.map(item=>item.id)).not.toContain(suggestion);
+});
+run('Trakt refreshes retain separate recommendation sets for every connected account',async()=>{
+ await updateConfig(admin,{enableTrakt:true});
+ const db=getSql(),service=crypto.randomUUID(),accounts=[crypto.randomUUID(),crypto.randomUUID()],generations=[crypto.randomUUID(),crypto.randomUUID()];
+ const app=await encryptCredential(JSON.stringify({clientId:'fixture',clientSecret:'fixture'}));
+ const credentials=await encryptCredential(JSON.stringify({access_token:'fixture',refresh_token:'fixture',created_at:Math.floor(Date.now()/1000),expires_in:3600}));
+ await db`insert into provider_instances(id,provider,name,base_url,credentials) values(${service},'trakt','Two accounts','https://api.trakt.tv',${app})`;
+ for(const [index,userId] of [ownerId,otherId].entries())await db`insert into provider_connections(id,user_id,instance_id,status,account_generation,credentials) values(${accounts[index]},${userId},${service},'connected',${generations[index]},${credentials})`;
+ const action=(index:number):OutboxAction=>({id:crypto.randomUUID(),userId:[ownerId,otherId][index],connectionId:accounts[index],accountGeneration:generations[index],kind:'trakt.recommendations',payload:{instanceId:service},attempts:0,correlationId:crypto.randomUUID()});
+ const recommendations=spyOn(TraktAdapter.prototype,'recommendations').mockResolvedValue([]);
+ try{
+  for(const index of [0,1,0])expect(await refreshProviderRecommendations(action(index))).toEqual({checked:2,added:0});
+  const sets=await db<{connection_id:string;account_generation:string;key:string}[]>`select connection_id,account_generation,key from recommendation_sets where instance_id=${service}`;
+  expect(sets).toHaveLength(4);
+  for(const [index,account] of accounts.entries()){
+   const own=sets.filter(set=>set.connection_id===account);
+   expect(own).toHaveLength(2);expect(own.every(set=>set.account_generation===generations[index])).toBe(true);
+  }
+  generations[0]=crypto.randomUUID();await db`update provider_connections set account_generation=${generations[0]} where id=${accounts[0]}`;
+  await refreshProviderRecommendations(action(0));
+  const refreshed=await db<{connection_id:string;account_generation:string}[]>`select connection_id,account_generation from recommendation_sets where instance_id=${service}`;
+  expect(refreshed).toHaveLength(4);
+  expect(refreshed.filter(set=>set.connection_id===accounts[0]).every(set=>set.account_generation===generations[0])).toBe(true);
+  expect(refreshed.filter(set=>set.connection_id===accounts[1]).every(set=>set.account_generation===generations[1])).toBe(true);
+ }finally{recommendations.mockRestore();}
 });
 run('negative interests do not produce fan rows and saved-only evidence never claims enjoyment',async()=>{
  const db=getSql(),dropped=crypto.randomUUID(),saved=crypto.randomUUID();
