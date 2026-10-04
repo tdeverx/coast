@@ -52,7 +52,7 @@ export async function refreshProviderRecommendations(action:OutboxAction){
   for(const kind of ['movie','show'] as const){
    const items=await adapter.recommendations(kind),ids:string[]=[];
    for(const item of items.slice(0,40)){if(!item.ids.tmdb)continue;const saved=await ingestMetadata({provider:'tmdb',externalId:String(item.ids.tmdb),kind,title:item.title,externalIds:{trakt:String(item.ids.trakt),...(item.ids.imdb?{imdb:item.ids.imdb}:{})}});ids.push(saved.id);}
-   await saveSet(instance.id,`account:${kind}`,ids,null,action);checked++;added+=ids.length;
+   await saveSet(instance.id,`account:${action.connectionId}:${kind}`,ids,null,action);checked++;added+=ids.length;
   }
  }else{
   const interests=(await interestWorks(null)).filter(work=>work.weight>0&&work.category===(instance.provider==='igdb'?'game':'screen'));
