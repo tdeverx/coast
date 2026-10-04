@@ -147,6 +147,7 @@ export class DiagnosticStore {
 export const diagnosticStore = new DiagnosticStore();
 export const logDiagnostic = diagnosticStore.write.bind(diagnosticStore);
 export function classifyFailure(error: unknown) {
+  if (error instanceof Error && error.name === 'TimeoutError') return 'timeout';
   if (error instanceof Error && error.name === 'AbortError') return 'aborted';
   if (error instanceof TypeError) return 'network';
   return 'unexpected';

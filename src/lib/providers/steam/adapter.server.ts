@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import type { ProviderTransport } from '../contracts';
 import { AppError } from '$lib/server/security/errors';
+import { ProviderHttpError } from '$lib/server/security/provider-fetch';
 export const STEAM_BASE_URL = 'https://api.steampowered.com';
 export const steamIdSchema = v.pipe(v.string(), v.regex(/^\d{17}$/), v.check(id => /^\d{17}$/.test(id) && BigInt(id) >= 76561197960265728n && BigInt(id) <= 76561202255233023n));
 const count = v.pipe(v.number(), v.integer(), v.minValue(0));
@@ -36,7 +37,17 @@ export class SteamAdapter {
   }
   async achievements(steamId:string,id:number) {
     v.parse(steamIdSchema,steamId);v.parse(appId,id);
-    const result=v.parse(v.object({playerstats:v.object({steamID:v.optional(steamIdSchema),success:v.boolean(),achievements:v.optional(v.array(v.object({apiname:v.string(),achieved:v.picklist([0,1]),unlocktime:v.optional(count,0)})))})}),await this.get('/ISteamUserStats/GetPlayerAchievements/v1/',{steamid:steamId,appid:String(id),l:'english'})).playerstats;
+    let response: unknown;
+    try {
+      response=await this.get('/ISteamUserStats/GetPlayerAchievements/v1/',{steamid:steamId,appid:String(id),l:'english'});
+    } catch (error) {
+      if (error instanceof ProviderHttpError && error.status===403) {
+        const denial=v.safeParse(v.object({playerstats:v.object({success:v.literal(false),error:v.literal('Profile is not public')})}),error.responseBody);
+        if (denial.success) throw new AppError(409,'Steam achievements are private or unavailable. Previous progress is retained.','steam_private');
+      }
+      throw error;
+    }
+    const result=v.parse(v.object({playerstats:v.object({steamID:v.optional(steamIdSchema),success:v.boolean(),achievements:v.optional(v.array(v.object({apiname:v.string(),achieved:v.picklist([0,1]),unlocktime:v.optional(count,0)})))})}),response).playerstats;
     if(!result.success || result.steamID && result.steamID!==steamId)throw new AppError(409,'Steam achievements are private or unavailable. Previous progress is retained.','steam_private');
     return result.achievements??[];
   }

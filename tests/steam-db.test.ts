@@ -22,6 +22,7 @@ suite('Steam account imports and ownership availability',()=>{
   let instanceId:string,connectionId:string,gameId:string;
   let ownership:unknown={response:{game_count:1,games:[{appid:10,name:'Steam fixture',playtime_forever:125,playtime_2weeks:20,rtime_last_played:1700000000,has_community_visible_stats:true}]}};
   let privateStats=false,failOwned=false,remoteId=steamId;
+  let deniedAppId:string|null=null,privacyDenial=true;
   let remoteMinutes=125;
   const achievementAppIds:string[]=[];
   const job=async(kind='steam.sync'):Promise<OutboxAction>=>{
@@ -47,7 +48,10 @@ suite('Steam account imports and ownership availability',()=>{
         if(appId==='11')return Response.json({error:'Unowned regional version'},{status:403});
       }
       if(url.pathname.includes('GetSchemaForGame'))return Response.json({game:{availableGameStats:{achievements:[{name:'FIRST',displayName:'First',hidden:0},{name:'SECOND',displayName:'Second',hidden:1}]}}});
-      if(url.pathname.includes('GetPlayerAchievements'))return Response.json({playerstats:{success:!privateStats,steamID:remoteId,achievements:[{apiname:'FIRST',achieved:1,unlocktime:0},{apiname:'SECOND',achieved:1,unlocktime:1700000000}]}});
+      if(url.pathname.includes('GetPlayerAchievements')){
+        if(url.searchParams.get('appid')===deniedAppId)return Response.json(privacyDenial?{playerstats:{success:false,error:'Profile is not public'}}:{error:'Invalid Web API key'},{status:403});
+        return Response.json({playerstats:{success:!privateStats,steamID:remoteId,achievements:[{apiname:'FIRST',achieved:1,unlocktime:0},{apiname:'SECOND',achieved:1,unlocktime:1700000000}]}});
+      }
       throw new Error('Unexpected fixture endpoint');
     }) as typeof fetch;
   });
@@ -111,6 +115,30 @@ suite('Steam account imports and ownership availability',()=>{
     ownership={response:{game_count:1,games:[{appid:10,name:'Steam fixture',playtime_forever:999,has_community_visible_stats:true}]}};
     await syncSteam(await job());expect((await gameDetails(owner,gameId)).steam[0].minutes_played).toBe(remoteMinutes);
     expect((await syncSteamAchievements(await job('steam.achievements'))).checked).toBe(0);
+  });
+  test('one private game retains progress and does not stop other games; invalid keys still fail',async()=>{
+    const previousOwnership=ownership;
+    await updateSteamImports(owner,connectionId,{importOwned:true,importPlaytime:false,importAchievements:true});
+    ownership={response:{game_count:2,games:[{appid:10,name:'Steam fixture',playtime_forever:125,has_community_visible_stats:true},{appid:20,name:'Public achievements fixture',playtime_forever:5,has_community_visible_stats:true}]}};
+    await syncSteam(await job());
+    const [other]=await getDb().select().from(s.gameExternalIds).where(eq(s.gameExternalIds.externalId,'20'));
+    const previousProgress=await getDb().select().from(s.gameAchievementProgress);
+    try {
+      await getDb().update(s.gameAccountState).set({achievementsAttemptedAt:null}).where(eq(s.gameAccountState.gameId,gameId));
+      deniedAppId='10';
+      expect(await syncSteamAchievements(await job('steam.achievements'))).toEqual({checked:1,refreshed:1,deferred:1});
+      const progress=await getDb().select().from(s.gameAchievementProgress);
+      expect(progress.filter(p=>previousProgress.some(old=>old.achievementId===p.achievementId))).toEqual(previousProgress);
+      expect((await gameDetails(owner,other.gameId)).steam[0].unlocked).toBe(2);
+      const [state]=await getDb().select().from(s.gameAccountState).where(eq(s.gameAccountState.gameId,gameId));
+      expect(state.achievementsAttemptedAt).not.toBeNull();
+      privacyDenial=false;
+      await expect(syncSteamAchievements(await job('steam.achievements'))).rejects.toMatchObject({status:403});
+    } finally {
+      deniedAppId=null;privacyDenial=true;ownership=previousOwnership;
+      await getDb().delete(s.games).where(eq(s.games.id,other.gameId));
+      await updateSteamImports(owner,connectionId,{importOwned:true,importPlaytime:false,importAchievements:false});
+    }
   });
   test('scheduling respects pause, manual runs, one queued task and disabled achievement imports',async()=>{
     await getDb().delete(s.outboxActions);
