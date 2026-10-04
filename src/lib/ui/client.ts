@@ -1,5 +1,6 @@
 import { diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
-import { invalidate } from '$app/navigation';
+import { invalidate, refreshAll } from '$app/navigation';
+import { page } from '$app/state';
 import { invalidateContentRevision, type ContentDomain } from './content-revision.svelte';
 
 let playbackApi = '/api/v1/';
@@ -69,7 +70,16 @@ export async function refreshAfterChange(path: string) {
     : ['tracking', 'ratings', 'collection', 'music', 'games', 'game-playthroughs', 'lists', 'up-next', 'continue', 'rewatch', 'media'].includes(domain) ? ['tracking', 'social']
     : [];
   invalidateContentRevision(dependencies.filter((key): key is ContentDomain => ['tracking','social','planning'].includes(key)));
-  await Promise.all(dependencies.map(key => invalidate(`coast:${key}`)));
+  await refreshRouteDependencies(dependencies);
 }
 export const message = (error: unknown) =>
   error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+
+/** Kit invalidate resets shallow page state. Use its state-preserving refresh while
+ * an overlay is open, so a write/session refresh cannot close the user's panel. */
+export async function refreshRouteDependencies(dependencies: readonly string[]) {
+  if (!dependencies.length) return;
+  if (page.state.mediaModalId || page.state.friendsPopover || page.state.notificationPopover)
+    await refreshAll();
+  else await Promise.all(dependencies.map(key => invalidate(`coast:${key}`)));
+}

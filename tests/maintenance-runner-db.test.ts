@@ -279,3 +279,19 @@ run('initial import priority remains completed after old job history is pruned',
  const next=await queue(0,'jellyfin.sync');const claimed=await claimNextAction();
  expect(claimed?.id).toBe(next);expect(claimed?.priority).toBe(3);
 });
+
+run('recommendation cards target one job, deduplicate runs, expose timing and respect pause',async()=>{
+ const db=getSql(),instance=crypto.randomUUID();
+ await db`insert into provider_instances(id,provider,name,base_url,credentials,settings) values(${instance},'tmdb','Recommendations fixture','https://api.themoviedb.org','fixture',${{schedule:{enabled:true,intervalMinutes:10080,fullIntervalHours:24,recommendationsEnabled:true,recommendationsIntervalMinutes:60}}}::jsonb)`;
+ await runProviderJob(users[0],instance,'metadata','tmdb.recommendations');
+ await runProviderJob(users[0],instance,'metadata','tmdb.recommendations');
+ const rows=await db<{kind:string}[]>`select kind,payload from outbox_actions where payload->>'instanceId'=${instance}`;
+ expect(rows.map(row=>row.kind)).toEqual(['tmdb.recommendations']);
+ const claimed=await claimNextAction();expect(claimed?.instanceId).toBe(instance);expect(claimed?.priority).toBe(3);
+ const timings=await jobTimings();expect(timings.some(row=>row.instanceId===instance&&row.kind==='tmdb.recommendations')).toBe(true);
+ await updateProviderSchedule(users[0],instance,{recommendationsEnabled:false});
+ await db`delete from outbox_actions where payload->>'instanceId'=${instance}`;
+ await scheduleProviderMaintenance({instanceId:instance,task:'metadata',kind:'tmdb.recommendations'});
+ expect((await db`select id from outbox_actions where payload->>'instanceId'=${instance}`).length).toBe(0);
+ expect((await jobTimings()).find(row=>row.instanceId===instance&&row.kind==='tmdb.recommendations')?.nextAt).toBeNull();
+});

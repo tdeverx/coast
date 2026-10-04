@@ -28,6 +28,9 @@ export type NotificationData = {actorId:string; subjectId:string; destination:st
 export function activityAction(kind:string) {
  return ({watch:'Watched',listen:'Listened',rating:'Rated',favourite:'Favourited',collect:'Collected',collected:'Collected',watchlist:'Saved',play:'Played',played:'Played',session:'Played','game-completed':'Completed','game-in-progress':'Started','game-paused':'Paused','game-dropped':'Stopped',drop:'Stopped',restore:'Resumed',progress:'Progressed',reaction:'Reacted',checkin:'Checked-in'} as Record<string,string>)[kind] ?? kind.replaceAll('-', ' ').replace(/^./, c=>c.toUpperCase());
 }
+export function unknownActivityDate(kind:string){
+ return kind==='collect'||kind==='collected'?'Acquisition date unavailable':kind==='listen'?'Listen date unavailable':kind==='watch'?'Watch date unavailable':['play','played','session'].includes(kind)?'Play date unavailable':'Activity date unavailable';
+}
 export function activityDateLabel(date:string,now:number) {
  const seconds=Math.max(0,Math.floor((now-new Date(date).getTime())/1000));
  if(seconds>=7*86400){

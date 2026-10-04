@@ -9,6 +9,7 @@ import {
   episodes,
   externalIds,
   metadataSnapshots,
+  workFeatures,
   providerInstances,
   mediaRelationships,
   users,
@@ -19,11 +20,11 @@ import { decryptCredential } from '$lib/server/security/credentials';
 import { TmdbAdapter } from '$lib/providers/tmdb/adapter.server';
 import type { DiscoverKind, Metadata } from '$lib/providers/contracts';
 
-export async function getTmdb(language = 'en-US', region = 'GB') {
+export async function getTmdb(language = 'en-US', region = 'GB', instanceId?:string) {
   const [instance] = await getDb()
     .select()
     .from(providerInstances)
-    .where(and(eq(providerInstances.provider, 'tmdb'), eq(providerInstances.enabled, true)))
+    .where(and(eq(providerInstances.provider, 'tmdb'), eq(providerInstances.enabled, true),instanceId?eq(providerInstances.id,instanceId):undefined))
     .limit(1);
   if (!instance?.credentials) return null;
   const credentials = JSON.parse(await decryptCredential(instance.credentials)) as {
@@ -193,6 +194,7 @@ export async function ingestMetadata(
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`metadata:${mediaId}`},0))`
     );
+    if(metadata.tasteFeatures!==undefined)await tx.insert(workFeatures).values({workId:mediaId,provider:metadata.provider,features:metadata.tasteFeatures}).onConflictDoUpdate({target:[workFeatures.workId,workFeatures.provider],set:{features:metadata.tasteFeatures,updatedAt:new Date()}});
     for (const [provider, externalId] of Object.entries(ids))
       await tx
         .insert(externalIds)

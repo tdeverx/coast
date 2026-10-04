@@ -1,5 +1,7 @@
 # Performance implementation and verification
 
+Publication note: this implementation was subsequently merged in [PR #18](https://github.com/tdeverx/coast/pull/18). The report below preserves the original measurement context. Use [Performance methods](../performance.md) for current practices and later runtime diagnostics.
+
 3 October 2026. Baseline: `c771fb92f46ccbc173994b39b6885a96bf6a6dec`; implementation: the `codex/performance-benchmarks` working tree. Runtime: Bun 1.4.2, macOS ARM 64, Apple M4. PostgreSQL fixtures ran in the existing test container, using separately created databases and temporary data directories. The existing dev server and data were preserved. No live provider requests, production configuration changes, commits, pushes or deployments were performed by this implementation; the parent agent will separately review and publish the authorized change.
 
 The evidenced repairs and administrator benchmark are implemented. Collection result equivalence, privacy, ordering, provider pacing, playback/account checks, and the independent Music/Gaming/Parties gates remain required behavior. The earlier plan remains at [performance plan](2026-10-03-performance-plan.md); focused evidence is in [frontend implementation](2026-10-03-frontend-performance-implementation.md), [server implementation](2026-10-03-server-performance-implementation.md), and [raw controlled measurements](2026-10-03-performance-measurements.json).

@@ -134,6 +134,9 @@ export class TraktAdapter {
     );
     return { id: data.user.ids.uuid, username: data.user.username, slug: data.user.ids.slug, avatar:data.user.images?.avatar?.full??null };
   }
+  async recommendations(kind:'movie'|'show'){
+    return v.parse(v.array(title),await this.call(`/recommendations/${kind==='movie'?'movies':'shows'}?limit=40`));
+  }
   async read(
     category: Exclude<SyncCategory, 'lists' | 'scrobble'>,
     page = 1

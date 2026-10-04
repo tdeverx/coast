@@ -20,7 +20,7 @@
 
   const { preview, api, change } = useClient();
 
-  let { item }: { item: MediaCardPresentation } = $props();
+  let { item, showTrigger = false }: { item: MediaCardPresentation; showTrigger?: boolean } = $props();
   let menu = $state<Button>();
   let planningOpen=$state(false),sharingOpen=$state(false);
   let music = $state<MusicItem>();
@@ -124,7 +124,7 @@
   }
 </script>
 
-<Button menu bind:this={menu} label={`Actions for ${item.title}`} hideTrigger onopen={load}>
+<Button menu bind:this={menu} label={`Actions for ${item.title}`} hideTrigger={!showTrigger} onopen={load}>
   <Button item icon="arrow" href={item.href}
     >Open {item.kind === 'game' ? 'game' : item.kind}</Button>
   {#if item.recommendationIds?.length}<WorkActions section="recommendations" workId={workId??item.id} recommendationIds={item.recommendationIds} disabled={busy||loading} />{/if}

@@ -84,7 +84,6 @@
     ],
     "usedBy": [
       "src/lib/benchmarks/BenchmarkSettings.svelte",
-      "src/lib/experiments/DynamicFeed.svelte",
       "src/lib/experiments/MediaModal.svelte",
       "src/lib/experiments/PlanAction.svelte",
       "src/lib/media/Details.svelte",
@@ -141,7 +140,6 @@
       "src/routes/login/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/music/+page.svelte",
-      "src/routes/music/work/[id]/+page.svelte",
       "src/routes/onboarding/+page.svelte",
       "src/routes/people/[id]/+page.svelte",
       "src/routes/planning/+page.svelte",
@@ -713,7 +711,9 @@
       "WorkActions"
     ],
     "usedBy": [
-      "src/lib/ui/components/MediaCard.svelte"
+      "src/lib/ui/components/MediaCard.svelte",
+      "src/routes/music/[connection]/[id]/+page.svelte",
+      "src/routes/music/work/[id]/+page.svelte"
     ],
     "dynamicComposition": false
   },
@@ -823,8 +823,7 @@
     "usedBy": [
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/WorkActions.svelte",
-      "src/routes/games/[id]/+page.svelte",
-      "src/routes/music/work/[id]/+page.svelte"
+      "src/routes/games/[id]/+page.svelte"
     ],
     "dynamicComposition": false
   },
@@ -839,8 +838,7 @@
     ],
     "usedBy": [
       "src/lib/ui/components/WorkActions.svelte",
-      "src/routes/games/[id]/+page.svelte",
-      "src/routes/music/work/[id]/+page.svelte"
+      "src/routes/games/[id]/+page.svelte"
     ],
     "dynamicComposition": false
   },
@@ -864,6 +862,7 @@
     ],
     "usedBy": [
       "src/lib/experiments/DynamicFeed.svelte",
+      "src/lib/experiments/MediaModal.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
       "src/lib/ui/components/ConflictList.svelte",
       "src/lib/ui/components/ConnectionCard.svelte",
@@ -885,7 +884,8 @@
       "src/lib/ui/components/RecommendAction.svelte",
       "src/lib/ui/components/RequestDialog.svelte",
       "src/lib/ui/components/Shelf.svelte",
-      "src/lib/ui/components/WorkActions.svelte"
+      "src/lib/ui/components/WorkActions.svelte",
+      "src/routes/planning/+page.svelte"
     ],
     "dynamicComposition": true
   },
@@ -933,6 +933,7 @@
       "src/lib/ui/materials/MaterialTweaker.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/music/+page.svelte",
+      "src/routes/planning/+page.svelte",
       "src/routes/profile/[username]/+page.svelte"
     ],
     "dynamicComposition": false

@@ -536,6 +536,7 @@
             >{/if}
         </div>
       {:else if data.section === 'jobs'}<JobsSettings
+          tasteJob={data.tasteJob}
           timing={data.jobTiming}
           providers={data.providers}
           actions={data.actions}

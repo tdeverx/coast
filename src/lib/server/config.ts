@@ -8,9 +8,7 @@ export const configSchema = v.object({
   experimentalMusic: v.optional(v.boolean(),false),
   experimentalGaming: v.optional(v.boolean(),false),
   experimentalParties: v.optional(v.boolean(),false),
-  experimentalDynamicForYou: v.optional(v.boolean(),false),
   experimentalPlanning: v.optional(v.boolean(),false),
-  experimentalRecommendations: v.optional(v.boolean(),false),
   experimentalMediaModal: v.optional(v.boolean(),false),
   allowPlaybackSharing: v.optional(v.boolean(),false),
   registrationMode: v.picklist(['invite','open']),
@@ -37,7 +35,7 @@ export type CoastConfig = v.InferOutput<typeof configSchema>;
 export const defaultConfig: CoastConfig = {
   siteAccess:'private',
   experimentalMusic: false, experimentalGaming: false, experimentalParties: false,
-  experimentalDynamicForYou:false, experimentalPlanning:false, experimentalRecommendations:false, experimentalMediaModal:false,
+  experimentalPlanning:false, experimentalMediaModal:false,
   allowPlaybackSharing:false,
   registrationMode: 'invite',
   registrationProvider: 'jellyfin',

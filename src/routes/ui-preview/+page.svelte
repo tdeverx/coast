@@ -12,6 +12,10 @@
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
   import { manifest, components, elements, composedComponents, referenceSections, referenceSection } from './catalog';
   let search = $state('');
+  let chartGallery: Promise<typeof import('./charts/ChartGallery.svelte')> | undefined;
+  function loadChartGallery() {
+    return chartGallery ??= import('./charts/ChartGallery.svelte');
+  }
   const section = $derived(referenceSection(page.url.searchParams.get('section')));
   const inventory = $derived(section === 'elements' ? elements : composedComponents);
   const visible = $derived(inventory.filter(name => name.toLowerCase().includes(search.trim().toLowerCase())));
@@ -46,7 +50,7 @@
   <Heading level={1} title="UI reference" selection={{label:'UI reference section',value:section,options:referenceSections,change:changeSection}}>
     {#snippet actions()}<Button href="/settings/admin" emphasis="subtle">Admin settings</Button>{/snippet}
   </Heading>
-  <p class="small reference-description">Shared styles and all {components.length} reusable elements and components. Examples use isolated demo data.</p>
+  {#if section !== 'charts'}<p class="small reference-description">Shared styles and all {components.length} reusable elements and components. Examples use isolated demo data.</p>{/if}
   {#if section === 'typography'}
   <section class="section token-section" aria-labelledby="typography-heading">
     <h2 id="typography-heading">Typography</h2>
@@ -119,6 +123,14 @@
   <section class="section" aria-label="Materials">
     <MaterialTweaker />
   </section>
+  {:else if section === 'charts'}
+    {#await loadChartGallery()}
+      <p class="section quiet" role="status">Loading chart exploration…</p>
+    {:then gallery}
+      <gallery.default />
+    {:catch}
+      <p class="section" role="alert">The chart exploration could not load. Reload this page to try again.</p>
+    {/await}
   {:else}
   <div class="row preview-filters">
     <label class="field">Find {section === 'elements' ? 'an element' : 'a component'}<input type="search" bind:value={search} placeholder="Name" /></label>

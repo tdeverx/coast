@@ -5,6 +5,7 @@ import * as v from 'valibot';
 import { AppError } from '$lib/server/security/errors';
 import { addLocalSeasonEpisodes } from '$lib/core/media/service';
 import { getMetadataEditor, getPresentationEditor, saveMetadataOverrides, savePresentationPreference, resetPresentationPreference } from '$lib/catalogue/overrides/service';
+import { loadMediaDetails } from '$lib/application/media-details.server';
 import { detailsData } from '$lib/server/queries/media';
 import { refreshMedia } from '$lib/catalogue/service';
 import { getTrailer } from '$lib/playback/server';
@@ -15,7 +16,9 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
  let result: unknown;
  if (path[0] === 'media') {
       if (path.length === 2 && method === 'GET')
-        result = await detailsData(uid, uuid(path[1]));
+        result = url.searchParams.get('enhance') === 'true'
+          ? await (await loadMediaDetails(uid, uuid(path[1]))).enhancement
+          : await detailsData(uid, uuid(path[1]));
       else if (path[2] === 'actions' && method === 'GET')
         result = await mediaActionData(uid, uuid(path[1]));
       else if (path[2] === 'activity' && method === 'GET')

@@ -1,6 +1,9 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { mediumOptions } from '$lib/experimental';
+  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
+  import RowFeedback from '$lib/ui/components/RowFeedback.svelte';
   import { page } from '$app/state';
-  import { invalidate } from '$app/navigation';
   import Heading from '$lib/ui/components/Heading.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import Button from '$lib/ui/components/Button.svelte';
@@ -23,14 +26,12 @@
         for (const friendId of plan.friends) await api(`synced/${room.id}/invite`, { friendId });
       }
       await change(`planning/${id}/complete`, {});
-      await invalidate('coast:planning');
     });
   }
   function finish(id: string, cancel = false) {
     void operation.run(async () => {
       if (cancel) await change(`planning/${id}`, undefined, 'DELETE');
       else await change(`planning/${id}/complete`, {});
-      await invalidate('coast:planning');
     });
   }
   function pageUrl(number: number) {
@@ -42,8 +43,10 @@
 
 <svelte:head><title>Planning · Coast</title></svelte:head>
 <div class="content page">
-  <Heading title="Planning" variant="page" description="Experimental · your scheduled plans. Visual treatment unapproved." />
-  {#if operation.error}<p class="notice error" role="alert">{operation.error}</p>{/if}
+  <Heading title="Planning" variant="page" description="Experimental · your scheduled plans. Visual treatment unapproved.">
+    {#snippet filters()}<SegmentedControl label="Planning medium" value={data.category} options={mediumOptions(page.data)} onchange={category=>{const url=new URL(page.url);url.searchParams.set('category',category);url.searchParams.delete('page');void goto(url,{keepFocus:true,noScroll:true});}} />{/snippet}
+  </Heading>
+  <RowFeedback error={operation.error} inline={false} />
   <Shelf title="Your plans" items={data.items} layout="grid" availability={false} hideEmpty={false} pageNumber={data.page} pages={data.pages} {pageUrl}>
     {#snippet details(item)}
       <div class="row">

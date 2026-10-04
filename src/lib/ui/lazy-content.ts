@@ -1,5 +1,5 @@
 /** Activate once for shelves; observe repeatedly for an infinite-scroll sentinel. */
-export function lazyContent(node: HTMLElement, options: { load: () => void; enabled?: () => boolean; repeat?: boolean }) {
+export function lazyContent(node: HTMLElement, options: { load: () => void; enabled?: () => boolean; repeat?: boolean; rootMargin?: string }) {
   let activated = false;
   const activate = () => {
     if ((!options.repeat && activated) || options.enabled?.() === false) return;
@@ -12,7 +12,7 @@ export function lazyContent(node: HTMLElement, options: { load: () => void; enab
   else {
     observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting)) activate();
-    }, { rootMargin: '300px' });
+    }, { rootMargin: options.rootMargin ?? '300px' });
     observer.observe(node);
   }
   return { destroy() { observer?.disconnect(); } };

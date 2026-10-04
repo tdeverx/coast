@@ -37,6 +37,22 @@ const source = (id: string, bitrate: number, codec = 'h264'): PlaybackSource => 
   raw: {},
 });
 describe('TMDB boundary and relevant metadata', () => {
+  test('movie and TV details collect keywords and creator signals in the existing request',async()=>{
+    for(const kind of ['movie','show'] as const){
+      let requests=0;
+      const adapter=new TmdbAdapter(async path=>{
+        requests++;expect(path).toContain('keywords');expect(path).toContain('credits');
+        return {id:10,title:'Film',name:'Show',keywords:kind==='movie'?{keywords:[{id:1,name:'Space travel'}]}:{results:[{id:1,name:'Space travel'}]},credits:{cast:[{id:2,name:'Actor'}],crew:[{id:3,name:'Director',job:'Director'},{id:4,name:'Writer',job:'Screenplay'}]},belongs_to_collection:{id:5,name:'Series'}};
+      });
+      const result=await adapter.details(kind,'10',false);
+      expect(requests).toBe(1);
+      expect(result.tasteFeatures?.tags).toEqual([{id:'tmdb:1',name:'Space travel'}]);
+      expect(result.tasteFeatures?.cast?.[0].name).toBe('Actor');
+      expect(result.tasteFeatures?.directors?.[0].name).toBe('Director');
+      expect(result.tasteFeatures?.writers?.[0].name).toBe('Writer');
+      expect(result.tasteFeatures?.franchises?.[0].name).toBe('Series');
+    }
+  });
   test('search excludes people, preserves translated and original titles', async () => {
     const adapter = new TmdbAdapter(async (path) => {
       expect(path).toContain('include_adult=false');

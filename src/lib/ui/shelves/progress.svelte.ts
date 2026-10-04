@@ -97,7 +97,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
       previousRefreshKey = key;
       previousInitial = next;
       if (!next) {
-        if (resource.activated) void select(content.page);
+        if ((revisionChanged || initialChanged) && resource.activated) void select(content.page);
         return;
       }
       // A session poll can report provider changes without re-running the page's initial load.

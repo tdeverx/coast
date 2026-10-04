@@ -226,7 +226,7 @@ async function metadataCandidates(
       from identities i left join metadata_snapshots s on s.media_id=i.id and s.provider='tmdb'
       group by i.id,s.region
     ) select id,region from candidates
-    where (${force} or refreshed is null or refreshed < now()-make_interval(mins=>${interval}))
+    where (${force} or refreshed is null or exists(select 1 from works w where w.id=candidates.id and w.kind in ('movie','show') and not exists(select 1 from work_features f where f.work_id=w.id and f.provider='tmdb')) or refreshed < now()-make_interval(mins=>${interval}))
       and (${force} or retry_at is null or retry_at::timestamptz<=now())
     order by refreshed nulls first,id,region limit 100
   `);
@@ -238,10 +238,11 @@ export async function scheduleMetadataRefresh(
     instanceId?: string;
     force?: boolean;
     task?: string;
+    kind?:string;
     adminId?: string;
   }
 ) {
-  if (options.task && !['all', 'metadata'].includes(options.task))
+  if (options.kind && options.kind!=='tmdb.refresh' || options.task && !['all', 'metadata'].includes(options.task))
     return { queued: 0, active: 0 };
   const [instance] = await tx.execute<{
     id: string;

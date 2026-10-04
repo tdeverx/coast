@@ -85,6 +85,7 @@ export const load = (async ({locals, params, depends, url}) => {
     health: section === 'admin' ? await systemHealth(locals.user) : null,
     demand: section === 'admin' ? adminDemand(url) : null,
     users: section === 'users' ? await listUsers(locals.user) : [],
+    tasteJob:section==='jobs'?await (await import('$lib/social/taste-cache.server')).tasteJob():null,
     jobTiming: section === 'jobs' ? await jobTimings() : [],
     actions: ['admin', 'jobs'].includes(section) ? await listActions(locals.user) : [],
     loggingAudit:

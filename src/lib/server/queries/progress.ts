@@ -16,6 +16,7 @@ import { workAssessments, workCards } from '$lib/collection/query.server';
 import { applySequenceEntry, hasPermittedMediaSource, mediaViewsForIds } from './media';
 import { viewingRecency } from './viewing-recency';
 import { pagination, PAGE_SIZE } from './pagination';
+import { heroTitleIds } from '$lib/media/hero';
 
 /** Plan using lightweight IDs; hydrate only the filtered, visible page. */
 export function progressData(userId:string, raw?:Partial<import('$lib/progress').ProgressOptions> & {category?:'screen'}, viewerId?:string):Promise<Omit<ProgressContent,'items'> & {items:MediaView[]}>;
@@ -71,6 +72,54 @@ async function readProgressData(
       pages: result.pages,
     };
   }
+  const { ids: visibleIds, page, pages, total, sequenceById } = await screenProgressPlan(userId, options, viewerId);
+  const views = new Map(
+    (await mediaViewsForIds(userId, visibleIds, viewerId)).map((item) => [item.id, item])
+  );
+  const items = visibleIds.flatMap((id) => (views.has(id) ? [views.get(id)!] : []));
+  const showIds = [...new Set(items.flatMap((item) => (item.showId ? [item.showId] : [])))];
+  const titles = new Map(
+    (await mediaViewsForIds(userId, showIds, viewerId)).map((item) => [item.id, item.title])
+  );
+  for (let index = 0; index < items.length; index++) {
+    let item = items[index];
+    const context = sequenceById.get(item.id);
+    if (context && (options.view !== 'watching' || context.entry.progress > 0)) {
+      item = items[index] = applySequenceEntry(item, context.entry, context.source);
+      item.captionSubtitle = context.title + (item.rewatchStartedAt ? ' · Rewatching' : '');
+      continue;
+    }
+    const title = item.showId ? titles.get(item.showId) : undefined;
+    if (!title) {
+      if (item.rewatchStartedAt) item.captionSubtitle = 'Rewatching';
+      continue;
+    }
+    item.captionTitle = title;
+    item.captionSubtitle =
+      item.kind === 'episode'
+        ? `S${String(item.seasonNumber ?? 0).padStart(2, '0')}E${String(item.episodeNumber ?? 0).padStart(2, '0')} ${item.title}`
+        : item.title?.trim() || `Season ${item.seasonNumber ?? 0}`;
+    if (item.rewatchStartedAt) item.captionSubtitle += ' · Rewatching';
+  }
+  return { ...options, page, pages, total, items };
+}
+
+/** The hero shares Continue's selection/order without hydrating a hidden card page. */
+export async function continueHeroId(userId: string) {
+  const { ids } = await screenProgressPlan(userId, v.parse(progressOptionsSchema, {}), userId);
+  if (!ids.length) return undefined;
+  const rows = await getDb().select({
+    id: s.media.id, kind: s.media.kind,
+    showId: sql<string | null>`coalesce(${s.episodes.showId}, ${s.seasons.showId})`,
+  }).from(s.media)
+    .leftJoin(s.episodes, eq(s.episodes.mediaId, s.media.id))
+    .leftJoin(s.seasons, eq(s.seasons.mediaId, s.media.id))
+    .where(inArray(s.media.id, ids));
+  const byId = new Map(rows.map(row => [row.id, { ...row, showId: row.showId ?? undefined }]));
+  return heroTitleIds(ids.flatMap(id => byId.has(id) ? [byId.get(id)!] : []))[0];
+}
+
+async function screenProgressPlan(userId: string, options: import('$lib/progress').ProgressOptions, viewerId: string) {
   const db = getDb();
   const states = await db
     .select({
@@ -131,7 +180,7 @@ async function readProgressData(
           ]
     ),
   ];
-  if (!candidateIds.length) return { ...options, items: [], total: 0, page: 1, pages: 1 };
+  if (!candidateIds.length) return { ids: [], total: 0, page: 1, pages: 1, sequenceById };
   const active = new Set(activeIds),
     manual = new Set([...queued,...saved].map((row) => row.id));
   const candidates = await db
@@ -181,35 +230,7 @@ async function readProgressData(
   }
   const { page, pages } = pagination(ids.length, options.page);
   const visibleIds = ids.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const views = new Map(
-    (await mediaViewsForIds(userId, visibleIds, viewerId)).map((item) => [item.id, item])
-  );
-  const items = visibleIds.flatMap((id) => (views.has(id) ? [views.get(id)!] : []));
-  const showIds = [...new Set(items.flatMap((item) => (item.showId ? [item.showId] : [])))];
-  const titles = new Map(
-    (await mediaViewsForIds(userId, showIds, viewerId)).map((item) => [item.id, item.title])
-  );
-  for (let index = 0; index < items.length; index++) {
-    let item = items[index];
-    const context = sequenceById.get(item.id);
-    if (context && (options.view !== 'watching' || context.entry.progress > 0)) {
-      item = items[index] = applySequenceEntry(item, context.entry, context.source);
-      item.captionSubtitle = context.title + (item.rewatchStartedAt ? ' · Rewatching' : '');
-      continue;
-    }
-    const title = item.showId ? titles.get(item.showId) : undefined;
-    if (!title) {
-      if (item.rewatchStartedAt) item.captionSubtitle = 'Rewatching';
-      continue;
-    }
-    item.captionTitle = title;
-    item.captionSubtitle =
-      item.kind === 'episode'
-        ? `S${String(item.seasonNumber ?? 0).padStart(2, '0')}E${String(item.episodeNumber ?? 0).padStart(2, '0')} ${item.title}`
-        : item.title?.trim() || `Season ${item.seasonNumber ?? 0}`;
-    if (item.rewatchStartedAt) item.captionSubtitle += ' · Rewatching';
-  }
-  return { ...options, page, pages, total: ids.length, items };
+  return { ids: visibleIds, page, pages, total: ids.length, sequenceById };
 }
 
 /** Concrete game/music activity stays in its own tables; only presentation is shared. */

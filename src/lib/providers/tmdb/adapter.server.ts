@@ -30,11 +30,15 @@ const castMember = v.object({
   profile_path: text,
   roles: v.optional(v.array(v.object({ character: v.string() })), []),
 });
+const crewMember=v.object({id:v.number(),name:v.string(),job:v.optional(v.string(),'')});
+const keyword=v.object({id:v.number(),name:v.string()});
 const credits = v.object({
+  crew:v.optional(v.array(crewMember),[]),
   cast: v.array(castMember),
   guest_stars: v.optional(v.array(castMember), []),
 });
 const detail = v.object({
+  keywords:v.optional(v.object({keywords:v.optional(v.array(keyword),[]),results:v.optional(v.array(keyword),[])})),
   credits: v.optional(credits),
   aggregate_credits: v.optional(credits),
   recommendations: v.optional(result),
@@ -165,7 +169,7 @@ export class TmdbAdapter implements MetadataProvider {
       detail,
       await this.request(
         this.path(`/3/${kind === 'show' ? 'tv' : 'movie'}/${encodeURIComponent(id)}`, {
-          append_to_response: `external_ids,videos,release_dates,content_ratings,images,${includeRecommendations ? 'recommendations,' : ''}${kind === 'show' ? 'aggregate_credits' : 'credits'}`,
+          append_to_response: `external_ids,keywords,videos,release_dates,content_ratings,images,${includeRecommendations ? 'recommendations,' : ''}${kind === 'show' ? 'aggregate_credits,credits' : 'credits'}`,
           include_image_language: `${this.language.split('-')[0]},en,null`,
         })
       )
@@ -187,6 +191,15 @@ export class TmdbAdapter implements MetadataProvider {
         character: person.character ?? person.roles.map((role) => role.character).join(' / '),
         portrait: tmdbArtwork(person.profile_path, 'original'),
       }));
+    const feature=(person:{id:number;name:string})=>({id:`tmdb:${person.id}`,name:person.name});
+    const crew=data.credits?.crew??[];
+    metadata.tasteFeatures={
+      tags:[...(data.keywords?.keywords??[]),...(data.keywords?.results??[])].map(feature),
+      cast:(data.aggregate_credits?.cast??data.credits?.cast??[]).slice(0,20).map(feature),
+      directors:crew.filter(person=>person.job==='Director').map(feature),
+      writers:crew.filter(person=>['Writer','Screenplay','Story','Creator'].includes(person.job)).map(feature),
+      franchises:data.belongs_to_collection?[{id:`tmdb:${data.belongs_to_collection.id}`,name:data.belongs_to_collection.name}]:[],
+    };
     metadata.recommendations = (data.recommendations?.results ?? [])
       .filter((entry) => entry.id !== data.id)
       .slice(0, 20)

@@ -20,6 +20,8 @@ export const jobWaiting = (action: QueueAction) => !!(action.state === 'pending'
 export const jobServiceWaiting = (action: QueueAction) => !!(action.state === 'pending' && action.serviceRetryAt && new Date(action.serviceRetryAt).getTime() > Date.now());
 
 export function jobOutcome(action: QueueAction) {
+  if(action.kind==='taste.refresh'&&action.state==='succeeded'&&action.outcome)return `${action.outcome.refreshed??0} user taste profiles refreshed${action.outcome.deferred?` · ${action.outcome.deferred} changed during calculation; retry next run`:''}`;
+  if(action.kind.endsWith('.recommendations')&&action.outcome)return `${action.outcome.added??0} suggestions cached from ${action.outcome.checked??0} ${action.kind.startsWith('trakt.')?'recommendation lists':'titles'}`;
   const progress = action.progress;
   if (action.state === 'running' && progress) return `${progress.processed ?? 0} items checked${progress.total == null ? '' : ` of ${progress.total}`}`;
   if (action.state !== 'succeeded') return null;

@@ -2,9 +2,15 @@ import {test,expect} from 'bun:test';
 import {tasteSignals,median,type TasteWork} from '../src/lib/social/taste';
 const works=(rating=5,reaction='❤️'):TasteWork[]=>Array.from({length:5},(_,i)=>({id:String(i),rating,reaction,genres:['Drama'],interest:true,consumed:true}));
 test('taste keeps independent signals and blends qualifying samples',()=>{
+ const result=tasteSignals(works(),works(2.5,'😂'));
+ expect(result.signals.ratings.score).toBeCloseTo(100*(1-2.5/4.5));expect(result.signals.reactions.score).toBe(0);
+ expect(result.signals.genres.score).toBe(100);expect(result.signals.interests.score).toBe(100);expect(result.score).toBeCloseTo(result.signals.ratings.score!*0.4+40);
+});
+test('negatively rated titles do not establish a shared positive genre preference',()=>{
  const result=tasteSignals(works(),works(0.5,'😂'));
  expect(result.signals.ratings.score).toBe(0);expect(result.signals.reactions.score).toBe(0);
- expect(result.signals.genres.score).toBe(100);expect(result.signals.interests.score).toBe(100);expect(result.score).toBe(40);
+ expect(result.signals.genres.score).toBeNull();expect(result.signals.interests.score).toBe(100);
+ expect(result.score).toBeCloseTo(100*10/70);
 });
 test('missing and sparse signals are excluded, never disagreements',()=>{
  const a=works().map(w=>({...w,rating:null,reaction:null}));

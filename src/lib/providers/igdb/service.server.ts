@@ -50,3 +50,6 @@ export async function igdbSteamMatches(instanceId:string,ids:string[]) {
 export async function discoverIgdb(instanceId:string,section:'trending'|'recent') {
   return (await igdbAdapter(instanceId)).discover(section);
 }
+export async function igdbRecommendations(instanceId:string,id:string){
+  return (await igdbAdapter(instanceId)).recommendations(id);
+}

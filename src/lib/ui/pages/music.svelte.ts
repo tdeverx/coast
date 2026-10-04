@@ -10,7 +10,7 @@ export type MusicPageData = { item: MusicItem; connectionId: string; children: M
 
 /** Music supplies data and commands to the same hero/content/shelf page as other media. */
 export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, canAct:()=>boolean=()=>true) {
-  const { preview, change } = useClient();
+  const { preview } = useClient();
 
   let failure = $state('');
   let busy = $state(false);
@@ -35,16 +35,14 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
   const commands = $derived<PageCommand[]>(canAct() ? [
     ...(item.workId ? [
       { label: 'Play', icon: 'play' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, false)) },
-      { label: 'Continue', disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, true)) },
-      { label: item.kind === 'album' ? 'Log album' : 'Log listen', icon: 'clock' as const, emphasis: 'subtle' as const, disabled: busy,
-        run: () => act(async () => { await change(`music/${item.workId}/log`, { batchId: crypto.randomUUID() }); }) },
+      ...(item.kind==='album'||item.positionSeconds ? [{ label: 'Continue', disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, true)) }] : []),
     ] : []),
     { label: 'Music', emphasis: 'subtle', icon: 'left', href: `/music?connection=${get().connectionId}` },
   ] : []);
   const sections = $derived.by((): PageSection[] => {
     const data = get();
     const result: PageSection[] = [];
-    if (overview.length && (!section || section === 'insights')) result.push({ key: 'insights', title: 'Overview', panels: overview, layout: section ? 'grid' : 'row' });
+    if (overview.length && (!section || section === 'insights')) result.push({ key: 'insights', title: 'Insights', panels: overview, layout: section ? 'grid' : 'row', href: !section ? `${path}?section=insights` : undefined });
     const key = item.kind === 'artist' ? 'albums' : 'tracks';
     if (item.kind !== 'track' && (!section || section === key)) result.push({
       key, title: item.kind === 'artist' ? 'Albums' : 'Tracks', items: data.children.items.map(child => musicCard(child, data.connectionId)),

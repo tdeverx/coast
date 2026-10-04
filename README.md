@@ -15,7 +15,7 @@
 ## Your media, together
 
 - **Track your collection.** History, progress, ratings, favourites, saved titles and lists belong to you—even when the media isn't on a server. Library brings personal Collection and server browsing together, with separate Collection and Available toggles. Collection is on by default; automatic membership is configurable in your settings.
-- **Pick up where you left off.** For You brings together Continue, Next, friend recommendations, favourites, activity and popular titles among friends. Watching, playing and listening segments keep each medium within the same familiar layout.
+- **Pick up where you left off.** For You brings together Continue, Next, friend recommendations, favourites, activity and dynamic personalised rows, including popular titles among friends. Watching, playing and listening segments keep each medium within the same familiar layout.
 - **Play from Jellyfin.** Stream films and episodes with resume positions and subtitles. Experimental music adds albums, tracks, repeatable listens, queues and audio that stays with you while browsing.
 - **Share with friends.** Mutual friendships, activity, reactions, recommendations, live presence and taste comparisons. Sharing defaults to friends only, with public and private options. Notifications and friends live in persistent panels so you can keep browsing.
 - **Watch or listen together.** Experimental parties support invitations, synchronized playback, participant controls and buffering policies. Each person uses their own authorized media source.
@@ -49,7 +49,7 @@ Use Docker Desktop or another Docker installation with `docker compose` availabl
    docker compose up -d --no-build
    ```
 
-4. Open <http://localhost:3000> and create your administrator account. Enter a username, display name and matching passwords of 12–128 characters. Email is optional for the first administrator.
+4. Open <http://localhost:3000> and create your administrator account. Enter a username, display name and matching passwords of 8–128 characters, including an uppercase letter, a lowercase letter and a special character. Email is optional for the first administrator.
 
 The published image is `ghcr.io/tdeverx/coast:preview`, built for `linux/amd64` and `linux/arm64`. Compose exposes port `3000` and uses the persistent `coast-data` volume for the database, encrypted service credentials, artwork and runtime state. Keep that volume when updating.
 
@@ -120,6 +120,10 @@ Keep API keys and passwords in Coast's settings. Do not include them in source c
 
 More detail: [Collection and Library](docs/collection.md) · [Music](docs/music.md) · [Games](docs/games.md) · [Social](docs/social.md) · [Provider behavior](docs/providers.md).
 
+## API access
+
+Create scoped, expiring tokens in **Settings → API access** for catalogue, Collection, Library and progress reads, tracking and relationship writes, and signed webhooks. Writes require idempotency keys; tokens do not grant playback, administrator access or another user’s data. See the [Public API guide](docs/public-api.md) for endpoints, permissions, pagination and webhook verification.
+
 ## Develop Coast
 
 Development requires **Bun 1.4.2** and PostgreSQL. Create a development database, then run:
@@ -137,6 +141,7 @@ Open the URL printed by Vite, usually <http://localhost:5173>. The server also l
 Run the local checks with:
 
 ```sh
+bun run code:inventory
 bun run ui:inventory:check
 bun run check
 bun run test
@@ -152,7 +157,9 @@ bun run test:db
 
 The runner creates and removes an isolated database for each suite; it does not run tests against the database named in that URL. Provider fixtures do not establish live-service compatibility.
 
-Administrators can open **`/ui-preview`** to inspect the shared typography, colors, materials, elements and components, including the material tweaker. See [Contributing](CONTRIBUTING.md) and [Architecture](docs/architecture.md) for development conventions.
+Administrators can open **`/ui-preview`** to inspect the shared typography, colors, materials, elements and components, including the material tweaker. **`/ui-preview?section=charts`** contains the non-approved chart exploration with isolated fictional data; its charts are unused elsewhere. See [Chart preview](docs/chart-preview.md), [Contributing](CONTRIBUTING.md) and [Architecture](docs/architecture.md) for development conventions.
+
+Administrators can run bounded local measurements in **Settings → Benchmarks** and compare compatible runs in the saved history. These measure selected database and server workloads, not browser rendering or live playback. The [performance guide](docs/performance.md) documents the shared optimisation patterns, isolated regression harness, measurement limits and runtime diagnostics.
 
 ## Project
 

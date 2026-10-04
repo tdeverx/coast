@@ -32,7 +32,7 @@ External actions remain durable in PostgreSQL without a default expiry. Transien
 
 Install the locked Bun dependencies, set `DATABASE_URL` for a development database, set `COAST_DATA_DIR` to a writable local directory such as `.data`, run `bun run db:migrate`, then `bun run dev`. The dev server listens on all network interfaces; use the Network URL printed by Vite (usually `http://<your-LAN-IP>:5173`) from another device on the same LAN. Sign in separately on each device. `bun run build` does not require a database connection. The development data directory and secrets are excluded from the OCI build context.
 
-`bun test tests/platform-security.test.ts` checks the local security boundaries. The transactional platform suite requires a separate database whose name begins `coast_platform_test`: set `TEST_DATABASE_URL`, then run `bun test tests/platform-db.test.ts`. That suite resets its isolated database. Never point it at real data.
+Run `bun run code:inventory`, `bun run ui:inventory:check`, `bun run check`, `bun run test` and `bun run build`. For database suites, set `TEST_DATABASE_URL` to an account allowed to create databases and run `bun run test:db`. The runner creates and removes a disposable database for each suite; it does not test against the database named in that URL. Never use deployed data for tests. See [performance methods](performance.md) for focused regression and browser checks.
 
 
 ## Recovery verification
@@ -42,3 +42,11 @@ Back up the database and `secrets/` together. A logical database restore without
 `TEST_DATABASE_URL=… bun run test:recovery` exercises a logical PostgreSQL dump/restore using only newly created disposable databases and fixture credentials. It requires matching `pg_dump`/`pg_restore` tools and permission to create databases. It verifies fresh-process decryption with the restored key, rejection with a different key, and retention of queued work. It does not restore an installation or alter its configured database. See [the audit follow-up](audits/2026-10-02-follow-up.md) for tested scope and the optional local container workflow.
 
 Transient cleanup runs through existing provider maintenance: expired login sessions, unapproved previews, old unused invites, ended synced rooms and diagnostics. History, playback evidence, redeemed invites, approved cleanup previews and completed outbox evidence remain durable. Artwork cache has a separate bounded eviction policy.
+
+## Runtime diagnostics and image builds
+
+The image sets Bun’s production `IDLE_TIMEOUT=60` to allow requests that take longer than the adapter’s earlier ten-second default. A handler’s recorded 200 response does not prove the proxy or browser received it. Check client and proxy failures alongside application timings before changing timeouts.
+
+The supervisor retains bounded child-exit evidence in `/data/runtime/child-exits.jsonl` and its rotated file. Application stderr is retained in `/data/runtime/application-stderr.log` and `.1`, each capped at 256 KiB with private file permissions. Inspect these after an unexpected shutdown; restarting can replace ordinary container console logs. Raw stderr may contain sensitive details and is excluded from web diagnostic exports. See [diagnostic logging](diagnostic-logging.md) for safe exports and retention. Current memory counters alone cannot establish the cause of an earlier process exit.
+
+The preview workflow verifies inventory, types, tests, isolated database suites and the production build. Images then build on native AMD64 and ARM64 runners with separate caches and health smoke checks; the combined manifest is published after both succeed. A green verification job alone does not mean image publishing has finished. Publishing an image does not update a running installation.

@@ -2,7 +2,7 @@ import { and, asc, count, desc, eq, ilike, sql, getTableColumns } from 'drizzle-
 import * as v from 'valibot';
 import { ownedGameAvailable } from '../../games/availability.server';
 import { getDb, type Database } from '../../server/db';
-import { games, gameExternalIds, gamePlaythroughs, gameSessions } from '../../server/db/schema';
+import { games, gameExternalIds, gamePlaythroughs, gameSessions, gameVariants, workFeatures } from '../../server/db/schema';
 import { PAGE_SIZE, pageNumberSchema, pagination } from '../../server/queries/pagination';
 import { DomainError } from '../errors';
 import { trackInTransaction } from '../tracking/service';
@@ -52,7 +52,8 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
   const { page, pages } = pagination(totals.total, requestedPage);
   const items = await db.select({...getTableColumns(games),available:tracking?ownedGameAvailable(tracking.userId):sql<boolean>`false`}).from(games).where(where).orderBy(asc(games.title), asc(games.id))
     .limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE);
-  return { items: items.map((item) => ({ ...item, category: 'game' as const })), total: totals.total, page, pages };
+  const presentation=await gamePresentationMetadata(items.map(item=>item.id),items);
+  return { items: items.map((item) => ({ ...item,...presentation.get(item.id),category: 'game' as const })), total: totals.total, page, pages };
 }
 
 export async function gameDetails(userId: string | null, gameId: string) {
@@ -71,7 +72,8 @@ export async function gameDetails(userId: string | null, gameId: string) {
       (select count(*)::int from game_achievements g where g.game_id=a.game_id and g.provider='steam') as total
     from game_account_state a join provider_connections c on c.sync_account_id=a.account_id join provider_instances i on i.id=c.instance_id
     where c.user_id=${userId} and c.status='connected' and i.provider='steam' and i.enabled and a.game_id=${gameId}`) : [];
-  return { ...game, steam: Array.from(steam), category: 'game' as const, identities, playthroughs };
+  const enriched=(await gamePresentationMetadata([gameId],[game])).get(gameId)??game;
+  return { ...enriched, steam: Array.from(steam), category: 'game' as const, identities, playthroughs };
 }
 
 export async function createPlaythrough(userId: string, gameId: string, raw: unknown, transaction?: Transaction) {
@@ -162,7 +164,8 @@ export async function playthroughDetails(userId: string, id: string, requestedPa
 
 /** Refresh provider-owned metadata while retaining the game's ID and all private playthroughs. */
 export async function importIgdbMetadata(metadata: import('../../providers/igdb/adapter.server').IgdbGame) {
-  const { category, provider, externalId, identities: linked = [], ...values } = metadata;
+  const { category, provider, externalId, identities: linked = [], parent,tasteFeatures,...values } = metadata;
+  const parentGame=parent?await importIgdbMetadata(parent):null;
   const identities=[{provider,externalId},...linked];
   return getDb().transaction(async (tx) => {
     for(const key of identities.map(i=>`game:${i.provider}:${i.externalId}`).sort())
@@ -182,6 +185,18 @@ export async function importIgdbMetadata(metadata: import('../../providers/igdb/
       const [saved]=await tx.select().from(gameExternalIds).where(and(eq(gameExternalIds.provider,id.provider),eq(gameExternalIds.externalId,id.externalId)));
       if(saved.gameId!==game.id)throw new DomainError('This game identity changed. Retry the import.',409,'identity_conflict');
     }
+    await tx.insert(workFeatures).values({workId:game.id,provider,features:tasteFeatures}).onConflictDoUpdate({target:[workFeatures.workId,workFeatures.provider],set:{features:tasteFeatures,updatedAt:new Date()}});
+    if(parentGame&&parentGame.id!==game.id)await tx.insert(gameVariants).values({gameId:game.id,parentId:parentGame.id,provider}).onConflictDoUpdate({target:gameVariants.gameId,set:{parentId:parentGame.id,provider,updatedAt:new Date()}});
     return { ...game, category, identities };
   });
+}
+
+/** Borrow only presentation fields from a verified main game; retain the variant's identity/title. */
+export async function gamePresentationMetadata(ids:string[],records?:typeof games.$inferSelect[]){
+  if(!ids.length)return new Map<string,typeof games.$inferSelect>();
+  const db=getDb(),rows=records??await db.select().from(games).where(sql`${games.id} in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)})`);
+  if(!rows.length)return new Map<string,typeof games.$inferSelect>();
+  const parents=await db.select({gameId:gameVariants.gameId,parent:games}).from(gameVariants).innerJoin(games,eq(games.id,gameVariants.parentId)).where(sql`${gameVariants.gameId} in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)})`);
+  const byGame=new Map(parents.map(row=>[row.gameId,row.parent]));
+  return new Map(rows.map(game=>{const parent=byGame.get(game.id);return [game.id,parent?{...game,posterPath:parent.posterPath??game.posterPath,backdropPath:parent.backdropPath??game.backdropPath,overview:parent.overview??game.overview,genres:parent.genres.length?parent.genres:game.genres,developers:parent.developers.length?parent.developers:game.developers,publishers:parent.publishers.length?parent.publishers:game.publishers}:game];}));
 }

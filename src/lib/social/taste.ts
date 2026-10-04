@@ -1,4 +1,5 @@
-export type TasteWork={id:string;rating?:number|null;reaction?:string|null;genres:string[];interest:boolean;consumed:boolean};
+import {buildTasteProfile,tasteDimensions,type TasteFeatures} from './taste-profile';
+export type TasteWork={id:string;rating?:number|null;reaction?:string|null;genres:string[];interest:boolean;consumed:boolean;features?:TasteFeatures};
 type TasteSignal={score:number|null;shared:number;left:number;right:number;weight:number};
 function cosine(a:Map<string,number>,b:Map<string,number>) {
  const dot=[...a].reduce((s,[k,n])=>s+n*(b.get(k)??0),0),norm=Math.sqrt([...a.values()].reduce((s,n)=>s+n*n,0)*[...b.values()].reduce((s,n)=>s+n*n,0));
@@ -9,7 +10,7 @@ export function tasteSignals(left:TasteWork[],right:TasteWork[]) {
  const ratingPairs=left.flatMap(w=>{const other=byId.get(w.id);return w.rating!=null&&other?.rating!=null?[[w.rating,other.rating]]:[];});
  const reactionPairs=left.flatMap(w=>{const other=byId.get(w.id);return w.reaction&&other?.reaction?[[w.reaction,other.reaction]]:[];});
  const eligible=(items:TasteWork[])=>items.filter(w=>w.consumed||w.interest||w.rating!=null);
- const genres=(items:TasteWork[])=>{const map=new Map<string,number>();for(const w of eligible(items))for(const genre of new Set(w.genres.map(g=>g.toLowerCase())))map.set(genre,(map.get(genre)??0)+1);return map;};
+ const genres=(items:TasteWork[])=>{const map=new Map<string,number>();for(const w of eligible(items).filter(work=>work.rating==null||work.rating>=2.5))for(const genre of new Set(w.genres.map(g=>g.toLowerCase())))map.set(genre,(map.get(genre)??0)+1);return map;};
  const ai=new Set(left.filter(w=>w.interest).map(w=>w.id)),bi=new Set(right.filter(w=>w.interest).map(w=>w.id));
  const shared=[...ai].filter(id=>bi.has(id)).length,union=new Set([...ai,...bi]).size;
  const signals:Record<string,TasteSignal>={
@@ -18,6 +19,13 @@ export function tasteSignals(left:TasteWork[],right:TasteWork[]) {
   reactions:{score:reactionPairs.length>=5?100*reactionPairs.filter(([a,b])=>a===b).length/reactionPairs.length:null,shared:reactionPairs.length,left:left.filter(w=>w.reaction).length,right:right.filter(w=>w.reaction).length,weight:20},
   interests:{score:ai.size>=5&&bi.size>=5&&union?100*shared/union:null,shared,left:ai.size,right:bi.size,weight:10},
  };
+ // Share the same feature-profile builder with personal recommendations, using only visible evidence.
+ const featureProfile=(items:TasteWork[])=>buildTasteProfile(items.map(work=>({id:work.id,weight:work.rating!=null?(work.rating<2.5?-5:work.rating>=3.5?5:0):['❤️','🔥'].includes(work.reaction??'')?4:work.interest?1:work.consumed?1:0,features:work.features??{}})));
+ const a=featureProfile(left),b=featureProfile(right);
+ for(const dimension of tasteDimensions.filter(value=>value!=='genres')){
+  const av=(a.dimensions[dimension]??[]).filter(value=>value.value>0&&(dimension!=='cast'||value.samples>=2)),bv=(b.dimensions[dimension]??[]).filter(value=>value.value>0&&(dimension!=='cast'||value.samples>=2));
+  signals[dimension]={score:a.works>=5&&b.works>=5&&av.length&&bv.length?cosine(new Map(av.map(v=>[v.id,v.value])),new Map(bv.map(v=>[v.id,v.value]))):null,shared:av.filter(v=>bv.some(other=>other.id===v.id)).length,left:av.length,right:bv.length,weight:dimension==='publishers'?2:5};
+ }
  const qualified=Object.values(signals).filter(s=>s.score!==null),weight=qualified.reduce((s,v)=>s+v.weight,0);
  return {signals,score:weight?qualified.reduce((s,v)=>s+v.score!*v.weight,0)/weight:null};
 }
