@@ -20,7 +20,7 @@ function visible(userId:string,filters:NotificationFilters=defaultNotificationFi
  request.state as request_state,case when room.id is not null then case when room.ended_at is not null then 'Ended' when room.paused then 'Paused' else 'Playing' end end as session_state
  from notifications n left join outbox_actions job on n.kind='external-action' and job.id::text=split_part(n.source_key,':',2) and job.user_id=n.user_id
  left join provider_connections connection on connection.id=job.connection_id
- left join provider_instances provider on provider.id=connection.instance_id or (job.kind='tmdb.refresh' and provider.provider='tmdb' and provider.id::text=job.payload->>'instanceId')
+ left join provider_instances provider on provider.id=connection.instance_id or (job.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations') and job.kind like provider.provider||'.%' and provider.id::text=job.payload->>'instanceId')
  left join social_recommendations recommendation on n.kind='recommendation' and recommendation.id::text=n.data->>'subjectId' and recommendation.recipient_id=n.user_id
  left join synced_rooms room on n.kind='synced-invite' and room.id::text=n.data->>'subjectId'
  left join lateral(select media_id,state from media_requests r where r.user_id=n.user_id and n.kind='request' and (r.id::text=n.data->>'subjectId' or n.source_key like 'seerr:'||r.instance_id||':'||r.external_id||':%') order by updated_at desc limit 1) request on true

@@ -1,7 +1,9 @@
 import type { ProviderSchedule } from './schedule';
 export const maintenanceKinds = [
+  'taste.refresh',
   'catalogue.user-scan',
   'tmdb.refresh',
+  'tmdb.recommendations','igdb.recommendations','trakt.recommendations',
   'jellyfin.library',
   'jellyfin.sync',
   'trakt.live',
@@ -23,7 +25,7 @@ export type ServiceTask = {
   description: string;
   kinds: string[];
   scope?: 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'catalogue' | 'metadata' | 'all';
-  interval?: 'intervalMinutes' | 'userIntervalMinutes' | 'listsIntervalMinutes' | 'liveIdleMinutes' | 'catalogueIntervalMinutes';
+  interval?: 'intervalMinutes' | 'userIntervalMinutes' | 'listsIntervalMinutes' | 'liveIdleMinutes' | 'catalogueIntervalMinutes' | 'recommendationsIntervalMinutes';
   enabled?: keyof ProviderSchedule;
 };
 function groupedServiceTasks(provider: string): ServiceTask[] {
@@ -50,7 +52,9 @@ function groupedServiceTasks(provider: string): ServiceTask[] {
           : ['seerr.request', 'seerr.manage'],
   };
   const catalogue: ServiceTask = { id: 'catalogue', title: 'User catalogue', description: 'Add missing shared TMDB titles directly referenced by connected accounts. No recommendations or personal tracking changes.', kinds: ['catalogue.user-scan'], scope: 'catalogue', interval: 'catalogueIntervalMinutes', enabled: 'catalogueEnabled' };
-  if (provider === 'tmdb') return [{ id: 'metadata', title: 'Shared metadata refresh', description: 'Refresh existing shared TMDB records in bounded batches. Each title retries independently.', kinds: ['tmdb.refresh'], scope: 'metadata', interval: 'intervalMinutes' }];
+  const recommendations:ServiceTask={id:'recommendations',title:'Recommendations',description:'Cache provider suggestions for For You. Metadata only; no personal tracking changes.',kinds:[`${provider}.recommendations`],scope:provider==='trakt'?'tracking':'metadata',interval:'recommendationsIntervalMinutes',enabled:'recommendationsEnabled'};
+  if(provider==='igdb')return [recommendations];
+  if (provider === 'tmdb') return [recommendations,{ id: 'metadata', title: 'Shared metadata refresh', description: 'Refresh existing shared TMDB records in bounded batches. Each title retries independently.', kinds: ['tmdb.refresh'], scope: 'metadata', interval: 'intervalMinutes' }];
   if (provider === 'jellyfin')
     return [
       {
@@ -78,7 +82,7 @@ function groupedServiceTasks(provider: string): ServiceTask[] {
       changes,
     ];
   if (provider === 'trakt')
-    return [
+    return [recommendations,
       {
         id:'live',title:'Live activity',description:'Read watching activity while idle or active. Outbound check-ins use each account’s scrobble preference.',kinds:['trakt.live'],scope:'live',interval:'liveIdleMinutes',enabled:'liveEnabled',
       },

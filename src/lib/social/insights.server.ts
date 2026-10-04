@@ -1,3 +1,4 @@
+import {workTasteFeatures} from './work-features.server';
 import {getSql} from '$lib/server/db';
 import {requireFriend} from './service.server';
 import {requireVisible} from './privacy.server';
@@ -28,6 +29,8 @@ export async function friendInsights(viewerId:string,friendId:string) {
  left join social_reactions reaction on reaction.user_id=u.id and reaction.target_kind='work' and reaction.target_id=w.id
  where u.id in (${viewerId},${friendId}) and not u.disabled and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true'))
  and (t.collected or t.watchlist or t.favourite or t.watched or t.play_count>0 or r.value is not null or reaction.emoji is not null or exists(select 1 from music_listens where user_id=u.id and track_id=w.id) or coalesce(t.position_seconds,mp.position_seconds,0)>0 or gp.status in ('in-progress','paused','completed','dropped'))`;
+ const features=await workTasteFeatures([...new Set<string>(rows.map((row:any)=>row.id as string))]);
+ for(const row of rows)row.features=features.get(row.id)??{};
  const media=['movies','tv','music','game'].map(medium=>{
   type ComparedWork=TasteWork&{positionSeconds:number;durationSeconds:number;gameProgress:number|null;gameStatus:string|null};
   const left=rows.filter((r:any)=>r.medium===medium&&r.userId===viewerId) as ComparedWork[],right=rows.filter((r:any)=>r.medium===medium&&r.userId===friendId) as ComparedWork[];

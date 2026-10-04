@@ -638,7 +638,7 @@ suite('application PostgreSQL read models', () => {
     const continuedHome = await homeData(a);
     expect(continuedHome.hero?.id).toBe(show);
     expect(continuedHome.hero?.kind).toBe('show');
-    const continuing = continuedHome.continueWatching.find((item) => item.id === episodeTwo);
+    const continuing = (await progressData(a)).items.find((item) => item.id === episodeTwo);
     expect(continuing?.title).toBe('Regular episode 2');
     expect(continuing?.captionTitle).toBe('Available show');
     expect(continuing?.captionSubtitle).toBe('S01E02 Regular episode 2');
@@ -654,10 +654,10 @@ suite('application PostgreSQL read models', () => {
     });
     await track(a, { mediaId: completeShow, action: 'watchlist' });
     await bulkTrack(a, { mediaId: completeShow, action: 'watch' });
-    const home = await homeData(a);
-    expect(home.watchlist.map((item) => item.id)).toContain(movie);
-    expect(home.continueWatching.map((item) => item.id)).toContain(movie);
-    expect(home.watchlist.map((item) => item.id)).not.toContain(completeShow);
+    const saved = await progressData(a, { view: 'watchlist' });
+    expect(saved.items.map((item) => item.id)).toContain(movie);
+    expect((await progressData(a)).items.map((item) => item.id)).toContain(movie);
+    expect(saved.items.map((item) => item.id)).not.toContain(completeShow);
     expect((await mediaViews(a, { ids: [completeShow] }))[0].watchlist).toBe(true);
   });
   test('collections infer availability and aggregate canonical descendant progress once', async () => {
@@ -693,7 +693,7 @@ suite('application PostgreSQL read models', () => {
     await getDb().insert(s.media).values({ id, kind: 'movie', title: 'A rewatched movie' });
     await getDb().insert(s.movies).values({ mediaId: id });
     await track(a, { mediaId: id, action: 'watch', durationSeconds: 1200 });
-    expect((await homeData(a)).continueWatching.some((item) => item.id === id)).toBe(false);
+    expect((await progressData(a)).items.some((item) => item.id === id)).toBe(false);
     await track(a, {
       mediaId: id,
       action: 'progress',
@@ -701,7 +701,7 @@ suite('application PostgreSQL read models', () => {
       durationSeconds: 1200,
       acknowledged: true,
     });
-    const resumed = (await homeData(a)).continueWatching.find((item) => item.id === id);
+    const resumed = (await progressData(a)).items.find((item) => item.id === id);
     expect(resumed?.progress).toBe(180);
     expect(resumed?.watched).toBe(true);
     const [state] = await getDb()
@@ -710,7 +710,7 @@ suite('application PostgreSQL read models', () => {
       .where(and(eq(s.trackingState.userId, a), eq(s.trackingState.mediaId, id)));
     expect(state.playCount).toBe(1);
     await track(a, { mediaId: id, action: 'watch', rewatch: true });
-    expect((await homeData(a)).continueWatching.some((item) => item.id === id)).toBe(false);
+    expect((await progressData(a)).items.some((item) => item.id === id)).toBe(false);
   });
   test('search includes original and personal titles without leaking another users preference', async () => {
     const originalTitle = `Original ${a}`;

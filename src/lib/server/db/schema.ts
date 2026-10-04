@@ -710,7 +710,7 @@ export const jobs = pgTable('jobs', {
   lastError: text('last_error'),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
-});
+},t=>[uniqueIndex('outbox_taste_one_active_idx').on(t.kind).where(sql`${t.kind}='taste.refresh' and ${t.state} in ('pending','running','failed')`)]);
 export const syncCheckpoints = pgTable(
   'sync_checkpoints',
   {
@@ -1243,3 +1243,34 @@ export const benchmarkRuns = pgTable('benchmark_runs', {
   index('benchmark_dataset_comparison_idx').on(t.comparisonKey,sql`(${t.context}->>'datasetFingerprint')`,t.createdAt),
   check('benchmark_state_check',sql`${t.state} in ('queued','running','completed','failed','cancelled')`),
 ]);
+
+/** Shared title suggestions or generation-scoped personal provider suggestions. */
+export const recommendationSets=pgTable('recommendation_sets',{
+ id:uuid('id').primaryKey().defaultRandom(),
+ instanceId:uuid('instance_id').notNull().references(()=>providerInstances.id,{onDelete:'cascade'}),
+ key:text('key').notNull(),
+ seedId:uuid('seed_id').references(()=>works.id,{onDelete:'cascade'}),
+ connectionId:uuid('connection_id').references(()=>providerConnections.id,{onDelete:'cascade'}),
+ accountGeneration:uuid('account_generation'),
+ items:uuid('items').array().notNull().default(sql`'{}'::uuid[]`),
+ updatedAt:updatedAt(),
+},t=>[uniqueIndex('recommendation_sets_source_unique').on(t.instanceId,t.key),index('recommendation_sets_seed_idx').on(t.seedId),index('recommendation_sets_connection_idx').on(t.connectionId)]);
+
+export const workFeatures=pgTable('work_features',{
+ workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),provider:text('provider').notNull(),
+ features:jsonb('features').$type<import('$lib/social/taste-profile').TasteFeatures>().notNull().default({}),updatedAt:updatedAt(),
+},t=>[primaryKey({columns:[t.workId,t.provider]}),index('work_features_lookup_idx').using('gin',t.features)]);
+/** A verified provider parent is presentation metadata, never full-game ownership. */
+export const gameVariants=pgTable('game_variants',{
+ gameId:uuid('game_id').primaryKey().references(()=>games.id,{onDelete:'cascade'}),
+ parentId:uuid('parent_id').notNull().references(()=>games.id,{onDelete:'cascade'}),provider:text('provider').notNull(),updatedAt:updatedAt(),
+},t=>[index('game_variants_parent_idx').on(t.parentId),check('game_variants_distinct_check',sql`${t.gameId}<>${t.parentId}`)]);
+export const userTasteProfiles=pgTable('user_taste_profiles',{
+ userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),medium:text('medium').notNull(),revision:text('revision').notNull(),
+ profile:jsonb('profile').$type<import('$lib/social/taste-profile').TasteProfile>().notNull(),updatedAt:updatedAt(),
+},t=>[primaryKey({columns:[t.userId,t.medium]})]);
+export const userTasteScores=pgTable('user_taste_scores',{
+ userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),
+ score:real('score'),confidence:real('confidence').notNull(),revision:text('revision').notNull(),
+ breakdown:jsonb('breakdown').$type<ReturnType<typeof import('$lib/social/taste-profile').scoreTaste>>().notNull(),updatedAt:updatedAt(),
+},t=>[primaryKey({columns:[t.userId,t.workId]}),index('user_taste_scores_rank_idx').on(t.userId,t.score,t.workId)]);

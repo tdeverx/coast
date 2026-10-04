@@ -6,6 +6,7 @@ export const referenceSections = [
   { value: 'typography', label: 'Typography' },
   { value: 'colors', label: 'Colors' },
   { value: 'materials', label: 'Materials' },
+  { value: 'charts', label: 'Charts' },
   { value: 'elements', label: 'Elements' },
   { value: 'components', label: 'Components' },
 ];

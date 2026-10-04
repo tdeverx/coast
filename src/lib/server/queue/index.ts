@@ -27,7 +27,7 @@ export interface OutboxAction {
 export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number };
 export type ActionHandler = (action: OutboxAction) => Promise<void | JobOutcome>;
 
-const independentQueueKinds=['webhook.deliver','planning.reminder','benchmark.run'];
+const independentQueueKinds=['webhook.deliver','planning.reminder','benchmark.run','taste.refresh'];
 const handlers = new Map<string, ActionHandler>();
 export class PermanentActionError extends Error {
   constructor(message: string) {
@@ -65,7 +65,7 @@ export async function enqueueAction(input: {
             (a.user_id=${input.userId} AND a.connection_id IS NOT DISTINCT FROM ${input.connectionId||null}::uuid AND a.state IN ('pending','running','failed')) OR
             (a.state IN ('pending','running') AND (
               (${input.connectionId||null}::uuid IS NOT NULL AND c.instance_id=(SELECT instance_id FROM provider_connections WHERE id=${input.connectionId||null}::uuid)) OR
-              (${input.kind}='tmdb.refresh' AND a.payload->>'instanceId'=${typeof input.payload.instanceId==='string'?input.payload.instanceId:null})
+              (${input.kind} in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations') AND a.payload->>'instanceId'=${typeof input.payload.instanceId==='string'?input.payload.instanceId:null})
             ))
           ) LIMIT 1`;
       if (existing) return existing.id;
@@ -177,7 +177,7 @@ export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | 
       WHERE id = (
         SELECT candidate.id FROM outbox_actions candidate
         LEFT JOIN provider_connections connection ON connection.id = candidate.connection_id
-        LEFT JOIN provider_instances instance ON instance.id = connection.instance_id OR (candidate.kind = 'tmdb.refresh' AND instance.provider = 'tmdb' AND instance.id::text = candidate.payload->>'instanceId')
+        LEFT JOIN provider_instances instance ON instance.id = connection.instance_id OR (candidate.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations') AND candidate.kind like instance.provider||'.%' AND instance.id::text = candidate.payload->>'instanceId')
         WHERE candidate.state = 'pending' AND candidate.next_attempt_at <= NOW()
           AND (${urgentOnly} = false OR ${priority} < 3)
           AND (instance.settings->>'jobsRetryAt' IS NULL OR (instance.settings->>'jobsRetryAt')::timestamptz <= NOW())
@@ -187,7 +187,7 @@ export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | 
             AND (earlier.kind NOT IN ${sql(maintenanceKinds)} OR earlier.state = 'running' OR
               (${priority} <> 0 AND candidate.kind IN ${sql(maintenanceKinds)} AND earlier.state = 'pending' AND earlier.next_attempt_at <= NOW()))))
         ORDER BY ${priority}, candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
-      ) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind='tmdb.refresh' AND provider='tmdb' AND id::text=payload->>'instanceId')) AS instance_id`;
+      ) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations') AND kind like provider||'.%' AND id::text=payload->>'instanceId')) AS instance_id`;
     const initial = row && ['jellyfin.sync','trakt.import','trakt.lists-import','steam.sync'].includes(row.kind)
       ? (await sql`SELECT NOT EXISTS(SELECT 1 FROM outbox_actions WHERE connection_id=${row.connection_id} AND kind=${row.kind} AND account_generation IS NOT DISTINCT FROM ${row.account_generation}::uuid AND state='succeeded') AND NOT EXISTS(SELECT 1 FROM sync_checkpoints WHERE connection_id=${row.connection_id} AND kind=${'initial:'+row.kind+':'+row.account_generation} AND completed_at IS NOT NULL) AS first`)[0].first : false;
     return row
@@ -424,7 +424,7 @@ export async function listActions(actor: SessionUser | null) {
     .from(outboxActions)
     .innerJoin(users, eq(users.id, outboxActions.userId))
     .leftJoin(providerConnections, eq(providerConnections.id, outboxActions.connectionId))
-    .leftJoin(providerInstances, sql`${providerInstances.id}=${providerConnections.instanceId} or (${outboxActions.kind}='tmdb.refresh' and ${providerInstances.provider}='tmdb' and ${providerInstances.id}::text=${outboxActions.payload}->>'instanceId')`)
+    .leftJoin(providerInstances, sql`${providerInstances.id}=${providerConnections.instanceId} or (${outboxActions.kind} in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations') and ${outboxActions.kind} like ${providerInstances.provider}||'.%' and ${providerInstances.id}::text=${outboxActions.payload}->>'instanceId')`)
     .where(inArray(outboxActions.id, ids))
     .orderBy(
       sql`case when ${outboxActions.state} in ('running', 'pending', 'failed') then 0 else 1 end`,

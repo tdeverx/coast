@@ -1,6 +1,8 @@
 import * as v from 'valibot';
 export const providerScheduleSchema = v.object({
   enabled: v.boolean(),
+  recommendationsEnabled:v.optional(v.boolean(),true),
+  recommendationsIntervalMinutes:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10080)),60),
   catalogueEnabled: v.optional(v.boolean(), true),
   catalogueIntervalMinutes: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10080)), 1440),
   intervalMinutes: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10080)),
@@ -29,6 +31,7 @@ export function providerSchedule(provider: string, saved?: unknown): ProviderSch
     ? parsed.output
     : {
         enabled: !['trakt', 'igdb'].includes(provider),
+        recommendationsEnabled:true,recommendationsIntervalMinutes:60,
         intervalMinutes: provider === 'tmdb' ? 10080 : provider === 'jellyfin' ? 10 : provider === 'seerr' ? 1 : 60,
         catalogueEnabled: true, catalogueIntervalMinutes: 1440,
         fullIntervalHours: 24,

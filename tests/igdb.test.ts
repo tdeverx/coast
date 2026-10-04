@@ -111,3 +111,11 @@ test('discovery uses ranked IGDB visits, preserves rank and excludes future rele
   expect(calls[2].body).toContain('first_release_date <=');
   expect(calls[2].body).toContain('sort first_release_date desc');
 });
+
+test('similar games preserve provider ordering, omit self and validate IDs before queries',async()=>{
+ const requests:string[]=[];
+ const adapter=new IgdbAdapter(credentials(),async(_path,init)=>{const body=String(init?.body);requests.push(body);return body.includes('fields similar_games')?[{similar_games:[1942,7,8,7]}]:[{id:8,name:'Eight'},{id:7,name:'Seven'}];},async()=>token);
+ expect((await adapter.recommendations('1942')).map(game=>game.externalId)).toEqual(['7','8']);
+ expect(requests[1]).toContain('id = (7,8)');
+ await expect(adapter.recommendations('1; limit 500')).rejects.toThrow();expect(requests).toHaveLength(2);
+});

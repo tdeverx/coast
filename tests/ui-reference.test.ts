@@ -11,6 +11,7 @@ test('the reference catalog covers every component once across elements and comp
   expect(files).toEqual(partition.sort());
   expect(new Set(partition).size).toBe(files.length);
   expect(referenceSection('materials')).toBe('materials');
+  expect(referenceSection('charts')).toBe('charts');
   expect(referenceSection('invalid')).toBe('typography');
 });
 

@@ -9,12 +9,14 @@
   } = $props();
   const operation = createOperation();
   let date = $state(''), party = $state(false), friendsError = $state('');
-  let friends = $state<{ userId: string; username: string }[]>([]), selected = $state<string[]>([]);
+  let friends = $state.raw<{ userId: string; username: string }[]>([]), selected = $state<string[]>([]);
   $effect(() => {
     if (!open) return;
     workId;
     date = ''; party = false; selected = []; friends = []; friendsError = ''; operation.error = '';
-    if (!partyAllowed) return;
+  });
+  $effect(() => {
+    if (!open || !partyAllowed || !party) return;
     const controller = new AbortController();
     void api<typeof friends>('social/friends?state=accepted', undefined, 'GET', { signal: controller.signal })
       .then(value => { if (!controller.signal.aborted) friends = value; })
@@ -31,7 +33,6 @@
 </script>
 
 <Dialog bind:open title={`Plan · ${title}`}>
-  <p class="small muted">Experimental planning · visual treatment unapproved</p>
   <form class="stack" onsubmit={save}>
     <label class="field">Date and time<input type="datetime-local" bind:value={date} required /></label>
     {#if partyAllowed}<label class="check"><input type="checkbox" bind:checked={party} />Plan a party</label>{/if}

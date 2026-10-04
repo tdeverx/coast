@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {providerSchedule} from '$lib/providers/schedule';
   import Button from '$lib/ui/components/Button.svelte';
   import { onMount } from 'svelte';
   import { invalidate } from '$app/navigation';
@@ -16,6 +17,7 @@
     providers,
     actions,
     timing = [],
+    tasteJob=null,
   }: {
     providers: {
       id: string;
@@ -27,6 +29,7 @@
       libraryScan?: unknown;
       schedule: ProviderSchedule;
     }[];
+    tasteJob?:Awaited<ReturnType<typeof import('$lib/social/taste-cache.server').tasteJob>>|null;
     actions: QueueAction[];
     timing?: import('$lib/providers/job-timing.server').JobTiming[];
   } = $props();
@@ -73,7 +76,7 @@
     service === 'all'
       ? actions.filter(
           (job) =>
-            !providers.some((provider) => provider.id === job.instanceId) &&
+            job.kind!=='taste.refresh' && !providers.some((provider) => provider.id === job.instanceId) &&
             matchesType(job.kind) &&
             matchesState(job)
         )
@@ -160,6 +163,7 @@
   {:else}<p class="small">
       No services match these filters. Add an integration or choose another task type.
     </p>{/each}
+  {#if tasteJob && service==='all' && (type==='all'||type==='maintenance') && (filter==='all'||actions.some(job=>job.kind==='taste.refresh'&&matchesState(job)))}<section class="service stack"><Heading title="Coast"/><div class="task-grid"><JobSchedule local provider={{id:'taste',name:'Coast',provider:'coast',enabled:true,connectedAccounts:0,accounts:[],schedule:{...providerSchedule('coast'),...tasteJob.schedule}}} task={{id:'taste',title:'Taste profiles',description:'Refresh changed user interests and score up to 500 recommendation candidates per medium. Ten users per run.',kinds:['taste.refresh'],scope:'metadata',interval:'intervalMinutes'}} timing={tasteJob.timing} jobs={actions.filter(job=>job.kind==='taste.refresh')}/></div></section>{/if}
   {#if orphaned.length}<section class="service">
       <Heading title="Other background work" /><QueueList actions={orphaned} />
     </section>{/if}

@@ -37,7 +37,7 @@ export async function syncSteam(action:OutboxAction) {
   // Exact provider links only. Metadata outages do not stop owned-game imports.
   const [igdb]=await getDb().select().from(s.providerInstances).where(and(eq(s.providerInstances.provider,'igdb'),eq(s.providerInstances.enabled,true),sql`${s.providerInstances.credentials} is not null`)).limit(1);
   let deferred=0,added=0;
-  const known=await getDb().select({id:s.gameExternalIds.externalId}).from(s.gameExternalIds).where(and(eq(s.gameExternalIds.provider,'steam'),sql`exists(select 1 from game_external_ids ge where ge.game_id=game_external_ids.game_id and ge.provider='igdb')`));
+  const known=await getDb().select({id:s.gameExternalIds.externalId}).from(s.gameExternalIds).where(and(eq(s.gameExternalIds.provider,'steam'),sql`exists(select 1 from game_external_ids ge where ge.game_id=game_external_ids.game_id and ge.provider='igdb') and exists(select 1 from work_features f where f.work_id=game_external_ids.game_id and f.provider='igdb')`));
   const knownIds=new Set(known.map(i=>i.id));
   const missing=owned.map(i=>String(i.appid)).filter(id=>!knownIds.has(id));
   if(igdb)for(let start=0;start<missing.length;start+=50){
@@ -79,8 +79,11 @@ export async function syncSteamAchievements(action:OutboxAction) {
   const accountId=connection.syncAccountId;
   if(!accountId)throw new PermanentActionError('Reconnect Steam to establish account provenance.');
   await getDb().transaction(tx=>assertAccount(tx,action,accountId));
-  const titles=await getDb().select({state:s.gameAccountState,externalId:s.gameExternalIds.externalId}).from(s.gameAccountState)
-    .innerJoin(s.gameExternalIds,and(eq(s.gameExternalIds.gameId,s.gameAccountState.gameId),eq(s.gameExternalIds.provider,'steam')))
+  // Metadata may list unowned regional/demo AppIDs for the same game. Use the
+  // exact AppIDs from this account's complete ownership scan, not every alias.
+  const titles=await getDb().select({state:s.gameAccountState,externalId:s.providerItems.externalId}).from(s.gameAccountState)
+    .innerJoin(s.availability,and(eq(s.availability.mediaId,s.gameAccountState.gameId),eq(s.availability.userId,action.userId),eq(s.availability.connectionId,connection.id),eq(s.availability.sourceId,'steam-owned'),eq(s.availability.state,'available')))
+    .innerJoin(s.providerItems,and(eq(s.providerItems.id,s.availability.providerItemId),eq(s.providerItems.instanceId,connection.instanceId),eq(s.providerItems.kind,'game')))
     .where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.owned,true),eq(s.gameAccountState.hasStats,true)))
     .orderBy(sql`${s.gameAccountState.achievementsAttemptedAt} asc nulls first`,s.gameAccountState.gameId).limit(20);
   let checked=0,deferred=0;

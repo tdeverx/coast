@@ -54,6 +54,7 @@ export function experimentalMaterial(node: HTMLElement, options: { enabled: bool
   const motion = matchMedia('(prefers-reduced-motion: reduce)');
   const touch = matchMedia('(hover: none)');
   let hovering = false, focused = false, x = 50, y = 50, frame = 0;
+  let pointer: {x:number;y:number}|undefined;
   function layer(name: LayerName, amount: number) {
     if (!options.enabled || amount <= 0) { layers.get(name)?.remove(); layers.delete(name); return; }
     let element = layers.get(name);
@@ -104,12 +105,19 @@ export function experimentalMaterial(node: HTMLElement, options: { enabled: bool
   function move(event: PointerEvent) {
     if (!options.enabled || options.effects.interactionAmount <= 0 || motion.matches || touch.matches || event.pointerType === 'touch') return;
     hovering = true;
-    const box = node.getBoundingClientRect();
-    x = Math.max(0, Math.min(100, (event.clientX - box.left) / box.width * 100));
-    y = Math.max(0, Math.min(100, (event.clientY - box.top) / box.height * 100));
-    cancelAnimationFrame(frame); frame = requestAnimationFrame(interaction);
+    pointer = {x:event.clientX,y:event.clientY};
+    if (!frame) frame = requestAnimationFrame(() => {
+      frame = 0;
+      if (!pointer) return;
+      const box = node.getBoundingClientRect();
+      x = Math.max(0, Math.min(100, (pointer.x - box.left) / Math.max(1,box.width) * 100));
+      y = Math.max(0, Math.min(100, (pointer.y - box.top) / Math.max(1,box.height) * 100));
+      pointer = undefined;
+      interaction();
+    });
   }
-  const leave = () => { hovering = false; if (focused) { x = 50; y = 50; } interaction(); };
+  const cancelPointer = () => {cancelAnimationFrame(frame);frame=0;pointer=undefined;};
+  const leave = () => { cancelPointer(); hovering = false; if (focused) { x = 50; y = 50; } interaction(); };
   const focus = () => { focused = true; x = 50; y = 50; interaction(); };
   const blur = (event: FocusEvent) => { if (!node.contains(event.relatedTarget as Node | null)) { focused = false; interaction(); } };
   node.addEventListener('pointermove', move, { passive: true });
@@ -118,9 +126,9 @@ export function experimentalMaterial(node: HTMLElement, options: { enabled: bool
   motion.addEventListener('change', interaction); touch.addEventListener('change', interaction);
   render();
   return {
-    update(next: typeof options) { options = next; render(); },
+    update(next: typeof options) { cancelPointer(); options = next; render(); },
     destroy() {
-      cancelAnimationFrame(frame); for (const element of layers.values()) element.remove(); layers.clear();
+      cancelPointer(); for (const element of layers.values()) element.remove(); layers.clear();
       node.removeEventListener('pointermove', move); node.removeEventListener('pointerleave', leave);
       node.removeEventListener('focusin', focus); node.removeEventListener('focusout', blur);
       motion.removeEventListener('change', interaction); touch.removeEventListener('change', interaction);

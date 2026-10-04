@@ -16,6 +16,8 @@ export async function handleAdmin(context: ApiContext): Promise<Response | undef
         result = await deleteUser(user, uuid(path[2]));
       else if (path[1] === 'users' && path.length === 3 && method === 'PATCH')
         result = await updateUser(user, uuid(path[2]), body);
+      else if(path[1]==='taste-refresh'&&path.length===2&&method==='POST')result=await (await import('$lib/social/taste-cache.server')).runTasteRefresh();
+      else if(path[1]==='taste-schedule'&&path.length===2&&method==='POST')result=await (await import('$lib/social/taste-cache.server')).updateTasteSchedule(body);
       else if (path[1] === 'health' && method === 'GET') result = await systemHealth(user);
       else if (path[1] === 'benchmarks' && path.length === 2 && method === 'GET') result = await listBenchmarks(user,Number(url.searchParams.get('page'))||1);
       else if (path[1] === 'benchmarks' && path.length === 2 && method === 'POST') result = await startBenchmark(user);

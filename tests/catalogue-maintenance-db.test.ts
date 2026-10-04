@@ -96,7 +96,7 @@ afterAll(async () => {
   await getDb().delete(s.media).where(inArray(s.media.id, mediaIds));
 });
 run(
-  'shared refresh respects pause, manual runs deduplicate, records attach to TMDB in Jobs',
+  'selected shared refresh respects pause, manual runs deduplicate, records attach to TMDB in Jobs',
   async () => {
     expect(
       (await scheduleProviderMaintenance({ instanceId: instance })).queued
@@ -104,9 +104,9 @@ run(
     await expect(runProviderJob(member, instance, 'metadata')).rejects.toThrow(
       'Administrator'
     );
-    const first = await runProviderJob(admin, instance, 'metadata');
+    const first = await runProviderJob(admin, instance, 'metadata', 'tmdb.refresh');
     expect(first.queued).toBe(1);
-    const second = await runProviderJob(admin, instance, 'metadata');
+    const second = await runProviderJob(admin, instance, 'metadata', 'tmdb.refresh');
     expect(second.queued).toBe(0);
     const actions = await listActions({
       id: admin,
@@ -150,7 +150,7 @@ run(
       .update(s.outboxActions)
       .set({ state: 'failed' })
       .where(eq(s.outboxActions.id, claimed!.id));
-    expect((await runProviderJob(admin, instance, 'metadata')).queued).toBe(0);
+    expect((await runProviderJob(admin, instance, 'metadata', 'tmdb.refresh')).queued).toBe(0);
     expect(await claimNextAction()).toBeNull();
     await retryAction(
       { id: admin, username: 'fixture', role: 'admin' } as Parameters<
@@ -280,6 +280,7 @@ run(
               externalId: identity.externalId,
               kind: 'movie',
               title: 'Refreshed fixture',
+              tasteFeatures:{},
             },
             { mediaId: id, complete: true }
           );

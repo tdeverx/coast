@@ -82,9 +82,10 @@ describe('shared component resources', () => {
   test('lazy shelves activate only once, sentinels repeat, and both clean up their observers', () => {
     const original = globalThis.IntersectionObserver;
     const callbacks: IntersectionObserverCallback[] = [];
+    const margins: (string | undefined)[] = [];
     let disconnected = 0;
     globalThis.IntersectionObserver = class {
-      constructor(callback: IntersectionObserverCallback) { callbacks.push(callback); }
+      constructor(callback: IntersectionObserverCallback, options?: IntersectionObserverInit) { callbacks.push(callback); margins.push(options?.rootMargin); }
       observe() {}
       disconnect() { disconnected++; }
     } as unknown as typeof IntersectionObserver;
@@ -98,7 +99,8 @@ describe('shared component resources', () => {
       callbacks[0](intersect, {} as IntersectionObserver);
       callbacks[0](intersect, {} as IntersectionObserver);
       expect(loads).toBe(1);
-      const sentinel = lazyContent({} as HTMLElement, { load: () => loads++, repeat: true });
+      const sentinel = lazyContent({} as HTMLElement, { load: () => loads++, repeat: true, rootMargin: '0px' });
+      expect(margins).toEqual(['300px','0px']);
       callbacks[1](intersect, {} as IntersectionObserver);
       callbacks[1](intersect, {} as IntersectionObserver);
       expect(loads).toBe(3);

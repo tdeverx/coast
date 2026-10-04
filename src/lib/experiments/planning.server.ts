@@ -33,9 +33,9 @@ export async function planningData(userId:string,url:URL){
  const requested=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10000)),Number(url.searchParams.get('page')??1));
  const db=getSql();
  if(view==='plans'){
-  const [count]=await db`select count(*)::int as total from media_plans p join works w on w.id=p.work_id where p.user_id=${userId} and p.state='scheduled' and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming}))`;
+  const [count]=await db`select count(*)::int as total from media_plans p join works w on w.id=p.work_id where p.user_id=${userId} and p.state='scheduled' and w.category=${category} and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming}))`;
   const paging=pagination(count.total,requested);
-  const rows=await db<{id:string;workId:string;startsAt:Date;party:boolean;friends:string[]}[]>`select p.id,p.work_id as "workId",p.starts_at as "startsAt",p.party,p.friends from media_plans p join works w on w.id=p.work_id where p.user_id=${userId} and p.state='scheduled' and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming})) order by p.starts_at,p.id limit ${PAGE_SIZE} offset ${(paging.page-1)*PAGE_SIZE}`;
+  const rows=await db<{id:string;workId:string;startsAt:Date;party:boolean;friends:string[]}[]>`select p.id,p.work_id as "workId",p.starts_at as "startsAt",p.party,p.friends from media_plans p join works w on w.id=p.work_id where p.user_id=${userId} and p.state='scheduled' and w.category=${category} and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming})) order by p.starts_at,p.id limit ${PAGE_SIZE} offset ${(paging.page-1)*PAGE_SIZE}`;
   const cards=await workCards(userId,userId,[...new Set(rows.map(row=>row.workId as string))]);
   const cardsById=new Map(cards.map(card=>[(('workId' in card?card.workId:undefined)??card.id),card]));
   return {view,category,...paging,total:count.total,plans:rows,items:rows.flatMap(row=>{const card=cardsById.get(row.workId);return card?[{...card,captionSubtitle:new Date(row.startsAt).toLocaleString(),entryId:row.id}]:[];})};

@@ -19,7 +19,7 @@ import { requireProviderAdmin, getInstance } from '$lib/providers/instances.serv
 export async function updateProviderSchedule(adminId: string, instanceId: string, input: unknown) {
   await requireProviderAdmin(adminId);
   const instance = await getInstance(instanceId);
-  if (!['jellyfin', 'seerr', 'trakt', 'tmdb', 'steam'].includes(instance.provider))
+  if (!['jellyfin', 'seerr', 'trakt', 'tmdb', 'steam','igdb'].includes(instance.provider))
     throw new Error('This integration has no scheduled jobs.');
   const patch = v.parse(v.partial(providerScheduleSchema), input);
   if (!Object.keys(patch).length) throw new Error('Choose a schedule setting to update.');
@@ -68,7 +68,7 @@ export async function runProviderJob(
 ) {
   await requireProviderAdmin(adminId);
   const instance = await getInstance(instanceId);
-  if (!['jellyfin', 'seerr', 'trakt', 'tmdb', 'steam'].includes(instance.provider))
+  if (!['jellyfin', 'seerr', 'trakt', 'tmdb', 'steam','igdb'].includes(instance.provider))
     throw new Error('This integration has no scheduled jobs.');
   if (
     task !== 'all' &&
@@ -77,7 +77,7 @@ export async function runProviderJob(
         ? ['library', 'users', 'catalogue']
         : instance.provider === 'trakt'
           ? ['tracking', 'lists', 'live', 'catalogue']
-          : instance.provider === 'tmdb' ? ['metadata'] : instance.provider === 'steam' ? ['tracking','users'] : []
+          : ['tmdb','igdb'].includes(instance.provider) ? ['metadata'] : instance.provider === 'steam' ? ['tracking','users'] : []
     ).includes(task)
   )
     throw new Error('This task is unavailable for the selected service.');
@@ -136,7 +136,10 @@ export async function scheduleProviderMaintenance(
         )
       );
     const [tmdb] = await tx.select({ id: providerInstances.id }).from(providerInstances).where(and(eq(providerInstances.provider, 'tmdb'), eq(providerInstances.enabled, true), sql`${providerInstances.credentials} is not null`)).limit(1);
+    const taste=options.instanceId?{queued:0,active:0}:await (await import('$lib/social/taste-cache.server')).scheduleTasteRefresh(tx);
     const metadata = await (await import('$lib/catalogue/maintenance.server')).scheduleMetadataRefresh(tx, options);
+    const recommendations=await (await import('$lib/experiments/provider-recommendations.server')).scheduleRecommendationRefresh(tx,options);
+    metadata.queued+=recommendations.queued+taste.queued;metadata.active+=recommendations.active+taste.active;
     const rows = await tx
       .select({ connection: providerConnections, instance: providerInstances })
       .from(providerConnections)

@@ -33,12 +33,14 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
         throw error;
       }
     });
+  register('taste.refresh',async()=> (await import('$lib/social/taste-cache.server')).refreshTasteCaches());
   register('planning.reminder',async action=>(await import('$lib/experiments/planning.server')).remindPlan(action.userId,v.parse(uuid,action.payload.planId)));
   register('webhook.deliver', async action => (await import('$lib/server/public-api/webhooks.server')).deliverWebhook(action));
   if (options.maintenance !== false) startProviderMaintenance();
   register('steam.sync', async action => (await import('$lib/providers/steam/sync.server')).syncSteam(action));
   register('steam.achievements', async action => (await import('$lib/providers/steam/sync.server')).syncSteamAchievements(action));
   register('catalogue.user-scan', async action => (await import('$lib/catalogue/maintenance.server')).scanUserCatalogue(action));
+  for(const provider of ['tmdb','igdb','trakt'])register(`${provider}.recommendations`,async action=>(await import('$lib/experiments/provider-recommendations.server')).refreshProviderRecommendations(action));
   register('tmdb.refresh', async action => {
     v.parse(v.object({ instanceId: uuid, force: v.optional(v.boolean(), false) }), action.payload);
     return (await import('$lib/catalogue/maintenance.server')).refreshSharedMetadata(action);

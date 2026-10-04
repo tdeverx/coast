@@ -21,7 +21,10 @@ export function getSql(): SQL {
       );
     // Interactive shelves use many small correlated reads; JIT compilation can take
     // seconds before returning a few cards and exhaust the test container's memory.
-    pools[poolKey] = new Bun.SQL(url, { max: 10, idleTimeout: 30, connectionTimeout: 10, connection: { jit: 'off' } });
+    // Job workers reserve sessions for advisory locks while provider calls wait.
+    // Bun's idle timer also closes reserved sessions, losing those locks and
+    // raising ERR_POSTGRES_IDLE_TIMEOUT. Keep this bounded pool open until closeDb.
+    pools[poolKey] = new Bun.SQL(url, { max: 10, idleTimeout: 0, connectionTimeout: 10, connection: { jit: 'off' } });
   }
   return pools[poolKey];
 }

@@ -1,32 +1,47 @@
 import * as v from 'valibot';
-import { getSql } from '$lib/server/db';
-import { getConfig } from '$lib/server/config';
-import { AppError } from '$lib/server/security/errors';
-export type DynamicRow = {key:string;title:string;category:'screen'|'game'|'music';genre:string};
-/** Row definitions are cheap; each Shelf fetches its own bounded card page on demand. */
-export async function dynamicFeed(userId:string,url:URL) {
+import {getSql} from '$lib/server/db';
+import {getConfig} from '$lib/server/config';
+import {genreRowTitle,relatedRowTitle,popularRowTitle,recommendationRowTitle,type DynamicMedium,type DynamicKind} from './row-titles';
+import {genreReason,rankRows,type GenreReason} from './row-ranking';
+import {interestWorks} from './interests.server';
+export type DynamicRow={key:string;title:string;category:DynamicMedium}&({surface:'popular'}|{surface:'recommendations'}|{surface:'genre';genre:string;kind:DynamicKind;reason:GenreReason}|{surface:'seed';workId:string});
+/** Definitions use bounded personal evidence. Card pages remain separate lazy requests. */
+export async function dynamicFeed(userId:string,url:URL){
  const config=await getConfig();
- if(!config.experimentalDynamicForYou)throw new AppError(404,'This experiment is disabled.');
  const offset=v.parse(v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(10000)),Number(url.searchParams.get('offset')??0));
- const db=getSql();
- const rows=await db<{category:DynamicRow['category'];genre:string}[]>`with personal as (
-  select media_id as id,updated_at as updated from tracking_state where user_id=${userId} and not dropped and (watched or favourite or watchlist)
-  union all select media_id,updated_at from ratings where user_id=${userId} and value>=3.5
-  union all select game_id,updated_at from game_playthroughs where user_id=${userId} and status<>'dropped'
-  union all select track_id,occurred_at from music_listens where user_id=${userId}
-  union all select track_id,updated_at from music_progress where user_id=${userId} and (position_seconds>0 or play_count>0)
- ), recent as (
-  select id,max(updated) as updated from personal group by id order by updated desc,id limit 300
- ), seeds as (
-  select w.category,coalesce(m.genres,g.genres,a.genres,'{}'::text[]) as genres,p.updated
-  from recent p join works w on w.id=p.id left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id
-  where w.kind in ('movie','show','game','album','track') and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming}))
- ), genres as (
-  select category,genre,max(updated) as updated from seeds cross join lateral unnest(genres) genre
-  where length(trim(genre)) between 1 and 100 group by category,genre
- ), ranked as (
-  select category,genre,row_number() over(partition by category order by updated desc,genre) as rank from genres
- ) select category,genre from ranked order by rank,category limit 4 offset ${offset}`;
- const items:DynamicRow[]=rows.slice(0,3).map(row=>({key:`${row.category}:${row.genre}`,category:row.category,genre:row.genre,title:`${row.genre} to ${row.category==='screen'?'watch':row.category==='game'?'play':'listen to'}`}));
- return {rows:items,nextOffset:rows.length>3?offset+3:null};
+ const limit=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(3)),Number(url.searchParams.get('limit')??3));
+ const seed=url.searchParams.has('seed')?v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(64),v.regex(/^[a-zA-Z0-9-]+$/)),url.searchParams.get('seed')):`${userId}:${new Date().toISOString().slice(0,10)}`;
+ const enabled=(category:DynamicMedium)=>category==='screen'||category==='music'&&config.experimentalMusic||category==='game'&&config.experimentalGaming;
+ const interests=(await interestWorks(userId)).filter(work=>enabled(work.category));
+ const genres=new Map<string,{category:DynamicMedium;genre:string;score:number;consumed:number;positive:number}>();
+ const definitions:(DynamicRow&{weight:number})[]=[];
+ for(const work of interests){
+  const recency=Date.now()-new Date(work.updated).getTime()<30*86400000?1.3:1;
+  for(const genre of new Set(work.genres)){
+   if(!genre.trim()||genre.length>100)continue;
+   const key=`${work.category}:${genre}`;
+   const entry=genres.get(key)??{category:work.category,genre,score:0,consumed:0,positive:0};
+   entry.score+=work.weight*recency;entry.consumed+=Number(work.consumed&&work.weight>0);entry.positive+=Number(work.positive&&work.weight>0);genres.set(key,entry);
+  }
+  if(work.weight>0&&work.genres.length)definitions.push({key:`seed:${work.id}`,surface:'seed',category:work.category,workId:work.id,title:relatedRowTitle(work.title,genreReason(Number(work.consumed),Number(work.positive)),seed),weight:Math.min(5,work.weight)*recency*.25});
+ }
+ function addGenre(category:DynamicMedium,genre:string,weight:number,reason:GenreReason){
+  const kinds:DynamicKind[]=category==='screen'?['movie','show']:category==='game'?['game']:['album'];
+  for(const kind of kinds)definitions.push({key:`${category}:${genre}:${kind}`,surface:'genre',category,genre,kind,reason,title:genreRowTitle(category,genre,kind,reason,seed),weight:weight/kinds.length});
+ }
+ for(const entry of genres.values())if(entry.score>0)addGenre(entry.category,entry.genre,Math.min(12,entry.score),genreReason(entry.consumed,entry.positive));
+ // Exploration must share an established interest; never choose a random disliked genre.
+ for(const category of ['screen','game','music'] as const){
+  if(!enabled(category))continue;
+  if(interests.some(work=>work.category===category&&work.weight>0))definitions.push({key:`recommendations:${category}`,surface:'recommendations',category,title:recommendationRowTitle(category,seed),weight:3});
+  const liked=[...genres.values()].filter(g=>g.category===category&&g.score>=3).sort((a,b)=>b.score-a.score).slice(0,5).map(g=>g.genre);
+  if(liked.length){
+   const db=getSql();
+   const adjacent=await db<{genre:string}[]>`with candidates as(select coalesce(m.genres,g.genres,a.genres,'{}'::text[]) as genres from works w left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id where w.category=${category} and w.kind in ('movie','show','game','album') and coalesce(m.genres,g.genres,a.genres,'{}'::text[]) && ${db.array(liked,'TEXT')}::text[] order by w.id limit 2000) select genre from candidates cross join lateral unnest(genres) genre where length(trim(genre)) between 1 and 100 group by genre order by count(*) desc,genre limit 30`;
+   for(const {genre} of adjacent.filter(g=>!genres.has(`${category}:${g.genre}`)).slice(0,2))addGenre(category,genre,.35,'explore');
+  }
+  if(interests.some(work=>work.category===category&&work.weight>0))definitions.push({key:`popular:${category}`,surface:'popular',category,title:popularRowTitle(category,seed),weight:3});
+ }
+ const ordered=rankRows(definitions,seed);
+ return {rows:ordered.slice(offset,offset+limit).map(({weight,...row})=>row),nextOffset:ordered.length>offset+limit?offset+limit:null};
 }

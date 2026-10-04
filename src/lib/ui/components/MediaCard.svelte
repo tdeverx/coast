@@ -19,7 +19,7 @@
   import { contextGesture, type MenuPoint } from '$lib/ui/context-gesture';
   import { liquidGlass } from '$lib/ui/materials/glass';
   import {useClock} from '$lib/ui/clock.svelte';
-  import {activityDateLabel} from '$lib/social/model';
+  import {activityDateLabel,unknownActivityDate} from '$lib/social/model';
   import ReactionActions from './ReactionActions.svelte';
   const clock=useClock();
   import Icon from './Icon.svelte';
@@ -83,6 +83,8 @@
   const selectedImage = $derived(resolvedArtwork.selected);
   const candidates = $derived(resolvedArtwork.candidates);
   const artwork = $derived(candidates[imageIndex]);
+  let loadedArtwork = $state<string>();
+  const loading = $derived(!!artwork && loadedArtwork !== artwork);
   const contained = $derived(
     selectedType !== 'none' &&
       !!selectedImage &&
@@ -158,14 +160,15 @@
 
 <article
   class="media-card"
+  class:loading
   use:cardGesture
   onpointerenter={() => (active = true)}
   onfocusin={() => (active = true)}
 >
   {#if showActivityContext && item.captionActor}
     <div class="activity-context">
-      <ActivityHeader username={item.captionActor.username} avatar={item.captionActor.avatar} status={item.captionActor.status} nonApproved>
-        {#snippet trailing()}{#if item.captionActivity}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{item.captionActivity.kind==='watch'?'Watch':'Activity'} date unknown</span>{/if}{/if}{/snippet}
+      <ActivityHeader username={item.captionActor.username} avatar={item.captionActor.avatar} status={item.captionActor.status} showAvatar={!loading} nonApproved>
+        {#snippet trailing()}{#if item.captionActivity}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{unknownActivityDate(item.captionActivity.kind)}</span>{/if}{/if}{/snippet}
       </ActivityHeader>
     </div>
   {/if}
@@ -176,6 +179,7 @@
     title={artworkHint}
   >
     <span class="hover-stroke" aria-hidden="true"></span>
+    {#if loading}<span class="skeleton artwork-loading" aria-hidden="true"></span>{/if}
     <a class="art-link" {href} aria-label={item.title} onclick={select} draggable="false">
       {#if artwork}<img
           use:lazyImage={artwork}
@@ -183,6 +187,7 @@
           loading="lazy"
           decoding="async"
           draggable="false"
+          onload={event => { loadedArtwork = event.currentTarget.getAttribute('src') ?? undefined; }}
           onerror={() => (imageIndex += 1)}
         />
       {:else if artworkStyle !== 'none'}<div class="fallback">
@@ -246,7 +251,7 @@
             />{/if}{/if}
       </div>
     {/if}{/if}
-    {#if !item.captionActor && (social?.total || completion !== null && completion > 0 && completion < 0.9)}<div class="card-status">
+    {#if !loading && !item.captionActor && (social?.total || completion !== null && completion > 0 && completion < 0.9)}<div class="card-status">
       {#if social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} showLabel={false} showReactions={false} /></div>{/if}
       {#if completion !== null && completion > 0 && completion < 0.9}<div class="card-progress"><ProgressBar progress={completion} label={`${item.title} progress`} /></div>{/if}
     </div>{/if}
@@ -288,7 +293,7 @@
   </div>{/if}
   {#if showActivityContext && item.captionActivity && !item.captionActor}
     <div class="activity-reactions small quiet">
-      {#if !item.captionActor}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{item.captionActivity.kind==='watch'?'Watch':'Activity'} date unknown</span>{/if}{/if}
+      {#if !item.captionActor}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{unknownActivityDate(item.captionActivity.kind)}</span>{/if}{/if}
       <ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} />
     </div>
   {/if}
@@ -296,7 +301,7 @@
 
 <style>
   .activity-attribution{margin-top:12px;}
-  .activity-context{margin-bottom:8px;}
+  .activity-context{margin-bottom:8px;min-height:24px;}
   .activity-body{display:flex;align-items:flex-start;gap:8px;margin-top:4px;}
   .activity-details{min-width:0;flex:1;}
   .activity-media{display:block;font-size:var(--text-md);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -321,6 +326,9 @@
     transition: transform var(--fast) var(--ease);
   }
   .art.circle{aspect-ratio:1;border-radius:50%;}
+  .artwork-loading{position:absolute;inset:0;border-radius:inherit;pointer-events:none;}
+  .loading .fallback,.loading .play,.loading .card-menu{visibility:hidden;}
+  .loading .art-link img,.loading .art-overlay{visibility:hidden!important;}
   .art.circle .art-link{border-radius:50%;}
   .media-card:has(.art.circle) .caption-row{text-align:center;}
   .media-card:has(.art.circle) .meta{justify-content:center;}
@@ -336,6 +344,9 @@
   .media-card:is(:hover, :focus-within) .art {
     transform: scale(1.02);
   }
+  .media-card.loading .art {background:transparent;transform:none;}
+  .media-card.loading .art::before,.media-card.loading .art::after {display:none;}
+  .media-card.loading .hover-stroke {display:none;}
   .art.contained .art-link img {
     object-fit: contain;
     padding: 24px;

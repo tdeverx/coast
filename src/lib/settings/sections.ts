@@ -61,9 +61,7 @@ export const experimentalPolicies = [
   ['experimentalMusic', 'Music', 'Browse albums and tracks, track listens and play music from connected libraries.'],
   ['experimentalGaming', 'Gaming', 'Track playthroughs and sessions, discover games and connect Steam.'],
   ['experimentalParties', 'Parties', 'Invite friends and keep video or music playback in sync. Music parties also require Music.'],
-  ['experimentalDynamicForYou', 'Dynamic For You', 'Load personalised horizontal rows as you scroll, across enabled media types.'],
   ['experimentalPlanning', 'Planning & calendar', 'Plan what to watch, play or listen to, with reminders and upcoming releases.'],
-  ['experimentalRecommendations', 'Personalised recommendations', 'Suggest titles from your activity, ratings and shared genres.'],
   ['experimentalMediaModal', 'Media detail overlay', 'Open the existing hero and media details over your current page.'],
 ] as const;
 
@@ -72,7 +70,7 @@ export const policyFields = [
   'registrationMode',
   'registrationProvider',
   'experimentalMusic','experimentalGaming','experimentalParties',
-  'experimentalDynamicForYou','experimentalPlanning','experimentalRecommendations','experimentalMediaModal','allowPlaybackSharing',
+  'experimentalPlanning','experimentalMediaModal','allowPlaybackSharing',
   'sessionLifetimeDays',
   'playbackDelivery',
   'maxBitrateMbps',

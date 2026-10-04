@@ -4,7 +4,7 @@ import { sql, eq, inArray, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { logDiagnostic } from '$lib/server/diagnostics';
-import { games, musicWorks, providerItems, providerConnections, providerInstances, ratings, lists, listItems, upNext } from '$lib/server/db/schema';
+import { musicWorks, providerItems, providerConnections, providerInstances, ratings, lists, listItems, upNext } from '$lib/server/db/schema';
 import { mediaViews } from '$lib/server/queries/media';
 import { profileUser } from '$lib/server/queries/profile-user';
 import { PAGE_SIZE, pageNumberSchema, pagination } from '$lib/server/queries/pagination';
@@ -216,7 +216,7 @@ export async function workCards(ownerId: string, viewerId: string | null, ids: s
   const db=getDb();
   const [screen,gameRows,musicRows,mappings] = await Promise.all([
     mediaViews(ownerId,{ids,limit:PAGE_SIZE},viewerId),
-    db.select().from(games).where(inArray(games.id,ids)),
+    (await import('$lib/core/games/service')).gamePresentationMetadata(ids).then(rows=>[...rows.values()]),
     db.select().from(musicWorks).where(inArray(musicWorks.id,ids)),
     db.select({item:providerItems,connection:providerConnections.id}).from(providerItems)
       .innerJoin(providerConnections,eq(providerConnections.instanceId,providerItems.instanceId))

@@ -26,10 +26,10 @@ export async function jobTimings(): Promise<JobTiming[]> {
       exists(select 1 from outbox_actions a where a.connection_id=c.id and a.kind=k.kind and a.state in ('pending','running','failed') and (a.account_generation is null or a.account_generation=c.account_generation)) as blocked
       from provider_connections c join users u on u.id=c.user_id join provider_instances i on i.id=c.instance_id cross join unnest(${sql.array(maintenanceKinds, 'TEXT')}) as k(kind) where c.status='connected' and not u.disabled
       and (k.kind like i.provider||'.%' or k.kind='catalogue.user-scan' and i.provider in ('jellyfin','trakt'))
-      union all select null::uuid,'tmdb.refresh',i.id::text,
-      (select updated_at from outbox_actions a where a.kind='tmdb.refresh' and a.payload->>'instanceId'=i.id::text and a.state='succeeded' order by updated_at desc limit 1),
-      exists(select 1 from outbox_actions a where a.kind='tmdb.refresh' and a.payload->>'instanceId'=i.id::text and a.state in ('pending','running','failed'))
-      from provider_instances i where i.provider='tmdb'`,
+      union all select null::uuid,k.kind,i.id::text,
+      (select updated_at from outbox_actions a where a.kind=k.kind and a.payload->>'instanceId'=i.id::text and a.state='succeeded' order by updated_at desc limit 1),
+      exists(select 1 from outbox_actions a where a.kind=k.kind and a.payload->>'instanceId'=i.id::text and a.state in ('pending','running','failed'))
+      from provider_instances i cross join lateral unnest(case when i.provider='tmdb' then ARRAY['tmdb.refresh','tmdb.recommendations'] else ARRAY['igdb.recommendations'] end) as k(kind) where i.provider in ('tmdb','igdb')`,
     sql<{ instance_id: string; due: Date | null }[]>`with pool as materialized (
       select e.media_id,coalesce(s.region,'GB') as region,
         max(s.updated_at) filter(where s.raw->>'detailLoaded'='true') as refreshed,
@@ -43,7 +43,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
       from provider_instances i cross join pool p
       where i.provider='tmdb' and i.enabled and i.credentials is not null
         and coalesce((i.settings->'schedule'->>'enabled')::boolean,true)
-    ) select instance_id,min(greatest(coalesce(refreshed+make_interval(mins=>interval),now()),coalesce(retry_at::timestamptz,now()))) as due from candidates group by instance_id`,
+    ) select instance_id,min(greatest(case when exists(select 1 from works w where w.id=candidates.media_id and w.kind in ('movie','show') and not exists(select 1 from work_features f where f.work_id=w.id and f.provider='tmdb')) then now() else coalesce(refreshed+make_interval(mins=>interval),now()) end,coalesce(retry_at::timestamptz,now()))) as due from candidates group by instance_id`,
   ]);
   const result: JobTiming[] = [];
   const tmdb = instances.some(i => i.provider === 'tmdb' && i.enabled && i.configured);
@@ -91,6 +91,8 @@ export async function jobTimings(): Promise<JobTiming[]> {
       const fresh = eligible.filter(c => { const completed = kind === 'jellyfin.sync' ? c.user_completed : rows.find(e => e.connection_id === c.id)?.completed; return completed && Date.now() - new Date(completed).getTime() <= Number(task.interval ? schedule[task.interval] : 0) * 120000; }).length;
       const metadataAt = metadataDue.find(entry => entry.instance_id === instance.id)?.due;
       const metadata = kind === 'tmdb.refresh';
+      const sharedRecommendations=['tmdb.recommendations','igdb.recommendations'].includes(kind);
+      if(sharedRecommendations){const latest=last.length?Math.max(...last):0;result.push({instanceId:instance.id,kind,nextAt:enabled&&instance.configured&&!rows.some(e=>e.blocked)&&(instance.provider!=='igdb'||config.experimentalGaming)?new Date(Math.max(Date.now(),latest+schedule.recommendationsIntervalMinutes*60000)).toISOString():null,lastAt:latest?new Date(latest).toISOString():null,eligible:Number(instance.configured),fresh:0,reviews:0,reason:!enabled?'Automatic runs paused':undefined});continue;}
       result.push({ instanceId: instance.id, kind,
         nextAt: enabled && (metadata ? instance.configured && metadataAt && !rows.some(e => e.blocked) : due.length) ? new Date(Math.max(Date.now(), metadata ? new Date(metadataAt!).getTime() : Math.min(...due))).toISOString() : null,
         lastAt: last.length ? new Date(Math.max(...last)).toISOString() : null,

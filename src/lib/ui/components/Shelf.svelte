@@ -6,6 +6,7 @@
   import { createShelfSelection } from '$lib/ui/shelves/local.svelte';
   import { createShelfLayout } from '$lib/ui/shelves/layout.svelte';
   import { lazyContent } from '$lib/ui/lazy-content';
+  import { liquidGlass } from '$lib/ui/materials/glass';
   import RowFeedback from './RowFeedback.svelte';
   import Pagination from './Pagination.svelte';
   import { createSequencePlayback } from '$lib/ui/controls/sequence.svelte';
@@ -34,10 +35,10 @@
   const sequence = createSequencePlayback({source: () => adapter?.sequence, experimentalMusic: () => !!page.data.experimentalMusic, preview, api, change});
 
   let {
-    title = '', items = [], source, panels, journal, href, children, heading, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle = 'auto', artworkPriority,
+    title = '', items = [], source, panels, journal, href, children, heading, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
     mediaKind = 'screen', filters, controls, actions, empty, details,
     busy = false, hideEmpty = true, itemCount, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
-    pageNumber, pages, onpage, pageUrl, filterBy = 'none', availability = true, availableOnly = $bindable(false),
+    pageNumber, pages, onpage, pageUrl, onsettled, filterBy = 'none', availability = true, availableOnly = $bindable(false),
   }: {
     filterBy?: 'none' | 'type' | 'watched';
     availability?: boolean;
@@ -75,11 +76,13 @@
     pages?: number;
     onpage?: (page: number) => void;
     pageUrl?: (page: number) => string;
+    onsettled?: () => void;
   } = $props();
   let selected = $state(false);
   let socialActive=$state(false);
   let social=$state<SocialEnrichment>({});
   const adapter = untrack(() => source ? createShelfSource(() => source!) : undefined);
+  $effect(() => { if(adapter && (adapter.ready || adapter.error))untrack(()=>onsettled?.()); });
   const filterMode = $derived(adapter?.filterBy ?? filterBy);
   const inputItems = $derived(adapter ? adapter.items as T[] : items);
   const displayTitle = $derived(adapter?.title ?? title);
@@ -92,6 +95,7 @@
   const displayItems = $derived(selection.items);
   const count = $derived(panels?.length ?? itemCount ?? (children ? null : journal ? journal.runs.length : displayItems.length));
   const loading = $derived(count === 0 && (displayBusy || !!adapter && !adapter.ready && !adapter.error));
+  const emptyRow = $derived(displayLayout === 'row' && count === 0 && !loading && !adapter?.error);
   // Keep failed rows and user-selected empty filters reachable; never hide a grid page.
   const hidden = $derived(hideEmpty && displayLayout === 'row' && !loading && !selected && !selection.filtered && count === 0 && !adapter?.error && !adapter?.notice && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false);
   function selectControl(control: ShelfControl, value: string) { selected = true; control.change(value); }
@@ -117,8 +121,8 @@
   const displayFilters = $derived(adapter && filterMode === 'none' ? (adapter.filters.length ? adapterFilters : undefined) : filterMode === 'none' ? filters : filters || filterMode === 'watched' || availability ? localFilters : undefined);
   const displayControls = $derived(adapter && filterMode === 'none' ? (adapter.controls.length || adapter.filters.some(control => !['segments', 'availability'].includes(control.type)) ? adapterControls : undefined) : filterMode === 'none' ? controls : localControls);
   const displayActions = $derived(adapter ? adapterActions : actions);
-  const displaySize = $derived(adapter?.shape ?? shape ?? size);
-  const displayArtworkStyle = $derived(adapter?.artworkStyle ?? artworkStyle);
+  const displaySize = $derived(shape ?? adapter?.shape ?? size);
+  const displayArtworkStyle = $derived(artworkStyle ?? adapter?.artworkStyle ?? 'auto');
   const displayArtworkPriority = $derived(adapter?.artworkPriority ?? artworkPriority);
   const displayMediaKind = $derived(adapter?.mediaKind ?? mediaKind);
   const displayPreserveHeight = $derived(preserveHeight ?? (!children && !panels && (displayBusy || !!displayItems.length || !!adapter && !adapter.ready)));
@@ -212,7 +216,7 @@
               <Button size="icon"
                 class="icon-button"
                 label={displayLayout === 'grid' ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}
-                disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber <= 1 : !rail.previous}
+                disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber <= 1 : emptyRow || !rail.previous}
                 onclick={() => (displayLayout === 'grid' ? displayOnpage?.(displayPageNumber - 1) : rail.scroll(-1))}
                  icon="left" iconSize={20} />{/if}
             {#if displayControls}<div class="row-controls">{@render displayControls()}</div>{/if}
@@ -220,7 +224,7 @@
               <Button size="icon"
                 class="icon-button"
                 label={displayLayout === 'grid' ? `Next ${displayTitle} page` : `Scroll ${displayTitle} right`}
-                disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber >= displayPages : !rail.next && !displayHasMore}
+                disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber >= displayPages : emptyRow || !rail.next && !displayHasMore}
                 onclick={() => (displayLayout === 'grid' ? displayOnpage?.(displayPageNumber + 1) : rail.scroll(1))}
                  icon="right" iconSize={20} />{/if}
           </div>{/if}{/snippet}
@@ -237,8 +241,10 @@
       bind:overrideArtwork={rail.overrideArtwork}
       bind:overrideOverlay={rail.overrideOverlay}
     />{/if}
+  <div class="rail-shell">
   <div
     class="rail"
+    class:empty-row={emptyRow}
     class:two-rows={displayRows === 2 && displayLayout === 'row'}
     class:grid-layout={displayLayout === 'grid'}
     class:preserve={displayPreserveHeight}
@@ -250,12 +256,14 @@
     class:banner={rail.size === 'banner'}
     class:panel-row={rail.size === 'panel'}
     bind:this={rail.scroller}
-    onscroll={rail.reachedEnd}
+    onscroll={() => { if(!emptyRow)rail.reachedEnd(); }}
   >
-    {#if loading}
-    <span class="sr-only" role="status">Loading {displayTitle || 'titles'}…</span>
-    {#each Array.from({length:displayLayout === 'grid' ? 60 : 12},(_,i)=>i) as placeholder (placeholder)}<div class="shelf-skeleton" aria-hidden="true">{#if source?.type === 'social' && source.surface !== 'popular'}<div class="activity-placeholder"><div class="skeleton avatar-placeholder"></div><div class="skeleton name-placeholder"></div><div class="skeleton time-placeholder"></div></div>{/if}<div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div><div class="skeleton text-placeholder"></div><div class="placeholder-caption"><div class="placeholder-copy"><div class="skeleton text-placeholder short"></div></div>{#if source?.type === 'social' && source.surface !== 'popular'}<div class="skeleton reaction-placeholder"></div>{/if}</div></div>{/each}
+    {#if loading || emptyRow}
+    {#if loading}<span class="sr-only" role="status">Loading {displayTitle || 'titles'}…</span>{/if}
+    {#each Array.from({length:displayLayout === 'grid' ? 60 : 12},(_,i)=>i) as placeholder (placeholder)}<div class="shelf-skeleton" aria-hidden="true">{#if source?.type === 'social' && source.surface !== 'popular'}<div class="activity-placeholder"><div class="skeleton avatar-placeholder"></div><div class="skeleton name-placeholder"></div><div class="skeleton time-placeholder"></div></div>{/if}<div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div><div class="skeleton text-placeholder" style:width={`${65 + placeholder % 3 * 10}%`}></div><div class="placeholder-caption"><div class="placeholder-copy"><div class="skeleton text-placeholder short" style:width={`${35 + placeholder % 4 * 8}%`}></div></div>{#if source?.type === 'social' && source.surface !== 'popular'}<div class="skeleton reaction-placeholder"></div>{/if}</div></div>{/each}
   {:else if children}{@render children(rail.style)}{:else}{@render cards(rail.style)}{/if}
+  </div>
+  {#if emptyRow}<div class="empty-label" role="status"><span class="glass empty-badge" use:liquidGlass={{variant:'glassDark',renderer:'css'}}>{selected || selection.filtered ? 'No matches' : 'Nothing here yet'}</span></div>{/if}
   </div>
 </section>
 
@@ -282,6 +290,11 @@
   .placeholder-copy{flex:1;}
   .reaction-placeholder{width:28px;height:28px;border-radius:50%;}
   .content-row[hidden] { display:none; }
+  .rail-shell {position:relative;}
+  .rail.empty-row {overflow:hidden;scroll-snap-type:none;pointer-events:none;}
+  .empty-row :global(.skeleton) {animation:none;opacity:.5;}
+  .empty-label {position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;}
+  .empty-badge {padding:8px 16px;border-radius:999px;color:var(--ink);font-size:var(--text-md);font-weight:var(--weight-semibold);}
   .artwork-placeholder { aspect-ratio:calc(1 / var(--row-art-ratio));border-radius:8px; }
   .artwork-placeholder.round { border-radius:50%; }
   .panel-row .artwork-placeholder { aspect-ratio:auto;height:260px; }
@@ -295,6 +308,7 @@
     min-width: 0;
   }
   .rail {
+    --landscape-card-width: clamp(255px, 27vw, 380px);
     --row-card-width: clamp(155px, 14vw, 210px);
     display: grid;
     grid-auto-flow: column;
@@ -318,6 +332,7 @@
     --row-gap: 20px;
   }
   .square {
+    --row-card-width: calc(var(--landscape-card-width) * 9 / 16);
     --row-art-ratio: 1;
   }
   .fanart {
@@ -336,7 +351,7 @@
     min-height: 380px;
   }
   .fanart {
-    --row-card-width: clamp(255px, 27vw, 380px);
+    --row-card-width: var(--landscape-card-width);
   }
   .banner {
     --row-card-width: clamp(310px, 34vw, 480px);
@@ -386,7 +401,7 @@
       gap: 14px;
       --row-gap: 14px;
     }
-    .rail:not(.fanart):not(.banner):not(.panel-row) {
+    .rail:not(.square):not(.fanart):not(.banner):not(.panel-row) {
       --row-card-width: 145px;
     }
   }

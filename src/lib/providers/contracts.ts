@@ -24,6 +24,7 @@ export interface Metadata {
   releaseDate?: string;
   runtimeMinutes?: number;
   genres?: string[];
+  tasteFeatures?: import('$lib/social/taste-profile').TasteFeatures;
   language?: string;
   region?: string;
   certificate?: string;

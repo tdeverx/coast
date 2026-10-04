@@ -27,6 +27,7 @@
     task,
     jobs,
     timing,
+    local=false,
   }: {
     provider: {
       id: string;
@@ -41,6 +42,7 @@
     task: ServiceTask;
     jobs: QueueAction[];
     timing?: JobTiming;
+    local?:boolean;
   } = $props();
   const clock = useClock();
   const countdown = $derived(timing?.nextAt ? Math.max(0, Math.ceil((new Date(timing.nextAt).getTime() - clock.now) / 1000)) : null);
@@ -95,8 +97,8 @@
     error = '';
     try {
       await change(
-        `providers/${provider.id}/schedule`,
-        Object.fromEntries(fields.map((field) => [field, draft[field as keyof ProviderSchedule]]))
+        local?'admin/taste-schedule':`providers/${provider.id}/schedule`,
+        {...Object.fromEntries(fields.map((field) => [field, draft[field as keyof ProviderSchedule]])),...(local?{enabled:draft.enabled}:{})}
       );
       saved = JSON.stringify(draft);
       open = false;
@@ -113,7 +115,7 @@
     error = '';
     try {
       const result = await change<{ queued: number; active: number; busy?: boolean }>(
-        `providers/${provider.id}/run-job`,
+        local?'admin/taste-refresh':`providers/${provider.id}/run-job`,
         { task: task.scope, kind: task.kinds[0] }
       );
       notifyAction(
@@ -144,10 +146,10 @@
       {#if task.scope}<Button item
           icon="refresh"
           keepOpen={false}
-          disabled={busy || !provider.enabled || (!provider.connectedAccounts && provider.provider !== 'tmdb')}
+          disabled={busy || !provider.enabled || (!provider.connectedAccounts && !local && !['tmdb','igdb'].includes(provider.provider))}
           disabledReason={!provider.enabled
             ? 'Enable this service in Integrations.'
-            : (!provider.connectedAccounts && provider.provider !== 'tmdb')
+            : (!provider.connectedAccounts && !local && !['tmdb','igdb'].includes(provider.provider))
               ? 'Connect an account before running this task.'
               : undefined}
           onclick={() => void run()}>Run now</Button>
@@ -162,8 +164,8 @@
         disabled={!jobs.length}
         onclick={() => (history = true)}>View run history</Button>
       <div class="menu-divider" role="separator"></div>
-      <Button item icon="settings" href="/settings/integrations" keepOpen={false}
-        >Manage integration</Button>
+      {#if !local}<Button item icon="settings" href="/settings/integrations" keepOpen={false}
+        >Manage integration</Button>{/if}
     </Button>
   </div>
   <p class="small task-description">{task.description}</p>
@@ -177,7 +179,7 @@
           ? 'On demand'
           : 'On changes'}</span
     >
-    {#if task.scope}<span>{task.scope === 'metadata' ? 'Each title every' : 'Every'} {interval} {interval === 1 ? 'minute' : 'minutes'}{task.scope === 'live' ? ` idle · Every ${provider.schedule.liveActiveMinutes} ${provider.schedule.liveActiveMinutes === 1 ? 'minute' : 'minutes'} active` : ''}</span>{/if}
+    {#if task.scope}<span>{!local && task.scope === 'metadata' && task.interval!=='recommendationsIntervalMinutes' ? 'Each title every' : 'Every'} {interval} {interval === 1 ? 'minute' : 'minutes'}{task.scope === 'live' ? ` idle · Every ${provider.schedule.liveActiveMinutes} ${provider.schedule.liveActiveMinutes === 1 ? 'minute' : 'minutes'} active` : ''}</span>{/if}
     {#if active.some((job) => job.state === 'running')}<span class="text-accent">Running</span>{/if}
     {#if active.some((job) => job.state === 'failed')}<span class="text-danger"
         >Needs attention</span
@@ -199,8 +201,8 @@
     {#if timing?.nextAt && countdown !== null && countdown > 0}<p class="small">Next eligible {task.scope === 'metadata' ? 'batch' : 'account'} · {new Date(timing.nextAt).toLocaleString()}</p>{/if}
   {:else}<p class="small">{task.id === 'metadata' ? 'Fetched when requested.' : 'Runs when a change needs delivery.'}</p>{/if}
   {#if latest}<p class="small">{jobOutcome(latest)}</p>{/if}
-  {#if timing?.lastAt}<p class="small">Freshness · Last successful {provider.provider === 'tmdb' ? 'batch' : 'account'} {new Date(timing.lastAt).toLocaleString()}</p>{/if}
-  {#if timing && provider.provider !== 'tmdb' && timing.eligible}<p class="small">{timing.fresh} of {timing.eligible} eligible accounts current · Within two schedule intervals</p>{/if}
+  {#if timing?.lastAt}<p class="small">Freshness · Last successful {local || provider.provider === 'tmdb' ? 'batch' : 'account'} {new Date(timing.lastAt).toLocaleString()}</p>{/if}
+  {#if timing && !local && !['tmdb','igdb'].includes(provider.provider) && timing.eligible}<p class="small">{timing.fresh} of {timing.eligible} eligible accounts current · Within two schedule intervals</p>{/if}
   {#if timing?.reviews}<p class="small">{timing.reviews} titles need tracking review · Each owner can review them in <a href="/settings/pending" class="text-accent">Sync conflicts</a>.</p>{/if}
   {#each failed as job (job.id)}
     <div class="stack small">
@@ -212,7 +214,7 @@
     </div>
   {/each}
   <div class="row task-controls">
-    {#if task.scope}<Button  icon="refresh" disabled={busy || !provider.enabled || running != null || queued.length > 0 || (!provider.connectedAccounts && provider.provider !== 'tmdb')} onclick={() => void run()}>Run now</Button>
+    {#if task.scope}<Button  icon="refresh" disabled={busy || !provider.enabled || running != null || queued.length > 0 || (!provider.connectedAccounts && !local && !['tmdb','igdb'].includes(provider.provider))} onclick={() => void run()}>Run now</Button>
       <Button emphasis="subtle" icon="clock" disabled={busy || !provider.enabled} onclick={editSchedule}>Edit schedule</Button>{/if}
     {#if jobs.length}<Button emphasis="subtle" onclick={() => history = true}>Run history</Button>{/if}
   </div>
@@ -226,12 +228,12 @@
       void save();
     }}
   >
-    <p class="small">
+    {#if local}<label class="check"><input type="checkbox" bind:checked={draft.enabled} disabled={busy}/>Automatic runs</label>{:else}<p class="small">
       {automatic ? 'Automatic runs are enabled.' : 'Automatic runs are paused.'} Manage automatic-run
       toggles in <a class="text-accent" href="/settings/integrations">Integrations</a>.
-    </p>
+    </p>{/if}
     {#if task.interval}<label class="field"
-        >{task.scope === 'library'
+        >{local?'Refresh taste profiles every (minutes)':task.interval==='recommendationsIntervalMinutes' ? 'Refresh recommendations every (minutes)' : task.scope === 'library'
           ? 'Library changes every (minutes)'
           : task.scope === 'users'
             ? 'User activity every (minutes)'
