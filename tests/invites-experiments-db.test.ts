@@ -237,6 +237,10 @@ run('Trakt refreshes retain separate recommendation sets for every connected acc
   expect(refreshed).toHaveLength(4);
   expect(refreshed.filter(set=>set.connection_id===accounts[0]).every(set=>set.account_generation===generations[0])).toBe(true);
   expect(refreshed.filter(set=>set.connection_id===accounts[1]).every(set=>set.account_generation===generations[1])).toBe(true);
+  await db`insert into recommendation_sets(instance_id,key,connection_id,account_generation,items) values(${service},'account:movie',${accounts[0]},${generations[0]},'{}'),(${service},'account:show',${accounts[1]},${generations[1]},'{}'),(${service},'shared',null,null,'{}')`;
+  await db.unsafe(await Bun.file(new URL('../drizzle/0043_trakt_recommendation_accounts.sql',import.meta.url)).text());
+  const migrated=await db<{key:string}[]>`select key from recommendation_sets where instance_id=${service}`;
+  expect(migrated.map(set=>set.key).sort()).toEqual([...sets.map(set=>set.key),'shared'].sort());
  }finally{recommendations.mockRestore();}
 });
 run('negative interests do not produce fan rows and saved-only evidence never claims enjoyment',async()=>{
