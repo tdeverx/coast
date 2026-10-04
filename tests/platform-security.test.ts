@@ -13,6 +13,23 @@ import { safeFields } from '../src/lib/diagnostics';
 import { retryDelayMs } from '../src/lib/server/queue';
 
 describe('provider network boundary', () => {
+  test('header and body timeouts stay distinct from caller cancellation',async()=>{
+    const original=globalThis.fetch;
+    const config={baseUrl:'https://1.1.1.1',approved:true,timeoutMs:20};
+    try {
+      globalThis.fetch=Object.assign(async(_url:unknown,init?:RequestInit)=>new Promise<Response>((_resolve,reject)=>{
+        if(init?.signal?.aborted)reject(init.signal.reason);
+        else init?.signal?.addEventListener('abort',()=>reject(init.signal?.reason),{once:true});
+      }),{preconnect:original.preconnect});
+      await expect(secureProviderFetch(config,'/slow-headers')).rejects.toMatchObject({name:'TimeoutError'});
+      const caller=new AbortController();caller.abort(new DOMException('Cancelled by caller','AbortError'));
+      await expect(secureProviderFetch(config,'/cancelled',{signal:caller.signal})).rejects.toMatchObject({name:'AbortError'});
+      globalThis.fetch=Object.assign(async(_url:unknown,init?:RequestInit)=>new Response(new ReadableStream({
+        start(controller){init?.signal?.addEventListener('abort',()=>controller.error(init.signal?.reason),{once:true});}
+      })),{preconnect:original.preconnect});
+      await expect(secureProviderFetch(config,'/slow-body')).rejects.toMatchObject({name:'TimeoutError'});
+    } finally {globalThis.fetch=original;}
+  });
   test('rejects loopback, metadata, special and rebinding targets even with LAN approval', () => {
     for (const ip of [
       '127.0.0.1',

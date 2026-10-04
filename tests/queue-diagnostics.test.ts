@@ -72,3 +72,15 @@ test('private Steam libraries need permissions rather than repeated retries',asy
   expect(jobFailureDetail(failure,true)).toEqual({code:'provider.permission',remedy:'permissions',retryable:false});
   expect(jobFailureMessage(failure,true)).toContain('Steam privacy');
 });
+
+test('service timeouts have an explicit retry remedy without exposing provider data',async()=>{
+  const {jobFailureDetail}=await import('../src/lib/server/queue');
+  const {classifyFailure}=await import('../src/lib/server/diagnostics');
+  const {safeFields}=await import('../src/lib/diagnostics');
+  const error=new DOMException('private service details','TimeoutError');
+  expect(classifyFailure(error)).toBe('timeout');
+  expect(classifyFailure(new DOMException('cancelled','AbortError'))).toBe('aborted');
+  expect(jobFailureDetail(error,false)).toEqual({code:'provider.timeout',remedy:'retry',retryable:true});
+  expect(jobFailureMessage(error,false)).toContain('did not respond in time');
+  expect(safeFields({provider:'steam',errorCode:'provider.timeout',error})).toEqual({provider:'steam',errorCode:'provider.timeout'});
+});

@@ -2,6 +2,7 @@ import { describe, expect, test } from 'bun:test';
 import { SteamAdapter } from '../src/lib/providers/steam/adapter.server';
 import { steamAssertion, steamLoginUrl } from '../src/lib/providers/steam/connection.server';
 import { mapIgdbGame } from '../src/lib/providers/igdb/adapter.server';
+import { createProviderTransport, ProviderHttpError } from '../src/lib/server/security/provider-fetch';
 const id='76561198000000000';
 describe('Steam provider contracts',()=>{
   test('ownership uses an API key header and distinguishes private, incomplete, and empty libraries',async()=>{
@@ -21,6 +22,22 @@ describe('Steam provider contracts',()=>{
     expect((await adapter.achievements(id,10))[0].unlocktime).toBe(0);
     raw={playerstats:{steamID:'76561198000000001',success:true}};await expect(adapter.achievements(id,10)).rejects.toThrow('private');
     raw={playerstats:{success:false}};await expect(adapter.achievements(id,10)).rejects.toThrow('private');
+  });
+  test('real HTTP privacy denials are isolated without hiding general access failures',async()=>{
+    const original=globalThis.fetch;
+    let body:unknown={playerstats:{success:false,error:'Profile is not public'}};
+    try {
+      globalThis.fetch=Object.assign(async()=>Response.json(body,{status:403}),{preconnect:original.preconnect});
+      const transport=createProviderTransport({baseUrl:'https://1.1.1.1',approved:true});
+      const adapter=new SteamAdapter(transport,'secret');
+      await expect(adapter.achievements(id,10)).rejects.toMatchObject({code:'steam_private'});
+      body={error:'Invalid Web API key'};
+      await expect(adapter.achievements(id,10)).rejects.toBeInstanceOf(ProviderHttpError);
+      const error=await transport('/denied').catch(error=>error);
+      expect(JSON.stringify(error)).not.toContain('Invalid Web API key');
+      body={playerstats:{success:false,error:'Profile is not public'},padding:'x'.repeat(16_384)};
+      await expect(adapter.achievements(id,10)).rejects.toBeInstanceOf(ProviderHttpError);
+    } finally { globalThis.fetch=original; }
   });
   test('OpenID pins the issuer, signed account identity, callback, nonce and rejects duplicate parameters',()=>{
     const returnTo='http://localhost:5173/connections/steam/callback?state=fixture';

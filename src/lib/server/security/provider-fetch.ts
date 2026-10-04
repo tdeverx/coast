@@ -122,7 +122,7 @@ function limitedBody(
   return new ReadableStream<Uint8Array>({
     async pull(output) {
       const timer = setTimeout(
-        () => controller.abort(new Error('Service response timed out.')),
+        () => controller.abort(new DOMException('Service response timed out.', 'TimeoutError')),
         timeout
       );
       try {
@@ -151,11 +151,11 @@ function limitedBody(
           'provider.failed',
           {
             provider: diagnostics.provider,
-            failure: controller.signal.aborted ? 'timeout' : classifyFailure(error),
+            failure: classifyFailure(controller.signal.aborted ? controller.signal.reason : error),
           },
           diagnostics.correlationId
         );
-        output.error(error);
+        output.error(controller.signal.aborted ? controller.signal.reason : error);
       } finally {
         clearTimeout(timer);
       }
@@ -178,7 +178,7 @@ async function providerFetch(
   const timeout = config.timeoutMs || 15_000;
   const controller = new AbortController();
   const timer = setTimeout(
-    () => controller.abort(new Error('The service did not respond in time.')),
+    () => controller.abort(new DOMException('The service did not respond in time.', 'TimeoutError')),
     timeout
   );
   const signal = init.signal
@@ -192,7 +192,7 @@ async function providerFetch(
           new Promise<never>((_, reject) =>
             signal.addEventListener(
               'abort',
-              () => reject(new Error('Service DNS lookup timed out.')),
+              () => reject(signal.reason),
               { once: true }
             )
           ),
@@ -242,18 +242,26 @@ async function providerFetch(
         : null,
       { status: response.status, statusText: response.statusText, headers: response.headers }
     );
+  } catch (error) {
+    throw signal.aborted ? signal.reason : error;
   } finally {
     clearTimeout(timer);
   }
 }
 
 export class ProviderHttpError extends Error {
+  // Provider adapters can inspect small structured denials without serializing
+  // upstream bodies into diagnostics or exposing them in error messages.
+  #responseBody: unknown;
+  get responseBody() { return this.#responseBody; }
   constructor(
     public status: number,
-    public retryAfterSeconds: number | null = null
+    public retryAfterSeconds: number | null = null,
+    responseBody?: unknown
   ) {
     super(`The connected service returned HTTP ${status}.`);
     this.name = 'ProviderHttpError';
+    this.#responseBody = responseBody;
   }
 }
 
@@ -261,10 +269,18 @@ export function createProviderTransport(config: ProviderFetchConfig) {
   return async (path: string, init: RequestInit = {}): Promise<unknown> => {
     const response = await secureProviderFetch(config, path, init);
     if (!response.ok) {
-      await response.body?.cancel();
+      let body: unknown;
+      if (response.status === 403 && response.headers.get('content-type')?.includes('application/json')) {
+        // secureProviderFetch has already buffered and bounded this response.
+        const bytes = await response.arrayBuffer();
+        if (bytes.byteLength <= 16_384) {
+          try { body = JSON.parse(new TextDecoder().decode(bytes)); } catch { /* Keep the HTTP failure. */ }
+        }
+      } else await response.body?.cancel();
       throw new ProviderHttpError(
         response.status,
-        retryAfterSeconds(response.headers.get('retry-after'))
+        retryAfterSeconds(response.headers.get('retry-after')),
+        body
       );
     }
     if (response.status === 204 || response.headers.get('content-length') === '0') return null;

@@ -86,6 +86,7 @@ export async function enqueueAction(input: {
 
 /** Safe, actionable descriptions without leaking provider response bodies. */
 export function jobFailureMessage(error: unknown, permanent: boolean) {
+  if (classifyFailure(error) === 'timeout') return 'The service did not respond in time. Coast will retry automatically; completed import pages are retained.';
   if (error instanceof ProviderHttpError) {
     if (error.status === 401) return 'Authentication failed. Reconnect this account in Connections before retrying.';
     if (error.status === 403) return 'Access denied. Check this account’s service permissions before retrying.';
@@ -101,6 +102,7 @@ export function jobFailureMessage(error: unknown, permanent: boolean) {
 
 export type JobFailure = { code: string; remedy: 'connection' | 'permissions' | 'metadata' | 'retry'; retryable: boolean };
 export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure {
+  if (classifyFailure(error) === 'timeout') return { code: 'provider.timeout', remedy: 'retry', retryable: true };
   if(error instanceof AppError && error.code === 'steam_private')return {code:'provider.permission',remedy:'permissions',retryable:false};
   const status = error instanceof ProviderHttpError ? error.status : undefined;
   if (status === 401) return { code: 'provider.authentication', remedy: 'connection', retryable: false };

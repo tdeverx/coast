@@ -140,6 +140,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'provider.unavailable',
       'provider.invalid-data',
       'provider.interrupted',
+      'provider.timeout',
       'action.rejected',
       'jellyfin.incomplete-library-page',
       'jellyfin.cyclic-media-hierarchy',
@@ -150,7 +151,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
     ].includes(String(input.errorCode))
   )
     result.errorCode = String(input.errorCode);
-  if (['jellyfin', 'trakt', 'tmdb', 'seerr', 'igdb'].includes(String(input.provider)))
+  if (['jellyfin', 'trakt', 'tmdb', 'seerr', 'igdb', 'steam'].includes(String(input.provider)))
     result.provider = String(input.provider);
   if (typeof input.stream === 'boolean') result.stream = input.stream;
   // Session and job IDs are random system IDs, not user/provider/media IDs.
