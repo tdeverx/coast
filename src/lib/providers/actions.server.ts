@@ -37,6 +37,12 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   register('planning.reminder',async action=>(await import('$lib/experiments/planning.server')).remindPlan(action.userId,v.parse(uuid,action.payload.planId)));
   register('webhook.deliver', async action => (await import('$lib/server/public-api/webhooks.server')).deliverWebhook(action));
   if (options.maintenance !== false) startProviderMaintenance();
+  register('jellyfin.streams',async action=>{
+    let scanner;
+    try{scanner=await import('$lib/providers/jellyfin/stream-history.server');}
+    catch(error){tagDiagnosticStage(error,'streams-module');throw error;}
+    return scanner.scanServerStreams(action);
+  });
   register('steam.sync', async action => (await import('$lib/providers/steam/sync.server')).syncSteam(action));
   register('steam.achievements', async action => (await import('$lib/providers/steam/sync.server')).syncSteamAchievements(action));
   register('catalogue.user-scan', async action => (await import('$lib/catalogue/maintenance.server')).scanUserCatalogue(action));

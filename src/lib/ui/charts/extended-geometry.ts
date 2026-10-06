@@ -1,4 +1,4 @@
-import type { ChartFlow, ChartRow } from './types';
+import type { ChartFlow, ChartRow } from './model';
 
 export interface Rect { x: number; y: number; width: number; height: number }
 export interface TreemapCell extends Rect { index: number; value: number }

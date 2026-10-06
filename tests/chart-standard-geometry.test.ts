@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { circleIntersectionArea, frequencyDensity, overlapGeometry, sectorPath } from '../src/routes/ui-preview/charts/standardGeometry';
+import { circleIntersectionArea, frequencyDensity, overlapGeometry, sectorPath, spreadLabels } from '../src/lib/ui/charts/standard-geometry';
 
 test('set-circle areas and shared lens encode exact populations, including empty and contained sets', () => {
   // Two unit circles separated by one radius have a known analytic lens area.
@@ -42,12 +42,21 @@ test('a full-circle slice uses two nondegenerate outer arcs, while a ring also r
   const disk = sectorPath(0, 0, 10, 0, 0, 2 * Math.PI);
   expect(disk.match(/ A10,10 /g)).toHaveLength(2);
   expect(disk).toStartWith('M10,0');
-  expect(disk).toContain('L0,0 Z');
+  expect(disk).not.toContain(' L'); // No radial stroke through a complete disk.
   const ring = sectorPath(0, 0, 10, 5, 0, 2 * Math.PI);
   expect(ring.match(/ A10,10 /g)).toHaveLength(2);
   expect(ring.match(/ A5,5 /g)).toHaveLength(2);
-  expect(ring).not.toContain('L0,0');
+  expect(ring).not.toContain(' L'); // Separate closed boundaries avoid a spoke across the ring.
   expect(`${disk} ${ring}`).not.toMatch(/NaN|Infinity/);
   expect(sectorPath(0, 0, 10, 0, 0, 0)).toBe('');
   expect(sectorPath(0, 0, 0, 0, 0, 2 * Math.PI)).toBe('');
+});
+
+test('comparison labels stay inside the chart with equal counts without moving the encoded data',()=>{
+ const positions=[40,40,350,350,300,300];
+ const packed=spreadLabels(positions,56,338,39);
+ expect(positions).toEqual([40,40,350,350,300,300]);
+ expect(packed.every(y=>y>=56&&y<=338)).toBe(true);
+ const ordered=[...packed].sort((a,b)=>a-b);
+ for(let i=1;i<ordered.length;i++)expect(ordered[i]-ordered[i-1]).toBeGreaterThanOrEqual(39);
 });

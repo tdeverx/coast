@@ -128,6 +128,7 @@ export async function playMedia(
     setPlaybackMuted(false);
     if(syncSwitch)await syncedCommand('item',{playbackId:session.id,queueIndex:Math.max(0,player.audioIndex),...(session.mediaType==='audio'?{queue:player.audioQueue.map(item=>item.id)}:{})});
   } catch (error) {
+    if(syncSwitch&&player.session)await controller?.stop();
     browserDiagnostic('playback.failed', { failure: 'unexpected' });
     throw error;
   } finally {

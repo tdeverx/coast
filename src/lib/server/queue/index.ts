@@ -1,7 +1,7 @@
 import { maintenanceKinds } from '$lib/providers/tasks';
 import { requestPriority, type RequestPriority } from '../security/request-priority';
 import { context, logDiagnostic, classifyFailure } from '../diagnostics';
-import { refreshDiagnosticConfig } from '../config';
+import { refreshDiagnosticConfig,getConfig } from '../config';
 import { correlationId } from '../../diagnostics';
 import { desc, eq, sql, inArray } from 'drizzle-orm';
 import { getDb, getSql } from '../db';
@@ -27,7 +27,8 @@ export interface OutboxAction {
 export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number };
 export type ActionHandler = (action: OutboxAction) => Promise<void | JobOutcome>;
 
-const independentQueueKinds=['webhook.deliver','planning.reminder','benchmark.run','taste.refresh'];
+const independentQueueKinds=['webhook.deliver','planning.reminder','benchmark.run','taste.refresh','jellyfin.streams'];
+const automaticQueueKinds=[...maintenanceKinds,'taste.refresh','social.checkin-complete','planning.reminder','webhook.deliver'];
 const handlers = new Map<string, ActionHandler>();
 export class PermanentActionError extends Error {
   constructor(message: string) {
@@ -68,7 +69,10 @@ export async function enqueueAction(input: {
               (${input.kind} in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations') AND a.payload->>'instanceId'=${typeof input.payload.instanceId==='string'?input.payload.instanceId:null})
             ))
           ) LIMIT 1`;
-      if (existing) return existing.id;
+      if (existing) {
+        await sql`UPDATE outbox_actions SET payload=payload||'{"_manual":true}'::jsonb WHERE id=${existing.id} AND state='pending'`;
+        return existing.id;
+      }
     }
     if (input.compactionKey) {
       const replaced =
@@ -79,7 +83,7 @@ export async function enqueueAction(input: {
     }
     const [row] =
       await sql`INSERT INTO outbox_actions (user_id, connection_id, kind, payload, compaction_key, created_at, correlation_id)
-      VALUES (${input.userId}, ${input.connectionId || null}, ${input.kind}, ${input.payload}::jsonb, ${input.compactionKey || null}, clock_timestamp(), ${correlationId(context.getStore())}) RETURNING id`;
+      VALUES (${input.userId}, ${input.connectionId || null}, ${input.kind}, ${{...input.payload,_manual:true}}::jsonb, ${input.compactionKey || null}, clock_timestamp(), ${correlationId(context.getStore())}) RETURNING id`;
     return row.id;
   });
 }
@@ -170,7 +174,7 @@ export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | 
   // Serialize claims, preserve mutable account ordering, and prioritize initial imports.
 
   return getSql().begin(async (sql) => {
-  const priority=sql`CASE WHEN candidate.kind IN ('jellyfin.sync','trakt.import','trakt.lists-import','steam.sync') AND NOT EXISTS (SELECT 1 FROM sync_checkpoints checkpoint WHERE checkpoint.connection_id=candidate.connection_id AND checkpoint.kind='initial:'||candidate.kind||':'||coalesce(candidate.account_generation,connection.account_generation)::text AND checkpoint.completed_at IS NOT NULL) AND NOT EXISTS (SELECT 1 FROM outbox_actions completed WHERE completed.connection_id=candidate.connection_id AND completed.kind=candidate.kind AND completed.account_generation IS NOT DISTINCT FROM candidate.account_generation AND completed.state='succeeded') THEN 0 WHEN candidate.kind NOT IN ${sql(maintenanceKinds)} THEN 1 WHEN candidate.kind LIKE '%.live' THEN 2 ELSE 3 END`;
+  const priority=sql`CASE WHEN candidate.kind IN ('jellyfin.sync','trakt.import','trakt.lists-import','steam.sync') AND NOT EXISTS (SELECT 1 FROM sync_checkpoints checkpoint WHERE checkpoint.connection_id=candidate.connection_id AND checkpoint.kind='initial:'||candidate.kind||':'||coalesce(candidate.account_generation,connection.account_generation)::text AND checkpoint.completed_at IS NOT NULL) AND NOT EXISTS (SELECT 1 FROM outbox_actions completed WHERE completed.connection_id=candidate.connection_id AND completed.kind=candidate.kind AND completed.account_generation IS NOT DISTINCT FROM candidate.account_generation AND completed.state='succeeded') THEN 0 WHEN candidate.kind NOT IN ${sql(maintenanceKinds)} THEN 1 WHEN candidate.kind LIKE '%.live' OR candidate.kind='jellyfin.streams' THEN 2 ELSE 3 END`;
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('queue-claim', 0))`;
     await sql`UPDATE outbox_actions SET state = 'pending', locked_at = NULL, next_attempt_at = NOW(), updated_at = NOW()
       WHERE state = 'running' AND locked_at < NOW() - INTERVAL '5 minutes'`;
@@ -182,10 +186,14 @@ export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | 
         LEFT JOIN provider_instances instance ON instance.id = connection.instance_id OR (candidate.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations') AND candidate.kind like instance.provider||'.%' AND instance.id::text = candidate.payload->>'instanceId')
         WHERE candidate.state = 'pending' AND candidate.next_attempt_at <= NOW()
           AND (${urgentOnly} = false OR ${priority} < 3)
+          AND (coalesce((SELECT value->>'developerMode' FROM system_settings WHERE key='coast'),'false')<>'true'
+            OR candidate.kind NOT IN ${sql(automaticQueueKinds)} OR candidate.payload->>'_manual'='true')
           AND (instance.settings->>'jobsRetryAt' IS NULL OR (instance.settings->>'jobsRetryAt')::timestamptz <= NOW())
           AND (candidate.kind IN ${sql(independentQueueKinds)} OR candidate.kind LIKE '%.live' OR NOT EXISTS (SELECT 1 FROM outbox_actions earlier
             WHERE earlier.user_id = candidate.user_id AND earlier.connection_id IS NOT DISTINCT FROM candidate.connection_id
             AND earlier.kind NOT IN ${sql(independentQueueKinds)} AND earlier.kind NOT LIKE '%.live' AND earlier.state IN ('pending', 'running', 'failed') AND (earlier.created_at, earlier.id) < (candidate.created_at, candidate.id)
+            AND (coalesce((SELECT value->>'developerMode' FROM system_settings WHERE key='coast'),'false')<>'true'
+              OR earlier.state='running' OR earlier.kind NOT IN ${sql(automaticQueueKinds)} OR earlier.payload->>'_manual'='true')
             AND (earlier.kind NOT IN ${sql(maintenanceKinds)} OR earlier.state = 'running' OR
               (${priority} <> 0 AND candidate.kind IN ${sql(maintenanceKinds)} AND earlier.state = 'pending' AND earlier.next_attempt_at <= NOW()))))
         ORDER BY ${priority}, candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
@@ -203,7 +211,7 @@ export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | 
           attempts: row.attempts,
           correlationId: row.correlation_id,
           instanceId: row.instance_id,
-          priority: initial ? 0 : !maintenanceKinds.includes(row.kind) ? 1 : row.kind.endsWith('.live') ? 2 : 3,
+          priority: initial ? 0 : !maintenanceKinds.includes(row.kind) ? 1 : (row.kind.endsWith('.live')||row.kind==='jellyfin.streams') ? 2 : 3,
         }
       : null;
   });
@@ -229,6 +237,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
     await refreshDiagnosticConfig();
     return await requestPriority.run(action.priority??1, () => context.run(action.correlationId, async () => {
       const started = performance.now();
+      const startedAt=new Date();
       void logDiagnostic('debug', 'job.start', { actionId: action.id, attempts: action.attempts });
       const heartbeat = setInterval(() => {
         void reserved`UPDATE outbox_actions SET locked_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts}`.catch(
@@ -283,7 +292,8 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
           error instanceof v.ValiError ||
           (error instanceof ProviderHttpError &&
             [400, 401, 403, 404, 405, 409, 410, 422].includes(error.status));
-        const message = jobFailureMessage(error, permanent);
+        const developerMode=(await getConfig()).developerMode;
+        const message = developerMode?'Automatic retries are paused in developer mode. Review this failure and Retry when ready.':jobFailureMessage(error, permanent);
         const failure = jobFailureDetail(error, permanent);
         const retryAfter =
           error instanceof ProviderHttpError
@@ -292,9 +302,10 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
         const next = new Date(Date.now() + Math.max(retryDelayMs(action.attempts), retryAfter));
         await getSql().begin(async (sql) => {
           const failed =
-            await sql`UPDATE outbox_actions SET state = ${permanent ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, payload = payload || ${{ _jobFailure: failure }}::jsonb, updated_at = NOW()
+            await sql`UPDATE outbox_actions SET state = ${permanent || developerMode ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, payload = payload || ${{ _jobFailure: failure }}::jsonb, updated_at = NOW()
         WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
           if (!failed.length) return; // A recovered lease owns the outcome now.
+          if(action.kind.endsWith('.live')&&action.connectionId)await sql`UPDATE social_live_state SET work_id=NULL,remote_id=NULL,expires_at=NULL WHERE connection_id=${action.connectionId} AND account_generation=${action.accountGeneration}::uuid AND checked_at<=${startedAt}`;
           if (
             action.instanceId &&
             retryAfter > 0 &&
@@ -458,7 +469,7 @@ export async function retryAction(actor: SessionUser | null, id: string) {
       const [busy]=await sql`select a.id from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id<>${id} and a.kind=${action.kind} and a.state in ('pending','running') and coalesce(c.instance_id::text,a.payload->>'instanceId')=${action.instance} limit 1`;
       if(busy)throw new AppError(409,'This task is already queued or running for this service.');
     }
-    const [row]=await sql`UPDATE outbox_actions SET state='pending',next_attempt_at=NOW(),updated_at=NOW() WHERE id=${id} AND (user_id=${user.id} OR ${user.role==='admin'}) AND state IN ('pending','failed') RETURNING id`;
+    const [row]=await sql`UPDATE outbox_actions SET state='pending',payload=payload||'{"_manual":true}'::jsonb,next_attempt_at=NOW(),updated_at=NOW() WHERE id=${id} AND (user_id=${user.id} OR ${user.role==='admin'}) AND state IN ('pending','failed') RETURNING id`;
     if(!row)throw new AppError(409,'This action cannot be retried.');
   });
 }

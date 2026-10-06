@@ -115,10 +115,11 @@ function limitedBody(
   max: number,
   controller: AbortController,
   timeout: number,
-  diagnostics: { provider: ProviderFetchConfig['provider']; correlationId?: string }
+  diagnostics: { provider: ProviderFetchConfig['provider']; correlationId?: string; callerSignal?: AbortSignal | null }
 ) {
   const reader = body.getReader();
   let bytes = 0;
+  let cancelled = false;
   return new ReadableStream<Uint8Array>({
     async pull(output) {
       const timer = setTimeout(
@@ -147,7 +148,7 @@ function limitedBody(
         output.enqueue(result.value);
       } catch (error) {
         void logDiagnostic(
-          'error',
+          cancelled || diagnostics.callerSignal?.aborted ? 'info' : 'error',
           'provider.failed',
           {
             provider: diagnostics.provider,
@@ -161,6 +162,7 @@ function limitedBody(
       }
     },
     async cancel(reason) {
+      cancelled = true;
       controller.abort();
       await reader.cancel(reason);
     },
@@ -238,6 +240,7 @@ async function providerFetch(
         ? limitedBody(response.body, max, controller, options.stream ? 30_000 : timeout, {
             provider: config.provider,
             correlationId: context.getStore(),
+            callerSignal: init.signal,
           })
         : null,
       { status: response.status, statusText: response.statusText, headers: response.headers }
@@ -327,7 +330,7 @@ export async function secureProviderFetch(
     });
     return response;
   } catch (error) {
-    void logDiagnostic('error', 'provider.failed', {
+    void logDiagnostic(init.signal?.aborted ? 'info' : 'error', 'provider.failed', {
       provider: config.provider,
       failure: classifyFailure(error),
       durationMs: performance.now() - started,

@@ -1,6 +1,7 @@
 import { onMount, untrack } from 'svelte';
 import { usePlayback } from '$lib/playback/context.svelte';
 import { noCrop, videoFitStyle, type FrameCrop } from '$lib/playback/crop';
+import { heroPlaybackVisible } from '$lib/playback/visibility';
 import { observeVideoCrop } from '$lib/playback/observe-crop';
 /** A single root-owned video surface survives hero and route changes. */
 export function createHeroPlayback() {
@@ -10,7 +11,7 @@ export function createHeroPlayback() {
   let foreground = $state(true);
   let frame = $state({ width: 0, height: 0 });
   let crop = $state<FrameCrop>(noCrop);
-  const visible = $derived(heroPlayer.visible && (!player.session || player.paused));
+  const visible = $derived(heroPlaybackVisible(heroPlayer.visible,player));
   const surfaceStyle = $derived(heroPlayer.rect
     ? `top:${heroPlayer.rect.top}px;left:${heroPlayer.rect.left}px;width:${heroPlayer.rect.width}px;height:${heroPlayer.rect.height}px;` : '');
   const videoStyle = $derived(videoFitStyle(frame.width, frame.height,

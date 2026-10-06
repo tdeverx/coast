@@ -11,6 +11,9 @@ export const providerScheduleSchema = v.object({
     v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(10080)),
     60
   ),
+  streamsEnabled:v.optional(v.boolean(),true),
+  streamsIntervalMinutes:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10080)),1),
+  streamsConnectionId:v.optional(v.nullable(v.pipe(v.string(),v.uuid())),null),
   liveEnabled: v.optional(v.boolean(),true),
   liveIdleMinutes:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10080)),5),
   liveActiveMinutes:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10080)),1),
@@ -36,6 +39,7 @@ export function providerSchedule(provider: string, saved?: unknown): ProviderSch
         catalogueEnabled: true, catalogueIntervalMinutes: 1440,
         fullIntervalHours: 24,
         listsIntervalMinutes: 60,
+        streamsEnabled:true,streamsIntervalMinutes:1,streamsConnectionId:null,
         liveEnabled:true,liveIdleMinutes:5,liveActiveMinutes:1,
         trackingEnabled: true,
         listsEnabled: true,

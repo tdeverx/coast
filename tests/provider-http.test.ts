@@ -43,7 +43,7 @@ import { TmdbAdapter } from '../src/lib/providers/tmdb/adapter.server';
 import { runQueueOnce, registerActionHandler, enqueueAction } from '../src/lib/server/queue';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
 import { defaultSyncPreferences } from '../src/lib/providers/contracts';
-import { POST } from '../src/routes/api/v1/[...path]/+server';
+import { GET, POST } from '../src/routes/api/v1/[...path]/+server';
 
 const enabled = process.env.COAST_PROVIDER_HTTP_TEST === '1';
 async function syncLibraryAndUser(userId: string, connectionId: string, full: boolean) {
@@ -124,7 +124,7 @@ const movie = {
 const json = (value: unknown, init?: ResponseInit) => Response.json(value, init);
 beforeAll(async () => {
   if (!enabled) return;
-  if (!process.env.DATABASE_URL?.endsWith('/coast_provider_test'))
+  if (!process.env.DATABASE_URL || !/^\/coast_provider_test(?:_[a-f0-9]{32})?$/.test(new URL(process.env.DATABASE_URL).pathname))
     throw new Error('Provider HTTP tests require the disposable coast_provider_test database.');
   const address = Object.values(networkInterfaces())
     .flat()
@@ -817,6 +817,21 @@ run(
     await progressPlayback(actorId, session.id, { positionSeconds: 0.5, event: 'stop' });
   }
 );
+run('cancelled playback relay requests are not reported as server failures', async () => {
+  const session = await startPlayback(actorId, { mediaId, browser });
+  const controller = new AbortController();
+  controller.abort(new DOMException('Player replaced', 'AbortError'));
+  const url = new URL(`http://coast.test${session.url}`);
+  const response = await GET({
+    url,
+    params: { path: `playback/${session.id}/stream` },
+    request: new Request(url, { signal: controller.signal }),
+    locals: { user: { id: actorId, username: 'fixture', email: null, role: 'admin', settings: {} } },
+  } as Parameters<typeof GET>[0]);
+  expect(response.status).toBe(499);
+  expect(await response.text()).toBe('');
+  await progressPlayback(actorId, session.id, { positionSeconds: 0, event: 'stop' });
+});
 run('direct session streams a real MP4 range and rejects another Coast user', async () => {
   const session = await startPlayback(actorId, { mediaId, browser });
   expect(session.kind).toBe('direct');

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {page} from '$app/state';
   import {providerSchedule} from '$lib/providers/schedule';
   import Button from '$lib/ui/components/Button.svelte';
   import { onMount } from 'svelte';
@@ -103,6 +104,8 @@
     return () => clearInterval(timer);
   });
 </script>
+{#if page.data.developerMode}<p class="notice" role="status">Developer mode: automatic jobs are paused. Run or Retry to start work explicitly.</p>{/if}
+
 
 <div class="stack jobs">
   <Heading title="Background work">

@@ -309,6 +309,13 @@
       "when": 1791099800000,
       "tag": "0043_trakt_recommendation_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791152320864,
+      "tag": "0044_server_stream_history",
+      "breakpoints": true
     }
   ]
 }

@@ -79,7 +79,7 @@ export const message = (error: unknown) =>
  * an overlay is open, so a write/session refresh cannot close the user's panel. */
 export async function refreshRouteDependencies(dependencies: readonly string[]) {
   if (!dependencies.length) return;
-  if (page.state.mediaModalId || page.state.friendsPopover || page.state.notificationPopover)
+  if (page.state.mediaModalId || page.state.friendsPopover || page.state.notificationPopover || page.state.streamsPopover)
     await refreshAll();
   else await Promise.all(dependencies.map(key => invalidate(`coast:${key}`)));
 }

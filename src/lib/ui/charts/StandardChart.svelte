@@ -1,7 +1,7 @@
 <script lang="ts">
   import ChartMark from './ChartMark.svelte';
-  import { chartColors, formatValue, type ChartModel } from './types';
-  import { bandPath, frequencyDensity, linePath, overlapGeometry, polar, scale, sectorPath } from './standardGeometry';
+  import { chartCategoryColor, chartFill, formatValue, type ChartModel } from './model';
+  import { bandPath, frequencyDensity, linePath, overlapGeometry, polar, scale, sectorPath, spreadLabels } from './standard-geometry';
 
   let { model, selected, onselect }: { model: ChartModel; selected: number; onselect: (index: number) => void } = $props();
   const width = 900;
@@ -12,8 +12,8 @@
   let style = $derived(model.styleId);
   let raw = $derived(model.raw);
   let signedColors = $derived(raw.lowerIsBetter === true ? ['var(--danger)', 'var(--success)'] : ['var(--success)', 'var(--danger)']);
-  let uid = $derived(`preview-${model.fixtureId.replace(/[^a-z0-9]/gi, '-')}`);
-  let height = $derived(style === '4A' ? 275 : style === '4B' ? 490 : 435);
+  let uid = $derived(`chart-${model.id.replace(/[^a-z0-9]/gi, '-')}`);
+  let height = $derived(style === '4A' ? 275 : style === '4B' ? 490 : ['2A','2C'].includes(style) ? Math.max(435,model.rows.length*44+110) : 435);
   // Keep token-sized SVG labels readable; a small viewport scrolls this canvas locally.
   const minimumWidth = width;
   let xPositions = $derived(model.labels.map((_, i) => scale(i, [0, Math.max(1, model.labels.length - 1)], plot.left, plot.right)));
@@ -43,6 +43,7 @@
       return { ...series, points, path: runs.map(linePath).join(' '), area: runs.map((run) => bandPath(run, run.map((point) => ({ x: point.x, y: valueY(bottom[point.index]) })))).join(' ') };
     });
   });
+  let composition = $derived(style.startsWith('3'));
   let compositions = $derived.by(() => {
     if (style !== '3A' && style !== '3B') return [];
     const total = model.rows.reduce((sum, row) => sum + Math.max(0, row.value ?? 0), 0);
@@ -57,9 +58,9 @@
   });
   let stackBars = $derived.by(() => style === '2B' ? model.labels.map((label, index) => {
     let baseline = 0;
-    const segments = model.series.map((series, seriesIndex) => {
+    const segments = model.series.map((series) => {
       const value = series.values[index] ?? 0;
-      const result = { value, seriesIndex, name: series.name, bottom: baseline, top: baseline + value };
+      const result = { value, name: series.name, bottom: baseline, top: baseline + value };
       baseline += value;
       return result;
     });
@@ -87,12 +88,7 @@
     const q1 = numbers(raw.q1), q3 = numbers(raw.q3), median = numbers(raw.median);
     return { band: bandPath(q3.map((value, i) => ({ x: xPositions[i], y: valueY(value) })), q1.map((value, i) => ({ x: xPositions[i], y: valueY(value) }))), path: linePath(median.map((value, i) => ({ x: xPositions[i], y: valueY(value) }))), median, q1, q3 };
   });
-  const spacedLabels = (values: number[], spacing: number) => {
-    const sorted = values.map((value, index) => ({ index, y: valueY(value) })).sort((a, b) => a.y - b.y);
-    for (let index = 1; index < sorted.length; index++) sorted[index].y = Math.max(sorted[index].y, sorted[index - 1].y + spacing);
-    const excess = Math.max(0, (sorted.at(-1)?.y ?? 0) - plot.bottom + 12);
-    return values.map((_, index) => (sorted.find((item) => item.index === index)?.y ?? plot.top) - excess);
-  };
+  const spacedLabels = (values:number[],spacing:number)=>spreadLabels(values.map(valueY),plot.top+16,plot.bottom-12,spacing);
   let slopeLabels = $derived(style === '6C' ? { before: spacedLabels(model.rows.map((row) => row.reference ?? 0), 39), after: spacedLabels(model.rows.map((row) => row.value ?? 0), 23) } : { before: [], after: [] });
   let densities = $derived.by(() => {
     if (style !== '7B') return [];
@@ -132,32 +128,32 @@
   {/each}
 {/snippet}
 
-{#snippet legend(entries: string[], colors = chartColors)}
-  <div class="chart-legend" aria-label="Legend">
+{#snippet legend(entries: string[], colors = entries.map(chartCategoryColor), points = false)}
+  <div class="chart-legend" class:points aria-label="Legend">
     {#each entries as entry, index}<span><i style:background={colors[index % colors.length]}></i>{entry}</span>{/each}
   </div>
 {/snippet}
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users need to scroll a wide chart canvas.) -->
-<div class="chart-scroll" style:--chart-min-width={`${minimumWidth}px`} tabindex="0" role="region" aria-label="Chart canvas; scroll horizontally on smaller screens">
+<div class="chart-scroll" class:wide-chart={composition||style==='5C'} style:--chart-min-width={`${minimumWidth}px`} tabindex="0" role="region" aria-label="Chart canvas; scroll horizontally on smaller screens">
   <svg viewBox={`0 0 ${width} ${height}`} role="group" aria-label={`${model.title}. ${model.subtitle}`}>
     <title>{model.title}</title>
     <desc>Fictional preview. Select a mark to inspect its exact values in the accompanying data table.</desc>
     <defs>
-      <linearGradient id={`${uid}-area`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent)" stop-opacity="0.38" /><stop offset="100%" stop-color="var(--accent)" stop-opacity="0.03" /></linearGradient>
+      <linearGradient id={`${uid}-area`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color={chartCategoryColor(timeline[0]?.name ?? 'Recorded watches')} stop-opacity="0.38" /><stop offset="100%" stop-color={chartCategoryColor(timeline[0]?.name ?? 'Recorded watches')} stop-opacity="0.03" /></linearGradient>
     </defs>
 
     {#if style === '1A' || style === '1B' || style === '1C'}
       {@render verticalAxis()}
       {@render categoryAxis()}
-      {#each timeline as series, seriesIndex}
-        {#if style !== '1A'}<path d={series.area} fill={style === '1B' ? `url(#${uid}-area)` : chartColors[seriesIndex % chartColors.length]} fill-opacity={style === '1C' ? 0.66 : 1} />{/if}
-        <path d={series.path} fill="none" stroke={chartColors[seriesIndex % chartColors.length]} stroke-width={style === '1C' ? 1.5 : 2.5} />
+      {#each timeline as series}
+        {#if style !== '1A'}<path d={series.area} fill={style === '1B' ? `url(#${uid}-area)` : series.tone ?? chartCategoryColor(series.name)} fill-opacity={style === '1C' ? 0.66 : 1} />{/if}
+        <path d={series.path} fill="none" stroke={series.tone ?? chartCategoryColor(series.name)} stroke-width={style === '1C' ? 1.5 : 2.5} />
         {#each series.points as point, index}
           {#if point}
             <ChartMark label={`${model.labels[index]} · ${series.name}: ${formatValue(series.values[index], model.unit)}`} {index} {selected} {onselect}>
               <circle cx={point.x} cy={point.y} r="15" fill="transparent" />
-              <circle cx={point.x} cy={point.y} r={selected === index ? 6 : 4} fill={chartColors[seriesIndex % chartColors.length]} stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
+              <circle class="chart-shape" cx={point.x} cy={point.y} r={selected === index ? 6 : 4} fill={series.tone ?? chartCategoryColor(series.name)} stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
             </ChartMark>
           {/if}
         {/each}
@@ -176,8 +172,8 @@
     {:else if style === '2A' || style === '2C'}
       {@const left = 232}
       {@const right = 814}
-      {@const bottom = 350}
-      {@const rowHeight = 290 / Math.max(1, model.rows.length)}
+      {@const bottom = height-85}
+      {@const rowHeight = (bottom-60) / Math.max(1, model.rows.length)}
       {@const zero = scale(0, model.domain, left, right)}
       {#if style === '2C'}
         {#each valueTicks as tick}<line x1={scale(tick, model.domain, left, right)} x2={scale(tick, model.domain, left, right)} y1="36" y2={bottom} class={tick === 0 ? 'axis' : 'grid-line'} />{/each}
@@ -188,7 +184,7 @@
         <ChartMark label={rowLabel(index)} {index} {selected} {onselect}>
           <rect x="12" y={y - 7} width="864" height={rowHeight} fill="transparent" />
           <text x="12" y={y + 17} class="row-label">{row.label}</text>
-          <rect x={Math.min(zero, end)} y={y + 1} width={Math.max(0, Math.abs(end - zero))} height="24" rx={style === '2A' ? 12 : 0} fill={style === '2C' ? signedColors[(row.value ?? 0) >= 0 ? 0 : 1] : index === 0 ? 'var(--success)' : 'var(--accent)'} fill-opacity={selected === index ? 1 : 0.8} />
+          <rect x={Math.min(zero, end)} y={y + 1} width={Math.max(0, Math.abs(end - zero))} height="24" class="rounded-mark chart-shape" fill={style === '2C' ? signedColors[(row.value ?? 0) >= 0 ? 0 : 1] : chartCategoryColor(row.label)} fill-opacity={selected === index ? 1 : 0.8} />
           <text x={end + ((row.value ?? 0) < 0 ? -9 : 9)} y={y + 18} text-anchor={(row.value ?? 0) < 0 ? 'end' : 'start'} class="value">{style === '2C' && (row.value ?? 0) > 0 ? '+' : ''}{formatValue(row.value)}</text>
         </ChartMark>
         {#if style === '2A'}<line x1="12" x2="875" y1={y + rowHeight - 8} y2={y + rowHeight - 8} class="rule" />{/if}
@@ -203,11 +199,14 @@
         {@const barWidth = slot * 0.64}
         <ChartMark label={`${bar.label}: ${bar.segments.map((segment) => `${segment.name} ${formatValue(segment.value, model.unit)}`).join(', ')}. Total ${formatValue(bar.total, model.unit)}`} index={bar.index} {selected} {onselect}>
           <rect {x} y={plot.top} width={barWidth} height={plot.bottom - plot.top} fill="transparent" />
+          <defs><clipPath id={`${uid}-stack-${bar.index}`}><rect class="rounded-mark" {x} y={valueY(bar.total)} width={barWidth} height={Math.max(0, plot.bottom - valueY(bar.total))} style:height={`calc(${Math.max(0, plot.bottom - valueY(bar.total))}px + var(--chart-mark-radius))`} /></clipPath></defs>
+          <g clip-path={`url(#${uid}-stack-${bar.index})`}>
           {#each bar.segments as segment}
-            <rect {x} y={valueY(segment.top)} width={barWidth} height={valueY(segment.bottom) - valueY(segment.top)} fill={chartColors[segment.seriesIndex % chartColors.length]} fill-opacity="0.8" />
+            <rect {x} y={valueY(segment.top)} width={barWidth} height={valueY(segment.bottom) - valueY(segment.top)} fill={chartCategoryColor(segment.name)} fill-opacity="0.8" />
             {#if valueY(segment.bottom) - valueY(segment.top) > 28}<text x={x + barWidth / 2} y={(valueY(segment.bottom) + valueY(segment.top)) / 2 + 5} text-anchor="middle" class="on-fill">{segment.value}</text>{/if}
           {/each}
-          {#if selected === bar.index}<rect x={x - 6} y={valueY(bar.total) - 7} width={barWidth + 12} height={plot.bottom - valueY(bar.total) + 7} rx="7" fill="none" stroke="var(--ink)" />{/if}
+          </g>
+          {#if selected === bar.index}<rect x={x - 6} y={valueY(bar.total) - 7} width={barWidth + 12} height={plot.bottom - valueY(bar.total) + 7} class="rounded-mark" fill="none" stroke="var(--chart-highlight)" stroke-width="1.5" />{/if}
         </ChartMark>
         <text x={x + barWidth / 2} y={valueY(bar.total) - 13} text-anchor="middle" class="value">{bar.total}</text>
         <text x={x + barWidth / 2} y={plot.bottom + 27} text-anchor="middle" class="tick">{bar.label}</text>
@@ -216,7 +215,7 @@
     {:else if style === '3A' || style === '3B'}
       {#each compositions as slice}
         <ChartMark label={`${rowLabel(slice.index)} · ${formatValue(slice.fraction * 100, '%')}`} index={slice.index} {selected} {onselect}>
-          <path d={slice.path} fill={chartColors[slice.index % chartColors.length]} stroke={selected === slice.index ? 'var(--ink)' : 'var(--canvas)'} stroke-width={selected === slice.index ? 3 : 2} />
+          <path class="chart-shape" d={slice.path} fill={chartFill(chartCategoryColor(model.rows[slice.index].label))} stroke={selected === slice.index ? 'var(--ink)' : 'var(--canvas)'} stroke-width="1.5" />
           {#if style === '3B' && slice.fraction >= 0.07}<text x={slice.label.x} y={slice.label.y + 5} text-anchor="middle" class="on-fill percentage">{Math.round(slice.fraction * 100)}%</text>{/if}
         </ChartMark>
       {/each}
@@ -228,7 +227,7 @@
         {@const y = 114 + index * 65}
         <ChartMark label={rowLabel(index)} {index} {selected} {onselect}>
           <rect x="480" y={y - 26} width="405" height="57" fill="transparent" />
-          <circle cx="500" cy={y} r="8" fill={chartColors[index % chartColors.length]} />
+          <rect class="legend-swatch" x="496" y={y - 4} width="8" height="8" fill={chartCategoryColor(row.label)} />
           <text x="522" y={y + 5} class="row-label">{row.label}</text>
           <text x="764" y={y + 5} text-anchor="end" class="value">{formatValue(row.value, model.unit)}</text>
           <text x="872" y={y + 5} text-anchor="end" class="tick">{Math.round((compositions[index]?.fraction ?? 0) * 100)}%</text>
@@ -243,9 +242,9 @@
         {@const proportion = row.capacity ? Math.min(1, Math.max(0, (row.value ?? 0) / row.capacity)) : 0}
         <circle cx="280" cy="216" r={radius} fill="none" stroke="var(--surface)" stroke-width="20" />
         <ChartMark label={`${rowLabel(index)} of ${formatValue(row.capacity ?? null, model.unit)}${row.value === null ? '' : ` · ${Math.round(proportion * 100)}%`}`} {index} {selected} {onselect}>
-          {#if row.value !== null}<circle cx="280" cy="216" r={radius} fill="none" stroke={chartColors[index % chartColors.length]} stroke-width={selected === index ? 24 : 20} stroke-dasharray={`${circumference * proportion} ${circumference}`} transform="rotate(-90 280 216)" />{/if}
+          {#if row.value !== null}<circle cx="280" cy="216" r={radius} fill="none" stroke={chartCategoryColor(row.label)} stroke-width="20" stroke-opacity={selected === index ? 1 : .85} stroke-dasharray={`${circumference * proportion} ${circumference}`} transform="rotate(-90 280 216)" />{/if}
           <rect x="510" y={104 + index * 88} width="350" height="70" fill="transparent" />
-          <circle cx="522" cy={123 + index * 88} r="8" fill={chartColors[index % chartColors.length]} />
+          <rect class="legend-swatch" x="518" y={119 + index * 88} width="8" height="8" fill={chartCategoryColor(row.label)} />
           <text x="545" y={127 + index * 88} class="row-label">{row.label}</text>
           <text x="545" y={151 + index * 88} class="tick">{row.value === null ? 'Unknown · insufficient evidence' : `${row.value} / ${row.capacity} · ${Math.round(proportion * 100)}%`}</text>
         </ChartMark>
@@ -261,13 +260,13 @@
       {#each weekdays as day, index}{#if index === 0 || index === 2 || index === 4}<text x="36" y={startY + index * (cell + gap) + 10} text-anchor="end" class="small-label">{day}</text>{/if}{/each}
       {#each yearCalendar.cells as day}
         <ChartMark label={rowLabel(day.index)} index={day.index} {selected} {onselect}>
-          <rect x={startX + day.column * (cell + gap)} y={startY + day.row * (cell + gap)} width={cell} height={cell} rx="2" fill={heatFill(day.value)} stroke={selected === day.index ? 'var(--ink)' : day.value === null ? 'var(--muted)' : 'none'} stroke-width={selected === day.index ? 1.5 : 0.75} />
+          <rect x={startX + day.column * (cell + gap)} y={startY + day.row * (cell + gap)} width={cell} height={cell} class="rounded-cell chart-shape" fill={heatFill(day.value)} stroke={selected === day.index ? 'var(--ink)' : day.value === null ? 'var(--muted)' : 'none'} stroke-width={selected === day.index ? 1.5 : 0.75} />
           {#if day.value === null}<line x1={startX + day.column * (cell + gap) + 3} x2={startX + day.column * (cell + gap) + 10} y1={startY + day.row * (cell + gap) + 10} y2={startY + day.row * (cell + gap) + 3} stroke="var(--muted)" stroke-width="0.75" />{/if}
         </ChartMark>
       {/each}
       <text x={startX} y="207" class="tick">{model.calendar?.year} · UTC · {model.unit} per day · outlined slash = unknown</text>
       {#each [0, 0.25, 0.5, 0.75, 1] as fraction, index}
-        <rect x={startX + index * 152} y="228" width="15" height="15" rx="2" fill={heatFill(fraction * heatMaximum)} />
+        <rect x={startX + index * 152} y="228" width="15" height="15" class="rounded-cell chart-shape" fill={heatFill(fraction * heatMaximum)} />
         <text x={startX + index * 152 + 23} y="240" class="small-label">{index === 0 ? 'Known 0' : formatValue(fraction * heatMaximum)}</text>
       {/each}
 
@@ -277,6 +276,8 @@
       {@const cellWidth = 112}
       {@const cellHeight = 370 / monthCalendar.rowCount}
       {#each weekdays as day, index}<text x={left + (index + 0.5) * cellWidth} y="24" text-anchor="middle" class="tick">{day}</text>{/each}
+      <defs><clipPath id={`${uid}-month-frame`}><rect class="rounded-frame" x={left} y={top} width={7 * cellWidth} height="370" /></clipPath></defs>
+      <g clip-path={`url(#${uid}-month-frame)`}>
       {#each Array.from({ length: monthCalendar.rowCount * 7 }) as _, slot}
         <rect x={left + slot % 7 * cellWidth} y={top + Math.floor(slot / 7) * cellHeight} width={cellWidth} height={cellHeight} fill="none" class="rule" />
       {/each}
@@ -285,12 +286,14 @@
         {@const y = top + day.row * cellHeight}
         {@const radius = day.value === null ? 0 : 23 * Math.sqrt(day.value / heatMaximum)}
         <ChartMark label={rowLabel(day.index)} index={day.index} {selected} {onselect}>
-          <rect {x} {y} width={cellWidth} height={cellHeight} fill="transparent" stroke={selected === day.index ? 'var(--accent)' : 'none'} stroke-width="2" />
+          <rect class="rounded-mark chart-shape" {x} {y} width={cellWidth} height={cellHeight} fill="transparent" stroke={selected === day.index ? 'var(--accent)' : 'none'} stroke-width="2" />
           <text x={x + 10} y={y + 18} class="small-label">{day.index + 1}</text>
           {#if day.value === null}<text x={x + cellWidth / 2} y={y + cellHeight / 2 + 5} text-anchor="middle" class="tick">—</text>
           {:else}<circle cx={x + cellWidth / 2} cy={y + cellHeight / 2 + 5} r={radius || 3} fill={radius ? 'var(--success)' : 'none'} stroke={radius ? 'none' : 'var(--muted)'} />{/if}
         </ChartMark>
       {/each}
+      </g>
+      <rect class="rounded-frame rule" x={left} y={top} width={7 * cellWidth} height="370" fill="none" pointer-events="none" />
       <text x="450" y="454" text-anchor="middle" class="tick">Circle area is proportional to {model.unit} · UTC dates · — = {model.unit === 'ms' ? 'no samples' : 'unknown event count'}</text>
 
     {:else if style === '4C'}
@@ -304,7 +307,7 @@
         {#each row as value, column}
           {@const index = rowIndex * row.length + column}
           <ChartMark label={rowLabel(index)} {index} {selected} {onselect}>
-            <rect x={left + column * cellWidth} y={top + rowIndex * cellHeight} width={cellWidth - 2} height={cellHeight - 2} fill={heatFill(value, 'var(--danger)')} stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
+            <rect class="rounded-mark chart-shape" x={left + column * cellWidth} y={top + rowIndex * cellHeight} width={cellWidth - 2} height={cellHeight - 2} fill={heatFill(value, 'var(--danger)')} stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
             <text x={left + (column + 0.5) * cellWidth} y={top + (rowIndex + 0.5) * cellHeight + 4} text-anchor="middle" style:fill={value !== null && value / heatMaximum > 0.52 ? 'var(--canvas)' : 'var(--ink)'}>{value === null ? '—' : value}</text>
           </ChartMark>
         {/each}
@@ -326,7 +329,7 @@
         {@const y = scale(point.y, model.domainY, plot.bottom, plot.top)}
         <ChartMark label={`${point.label}. ${model.xLabel}: ${point.x}; ${model.yLabel}: ${point.y}`} {index} {selected} {onselect}>
           <circle cx={x} cy={y} r="13" fill="transparent" />
-          <circle cx={x} cy={y} r={selected === index ? 6 : 4.5} fill="var(--accent)" stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
+          <circle class="chart-shape" cx={x} cy={y} r={selected === index ? 6 : 4.5} fill="var(--accent)" stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
         </ChartMark>
       {/each}
       <text x="450" y="410" text-anchor="middle" class="tick">{model.xLabel}</text>
@@ -345,20 +348,20 @@
           <text x={labelPoint.x} y={labelPoint.y + 5} text-anchor={labelPoint.x < 440 ? 'end' : labelPoint.x > 460 ? 'start' : 'middle'} class="row-label">{label}</text>
         </ChartMark>
       {/each}
-      {#each radar as series, seriesIndex}
+      {#each radar as series}
         {#if series.points.every((point) => point !== null)}
-          <polygon points={series.points.map((point) => point ? `${point.x},${point.y}` : '').join(' ')} fill={chartColors[seriesIndex % chartColors.length]} fill-opacity="0.12" stroke={chartColors[seriesIndex % chartColors.length]} stroke-width="2" />
+          <polygon points={series.points.map((point) => point ? `${point.x},${point.y}` : '').join(' ')} fill={series.tone ?? chartCategoryColor(series.name)} fill-opacity="0.12" stroke={series.tone ?? chartCategoryColor(series.name)} stroke-width="2" />
         {:else}
           {#each series.points as point, index}
             {@const next = series.points[(index + 1) % series.points.length]}
-            {#if point && next}<line x1={point.x} y1={point.y} x2={next.x} y2={next.y} stroke={chartColors[seriesIndex % chartColors.length]} stroke-width="2" />{/if}
+            {#if point && next}<line x1={point.x} y1={point.y} x2={next.x} y2={next.y} stroke={series.tone ?? chartCategoryColor(series.name)} stroke-width="2" />{/if}
           {/each}
         {/if}
         {#each series.points as point, index}
           {#if point}
             <ChartMark label={`${model.labels[index]} · ${series.name}: ${formatValue(series.values[index], model.unit)}`} {index} {selected} {onselect}>
               <circle cx={point.x} cy={point.y} r="14" fill="transparent" />
-              <circle cx={point.x} cy={point.y} r={selected === index ? 5.5 : 4} fill={chartColors[seriesIndex % chartColors.length]} stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
+              <circle class="chart-shape" cx={point.x} cy={point.y} r={selected === index ? 5.5 : 4} fill={series.tone ?? chartCategoryColor(series.name)} stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
             </ChartMark>
           {/if}
         {/each}
@@ -371,8 +374,8 @@
           <path d={path} fill-rule="evenodd" fill={index === 0 ? 'var(--accent)' : index === 2 ? 'var(--success)' : 'var(--ink)'} fill-opacity={index === selected ? 0.38 : 0.22} stroke={index === selected ? 'var(--ink)' : index === 2 ? 'var(--success)' : 'var(--accent)'} stroke-width="2" />
         </ChartMark>
       {/each}
-      <text x={overlap.xA} y={overlap.cy - overlap.a - 19} text-anchor="middle" class="row-label" style:fill="var(--accent)">{String(raw.left)} · {String(raw.a)}</text>
-      <text x={overlap.xB} y={overlap.cy - overlap.b - 19} text-anchor="middle" class="row-label" style:fill="var(--success)">{String(raw.right)} · {String(raw.b)}</text>
+      <text x="92" y="27" text-anchor="start" class="row-label" style:fill="var(--accent)">{String(raw.left)} · {String(raw.a)}</text>
+      <text x="806" y="27" text-anchor="end" class="row-label" style:fill="var(--success)">{String(raw.right)} · {String(raw.b)}</text>
       {#each model.rows as row, index}
         {@const x = index === 0 ? overlap.xA - overlap.a * 0.48 : index === 2 ? overlap.xB + overlap.b * 0.48 : (overlap.xA + overlap.a + overlap.xB - overlap.b) / 2}
         <ChartMark label={rowLabel(index)} {index} {selected} {onselect}>
@@ -386,13 +389,13 @@
       {@const interval = model.interval}
       {@const y = 199}
       <line x1={valueX(interval.min)} x2={valueX(interval.max)} y1={y} y2={y} stroke="var(--accent)" stroke-width="2" />
-      <rect x={valueX(interval.q1)} y={y - 18} width={valueX(interval.q3) - valueX(interval.q1)} height="36" fill="var(--accent)" fill-opacity="0.3" />
+      <rect class="rounded-mark" x={valueX(interval.q1)} y={y - 18} width={valueX(interval.q3) - valueX(interval.q1)} height="36" fill="var(--accent)" fill-opacity="0.3" />
       {#each [interval.min, interval.q1, interval.median, interval.q3, interval.max, interval.current] as value, index}
         {#if value !== undefined}
           <ChartMark label={rowLabel(index)} {index} {selected} {onselect}>
             <rect x={valueX(value) - 10} y={y - 26} width="20" height="55" fill="transparent" />
-            {#if index === 2 || index === 5}<circle cx={valueX(value)} cy={y} r={selected === index ? 7 : 5} fill={index === 5 ? 'var(--success)' : 'var(--accent)'} stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
-            {:else}<line x1={valueX(value)} x2={valueX(value)} y1={y - 18} y2={y + 18} stroke={selected === index ? 'var(--ink)' : 'var(--accent)'} stroke-width="2" />{/if}
+            {#if index === 2 || index === 5}<circle class="chart-shape" cx={valueX(value)} cy={y} r={selected === index ? 7 : 5} fill={index === 5 ? 'var(--success)' : 'var(--accent)'} stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
+            {:else}<line x1={valueX(value)} x2={valueX(value)} y1={y - 18} y2={y + 18} stroke={selected === index ? 'var(--chart-highlight)' : 'var(--accent)'} stroke-width="2" />{/if}
           </ChartMark>
           <text x={valueX(value)} y={index === 5 ? y + 52 : y - 54} text-anchor="middle" class="small-label" style:fill={index === 5 ? 'var(--success)' : 'var(--muted)'}>{model.rows[index]?.label}</text>
           <text x={valueX(value)} y={index === 5 ? y + 73 : y - 32} text-anchor="middle" class="value">{formatValue(value)}</text>
@@ -410,7 +413,7 @@
       {#each intervalHistory.median as value, index}
         <ChartMark label={`${rowLabel(index)}. IQR ${intervalHistory.q1[index]}–${intervalHistory.q3[index]}`} {index} {selected} {onselect}>
           <circle cx={xPositions[index]} cy={valueY(value)} r="15" fill="transparent" />
-          <circle cx={xPositions[index]} cy={valueY(value)} r={selected === index ? 6 : 4.5} fill="var(--success)" stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
+          <circle class="chart-shape" cx={xPositions[index]} cy={valueY(value)} r={selected === index ? 6 : 4.5} fill="var(--success)" stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
         </ChartMark>
       {/each}
 
@@ -423,12 +426,12 @@
         {@const after = row.value ?? 0}
         <ChartMark label={`${row.label}: ${String(raw.left)} ${formatValue(before, model.unit)}; ${String(raw.right)} ${formatValue(after, model.unit)}`} {index} {selected} {onselect}>
           <line x1="295" x2="602" y1={valueY(before)} y2={valueY(after)} stroke="transparent" stroke-width="18" />
-          <line x1="295" x2="602" y1={valueY(before)} y2={valueY(after)} stroke={chartColors[index % chartColors.length]} stroke-width={selected === index ? 3 : 2} />
-          <circle cx="295" cy={valueY(before)} r="5" fill={chartColors[index % chartColors.length]} /><circle cx="602" cy={valueY(after)} r="5" fill={chartColors[index % chartColors.length]} />
-          {#if Math.abs(slopeLabels.before[index] - valueY(before)) > 1}<line x1="295" x2="281" y1={valueY(before)} y2={slopeLabels.before[index]} stroke={chartColors[index % chartColors.length]} />{/if}
-          {#if Math.abs(slopeLabels.after[index] - valueY(after)) > 1}<line x1="602" x2="617" y1={valueY(after)} y2={slopeLabels.after[index]} stroke={chartColors[index % chartColors.length]} />{/if}
-          <text x="276" y={slopeLabels.before[index] - 6} text-anchor="end" class="small-label">{row.label}</text><text x="276" y={slopeLabels.before[index] + 13} text-anchor="end" class="value" style:fill={chartColors[index % chartColors.length]}>{formatValue(before, model.unit)}</text>
-          <text x="621" y={slopeLabels.after[index] + 5} class="value" style:fill={chartColors[index % chartColors.length]}>{formatValue(after, model.unit)}</text>
+          <line x1="295" x2="602" y1={valueY(before)} y2={valueY(after)} stroke={chartCategoryColor(row.label)} stroke-width={selected === index ? 3 : 2} />
+          <circle cx="295" cy={valueY(before)} r="5" fill={chartCategoryColor(row.label)} /><circle cx="602" cy={valueY(after)} r="5" fill={chartCategoryColor(row.label)} />
+          {#if Math.abs(slopeLabels.before[index] - valueY(before)) > 1}<line x1="295" x2="281" y1={valueY(before)} y2={slopeLabels.before[index]} stroke={chartCategoryColor(row.label)} />{/if}
+          {#if Math.abs(slopeLabels.after[index] - valueY(after)) > 1}<line x1="602" x2="617" y1={valueY(after)} y2={slopeLabels.after[index]} stroke={chartCategoryColor(row.label)} />{/if}
+          <text x="276" y={slopeLabels.before[index] - 6} text-anchor="end" class="small-label">{row.label}</text><text x="276" y={slopeLabels.before[index] + 13} text-anchor="end" class="value" style:fill={chartCategoryColor(row.label)}>{formatValue(before, model.unit)}</text>
+          <text x="621" y={slopeLabels.after[index] + 5} class="value" style:fill={chartCategoryColor(row.label)}>{formatValue(after, model.unit)}</text>
         </ChartMark>
       {/each}
 
@@ -440,7 +443,7 @@
         {@const y = valueY(row.value ?? 0)}
         <ChartMark label={rowLabel(index)} {index} {selected} {onselect}>
           <rect {x} y={Math.min(y, plot.bottom - 5)} width={slot * 0.88} height={Math.max(5, plot.bottom - y)} fill="transparent" />
-          <rect {x} {y} width={slot * 0.88} height={plot.bottom - y} fill={index === Number(raw.highlight) ? 'var(--success)' : 'var(--accent)'} stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
+          <rect class="rounded-mark chart-shape" {x} {y} width={slot * 0.88} height={plot.bottom - y} fill={index === Number(raw.highlight) ? 'var(--success)' : 'var(--accent)'} stroke={selected === index ? 'var(--ink)' : 'none'} stroke-width="2" />
           <text x={x + slot * 0.44} y={y - 10} text-anchor="middle" class="value">{row.value}</text>
         </ChartMark>
         <text x={x + slot * 0.44} y={plot.bottom + 26} text-anchor="middle" class="tick">{row.label}</text>
@@ -455,17 +458,17 @@
       {@render horizontalAxis(plot.left, plot.right, plot.bottom)}
       <line x1={plot.left} x2={plot.left} y1={plot.top} y2={plot.bottom} class="axis" />
       {#each densityPaths as density, seriesIndex}
-        <path d={density.area} fill={chartColors[seriesIndex % chartColors.length]} fill-opacity="0.2" />
-        <path d={density.path} fill="none" stroke={chartColors[seriesIndex % chartColors.length]} stroke-width="2.5" />
+        <path d={density.area} fill={model.series[seriesIndex].tone ?? chartCategoryColor(model.series[seriesIndex].name)} fill-opacity="0.2" />
+        <path d={density.path} fill="none" stroke={model.series[seriesIndex].tone ?? chartCategoryColor(model.series[seriesIndex].name)} stroke-width="2.5" />
         {#if Number.isFinite(densityMedians[seriesIndex])}
-          <line x1={valueX(densityMedians[seriesIndex])} x2={valueX(densityMedians[seriesIndex])} y1={plot.top + seriesIndex * 38} y2={plot.bottom} stroke={chartColors[seriesIndex % chartColors.length]} stroke-dasharray="5 5" />
-          <text x={valueX(densityMedians[seriesIndex]) - 7} y={plot.top + 16 + seriesIndex * 38} text-anchor="end" class="small-label" style:fill={chartColors[seriesIndex % chartColors.length]}>{model.series[seriesIndex].name} median · {densityMedians[seriesIndex]}</text>
+          <line x1={valueX(densityMedians[seriesIndex])} x2={valueX(densityMedians[seriesIndex])} y1={plot.top + seriesIndex * 38} y2={plot.bottom} stroke={model.series[seriesIndex].tone ?? chartCategoryColor(model.series[seriesIndex].name)} stroke-dasharray="5 5" />
+          <text x={valueX(densityMedians[seriesIndex]) - 7} y={plot.top + 16 + seriesIndex * 38} text-anchor="end" class="small-label" style:fill={model.series[seriesIndex].tone ?? chartCategoryColor(model.series[seriesIndex].name)}>{model.series[seriesIndex].name} median · {densityMedians[seriesIndex]}</text>
         {/if}
       {/each}
       {#each model.rows as _, index}
         {@const x = valueX(Number(model.labels[index]))}
         <ChartMark label={rowLabel(index)} {index} {selected} {onselect}>
-          <line x1={x} x2={x} y1={plot.top} y2={plot.bottom} stroke={selected === index ? 'var(--ink)' : 'transparent'} stroke-opacity="0.35" stroke-width={selected === index ? 1 : 18} />
+          <line x1={x} x2={x} y1={plot.top} y2={plot.bottom} stroke={selected === index ? 'var(--chart-highlight)' : 'transparent'} stroke-opacity="0.35" stroke-width={selected === index ? 1 : 18} />
         </ChartMark>
       {/each}
       <text x="24" y="190" transform="rotate(-90 24 190)" text-anchor="middle" class="tick">Illustrative density</text>
@@ -474,8 +477,61 @@
   </svg>
 </div>
 
+
+{#if composition}
+  <div class="compact-chart">
+    <svg class="compact-composition" viewBox={style === '3C' ? '102 38 356 356' : '76 39 356 356'} role="group" aria-label={model.title}>
+      {#if style === '3C'}
+        {#each model.rows as row, index}
+          {@const radius = 166 - index * 34}
+          {@const circumference = 2 * Math.PI * radius}
+          {@const proportion = row.capacity ? Math.min(1, Math.max(0, (row.value ?? 0) / row.capacity)) : 0}
+          <circle cx="280" cy="216" r={radius} fill="none" stroke="var(--chart-track)" stroke-width="20" />
+          <ChartMark label={rowLabel(index)} {index} {selected} {onselect}>
+            {#if row.value !== null}<circle cx="280" cy="216" r={radius} fill="none" stroke={chartCategoryColor(row.label)} stroke-width="20" stroke-opacity={selected === index ? 1 : .85} stroke-dasharray={`${circumference * proportion} ${circumference}`} transform="rotate(-90 280 216)" />{/if}
+          </ChartMark>
+        {/each}
+        <text x="280" y="223" text-anchor="middle" class="tick">{String(raw.center ?? model.unit).replace(/\n/g, ' ')}</text>
+      {:else}
+        {#each compositions as slice}
+          <ChartMark label={rowLabel(slice.index)} index={slice.index} {selected} {onselect}>
+            <path class="chart-shape" d={slice.path} fill={chartFill(chartCategoryColor(model.rows[slice.index].label))} stroke="var(--canvas)" stroke-width="1.5" />
+            {#if style === '3B' && slice.fraction >= .07}<text x={slice.label.x} y={slice.label.y + 5} text-anchor="middle" class="on-fill percentage">{Math.round(slice.fraction * 100)}%</text>{/if}
+          </ChartMark>
+        {/each}
+        {#if style === '3A'}<text x="254" y="214" text-anchor="middle" class="total">{model.total ?? model.rows.reduce((sum, row) => sum + (row.value ?? 0), 0)}</text><text x="254" y="242" text-anchor="middle" class="tick">{model.unit}</text>{/if}
+      {/if}
+    </svg>
+    <div class="chart-legend-list" aria-label="Legend">
+      {#each model.rows as row, index}
+        <button type="button" class="chart-legend-row" aria-pressed={selected === index} onpointerenter={() => onselect(index)} onfocus={() => onselect(index)} onclick={() => onselect(index)}>
+          <i style:background={chartCategoryColor(row.label)}></i><span>{row.label}</span>
+          <strong>{formatValue(row.value, model.unit)}{#if row.capacity !== undefined} / {formatValue(row.capacity)}{/if}</strong>
+          <small>{row.value === null ? '' : `${Math.round(style === '3C' ? (row.capacity ? row.value / row.capacity * 100 : 0) : (compositions[index]?.fraction ?? 0) * 100)}%`}</small>
+        </button>
+      {/each}
+    </div>
+  </div>
+{/if}
+{#if style==='5C'}
+  <div class="compact-chart">
+    {@render legend([`${String(raw.left)} · ${String(raw.a)}`,`${String(raw.right)} · ${String(raw.b)}`],['var(--accent)','var(--success)'])}
+    <svg class="compact-composition" viewBox="0 0 360 250" role="group" aria-label={`${model.title}; circle areas and overlap encode visible item counts`}>
+      <g transform="translate(180 125) scale(.45) translate(-450 -222)">
+        {#each overlap.paths as path,index}<ChartMark label={rowLabel(index)} {index} {selected} {onselect}>
+          <path d={path} fill-rule="evenodd" fill={index===0?'var(--accent)':index===2?'var(--success)':'var(--ink)'} fill-opacity={index===selected?.38:.22} stroke={index===selected?'var(--ink)':index===2?'var(--success)':'var(--accent)'} stroke-width="2" vector-effect="non-scaling-stroke"/>
+        </ChartMark>{/each}
+      </g>
+    </svg>
+    <div class="chart-legend-list" aria-label="Visible item overlap">
+      {#each model.rows as row,index}<button type="button" class="chart-legend-row" aria-pressed={selected===index} onpointerenter={()=>onselect(index)} onfocus={()=>onselect(index)} onclick={()=>onselect(index)}>
+        <i style:background={index===0?'var(--accent)':index===2?'var(--success)':'var(--ink)'}></i><span>{row.label}</span><strong>{formatValue(row.value,model.unit)}</strong>
+      </button>{/each}
+    </div>
+  </div>
+{/if}
 {#if ['1A', '1B', '1C', '2B', '5B', '7B'].includes(style)}
-  {@render legend(model.series.map((series) => series.name))}
+  {@render legend(model.series.map((series) => series.name), model.series.map((series) => series.tone ?? chartCategoryColor(series.name)), style !== '2B' && style !== '1C')}
 {:else if style === '2C'}
   {@render legend([String(raw.positive ?? 'Positive'), String(raw.negative ?? 'Negative')], signedColors)}
 {:else if style === '6B'}
@@ -489,20 +545,6 @@
 {/if}
 
 <style>
-  .chart-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
+  svg.compact-composition { min-width: 0; }
   svg { display: block; width: 100%; min-width: var(--chart-min-width); height: auto; overflow: visible; }
-  text { font-family: var(--font-sans); font-size: var(--text-md); fill: var(--ink); font-weight: var(--weight-regular); }
-  .tick, .small-label { fill: var(--muted); }
-  .small-label { font-size: var(--text-sm); }
-  .value, .row-label { font-weight: var(--weight-semibold); }
-  .total { font-size: var(--text-2xl); font-weight: var(--weight-bold); }
-  .percentage { font-size: var(--text-xl); font-weight: var(--weight-bold); }
-  .on-fill { fill: var(--canvas); font-weight: var(--weight-semibold); }
-  .axis { stroke: var(--muted); stroke-opacity: 0.55; fill: none; }
-  .grid-line { stroke: var(--line); stroke-dasharray: 3 4; }
-  .rule { stroke: var(--line); }
-  .chart-legend { display: flex; flex-wrap: wrap; gap: var(--gutter); margin-top: 12px; font-size: var(--text-sm); color: var(--muted); }
-  .chart-legend span { display: inline-flex; gap: 8px; align-items: center; }
-  .chart-legend i { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
-  .chart-note { font-size: var(--text-sm); margin-top: 12px; }
 </style>

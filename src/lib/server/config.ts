@@ -4,6 +4,7 @@ import { diagnosticStore } from './diagnostics';
 import { getSql } from './db';
 
 export const configSchema = v.object({
+  developerMode: v.optional(v.boolean(),false),
   siteAccess: v.optional(v.picklist(['private','public-profiles','public-read-only']),'private'),
   experimentalMusic: v.optional(v.boolean(),false),
   experimentalGaming: v.optional(v.boolean(),false),
@@ -33,6 +34,7 @@ export const configSchema = v.object({
 });
 export type CoastConfig = v.InferOutput<typeof configSchema>;
 export const defaultConfig: CoastConfig = {
+  developerMode:false,
   siteAccess:'private',
   experimentalMusic: false, experimentalGaming: false, experimentalParties: false,
   experimentalPlanning:false, experimentalMediaModal:false,

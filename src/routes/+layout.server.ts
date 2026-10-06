@@ -11,6 +11,7 @@ export const load = (async ({ locals, depends,params,url }) => {
   const [notifications,unreadNotifications,friendRequestCount,revision]=locals.user?await Promise.all([inbox(locals.user),notificationUnread(locals.user),incomingFriendRequests(locals.user.id),contentRevision(locals.user.id,viewedUsername)]):[[],0,0,null];
   return {
     publicRead:config.siteAccess==='public-read-only',
+    developerMode:locals.user?.role==='admin'&&config.developerMode,
     publicProfiles:config.siteAccess==='public-profiles',
     experimentalMusic: config.experimentalMusic,
     experimentalGaming: config.experimentalGaming,

@@ -44,7 +44,7 @@ run('live polling works independently of history imports and honors its own opt-
  await pollLiveFromAdapter(userId,context.connection.id,{...context,sync:{...context.sync,history:false}});
  expect(calls).toEqual(['GET /users/me/watching']);
  const [state]=await getSql()`select work_id,expires_at from social_live_state where connection_id=${context.connection.id}`;
- expect(state.work_id).toBe(workId);expect(new Date(state.expires_at).getTime()-Date.now()).toBeLessThan(121000);
+ expect(state.work_id).toBe(workId);expect(new Date(state.expires_at).getTime()-Date.now()).toBeLessThan(181000);
  calls=[];await pollLiveFromAdapter(userId,context.connection.id,{...context,connection:{...context.connection,settings:{...context.connection.settings,liveRead:false}}});expect(calls).toHaveLength(0);
  remote=null;
 });

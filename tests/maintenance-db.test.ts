@@ -65,7 +65,7 @@ run('one admin schedule covers all active accounts and rejects user controls', a
     fullIntervalHours: 48, liveEnabled:true,
   });
   const result = await scheduleProviderMaintenance({ instanceId: instance });
-  expect(result.queued).toBe(3);
+  expect(result.queued).toBe(4);
   const jobs = await getDb()
     .select()
     .from(s.outboxActions)
@@ -73,9 +73,10 @@ run('one admin schedule covers all active accounts and rejects user controls', a
   expect(new Set(jobs.map((j) => j.userId)).size).toBe(1);
   expect(jobs.filter(j => j.kind === 'jellyfin.library')).toHaveLength(1);
   expect(jobs.filter(j => j.kind === 'jellyfin.sync')).toHaveLength(1);
+  expect(jobs.filter(j => j.kind === 'jellyfin.streams')).toMatchObject([{userId:admin,connectionId:connections[0]}]);
   const again = await runProviderJob(admin, instance);
   expect(again.queued).toBe(0);
-  expect(again.active).toBe(3);
+  expect(again.active).toBe(4);
   expect(
     (
       await getDb()
@@ -118,13 +119,13 @@ run('paused schedules stay paused and recently checked accounts do not repeat wo
         .slice(0, 2)
         .map((connectionId) => ({ connectionId, kind: 'jellyfin-user', completedAt: new Date() }))
     );
-  await getDb().update(s.providerInstances).set({ settings: { schedule: { enabled: true, intervalMinutes: 30, fullIntervalHours: 48, liveEnabled:false }, libraryScan: { connectionId: connections[0], externalUserId: null, fullCompletedAt: new Date().toISOString() } } }).where(eq(s.providerInstances.id, instance));
+  await getDb().update(s.providerInstances).set({ settings: { schedule: { enabled: true, intervalMinutes: 30, fullIntervalHours: 48, liveEnabled:false, streamsEnabled:false }, libraryScan: { connectionId: connections[0], externalUserId: null, fullCompletedAt: new Date().toISOString() } } }).where(eq(s.providerInstances.id, instance));
   expect((await scheduleProviderMaintenance({ instanceId: instance })).queued).toBe(0);
   const results = await Promise.all([
     runProviderJob(admin, instance),
     runProviderJob(admin, instance),
   ]);
-  expect(results.reduce((n, r) => n + r.queued, 0)).toBe(3);
+  expect(results.reduce((n, r) => n + r.queued, 0)).toBe(4);
 });
 run('independent schedule edits preserve toggles, cadences and scan progress', async () => {
   await updateProviderSchedule(admin, instance, {

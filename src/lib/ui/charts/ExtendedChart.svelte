@@ -1,6 +1,6 @@
 <script lang="ts">
   import ChartMark from './ChartMark.svelte';
-  import { chartColors, formatValue, mediumColor, type ChartModel, type ChartRow } from './types';
+  import { chartColors, chartCategoryColor, chartFill, formatValue, mediumColor, type ChartModel, type ChartRow } from './model';
   import { isotypeFractions, layoutBubbles, layoutFlows, partitionTreemap, radialLength, radialSector } from './extended-geometry';
 
   let { model, selected, onselect }: { model: ChartModel; selected: number; onselect: (index: number) => void } = $props();
@@ -9,7 +9,7 @@
   const label = (row: ChartRow) => `${row.group ? `${row.group} · ` : ''}${row.label}: ${formatValue(row.value, row.valueUnit ?? model.unit)}${row.detail ? `; ${row.detail}` : ''}`;
   const number = (value: unknown, fallback = 0) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
   const text = (value: unknown, fallback = '') => typeof value === 'string' ? value : fallback;
-  const colour = (index: number) => mediumColor(model.rows[index]?.medium, index);
+  const colour = (index: number) => mediumColor(model.rows[index]?.medium, model.rows[index]?.label);
   const fraction = (value: number, domain: [number, number]) => Math.max(0, Math.min(1, (value - domain[0]) / Math.max(0.001, domain[1] - domain[0])));
   // Selection changes must not repeat wrapping for every SVG label. Reset this
   // small component-local cache when the model changes, rather than retaining
@@ -97,6 +97,7 @@
     });
   });
   let bubbles = $derived.by(() => model.styleId.startsWith('13') ? layoutBubbles(model.rows, model.styleId === '13B' ? 'editorial' : model.styleId === '13A' ? 'playful' : 'packed', { x: 24, y: 26, width: 712, height: model.styleId === '13B' ? 250 : 350 }) : []);
+  let bubbleMaximum = $derived(model.styleId.startsWith('13') ? Math.max(1, ...model.rows.map(row => row.value ?? 0)) : 1);
   let flow = $derived.by(() => model.styleId === '14A' ? layoutFlows(model.flows, { x: 128, y: 30, width: 488, height: 330 }) : { nodes: [], ribbons: [], scale: 1 });
   let radialMaximum = $derived(Math.max(1, model.domain[1], ...model.rows.map((row) => row.value ?? 0)));
   let radialTicks = $derived(model.ticks.filter((tick) => tick > 0 && tick <= radialMaximum));
@@ -111,7 +112,7 @@
     });
   });
   let unitHeight = $derived(Math.max(220, (unitRows.at(-1) ?? 56) + Math.max(1, Math.ceil((units.at(-1)?.length ?? 1) / unitColumns)) * 30 + 36));
-  const nodeColour = (value: string, index: number) => /completed|available/i.test(value) ? 'var(--success)' : /failed/i.test(value) ? 'var(--danger)' : /cancelled|not started|unwatched/i.test(value) ? 'var(--muted)' : /music/i.test(value) ? 'var(--danger)' : /game/i.test(value) ? 'var(--success)' : chartColors[index % chartColors.length];
+  const nodeColour = (value: string) => /completed|available/i.test(value) ? 'var(--success)' : /failed/i.test(value) ? 'var(--danger)' : /cancelled|not started|unwatched/i.test(value) ? 'var(--muted)' : chartCategoryColor(value);
 </script>
 
 {#snippet symbol(x: number, y: number, size: number, kind: string)}
@@ -129,7 +130,7 @@
 {#if model.styleId.startsWith('8')}
   <!-- svelte-ignore a11y_no_noninteractive_tabindex (Focusable overflow regions support keyboard scrolling.) -->
   <div class="chart-scroll" tabindex="0" role="region" aria-label="Ranked chart table; scroll horizontally on smaller screens">
-    <table class="table ranked-table">
+    <table class="table chart-table ranked-table">
       <thead><tr><th scope="col">#</th>{#each tableColumns as column}<th scope="col">{column}</th>{/each}</tr></thead>
       <tbody>
         {#each model.rows as row, index}
@@ -155,7 +156,7 @@
   <!-- svelte-ignore a11y_no_noninteractive_tabindex (Focusable overflow regions support keyboard scrolling.) -->
   <div class="chart-scroll" tabindex="0" role="region" aria-label="Dated event timeline; scroll horizontally on smaller screens">
     <svg class:dense={model.events.length > 5} viewBox="0 0 760 280" role="group" aria-label={`${model.title}; exact date positions in ${timeline.month} 2026`}>
-      {#if model.styleId === '9B'}<rect x="20" y="22" width="720" height="230" rx="12" fill="var(--surface)" fill-opacity=".7"/>{/if}
+      {#if model.styleId === '9B'}<rect x="20" y="22" width="720" height="230" class="rounded-frame" fill="var(--surface)" fill-opacity=".7"/>{/if}
       <line x1="54" x2="706" y1="134" y2="134" class="axis"/>
       {#each [1, 8, 15, 22, timeline.maximum] as day}
         <line x1={eventX(day)} x2={eventX(day)} y1={model.styleId === '9B' ? 48 : 126} y2={model.styleId === '9B' ? 238 : 142} class="axis" stroke-dasharray={model.styleId === '9B' ? '4 6' : undefined}/>
@@ -190,16 +191,19 @@
       <text x={group.x + 10} y="30" class="strong-text">{group.name}</text>
       <text x={group.x + 10} y="50" class="muted-text">{formatValue(group.value)}</text>
     {/each}
+    <defs><clipPath id={`${instance}-tree-frame`}><rect class="rounded-frame" x="20" y={model.styleId === '10A' ? 24 : 64} width="720" height={model.styleId === '10A' ? 330 : 290} /></clipPath></defs>
+    <g clip-path={`url(#${instance}-tree-frame)`}>
     {#each tree.cells as cell}
       {@const row = model.rows[cell.index]}
       <ChartMark index={cell.index} {selected} {onselect} label={label(row)}>
-        <rect x={cell.x} y={cell.y} width={cell.width} height={cell.height} fill={colour(cell.index)} stroke={selected === cell.index ? 'var(--ink)' : 'var(--canvas)'} stroke-width={selected === cell.index ? 3 : 2} vector-effect="non-scaling-stroke"/>
+        <rect x={cell.x} y={cell.y} width={cell.width} height={cell.height} class="chart-shape" fill={chartFill(colour(cell.index))} stroke={selected === cell.index ? 'var(--ink)' : 'var(--canvas)'} stroke-width="1.5" vector-effect="non-scaling-stroke"/>
         {#if cell.width >= 62 && cell.height >= 40}
           {#each lines(row.label, Math.max(7, Math.floor((cell.width - 20) / 8))) as line, lineIndex}<text x={cell.x + 12} y={cell.y + 24 + lineIndex * 17} class="tile-label">{line}</text>{/each}
           {#if cell.height >= 80}<text x={cell.x + 12} y={cell.y + 66} class="tile-value">{formatValue(row.value)}</text>{/if}
         {/if}
       </ChartMark>
     {/each}
+    </g>
   </svg>
   </div>
 {:else if model.styleId.startsWith('11')}
@@ -208,11 +212,14 @@
   <svg viewBox={`0 0 ${chartWidth} 290`} role="group" aria-label={`${model.title}; value and labeled reference on a common scale`}>
     {#each model.rows as row, index}
       <ChartMark {index} {selected} {onselect} label={label(row)}>
+        <defs><clipPath id={`${instance}-reference-track-${index}`}><rect class="rounded-frame" x="64" y="78" width="632" height="104" /></clipPath></defs>
+        <g clip-path={`url(#${instance}-reference-track-${index})`}>
         <rect x="64" y="78" width="632" height="104" fill="var(--surface)"/>
         {#if model.styleId === '11B'}
           {#each bullet.ranges as range, rangeIndex}<rect x={bulletX(range[0])} y="78" width={bulletX(range[1]) - bulletX(range[0])} height="104" fill={chartColors[rangeIndex % chartColors.length]} fill-opacity=".12"/>{/each}
         {/if}
-        {#if row.value !== null}<rect x="64" y="113" width={Math.max(0, bulletX(row.value) - 64)} height="32" fill={colour(index)}/>{/if}
+        </g>
+        {#if row.value !== null}<rect x="64" y="113" width={Math.max(0, bulletX(row.value) - 64)} height="32" class="rounded-mark chart-shape" fill={colour(index)}/>{/if}
         {#if row.reference !== undefined}
           {#if model.styleId === '11B'}<circle cx={bulletX(row.reference)} cy="96" r="6" fill="none" stroke="var(--danger)" stroke-width="2" vector-effect="non-scaling-stroke"/>
           {:else}<line x1={bulletX(row.reference)} x2={bulletX(row.reference)} y1="78" y2="182" stroke="var(--success)" stroke-width="3" vector-effect="non-scaling-stroke"/>{/if}
@@ -232,7 +239,7 @@
   <svg viewBox={`0 0 760 ${Math.max(250, funnel.length * 110 + 16)}`} role="group" aria-label={`${model.title}; stage area is proportional to count; percentages use the original cohort`}>
     {#each funnel as stage}
       <ChartMark index={stage.index} {selected} {onselect} label={label(model.rows[stage.index])}>
-        <path d={stage.path} fill={colour(stage.index)} stroke={selected === stage.index ? 'var(--ink)' : 'var(--canvas)'} stroke-width="2" vector-effect="non-scaling-stroke"/>
+        <path d={stage.path} class="chart-shape" fill={chartFill(colour(stage.index))} stroke={selected === stage.index ? 'var(--ink)' : 'var(--canvas)'} stroke-width="2" vector-effect="non-scaling-stroke"/>
         <text x="380" y={stage.y + 32} text-anchor="middle" class="tile-label">{model.rows[stage.index].label}</text>
         <text x="380" y={stage.y + 57} text-anchor="middle" class="tile-label">{formatValue(stage.value)} · {formatValue(stage.percent, '%')}</text>
       </ChartMark>
@@ -250,7 +257,7 @@
       {@const height = 210 * (row.value ?? 0) / Math.max(1, model.rows[0]?.value ?? 0)}
       {@const x = 64 + index * width}
       <ChartMark {index} {selected} {onselect} label={label(row)}>
-        <rect {x} y={270 - height} {width} {height} fill={colour(index)} stroke={selected === index ? 'var(--ink)' : 'var(--canvas)'} stroke-width={selected === index ? 2 : 0} vector-effect="non-scaling-stroke"/>
+        <rect {x} y={270 - height} {width} {height} class="chart-shape" fill={chartFill(colour(index))} stroke={selected === index ? 'var(--ink)' : 'var(--canvas)'} stroke-width={selected === index ? 2 : 0} vector-effect="non-scaling-stroke"/>
         <text x={x + width / 2} y={254 - height} text-anchor="middle" class="strong-text">{formatValue(row.value)} · {formatValue((row.value ?? 0) / Math.max(1, model.rows[0]?.value ?? 0) * 100, '%')}</text>
         {#each lines(row.label, 24) as line, lineIndex}<text x={x + width / 2} y={294 + lineIndex * 17} text-anchor="middle">{line}</text>{/each}
       </ChartMark>
@@ -260,13 +267,13 @@
   </div>
 {:else if model.styleId.startsWith('13')}
   <!-- svelte-ignore a11y_no_noninteractive_tabindex (Focusable overflow regions support keyboard scrolling.) -->
-  <div class="chart-scroll" tabindex="0" role="region" aria-label="Proportional circle chart; scroll horizontally on smaller screens">
+  <div class="chart-scroll wide-chart" tabindex="0" role="region" aria-label="Proportional circle chart; scroll horizontally on smaller screens">
     <svg class:dense={model.styleId === '13B' && model.rows.length > 6} viewBox={`0 0 760 ${model.styleId === '13B' ? 350 : 410}`} role="group" aria-label={`${model.title}; circle area proportional to value; unknown values omitted from area encoding`}>
       {#each bubbles as bubble}
         {@const row = model.rows[bubble.index]}
         <ChartMark index={bubble.index} {selected} {onselect} label={label(row)}>
-          <circle cx={bubble.x} cy={bubble.y} r={bubble.radius} fill={colour(bubble.index)} stroke={selected === bubble.index ? 'var(--ink)' : 'var(--canvas)'} stroke-width="2" vector-effect="non-scaling-stroke"/>
-          {#if model.styleId === '13A' && bubble.radius >= 44}<g color="var(--canvas)">{@render symbol(bubble.x - 12, bubble.y - 42, 24, row.medium ?? 'screen')}</g>{/if}
+          <circle cx={bubble.x} cy={bubble.y} r={bubble.radius} class="chart-shape" fill={chartFill(colour(bubble.index))} stroke={selected === bubble.index ? 'var(--ink)' : 'var(--canvas)'} stroke-width="2" vector-effect="non-scaling-stroke"/>
+          {#if model.styleId === '13A' && bubble.radius >= 56}<g color="var(--chart-on-fill)">{@render symbol(bubble.x - 12, bubble.y - 50, 24, row.medium ?? 'screen')}</g>{/if}
           <text x={bubble.x} y={bubble.y + (model.styleId === '13B' ? 6 : 30)} text-anchor="middle" class="bubble-value">{formatValue(row.value)}</text>
           {#each lines(row.label, Math.max(9, Math.floor(bubble.radius / 4))) as line, lineIndex}
             <text x={bubble.x} y={(model.styleId === '13B' ? 302 : bubble.y - 12) + lineIndex * 17} text-anchor="middle" class={model.styleId === '13B' ? 'circle-caption' : 'bubble-label'}>{line}</text>
@@ -274,6 +281,18 @@
         </ChartMark>
       {/each}
     </svg>
+  </div>
+  <div class="compact-chart compact-bubbles" aria-label="Proportional circles; equal plot sizes preserve area comparisons">
+    {#each model.rows as row, index}
+      {#if row.value !== null}
+        <button type="button" class="bubble-tile chart-mark" aria-label={label(row)} aria-pressed={selected === index} onpointerenter={() => onselect(index)} onfocus={() => onselect(index)} onclick={() => onselect(index)}>
+          <svg viewBox="0 0 160 160" aria-hidden="true">
+            <circle class="chart-shape" cx="80" cy="80" r={68 * Math.sqrt(Math.max(0, row.value) / bubbleMaximum)} fill={chartFill(colour(index))} />
+          </svg>
+          <span>{row.label}</span><strong>{formatValue(row.value)}</strong>
+        </button>
+      {/if}
+    {/each}
   </div>
   {#if model.rows.some((row) => row.value === null)}
     <div class="unknown-scores">{#each model.rows as row, index}{#if row.value === null}<button class="button" aria-pressed={selected === index} onpointerenter={() => onselect(index)} onfocus={() => onselect(index)} onclick={() => onselect(index)}>{row.label}: Unknown{row.evidence !== undefined ? ` · ${row.evidence} evidence items` : ''}</button>{/if}{/each}</div>
@@ -285,11 +304,11 @@
     <svg class="dense" viewBox="0 0 760 400" role="group" aria-label={`${model.title}; every ribbon and node uses the same count scale`}>
       {#each flow.ribbons as ribbon}
         <ChartMark index={ribbon.index} {selected} {onselect} label={`${ribbon.source.label} → ${ribbon.target.label}: ${formatValue(ribbon.value, model.unit)}`}>
-          <path d={ribbon.path} fill={nodeColour(ribbon.source.label, ribbon.source.index)} fill-opacity={selected === ribbon.index ? .85 : .4} stroke={selected === ribbon.index ? 'var(--ink)' : 'none'} stroke-width="1" vector-effect="non-scaling-stroke"/>
+          <path class="chart-shape" d={ribbon.path} fill={nodeColour(ribbon.source.label)} fill-opacity={selected === ribbon.index ? .85 : .4} stroke={selected === ribbon.index ? 'var(--ink)' : 'none'} stroke-width="1" vector-effect="non-scaling-stroke"/>
         </ChartMark>
       {/each}
       {#each flow.nodes as node}
-        <rect x={node.x} y={node.y} width="12" height={node.height} fill={nodeColour(node.label, node.index)}><title>{node.label}: {node.value}</title></rect>
+        <rect class="rounded-cell" x={node.x} y={node.y} width="12" height={node.height} fill={nodeColour(node.label)}><title>{node.label}: {node.value}</title></rect>
         {#each lines(node.label, node.column === 0 ? 16 : 18) as line, lineIndex}<text x={node.column === 0 ? node.x - 8 : node.x + 20} y={node.y + node.height / 2 - 3 + lineIndex * 17} text-anchor={node.column === 0 ? 'end' : 'start'} class="strong-text">{line}</text>{/each}
         <text x={node.column === 0 ? node.x - 8 : node.x + 20} y={node.y + node.height / 2 + 18 + (lines(node.label, 18).length - 1) * 17} text-anchor={node.column === 0 ? 'end' : 'start'} class="muted-text">{formatValue(node.value)}</text>
       {/each}
@@ -305,7 +324,7 @@
       {@const angle = -Math.PI / 2 + index * 2 * Math.PI / model.rows.length}
       {@const radius = radialLength(row.value ?? 0, radialMaximum, 42, 148)}
       <ChartMark {index} {selected} {onselect} label={label(row)}>
-        <path d={radialSector(260, 220, 42, radius, angle - Math.PI / model.rows.length + .045, angle + Math.PI / model.rows.length - .045)} fill={colour(index)} stroke={selected === index ? 'var(--ink)' : 'var(--canvas)'} stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+        <path d={radialSector(260, 220, 42, radius, angle - Math.PI / model.rows.length + .045, angle + Math.PI / model.rows.length - .045)} class="chart-shape" fill={chartFill(colour(index))} stroke={selected === index ? 'var(--ink)' : 'var(--canvas)'} stroke-width="1.5" vector-effect="non-scaling-stroke"/>
         <text x={260 + 174 * Math.cos(angle)} y={224 + 174 * Math.sin(angle)} text-anchor="middle" class="strong-text">{row.label}</text>
         <text x={260 + 199 * Math.cos(angle)} y={224 + 199 * Math.sin(angle)} text-anchor="middle" class="muted-text">{formatValue(row.value)}</text>
       </ChartMark>
@@ -323,7 +342,7 @@
       <text x="24" y="24" class="muted-text">Each symbol = {model.symbolUnit ?? 1} {model.unit}</text>
       {#each model.rows as row, index}
         <ChartMark {index} {selected} {onselect} label={label(row)}>
-          <rect x="16" y={unitRows[index] - 6} width="726" height={Math.max(1, Math.ceil(units[index].length / unitColumns)) * 30 + 4} fill="var(--surface)" fill-opacity={selected === index ? .5 : .01} rx="8"/>
+          <rect class="rounded-mark" x="16" y={unitRows[index] - 6} width="726" height={Math.max(1, Math.ceil(units[index].length / unitColumns)) * 30 + 4} fill="var(--surface)" fill-opacity={selected === index ? .5 : .01} rx="8"/>
           <text x="24" y={unitRows[index] + 19} class="strong-text">{row.label}</text>
           {#each units[index] as share, symbolIndex}
             {@const x = 208 + symbolIndex % unitColumns * 28}
@@ -347,27 +366,16 @@
 <style>
   svg { display: block; width: 100%; overflow: visible; }
   svg:not(.sparkline) { min-width: 760px; }
-  svg text { fill: var(--ink); font-family: var(--font-sans); font-size: var(--text-sm); font-weight: var(--weight-regular); }
-  svg .muted-text { fill: var(--muted); }
-  svg .strong-text { font-size: var(--text-md); font-weight: var(--weight-semibold); }
-  svg .tile-label, svg .bubble-label { fill: var(--canvas); font-size: var(--text-md); font-weight: var(--weight-semibold); }
-  svg .tile-value, svg .bubble-value { fill: var(--canvas); font-size: var(--text-xl); font-weight: var(--weight-bold); }
-  svg .circle-caption { font-size: var(--text-md); }
-  .axis { stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .compact-bubbles svg { min-width: 0; }
   .unit-symbol :is(path, rect, ellipse) { vector-effect: non-scaling-stroke; }
-  .grid-line { stroke: var(--line); stroke-width: 1; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
-  .chart-scroll { overflow-x: auto; overscroll-behavior-inline: contain; padding: 4px; }
   .dense { min-width: 660px; }
   svg.radial-chart { min-width: 520px; max-width: 680px; margin-inline: auto; }
   .ranked-table { min-width: 580px; }
-  .ranked-table td, .ranked-table th { padding: 12px 8px; }
-  .ranked-table tbody th { color: var(--ink); }
-  .ranked-table .chosen { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+  .ranked-table td, .ranked-table th { padding: var(--chart-gap) 8px; font-size: var(--text-md); }
+  .ranked-table tbody th { color: var(--chart-label); }
   .primary-value { white-space: nowrap; font-weight: var(--weight-semibold); }
   .rank-select { border: 0; padding: 4px 0; text-align: left; background: transparent; font-weight: var(--weight-semibold); }
   .rank-select[aria-pressed='true'] { color: var(--accent); }
   .sparkline { width: 180px; height: 52px; }
-  .chart-caption { margin-top: 12px; font-size: var(--text-sm); line-height: var(--leading-normal); }
-  .unknown-scores { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
-  @media (forced-colors: active) { svg text, svg .tile-label, svg .tile-value, svg .bubble-label, svg .bubble-value { fill: CanvasText; } }
+  .unknown-scores { display: flex; flex-wrap: wrap; gap: var(--chart-gap); margin-top: var(--chart-gap); }
 </style>

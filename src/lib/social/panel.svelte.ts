@@ -4,8 +4,9 @@ export function openFriends(){
  const url=new URL(window.location.href);
  if(page.state.friendsPopover??url.searchParams.get('friends')==='true')return;
  const alreadyLinked=url.searchParams.get('friends')==='true';
+ url.searchParams.delete('streams');
  url.searchParams.delete('notifications');url.searchParams.delete('notificationKind');url.searchParams.set('friends','true');
- (alreadyLinked?replaceState:pushState)(url,{...page.state,notificationPopover:false,friendsPopover:true});
+ (alreadyLinked?replaceState:pushState)(url,{...page.state,streamsPopover:false,notificationPopover:false,friendsPopover:true});
 }
 export function closeFriends(){
  const url=new URL(window.location.href);url.searchParams.delete('friends');

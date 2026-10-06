@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './lib/ui/charts/chart.css';
 @font-face {
   font-family: Inter;
   src: url('/fonts/InterVariable.woff2') format('woff2-variations');

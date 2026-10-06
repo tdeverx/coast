@@ -8,6 +8,7 @@ export const maintenanceKinds = [
   'jellyfin.sync',
   'trakt.live',
   'jellyfin.live',
+  'jellyfin.streams',
   'steam.live',
   'trakt.import',
   'trakt.lists-import',
@@ -24,8 +25,8 @@ export type ServiceTask = {
   title: string;
   description: string;
   kinds: string[];
-  scope?: 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'catalogue' | 'metadata' | 'all';
-  interval?: 'intervalMinutes' | 'userIntervalMinutes' | 'listsIntervalMinutes' | 'liveIdleMinutes' | 'catalogueIntervalMinutes' | 'recommendationsIntervalMinutes';
+  scope?: 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'streams' | 'catalogue' | 'metadata' | 'all';
+  interval?: 'intervalMinutes' | 'userIntervalMinutes' | 'listsIntervalMinutes' | 'liveIdleMinutes' | 'streamsIntervalMinutes' | 'catalogueIntervalMinutes' | 'recommendationsIntervalMinutes';
   enabled?: keyof ProviderSchedule;
 };
 function groupedServiceTasks(provider: string): ServiceTask[] {
@@ -78,6 +79,7 @@ function groupedServiceTasks(provider: string): ServiceTask[] {
         enabled: 'userSyncEnabled',
       },
       {id:'live',title:'Live activity',description:'Read this account’s current Jellyfin playback sessions.',kinds:['jellyfin.live'],scope:'live',interval:'liveIdleMinutes',enabled:'liveEnabled'},
+      {id:'streams',title:'Server streams',description:'Record server streaming sessions and cache active stream counts using a Jellyfin administrator account.',kinds:['jellyfin.streams'],scope:'streams',interval:'streamsIntervalMinutes',enabled:'streamsEnabled'},
       catalogue,
       changes,
     ];

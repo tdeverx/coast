@@ -2,7 +2,7 @@ import {and,eq} from 'drizzle-orm';
 import {getDb,getSql} from '$lib/server/db';
 import {socialLiveState,socialLiveDeliveries,providerConnections,externalIds} from '$lib/server/db/schema';
 import {getTrakt} from '$lib/providers/trakt/connection.server';
-import {providerSchedule} from '$lib/providers/schedule';
+import {liveObservationExpiry} from './live-freshness.server';
 import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
 import {reconcileProviderValue} from '$lib/sync/values';
 import {trackInTransaction} from '$lib/core/tracking/service';
@@ -13,11 +13,11 @@ export async function pollLive(userId:string,connectionId:string) {
 }
 export async function pollLiveFromAdapter(userId:string,connectionId:string,{adapter,connection,instance,sync}:TraktContext) {
  if(connection.settings.liveRead===false)return;
- const schedule=providerSchedule('trakt',instance.settings.schedule),db=getDb();
+ const db=getDb();
  const [previous]=await db.select().from(socialLiveState).where(eq(socialLiveState.connectionId,connectionId));
  const remote=await adapter.watching(),now=new Date();
  const work=remote?await resolveTrakt(remote):null;
- const expires=remote?new Date(Math.min(Date.parse(remote.expires_at),now.getTime()+2*schedule.liveActiveMinutes*60000)):null;
+ const expires=remote?await liveObservationExpiry(instance,now,remote.expires_at):null;
  const since=previous?.accountGeneration===connection.accountGeneration&&previous.historyCursor?new Date(Math.max(previous.historyCursor.getTime()-60000,Date.now()-30*86400000)).toISOString():new Date(Date.now()-10*60000).toISOString();
  if(sync.history)for(const record of await adapter.recentHistory(since)){
   if(!record.id||!record.watched_at)continue;

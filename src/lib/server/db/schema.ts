@@ -1274,3 +1274,14 @@ export const userTasteScores=pgTable('user_taste_scores',{
  score:real('score'),confidence:real('confidence').notNull(),revision:text('revision').notNull(),
  breakdown:jsonb('breakdown').$type<ReturnType<typeof import('$lib/social/taste-profile').scoreTaste>>().notNull(),updatedAt:updatedAt(),
 },t=>[primaryKey({columns:[t.userId,t.workId]}),index('user_taste_scores_rank_idx').on(t.userId,t.score,t.workId)]);
+
+export const serverStreamScans=pgTable('server_stream_scans',{
+ instanceId:uuid('instance_id').primaryKey().references(()=>providerInstances.id,{onDelete:'cascade'}),
+ connectionId:uuid('connection_id').references(()=>providerConnections.id,{onDelete:'set null'}),
+ accountGeneration:uuid('account_generation').notNull(),checkedAt:timestamp('checked_at',{withTimezone:true}).notNull().defaultNow(),lastError:text('last_error'),
+});
+export const serverStreamSessions=pgTable('server_stream_sessions',{
+ id:uuid('id').primaryKey().defaultRandom(),instanceId:uuid('instance_id').notNull().references(()=>providerInstances.id,{onDelete:'cascade'}),
+ sessionId:text('session_id').notNull(),externalItemId:text('external_item_id').notNull(),snapshot:jsonb('snapshot').notNull(),
+ firstSeenAt:timestamp('first_seen_at',{withTimezone:true}).notNull().defaultNow(),lastSeenAt:timestamp('last_seen_at',{withTimezone:true}).notNull().defaultNow(),endedAt:timestamp('ended_at',{withTimezone:true}),
+},table=>[uniqueIndex('server_stream_sessions_active_unique').on(table.instanceId,table.sessionId).where(sql`${table.endedAt} is null`),index('server_stream_sessions_history_idx').on(table.lastSeenAt.desc(),table.id.desc())]);

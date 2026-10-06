@@ -11,6 +11,7 @@
   import type {
     MediaView,
     MediaCardPresentation,
+    MediaCardDisplay,
     MediaCardShape,
     MediaCardArtwork,
     MediaCardOverlay,
@@ -40,8 +41,10 @@
     showCaption = true,
     showPrimaryAction = true,
     primaryMenu,
+    activityTrailing,
+    activityProgress,
   }: {
-    item: MediaView | MediaCardPresentation;
+    item: MediaView | MediaCardPresentation | MediaCardDisplay;
     shape?: MediaCardShape;
     artworkStyle?: MediaCardArtwork;
     overlay?: MediaCardOverlay;
@@ -52,12 +55,14 @@
     showCaption?:boolean;
     showPrimaryAction?:boolean;
     primaryMenu?:import('svelte').Snippet;
+    activityTrailing?:import('svelte').Snippet;
+    activityProgress?:number|null;
     social?:{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number};
   } = $props();
   const contextReadOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
-  const readOnly = () => !page.data.user || contextReadOnly();
+  const readOnly = () => !page.data.user || contextReadOnly() || ('href' in item&&item.href===null);
   const trackedItem = $derived('href' in item ? undefined : item);
-  const href = $derived('href' in item ? item.href : `/media/${item.id}`);
+  const href = $derived('href' in item ? item.href??undefined : `/media/${item.id}`);
   let overlayIndex = $state(0);
   const overlayCandidates = $derived(overlayArtwork(item, overlay, artworkPriority));
   const overlayImage = $derived(overlayCandidates[overlayIndex]);
@@ -128,6 +133,7 @@
         })
       : 'open'
   );
+  const cardProgress=$derived(item.captionActor?activityProgress??null:completion!==null&&completion>0&&completion<0.9?completion:null);
   const primaryLabel = $derived(
     {
       play: 'Play',
@@ -144,12 +150,13 @@
     if(primaryMenu&&rect){primaryMenuButton?.openAt({x:rect.left,y:rect.bottom});return;}
     if (primaryAction === 'play') await actions?.start();
     else if (primaryAction === 'request') actions?.request();
-    else await goto(href);
+    else if(href) await goto(href);
   }
   function cardGesture(node: HTMLElement) {
     return contextGesture(node, openMenu);
   }
   function select(event: MouseEvent) {
+    if(!href)return;
     if(!onselect&&page.data.user&&page.data.experiments?.mediaModal&&/^\/media\/[0-9a-f-]{36}$/.test(href)&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey&&event.button===0){event.preventDefault();pushState(page.url,{...page.state,mediaModalId:href.split('/')[2]});return;}
     if (onselect && trackedItem) {
       event.preventDefault();
@@ -167,8 +174,8 @@
 >
   {#if showActivityContext && item.captionActor}
     <div class="activity-context">
-      <ActivityHeader username={item.captionActor.username} avatar={item.captionActor.avatar} status={item.captionActor.status} showAvatar={!loading} nonApproved>
-        {#snippet trailing()}{#if item.captionActivity}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{unknownActivityDate(item.captionActivity.kind)}</span>{/if}{/if}{/snippet}
+      <ActivityHeader username={item.captionActor.username} avatar={item.captionActor.avatar} status={item.captionActor.status} profileHref={item.captionActor.profileHref} showAvatar={!loading} nonApproved>
+        {#snippet trailing()}{#if activityTrailing}{@render activityTrailing()}{:else if item.captionActivity}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{unknownActivityDate(item.captionActivity.kind)}</span>{/if}{/if}{/snippet}
       </ActivityHeader>
     </div>
   {/if}
@@ -245,15 +252,15 @@
               bind:this={actions}
               item={trackedItem}
               menuOnly
-            />{:else if 'href' in item}<PresentationActions
+            />{:else if 'href' in item&&item.href!==null}<PresentationActions
               bind:this={presentationActions}
               {item}
             />{/if}{/if}
       </div>
     {/if}{/if}
-    {#if !loading && !item.captionActor && (social?.total || completion !== null && completion > 0 && completion < 0.9)}<div class="card-status">
-      {#if social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} showLabel={false} showReactions={false} /></div>{/if}
-      {#if completion !== null && completion > 0 && completion < 0.9}<div class="card-progress"><ProgressBar progress={completion} label={`${item.title} progress`} /></div>{/if}
+    {#if !loading && ((!item.captionActor&&social?.total)||cardProgress!==null)}<div class="card-status">
+      {#if !item.captionActor&&social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} showLabel={false} showReactions={false} /></div>{/if}
+      {#if cardProgress!==null}<div class="card-progress"><ProgressBar progress={cardProgress} label={`${item.title}${item.captionActor?' playback':''} progress`} /></div>{/if}
     </div>{/if}
   </div>
   {#if showCaption}<div class="caption-row">

@@ -1,4 +1,5 @@
 import { artworkKeys, artworkTypes } from '$lib/artwork';
+import {activeSessionsSchema,streamPresentation} from './streams';
 import * as v from 'valibot';
 import { browseMusic, musicItem, type MusicBrowseOptions } from './music.server';
 import { ProviderActionError } from '../contracts';
@@ -203,6 +204,10 @@ export class JellyfinAdapter {
     const sessions=v.parse(v.array(v.object({UserId:v.optional(v.string()),NowPlayingItem:v.optional(v.nullable(v.object({Id:v.string()}))),PlayState:v.optional(v.nullable(v.object({IsPaused:v.optional(v.boolean(),false)})))})),await this.call('/Sessions?ActiveWithinSeconds=120'));
     // Administrator accounts may see everyone; never import another user's live session.
     return sessions.filter(session=>session.UserId===userId);
+  }
+  async activeStreams(){
+    const sessions=v.parse(activeSessionsSchema,await this.call('/Sessions?ActiveWithinSeconds=120'));
+    return sessions.flatMap(session=>{const stream=streamPresentation(session);return stream?[stream]:[];});
   }
   async identity(expectedId?: string) {
     const info = v.parse(identitySchema, await this.call('/System/Info/Public'));

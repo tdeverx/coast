@@ -7,7 +7,7 @@
   providePreviewClient(fixtureFetch);
   const name = $derived(page.url.searchParams.get('component') ?? 'Button');
 </script>
-<svelte:head><title>{name} · UI preview</title></svelte:head>
+<svelte:head><title>{name}{name==='StreamsPanel'?' · Non-approved':''} · UI preview</title></svelte:head>
 {#if ready}{#key name}<Demo {name} initialOpen />{/key}{/if}
 <style>
   :global([data-coast-glass] > header), :global([data-coast-glass] > .hero-player), :global([data-coast-glass] > .toasts) { display:none; }

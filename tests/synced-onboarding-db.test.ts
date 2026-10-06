@@ -291,3 +291,15 @@ run('initial imports take priority without overlapping service work',async()=>{
  expect(await runQueueOnce()).toBe(true);expect(calls).toEqual(['initial']);
  expect(await runQueueOnce()).toBe(true);expect(calls).toEqual(['initial','ordinary']);
 });
+
+run('direct item switches reset queues across video and audio and retain membership',async()=>{
+ await getSql()`UPDATE playback_sessions SET state='active',expires_at=NOW()+INTERVAL '1 hour' WHERE id=${play[0]}`;
+ const [audio]=await getSql()`SELECT id,media_id FROM playback_sessions WHERE user_id=${ids[0]} AND media_type='audio' LIMIT 1`;
+ await getSql()`UPDATE playback_sessions SET state='active',expires_at=NOW()+INTERVAL '1 hour' WHERE id=${audio.id}`;
+ let r=await createRoom(ids[0],{playbackId:play[0]});
+ r=await commandRoom(ids[0],r.id,{action:'item',playbackId:audio.id,revision:r.revision});
+ expect(r.mediaType).toBe('audio');expect(r.mediaId).toBe(audio.media_id);expect(r.queue).toEqual([audio.media_id]);expect(r.queueIndex).toBe(0);
+ r=await commandRoom(ids[0],r.id,{action:'item',playbackId:play[0],revision:r.revision,queueIndex:1});
+ expect(r.mediaType).toBe('video');expect(r.queue).toEqual([]);expect(r.queueItems).toEqual([]);expect(r.queueIndex).toBe(0);expect(r.participants.find(p=>p.userId===ids[0])?.joined).toBe(true);
+ await leaveRoom(ids[0],r.id);
+});

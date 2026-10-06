@@ -1,6 +1,6 @@
 <script module lang="ts">
   // Decorative, local samples are computed once. These miniatures never mount a live chart.
-  const colours = ['var(--accent)', 'var(--success)', 'var(--danger)', 'var(--rating)'];
+  import { chartColors as colours } from '$lib/ui/charts/types';
   const lineValues = [12, 18, 15, 24, 20, 30];
   const stacks = [[8, 12, 10, 15, 12, 18], [6, 8, 11, 10, 14, 12], [4, 6, 7, 10, 8, 14]];
   const trendPoints = (values: number[], left = 18, top = 20, width = 144, height = 66, maximum = 36) => values.map((value, index) => ({ x: left + index * width / Math.max(1, values.length - 1), y: top + height * (1 - value / maximum) }));
@@ -60,13 +60,14 @@
 </script>
 
 <script lang="ts">
+  const instance = $props.id();
   let { styleId }: { styleId: string } = $props();
   let family = $derived(Number.parseInt(styleId));
   let framed = $derived(['1B', '2B', '6B', '7B', '8B', '9B', '10B', '11B'].includes(styleId));
 </script>
 
 <svg class="chart-thumbnail" viewBox="0 0 180 108" aria-hidden="true" focusable="false">
-  {#if framed}<rect x="8" y="8" width="164" height="92" rx="9" fill="var(--coast-glass-fill)" stroke="var(--line)"/>{/if}
+  {#if framed}<rect x="8" y="8" width="164" height="92" class="thumbnail-frame" fill="var(--coast-glass-fill)" stroke="var(--line)"/>{/if}
   {#if family === 1}
     {#each [30, 58, 86] as y}<line x1="18" x2="162" y1={y} y2={y} class="grid"/>{/each}
     <path d="M18 17V86H164" class="axis"/>
@@ -82,11 +83,11 @@
       {#each [100, 78, 56, 38] as value, index}<rect x="18" y={20 + index * 19} width="20" height="3" rx="1.5" fill="var(--muted)"/><rect x="48" y={17 + index * 19} width={value} height="9" rx="4.5" fill={index ? 'var(--accent)' : 'var(--success)'}/>{/each}
       <line x1="48" x2="159" y1="93" y2="93" class="axis"/>
     {:else if styleId === '2B'}
-      {#each [30, 36, 34, 42, 44, 54] as total, index}<rect x={23 + index * 23} y={86 - total * 1.1} width="14" height={total * 1.1} fill="var(--success)"/><rect x={23 + index * 23} y={86 - [12, 16, 10, 20, 18, 24][index] * 1.1} width="14" height={[12, 16, 10, 20, 18, 24][index] * 1.1} fill="var(--accent)"/>{/each}
+      {#each [30, 36, 34, 42, 44, 54] as total, index}<defs><clipPath id={`${instance}-stack-${index}`}><rect x={23 + index * 23} y={86 - total * 1.1} width="14" height={total * 1.1} style:height={`calc(${total * 1.1}px + var(--chart-mark-radius) / 4)`} class="rounded-detail" /></clipPath></defs><g clip-path={`url(#${instance}-stack-${index})`}><rect x={23 + index * 23} y={86 - total * 1.1} width="14" height={total * 1.1} fill="var(--success)"/><rect x={23 + index * 23} y={86 - [12, 16, 10, 20, 18, 24][index] * 1.1} width="14" height={[12, 16, 10, 20, 18, 24][index] * 1.1} fill="var(--accent)"/></g>{/each}
       <line x1="18" x2="164" y1="86" y2="86" class="axis"/>
     {:else}
       <line x1="90" x2="90" y1="16" y2="94" class="axis"/>
-      {#each [48, 32, 16, -18, -34] as value, index}<rect x={Math.min(90, 90 + value)} y={18 + index * 15} width={Math.abs(value)} height="10" fill={value > 0 ? 'var(--success)' : 'var(--danger)'}/>{/each}
+      {#each [48, 32, 16, -18, -34] as value, index}<rect x={Math.min(90, 90 + value)} y={18 + index * 15} width={Math.abs(value)} height="10" class="rounded-detail" fill={value > 0 ? 'var(--success)' : 'var(--danger)'}/>{/each}
     {/if}
   {:else if family === 3}
     {#if styleId === '3C'}
@@ -96,12 +97,14 @@
     {/if}
   {:else if family === 4}
     {#if styleId === '4A'}
-      {#each calendarCells as cell}<rect x={cell.x} y={cell.y} width="8" height="8" rx="1" fill="var(--accent)" fill-opacity={.12 + cell.strength * .8}/>{/each}
+      {#each calendarCells as cell}<rect x={cell.x} y={cell.y} width="8" height="8" class="rounded-detail" fill="var(--accent)" fill-opacity={.12 + cell.strength * .8}/>{/each}
     {:else if styleId === '4B'}
+      <defs><clipPath id={`${instance}-month-frame`}><rect x="31" y="12" width="119" height="75" class="rounded-mini-frame" /></clipPath></defs><g clip-path={`url(#${instance}-month-frame)`}>
       {#each Array(35) as _, index}<rect x={31 + index % 7 * 17} y={12 + Math.floor(index / 7) * 15} width="17" height="15" fill="none" stroke="var(--line)" stroke-width=".7"/>{/each}
       {#each monthCells as cell}<circle cx={cell.x} cy={cell.y} r={cell.radius} fill="var(--success)"/>{/each}
+      </g><rect x="31" y="12" width="119" height="75" class="rounded-mini-frame axis" />
     {:else}
-      {#each matrixCells as cell}<rect x={cell.x} y={cell.y} width="21" height="9" fill="var(--danger)" fill-opacity={.12 + cell.strength * .84}/>{/each}
+      {#each matrixCells as cell}<rect x={cell.x} y={cell.y} width="21" height="9" class="rounded-detail" fill="var(--danger)" fill-opacity={.12 + cell.strength * .84}/>{/each}
     {/if}
   {:else if family === 5}
     {#if styleId === '5A'}
@@ -116,7 +119,7 @@
     {/if}
   {:else if family === 6}
     {#if styleId === '6A'}
-      <line x1="22" x2="155" y1="61" y2="61" stroke="var(--accent)" stroke-width="1.5"/><path d="M22 54V68M155 54V68" stroke="var(--accent)" fill="none"/><rect x="74" y="49" width="36" height="24" fill="var(--accent)" fill-opacity=".35"/><line x1="91" x2="91" y1="47" y2="75" stroke="var(--accent)"/><circle cx="48" cy="61" r="4" fill="var(--success)"/><line x1="48" x2="48" y1="65" y2="85" class="grid"/><line x1="18" x2="162" y1="85" y2="85" class="axis"/>
+      <line x1="22" x2="155" y1="61" y2="61" stroke="var(--accent)" stroke-width="1.5"/><path d="M22 54V68M155 54V68" stroke="var(--accent)" fill="none"/><rect x="74" y="49" width="36" height="24" class="rounded-detail" fill="var(--accent)" fill-opacity=".35"/><line x1="91" x2="91" y1="47" y2="75" stroke="var(--accent)"/><circle cx="48" cy="61" r="4" fill="var(--success)"/><line x1="48" x2="48" y1="65" y2="85" class="grid"/><line x1="18" x2="162" y1="85" y2="85" class="axis"/>
     {:else if styleId === '6B'}
       <path d={intervalBand} fill="var(--danger)" fill-opacity=".3"/><path d={intervalLine} fill="none" stroke="var(--success)" stroke-width="2"/>
       {#each trendPoints(intervalValues) as point}<circle cx={point.x} cy={point.y} r="2.5" fill="var(--success)"/>{/each}
@@ -128,7 +131,7 @@
   {:else if family === 7}
     <path d="M18 16V86H164" class="axis"/>
     {#if styleId === '7A'}
-      {#each [4, 8, 15, 29, 46, 58, 40, 23] as value, index}<rect x={22 + index * 17.3} y={86 - value} width="14" height={value} fill={index === 5 ? 'var(--success)' : 'var(--accent)'}/>{/each}
+      {#each [4, 8, 15, 29, 46, 58, 40, 23] as value, index}<rect x={22 + index * 17.3} y={86 - value} width="14" height={value} class="rounded-detail" fill={index === 5 ? 'var(--success)' : 'var(--accent)'}/>{/each}
     {:else}
       {#each distributions as distribution, index}<path d={distribution.area} fill={colours[index]} fill-opacity=".24"/><path d={distribution.line} fill="none" stroke={colours[index]} stroke-width="2"/>{/each}
     {/if}
@@ -148,6 +151,8 @@
       {#each [2, 6, 10, 14, 18, 22, 26, 30] as day, index}{@const x = 20 + (day - 1) / 29 * 140}<circle cx={x} cy="54" r="4" fill={index < 6 ? 'var(--success)' : 'var(--canvas)'} stroke={index < 6 ? 'var(--success)' : 'var(--accent)'} stroke-width="1.3"/><line x1={x - 4} x2={x + 4} y1="69" y2="69" class="axis"/>{#if index === 3}<circle cx={x} cy="54" r="7" fill="none" stroke="var(--accent)"/>{/if}{/each}
     {/if}
   {:else if family === 10}
+    <defs><clipPath id={`${instance}-tree-frame`}><rect x="18" y={styleId === '10A' ? 22 : 30} width="144" height={styleId === '10A' ? 64 : 58} class="rounded-mini-frame" /></clipPath></defs>
+    <g clip-path={`url(#${instance}-tree-frame)`}>
     {#if styleId === '10A'}
       <rect x="18" y="22" width="57.6" height="64" fill="var(--accent)"/><rect x="75.6" y="22" width="43.2" height="64" fill="var(--success)"/><rect x="118.8" y="22" width="43.2" height={128 / 3} fill="var(--danger)"/><rect x="118.8" y={22 + 128 / 3} width="43.2" height={64 / 3} fill="var(--rating)"/>
       <path d="M75.6 22V86M118.8 22V86M118.8 64.667H162" stroke="var(--canvas)" fill="none"/>
@@ -156,12 +161,15 @@
       <rect x="18" y="30" width="57.6" height="58" fill="var(--accent)"/><rect x="75.6" y="30" width="43.2" height="58" fill="var(--success)"/><rect x="118.8" y="30" width="43.2" height={116 / 3} fill="var(--danger)"/><rect x="118.8" y={30 + 116 / 3} width="43.2" height={58 / 3} fill="var(--rating)"/>
       <path d="M75.6 30V88M118.8 68.667H162" stroke="var(--canvas)" fill="none"/><line x1="118.8" x2="118.8" y1="30" y2="88" stroke="var(--canvas)" stroke-width="3"/>
     {/if}
+    </g>
   {:else if family === 11}
     {#if styleId === '11A'}
-      <rect x="18" y="43" width="144" height="27" fill="var(--surface)"/><rect x="18" y="50" width="86.4" height="13" fill="var(--success)"/><line x1="133.2" x2="133.2" y1="40" y2="74" stroke="var(--accent)" stroke-width="2.5"/>
+      <rect x="18" y="43" width="144" height="27" class="rounded-mini-frame" fill="var(--surface)"/><rect x="18" y="50" width="86.4" height="13" class="rounded-detail" fill="var(--success)"/><line x1="133.2" x2="133.2" y1="40" y2="74" stroke="var(--accent)" stroke-width="2.5"/>
     {:else}
+      <defs><clipPath id={`${instance}-reference-track`}><rect x="18" y="37" width="144" height="39" class="rounded-mini-frame" /></clipPath></defs><g clip-path={`url(#${instance}-reference-track)`}>
       {#each [[18, 72], [90, 36], [126, 36]] as band, index}<rect x={band[0]} y="37" width={band[1]} height="39" fill={colours[index]} fill-opacity=".17"/>{/each}
-      <rect x="18" y="55" width="64.8" height="11" fill="var(--accent)"/><circle cx="118.8" cy="46" r="3.5" fill="none" stroke="var(--danger)" stroke-width="1.5"/><line x1="90" x2="90" y1="29" y2="82" stroke="var(--success)" stroke-dasharray="3 3"/>
+      </g>
+      <rect x="18" y="55" width="64.8" height="11" class="rounded-detail" fill="var(--accent)"/><circle cx="118.8" cy="46" r="3.5" fill="none" stroke="var(--danger)" stroke-width="1.5"/><line x1="90" x2="90" y1="29" y2="82" stroke="var(--success)" stroke-dasharray="3 3"/>
     {/if}
     <line x1="18" x2="162" y1="82" y2="82" class="axis"/>{#each [18, 54, 90, 126, 162] as x}<line x1={x} x2={x} y1="82" y2="86" class="axis"/>{/each}
   {:else if family === 12}
@@ -175,7 +183,7 @@
     {#if styleId === '13B'}{#each editorialCircles as bubble}<line x1={bubble.x - 8} x2={bubble.x + 8} y1="90" y2="90" class="axis"/>{/each}{/if}
   {:else if styleId === '14A'}
     {#each ribbons as flow}<path d={flow.d} fill={colours[flow.colour]} fill-opacity=".47"/>{/each}
-    {#each [[22, 18, 20.8, 0], [22, 46.8, 18.2, 1], [22, 73, 13, 2], [85, 18, 31.2, 0], [85, 62, 20.8, 1], [151, 18, 23.4, 0], [151, 48, 7.8, 1], [151, 65, 20.8, 2]] as node}<rect x={node[0]} y={node[1]} width="6" height={node[2]} fill={colours[node[3]]}/>{/each}
+    {#each [[22, 18, 20.8, 0], [22, 46.8, 18.2, 1], [22, 73, 13, 2], [85, 18, 31.2, 0], [85, 62, 20.8, 1], [151, 18, 23.4, 0], [151, 48, 7.8, 1], [151, 65, 20.8, 2]] as node}<rect x={node[0]} y={node[1]} width="6" height={node[2]} class="rounded-detail" fill={colours[node[3]]}/>{/each}
   {:else if styleId === '14B'}
     {#each [20, 40, 60] as tick}<circle cx="90" cy="54" r={9 + tick / 60 * 31} class="grid"/>{/each}
     {#each radial as bar}<path d={bar.path} fill={colours[Math.floor(bar.index / 3)]}/>{/each}<circle cx="90" cy="54" r="7.5" fill="var(--surface)"/>
@@ -186,7 +194,11 @@
 
 <style>
   .chart-thumbnail { display: block; width: 100%; height: 92px; pointer-events: none; }
-  .axis { fill: none; stroke: var(--line); stroke-width: 1; }
-  .grid { fill: none; stroke: var(--line); stroke-width: .8; stroke-dasharray: 2 3; }
+  .thumbnail-frame { rx: var(--chart-frame-radius); }
+  .rounded-detail { rx: calc(var(--chart-mark-radius) / 4); }
+  .rounded-mini-frame { rx: calc(var(--chart-frame-radius) / 3); }
+  path, line, polygon { stroke-linecap: round; stroke-linejoin: round; }
+  .axis { fill: none; stroke: var(--chart-axis); stroke-width: 1; }
+  .grid { fill: none; stroke: var(--chart-grid); stroke-width: 1; stroke-dasharray: 3 5; }
   path, line, polygon, circle, rect { vector-effect: non-scaling-stroke; }
 </style>

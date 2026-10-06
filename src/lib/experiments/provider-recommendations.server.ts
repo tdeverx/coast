@@ -23,13 +23,13 @@ export async function scheduleRecommendationRefresh(tx:Tx,options:Options){
   if(options.kind&&options.kind!==kind||!options.force&&(!schedule.enabled||!schedule.recommendationsEnabled)||instance.provider==='igdb'&&!config.experimentalGaming||instance.provider==='trakt'&&!config.enableTrakt)continue;
   if(options.task==='tracking'&&instance.provider!=='trakt'||options.task==='metadata'&&instance.provider==='trakt')continue;
   const [busy]=await tx.execute(sql`select id from outbox_actions where kind=${kind} and coalesce(payload->>'instanceId',(select instance_id::text from provider_connections where id=connection_id))=${instance.id} and (state in ('pending','running') or state='failed' and connection_id is null) limit 1`);
-  if(busy){active++;continue;}
+  if(busy){if(options.force)await tx.execute(sql`update outbox_actions set payload=payload||'{"_manual":true}'::jsonb where id=${busy.id} and state='pending'`);active++;continue;}
   const [last]=await tx.execute<{updated:Date|null}>(sql`select max(updated_at) as updated from outbox_actions where kind=${kind} and payload->>'instanceId'=${instance.id} and state='succeeded'`);
   if(instance.provider!=='trakt'&&!options.force&&last?.updated&&Date.now()-new Date(last.updated).getTime()<schedule.recommendationsIntervalMinutes*60000)continue;
   const accounts=instance.provider==='trakt'?await tx.execute<{id:string;user_id:string;account_generation:string}>(sql`select c.id,c.user_id,c.account_generation from provider_connections c join users u on u.id=c.user_id and not u.disabled where c.instance_id=${instance.id} and c.status='connected' and c.credentials is not null and not exists(select 1 from outbox_actions a where a.connection_id=c.id and a.kind=${kind} and a.state in ('pending','running','failed')) and not exists(select 1 from outbox_actions a where a.connection_id=c.id and a.kind=${kind} and a.state='succeeded' and a.account_generation=c.account_generation and a.updated_at>now()-make_interval(mins=>${schedule.recommendationsIntervalMinutes})) order by c.created_at,c.id limit 1`):[];
   const [admin]=await tx.execute<{id:string}>(sql`select id from users where role='admin' and not disabled order by created_at,id limit 1`);
   const account=accounts[0],user=account?.user_id??admin?.id;if(!user||instance.provider==='trakt'&&!account)continue;
-  await tx.execute(sql`insert into outbox_actions(user_id,connection_id,account_generation,kind,payload,compaction_key) values(${user},${account?.id??null},${account?.account_generation??null},${kind},${{instanceId:instance.id,force:!!options.force}}::jsonb,${kind})`);queued++;
+  await tx.execute(sql`insert into outbox_actions(user_id,connection_id,account_generation,kind,payload,compaction_key) values(${user},${account?.id??null},${account?.account_generation??null},${kind},${{instanceId:instance.id,force:!!options.force,_manual:!!options.force}}::jsonb,${kind})`);queued++;
  }
  return {queued,active};
 }
