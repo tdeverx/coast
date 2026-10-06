@@ -257,7 +257,10 @@ export async function scheduleMetadataRefresh(
   const [existing] = await tx.execute<{ id: string }>(
     sql`select id from outbox_actions where kind='tmdb.refresh' and payload->>'instanceId'=${instance.id} and state in ('pending','running','failed') limit 1`
   );
-  if (existing) return { queued: 0, active: 1 };
+  if (existing) {
+    if(options.force)await tx.execute(sql`update outbox_actions set payload=payload||'{"_manual":true}'::jsonb where id=${existing.id} and state='pending'`);
+    return { queued: 0, active: 1 };
+  }
   const [admin] = await tx.execute<{ id: string }>(
     sql`select id from users where role='admin' and not disabled and (${options.adminId ?? null}::uuid is null or id=${options.adminId ?? null}::uuid) order by created_at,id limit 1`
   );
@@ -268,7 +271,7 @@ export async function scheduleMetadataRefresh(
   )
     return { queued: 0, active: 0 };
   await tx.execute(
-    sql`insert into outbox_actions(user_id,kind,payload,compaction_key) values(${admin.id},'tmdb.refresh',${{ instanceId: instance.id, force: !!options.force }}::jsonb,'tmdb.refresh')`
+    sql`insert into outbox_actions(user_id,kind,payload,compaction_key) values(${admin.id},'tmdb.refresh',${{ instanceId: instance.id, force: !!options.force,_manual:!!options.force }}::jsonb,'tmdb.refresh')`
   );
   return { queued: 1, active: 0 };
 }

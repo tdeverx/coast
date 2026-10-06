@@ -3,11 +3,11 @@
  import type {ActivityStatus} from '$lib/social/status';
  import Avatar from './Avatar.svelte';
  import {profilePath} from '$lib/profile/url';
- let {username,avatar,status,trailing,nonApproved=false,showAvatar=true}:{username:string;avatar?:string|null;status?:ActivityStatus;trailing?:Snippet;nonApproved?:boolean;showAvatar?:boolean}=$props();
+ let {username,avatar,status,trailing,nonApproved=false,showAvatar=true,profileHref=profilePath(username)}:{username:string;avatar?:string|null;status?:ActivityStatus;trailing?:Snippet;nonApproved?:boolean;showAvatar?:boolean;profileHref?:string|null}=$props();
 </script>
 <div class="activity-header">
- {#if showAvatar}<a class="actor" href={profilePath(username)} aria-label={username} title={nonApproved?`${username} · Non-approved`:username} data-design-status={nonApproved?'non-approved':undefined}><Avatar name={username} src={avatar} {status} size={20}/></a>{:else}<span class="actor-space" aria-hidden="true"></span>{/if}
- <a class="username" href={profilePath(username)}>{username}</a>
+ {#if showAvatar}<a class="actor" href={profileHref??undefined} aria-label={username} title={nonApproved?`${username} · Non-approved`:username} data-design-status={nonApproved?'non-approved':undefined}><Avatar name={username} src={avatar} {status} size={20}/></a>{:else}<span class="actor-space" aria-hidden="true"></span>{/if}
+ <a class="username" href={profileHref??undefined}>{username}</a>
  {#if trailing}<span class="small quiet time">{@render trailing()}</span>{/if}
 </div>
 <style>

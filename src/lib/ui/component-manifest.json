@@ -125,6 +125,7 @@
       "src/lib/ui/components/RowStyleMenu.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/components/SocialControls.svelte",
+      "src/lib/ui/components/StreamsPanel.svelte",
       "src/lib/ui/components/SyncedControls.svelte",
       "src/lib/ui/components/WorkActions.svelte",
       "src/lib/ui/materials/MaterialTweaker.svelte",
@@ -248,6 +249,7 @@
       "src/lib/ui/components/RecommendAction.svelte",
       "src/lib/ui/components/RequestDialog.svelte",
       "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/components/StreamsPanel.svelte",
       "src/lib/ui/components/SyncedControls.svelte",
       "src/routes/games/[id]/+page.svelte",
       "src/routes/lists/+page.svelte",
@@ -269,6 +271,7 @@
       "src/lib/ui/components/MediaPage.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/QueueList.svelte",
+      "src/lib/ui/components/StreamsPanel.svelte",
       "src/routes/+error.svelte",
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
@@ -377,6 +380,7 @@
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/ProviderAutomation.svelte",
       "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/components/StreamsPanel.svelte",
       "src/lib/ui/materials/MaterialTweaker.svelte",
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
@@ -523,6 +527,7 @@
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/PartyCard.svelte",
       "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/components/StreamsPanel.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/profile/[username]/+page.svelte"
@@ -930,6 +935,7 @@
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/components/StreamsPanel.svelte",
       "src/lib/ui/materials/MaterialTweaker.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/music/+page.svelte",
@@ -983,6 +989,19 @@
     "usedBy": [
       "src/lib/ui/components/MediaCard.svelte"
     ],
+    "dynamicComposition": false
+  },
+  "StreamsPanel": {
+    "path": "src/lib/ui/components/StreamsPanel.svelte",
+    "elements": [
+      "Button",
+      "Dialog",
+      "EmptyState",
+      "Heading",
+      "MediaCard",
+      "SegmentedControl"
+    ],
+    "usedBy": [],
     "dynamicComposition": false
   },
   "SyncedControls": {

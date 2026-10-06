@@ -8,13 +8,13 @@
     open = $bindable(false),
     title,
     children, message, actions, alert = false,
-    wide = false, edgeToEdge = false, popover = false, anchor, heading, footer,
+    wide = false, edgeToEdge = false, popover = false, popoverWidth = 560, anchor, heading, footer,
     onclose,
   }: {
     open: boolean;
     title: string;
     children?: Snippet; message?: string; alert?: boolean; actions?: ComponentProps<typeof Button>[];
-    wide?: boolean; edgeToEdge?: boolean; popover?: boolean; anchor?:string; heading?:Snippet; footer?:Snippet;
+    wide?: boolean; edgeToEdge?: boolean; popover?: boolean; popoverWidth?:number; anchor?:string; heading?:Snippet; footer?:Snippet;
     onclose?: () => void;
   } = $props();
   let dialog: HTMLElement;
@@ -63,6 +63,7 @@
 
 <svelte:element this={popover ? 'div' : 'dialog'}
   class="dialog"
+  style:--popover-width={`${popoverWidth}px`}
   class:solid-surface={!popover}
   class:glass={popover}
   use:liquidGlass={{variant:'glassDark',enabled:popover,renderer:'css'}}
@@ -120,7 +121,7 @@
   }
   .dialog.edge-to-edge {padding:0;}
   .edge-to-edge .heading {padding:16px 24px;margin-bottom:0;}
-  .notification-popover {--popover-inset:16px;position:fixed;inset:auto;top:var(--popover-top,16px);left:var(--popover-left,16px);width:min(560px,calc(100vw - 32px));max-height:min(640px,calc(100dvh - var(--popover-top,16px) - 16px));margin:0;border-radius:16px;padding:0;overflow:hidden;}
+  .notification-popover {--popover-inset:16px;position:fixed;inset:auto;top:var(--popover-top,16px);left:var(--popover-left,16px);width:min(var(--popover-width),calc(100vw - 32px));max-height:min(640px,calc(100dvh - var(--popover-top,16px) - 16px));margin:0;border-radius:16px;padding:0;overflow:hidden;}
   .notification-popover:popover-open{display:flex;flex-direction:column;}
   .popover-heading{flex:none;padding:12px var(--popover-inset);border-bottom:1px solid var(--line);}
   .popover-content{min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:var(--popover-inset);}

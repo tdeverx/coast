@@ -791,6 +791,10 @@
           <nav class="policy-links" aria-label="Policy groups">
             {#each policyGroups as [key, label]}<a class="badge" href="#{key}">{label}</a>{/each}
           </nav>
+          <fieldset class="panel stack" id="development" disabled={busy}>
+            <legend class="sr-only">Development</legend>
+            <div class="setting"><div><h3>Developer mode</h3><p>Pause automatic jobs, queued background work and retention cleanup. Run and Retry remain available, as do actions you explicitly take. Running jobs finish their current run.</p></div><input type="checkbox" aria-label="Developer mode" bind:checked={policy.developerMode}/></div>
+          </fieldset>
           <fieldset class="panel stack" id="access" disabled={busy}>
             <legend class="sr-only">Access & registration</legend>
             <h3>Access & registration</h3>

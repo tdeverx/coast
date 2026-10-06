@@ -17,12 +17,12 @@ const catalogueRevisionSql=query`coalesce((select revision::text from content_re
 /** Piggyback on existing maintenance/outbox. Ten stale users per run; no cartesian user/catalogue scan. */
 const scheduleSchema=v.object({enabled:v.optional(v.boolean(),true),intervalMinutes:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10080)),60)});
 export async function tasteJob(){
- const sql=getSql(),[settings]=await sql`select value from system_settings where key='taste-refresh'`;
+ const config=await getConfig();const sql=getSql(),[settings]=await sql`select value from system_settings where key='taste-refresh'`;
  const parsed=v.safeParse(scheduleSchema,settings?.value),schedule=parsed.success?parsed.output:v.parse(scheduleSchema,{});
  const [last]=await sql`select updated_at as completed,payload->'_jobOutcome' as outcome from outbox_actions where kind='taste.refresh' and state='succeeded' order by updated_at desc limit 1`;
  const [active]=await sql`select exists(select 1 from outbox_actions where kind='taste.refresh' and state in ('pending','running','failed')) as active`;
  const interval=last?.outcome?.deferred || last?.outcome?.checked>=10 ? 1 : schedule.intervalMinutes;
- return {schedule,timing:{instanceId:'taste',kind:'taste.refresh',nextAt:schedule.enabled&&!active.active?new Date(Math.max(Date.now(),new Date(last?.completed??0).getTime()+interval*60000)).toISOString():null,lastAt:last?.completed?new Date(last.completed).toISOString():null,eligible:1,fresh:0,reviews:0}};
+ return {schedule,timing:{instanceId:'taste',kind:'taste.refresh',nextAt:!config.developerMode&&schedule.enabled&&!active.active?new Date(Math.max(Date.now(),new Date(last?.completed??0).getTime()+interval*60000)).toISOString():null,lastAt:last?.completed?new Date(last.completed).toISOString():null,eligible:1,fresh:0,reviews:0}};
 }
 export async function updateTasteSchedule(raw:unknown){
  const schedule=v.parse(scheduleSchema,raw);
@@ -37,13 +37,13 @@ export async function scheduleTasteRefresh(tx:Tx,force=false){
  const schedule=parsed.success?parsed.output:v.parse(scheduleSchema,{});
  if(!force&&!schedule.enabled)return {queued:0,active:0};
  const [active]=await tx.execute<{active:boolean}>(query`select exists(select 1 from outbox_actions where kind='taste.refresh' and state in ('pending','running','failed')) as active`);
- if(active.active)return {queued:0,active:1};
+ if(active.active){if(force)await tx.execute(query`update outbox_actions set payload=payload||'{"_manual":true}'::jsonb where kind='taste.refresh' and state='pending'`);return {queued:0,active:1};}
  // Check for outstanding stale users every minute; unchanged profiles are rebuilt at most daily.
  // The configured cadence separates batches, and manual runs retain admission/deduplication.
  if(!force){const [last]=await tx.execute<{due:boolean}>(query`select updated_at<now()-make_interval(mins=>case when coalesce((payload->'_jobOutcome'->>'deferred')::int,0)>0 or coalesce((payload->'_jobOutcome'->>'checked')::int,0)>=10 then 1 else ${schedule.intervalMinutes} end) as due from outbox_actions where kind='taste.refresh' and state='succeeded' order by updated_at desc limit 1`);if(last&&!last.due)return {queued:0,active:0};}
  const [needed]=await tx.execute<{userId:string}>(query`select u.id as "userId" from users u where not u.disabled and not exists(select 1 from user_taste_profiles p where p.user_id=u.id and p.revision=${tasteRevisionSql} and p.profile->>'catalogueRevision'=${catalogueRevisionSql} and p.updated_at>now()-interval '1 day') order by u.created_at,u.id limit 1`);
  if(!needed)return {queued:0,active:0};
- await tx.execute(query`insert into outbox_actions(user_id,kind,payload,compaction_key) values(${needed.userId}::uuid,'taste.refresh','{}'::jsonb,'taste.refresh')`);
+ await tx.execute(query`insert into outbox_actions(user_id,kind,payload,compaction_key) values(${needed.userId}::uuid,'taste.refresh',${{_manual:force}}::jsonb,'taste.refresh')`);
  return {queued:1,active:0};
 }
 export async function refreshTasteCaches(){

@@ -1,6 +1,6 @@
 # App follow-up roadmap
 
-Updated 4 October 2026. Parked entries record deferred work, not implementation authorization.
+Updated 6 October 2026. Parked entries record deferred work, not implementation authorization.
 
 ## Selected audit pass — implemented
 
@@ -14,6 +14,10 @@ Implementation and verification limits: [selected follow-ups](audits/2026-10-03-
 
 ## Parked audit follow-ups
 
+- Profile comparison / versus view: parked after the first design exploration was rejected. Revisit side-by-side profile identities, blended backgrounds and per-medium comparison charts only when selected again; reuse approved UI and respect profile privacy. The first-pass button, route and comparison implementation have been removed.
+
+- Activity feed card lookup: a page can reference 60 activities plus parent shows, while `workCards` currently limits screen cards to 60 total. Fetch explicit IDs in bounded batches before revisiting feed pagination; investigate whether this omission causes entries to disappear between refreshes. Parked at the user's request.
+
 - Next major pass: codebase-wide optimisation and performance profiling, with focused automated tests and optional user-assisted acceptance. Measure CPU/RAM spikes, query latency and concurrency, provider/background work, rendering, playback and caches under realistic workloads. Prioritise slow Collection requests, the production HTTP idle timeout, and durable child-process exit diagnostics from the live outage investigation; compare measured before/after results. Follow the [isolated investigation and repair plan](audits/2026-10-03-performance-plan.md).
 - Add an administrator benchmarking section to the performance pass: one Run benchmark button, recorded results and durable run history to compare performance drift over time. Use repeatable workloads and record build, environment, duration, query latency, CPU/RAM and failures so comparisons remain meaningful.
 - Real-account provider/social certification: reconnects/account switching, projection cleanup, genuine sync conflicts, social privacy and taste results across actual integrations.
@@ -23,6 +27,47 @@ Implementation and verification limits: [selected follow-ups](audits/2026-10-03-
 - Review the disabled-by-default modal media details experiment; expand navigation/context restoration after design approval.
 - Revisit friend-avatar meanings with explicit design approval.
 - External provider connector grants and protocol negotiation. Scoped public API writes, idempotency and signed webhooks are implemented.
+
+## Small–medium quality-of-life audit — parked
+
+Source audit recorded 5 October 2026. These are proposals, not implementation authorization. Value is rated from 1–5 (5 = broad everyday benefit; 3 = useful occasionally). Size is S (small) or M (medium); size and regression risk are estimates to confirm during implementation. Reuse the existing approved buttons, menus, dialogs and row controls.
+
+| Improvement | Value | Size | Risk |
+|---|:---:|:---:|:---:|
+| Keep the actual job error visible in Developer mode; show paused retries separately instead of replacing the failure explanation. | 5 | S | Low |
+| Clear one Library filter without resetting other selections; clearing genre currently drops other filter state. | 4 | S | Low |
+| Prevent duplicate list creation by disabling submission while saving and guarding repeated clicks. | 4 | S | Low |
+| Protect unsaved profile and metadata dialog edits, matching the protection already present in Settings. | 5 | S | Low |
+| Extend Undo to reversible music/game relationship changes, Collection changes and list removal. | 5 | M | Medium |
+| Add a search keyboard shortcut using `/`, ignoring typing inside inputs. | 4 | S | Low |
+| Offer recent searches, with individual removal and Clear history. | 4 | S | Low |
+| Add password visibility and Caps Lock feedback to login, registration and credential forms. | 4 | S | Low |
+| Add explicit Copy buttons for invite links, share links and API tokens instead of relying on input selection. | 4 | S | Low |
+| Add Library sorting by title, release date, recently added, personal rating and recent activity. | 5 | M | Low |
+| Add saved filter presets for frequently used combinations. | 3 | M | Low |
+| Fetch search results beyond the current caps in bounded batches. | 4 | M | Medium |
+| Add search across the entire friends roster and optional online/active-first sorting. | 4 | M | Low |
+| Explain Collection membership in a menu detail: playback, import, list or explicit addition. | 4 | S | Low |
+| Allow existing lists to be renamed and their descriptions edited. | 4 | M | Low |
+| Add drag rearrangement for ordered lists alongside the existing keyboard-accessible move actions. | 3 | M | Medium |
+| Add bulk Library/list relationship actions to save, favourite, collect or remove selected items. | 5 | M | Medium |
+| Add personal playback queue reorder, remove, clear and Play next using the party queue's existing patterns. | 4 | M | Medium |
+| Extend playback shortcuts to seek, mute, fullscreen and show UI, respecting party permissions. | 5 | S | Medium |
+| Remember playback volume per device instead of starting at full volume after remounting. | 4 | S | Low |
+| Show the projected finishing time through the existing timeline information. | 3 | S | Low |
+| Add optional next-episode autoplay with cancellation, respecting party ownership, availability and progress. | 5 | M | Medium |
+| Add a sleep timer for a duration, track or episode, with explicit personal behaviour in parties. | 3 | M | Medium |
+| Extend subtitle preferences with size, timing offset and remembered manual choices. | 4 | M | Medium |
+| Expose picture-in-picture when supported, maintaining playback through normal navigation. | 3 | M | Medium |
+| Add Why this recommendation? using existing taste reasons and confidence in a menu/detail view. | 4 | S | Low |
+| Add Not interested and Already seen feedback to influence personal recommendations; friend recommendations already have Dismiss. | 5 | M | Medium |
+| Give notifications problem-specific actions: retry transient failures, reconnect accounts or review conflicts directly. | 5 | M | Medium |
+| Allow planned items to be rescheduled without cancelling and recreating them. | 4 | M | Low |
+| Export personal Collection, progress or history through bounded, permission-checked downloads. | 3 | M | Medium |
+
+Recommended first batch: job error clarity, filter preservation, duplicate-submit protection, unsaved-dialog protection, Undo parity and explicit Copy buttons. Follow with Library sorting, playback shortcuts and recommendation explanations. This ordering is a recommendation, not a selected implementation pass.
+
+Browsing-context restoration remains parked under the modal media details review above: retain loaded rows and horizontal/vertical scroll positions when returning, subject to the media-modal direction and design approval.
 
 ## Existing future work
 

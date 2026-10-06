@@ -17,6 +17,8 @@ export type MediaCardPresentation = Pick<
   | 'artworkSources'
   | 'logo'
 > & { kind: MusicKind | 'game' | 'person'; href: string; connectionId?: string; workId?: string; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean };
+/** A server item can be displayed before it has a shared catalogue destination. */
+export type MediaCardDisplay = Omit<MediaCardPresentation,'kind'|'href'> & {kind:MediaKind|MusicKind|'game'|'person';href:null};
 export type MediaHeroPresentation = MediaCardPresentation &
   Pick<MediaView, 'overview' | 'genres' | 'runtimeMinutes' | 'certification'>;
 export type MediaCardShape = 'poster' | 'square' | 'circle' | 'fanart' | 'banner';
@@ -55,7 +57,7 @@ export interface MediaView {
   captionTitle?: string;
   captionSubtitle?: string;
   captionActivity?: {id:string;occurredAt:string;dateKnown:boolean;kind:string;action?:string;detail?:string;myReaction?:string|null};
-  captionActor?: {username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus};
+  captionActor?: {username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus;profileHref?:string|null};
   originalTitle?: string | null;
   overview?: string | null;
   year?: number | null;

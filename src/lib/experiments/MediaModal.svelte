@@ -1,4 +1,6 @@
 <script lang="ts">
+ import {player} from '$lib/playback/client.svelte';
+ import {playbackVisible} from '$lib/playback/visibility';
  import { page } from '$app/state';
  import { replaceState } from '$app/navigation';
  import Dialog from '$lib/ui/components/Dialog.svelte';
@@ -14,7 +16,7 @@
  let enhancement=$state.raw<Promise<EnhancedDetails>>();
  const enabled=$derived(page.data.experiments.mediaModal);
  const refreshKey=$derived(contentRevisionKey(page.data,['tracking']));
- function closed(){if(page.state.mediaModalId)replaceState(page.url,{...page.state,mediaModalId:undefined});}
+ function closed(){if(playbackVisible(player))return;if(page.state.mediaModalId)replaceState(page.url,{...page.state,mediaModalId:undefined});}
  $effect(()=>{
   const id=page.state.mediaModalId;
   if(!id||!enabled||id!==loadedId){open=false;data=null;}
@@ -29,9 +31,9 @@
  });
 
 </script>
-<Dialog bind:open title="Media details" wide edgeToEdge onclose={closed}>
+<Dialog open={open&&!playbackVisible(player)} title="Media details" wide edgeToEdge onclose={closed}>
  <RowFeedback {error} inline={false} />
- {#if data}<Details modal data={{...data,requestable:false,refreshUnavailable:false,enhancement:enhancement!,experimentalMusic:page.data.experimentalMusic,experimentalGaming:page.data.experimentalGaming,experimentalParties:page.data.experimentalParties,user:page.data.user,contentRevision:page.data.contentRevision,unreadNotifications:page.data.unreadNotifications,friendRequestCount:page.data.friendRequestCount,notifications:page.data.notifications,experiments:page.data.experiments,playbackSharing:page.data.playbackSharing,publicRead:page.data.publicRead,publicProfiles:page.data.publicProfiles,expiresAt:page.data.expiresAt}}/><div class="modal-footer"><Button href={`/media/${data.item.id}`} onclick={()=>open=false}>Full page</Button></div>{/if}
+ {#if data}<Details modal data={{...data,requestable:false,refreshUnavailable:false,enhancement:enhancement!,experimentalMusic:page.data.experimentalMusic,experimentalGaming:page.data.experimentalGaming,experimentalParties:page.data.experimentalParties,user:page.data.user,contentRevision:page.data.contentRevision,unreadNotifications:page.data.unreadNotifications,friendRequestCount:page.data.friendRequestCount,notifications:page.data.notifications,experiments:page.data.experiments,playbackSharing:page.data.playbackSharing,publicRead:page.data.publicRead,publicProfiles:page.data.publicProfiles,developerMode:page.data.developerMode,expiresAt:page.data.expiresAt}}/><div class="modal-footer"><Button href={`/media/${data.item.id}`} onclick={()=>open=false}>Full page</Button></div>{/if}
 </Dialog>
 
 <style>

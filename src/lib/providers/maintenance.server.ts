@@ -50,6 +50,10 @@ export async function updateProviderSchedule(adminId: string, instanceId: string
       if (current.provider !== 'jellyfin' || !source)
         throw new Error('Choose a connected account for this Jellyfin service.');
     }
+    if(patch.streamsConnectionId){
+      const [source]=await tx.select({id:providerConnections.id}).from(providerConnections).innerJoin(users,eq(users.id,providerConnections.userId)).where(and(eq(providerConnections.id,patch.streamsConnectionId),eq(providerConnections.instanceId,instanceId),eq(providerConnections.status,'connected'),eq(users.disabled,false),eq(users.role,'admin')));
+      if(current.provider!=='jellyfin'||!source)throw new Error('Choose a connected administrator account for server streams.');
+    }
     await tx
       .update(providerInstances)
       .set({
@@ -63,7 +67,7 @@ export async function updateProviderSchedule(adminId: string, instanceId: string
 export async function runProviderJob(
   adminId: string,
   instanceId: string,
-  task: 'all' | 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'catalogue' | 'metadata' = 'all',
+  task: 'all' | 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'streams' | 'catalogue' | 'metadata' = 'all',
   kind?: string
 ) {
   await requireProviderAdmin(adminId);
@@ -72,13 +76,7 @@ export async function runProviderJob(
     throw new Error('This integration has no scheduled jobs.');
   if (
     task !== 'all' &&
-    !(
-      instance.provider === 'jellyfin'
-        ? ['library', 'users', 'catalogue']
-        : instance.provider === 'trakt'
-          ? ['tracking', 'lists', 'live', 'catalogue']
-          : ['tmdb','igdb'].includes(instance.provider) ? ['metadata'] : instance.provider === 'steam' ? ['tracking','users'] : []
-    ).includes(task)
+    !serviceTasks(instance.provider).some(entry=>entry.scope===task)
   )
     throw new Error('This task is unavailable for the selected service.');
   if (kind && !serviceTasks(instance.provider).some(entry => entry.scope === task && entry.kinds.includes(kind))) throw new Error('This job is unavailable for the selected service.');
@@ -104,16 +102,22 @@ export async function scheduleProviderMaintenance(
     kind?: string;
     adminId?: string;
     force?: boolean;
-    task?: 'all' | 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'catalogue' | 'metadata';
+    task?: 'all' | 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'streams' | 'catalogue' | 'metadata';
   } = {}
 ) {
   const config = await getConfig();
+  if(config.developerMode&&!options.force)return {queued:0,active:0,connections:0,busy:false};
   return getDb().transaction(async (tx) => {
     // Prevent overlapping timer/manual runs across processes without waiting or duplicating work.
     const [lock] = await tx.execute<{ acquired: boolean }>(
       sql`select pg_try_advisory_xact_lock(hashtextextended('provider-maintenance',0)) as acquired`
     );
     if (!lock.acquired) return { queued: 0, active: 0, connections: 0, busy: true };
+    if(options.force&&options.instanceId){
+      const instance=await getInstance(options.instanceId);
+      const kinds=serviceTasks(instance.provider).filter(task=>!options.task||options.task==='all'||task.scope===options.task).flatMap(task=>task.kinds).filter(kind=>!options.kind||kind===options.kind);
+      if(kinds.length)await tx.execute(sql`update outbox_actions a set payload=a.payload||'{"_manual":true}'::jsonb where a.state='pending' and a.kind in (${sql.join(kinds.map(kind=>sql`${kind}`),sql`,`)}) and coalesce((select instance_id::text from provider_connections where id=a.connection_id),a.payload->>'instanceId')=${options.instanceId}`);
+    }
     if(!options.instanceId)await tx.execute(sql`
       insert into outbox_actions(user_id,kind,payload,compaction_key)
       select c.user_id,'social.checkin-complete',jsonb_build_object('checkinId',c.id),'checkin-complete:'||c.id
@@ -141,7 +145,7 @@ export async function scheduleProviderMaintenance(
     const recommendations=await (await import('$lib/experiments/provider-recommendations.server')).scheduleRecommendationRefresh(tx,options);
     metadata.queued+=recommendations.queued+taste.queued;metadata.active+=recommendations.active+taste.active;
     const rows = await tx
-      .select({ connection: providerConnections, instance: providerInstances })
+      .select({ connection: providerConnections, instance: providerInstances, role:users.role })
       .from(providerConnections)
       .innerJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
       .innerJoin(users, eq(users.id, providerConnections.userId))
@@ -182,6 +186,7 @@ export async function scheduleProviderMaintenance(
               'jellyfin.sync',
               'trakt.live',
               'jellyfin.live',
+              'jellyfin.streams',
               'steam.live',
               'trakt.import',
               'trakt.lists-import',
@@ -206,6 +211,7 @@ export async function scheduleProviderMaintenance(
       active = metadata.active;
     const now = Date.now();
     const handledLibraries = new Set<string>();
+    const handledStreams = new Set<string>();
     const requests = new Map<string, { connection: (typeof eligible)[number]['connection']; kind: string; payload: Record<string, unknown>; last: number }[]>();
     async function queue(connection: (typeof eligible)[number]['connection'], kind: string, payload: Record<string, unknown> = {}) {
       if (options.kind && options.kind !== kind) return;
@@ -222,6 +228,16 @@ export async function scheduleProviderMaintenance(
         else if (options.force || !job?.last || now - new Date(job.last).getTime() >= schedule.catalogueIntervalMinutes * 60000) await queue(connection, 'catalogue.user-scan');
       }
       if (options.task === 'catalogue' || options.task === 'metadata') continue;
+      if(instance.provider==='jellyfin'&&(!options.task||['all','streams'].includes(options.task))&&!handledStreams.has(instance.id)){
+        handledStreams.add(instance.id);
+        const accounts=eligible.filter(row=>row.instance.id===instance.id&&row.role==='admin');
+        const source=schedule.streamsConnectionId?accounts.find(row=>row.connection.id===schedule.streamsConnectionId):accounts[0];
+        const scans=jobs.filter(job=>job.kind==='jellyfin.streams'&&eligible.some(row=>row.instance.id===instance.id&&row.connection.id===job.connectionId));
+        const last=Math.max(0,...scans.map(job=>new Date(job.last??0).getTime()));
+        if(scans.some(job=>job.active))active++;
+        else if(source&&(options.force||schedule.streamsEnabled)&&(options.force||now-last>=schedule.streamsIntervalMinutes*60000))await queue(source.connection,'jellyfin.streams');
+      }
+      if(options.task==='streams')continue;
       if (['jellyfin','trakt','steam'].includes(instance.provider)) {
         if((!options.task||['all','live'].includes(options.task))&&(options.force||schedule.liveEnabled)&&connection.settings.liveRead!==false){
           const live=jobsByKey.get(`${connection.id}:${instance.provider}.live`);
@@ -321,7 +337,7 @@ export async function scheduleProviderMaintenance(
       const [existing]=await tx.select({id:outboxActions.id}).from(outboxActions).innerJoin(providerConnections,eq(providerConnections.id,outboxActions.connectionId)).where(and(eq(providerConnections.instanceId,connection.instanceId),eq(outboxActions.kind,kind),inArray(outboxActions.state,['pending','running']))).limit(1);
       if(existing)continue;
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${connection.userId}:${connection.id}`},0))`);
-      await tx.insert(outboxActions).values({userId:connection.userId,connectionId:connection.id,accountGeneration:connection.accountGeneration,kind,payload,compactionKey:kind,correlationId:correlationId(context.getStore()),createdAt:sql`clock_timestamp()`});queued++;
+      await tx.insert(outboxActions).values({userId:connection.userId,connectionId:connection.id,accountGeneration:connection.accountGeneration,kind,payload:{...payload,_manual:!!options.force},compactionKey:kind,correlationId:correlationId(context.getStore()),createdAt:sql`clock_timestamp()`});queued++;
     }
     return { queued, active, connections: eligible.length, busy: false };
   });
@@ -329,6 +345,7 @@ export async function scheduleProviderMaintenance(
 
 let retentionDue = 0;
 async function maintenanceTick() {
+  if((await getConfig()).developerMode)return;
   await scheduleProviderMaintenance();
   if (Date.now() < retentionDue) return;
   const result = await pruneTransientRecords();

@@ -1,4 +1,4 @@
-/** Pure, bounded geometry for the preview's line, composition and distribution families. */
+/** Pure, bounded geometry for shared line, composition and distribution families. */
 export type Coordinate = { x: number; y: number };
 
 export function scale(value: number, domain: [number, number], from: number, to: number) {
@@ -23,9 +23,11 @@ export function sectorPath(cx: number, cy: number, radius: number, inner: number
   const middle = (start + end) / 2;
   const a = polar(cx, cy, radius, start), b = polar(cx, cy, radius, middle), c = polar(cx, cy, radius, end);
   const outside = `M${a.x},${a.y} A${radius},${radius} 0 0 1 ${b.x},${b.y} A${radius},${radius} 0 0 1 ${c.x},${c.y}`;
-  if (!inner) return `${outside} L${cx},${cy} Z`;
+  const complete=Math.abs(end-start-Math.PI*2)<1e-9;
+  if (!inner) return complete?`${outside} Z`:`${outside} L${cx},${cy} Z`;
   const d = polar(cx, cy, inner, end), e = polar(cx, cy, inner, middle), f = polar(cx, cy, inner, start);
-  return `${outside} L${d.x},${d.y} A${inner},${inner} 0 0 0 ${e.x},${e.y} A${inner},${inner} 0 0 0 ${f.x},${f.y} Z`;
+  const inside=`A${inner},${inner} 0 0 0 ${e.x},${e.y} A${inner},${inner} 0 0 0 ${f.x},${f.y} Z`;
+  return complete?`${outside} Z M${d.x},${d.y} ${inside}`:`${outside} L${d.x},${d.y} ${inside}`;
 }
 
 export function circleIntersectionArea(a: number, b: number, distance: number) {
@@ -79,4 +81,16 @@ export function frequencyDensity(xs: number[], counts: number[], domain: [number
   });
   const integral = points.slice(1).reduce((sum, point, index) => sum + (point.y + points[index].y) / 2 * (point.x - points[index].x), 0);
   return points.map((point) => ({ x: point.x, y: integral ? point.y / integral : 0 }));
+}
+
+/** Pack labels within the plot while leaving their encoded points untouched. */
+export function spreadLabels(positions:number[],top:number,bottom:number,spacing:number) {
+  const ordered=positions.map((y,index)=>({y:Math.max(top,Math.min(bottom,y)),index})).sort((a,b)=>a.y-b.y||a.index-b.index);
+  const gap=Math.min(spacing,(bottom-top)/Math.max(1,ordered.length-1));
+  for(let i=1;i<ordered.length;i++)ordered[i].y=Math.max(ordered[i].y,ordered[i-1].y+gap);
+  if(ordered.length)ordered[ordered.length-1].y=Math.min(bottom,ordered[ordered.length-1].y);
+  for(let i=ordered.length-2;i>=0;i--)ordered[i].y=Math.min(ordered[i].y,ordered[i+1].y-gap);
+  const result=new Array<number>(positions.length);
+  for(const point of ordered)result[point.index]=point.y;
+  return result;
 }

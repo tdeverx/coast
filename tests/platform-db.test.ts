@@ -151,7 +151,7 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
         .sort()
     ).toEqual([first, other].sort());
     expect(claims.find((value) => value?.id === first)?.correlationId).toBe(requestId);
-    expect(claims.find((value) => value?.id === first)?.payload).toEqual({ order: 1 });
+    expect(claims.find((value) => value?.id === first)?.payload).toEqual({ order: 1, _manual: true });
     const [pending] = await getSql()`SELECT state FROM outbox_actions WHERE id = ${second}`;
     expect(pending.state).toBe('pending');
     await getSql()`UPDATE outbox_actions SET state = 'succeeded' WHERE id IN (${first}, ${other})`;

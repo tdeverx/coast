@@ -5,7 +5,7 @@ import { serviceTasks, maintenanceKinds } from './tasks';
 
 type Settings = { schedule?: unknown; libraryScan?: { connectionId?: string; externalUserId?: string; fullCompletedAt?: string; recentCompletedAt?: string }; sync?: Record<string, boolean>; liveRead?: boolean; collectionProjection?: { enabled?: boolean }; importAchievements?: boolean; requestsVerifiedAt?: string };
 type Instance = { id: string; provider: string; enabled: boolean; settings: Settings; configured: boolean };
-type Account = { id: string; instance_id: string; external_user_id: string; settings: Settings; live: boolean; user_completed: Date | null; reviews: number };
+type Account = { role:string; id: string; instance_id: string; external_user_id: string; settings: Settings; live: boolean; user_completed: Date | null; reviews: number };
 type Evidence = { connection_id: string | null; kind: string; instance_id: string | null; completed: Date | null; blocked: boolean };
 export type JobTiming = { instanceId: string; kind: string; nextAt: string | null; lastAt: string | null; eligible: number; fresh: number; reviews: number; reason?: string };
 /** Scheduling evidence is read independently of the bounded recent-run display. */
@@ -14,7 +14,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
   const config = await getConfig();
   const [instances, accounts, evidence, metadataDue] = await Promise.all([
     sql<Instance[]>`select id,provider,enabled,settings,credentials is not null as configured from provider_instances`,
-    sql<Account[]>`select c.id,c.instance_id,c.external_user_id,c.settings,
+    sql<Account[]>`select c.id,c.instance_id,c.external_user_id,c.settings,u.role,
       exists(select 1 from social_live_state s where s.connection_id=c.id and s.account_generation=c.account_generation and s.expires_at>now())
       or exists(select 1 from playback_sessions p where p.user_id=c.user_id and p.state='active' and p.updated_at>now()-interval '2 minutes')
       or exists(select 1 from social_checkins s where s.user_id=c.user_id and s.state='active' and s.expires_at>now()) as live,
@@ -54,6 +54,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
       const kind = task.kinds[0];
       if (!kind || !task.scope) continue;
       let eligible = linked.filter(c => {
+        if(kind==='jellyfin.streams')return c.role==='admin';
         if (kind === 'catalogue.user-scan') return tmdb;
         if (kind === 'steam.achievements') return c.settings.importAchievements !== false;
         if (kind.endsWith('.live')) return c.settings.liveRead !== false;
@@ -68,6 +69,7 @@ export async function jobTimings(): Promise<JobTiming[]> {
         const source = eligible.find(c => c.id === selected) ?? (schedule.libraryConnectionId ? undefined : eligible[0]);
         eligible = source ? [source] : [];
       }
+      if(kind==='jellyfin.streams'){const source=schedule.streamsConnectionId?eligible.find(c=>c.id===schedule.streamsConnectionId):eligible[0];eligible=source?[source]:[];}
       const rows = evidence.filter(e => e.kind === kind && (eligible.some(c => c.id === e.connection_id) || e.instance_id === instance.id));
       const last = rows.map(e => new Date(e.completed ?? 0).getTime()).filter(Boolean);
       const enabled = instance.enabled && schedule.enabled && (!task.enabled || schedule[task.enabled]) && (instance.provider !== 'trakt' || config.enableTrakt) && (instance.provider !== 'seerr' || config.enableRequests) && (instance.provider !== 'steam' || config.experimentalGaming);
@@ -102,5 +104,5 @@ export async function jobTimings(): Promise<JobTiming[]> {
       });
     }
   }
-  return result;
+  return config.developerMode?result.map(timing=>({...timing,nextAt:null,reason:'Developer mode · automatic runs paused'})):result;
 }

@@ -48,6 +48,7 @@ export const preferenceFields = {
 } as const;
 
 export const policyGroups = [
+  ['development', 'Development'],
   ['access', 'Access & registration'],
   ['features', 'Experimental features'],
   ['sessions', 'Sessions'],
@@ -66,6 +67,7 @@ export const experimentalPolicies = [
 ] as const;
 
 export const policyFields = [
+  'developerMode',
   'siteAccess',
   'registrationMode',
   'registrationProvider',

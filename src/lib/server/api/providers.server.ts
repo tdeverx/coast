@@ -17,7 +17,10 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
  const { user, uid, path, method, request, url, body } = context;
  let result: unknown;
  if (path[0] === 'providers') {
-      if (path.length === 1 && method === 'GET') result = await listProviders(uid);
+      if(path.length===2&&path[1]==='streams'&&method==='GET')result=await (await import('$lib/application/streams.server')).activeStreams(user,{view:url.searchParams.get('view')??'now',before:url.searchParams.get('before')??undefined});
+      else if(path.length===3&&path[1]==='streams'&&path[2]==='count'&&method==='GET')result=await (await import('$lib/application/streams.server')).streamCount(user);
+      else if(path.length===3&&path[1]==='streams'&&path[2]==='refresh'&&method==='POST')result=await (await import('$lib/application/streams.server')).refreshStreams(user);
+      else if (path.length === 1 && method === 'GET') result = await listProviders(uid);
       else if (path.length === 1 && method === 'POST') {
         requireAdmin(user);
         result = await configureInstance(uid, body);
@@ -66,7 +69,7 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
         result = await updateProviderSchedule(uid, uuid(path[1]), body);
       } else if (path[2] === 'run-job' && method === 'POST') {
         requireAdmin(user);
-        result = await runProviderJob(uid, uuid(path[1]), v.parse(v.optional(v.picklist(['all','library','users','tracking','lists','live','catalogue','metadata']), 'all'), body.task), v.parse(v.optional(v.string()), body.kind));
+        result = await runProviderJob(uid, uuid(path[1]), v.parse(v.optional(v.picklist(['all','library','users','tracking','lists','live','streams','catalogue','metadata']), 'all'), body.task), v.parse(v.optional(v.string()), body.kind));
       } else if (path[2] === 'playback-import' && method === 'POST')
         result = await updateJellyfinPlaybackImport(uid, uuid(path[1]), body);
       else if (path[2] === 'live-read' && method === 'POST')

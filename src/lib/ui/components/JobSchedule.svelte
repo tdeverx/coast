@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {page} from '$app/state';
   import RowFeedback from './RowFeedback.svelte';
   import { useClock } from '$lib/ui/clock.svelte';
   import { createQueueActions } from '$lib/ui/controls/queue.svelte';
@@ -35,7 +36,7 @@
       provider: string;
       enabled: boolean;
       connectedAccounts: number;
-      accounts: { id: string; username: string }[];
+      accounts: { id: string; username: string; role?:string }[];
       schedule: ProviderSchedule;
       libraryScan?: unknown;
     };
@@ -62,6 +63,7 @@
   let menu = $state<Button>();
   const dirty = $derived(open && JSON.stringify(draft) !== saved);
   const automatic = $derived(
+    !page.data.developerMode &&
     provider.enabled &&
       provider.schedule.enabled &&
       (!task.enabled || !!provider.schedule[task.enabled])
@@ -79,7 +81,7 @@
       { fullCompletedAt?: string; processed?: number; total?: number | null } | undefined
   );
   const fields = $derived(
-    task.scope==='live' ? ['liveIdleMinutes','liveActiveMinutes'] : task.scope === 'library'
+    task.scope==='streams'?['streamsIntervalMinutes','streamsConnectionId']:task.scope==='live' ? ['liveIdleMinutes','liveActiveMinutes'] : task.scope === 'library'
       ? ['intervalMinutes', 'fullIntervalHours', 'libraryConnectionId']
       : task.interval
         ? [task.interval]
@@ -194,7 +196,7 @@
     <p class="small" role="status">Running{#if running.connectionLabel} · {running.connectionLabel}{/if}</p>
     {#if jobOutcome(running)}<p class="small">{jobOutcome(running)}</p>{/if}
   {:else if queued.length}
-    <p class="small" role="status">{queued.some(jobServiceWaiting) ? 'Waiting for service cooldown' : queued.some(jobWaiting) ? 'Waiting to retry' : 'Queued · waiting for the current job to finish'}</p>
+    <p class="small" role="status">{page.data.developerMode ? 'Developer mode · Run now to start queued work' : queued.some(jobServiceWaiting) ? 'Waiting for service cooldown' : queued.some(jobWaiting) ? 'Waiting to retry' : 'Queued · waiting for the current job to finish'}</p>
     {#each queued.filter(jobWaiting) as job (job.id)}<p class="small">{job.connectionLabel} · Retry {new Date(job.nextAttemptAt!).toLocaleString()}</p>{/each}
   {:else if task.scope}
     <p class="small" role="status">{timing?.reason ?? (countdown === 0 ? 'Due now · checked within one minute' : countdown !== null ? `Next run in ${durationLabel(countdown)}` : 'Schedule assessment unavailable')}</p>
@@ -237,7 +239,7 @@
           ? 'Library changes every (minutes)'
           : task.scope === 'users'
             ? 'User activity every (minutes)'
-            : task.scope === 'live' ? 'Idle checks every (minutes)' : task.scope === 'lists'
+            : task.scope==='streams'?'Server streams every (minutes)':task.scope === 'live' ? 'Idle checks every (minutes)' : task.scope === 'lists'
               ? 'Lists every (minutes)'
               : task.scope === 'tracking'
                 ? 'Tracking every (minutes)'
@@ -251,6 +253,7 @@
           disabled={busy}
         /></label
       >{/if}
+    {#if task.scope==='streams'}<div class="field"><span>Server streams source account</span><RowFilter selection groups={[{label:'Administrator account',value:draft.streamsConnectionId??'auto',options:[{value:'auto',label:'Automatic · first connected administrator'},...provider.accounts.filter(account=>account.role==='admin').map(account=>({value:account.id,label:account.username}))],change:value=>(draft.streamsConnectionId=value==='auto'?null:value)}]}/><small>This account must also be a Jellyfin administrator.</small></div>{/if}
     {#if task.scope==='live'}<label class="field">Active checks every (minutes)<input type="number" min="1" max="10080" step="1" required bind:value={draft.liveActiveMinutes} disabled={busy} /></label>{/if}
     {#if task.scope === 'library'}
       <label class="field"

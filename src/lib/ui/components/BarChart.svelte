@@ -21,7 +21,7 @@
   const hasData = $derived(items.some((i) => i.value > 0));
 </script>
 
-<div class="chart" aria-label={label}>
+<div class="chart chart-visual" aria-label={label}>
   <div class="summary" aria-live="polite">
     <strong>{active ? active.value.toLocaleString() : summary}</strong><span
       >{active ? (active.detail ?? active.label) : caption}</span
@@ -73,22 +73,22 @@
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 4px 10px;
+    gap: 4px var(--chart-gap);
     min-height: 40px;
   }
   .summary strong {
-    font-size: var(--text-xl);
+    font-size: var(--text-2xl);
     font-weight: var(--weight-semibold);
     font-variant-numeric: tabular-nums;
   }
   .summary span {
     font-size: var(--text-sm);
-    color: var(--muted);
+    color: var(--chart-muted);
   }
   .plot {
     position: relative;
     display: flex;
-    gap: 12px;
+    gap: var(--chart-gap);
     height: 150px;
     margin-top: 20px;
   }
@@ -98,7 +98,7 @@
     justify-content: space-between;
     min-width: 20px;
     text-align: right;
-    color: var(--quiet);
+    color: var(--chart-muted);
     font-size: var(--text-sm);
   }
   .bars {
@@ -106,12 +106,12 @@
     gap: clamp(2px, 0.5vw, 9px);
     flex: 1;
     min-width: 0;
-    border-bottom: 1px solid color-mix(in srgb, var(--white) calc(21 / 255 * 100%), transparent);
+    border-bottom: 1px solid var(--chart-axis);
     background: repeating-linear-gradient(
       to top,
       transparent 0,
       transparent calc(50% - 1px),
-      color-mix(in srgb, var(--white) calc(8 / 255 * 100%), transparent) 50%
+      var(--chart-grid) 50%
     );
   }
   .target {
@@ -129,8 +129,8 @@
     width: 100%;
     max-width: 24px;
     min-height: 2px;
-    border-radius: 5px 5px 0 0;
-    background: linear-gradient(to top, color-mix(in srgb, var(--white) calc(112 / 255 * 100%), transparent), color-mix(in srgb, var(--white) calc(217 / 255 * 100%), transparent));
+    border-radius: var(--chart-mark-radius) var(--chart-mark-radius) 0 0;
+    background: linear-gradient(to top, color-mix(in srgb, var(--chart-series-1) 65%, var(--chart-track)), var(--chart-series-1));
     transition: opacity var(--fast);
   }
   .bar.zero {
@@ -138,7 +138,9 @@
   }
   .target:hover .bar,
   .target:focus-visible .bar {
-    background: var(--ink);
+    background: var(--chart-series-1);
+    opacity: .8;
+    box-shadow: inset 0 0 0 var(--chart-selection-width) var(--chart-highlight);
   }
   .labels {
     display: flex;
@@ -146,7 +148,7 @@
     gap: 4px;
     margin: 10px 0 0 32px;
     font-size: var(--text-sm);
-    color: var(--quiet);
+    color: var(--chart-muted);
   }
   .labels.all span {
     flex: 1;

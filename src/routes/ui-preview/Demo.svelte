@@ -42,6 +42,7 @@
 
   let MetadataEditor = $state<typeof import('$lib/ui/components/MetadataEditor.svelte').default>(null!);
   let MetricGrid = $state<typeof import('$lib/ui/components/MetricGrid.svelte').default>(null!);
+  let StreamsPanel = $state<typeof import('$lib/ui/components/StreamsPanel.svelte').default>(null!);
   let FriendsPanel = $state<typeof import('$lib/ui/components/FriendsPanel.svelte').default>(null!);
   let ProgressBar = $state<typeof import('$lib/ui/components/ProgressBar.svelte').default>(null!);
   let ActivityHeader = $state<typeof import('$lib/ui/components/ActivityHeader.svelte').default>(null!);
@@ -116,7 +117,7 @@
   });
 
   const loaders = import.meta.glob<{default: any}>('/src/lib/ui/components/*.svelte');
-  const recipes: Record<string,string[]> = {"AvatarPicker":["Avatar","Button","Field","RowFilter"],"AccountFields":["Field"],"PartyCard": ["PartyCard", "Button", "PlaybackTimeline"], "ActivityHeader": ["ActivityHeader"], "ProgressBar": ["ProgressBar"], "IdentityCard": ["Avatar", "Button", "IdentityCard"], "FriendsPanel": ["Button", "FriendsPanel"], "FriendRoster": ["Button", "FriendRoster"], "NotificationInbox": ["Button", "NotificationInbox"], "RecommendAction": ["Button", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "SyncedControls": ["Button", "SyncedControls", "PartyMenu"], "Glass": ["Button"], "BarChart": ["BarChart", "Button"], "Brand": ["Brand", "Button"], "BreakdownChart": ["BreakdownChart", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["Button", "Heading", "Pagination"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "MediaActions": ["Button", "MediaActions"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PersistentPlayer": ["Button", "PersistentPlayer"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "PresentationActions": ["Button", "PresentationActions"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileFeatureEditor": ["Button", "ProfileFeatureEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProgressChart": ["Button", "ProgressChart"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "RowFeedback": ["Button", "RowFeedback"], "Shelf": ["Button", "RowFilter", "Shelf"], "Avatar": ["Button", "Avatar"], "ChoiceGroup": ["Button", "ChoiceGroup"], "Field": ["Button", "Field"], "FormActions": ["Button", "FormActions"], "WorkActions": ["Button", "WorkActions"], "PartyMenu": ["Button", "PartyMenu"]};
+  const recipes: Record<string,string[]> = {"AvatarPicker":["Avatar","Button","Field","RowFilter"],"AccountFields":["Field"],"PartyCard": ["PartyCard", "Button", "PlaybackTimeline"], "ActivityHeader": ["ActivityHeader"], "ProgressBar": ["ProgressBar"], "IdentityCard": ["Avatar", "Button", "IdentityCard"], "FriendsPanel": ["Button", "FriendsPanel"], "StreamsPanel":["Button","StreamsPanel"], "FriendRoster": ["Button", "FriendRoster"], "NotificationInbox": ["Button", "NotificationInbox"], "RecommendAction": ["Button", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "SyncedControls": ["Button", "SyncedControls", "PartyMenu"], "Glass": ["Button"], "BarChart": ["BarChart", "Button"], "Brand": ["Brand", "Button"], "BreakdownChart": ["BreakdownChart", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["Button", "Heading", "Pagination"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "MediaActions": ["Button", "MediaActions"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PersistentPlayer": ["Button", "PersistentPlayer"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "PresentationActions": ["Button", "PresentationActions"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileFeatureEditor": ["Button", "ProfileFeatureEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProgressChart": ["Button", "ProgressChart"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "RowFeedback": ["Button", "RowFeedback"], "Shelf": ["Button", "RowFilter", "Shelf"], "Avatar": ["Button", "Avatar"], "ChoiceGroup": ["Button", "ChoiceGroup"], "Field": ["Button", "Field"], "FormActions": ["Button", "FormActions"], "WorkActions": ["Button", "WorkActions"], "PartyMenu": ["Button", "PartyMenu"]};
   $effect(() => {
     const selected = name;
     ready = false;
@@ -157,6 +158,7 @@
 
         case 'MetadataEditor': MetadataEditor = module.default; break;
         case 'MetricGrid': MetricGrid = module.default; break;
+        case 'StreamsPanel': StreamsPanel=module.default;break;
         case 'FriendsPanel': FriendsPanel=module.default;break;
         case 'ProgressBar': ProgressBar=module.default;break;
         case 'ActivityHeader': ActivityHeader=module.default;break;
@@ -202,7 +204,7 @@
 <div class="demo" onclickcapture={event => { const link = (event.target as Element).closest('a'); if(link && !link.hasAttribute('data-preview-navigation'))event.preventDefault(); }} class:header-demo={name==='Header'}>
   {#if failure}<p role="alert">{failure}</p>{/if}
   {#if ready}
-    {#if ['FriendsPanel','NotificationInbox','Dialog','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog'].includes(name)}
+    {#if ['StreamsPanel','FriendsPanel','NotificationInbox','Dialog','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog'].includes(name)}
       <Button  onclick={() => open = true}>Open example</Button>
     {/if}
     {#if name==='AvatarPicker'}<AvatarPicker name="Coast" choices={[]} />
@@ -282,6 +284,9 @@
       <MetadataEditor bind:open mediaId={id} admin />
     {:else if name==='MetricGrid'}
       <MetricGrid items={[{label:"Watches",value:12},{label:"Hours",value:34},{label:"Status",value:"Watching",text:true}]} />
+    {:else if name==='StreamsPanel'}
+      <p class="small quiet">Non-approved · stream card arrangement pending visual review.</p>
+      <StreamsPanel bind:open />
     {:else if name==='FriendsPanel'}<FriendsPanel bind:open />
     {:else if name==='ProgressBar'}<div style="height:6px"><ProgressBar progress={0.42}/></div>
     {:else if name==='ActivityHeader'}<ActivityHeader username="Alice">{#snippet trailing()}12:34{/snippet}</ActivityHeader>

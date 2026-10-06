@@ -1,0 +1,165 @@
+/* Shared chart roles derive from Coast's palette and typography. Plot dimensions
+   and encoded geometry remain the responsibility of each chart renderer. */
+:root {
+  --chart-series-1: var(--accent);
+  --chart-series-2: var(--success);
+  --chart-series-3: var(--danger);
+  --chart-series-4: var(--rating);
+  --chart-label: var(--ink);
+  --chart-muted: var(--muted);
+  --chart-axis: var(--line);
+  --chart-grid: color-mix(in srgb, var(--line) 65%, transparent);
+  --chart-track: var(--surface);
+  --chart-on-fill: var(--canvas);
+  --chart-selection: color-mix(in srgb, var(--accent) 8%, transparent);
+  --chart-highlight: color-mix(in srgb, var(--ink) 75%, transparent);
+  --chart-selection-width: 1.5px;
+  --chart-fill-strength: 90%;
+  --chart-frame-radius: 12px;
+  --chart-mark-radius: 8px;
+  --chart-cell-radius: 4px;
+  --chart-swatch-radius: 3px;
+  --chart-frame-padding: calc(var(--gutter) / 2);
+  --chart-gap: calc(var(--gutter) / 2);
+  --chart-inset: calc(var(--gutter) / 6);
+  --chart-marker-size: 8px;
+}
+
+.chart-visual {
+  color: var(--chart-label);
+  font-variant-numeric: tabular-nums;
+}
+.chart-renderer { container-type: inline-size; }
+.chart-visual svg :is(path, polygon, polyline, line) { stroke-linecap: round; stroke-linejoin: round; }
+.chart-visual svg .rounded-frame { rx: var(--chart-frame-radius); }
+.chart-visual svg .rounded-mark { rx: var(--chart-mark-radius); }
+.chart-visual svg .rounded-cell { rx: var(--chart-cell-radius); }
+.chart-visual svg .legend-swatch { rx: var(--chart-swatch-radius); }
+.chart-visual .chart-mark[aria-pressed='true'] .chart-shape {
+  stroke: var(--chart-highlight);
+  stroke-width: var(--chart-selection-width);
+  vector-effect: non-scaling-stroke;
+}
+.chart-visual svg text {
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  fill: var(--chart-label);
+  font-weight: var(--weight-regular);
+}
+.chart-visual svg :is(.tick, .small-label, .muted-text) {
+  fill: var(--chart-muted);
+  font-size: var(--text-sm);
+}
+.chart-visual svg :is(.value, .row-label, .strong-text, .circle-caption) {
+  font-size: var(--text-md);
+  font-weight: var(--weight-semibold);
+}
+.chart-visual svg .total {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+}
+.chart-visual svg :is(.percentage, .tile-value, .bubble-value) {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+.chart-visual svg :is(.on-fill, .tile-label, .tile-value, .bubble-label, .bubble-value) {
+  fill: var(--chart-on-fill);
+  font-weight: var(--weight-semibold);
+}
+.chart-visual svg :is(.axis, .rule) {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.chart-visual svg .axis { fill: none; }
+.chart-visual svg .grid-line {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+  stroke-dasharray: 3 5;
+  vector-effect: non-scaling-stroke;
+}
+.chart-visual .chart-scroll {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: var(--chart-inset);
+  scrollbar-width: thin;
+}
+.chart-visual .chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--chart-gap) var(--gutter);
+  margin-top: var(--chart-gap);
+  font-size: var(--text-sm);
+  color: var(--chart-muted);
+}
+.chart-visual .chart-legend span { display: inline-flex; gap: 8px; align-items: center; }
+.chart-visual .chart-legend i {
+  width: var(--chart-marker-size);
+  height: var(--chart-marker-size);
+  border-radius: var(--chart-swatch-radius);
+  flex: none;
+}
+.chart-visual .chart-legend.points i { border-radius: 50%; }
+.chart-visual .compact-chart { display: none; }
+.chart-visual .compact-chart svg { min-width: 0; max-width: 360px; margin-inline: auto; }
+.chart-visual .chart-legend-list { display: grid; gap: 4px; width: 100%; }
+.chart-visual .chart-legend-row {
+  display: grid;
+  grid-template-columns: var(--chart-marker-size) minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 0;
+  border-radius: var(--chart-mark-radius);
+  background: transparent;
+  color: var(--chart-label);
+  text-align: left;
+  font-size: var(--text-md);
+}
+.chart-visual .chart-legend-row:is(:hover, [aria-pressed='true']) { background: var(--chart-selection); }
+.chart-visual .chart-legend-row i {
+  width: var(--chart-marker-size);
+  height: var(--chart-marker-size);
+  border-radius: var(--chart-swatch-radius);
+}
+.chart-visual .chart-legend-row small { font-size: var(--text-sm); color: var(--chart-muted); }
+.chart-visual .chart-legend-row strong { font-weight: var(--weight-semibold); }
+.chart-visual .compact-bubbles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--chart-gap); }
+.chart-visual .bubble-tile {
+  min-width: 0;
+  border: 0;
+  border-radius: var(--chart-mark-radius);
+  background: transparent;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--chart-label);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  overflow-wrap: anywhere;
+}
+.chart-visual .bubble-tile span { color: var(--chart-muted); }
+.chart-visual .bubble-tile strong { font-size: var(--text-xl); font-weight: var(--weight-semibold); }
+@container (max-width: 600px) {
+  .chart-visual .wide-chart { display: none; }
+  .chart-visual .compact-chart { display: grid; gap: var(--chart-gap); }
+}
+.chart-visual :is(.chart-caption, .chart-note) {
+  color: var(--chart-muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  margin-top: var(--chart-gap);
+}
+@media (forced-colors: active) {
+  .chart-visual svg :is(text, .tick, .small-label, .muted-text, .on-fill, .tile-label, .tile-value, .bubble-label, .bubble-value) { fill: CanvasText; }
+  .chart-visual svg :is(.axis, .rule, .grid-line) { stroke: GrayText; }
+}
+
+/* Paint selection on cells so joined tables get one rounded row silhouette. */
+.chart-table, .table.chart-table { border-collapse: separate; border-spacing: 0; }
+.chart-table tr:is(.chosen, .inspected) > * { background: var(--chart-selection); }
+.chart-table tr:is(.chosen, .inspected) > :first-child { border-radius: var(--chart-mark-radius) 0 0 var(--chart-mark-radius); }
+.chart-table tr:is(.chosen, .inspected) > :last-child { border-radius: 0 var(--chart-mark-radius) var(--chart-mark-radius) 0; }

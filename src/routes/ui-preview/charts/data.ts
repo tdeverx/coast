@@ -1,5 +1,6 @@
 import catalog from './catalog.json';
-import type { ChartContext, ChartDataset, ChartFixture, ChartMedium, ChartModel, ChartRow, ChartStyle } from './types';
+import type { ChartContext, ChartDataset, ChartFixture, ChartMedium, ChartStyle } from './types';
+import type { ChartModel, ChartRow } from '$lib/ui/charts/model';
 
 /** This catalog belongs exclusively to the lazy UI-preview route. Every value is fictional. */
 export const styles = catalog.styles as ChartStyle[];
@@ -281,7 +282,7 @@ function normalize(fixture: ChartFixture, medium: ChartMedium): ChartModel {
 	if (fixture.id === '2C-PB') raw = { ...raw, lowerIsBetter: true };
 	if (fixture.id === '9B-MB' && !replacement) raw = { ...raw, asOf: '2026-09-22' };
 	const model: ChartModel = {
-		fixtureId: fixture.id, styleId: style, title: string(raw.title, fixture.title),
+		id: fixture.id, styleId: style, title: string(raw.title, fixture.title),
 		subtitle: string(raw.subtitle, string(raw.caption, string(raw.sub, string((fixture as ChartFixture & { caption?: string }).caption, `${medium} · Exact local fictional fixture ${fixture.id}`)))),
 		unit: string(raw.unit, string(raw.units)), notes: [], labels: [], rows: [], series: [], points: [], events: [], flows: [], matrix: [],
 		domain: [0, 1], domainY: [0, 1], ticks: [], ticksY: [], xLabel: '', yLabel: '', raw

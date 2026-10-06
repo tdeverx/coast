@@ -20,6 +20,8 @@
   const choices = $derived(
     instance.provider === 'jellyfin'
       ? [
+          {key:'liveEnabled' as const,label:'Live activity checks'},
+          {key:'streamsEnabled' as const,label:'Record server streams'},
           { key: 'libraryEnabled' as const, label: 'Shared library scans' },
           { key: 'userSyncEnabled' as const, label: 'User activity imports' },
           { key: 'catalogueEnabled' as const, label: 'Discover user-linked titles' },

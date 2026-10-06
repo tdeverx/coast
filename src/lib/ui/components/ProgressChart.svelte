@@ -7,7 +7,7 @@
     $props();
 </script>
 
-<div class="progress-chart" aria-label={label}>
+<div class="progress-chart chart-visual" aria-label={label}>
   {#each items as item}
     {#snippet content()}<div class="heading">
         <span>{item.label}</span><small
@@ -28,7 +28,7 @@
 <style>
   .progress-chart {
     display: grid;
-    gap: 18px;
+    gap: calc(var(--chart-gap) * 1.5);
     max-height: 280px;
     overflow: auto;
     scrollbar-width: thin;
@@ -38,22 +38,22 @@
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    gap: 12px;
+    gap: var(--chart-gap);
     margin-bottom: 8px;
-    font-size: var(--text-sm);
+    font-size: var(--text-md);
   }
   small {
     flex: none;
-    color: var(--muted);
+    color: var(--chart-muted);
     font-size: var(--text-sm);
     font-variant-numeric: tabular-nums;
   }
   .track {
     height: 6px;
     border-radius: 999px;
-    --progress-track-background: color-mix(in srgb, var(--white) calc(24 / 255 * 100%), transparent);
+    --progress-track-background: var(--chart-track);
     background: var(--progress-track-background);
-    --progress-fill-background: linear-gradient(to right, color-mix(in srgb, var(--white) calc(128 / 255 * 100%), transparent), var(--ink));
+    --progress-fill-background: var(--chart-series-1);
     overflow: hidden;
   }
   a:hover .heading {

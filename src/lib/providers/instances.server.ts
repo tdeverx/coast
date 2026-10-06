@@ -166,7 +166,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
     .from(providerConnections)
     .where(eq(providerConnections.userId, userId));
   const accounts = includeDisabled ? await getDb()
-    .select({ id: providerConnections.id, instanceId: providerConnections.instanceId, username: users.username })
+    .select({ id: providerConnections.id, instanceId: providerConnections.instanceId, username: users.username, role:users.role })
     .from(providerConnections).innerJoin(users, eq(users.id, providerConnections.userId))
     .where(and(eq(providerConnections.status, 'connected'), eq(users.disabled, false)))
     .orderBy(providerConnections.createdAt, providerConnections.id) : [];
@@ -176,7 +176,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
       const connection = connections.find((connection) => connection.instanceId === instance.id);
       return {
         connectedAccounts: accounts.filter(row => row.instanceId === instance.id).length,
-        accounts: accounts.filter(row => row.instanceId === instance.id).map(({ id, username }) => ({ id, username })),
+        accounts: accounts.filter(row => row.instanceId === instance.id).map(({ id, username, role }) => ({ id, username, role })),
         libraryScan: includeDisabled ? instance.settings.libraryScan : undefined,
         id: instance.id,
         provider: instance.provider,

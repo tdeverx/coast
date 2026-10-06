@@ -157,7 +157,7 @@ bun run test:db
 
 The runner creates and removes an isolated database for each suite; it does not run tests against the database named in that URL. Provider fixtures do not establish live-service compatibility.
 
-Administrators can open **`/ui-preview`** to inspect the shared typography, colors, materials, elements and components, including the material tweaker. **`/ui-preview?section=charts`** contains the non-approved chart exploration with isolated fictional data; its charts are unused elsewhere. See [Chart preview](docs/chart-preview.md), [Contributing](CONTRIBUTING.md) and [Architecture](docs/architecture.md) for development conventions.
+Administrators can open **`/ui-preview`** to inspect the shared typography, colors, materials, elements and components, including the material tweaker. **`/ui-preview?section=charts`** contains the non-approved chart exploration with isolated fictional data; its fictional data stays in the preview. See [Chart preview](docs/chart-preview.md), [Contributing](CONTRIBUTING.md) and [Architecture](docs/architecture.md) for development conventions.
 
 Administrators can run bounded local measurements in **Settings → Benchmarks** and compare compatible runs in the saved history. These measure selected database and server workloads, not browser rendering or live playback. The [performance guide](docs/performance.md) documents the shared optimisation patterns, isolated regression harness, measurement limits and runtime diagnostics.
 

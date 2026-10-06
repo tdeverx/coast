@@ -128,6 +128,12 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'complete',
       'assessment',
       'card-hydration',
+      'streams-module',
+      'streams-account',
+      'streams-connection',
+      'streams-permissions',
+      'streams-sessions',
+      'streams-recording',
     ].includes(String(input.stage))
   )
     result.stage = String(input.stage);

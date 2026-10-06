@@ -2,7 +2,9 @@
   import '../app.css';
   import {closeNotifications} from '$lib/notifications/client.svelte';
   import {closeFriends} from '$lib/social/panel.svelte';
+  import {closeStreams} from '$lib/providers/streams-panel.svelte';
   import {startPresence,userStatus} from '$lib/social/status.svelte';
+  import {playbackVisible} from '$lib/playback/visibility';
   import {syncedPlayer,pollSynced,restoreSynced} from '$lib/playback/synced/client.svelte';
   import { refreshRouteDependencies } from '$lib/ui/client';
   import { installBrowserDiagnostics } from '$lib/ui/diagnostics';
@@ -22,13 +24,17 @@
   const friendsOpen=$derived(!!data.user&&(page.state.friendsPopover??page.url.searchParams.get('friends')==='true'));
   let NotificationInbox=$state<typeof import('$lib/ui/components/NotificationInbox.svelte').default>();
   let FriendsPanel=$state<typeof import('$lib/ui/components/FriendsPanel.svelte').default>();
+  const streamsOpen=$derived(data.user?.role==='admin'&&(page.state.streamsPopover??page.url.searchParams.get('streams')==='true'));
+  let StreamsPanel=$state<typeof import('$lib/ui/components/StreamsPanel.svelte').default>();
+  let streamsLoading=false;
+  $effect(()=>{if(streamsOpen&&!StreamsPanel&&!streamsLoading){streamsLoading=true;void import('$lib/ui/components/StreamsPanel.svelte').then(module=>StreamsPanel=module.default).finally(()=>streamsLoading=false);}});
   let MediaModal=$state<typeof import('$lib/experiments/MediaModal.svelte').default>();
   let mediaModalLoading=false;
   $effect(()=>{if(data.user&&data.experiments.mediaModal&&page.state.mediaModalId&&!MediaModal&&!mediaModalLoading){mediaModalLoading=true;void import('$lib/experiments/MediaModal.svelte').then(module=>MediaModal=module.default).finally(()=>mediaModalLoading=false);}});
   let notificationLoading=false,friendsLoading=false;
   $effect(()=>{if(notificationOpen&&!NotificationInbox&&!notificationLoading){notificationLoading=true;void import('$lib/ui/components/NotificationInbox.svelte').then(module=>NotificationInbox=module.default).finally(()=>notificationLoading=false);}});
   $effect(()=>{if(friendsOpen&&!FriendsPanel&&!friendsLoading){friendsLoading=true;void import('$lib/ui/components/FriendsPanel.svelte').then(module=>FriendsPanel=module.default).finally(()=>friendsLoading=false);}});
-  const watching = $derived((!!data.user || page.url.pathname === '/share') && !!player.session && player.session.mediaType!=='audio' && !player.browsing);
+  const watching = $derived((!!data.user || page.url.pathname === '/share') && playbackVisible(player));
   onNavigate(async (navigation) => {
     if (player.session && player.session.mediaType!=='audio' && !syncedPlayer.room && !player.paused) pausePlayback();
     const hero = document.querySelector<HTMLElement>('[data-hero-id]');
@@ -116,6 +122,7 @@
   </div>
   {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??page.url.searchParams.get('notificationKind')??'all'} onclose={closeNotifications}/>{/if}
   {#if friendsOpen&&FriendsPanel}<FriendsPanel open={true} onclose={closeFriends}/>{/if}
+  {#if streamsOpen&&StreamsPanel}<StreamsPanel open={true} onclose={closeStreams}/>{/if}
   {#if data.user}<NotificationToasts notifications={data.notifications} />{/if}{#if expired}<div
       class="session-notice solid-surface"
       role="alert"
@@ -135,6 +142,9 @@
     display: flow-root;
   }
   .page-shell.watching {
+    /* Descendant image visibility cannot override a composited hidden page. */
+    opacity: 0;
+    pointer-events: none;
     visibility: hidden;
   }
   .player-active .page-shell {

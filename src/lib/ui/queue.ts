@@ -20,6 +20,7 @@ export const jobWaiting = (action: QueueAction) => !!(action.state === 'pending'
 export const jobServiceWaiting = (action: QueueAction) => !!(action.state === 'pending' && action.serviceRetryAt && new Date(action.serviceRetryAt).getTime() > Date.now());
 
 export function jobOutcome(action: QueueAction) {
+  if(action.kind==='jellyfin.streams'&&action.outcome?.checked!=null)return `${action.outcome.checked} active streams`;
   if(action.kind==='taste.refresh'&&action.state==='succeeded'&&action.outcome)return `${action.outcome.refreshed??0} user taste profiles refreshed${action.outcome.deferred?` · ${action.outcome.deferred} changed during calculation; retry next run`:''}`;
   if(action.kind.endsWith('.recommendations')&&action.outcome)return `${action.outcome.added??0} suggestions cached from ${action.outcome.checked??0} ${action.kind.startsWith('trakt.')?'recommendation lists':'titles'}`;
   const progress = action.progress;

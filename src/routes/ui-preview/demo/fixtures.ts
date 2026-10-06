@@ -34,10 +34,12 @@ export const fixtureFetch: import('$lib/ui/client').ApiTransport = async (input,
     const url=new URL(input instanceof Request?input.url:String(input),location.href);
     if(!url.pathname.startsWith('/api/'))return new Response('Preview only', {status:409});
     const method=(init?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
+    if(url.pathname.endsWith('/providers/streams/refresh')&&method==='POST')return Response.json({queued:1});
     if(method!=='GET')return Response.json({error:'Preview only — changes are not saved.'},{status:409});
     const path=url.pathname;
     if(path.endsWith('/social/friends'))return Response.json(url.searchParams.get('state')==='pending'?[]:[{id,userId:id,username:'Alice',state:'accepted',requestedBy:id,avatar:null,canCompare:true,activityStatus:'online',backgroundArtwork:movie.backdrop}]);
-    if(path.endsWith('/social/checkins'))return Response.json([]);
+    if(path.endsWith('/social/checkins'))return Response.json([{userId:id,title:'The Expanse — S01E03',href:'#',category:'screen',progress:.35,artwork:movie.backdrop}]);
+    if(path.endsWith('/providers/streams'))return Response.json({view:url.searchParams.get('view')??'now',nextCursor:null,streams:[{id:'fixture-session',connectionId:id,externalId:'fixture-episode',username:'Alice',title:'The Expanse',episode:'S01E03',server:'Home',client:'Jellyfin Web',device:'Browser',paused:false,method:'DirectPlay',duration:2700,position:945,progress:.35,card:{...episode,available:true},actor:{username:'Alice',avatar:null,profileHref:'/profile/Alice'}},{id:'fixture-unmapped',connectionId:id,externalId:'fixture-unmapped',username:'Jellyfin guest',title:'Unimported movie',episode:null,server:'Home',client:'TV',device:'Living room',paused:true,method:'DirectStream',duration:6600,position:1800,progress:1800/6600,card:{id:'fixture-unmapped',kind:'movie',title:'Unimported movie',href:null},actor:{username:'Jellyfin guest',avatar:null,profileHref:null}}].map(stream=>({...stream,firstSeenAt:new Date(Date.now()-3600000).toISOString(),lastSeenAt:new Date(Date.now()-600000).toISOString(),endedAt:url.searchParams.get('view')==='history'?new Date().toISOString():null})),issues:[],checkedAt:new Date().toISOString()});
     if(path.endsWith('/members'))return Response.json({items:[{...notificationExamples[4],count:1}],hasMore:false});
     if(path.endsWith('/notifications')){
       const segment=url.searchParams.get('segment'),kind=url.searchParams.get('kind');

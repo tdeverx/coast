@@ -139,9 +139,10 @@ export async function commandRoom(userId:string,id:string,input:unknown){
   const p=data.action==='item'&&data.playbackId?await playback(userId,data.playbackId):null;
   if(data.action==='item'&&!p)throw new AppError(400,'Prepare the next item first.');
   if(!room.media_id&&['play','pause','seek'].includes(data.action))throw new AppError(409,'Choose something to play first.');
-  const queue=data.queue??(room.media_type==='audio'?room.queue:[]);
-  if(p&&(!(p.duration_seconds>0)||p.media_type==='audio'&&queue.length>0&&queue[data.queueIndex??room.queue_index]!==p.media_id))throw new AppError(409,'Choose a compatible item in this shared queue.');
-  if(p&&p.media_type==='audio'&&data.queue){const [invalid]=await getSql()`SELECT count(*)::int AS count FROM unnest(${getSql().array(queue,'TEXT')}::uuid[]) q(id) LEFT JOIN works w ON w.id=q.id WHERE w.kind IS DISTINCT FROM 'track'`;if(invalid.count)throw new AppError(400,'Choose music tracks for the shared queue.');}
+  const queue=p?.media_type==='audio'?(data.queue??(room.media_type==='audio'&&room.queue.includes(p.media_id)?room.queue:[p.media_id])):[];
+  const queueIndex=p?.media_type==='audio'?(data.queueIndex??Math.max(0,queue.indexOf(p.media_id))):0;
+  if(p&&(!(p.duration_seconds>0)||p.media_type==='audio'&&queue.length>0&&queue[queueIndex]!==p.media_id))throw new AppError(409,'Choose a compatible item in this shared queue.');
+  if(p&&p.media_type==='audio'){const [invalid]=await getSql()`SELECT count(*)::int AS count FROM unnest(${getSql().array(queue,'TEXT')}::uuid[]) q(id) LEFT JOIN works w ON w.id=q.id WHERE w.kind IS DISTINCT FROM 'track'`;if(invalid.count)throw new AppError(400,'Choose music tracks for the shared queue.');}
   await getSql().begin(async sql=>{
     const [r]=await sql`SELECT * FROM synced_rooms WHERE id=${id} FOR UPDATE`;
     const [actor]=await sql`SELECT joined FROM synced_participants WHERE room_id=${id} AND user_id=${userId}`;
@@ -189,7 +190,7 @@ export async function commandRoom(userId:string,id:string,input:unknown){
     if(data.action==='stop'){pos=0;await sql`UPDATE synced_participants SET playback_id=NULL,buffering=FALSE WHERE room_id=${id}`;}
     if(p){pos=0;await sql`UPDATE synced_participants SET ready=FALSE,unavailable=FALSE WHERE room_id=${id}`;await sql`UPDATE synced_participants SET playback_id=NULL,buffering=TRUE WHERE room_id=${id} AND user_id<>${userId} AND joined`;await sql`UPDATE synced_participants SET playback_id=${p.id} WHERE room_id=${id} AND user_id=${userId}`;}
     await sql`UPDATE synced_rooms SET position_seconds=${pos},paused=${data.action==='pause'||data.action==='stop'?true:data.action==='play'||p?false:r.paused},buffering_policy=${data.policy||r.buffering_policy},
-      media_type=${p?.media_type??r.media_type},queue=${p?(p.media_type==='audio'?queue:[]):r.queue}::jsonb,queue_index=${p?data.queueIndex??r.queue_index:r.queue_index},media_id=${data.action==='stop'?null:p?.media_id||r.media_id},edition=${p?p.edition||'':r.edition},duration_seconds=${p?.duration_seconds||r.duration_seconds},updated_at=${now},revision=revision+1,ended_at=${data.action==='end'?now:null} WHERE id=${id}`;
+      media_type=${p?.media_type??r.media_type},queue=${p?(p.media_type==='audio'?queue:[]):r.queue}::jsonb,queue_index=${p?queueIndex:r.queue_index},media_id=${data.action==='stop'?null:p?.media_id||r.media_id},edition=${p?p.edition||'':r.edition},duration_seconds=${p?.duration_seconds||r.duration_seconds},updated_at=${now},revision=revision+1,ended_at=${data.action==='end'?now:null} WHERE id=${id}`;
   });return roomState(userId,id);
 }
 export async function leaveRoom(userId:string,id:string){

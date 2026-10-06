@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { chartTones, chartValue, type ChartDatum } from '$lib/ui/charts/types';
+  import { chartCategoryColor, chartFill, chartValue, type ChartDatum } from '$lib/ui/charts/types';
   let {
     items,
     label,
@@ -19,18 +19,18 @@
   const active = $derived(selected === null ? undefined : items[selected]);
   const slices = $derived.by(() => {
     let angle = -Math.PI / 2;
-    return items.map((item, index) => {
+    return items.map((item) => {
       const sweep = (chartValue(item.value) / Math.max(1, total)) * Math.PI * 2;
       const end = angle + Math.min(sweep, Math.PI * 2 - 0.00001);
       const point = (r: number, a: number) => `${100 + r * Math.cos(a)},${100 + r * Math.sin(a)}`;
       const path = `M ${point(91, angle)} A 91 91 0 ${sweep > Math.PI ? 1 : 0} 1 ${point(91, end)} L ${point(72, end)} A 72 72 0 ${sweep > Math.PI ? 1 : 0} 0 ${point(72, angle)} Z`;
       angle += sweep;
-      return { ...item, path, colour: item.tone ?? chartTones[index % chartTones.length] };
+      return { ...item, path, colour: item.tone ?? chartCategoryColor(item.label) };
     });
   });
 </script>
 
-<div class="breakdown" aria-label={label}>
+<div class="breakdown chart-visual" aria-label={label}>
   <div class="chart-ring">
     <svg
       viewBox="0 0 200 200"
@@ -42,14 +42,14 @@
         cy="100"
         r="81.5"
         fill="none"
-        stroke="currentColor"
+        stroke="var(--chart-track)"
         stroke-width="19"
-        opacity=".08"
       />
       {#each slices as slice, index}{#if slice.value > 0}<path
             d={slice.path}
-            fill={slice.colour}
+            fill={chartFill(slice.colour)}
             class:dimmed={active && selected !== index}
+            class:chosen={selected === index}
           />{/if}{/each}
     </svg>
     <div class="centre" aria-live="polite">
@@ -93,7 +93,7 @@
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    gap: 24px;
+    gap: var(--gutter);
   }
   .chart-ring {
     position: relative;
@@ -107,10 +107,11 @@
     overflow: visible;
   }
   path {
-    stroke: color-mix(in srgb, var(--canvas) 95%, var(--ink));
+    stroke: var(--chart-on-fill);
     stroke-width: 2px;
     transition: opacity var(--fast);
   }
+  path.chosen { stroke: var(--chart-highlight); stroke-width: var(--chart-selection-width); vector-effect: non-scaling-stroke; }
   path.dimmed {
     opacity: 0.3;
   }
@@ -122,7 +123,7 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    gap: 5px;
+    gap: 4px;
     pointer-events: none;
   }
   .centre strong {
@@ -134,7 +135,7 @@
   }
   .centre span {
     font-size: var(--text-sm);
-    color: var(--muted);
+    color: var(--chart-muted);
     line-height: var(--leading-normal);
   }
   ul {
@@ -144,7 +145,7 @@
     padding: 0;
     list-style: none;
     display: grid;
-    gap: 10px;
+    gap: var(--chart-gap);
   }
   a,
   .legend-entry {
@@ -157,30 +158,31 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: var(--text-sm);
+    font-size: var(--text-md);
     min-height: 24px;
   }
   a:hover .label {
     color: var(--ink);
   }
   i {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
+    width: var(--chart-marker-size);
+    height: var(--chart-marker-size);
+    border-radius: var(--chart-swatch-radius);
     flex: none;
   }
   .label {
     flex: 1;
-    color: var(--muted);
+    color: var(--chart-muted);
   }
   strong,
   small {
     font-variant-numeric: tabular-nums;
   }
+  strong { font-weight: var(--weight-semibold); }
   small {
     width: 30px;
     text-align: right;
-    color: var(--quiet);
+    color: var(--chart-muted);
     font-size: var(--text-sm);
   }
   @media (prefers-reduced-motion: reduce) {

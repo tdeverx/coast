@@ -7,10 +7,12 @@
   import Button from '$lib/ui/components/Button.svelte';
   import { liquidGlass } from '$lib/ui/materials/glass';
   import { createShelfLayout } from '$lib/ui/shelves/layout.svelte';
-  import ChartView from './ChartView.svelte';
+  import { chartRowContext, chartRowSummary } from './presentation';
+  import ChartView from '$lib/ui/charts/ChartView.svelte';
   import ChartThumbnail from './ChartThumbnail.svelte';
   import { styles, fixtures, contextOptions, getDatasetOptions, getChartPeriod, getChartModel, dataRows, supportedMediums } from './data';
-  import { formatValue, type ChartContext, type ChartDataset, type ChartMedium, type ChartRow } from './types';
+  import type { ChartContext, ChartDataset, ChartMedium } from './types';
+  import { formatValue, type ChartRow } from '$lib/ui/charts/model';
 
   const contexts = ['P', 'T', 'S', 'M'];
   const parameters = $derived(Object.fromEntries(page.url.searchParams));
@@ -112,7 +114,7 @@
     <div class="row chart-inspect" aria-label="Inspect chart data">
       <Button size="icon" icon="left" label="Previous data point" disabled={selected <= 0} onclick={() => select(selected - 1)} />
       <p class="small selected-value" role="status" aria-live="polite" aria-atomic="true">
-        {#if selection}<strong>{selection.label}</strong> · {rowValue(selection)}{#if selection.capacity !== undefined} / {formatValue(selection.capacity,selection.valueUnit ?? model.unit)}{/if}{#if selection.reference !== undefined} · Reference {formatValue(selection.reference,selection.referenceUnit ?? model.unit)}{/if}{#if selection.evidence !== undefined} · {selection.evidence} evidence items{/if}{#if selection.detail}<span class="quiet"> · {selection.detail}</span>{/if}{:else}No known values in this fixture.{/if}
+        {#if selection}<strong>{selection.label}</strong> · {chartRowSummary(selection, model)}{:else}No known values in this fixture.{/if}
       </p>
       <Button size="icon" icon="right" label="Next data point" disabled={selected >= rows.length - 1} onclick={() => select(selected + 1)} />
     </div>
@@ -122,18 +124,18 @@
       <summary>Exact data</summary>
       <p class="quiet">{rows.length} rows · {model.unit}</p>
       <div class="table-scroll">
-        <table>
+        <table class="chart-table">
           <caption class="sr-only">{model.title} · fictional data · {model.unit}</caption>
           <thead><tr><th scope="col">Item</th><th scope="col">Value</th><th scope="col">Evidence / reference</th></tr></thead>
           <tbody>{#each tableRows as row, i}<tr class:inspected={selected === tablePage * pageSize + i}>
             <th scope="row"><button type="button" aria-pressed={selected === tablePage * pageSize + i} onclick={() => select(tablePage * pageSize + i)}>{row.label}</button></th>
-            <td>{rowValue(row)}</td><td>{row.detail ?? ''}{row.capacity !== undefined ? ` · Capacity ${formatValue(row.capacity,row.valueUnit ?? model.unit)}` : ''}{row.reference !== undefined ? ` · Reference ${formatValue(row.reference,row.referenceUnit ?? model.unit)}` : ''}{row.evidence !== undefined ? ` · ${row.evidence} evidence items` : ''}</td>
+            <td>{rowValue(row)}</td><td>{row.capacity !== undefined ? `Capacity ${formatValue(row.capacity,row.valueUnit ?? model.unit)}` : ''}{row.capacity !== undefined && chartRowContext(row, model.unit) ? ' · ' : ''}{chartRowContext(row, model.unit)}</td>
           </tr>{/each}</tbody>
         </table>
       </div>
       {#if tablePages > 1}<div class="row table-pagination"><Button emphasis="subtle" label="Previous data page" disabled={tablePage === 0} onclick={() => tablePage--}>Previous</Button><span class="quiet">Page {tablePage + 1} / {tablePages}</span><Button emphasis="subtle" label="Next data page" disabled={tablePage === tablePages - 1} onclick={() => tablePage++}>Next</Button></div>{/if}
     </details>
-    <details class="small preview-details"><summary>About this preview</summary><p>{styles.length} explored styles · {fixtures.length} contextual fixtures. All values are fictional, local demo data. These charts are unused elsewhere in Coast.</p><p>Hover or tap a mark to inspect it. Use the previous and next data-point buttons or the exact-data table with a keyboard. Dense charts scroll within their own region.</p><p>Style thumbnails illustrate the encoding and do not display the selected dataset. Selecting a chart does not approve it for the product.</p></details>
+    <details class="small preview-details"><summary>About this preview</summary><p>{styles.length} explored styles · {fixtures.length} contextual fixtures. All values are fictional, local demo data. These fictional datasets stay in the preview.</p><p>Hover or tap a mark to inspect it. Use the previous and next data-point buttons or the exact-data table with a keyboard. Dense charts scroll within their own region.</p><p>Style thumbnails illustrate the encoding and do not display the selected dataset. Selecting a chart does not approve it for the product.</p></details>
     </div>
   </section>
 
@@ -163,20 +165,20 @@
   .stage-title :global(.identity) { justify-content:center; }
   .chart-meta { overflow-wrap:anywhere; }
   .chart-stage { display:flex; align-items:center; min-height:360px; }
-  .chart-surface { width:100%; min-width:0; max-width:var(--plot-width); margin:0 auto; position:relative; isolation:isolate; }
-  .chart-surface.glass { max-width:calc(var(--plot-width) + var(--gutter) * 2); border-radius:12px; padding:var(--gutter); }
+  .chart-surface { width:100%; min-width:0; max-width:calc(var(--plot-width) + var(--chart-inset) * 2 + var(--chart-frame-padding) * 2); padding:var(--chart-frame-padding); margin:0 auto; position:relative; isolation:isolate; }
+  .chart-surface.glass { border-radius:var(--chart-frame-radius); }
   .chart-inspect { max-width:760px; margin:16px auto 0; gap:12px; flex-wrap:nowrap; }
-  .selected-value { flex:1; min-width:0; overflow-wrap:anywhere; text-align:center; }
+  .selected-value { flex:1; min-width:0; overflow-wrap:anywhere; text-align:center; font-variant-numeric:tabular-nums; }
+  .selected-value strong { font-weight:var(--weight-semibold); }
   .chart-details { display:flex; flex-wrap:wrap; justify-content:center; align-items:flex-start; gap:12px var(--gutter); margin-top:16px; color:var(--muted); }
   .chart-details:has(details[open]) { display:block; }
   .chart-details:has(details[open]) details { margin-top:16px; }
   .chart-details p { margin-top:12px; overflow-wrap:anywhere; }
   .table-scroll { margin-top:16px; overflow:auto; }
-  table { width:100%; border-collapse:collapse; text-align:left; }
+  table { width:100%; text-align:left; }
   th,td { padding:12px; border-bottom:1px solid var(--line); vertical-align:top; }
   th { font-weight:var(--weight-semibold); }
   th button { background:transparent; border:0; padding:0; text-align:left; }
-  tr.inspected { background:color-mix(in srgb,var(--accent) 8%,transparent); }
   .table-pagination { justify-content:flex-end; margin-top:12px; flex-wrap:wrap; }
   .style-browser-heading { margin:calc(var(--gutter) * 2) 0 20px; }
   .style-browser-heading input { max-width:240px; }
@@ -187,7 +189,6 @@
   .style-family { min-height:18px; text-align:left; }
   .style-name { width:100%; min-height:36px; font-size:var(--text-sm); text-align:left; overflow-wrap:anywhere; }
   @media(max-width:600px) {
-    .chart-surface.glass { padding:12px; }
     .chart-stage { min-height:0; }
     .chart-inspect { gap:4px; }
     .chart-details { justify-content:flex-start; }

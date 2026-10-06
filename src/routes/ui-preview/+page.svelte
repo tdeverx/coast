@@ -140,7 +140,7 @@
     {#each visible as name (name)}
       <section class="specimen" id={`component-${name}`} aria-labelledby={`label-${name}`}>
         <Heading title={name}>
-          {#snippet heading()}<h2 id={`label-${name}`}>{name}{['SocialControls','NotificationInbox'].includes(name)?' · Non-approved':''}</h2>{/snippet}
+          {#snippet heading()}<h2 id={`label-${name}`}>{name}{['SocialControls','NotificationInbox','StreamsPanel'].includes(name)?' · Non-approved':''}</h2>{/snippet}
           {#snippet actions()}<a class="small quiet" href={`/ui-preview/demo?component=${name}`} target="_blank" rel="noreferrer">Open ↗</a>{/snippet}
         </Heading>
         <p class="small quiet">{manifest[name].path}</p>

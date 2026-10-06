@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { isotypeFractions, layoutBubbles, layoutFlows, partitionTreemap, radialLength } from '../src/routes/ui-preview/charts/extended-geometry';
+import { isotypeFractions, layoutBubbles, layoutFlows, partitionTreemap, radialLength } from '../src/lib/ui/charts/extended-geometry';
 
 test('treemap partitions preserve exact area and total for unequal leaves', () => {
   const values = [40, 25, 20, 10, 5];

@@ -155,7 +155,7 @@ export const handler: RequestHandler = async (event) => {
         if(action==='checkins'){
           const live=await (await import('$lib/social/presence.server')).presence(uid);
           const cards=await workCards(uid,uid,live.map((item:{workId:string})=>item.workId));
-          return json(live.map((item:{workId:string})=>{const card=cards.find(card=>('workId' in card?card.workId??card.id:card.id)===item.workId);return {...item,category:card?.kind==='game'?'game':['album','track'].includes(card?.kind??'')?'music':'screen',artwork:card?.backdrop||card?.poster};}));
+          return json(live.map((item:{workId:string;category:string})=>{const card=cards.find(card=>('workId' in card?card.workId??card.id:card.id)===item.workId);return {...item,artwork:card?.backdrop||card?.poster};}));
         }
       } else if(method==='POST') {
         const input=await readBody(request);
@@ -215,9 +215,9 @@ export const handler: RequestHandler = async (event) => {
         })
       );
     if (path[0] === 'playback' && path[2] === 'stream' && method === 'GET')
-      return streamPlayback(uid, uuid(path[1]), request);
+      return await streamPlayback(uid, uuid(path[1]), request);
     if (path[0] === 'trailer' && method === 'GET')
-      return streamTrailer(uid, uuid(path[1]), request);
+      return await streamTrailer(uid, uuid(path[1]), request);
     if (path[0] === 'artwork' && path[1] === 'tmdb' && path.length === 4 && method === 'GET')
       return streamTmdbArtwork(text(path[2]), text(path[3]), request);
     if (path[0] === 'artwork' && path[1] === 'fallback' && path.length === 4 && method === 'GET')
@@ -244,6 +244,9 @@ export const handler: RequestHandler = async (event) => {
     }
     throw new AppError(404, 'Action not found.');
   } catch (error) {
+    // Closing or replacing a player cancels its relay request. This is not an outage.
+    if (request.signal.aborted && classifyFailure(error) === 'aborted')
+      return new Response(null, { status: 499 });
     if (v.isValiError(error))
       return json(
         { error: error.issues[0]?.message ?? 'Check the supplied values.', code: 'invalid_input' },
