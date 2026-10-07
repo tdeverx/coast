@@ -52,6 +52,9 @@
   --leading-relaxed: 1.6;
   --tracking-tight: -0.025em;
   --tracking-wide: 0.08em;
+  --hover-grow: 1.02;
+  --hover-grow-strong: 1.08;
+  --press-shrink: .98;
   --fast: 160ms;
   --motion: 240ms;
   --cinematic: 1100ms;
@@ -290,15 +293,15 @@ form.stack,
 /* Scale the material box itself: its decorations and foreground move together.
    Positioned consumers use independent translate to preserve their centre. */
 .glass:focus-visible:not(:disabled):not([aria-disabled='true']) {
-  scale: var(--coast-material-hover-scale, 1.02);
+  scale: var(--coast-material-hover-scale, var(--hover-grow));
 }
 @media (hover: hover) {
   .glass:hover:not(:disabled):not([aria-disabled='true']) {
-    scale: var(--coast-material-hover-scale, 1.02);
+    scale: var(--coast-material-hover-scale, var(--hover-grow));
   }
 }
 .glass:active:not(:disabled):not([aria-disabled='true']) {
-  scale: var(--coast-material-press-scale, .98);
+  scale: var(--coast-material-press-scale, var(--press-shrink));
 }
 @media (prefers-reduced-motion: reduce) {
   .glass.glass { transition: none !important; scale: none !important; }

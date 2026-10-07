@@ -818,7 +818,7 @@
   .controls :global(.icon-button:is(:hover, :focus-visible)) {
     background: transparent;
     color: var(--ink);
-    transform: scale(1.08);
+    transform: scale(var(--hover-grow-strong));
   }
   .control-divider {
     height: 20px;

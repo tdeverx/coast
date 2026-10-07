@@ -349,7 +349,7 @@
     aspect-ratio: 5.4 / 1;
   }
   .media-card:is(:hover, :focus-within) .art {
-    transform: scale(1.02);
+    transform: scale(var(--hover-grow));
   }
   .media-card.loading .art {background:transparent;transform:none;}
   .media-card.loading .art::before,.media-card.loading .art::after {display:none;}
@@ -445,7 +445,7 @@
     }
   }
   .play {
-    --coast-material-hover-scale: 1.08;
+    --coast-material-hover-scale: var(--hover-grow-strong);
     position: absolute;
     top: 50%;
     left: 50%;
