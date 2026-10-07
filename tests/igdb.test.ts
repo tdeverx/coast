@@ -70,9 +70,9 @@ test('401 renews an app token once and rate limits never become uncontrolled ret
   expect(apiCalls).toBe(2);
   let rateCalls = 0;
   const limited = new IgdbAdapter(credentials(), async () => {
-    rateCalls++; throw new ProviderHttpError(429);
+    rateCalls++; throw new ProviderHttpError(429, 75);
   }, async () => token);
-  await expect(limited.search('Game')).rejects.toMatchObject({ status: 429, code: 'igdb_rate_limited' });
+  await expect(limited.search('Game')).rejects.toMatchObject({ status: 429, retryAfterSeconds: 75 });
   expect(rateCalls).toBe(1);
 });
 
@@ -93,8 +93,25 @@ test('invalid OAuth responses and repeated rejection do not reveal secrets or lo
   await expect(invalid.search('Game')).rejects.toMatchObject({ status: 502 });
   let calls = 0;
   const rejected = new IgdbAdapter(credentials(), async () => { calls++; throw new ProviderHttpError(401); }, async () => token);
-  await expect(rejected.search('Game')).rejects.toMatchObject({ status: 502, code: 'igdb_rejected' });
+  await expect(rejected.search('Game')).rejects.toBeInstanceOf(ProviderHttpError);
   expect(calls).toBe(2);
+});
+
+test('adapter does not hide requests behind a FIFO before the shared priority transport',async()=>{
+  const releases:(()=>void)[]=[],started:string[]=[];
+  let ready!:()=>void;
+  const allEntered=new Promise<void>(resolve=>{ready=resolve;});
+  const adapter=new IgdbAdapter(credentials(),async(_path,init)=>{
+    started.push(String(init?.body));
+    const pending=new Promise<void>(resolve=>releases.push(resolve));
+    if(started.length===3)ready();
+    await pending;return [fixture];
+  },async()=>token);
+  const searches=['Background one','Background two','Interactive'].map(query=>adapter.search(query));
+  await allEntered;
+  expect(started).toHaveLength(3);
+  for(const release of releases)release();
+  await Promise.all(searches);
 });
 
 test('discovery uses ranked IGDB visits, preserves rank and excludes future releases from recent queries',async()=>{

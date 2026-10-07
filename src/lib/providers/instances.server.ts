@@ -178,6 +178,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
         connectedAccounts: accounts.filter(row => row.instanceId === instance.id).length,
         accounts: accounts.filter(row => row.instanceId === instance.id).map(({ id, username, role }) => ({ id, username, role })),
         libraryScan: includeDisabled ? instance.settings.libraryScan : undefined,
+        companion: includeDisabled && instance.provider==='jellyfin' ? instance.settings.companion : undefined,
         id: instance.id,
         provider: instance.provider,
         name: instance.name,

@@ -6,9 +6,11 @@ export const maintenanceKinds = [
   'tmdb.recommendations','igdb.recommendations','trakt.recommendations',
   'jellyfin.library',
   'jellyfin.sync',
+  'jellyfin.bootstrap',
   'trakt.live',
   'jellyfin.live',
   'jellyfin.streams',
+  'jellyfin.updates',
   'steam.live',
   'trakt.import',
   'trakt.lists-import',
@@ -16,17 +18,18 @@ export const maintenanceKinds = [
   'seerr.sync',
   'steam.sync',
   'steam.achievements',
+  'igdb.steam-metadata',
 ];
 // Cleanup/review traverse remote collections too, but retain per-preview/per-work
 // queue identities rather than maintenance's one-job-per-kind deduplication.
-export const serviceTraversalKinds=[...maintenanceKinds,'trakt.collection-cleanup','trakt.collection-review'];
+export const serviceTraversalKinds=[...maintenanceKinds,'jellyfin.delta','trakt.collection-cleanup','trakt.collection-review'];
 export type ServiceTask = {
   id: string;
   title: string;
   description: string;
   kinds: string[];
   scope?: 'library' | 'users' | 'tracking' | 'lists' | 'live' | 'streams' | 'catalogue' | 'metadata' | 'all';
-  interval?: 'intervalMinutes' | 'userIntervalMinutes' | 'listsIntervalMinutes' | 'liveIdleMinutes' | 'streamsIntervalMinutes' | 'catalogueIntervalMinutes' | 'recommendationsIntervalMinutes';
+  interval?: 'intervalMinutes' | 'userIntervalMinutes' | 'listsIntervalMinutes' | 'liveIdleMinutes' | 'streamsIntervalMinutes' | 'updatesIntervalMinutes' | 'catalogueIntervalMinutes' | 'recommendationsIntervalMinutes';
   enabled?: keyof ProviderSchedule;
 };
 function groupedServiceTasks(provider: string): ServiceTask[] {
@@ -54,7 +57,7 @@ function groupedServiceTasks(provider: string): ServiceTask[] {
   };
   const catalogue: ServiceTask = { id: 'catalogue', title: 'User catalogue', description: 'Add missing shared TMDB titles directly referenced by connected accounts. No recommendations or personal tracking changes.', kinds: ['catalogue.user-scan'], scope: 'catalogue', interval: 'catalogueIntervalMinutes', enabled: 'catalogueEnabled' };
   const recommendations:ServiceTask={id:'recommendations',title:'Recommendations',description:'Cache provider suggestions for For You. Metadata only; no personal tracking changes.',kinds:[`${provider}.recommendations`],scope:provider==='trakt'?'tracking':'metadata',interval:'recommendationsIntervalMinutes',enabled:'recommendationsEnabled'};
-  if(provider==='igdb')return [recommendations];
+  if(provider==='igdb')return [recommendations,{id:'steam-metadata',title:'Steam game metadata',description:'Enrich imported Steam games after ownership is ready. Triggered by ownership imports.',kinds:['igdb.steam-metadata']}];
   if (provider === 'tmdb') return [recommendations,{ id: 'metadata', title: 'Shared metadata refresh', description: 'Refresh existing shared TMDB records in bounded batches. Each title retries independently.', kinds: ['tmdb.refresh'], scope: 'metadata', interval: 'intervalMinutes' }];
   if (provider === 'jellyfin')
     return [
@@ -73,12 +76,14 @@ function groupedServiceTasks(provider: string): ServiceTask[] {
         title: 'User activity',
         description:
           'Access, watched history, favourites and resume positions. Accounts sync one at a time.',
-        kinds: ['jellyfin.sync'],
+        kinds: ['jellyfin.sync', 'jellyfin.bootstrap'],
         scope: 'users',
         interval: 'userIntervalMinutes',
         enabled: 'userSyncEnabled',
       },
       {id:'live',title:'Live activity',description:'Read this account’s current Jellyfin playback sessions.',kinds:['jellyfin.live'],scope:'live',interval:'liveIdleMinutes',enabled:'liveEnabled'},
+      {id:'updates',title:'Plugin updates',description:'Read the companion change feed once per server and queue targeted updates. Native polling remains the fallback; full reconciliation still runs periodically.',kinds:['jellyfin.updates'],scope:'streams',interval:'updatesIntervalMinutes',enabled:'updatesEnabled'},
+      {id:'delta',title:'Changed items',description:'Refresh only changed titles with each account’s native access checks.',kinds:['jellyfin.delta']},
       {id:'streams',title:'Server streams',description:'Record server streaming sessions and cache active stream counts using a Jellyfin administrator account.',kinds:['jellyfin.streams'],scope:'streams',interval:'streamsIntervalMinutes',enabled:'streamsEnabled'},
       catalogue,
       changes,

@@ -26,9 +26,9 @@ export async function connectJellyfin(
   await enqueueAction({
     userId,
     connectionId: connection.id,
-    kind: 'jellyfin.sync',
+    kind: 'jellyfin.bootstrap',
     payload: {},
-    compactionKey: 'jellyfin.sync',
+    compactionKey: 'jellyfin.bootstrap',
   });
   return connection;
 }

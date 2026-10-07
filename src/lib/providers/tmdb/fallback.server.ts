@@ -5,14 +5,16 @@ import { getTmdb, ingestMetadata } from '$lib/catalogue/service';
 import { getConfig } from '$lib/server/config';
 import type { ArtworkImages } from '$lib/artwork';
 import { tmdbArtworkUrl } from './artwork.server';
+import { providerSingleFlight } from '$lib/server/utils/provider-single-flight';
 
-const pending = new Map<string, Promise<ArtworkImages>>();
+const pending = providerSingleFlight<ArtworkImages>('tmdb-artwork');
 async function lookup(id: string): Promise<ArtworkImages> {
   const db = getDb();
   const [snapshot] = await db
     .select()
     .from(metadataSnapshots)
-    .where(and(eq(metadataSnapshots.mediaId, id), eq(metadataSnapshots.provider, 'tmdb')))
+    .where(and(eq(metadataSnapshots.mediaId, id), eq(metadataSnapshots.provider, 'tmdb'),
+      eq(metadataSnapshots.language,'en-US'),eq(metadataSnapshots.region,'GB')))
     .orderBy(desc(metadataSnapshots.updatedAt))
     .limit(1);
   if (
@@ -93,12 +95,7 @@ export async function fallbackArtwork(id: string, type: string) {
   let source: string | undefined;
   const fallbacks: ArtworkImages[] = [];
   for (const mediaId of lineage) {
-    let work = pending.get(mediaId);
-    if (!work) {
-      work = lookup(mediaId).finally(() => pending.delete(mediaId));
-      pending.set(mediaId, work);
-    }
-    const artwork = await work;
+    const artwork = await pending(mediaId,()=>lookup(mediaId));
     fallbacks.push(artwork);
     source = artwork[type as keyof ArtworkImages];
     if (source) break;

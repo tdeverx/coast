@@ -3,7 +3,7 @@ import { applySyncValue, localSyncValue, valueCategories, decideSync, sameValue,
 import { enqueueSyncValueInTransaction, enqueueInTransaction } from './changes';
 import * as v from 'valibot';
 import { and, eq, isNull, desc, sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { getDb, type Database } from '$lib/server/db';
 import {
   trackingEvents,
   media,
@@ -19,6 +19,7 @@ import {
 } from '$lib/server/db/schema';
 import { trackInTransaction } from '$lib/core/tracking/service';
 import { DomainError } from '$lib/core/errors';
+type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
 
 export async function getPendingConflicts(userId: string) {
   const rows = await getDb()
@@ -172,11 +173,12 @@ export async function repairImportedOrderReviews(userId:string) {
 export async function resolveConflict(
   userId: string,
   eventId: string,
-  decision: 'accepted' | 'ignored'
+  decision: 'accepted' | 'ignored',
+  transaction?:Transaction
 ) {
   v.parse(v.pipe(v.string(), v.uuid()), eventId);
   v.parse(v.picklist(['accepted', 'ignored']), decision);
-  return getDb().transaction(async (tx) => {
+  const apply=async (tx:Transaction) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const [listConflict] = await tx
       .select({ entry: syncListValues })
@@ -300,5 +302,6 @@ export async function resolveConflict(
       );
     }
     return { decision, alreadyReviewed: false, state: result?.state };
-  });
+  };
+  return transaction?apply(transaction):getDb().transaction(apply);
 }

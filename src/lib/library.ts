@@ -10,7 +10,7 @@ export type LibraryContent = {
 export const libraryTitles = { watch: 'Watch', listen: 'Listen', play: 'Play' } as const;
 export function libraryBrowseDefaults(parameters: URLSearchParams, profile = false) {
   return {
-    collection: profile || parameters.get('collection') !== 'false',
+    collection: profile || parameters.get('collection') === 'true',
     scope: parameters.get('scope') ?? (parameters.get('availability') === 'available' ? 'available' : 'all'),
   };
 }

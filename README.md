@@ -19,7 +19,7 @@
 - **Play from Jellyfin.** Stream films and episodes with resume positions and subtitles. Experimental music adds albums, tracks, repeatable listens, queues and audio that stays with you while browsing.
 - **Share with friends.** Mutual friendships, activity, reactions, recommendations, live presence and taste comparisons. Sharing defaults to friends only, with public and private options. Notifications and friends live in persistent panels so you can keep browsing.
 - **Watch or listen together.** Experimental parties support invitations, synchronized playback, participant controls and buffering policies. Each person uses their own authorized media source.
-- **See what sync is doing.** Jobs show schedules, the next run, progress and outcomes, with manual runs and retries. Background tasks discover missing user-linked TMDB records and refresh shared metadata. Provider traversal jobs run sequentially across services.
+- **See what sync is doing.** Jobs groups tasks into Running, Waiting, Needs attention, Upcoming and Manual, with one compact row per service/task. Rows show user freshness, state or next run and the last result; action menus provide Run now, Edit schedule and detailed progress. Persistent job records retain the history. Background tasks discover missing user-linked TMDB records and refresh shared metadata. Long imports yield at committed checkpoints; each service serializes its scans and API requests while unrelated services can progress.
 
 Music, games and parties are behind **Settings → Policies → Experimental features**. Films and TV remain the core experience. See [release readiness](docs/readiness.md) for verification limits; implemented features are not a guarantee of compatibility with every live provider or device.
 
@@ -171,3 +171,5 @@ Administrators can run bounded local measurements in **Settings → Benchmarks**
 - [License](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 
 Coast is licensed under **AGPL-3.0-only**, and contributions use the same license. Connected services are independent of Coast. Coast is not endorsed or certified by TMDB.
+
+The optional [Jellyfin companion](docs/jellyfin-companion.md) adds authenticated trailer crop analysis and a shared change feed for targeted updates, live activity and server streams. Coast retains native polling when the companion is unavailable.

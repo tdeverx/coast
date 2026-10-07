@@ -1,18 +1,17 @@
 <script lang="ts">
   import {page} from '$app/state';
   import {providerSchedule} from '$lib/providers/schedule';
-  import Button from '$lib/ui/components/Button.svelte';
+  import {recurringTask} from '$lib/providers/task-timing';
   import { onMount } from 'svelte';
   import { invalidate } from '$app/navigation';
   import { maintenanceKinds, serviceTasks, type ServiceTask } from '$lib/providers/tasks';
-  import { displayLabel } from '$lib/ui/labels';
   import type { ProviderSchedule } from '$lib/providers/schedule';
   import Heading from './Heading.svelte';
   import RowFilter from './RowFilter.svelte';
   import JobSchedule from './JobSchedule.svelte';
-  import QueueList from './QueueList.svelte';
-  import type { QueueAction } from '$lib/ui/queue';
-  import SegmentedControl from './SegmentedControl.svelte';
+  import EmptyState from './EmptyState.svelte';
+  import {displayLabel} from '$lib/ui/labels';
+  import {jobTaskSections,type QueueAction} from '$lib/ui/queue';
 
   let {
     providers,
@@ -50,47 +49,37 @@
   function matchesTask(task: ServiceTask) {
     return type === 'all' || task.kinds.some(matchesType);
   }
-  function matchesState(job: QueueAction) {
-    return (
-      filter === 'all' ||
-      (filter === 'attention'
-        ? job.state === 'failed'
-        : filter === 'finished'
-          ? ['succeeded', 'cancelled'].includes(job.state)
-          : ['pending', 'running', 'failed'].includes(job.state))
-    );
-  }
   const sections = $derived.by(() => {
-    const selectedStatus = filter;
-    const selectedService = service;
-    const matching = actions.filter(job => matchesType(job.kind)).filter(matchesState);
-    return providers.filter(provider => selectedService === 'all' || provider.id === selectedService).map(provider => {
-      const registered = serviceTasks(provider.provider);
-      return {
-        provider,
-        tasks: registered.filter(task => task.kinds.length > 0 && matchesTask(task) && (selectedStatus === 'all' || matching.some(job => job.instanceId === provider.id && task.kinds.includes(job.kind)))),
-        other: matching.filter(job => job.instanceId === provider.id && !registered.some(task => task.kinds.includes(job.kind))),
-      };
-    }).filter(section => section.tasks.length || section.other.length);
+    const entries = providers.filter(provider => service === 'all' || provider.id === service).flatMap(provider =>
+      serviceTasks(provider.provider).filter(task => task.kinds.length > 0 && matchesTask(task) && (task.scope && recurringTask(task.kinds[0]) || actions.some(job=>job.instanceId===provider.id&&task.kinds.includes(job.kind)))).map(task => ({
+        provider, task, local: false,
+        jobs: actions.filter(job => job.instanceId === provider.id && task.kinds.includes(job.kind)),
+        timing: timing.find(entry => entry.instanceId === provider.id && task.kinds.includes(entry.kind)),
+      })));
+    if (tasteJob && service === 'all' && (type === 'all' || type === 'maintenance')) entries.push({
+      provider: { id: 'taste', name: 'Coast', provider: 'coast', enabled: true, connectedAccounts: 0, accounts: [], schedule: { ...providerSchedule('coast'), ...tasteJob.schedule } },
+      task: { id: 'taste', title: 'Taste profiles', description: 'Refresh changed user interests and score up to 500 recommendation candidates per medium. Ten users per run.', kinds: ['taste.refresh'], scope: 'metadata', interval: 'intervalMinutes' },
+      local: true, timing: tasteJob.timing, jobs: actions.filter(job => job.kind === 'taste.refresh'),
+    });
+    // Local/event-driven work without a service schedule still gets one task
+    // row. No account job is removed or merged in the execution queue.
+    for(const job of actions){
+      if(!matchesType(job.kind)||(service!=='all'&&job.instanceId!==service)||entries.some(entry=>entry.jobs.some(existing=>existing.id===job.id)))continue;
+      const jobs=actions.filter(candidate=>candidate.kind===job.kind&&candidate.instanceId===job.instanceId);
+      const provider=providers.find(provider=>provider.id===job.instanceId)??{id:job.instanceId??'coast',name:'Coast',provider:'coast',enabled:true,connectedAccounts:0,accounts:[],schedule:providerSchedule('coast')};
+      entries.push({provider,task:{id:job.kind,title:displayLabel(job.kind),description:'Work requested by Coast or a user action.',kinds:[job.kind]},local:provider.provider==='coast',jobs,timing:timing.find(entry=>entry.instanceId===provider.id&&entry.kind===job.kind)});
+    }
+    const order=(entry:(typeof entries)[number])=>Math.min(...entry.jobs.filter(job=>['running','pending','failed'].includes(job.state)).map(job=>actions.indexOf(job)));
+    entries.sort((a,b)=>order(a)-order(b));
+    return jobTaskSections(entries);
   });
-  const orphaned = $derived(
-    service === 'all'
-      ? actions.filter(
-          (job) =>
-            job.kind!=='taste.refresh' && !providers.some((provider) => provider.id === job.instanceId) &&
-            matchesType(job.kind) &&
-            matchesState(job)
-        )
-      : []
-  );
-  const visible = $derived(
-    actions.filter(
-      (job) =>
-        (service === 'all' || job.instanceId === service) &&
-        matchesType(job.kind) &&
-        matchesState(job)
-    )
-  );
+  const groups = $derived([
+    {id:'running',title:'Running',description:undefined,entries:sections.running},
+    {id:'pending',title:'Waiting',description:undefined,entries:sections.waiting},
+    {id:'failed',title:'Needs attention',description:undefined,entries:sections.attention},
+    {id:'upcoming',title:'Upcoming',description:undefined,entries:sections.upcoming},
+    {id:'manual',title:'Manual',description:undefined,entries:sections.manual},
+  ].filter(group=>(filter==='all'||filter===group.id)&&group.entries.length));
   onMount(() => {
     let polling = false;
     const timer = setInterval(() => {
@@ -106,96 +95,53 @@
 </script>
 {#if page.data.developerMode}<p class="notice" role="status">Developer mode: automatic jobs are paused. Run or Retry to start work explicitly.</p>{/if}
 
-
 <div class="stack jobs">
-  <Heading title="Background work">
-    {#snippet filters()}<SegmentedControl
-        label="Job status"
-        bind:value={filter}
-        options={[
-          { value: 'active', label: 'Active' },
-          { value: 'attention', label: 'Needs attention' },
-          { value: 'finished', label: 'Finished' },
-          { value: 'all', label: 'All' },
-        ]}
-      />{/snippet}
-    {#snippet actions()}<RowFilter groups={[{label:"Job service", value:service, options:[
-          { value: 'all', label: 'All services' },
-          ...providers.map((provider) => ({ value: provider.id, label: provider.name })),
-        ], change:next=>{service=next;}}, {label:"Job type", value:type, options:[
-          { value: 'all', label: 'All tasks' },
-          { value: 'maintenance', label: 'Imports and scans' },
-          { value: 'changes', label: 'Tracking and requests' },
-          { value: 'playback', label: 'Playback reports' },
-        ], change:next=>{type=next;}}]} />{/snippet}
+  <Heading title="Queue">
+    {#snippet actions()}<RowFilter groups={[
+      { label: 'Job service', value: service, options: [
+        { value: 'all', label: 'All services' },
+        ...providers.map(provider => ({ value: provider.id, label: provider.name })),
+      ], change: next => { service = next; } },
+      { label: 'Job type', value: type, options: [
+        { value: 'all', label: 'All tasks' },
+        { value: 'maintenance', label: 'Imports and scans' },
+        { value: 'changes', label: 'Tracking and requests' },
+        { value: 'playback', label: 'Playback reports' },
+      ], change: next => { type = next; } },
+      { label: 'Job status', value: filter,
+        options: [
+          { value: 'all', label: 'All work' },
+          { value: 'running', label: 'Running' },
+          { value: 'pending', label: 'Waiting' },
+          { value: 'failed', label: 'Needs attention' },
+          { value: 'upcoming', label: 'Upcoming' },
+          { value: 'manual', label: 'Manual' },
+        ], change: (next: string) => { filter = next; } },
+    ]} />{/snippet}
   </Heading>
-  <p class="small intro">
-    One card per job · {visible.length} matching recent runs. Automatic-run toggles
-    are in <a class="text-accent" href="/settings/integrations">Integrations</a>.
-  </p>
-  {#each sections as section (section.provider.id)}
-    <section class="service stack" aria-label={`${section.provider.name} tasks`}>
-      <Heading title={section.provider.name}>
-        {#snippet filters()}<span class="small"
-            >{displayLabel(section.provider.provider)} · {section.provider.connectedAccounts} connected
-            {section.provider.connectedAccounts === 1 ? 'account' : 'accounts'}</span
-          >{#if !section.provider.enabled}<span class="badge">Disabled</span>{/if}{/snippet}
-        {#snippet actions()}<Button menu label={`${section.provider.name} service actions`}
-            ><Button item icon="settings" href="/settings/integrations" keepOpen={false}
-              >Manage integration</Button><Button item icon="user" href="/settings/connections" keepOpen={false}
-              >Connections</Button></Button
-          >{/snippet}
-      </Heading>
-      <div class="task-grid">
-        {#each section.tasks as task (task.id)}<JobSchedule
-            provider={section.provider}
-            {task}
-            jobs={actions.filter(
-              (job) =>
-                job.instanceId === section.provider.id &&
-                task.kinds.includes(job.kind) &&
-                matchesType(job.kind)
-            )}
-            timing={timing.find(entry => entry.instanceId === section.provider.id && task.kinds.includes(entry.kind))}
-          />{/each}
-      </div>
-      {#if section.other.length}<div class="panel">
-          <Heading title="Other runs" /><QueueList actions={section.other} />
-        </div>{/if}
+
+  {#each groups as group (group.id)}
+    <section class="service stack" aria-label={`${group.title} tasks`}>
+      <Heading title={group.title} description={group.description} />
+      <div class="task-list">{#each group.entries as entry (`${entry.provider.id}:${entry.task.id}`)}
+        <JobSchedule provider={entry.provider} task={entry.task} jobs={entry.jobs} timing={entry.timing} local={entry.local} showSource />
+      {/each}</div>
     </section>
-  {:else}<p class="small">
-      No services match these filters. Add an integration or choose another task type.
-    </p>{/each}
-  {#if tasteJob && service==='all' && (type==='all'||type==='maintenance') && (filter==='all'||actions.some(job=>job.kind==='taste.refresh'&&matchesState(job)))}<section class="service stack"><Heading title="Coast"/><div class="task-grid"><JobSchedule local provider={{id:'taste',name:'Coast',provider:'coast',enabled:true,connectedAccounts:0,accounts:[],schedule:{...providerSchedule('coast'),...tasteJob.schedule}}} task={{id:'taste',title:'Taste profiles',description:'Refresh changed user interests and score up to 500 recommendation candidates per medium. Ten users per run.',kinds:['taste.refresh'],scope:'metadata',interval:'intervalMinutes'}} timing={tasteJob.timing} jobs={actions.filter(job=>job.kind==='taste.refresh')}/></div></section>{/if}
-  {#if orphaned.length}<section class="service">
-      <Heading title="Other background work" /><QueueList actions={orphaned} />
-    </section>{/if}
-  <p class="small">
-    Schedules are checked once a minute while Coast is running. Provider Jobs run one at
-    a time per service request lane. First imports take priority, and interactive requests can run between background requests. Playback streams continue independently. Retries respect service rate limits. Pausing
-    automatic work keeps already queued jobs available to review.
-  </p>
+  {:else}<EmptyState title="No matching tasks" description="Choose another filter to see active work, upcoming schedules or manual tasks." icon="clock" />{/each}
 </div>
 
 <style>
   .jobs {
-    gap: 24px;
+    gap: 16px;
+    min-width: 0;
   }
   .jobs > :global(.row-header) {
     margin-bottom: 0;
   }
-  .intro {
-    margin: 0;
-  }
   .service {
     gap: 0;
+    min-width: 0;
   }
-  .task-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-    gap: 16px;
-  }
-  .service + .service {
-    margin-top: 12px;
-  }
+  .task-list {min-width:0;}
+  .service > :global(.row-header) {margin-bottom:0;}
 </style>

@@ -44,6 +44,7 @@ const userSchema = v.object({
   displayName: v.optional(v.string()),
   permissions: v.number(),
 });
+export type SeerrUser=v.InferOutput<typeof userSchema>;
 export const requestSchema = v.object({
   id: v.number(),
   status: v.number(),
@@ -191,14 +192,16 @@ export class SeerrAdapter {
       await this.call(`/service/${kind === 'movie' ? 'radarr' : 'sonarr'}`)
     );
   }
-  async requests(offset = 0, all = false) {
-    const me = await this.user();
+  async requests(offset = 0, all = false, verifiedAccount?:SeerrUser) {
+    const me = verifiedAccount ? v.parse(userSchema,verifiedAccount) : await this.user();
+    if(this.userId!==undefined&&me.id!==this.userId)
+      throw new ProviderActionError('The linked request account changed.','permission');
     if (all && !seerrAllows(me.permissions, SeerrPermission.MANAGE_REQUESTS))
       throw new ProviderActionError(
         'You do not have permission to manage other users’ requests.',
         'permission'
       );
-    return v.parse(
+    const page=v.parse(
       v.object({
         results: v.array(requestSchema),
         pageInfo: v.optional(
@@ -209,6 +212,10 @@ export class SeerrAdapter {
         `/request?take=100&skip=${offset}&sort=added${all ? '' : `&requestedBy=${me.id}`}`
       )
     );
+    if(page.results.length>100||new Set(page.results.map(item=>item.id)).size!==page.results.length||
+      !all&&page.results.some(item=>item.requestedBy&&item.requestedBy.id!==me.id))
+      throw new Error('Seerr returned an unexpected request page.');
+    return page;
   }
   async details(kind: DiscoverKind, tmdbId: number) {
     return v.parse(

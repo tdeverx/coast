@@ -251,7 +251,7 @@ form.stack,
   isolation: isolate;
   background: var(--coast-glass-fill);
   border: 0;
-  box-shadow: var(--coast-glass-shadow);
+  box-shadow: none;
   -webkit-backdrop-filter: var(--coast-glass-filter);
   backdrop-filter: var(--coast-glass-filter);
 }
@@ -275,9 +275,34 @@ form.stack,
 }
 .glass::before {
   z-index: 2;
+  /* Keep the outer stroke and shadow above the backdrop compositor, with the
+     lighting. All layers inherit the material's box and transform together. */
   box-shadow:
     inset var(--coast-glass-top-inner-x) var(--coast-glass-top-inner-depth) var(--coast-glass-top-inner-softness) var(--coast-glass-top-inner-spread) color-mix(in srgb, var(--coast-glass-top-inner-color) var(--coast-glass-top-inner-opacity), transparent),
-    inset var(--coast-glass-bottom-inner-x) calc(-1 * var(--coast-glass-bottom-inner-depth)) var(--coast-glass-bottom-inner-softness) var(--coast-glass-bottom-inner-spread) color-mix(in srgb, var(--coast-glass-bottom-inner-color) var(--coast-glass-bottom-inner-opacity), transparent);
+    inset var(--coast-glass-bottom-inner-x) calc(-1 * var(--coast-glass-bottom-inner-depth)) var(--coast-glass-bottom-inner-softness) var(--coast-glass-bottom-inner-spread) color-mix(in srgb, var(--coast-glass-bottom-inner-color) var(--coast-glass-bottom-inner-opacity), transparent),
+    var(--coast-glass-shadow);
+}
+.glass.material-interactive {
+  transform-origin: 50% 50%;
+  transition: background var(--fast), color var(--fast), opacity var(--fast),
+    transform var(--fast) var(--ease), scale var(--fast) var(--ease);
+}
+/* Scale the material box itself: its decorations and foreground move together.
+   Separate scale leaves consumer positioning transforms (e.g. centring) intact. */
+.glass.material-interactive:focus-visible:not(:disabled):not([aria-disabled='true']) {
+  scale: var(--coast-material-hover-scale, 1.02);
+}
+@media (hover: hover) {
+  .glass.material-interactive:hover:not(:disabled):not([aria-disabled='true']) {
+    scale: var(--coast-material-hover-scale, 1.02);
+  }
+}
+.glass.material-interactive:active:not(:disabled):not([aria-disabled='true']) {
+  scale: var(--coast-material-press-scale, .98);
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass.material-interactive,
+  .glass.material-interactive:is(:hover, :focus-visible, :active) { transition: none; scale: none; }
 }
 .glass::after {
   z-index: 3;

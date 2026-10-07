@@ -80,15 +80,15 @@ run('Trakt onboarding requires both pinned import outcomes and leaves export pre
   expect((await onboardingStatus(session.user.id)).complete).toBe(true);
  }finally{await getSql()`delete from provider_instances where id=${service}`;await updateConfig(admin,{registrationMode:'invite',registrationProvider:'jellyfin'});}
 });
-run('shared scan cannot complete onboarding; fresh current-account user traversal can',async()=>{
+run('shared and full availability scans cannot complete onboarding; fresh personal bootstrap can',async()=>{
  await getSql()`INSERT INTO user_onboarding (user_id,connection_id,account_generation,imports_started_at,requested_at) SELECT ${ids[1]},id,account_generation,NOW(),NOW()-INTERVAL '1 minute' FROM provider_connections WHERE id=${conn[1]}`;
  await getSql()`INSERT INTO sync_checkpoints (connection_id,kind,completed_at) VALUES (${conn[1]},'jellyfin-full',NOW())`;
  expect((await onboardingStatus(ids[1])).complete).toBe(false);
- await getSql()`INSERT INTO sync_checkpoints (connection_id,kind,completed_at) VALUES (${conn[1]},'jellyfin-user',NOW()-INTERVAL '1 hour')`;
+ await getSql()`INSERT INTO sync_checkpoints (connection_id,kind,completed_at) VALUES (${conn[1]},'jellyfin-personal',NOW()-INTERVAL '1 hour')`;
  expect((await onboardingStatus(ids[1])).complete).toBe(false);
- await getSql()`UPDATE sync_checkpoints SET completed_at=NOW(),scan_id=gen_random_uuid() WHERE connection_id=${conn[1]} AND kind='jellyfin-user'`;
+ await getSql()`UPDATE sync_checkpoints SET completed_at=NOW(),scan_id=gen_random_uuid() WHERE connection_id=${conn[1]} AND kind='jellyfin-personal'`;
  expect((await onboardingStatus(ids[1])).complete).toBe(false);
- await getSql()`UPDATE sync_checkpoints SET scan_id=NULL WHERE connection_id=${conn[1]} AND kind='jellyfin-user'`;
+ await getSql()`UPDATE sync_checkpoints SET scan_id=NULL WHERE connection_id=${conn[1]} AND kind='jellyfin-personal'`;
  await getSql()`UPDATE user_onboarding SET account_generation=gen_random_uuid() WHERE user_id=${ids[1]}`;
  const switched=await onboardingStatus(ids[1]);expect(switched.complete).toBe(false);expect(switched.reconnect).toBe(true);
  await getSql()`UPDATE user_onboarding o SET account_generation=c.account_generation FROM provider_connections c WHERE o.user_id=${ids[1]} AND c.id=o.connection_id`;
@@ -141,14 +141,15 @@ run('music queue keeps gaps, order and repeated track positions',async()=>{
 run('onboarding ignores obsolete jobs and owner retries respect the service lane',async()=>{
  await getSql()`UPDATE outbox_actions SET state='cancelled' WHERE connection_id=ANY(${getSql().array(conn,'TEXT')}::uuid[]) AND state IN ('pending','running')`;
  await getSql()`INSERT INTO user_onboarding (user_id,connection_id,account_generation,imports_started_at) SELECT ${ids[2]},id,account_generation,NOW() FROM provider_connections WHERE id=${conn[2]}`;
- await getSql()`INSERT INTO outbox_actions (user_id,connection_id,kind,payload,state,created_at) VALUES (${ids[2]},${conn[2]},'jellyfin.sync','{}'::jsonb,'cancelled',NOW()-INTERVAL '2 hours')`;
- const busy=await enqueueAction({userId:ids[0],connectionId:conn[0],kind:'jellyfin.sync',payload:{}});
- const waiting=await onboardingStatus(ids[2]);expect(waiting.complete).toBe(false);expect(waiting.progress).toBeNull();
+ await getSql()`INSERT INTO outbox_actions (user_id,connection_id,kind,payload,state,created_at) VALUES (${ids[2]},${conn[2]},'jellyfin.bootstrap','{}'::jsonb,'cancelled',NOW()-INTERVAL '2 hours')`;
+ const busy=await enqueueAction({userId:ids[0],connectionId:conn[0],kind:'jellyfin.bootstrap',payload:{}});
+ const waiting=await onboardingStatus(ids[2]);expect(waiting.complete).toBe(false);expect(waiting.progress?.state).toBe('pending');
  await expect(retryOnboarding(ids[2])).rejects.toThrow('already queued or running');
  await getSql()`UPDATE outbox_actions SET state='cancelled' WHERE id=${busy}`;
+ await getSql()`UPDATE outbox_actions SET state='failed' WHERE user_id=${ids[2]} and kind='jellyfin.bootstrap' and state='pending'`;
  await retryOnboarding(ids[2]);expect((await onboardingStatus(ids[2])).progress?.state).toBe('pending');
- const [count]=await getSql()`SELECT count(*)::int AS total FROM outbox_actions WHERE user_id=${ids[2]} AND kind='jellyfin.sync' AND state IN ('pending','running')`;expect(count.total).toBe(1);
- await getSql()`update outbox_actions set state='failed',payload=payload||${{_jobFailure:{code:'provider.authentication'}}}::jsonb where user_id=${ids[2]} and kind='jellyfin.sync' and state='pending'`;
+ const [count]=await getSql()`SELECT count(*)::int AS total FROM outbox_actions WHERE user_id=${ids[2]} AND kind='jellyfin.bootstrap' AND state IN ('pending','running')`;expect(count.total).toBe(1);
+ await getSql()`update outbox_actions set state='failed',payload=payload||${{_jobFailure:{code:'provider.authentication'}}}::jsonb where user_id=${ids[2]} and kind='jellyfin.bootstrap' and state='pending'`;
  const authentication=await onboardingStatus(ids[2]);expect(authentication.reconnect).toBe(true);expect(authentication.linked).toBe(false);expect(authentication.complete).toBe(false);
 });
 

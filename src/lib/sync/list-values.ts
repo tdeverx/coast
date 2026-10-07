@@ -42,10 +42,12 @@ async function applyListValue(tx: Transaction, listId: string, value: ListValue)
     .where(eq(lists.id, listId));
   await tx.delete(listItems).where(eq(listItems.listId, listId));
   const unique = [...new Set(value.items)];
-  if (unique.length)
+  // Keep one atomic replacement while bounding PostgreSQL statement size for
+  // large imported lists. Positions remain relative to the complete snapshot.
+  for(let start=0;start<unique.length;start+=1000)
     await tx
       .insert(listItems)
-      .values(unique.map((mediaId, position) => ({ listId, mediaId, position })));
+      .values(unique.slice(start,start+1000).map((mediaId, position) => ({ listId, mediaId, position:start+position })));
 }
 async function exportLists(
   tx: Transaction,
@@ -91,23 +93,26 @@ export async function reconcileProviderList(
   connectionId: string,
   listId: string,
   remote: ListValue,
-  initial = false
+  initial = false,
+  options: { accountGeneration?:string; initialSnapshot?:Pick<ListValue,'name'|'description'>; onReconciled?:(tx:Transaction,decision:'agree'|'local'|'remote'|'conflict')=>Promise<void> } = {}
 ) {
   return getDb().transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
     const [connection] = await tx
-      .select({ id: providerConnections.id })
+      .select({ id: providerConnections.id, accountGeneration:providerConnections.accountGeneration,status:providerConnections.status })
       .from(providerConnections)
-      .where(and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId)));
+      .where(and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId))).for('update');
     if (!connection) throw new Error('Connection does not belong to this account.');
+    if(options.accountGeneration&&(connection.accountGeneration!==options.accountGeneration||connection.status!=='connected'))throw new Error('The connected account changed before list reconciliation.');
     const local = await localListValue(tx, userId, listId);
     const [previous] = await tx
       .select()
       .from(syncListValues)
       .where(and(eq(syncListValues.connectionId, connectionId), eq(syncListValues.listId, listId)));
-    let decision = remote.deleted
+    const untouchedInitial=initial&&(!options.initialSnapshot||(!local.items.length&&local.name===options.initialSnapshot.name&&local.description===options.initialSnapshot.description));
+    let decision:'agree'|'local'|'remote'|'conflict' = remote.deleted
       ? 'conflict'
-      : initial && !previous
+      : untouchedInitial && !previous
         ? 'remote'
         : decideSync(local, remote, previous);
     const preference = await conflictPreference(tx, userId, connectionId);
@@ -141,6 +146,7 @@ export async function reconcileProviderList(
       await resolveListConflict(tx, userId, entry, preference === 'remote');
       decision = preference;
     }
+    await options.onReconciled?.(tx,decision);
     return decision;
   });
 }

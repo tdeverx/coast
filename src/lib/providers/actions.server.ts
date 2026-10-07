@@ -1,3 +1,4 @@
+import { requestPriority } from '$lib/server/security/request-priority';
 import { getConfig } from '$lib/server/config';
 import { conflictPreference } from '$lib/sync/preference';
 import * as v from 'valibot';
@@ -6,6 +7,7 @@ import { getDb } from '$lib/server/db';
 import { mediaRequests, externalIds, syncValues } from '$lib/server/db/schema';
 import {
   registerActionHandler,
+  enqueueAction,
   PermanentActionError,
   tagDiagnosticStage,
   type ActionHandler,
@@ -37,12 +39,15 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   register('planning.reminder',async action=>(await import('$lib/experiments/planning.server')).remindPlan(action.userId,v.parse(uuid,action.payload.planId)));
   register('webhook.deliver', async action => (await import('$lib/server/public-api/webhooks.server')).deliverWebhook(action));
   if (options.maintenance !== false) startProviderMaintenance();
+  register('jellyfin.updates',async action=>(await import('$lib/providers/jellyfin/updates.server')).pollCompanion(action));
+  register('jellyfin.delta',async action=>(await import('$lib/providers/jellyfin/updates.server')).applyCompanionDelta(action));
   register('jellyfin.streams',async action=>{
     let scanner;
     try{scanner=await import('$lib/providers/jellyfin/stream-history.server');}
     catch(error){tagDiagnosticStage(error,'streams-module');throw error;}
     return scanner.scanServerStreams(action);
   });
+  register('igdb.steam-metadata', async action => (await import('$lib/providers/steam/sync.server')).syncSteamMetadata(action));
   register('steam.sync', async action => (await import('$lib/providers/steam/sync.server')).syncSteam(action));
   register('steam.achievements', async action => (await import('$lib/providers/steam/sync.server')).syncSteamAchievements(action));
   register('catalogue.user-scan', async action => (await import('$lib/catalogue/maintenance.server')).scanUserCatalogue(action));
@@ -195,7 +200,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     if (!action.connectionId)
       throw new PermanentActionError('The Seerr connection is unavailable.');
     const { instance } = await connectionFor(action.userId, action.connectionId, 'seerr');
-    await refreshRequests(action.userId, instance.id);
+    await refreshRequests(action.userId, instance.id, {connectionId:action.connectionId,accountGeneration:action.accountGeneration!});
   });
   register('history.remove', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The connection is unavailable.');
@@ -254,12 +259,27 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
       throw error;
     }
   });
-  register('jellyfin.sync', async (action) => {
+  register('jellyfin.bootstrap', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The Jellyfin connection is unavailable.');
-    const { syncJellyfinUser } = await import('$lib/sync/jellyfin');
+    const { bootstrapJellyfinUser } = await import('$lib/sync/jellyfin');
     let stage = 'connection';
-    try { const result = await syncJellyfinUser(action.userId, action.connectionId, next => { stage = next; }); return { checked: result.checked }; }
+    try {
+      const result = await bootstrapJellyfinUser(action.userId, action.connectionId, next => { stage = next; });
+      // Finish the bootstrap job and release its worker/account lane. A separate
+      // background job completes availability without delaying another user joining.
+      await enqueueAction({userId: action.userId, connectionId: action.connectionId, kind: 'jellyfin.sync', purpose: 'scheduled', payload: {}, compactionKey: 'jellyfin.sync'});
+      return { checked: result.checked };
+    }
     catch (error) { tagDiagnosticStage(error, stage); throw error; }
+  });
+  register('jellyfin.sync', async action => {
+    if (!action.connectionId) throw new PermanentActionError('The Jellyfin connection is unavailable.');
+    const {syncJellyfinUser} = await import('$lib/sync/jellyfin');
+    let stage = 'connection';
+    try {
+      const result = await requestPriority.run(3, () => syncJellyfinUser(action.userId, action.connectionId!, next => {stage = next;}));
+      return {checked: result.checked};
+    } catch (error) {tagDiagnosticStage(error, stage); throw error;}
   });
   register('trakt.import', async (action) => {
     if (!action.connectionId)

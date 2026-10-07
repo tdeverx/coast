@@ -3,7 +3,7 @@ import { correlationId } from '$lib/diagnostics';
 import { conflictPreference } from '$lib/sync/preference';
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { getDb, type Database } from '$lib/server/db';
 import {
   providerInstances,
   providerConnections,
@@ -26,7 +26,8 @@ import { notify } from '$lib/server/notifications';
 import { trackInTransaction } from '$lib/core/tracking/service';
 import { getInstance, instanceFetchConfig } from '$lib/providers/instances.server';
 import { connectionFor } from '$lib/providers/connections.server';
-import { getSeerr } from '$lib/providers/seerr/connection.server';
+import { getSeerr, assertSeerrAccount } from '$lib/providers/seerr/connection.server';
+import { ProviderHttpError } from '$lib/server/security/provider-fetch';
 
 const uuid = v.pipe(v.string(), v.uuid());
 
@@ -353,12 +354,16 @@ export async function requestMedia(userId: string, input: unknown) {
   });
 }
 
-export async function refreshRequests(userId: string, instanceId: string) {
-  const { adapter, connection } = await getSeerr(userId, instanceId);
+export async function refreshRequests(userId: string, instanceId: string,expected?:{connectionId:string;accountGeneration:string}) {
+  const { adapter, connection,account,scope } = await getSeerr(userId, instanceId,expected);
+  type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
+  const guarded=<T>(work:(tx:Tx)=>Promise<T>)=>getDb().transaction(async tx=>{await assertSeerrAccount(tx,scope);return work(tx);});
   const { importTmdb } = await import('$lib/catalogue/service');
   const seen = new Set<string>();
   for (let offset = 0; ; offset += 100) {
-    const page = await adapter.requests(offset);
+    await guarded(async()=>{});
+    const page = await adapter.requests(offset,false,account);
+    await guarded(async()=>{});
     for (const remote of page.results) {
       seen.add(String(remote.id));
       const [local] = await getDb()
@@ -382,10 +387,10 @@ export async function refreshRequests(userId: string, instanceId: string) {
             : 'pending';
       if (local) {
         if (local.state !== state) {
-          await getDb()
+          await guarded(tx=>tx
             .update(mediaRequests)
             .set({ state, updatedAt: new Date() })
-            .where(eq(mediaRequests.id, local.id));
+            .where(eq(mediaRequests.id, local.id)));
           await notify({
             userId,
             kind: 'request',
@@ -402,8 +407,10 @@ export async function refreshRequests(userId: string, instanceId: string) {
       const item = await importTmdb(kind, String(remote.media.tmdbId), {
         includeEpisodes: false,
       });
-      await getDb()
-        .insert(mediaRequests)
+      await guarded(async tx=>{
+        const [existing]=await tx.select({id:mediaRequests.id}).from(mediaRequests).where(and(eq(mediaRequests.userId,userId),eq(mediaRequests.instanceId,instanceId),eq(mediaRequests.externalId,String(remote.id)))).limit(1);
+        if(existing)return;
+        await tx.insert(mediaRequests)
         .values({
           userId,
           instanceId,
@@ -414,6 +421,7 @@ export async function refreshRequests(userId: string, instanceId: string) {
           seasons: remote.seasons.map((s) => s.seasonNumber),
           state,
         });
+      });
     }
     if (page.results.length < 100) break;
     if (offset >= 100000)
@@ -428,13 +436,14 @@ export async function refreshRequests(userId: string, instanceId: string) {
     if (!request.externalId || seen.has(request.externalId) || request.state === 'cancelled')
       continue;
     try {
+      await guarded(async()=>{});
       await adapter.requestDetails(Number(request.externalId));
     } catch (error) {
-      if ((error as { status?: number }).status !== 404) throw error;
-      await getDb()
+      if (!(error instanceof ProviderHttpError)||error.status !== 404) throw error;
+      await guarded(tx=>tx
         .update(mediaRequests)
         .set({ state: 'cancelled', updatedAt: new Date() })
-        .where(eq(mediaRequests.id, request.id));
+        .where(eq(mediaRequests.id, request.id)));
     }
   }
   const pending = await getDb()
@@ -447,7 +456,7 @@ export async function refreshRequests(userId: string, instanceId: string) {
         sql`${syncValues.category} like 'request:%'`
       )
     );
-  const preference = await getDb().transaction((tx) =>
+  const preference = await guarded((tx) =>
     conflictPreference(tx, userId, connection.id)
   );
   for (const entry of pending) {
@@ -461,21 +470,21 @@ export async function refreshRequests(userId: string, instanceId: string) {
         )
       );
     if (!request) continue;
-    await getDb()
+    await guarded(tx=>tx
       .update(syncValues)
       .set({ remote: { value: request.state }, updatedAt: new Date() })
-      .where(eq(syncValues.id, entry.id));
+      .where(eq(syncValues.id, entry.id)));
     if (preference !== 'manual') {
       const { resolveConflict } = await import('$lib/sync/conflicts');
-      await resolveConflict(userId, entry.id, preference === 'remote' ? 'accepted' : 'ignored');
+      await guarded(tx=>resolveConflict(userId, entry.id, preference === 'remote' ? 'accepted' : 'ignored',tx));
     }
   }
-  await getDb()
+  await guarded(tx=>tx
     .update(providerConnections)
     .set({
       settings: sql`jsonb_set(${providerConnections.settings}, '{requestsVerifiedAt}', ${JSON.stringify(new Date().toISOString())}::jsonb, true)`,
     })
-    .where(eq(providerConnections.id, connection.id));
+    .where(eq(providerConnections.id, connection.id)));
 }
 
 export async function manageRequest(

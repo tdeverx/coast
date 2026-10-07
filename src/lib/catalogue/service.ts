@@ -1,4 +1,5 @@
-import { mapConcurrent, singleFlight } from '$lib/server/utils/async';
+import { mapConcurrent } from '$lib/server/utils/async';
+import { providerSingleFlight } from '$lib/server/utils/provider-single-flight';
 import { and, eq, inArray, isNull, or, sql, desc } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import {
@@ -363,7 +364,7 @@ async function refreshChildDetails(id: string, region: string) {
   return saved;
 }
 
-const sharedRefresh = singleFlight<Awaited<ReturnType<typeof importTmdb>>>();
+const sharedRefresh = providerSingleFlight<Awaited<ReturnType<typeof importTmdb>>>('tmdb-refresh');
 export function refreshMedia(id: string, region = 'GB', includeRecommendations = true) {
   return sharedRefresh(`${id}:${region}:${includeRecommendations}`, () => refreshMediaNow(id, region, includeRecommendations));
 }

@@ -6,7 +6,8 @@ import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
 import { exportTraktListToAdapter } from '../src/lib/sync/trakt-lists';
 import { exportTraktToAdapter } from '../src/lib/sync/trakt-export';
 import { importTraktFromAdapter } from '../src/lib/sync/trakt-import';
-import { externalIds, listItems, lists, media, providerConnections, providerInstances, ratings, seasons, trackingEvents, trackingState, users } from '../src/lib/server/db/schema';
+import { externalIds, listItems, lists, media, outboxActions, providerConnections, providerInstances, ratings, seasons, trackingEvents, trackingState, users } from '../src/lib/server/db/schema';
+import { jobExecution, JobYield } from '../src/lib/server/queue/execution';
 import type { SyncPreferences } from '../src/lib/providers/contracts';
 
 const enabled = process.env.COAST_DB_TEST === '1';
@@ -97,6 +98,41 @@ run('season rating and watchlist exports use real season IDs and respect categor
   mediaIds.push(unmatchable.id);
   await expect(exportTraktToAdapter(userId,{mediaId:unmatchable.id,category:'ratings',value:4},{adapter,sync})).rejects.toThrow('no identity Trakt can match');
   expect(calls).toHaveLength(2);
+});
+
+run('committed Trakt categories and lists resume without replaying or revoking their members',async()=>{
+  const id=crypto.randomUUID();
+  await getDb().insert(outboxActions).values({id,userId,connectionId:connection.id,accountGeneration:connection.accountGeneration,kind:'trakt.import',payload:{},state:'running',attempts:1});
+  const reads:string[]=[];
+  const adapter=new TraktAdapter(async(path)=>{
+    const route=path.split('?')[0];
+    if(route==='/sync/last_activities')return{all:'2026-01-01T00:00:00.000Z'};
+    reads.push(route);
+    if(route==='/sync/ratings')return[{...remoteItems[0],rating:2,rated_at:'2026-01-01T00:00:00.000Z'},{type:'season',season:{number:2,ids:{trakt:numericId+2}},show,rating:5,rated_at:'2026-01-02T00:00:00.000Z'}];
+    if(route==='/sync/watchlist')return[{...remoteItems[0],listed_at:'2026-01-03T00:00:00.000Z'}];
+    if(route==='/users/me/lists')return[{name:'Mixed fixture list',ids:{trakt:remoteListId,slug:'fixture'}}];
+    if(route===`/users/me/lists/${remoteListId}/items/movie,show,season,episode`)return remoteItems;
+    throw new Error(`Unexpected fixture read ${route}`);
+  },'fixture-client','fixture-secret');
+  const execute=(checkpoints:number)=>jobExecution.run({id,attempts:1,purpose:'scheduled',started:performance.now(),checkpoints},()=>importTraktFromAdapter(userId,connection.id,{adapter,sync}));
+  try{
+    let yields=0,complete=false;
+    for(let chunk=0;chunk<30;chunk++){
+      try{await execute(4);complete=true;break;}catch(error){if(!(error instanceof JobYield))throw error;yields++;}
+    }
+    expect(yields).toBeGreaterThan(3);
+    expect(complete).toBe(true);
+    const [paused]=await getDb().select().from(outboxActions).where(eq(outboxActions.id,id));
+    expect(paused.payload._checkpoint).toMatchObject({task:'trakt-import',categories:['ratings','watchlist']});
+    const before=reads.length;
+    await execute(0);
+    expect(reads.slice(before)).toEqual([]);
+    expect(reads.filter(path=>path==='/sync/ratings')).toHaveLength(1);
+    expect(reads.filter(path=>path==='/sync/watchlist')).toHaveLength(1);
+    const [list]=await getDb().select().from(lists).where(eq(lists.userId,userId));
+    const members=await getDb().select().from(listItems).where(eq(listItems.listId,list.id)).orderBy(listItems.position);
+    expect(members.map(item=>item.mediaId)).toEqual([seasonId,movieId,showId]);
+  }finally{await getDb().delete(outboxActions).where(eq(outboxActions.id,id));}
 });
 
 run('mixed-list reconciliation scopes matching and rank to media kind, including seasons',async()=>{

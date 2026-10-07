@@ -20,9 +20,10 @@ export async function tasteJob(){
  const config=await getConfig();const sql=getSql(),[settings]=await sql`select value from system_settings where key='taste-refresh'`;
  const parsed=v.safeParse(scheduleSchema,settings?.value),schedule=parsed.success?parsed.output:v.parse(scheduleSchema,{});
  const [last]=await sql`select updated_at as completed,payload->'_jobOutcome' as outcome from outbox_actions where kind='taste.refresh' and state='succeeded' order by updated_at desc limit 1`;
+ const [lastRun]=await sql`select id,state,updated_at as at,payload->'_jobOutcome' as outcome,last_error as "lastError" from outbox_actions where kind='taste.refresh' and state in ('succeeded','failed','cancelled') order by updated_at desc,id desc limit 1`;
  const [active]=await sql`select exists(select 1 from outbox_actions where kind='taste.refresh' and state in ('pending','running','failed')) as active`;
  const interval=last?.outcome?.deferred || last?.outcome?.checked>=10 ? 1 : schedule.intervalMinutes;
- return {schedule,timing:{instanceId:'taste',kind:'taste.refresh',nextAt:!config.developerMode&&schedule.enabled&&!active.active?new Date(Math.max(Date.now(),new Date(last?.completed??0).getTime()+interval*60000)).toISOString():null,lastAt:last?.completed?new Date(last.completed).toISOString():null,eligible:1,fresh:0,reviews:0}};
+ return {schedule,timing:{lastRun:lastRun?{id:String(lastRun.id),state:lastRun.state as 'succeeded'|'failed'|'cancelled',at:new Date(lastRun.at).toISOString(),outcome:lastRun.outcome,lastError:lastRun.lastError}:null,instanceId:'taste',kind:'taste.refresh',nextAt:!config.developerMode&&schedule.enabled&&!active.active?new Date(Math.max(Date.now(),new Date(last?.completed??0).getTime()+interval*60000)).toISOString():null,lastAt:last?.completed?new Date(last.completed).toISOString():null,eligible:1,fresh:0,reviews:0}};
 }
 export async function updateTasteSchedule(raw:unknown){
  const schedule=v.parse(scheduleSchema,raw);

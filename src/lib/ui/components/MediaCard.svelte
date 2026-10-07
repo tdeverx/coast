@@ -223,7 +223,7 @@
       />
     {/if}
     {#if !readOnly()}{#if showPrimaryAction}<button
-        class="play glass icon-button"
+        class="play glass material-interactive icon-button"
         use:liquidGlass={{ enabled: active }}
         aria-label={primaryMenu?`Actions for ${item.title}`:`${primaryLabel} ${item.title}`}
         aria-haspopup={primaryMenu?'menu':undefined}
@@ -445,17 +445,15 @@
     }
   }
   .play {
+    --coast-material-hover-scale: 1.08;
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    translate: -50% -50%;
     width: 58px;
     height: 58px;
     z-index: 2;
     border-radius: 50%;
-  }
-  .play:is(:hover, :focus-visible) {
-    transform: translate(-50%, -50%) scale(1.08);
   }
   .card-menu {
     position: absolute;
@@ -470,10 +468,8 @@
   .play,
   .card-menu {
     opacity: 0;
-    transition:
-      opacity var(--fast),
-      transform var(--fast) var(--ease);
   }
+  .card-menu { transition: opacity var(--fast); }
   .media-card:hover .play,
   .media-card:hover .card-menu,
   .media-card:focus-within .play,

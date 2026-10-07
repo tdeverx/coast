@@ -152,8 +152,23 @@ export class TraktAdapter {
       await this.call(`${path}?page=${page}&limit=100&extended=full`)
     );
   }
+  /** Activity fence for a staged census; this is a change signal, not a snapshot. */
+  async lastActivity(): Promise<string> {
+    return v.parse(v.object({ all: v.string() }), await this.call('/sync/last_activities')).all;
+  }
   async collectionShows(): Promise<TraktRecord[]> {
     return this.readPages('/sync/collection/shows?extended=full', value => v.parse(v.array(traktRecordSchema),value));
+  }
+  async collectionShowsPage(page=1):Promise<TraktRecord[]> {
+    const records=v.parse(v.array(traktRecordSchema),await this.call(`/sync/collection/shows?extended=full&page=${page}&limit=10`));
+    if(records.some(record=>!record.show||!record.seasons))throw new Error('Trakt returned an incomplete show collection page.');
+    return records;
+  }
+  async listsPage(page=1) {
+    return v.parse(v.array(v.object({name:v.string(),description:v.nullish(v.string()),ids:v.object({trakt:v.number(),slug:v.string()})})),await this.call(`/users/me/lists?page=${page}&limit=100`));
+  }
+  async listItemsPage(listId:string,page=1):Promise<TraktRecord[]> {
+    return v.parse(v.array(traktRecordSchema),await this.call(`/users/me/lists/${encodeURIComponent(listId)}/items/movie,show,season,episode?extended=full&page=${page}&limit=100`));
   }
   async lists() {
     return this.readPages('/users/me/lists', (value) =>

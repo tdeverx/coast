@@ -8,6 +8,7 @@ import { hashToken, randomToken, newSession, requireAdmin, checkLoginRate, type 
 import { AppError } from '../security/errors';
 import { connectJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { libraryScanProgress } from '$lib/sync/jellyfin';
+import { jellyfinImportStage } from '$lib/sync/jellyfin-progress';
 import { enqueueAction } from '../queue';
 
 export async function listInvites(actor: SessionUser | null) {
@@ -80,12 +81,12 @@ export async function retryOnboarding(userId: string) {
     const [o] = await sql`SELECT o.connection_id,c.instance_id FROM user_onboarding o JOIN provider_connections c ON c.id=o.connection_id
       WHERE o.user_id=${userId} AND o.account_generation=c.account_generation AND c.status='connected' AND o.completed_at IS NULL`;
     if (!o) throw new AppError(409, 'Reconnect Jellyfin before retrying the import.');
-    const [busy] = await sql`SELECT a.id FROM outbox_actions a JOIN provider_connections c ON c.id=a.connection_id WHERE c.instance_id=${o.instance_id} AND a.kind='jellyfin.sync' AND a.state IN ('pending','running') LIMIT 1`;
-    if (busy) throw new AppError(409,'A Jellyfin user import is already queued or running. Retry when it finishes.');
-    await sql`UPDATE outbox_actions SET state='pending',next_attempt_at=NOW(),updated_at=NOW() WHERE id=(SELECT id FROM outbox_actions WHERE user_id=${userId} AND connection_id=${o.connection_id} AND kind='jellyfin.sync' AND state='failed' AND account_generation=(SELECT account_generation FROM provider_connections WHERE id=${o.connection_id}) ORDER BY created_at DESC LIMIT 1)`;
+    const [busy] = await sql`SELECT a.id FROM outbox_actions a JOIN provider_connections c ON c.id=a.connection_id WHERE a.connection_id=${o.connection_id} AND a.user_id=${userId} AND a.kind='jellyfin.bootstrap' AND a.state IN ('pending','running') LIMIT 1`;
+    if (busy) throw new AppError(409,'Your Jellyfin import is already queued or running. Retry when it finishes.');
+    await sql`UPDATE outbox_actions SET state='pending',next_attempt_at=NOW(),updated_at=NOW() WHERE id=(SELECT id FROM outbox_actions WHERE user_id=${userId} AND connection_id=${o.connection_id} AND kind='jellyfin.bootstrap' AND state='failed' AND account_generation=(SELECT account_generation FROM provider_connections WHERE id=${o.connection_id}) ORDER BY created_at DESC LIMIT 1)`;
   });
   const [o] = await getSql()`SELECT connection_id FROM user_onboarding WHERE user_id=${userId}`;
-  if (o?.connection_id) await enqueueAction({userId,connectionId:o.connection_id,kind:'jellyfin.sync',payload:{},compactionKey:'jellyfin.sync'});
+  if (o?.connection_id) await enqueueAction({userId,connectionId:o.connection_id,kind:'jellyfin.bootstrap',payload:{},compactionKey:'jellyfin.bootstrap'});
 }
 
 export async function onboardingTraktServices() {
@@ -142,7 +143,8 @@ async function ensureTraktImports(userId:string,row:any) {
   if(job?.payload?.initialImport===true)await db`update user_onboarding set import_jobs=import_jobs||${{[kind]:id}}::jsonb where user_id=${userId} and trakt_account_generation=${row.trakt_account_generation} and completed_at is null`;
  }
 }
-type OnboardingStatus={complete:boolean;phase:'complete'|'connections'|'importing';progress:Awaited<ReturnType<typeof libraryScanProgress>>|null;imports:{label:string;state:string;processed:number;total:number|null;error:string|null}[];reconnect:boolean;linked:boolean;traktLinked:boolean;requiredProvider:string};
+type OnboardingImport={label:string;state:string;processed:number;total:number|null;error:string|null;stage:string};
+type OnboardingStatus={complete:boolean;phase:'complete'|'connections'|'importing';progress:Awaited<ReturnType<typeof libraryScanProgress>>|null;imports:OnboardingImport[];reconnect:boolean;linked:boolean;traktLinked:boolean;requiredProvider:string};
 export async function onboardingStatus(userId:string):Promise<OnboardingStatus> {
  let row=await onboardingRow(userId);
  if(!row||row.completed_at)return {complete:true,phase:'complete' as const,progress:null,imports:[],reconnect:false,linked:false,traktLinked:false,requiredProvider:'none'};
@@ -150,16 +152,16 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
  const trakt=row.trakt_status==='connected'&&row.current_trakt_generation===row.trakt_account_generation;
  let jfAuthFailed=false,traktAuthFailed=false;
  let reconnect=!!row.account_generation&&!jf || !!row.trakt_account_generation&&!trakt;
- const imports:{label:string;state:string;processed:number;total:number|null;error:string|null}[]=[];
+ const imports:OnboardingImport[]=[];
  let ready=true,progress=null;
  if(row.imports_started_at){
   if(row.account_generation){
-   const [checkpoint]=await getSql()`select completed_at from sync_checkpoints where connection_id=${row.connection_id} and kind='jellyfin-user' and completed_at>=${row.requested_at} and scan_id is null`;
+   const [checkpoint]=await getSql()`select completed_at from sync_checkpoints where connection_id=${row.connection_id} and kind='jellyfin-personal' and completed_at>=${row.requested_at} and scan_id is null`;
    const done=jf&&!!checkpoint;
-   if(!done&&jf){await enqueueAction({userId,connectionId:row.connection_id,kind:'jellyfin.sync',payload:{},compactionKey:'jellyfin.sync'});progress=await libraryScanProgress(userId,row.connection_id,new Date(row.requested_at));}
+   if(!done&&jf){await enqueueAction({userId,connectionId:row.connection_id,kind:'jellyfin.bootstrap',payload:{},compactionKey:'jellyfin.bootstrap'});progress=await libraryScanProgress(userId,row.connection_id,new Date(row.requested_at),true);}
    jfAuthFailed=!!progress?.authenticationFailed;reconnect||=jfAuthFailed;
    const jfReconnect=!jf||jfAuthFailed;
-   imports.push({label:'Jellyfin',state:done?'succeeded':jfReconnect?'failed':progress?.state??'pending',processed:progress?.processed??0,total:progress?.total??null,error:jfReconnect?'Reconnect Jellyfin to continue.':progress?.error??null});ready&&=done;
+   imports.push({label:'Jellyfin',state:done?'succeeded':jfReconnect?'failed':progress?.state??'pending',processed:progress?.stageProcessed??0,total:progress?.stageTotal??null,stage:done?'Complete':jellyfinImportStage(progress?.phase??'scanning'),error:jfReconnect?'Reconnect Jellyfin to continue.':progress?.error??null});ready&&=done;
   }
   if(row.trakt_account_generation){
    if(trakt)await ensureTraktImports(userId,row);
@@ -171,7 +173,7 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
     const [job]=id?await getSql()`select state,last_error,payload from outbox_actions where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation}`:[];
     traktAuthFailed||=job?.payload?._jobFailure?.code==='provider.authentication';reconnect||=traktAuthFailed;
     const done=trakt&&job?.state==='succeeded';ready&&=done;
-    imports.push({label:kind==='trakt.import'?'Trakt tracking':'Trakt lists',state:trakt?job?.state??'pending':'failed',processed:0,total:null,error:trakt?job?.last_error??null:'Reconnect Trakt to continue.'});
+    imports.push({label:kind==='trakt.import'?'Trakt tracking':'Trakt lists',state:trakt?job?.state??'pending':'failed',processed:0,total:null,stage:kind==='trakt.import'?'Importing history, progress and favourites':'Importing saved titles and lists',error:trakt?job?.last_error??null:'Reconnect Trakt to continue.'});
    }
   }
   if(ready&&requiredConnection(row.required_provider,jf,trakt)){
@@ -184,6 +186,6 @@ export async function onboardingStatus(userId:string):Promise<OnboardingStatus> 
 export async function retryInitialImports(userId:string) {
  const row=await pendingOnboarding(userId);
  for(const id of Object.values(row.import_jobs??{}) as string[])await getSql()`update outbox_actions set state='pending',next_attempt_at=now(),last_error=null,updated_at=now() where id=${id} and user_id=${userId} and connection_id=${row.trakt_connection_id} and account_generation=${row.trakt_account_generation} and state in ('failed','cancelled')`;
- if(row.connection_id){const [checkpoint]=await getSql()`select completed_at from sync_checkpoints where connection_id=${row.connection_id} and kind='jellyfin-user' and completed_at>=${row.requested_at} and scan_id is null`;if(!checkpoint)await retryOnboarding(userId);}
+ if(row.connection_id){const [checkpoint]=await getSql()`select completed_at from sync_checkpoints where connection_id=${row.connection_id} and kind='jellyfin-personal' and completed_at>=${row.requested_at} and scan_id is null`;if(!checkpoint)await retryOnboarding(userId);}
  return onboardingStatus(userId);
 }

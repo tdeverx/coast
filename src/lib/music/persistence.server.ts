@@ -1,12 +1,21 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import { getDb, type Database } from '$lib/server/db';
-import { works, musicWorks, workIdentifiers, providerItems, workEditions, mediaRelationships, musicArtists, musicCredits, musicListens, musicListenBatches,musicProgress, availability } from '$lib/server/db/schema';
+import { works, musicWorks, workIdentifiers, providerItems, workEditions, mediaRelationships, musicArtists, musicCredits, musicListens, musicListenBatches,musicProgress, availability, providerConnections, providerInstances, users } from '$lib/server/db/schema';
 import type { MusicItem } from './model';
 import { DomainError } from '$lib/core/errors';
 import * as v from 'valibot';
+import { assertJobLease } from '$lib/server/queue/execution';
 
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
+/** Shared provider metadata must never carry one account's personal state. */
+export function musicMetadataSnapshot(item: MusicItem) {
+  return {id:item.id,kind:item.kind,title:item.title,artists:item.artists,albumArtists:item.albumArtists,
+    artistNames:item.artistNames,album:item.album,albumId:item.albumId,discNumber:item.discNumber,
+    trackNumber:item.trackNumber,durationSeconds:item.durationSeconds,releaseDate:item.releaseDate,
+    year:item.year,genres:item.genres,overview:item.overview,primaryImageTag:item.primaryImageTag,
+    externalIds:item.externalIds};
+}
 /** Only MusicBrainz identifiers with explicit recording/release-group semantics merge works. */
 export async function persistMusic(instanceId: string, item: MusicItem): Promise<MusicItem & { providerItemId?: string }> {
   if(item.kind==='artist') {
@@ -27,7 +36,8 @@ export async function persistMusic(instanceId: string, item: MusicItem): Promise
     const data={id,title:item.title,kind,artistNames:item.artistNames.length?item.artistNames:item.artists.map(a=>a.name),releaseDate:item.releaseDate,year:item.year,durationSeconds:item.durationSeconds,overview:item.overview,genres:item.genres,updatedAt:new Date()};
     await tx.insert(musicWorks).values(data).onConflictDoUpdate({target:musicWorks.id,set:data});
     if(verified) await tx.insert(workIdentifiers).values({workId:id,provider,externalId:verified,kind}).onConflictDoNothing();
-    const [saved]=await tx.insert(providerItems).values({instanceId,externalId:item.id,mediaId:id,kind,snapshot:{...item},lastSeenAt:new Date()}).onConflictDoUpdate({target:[providerItems.instanceId,providerItems.externalId],set:{snapshot:{...item},lastSeenAt:new Date()}}).returning();
+    const snapshot=musicMetadataSnapshot(item);
+    const [saved]=await tx.insert(providerItems).values({instanceId,externalId:item.id,mediaId:id,kind,snapshot,lastSeenAt:new Date()}).onConflictDoUpdate({target:[providerItems.instanceId,providerItems.externalId],set:{snapshot,lastSeenAt:new Date()}}).returning();
     await tx.insert(workEditions).values({workId:id,instanceId,externalId:item.id,format:'audio',metadata:{externalIds:item.externalIds}}).onConflictDoUpdate({target:[workEditions.instanceId,workEditions.externalId],set:{metadata:{externalIds:item.externalIds}}});
     for(const [role,artists] of [['artist',item.artists],['album-artist',item.albumArtists]] as const) for(const a of artists){
       const [artist]=await tx.insert(musicArtists).values({instanceId,externalId:a.id,name:a.name}).onConflictDoUpdate({target:[musicArtists.instanceId,musicArtists.externalId],set:{name:a.name}}).returning();
@@ -44,6 +54,51 @@ export async function observeMusicAccess(userId: string, connectionId: string, i
   if(!('workId' in saved)||!saved.workId||!('providerItemId' in saved))return saved;
   const data={userId,connectionId,mediaId:saved.workId,providerItemId:saved.providerItemId!,sourceId:'default',durationSeconds:item.durationSeconds,state:'available' as const,scanId,verifiedAt:new Date()};
   await getDb().insert(availability).values(data).onConflictDoUpdate({target:[availability.userId,availability.connectionId,availability.providerItemId,availability.sourceId],set:data});
+  return saved;
+}
+
+/** User sync reuses shared music metadata and grants only this authenticated page's access. */
+export async function observeMusicPageAccess(userId: string, connectionId: string, instanceId: string,
+  accountGeneration: string, items: MusicItem[], scanId: string,
+  loadMissing?: (ids: string[]) => Promise<MusicItem[]>) {
+  if (!items.length) return [];
+  const db = getDb();
+  const known = await db.select({externalId: providerItems.externalId, providerItemId: providerItems.id, workId: musicWorks.id, kind: musicWorks.kind})
+    .from(providerItems).innerJoin(musicWorks, eq(musicWorks.id, providerItems.mediaId))
+    .where(and(eq(providerItems.instanceId, instanceId), inArray(providerItems.externalId, items.map(item => item.id))));
+  const mappings = new Map(known.map(row => [row.externalId, row]));
+  const missing=items.filter(item=>mappings.get(item.id)?.kind!==item.kind);
+  const hydrated=loadMissing && missing.length ? await loadMissing([...new Set(missing.map(item=>item.id))]) : missing;
+  const details=new Map(hydrated.map(item=>[item.id,item]));
+  const saved: (MusicItem & {providerItemId?: string})[] = [];
+  for (const item of items) {
+    const mapping = mappings.get(item.id);
+    if(mapping?.kind===item.kind)saved.push({...item,workId:mapping.workId,providerItemId:mapping.providerItemId});
+    else {
+      const detail=details.get(item.id);
+      // An item removed or denied between the page and detail query grants no access.
+      if(!detail)continue;
+      if(detail.kind!==item.kind)throw new Error('Jellyfin returned an unexpected music item type.');
+      saved.push({...await persistMusic(instanceId,detail),favourite:item.favourite,playCount:item.playCount,positionSeconds:item.positionSeconds,expectedMembers:item.expectedMembers});
+    }
+  }
+  await db.transaction(async tx => {
+    const [connection] = await tx.select().from(providerConnections)
+      .where(and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId),
+        eq(providerConnections.instanceId, instanceId), eq(providerConnections.accountGeneration, accountGeneration), eq(providerConnections.status, 'connected'))).for('update');
+    const [active] = await tx.select({id: users.id}).from(users).innerJoin(providerInstances, eq(providerInstances.id, instanceId))
+      .where(and(eq(users.id, userId), eq(users.disabled, false), eq(providerInstances.enabled, true)));
+    if (!connection || !active) throw new Error('The connected account changed during this task.');
+    await assertJobLease(tx,true);
+    const rows = new Map(saved.filter(item => item.workId && item.providerItemId).map(item => [item.providerItemId!, {
+      userId, connectionId, mediaId: item.workId!, providerItemId: item.providerItemId!, sourceId: 'default',
+      durationSeconds: item.durationSeconds, source:{coastMembershipCount:item.expectedMembers??null},state: 'available' as const, scanId, verifiedAt: new Date(),
+    }]));
+    if (rows.size) await tx.insert(availability).values([...rows.values()]).onConflictDoUpdate({
+      target: [availability.userId, availability.connectionId, availability.providerItemId, availability.sourceId],
+      set: {mediaId: sql`excluded.media_id`, durationSeconds: sql`excluded.duration_seconds`, source:sql`excluded.source`,state: 'available', scanId, verifiedAt: new Date()},
+    });
+  });
   return saved;
 }
 export async function recordMusicListen(tx: Transaction,userId: string,trackId:string,batchId:string,source='coast',occurredAt?:Date,known=true){

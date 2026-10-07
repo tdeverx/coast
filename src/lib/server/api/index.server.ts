@@ -1,4 +1,6 @@
 import { readJsonBody as readBody } from '$lib/server/security/request-body';
+import { ProviderHttpError } from '$lib/server/security/provider-fetch';
+import { providerApiError } from '$lib/server/security/provider-api-error';
 import { provisioningAuthority } from '$lib/providers/jellyfin/provisioning.server';
 import { createShare,listShares,revokeShare } from '$lib/sharing/service.server';
 import { planningData,createPlan,cancelPlan,completePlan } from '$lib/experiments/planning.server';
@@ -259,6 +261,10 @@ export const handler: RequestHandler = async (event) => {
         { error: error.message, code: error.code },
         { status: error.code === 'permission' ? 403 : 400 }
       );
+    if(error instanceof ProviderHttpError){
+      const failure=providerApiError(error);
+      return json(failure.body,{status:failure.status,headers:failure.headers});
+    }
     void logDiagnostic('error', path[0] === 'playback' ? 'playback.failed' : 'application.failed', { failure: classifyFailure(error) });
     return json(
       {

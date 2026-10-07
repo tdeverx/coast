@@ -76,6 +76,8 @@ export interface AvailableItem {
   metadata: Metadata;
   /** Account-scoped expected leaf count; never grants access or proves server inventory. */
   expectedMembers?: number;
+  /** Raw library visibility evidence; never personal state or an access grant by itself. */
+  access?: { sourceType?: string | null; tags?: string[]; officialRating?: string | null; customRating?: string | null; locationType?: string | null };
   parentId?: string;
   showId?: string;
   seasonNumber?: number;

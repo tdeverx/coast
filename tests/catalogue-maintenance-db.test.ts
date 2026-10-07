@@ -145,6 +145,11 @@ run(
     const claimed = await claimNextAction();
     expect(claimed?.instanceId).toBe(instance);
     expect(claimed?.kind).toBe('tmdb.refresh');
+    expect(claimed?.payload._jobPurpose).toBe('manual');
+    await getDb().update(s.outboxActions).set({payload:{instanceId:instance,_jobPurpose:'scheduled'}}).where(eq(s.outboxActions.id,claimed!.id));
+    expect((await runProviderJob(admin,instance,'metadata','tmdb.refresh')).active).toBe(1);
+    const [promoted]=await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.id,claimed!.id));
+    expect(promoted.payload._jobPurpose).toBe('manual');
     expect(await claimNextAction()).toBeNull();
     await getDb()
       .update(s.outboxActions)
@@ -290,7 +295,7 @@ run(
       }
     );
     expect(calls).toBe(2);
-    expect(peak).toBeLessThanOrEqual(2);
+    expect(peak).toBe(1);
     const [saved] = await getDb()
       .select()
       .from(s.providerInstances)
@@ -306,3 +311,19 @@ run(
     ).toBe(0);
   }
 );
+run('forced metadata refresh retains its finite batch across cooperative yields',async()=>{
+  const {refreshSharedMetadata}=await import('../src/lib/catalogue/maintenance.server');
+  const {jobExecution,JobYield}=await import('../src/lib/server/queue/execution');
+  const {ProviderHttpError}=await import('../src/lib/server/security/provider-fetch');
+  const id=crypto.randomUUID(),calls:string[]=[];
+  const action={id,userId:admin,connectionId:null,kind:'tmdb.refresh',payload:{instanceId:instance,force:true},attempts:1,correlationId:crypto.randomUUID()};
+  await getDb().insert(s.outboxActions).values({...action,state:'running'});
+  const refresh=async(mediaId:string)=>{calls.push(mediaId);throw new ProviderHttpError(404);};
+  try{
+    await expect(jobExecution.run({id,attempts:1,purpose:'manual',started:performance.now(),checkpoints:4},()=>refreshSharedMetadata(action,refresh))).rejects.toBeInstanceOf(JobYield);
+    const [saved]=await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.id,id));
+    expect(saved.payload._checkpoint).toMatchObject({task:'tmdb-refresh',next:1,failed:1});
+    expect(await jobExecution.run({id,attempts:1,purpose:'manual',started:performance.now(),checkpoints:0},()=>refreshSharedMetadata(action,refresh))).toEqual({refreshed:0,deferred:2});
+    expect(calls).toHaveLength(2);expect(new Set(calls).size).toBe(2);
+  }finally{await getDb().delete(s.outboxActions).where(eq(s.outboxActions.id,id));}
+});

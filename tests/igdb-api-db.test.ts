@@ -27,6 +27,7 @@ suite('IGDB authenticated API and provider persistence', () => {
   let directory: string, instanceId: string, gameId: string;
   let apiCalls = 0, oauthCalls = 0, tokenDenied = false, outage = false, title = 'IGDB fixture';
   let expectedSecret = clientSecret;
+  let upstreamStatus:number|null=null;
   const externalId = String(Math.floor(Math.random() * 1000000000) + 1000000000);
   const request = (path: string, actor: SessionUser | null, body?: unknown, query = '') => {
     const url = new URL(`http://coast.test/api/v1/${path}${query}`);
@@ -59,7 +60,7 @@ suite('IGDB authenticated API and provider persistence', () => {
         apiCalls++;
         expect(headers.get('client-id')).toBe(clientId);
         expect(headers.get('authorization')).toBe('Bearer fixture-token');
-        return Response.json(outage ? { error: 'offline' } : [{ id: Number(externalId), name: title, summary: 'Imported overview', genres: [{ name: 'Adventure' }], platforms: [{ name: 'PC' }], cover: { image_id: 'fixturecover' } }], { status: outage ? 503 : 200 });
+        return Response.json(upstreamStatus?{error:'fixture-private-provider-error'}:outage ? { error: 'offline' } : [{ id: Number(externalId), name: title, summary: 'Imported overview', genres: [{ name: 'Adventure' }], platforms: [{ name: 'PC' }], cover: { image_id: 'fixturecover' } }], { status:upstreamStatus??(outage ? 503 : 200),headers:upstreamStatus===429?{'Retry-After':'999999'}:undefined });
       }
       throw new Error('Unexpected fixture request.');
     }) as typeof fetch;
@@ -143,5 +144,19 @@ suite('IGDB authenticated API and provider persistence', () => {
     await getDb().update(providerInstances).set({ enabled: false }).where(eq(providerInstances.id, instanceId));
     expect((await request('games/igdb/search', member, undefined, query)).status).toBe(409);
     expect(apiCalls).toBe(before);
+  });
+  test('typed upstream auth and rate failures are mapped safely at the common API boundary',async()=>{
+    await getDb().update(providerInstances).set({enabled:true}).where(eq(providerInstances.id,instanceId));
+    const query=`?instanceId=${instanceId}&q=Fixture`;
+    for(const status of [401,403]){
+      upstreamStatus=status;
+      const response=await request('games/igdb/search',member,undefined,query);
+      expect(response.status).toBe(502);expect(await response.text()).not.toContain('fixture-private-provider-error');
+    }
+    upstreamStatus=429;
+    const response=await request('games/igdb/search',member,undefined,query);
+    expect(response.status).toBe(429);expect(response.headers.get('Retry-After')).toBe('86400');
+    expect(await response.text()).not.toContain('fixture-private-provider-error');
+    upstreamStatus=null;
   });
 });

@@ -180,7 +180,7 @@
           {@render colorControl(`material-${control.key}`, control.label, surface[control.key], value => surface[control.key] = value)}
         {/each}
         <label class="field">Stroke alignment<select bind:value={surface.strokeAlignment}><option value="internal">Internal</option><option value="external">External</option></select></label>
-        <label class="field">Stroke blend<select aria-label="Stroke blend" bind:value={surface.strokeBlend}>{#each blendOptions as option}<option value={option.value} disabled={!supportedBlends.includes(option.value)}>{option.label}</option>{/each}</select></label>
+        <label class="field">Stroke blend<select aria-label="Stroke blend" disabled={surface.strokeAlignment === 'external'} value={surface.strokeAlignment === 'external' ? 'normal' : surface.strokeBlend} onchange={event => surface.strokeBlend = event.currentTarget.value as typeof surface.strokeBlend}>{#each blendOptions as option}<option value={option.value} disabled={!supportedBlends.includes(option.value)}>{option.label}</option>{/each}</select></label>
         <label class="field">Shadow position<select bind:value={surface.shadowPosition}><option value="outer">Outer</option><option value="inner">Inner</option></select></label>
       </div>
       <p class="quiet">Use any CSS color, including var(--white), var(--canvas), var(--surface) and color-mix().</p>

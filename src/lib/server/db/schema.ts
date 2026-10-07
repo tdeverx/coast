@@ -691,6 +691,16 @@ export const outboxActions = pgTable(
     index('outbox_state_created_idx').on(t.state, t.createdAt),
   ]
 );
+/** Complete upstream snapshots for resumable account imports. Never returned by
+ * public/Jobs APIs; cursors and personal effects commit together. */
+export const providerJobSnapshots = pgTable('provider_job_snapshots', {
+  actionId: uuid('action_id').primaryKey().references(()=>outboxActions.id,{onDelete:'cascade'}),
+  connectionId: uuid('connection_id').notNull().references(()=>providerConnections.id,{onDelete:'cascade'}),
+  accountGeneration: uuid('account_generation').notNull(),
+  data: jsonb('data').$type<JsonObject>().notNull(),
+  updatedAt: updatedAt(),
+}, t=>[index('provider_job_snapshot_retention_idx').on(t.updatedAt)]);
+
 export const jobs = pgTable('jobs', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
@@ -711,6 +721,30 @@ export const jobs = pgTable('jobs', {
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 },t=>[uniqueIndex('outbox_taste_one_active_idx').on(t.kind).where(sql`${t.kind}='taste.refresh' and ${t.state} in ('pending','running','failed')`)]);
+/** Temporary account observations, never shared catalogue metadata. */
+export const traktImportStages = pgTable('trakt_import_stages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  actionId: uuid('action_id').notNull().references(() => outboxActions.id, {onDelete:'cascade'}),
+  connectionId: uuid('connection_id').notNull().references(() => providerConnections.id, {onDelete:'cascade'}),
+  accountGeneration: uuid('account_generation').notNull(),
+  category: text('category').notNull(),
+  phase: text('phase').$type<'fetching'|'applying'|'cleaning'|'done'>().notNull().default('fetching'),
+  nextPage: integer('next_page').notNull().default(1),
+  activity: text('activity').notNull(),
+  restarts: integer('restarts').notNull().default(0),
+  cleanedThrough: uuid('cleaned_through'),
+  imported: integer('imported').notNull().default(0),
+  review: integer('review').notNull().default(0),
+  updatedAt: updatedAt(),
+}, t => [uniqueIndex('trakt_import_stage_action_unique').on(t.actionId,t.category),index('trakt_import_stage_retention_idx').on(t.updatedAt)]);
+export const traktImportRecords = pgTable('trakt_import_records', {
+  stageId: uuid('stage_id').notNull().references(() => traktImportStages.id, {onDelete:'cascade'}),
+  ordinal: integer('ordinal').notNull(),
+  sortKey: text('sort_key').notNull(),
+  record: jsonb('record').$type<import('$lib/providers/trakt/adapter.server').TraktRecord>().notNull(),
+  applied: boolean('applied').notNull().default(false),
+  observedMediaId: uuid('observed_media_id'),
+}, t => [primaryKey({columns:[t.stageId,t.ordinal]}),index('trakt_import_records_apply_idx').on(t.stageId,t.sortKey,t.ordinal).where(sql`not ${t.applied}`),index('trakt_import_records_observed_idx').on(t.stageId,t.observedMediaId)]);
 export const syncCheckpoints = pgTable(
   'sync_checkpoints',
   {
