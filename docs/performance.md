@@ -78,7 +78,7 @@ bun run test:db
 bun run build
 ```
 
-`test:db` requires the create-database-capable `TEST_DATABASE_URL` described above and isolates each suite. Choose focused tests while iterating, including resource cancellation, content revisions, request priority, journals and benchmark fixtures. Add tests for meaningful regression behavior, not timing thresholds that vary with the host. See [verification platform](verification-platform.md).
+`test:db` requires the create-database-capable `TEST_DATABASE_URL` described above and isolates each suite. Database tests and lifecycle hooks have a bounded 30-second default so bulk import fixtures and FK cleanup can complete on slower CI runners; this is a correctness-test allowance, not a production latency target. Unit tests and benchmark deadlines retain their own limits. Choose focused tests while iterating, including resource cancellation, content revisions, request priority, journals and benchmark fixtures. Add tests for meaningful regression behavior, not timing thresholds that vary with the host. See [verification platform](verification-platform.md).
 
 For rendering changes, exercise a production build as well as development mode. Record desktop/mobile viewport, browser and device; developer tooling and hot reload affect measurements. Check:
 
