@@ -25,6 +25,8 @@ Films and TV are the core experience. Music, games and shared playback are avail
 
 Discover trending and recent releases. For You brings together Continue, Next, favourites, recommendations and activity, with personalised rows that appear as you scroll.
 
+Personalised rows use cached provider suggestions and your own taste signals across enabled media. Friend popularity is part of those rows; recommendations do not automatically add items to your Collection.
+
 ### Keep your own collection
 
 Track progress, history, ratings, favourites, saved titles and lists—even when a title is not currently playable. Choose what automatically joins your Collection.
@@ -57,8 +59,6 @@ Create scoped API tokens for reads and supported writes, and connect signed webh
 
 Run local benchmarks and compare results over time. Saved measurements help you spot changes in database and server workloads.
 
-Personalised rows use cached provider suggestions and your own taste signals across enabled media. Friend popularity is part of those rows; recommendations do not automatically add items to your Collection.
-
 ### Sync you can follow
 
 **Settings → Jobs & schedules** shows what is running, waiting, needs attention, is scheduled next, or is manual. Each task shows its last result and timing, with **Run now**, **Retry** and schedule controls where applicable. Long imports can pause at saved checkpoints so higher-priority work can proceed; initial imports take priority over routine background work. Detailed job history remains in the logs.
@@ -68,6 +68,8 @@ The optional [Jellyfin companion](docs/jellyfin-companion.md) provides server ch
 ## Experiments
 
 Administrators enable these separately in **Settings → Policies → Experimental features**. They default off; disabling one hides it without deleting saved data.
+
+Dynamic For You and personalised recommendations are standard features and no longer have experimental switches. The [experiment guide](docs/experimental-features.md) explains each feature's behaviour and limits.
 
 ### Music
 
@@ -88,8 +90,6 @@ Schedule titles and reminders. Upcoming on For You shows known releases for watc
 ### Media detail overlay
 
 Open the existing hero and details over the page you are browsing, with a full-page option. Its presentation is still under review.
-
-Dynamic For You and personalised recommendations are standard features and no longer have experimental switches. The [experiment guide](docs/experimental-features.md) explains each feature's behaviour and limits.
 
 ## Still being refined
 
