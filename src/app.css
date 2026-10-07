@@ -253,9 +253,31 @@ form.stack,
   isolation: isolate;
   background: var(--coast-glass-fill);
   border: 0;
-  box-shadow: none;
+  box-shadow: var(--coast-glass-shadow);
   -webkit-backdrop-filter: var(--coast-glass-filter);
   backdrop-filter: var(--coast-glass-filter);
+}
+/* One transform owns the material, decoration and foreground together.
+   Retain the original Play transform path; do not animate independent scale. */
+.glass.glass {
+  transform-origin: 50% 50%;
+  transform: var(--coast-material-position, translate(0, 0)) scale(1);
+  transition: background var(--fast), color var(--fast), opacity var(--fast),
+    transform var(--fast) var(--ease);
+}
+.glass:focus-visible:not(:disabled):not([aria-disabled='true']) {
+  transform: var(--coast-material-position, translate(0, 0)) scale(var(--coast-material-hover-grow, var(--hover-grow)));
+}
+@media (hover: hover) {
+  .glass:hover:not(:disabled):not([aria-disabled='true']) {
+    transform: var(--coast-material-position, translate(0, 0)) scale(var(--coast-material-hover-grow, var(--hover-grow)));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass.glass {
+    transition: none !important;
+    transform: var(--coast-material-position, translate(0, 0)) !important;
+  }
 }
 /* Below surface content, above its backdrop; never changes layout or hit targets. */
 .coast-glass-grain {
@@ -277,30 +299,9 @@ form.stack,
 }
 .glass::before {
   z-index: 2;
-  /* Keep the outer stroke and shadow above the backdrop compositor, with the
-     lighting. All layers inherit the material's box and transform together. */
   box-shadow:
     inset var(--coast-glass-top-inner-x) var(--coast-glass-top-inner-depth) var(--coast-glass-top-inner-softness) var(--coast-glass-top-inner-spread) color-mix(in srgb, var(--coast-glass-top-inner-color) var(--coast-glass-top-inner-opacity), transparent),
-    inset var(--coast-glass-bottom-inner-x) calc(-1 * var(--coast-glass-bottom-inner-depth)) var(--coast-glass-bottom-inner-softness) var(--coast-glass-bottom-inner-spread) color-mix(in srgb, var(--coast-glass-bottom-inner-color) var(--coast-glass-bottom-inner-opacity), transparent),
-    var(--coast-glass-shadow);
-}
-.glass.glass {
-  transform-origin: 50% 50%;
-  transition: background var(--fast), color var(--fast), opacity var(--fast),
-    transform var(--fast) var(--ease), scale var(--motion) var(--ease);
-}
-/* Scale the material box itself: its decorations and foreground move together.
-   Positioned consumers use independent translate to preserve their centre. */
-.glass:focus-visible:not(:disabled):not([aria-disabled='true']) {
-  scale: var(--coast-material-hover-scale, var(--hover-grow));
-}
-@media (hover: hover) {
-  .glass:hover:not(:disabled):not([aria-disabled='true']) {
-    scale: var(--coast-material-hover-scale, var(--hover-grow));
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .glass.glass { transition: none !important; scale: none !important; }
+    inset var(--coast-glass-bottom-inner-x) calc(-1 * var(--coast-glass-bottom-inner-depth)) var(--coast-glass-bottom-inner-softness) var(--coast-glass-bottom-inner-spread) color-mix(in srgb, var(--coast-glass-bottom-inner-color) var(--coast-glass-bottom-inner-opacity), transparent);
 }
 .glass::after {
   z-index: 3;

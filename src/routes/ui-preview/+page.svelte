@@ -103,7 +103,7 @@
   {:else if section === 'colors'}
   <section class="section token-section" aria-labelledby="colors-heading">
     <h2 id="colors-heading">Colors</h2>
-    <p class="small">Nine base colors from src/app.css. Hover, subdued text and borders are derived roles; chart shades, transparency and all glass treatments use the same palette.</p>
+    <p class="small">Nine base colors from src/app.css. Hover, subdued text and borders are derived roles; chart shades, transparency and all six glass treatments use the same palette.</p>
     {#each palette as group}
       <section class="palette-group" aria-label={group.title}>
         <h3>{group.title}</h3>

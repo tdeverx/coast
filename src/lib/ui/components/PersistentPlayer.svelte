@@ -777,7 +777,8 @@
     position: absolute;
     bottom: max(16px, env(safe-area-inset-bottom));
     left: 50%;
-    translate: -50% 0;
+    --coast-material-position: translateX(-50%);
+    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 8px;

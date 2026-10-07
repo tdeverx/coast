@@ -137,9 +137,10 @@
     pointer-events: none;
   }
   nav {
+    --coast-material-position: translateX(-50%);
     position: absolute;
     left: 50%;
-    translate: -50% 0;
+    transform: translateX(-50%);
   }
   .nav-icon{display:none;}
   nav a {
@@ -175,9 +176,10 @@
       padding-inline: 20px;
     }
     nav {
+      --coast-material-position: translate(0, 0);
       position: fixed;
       inset: auto 12px calc(env(safe-area-inset-bottom) + 12px);
-      translate: none;
+      transform: none;
     }
     .nav-label{display:none;}
     .nav-icon{display:flex;}

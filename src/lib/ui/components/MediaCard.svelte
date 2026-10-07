@@ -445,11 +445,12 @@
     }
   }
   .play {
-    --coast-material-hover-scale: var(--hover-grow-strong);
+    --coast-material-position: translate(-50%, -50%);
+    --coast-material-hover-grow: var(--hover-grow-strong);
     position: absolute;
     top: 50%;
     left: 50%;
-    translate: -50% -50%;
+    transform: translate(-50%, -50%);
     width: 58px;
     height: 58px;
     z-index: 2;
@@ -468,8 +469,10 @@
   .play,
   .card-menu {
     opacity: 0;
+    transition:
+      opacity var(--fast),
+      transform var(--fast) var(--ease);
   }
-  .card-menu { transition: opacity var(--fast); }
   .media-card:hover .play,
   .media-card:hover .card-menu,
   .media-card:focus-within .play,

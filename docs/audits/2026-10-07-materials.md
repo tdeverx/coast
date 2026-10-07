@@ -1,120 +1,79 @@
-# Material layering and usage audit
+# Material regression and layering audit
 
-Scope: shared material presets, runtime, CSS layers, experiment editor and material consumers in the current working tree. Investigation began read-only; the user subsequently authorized material fixes with the plugin/jobs work. The lifecycle and shared compositor fixes below are implemented. Approved presets and radii remain unchanged; all glass materials now own shared hover scaling at the user’s request. No server, database, container or provider state was changed.
+## Status
 
-## Material inventory
+The user reported **new uneven movement inside the Play button material**, introduced during this pass. This is a regression investigation, not a claim that the original material had the same defect.
 
-All application glass uses [glass.ts](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/materials/glass.ts:129) and [the shared CSS](/Users/admin/Documents/ChatGPT/coast-new/src/app.css:249). There are four presets, each paired with a CSS blur fallback in [presets.ts](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/materials/presets.ts:117).
+The regression comparison uses remote main `6682c064679b2771629df5f734c5594e0efe4353` and the material portion of `a3a7d806b99e1a45d4fac8d18e8059fac74e9714`. Provider/jobs and Jellyfin companion work remains intact. The precise source of the reported movement was not conclusively attributed to one layer. The corrected implementation removes the changed shadow placement and independent scale path rather than altering the optical map.
 
-| Variant | Enhanced fill / blur | CSS fallback fill / blur | Actual usage |
-| --- | --- | --- | --- |
-| Clear | Canvas 5% / 2px | Canvas 5% / 12px | Main navigation, hero buttons, media-card primary buttons and persistent playback controls. |
-| Light | White 54% / 18px | White 62% / 24px | Reference previews/editor and the Button material API. No explicit production caller currently selects it. |
-| Dark | Dark tint 56% / 18px | Dark tint 68% / 24px | Standard buttons and context menus; persistent panels, empty-row badges and glass chart previews explicitly select CSS rendering. |
-| Prominent | Accent 48% / 18px | Accent 64% / 24px | Reference previews/editor and the Button material API. No explicit production caller currently selects it. |
+## Corrected implementation on development
 
-The temporary experiment is independent of application presets: directional sheen, edge vignette, masked edge light and pointer/focus sheen. All effect amounts default to zero. Frost variation has been removed. Drafts and preview backgrounds are local to the reference editor; exporting resolves colors and includes the selected material, fallback and optional effects.
+- Shadow remains on the material element, top/bottom inset lights remain on `::before`, and internal stroke remains on `::after`. No layer gets its own animated scale.
+- Shared glass hover uses a single combined transform, with an explicit centering translation supplied by positioned consumers. Play retains its original 160ms timing and 1.08 growth. Global grow values remain shared tokens. Reduced motion preserves centering and disables growth.
+- Displacement maps, channel filters and percentage filter bounds retain their original values.
+- Independently verified runtime improvements remain: unchanged graphs are reused, disabled actions have no filter/grain, hidden surfaces release native definitions, and activation happens before reveal.
+- Dev Play inspection reports `matrix(1.08, 0, 0, 1.08, -29, -29)`, independent scale/translate both `none`, center offsets below 0.01px, and the original separate shadow/light values. Account menu opens and closes with the expected size and native renderer. No browser errors were recorded during these checks.
+- Svelte check: zero errors/warnings. Unit suite: 356 passed, 472 database-dependent skips, zero failures. Production build succeeds. These are not a claim of exhaustive cross-browser animation testing.
 
-Representative consumers:
+## Verified comparison
 
-- [Button.svelte](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/components/Button.svelte:45): standard buttons use Dark; hero buttons use Clear. Icon, subtle, compact and menu-row controls do not acquire their own glass action. Menu surfaces use Dark enhanced glass where supported.
-- [Dialog.svelte](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/components/Dialog.svelte:67): persistent popovers use Dark CSS fallback; modal dialogs use a solid surface. Native top-layer dialog/popover behavior remains intact.
-- [Header.svelte](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/components/Header.svelte:45): Clear navigation. Account icons are ordinary transparent controls; their menu surfaces acquire materials.
-- [MediaCard.svelte](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/components/MediaCard.svelte:225): Clear central primary button, lazily enabled on pointer/focus activation. Artwork itself uses a separate overlay border/dimming treatment, not a glass material.
-- [PersistentPlayer.svelte](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/components/PersistentPlayer.svelte:585): Clear controller container. Transport icons are ordinary controls; option popovers use the shared menu surface.
-- [Shelf.svelte](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/components/Shelf.svelte:266): Dark CSS-fallback empty-state badge.
-- [ChartGallery.svelte](/Users/admin/Documents/ChatGPT/coast-new/src/routes/ui-preview/charts/ChartGallery.svelte:48): eight glass chart styles share Dark CSS fallback. Non-glass styles do not initialize the material action.
-- [MaterialTweaker.svelte](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/materials/MaterialTweaker.svelte:130) and [Demo.svelte](/Users/admin/Documents/ChatGPT/coast-new/src/routes/ui-preview/Demo.svelte:225): preview override deliberately ignores the personal Liquid glass switch.
+The local fixture at `http://127.0.0.1:18767/` builds both runtimes and compares:
 
-Identity and Party cards are solid/image containers, not extra glass variants. Their backgrounds are opacity-adjusted image siblings; text and posters do not inherit that image opacity.
+1. Original runtime, decoration placement and combined transform.
+2. Recent runtime, moved shadow/light layer and separate translate/scale.
+3. Only the shadow/light placement change.
+4. Only the translate/scale change.
+5. Only the runtime change.
 
-## Verified fixes
+SVG identifiers are namespaced to prevent collisions. The fixture uses a high-contrast grid and a 58px circular Play button. Optional repeated motion compares scaling alone or scaling with artwork growth and button opacity. These cycles aid visual comparison; they are not a recorded reproduction of the application's pointer timing.
 
-### P2: Disabled material actions still installed blur on solid dialogs
+Browser observations:
 
-Previously `enabled:false` only excluded native refraction. The fallback branch still wrote literal `backdrop-filter:blur(24px)` and material variables. Every solid modal passes `enabled:popover`, so a non-popover dialog acquired an invisible blur and a backdrop-root boundary despite its opaque solid fill. Inactive card buttons also installed fallback blur before they were activated.
+- Original and recent runtimes generate **identical displacement PNG data and identical SVG filter primitives** for this geometry and preset. No changed refraction, blur, dispersion, filter region or bitmap resolution was found in the pushed patch.
+- Repeated scaling leaves filter graph counts unchanged in both runtimes. A DOM filter rebuild on every animation frame is ruled out for this isolated case.
+- Reapplying unchanged options adds three original graphs for the three original-runtime samples, but no recent graphs for the two recent-runtime samples. The recent cache works in this case; its introduction alone is not evidence of the movement defect.
+- Ordinary Play has one material: fill/backdrop filtering, two decoration pseudo-elements, and optional grain. Default grain is zero. Its artwork ancestor independently grows by 1.02. No experimental interaction/sheens exist inside ordinary Play.
 
-The isolated Chromium fixture confirmed a solid action with `enabled:false` computed `blur(24px) saturate(1.2) brightness(0.78)` before the fix.
+Static screenshots and computed styles do not prove smooth animation. Do not call the regression fixed without reproducing and checking the moving artifact.
 
-Fixed in [glass.ts](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/materials/glass.ts:155): explicitly disabled actions remove their optional texture, SVG graph and owned material variables, and set both backdrop-filter properties to `none`. The personal Liquid glass preference remains a separate choice between enhanced glass and its CSS fallback. Existing component design is preserved.
+## Reverted changes requiring independent verification
 
-Confidence: high; unit and real Chromium lifecycle checks cover disabled initialization, enabled-to-disabled transitions and reactivation.
+| Priority | Change | Consequence / next check |
+| --- | --- | --- |
+| P1 | Combined `transform: translate(...) scale(...)` replaced by independent `translate` and `scale`. | The compositor follows a different transform path with identical optics. Compare motion-only with the original at normal size, browser zoom and display scale. Candidate cause, not confirmed. |
+| P1 | External stroke and shadow moved from the filtered element into `::before` with the inset lights. | Decoration now paints above the backdrop/content rather than on the element. Compare shadow-only over light/dark artwork and edited shadow spread. Candidate cause, not confirmed. |
+| P2 | New global scale transition lasts 240ms; artwork still scales over 160ms. | The two boxes settle at different times. Separate timing/easing from transform representation. This later timing change is not established as the original onset of the regression. |
+| P2 | Every hovered glass ancestor can grow with hovered glass descendants. | New behavior compounds transforms in menus/panels and controls. Audit nested use separately; standalone Play itself is not nested glass. |
+| P2 | Lazy activation became synchronous and explicit disabling removed the former CSS blur. | First reveal changes directly from no backdrop effect to SVG filtering. Check first activation separately from subsequent grow/shrink; a first-reveal issue cannot explain repeated jiggle without evidence. |
 
-### P2: Identical updates rebuilt the native SVG graph
+Runtime caching/lifecycle corrections, decoration relocation and global hover were bundled together. Any future attempt should reintroduce one independently observable change at a time, retaining original Play positioning and optics until the cause is established.
 
-The displacement bitmap was cached, but every render removed and recreated the SVG definition, even when an initial ResizeObserver notification or a paint-only change did not alter geometry or optics. This creates needless native-filter invalidation and allocation around animated surfaces.
+## Original implementation findings — separate follow-up work
 
-Fixed in [glass.ts](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/materials/glass.ts:269): retain the SVG definition when geometry, refraction/depth/dispersion and blur match. Fill, stroke, texture, brightness and saturation still update independently. Geometry/optical changes still rebuild the graph.
+These predate the reported regression and must not be presented as its cause.
 
-Confidence: high; real Chromium and the lifecycle test assert SVG node identity across resize notifications, identical options and paint-only updates, and replacement when optics change. This removes avoidable work; it does not establish a measured whole-app CPU/GPU improvement or prove the reported hover artifact is resolved.
+| Priority | Finding | Evidence / scope |
+| --- | --- | --- |
+| P2, corrected | `enabled: false` selected CSS blur instead of disabling the action. | Original fixture reports `disabled` with `blur(12px) saturate(1.2) brightness(1)`. `Dialog.svelte` attaches a disabled action to solid dialogs; `MediaCard.svelte` uses this flag for lazy activation. Personal glass preference and action activation need distinct semantics. |
+| P2, corrected | Unchanged updates replaced the SVG graph. | Bitmap is cached but definition is recreated. Fixture confirms replacement and an initial ResizeObserver rebuild. Avoidable work, not a proven continuous motion cause. |
+| P2 | Percentage, elliptical and asymmetric radii are not resolved correctly. | `parseFloat(borderTopLeftRadius)` reads `50%` as 50px and considers one circular radius. The 58px Play circle clamps correctly to 29px. A 140px circle uses 50px rather than 70px. |
+| P3, corrected | Zero-size/closed surfaces retained definitions. | Hidden original fixture retains URL and graph with a 0×0 box. Allocation retention was observed; continued GPU painting or a permanent leak was not demonstrated. Destroy separately removes definitions after delayed cleanup. |
+| P3 | Stroke blend control affects only internal strokes. | External ring is in the element shadow, while blend is on the internal pseudo-element. There is **no duplicated external ring** in the restored baseline. |
+| P3 | Hidden experimental interaction still handles pointer work. | CSS hides effects for reduced transparency/forced colors, while JS guards only reduced motion/coarse pointer. Scope is the experiment, not ordinary Play. |
+| P3, corrected | Design docs described obsolete materials. | `docs/design.md` still describes six independent glass/blur recipes and the removed patch-frost experiment. Current presets contain four materials with paired fallbacks. |
 
-### P3: Closed surfaces retained native SVG definitions
+## Unproven sampling hypotheses
 
-Previously the zero-width/height branch returned without releasing the last native graph. A previously opened menu could retain its SVG primitives after closing until its component was destroyed.
+Integer CSS-pixel map dimensions, 8-bit channels, percentage filter bounds and pixel image bounds are unchanged by the regression patch. Earlier pixel-region/high-resolution experiments did not establish a fix and were reverted. Do not increase bitmap sizes or change filter coordinates to mask an unverified artifact.
 
-Fixed in [glass.ts](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/materials/glass.ts:254): release the native definition for a zero-sized surface and retain its CSS fallback. Reopening creates the correct graph through the existing ResizeObserver. The cached displacement bitmap can still be reused.
+Browser-engine filter/transform reports do not establish this application's cause. Keep Safari/Firefox CSS fallbacks during Blink testing.
 
-Confidence: high; display-none/reopen checks confirm graph release, fallback retention and correct native restoration. Display-none surfaces do not paint; this is retention/lifecycle cleanup, not evidence that hidden menus previously consumed continuous GPU rendering time.
+References: [border-radius percentage semantics](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/border-radius), [backdrop filter painting and transform model](https://drafts.csswg.org/filter-effects-2/#BackdropFilterProperty) (draft, not an interoperability guarantee), [WebKit SVG backdrop issue](https://bugs.webkit.org/show_bug.cgi?id=245510).
 
-## Remaining observations
+## Acceptance before restoring changes
 
-### P3: External stroke blend is exposed but not applied
-
-[glass.ts](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/materials/glass.ts:218) paints external strokes in the lighting layer’s normal-composited box-shadow. [app.css](/Users/admin/Documents/ChatGPT/coast-new/src/app.css:282) applies `strokeBlend` only to the internal-stroke pseudo-element. When alignment is External, that pseudo's stroke width is zero, so changing Stroke blend in the editor has no visible effect on the external ring.
-
-The editor now shows Normal and disables Stroke blend for External alignment, accurately exposing its current normal compositing. A full renderer correction would: render external and internal strokes in the existing stroke layer and establish a deliberate default visual baseline. An isolated attempt to move the external rim into that layer did not achieve pixel-identical default rendering, so it was not retained. The approved appearance remains untouched.
-
-Confidence: high; code-supported and isolated computed-style verified. This is an editor/runtime discrepancy, not an application navigation or data bug.
-
-### P3: Activated media-card filters remain retained after pointer leave
-
-[MediaCard.svelte](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/components/MediaCard.svelte:172) permanently sets its lazy `active` state after hover/focus. The button subsequently hides using opacity, but its layout size remains nonzero. Therefore the zero-size cleanup does not retire this particular graph. Hidden header/player chrome similarly uses opacity/visibility while keeping its dimensions.
-
-Do not infer continuous paint cost from retained DOM alone. Measure filter graphs/heap and GPU paint after a long card-browsing session before adding more observers or pointer-leave logic. Any retirement must preserve keyboard focus, open menus and touch access. A visibility-aware material activation policy could be shared across card and playback chrome if measurements justify it.
-
-Confidence: high for retained state; actual resource cost unmeasured.
-
-### P3: Experimental interaction sheen still updates when reduced transparency hides it
-
-[experimental.ts](/Users/admin/Documents/ChatGPT/coast-new/src/lib/ui/materials/experimental.ts:105) skips motion/touch/zero-amount cases, but not reduced transparency or forced colors. [app.css](/Users/admin/Documents/ChatGPT/coast-new/src/app.css:642) correctly hides effect layers under those preferences; pointer movement can still schedule an otherwise unnecessary layout read/style update while the experimental sample is hovered.
-
-A shared appearance-preference guard could omit those experiment layers and cancel pending interaction work. This affects the opt-in reference experiment only; it does not run on ordinary app cards. No production change was made for this low-impact observation.
-
-Confidence: high for code path; no continuous idle work or visible accessibility regression observed.
-
-### P3: Reference palette copy has a stale material count
-
-The reference palette no longer describes six treatments; its copy describes all glass treatments without a stale count. There are four materials with four fallbacks. The reference layout is unchanged, and historical dated audit counts remain historical.
-
-## Layering and browser conclusions
-
-The material element owns fill and backdrop filtering. Its existing lighting pseudo-element owns the outer shadow and stroke above the backdrop compositor. Its optional grain is an isolated negative-z sibling below content. Insets occupy `::before` at z-index 2, internal stroke occupies `::after` at z-index 3. Both inherit radius and cannot intercept pointer events. Experimental layers also sit below content at negative z-index. Amount zero removes optional texture/effect spans rather than leaving invisible drawing layers.
-
-The material creates an isolated stacking context; that is not itself interchangeable with a backdrop root. Nested backdrop-filter elements, opacity, filters and masks can restrict what an inner material samples. Avoid blanket `opacity`, `filter` or `will-change` on material ancestors. Current profile/card artwork opacity is mostly applied to image siblings, which avoids dimming all foreground content. These relationships are described in the [CSS Filter Effects Level 2 draft](https://drafts.csswg.org/filter-effects-2/#BackdropRoot); its backdrop-root definition is still a draft with engine-specific behavior.
-
-Context menus and dialogs use the native top layer, so their popup positioning is not constrained by ordinary card overflow/z-index. Menu max dimensions and popover-content scrolling keep the surface bounded. Existing shadows are attached to the transformed surface, not independently positioned siblings.
-
-CSS blur writes both prefixed and unprefixed literal filter values, avoiding the documented [Safari CSS-variable regression](https://bugs.webkit.org/show_bug.cgi?id=297620). The optical SVG path stays Blink-only; the [WebKit SVG-backdrop issue](https://bugs.webkit.org/show_bug.cgi?id=245510) and [Gecko SVG filter issue](https://bugzilla.mozilla.org/show_bug.cgi?id=1961378) remain open. Keep that conservative gate until a tested browser pipeline actually supports the required feImage/displacement path; CSS syntax acceptance alone is insufficient.
-
-Reduced transparency switches to a solid fill and disables filtering; forced colors removes decorative layers/shadows and uses system colors. CSS fallbacks keep ordinary lighting/strokes. There is no default noise texture on app surfaces. Unsupported engines do not generate displacement canvases or native SVG graphs.
-
-## Reported card hover shadow
-
-The user’s follow-up identified the enlarging Play/Request primary button and asked for a global correction. The outer shadow and external rim now render on the existing lighting pseudo-element above the backdrop compositor for every `.glass` consumer. No additional wrapper or permanent compositor promotion is introduced. Native and CSS-fallback materials use the same arrangement.
-
-All `.glass` surfaces share centred hover/focus growth, including menus, panels, navigation and controls, as explicitly requested by the user. The material itself owns hover/focus growth and press shrinkage, so its decorations and foreground content inherit the same movement. Independent CSS `scale` and an explicit centre origin move foreground and decorations together. Centred card buttons use separate `translate` positioning so enlargement cannot shift their centre. Global motion tokens define `--hover-grow:1.02` and `--hover-grow-strong:1.08`; scaling uses the shared 240ms motion duration. Pressing a child does not shrink the enclosing glass container. Play/Request and existing playback-control/artwork hover effects use the strong token; other glass surfaces and card artwork use the subtle token. Disabled controls do not scale, and reduced motion suppresses scaling. Header navigation and playback controls also use separate positioning translations to stay centred. Lazy material activation renders immediately before the reveal can paint; ordinary updates remain frame-batched.
-
-The initial isolated trials did not reproduce a persistent detached shadow. Actual browser checks are described below; they support the layer arrangement without establishing every engine’s intermittent compositor behaviour. The user’s affected browser should confirm the original symptom no longer occurs.
-
-## Verification and limits
-
-Browser plugin was unavailable, so existing Playwright CLI and installed Chromium were used. All fixtures are under `/private/tmp/coast-material-audit`; no development server was started or stopped. The source material runtime and card CSS were bundled into an isolated about:blank fixture with a patterned background, native and CSS card buttons, a solid disabled node and adjustable stroke sample.
-
-- Focused material lifecycle tests cover synchronous activation, disable/re-enable, stable graph identity and zero-size cleanup.
-- Actual Library keyboard-focus enlargement computes `scale:1.08`, a 29px/29px origin and centre deviation below 0.001px; the icon stays centred. Its native material has no element-level shadow and retains shadow/rim in the shared lighting layer. The page renders with no console warnings or errors.
-- Type/Svelte checks pass with zero errors and warnings.
-- Real Chromium assertions pass for disabled solid material, optional texture removal, stable graph identity, zero-size release, fallback retention, reopening and personal Liquid glass off/on.
-- Native/CSS hover screenshots were captured and inspected; no persistent detached shadow was established.
-- No actual Safari/Firefox or mobile-device runtime matrix was run. Their compatibility conclusions use official issue trackers and code inspection, not a claim of full cross-browser visual parity.
-
-[material-runtime.test.ts](/Users/admin/Documents/ChatGPT/coast-new/tests/material-runtime.test.ts:5) preserves the meaningful activation/graph-lifecycle regression behavior without provider or database access.
+- Reproduce the new artifact alongside a stable original in the same browser, zoom and display scale.
+- Isolate motion representation, decoration placement, activation and timing independently.
+- Preserve approved artwork, lighting, stroke, shadow and centering at rest and during motion.
+- Verify native rendering, CSS fallback, first/repeated reveals, reopening and cleanup.
+- Keep unrelated jobs/plugin changes outside material rollback or experiments.

@@ -52,6 +52,12 @@ test('material activation is explicit and native graphs stay stable until geomet
     flush();
     const initial = body.children[0];
     expect(initial).toBeDefined();
+    const filter = initial.children[0], map = filter.children[0];
+    expect(filter.attributes.filterUnits).toBe('objectBoundingBox');
+    expect(filter.attributes.primitiveUnits).toBe('userSpaceOnUse');
+    expect(filter.attributes.x).toBe('-50%');
+    expect(filter.attributes.width).toBe('200%');
+    expect(map.attributes.width).toBe('150');
     resized?.(); flush();
     expect(body.children[0]).toBe(initial);
     action.update({ enabled: true, surface: { fillOpacity: 20, brightness: 90, noiseOpacity: 5 } }); flush();
