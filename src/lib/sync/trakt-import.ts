@@ -18,6 +18,8 @@ import type { Metadata, SyncCategory, SyncPreferences } from '$lib/providers/con
 import type { TraktRecord, TraktAdapter } from '$lib/providers/trakt/adapter.server';
 import { traktEntry } from '$lib/sync/trakt-identity';
 import { compactTraktHistory, type TraktHistoryTitles } from '$lib/sync/trakt-history';
+import { jobCheckpoint, jobExecution, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
+import { stagedTraktCategory, stagedTraktLists, type StageCommit } from './trakt-staging.server';
 
 export async function importTrakt(
   userId: string,
@@ -47,17 +49,32 @@ export async function importTraktFromAdapter(
   connectionId: string,
   { adapter, sync }: { adapter: TraktAdapter; sync: SyncPreferences }
 ) {
-  let imported = 0,
-    review = 0;
+  const checkpoint = await readJobCheckpoint();
+  const resume = checkpoint?.task === 'trakt-import' ? checkpoint : null;
+  const completedCategories = new Set(Array.isArray(resume?.categories) ? resume.categories.filter((value): value is string => typeof value === 'string') : []);
+  const completedLists = new Set(Array.isArray(resume?.lists) ? resume.lists.filter((value): value is string => typeof value === 'string') : []);
+  let imported = typeof resume?.imported === 'number' ? resume.imported : 0,
+    review = typeof resume?.review === 'number' ? resume.review : 0;
+  const commitChunk = async () => {
+    await saveJobCheckpoint({ task: 'trakt-import', categories: [...completedCategories], lists: [...completedLists], imported, review });
+    await jobCheckpoint();
+  };
   const seen = new Set<string>();
   const apply = async (
     category: Exclude<SyncCategory, 'lists' | 'scrobble'>,
-    record: TraktRecord
+    record: TraktRecord,
+    staged?: StageCommit
   ) => {
-    const item = await resolveTrakt(record);
+    let item;
+    if(category==='collection'&&staged&&record.type==='coast-collection-episode'){
+      const show=await resolveTrakt({show:record.show});
+      const season=record.seasons?.[0],episode=season?.episodes[0];
+      if(!show||!season||!episode||!record.show)return;
+      item=await ingestMetadata({provider:'trakt',externalId:`${record.show.ids.trakt}:episode:${season.number}:${episode.number}`,kind:'episode',title:`Episode ${episode.number}`,seasonNumber:season.number,episodeNumber:episode.number},{showId:show.id});
+    }else item=await resolveTrakt(record);
     if (!item) return;
     if(category==='collection'){
-      seen.add(item.id);
+      if(!staged)seen.add(item.id);
       const {isGeneratedProjection}=await import('$lib/collection/projection.server');
       if(await isGeneratedProjection(connectionId,item.id))return;
     }
@@ -89,11 +106,14 @@ export async function importTraktFromAdapter(
           item.id,
           category,
           { value: record.rating / 2 },
-          { source: 'trakt' }
+          { source: 'trakt', accountGeneration:staged?.generation,onReconciled:staged?(tx,decision)=>staged.commit(tx,item.id,decision):undefined }
         );
-        if (decision === 'conflict') review++;
-        else if (decision === 'remote') imported++;
-        seen.add(item.id);
+        if (!staged) {
+          if (decision === 'conflict') review++;
+          else if (decision === 'remote') imported++;
+          seen.add(item.id);
+        }
+        return true;
       }
       return;
     }
@@ -104,7 +124,7 @@ export async function importTraktFromAdapter(
       return;
     const duration = (item.runtimeMinutes || 0) * 60;
     if (category === 'progress' && !duration) return;
-    seen.add(item.id);
+    if(!staged)seen.add(item.id);
     const remote =
       category === 'progress'
         ? {
@@ -121,6 +141,8 @@ export async function importTraktFromAdapter(
       remote,
       {
         source: 'trakt',
+        accountGeneration:staged?.generation,
+        onReconciled:staged?(tx,decision)=>staged.commit(tx,item.id,decision):undefined,
         occurredAt: timestamp,
         ...(category === 'history'
           ? {
@@ -137,8 +159,11 @@ export async function importTraktFromAdapter(
           : {}),
       }
     );
-    if (decision === 'conflict') review++;
-    else if (decision === 'remote') imported++;
+    if(!staged){
+      if (decision === 'conflict') review++;
+      else if (decision === 'remote') imported++;
+    }
+    return true;
   };
   for (const category of [
     'history',
@@ -147,7 +172,14 @@ export async function importTraktFromAdapter(
     'ratings',
     'watchlist',
   ] as const) {
-    if (!sync[category]) continue;
+    if (!sync[category] || completedCategories.has(category)) continue;
+    if(jobExecution.getStore()) {
+      const result=await stagedTraktCategory({userId,connectionId,category,adapter,apply:(record,commit)=>apply(category,record,commit)});
+      imported+=result.imported;review+=result.review;
+      completedCategories.add(category);
+      await commitChunk();
+      continue;
+    }
     seen.clear();
     const history: TraktRecord[] = [];
     const historyTitles: TraktHistoryTitles = new Map();
@@ -218,8 +250,15 @@ export async function importTraktFromAdapter(
         );
         if (decision === 'conflict') review++;
       }
+    // Absence reconciliation needs the entire category's observed set. Yield
+    // only after it finishes, so a resumed category never revokes unseen pages.
+    completedCategories.add(category);
+    await commitChunk();
   }
-  if (sync.lists) {
+  if(sync.lists&&jobExecution.getStore()){
+    const result=await stagedTraktLists(userId,connectionId,adapter);
+    review+=result.review;
+  }else if (sync.lists) {
     const [connection] = await getDb()
       .select()
       .from(providerConnections)
@@ -263,6 +302,7 @@ export async function importTraktFromAdapter(
           })
           .returning();
       observed.add(local.id);
+      if (!initial && completedLists.has(String(remote.ids.trakt))) continue;
       const members: string[] = [];
       for (const record of await adapter.listItems(String(remote.ids.trakt))) {
         const item = await resolveTrakt(record);
@@ -284,6 +324,8 @@ export async function importTraktFromAdapter(
         initial
       );
       if (decision === 'conflict') review++;
+      completedLists.add(String(remote.ids.trakt));
+      await commitChunk();
     }
     const previous = await getDb()
       .select()

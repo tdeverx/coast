@@ -6,12 +6,12 @@ export const STEAM_BASE_URL = 'https://api.steampowered.com';
 export const steamIdSchema = v.pipe(v.string(), v.regex(/^\d{17}$/), v.check(id => /^\d{17}$/.test(id) && BigInt(id) >= 76561197960265728n && BigInt(id) <= 76561202255233023n));
 const count = v.pipe(v.number(), v.integer(), v.minValue(0));
 const appId = v.pipe(count, v.minValue(1));
-const owned = v.object({
+export const steamOwnedGameSchema = v.object({
   appid: appId, name: v.pipe(v.string(),v.minLength(1),v.maxLength(250)),
   playtime_forever: count, playtime_2weeks: v.optional(count,0),
   rtime_last_played: v.optional(count,0), has_community_visible_stats: v.optional(v.boolean(),false),
 });
-export type SteamOwnedGame = v.InferOutput<typeof owned>;
+export type SteamOwnedGame = v.InferOutput<typeof steamOwnedGameSchema>;
 export class SteamAdapter {
   constructor(private call: ProviderTransport, private apiKey: string) {}
   private get(path: string, parameters: Record<string,string> = {}) {
@@ -27,7 +27,7 @@ export class SteamAdapter {
   }
   async ownedGames(steamId:string) {
     v.parse(steamIdSchema,steamId);
-    const response=v.parse(v.object({response:v.object({game_count:v.optional(count),games:v.optional(v.array(owned))})}),await this.get('/IPlayerService/GetOwnedGames/v1/',{steamid:steamId,include_appinfo:'true',include_played_free_games:'true',include_free_sub:'true'})).response;
+    const response=v.parse(v.object({response:v.object({game_count:v.optional(count),games:v.optional(v.array(steamOwnedGameSchema))})}),await this.get('/IPlayerService/GetOwnedGames/v1/',{steamid:steamId,include_appinfo:'true',include_played_free_games:'true',include_free_sub:'true'})).response;
     if(response.game_count===undefined || (response.game_count>0&&!response.games))
       throw new AppError(409,'Steam game details are private or unavailable. Previous imports are retained.','steam_private');
     const games=response.games??[];

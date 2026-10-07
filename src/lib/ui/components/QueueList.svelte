@@ -4,7 +4,7 @@
   import { untrack } from 'svelte';
   import { createQueueActions } from '$lib/ui/controls/queue.svelte';
   import EmptyState from './EmptyState.svelte';
-  import { jobWaiting, jobOutcome, jobRemedy, type QueueAction } from '$lib/ui/queue';
+  import { jobWaiting, jobOutcome, jobRemedy, jobWaitingReason, jobPurposeLabel, type QueueAction } from '$lib/ui/queue';
   import { displayLabel } from '$lib/ui/labels';
   import { contextGesture } from '$lib/ui/context-gesture';
   const queue = createQueueActions();
@@ -41,13 +41,7 @@
     <h3>{displayLabel(action.kind)}</h3>
     {#if action.connectionLabel}<p>{action.connectionLabel}</p>{/if}
     <p>
-      {action.state === 'pending' && action.attempts > 0
-        ? 'Waiting to retry'
-        : waiting
-          ? 'Waiting for service'
-          : action.state === 'failed'
-            ? 'Needs attention'
-            : displayLabel(action.state)} · {action.attempts}
+      {[jobWaitingReason(action) ?? (action.state === 'failed' ? 'Needs attention' : displayLabel(action.state)), jobPurposeLabel(action)].filter(Boolean).join(' · ')} · {action.attempts}
       {action.attempts === 1 ? 'attempt' : 'attempts'}
     </p>
     {#if action.createdAt}<p>
@@ -57,27 +51,28 @@
     {#if jobOutcome(action)}<p>{jobOutcome(action)}</p>{/if}
     {#if action.lastError}<p class="job-error">{action.lastError}</p>{/if}
   </div>
-  {#if ['pending', 'failed'].includes(action.state)}
+  {#if ['pending', 'running', 'failed'].includes(action.state)}
     <Button menu
       bind:this={menus[action.id]}
       label={`${displayLabel(action.kind)} job actions`}
       disabled={queue.busy(action.id)}
     >
+      {#if ['pending', 'running'].includes(action.state) && (!action.failure || action.failure.retryable)}<Button item icon="clock" keepOpen={false} onclick={() => void update(action.id, 'promote')}>Prioritize</Button>{/if}
       {#if jobRemedy(action) === 'connection'}<Button item icon="user" href="/settings/connections" keepOpen={false}>Reconnect account</Button>
       {:else if jobRemedy(action) === 'permissions'}<Button item icon="settings" href="/settings/integrations" keepOpen={false}>Review permissions</Button>
       {:else if jobRemedy(action) === 'metadata'}<Button item icon="list" href="/settings/activity" keepOpen={false}>Review diagnostics</Button>
       {/if}
       {#if action.kind === 'benchmark.run'}<Button item icon="refresh" href="/settings/benchmarks" keepOpen={false}>Run a new benchmark</Button>
-      {:else if action.state === 'failed' || action.attempts > 0}<Button item
+      {:else if action.state !== 'running' && (action.state === 'failed' || action.attempts > 0)}<Button item
           icon="refresh"
           keepOpen={false}
           onclick={() => void update(action.id, 'retry')}
           >{action.state === 'failed' ? 'Retry' : 'Retry now'}</Button>{/if}
-      <Button item
+      {#if ['pending', 'failed'].includes(action.state)}<Button item
         icon="close"
         keepOpen={false}
         danger
-        onclick={() => void update(action.id, 'cancel')}>Cancel job</Button>
+        onclick={() => void update(action.id, 'cancel')}>Cancel job</Button>{/if}
     </Button>
   {/if}
 </div>

@@ -10,6 +10,18 @@ import { profileUser } from '$lib/server/queries/profile-user';
 import { PAGE_SIZE, pageNumberSchema, pagination } from '$lib/server/queries/pagination';
 import type { MediaCardPresentation, MediaView } from '$lib/ui/types';
 
+/** Cached inventory proves positive access only with this account's fresh grant
+ * and the exact completed library census; it never proves negative user state. */
+function inheritedScreenAccess(source:SQL, scanId:SQL, settings:SQL, generation:SQL, inventory:SQL) {
+  return sql`(${source}->>'coastAccessKind'='library-cache'
+    and ${source}->>'coastAccessGeneration'=${generation}::text
+    and ${settings}->'screenAccessInherited'->>'accountGeneration'=${generation}::text
+    and ${scanId}::text=${settings}->'screenAccessInherited'->>'scanId'
+    and ${source}->>'coastLibraryScanId'=${settings}->'screenAccessInherited'->'libraries'->>(${source}->>'coastLibraryId')
+    and ${source}->>'coastLibraryScanId'=${inventory}->'screenLibraryCensus'->(${source}->>'coastLibraryId')->>'scanId'
+    and (${inventory}->'screenLibraryCensus'->(${source}->>'coastLibraryId')->>'expiresAt')::timestamptz>now())`;
+}
+
 export const collectionOptionsSchema = v.object({
   page: v.optional(pageNumberSchema, 1),
   level: v.optional(v.picklist(['all', 'root']), 'all'),
@@ -107,7 +119,7 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
     union select d.id,'collected','inherited',d.root from descendants d join direct r on r.id=d.root and r.relationship='collected' where d.id<>d.root
     union select d.root,r.relationship,'member-derived',d.id from descendants d join direct r on r.id=d.id where d.id<>d.root
   ), connections as (
-    select c.id,i.name,i.provider,i.settings,c.status,i.enabled,c.settings as connection_settings, cp.completed_at,cp.scan_id,
+    select c.id,c.account_generation,i.name,i.provider,i.settings,c.status,i.enabled,c.settings as connection_settings, cp.completed_at,cp.scan_id,
       case when i.provider='steam' then coalesce((i.settings->'schedule'->>'intervalMinutes')::integer,60) else coalesce((i.settings->'schedule'->>'userIntervalMinutes')::integer,10) end as cadence
     from provider_connections c join provider_instances i on i.id=c.instance_id
     left join sync_checkpoints cp on cp.connection_id=c.id and cp.kind=case when i.provider='steam' then 'steam-user' else 'jellyfin-user' end
@@ -116,7 +128,7 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
     select w.id,w.category,
       exists(select 1 from availability a join connections c on c.id=a.connection_id where a.user_id=${viewerId} and a.media_id=w.id and c.provider=case when w.category='game' then 'steam' else 'jellyfin' end and a.state='available' and c.status<>'disconnected' and c.enabled) as positive,
       exists(select 1 from availability a join connections c on c.id=a.connection_id where a.user_id=${viewerId} and a.media_id=w.id and c.provider=case when w.category='game' then 'steam' else 'jellyfin' end and a.state='available' and c.status<>'disconnected' and c.enabled and
-        (c.status<>'connected' or c.completed_at is null or c.scan_id is not null or c.completed_at<now()-c.cadence*interval '2 minutes' or a.verified_at < now()-c.cadence*interval '2 minutes')) as stale,
+        (c.status<>'connected' or (not coalesce(${inheritedScreenAccess(sql`a.source`,sql`a.scan_id`,sql`c.connection_settings`,sql`c.account_generation`,sql`c.settings`)},false) and (c.completed_at is null or c.scan_id is not null or c.completed_at<now()-c.cadence*interval '2 minutes')) or a.verified_at < now()-c.cadence*interval '2 minutes')) as stale,
       ((w.category<>'game' or exists(select 1 from game_external_ids ge where ge.game_id=w.id and ge.provider='steam')) and exists(select 1 from connections c where c.provider=case when w.category='game' then 'steam' else 'jellyfin' end) and not exists(select 1 from connections c where c.provider=case when w.category='game' then 'steam' else 'jellyfin' end and (c.status<>'connected' or not c.enabled or
         ((c.completed_at is null or c.scan_id is not null or c.completed_at < now()-c.cadence*interval '2 minutes') and
           not exists(select 1 from availability a where a.user_id=${viewerId} and a.connection_id=c.id and a.media_id=w.id and a.state='unavailable' and a.source->>'authoritative'='true' and a.verified_at>=now()-c.cadence*interval '2 minutes'))))) as assessed
@@ -148,8 +160,15 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
     select d.root,count(distinct leaf.id)::int as total from descendants d join works leaf on leaf.id=d.id
       where leaf.kind in ('episode','track','movie') group by d.root
   ), known_membership as materialized (
-    select w.id,(coalesce(mu.membership_complete,false) or exists(select 1 from provider_items pi
+    select w.id,((coalesce(mu.membership_complete,false) and not exists(select 1 from provider_items mp join provider_instances mi on mi.id=mp.instance_id where mp.media_id=w.id and mi.provider='jellyfin')) or exists(select 1 from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id
+      where a.user_id=${ownerId} and a.media_id=w.id and a.state='available' and c.status='connected'
+        and ((c.settings->'userSync'->>'phase'='complete' and c.settings->'userSync'->>'accountGeneration'=c.account_generation::text
+          and a.scan_id::text=c.settings->'userSync'->>'scanId') or ${inheritedScreenAccess(sql`a.source`,sql`a.scan_id`,sql`c.settings`,sql`c.account_generation`,sql`i.settings`)}) and a.source->>'coastMembershipCount' is not null
+        and (a.source->>'coastMembershipCount')::integer=counts.total) or exists(select 1 from provider_items pi
       where pi.media_id=w.id and pi.snapshot->>'membershipComplete'='true' and
+      (exists(select 1 from provider_connections c
+        where c.id::text=pi.snapshot->'membershipEvidence'->>'connectionId' and c.user_id=${ownerId}
+        and c.account_generation::text=pi.snapshot->'membershipEvidence'->>'accountGeneration' and c.status='connected')) and
       (pi.snapshot->>'expectedMembers' is null or (pi.snapshot->>'expectedMembers')::integer=counts.total))) as complete
       from scoped_works w left join music_works mu on mu.id=w.id left join member_counts counts on counts.root=w.id
   ), next_episodes as (

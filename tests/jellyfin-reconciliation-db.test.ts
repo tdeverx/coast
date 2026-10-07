@@ -19,6 +19,7 @@ const track={Id:trackExternal,Type:'Audio',Name:'Reconciliation track',AlbumId:a
 const adapter=new JellyfinAdapter(async(path,init)=>{
  const url=new URL(path,'https://fixture.invalid');
  if(url.pathname==='/System/Info/Public')return {Id:tag,ServerName:'Fixture',ProductName:'Jellyfin Server',Version:'10.11.0'};
+ if(url.pathname==='/Users/Me')return {Id:tag,ServerId:tag,Policy:{MaxParentalRating:1}};
  if(url.pathname==='/Items'){
   if(failure)throw new Error('Interrupted first page');
   const type=url.searchParams.get('includeItemTypes')??'';

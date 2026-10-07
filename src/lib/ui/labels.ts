@@ -38,6 +38,8 @@ const labels: Record<string, string> = {
   'igdb.recommendations':'Refresh similar games',
   'trakt.recommendations':'Refresh Trakt recommendations',
   'jellyfin.library': 'Scan shared Jellyfin library',
+  'jellyfin.bootstrap': 'Import Jellyfin personal activity',
+  'igdb.steam-metadata': 'Match Steam game metadata',
   'jellyfin.sync': 'Sync Jellyfin user activity',
   'jellyfin.user-state': 'Update Jellyfin tracking',
   'jellyfin.scrobble': 'Report Jellyfin playback',

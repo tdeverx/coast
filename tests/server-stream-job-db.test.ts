@@ -27,7 +27,7 @@ beforeAll(async()=>{
  await updateConfig(actor,{developerMode:true});registerProviderActions({maintenance:false});
 });
 afterAll(async()=>{if(enabled){await closeDb();mock.restore();}});
-const enqueue=()=>enqueueAction({userId:user,connectionId:source,kind:'jellyfin.streams',payload:{}});
+const enqueue=()=>enqueueAction({userId:user,connectionId:source,kind:'jellyfin.streams',payload:{},purpose:'manual'});
 run('registered scan job verifies permissions, records streams under its lease and publishes the cached count',async()=>{
  const id=await enqueue();expect(await runQueueOnce()).toBe(true);
  const [job]=await getSql()`select state,last_error,payload from outbox_actions where id=${id}`;

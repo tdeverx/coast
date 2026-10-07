@@ -14,6 +14,7 @@ import {
 import { trackInTransaction } from '$lib/core/tracking/service';
 import { rateInTransaction } from '$lib/core/ratings/service';
 import { enqueueSyncValueInTransaction } from './changes';
+import { assertJobLease } from '$lib/server/queue/execution';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 export type ValueCategory =
@@ -124,7 +125,7 @@ export function decideSync(
   local: JsonObject,
   remote: JsonObject,
   previous?: { remote: JsonObject; agreed: JsonObject | null; conflict: boolean }
-) {
+): 'agree'|'local'|'remote'|'conflict' {
   if (sameValue(local, remote)) return 'agree';
   // An uninitialized destination has no competing user value. This also
   // reclassifies initial-empty conflicts produced by earlier comparisons.
@@ -153,6 +154,7 @@ export async function reconcileProviderValue(
     importRemote?: boolean;
     occurredAt?: string;
     apply?: (tx: Transaction) => Promise<unknown>;
+    onReconciled?: (tx: Transaction, decision: 'agree' | 'local' | 'remote' | 'conflict') => Promise<void>;
   } = {}
 ) {
   return getDb().transaction(async (tx) => {
@@ -162,6 +164,7 @@ export async function reconcileProviderValue(
       .from(providerConnections)
       .where(and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId))).for('update');
     if (!connection) throw new Error('Connection does not belong to this account.');
+    await assertJobLease(tx,true);
     if(options.accountGeneration && (connection.accountGeneration!==options.accountGeneration || connection.status!=='connected'))
       throw new Error('The connected account changed before reconciliation.');
     const [previous] = await tx
@@ -309,6 +312,7 @@ export async function reconcileProviderValue(
         preference === 'remote' ? remote : local,
         preference === 'remote' ? connectionId : undefined
       );
+    await options.onReconciled?.(tx, decision);
     return decision;
   });
 }

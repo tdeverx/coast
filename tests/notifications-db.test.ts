@@ -112,7 +112,7 @@ run('service failures stay individual and link to their job card',async()=>{
    await notify({userId:user.id,kind:'external-action',title:'Needs attention',sourceKey:'outbox:'+id});
   }
   const feed=await notificationInbox(user,{kind:'external-action'});expect(feed.items).toHaveLength(3);
-  expect(feed.items.every(n=>n.destination===`/settings/jobs#job-${instance}-users`)).toBe(true);
+  expect(feed.items.every(n=>n.destination===`/settings/jobs#job-${instance}-jellyfin.sync`)).toBe(true);
   expect(feed.items.every(n=>n.sourceLabel?.startsWith('Fixture Jellyfin'))).toBe(true);
   const unreadBefore=await notificationUnread(user);
   await db`update outbox_actions set state='cancelled' where connection_id=${connection} and payload->'_jobFailure'->>'code'='permissions'`;

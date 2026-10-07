@@ -1,6 +1,7 @@
 import * as v from 'valibot';
 import type { MusicItem, MusicPage } from '$lib/music/model';
 import type { ProviderTransport } from '../contracts';
+import { jellyfinItemKey, validateJellyfinItems, validateJellyfinPage } from './paging';
 
 const text = v.nullish(v.string());
 const number = v.nullish(v.pipe(v.number(), v.finite(), v.minValue(0)));
@@ -19,6 +20,7 @@ export const musicBrowseSchema = v.pipe(
     search: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(200))),
     artistId: v.optional(jellyfinMusicIdSchema),
     albumId: v.optional(jellyfinMusicIdSchema),
+    filter: v.optional(v.picklist(['IsPlayed', 'IsResumable', 'IsFavorite'])),
   }),
   v.check(
     (options) => !options.albumId || options.kind === 'track',
@@ -30,6 +32,8 @@ export const musicBrowseSchema = v.pipe(
   )
 );
 export type MusicBrowseOptions = v.InferInput<typeof musicBrowseSchema>;
+/** Internal scan intent; interactive browse projection remains unchanged. */
+export type MusicScanOptions = { scope: 'library' | 'user'; since?: string };
 const artists = v.nullish(v.array(v.object({ Id: v.string(), Name: v.string() })), []);
 const itemSchema = v.object({
   Id: v.string(),
@@ -98,7 +102,8 @@ function mapItem(item: v.InferOutput<typeof itemSchema>): MusicItem {
 export async function browseMusic(
   call: ProviderTransport,
   userId: string,
-  input: MusicBrowseOptions = {}
+  input: MusicBrowseOptions = {},
+  scan?: MusicScanOptions
 ): Promise<MusicPage> {
   const options = v.parse(musicBrowseSchema, input);
   if (options.availableOnly && options.kind === 'artist')
@@ -106,9 +111,9 @@ export async function browseMusic(
   const query = new URLSearchParams({
     userId,
     recursive: 'true',
-    fields: 'Genres,Overview,ProviderIds,ChildCount',
-    enableUserData: 'true',
-    enableImages: 'true',
+    fields: scan?.scope === 'user' ? 'ChildCount' : 'Genres,Overview,ProviderIds,ChildCount',
+    enableUserData: String(scan?.scope !== 'library'),
+    enableImages: String(scan?.scope !== 'user'),
     enableImageTypes: 'Primary',
     enableTotalRecordCount: 'true',
     startIndex: String(options.offset),
@@ -131,6 +136,9 @@ export async function browseMusic(
   if (options.artistId)
     query.set(options.kind === 'album' ? 'albumArtistIds' : 'artistIds', options.artistId);
   if (options.albumId) query.set('albumIds', options.albumId);
+  if (options.filter) query.set('filters', options.filter);
+  // Metadata-save dates are never a user-state/access change cursor.
+  if (scan?.scope === 'library' && scan.since) query.set('minDateLastSaved', v.parse(v.pipe(v.string(), v.isoTimestamp()), scan.since));
   const endpoint = options.kind === 'artist' ? '/Artists/AlbumArtists' : '/Items';
   const page = v.parse(
     v.object({
@@ -141,10 +149,7 @@ export async function browseMusic(
     await call(`${endpoint}?${query}`)
   );
   const next = options.offset + page.Items.length;
-  if (page.StartIndex !== undefined && page.StartIndex !== options.offset)
-    throw new Error('Jellyfin returned an unexpected music page offset.');
-  if (!page.Items.length && options.offset < page.TotalRecordCount)
-    throw new Error('Jellyfin returned an incomplete music page.');
+  validateJellyfinPage(page, options.offset, options.limit, 'music');
   const items = page.Items.map(mapItem);
   if (options.kind !== 'all' && items.some((item) => item.kind !== options.kind))
     throw new Error('Jellyfin returned an unexpected music item type.');
@@ -161,10 +166,32 @@ export async function musicItem(
   id: string
 ): Promise<MusicItem> {
   v.parse(jellyfinMusicIdSchema, id);
-  return mapItem(
-    v.parse(
+  const item = v.parse(
       itemSchema,
       await call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(id)}`)
-    )
-  );
+    );
+  validateJellyfinItems([item], [id]);
+  return mapItem({...item, Id:id});
+}
+
+/** Authenticated rich hydration for only the identities missing from shared metadata. */
+export async function musicItems(call: ProviderTransport, userId: string, ids: string[]): Promise<MusicItem[]> {
+  const requested = [...new Map(ids.map(id => [jellyfinItemKey(v.parse(jellyfinMusicIdSchema, id)), id])).values()];
+  const result: MusicItem[] = [];
+  for (let offset = 0; offset < requested.length; offset += 100) {
+    const batch = requested.slice(offset, offset + 100);
+    const query = new URLSearchParams({userId, ids: batch.join(','), recursive: 'true',
+      includeItemTypes: 'MusicAlbum,Audio', fields: 'Genres,Overview,ProviderIds,ChildCount',
+      enableUserData: 'true', enableImages: 'true', enableImageTypes: 'Primary',
+      enableTotalRecordCount: 'true', startIndex: '0', limit: String(batch.length)});
+    const page = v.parse(v.object({Items: v.array(itemSchema), TotalRecordCount: count, StartIndex: v.optional(count)}), await call(`/Items?${query}`));
+    validateJellyfinPage(page, 0, batch.length, 'music');
+    validateJellyfinItems(page.Items, batch);
+    if (page.TotalRecordCount !== page.Items.length) throw new Error('Jellyfin returned an incomplete item lookup.');
+    const identities = new Map(batch.map(id => [jellyfinItemKey(id), id]));
+    const items = page.Items.map(item => mapItem({...item, Id:identities.get(jellyfinItemKey(item.Id))!}));
+    if (items.some(item => item.kind === 'artist')) throw new Error('Jellyfin returned an unexpected music item type.');
+    result.push(...items);
+  }
+  return result;
 }

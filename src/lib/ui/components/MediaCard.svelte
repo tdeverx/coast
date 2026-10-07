@@ -3,6 +3,7 @@
   import { page } from '$app/state';
   import ProgressBar from './ProgressBar.svelte';
   import { primaryMediaAction, progressFraction } from '$lib/media/model';
+  import { canPlayMusicCard } from '$lib/music/presentation';
   import { goto,pushState } from '$app/navigation';
   import { cardArtwork, overlayArtwork } from '$lib/ui/artwork-priority';
   import type { ArtworkPriority } from '$lib/ui/types';
@@ -131,7 +132,7 @@
             trackedItem.requestable ??
             ((trackedItem.category ?? 'screen') === 'screen' && !trackedItem.available),
         })
-      : 'open'
+      : canPlayMusicCard(item) ? 'play' : 'open'
   );
   const cardProgress=$derived(item.captionActor?activityProgress??null:completion!==null&&completion>0&&completion<0.9?completion:null);
   const primaryLabel = $derived(
@@ -148,7 +149,10 @@
     active = true;
     await tick();
     if(primaryMenu&&rect){primaryMenuButton?.openAt({x:rect.left,y:rect.bottom});return;}
-    if (primaryAction === 'play') await actions?.start();
+    if (primaryAction === 'play') {
+      if (trackedItem) await actions?.start();
+      else await presentationActions?.start();
+    }
     else if (primaryAction === 'request') actions?.request();
     else if(href) await goto(href);
   }
@@ -349,7 +353,7 @@
     aspect-ratio: 5.4 / 1;
   }
   .media-card:is(:hover, :focus-within) .art {
-    transform: scale(1.02);
+    transform: scale(var(--hover-grow));
   }
   .media-card.loading .art {background:transparent;transform:none;}
   .media-card.loading .art::before,.media-card.loading .art::after {display:none;}
@@ -445,6 +449,8 @@
     }
   }
   .play {
+    --coast-material-position: translate(-50%, -50%);
+    --coast-material-hover-grow: var(--hover-grow-strong);
     position: absolute;
     top: 50%;
     left: 50%;
@@ -453,9 +459,6 @@
     height: 58px;
     z-index: 2;
     border-radius: 50%;
-  }
-  .play:is(:hover, :focus-visible) {
-    transform: translate(-50%, -50%) scale(1.08);
   }
   .card-menu {
     position: absolute;

@@ -8,7 +8,9 @@ import {
   runQueueOnce,
   PermanentActionError,
   listActions,
+  promoteAction,
 } from '../src/lib/server/queue';
+import {jobCheckpoint, saveJobCheckpoint} from '../src/lib/server/queue/execution';
 import { ProviderHttpError } from '../src/lib/server/security/provider-fetch';
 import {
   scheduleProviderMaintenance,
@@ -56,6 +58,7 @@ const queue = (connection: number, kind: string) =>
     userId: users[connection === 1 ? 1 : 0],
     connectionId: connections[connection],
     kind,
+    purpose: ['jellyfin.library','jellyfin.sync','seerr.sync','trakt.import'].includes(kind) ? 'scheduled' : kind.endsWith('.live') ? 'live' : 'interactive',
     payload: {},
   });
 run('repeated maintenance requests preserve one durable job in every active state', async () => {
@@ -67,7 +70,7 @@ run('repeated maintenance requests preserve one durable job in every active stat
   }
 });
 run(
-  'parallel claims allow unrelated jobs but preserve mutable account ordering',
+  'parallel claims serialize a service scan while unrelated services and account edits can progress',
   async () => {
     const library = await queue(0, 'jellyfin.library');
     const user = await queue(1, 'jellyfin.sync');
@@ -79,11 +82,11 @@ run(
         .filter(Boolean)
         .map((job) => job!.id)
         .sort()
-    ).toEqual([library, user, request].sort());
-    await getSql()`UPDATE outbox_actions SET state = 'succeeded' WHERE id = ${library}`;
+    ).toEqual([user, request].sort());
     expect(await claimNextAction()).toBeNull();
     await getSql()`UPDATE outbox_actions SET state='succeeded' WHERE id=${user}`;
     expect((await claimNextAction())?.id).toBe(edit);
+    expect((await claimNextAction())?.id).toBe(library);
   }
 );
 run('failed and backed-off maintenance does not block other users or later edits', async () => {
@@ -94,6 +97,14 @@ run('failed and backed-off maintenance does not block other users or later edits
   await getSql()`UPDATE outbox_actions SET state = 'pending', next_attempt_at = NOW() + INTERVAL '1 hour' WHERE id = ${user}`;
   const edit = await queue(1, 'jellyfin.user-state');
   expect((await claimNextAction())?.id).toBe(edit);
+});
+run('Queue explains a failed account edit that blocks a later import',async()=>{
+  const actor={id:users[0],username:'runner',role:'admin' as const,email:null,settings:{}};
+  const edit=await queue(1,'jellyfin.user-state');
+  await getSql()`update outbox_actions set state='failed' where id=${edit}`;
+  const importId=await queue(1,'jellyfin.sync');
+  expect(await claimNextAction()).toBeNull();
+  expect((await listActions(actor)).find(row=>row.id===importId)?.waitingReason).toBe('account-order');
 });
 run('shared rate-limit cooldown protects all queued accounts on the affected service', async () => {
   registerActionHandler('jellyfin.library', async () => {
@@ -120,8 +131,9 @@ run('Collection cleanup and reviews preserve account ordering without globally b
   const cleanup=await queue(3,'trakt.collection-cleanup');
   const first=await enqueueAction({userId:users[1],connectionId:other,kind:'trakt.collection-review',payload:{workId:crypto.randomUUID()}});
   const second=await enqueueAction({userId:users[1],connectionId:other,kind:'trakt.collection-review',payload:{workId:crypto.randomUUID()}});
-  expect(first).not.toBe(second);expect((await claimNextAction())?.id).toBe(cleanup);expect((await claimNextAction())?.id).toBe(first);expect(await claimNextAction()).toBeNull();
-  await db`update outbox_actions set state='succeeded' where id in (${cleanup},${first})`;expect((await claimNextAction())?.id).toBe(second);
+  expect(first).not.toBe(second);expect((await claimNextAction())?.id).toBe(cleanup);expect(await claimNextAction()).toBeNull();
+  await db`update outbox_actions set state='succeeded' where id=${cleanup}`;expect((await claimNextAction())?.id).toBe(first);expect(await claimNextAction()).toBeNull();
+  await db`update outbox_actions set state='succeeded' where id=${first}`;expect((await claimNextAction())?.id).toBe(second);
  }finally{await db`delete from provider_connections where id=${other}`;}
 });
 run(
@@ -201,7 +213,7 @@ run(
         libraryConnectionId: connections[2],
       })
     ).rejects.toThrow('Choose a connected account');
-    expect((await runProviderJob(users[0], instances[0], 'users')).queued).toBe(1);
+    expect((await runProviderJob(users[0], instances[0], 'users')).queued).toBe(2);
     let jobs =
       await getSql()`SELECT kind FROM outbox_actions WHERE connection_id IN (${connections[0]}, ${connections[1]})`;
     expect(jobs.every((job: { kind: string }) => job.kind === 'jellyfin.sync')).toBe(true);
@@ -212,11 +224,12 @@ run(
     await expect(runProviderJob(users[0], instances[1], 'library')).rejects.toThrow('unavailable');
   }
 );
-run('concurrent account requests cannot queue the same service task twice', async()=>{
+run('concurrent account requests retain one Jellyfin sync per account without collapsing different users', async()=>{
  const ids=await Promise.all(Array.from({length:12},(_,i)=>queue(i%2,'jellyfin.sync')));
- expect(new Set(ids).size).toBe(1);
- const actions=await getSql()`select id from outbox_actions where kind='jellyfin.sync' and connection_id in (${connections[0]},${connections[1]}) and state in ('pending','running')`;
- expect(actions).toHaveLength(1);
+ expect(new Set(ids).size).toBe(2);
+ const actions=await getSql()`select id,connection_id from outbox_actions where kind='jellyfin.sync' and connection_id in (${connections[0]},${connections[1]}) and state in ('pending','running')`;
+ expect(actions).toHaveLength(2);
+ expect(new Set(actions.map((row: {connection_id:string})=>row.connection_id)).size).toBe(2);
 });
 
 run('Run now targets the selected card rather than its shared schedule siblings', async () => {
@@ -287,11 +300,81 @@ run('recommendation cards target one job, deduplicate runs, expose timing and re
  await runProviderJob(users[0],instance,'metadata','tmdb.recommendations');
  const rows=await db<{kind:string}[]>`select kind,payload from outbox_actions where payload->>'instanceId'=${instance}`;
  expect(rows.map(row=>row.kind)).toEqual(['tmdb.recommendations']);
- const claimed=await claimNextAction();expect(claimed?.instanceId).toBe(instance);expect(claimed?.priority).toBe(3);
+ const claimed=await claimNextAction();expect(claimed?.instanceId).toBe(instance);expect(claimed?.priority).toBe(1);
  const timings=await jobTimings();expect(timings.some(row=>row.instanceId===instance&&row.kind==='tmdb.recommendations')).toBe(true);
  await updateProviderSchedule(users[0],instance,{recommendationsEnabled:false});
  await db`delete from outbox_actions where payload->>'instanceId'=${instance}`;
  await scheduleProviderMaintenance({instanceId:instance,task:'metadata',kind:'tmdb.recommendations'});
  expect((await db`select id from outbox_actions where payload->>'instanceId'=${instance}`).length).toBe(0);
  expect((await jobTimings()).find(row=>row.instanceId===instance&&row.kind==='tmdb.recommendations')?.nextAt).toBeNull();
+});
+
+run('priority promotion reuses work and preserves retry and service cooldowns',async()=>{
+  const id=await queue(2,'seerr.sync');
+  await getSql()`update outbox_actions set next_attempt_at=now()+interval '20 minutes' where id=${id}`;
+  await getSql()`update provider_instances set settings=settings||jsonb_build_object('jobsRetryAt',(now()+interval '1 hour')::text) where id=${instances[1]}`;
+  const actor={id:users[0],username:'runner',role:'admin' as const,email:null,settings:{}};
+  expect(await promoteAction(actor,id)).toMatchObject({id,state:'pending',purpose:'manual'});
+  expect(await enqueueAction({userId:users[0],connectionId:connections[2],kind:'seerr.sync',purpose:'manual',payload:{}})).toBe(id);
+  const [row]=await getSql()`select next_attempt_at,payload from outbox_actions where id=${id}`;
+  expect(new Date(row.next_attempt_at).getTime()).toBeGreaterThan(Date.now()+19*60000);
+  expect(row.payload._jobPurpose).toBe('manual');
+  expect((await listActions(actor)).find(row=>row.id===id)?.waitingReason).toBe('service-cooldown');
+  expect(await claimNextAction()).toBeNull();
+});
+run('manual reads overtake lower-priority account maintenance and Queue displays the same order',async()=>{
+  const older=await enqueueAction({userId:users[0],connectionId:connections[2],kind:'catalogue.user-scan',purpose:'scheduled',payload:{}});
+  const requested=await enqueueAction({userId:users[0],connectionId:connections[2],kind:'seerr.sync',purpose:'manual',payload:{}});
+  const actor={id:users[0],username:'runner',role:'admin' as const,email:null,settings:{}};
+  const rows=await listActions(actor);
+  expect(rows.filter(row=>row.state==='pending').map(row=>row.id)).toEqual([requested,older]);
+  expect((await claimNextAction())?.id).toBe(requested);
+  expect(await claimNextAction()).toBeNull();
+  await getSql()`update outbox_actions set state='succeeded' where id=${requested}`;
+  expect((await claimNextAction())?.id).toBe(older);
+});
+run('Queue places runnable work before urgent jobs held by service cooldown',async()=>{
+  const cooling=await queue(1,'jellyfin.sync');
+  await getSql()`update provider_instances set settings=settings||jsonb_build_object('jobsRetryAt',(now()+interval '1 hour')::text) where id=${instances[0]}`;
+  const ready=await queue(2,'seerr.sync');
+  const actor={id:users[0],username:'runner',role:'admin' as const,email:null,settings:{}};
+  const pending=(await listActions(actor)).filter(row=>row.state==='pending');
+  expect(pending.map(row=>row.id)).toEqual([ready,cooling]);
+  expect(pending[1].waitingReason).toBe('service-cooldown');
+  expect((await claimNextAction())?.id).toBe(ready);
+  expect(await claimNextAction()).toBeNull();
+});
+run('a running account edit blocks an older import and Queue places unrelated ready work first',async()=>{
+  const held=await queue(1,'jellyfin.sync');
+  const edit=await queue(1,'jellyfin.user-state');
+  await getSql()`update outbox_actions set state='running' where id=${edit}`;
+  const ready=await queue(2,'seerr.sync');
+  const actor={id:users[0],username:'runner',role:'admin' as const,email:null,settings:{}};
+  const pending=(await listActions(actor)).filter(row=>row.state==='pending');
+  expect(pending.map(row=>row.id)).toEqual([ready,held]);
+  expect(pending[1].waitingReason).toBe('account-order');
+  expect((await claimNextAction())?.id).toBe(ready);
+  expect(await claimNextAction()).toBeNull();
+  await getSql()`update outbox_actions set state='succeeded' where id=${edit}`;
+  expect((await claimNextAction())?.id).toBe(held);
+});
+run('committed chunks yield without failure attempts and continue the same durable action',async()=>{
+  registerActionHandler('seerr.sync',async action=>{
+    const saved=action.payload._checkpoint as {next:number}|undefined;
+    for(let next=saved?.next??0;next<7;next++){
+      await saveJobCheckpoint({next:next+1});
+      await jobCheckpoint();
+    }
+    return {checked:7};
+  });
+  const id=await queue(2,'seerr.sync');
+  expect(await runQueueOnce()).toBe(true);
+  const [paused]=await getSql()`select state,attempts,payload,last_error from outbox_actions where id=${id}`;
+  expect(paused).toMatchObject({state:'pending',attempts:0,last_error:null});
+  expect(paused.payload._checkpoint).toEqual({next:5});
+  expect(paused.payload._jobFailure).toBeUndefined();
+  expect(await runQueueOnce()).toBe(true);
+  const [complete]=await getSql()`select state,attempts,payload from outbox_actions where id=${id}`;
+  expect(complete).toMatchObject({state:'succeeded',attempts:1});
+  expect(complete.payload._jobOutcome).toEqual({checked:7});
 });

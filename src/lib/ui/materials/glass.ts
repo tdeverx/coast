@@ -39,6 +39,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 
 export type LiquidGlassOptions = {
   variant?: GlassVariant;
+  /** False disables this action. The user preference instead selects CSS blur. */
   enabled?: boolean;
   surface?: Partial<GlassSurface>;
   fallback?: Partial<GlassSurface>;
@@ -129,6 +130,7 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
   const nativeSupported = supported();
   const filterId = `coast-liquid-glass-${Date.now()}-${++filterSequence}`;
   let definition: SVGSVGElement | null = null;
+  let definitionKey: string | undefined;
   const settings = () => {
     const options = typeof requested === 'boolean' ? { enabled: requested } : requested;
     const preset = { ...glassPresets.materials[options.variant ?? 'clear'], ...options.surface };
@@ -146,6 +148,25 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
   let grain: HTMLSpanElement | undefined;
   let mapCache: { key: string; url: string | null } | undefined;
   const materialProperties = new Set<string>();
+  function releaseDefinition() {
+    definition?.remove();
+    definition = null;
+    definitionKey = undefined;
+  }
+  function disableSurface() {
+    releaseDefinition();
+    grain?.remove();
+    grain = undefined;
+    node.classList.remove('liquid-glass-active');
+    node.dataset.coastGlassRenderer = 'disabled';
+    delete node.dataset.coastGlassVariant;
+    for (const property of materialProperties) node.style.removeProperty(property);
+    materialProperties.clear();
+    // The action may be attached to a solid modal, or an inactive glass button.
+    // Explicitly disabling the action must not leave a CSS backdrop filter active.
+    node.style.setProperty('-webkit-backdrop-filter', 'none');
+    node.style.setProperty('backdrop-filter', 'none');
+  }
   function applySurface(enhanced: boolean) {
     const variant = settings().variant ?? 'clear';
     const options = settings();
@@ -210,17 +231,19 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     const filter = node.style.getPropertyValue('--coast-glass-filter');
     node.style.setProperty('-webkit-backdrop-filter', filter);
     node.style.setProperty('backdrop-filter', filter);
-    definition?.remove();
-    definition = null;
+    releaseDefinition();
   }
   function render() {
     const options = settings();
+    if (options.enabled === false) {
+      disableSurface();
+      return;
+    }
     const enabled =
       nativeSupported &&
       !appearancePreferences?.matches &&
       options.renderer !== 'css' &&
       options.refraction > 0 &&
-      options.enabled !== false &&
       (options.preview || document.querySelector('[data-coast-glass="on"]'));
     if (!enabled) {
       clearNative(options.renderer === 'css' || !nativeSupported || options.refraction === 0 ? 'css' : 'disabled');
@@ -228,7 +251,12 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     }
     const width = Math.round(node.offsetWidth),
       height = Math.round(node.offsetHeight);
-    if (!width || !height) return;
+    if (!width || !height) {
+      // Closed popovers have no box. Retain their CSS fallback, but release the
+      // SVG graph until ResizeObserver sees the newly opened surface again.
+      clearNative('hidden');
+      return;
+    }
     const scale = -(options.depth * 2 * options.refraction);
     const dispersion = options.depth * options.dispersion;
     const padding = Math.ceil((Math.abs(scale) + dispersion) / 2) + 8;
@@ -239,6 +267,16 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       height / 2
     );
     const mapKey = `${width}:${height}:${padding}:${radius}:${options.depth}`;
+    const nextDefinitionKey = `${mapKey}:${scale}:${dispersion}:${options.radius}`;
+    if (definition && definitionKey === nextDefinitionKey) {
+      // Fill, colour and light changes do not change the displacement graph.
+      // Keep its reference stable during hover/layout updates.
+      const value = `url("#${filterId}") saturate(${options.saturation}) brightness(${options.brightness})`;
+      node.style.setProperty('-webkit-backdrop-filter', value);
+      node.style.setProperty('backdrop-filter', value);
+      applySurface(true);
+      return;
+    }
     if (mapCache?.key !== mapKey)
       mapCache = { key: mapKey, url: displacementMap(width, height, padding, radius, options.depth) };
     const mapUrl = mapCache.url;
@@ -309,6 +347,7 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     svg.append(filter);
     document.body.append(svg);
     definition = svg;
+    definitionKey = nextDefinitionKey;
     const value = `url("#${filterId}") saturate(${options.saturation}) brightness(${options.brightness})`;
     node.style.setProperty('-webkit-backdrop-filter', value);
     node.style.setProperty('backdrop-filter', value);
@@ -320,12 +359,17 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
   const resize = new ResizeObserver(schedule);
   resize.observe(node);
   const stopSetting = watchSetting(schedule);
-  applySurface(false);
   render();
   return {
     update(next: boolean | LiquidGlassOptions = true) {
+      const wasEnabled = settings().enabled !== false;
       requested = next;
-      schedule();
+      if (wasEnabled !== (settings().enabled !== false)) {
+        // Lazy hover/focus activation must be ready before the reveal paints.
+        // Waiting for another animation frame can flash the unfiltered surface.
+        pendingSurfaces.delete(render);
+        render();
+      } else schedule();
     },
     destroy() {
       pendingSurfaces.delete(render);

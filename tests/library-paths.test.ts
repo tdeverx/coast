@@ -4,10 +4,11 @@ import { libraryBrowseDefaults, libraryBrowsePaths } from '../src/lib/library';
 const base = { surface: 'watch' as const, collection: false, selection: 'all', kind: 'all', scope: 'available', genre: '', relationship: 'all', source: 'all', availability: 'all', username: '', page: 1 };
 const url = (path: string) => new URL(path, 'http://coast/');
 describe('Library browsing paths', () => {
-  test('Library defaults to Collection with availability off and respects explicit filters', () => {
-    expect(libraryBrowseDefaults(new URLSearchParams())).toEqual({ collection: true, scope: 'all' });
+  test('Library defaults to Collection and availability off and respects explicit filters', () => {
+    expect(libraryBrowseDefaults(new URLSearchParams())).toEqual({ collection: false, scope: 'all' });
     expect(libraryBrowseDefaults(new URLSearchParams('collection=false&scope=available'))).toEqual({ collection: false, scope: 'available' });
-    expect(libraryBrowseDefaults(new URLSearchParams('availability=available'))).toEqual({ collection: true, scope: 'available' });
+    expect(libraryBrowseDefaults(new URLSearchParams('availability=available'))).toEqual({ collection: false, scope: 'available' });
+    expect(libraryBrowseDefaults(new URLSearchParams('collection=true')).collection).toBe(true);
     expect(libraryBrowseDefaults(new URLSearchParams('collection=false'), true).collection).toBe(true);
   });
   test('Collection and availability remain independent filters on the shared route', () => {

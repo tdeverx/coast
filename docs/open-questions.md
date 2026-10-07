@@ -36,7 +36,7 @@ The user asked to park these ideas for later. They are discussion candidates, no
 ### Suggestions discussed for Collection and Library
 
 - Keep personal membership and server availability separate in the data, with independent Collection and Available filters on one page. Both off would show personal items plus accessible server content, excluding unrelated discovery metadata; both on would show their intersection.
-- Consider Collection on and Available off as the initial tracking-focused view, remember the user's selections, and give the Collection toggle a clear label. A profile-menu shortcut could open this view rather than being its only entry point.
+- Library now defaults to Collection off and Available off so new users can browse connected libraries before building a personal Collection. Revisit first-run guidance and remembering selections; see the new-user Library roadmap entry.
 - Consolidate duplicate availability controls; retain advanced Missing, Unknown, Partial and Ready to continue choices in the existing filter menu.
 - Explain why an item remains after removing direct Collected status, using its retained watchlist/history or other membership reasons in existing feedback.
 - Present missing demand as an actionable shelf using existing cards/request actions, keeping uncertain access separate from confirmed missing.

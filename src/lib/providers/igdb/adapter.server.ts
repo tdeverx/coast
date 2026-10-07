@@ -72,40 +72,9 @@ export function mapIgdbGame(raw:unknown){
 }
 export type IgdbGame = ReturnType<typeof mapGame> & {parent?:ReturnType<typeof mapGame>};
 
-// Share a conservative request lane across instances using the same Twitch application.
-// Serial requests, at least 275ms apart, stay below IGDB's 4/sec and 8-open-request limits.
-type Lane = { tail: Promise<void>; pending: number; lastStart: number };
-const lanes = new Map<string, Lane>();
-async function inLane<T>(clientId: string, work: () => Promise<T>): Promise<T> {
-  let lane = lanes.get(clientId);
-  if (!lane) {
-    for (const [id, candidate] of lanes) {
-      if (candidate.pending === 0 && Date.now() - candidate.lastStart > 60_000) lanes.delete(id);
-    }
-    if (lanes.size >= 64) throw new AppError(429, 'Game metadata is busy. Try again shortly.', 'igdb_busy');
-    lane = { tail: Promise.resolve(), pending: 0, lastStart: 0 };
-    lanes.set(clientId, lane);
-  }
-  if (lane.pending >= 20) throw new AppError(429, 'Game metadata is busy. Try again shortly.', 'igdb_busy');
-  const current = lane;
-  current.pending++;
-  const result = current.tail.then(async () => {
-    const delay = Math.max(0, current.lastStart + 275 - Date.now());
-    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
-    current.lastStart = Date.now();
-    return work();
-  });
-  current.tail = result.then(() => {}, () => {});
-  try { return await result; } finally { current.pending--; }
-}
-
 function providerError(error: unknown): never {
-  if (error instanceof ProviderHttpError) {
-    if ([400, 401, 403].includes(error.status))
-      throw new AppError(502, 'IGDB authentication or the metadata request failed. Check the Twitch application credentials.', 'igdb_rejected');
-    if (error.status === 429)
-      throw new AppError(429, 'IGDB is limiting requests. Try again later.', 'igdb_rate_limited');
-  }
+  // Preserve provider status and Retry-After for the common queue failure policy.
+  if (error instanceof ProviderHttpError) throw error;
   if (error instanceof AppError) throw error;
   throw new AppError(502, 'IGDB could not return valid game metadata. Try again later.', 'igdb_unavailable');
 }
@@ -137,9 +106,10 @@ export class IgdbAdapter {
   private async requestQuery(body: string, endpoint: string) {
     try {
       let token = await this.accessToken();
-      const send = () => inLane(this.credentials.clientId, () => this.request(`/v4/${endpoint}`, {
+      // The common origin lane supplies priority, cooldown and IGDB's 260ms spacing.
+      const send = () => this.request(`/v4/${endpoint}`, {
         method: 'POST', headers: { 'Client-ID': this.credentials.clientId, Authorization: `Bearer ${token}`, accept: 'application/json', 'content-type': 'text/plain' }, body,
-      }));
+      });
       let raw: unknown;
       try { raw = await send(); } catch (error) {
         if (!(error instanceof ProviderHttpError) || error.status !== 401) throw error;

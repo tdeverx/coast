@@ -1,5 +1,7 @@
 import { pruneTransientRecords } from '$lib/server/storage/retention.server';
-import { serviceTasks } from './tasks';
+import { serviceTasks, maintenanceKinds } from './tasks';
+import { jobIdentityScope } from './job-policy';
+import { eligibleTaskAccounts, recurringTask, taskDue, taskSchedulingEnabled } from './task-timing';
 import { providerSchedule, providerScheduleSchema } from '$lib/providers/schedule';
 import * as v from 'valibot';
 import { and, eq, sql, inArray } from 'drizzle-orm';
@@ -116,7 +118,14 @@ export async function scheduleProviderMaintenance(
     if(options.force&&options.instanceId){
       const instance=await getInstance(options.instanceId);
       const kinds=serviceTasks(instance.provider).filter(task=>!options.task||options.task==='all'||task.scope===options.task).flatMap(task=>task.kinds).filter(kind=>!options.kind||kind===options.kind);
-      if(kinds.length)await tx.execute(sql`update outbox_actions a set payload=a.payload||'{"_manual":true}'::jsonb where a.state='pending' and a.kind in (${sql.join(kinds.map(kind=>sql`${kind}`),sql`,`)}) and coalesce((select instance_id::text from provider_connections where id=a.connection_id),a.payload->>'instanceId')=${options.instanceId}`);
+      if (kinds.length) await tx.execute(sql`update outbox_actions a set payload=a.payload||jsonb_build_object(
+        '_manual',true,'_jobPurpose',case when a.payload->>'_jobPurpose' in ('playback','bootstrap','interactive') then a.payload->>'_jobPurpose' else 'manual' end)
+        || case when a.kind='jellyfin.library' and a.payload->>'full'='false' then
+          case when a.state='pending' then '{"full":true}'::jsonb else '{"_followupFull":true}'::jsonb end
+          else '{}'::jsonb end
+        where a.state in ('pending','running') and a.kind in (${sql.join(kinds.map(kind=>sql`${kind}`),sql`,`)})
+        and (a.account_generation is null or a.account_generation=(select account_generation from provider_connections where id=a.connection_id))
+        and coalesce((select instance_id::text from provider_connections where id=a.connection_id),a.payload->>'instanceId')=${options.instanceId}`);
     }
     if(!options.instanceId)await tx.execute(sql`
       insert into outbox_actions(user_id,kind,payload,compaction_key)
@@ -160,11 +169,9 @@ export async function scheduleProviderMaintenance(
       )
       .orderBy(providerConnections.createdAt, providerConnections.id);
     const eligible = rows.filter(
-      ({ instance }) =>
-        (instance.provider !== 'trakt' || config.enableTrakt) &&
-        (instance.provider !== 'seerr' || config.enableRequests) &&
-        (instance.provider !== 'steam' || config.experimentalGaming) &&
-        (options.force || providerSchedule(instance.provider, instance.settings.schedule).enabled)
+      ({ instance }) => taskSchedulingEnabled(instance.provider, instance.enabled,
+        { id: 'instance', title: '', description: '', kinds: [] },
+        providerSchedule(instance.provider, instance.settings.schedule), config, options.force)
     );
     if (!eligible.length) return { ...metadata, connections: 0, busy: false };
     const ids = eligible.map((row) => row.connection.id);
@@ -180,21 +187,8 @@ export async function scheduleProviderMaintenance(
         .where(
           and(
             inArray(outboxActions.connectionId, ids),
-            inArray(outboxActions.kind, [
-              'catalogue.user-scan',
-              'jellyfin.library',
-              'jellyfin.sync',
-              'trakt.live',
-              'jellyfin.live',
-              'jellyfin.streams',
-              'steam.live',
-              'trakt.import',
-              'trakt.lists-import',
-              'trakt.collection-project',
-              'seerr.sync',
-              'steam.sync',
-              'steam.achievements',
-            ])
+            inArray(outboxActions.kind, maintenanceKinds),
+            sql`(${outboxActions.accountGeneration} is null or ${outboxActions.accountGeneration}=(select account_generation from provider_connections where id=${outboxActions.connectionId}))`
           )
         )
         .groupBy(outboxActions.connectionId, outboxActions.kind),
@@ -210,134 +204,68 @@ export async function scheduleProviderMaintenance(
     let queued = metadata.queued,
       active = metadata.active;
     const now = Date.now();
-    const handledLibraries = new Set<string>();
-    const handledStreams = new Set<string>();
+    const presence = await tx.execute<{ id: string; live: boolean }>(sql`
+      select c.id,exists(select 1 from social_live_state s where s.connection_id=c.id and s.account_generation=c.account_generation and s.expires_at>now())
+        or exists(select 1 from playback_sessions p where p.user_id=c.user_id and p.state='active' and p.updated_at>now()-interval '2 minutes')
+        or exists(select 1 from social_checkins s where s.user_id=c.user_id and s.state='active' and s.expires_at>now()) as live
+      from provider_connections c where c.id in (${sql.join(ids.map(id=>sql`${id}`),sql`,`)})
+    `);
     const requests = new Map<string, { connection: (typeof eligible)[number]['connection']; kind: string; payload: Record<string, unknown>; last: number }[]>();
-    async function queue(connection: (typeof eligible)[number]['connection'], kind: string, payload: Record<string, unknown> = {}) {
-      if (options.kind && options.kind !== kind) return;
-      const key=`${connection.instanceId}:${kind}`;
-      const last=kind==='jellyfin.sync' ? checkpointByKey.get(`${connection.id}:jellyfin-user`)??0 : new Date(jobsByKey.get(`${connection.id}:${kind}`)?.last??0).getTime();
-      const candidates=requests.get(key)??[];
-      candidates.push({connection,kind,payload,last});requests.set(key,candidates);
-    }
-    for (const { instance, connection } of eligible) {
+    for (const instance of new Map(eligible.map(row => [row.instance.id, row.instance])).values()) {
       const schedule = providerSchedule(instance.provider, instance.settings.schedule);
-      if (tmdb && ['jellyfin', 'trakt'].includes(instance.provider) && (!options.task || ['all', 'catalogue'].includes(options.task)) && (options.force || schedule.catalogueEnabled)) {
-        const job = jobsByKey.get(`${connection.id}:catalogue.user-scan`);
-        if (job?.active) active++;
-        else if (options.force || !job?.last || now - new Date(job.last).getTime() >= schedule.catalogueIntervalMinutes * 60000) await queue(connection, 'catalogue.user-scan');
-      }
-      if (options.task === 'catalogue' || options.task === 'metadata') continue;
-      if(instance.provider==='jellyfin'&&(!options.task||['all','streams'].includes(options.task))&&!handledStreams.has(instance.id)){
-        handledStreams.add(instance.id);
-        const accounts=eligible.filter(row=>row.instance.id===instance.id&&row.role==='admin');
-        const source=schedule.streamsConnectionId?accounts.find(row=>row.connection.id===schedule.streamsConnectionId):accounts[0];
-        const scans=jobs.filter(job=>job.kind==='jellyfin.streams'&&eligible.some(row=>row.instance.id===instance.id&&row.connection.id===job.connectionId));
-        const last=Math.max(0,...scans.map(job=>new Date(job.last??0).getTime()));
-        if(scans.some(job=>job.active))active++;
-        else if(source&&(options.force||schedule.streamsEnabled)&&(options.force||now-last>=schedule.streamsIntervalMinutes*60000))await queue(source.connection,'jellyfin.streams');
-      }
-      if(options.task==='streams')continue;
-      if (['jellyfin','trakt','steam'].includes(instance.provider)) {
-        if((!options.task||['all','live'].includes(options.task))&&(options.force||schedule.liveEnabled)&&connection.settings.liveRead!==false){
-          const live=jobsByKey.get(`${connection.id}:${instance.provider}.live`);
-          const [presence]=await tx.execute<{active:boolean}>(sql`select exists(select 1 from social_live_state where connection_id=${connection.id} and account_generation=${connection.accountGeneration} and expires_at>now()) or exists(select 1 from playback_sessions where user_id=${connection.userId} and state='active' and updated_at>now()-interval '2 minutes') or exists(select 1 from social_checkins where user_id=${connection.userId} and state='active' and expires_at>now()) as active`);
-          const interval=presence?.active?schedule.liveActiveMinutes:schedule.liveIdleMinutes;
-          if(live?.active)active++;else if(options.force||!live?.last||now-new Date(live.last).getTime()>=interval*60000)await queue(connection,`${instance.provider}.live`);
+      const linked = eligible.filter(row => row.instance.id === instance.id).map(row => ({
+        ...row.connection, role: row.role, live: presence.find(account => account.id === row.connection.id)?.live ?? false,
+        userCompleted: checkpointByKey.get(`${row.connection.id}:jellyfin-user`) ? new Date(checkpointByKey.get(`${row.connection.id}:jellyfin-user`)!) : null,
+      }));
+      const source=instance.settings.companion as import('./jellyfin/companion').CompanionState|undefined;
+      const validSource=linked.some(c=>c.id===source?.connectionId&&c.accountGeneration===source?.generation&&c.role==='admin');
+      const effectiveSettings=validSource?instance.settings:{...instance.settings,companion:undefined};
+      for (const task of serviceTasks(instance.provider)) {
+        const kind = task.kinds[0];
+        if (!kind || !task.scope || (!recurringTask(kind) && options.kind !== kind) || (options.kind && options.kind !== kind)
+          || (options.task && options.task !== 'all' && options.task !== task.scope)
+          || !taskSchedulingEnabled(instance.provider, instance.enabled, task, schedule, config, options.force)) continue;
+        // Metadata/recommendation schedulers above own their record/seed-specific evidence.
+        if (kind.endsWith('.recommendations')) continue;
+        const accounts = eligibleTaskAccounts(kind, linked, schedule, instance.settings, !!tmdb);
+        const shared = jobIdentityScope(kind) === 'instance';
+        const sharedJobs = jobs.filter(job => job.kind === kind && linked.some(account => account.id === job.connectionId));
+        for (const account of accounts) {
+          const job = jobsByKey.get(`${account.id}:${kind}`);
+          const evidence = shared ? {
+            blocked: sharedJobs.some(entry => entry.active),
+            completed: new Date(Math.max(0, ...sharedJobs.map(entry => new Date(entry.last ?? 0).getTime()))),
+          } : { blocked: job?.active, completed: job?.last };
+          const due = taskDue(task, schedule, effectiveSettings, account, evidence, now, options.force);
+          if (evidence.blocked) { active++; continue; }
+          if (due.at == null || due.at > now) continue;
+          const key = `${instance.id}:${kind}`;
+          const candidates = requests.get(key) ?? [];
+          candidates.push({ connection: account, kind, payload: due.full === undefined ? {} : { full: due.full }, last: due.completed });
+          requests.set(key, candidates);
         }
-        if(options.task==='live')continue;
       }
-      if (instance.provider === 'jellyfin') {
-        if (!handledLibraries.has(instance.id)) {
-          handledLibraries.add(instance.id);
-          const accounts = eligible
-            .filter((row) => row.instance.id === instance.id)
-            .map((row) => row.connection);
-          const progress = instance.settings.libraryScan as Record<string, unknown> | undefined;
-          const sourceId = schedule.libraryConnectionId ?? progress?.connectionId;
-          const source =
-            accounts.find((account) => account.id === sourceId) ??
-            (schedule.libraryConnectionId ? undefined : accounts[0]);
-          const fullAt = Date.parse(String(progress?.fullCompletedAt ?? '')) || 0;
-          const recentAt = Date.parse(String(progress?.recentCompletedAt ?? '')) || 0;
-          const full =
-            !!options.force ||
-            source?.id !== progress?.connectionId ||
-            source?.externalUserId !== progress?.externalUserId ||
-            now - fullAt >= schedule.fullIntervalHours * 3600000;
-          const libraryActive = accounts.some(
-            (account) => jobsByKey.get(`${account.id}:jellyfin.library`)?.active
-          );
-          if (options.task !== 'users' && (options.force || schedule.libraryEnabled)) {
-            if (libraryActive) active++;
-            else if (
-              source &&
-              (full || now - Math.max(fullAt, recentAt) >= schedule.intervalMinutes * 60000)
-            )
-              await queue(source, 'jellyfin.library', { full });
-          }
-        }
-        const last = checkpointByKey.get(`${connection.id}:jellyfin-user`) ?? 0;
-        if (options.task !== 'library' && (options.force || schedule.userSyncEnabled)) {
-          if (jobsByKey.get(`${connection.id}:jellyfin.sync`)?.active) active++;
-          else if (options.force || now - last >= schedule.userIntervalMinutes * 60000)
-            await queue(connection, 'jellyfin.sync');
-        }
-        continue;
-      }
-      if(instance.provider==='steam'){
-        for(const [kind,task,enabled,interval] of [['steam.sync','tracking',schedule.trackingEnabled,schedule.intervalMinutes],['steam.achievements','users',schedule.userSyncEnabled,schedule.userIntervalMinutes]] as const){
-          if(options.task && !['all',task].includes(options.task)||!options.force&&!enabled||kind==='steam.achievements'&&connection.settings.importAchievements===false)continue;
-          const job=jobsByKey.get(`${connection.id}:${kind}`);
-          if(job?.active)active++;else if(options.force||!job?.last||now-new Date(job.last).getTime()>=interval*60000)await queue(connection,kind);
-        }
-        continue;
-      }
-      if (instance.provider === 'trakt') {
-        if(options.task !== 'lists' && (options.force || schedule.trackingEnabled) && (connection.settings.collectionProjection as {enabled?:boolean})?.enabled){
-          const projectionJob=jobsByKey.get(`${connection.id}:trakt.collection-project`);
-          if(!projectionJob?.active && (options.force||!projectionJob?.last||now-new Date(projectionJob.last).getTime()>=schedule.intervalMinutes*60000))await queue(connection,'trakt.collection-project');
-        }
-        const sync = connection.settings.sync as Record<string, boolean> | undefined;
-        if (
-          options.task !== 'tracking' &&
-          (options.force || schedule.listsEnabled) &&
-          sync?.lists
-        ) {
-          const listsJob = jobsByKey.get(`${connection.id}:trakt.lists-import`);
-          const last = listsJob?.last ? new Date(listsJob.last).getTime() : 0;
-          if (listsJob?.active) active++;
-          else if (options.force || now - last >= schedule.listsIntervalMinutes * 60000)
-            await queue(connection, 'trakt.lists-import');
-        }
-        if (
-          options.task === 'lists' ||
-          (!options.force && !schedule.trackingEnabled) ||
-          !['history', 'progress', 'collection', 'ratings', 'watchlist'].some(
-            (category) => sync?.[category]
-          )
-        )
-          continue;
-      }
-      const kind = instance.provider === 'trakt' ? 'trakt.import' : 'seerr.sync';
-      const job = jobsByKey.get(`${connection.id}:${kind}`);
-      if (job?.active) {
-        active++;
-        continue;
-      }
-      const checked = Date.parse(String(connection.settings.requestsVerifiedAt ?? '')) || 0;
-      const last =
-        instance.provider === 'seerr' ? checked : job?.last ? new Date(job.last).getTime() : 0;
-      if (options.force || now - last >= schedule.intervalMinutes * 60000)
-        await queue(connection, kind);
     }
-    for(const candidates of requests.values()) {
-      const chosen=candidates.sort((a,b)=>a.last-b.last||a.connection.createdAt.getTime()-b.connection.createdAt.getTime())[0];
-      const {connection,kind,payload}=chosen;
-      const [existing]=await tx.select({id:outboxActions.id}).from(outboxActions).innerJoin(providerConnections,eq(providerConnections.id,outboxActions.connectionId)).where(and(eq(providerConnections.instanceId,connection.instanceId),eq(outboxActions.kind,kind),inArray(outboxActions.state,['pending','running']))).limit(1);
-      if(existing)continue;
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${connection.userId}:${connection.id}`},0))`);
-      await tx.insert(outboxActions).values({userId:connection.userId,connectionId:connection.id,accountGeneration:connection.accountGeneration,kind,payload:{...payload,_manual:!!options.force},compactionKey:kind,correlationId:correlationId(context.getStore()),createdAt:sql`clock_timestamp()`});queued++;
+    for (const candidates of requests.values()) {
+      candidates.sort((a, b) => a.last - b.last || a.connection.createdAt.getTime() - b.connection.createdAt.getTime());
+      // A timer rotates through due accounts; an explicit run requests every eligible account.
+      const selected = options.force && jobIdentityScope(candidates[0].kind) === 'account' ? candidates : candidates.slice(0, 1);
+      for (const { connection, kind, payload } of selected) {
+        const scope = jobIdentityScope(kind);
+        const [existing] = await tx.select({ id: outboxActions.id }).from(outboxActions)
+          .innerJoin(providerConnections, eq(providerConnections.id, outboxActions.connectionId))
+          .where(and(eq(outboxActions.kind, kind),
+            scope === 'instance' ? eq(providerConnections.instanceId, connection.instanceId) : eq(outboxActions.connectionId, connection.id),
+            sql`(${outboxActions.accountGeneration} is null or ${outboxActions.accountGeneration}=${providerConnections.accountGeneration})`,
+            inArray(outboxActions.state, ['pending', 'running', 'failed']))).limit(1);
+        if (existing) continue;
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${connection.userId}:${connection.id}`},0))`);
+        const purpose = options.force ? 'manual' : kind.endsWith('.live') || ['jellyfin.streams','jellyfin.updates'].includes(kind) ? 'live' : 'scheduled';
+        await tx.insert(outboxActions).values({ userId: connection.userId, connectionId: connection.id, accountGeneration: connection.accountGeneration,
+          kind, payload: { ...payload, _manual: !!options.force, _jobPurpose: purpose }, compactionKey: kind,
+          correlationId: correlationId(context.getStore()), createdAt: sql`clock_timestamp()` });
+        queued++;
+      }
     }
     return { queued, active, connections: eligible.length, busy: false };
   });

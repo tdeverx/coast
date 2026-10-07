@@ -1,6 +1,6 @@
 # App follow-up roadmap
 
-Updated 6 October 2026. Parked entries record deferred work, not implementation authorization.
+Updated 7 October 2026. Parked entries record deferred work, not implementation authorization.
 
 ## Selected audit pass — implemented
 
@@ -13,6 +13,8 @@ Updated 6 October 2026. Parked entries record deferred work, not implementation 
 Implementation and verification limits: [selected follow-ups](audits/2026-10-03-selected-follow-ups.md). Live-device/provider acceptance is separate from the completed fixture checks.
 
 ## Parked audit follow-ups
+
+- New-user Library experience: explain the difference between connected libraries and personal Collection, guide users while initial imports run, and make an empty Collection useful without hiding the server catalogue. Collection filtering now defaults off in Library; revisit a more helpful first-run experience when selected.
 
 - Profile comparison / versus view: parked after the first design exploration was rejected. Revisit side-by-side profile identities, blended backgrounds and per-medium comparison charts only when selected again; reuse approved UI and respect profile privacy. The first-pass button, route and comparison implementation have been removed.
 

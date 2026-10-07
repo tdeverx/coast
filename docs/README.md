@@ -25,6 +25,7 @@
 
 - [Architecture](architecture.md): domain, database, service boundaries and security.
 - [Deployment](deployment.md): container, storage, accounts and recovery.
+- [Job scheduling and progress](job-scheduling.md): queue priorities, safe resumable imports, schedules and waiting reasons.
 - [Performance methods](performance.md): shared optimisation patterns, benchmarks, isolated measurements and acceptance checks.
 - [Diagnostic logging](diagnostic-logging.md): safe exports, bounded logs and persistent exit evidence.
 - [Verification platform](verification-platform.md): inventories, fixtures and isolated database testing.
@@ -44,3 +45,7 @@
 - [Selected audit follow-ups — 3 October](audits/2026-10-03-selected-follow-ups.md): read-only API, consolidation, accessibility, empty shelves and playback evidence.
 
 Keep the readiness report honest: implementation is not proof of a live provider journey. Dated audits preserve their original evidence; use the performance guide for current working methods.
+
+The [provider jobs implementation audit](audits/2026-10-07-provider-jobs.md) records the Jellyfin inventory fast path, shared scheduling and durable import boundaries.
+
+- [Jellyfin companion updates](jellyfin-companion.md): install, authenticated change-feed contract, targeted jobs and reconciliation/fallback.

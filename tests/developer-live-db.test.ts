@@ -38,7 +38,7 @@ run('paused background work cannot block intentional changes; disabling dev mode
  expect(await claimNextAction()).toBeNull();await updateConfig(actor,{developerMode:false});expect((await claimNextAction())?.id).toBe(job);
 });
 run('a manual job failure waits for Retry in developer mode and clears failed live observations',async()=>{
- await observation();await enqueueAction({userId:user,connectionId:connection,kind:'jellyfin.live',payload:{}});
+ await observation();await enqueueAction({userId:user,connectionId:connection,kind:'jellyfin.live',payload:{},purpose:'manual'});
  registerActionHandler('jellyfin.live',async()=>{throw Error('Fixture connection failure');});expect(await runQueueOnce()).toBe(true);
  const [job]=await getSql()`select id,state from outbox_actions where user_id=${user}`;expect(job.state).toBe('failed');expect(await claimNextAction()).toBeNull();
  expect((await getSql()`select work_id from social_live_state where connection_id=${connection}`)[0].work_id).toBeNull();

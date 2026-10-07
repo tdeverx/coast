@@ -1,3 +1,4 @@
+import { requestPriority } from '$lib/server/security/request-priority';
 import {playbackArtwork} from '$lib/ui/artwork-priority';
 import { acceptedPlayedTime, listenReached } from './listening';
 import { recordMusicListen } from '$lib/music/persistence.server';
@@ -138,7 +139,11 @@ async function resourceUrl(sessionId: string, path: string, expiresAt: Date) {
   );
   return `/api/v1/playback/${sessionId}/stream?resource=${encodeURIComponent(token)}`;
 }
-export async function startPlayback(
+export async function startPlayback(userId: string,input: unknown,
+  share?: {id:string;connectionId:string;expiresAt:Date;sourceId?:string}) {
+  return requestPriority.run(0,()=>preparePlayback(userId,input,share));
+}
+async function preparePlayback(
   userId: string,
   input: unknown,
   share?: { id: string; connectionId: string; expiresAt: Date; sourceId?: string }

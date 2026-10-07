@@ -1,13 +1,17 @@
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
-import { providerInstances, providerConnections, syncAccounts } from '$lib/server/db/schema';
+import { providerInstances, providerConnections, syncAccounts, users } from '$lib/server/db/schema';
 import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
 import { getConfig } from '$lib/server/config';
 import { TraktAdapter } from '$lib/providers/trakt/adapter.server';
 import { defaultSyncPreferences, type SyncPreferences } from '$lib/providers/contracts';
 import { getInstance, instanceTransport } from '$lib/providers/instances.server';
 import { connectionFor, saveConnection } from '$lib/providers/connections.server';
+import { PermanentActionError } from '$lib/server/queue';
+
+const savedTokenSchema=v.object({access_token:v.string(),refresh_token:v.string(),created_at:v.number(),expires_in:v.number()});
+const tokenNeedsRefresh=(token:v.InferOutput<typeof savedTokenSchema>)=>(token.created_at+token.expires_in)*1000<Date.now()+60000;
 
 /** Upgrade the merged slug identity only after the authenticated account proves it. */
 export async function verifyTraktIdentity(connection:typeof providerConnections.$inferSelect,profile:{id:string;slug?:string}){
@@ -175,7 +179,9 @@ export async function getTrakt(userId: string, connectionId: string) {
   const context = await connectionFor(userId, connectionId, 'trakt'),
     app = await traktApp(context.instance);
   if (!context.connection.credentials) throw new Error('Reconnect Trakt to continue.');
-  const token = await getDb().transaction(async (tx) => {
+  const initial=v.parse(savedTokenSchema,JSON.parse(await decryptCredential(context.connection.credentials)));
+  // Valid tokens do not need a transaction or the rotating-refresh-token lock.
+  const token = !tokenNeedsRefresh(initial)?initial:await getDb().transaction(async (tx) => {
     // Refresh tokens may rotate: concurrent API/worker requests must consume only the latest token.
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`trakt-refresh:${connectionId}`},0))`
@@ -192,15 +198,10 @@ export async function getTrakt(userId: string, connectionId: string) {
       );
     if (!current?.credentials || current.accountGeneration !== context.connection.accountGeneration) throw new Error('Reconnect Trakt to continue.');
     let saved = v.parse(
-      v.object({
-        access_token: v.string(),
-        refresh_token: v.string(),
-        created_at: v.number(),
-        expires_in: v.number(),
-      }),
+      savedTokenSchema,
       JSON.parse(await decryptCredential(current.credentials))
     );
-    if ((saved.created_at + saved.expires_in) * 1000 < Date.now() + 60000) {
+    if (tokenNeedsRefresh(saved)) {
       saved = await new TraktAdapter(
         instanceTransport(context.instance),
         app.clientId,
@@ -215,13 +216,24 @@ export async function getTrakt(userId: string, connectionId: string) {
         .where(
           and(
             eq(providerConnections.id, connectionId),
+            eq(providerConnections.accountGeneration,context.connection.accountGeneration),
             eq(providerConnections.status, 'connected')
           )
         );
     }
     return saved;
   });
-  const adapter=new TraktAdapter(instanceTransport(context.instance),app.clientId,app.clientSecret,token.access_token);
+  const request=instanceTransport(context.instance);
+  const adapter=new TraktAdapter(async(path,init)=>{
+    const [active]=await getDb().select({id:providerConnections.id}).from(providerConnections)
+      .innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
+      .innerJoin(users,eq(users.id,providerConnections.userId))
+      .where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId),
+        eq(providerConnections.accountGeneration,context.connection.accountGeneration),eq(providerConnections.status,'connected'),
+        eq(providerInstances.enabled,true),eq(users.disabled,false)));
+    if(!active||!(await getConfig()).enableTrakt)throw new PermanentActionError('The connected Trakt account changed or is disabled.');
+    return request(path,init);
+  },app.clientId,app.clientSecret,token.access_token);
   const connection=context.connection.settings.traktIdentityPending
     ? await verifyTraktIdentity(context.connection,await adapter.profile()) : context.connection;
   return {

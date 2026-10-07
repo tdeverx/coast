@@ -100,7 +100,6 @@
       "src/lib/ui/components/Header.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
-      "src/lib/ui/components/JobsSettings.svelte",
       "src/lib/ui/components/MediaActions.svelte",
       "src/lib/ui/components/MediaActivity.svelte",
       "src/lib/ui/components/MediaCard.svelte",
@@ -244,6 +243,7 @@
       "src/lib/ui/components/MetadataEditor.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/PresentationActions.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/RecommendAction.svelte",
@@ -268,6 +268,7 @@
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/media/Details.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
+      "src/lib/ui/components/JobsSettings.svelte",
       "src/lib/ui/components/MediaPage.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/QueueList.svelte",
@@ -374,7 +375,6 @@
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
-      "src/lib/ui/components/JobSchedule.svelte",
       "src/lib/ui/components/JobsSettings.svelte",
       "src/lib/ui/components/MediaPage.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
@@ -455,8 +455,6 @@
     "elements": [
       "Button",
       "Dialog",
-      "Heading",
-      "QueueList",
       "RowFeedback",
       "RowFilter"
     ],
@@ -468,12 +466,10 @@
   "JobsSettings": {
     "path": "src/lib/ui/components/JobsSettings.svelte",
     "elements": [
-      "Button",
+      "EmptyState",
       "Heading",
       "JobSchedule",
-      "QueueList",
-      "RowFilter",
-      "SegmentedControl"
+      "RowFilter"
     ],
     "usedBy": [
       "src/routes/settings/[[section]]/+page.svelte"
@@ -712,6 +708,7 @@
     "path": "src/lib/ui/components/PresentationActions.svelte",
     "elements": [
       "Button",
+      "Dialog",
       "RowFeedback",
       "WorkActions"
     ],
@@ -800,8 +797,6 @@
       "RowFeedback"
     ],
     "usedBy": [
-      "src/lib/ui/components/JobSchedule.svelte",
-      "src/lib/ui/components/JobsSettings.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
     "dynamicComposition": false
@@ -931,7 +926,6 @@
     "usedBy": [
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/Heading.svelte",
-      "src/lib/ui/components/JobsSettings.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/Shelf.svelte",

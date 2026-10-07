@@ -57,7 +57,7 @@
   .seek-area { position: relative; flex: 1; min-width: 0; height: 44px; border-radius: 6px; }
   .track-info { position: absolute; inset: 0 0 8px; display: flex; align-items: center; pointer-events: none; transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease); }
   .artwork { position: relative; transition: transform var(--fast) var(--ease); width: 28px; height: 42px; flex: none; display: grid; place-items: center; overflow: hidden; border-radius: 4px; background: var(--surface); }
-  a.artwork:is(:hover, :focus-visible) { transform: scale(1.08); }
+  a.artwork:is(:hover, :focus-visible) { transform: scale(var(--hover-grow-strong)); }
   .artwork img { width: 100%; height: 100%; object-fit: cover; }
   .track-copy { display: grid; min-width: 0; font-size: var(--text-sm); line-height: var(--leading-normal); }
   .track-copy strong, .track-copy span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

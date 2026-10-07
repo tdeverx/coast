@@ -1,12 +1,12 @@
 import { beforeAll, afterAll, describe, test, expect } from 'bun:test';
-import { eq } from 'drizzle-orm';
+import { eq, sql as sq } from 'drizzle-orm';
 import { closeDb, getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import { getConfig } from '../src/lib/server/config';
 import { configureInstance } from '../src/lib/providers/instances.server';
 import { saveConnection } from '../src/lib/providers/connections.server';
 import { disconnectProvider } from '../src/lib/application/provider-sources.server';
-import { syncSteam, syncSteamAchievements } from '../src/lib/providers/steam/sync.server';
+import { syncSteam, syncSteamAchievements, syncSteamMetadata } from '../src/lib/providers/steam/sync.server';
 import { startSteam, finishSteam, updateSteamImports } from '../src/lib/providers/steam/connection.server';
 import { listGames, gameDetails, importIgdbMetadata, createPlaythrough } from '../src/lib/core/games/service';
 import { track } from '../src/lib/core/tracking/service';
@@ -14,6 +14,7 @@ import { workAssessments, collectionData } from '../src/lib/collection/query.ser
 import { scheduleProviderMaintenance, updateProviderSchedule, runProviderJob } from '../src/lib/providers/maintenance.server';
 import { enqueueAction, type OutboxAction } from '../src/lib/server/queue';
 import { mapIgdbGame } from '../src/lib/providers/igdb/adapter.server';
+import { jobExecution, JobYield } from '../src/lib/server/queue/execution';
 const suite=process.env.TEST_DATABASE_URL?describe:describe.skip;
 suite('Steam account imports and ownership availability',()=>{
   const fetchBefore=globalThis.fetch, databaseBefore=process.env.DATABASE_URL;
@@ -22,6 +23,7 @@ suite('Steam account imports and ownership availability',()=>{
   let instanceId:string,connectionId:string,gameId:string;
   let ownership:unknown={response:{game_count:1,games:[{appid:10,name:'Steam fixture',playtime_forever:125,playtime_2weeks:20,rtime_last_played:1700000000,has_community_visible_stats:true}]}};
   let privateStats=false,failOwned=false,remoteId=steamId;
+  let ownedReads=0,igdbReads=0,failIgdb=false;
   let deniedAppId:string|null=null,privacyDenial=true;
   let remoteMinutes=125;
   const achievementAppIds:string[]=[];
@@ -38,11 +40,11 @@ suite('Steam account imports and ownership availability',()=>{
       const url=new URL(input instanceof Request?input.url:String(input)),headers=new Headers(init?.headers);
       expect(init?.redirect).toBe('manual');expect(url.searchParams.has('key')).toBe(false);
       if(headers.get('host')==='id.twitch.tv')return Response.json({access_token:'fixture-token',expires_in:3600,token_type:'bearer'});
-      if(headers.get('host')==='api.igdb.com')return Response.json([{id:556,name:'Late enrichment fixture',external_games:[{uid:'777',url:'https://store.steampowered.com/app/777/'}]}]);
+      if(headers.get('host')==='api.igdb.com'){igdbReads++;if(failIgdb)return Response.json({error:'offline'},{status:503});return Response.json([{id:556,name:'Late enrichment fixture',external_games:[{uid:'777',url:'https://store.steampowered.com/app/777/'}]}]);}
       if(headers.get('host')==='steamcommunity.com')return new Response('ns:http://specs.openid.net/auth/2.0\nis_valid:true\n');
       expect(headers.get('host')).toBe('api.steampowered.com');expect(headers.get('x-webapi-key')).toBe(key);
       if(url.pathname.includes('GetPlayerSummaries'))return Response.json({response:{players:[{steamid:remoteId,personaname:'Fixture Steam user'}]}});
-      if(url.pathname.includes('GetOwnedGames'))return Response.json(failOwned?{error:'offline'}:ownership,{status:failOwned?503:200});
+      if(url.pathname.includes('GetOwnedGames')){ownedReads++;return Response.json(failOwned?{error:'offline'}:ownership,{status:failOwned?503:200});}
       if(url.pathname.includes('GetSchemaForGame')||url.pathname.includes('GetPlayerAchievements')){
         const appId=url.searchParams.get('appid')!;achievementAppIds.push(appId);
         if(appId==='11')return Response.json({error:'Unowned regional version'},{status:403});
@@ -140,6 +142,34 @@ suite('Steam account imports and ownership availability',()=>{
       await updateSteamImports(owner,connectionId,{importOwned:true,importPlaytime:false,importAchievements:false});
     }
   });
+  test('achievement chunks resume their original AppIDs and retain successful outcomes',async()=>{
+    const previousOwnership=ownership;
+    const action={...await job('steam.achievements'),attempts:1};
+    try{
+      await updateSteamImports(owner,connectionId,{importOwned:true,importPlaytime:false,importAchievements:true});
+      ownership={response:{game_count:2,games:[{appid:10,name:'Steam fixture',playtime_forever:125,has_community_visible_stats:true},{appid:30,name:'Chunk achievements fixture',playtime_forever:0,has_community_visible_stats:true}]}};
+      await syncSteam(await job());
+      await getDb().insert(s.outboxActions).values({...action,state:'running'});
+      const callsBefore=achievementAppIds.length;
+      await expect(jobExecution.run({id:action.id,attempts:1,purpose:'scheduled',started:performance.now(),checkpoints:4},()=>syncSteamAchievements(action))).rejects.toBeInstanceOf(JobYield);
+      const [paused]=await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.id,action.id));
+      expect(paused.payload._checkpoint).toMatchObject({task:'steam-achievements',next:1,checked:1,deferred:0});
+      const firstCalls=achievementAppIds.slice(callsBefore);
+      const firstAppId=firstCalls[0];
+      expect(firstCalls).toContain(firstAppId);
+      const resumeCalls=achievementAppIds.length;
+      const result=await jobExecution.run({id:action.id,attempts:1,purpose:'scheduled',started:performance.now(),checkpoints:0},()=>syncSteamAchievements(action));
+      expect(result).toEqual({checked:2,refreshed:2,deferred:0});
+      expect(achievementAppIds.slice(resumeCalls)).not.toContain(firstAppId);
+      expect((await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.id,action.id)))[0].attempts).toBe(1);
+    }finally{
+      ownership=previousOwnership;
+      await getDb().delete(s.outboxActions).where(eq(s.outboxActions.id,action.id));
+      const [extra]=await getDb().select().from(s.gameExternalIds).where(eq(s.gameExternalIds.externalId,'30'));
+      if(extra)await getDb().delete(s.games).where(eq(s.games.id,extra.gameId));
+      await updateSteamImports(owner,connectionId,{importOwned:true,importPlaytime:false,importAchievements:false});
+    }
+  });
   test('scheduling respects pause, manual runs, one queued task and disabled achievement imports',async()=>{
     await getDb().delete(s.outboxActions);
     await updateProviderSchedule(owner,instanceId,{enabled:false});
@@ -178,8 +208,52 @@ suite('Steam account imports and ownership availability',()=>{
     const [minimal]=await getDb().select().from(s.gameExternalIds).where(eq(s.gameExternalIds.externalId,'777'));
     await configureInstance(owner,{provider:'igdb',name:'Fixture IGDB',clientId:'fixture-client',clientSecret:'fixture-secret'});
     await syncSteam(await job());
+    expect((await gameDetails(owner,minimal.gameId)).title).toBe('Minimal Steam fixture');
+    const [metadataJob]=await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.kind,'igdb.steam-metadata'));
+    await syncSteamMetadata({id:metadataJob.id,userId:owner,connectionId:null,kind:metadataJob.kind,payload:metadataJob.payload,attempts:0,correlationId:crypto.randomUUID()});
     expect((await gameDetails(owner,minimal.gameId)).title).toBe('Late enrichment fixture');
     expect((await getDb().select().from(s.gameExternalIds).where(eq(s.gameExternalIds.externalId,'556')))[0].gameId).toBe(minimal.gameId);
+  });
+
+  test('a cancelled worker cannot apply an empty census or publish ownership removals',async()=>{
+    const action={...await job(),attempts:1},original=ownership;
+    const before=await getDb().select().from(s.availability).where(eq(s.availability.connectionId,connectionId));
+    const reads=ownedReads;
+    try{
+      ownership={response:{game_count:0}};
+      await getDb().insert(s.outboxActions).values({...action,state:'cancelled'});
+      await expect(jobExecution.run({id:action.id,attempts:1,purpose:'bootstrap',started:performance.now(),checkpoints:0},()=>syncSteam(action))).rejects.toBeInstanceOf(JobYield);
+      expect(ownedReads).toBe(reads);
+      expect(await getDb().select().from(s.availability).where(eq(s.availability.connectionId,connectionId))).toEqual(before);
+    }finally{ownership=original;await getDb().delete(s.outboxActions).where(eq(s.outboxActions.id,action.id));}
+  });
+
+  test('ownership resumes the retained census, publishes absence only at completion and ignores optional IGDB outages',async()=>{
+    const original=ownership, action={...await job(),attempts:1};
+    const beforeOwned=ownedReads,beforeIgdb=igdbReads;
+    const originalAvailable=(await getDb().select().from(s.availability).where(eq(s.availability.connectionId,connectionId))).filter(row=>row.state==='available');
+    ownership={response:{game_count:111,games:Array.from({length:111},(_,index)=>({appid:8000+index,name:`Chunk game ${index}`,playtime_forever:0}))}};
+    failIgdb=true;
+    try{
+      await getDb().insert(s.outboxActions).values({...action,state:'running'});
+      await expect(jobExecution.run({id:action.id,attempts:1,purpose:'bootstrap',started:performance.now(),checkpoints:4},()=>syncSteam(action))).rejects.toBeInstanceOf(JobYield);
+      const [snapshot]=await getDb().select().from(s.providerJobSnapshots).where(eq(s.providerJobSnapshots.actionId,action.id));
+      expect(snapshot.data.next).toBe(100);
+      const during=await getDb().select().from(s.availability).where(eq(s.availability.connectionId,connectionId));
+      expect(originalAvailable.every(old=>during.some(row=>row.id===old.id&&row.state==='available'))).toBe(true);
+      // A changing upstream result must not silently replace the retained census.
+      ownership={response:{game_count:0}};
+      const outcome=await jobExecution.run({id:action.id,attempts:1,purpose:'bootstrap',started:performance.now(),checkpoints:0},()=>syncSteam(action));
+      expect(outcome.checked).toBe(111);expect(ownedReads-beforeOwned).toBe(1);expect(igdbReads).toBe(beforeIgdb);
+      const complete=await getDb().select().from(s.availability).where(eq(s.availability.connectionId,connectionId));
+      expect(complete.filter(row=>row.state==='available')).toHaveLength(111);
+      await getDb().update(s.outboxActions).set({state:'succeeded'}).where(eq(s.outboxActions.id,action.id));
+      expect(await getDb().select().from(s.providerJobSnapshots).where(eq(s.providerJobSnapshots.actionId,action.id))).toHaveLength(0);
+    }finally{
+      ownership=original;failIgdb=false;
+      await getDb().delete(s.outboxActions).where(eq(s.outboxActions.id,action.id));
+      await getDb().execute(sq`delete from games where id in(select game_id from game_external_ids where provider='steam' and external_id::integer between 8000 and 8110)`);
+    }
   });
 
 });

@@ -1,7 +1,10 @@
+import {companionPageSchema} from './companion';
 import { artworkKeys, artworkTypes } from '$lib/artwork';
 import {activeSessionsSchema,streamPresentation} from './streams';
 import * as v from 'valibot';
-import { browseMusic, musicItem, type MusicBrowseOptions } from './music.server';
+import { browseMusic, musicItem, musicItems, type MusicBrowseOptions, type MusicScanOptions } from './music.server';
+import { jellyfinItemKey, validateJellyfinItems, validateJellyfinPage } from './paging';
+import { ProviderHttpError } from '$lib/server/security/provider-fetch';
 import { ProviderActionError } from '../contracts';
 import type {
   AvailableItem,
@@ -66,6 +69,10 @@ const itemSchema = v.object({
   ProviderIds: v.optional(v.record(v.string(), v.string()), {}),
   Genres: v.optional(v.array(v.string()), []),
   OfficialRating: str,
+  CustomRating: str,
+  SourceType: str,
+  LocationType: str,
+  Tags: v.optional(v.array(v.string())),
   MediaSources: v.optional(v.array(sourceSchema), []),
   ImageTags: v.optional(v.record(v.string(), v.string()), {}),
   BackdropImageTags: v.optional(v.array(v.string()), []),
@@ -126,6 +133,7 @@ function mapLibraryItem(i: v.InferOutput<typeof itemSchema>): AvailableItem {
   return {
     id: i.Id,
     kind,
+    access: {sourceType:i.SourceType, locationType:i.LocationType, tags:i.Tags, officialRating:i.OfficialRating, customRating:i.CustomRating},
     expectedMembers: (kind === 'show' || kind === 'season') ? i.RecursiveItemCount ?? undefined : undefined,
     parentId: i.ParentId || undefined,
     showId: i.SeriesId || undefined,
@@ -195,6 +203,10 @@ export class JellyfinAdapter {
       },
     });
   }
+  async companionChanges(epoch?:string,cursor=0){
+    const query=new URLSearchParams({cursor:String(cursor)});if(epoch)query.set('epoch',epoch);
+    return v.parse(companionPageSchema,await this.call(`/Coast/Changes?${query}`));
+  }
   async createUser(name:string,password:string){return v.parse(v.object({Id:v.string()}),await this.call('/Users/New',{method:'POST',body:JSON.stringify({Name:name,Password:password})}));}
   async userForProvisioning(id:string){const user=v.parse(v.object({Id:v.string(),Name:v.string(),Policy:v.record(v.string(),v.unknown())}),await this.call(`/Users/${encodeURIComponent(id)}`));if(user.Id!==id)throw new ProviderActionError('Jellyfin returned an unexpected user.','identity');return user;}
   async setProvisionPolicy(id:string,policy:Record<string,unknown>){await this.call(`/Users/${encodeURIComponent(id)}/Policy`,{method:'POST',body:JSON.stringify(policy)});}
@@ -245,12 +257,14 @@ export class JellyfinAdapter {
       serverId: auth.ServerId,
     };
   }
-  async library(userId: string, offset = 0, since?: string, scope: 'library' | 'user' = 'library'): Promise<LibraryPage> {
+  async library(userId: string, offset = 0, since?: string, scope: 'library' | 'user' = 'library', filter?: 'IsPlayed' | 'IsResumable' | 'IsFavorite', parentId?: string): Promise<LibraryPage> {
     const query = new URLSearchParams({
       userId,
       recursive: 'true',
       includeItemTypes: 'Movie,Series,Season,Episode',
-      fields: scope === 'user' ? 'MediaSources,MediaStreams,RecursiveItemCount' : 'ProviderIds,MediaSources,MediaStreams,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount',
+      // Source identities/editions are needed for per-user access. Individual
+      // streams are obtained from playback info when playback is requested.
+      fields: scope === 'user' ? 'MediaSources,RecursiveItemCount,Tags,CustomRating,ParentId' : 'ProviderIds,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount,Tags,CustomRating,ParentId',
       enableImages: String(scope === 'library'),
       enableUserData: String(scope === 'user'),
       enableImageTypes: artworkKeys.map((type) => artworkTypes[type].jellyfin).join(','),
@@ -259,7 +273,9 @@ export class JellyfinAdapter {
       sortBy: 'SortName',
       sortOrder: 'Ascending',
       enableTotalRecordCount: 'true',
-      ...(since ? { minDateLastSaved: since } : {}),
+      ...(scope==='library'&&since ? { minDateLastSaved:v.parse(v.pipe(v.string(),v.isoTimestamp()),since) } : {}),
+      ...(filter ? {filters: filter} : {}),
+      ...(parentId ? {parentId} : {}),
     });
     const page = v.parse(
       v.object({
@@ -270,14 +286,26 @@ export class JellyfinAdapter {
       await this.call(`/Items?${query}`)
     );
     const items: AvailableItem[] = page.Items.map(mapLibraryItem);
+    validateJellyfinPage(page, offset, 100, 'library');
     const next = offset + page.Items.length;
-    if (!page.Items.length && next < page.TotalRecordCount)
-      throw new Error('Jellyfin returned an incomplete library page.');
     return {
       items,
       total: page.TotalRecordCount,
       nextOffset: next < page.TotalRecordCount ? next : null,
     };
+  }
+  /** Token-owned policy: a caller-supplied ID never determines which account is proved. */
+  async accessIdentity(userId: string) {
+    const user=v.parse(v.object({Id:v.string(),ServerId:v.string(),Policy:v.record(v.string(),v.unknown())}),await this.call('/Users/Me'));
+    if(jellyfinItemKey(user.Id)!==jellyfinItemKey(userId))throw new ProviderActionError('Jellyfin returned an unexpected user identity.','identity');
+    return user;
+  }
+  /** Real visible CollectionFolder IDs, before optional custom view grouping. */
+  async screenLibraries(userId: string) {
+    const folders=v.parse(v.array(v.object({Id:v.string(),Name:v.optional(v.string())})),await this.call(`/UserViews/GroupingOptions?userId=${encodeURIComponent(userId)}`));
+    const ids=folders.map(folder=>jellyfinItemKey(folder.Id));
+    if(ids.some(id=>!/^[a-f0-9]{32}$/.test(id))||new Set(ids).size!==ids.length)throw new Error('Jellyfin returned invalid library identities.');
+    return ids.sort();
   }
   async userPolicy(userId: string) {
     const user = v.parse(
@@ -293,15 +321,46 @@ export class JellyfinAdapter {
     return { administrator: user.Policy.IsAdministrator, disabled: user.Policy.IsDisabled };
   }
   async item(userId: string, id: string) {
-    return mapLibraryItem(
-      v.parse(
+    const item = v.parse(
         itemSchema,
         await this.call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(id)}`)
-      )
-    );
+      );
+    validateJellyfinItems([item], [id]);
+    return mapLibraryItem({...item, Id:id});
   }
-  async musicLibrary(userId: string, options: MusicBrowseOptions = {}) {
-    return browseMusic((path, init) => this.call(path, init), userId, options);
+  /** Missing individual items do not imply a missing Items endpoint or account. */
+  async itemIfAvailable(userId: string, id: string) {
+    try { return await this.item(userId, id); }
+    catch (error) {
+      if (error instanceof ProviderHttpError && [404, 410].includes(error.status)) return null;
+      throw error;
+    }
+  }
+  /** Hydrate only missing shared mappings under this account's access policy. */
+  async items(userId: string, ids: string[]): Promise<AvailableItem[]> {
+    const requested = [...new Map(ids.map(id => [jellyfinItemKey(id), id])).values()];
+    const result: AvailableItem[] = [];
+    for (let offset = 0; offset < requested.length; offset += 100) {
+      const batch = requested.slice(offset, offset + 100);
+      const query = new URLSearchParams({userId, ids: batch.join(','), recursive: 'true',
+        includeItemTypes: 'Movie,Series,Season,Episode',
+        fields: 'ProviderIds,MediaSources,Overview,Genres,OriginalTitle,Chapters,RecursiveItemCount',
+        enableImages: 'true', enableUserData: 'true', enableTotalRecordCount: 'true',
+        startIndex: '0', limit: String(batch.length)});
+      const page = v.parse(v.object({Items: v.array(itemSchema), TotalRecordCount: v.number(), StartIndex: v.optional(v.number())}), await this.call(`/Items?${query}`));
+      validateJellyfinPage(page, 0, batch.length, 'library');
+      validateJellyfinItems(page.Items, batch);
+      if (page.TotalRecordCount !== page.Items.length) throw new Error('Jellyfin returned an incomplete item lookup.');
+      const identities = new Map(batch.map(id => [jellyfinItemKey(id), id]));
+      result.push(...page.Items.map(item => mapLibraryItem({...item, Id: identities.get(jellyfinItemKey(item.Id))!})));
+    }
+    return result;
+  }
+  async musicLibrary(userId: string, options: MusicBrowseOptions = {}, scan?: MusicScanOptions) {
+    return browseMusic((path, init) => this.call(path, init), userId, options, scan);
+  }
+  async musicItems(userId: string, ids: string[]) {
+    return musicItems((path, init) => this.call(path, init), userId, ids);
   }
   async musicItem(userId: string, id: string) {
     return musicItem((path, init) => this.call(path, init), userId, id);

@@ -52,6 +52,8 @@
   --leading-relaxed: 1.6;
   --tracking-tight: -0.025em;
   --tracking-wide: 0.08em;
+  --hover-grow: 1.02;
+  --hover-grow-strong: 1.08;
   --fast: 160ms;
   --motion: 240ms;
   --cinematic: 1100ms;
@@ -254,6 +256,28 @@ form.stack,
   box-shadow: var(--coast-glass-shadow);
   -webkit-backdrop-filter: var(--coast-glass-filter);
   backdrop-filter: var(--coast-glass-filter);
+}
+/* One transform owns the material, decoration and foreground together.
+   Retain the original Play transform path; do not animate independent scale. */
+.glass.glass {
+  transform-origin: 50% 50%;
+  transform: var(--coast-material-position, translate(0, 0)) scale(1);
+  transition: background var(--fast), color var(--fast), opacity var(--fast),
+    transform var(--fast) var(--ease);
+}
+.glass:focus-visible:not(:disabled):not([aria-disabled='true']) {
+  transform: var(--coast-material-position, translate(0, 0)) scale(var(--coast-material-hover-grow, var(--hover-grow)));
+}
+@media (hover: hover) {
+  .glass:hover:not(:disabled):not([aria-disabled='true']) {
+    transform: var(--coast-material-position, translate(0, 0)) scale(var(--coast-material-hover-grow, var(--hover-grow)));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass.glass {
+    transition: none !important;
+    transform: var(--coast-material-position, translate(0, 0)) !important;
+  }
 }
 /* Below surface content, above its backdrop; never changes layout or hit targets. */
 .coast-glass-grain {

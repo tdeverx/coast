@@ -777,6 +777,7 @@
     position: absolute;
     bottom: max(16px, env(safe-area-inset-bottom));
     left: 50%;
+    --coast-material-position: translateX(-50%);
     transform: translateX(-50%);
     display: flex;
     align-items: center;
@@ -818,7 +819,7 @@
   .controls :global(.icon-button:is(:hover, :focus-visible)) {
     background: transparent;
     color: var(--ink);
-    transform: scale(1.08);
+    transform: scale(var(--hover-grow-strong));
   }
   .control-divider {
     height: 20px;

@@ -22,7 +22,9 @@ try {
       await admin.unsafe(`CREATE DATABASE ${name}`);
       created = true;
       const migration = await Bun.spawn([process.execPath, 'scripts/migrate.ts'], { env, stdout: 'inherit', stderr: 'inherit' }).exited;
-      const result = migration || await Bun.spawn([process.execPath, 'test', `tests/${file}`], { env, stdout: 'inherit', stderr: 'inherit' }).exited;
+      // Bulk import fixtures and their FK cleanup exceed Bun's 5s default on CI.
+      // Bound database correctness checks separately from unit/performance tests.
+      const result = migration || await Bun.spawn([process.execPath, 'test', '--timeout', '30000', `tests/${file}`], { env, stdout: 'inherit', stderr: 'inherit' }).exited;
       if (result) failures++;
     } finally {
       try { if (created) await admin.unsafe(`DROP DATABASE ${name} WITH (FORCE)`); }

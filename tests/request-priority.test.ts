@@ -1,5 +1,5 @@
 import {test,expect} from 'bun:test';
-import {queueProviderRequest,requestPriority} from '../src/lib/server/security/request-priority';
+import {queueProviderRequest,requestPriority,providerJob,registerJobRequestPriority,updateJobRequestPriority,releaseJobRequestPriority} from '../src/lib/server/security/request-priority';
 test('requests serialize and urgent work slots between background requests',async()=>{
  const origin=crypto.randomUUID(),order:string[]=[];
  let release!:()=>void,entered!:()=>void;
@@ -20,4 +20,18 @@ test('queued calls retain their own task context',async()=>{
  const origin=crypto.randomUUID();let release!:()=>void;
  const first=requestPriority.run(3,()=>queueProviderRequest(origin,0,()=>new Promise<void>(r=>release=r)));
  const next=requestPriority.run(0,()=>queueProviderRequest(origin,0,async()=>requestPriority.getStore()));release();await first;expect(await next).toBe(0);
+});
+
+test('promoting an active job reorders its already queued HTTP request',async()=>{
+ const origin=crypto.randomUUID(),id=crypto.randomUUID(),order:string[]=[];
+ let release!:()=>void;
+ const active=queueProviderRequest(origin,0,()=>new Promise<void>(resolve=>release=resolve));
+ registerJobRequestPriority(id,3);
+ try{
+  const promoted=providerJob.run(id,()=>requestPriority.run(3,()=>queueProviderRequest(origin,0,async()=>{order.push('promoted');})));
+  const live=requestPriority.run(2,()=>queueProviderRequest(origin,0,async()=>{order.push('live');}));
+  updateJobRequestPriority(id,1);
+  release();await Promise.all([active,promoted,live]);
+  expect(order).toEqual(['promoted','live']);
+ }finally{releaseJobRequestPriority(id);}
 });

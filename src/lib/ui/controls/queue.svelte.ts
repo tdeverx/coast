@@ -8,12 +8,12 @@ export function createQueueActions() {
   return {
     get error() { return error; },
     busy(id: string) { return pending.includes(id); },
-    async run(id: string, action: 'retry' | 'cancel') {
+    async run(id: string, action: 'retry' | 'cancel' | 'promote') {
       if (pending.includes(id)) return false;
       pending = [...pending, id]; error = '';
       try {
         await change(`queue/${id}/${action}`, {});
-        notifyAction(action === 'retry' ? 'Job queued for retry.' : 'Job cancelled.');
+        notifyAction(action === 'retry' ? 'Job queued for retry.' : action === 'promote' ? 'Job prioritized. Service cooldowns still apply.' : 'Job cancelled.');
         return true;
       } catch (cause) { error = message(cause); return false; }
       finally { pending = pending.filter(value => value !== id); }

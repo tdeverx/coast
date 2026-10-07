@@ -10,7 +10,7 @@ import { requireAdmin, listUsers } from '$lib/server/auth';
 import { listProviders } from '$lib/providers/instances.server';
 import { getConfig } from '$lib/server/config';
 import { systemHealth, listDiagnostics } from '$lib/server/notifications';
-import { listActions } from '$lib/server/queue';
+import { listActions, listTaskActions } from '$lib/server/queue';
 import { getSql, getDb } from '$lib/server/db';
 import {
   mediaRequests,
@@ -87,7 +87,7 @@ export const load = (async ({locals, params, depends, url}) => {
     users: section === 'users' ? await listUsers(locals.user) : [],
     tasteJob:section==='jobs'?await (await import('$lib/social/taste-cache.server')).tasteJob():null,
     jobTiming: section === 'jobs' ? await jobTimings() : [],
-    actions: ['admin', 'jobs'].includes(section) ? await listActions(locals.user) : [],
+    actions: section === 'jobs' ? await listTaskActions(locals.user) : section === 'admin' ? await listActions(locals.user) : [],
     loggingAudit:
       section === 'activity'
         ? await getSql()`SELECT previous_level AS previous, next_level AS next, created_at AS "createdAt" FROM diagnostic_setting_audit ORDER BY created_at DESC LIMIT 30`

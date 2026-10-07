@@ -1,4 +1,4 @@
-import { persistMusic, observeMusicAccess, recordMusicListen, importedListenBatch } from '$lib/music/persistence.server';
+import { persistMusic, observeMusicPageAccess, recordMusicListen, importedListenBatch } from '$lib/music/persistence.server';
 import { enqueueInTransaction } from '$lib/sync/changes';
 import {
   reconcileProviderValue,
@@ -6,11 +6,13 @@ import {
   localSyncValue,
   sameValue,
 } from '$lib/sync/values';
-import { importJellyfinPlayback } from '$lib/sync/jellyfin-playback';
+import { importJellyfinPlayback, seedEmptyJellyfinPlayback, unchangedJellyfinPlayback, type JellyfinPlaybackObservation } from '$lib/sync/jellyfin-playback';
+import { jellyfinScanProgressSchema, type JellyfinScanProgress } from './jellyfin-progress';
+import { jobCheckpoint, assertJobLease } from '$lib/server/queue/execution';
 import { artworkKeys } from '$lib/artwork';
 import * as v from 'valibot';
-import { and, eq, isNull, ne, or, sql, desc, inArray } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { and, eq, isNull, ne, or, sql, desc, inArray, lte } from 'drizzle-orm';
+import { getDb, type Database } from '$lib/server/db';
 import {
   availability,
   providerItems,
@@ -30,6 +32,7 @@ import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { getConfig } from '$lib/server/config';
 import { ingestMetadata } from '$lib/catalogue/service';
 import type { AvailableItem } from '$lib/providers/contracts';
+import {captureScreenAccessProof,observeScreenLibraryPage,publishScreenLibraryCensus,sameScreenAccessProof,tryReuseScreenAccess,type ScreenAccessProof} from '$lib/providers/jellyfin/access-proof.server';
 
 export type JellyfinSyncContext=Awaited<ReturnType<typeof getJellyfin>>;
 async function jellyfinContext(userId:string,connectionId:string,provided?:JellyfinSyncContext){
@@ -42,7 +45,7 @@ async function jellyfinContext(userId:string,connectionId:string,provided?:Jelly
   return {...current,adapter:provided.adapter};
 }
 
-export async function libraryScanProgress(userId: string, connectionId: string, since?:Date) {
+export async function libraryScanProgress(userId: string, connectionId: string, since?:Date, personal = false) {
   const { connection } = await getJellyfin(userId, connectionId);
   const [job] = await getDb()
     .select()
@@ -51,22 +54,14 @@ export async function libraryScanProgress(userId: string, connectionId: string, 
       and(
         eq(outboxActions.userId, userId),
         eq(outboxActions.connectionId, connectionId),
-        eq(outboxActions.kind, 'jellyfin.sync'),
+        eq(outboxActions.kind, personal ? 'jellyfin.bootstrap' : 'jellyfin.sync'),
         since ? sql`${outboxActions.createdAt} >= ${since}` : undefined
       )
     )
     .orderBy(desc(outboxActions.createdAt))
     .limit(1);
   if (!job) return null;
-  const parsed = v.safeParse(
-    v.object({
-      processed: v.number(),
-      total: v.nullable(v.number()),
-      startedAt: v.string(),
-      phase: v.picklist(['scanning', 'reconciling', 'complete']),
-    }),
-    connection.settings.userSync
-  );
+  const parsed = v.safeParse(jellyfinScanProgressSchema, personal ? connection.settings.initialSync : connection.settings.userSync);
   const current =
     parsed.success && new Date(parsed.output.startedAt) >= job.createdAt ? parsed.output : null;
   const [checkpoint] = current
@@ -77,7 +72,7 @@ export async function libraryScanProgress(userId: string, connectionId: string, 
         .where(
           and(
             eq(syncCheckpoints.connectionId, connectionId),
-            eq(syncCheckpoints.kind, 'jellyfin-user')
+            eq(syncCheckpoints.kind, personal ? 'jellyfin-personal' : 'jellyfin-user')
           )
         )
         .limit(1);
@@ -88,6 +83,8 @@ export async function libraryScanProgress(userId: string, connectionId: string, 
     processed: current?.processed ?? (Number.isSafeInteger(checkpointCount) ? checkpointCount : 0),
     total: current?.total ?? null,
     phase: current?.phase ?? 'scanning',
+    stageProcessed: current?.stageProcessed ?? current?.processed ?? 0,
+    stageTotal: current?.stageTotal === undefined ? current?.total ?? null : current.stageTotal,
     error: job.lastError,
     authenticationFailed: (job.payload._jobFailure as {code?:string}|undefined)?.code==='provider.authentication',
     attempts: job.attempts,
@@ -99,9 +96,10 @@ export async function scanJellyfinLibrary(
   userId: string,
   connectionId: string,
   full = true,
-  onStage?: (stage: string) => void
+  onStage?: (stage: string) => void,
+  provided?: JellyfinSyncContext
 ) {
-  return runJellyfinScan(userId, connectionId, 'library', full, onStage);
+  return runJellyfinScan(userId, connectionId, 'library', full, onStage,provided);
 }
 
 export async function syncJellyfinUser(
@@ -113,13 +111,42 @@ export async function syncJellyfinUser(
   return runJellyfinScan(userId, connectionId, 'user', true, onStage,provided);
 }
 
+/** Import only personal state before onboarding opens. Full availability follows at background priority. */
+export async function bootstrapJellyfinUser(userId: string, connectionId: string,
+  onStage?: (stage: string) => void, provided?: JellyfinSyncContext) {
+  const [ready] = await getDb().execute(sql`select c.connection_id from sync_checkpoints c
+    join provider_connections p on p.id=c.connection_id
+    join users u on u.id=p.user_id and not u.disabled
+    join provider_instances i on i.id=p.instance_id and i.enabled
+    left join user_onboarding o on o.user_id=p.user_id and o.completed_at is null
+    where p.id=${connectionId} and p.user_id=${userId} and p.status='connected'
+      ${provided ? sql`and p.account_generation=${provided.connection.accountGeneration}::uuid` : sql``}
+      and p.settings->'initialSync'->>'accountGeneration'=p.account_generation::text
+      and c.kind='jellyfin-personal' and c.scan_id is null and c.completed_at is not null
+      and (o.requested_at is null or c.completed_at>=o.requested_at)`);
+  if (ready) return {checked: 0, count: 0, full: false};
+  const context=await jellyfinContext(userId,connectionId,provided);
+  onStage?.('cached-library-access');
+  await tryReuseScreenAccess(context);
+  return runJellyfinScan(userId, connectionId, 'personal', true, onStage, context);
+}
+
+/** Incremental hints are re-read with this account's native permissions. They never
+ * advance a full census cursor or establish whole-library coverage. */
+export async function syncJellyfinChanges(userId:string,connectionId:string,scope:'library'|'user',
+  ids:{video:string[];music:string[]},provided?:JellyfinSyncContext){
+  if(ids.video.length+ids.music.length>200)throw new Error('Too many incremental Jellyfin items.');
+  return runJellyfinScan(userId,connectionId,scope,true,undefined,provided,ids);
+}
+
 async function runJellyfinScan(
   userId: string,
   connectionId: string,
-  scope: 'library' | 'user',
+  scope: 'library' | 'user' | 'personal',
   full = true,
   onStage?: (stage: string) => void,
-  provided?: JellyfinSyncContext
+  provided?: JellyfinSyncContext,
+  changes?: {video:string[];music:string[]}
 ) {
   onStage?.('connection');
   const { adapter, connection, instance } = await jellyfinContext(userId, connectionId,provided);
@@ -127,13 +154,39 @@ async function runJellyfinScan(
   await adapter.identity(instance.serverIdentity || undefined);
   onStage?.('checkpoint-read');
   const db = getDb(),
-    kind = scope === 'user' ? 'jellyfin-user' : full ? 'jellyfin-full' : 'jellyfin-recent';
-  const [checkpoint] = await db
+    kind = scope === 'personal' ? 'jellyfin-personal' : scope === 'user' ? 'jellyfin-user' : full ? 'jellyfin-full' : 'jellyfin-recent';
+  const userScope = scope !== 'library';
+  const progressKey = scope === 'personal' ? 'initialSync' : 'userSync';
+  const filters = ['IsPlayed', 'IsResumable', 'IsFavorite'] as const;
+  const filterPhases = ['watched', 'resume', 'favourites'] as const;
+  let filterIndex = 0;
+  const [checkpoint] = changes ? [] : await db
     .select()
     .from(syncCheckpoints)
     .where(and(eq(syncCheckpoints.connectionId, connectionId), eq(syncCheckpoints.kind, kind)));
-  const scanId = checkpoint?.cursor && checkpoint.scanId ? checkpoint.scanId : crypto.randomUUID();
-  let offset = checkpoint?.cursor ? Number(checkpoint.cursor) : 0;
+  let scanId = checkpoint?.scanId ?? crypto.randomUUID();
+  const accessContext={adapter,connection,instance};
+  let inventoryProof=!changes&&scope!=='personal'&&full?await captureScreenAccessProof(accessContext):null;
+  let libraryIndex=0,libraryCompleted=0,libraryTotal:number|null=null;
+  let offset = 0;
+  if (checkpoint?.scanId && checkpoint.cursor) {
+    if (scope === 'personal') {
+      const cursor = v.parse(v.object({filter: v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(3)), offset: v.pipe(v.number(), v.integer(), v.minValue(0))}), JSON.parse(checkpoint.cursor));
+      filterIndex = cursor.filter; offset = cursor.offset;
+    } else if(checkpoint.cursor.startsWith('{')) {
+      const cursor=v.parse(v.object({libraryIndex:v.pipe(v.number(),v.integer(),v.minValue(0)),offset:v.pipe(v.number(),v.integer(),v.minValue(0)),
+        completed:v.pipe(v.number(),v.integer(),v.minValue(0)),total:v.nullable(v.pipe(v.number(),v.integer(),v.minValue(0))),proof:v.unknown()}),JSON.parse(checkpoint.cursor));
+      if(!inventoryProof||!sameScreenAccessProof(cursor.proof as ScreenAccessProof,inventoryProof)) {
+        await db.update(syncCheckpoints).set({cursor:null,scanId:null,updatedAt:new Date()}).where(and(eq(syncCheckpoints.connectionId,connectionId),eq(syncCheckpoints.kind,kind)));
+        throw new Error('Jellyfin library permissions changed during the census.');
+      }
+      libraryIndex=cursor.libraryIndex;libraryCompleted=cursor.completed;libraryTotal=cursor.total;offset=cursor.offset;
+    } else {
+      offset = Number(checkpoint.cursor);
+      // Finish a pre-existing global traversal; the next full pass establishes per-library provenance.
+      inventoryProof=null;
+    }
+  }
   if (!Number.isSafeInteger(offset) || offset < 0) offset = 0;
   const previousScan = instance.settings.libraryScan as Record<string, unknown> | undefined;
   const completedAt =
@@ -143,13 +196,22 @@ async function runJellyfinScan(
       Date.parse(String(previousScan?.recentCompletedAt ?? '')) || 0
     );
   const since = !full && completedAt ? new Date(completedAt - 60000).toISOString() : undefined;
-  const scanProgress=(scope==='library'?previousScan:connection.settings.userSync) as {scanId?:string;startedAt?:string}|undefined;
+  const parsedProgress = v.safeParse(jellyfinScanProgressSchema, changes ? undefined : scope === 'library' ? previousScan : connection.settings[progressKey]);
+  const scanProgress = parsedProgress.success ? parsedProgress.output : undefined;
   const retainedStart=scanProgress?.startedAt;
   const startedAt = checkpoint?.scanId===scanProgress?.scanId && retainedStart && Number.isFinite(Date.parse(retainedStart)) ? retainedStart : new Date().toISOString();
   // If progress no longer belongs to this checkpoint, restart rather than skip changed pages.
-  if(offset>0 && startedAt!==retainedStart)offset=0;
-  async function report(processed: number, total: number | null, phase = 'scanning') {
-    const progress = { processed, total, phase, startedAt, scanId };
+  if(startedAt!==retainedStart){offset=0;filterIndex=0;libraryIndex=0;libraryCompleted=0;libraryTotal=null;if(checkpoint?.scanId)scanId=crypto.randomUUID();}
+  const resume = checkpoint?.scanId === scanProgress?.scanId && startedAt === retainedStart &&
+    (scope === 'library' || scanProgress?.accountGeneration === connection.accountGeneration) ? scanProgress : undefined;
+  let phase: JellyfinScanProgress['phase'] = resume?.phase ?? (scope === 'personal' ? filterPhases[filterIndex] ?? 'reconciling' : 'scanning');
+  // The durable cursor may commit just before the progress label. A finished
+  // filter union must never resume as an unfiltered whole-library request.
+  if (scope === 'personal' && filterIndex === filters.length && filterPhases.includes(phase as typeof filterPhases[number])) phase = 'reconciling';
+  async function report(processed: number, total: number | null, nextPhase: JellyfinScanProgress['phase'] = 'scanning',
+    details: Pick<JellyfinScanProgress, 'playbackCursor' | 'musicOffset' | 'musicFilter' | 'stageProcessed' | 'stageTotal'> = {}) {
+    phase = nextPhase;
+    const progress = { processed, total, phase, startedAt, scanId, accountGeneration: connection.accountGeneration, ...details };
     if (scope === 'library')
       await db
         .update(providerInstances)
@@ -161,24 +223,39 @@ async function runJellyfinScan(
       await db
         .update(providerConnections)
         .set({
-          settings: sql`jsonb_set(${providerConnections.settings}, '{userSync}', ${progress}::jsonb, true)`,
+          settings: sql`jsonb_set(${providerConnections.settings}, ARRAY[${progressKey}]::text[], ${progress}::jsonb, true)`,
         })
         .where(
-          and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId))
+          and(eq(providerConnections.id, connectionId), eq(providerConnections.userId, userId), eq(providerConnections.accountGeneration, connection.accountGeneration))
         );
   }
   // Mark traversal before its first remote request. An interrupted first page
   // cannot leave earlier negative observations looking like current coverage.
-  await db.insert(syncCheckpoints).values({connectionId,kind,cursor:String(offset),scanId,updatedAt:new Date()})
-    .onConflictDoUpdate({target:[syncCheckpoints.connectionId,syncCheckpoints.kind],set:{cursor:String(offset),scanId,updatedAt:new Date()}});
-  await report(offset, null);
+  const screenCursor=(nextOffset:number)=>inventoryProof?JSON.stringify({libraryIndex,offset:nextOffset,completed:libraryCompleted,total:libraryTotal,proof:inventoryProof}):String(nextOffset);
+  const initialCursor=scope === 'personal' ? JSON.stringify({filter:filterIndex,offset}) : screenCursor(offset);
+  if(!changes)await db.transaction(async tx=>{
+    await ensureConnected(tx,true);
+    await tx.insert(syncCheckpoints).values({connectionId,kind,cursor:initialCursor,scanId,updatedAt:new Date()})
+      .onConflictDoUpdate({target:[syncCheckpoints.connectionId,syncCheckpoints.kind],set:{cursor:initialCursor,scanId,updatedAt:new Date()}});
+  });
+  if (phase === 'complete') phase = scope === 'personal' ? 'watched' : 'scanning';
+  if(!changes)await report(resume?.processed ?? offset, resume?.total ?? null, phase, {
+    playbackCursor: resume?.playbackCursor, musicOffset: resume?.musicOffset, musicFilter: resume?.musicFilter,
+    stageProcessed: resume?.stageProcessed, stageTotal: resume?.stageTotal,
+  });
   const visited = new Map<string, string>();
+  const hydratedItems = new Map<string, AvailableItem>();
+  const missingItems = new Set<string>();
+  const listedItems = new Set<string>();
   const knownItems = new Map<
     string,
     { providerItem: typeof providerItems.$inferSelect; saved: typeof media.$inferSelect }
   >();
-  async function ensureConnected() {
-    const [current] = await db
+  const pendingAvailability = new Map<string, typeof availability.$inferInsert>();
+  const availableTitles = new Map<string, string>();
+  const expectedMembers = new Map<string, number>();
+  async function ensureConnected(store: Pick<Database, 'select'> = db, lock = false) {
+    const query = store
       .select({ settings: providerConnections.settings })
       .from(providerConnections)
       .innerJoin(users, eq(users.id, providerConnections.userId))
@@ -194,17 +271,20 @@ async function runJellyfinScan(
           eq(providerInstances.enabled, true)
         )
       );
+    const [current] = await (lock ? query.for('update', {of: providerConnections}) : query);
     if (!current) throw new PermanentActionError('The connected account changed during this task.');
+    await assertJobLease(store,lock);
     return current;
   }
   let importPlayback = connection.settings.importPlayback !== false;
-  const importItem = async (item: AvailableItem, ancestry = new Set<string>()): Promise<string> => {
+  const importItem = async (item: AvailableItem, ancestry = new Set<string>()): Promise<string | null> => {
+    if (missingItems.has(item.id)) return null;
     if (visited.has(item.id)) return visited.get(item.id)!;
     if (ancestry.has(item.id)) throw new Error('Jellyfin returned a cyclic media hierarchy.');
     ancestry.add(item.id);
     const [known] = knownItems.has(item.id)
       ? [knownItems.get(item.id)!]
-      : scope === 'user'
+      : userScope
         ? await db
             .select({ providerItem: providerItems, saved: media })
             .from(providerItems)
@@ -216,7 +296,11 @@ async function runJellyfinScan(
         : [];
     // An account may see a title outside the source account's libraries. Fill that single
     // missing identity once, without re-importing the catalogue for every user.
-    if (scope === 'user' && !known) item = await adapter.item(connection.externalUserId!, item.id);
+    if (userScope && !known) {
+      const detail = hydratedItems.get(item.id) ?? await adapter.itemIfAvailable(connection.externalUserId!, item.id);
+      if (!detail) return null;
+      item = detail;
+    }
     let showId: string | undefined, seasonId: string | undefined;
     if (!known && (item.kind === 'episode' || item.kind === 'season')) {
       if (!item.showId) throw new Error('Jellyfin returned an item without its show identity.');
@@ -227,20 +311,22 @@ async function runJellyfinScan(
           and(eq(providerItems.instanceId, instance.id), eq(providerItems.externalId, item.showId))
         )
         .limit(1);
-      showId =
-        parent?.mediaId ||
-        (await importItem(await adapter.item(connection.externalUserId!, item.showId), ancestry));
+      const parentItem = parent?.mediaId ? null : hydratedItems.get(item.showId) ?? await adapter.itemIfAvailable(connection.externalUserId!, item.showId);
+      const resolvedShow = parent?.mediaId || (parentItem ? await importItem(parentItem, ancestry) : null);
+      if (!resolvedShow) return null;
+      showId = resolvedShow;
       if (item.kind === 'episode') {
         const [existing] = await db
           .select()
           .from(seasons)
           .where(and(eq(seasons.showId, showId), eq(seasons.seasonNumber, item.seasonNumber ?? 0)));
         if (existing) seasonId = existing.mediaId;
-        else if (item.parentId)
-          seasonId = await importItem(
-            await adapter.item(connection.externalUserId!, item.parentId),
-            ancestry
-          );
+        else if (item.parentId) {
+          const parentItem = hydratedItems.get(item.parentId) ?? await adapter.itemIfAvailable(connection.externalUserId!, item.parentId);
+          const resolvedSeason = parentItem ? await importItem(parentItem, ancestry) : null;
+          if (!resolvedSeason) return null;
+          seasonId = resolvedSeason;
+        }
       }
     }
     item.metadata.artwork = Object.fromEntries(
@@ -281,22 +367,12 @@ async function runJellyfinScan(
           })
           .onConflictDoUpdate({
             target: [providerItems.instanceId, providerItems.externalId],
-            set: { mediaId: saved.id, snapshot: { ...item.metadata }, lastSeenAt: new Date() },
+            set: { mediaId: saved.id, snapshot: sql`${item.metadata}::jsonb || case when ${item.access?.locationType==='FileSystem'&&(item.access?.sourceType==null||item.access.sourceType==='Library')} and ${providerItems.snapshot}->'screenAccess' is not null then jsonb_build_object('screenAccess',${providerItems.snapshot}->'screenAccess') else '{}'::jsonb end`, lastSeenAt: new Date() },
           })
           .returning();
-    if (item.expectedMembers !== undefined) await db.update(providerItems).set({snapshot:sql`${providerItems.snapshot} || jsonb_build_object('expectedMembers',${item.expectedMembers}::integer)`}).where(eq(providerItems.id,providerItem.id));
+    if (scope === 'library' && item.expectedMembers !== undefined) expectedMembers.set(providerItem.id, item.expectedMembers);
     if (scope === 'library') return saved.id;
-    const [wasAvailable] = await db
-      .select({ id: availability.id })
-      .from(availability)
-      .where(
-        and(
-          eq(availability.userId, userId),
-          eq(availability.mediaId, saved.id),
-          eq(availability.state, 'available')
-        )
-      )
-      .limit(1);
+    availableTitles.set(saved.id, saved.title);
     const sources = item.sources.length
       ? item.sources
       : [
@@ -329,54 +405,168 @@ async function runJellyfinScan(
         width: video?.width,
         height: video?.height,
         durationSeconds: source.durationSeconds,
-        source: { ...source.raw, ...(scope==='user' ? {coastUserData:item.userData??null} : {}) },
+        source: { ...source.raw, ...(userScope ? {coastUserData:item.userData??null,coastMembershipCount:item.expectedMembers??null,coastReadStage:scope==='personal'?String(filterIndex):'user',coastListed:listedItems.has(item.id)} : {}) },
         state: 'available' as const,
         verifiedAt: new Date(),
         scanId,
       };
-      await db
-        .insert(availability)
-        .values(data)
-        .onConflictDoUpdate({
-          target: [
-            availability.userId,
-            availability.connectionId,
-            availability.providerItemId,
-            availability.sourceId,
-          ],
-          set: data,
-        });
-    }
-    if (!wasAvailable) {
-      const [state] = await db
-        .select()
-        .from(trackingState)
-        .where(and(eq(trackingState.userId, userId), eq(trackingState.mediaId, saved.id)));
-      if (state?.watchlist)
-        await notify({
-          userId,
-          kind: 'availability',
-          title: `${saved.title} is available`,
-          body: 'A title on your watchlist is now in your library.',
-          sourceKey: `available:${saved.id}`,
-          data:{actorId:userId,subjectId:saved.id,workId:saved.id,destination:`/media/${saved.id}`},
-        });
+      pendingAvailability.set(`${providerItem.id}:${source.id}`, data);
     }
 
     return saved.id;
   };
+  async function flushPage() {
+    const ids = [...availableTitles.keys()];
+    // Access is granted only for items returned by this user's authenticated page.
+    // Keep editions distinct, and deduplicate repeated source IDs before the upsert.
+    const previous = ids.length ? await db.select({id: availability.mediaId}).from(availability)
+      .where(and(eq(availability.userId, userId), inArray(availability.mediaId, ids), eq(availability.state, 'available'))) : [];
+    const previouslyAvailable = new Set(previous.map(row => row.id));
+    const rows = [...pendingAvailability.values()];
+    await db.transaction(async tx => {
+    await ensureConnected(tx, true);
+    for (let index = 0; index < rows.length; index += 500) {
+      await tx.insert(availability).values(rows.slice(index, index + 500)).onConflictDoUpdate({
+        target: [availability.userId, availability.connectionId, availability.providerItemId, availability.sourceId],
+        set: {
+          mediaId: sql`excluded.media_id`, edition: sql`excluded.edition`, container: sql`excluded.container`,
+          videoCodec: sql`excluded.video_codec`, audioCodec: sql`excluded.audio_codec`, bitrate: sql`excluded.bitrate`,
+          width: sql`excluded.width`, height: sql`excluded.height`, durationSeconds: sql`excluded.duration_seconds`,
+          source: sql`excluded.source`, state: 'available', verifiedAt: sql`excluded.verified_at`, scanId: sql`excluded.scan_id`,
+        },
+      });
+    }
+    if (expectedMembers.size) await tx.execute(sql`
+      update provider_items pi set snapshot=pi.snapshot || jsonb_build_object('expectedMembers',counts.total,'membershipEvidence',jsonb_build_object('connectionId',${connectionId}::text,'accountGeneration',${connection.accountGeneration}::text,'scope','user-visible','observedAt',${startedAt}::text))
+      from (values ${sql.join([...expectedMembers].map(([id, count]) => sql`(${id}::uuid,${count}::integer)`), sql`,`)}) as counts(id,total)
+      where pi.id=counts.id and pi.instance_id=${instance.id}`);
+    });
+    const newlyAvailable = ids.filter(id => !previouslyAvailable.has(id));
+    const savedTitles = newlyAvailable.length ? await db.select({id: trackingState.mediaId}).from(trackingState)
+      .where(and(eq(trackingState.userId, userId), inArray(trackingState.mediaId, newlyAvailable), eq(trackingState.watchlist, true))) : [];
+    for (const {id} of savedTitles) await notify({
+      userId, kind: 'availability', title: `${availableTitles.get(id)} is available`,
+      body: 'A title on your watchlist is now in your library.', sourceKey: `available:${id}`,
+      data: {actorId: userId, subjectId: id, workId: id, destination: `/media/${id}`},
+    });
+    pendingAvailability.clear(); availableTitles.clear(); expectedMembers.clear();
+  }
+  async function importMusic(saved:Awaited<ReturnType<typeof persistMusic>>,item:Parameters<typeof persistMusic>[1]) {
+    if(userScope && saved.workId && importPlayback){
+          if(item.favourite!==undefined)await reconcileProviderValue(userId,connectionId,saved.workId,'favourite',{value:item.favourite},{source:'jellyfin',accountGeneration:connection.accountGeneration});
+          if(item.kind==='track'){
+            const count=Math.max(0,Math.min(item.playCount??0,10000));
+            await reconcileProviderValue(userId,connectionId,saved.workId,'history',{value:count>0,playCount:count},{source:'jellyfin',accountGeneration:connection.accountGeneration,apply:async tx=>{
+              let added=0;
+              const [baseline]=await tx.select().from(syncValues).where(and(eq(syncValues.connectionId,connectionId),eq(syncValues.mediaId,saved.workId!),eq(syncValues.category,'history')));
+              const local=await localSyncValue(tx,userId,saved.workId!,'history');
+              const observed=Number(baseline?.remote.playCount??local.playCount??0);
+              for(let n=Math.min(count,observed);n<count;n++)if(await recordMusicListen(tx,userId,saved.workId!,importedListenBatch(connection.syncAccountId??connectionId,item.id,n),'jellyfin',undefined,false))added++;
+              await tx.insert(musicProgress).values({userId,trackId:saved.workId!,playCount:count}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{playCount:count,updatedAt:new Date()}});
+              return {changed:added>0};
+            }});
+            await reconcileProviderValue(userId,connectionId,saved.workId,'progress',{positionSeconds:Math.round((item.positionSeconds??0)*1000)/1000,durationSeconds:Math.round(item.durationSeconds??0)},{source:'jellyfin',accountGeneration:connection.accountGeneration});
+          }
+        }
+  }
+  if(changes){
+    const items=await adapter.items(connection.externalUserId!,changes.video);
+    for(const item of items)hydratedItems.set(item.id,item);
+    for(const item of items)await importItem(item);
+    const touched=[...visited.values()];
+    const changedWorks=new Set(touched);
+    const currentSources=[...pendingAvailability.values()];
+    await flushPage();
+    if(userScope&&currentSources.length)await db.transaction(async tx=>{
+      await ensureConnected(tx,true);
+      await tx.execute(sql`update availability a set state='unavailable',verified_at=now()
+        where a.connection_id=${connectionId} and a.provider_item_id in (${sql.join([...new Set(currentSources.map(row=>row.providerItemId))].map(id=>sql`${id}::uuid`),sql`,`)})
+        and not exists(select 1 from (values ${sql.join(currentSources.map(row=>sql`(${row.providerItemId}::uuid,${row.sourceId}::text)`),sql`,`)}) as present(item_id,source_id)
+          where present.item_id=a.provider_item_id and present.source_id=a.source_id)`);
+    });
+    importPlayback=(await ensureConnected()).settings.importPlayback!==false;
+    if(userScope && changes.video.length){
+      // A complete IDs lookup can confirm loss only for its requested IDs, not other titles.
+      const missing=changes.video.filter(id=>!hydratedItems.has(id));
+      if(missing.length)await db.transaction(async tx=>{
+        await ensureConnected(tx,true);
+        await tx.execute(sql`update availability a set state='unavailable',verified_at=now()
+          from provider_items pi where a.provider_item_id=pi.id and pi.instance_id=${instance.id}
+          and pi.external_id in (${sql.join(missing.map(id=>sql`${id}`),sql`,`)}) and a.connection_id=${connectionId}`);
+      });
+      if(importPlayback && touched.length){
+        const observed=await db.execute<JellyfinPlaybackObservation>(sql`
+          select a.media_id as id,m.kind,bool_or((a.source->'coastUserData'->>'played')::boolean) as played,
+            bool_or((a.source->'coastUserData'->>'favourite')::boolean) as favourite,
+            coalesce((array_agg((a.source->'coastUserData'->>'positionSeconds')::double precision order by
+              case when (a.source->'coastUserData'->>'positionSeconds')::double precision>0 then 1 else 0 end desc,
+              a.source->'coastUserData'->>'lastPlayedAt' desc nulls last,a.verified_at desc,a.provider_item_id))[1],0) as position,
+            max((a.source->'coastUserData'->>'playCount')::integer) as "playCount",
+            max(a.source->'coastUserData'->>'lastPlayedAt') as "lastPlayedAt",max(a.duration_seconds) as duration
+          from availability a join media m on m.id=a.media_id where a.connection_id=${connectionId} and a.state='available'
+          and a.media_id in (${sql.join(touched.map(id=>sql`${id}::uuid`),sql`,`)})
+          and jsonb_typeof(a.source->'coastUserData')='object' group by a.media_id,m.kind`);
+        for(const row of observed){
+          if((await ensureConnected()).settings.importPlayback===false)break;
+          await importJellyfinPlayback(userId,connectionId,row.id,{kind:row.kind,metadata:{},sources:row.duration===null?[]:[{durationSeconds:row.duration}],
+            userData:{played:row.played,favourite:row.favourite??undefined,positionSeconds:row.position,playCount:row.playCount,lastPlayedAt:row.lastPlayedAt??undefined}},connection.accountGeneration);
+        }
+      }
+    }
+    if(changes.music.length && (await getConfig()).experimentalMusic){
+      const remote=await adapter.musicItems(connection.externalUserId!,changes.music);
+      const saved=userScope?await observeMusicPageAccess(userId,connectionId,instance.id,connection.accountGeneration,remote,scanId):await Promise.all(remote.map(item=>persistMusic(instance.id,item)));
+      for(const item of saved){if(item.workId)changedWorks.add(item.workId);await importMusic(item,item);}
+      if(userScope){
+        const present=new Set(remote.map(item=>item.id));
+        const missing=changes.music.filter(id=>!present.has(id));
+        if(missing.length)await db.transaction(async tx=>{await ensureConnected(tx,true);
+          await tx.execute(sql`update availability a set state='unavailable',verified_at=now() from provider_items pi
+            where a.provider_item_id=pi.id and pi.instance_id=${instance.id} and pi.external_id in (${sql.join(missing.map(id=>sql`${id}`),sql`,`)}) and a.connection_id=${connectionId}`);
+        });
+      }
+    }
+    if(userScope)await db.transaction(async tx=>{
+      const current=await ensureConnected(tx,true);
+      if(current.settings.reconcileTracking===true && changedWorks.size){
+        const intents=await tx.select().from(reconciliationIntents).where(and(eq(reconciliationIntents.connectionId,connectionId),inArray(reconciliationIntents.workId,[...changedWorks])));
+        for(const intent of intents)await enqueueInTransaction(tx,{userId,connectionId,kind:'jellyfin.reconcile',payload:{mediaId:intent.workId,field:intent.category==='history'?'watched':intent.category,value:intent.category==='progress'?Number(intent.value.positionSeconds):Boolean(intent.value.value),playCount:intent.value.playCount,durationSeconds:intent.value.durationSeconds,intentVersion:intent.version,backfill:true},compactionKey:`jellyfin-reconcile:${intent.workId}:${intent.category}`});
+      }
+      await (await import('$lib/sync/changes')).enqueueCollectionProjectionInTransaction(tx,userId);
+    });
+    return {checked:items.length+changes.music.length,count:touched.length,full:false};
+  }
   let count = 0,
-    processed = offset,
-    total: number | null = null;
-  for (;;) {
+    processed = resume?.processed ?? offset,
+    total: number | null = resume?.total ?? null;
+  while (phase === 'scanning' || phase === 'watched' || phase === 'resume' || phase === 'favourites') {
+    if(inventoryProof&&libraryIndex>=inventoryProof.libraryIds.length){processed=libraryCompleted;total=libraryCompleted;await report(processed,total,'reconciling');break;}
     onStage?.('library-page');
     const current = await ensureConnected();
     importPlayback = !!current && current.settings.importPlayback !== false;
-    const page = await adapter.library(connection.externalUserId!, offset, since, scope);
+    const page = scope === 'personal' && !importPlayback ? {items: [], total: 0, nextOffset: null} :
+      await adapter.library(connection.externalUserId!, offset, since, userScope ? 'user' : 'library', scope === 'personal' ? filters[filterIndex] : undefined,inventoryProof?.libraryIds[libraryIndex]);
     await ensureConnected();
+    if(offset>0 && (inventoryProof?libraryTotal:total)!==null && page.total!==(inventoryProof?libraryTotal:total)){
+      await db.update(syncCheckpoints).set({cursor:null,scanId:null,updatedAt:new Date()}).where(and(eq(syncCheckpoints.connectionId,connectionId),eq(syncCheckpoints.kind,kind)));
+      throw new Error('Jellyfin library changed during pagination.');
+    }
+    if(userScope && offset>0 && page.items.length){
+      const repeated=await db.select({id:availability.id}).from(availability).innerJoin(providerItems,eq(providerItems.id,availability.providerItemId))
+        .where(and(eq(availability.connectionId,connectionId),eq(availability.scanId,scanId),inArray(providerItems.externalId,page.items.map(item=>item.id)),
+          sql`${availability.source}->>'coastListed'='true'`,sql`${availability.source}->>'coastReadStage'=${scope==='personal'?String(filterIndex):'user'}`)).limit(1);
+      if(repeated.length){
+        await db.update(syncCheckpoints).set({cursor:null,scanId:null,updatedAt:new Date()}).where(and(eq(syncCheckpoints.connectionId,connectionId),eq(syncCheckpoints.kind,kind)));
+        throw new Error('Jellyfin library changed during pagination.');
+      }
+    }
+    listedItems.clear();
+    for(const item of page.items)listedItems.add(item.id);
     visited.clear();
     knownItems.clear();
-    if (scope === 'user' && page.items.length) {
+    hydratedItems.clear();
+    missingItems.clear();
+    if (userScope && page.items.length) {
       const mapped = await db
         .select({ providerItem: providerItems, saved: media })
         .from(providerItems)
@@ -391,49 +581,96 @@ async function runJellyfinScan(
           )
         );
       for (const row of mapped) knownItems.set(row.providerItem.externalId, row);
+      const missing = page.items.filter(item => !knownItems.has(item.id));
+      if (missing.length) {
+        const details = await adapter.items(connection.externalUserId!, [...new Set(missing.map(item=>item.id))]);
+        for (const item of details) hydratedItems.set(item.id,item);
+        for (const item of missing) if(!hydratedItems.has(item.id))missingItems.add(item.id);
+        const ancestorIds = [...new Set(details.flatMap(item => [item.showId,item.parentId].filter((id):id is string=>!!id)))];
+        if (ancestorIds.length) {
+          const existing = await db.select({id:providerItems.externalId}).from(providerItems).where(and(eq(providerItems.instanceId,instance.id),inArray(providerItems.externalId,ancestorIds)));
+          const knownParents = new Set(existing.map(item=>item.id));
+          const unknown = ancestorIds.filter(id=>!knownParents.has(id)&&!hydratedItems.has(id));
+          if(unknown.length)for(const item of await adapter.items(connection.externalUserId!,unknown))hydratedItems.set(item.id,item);
+        }
+      }
     }
     total = page.total;
-    await report(offset, page.total);
+    await report(offset, page.total, scope === 'personal' ? filterPhases[filterIndex] : 'scanning');
     onStage?.('item-import');
     for (const [index, item] of page.items.entries()) {
       await importItem(item);
       count++;
       if ((index + 1) % 25 === 0 || index === page.items.length - 1)
-        await report(offset + index + 1, page.total);
+        await report(offset + index + 1, page.total, scope === 'personal' ? filterPhases[filterIndex] : 'scanning');
     }
+    await flushPage();
+    if(inventoryProof) {
+      try {await observeScreenLibraryPage(accessContext,inventoryProof,inventoryProof.libraryIds[libraryIndex],scanId,page.items,offset);}
+      catch(error) {
+        await db.update(syncCheckpoints).set({cursor:null,scanId:null,updatedAt:new Date()}).where(and(eq(syncCheckpoints.connectionId,connectionId),eq(syncCheckpoints.kind,kind)));
+        throw error;
+      }
+      libraryTotal=page.total;
+    }
+    const nextFilter = scope === 'personal' && page.nextOffset === null ? filterIndex + 1 : filterIndex;
+    const nextOffset = scope === 'personal' && page.nextOffset === null ? 0 : page.nextOffset ?? offset + page.items.length;
+    if(inventoryProof&&page.nextOffset===null) {
+      try {await publishScreenLibraryCensus(accessContext,inventoryProof,inventoryProof.libraryIds[libraryIndex],scanId,page.total);}
+      catch(error) {
+        await db.update(syncCheckpoints).set({cursor:null,scanId:null,updatedAt:new Date()}).where(and(eq(syncCheckpoints.connectionId,connectionId),eq(syncCheckpoints.kind,kind)));
+        throw error;
+      }
+      libraryCompleted+=page.total;libraryIndex++;libraryTotal=null;
+    }
+    const cursor = scope === 'personal' ? JSON.stringify({filter: nextFilter, offset: nextOffset}) : screenCursor(inventoryProof&&page.nextOffset===null?0:nextOffset);
     onStage?.('checkpoint-write');
     await db
       .insert(syncCheckpoints)
       .values({
         connectionId,
         kind,
-        cursor: page.nextOffset === null ? null : String(page.nextOffset),
+        cursor,
         scanId,
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: [syncCheckpoints.connectionId, syncCheckpoints.kind],
         set: {
-          cursor: page.nextOffset === null ? null : String(page.nextOffset),
+          cursor,
           scanId,
           updatedAt: new Date(),
         },
       });
+    if (scope === 'personal' && nextFilter < filters.length && page.nextOffset === null) {
+      filterIndex = nextFilter; offset = 0;
+      await report(0, null, filterPhases[filterIndex]);
+      await jobCheckpoint();
+      continue;
+    }
     if (page.nextOffset === null) {
-      processed = offset + page.items.length;
+      if(inventoryProof&&libraryIndex<inventoryProof.libraryIds.length){offset=0;total=null;await report(0,null,'scanning');await jobCheckpoint();continue;}
+      processed = inventoryProof?libraryCompleted:offset + page.items.length;
+      if(inventoryProof)total=libraryCompleted;
       await report(processed, page.total, 'reconciling');
+      await jobCheckpoint();
       break;
     }
     offset = page.nextOffset;
+    await jobCheckpoint();
   }
   // Multiple accessible editions may disagree. Apply one account-level observation
   // per canonical title after a complete traversal; persisted access snapshots also
   // survive checkpoints/retries without retaining the entire catalogue in memory.
-  if(scope==='user' && (await ensureConnected()).settings.importPlayback!==false) {
-    type PlaybackObservation = {id:string;kind:AvailableItem['kind'];played:boolean;favourite:boolean|null;position:number;playCount:number;lastPlayedAt:string|null;duration:number|null};
-    let after: string | null = null;
+  if(userScope && phase === 'reconciling' && (await ensureConnected()).settings.importPlayback!==false) {
+    let after: string | null = resume?.phase === 'reconciling' ? resume.playbackCursor ?? null : null;
+    const [size] = await db.execute<{total: number}>(sql`select count(distinct media_id)::integer as total from availability
+      where user_id=${userId} and connection_id=${connectionId} and scan_id=${scanId} and state='available'
+      and jsonb_typeof(source->'coastUserData')='object'`);
+    let reconciled = resume?.phase === 'reconciling' ? resume.stageProcessed ?? 0 : 0;
+    await report(processed, total, 'reconciling', {playbackCursor: after, stageProcessed: reconciled, stageTotal: size.total});
     observationPages: for (;;) {
-    const observed: PlaybackObservation[]=await db.execute<PlaybackObservation>(sql`
+    const observed: JellyfinPlaybackObservation[]=await db.execute<JellyfinPlaybackObservation>(sql`
       select a.media_id as id,m.kind,bool_or((a.source->'coastUserData'->>'played')::boolean) as played,
         bool_or((a.source->'coastUserData'->>'favourite')::boolean) as favourite,
         coalesce((array_agg((a.source->'coastUserData'->>'positionSeconds')::double precision order by
@@ -445,53 +682,73 @@ async function runJellyfinScan(
       where a.user_id=${userId} and a.connection_id=${connectionId} and a.scan_id=${scanId} and a.state='available'
         and jsonb_typeof(a.source->'coastUserData')='object'
         ${after === null ? sql`` : sql`and a.media_id > ${after}::uuid`}
-      group by a.media_id,m.kind order by a.media_id limit 100`) as PlaybackObservation[];
+      group by a.media_id,m.kind order by a.media_id limit 100`) as JellyfinPlaybackObservation[];
+    if ((await ensureConnected()).settings.importPlayback === false) break observationPages;
+    const unchanged = await unchangedJellyfinPlayback(userId, connectionId, connection.accountGeneration, observed);
+    const untouched = await seedEmptyJellyfinPlayback(userId, connectionId, connection.accountGeneration, observed);
     for(const row of observed) {
-      if((await ensureConnected()).settings.importPlayback===false)break observationPages;
+      if (untouched.has(row.id) || unchanged.has(row.id)) continue;
+      if ((await ensureConnected()).settings.importPlayback === false) break observationPages;
       await importJellyfinPlayback(userId,connectionId,row.id,{
         kind:row.kind,metadata:{},sources:row.duration===null?[]:[{durationSeconds:row.duration}],
         userData:{played:row.played,favourite:row.favourite??undefined,positionSeconds:row.position,playCount:row.playCount,lastPlayedAt:row.lastPlayedAt??undefined},
       },connection.accountGeneration);
     }
+    reconciled += observed.length;
+    after = observed.at(-1)?.id ?? after;
+    await report(processed, total, 'reconciling', {playbackCursor: after, stageProcessed: reconciled, stageTotal: size.total});
+    if (observed.length) await jobCheckpoint();
     if (observed.length < 100) break;
-    after = observed[observed.length - 1].id;
     }
   }
   // Metadata and per-user access remain separate for music, within the same service task.
+  if (phase === 'reconciling') await report(processed, total, 'music-albums', {musicOffset: 0, stageProcessed: 0, stageTotal: null});
   for(const musicKind of (await getConfig()).experimentalMusic?['album','track'] as const:[]){
-    let musicOffset=0;for(;;){
+    const musicPhase = musicKind === 'album' ? 'music-albums' : 'music-tracks';
+    if (phase === 'finalizing' || phase === 'music-tracks' && musicKind === 'album') continue;
+    let musicOffset = resume?.phase === musicPhase ? resume.musicOffset ?? 0 : 0;
+    const musicFilters = scope === 'personal' ? musicKind === 'album' ? ['IsFavorite'] as const : filters : [undefined];
+    let musicFilter = resume?.phase === musicPhase ? resume.musicFilter ?? 0 : 0;
+    await report(processed, total, musicPhase, {musicOffset, musicFilter, stageProcessed: musicOffset, stageTotal: null});
+    for(;;){
       importPlayback=(await ensureConnected()).settings.importPlayback!==false;
-      const page=await adapter.musicLibrary(connection.externalUserId!,{kind:musicKind,offset:musicOffset,limit:100});
+      if (scope === 'personal' && !importPlayback || musicFilter >= musicFilters.length) break;
+      const page=await adapter.musicLibrary(connection.externalUserId!,{kind:musicKind,offset:musicOffset,limit:100,filter:musicFilters[musicFilter]}, {scope:userScope?'user':'library',since:scope==='library'?since:undefined});
       await ensureConnected();
-      for(const item of page.items){
-        const saved=scope==='user'?await observeMusicAccess(userId,connectionId,instance.id,item,scanId):await persistMusic(instance.id,item);
-        if(scope==='user' && saved.workId && importPlayback){
-          if(item.favourite!==undefined)await reconcileProviderValue(userId,connectionId,saved.workId,'favourite',{value:item.favourite},{source:'jellyfin'});
-          if(item.kind==='track'){
-            const count=Math.max(0,Math.min(item.playCount??0,10000));
-            await reconcileProviderValue(userId,connectionId,saved.workId,'history',{value:count>0,playCount:count},{source:'jellyfin',apply:async tx=>{
-              let added=0;
-              const [baseline]=await tx.select().from(syncValues).where(and(eq(syncValues.connectionId,connectionId),eq(syncValues.mediaId,saved.workId!),eq(syncValues.category,'history')));
-              const local=await localSyncValue(tx,userId,saved.workId!,'history');
-              const observed=Number(baseline?.remote.playCount??local.playCount??0);
-              for(let n=Math.min(count,observed);n<count;n++)if(await recordMusicListen(tx,userId,saved.workId!,importedListenBatch(connection.syncAccountId??connectionId,item.id,n),'jellyfin',undefined,false))added++;
-              await tx.insert(musicProgress).values({userId,trackId:saved.workId!,playCount:count}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{playCount:count,updatedAt:new Date()}});
-              return {changed:added>0};
-            }});
-            await reconcileProviderValue(userId,connectionId,saved.workId,'progress',{positionSeconds:Math.round((item.positionSeconds??0)*1000)/1000,durationSeconds:Math.round(item.durationSeconds??0)},{source:'jellyfin'});
-          }
-        }
+      const musicItems = userScope ? await observeMusicPageAccess(userId, connectionId, instance.id, connection.accountGeneration, page.items, scanId, ids=>adapter.musicItems(connection.externalUserId!,ids)) : page.items;
+      for(const item of musicItems){
+        const saved=userScope?item:await persistMusic(instance.id,item);
+        await importMusic(saved,item);
       }
-      if(page.nextOffset===null)break;musicOffset=page.nextOffset;
+      musicOffset = page.nextOffset ?? musicOffset + page.items.length;
+      await report(processed, total, musicPhase, {musicOffset, musicFilter, stageProcessed: musicOffset, stageTotal: page.total});
+      if(page.nextOffset===null){
+        musicFilter++; musicOffset=0;
+        await report(processed, total, musicPhase, {musicOffset, musicFilter, stageProcessed: 0, stageTotal: null});
+        if (musicFilter >= musicFilters.length) break;
+      }
+      await jobCheckpoint();
     }
+    await report(processed, total, musicKind === 'album' ? 'music-tracks' : 'finalizing', {musicOffset: 0, stageProcessed: 0, stageTotal: null});
+    await jobCheckpoint();
   }
-  // Complete known membership is a metadata property; this never grants another user access.
-  if ((await getConfig()).experimentalMusic) await db.execute(sql`update music_works m set membership_complete=exists(select 1 from provider_items pi where pi.media_id=m.id and pi.instance_id=${instance.id} and (pi.snapshot->>'expectedMembers')::integer=(select count(*) from media_relationships r join music_works t on t.id=r.child_id where r.parent_id=m.id and r.kind='contains' and t.kind='track')) where m.kind='album' and exists(select 1 from provider_items pi where pi.media_id=m.id and pi.instance_id=${instance.id} and pi.snapshot->>'expectedMembers' is not null)`);
-  // A complete traversal can confirm a provider's advertised known membership, not server-wide coverage.
-  await db.execute(sql`update provider_items pi set snapshot=pi.snapshot || jsonb_build_object('membershipComplete',(pi.snapshot->>'expectedMembers')::integer=(select count(*) from episodes e where (pi.kind='show' and e.show_id=pi.media_id or pi.kind='season' and e.season_id=pi.media_id)))
-    where pi.instance_id=${instance.id} and pi.kind in ('show','season') and pi.snapshot->>'expectedMembers' is not null`);
-  if(scope==='user' && (await ensureConnected()).settings.reconcileTracking===true){
+  await report(processed, total, 'finalizing', {stageProcessed: 0, stageTotal: null});
+  // Counts are scoped to the authenticated source account, never server-wide.
+  // Restrict recomputation to parents touched by this metadata pass or its children.
+  if (scope === 'library') await db.execute(sql`update provider_items parent set snapshot=parent.snapshot || jsonb_build_object('membershipComplete',
+    (parent.snapshot->>'expectedMembers')::integer=(select count(distinct child.media_id) from provider_items child
+      join episodes e on e.media_id=child.media_id where child.instance_id=parent.instance_id
+      and (parent.kind='show' and e.show_id=parent.media_id or parent.kind='season' and e.season_id=parent.media_id)))
+    where parent.instance_id=${instance.id} and parent.kind in ('show','season')
+      and parent.snapshot->'membershipEvidence'->>'connectionId'=${connectionId}
+      and parent.snapshot->'membershipEvidence'->>'accountGeneration'=${connection.accountGeneration}
+      and parent.snapshot->>'expectedMembers' is not null
+      and (parent.last_seen_at>=${startedAt}::timestamptz or exists(select 1 from provider_items child join episodes e on e.media_id=child.media_id
+        where child.instance_id=parent.instance_id and child.last_seen_at>=${startedAt}::timestamptz
+        and (parent.kind='show' and e.show_id=parent.media_id or parent.kind='season' and e.season_id=parent.media_id)))`);
+  if(scope === 'user' && (await ensureConnected()).settings.reconcileTracking===true){
     await db.transaction(async tx=>{
+      await ensureConnected(tx,true);
       // Include state imported while no mapping existed, without treating empty rows as intent.
       const states=await tx.select().from(trackingState).where(and(eq(trackingState.userId,userId),sql`(${trackingState.favourite} or ${trackingState.watched} or ${trackingState.positionSeconds}>0)`));
       for(const state of states)for(const [category,value] of [['favourite',{value:state.favourite}],['history',{value:state.watched}],['progress',{positionSeconds:state.positionSeconds,durationSeconds:state.durationSeconds??0}]] as const){
@@ -510,6 +767,7 @@ async function runJellyfinScan(
   onStage?.('reconcile');
   await ensureConnected();
   await db.transaction(async (tx) => {
+    await ensureConnected(tx, true);
     if (scope === 'user')
       await tx
         .update(availability)
@@ -518,6 +776,7 @@ async function runJellyfinScan(
           and(
             eq(availability.userId, userId),
             eq(availability.connectionId, connectionId),
+            lte(availability.verifiedAt,new Date(startedAt)),
             or(ne(availability.scanId, scanId), isNull(availability.scanId))
           )
         );
@@ -525,7 +784,7 @@ async function runJellyfinScan(
       .update(syncCheckpoints)
       .set({ cursor: null, scanId: null, completedAt: new Date(startedAt), updatedAt: new Date() })
       .where(and(eq(syncCheckpoints.connectionId, connectionId), eq(syncCheckpoints.kind, kind)));
-    if(scope==='user'){const {enqueueCollectionProjectionInTransaction}=await import('$lib/sync/changes');await enqueueCollectionProjectionInTransaction(tx,userId);}
+    if(userScope){const {enqueueCollectionProjectionInTransaction}=await import('$lib/sync/changes');await enqueueCollectionProjectionInTransaction(tx,userId);}
   });
   onStage?.('complete');
   await report(processed, total, 'complete');
