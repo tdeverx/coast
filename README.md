@@ -17,18 +17,45 @@ Coast brings your media and personal tracking together without making your colle
 
 Films and TV are the core experience. Music, games and shared playback are available as optional experiments. Coast runs on your own server and stores its data there.
 
+![The Magicians show page in Coast, with its hero and Seasons row](docs/screenshots/the-magicians.jpg)
+
 ## What you can do
 
-| Feature | In Coast |
-| --- | --- |
-| **Find your next title** | Discover trending and recent releases. For You combines Continue, Next, favourites, friend recommendations and activity with personalised rows that appear as you scroll. |
-| **Keep your own collection** | Track progress, history, ratings, favourites, saved titles and lists, including titles that are not currently playable. Choose what automatically joins your Collection. |
-| **Browse your libraries** | Explore connected media and switch on Collection or Available filters when you want them. Both filters default off in Library; profile libraries show that person's Collection. |
-| **Play from Jellyfin** | Watch films and episodes with resume positions, subtitles and a persistent player. Request missing media through Seerr when it is configured. |
-| **Stay connected** | Add friends, send recommendations, react to activity and see taste matches. Friends and notifications open in panels so you can keep browsing. |
-| **Choose what you share** | Profiles default to friends only, with public and private options. Control live activity sharing separately, and choose a private site, public profiles only, or public read-only browsing. |
-| **Manage your installation** | Invite users, choose signup requirements, inspect sync jobs and view current server streams and recorded session history. Developer mode pauses automatic work while keeping manual actions available. |
-| **Build on your data** | Use scoped API tokens for reads and supported writes, plus signed webhooks. Run local benchmarks and keep a history of results. |
+### Find your next title
+
+Discover trending and recent releases. For You brings together Continue, Next, favourites, recommendations and activity, with personalised rows that appear as you scroll.
+
+### Keep your own collection
+
+Track progress, history, ratings, favourites, saved titles and lists—even when a title is not currently playable. Choose what automatically joins your Collection.
+
+### Browse your libraries
+
+Explore connected media, then narrow it down with Collection and Available filters. Both default off in Library; profile libraries show that person's Collection.
+
+### Play from Jellyfin
+
+Watch films and episodes with resume positions, subtitles and a persistent player. Request missing media through Seerr when it is configured.
+
+### Stay connected
+
+Add friends, send recommendations, react to activity and see taste matches. Friends and notifications open in panels so you can keep browsing.
+
+### Choose what you share
+
+Profiles default to friends only, with public and private options. Control live activity sharing separately, and choose a private site, public profiles only, or public read-only browsing.
+
+### Manage your installation
+
+Invite users, choose signup requirements, inspect sync jobs and review server streams and recorded sessions. Developer mode pauses automatic work while keeping manual actions available.
+
+### Use your data
+
+Create scoped API tokens for reads and supported writes, and connect signed webhooks. Your tokens are limited to the permissions you select.
+
+### Measure performance
+
+Run local benchmarks and compare results over time. Saved measurements help you spot changes in database and server workloads.
 
 Personalised rows use cached provider suggestions and your own taste signals across enabled media. Friend popularity is part of those rows; recommendations do not automatically add items to your Collection.
 
@@ -42,13 +69,25 @@ The optional [Jellyfin companion](docs/jellyfin-companion.md) provides server ch
 
 Administrators enable these separately in **Settings → Policies → Experimental features**. They default off; disabling one hides it without deleting saved data.
 
-| Experiment | What you can try |
-| --- | --- |
-| **Music** | Browse Jellyfin artists, albums and tracks; keep listening history and queues; listen while browsing. Playable albums and tracks use Play as their main card action. |
-| **Gaming** | Discover games through IGDB, import Steam ownership, playtime and supported achievement progress, and track playthroughs and sessions. Steam ownership is availability evidence, not proof of a local installation. |
-| **Parties** | Invite friends into a shared video or audio session with synced playback, participant controls and buffering policies. Each person needs their own permitted source; listening also requires Music. |
-| **Planning & calendar** | Schedule titles and reminders. Upcoming on For You shows known releases for watchlisted titles and tracked shows. |
-| **Media detail overlay** | Open the existing hero and details over the page you are browsing, with a full-page option. Its presentation is still under review. |
+### Music
+
+Browse Jellyfin artists, albums and tracks; keep listening history and queues; listen while browsing. Playable albums and tracks use Play as their main card action.
+
+### Gaming
+
+Discover games through IGDB, import Steam ownership, playtime and supported achievement progress, and track playthroughs and sessions. Steam ownership is availability evidence, not proof of a local installation.
+
+### Parties
+
+Invite friends into a shared video or audio session with synced playback, participant controls and buffering policies. Each person needs their own permitted source; listening also requires Music.
+
+### Planning & calendar
+
+Schedule titles and reminders. Upcoming on For You shows known releases for watchlisted titles and tracked shows.
+
+### Media detail overlay
+
+Open the existing hero and details over the page you are browsing, with a full-page option. Its presentation is still under review.
 
 Dynamic For You and personalised recommendations are standard features and no longer have experimental switches. The [experiment guide](docs/experimental-features.md) explains each feature's behaviour and limits.
 
@@ -67,11 +106,22 @@ See [release readiness](docs/readiness.md) and the [performance guide](docs/perf
 
 These are roadmap ideas, not available features or promises of a release date.
 
-**Planned follow-ups** include separate profiles under one account, playback without personal tracking, richer social recaps, and a dedicated pass on challenges and achievements. [The roadmap](docs/roadmap.md) records the privacy and provider requirements for these ideas.
+### Planned follow-ups
 
-**Ideas to revisit** include profile comparison charts, collaborative lists and groups, group queues and polls, chat or reaction overlays during parties, broader media such as books and comics, and more Library, search and playback conveniences. The chart gallery in the UI preview is a design exploration with fictional data, not a live statistics dashboard.
+- Separate profiles under one account.
+- Playback without personal tracking.
+- Richer social recaps.
+- A dedicated pass on challenges and achievements.
 
-The full [roadmap](docs/roadmap.md) distinguishes selected work, parked proposals and open questions.
+### Ideas to revisit
+
+- Profile comparison charts.
+- Collaborative lists, groups, shared queues and polls.
+- Chat or reaction overlays during parties.
+- Broader media, including books and comics.
+- More Library, search and playback conveniences.
+
+The chart gallery in the UI preview explores designs with fictional data. The full [roadmap](docs/roadmap.md) records priorities, parked proposals, open questions and the privacy and provider requirements for future work.
 
 ## Start Coast
 
@@ -212,6 +262,8 @@ Administrators can open **`/ui-preview`** to inspect the shared typography, colo
 Administrators can run bounded local measurements in **Settings → Benchmarking** and compare compatible runs in the saved history. These measure selected database and server workloads, not browser rendering or live playback. The [performance guide](docs/performance.md) documents the shared optimisation patterns, isolated regression harness, measurement limits and runtime diagnostics.
 
 ## Project
+
+For bug reports, questions and feature ideas, use [GitHub Issues](https://github.com/tdeverx/coast/issues).
 
 - [Documentation](docs/README.md)
 - [Deployment](docs/deployment.md)
