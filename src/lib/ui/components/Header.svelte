@@ -139,7 +139,7 @@
   nav {
     position: absolute;
     left: 50%;
-    transform: translateX(-50%);
+    translate: -50% 0;
   }
   .nav-icon{display:none;}
   nav a {
@@ -177,7 +177,7 @@
     nav {
       position: fixed;
       inset: auto 12px calc(env(safe-area-inset-bottom) + 12px);
-      transform: none;
+      translate: none;
     }
     .nav-label{display:none;}
     .nav-icon{display:flex;}

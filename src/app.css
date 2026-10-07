@@ -282,27 +282,27 @@ form.stack,
     inset var(--coast-glass-bottom-inner-x) calc(-1 * var(--coast-glass-bottom-inner-depth)) var(--coast-glass-bottom-inner-softness) var(--coast-glass-bottom-inner-spread) color-mix(in srgb, var(--coast-glass-bottom-inner-color) var(--coast-glass-bottom-inner-opacity), transparent),
     var(--coast-glass-shadow);
 }
-.glass.material-interactive {
+.glass.glass {
   transform-origin: 50% 50%;
   transition: background var(--fast), color var(--fast), opacity var(--fast),
     transform var(--fast) var(--ease), scale var(--fast) var(--ease);
 }
 /* Scale the material box itself: its decorations and foreground move together.
    Separate scale leaves consumer positioning transforms (e.g. centring) intact. */
-.glass.material-interactive:focus-visible:not(:disabled):not([aria-disabled='true']) {
+.glass:focus-visible:not(:disabled):not([aria-disabled='true']) {
   scale: var(--coast-material-hover-scale, 1.02);
 }
 @media (hover: hover) {
-  .glass.material-interactive:hover:not(:disabled):not([aria-disabled='true']) {
+  .glass:hover:not(:disabled):not([aria-disabled='true']) {
     scale: var(--coast-material-hover-scale, 1.02);
   }
 }
-.glass.material-interactive:active:not(:disabled):not([aria-disabled='true']) {
+.glass:active:not(:disabled):not([aria-disabled='true']) {
   scale: var(--coast-material-press-scale, .98);
 }
 @media (prefers-reduced-motion: reduce) {
-  .glass.material-interactive,
-  .glass.material-interactive:is(:hover, :focus-visible, :active) { transition: none; scale: none; }
+  .glass.glass,
+  .glass:is(:hover, :focus-visible, :active) { transition: none; scale: none; }
 }
 .glass::after {
   z-index: 3;

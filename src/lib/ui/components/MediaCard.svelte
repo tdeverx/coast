@@ -223,7 +223,7 @@
       />
     {/if}
     {#if !readOnly()}{#if showPrimaryAction}<button
-        class="play glass material-interactive icon-button"
+        class="play glass icon-button"
         use:liquidGlass={{ enabled: active }}
         aria-label={primaryMenu?`Actions for ${item.title}`:`${primaryLabel} ${item.title}`}
         aria-haspopup={primaryMenu?'menu':undefined}

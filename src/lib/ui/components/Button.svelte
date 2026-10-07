@@ -78,12 +78,12 @@
   {/if}
 {/snippet}
 {#snippet control()}
-  {#if href && !menu}<a class={controlClass} class:glass={usesMaterial} class:material-interactive={usesMaterial} class:light-material={usesMaterial && controlMaterial === 'glassLight'} class:menu-row-danger={item && danger} class:control-danger={!item && danger}
+  {#if href && !menu}<a class={controlClass} class:glass={usesMaterial} class:light-material={usesMaterial && controlMaterial === 'glassLight'} class:menu-row-danger={item && danger} class:control-danger={!item && danger}
     use:surfaceMaterial={{enabled:usesMaterial,variant:controlMaterial,blur:fallback}}
     href={disabled ? undefined : href} role={role ?? (disabled ? 'link' : undefined)} tabindex={disabled ? -1 : undefined}
     aria-label={label} aria-disabled={disabled || undefined} aria-describedby={disabled && disabledReason ? `${id}-reason` : undefined}
     {title} onclick={activate}>{@render content()}</a>
-  {:else}<button bind:this={triggerNode} class={controlClass} class:glass={usesMaterial} class:material-interactive={usesMaterial} class:light-material={usesMaterial && controlMaterial === 'glassLight'} class:active={pressed} class:menu-row-danger={item && danger} class:control-danger={!item && danger}
+  {:else}<button bind:this={triggerNode} class={controlClass} class:glass={usesMaterial} class:light-material={usesMaterial && controlMaterial === 'glassLight'} class:active={pressed} class:menu-row-danger={item && danger} class:control-danger={!item && danger}
     use:surfaceMaterial={{enabled:usesMaterial,variant:controlMaterial,blur:fallback}}
     id={menu ? `${id}-trigger` : undefined} {type} hidden={hideTrigger} disabled={disabled && !(item && disabledReason)}
     {role} aria-label={label ?? (menu ? 'More options' : undefined)} aria-pressed={pressed} aria-checked={checked}
