@@ -1,5 +1,11 @@
 import type { MusicItem } from './model';
-import type { MediaCardPresentation, MediaHeroPresentation } from '$lib/ui/types';
+import type { MediaCardDisplay, MediaCardPresentation, MediaHeroPresentation } from '$lib/ui/types';
+
+/** Artists are browse destinations; tracks/albums use their music queue. */
+export function canPlayMusicCard(item: Pick<MediaCardDisplay, 'kind' | 'available' | 'workId' | 'connectionId'>) {
+  return (item.kind === 'track' || item.kind === 'album') && item.available !== false &&
+    !!(item.workId || item.connectionId);
+}
 
 export function musicHref(connectionId: string, itemId: string) {
   if(!connectionId)return `/music/work/${encodeURIComponent(itemId)}`;

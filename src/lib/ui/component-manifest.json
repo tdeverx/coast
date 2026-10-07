@@ -243,6 +243,7 @@
       "src/lib/ui/components/MetadataEditor.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/PresentationActions.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/RecommendAction.svelte",
@@ -707,6 +708,7 @@
     "path": "src/lib/ui/components/PresentationActions.svelte",
     "elements": [
       "Button",
+      "Dialog",
       "RowFeedback",
       "WorkActions"
     ],

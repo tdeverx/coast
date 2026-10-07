@@ -8,6 +8,7 @@
   import WorkActions from './WorkActions.svelte';
   import { relationshipControls, listMembershipControls } from '$lib/ui/controls/actions';
   import Button from '$lib/ui/components/Button.svelte';
+  import Dialog from './Dialog.svelte';
   import { playMusic } from '$lib/playback/client.svelte';
   import type { MediaCardPresentation } from '$lib/ui/types';
   import type { MusicItem } from '$lib/music/model';
@@ -15,6 +16,7 @@
   import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
   import { createMutation } from '$lib/ui/mutation.svelte';
+  import { createOperation } from '$lib/ui/operation.svelte';
   import { type Relationship } from '$lib/ui/relationships';
 
 
@@ -31,7 +33,9 @@
   const lists = $derived(work.data.lists);
   let loading = $state(false);
   const mutation = createMutation(load);
-  const busy = $derived(mutation.busy);
+  const playback = createOperation();
+  let playbackErrorOpen = $state(false);
+  const busy = $derived(mutation.busy || playback.busy);
   const failure = $derived(mutation.error);
   let generation = 0;
   let controller: AbortController | undefined;
@@ -57,6 +61,15 @@
   }
   export function openAt(point: { x: number; y: number }) {
     menu?.openAt(point);
+  }
+  export async function start() {
+    if (preview || busy || loading) return;
+    const played = await playback.run(async () => {
+      if (!workId && musicPath) await load();
+      if (!workId) throw new Error(mutation.error || 'This music is not available to play.');
+      await playMusic(workId);
+    });
+    if (!played) playbackErrorOpen = true;
   }
   async function load() {
     controller?.abort();
@@ -163,7 +176,7 @@
   {/if}
   {#if !loading && workId}
     <div class="menu-divider" role="separator"></div>
-    {#if item.kind==='track'||item.kind==='album'}<Button item icon="play" disabled={busy || preview} onclick={()=>playMusic(workId!).catch(e=>mutation.error = message(e))}>Play</Button><Button item icon="clock" disabled={busy} onclick={listen}>Log {item.kind==='album'?'album':'listen'}</Button>{/if}
+    {#if item.kind==='track'||item.kind==='album'}<Button item icon="play" disabled={busy || preview} onclick={start}>Play</Button><Button item icon="clock" disabled={busy} onclick={listen}>Log {item.kind==='album'?'album':'listen'}</Button>{/if}
     <WorkActions section="relationships" workId={workId} controls={relationshipControls([
       { kind: 'collected', value: relationships.collected, icon: 'plus', label: `${relationships.collected ? 'Remove from' : 'Add to'} Collection` },
       { kind: 'watchlist', value: relationships.watchlist, icon: 'list', label: `${relationships.watchlist ? 'Remove from' : 'Save for'} later` },
@@ -179,6 +192,11 @@
   {#if failure}<RowFeedback error={failure} tag="p" class="menu-status notice error" />
     <Button item icon="refresh" disabled={busy} onclick={load}>Try again</Button>{/if}
 </Button>
+
+{#if playbackErrorOpen}<Dialog bind:open={playbackErrorOpen} title="Playback unavailable">
+  <p>{playback.error}</p>
+  {#snippet footer()}<Button onclick={() => playbackErrorOpen = false}>Close</Button>{/snippet}
+</Dialog>{/if}
 
 {#if workId&&page.data.experiments?.planning}<PlanAction bind:open={planningOpen} {workId} title={item.title} partyAllowed={page.data.experimentalParties&&item.kind==='track'}/>{/if}
 {#if workId&&page.data.playbackSharing&&item.kind==='track'}<ShareAction bind:open={sharingOpen} {workId} title={item.title}/>{/if}

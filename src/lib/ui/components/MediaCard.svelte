@@ -3,6 +3,7 @@
   import { page } from '$app/state';
   import ProgressBar from './ProgressBar.svelte';
   import { primaryMediaAction, progressFraction } from '$lib/media/model';
+  import { canPlayMusicCard } from '$lib/music/presentation';
   import { goto,pushState } from '$app/navigation';
   import { cardArtwork, overlayArtwork } from '$lib/ui/artwork-priority';
   import type { ArtworkPriority } from '$lib/ui/types';
@@ -131,7 +132,7 @@
             trackedItem.requestable ??
             ((trackedItem.category ?? 'screen') === 'screen' && !trackedItem.available),
         })
-      : 'open'
+      : canPlayMusicCard(item) ? 'play' : 'open'
   );
   const cardProgress=$derived(item.captionActor?activityProgress??null:completion!==null&&completion>0&&completion<0.9?completion:null);
   const primaryLabel = $derived(
@@ -148,7 +149,10 @@
     active = true;
     await tick();
     if(primaryMenu&&rect){primaryMenuButton?.openAt({x:rect.left,y:rect.bottom});return;}
-    if (primaryAction === 'play') await actions?.start();
+    if (primaryAction === 'play') {
+      if (trackedItem) await actions?.start();
+      else await presentationActions?.start();
+    }
     else if (primaryAction === 'request') actions?.request();
     else if(href) await goto(href);
   }

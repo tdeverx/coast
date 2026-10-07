@@ -2,26 +2,76 @@
   <img src="static/coast-mark.png" alt="Coast mark" width="112" />
   <h1>Coast</h1>
   <p>A self-hosted home for what you watch, play and listen to.</p>
+  <p>Your library, progress and friends, together in one place.</p>
   <p>
     <a href="https://github.com/tdeverx/coast/actions/workflows/verify-and-publish-preview.yml"><img alt="Build and preview image" src="https://github.com/tdeverx/coast/actions/workflows/verify-and-publish-preview.yml/badge.svg?branch=main"></a>
     <a href="LICENSE"><img alt="AGPL-3.0-only" src="https://img.shields.io/badge/license-AGPL--3.0--only-blue.svg"></a>
   </p>
-  <p><a href="#start-coast">Get started</a> · <a href="#connected-services">Integrations</a> · <a href="docs/README.md">Documentation</a> · <a href="#develop-coast">Development</a></p>
+  <p><a href="#what-you-can-do">Features</a> · <a href="#experiments">Experiments</a> · <a href="#start-coast">Get started</a> · <a href="docs/README.md">Documentation</a></p>
 </div>
 
 > [!WARNING]
 > Coast is an early preview. Updates can include breaking changes, so **back up your data before upgrading**. Databases from the earlier prototype are not supported.
 
-## Your media, together
+Coast brings your media and personal tracking together without making your collection depend on one server. Browse what is available, keep a watchlist, resume an episode, and see what your friends are enjoying. Connect Jellyfin for playback and Trakt for personal tracking; add other services when you need them.
 
-- **Track your collection.** History, progress, ratings, favourites, saved titles and lists belong to you—even when the media isn't on a server. Library brings personal Collection and server browsing together, with separate Collection and Available toggles. Collection is on by default; automatic membership is configurable in your settings.
-- **Pick up where you left off.** For You brings together Continue, Next, friend recommendations, favourites, activity and dynamic personalised rows, including popular titles among friends. Watching, playing and listening segments keep each medium within the same familiar layout.
-- **Play from Jellyfin.** Stream films and episodes with resume positions and subtitles. Experimental music adds albums, tracks, repeatable listens, queues and audio that stays with you while browsing.
-- **Share with friends.** Mutual friendships, activity, reactions, recommendations, live presence and taste comparisons. Sharing defaults to friends only, with public and private options. Notifications and friends live in persistent panels so you can keep browsing.
-- **Watch or listen together.** Experimental parties support invitations, synchronized playback, participant controls and buffering policies. Each person uses their own authorized media source.
-- **See what sync is doing.** Jobs groups tasks into Running, Waiting, Needs attention, Upcoming and Manual, with one compact row per service/task. Rows show user freshness, state or next run and the last result; action menus provide Run now, Edit schedule and detailed progress. Persistent job records retain the history. Background tasks discover missing user-linked TMDB records and refresh shared metadata. Long imports yield at committed checkpoints; each service serializes its scans and API requests while unrelated services can progress.
+Films and TV are the core experience. Music, games and shared playback are available as optional experiments. Coast runs on your own server and stores its data there.
 
-Music, games and parties are behind **Settings → Policies → Experimental features**. Films and TV remain the core experience. See [release readiness](docs/readiness.md) for verification limits; implemented features are not a guarantee of compatibility with every live provider or device.
+## What you can do
+
+| Feature | In Coast |
+| --- | --- |
+| **Find your next title** | Discover trending and recent releases. For You combines Continue, Next, favourites, friend recommendations and activity with personalised rows that appear as you scroll. |
+| **Keep your own collection** | Track progress, history, ratings, favourites, saved titles and lists, including titles that are not currently playable. Choose what automatically joins your Collection. |
+| **Browse your libraries** | Explore connected media and switch on Collection or Available filters when you want them. Both filters default off in Library; profile libraries show that person's Collection. |
+| **Play from Jellyfin** | Watch films and episodes with resume positions, subtitles and a persistent player. Request missing media through Seerr when it is configured. |
+| **Stay connected** | Add friends, send recommendations, react to activity and see taste matches. Friends and notifications open in panels so you can keep browsing. |
+| **Choose what you share** | Profiles default to friends only, with public and private options. Control live activity sharing separately, and choose a private site, public profiles only, or public read-only browsing. |
+| **Manage your installation** | Invite users, choose signup requirements, inspect sync jobs and view current server streams and recorded session history. Developer mode pauses automatic work while keeping manual actions available. |
+| **Build on your data** | Use scoped API tokens for reads and supported writes, plus signed webhooks. Run local benchmarks and keep a history of results. |
+
+Personalised rows use cached provider suggestions and your own taste signals across enabled media. Friend popularity is part of those rows; recommendations do not automatically add items to your Collection.
+
+### Sync you can follow
+
+**Settings → Jobs & schedules** shows what is running, waiting, needs attention, is scheduled next, or is manual. Each task shows its last result and timing, with **Run now**, **Retry** and schedule controls where applicable. Long imports can pause at saved checkpoints so higher-priority work can proceed; initial imports take priority over routine background work. Detailed job history remains in the logs.
+
+The optional [Jellyfin companion](docs/jellyfin-companion.md) provides server change hints, live activity and stream updates so Coast can target changed items. It also supports trailer crop analysis. Native polling remains available when the plugin is unavailable.
+
+## Experiments
+
+Administrators enable these separately in **Settings → Policies → Experimental features**. They default off; disabling one hides it without deleting saved data.
+
+| Experiment | What you can try |
+| --- | --- |
+| **Music** | Browse Jellyfin artists, albums and tracks; keep listening history and queues; listen while browsing. Playable albums and tracks use Play as their main card action. |
+| **Gaming** | Discover games through IGDB, import Steam ownership, playtime and supported achievement progress, and track playthroughs and sessions. Steam ownership is availability evidence, not proof of a local installation. |
+| **Parties** | Invite friends into a shared video or audio session with synced playback, participant controls and buffering policies. Each person needs their own permitted source; listening also requires Music. |
+| **Planning & calendar** | Schedule titles and reminders. Upcoming on For You shows known releases for watchlisted titles and tracked shows. |
+| **Media detail overlay** | Open the existing hero and details over the page you are browsing, with a full-page option. Its presentation is still under review. |
+
+Dynamic For You and personalised recommendations are standard features and no longer have experimental switches. The [experiment guide](docs/experimental-features.md) explains each feature's behaviour and limits.
+
+## Still being refined
+
+Coast is actively developed. These areas have implementations, but need broader acceptance or further polish:
+
+- **Provider and playback compatibility:** real-account Trakt and Seerr journeys, reconnects, genuine sync conflicts and playback across more devices and sources.
+- **Recommendations and first-run experience:** better exact-next-item choices, more useful guidance during imports, and clearer empty Collections for new users.
+- **Performance and recovery:** continued measurement of imports, queries, rendering and resource use. Benchmarks and runtime diagnostics are available; a benchmark is not a live playback or browser performance test.
+- **Social details:** validate privacy, live activity and taste scores with more real accounts, and revisit what friend avatars communicate.
+
+See [release readiness](docs/readiness.md) and the [performance guide](docs/performance.md) for verification evidence. Fixture tests do not establish compatibility with every live provider or device.
+
+## Planned and under consideration
+
+These are roadmap ideas, not available features or promises of a release date.
+
+**Planned follow-ups** include separate profiles under one account, playback without personal tracking, richer social recaps, and a dedicated pass on challenges and achievements. [The roadmap](docs/roadmap.md) records the privacy and provider requirements for these ideas.
+
+**Ideas to revisit** include profile comparison charts, collaborative lists and groups, group queues and polls, chat or reaction overlays during parties, broader media such as books and comics, and more Library, search and playback conveniences. The chart gallery in the UI preview is a design exploration with fictional data, not a live statistics dashboard.
+
+The full [roadmap](docs/roadmap.md) distinguishes selected work, parked proposals and open questions.
 
 ## Start Coast
 
@@ -159,7 +209,7 @@ The runner creates and removes an isolated database for each suite; it does not 
 
 Administrators can open **`/ui-preview`** to inspect the shared typography, colors, materials, elements and components, including the material tweaker. **`/ui-preview?section=charts`** contains the non-approved chart exploration with isolated fictional data; its fictional data stays in the preview. See [Chart preview](docs/chart-preview.md), [Contributing](CONTRIBUTING.md) and [Architecture](docs/architecture.md) for development conventions.
 
-Administrators can run bounded local measurements in **Settings → Benchmarks** and compare compatible runs in the saved history. These measure selected database and server workloads, not browser rendering or live playback. The [performance guide](docs/performance.md) documents the shared optimisation patterns, isolated regression harness, measurement limits and runtime diagnostics.
+Administrators can run bounded local measurements in **Settings → Benchmarking** and compare compatible runs in the saved history. These measure selected database and server workloads, not browser rendering or live playback. The [performance guide](docs/performance.md) documents the shared optimisation patterns, isolated regression harness, measurement limits and runtime diagnostics.
 
 ## Project
 
@@ -171,5 +221,3 @@ Administrators can run bounded local measurements in **Settings → Benchmarks**
 - [License](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md)
 
 Coast is licensed under **AGPL-3.0-only**, and contributions use the same license. Connected services are independent of Coast. Coast is not endorsed or certified by TMDB.
-
-The optional [Jellyfin companion](docs/jellyfin-companion.md) adds authenticated trailer crop analysis and a shared change feed for targeted updates, live activity and server streams. Coast retains native polling when the companion is unavailable.

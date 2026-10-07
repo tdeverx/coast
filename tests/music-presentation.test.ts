@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { musicCard, musicCredits, musicDuration } from '../src/lib/music/presentation';
+import { canPlayMusicCard, musicCard, musicCredits, musicDuration } from '../src/lib/music/presentation';
 import type { MusicItem } from '../src/lib/music/model';
 
 const album: MusicItem = {
@@ -30,4 +30,13 @@ test('tracks use performer credits and unknown durations remain absent', () => {
   expect(musicDuration(0)).toBe('0:00');
   expect(musicDuration(12.5)).toBe('0:12');
   expect(musicDuration(185)).toBe('3:05');
+});
+
+test('music card playback needs a queue identity and preserves artist browsing', () => {
+  expect(canPlayMusicCard(musicCard(album, 'connection'))).toBe(true);
+  expect(canPlayMusicCard({kind:'track',workId:'work'})).toBe(true);
+  expect(canPlayMusicCard({kind:'album'})).toBe(false);
+  expect(canPlayMusicCard({kind:'track',workId:'work',available:false})).toBe(false);
+  expect(canPlayMusicCard({kind:'artist',connectionId:'connection'})).toBe(false);
+  expect(canPlayMusicCard({kind:'game',workId:'work'})).toBe(false);
 });
