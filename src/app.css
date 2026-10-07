@@ -288,7 +288,7 @@ form.stack,
     transform var(--fast) var(--ease), scale var(--fast) var(--ease);
 }
 /* Scale the material box itself: its decorations and foreground move together.
-   Separate scale leaves consumer positioning transforms (e.g. centring) intact. */
+   Positioned consumers use independent translate to preserve their centre. */
 .glass:focus-visible:not(:disabled):not([aria-disabled='true']) {
   scale: var(--coast-material-hover-scale, 1.02);
 }
@@ -301,8 +301,7 @@ form.stack,
   scale: var(--coast-material-press-scale, .98);
 }
 @media (prefers-reduced-motion: reduce) {
-  .glass.glass,
-  .glass:is(:hover, :focus-visible, :active) { transition: none; scale: none; }
+  .glass.glass { transition: none !important; scale: none !important; }
 }
 .glass::after {
   z-index: 3;
