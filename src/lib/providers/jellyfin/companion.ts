@@ -18,7 +18,7 @@ export function validateCompanionPage(page:CompanionPage,previous:Pick<Companion
   if(page.epoch!==previous.epoch||page.cursor<(previous.cursor??0))throw new Error('Invalid companion cursor.');
   let cursor=previous.cursor??0;
   for(const change of page.changes){if(change.Sequence<=cursor||change.Sequence>page.cursor)throw new Error('Companion changes are out of order.');cursor=change.Sequence;}
-  if(page.more&&(!page.changes.length||cursor!==page.cursor))throw new Error('Incomplete companion page.');
+  if(cursor!==page.cursor||(page.more&&!page.changes.length))throw new Error('Incomplete companion page.');
 }
 export function companionHealthy(saved:unknown,now:number,intervalMinutes:number){
   const state=saved as Partial<CompanionState>|undefined;

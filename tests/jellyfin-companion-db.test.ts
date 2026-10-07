@@ -116,6 +116,6 @@ run('reconnected sources reconcile again and permission edits revoke only the af
 });
 run('expired workers cannot publish a snapshot or acknowledge a feed cursor',async()=>{
  const ctx=await context(),job=await action();await getDb().update(s.outboxActions).set({state:'pending',attempts:2}).where(eq(s.outboxActions.id,job.id));
- await expect(jobExecution.run({id:job.id,attempts:1,purpose:'live',started:performance.now(),checkpoints:0},()=>applyCompanionPage(job,ctx,page({reset:false,cursor:2})))).rejects.toThrow('yielded');
+ await expect(jobExecution.run({id:job.id,attempts:1,purpose:'live',started:performance.now(),checkpoints:0},()=>applyCompanionPage(job,ctx,page({reset:false,cursor:1})))).rejects.toThrow('yielded');
  expect((await context()).instance.settings.companion).toMatchObject({cursor:1});
 });

@@ -16,7 +16,9 @@ test('native plugin contract strips credentials and paths from sessions',()=>{
 test('cursor ordering, identity and partial batches are validated before acknowledgement',()=>{
  const previous={epoch,cursor:1};
  expect(()=>validateCompanionPage(page({cursor:2,changes:[change(2,'user-data')]}),previous,'server')).not.toThrow();
- for(const invalid of [page({serverId:'other'}),page({epoch:'d'.repeat(32)}),page({cursor:0}),page({cursor:3,changes:[change(3,'user-data'),change(2,'user-data')]}),page({more:true}),page({reset:true,changes:[change(1,'user-data')]})])
+ expect(()=>validateCompanionPage(page(),previous,'server')).not.toThrow();
+ expect(()=>validateCompanionPage(page({cursor:4,changes:[change(4,'user-data')]}),previous,'server')).not.toThrow();
+ for(const invalid of [page({serverId:'other'}),page({epoch:'d'.repeat(32)}),page({cursor:0}),page({cursor:3,changes:[change(3,'user-data'),change(2,'user-data')]}),page({cursor:2}),page({cursor:3,changes:[change(2,'user-data')]}),page({more:true}),page({reset:true,changes:[change(1,'user-data')]})])
   expect(()=>validateCompanionPage(invalid,previous,'server')).toThrow();
  expect(()=>validateCompanionPage(page({epoch:'d'.repeat(32),reset:true}),previous,'server')).not.toThrow();
 });
