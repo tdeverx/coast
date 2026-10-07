@@ -137,7 +137,6 @@
     pointer-events: none;
   }
   nav {
-    --coast-material-position: translateX(-50%);
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
@@ -176,7 +175,6 @@
       padding-inline: 20px;
     }
     nav {
-      --coast-material-position: translate(0, 0);
       position: fixed;
       inset: auto 12px calc(env(safe-area-inset-bottom) + 12px);
       transform: none;
