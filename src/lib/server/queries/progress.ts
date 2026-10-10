@@ -1,5 +1,5 @@
-import { enabledCategories, requireEnabledCategory } from '../experimental';
-import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch';
+import { enabledCategories, requireEnabledCategory, selectedCategory } from '../experimental';
+import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import type { MediaView } from '$lib/ui/types';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -17,6 +17,7 @@ import { applySequenceEntry, hasPermittedMediaSource, mediaViewsForIds } from '.
 import { viewingRecency } from './viewing-recency';
 import { pagination, PAGE_SIZE } from './pagination';
 import { heroTitleIds } from '$lib/media/hero';
+import { readingCards } from '$lib/reading/query.server';
 
 /** Plan using lightweight IDs; hydrate only the filtered, visible page. */
 export function progressData(userId:string, raw?:Partial<import('$lib/progress').ProgressOptions> & {category?:'screen'}, viewerId?:string):Promise<Omit<ProgressContent,'items'> & {items:MediaView[]}>;
@@ -29,13 +30,14 @@ export async function progressData(userId:string, raw:unknown = {}, viewerId=use
   const config=await getConfig();
   // An empty default medium cannot hide another medium's personal content.
   // Check lightweight relationship/activity evidence instead of hydrating extra card pages.
-  const [other]=await getDb().execute<{present:boolean}>(sql`select exists(select 1 from works w where ${enabledCategories(sql`w.category`,config)} and w.category<>${result.category} and (
+  const [other]=await getDb().execute<{present:boolean}>(sql`select exists(select 1 from works w where ${enabledCategories(sql`w.category`,config)} and not (${selectedCategory(sql`w.category`,result.category)}) and (
     (${result.view}='favourites' and exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.favourite))
     or (${result.view} in ('watchlist','next','up-next') and (exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.watchlist and not t.dropped)
-      or exists(select 1 from up_next n where n.media_id=w.id and n.user_id=${userId}) or exists(select 1 from game_playthroughs g where g.game_id=w.id and g.user_id=${userId} and g.status='planned')))
+      or exists(select 1 from up_next n where n.media_id=w.id and n.user_id=${userId}) or exists(select 1 from game_playthroughs g where g.game_id=w.id and g.user_id=${userId} and g.status='planned') or exists(select 1 from reading_progress p where p.work_id=w.id and p.user_id=${userId} and p.state='planned')))
     or (${result.view}='watching' and (exists(select 1 from tracking_state t where t.media_id=w.id and t.user_id=${userId} and t.position_seconds>0 and not t.dropped)
       or exists(select 1 from music_progress p where p.track_id=w.id and p.user_id=${userId} and p.position_seconds>0)
-      or exists(select 1 from game_playthroughs g where g.game_id=w.id and g.user_id=${userId} and g.status in ('in-progress','paused'))))
+      or exists(select 1 from game_playthroughs g where g.game_id=w.id and g.user_id=${userId} and g.status in ('in-progress','paused'))
+      or exists(select 1 from reading_progress p where p.work_id=w.id and p.user_id=${userId} and p.state in ('reading','paused'))))
     or (${result.view}='recommendations' and exists(select 1 from social_recommendations r where r.work_id=w.id and r.recipient_id=${userId} and r.state='pending'))
   )) as present`);
   return {...result,emptyAllMedia:!other.present};
@@ -47,6 +49,8 @@ async function readProgressData(
 ): Promise<ProgressContent> {
   const options = v.parse(progressOptionsSchema, raw);
   if(options.view === 'recommendations') return recommendationProgress(userId,viewerId,options);
+  if(options.category==='reading')return readingProgress(userId,viewerId,options);
+  if(options.kind==='book'||options.kind==='comic')throw new AppError(400,'Choose a reading type only for Reading.');
   if(userId!==viewerId) {
     await requireVisible(userId,viewerId,options.view==='favourites'?'favourites':['next','watchlist'].includes(options.view)?'collection':'progress',options.category);
     if(options.view==='next')await requireVisible(userId,viewerId,'progress',options.category);
@@ -61,7 +65,7 @@ async function readProgressData(
       userId,
       options.view === 'finished' ? 'watched' : 'dropped',
       options.page,
-      options,
+      {kind:options.kind,scope:options.scope},
       viewerId
     );
     return {
@@ -102,6 +106,35 @@ async function readProgressData(
     if (item.rewatchStartedAt) item.captionSubtitle += ' · Rewatching';
   }
   return { ...options, page, pages, total, items };
+}
+
+/** A single local page shares Continue/Next/saved rows without treating pages as playback. */
+async function readingProgress(userId:string, viewerId:string, options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
+  const config=await getConfig();
+  requireEnabledCategory(config,'reading');
+  if(options.kind!=='all'&&!['book','comic'].includes(options.kind))throw new AppError(400,'Choose Books or Comics.');
+  if(options.kind!=='all')requireEnabledCategory(config,options.kind);
+  const progressVisible=sql`social_visible(${userId}::uuid,${viewerId}::uuid,'progress',${s.readingWorks.kind})`;
+  const saved=sql`social_visible(${userId}::uuid,${viewerId}::uuid,'collection',${s.readingWorks.kind}) and coalesce(${s.trackingState.watchlist},false)`;
+  const state=sql`case when ${progressVisible} then ${s.readingProgress.state} else null end`;
+  const selection=options.view==='favourites'
+    ? sql`social_visible(${userId}::uuid,${viewerId}::uuid,'favourites',${s.readingWorks.kind}) and ${s.trackingState.favourite}`
+    : options.view==='watching' ? sql`${state} in ('reading','paused')`
+    : options.view==='finished' ? sql`${state}='completed'`
+    : options.view==='dropped' ? sql`${state}='dropped'`
+    : sql`((${saved}) or (${options.view}<>'watchlist' and ${state}='planned')) and coalesce(${state} not in ('reading','paused','completed','dropped'),true)`;
+  const available=sql`exists(select 1 from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.media_id=${s.readingWorks.id} and a.user_id=${viewerId} and c.user_id=${viewerId} and a.state='available' and c.status='connected' and i.enabled)`;
+  const where=and(enabledCategories(sql`${s.readingWorks.kind}`,config),options.kind==='all'?undefined:eq(s.readingWorks.kind,options.kind as 'book'|'comic'),selection,options.scope==='available'?available:undefined);
+  const db=getDb();
+  const base=()=>db.select().from(s.readingWorks)
+    .leftJoin(s.readingProgress,and(eq(s.readingProgress.workId,s.readingWorks.id),eq(s.readingProgress.userId,userId)))
+    .leftJoin(s.trackingState,and(eq(s.trackingState.mediaId,s.readingWorks.id),eq(s.trackingState.userId,userId)));
+  const [count]=await db.select({total:sql<number>`count(*)::int`}).from(s.readingWorks)
+    .leftJoin(s.readingProgress,and(eq(s.readingProgress.workId,s.readingWorks.id),eq(s.readingProgress.userId,userId)))
+    .leftJoin(s.trackingState,and(eq(s.trackingState.mediaId,s.readingWorks.id),eq(s.trackingState.userId,userId))).where(where);
+  const {page,pages}=pagination(count.total,options.page);
+  const rows=await base().where(where).orderBy(sql`greatest(case when ${progressVisible} then ${s.readingProgress.updatedAt} end,${s.trackingState.updatedAt}) desc nulls last`,s.readingWorks.id).limit(PAGE_SIZE).offset((page-1)*PAGE_SIZE);
+  return {...options,page,pages,total:count.total,items:await readingCards(userId,viewerId,rows.map(row=>row.reading_works))};
 }
 
 /** The hero shares Continue's selection/order without hydrating a hidden card page. */
@@ -269,12 +302,14 @@ async function mediumProgress(userId:string, viewerId:string, options:import('$l
 /** Received recommendations outlive notification delivery; filter IDs before hydrating a page. */
 async function recommendationProgress(userId:string,viewerId:string,options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
   if(userId!==viewerId)throw new AppError(403,'Recommendations are private to their recipient.');
-  requireEnabledCategory(await getConfig(),options.category);
+  const config=await getConfig();requireEnabledCategory(config,options.category);
+  if(options.category==='reading'&&options.kind!=='all'&&!['book','comic'].includes(options.kind)||options.category!=='reading'&&['book','comic'].includes(options.kind))throw new AppError(400,'Choose a type for the selected medium.');
+  if(['book','comic'].includes(options.kind))requireEnabledCategory(config,options.kind);
   const rows=await getDb().execute<{workId:string;ids:string[];names:string[]}>(sql`
     select r.work_id as "workId",array_agg(r.id::text order by r.created_at desc,r.id desc) as ids,
       array_agg(u.username order by r.created_at desc,r.id desc) as names
     from social_recommendations r join users u on u.id=r.sender_id join works w on w.id=r.work_id
-    where r.recipient_id=${userId} and r.state='pending' and not u.disabled and w.category=${options.category}
+    where r.recipient_id=${userId} and r.state='pending' and not u.disabled and ${selectedCategory(sql`w.category`,options.category)} and ${enabledCategories(sql`w.category`,config)}
       and (${options.kind}='all' or w.kind=${options.kind})
       and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(r.sender_id,r.recipient_id) and f.user_b=greatest(r.sender_id,r.recipient_id))
     group by r.work_id order by max(r.created_at) desc,r.work_id`);

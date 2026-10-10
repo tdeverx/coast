@@ -1,5 +1,5 @@
-import { wholeWorkId } from '$lib/core/tracking/continue';
-import { setRewatch } from '$lib/core/tracking/rewatch';
+import { wholeWorkId } from '$lib/core/tracking/continue.server';
+import { setRewatch } from '$lib/core/tracking/rewatch.server';
 import { json } from '@sveltejs/kit';
 import { getDb } from '$lib/server/db';
 import { uuid, type ApiContext } from './context.server';

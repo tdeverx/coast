@@ -1,5 +1,5 @@
 import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
-export type LibrarySurface = 'watch' | 'listen' | 'play';
+export type LibrarySurface = 'watch' | 'listen' | 'play' | 'read';
 export type LibraryContent = {
   items: (MediaView | MediaCardPresentation)[];
   page: number;
@@ -7,7 +7,7 @@ export type LibraryContent = {
   total: number;
   failure?: string;
 };
-export const libraryTitles = { watch: 'Watch', listen: 'Listen', play: 'Play' } as const;
+export const libraryTitles = { watch: 'Watch', listen: 'Listen', play: 'Play', read: 'Read' } as const;
 export function libraryBrowseDefaults(parameters: URLSearchParams, profile = false) {
   return {
     collection: profile || parameters.get('collection') === 'true',
@@ -34,6 +34,14 @@ export const librarySelections = {
     { value: 'in-progress', label: 'In progress' },
     { value: 'paused', label: 'Paused' },
     { value: 'completed', label: 'Completed' },
+    { value: 'dropped', label: 'Dropped' },
+  ],
+  read: [
+    { value: 'all', label: 'All' },
+    { value: 'planned', label: 'Planned' },
+    { value: 'reading', label: 'Reading' },
+    { value: 'paused', label: 'Paused' },
+    { value: 'completed', label: 'Read' },
     { value: 'dropped', label: 'Dropped' },
   ],
 };
@@ -66,8 +74,8 @@ export function libraryBrowsePaths(options: {
     href: surface === 'listen' ? '/music?' + new URLSearchParams({kind:selection,scope}) : '/games?' + new URLSearchParams({state: selection, scope, personal: String(preview.personal ?? false)}),
   };
   if (collection) {
-    const parameters = new URLSearchParams({ category: surface === 'watch' ? 'screen' : surface === 'listen' ? 'music' : 'game', level: 'root',
-      activity: surface === 'listen' ? 'all' : selection === 'progress' || selection === 'in-progress' ? 'active' : selection === 'watched' ? 'completed' : selection,
+    const parameters = new URLSearchParams({ category: surface === 'watch' ? 'screen' : surface === 'listen' ? 'music' : surface === 'read' ? 'reading' : 'game', level: 'root',
+      activity: surface === 'listen' ? 'all' : ['progress','in-progress'].includes(selection) ? 'active' : selection === 'watched' ? 'completed' : selection,
       kind: surface === 'listen' ? selection : surface === 'play' ? 'all' : kind, relationship, source, availability, ...(username ? { username } : {}), page: String(page) });
     const api = `collection?${parameters}`;
     parameters.set('view', surface);

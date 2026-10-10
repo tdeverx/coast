@@ -16,4 +16,4 @@
   {#if tag}<svelte:element this={tag} class={className} role="alert">{error}</svelte:element>
   {:else if inline}<span role="alert">{error}</span>{#if retry}<Button emphasis="subtle" onclick={retry}>{retryLabel}</Button>{/if}
   {:else}<div class="stack"><p role="alert">{error}</p>{#if retry}<Button emphasis="subtle" onclick={retry}>{retryLabel}</Button>{/if}</div>{/if}
-{:else if message}<p class="muted" role="status">{message}{@render children?.()}</p>{/if}
+{:else if message}<p class="muted" role="status">{message}{#if children}{' '}{@render children()}{/if}</p>{/if}

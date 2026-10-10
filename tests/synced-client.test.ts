@@ -3,11 +3,12 @@ import { compileModule } from 'svelte/compiler';
 const moduleUrl = (code:string)=>`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
 const clientUrl = moduleUrl(`export let respond=async()=>{}; export function delivery(fn){respond=fn;} export function api(...args){return respond(...args);} export const message=e=>e.message; export class ApiError extends Error {constructor(status){super('fixture');this.status=status;}}`);
 const playbackUrl = moduleUrl(`export const player={session:{id:'playback',mediaId:'media',mediaType:'audio',edition:'',durationSeconds:100},audioQueue:[],audioIndex:0};export const alignments=[];export let stops=0;export const playMedia=async()=>{};export const playbackSnapshot=()=>({positionSeconds:10,buffering:false});export const alignPlayback=state=>alignments.push(state);export const stopPlayback=async()=>{stops++;};`);
+const readingUrl = moduleUrl(`export const reader={session:null,location:null,loading:false,rendering:false,syncing:false}; export const alignments=[];export const alignReading=async location=>alignments.push(location);export const attachReading=async session=>{reader.session=session;};export const closeReading=async()=>{reader.session=null;};`);
 const modelUrl = moduleUrl('export const compatibleSource=(r,p)=>r.mediaId===p.mediaId&&r.mediaType===p.mediaType&&r.edition===(p.edition||"")&&Math.abs(r.durationSeconds-p.durationSeconds)<=2;export const timelinePosition=()=>10;export const canControl=(r,u)=>r.hostId===u||r.participants.some(p=>p.userId===u&&p.joined)&&(r.settings.playback==="everyone"||r.settings.playback==="selected"&&r.settings.controllers.includes(u));');
 const source = await Bun.file(new URL('../src/lib/playback/synced/client.svelte.ts',import.meta.url)).text();
 const code = compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:'client.svelte.js',generate:'client'}).js.code
  .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
- .replaceAll('$lib/ui/client',clientUrl).replaceAll('$lib/playback/client.svelte',playbackUrl).replaceAll('./model',modelUrl);
+ .replaceAll('$lib/reading/client.svelte',readingUrl).replaceAll('$lib/ui/client',clientUrl).replaceAll('$lib/playback/client.svelte',playbackUrl).replaceAll('./model',modelUrl);
 const client = await import(clientUrl);
 const sync:typeof import('../src/lib/playback/synced/client.svelte') = await import(moduleUrl(code));
 const stored = new Map<string,string>();
@@ -86,4 +87,20 @@ test('a denied item transition fails instead of silently leaving local playback 
  let calls=0;client.delivery(()=>{calls++;return Promise.resolve(room);});
  await expect(sync.syncedCommand('item',{playbackId:'new'})).rejects.toThrow('host');expect(calls).toBe(0);
  await sync.leaveSynced();sync.syncedPlayer.userId='host';
+});
+
+
+test('reading parties use their own session and never overwrite a location while it is publishing',async()=>{
+ const reading=await import(readingUrl);
+ const session={id:'reading-session',workId:'book',edition:'edition',format:'epub'};
+ const location={format:'epub',cfi:'epubcfi(/6/2!/4/2/1:0)',fraction:.25};
+ const readingRoom={...room,mediaType:'reading',mediaId:'book',edition:'edition',readingFormat:'epub',reading:location};
+ reading.reader.session=session;sync.syncedPlayer.userId='host';reading.reader.syncing=true;
+ let payload:any;client.delivery((_path:string,body:unknown)=>{payload=body;return Promise.resolve(readingRoom);});
+ try{
+  const before=reading.alignments.length;
+  await sync.startSynced();expect(payload.readingSessionId).toBe(session.id);expect(payload.playbackId).toBeUndefined();
+  expect(reading.alignments).toHaveLength(before);
+  reading.reader.syncing=false;await sync.resyncNow();expect(reading.alignments.at(-1)).toEqual(location);
+ }finally{reading.reader.session=null;reading.reader.syncing=false;await sync.leaveSynced();}
 });

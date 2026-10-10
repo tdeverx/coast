@@ -4,8 +4,8 @@ import {socialLiveState,socialLiveDeliveries,providerConnections,externalIds} fr
 import {getTrakt} from '$lib/providers/trakt/connection.server';
 import {liveObservationExpiry} from './live-freshness.server';
 import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
-import {reconcileProviderValue} from '$lib/sync/values';
-import {trackInTransaction} from '$lib/core/tracking/service';
+import {reconcileProviderValue} from '$lib/sync/values.server';
+import {trackInTransaction} from '$lib/core/tracking/service.server';
 import {PermanentActionError} from '$lib/server/queue';
 type TraktContext=Awaited<ReturnType<typeof getTrakt>>;
 export async function pollLive(userId:string,connectionId:string) {

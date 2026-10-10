@@ -2,13 +2,16 @@ import * as v from 'valibot';
 import {and,eq,sql} from 'drizzle-orm';
 import {collectionCTE,collectionRead} from '$lib/collection/query.server';
 import {getSql,getDb} from '$lib/server/db';
-import {socialRecommendations,friendships,notifications} from '$lib/server/db/schema';
-import {trackInTransaction} from '$lib/core/tracking/service';
-import {enqueueTraktChangeInTransaction,enqueueCollectionProjectionInTransaction} from '$lib/sync/changes';
+import {socialRecommendations,friendships,notifications,works} from '$lib/server/db/schema';
+import {trackInTransaction} from '$lib/core/tracking/service.server';
+import {enqueueTraktChangeInTransaction,enqueueCollectionProjectionInTransaction} from '$lib/sync/changes.server';
 import {notify,resolveNotification} from '$lib/server/notifications';
 import {AppError} from '$lib/server/security/errors';
 import {emojis} from './model';
 import {friendStatusSql} from './status.server';
+import {getConfig} from '$lib/server/config';
+import {categoryEnabled} from '$lib/experimental';
+import {enabledCategories} from '$lib/server/experimental';
 const uuid=v.pipe(v.string(),v.uuid());
 export async function incomingFriendRequests(userId:string){
  const [row]=await getSql()`select count(*)::int as count from friendships f join users u on u.id=f.requested_by where f.state='pending' and f.requested_by<>${userId}::uuid and (${userId}::uuid=f.user_a or ${userId}::uuid=f.user_b) and not u.disabled`;
@@ -18,7 +21,7 @@ export async function friends(userId:string,page=1,state:'all'|'accepted'|'pendi
  return await getSql()`select f.id,f.state,f.requested_by as "requestedBy",f.created_at as "createdAt",u.id as "userId",u.username,
  case when social_visible(u.id,${userId}::uuid,'details') then u.settings->'profile'->>'avatar' end as avatar, social_visible(u.id,${userId}::uuid,'insights') as "canCompare", ${friendStatusSql(userId)} as "activityStatus",
  case when social_visible(u.id,${userId}::uuid,'details') then case when coalesce(u.settings->'profile'->>'backgroundMode',case when u.settings->'profile'->>'backgroundMediaId' is not null then 'fixed' else 'activity' end)='activity' then
- (select a.work_id::text from social_activity a join works w on w.id=a.work_id where a.user_id=u.id and a.date_known and a.event_kind in ('watch','listen','play','played','session') and a.occurred_at<=now() and social_visible(u.id,${userId}::uuid,a.section,w.category) and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true')) order by a.occurred_at desc,a.id desc limit 1)
+ (select a.work_id::text from social_activity a join works w on w.id=a.work_id where a.user_id=u.id and a.date_known and a.event_kind in ('watch','listen','play','played','session','reading-reading','reading-completed') and a.occurred_at<=now() and social_visible(u.id,${userId}::uuid,a.section,w.category) and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true')) order by a.occurred_at desc,a.id desc limit 1)
  else u.settings->'profile'->>'backgroundMediaId' end end as "backgroundWorkId"
  from friendships f join users u on u.id=case when f.user_a=${userId}::uuid then f.user_b else f.user_a end left join user_presence up on up.user_id=u.id
  where (f.user_a=${userId}::uuid or f.user_b=${userId}::uuid) and not u.disabled and f.state in ('pending','accepted') and (${state}='all' or f.state=${state}) and (${userIds===undefined} or u.id=any(${getSql().array(userIds??[],'TEXT')}::uuid[])) order by f.state desc,u.username,f.id limit 61 offset ${(page-1)*60}`;
@@ -58,14 +61,15 @@ export async function requireFriend(userId:string,otherId:string) {
 }
 export async function react(userId:string,raw:unknown) {
  const input=v.parse(v.object({targetKind:v.picklist(['work','activity']),targetId:uuid,emoji:v.nullable(v.picklist(emojis))}),raw);
+ const config=await getConfig();
  return getSql().begin(async db=>{
   let owner:string|undefined,workId:string;
   if(input.targetKind==='activity') {
    const [event]=await db`select a.*,w.category from social_activity a join works w on w.id=a.work_id where a.id=${input.targetId} and social_visible(a.user_id,${userId}::uuid,a.section,w.category)`;
-   if(!event)throw new AppError(404,'Activity not found.');owner=event.user_id;workId=event.work_id;
+   if(!event||!categoryEnabled(config,event.category))throw new AppError(404,'Activity not found.');owner=event.user_id;workId=event.work_id;
   }else{
    const [work]=await db`select id,category from works where id=${input.targetId}`;
-   if(!work)throw new AppError(404,'Media not found.');workId=work.id;
+   if(!work||!categoryEnabled(config,work.category))throw new AppError(404,'Media not found.');workId=work.id;
   }
   if(input.emoji===null)await db`delete from social_reactions where user_id=${userId} and target_kind=${input.targetKind} and target_id=${input.targetId}`;
   else await db`insert into social_reactions(user_id,target_kind,target_id,emoji) values(${userId},${input.targetKind},${input.targetId},${input.emoji}) on conflict(user_id,target_kind,target_id) do update set emoji=excluded.emoji,updated_at=now()`;
@@ -79,10 +83,11 @@ export async function react(userId:string,raw:unknown) {
  });
 }
 export async function recommendations(userId:string,page=1,availableOnly=false) {
+ const config=await getConfig();
  const rows=await collectionRead(sql`${collectionCTE(userId,userId)}
  select r.id,r.state,r.sender_id as "senderId",r.recipient_id as "recipientId",r.work_id as "workId",r.created_at as "createdAt",u.username
- from social_recommendations r join users u on u.id=case when r.sender_id=${userId} then r.recipient_id else r.sender_id end
- where (r.recipient_id=${userId} or r.sender_id=${userId}) and not u.disabled
+ from social_recommendations r join users u on u.id=case when r.sender_id=${userId} then r.recipient_id else r.sender_id end join works w on w.id=r.work_id
+ where (r.recipient_id=${userId} or r.sender_id=${userId}) and not u.disabled and ${enabledCategories(sql`w.category`,config)}
  and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(r.sender_id,r.recipient_id) and f.user_b=greatest(r.sender_id,r.recipient_id))
  and (${!availableOnly} or exists(select 1 from assessments a where a.id=r.work_id and a.availability in ('available','partial')))
  order by r.created_at desc,r.id desc limit 61 offset ${(page-1)*60}`);
@@ -91,11 +96,12 @@ export async function recommendations(userId:string,page=1,availableOnly=false) 
 export async function recommend(userId:string,raw:unknown) {
  const input=v.parse(v.object({recipientId:uuid,workId:uuid}),raw);
  await requireFriend(userId,input.recipientId);
+ const config=await getConfig();
  return getSql().begin(async db=>{
   // Lock friendship with delivery so removal cannot race a recommendation.
   const [f]=await db`select id from friendships where state='accepted' and user_a=least(${userId}::uuid,${input.recipientId}::uuid) and user_b=greatest(${userId}::uuid,${input.recipientId}::uuid) for update`;
   if(!f)throw new AppError(403,'This action is available between friends.');
-  const [work]=await db`select id from works where id=${input.workId}`;if(!work)throw new AppError(404,'Media not found.');
+  const [work]=await db`select id,category from works where id=${input.workId}`;if(!work||!categoryEnabled(config,work.category))throw new AppError(404,'Media not found.');
   const [r]=await db`insert into social_recommendations(sender_id,recipient_id,work_id) values(${userId},${input.recipientId},${input.workId}) on conflict(sender_id,recipient_id,work_id) where state='pending' do update set work_id=excluded.work_id returning id,state`;
   await notify({userId:input.recipientId,kind:'recommendation',title:'A friend recommended something',sourceKey:'recommendation:'+r.id,data:{actorId:userId,subjectId:r.id,workId:input.workId,destination:'/for-you?notifications=true&notificationKind=recommendation',actions:['save','dismiss']}},db);
   return r;
@@ -103,6 +109,7 @@ export async function recommend(userId:string,raw:unknown) {
 }
 export async function respondRecommendation(userId:string,id:string,raw:unknown) {
  const {action}=v.parse(v.object({action:v.picklist(['save','dismiss'])}),raw);
+ const config=await getConfig();
  return getDb().transaction(async tx=>{
   const [r]=await tx.select().from(socialRecommendations).where(and(eq(socialRecommendations.id,id),eq(socialRecommendations.recipientId,userId))).for('update');
   if(!r)throw new AppError(404,'Recommendation not found.');
@@ -110,6 +117,8 @@ export async function respondRecommendation(userId:string,id:string,raw:unknown)
   if(!f)throw new AppError(403,'This recommendation is no longer available.');
   if(r.state!=='pending')return {state:r.state};
   if(action==='save'){
+   const [work]=await tx.select({category:works.category}).from(works).where(eq(works.id,r.workId));
+   if(!work||!categoryEnabled(config,work.category))throw new AppError(404,'Media not found.');
    const result=await trackInTransaction(tx,userId,{mediaId:r.workId,action:'watchlist',value:true});
    if(result.changed&&!result.reviewRequired){
     await enqueueTraktChangeInTransaction(tx,userId,{mediaId:r.workId,category:'watchlist',eventId:result.eventId??undefined});

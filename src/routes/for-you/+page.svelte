@@ -1,5 +1,6 @@
 <script lang="ts">
-  import DynamicFeed from '$lib/experiments/DynamicFeed.svelte';
+  import DynamicFeed from '$lib/recommendations/DynamicFeed.svelte';
+  import type {DynamicKind,GenreReason} from '$lib/recommendations/model';
   import { page } from '$app/state';
   import Heading from '$lib/ui/components/Heading.svelte';
   import MediaHero from '$lib/ui/components/MediaHero.svelte';
@@ -16,11 +17,11 @@
   {#if section}
     <Button href="/for-you" emphasis="subtle" icon="left">For You</Button>
     {#if section === 'upcoming' && page.data.experiments.planning}
-      <Shelf source={{type:'experimental',feature:'upcoming',layout:'grid'}} />
+      <Shelf source={{type:'for-you',feature:'upcoming',layout:'grid'}} />
     {:else if section === 'recommendations'}
-      <Shelf source={{type:'experimental',feature:'recommendations',layout:'grid'}} />
+      <Shelf source={{type:'for-you',feature:'recommendations',layout:'grid'}} />
     {:else if section === 'dynamic' && (page.url.searchParams.get('genre') || page.url.searchParams.get('work'))}
-      <Shelf source={{type:'experimental',feature:'row',genre:page.url.searchParams.get('genre')??undefined,workId:page.url.searchParams.get('work')??undefined,kind:(['movie','show','game','album'].includes(page.url.searchParams.get('kind')??'')?page.url.searchParams.get('kind'):undefined) as import('$lib/experiments/row-titles').DynamicKind|undefined,reason:(['liked','watched','saved','explore'].includes(page.url.searchParams.get('reason')??'')?page.url.searchParams.get('reason'):undefined) as import('$lib/experiments/row-ranking').GenreReason|undefined,layout:'grid'}} />
+      <Shelf source={{type:'for-you',feature:'row',genre:page.url.searchParams.get('genre')??undefined,workId:page.url.searchParams.get('work')??undefined,kind:(['movie','show','game','album'].includes(page.url.searchParams.get('kind')??'')?page.url.searchParams.get('kind'):undefined) as DynamicKind|undefined,reason:(['liked','watched','saved','explore'].includes(page.url.searchParams.get('reason')??'')?page.url.searchParams.get('reason'):undefined) as GenreReason|undefined,layout:'grid'}} />
     {:else if section === 'popular'}
       <Shelf source={{type:'social',surface:'popular',layout:'grid',mediums:true,category:page.url.searchParams.get('category')??'screen'}} />
     {:else}
@@ -42,7 +43,7 @@
     <Shelf source={{type:'progress',surface:'next',mediums:true}} />
     <Shelf source={{type:'progress',surface:'recommendations',mediums:true}} />
     <Shelf source={{type:'progress',surface:'favourites',mediums:true}} />
-    {#if page.data.experiments.planning}<Shelf source={{type:'experimental',feature:'upcoming'}} />{/if}
+    {#if page.data.experiments.planning}<Shelf source={{type:'for-you',feature:'upcoming'}} />{/if}
     <Shelf source={{type:'social',mediums:true}} />
     <DynamicFeed />
   {/if}

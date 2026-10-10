@@ -55,7 +55,7 @@ This is an explicit user constraint, applying throughout implementation:
 - Sharing changes do not remove tracking history or alter provider import/export settings. Existing Collection visibility and demand reporting remain separate controls, with demand-sharing opt-outs preserved.
 - Availability is assessed for the visitor/recipient; a friend's accessible source does not grant access to somebody else. Social visibility does not grant playback permission.
 - Use the shared UI library, work registry, concrete activity models and existing notification/delivery infrastructure. Reuse shelves/cards/headers/menus and lazy bounded loading. Do not add a second scheduler, authentication binding system, or speculative generic social framework.
-- Define reactions, feed deduplication/grouping, opt-outs and notification responses once. Reuse those rules for supported media, with concrete activity semantics and existing experimental gates. Future books/audiobooks/comics can extend the work foundation without pretending they are implemented now.
+- Define reactions, feed deduplication/grouping, opt-outs and notification responses once. Reuse those rules for supported media, with concrete activity semantics and existing experimental gates. Books/Comics record dated reading-state transitions and share permitted live reading presence; page turns do not create Activity events. Audiobooks still require their own concrete model.
 
 ## Confirmed decisions
 
@@ -106,7 +106,7 @@ Account invitation links are tentative roadmap work under invites and onboarding
 
 ### Shared playback
 
-Robust synchronised watching and listening are approved follow-up targets, with future books/comics considered when those media exist. Plan source/access compatibility, session leadership, joining/leaving, playback drift, seeking and reconnects together. Co-watching presence and shared listening sessions belong here. Consider an in-session chat/reaction overlay; it does not establish approval for ordinary direct messaging.
+Parties support watching, listening and experimental reading using concrete source contracts. Reading members need their own matching edition; PDF/CBZ pages and EPUB CFIs are synchronized without sharing file access. Plan source/access compatibility, session leadership, joining/leaving, playback drift, seeking and reconnects together. Co-watching presence and shared listening sessions belong here. Consider an in-session chat/reaction overlay; it does not establish approval for ordinary direct messaging.
 
 ### Optional or undecided
 

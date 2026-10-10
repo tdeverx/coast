@@ -1,6 +1,6 @@
 import { context } from '$lib/server/diagnostics';
 import { correlationId } from '$lib/diagnostics';
-import { conflictPreference } from '$lib/sync/preference';
+import { conflictPreference } from '$lib/sync/preference.server';
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb, type Database } from '$lib/server/db';
@@ -23,7 +23,7 @@ import {
 } from '$lib/providers/seerr/adapter.server';
 import { ProviderActionError, type DiscoverKind } from '$lib/providers/contracts';
 import { notify } from '$lib/server/notifications';
-import { trackInTransaction } from '$lib/core/tracking/service';
+import { trackInTransaction } from '$lib/core/tracking/service.server';
 import { getInstance, instanceFetchConfig } from '$lib/providers/instances.server';
 import { connectionFor } from '$lib/providers/connections.server';
 import { getSeerr, assertSeerrAccount } from '$lib/providers/seerr/connection.server';
@@ -358,7 +358,7 @@ export async function refreshRequests(userId: string, instanceId: string,expecte
   const { adapter, connection,account,scope } = await getSeerr(userId, instanceId,expected);
   type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
   const guarded=<T>(work:(tx:Tx)=>Promise<T>)=>getDb().transaction(async tx=>{await assertSeerrAccount(tx,scope);return work(tx);});
-  const { importTmdb } = await import('$lib/catalogue/service');
+  const { importTmdb } = await import('$lib/catalogue/service.server');
   const seen = new Set<string>();
   for (let offset = 0; ; offset += 100) {
     await guarded(async()=>{});
@@ -475,7 +475,7 @@ export async function refreshRequests(userId: string, instanceId: string,expecte
       .set({ remote: { value: request.state }, updatedAt: new Date() })
       .where(eq(syncValues.id, entry.id)));
     if (preference !== 'manual') {
-      const { resolveConflict } = await import('$lib/sync/conflicts');
+      const { resolveConflict } = await import('$lib/sync/conflicts.server');
       await guarded(tx=>resolveConflict(userId, entry.id, preference === 'remote' ? 'accepted' : 'ignored',tx));
     }
   }

@@ -11,7 +11,7 @@ import { AppError } from '$lib/server/security/errors';
 import { PermanentActionError,type OutboxAction } from '$lib/server/queue';
 
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
-export const webhookEvents=['tracking.changed','relationship.changed','rating.changed','music.listened','game.changed'] as const;
+export const webhookEvents=['tracking.changed','relationship.changed','rating.changed','music.listened','game.changed','reading.changed'] as const;
 export type WebhookEvent=typeof webhookEvents[number];
 export const webhookSchema=v.strictObject({url:v.pipe(v.string(),v.url(),v.maxLength(2048)),events:v.pipe(v.array(v.picklist(webhookEvents)),v.minLength(1),v.maxLength(webhookEvents.length))});
 export function webhookSignature(secret:string,timestamp:string,body:string){return createHmac('sha256',secret).update(`${timestamp}.${body}`).digest('hex');}

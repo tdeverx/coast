@@ -1,8 +1,9 @@
-import { setRewatch } from '../src/lib/core/tracking/rewatch';
+import { setRewatch } from '../src/lib/core/tracking/rewatch.server';
 import { mediaViewsForIds } from '../src/lib/server/queries/media';
 import { beforeAll, afterAll, test, expect } from 'bun:test';
 import { eq, inArray } from 'drizzle-orm';
 import { getDb,getSql } from '../src/lib/server/db';
+import { getConfig } from '../src/lib/server/config';
 import {
   users,
   media,
@@ -13,10 +14,14 @@ import {
   seasons,
   mediaRelationships,
   episodes,
+  readingProgress,
+  readingWorks,
+  systemSettings,
+  works,
 } from '../src/lib/server/db/schema';
-import { updateProfile } from '../src/lib/core/profile/service';
+import { updateProfile } from '../src/lib/core/profile/service.server';
 import { streamGifAvatar } from '../src/lib/core/profile/gif-avatar.server';
-import { track } from '../src/lib/core/tracking/service';
+import { track } from '../src/lib/core/tracking/service.server';
 import { progressData } from '../src/lib/server/queries/progress';
 import { profileData, profileActivity, profileProgress } from '../src/lib/server/queries/profile';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
@@ -94,6 +99,129 @@ afterAll(async () => {
     .delete(users)
     .where(inArray(users.id, [owner, other]));
   await getDb().delete(media).where(inArray(media.id, ids));
+});
+
+async function withReadingProfile(
+  bookCount: number,
+  comicCount: number,
+  assertions: (fixture: {
+    reader: string;
+    books: string[];
+    comics: string[];
+    now: Date;
+    setFeatures: (books: boolean, comics: boolean) => Promise<void>;
+  }) => Promise<void>
+) {
+  const db = getDb(), reader = crypto.randomUUID(), config = await getConfig();
+  const books = Array.from({ length: bookCount }, () => crypto.randomUUID());
+  const comics = Array.from({ length: comicCount }, () => crypto.randomUUID());
+  const fixtureIds = [...books, ...comics], now = new Date('2026-09-30T12:00:00Z');
+  const setFeatures = async (experimentalBooks: boolean, experimentalComics: boolean) => {
+    const value = { ...config, experimentalBooks, experimentalComics };
+    await db.insert(systemSettings).values({ key: 'coast', value })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value } });
+  };
+  try {
+    await setFeatures(true, true);
+    await db.insert(users).values({ id: reader, username: `profile-reader-${reader}`, passwordHash: 'fixture' });
+    await db.transaction(async tx => {
+      await tx.insert(works).values([
+        ...books.map(id => ({ id, category: 'book', kind: 'book' as const })),
+        ...comics.map(id => ({ id, category: 'comic', kind: 'comic' as const })),
+      ]);
+      await tx.insert(readingWorks).values([
+        ...books.map((id, i) => ({ id, provider: 'openlibrary' as const, externalId: `OL${960000000 + i}W`, kind: 'book' as const, title: `Profile book ${i}`, authors: ['Reading author'], publishedYear: 2020, sourceUrl: `https://openlibrary.org/works/OL${960000000 + i}W` })),
+        ...comics.map((id, i) => ({ id, provider: 'comic-vine' as const, externalId: `4000-${960000000 + i}`, kind: 'comic' as const, title: `Profile comic ${i}`, seriesTitle: 'Profile series', issueNumber: String(i + 1), sourceUrl: `https://comicvine.gamespot.com/issue/4000-${960000000 + i}/` })),
+      ]);
+      // Comics sort first, so filtering after pagination would leave short or empty book pages.
+      for (const [mediaIds, updatedAt] of [[books, new Date('2026-09-27T12:00:00Z')], [comics, new Date('2026-09-29T12:00:00Z')]] as const) {
+        await tx.insert(trackingState).values(mediaIds.map(mediaId => ({ userId: reader, mediaId, favourite: true, updatedAt })));
+        await tx.insert(ratings).values(mediaIds.map(mediaId => ({ userId: reader, mediaId, value: 4.5, updatedAt })));
+      }
+      await tx.insert(readingProgress).values(fixtureIds.map(workId => ({ userId: reader, workId, state: 'completed' as const, page: 100, totalPages: 100, startedAt: new Date('2026-09-27T12:00:00Z'), completedAt: new Date('2026-09-29T12:00:00Z') })));
+    });
+    await assertions({ reader, books, comics, now, setFeatures });
+  } finally {
+    await db.delete(users).where(eq(users.id, reader));
+    await db.delete(works).where(inArray(works.id, fixtureIds));
+    await db.insert(systemSettings).values({ key: 'coast', value: config })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: config } });
+  }
+}
+
+run('reading profile favourites and ratings use canonical cards without screen watch history', async () => {
+  await withReadingProfile(1, 1, async ({ reader, books, comics, now }) => {
+    const overview = await profileData(reader, {}, now);
+    expect(overview.totals).toEqual({ movies: 0, episodes: 0, favourites: 2, rated: 2, unique: 0, watches: 0 });
+    expect((await profileData(reader, { view: 'history' }, now)).history).toEqual([]);
+    expect(await getDb().select().from(trackingEvents).where(eq(trackingEvents.userId, reader))).toEqual([]);
+    for (const cards of [overview.favourites, (await profileData(reader, { view: 'ratings' }, now)).ratedTitles]) {
+      expect(cards).toHaveLength(2);
+      expect(cards.find(item => item.id === books[0])).toMatchObject({ kind: 'book', title: 'Profile book 0', href: `/media/${books[0]}`, captionSubtitle: 'Reading author', year: 2020 });
+      expect(cards.find(item => item.id === comics[0])).toMatchObject({ kind: 'comic', title: 'Profile comic 0', href: `/media/${comics[0]}`, captionSubtitle: 'Profile series #1', attribution: { label: 'Comic Vine', href: 'https://comicvine.gamespot.com/issue/4000-960000000/' } });
+    }
+    await updateProfile(reader, { action: 'preferences', period: 'month', favouriteKind: 'book' });
+    await updateProfile(reader, { action: 'preferences', period: 'all' });
+    const [saved] = await getDb().select({ settings: users.settings }).from(users).where(eq(users.id, reader));
+    expect(saved.settings.profile?.favouriteKind).toBe('book');
+    expect((await profileData(reader, {}, now)).profile.favouriteKind).toBe('book');
+    expect((await profileData(reader, { view: 'favourites', kind: 'book' }, now)).favourites.map(item => item.id)).toEqual(books);
+    expect((await profileData(reader, { view: 'favourites', kind: 'book', scope: 'available' }, now)).favourites.map(item => item.id)).toEqual(books);
+    expect((await profileData(reader, { view: 'ratings', kind: 'comic' }, now)).ratedTitles.map(item => item.id)).toEqual(comics);
+  });
+});
+
+run('reading profile privacy follows each work category even when screen content is private', async () => {
+  await withReadingProfile(1, 1, async ({ reader, books, comics, now }) => {
+    await getDb().update(users).set({ settings: {
+      profile: { featuredMediaId: books[0], featuredNote: 'Private book note', pinnedFavourites: [...books, ...comics], favouriteOrder: [...books, ...comics] },
+      social: { audience: 'public', sections: { progress: 'private' }, categories: { screen: 'private', book: 'private', comic: 'public' } },
+    } }).where(eq(users.id, reader));
+    for (const viewer of [other, null]) {
+      const favourites = await profileData(reader, { view: 'favourites' }, now, viewer);
+      expect(favourites.total).toBe(1);
+      expect(favourites.favourites.map(item => item.id)).toEqual(comics);
+      expect(favourites.favourites[0].trackingProgress).toBeUndefined();
+      expect(favourites.profile.pinnedFavourites).toEqual(comics);
+      expect(favourites.profile.favouriteOrder).toEqual(comics);
+      expect(favourites.featured).toBeNull();
+      expect(favourites.profile.featuredMediaId).toBeUndefined();
+      expect(favourites.profile.featuredNote).toBeUndefined();
+      const rated = await profileData(reader, { view: 'ratings' }, now, viewer);
+      expect(rated.total).toBe(1);
+      expect(rated.ratedTitles.map(item => item.id)).toEqual(comics);
+      expect(rated.ratedTitles[0].trackingProgress).toBeUndefined();
+      expect(JSON.stringify({ profile: favourites.profile, favourites: favourites.favourites, ratings: rated.ratedTitles })).not.toContain(books[0]);
+    }
+    expect((await profileData(reader, { view: 'favourites' }, now)).total).toBe(2);
+    expect((await profileData(reader, { view: 'ratings' }, now)).total).toBe(2);
+    expect((await profileData(reader, {}, now)).profile.featuredMediaId).toBe(books[0]);
+  });
+});
+
+run('disabled reading experiments filter profile counts before bounded favourites and rating pages', async () => {
+  await withReadingProfile(61, 2, async ({ reader, books, comics, now, setFeatures }) => {
+    const enabled = await profileData(reader, { view: 'favourites' }, now);
+    expect(enabled.total).toBe(63);
+    expect(enabled.favourites.slice(0, 2).map(item => item.id).sort()).toEqual([...comics].sort());
+    await setFeatures(true, false);
+    const sortedBooks = [...books].sort();
+    for (const view of ['favourites', 'ratings'] as const) {
+      const first = await profileData(reader, { view }, now);
+      const firstCards = view === 'favourites' ? first.favourites : first.ratedTitles;
+      expect(first.total).toBe(61); expect(first.pages).toBe(2); expect(firstCards).toHaveLength(60);
+      expect(firstCards.map(item => item.id)).toEqual(sortedBooks.slice(0, 60));
+      const last = await profileData(reader, { view, page: 99 }, now);
+      const lastCards = view === 'favourites' ? last.favourites : last.ratedTitles;
+      expect(last.page).toBe(2); expect(lastCards.map(item => item.id)).toEqual(sortedBooks.slice(60));
+      expect(last.totals.favourites).toBe(61); expect(last.totals.rated).toBe(61);
+    }
+    await setFeatures(false, false);
+    const hidden = await profileData(reader, { view: 'favourites' }, now);
+    expect(hidden.total).toBe(0); expect(hidden.favourites).toEqual([]);
+    expect((await profileData(reader, { view: 'ratings' }, now)).ratedTitles).toEqual([]);
+    expect(await getDb().select().from(readingProgress).where(eq(readingProgress.userId, reader))).toHaveLength(63);
+  });
 });
 run(
   'profile is owner scoped, bounds rows and counts titles without duplicating rewatches',
@@ -299,7 +427,7 @@ run('unknown imported dates appear only in all-time history, never dated charts'
     .values({ kind: 'movie', title: 'Undated import' })
     .returning();
   ids.push(item.id);
-  const { track } = await import('../src/lib/core/tracking/service');
+  const { track } = await import('../src/lib/core/tracking/service.server');
   await track(owner, { mediaId: item.id, action: 'watch', source: 'jellyfin', acknowledged: true });
   const [state] = await getDb()
     .select()

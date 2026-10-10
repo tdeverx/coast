@@ -2,10 +2,10 @@ import {beforeAll,afterAll,test,expect} from 'bun:test';
 import {sql as query} from 'drizzle-orm';
 import {getSql,getDb} from '../src/lib/server/db';
 import {refreshTasteCaches,runTasteRefresh,scheduleTasteRefresh,updateTasteSchedule,tasteJob,tasteRevisionSql} from '../src/lib/social/taste-cache.server';
-import {experimentalRows} from '../src/lib/experiments/recommendations.server';
-import {importIgdbMetadata,gameDetails} from '../src/lib/core/games/service';
+import {recommendationRows} from '../src/lib/recommendations/query.server';
+import {importIgdbMetadata,gameDetails} from '../src/lib/core/games/service.server';
 import {mapIgdbGame} from '../src/lib/providers/igdb/adapter.server';
-import {track} from '../src/lib/core/tracking/service';
+import {track} from '../src/lib/core/tracking/service.server';
 import {workTasteFeatures} from '../src/lib/social/work-features.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),other=crypto.randomUUID(),ids=Array.from({length:4},()=>crypto.randomUUID());
@@ -22,7 +22,7 @@ run('task computes private bounded scores and excludes stale cached rankings',as
  const profiles=await sql`select * from user_taste_profiles where user_id=${user}`;expect(profiles).toHaveLength(4);
  const [score]=await sql`select * from user_taste_scores where user_id=${user} and work_id=${ids[2]}`;expect(score.score).toBeGreaterThan(50);expect(score.breakdown.reasons.some((r:any)=>r.dimension==='cast')).toBe(true);
  const [none]=await sql`select count(*)::int as count from user_taste_scores where user_id=${other}`;expect(none.count).toBe(0);
- const result=await experimentalRows(user,'recommendations',new URL('http://test/?category=screen'));expect(result.items.some(item=>item.id===ids[2])).toBe(true);
+ const result=await recommendationRows(user,'recommendations',new URL('http://test/?category=screen'));expect(result.items.some(item=>item.id===ids[2])).toBe(true);
  // Shared enrichment queues a later refresh without invalidating private scores mid-backfill.
  await sql`update work_features set updated_at=now() where work_id=${ids[2]}`;
  const [enriched]=await getDb().execute<{revision:string}>(query`select ${tasteRevisionSql} as revision from users u where u.id=${user}::uuid`);expect(enriched.revision).toBe(score.revision);

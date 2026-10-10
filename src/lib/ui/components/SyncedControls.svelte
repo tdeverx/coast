@@ -6,7 +6,7 @@
   import {createResource} from '$lib/ui/resource.svelte';
   import type {MediaCardPresentation} from '$lib/ui/types';
   import PlaybackTimeline from './PlaybackTimeline.svelte';
-  import {playbackArtwork,playbackBackground} from '$lib/ui/artwork-priority';
+  import {playbackArtwork,playbackBackground} from '$lib/media/artwork';
   import {useClock} from '$lib/ui/clock.svelte';
   import {profilePath} from '$lib/profile/url';
   import {playbackTime} from '$lib/playback/time';
@@ -31,11 +31,11 @@
 {#snippet content()}
   {#if syncedPlayer.room}
     {#snippet partyBody()}
-      {#if syncedPlayer.unavailableMediaId}<Button disabled={syncedPlayer.busy} onclick={retry}>Retry playback</Button>{/if}
+      {#if syncedPlayer.unavailableMediaId}<Button disabled={syncedPlayer.busy} onclick={retry}>{syncedPlayer.room?.mediaType==='reading'?'Retry reading':'Retry playback'}</Button>{/if}
       {#if syncedPlayer.notice}<p class="notice" role="status">{syncedPlayer.notice}</p>{/if}
     {/snippet}
     {#snippet partyFooter()}
-      <PlaybackTimeline mediaId={syncedPlayer.room?.mediaId??undefined} href={media.data?.href} audio={syncedPlayer.room?.mediaType==='audio'} title={media.data?.title??'Now playing'} detail={media.data?.captionSubtitle??''} artwork={media.data?playbackArtwork(media.data):undefined} current={mediaId&&syncedPlayer.room?timelinePosition(syncedPlayer.room,clock.now):0} duration={mediaId?syncedPlayer.room?.durationSeconds??0:0}/>
+      <PlaybackTimeline readingActive={syncedPlayer.room?.mediaType==='reading'} reading={syncedPlayer.room?.reading??null} mediaId={syncedPlayer.room?.mediaId??undefined} href={media.data?.href} audio={syncedPlayer.room?.mediaType==='audio'} title={media.data?.title??'Now playing'} detail={media.data?.captionSubtitle??''} artwork={media.data?playbackArtwork(media.data):undefined} current={mediaId&&syncedPlayer.room?timelinePosition(syncedPlayer.room,clock.now):0} duration={mediaId?syncedPlayer.room?.durationSeconds??0:0}/>
     {/snippet}
     <PartyCard inParty {embedded} footer={mediaId?partyFooter:undefined} {members} children={syncedPlayer.unavailableMediaId||syncedPlayer.notice?partyBody:undefined} label="Current party" background={mediaId&&media.data?playbackBackground(media.data):null}>
 

@@ -4,7 +4,7 @@ import { getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import { updateProviderSchedule, runProviderJob, scheduleProviderMaintenance } from '../src/lib/providers/maintenance.server';
 import { libraryData } from '../src/lib/server/queries/library';
-import { ingestMetadata } from '../src/lib/catalogue/service';
+import { ingestMetadata } from '../src/lib/catalogue/service.server';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const admin = crypto.randomUUID(),
   member = crypto.randomUUID(),

@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import { AppError } from '$lib/server/security/errors';
-import { startPlayback, progressPlayback, recordPlaybackError } from '$lib/playback/server';
+import { startPlayback, progressPlayback, recordPlaybackError } from '$lib/playback/service.server';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handlePlayback(context: ApiContext): Promise<Response | undefined> {

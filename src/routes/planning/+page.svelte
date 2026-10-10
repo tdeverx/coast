@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ReadingLaunch from '$lib/reading/ReadingLaunch.svelte';
   import { goto } from '$app/navigation';
   import { mediumOptions } from '$lib/experimental';
   import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
@@ -14,11 +15,11 @@
   let { data } = $props();
   const operation = createOperation();
 
-  function start(id: string) {
+  async function start(id: string,reading=false) {
     const plan = data.plans.find(plan => plan.id === id);
     if (!plan) return;
-    void operation.run(async () => {
-      await playMedia(plan.workId);
+    await operation.run(async () => {
+      if(!reading)await playMedia(plan.workId);
       if (plan.party) {
         await startSynced();
         const room = syncedPlayer.room;
@@ -44,13 +45,14 @@
 <svelte:head><title>Planning · Coast</title></svelte:head>
 <div class="content page">
   <Heading title="Planning" variant="page" description="Experimental · your scheduled plans. Visual treatment unapproved.">
-    {#snippet filters()}<SegmentedControl label="Planning medium" value={data.category} options={mediumOptions(page.data)} onchange={category=>{const url=new URL(page.url);url.searchParams.set('category',category);url.searchParams.delete('page');void goto(url,{keepFocus:true,noScroll:true});}} />{/snippet}
+    {#snippet filters()}<SegmentedControl label="Planning medium" value={data.category} options={mediumOptions(page.data, ['screen','game','music','reading'])} onchange={category=>{const url=new URL(page.url);url.searchParams.set('category',category);url.searchParams.delete('page');void goto(url,{keepFocus:true,noScroll:true});}} />{/snippet}
   </Heading>
   <RowFeedback error={operation.error} inline={false} />
   <Shelf title="Your plans" items={data.items} layout="grid" availability={false} hideEmpty={false} pageNumber={data.page} pages={data.pages} {pageUrl}>
     {#snippet details(item)}
       <div class="row">
-        {#if ['movie', 'episode', 'track'].includes(item.kind)}
+        {#if item.kind==='book'||item.kind==='comic'}<ReadingLaunch compact workId={item.id} title={item.title} onopened={async()=>{start(item.entryId!,true);}} />
+        {:else if ['movie', 'episode', 'track'].includes(item.kind)}
           <Button compact disabled={operation.busy} onclick={() => start(item.entryId!)}>Start</Button>
         {:else}
           <Button compact href={'href' in item ? item.href : `/media/${item.id}`}>View</Button>

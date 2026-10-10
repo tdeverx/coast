@@ -25,8 +25,11 @@
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.5",
     "@hugeicons/svelte": "^1.1.5",
+    "@zip.js/zip.js": "^2.23.0",
     "drizzle-orm": "^0.45.2",
+    "epubjs": "^0.3.93",
     "hls.js": "^1.6.0",
+    "pdfjs-dist": "^6.4.299",
     "valibot": "^1.1.0"
   },
   "devDependencies": {

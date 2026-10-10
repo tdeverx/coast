@@ -2,9 +2,9 @@ import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { asc, eq } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import { ingestMetadata } from '../src/lib/catalogue/service';
+import { ingestMetadata } from '../src/lib/catalogue/service.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
-import { importTraktFromAdapter } from '../src/lib/sync/trakt-import';
+import { importTraktFromAdapter } from '../src/lib/sync/trakt-import.server';
 import type { SyncPreferences } from '../src/lib/providers/contracts';
 
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;

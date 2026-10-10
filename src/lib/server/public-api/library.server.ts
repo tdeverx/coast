@@ -7,8 +7,8 @@ import {pagination,PAGE_SIZE} from '$lib/server/queries/pagination';
 
 /** Read shared identities from observed user access; never call provider browsing APIs. */
 export async function publicLibrary(userId:string,url:URL) {
- const category=v.parse(v.picklist(['all','screen','game','music']),url.searchParams.get('category')??'all');
- const kind=v.parse(v.picklist(['all','movie','show','season','episode','collection','game','album','track']),url.searchParams.get('kind')??'all');
+ const category=v.parse(v.picklist(['all','screen','game','music','reading']),url.searchParams.get('category')??'all');
+ const kind=v.parse(v.picklist(['all','movie','show','season','episode','collection','game','album','track','book','comic']),url.searchParams.get('kind')??'all');
  const source=v.parse(v.union([v.literal('all'),v.pipe(v.string(),v.uuid())]),url.searchParams.get('source')??'all');
  const config=await getConfig();
  const requested=Number(url.searchParams.get('page')??1);
@@ -23,8 +23,8 @@ export async function publicLibrary(userId:string,url:URL) {
      and (${source}='all' or c.id::text=${source})
    union select e.parent_id from accessible a join edges e on e.child_id=a.id
  ), filtered as (
-   select w.id from works w where w.id in(select id from accessible) and (${category}='all' or w.category=${category})
-     and (${kind}='all' or w.kind=${kind}) and w.category in ('screen','game','music') and (w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming}))
+   select w.id from works w where w.id in(select id from accessible) and (${category}='all' or w.category=${category} or ${category}='reading' and w.kind in ('book','comic'))
+     and (${kind}='all' or w.kind=${kind}) and w.category in ('screen','game','music','book','comic') and (w.category='book' and ${config.experimentalBooks} or w.category='comic' and ${config.experimentalComics} or w.category='screen' or (w.category='music' and ${config.experimentalMusic}) or (w.category='game' and ${config.experimentalGaming}))
  ), total as (select count(*)::int as total from filtered)
  select total,coalesce((select jsonb_agg(id order by id) from(select id from filtered order by id limit ${PAGE_SIZE}
    offset (least(${requested},greatest(1,ceil(total::numeric/${PAGE_SIZE})::int))-1)*${PAGE_SIZE}) page),'[]'::jsonb) as ids from total`);

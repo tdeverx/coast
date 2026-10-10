@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test';
-import { decideSync } from '../src/lib/sync/values';
+import { decideSync } from '../src/lib/sync/values.server';
 
 test('sync distinguishes remote edits, local edits, and simultaneous conflicts', () => {
   const baseline = { remote: { value: 2 }, agreed: { value: 2 }, conflict: false };

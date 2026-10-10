@@ -16,9 +16,9 @@ import {
   trackingState,
   notifications,
 } from '../src/lib/server/db/schema';
-import { trackWithExports, bulkTrackWithExports, rateWithExports } from '../src/lib/sync/changes';
-import { track } from '../src/lib/core/tracking/service';
-import { getPendingConflicts, resolveConflict } from '../src/lib/sync/conflicts';
+import { trackWithExports, bulkTrackWithExports, rateWithExports } from '../src/lib/sync/changes.server';
+import { track } from '../src/lib/core/tracking/service.server';
+import { getPendingConflicts, resolveConflict } from '../src/lib/sync/conflicts.server';
 const enabled = process.env.COAST_DB_TEST === '1',
   run = enabled ? test : test.skip;
 const suffix = crypto.randomUUID();

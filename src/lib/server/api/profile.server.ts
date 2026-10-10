@@ -1,5 +1,5 @@
 import { profileData, profileActivity } from '$lib/server/queries/profile';
-import { updateProfile } from '$lib/core/profile/service';
+import { updateProfile } from '$lib/core/profile/service.server';
 import { json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { type ApiContext } from './context.server';

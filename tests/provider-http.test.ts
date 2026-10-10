@@ -1,6 +1,6 @@
-import { addListItem, createList, getList, deleteList } from '../src/lib/core/lists/service';
-import { restartPlaylist, sequenceEntries } from '../src/lib/core/lists/sequence';
-import { track } from '../src/lib/core/tracking/service';
+import { addListItem, createList, getList, deleteList } from '../src/lib/core/lists/service.server';
+import { restartPlaylist, sequenceEntries } from '../src/lib/core/lists/sequence.server';
+import { track } from '../src/lib/core/tracking/service.server';
 import {profileAvatarChoices,providerProfileAvatar} from '../src/lib/core/profile/avatars.server';
 import { streamArtwork } from '../src/lib/providers/artwork.server';
 import { verifyTraktIdentity } from '../src/lib/providers/trakt/connection.server';
@@ -35,10 +35,10 @@ import { updateJellyfinPlaybackImport, connectJellyfin } from '../src/lib/provid
 import { updateProviderSchedule } from '../src/lib/providers/maintenance.server';
 import { requestMedia, requestOptions } from '../src/lib/providers/seerr/requests.server';
 import { registerProviderActions } from '../src/lib/providers/actions.server';
-import { scanJellyfinLibrary, syncJellyfinUser, libraryScanProgress } from '../src/lib/sync/jellyfin';
-import { importTraktFromAdapter } from '../src/lib/sync/trakt-import';
-import { exportTraktToAdapter } from '../src/lib/sync/trakt-export';
-import { startPlayback, streamPlayback, progressPlayback } from '../src/lib/playback/server';
+import { scanJellyfinLibrary, syncJellyfinUser, libraryScanProgress } from '../src/lib/sync/jellyfin.server';
+import { importTraktFromAdapter } from '../src/lib/sync/trakt-import.server';
+import { exportTraktToAdapter } from '../src/lib/sync/trakt-export.server';
+import { startPlayback, streamPlayback, progressPlayback } from '../src/lib/playback/service.server';
 import { TmdbAdapter } from '../src/lib/providers/tmdb/adapter.server';
 import { runQueueOnce, registerActionHandler, enqueueAction } from '../src/lib/server/queue';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';

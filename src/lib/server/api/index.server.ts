@@ -4,9 +4,9 @@ import { providerApiError } from '$lib/server/security/provider-api-error';
 import { provisioningAuthority } from '$lib/providers/jellyfin/provisioning.server';
 import { createShare,listShares,revokeShare } from '$lib/sharing/service.server';
 import { planningData,createPlan,cancelPlan,completePlan } from '$lib/experiments/planning.server';
-import { dynamicFeed } from '$lib/experiments/dynamic.server';
-import { experimentalRows } from '$lib/experiments/recommendations.server';
-import {playbackBackground} from '$lib/ui/artwork-priority';
+import { dynamicFeed } from '$lib/recommendations/feed.server';
+import { recommendationRows } from '$lib/recommendations/query.server';
+import {playbackBackground} from '$lib/media/artwork';
 import { uuid, text } from './context.server';
 import * as synced from '$lib/playback/synced/service.server';
 import { createInvite, listInvites, revokeInvite } from '$lib/server/auth/onboarding';
@@ -47,12 +47,13 @@ import { getConfig } from '$lib/server/config';
 import { AppError } from '$lib/server/security/errors';
 import { DomainError } from '$lib/core/errors';
 import { ProviderActionError } from '$lib/providers/contracts';
-import { trackWithExports } from '$lib/sync/changes';
+import { trackWithExports } from '$lib/sync/changes.server';
 import { updateJellyfinReconciliation } from '$lib/providers/jellyfin/connection.server';
-import { playbackDetails, streamPlayback, streamTrailer } from '$lib/playback/server';
+import { playbackDetails, streamPlayback, streamTrailer } from '$lib/playback/service.server';
 import { streamArtwork } from '$lib/providers/artwork.server';
 import { handleUpNext } from './up-next.server';
 import { handleGames } from './games.server';
+import { handleReading } from './reading.server';
 import { handleGamePlaythroughs } from './game-playthroughs.server';
 import { handleSession } from './session.server';
 import { handleProfile } from './profile.server';
@@ -87,7 +88,7 @@ export const handler: RequestHandler = async (event) => {
       if(path[0]==='profile' && ['section','activity'].includes(path[1]) && url.searchParams.has('username')) {
         const owner=await profileUser(url.searchParams.get('username')!);
         const section=path[1]==='activity'?'activity':v.parse(v.picklist(['favourites','insights']),url.searchParams.get('section'));
-        await requireVisible(owner.id,null,section,'screen');
+        if(section!=='favourites')await requireVisible(owner.id,null,section,'screen');
         const data=await profileData(owner.id,{view:section==='activity'?'history':section==='favourites'?'favourites':'overview',page:Number(url.searchParams.get('page')??1),period:url.searchParams.get('period')??'all',kind:url.searchParams.get('kind')??'all'},new Date(),null);
         return json(section==='activity'?{items:data.history,page:data.page,pages:data.pages,total:data.total}:section==='favourites'?{favourites:data.favourites,page:data.page,pages:data.pages,total:data.total}:{totals:data.totals,activity:await profileActivity(owner.id,new Date(),data.filters.period,null)});
       }
@@ -113,7 +114,7 @@ export const handler: RequestHandler = async (event) => {
       if(path.length===2&&path[1]==='sources'&&method==='GET'){const workId=uuid(url.searchParams.get('workId')??'');return json(await getSql()`select distinct c.id,i.name from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${uid} and a.media_id=${workId} and a.state='available' and c.status='connected' and i.enabled`);}
     }
     if(path[0]==='planning'){if(method==='POST'&&path.length===3&&path[2]==='complete')return json(await completePlan(uid,path[1]));if(path.length===1&&method==='GET')return json(await planningData(uid,url));if(path.length===1&&method==='POST')return json(await createPlan(uid,await readBody(request)));if(method==='DELETE'&&path.length===2)return json(await cancelPlan(uid,path[1]));}
-    if(path[0]==='experiments'&&path.length===2&&method==='GET')return json(await (path[1]==='feed'?dynamicFeed(uid,url):experimentalRows(uid,path[1],url)));
+    if(path[0]==='experiments'&&path.length===2&&method==='GET')return json(await (path[1]==='feed'?dynamicFeed(uid,url):recommendationRows(uid,path[1],url)));
     if(path[0]==='synced') {
       if(path.length===1&&method==='GET'){
         const rooms=await synced.listRooms(uid),hosts=await social.friends(uid,1,'accepted',[...new Set(rooms.filter(room=>room.hostId!==uid).map(room=>room.hostId))]);
@@ -146,7 +147,7 @@ export const handler: RequestHandler = async (event) => {
         }
         if(action==='feed')return json(await activityFeed(uid,Object.fromEntries(url.searchParams)));
         if(action==='popular'){
-          const category=v.parse(v.picklist(['all','screen','game','music']),url.searchParams.get('category')??'screen');
+          const category=v.parse(v.picklist(['all','screen','game','music','reading']),url.searchParams.get('category')??'screen');
           const ranked=await friendDiscovery(uid,category),cards=await workCards(uid,uid,ranked.map(row=>row.workId));
           return json({items:ranked.flatMap(row=>{const item=cards.find(card=>card.id===row.workId);return item?[{...item,captionSubtitle:`${row.friends} ${row.friends===1?'friend':'friends'}`}]:[];}),hasMore:false,next:null});
         }
@@ -168,7 +169,9 @@ export const handler: RequestHandler = async (event) => {
       }
       throw new AppError(404,'Social action not found.');
     }
-    if(subjectId!==uid && path[0]!=='collection')await requireVisible(subjectId,uid,path[0]==='collection'?'collection':path[0]==='progress'?(url.searchParams.get('view')==='watchlist'?'collection':url.searchParams.get('view')==='favourites'?'favourites':'progress'):path[1]==='activity'?'activity':url.searchParams.get('section')==='favourites'?'favourites':'insights','screen');
+    // Collection, Progress and mixed favourites enforce actual category privacy in their read models.
+    if(subjectId!==uid && !['collection','progress'].includes(path[0]) && !(path[0]==='profile'&&path[1]==='section'&&url.searchParams.get('section')==='favourites'))
+      await requireVisible(subjectId,uid,path[1]==='activity'?'activity':'insights','screen');
     if(path[0]==='music' && path[2]==='queue' && method==='GET') return json(await musicQueue(uid,uuid(path[1])));
     if(path[0]==='music' && path[1]==='queue' && method==='GET')return json(await savedMusicQueue(uid,url.searchParams.has('listId')?uuid(url.searchParams.get('listId')):undefined));
     if (path[0] === 'collection' && path.length === 1 && method === 'GET') return json(await collectionData(uid,collectionParameters(url),url.searchParams.get('username')??undefined));
@@ -240,7 +243,7 @@ export const handler: RequestHandler = async (event) => {
     if(path[0]==='music' && path[1] && path[2]==='log' && method==='POST') return json(await logMusic(uid,uuid(path[1]),body));
 
     const context = { path, method, url, user, uid, subjectId, body, request, locals };
-    for (const dispatch of [handleUpNext, handleGames, handleGamePlaythroughs, handleSession, handleProfile, handleContinue, handleRewatch, handleTracking, handleRatings, handleMedia, handleLists, handleProviders, handleRequests, handlePlayback, handleNotifications, handleConflicts, handleQueue, handleSettings, handleAdmin]) {
+    for (const dispatch of [handleUpNext, handleGames, handleReading, handleGamePlaythroughs, handleSession, handleProfile, handleContinue, handleRewatch, handleTracking, handleRatings, handleMedia, handleLists, handleProviders, handleRequests, handlePlayback, handleNotifications, handleConflicts, handleQueue, handleSettings, handleAdmin]) {
       const response = await dispatch(context);
       if (response) return response;
     }

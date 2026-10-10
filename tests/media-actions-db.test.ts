@@ -7,11 +7,11 @@ import {
   mediaHistory,
   mediaActivity,
 } from '../src/lib/server/queries/media-actions';
-import { bulkTrack, getTracking, track } from '../src/lib/core/tracking/service';
-import { createList, addListItem, getList, removeListItem } from '../src/lib/core/lists/service';
-import { sequenceEntries } from '../src/lib/core/lists/sequence';
-import { changeContinue, wholeWorkId } from '../src/lib/core/tracking/continue';
-import { setRewatch } from '../src/lib/core/tracking/rewatch';
+import { bulkTrack, getTracking, track } from '../src/lib/core/tracking/service.server';
+import { createList, addListItem, getList, removeListItem } from '../src/lib/core/lists/service.server';
+import { sequenceEntries } from '../src/lib/core/lists/sequence.server';
+import { changeContinue, wholeWorkId } from '../src/lib/core/tracking/continue.server';
+import { setRewatch } from '../src/lib/core/tracking/rewatch.server';
 import { requestList } from '../src/lib/server/queries/requests';
 import { mediaViewsForIds } from '../src/lib/server/queries/media';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;

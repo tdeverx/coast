@@ -1,12 +1,16 @@
 import {profileVisibility,requireVisible} from '$lib/social/privacy.server';
 import {workCards} from '$lib/collection/query.server';
-import { recordedWatches as watches } from '$lib/core/tracking/recorded-watches';
+import { recordedWatches as watches } from '$lib/core/tracking/recorded-watches.server';
 import { libraryTrackingCondition } from './library';
 import { periodStart, type ProfilePeriod } from '$lib/profile/period';
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
+import { getConfig } from '../config';
+import { enabledCategories } from '../experimental';
+import { AppError } from '../security/errors';
+import type { MediaCardPresentation, MediaView } from '$lib/ui/types';
 import { viewingRecency } from './viewing-recency';
 import { mediaViews, hasPermittedMediaSource } from './media';
 import { PAGE_SIZE, pageNumberSchema, pagination } from './pagination';
@@ -23,7 +27,7 @@ export const profileOptionsSchema = v.object({
   view: v.optional(v.picklist(['overview', 'history', 'favourites', 'ratings']), 'overview'),
   page: v.optional(pageNumberSchema, 1),
   scope: v.optional(v.picklist(['all', 'available']), 'all'),
-  kind: v.optional(v.picklist(['all', 'movie', 'show']), 'all'),
+  kind: v.optional(v.picklist(['all', 'movie', 'show', 'album', 'track', 'game', 'book', 'comic']), 'all'),
   period: v.optional(v.picklist(['month', 'year', 'all']), 'all'),
   query: v.optional(v.pipe(v.string(), v.trim(), v.maxLength(160)), ''),
   activityKind: v.optional(v.picklist(['all', 'movie', 'episode']), 'all'),
@@ -58,10 +62,19 @@ export async function profileData(
   viewerId: string | null = userId
 ) {
   const options = v.parse(profileOptionsSchema, input);
-  const visibility=await profileVisibility(userId,viewerId);
-  if(!Object.values(visibility).some(Boolean))throw new (await import('../security/errors')).AppError(404,'Profile not found.');
-  if(options.view!=='overview')await requireVisible(userId,viewerId,options.view==='history'?'activity':options.view,'screen');
   const db = getDb();
+  const [screenVisibility,config]=await Promise.all([profileVisibility(userId,viewerId),getConfig()]);
+  const [sharedVisibility]=await db.execute<{favourites:boolean;ratings:boolean}>(sql`select
+    coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'favourites',category)),false) as favourites,
+    coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'ratings',category)),false) as ratings
+    from (values ('screen'),('music'),('game'),('book'),('comic')) categories(category)
+    where ${enabledCategories(sql`category`,config)}`);
+  const visibility={...screenVisibility,favourites:sharedVisibility.favourites,ratings:sharedVisibility.ratings};
+  if(!Object.values(visibility).some(Boolean))throw new AppError(404,'Profile not found.');
+  if(options.view==='history')await requireVisible(userId,viewerId,'activity','screen');
+  if(options.view==='favourites'&&!visibility.favourites||options.view==='ratings'&&!visibility.ratings)
+    throw new AppError(404,'Profile section not found.');
+  const visibleWork=(section:string)=>sql`${enabledCategories(sql`${s.works.category}`,config)} and social_visible(${userId}::uuid,${viewerId}::uuid,${section},${s.works.category})`;
   const [user] = await db
     .select({ settings: s.users.settings })
     .from(s.users)
@@ -84,8 +97,11 @@ export async function profileData(
     ? sql`media_id in (select m.id from media m left join episodes ep on ep.media_id=m.id left join media series on series.id=ep.show_id where m.title ilike ${`%${query}%`} or series.title ilike ${`%${query}%`})`
     : sql`true`;
   const history = sql`select * from (${periodEvents}) p where ${genreFilter} and ${matching} and ${options.activityKind === 'all' ? sql`true` : sql`kind=${options.activityKind}`} and ${options.repeats ? sql`rewatched` : sql`true`}`;
+  const kindFilter=options.kind==='all'?undefined:options.kind==='show'
+    ?sql`${s.works.kind} in ('show','season','episode')`:eq(s.works.kind,options.kind);
   const ratingFilter = and(
-    sql`${visibility.ratings}`,
+    visibleWork('ratings'),
+    options.view==='ratings'?kindFilter:undefined,
     eq(s.ratings.userId, userId),
     sql`${s.ratings.updatedAt} <= ${now.toISOString()}::timestamptz`,
     options.period === 'all'
@@ -94,27 +110,30 @@ export async function profileData(
     options.rating === undefined ? undefined : eq(s.ratings.value, options.rating)
   );
   const dates = sql`${options.from || options.to ? sql`occurred_at_known` : sql`true`} and ${options.from ? sql`occurred_at >= (${options.from}::date::timestamp at time zone 'UTC')` : sql`true`} and ${options.to ? sql`occurred_at < ((${options.to}::date + interval '1 day') at time zone 'UTC')` : sql`true`}`;
-  const favouriteFilter = and(
+  const favouriteMembership = and(
     eq(s.trackingState.userId, userId),
-    sql`${visibility.favourites}`,
-    eq(s.trackingState.favourite, true),
-    options.scope === 'available' ? viewerId ? hasPermittedMediaSource(viewerId) : sql`false` : undefined,
-    options.kind === 'movie'
-      ? eq(s.media.kind, 'movie')
-      : options.kind === 'show'
-        ? sql`${s.media.kind} in ('show','season','episode')`
-        : undefined
+    visibleWork('favourites'),
+    eq(s.trackingState.favourite, true)
+  );
+  const favouriteFilter = and(
+    favouriteMembership,
+    options.scope === 'available' && options.kind!=='book' && options.kind!=='comic'
+      ? viewerId ? hasPermittedMediaSource(viewerId) : sql`false` : undefined,
+    kindFilter
   );
   const [[counts], [rated], historyCounts, [favouriteCount]] = await Promise.all([
     db
       .select({
-        favourites: sql<number>`count(*) filter (where ${s.trackingState.favourite})::int`,
+        favourites: sql<number>`count(*) filter (where social_visible(${userId}::uuid,${viewerId}::uuid,'insights',${s.works.category}))::int`,
+        categories:sql<string[]>`coalesce(array_agg(distinct ${s.works.category}),'{}'::text[])`,
       })
       .from(s.trackingState)
-      .where(and(eq(s.trackingState.userId, userId),sql`${visibility.favourites}`)),
+      .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
+      .where(favouriteMembership),
     db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(*)::int`,insightCount:sql<number>`count(*) filter (where social_visible(${userId}::uuid,${viewerId}::uuid,'insights',${s.works.category}))::int`,categories:sql<string[]>`coalesce(array_agg(distinct ${s.works.category}),'{}'::text[])` })
       .from(s.ratings)
+      .innerJoin(s.works,eq(s.works.id,s.ratings.mediaId))
       .where(ratingFilter),
     db.execute<{
       total: number;
@@ -128,7 +147,8 @@ export async function profileData(
     db
       .select({ count: sql<number>`count(*)::int` })
       .from(s.trackingState)
-      .innerJoin(s.media, eq(s.media.id, s.trackingState.mediaId))
+      .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
+      .leftJoin(s.media, eq(s.media.id, s.works.id))
       .where(favouriteFilter),
   ]);
   const total =
@@ -164,7 +184,8 @@ export async function profileData(
       : db
           .select({ id: s.trackingState.mediaId })
           .from(s.trackingState)
-          .innerJoin(s.media, eq(s.media.id, s.trackingState.mediaId))
+          .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
+          .leftJoin(s.media,eq(s.media.id,s.works.id))
           .where(favouriteFilter)
           .orderBy(
             sql`case when ${s.trackingState.mediaId} = any(${ordered(profile.pinnedFavourites ?? [])}) then 0 else 1 end`,
@@ -178,8 +199,9 @@ export async function profileData(
   const ratedItems =
     options.view === 'ratings'
       ? await db
-          .select({ id: s.ratings.mediaId })
+          .select({ id: s.ratings.mediaId,value:s.ratings.value })
           .from(s.ratings)
+          .innerJoin(s.works,eq(s.works.id,s.ratings.mediaId))
           .where(ratingFilter)
           .orderBy(desc(s.ratings.updatedAt), s.ratings.mediaId)
           .limit(PAGE_SIZE)
@@ -189,41 +211,52 @@ export async function profileData(
     ? await db
         .select({ id: s.trackingState.mediaId })
         .from(s.trackingState)
+        .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
         .where(
           and(
-            eq(s.trackingState.userId, userId),
+            favouriteMembership,
             eq(s.trackingState.mediaId, profile.featuredMediaId),
-            eq(s.trackingState.favourite, true)
           )
         )
     : [];
-  const ids = [
+  if(!featuredState){delete profile.featuredMediaId;delete profile.featuredNote;}
+  const preferenceIds=[...new Set([...(profile.pinnedFavourites??[]),...(profile.favouriteOrder??[])])].slice(0,2050);
+  if(preferenceIds.length){
+    const visible=await db.select({id:s.trackingState.mediaId}).from(s.trackingState)
+      .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
+      .where(and(favouriteMembership,inArray(s.trackingState.mediaId,preferenceIds))).limit(2050);
+    const permitted=new Set(visible.map(row=>row.id));
+    if(profile.pinnedFavourites)profile.pinnedFavourites=profile.pinnedFavourites.filter(id=>permitted.has(id));
+    if(profile.favouriteOrder)profile.favouriteOrder=profile.favouriteOrder.filter(id=>permitted.has(id));
+  }
+  const [backgroundState]=profile.backgroundMediaId?await db.select({id:s.works.id}).from(s.works)
+    .where(and(eq(s.works.id,profile.backgroundMediaId),visibleWork('details'))):[];
+  if(!backgroundState)delete profile.backgroundMediaId;
+  const sharedIds = [
     ...new Set(
-      [...events, ...favourites, ...ratedItems]
+      [...favourites, ...ratedItems]
         .map((row) => row.id)
-        .concat(profile.backgroundMediaId ? [profile.backgroundMediaId] : [])
+        .concat(backgroundState ? [backgroundState.id] : [])
         .concat(featuredState ? [featuredState.id] : [])
     ),
   ];
-  const views = await mediaViews(userId, { ids, limit: Math.max(1, ids.length) }, viewerId);
-  const showIds = [...new Set(views.flatMap((item) => (item.showId ? [item.showId] : [])))];
-  const shows = new Map(
-    (await mediaViews(userId, { ids: showIds, limit: Math.max(1, showIds.length) }, viewerId)).map(
-      (item) => [item.id, item.title]
-    )
-  );
-  const byId = new Map(
-    views.map((item) => [
-      item.id,
-      item.kind === 'episode'
+  const cards:(MediaView|MediaCardPresentation)[]=[];
+  for(let offset=0;offset<sharedIds.length;offset+=PAGE_SIZE)
+    cards.push(...await workCards(userId,viewerId,sharedIds.slice(offset,offset+PAGE_SIZE)));
+  const historyViews=await mediaViews(userId,{ids:events.map(row=>row.id),limit:PAGE_SIZE},viewerId);
+  const showIds = [...new Set([...cards,...historyViews].flatMap(item=>'showId' in item&&item.showId?[item.showId]:[]))];
+  const shows=new Map<string,string>();
+  for(let offset=0;offset<showIds.length;offset+=PAGE_SIZE)
+    for(const item of await mediaViews(userId,{ids:showIds.slice(offset,offset+PAGE_SIZE),limit:PAGE_SIZE},viewerId))shows.set(item.id,item.title);
+  const episodeCaption=(item:MediaView)=>item.kind==='episode'
         ? {
             ...item,
             captionTitle: shows.get(item.showId!) ?? item.title,
             captionSubtitle: `S${String(item.seasonNumber ?? 0).padStart(2, '0')}E${String(item.episodeNumber ?? 0).padStart(2, '0')} · ${item.title}`,
           }
-        : item,
-    ])
-  );
+        : item;
+  const byId=new Map(cards.map(item=>[('workId' in item?item.workId:undefined)??item.id,'href' in item?item:episodeCaption(item)]));
+  const historyById=new Map(historyViews.map(item=>[item.id,episodeCaption(item)]));
   let activityBackground = null;
   if(profile.backgroundMode==='activity'){
     const latest=await db.execute<{workId:string}>(sql`select a.work_id as "workId" from social_activity a join works w on w.id=a.work_id
@@ -251,10 +284,9 @@ export async function profileData(
       rating: options.rating,
     },
     profile,
-    categories:
-      historyCounts[0].total || counts.favourites || rated.count ? (['screen'] as const) : [],
+    categories:[...new Set([...counts.categories,...rated.categories,...(historyCounts[0].total?['screen']:[])])],
     featured: featuredState ? (byId.get(featuredState.id) ?? null) : null,
-    ratedTitles: ratedItems.flatMap((row) => (byId.has(row.id) ? [byId.get(row.id)!] : [])),
+    ratedTitles: ratedItems.flatMap((row) => (byId.has(row.id) ? [{...byId.get(row.id)!,id:row.id,rating:row.value}] : [])),
     background: profile.backgroundMode==='activity'?activityBackground:profile.backgroundMediaId ? (byId.get(profile.backgroundMediaId) ?? null) : null,
     totals: {
       movies: visibility.insights?historyCounts[0].movies:0,
@@ -262,13 +294,13 @@ export async function profileData(
       unique: visibility.insights?historyCounts[0].unique:0,
       watches: visibility.insights?historyCounts[0].total:0,
       favourites: visibility.insights?counts.favourites:0,
-      rated: visibility.insights?rated.count:0,
+      rated: visibility.insights?rated.insightCount:0,
     },
     history: Array.from(events).flatMap((row) =>
-      byId.has(row.id)
+      historyById.has(row.id)
         ? [
             {
-              ...byId.get(row.id)!,
+              ...historyById.get(row.id)!,
               eventId: row.eventId,
               dateKnown: row.dateKnown,
               activity: {
@@ -289,7 +321,7 @@ export async function profileData(
     ),
     favourites: favourites.flatMap((row) =>
       byId.has(row.id)
-        ? [{ ...byId.get(row.id)!, pinned: (profile.pinnedFavourites ?? []).includes(row.id) }]
+        ? [{ ...byId.get(row.id)!,id:row.id,favourite:true,pinned: (profile.pinnedFavourites ?? []).includes(row.id) }]
         : []
     ),
     today: new Date().toISOString().slice(0, 10),
@@ -303,6 +335,7 @@ export async function profileActivity(
 ) {
   await requireVisible(userId,viewerId,'insights','screen');
   const visibility=await profileVisibility(userId,viewerId);
+  const config=await getConfig();
   const history = sql`select * from (${periodHistory(userId, period, now)}) h where ${visibility.activity}`;
   const previousNow =
     period === 'all' ? undefined : new Date(Date.parse(periodStart(period, now)!) - 1);
@@ -317,9 +350,11 @@ export async function profileActivity(
     getDb()
       .select({ value: s.ratings.value, count: sql<number>`count(*)::int` })
       .from(s.ratings)
+      .innerJoin(s.works,eq(s.works.id,s.ratings.mediaId))
       .where(
         and(
-          sql`${visibility.ratings}`,
+          enabledCategories(sql`${s.works.category}`,config),
+          sql`social_visible(${userId}::uuid,${viewerId}::uuid,'ratings',${s.works.category}) and social_visible(${userId}::uuid,${viewerId}::uuid,'insights',${s.works.category})`,
           eq(s.ratings.userId, userId),
           sql`${s.ratings.updatedAt} <= ${now.toISOString()}::timestamptz`,
           period === 'all'

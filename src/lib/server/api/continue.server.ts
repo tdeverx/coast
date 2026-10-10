@@ -1,4 +1,4 @@
-import { changeContinue } from '$lib/core/tracking/continue';
+import { changeContinue } from '$lib/core/tracking/continue.server';
 import { json } from '@sveltejs/kit';
 import { type ApiContext } from './context.server';
 

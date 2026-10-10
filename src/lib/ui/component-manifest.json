@@ -87,6 +87,9 @@
       "src/lib/experiments/MediaModal.svelte",
       "src/lib/experiments/PlanAction.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/reading/Details.svelte",
+      "src/lib/reading/Reader.svelte",
+      "src/lib/reading/ReadingLaunch.svelte",
       "src/lib/sharing/ShareAction.svelte",
       "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/ChoiceGroup.svelte",
@@ -215,6 +218,7 @@
       "ProgressChart"
     ],
     "usedBy": [
+      "src/lib/reading/Details.svelte",
       "src/lib/ui/components/MediaActivity.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/Shelf.svelte",
@@ -232,6 +236,9 @@
       "src/lib/experiments/MediaModal.svelte",
       "src/lib/experiments/PlanAction.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/reading/Details.svelte",
+      "src/lib/reading/Reader.svelte",
+      "src/lib/reading/ReadingLaunch.svelte",
       "src/lib/sharing/ShareAction.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
       "src/lib/ui/components/ConflictList.svelte",
@@ -267,6 +274,7 @@
     "usedBy": [
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/reading/Details.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/JobsSettings.svelte",
       "src/lib/ui/components/MediaPage.svelte",
@@ -373,6 +381,7 @@
     ],
     "usedBy": [
       "src/lib/benchmarks/BenchmarkSettings.svelte",
+      "src/lib/reading/Details.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobsSettings.svelte",
@@ -573,6 +582,7 @@
     ],
     "usedBy": [
       "src/lib/media/Details.svelte",
+      "src/lib/reading/Details.svelte",
       "src/routes/games/[id]/+page.svelte",
       "src/routes/games/igdb/[instance]/[id]/+page.svelte",
       "src/routes/lists/+page.svelte",
@@ -601,6 +611,7 @@
     "path": "src/lib/ui/components/MetricGrid.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/reading/Details.svelte",
       "src/lib/ui/components/DetailCard.svelte",
       "src/routes/games/[id]/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
@@ -713,6 +724,7 @@
       "WorkActions"
     ],
     "usedBy": [
+      "src/lib/reading/Details.svelte",
       "src/lib/ui/components/MediaCard.svelte",
       "src/routes/music/[connection]/[id]/+page.svelte",
       "src/routes/music/work/[id]/+page.svelte"
@@ -760,6 +772,7 @@
     "path": "src/lib/ui/components/ProgressBar.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/reading/Reader.svelte",
       "src/lib/ui/components/IdentityCard.svelte",
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/PlaybackTimeline.svelte",
@@ -773,6 +786,7 @@
       "ProgressBar"
     ],
     "usedBy": [
+      "src/lib/reading/Details.svelte",
       "src/lib/ui/components/DetailCard.svelte",
       "src/routes/games/[id]/+page.svelte"
     ],
@@ -861,8 +875,8 @@
       "Button"
     ],
     "usedBy": [
-      "src/lib/experiments/DynamicFeed.svelte",
       "src/lib/experiments/MediaModal.svelte",
+      "src/lib/recommendations/DynamicFeed.svelte",
       "src/lib/ui/components/CollectionProjectionSettings.svelte",
       "src/lib/ui/components/ConflictList.svelte",
       "src/lib/ui/components/ConnectionCard.svelte",
@@ -905,6 +919,7 @@
       "src/lib/ui/components/Shelf.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
+      "src/routes/search/+page.svelte",
       "src/routes/taste/[friendId]/+page.svelte"
     ],
     "dynamicComposition": true
@@ -931,6 +946,7 @@
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/components/StreamsPanel.svelte",
       "src/lib/ui/materials/MaterialTweaker.svelte",
+      "src/routes/discover/+page.svelte",
       "src/routes/games/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/planning/+page.svelte",
@@ -953,8 +969,9 @@
       "SegmentedControl"
     ],
     "usedBy": [
-      "src/lib/experiments/DynamicFeed.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/reading/Details.svelte",
+      "src/lib/recommendations/DynamicFeed.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/MediaPage.svelte",
       "src/routes/discover/+page.svelte",

@@ -12,7 +12,7 @@ import { useClient } from '$lib/ui/client-context';
     page: number;
     pages: number;
     total: number;
-    kind: 'all' | 'movie' | 'show' | 'album' | 'track' | 'game';
+    kind: 'all' | 'movie' | 'show' | 'album' | 'track' | 'game' | 'book' | 'comic';
     filter: string;
     scope?: 'all' | 'available';
   };

@@ -15,6 +15,8 @@ export const load = (async ({ locals, depends,params,url }) => {
     publicProfiles:config.siteAccess==='public-profiles',
     experimentalMusic: config.experimentalMusic,
     experimentalGaming: config.experimentalGaming,
+    experimentalBooks: config.experimentalBooks,
+    experimentalComics: config.experimentalComics,
     experimentalParties: config.experimentalParties,
     experiments:{planning:config.experimentalPlanning,mediaModal:config.experimentalMediaModal},
     playbackSharing:config.allowPlaybackSharing && !!locals.user && (locals.user.role==='admin'||locals.user.settings.allowPlaybackSharing===true),

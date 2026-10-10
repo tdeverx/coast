@@ -6,6 +6,7 @@
  import {useClock} from '$lib/ui/clock.svelte';
  import {useClient} from '$lib/ui/client-context';
  import {message} from '$lib/ui/client';
+ import {readingLocationLabel} from '$lib/reading/model';
  let {demoRoom}:{demoRoom?:RoomState}=$props();
  const {api,preview}=useClient();
  const clock=useClock();
@@ -35,20 +36,22 @@
  <Button menu icon="settings" iconSize={18} size="icon" label="Party options" title="Party options">
   <Button item keepOpen={false} onclick={resyncNow}>Resync</Button>
   <Button menu text="Sync status" label="Sync status">
-   <Button item disabled>{drift===null?'No local playback':drift<.25?'Aligned':`${drift.toFixed(1)}s apart`}</Button>
+   <Button item disabled>{room.mediaType==='reading'?readingLocationLabel(room.reading):drift===null?'No local playback':drift<.25?'Aligned':`${drift.toFixed(1)}s apart`}</Button>
    {#each room.participants as member (member.userId)}
-    <Button item disabled>{member.username} — {!member.joined?'Invited':!member.online?'Disconnected':member.unavailable?'Cannot play':member.buffering?'Buffering':settings.readyCheck&&!member.ready?'Not ready':'Ready'}</Button>
+    <Button item disabled>{member.username} — {!member.joined?'Invited':!member.online?'Disconnected':member.unavailable?room.mediaType==='reading'?'Cannot read':'Cannot play':member.buffering?room.mediaType==='reading'?'Opening':'Buffering':room.mediaType!=='reading'&&settings.readyCheck&&!member.ready?'Not ready':'Ready'}</Button>
    {/each}
   </Button>
-  {#if settings.readyCheck}<Button item checked={self?.ready??false} onclick={()=>syncedCommand('ready',{ready:!self?.ready})}>Ready</Button>{/if}
+  {#if room.mediaType!=='reading'&&settings.readyCheck}<Button item checked={self?.ready??false} onclick={()=>syncedCommand('ready',{ready:!self?.ready})}>Ready</Button>{/if}
   <Button menu text="Personal" label="Personal">
-   <Button item checked={syncPreferences.keepPlaying} onclick={()=>setSyncPreferences({keepPlaying:!syncPreferences.keepPlaying})}>Keep playing when leaving</Button>
+   <Button item checked={syncPreferences.keepPlaying} onclick={()=>setSyncPreferences({keepPlaying:!syncPreferences.keepPlaying})}>{room.mediaType==='reading'?'Keep reading when leaving':'Keep playing when leaving'}</Button>
+   {#if room.mediaType!=='reading'}
    <Button menu text="Playback offset" label="Playback offset">
     <label class="offset-control">{syncPreferences.offsetSeconds>0?'+':''}{syncPreferences.offsetSeconds.toFixed(1)}s
      <input aria-label="Personal playback offset" type="range" min="-5" max="5" step="0.1" value={syncPreferences.offsetSeconds} oninput={event=>setSyncPreferences({offsetSeconds:Number(event.currentTarget.value)})}/>
     </label>
     <Button item onclick={()=>setSyncPreferences({offsetSeconds:0})}>Reset</Button>
    </Button>
+   {/if}
   </Button>
   {#if room.mediaType==='audio'}
    <Button menu text="Queue" label="Queue">
@@ -71,18 +74,18 @@
   {/if}
   {#if isSyncHost()}
    <div class="menu-divider" role="separator"></div>
-   <Button menu text="Playback" label="Playback">
+   <Button menu text={room.mediaType==='reading'?'Reading controls':'Playback'} label={room.mediaType==='reading'?'Reading controls':'Playback'}>
     {#each [{value:'host',label:'Host only'},{value:'everyone',label:'Everyone'},{value:'selected',label:'Selected members'}] as option}<Button item selection="radio" checked={settings.playback===option.value} onclick={()=>updatePartySettings({playback:option.value as typeof settings.playback})}>{option.label}</Button>{/each}
     <Button menu text="Controllers" label="Controllers" disabled={settings.playback!=='selected'}>
      {#each room.participants.filter(p=>p.joined&&p.userId!==room!.hostId) as member (member.userId)}<Button item checked={settings.controllers.includes(member.userId)} onclick={()=>updatePartySettings({controllers:settings.controllers.includes(member.userId)?settings.controllers.filter(id=>id!==member.userId):[...settings.controllers,member.userId]})}>{member.username}</Button>{:else}<Button item disabled>No joined guests</Button>{/each}
     </Button>
-    <div class="menu-divider" role="separator"></div>
-    <Button item checked={settings.readyCheck} onclick={()=>updatePartySettings({readyCheck:!settings.readyCheck})}>Ready check</Button>
+    {#if room.mediaType!=='reading'}<div class="menu-divider" role="separator"></div>
+    <Button item checked={settings.readyCheck} onclick={()=>updatePartySettings({readyCheck:!settings.readyCheck})}>Ready check</Button>{/if}
    </Button>
-   <Button menu text="Buffering" label="Buffering">
+   {#if room.mediaType!=='reading'}<Button menu text="Buffering" label="Buffering">
     <Button item checked={room.bufferingPolicy==='together'} selection="radio" onclick={()=>syncedCommand('policy',{policy:'together'})}>Pause together</Button>
     <Button item checked={room.bufferingPolicy==='catch-up'} selection="radio" onclick={()=>syncedCommand('policy',{policy:'catch-up'})}>Continue and catch up</Button>
-   </Button>
+   </Button>{/if}
    <Button menu text="Invitations" label="Invitations">
     <Button item checked={settings.acceptInvites} onclick={()=>updatePartySettings({acceptInvites:!settings.acceptInvites})}>Allow new members</Button>
     <div class="menu-divider" role="separator"></div>
@@ -92,10 +95,10 @@
    <Button menu text="Host disconnects" label="Host disconnects">
     {#each [{value:'wait',label:'Wait for host'},{value:'continue',label:'Continue for up to 1 minute'},{value:'transfer',label:'Transfer ownership'}] as option}<Button item selection="radio" checked={settings.hostDisconnect===option.value} onclick={()=>updatePartySettings({hostDisconnect:option.value as typeof settings.hostDisconnect})}>{option.label}</Button>{/each}
    </Button>
-   <Button menu text="Queue permissions" label="Queue permissions">
+   {#if room.mediaType!=='reading'}<Button menu text="Queue permissions" label="Queue permissions">
     <Button item selection="radio" checked={settings.queue==='host'} onclick={()=>updatePartySettings({queue:'host'})}>Host only</Button>
     <Button item selection="radio" checked={settings.queue==='everyone'} onclick={()=>updatePartySettings({queue:'everyone'})}>Everyone</Button>
-   </Button>
+   </Button>{/if}
    <div class="menu-divider" role="separator"></div>
    <Button item danger keepOpen={false} onclick={()=>leaveSynced()}>End party</Button>
   {/if}

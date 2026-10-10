@@ -13,7 +13,7 @@
   import Rating from '$lib/ui/components/Rating.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
-  let { data,modal=false }: {data:import('../../routes/media/[id]/$types').PageData;modal?:boolean} = $props();
+  let { data,modal=false }: {data:Extract<import('../../routes/media/[id]/$types').PageData,{enhancement:unknown}>;modal?:boolean} = $props();
   setContext('profile-read-only',()=>!page.data.user);
   let enriched = $state<Awaited<typeof data.enhancement> | null>(null);
   const view = $derived(enriched ?? data);

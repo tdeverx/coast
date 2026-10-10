@@ -9,7 +9,7 @@ import { users, systemSettings, externalIds, providerItems, providerInstances } 
 import { defaultConfig } from '../src/lib/server/config';
 import { configureInstance } from '../src/lib/providers/instances.server';
 import { connectJellyfin } from '../src/lib/providers/jellyfin/connection.server';
-import { scanJellyfinLibrary, syncJellyfinUser } from '../src/lib/sync/jellyfin';
+import { scanJellyfinLibrary, syncJellyfinUser } from '../src/lib/sync/jellyfin.server';
 
 if (!/\/(coast_browser_test(?:_audit_[a-f0-9]{32})?|coast_collection_test)$/.test(process.env.DATABASE_URL??''))
   throw new Error('Use only the disposable coast_browser_test or coast_collection_test database.');

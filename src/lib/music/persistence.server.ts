@@ -117,7 +117,7 @@ export async function logMusic(userId:string,workId:string,input:unknown,transac
     const tracks=work.kind==='track'?[{id:workId}]:await tx.select({id:musicWorks.id}).from(mediaRelationships).innerJoin(musicWorks,eq(musicWorks.id,mediaRelationships.childId)).where(and(eq(mediaRelationships.parentId,workId),eq(mediaRelationships.kind,'contains'),eq(musicWorks.kind,'track')));
     if(!tracks.length)throw new DomainError('No known tracks to log.');
     await tx.insert(musicListenBatches).values({userId,batchId:data.batchId,workId,tracks:tracks.map(t=>t.id)});
-    const { enqueueSyncValueInTransaction, enqueueCollectionProjectionInTransaction } = await import('$lib/sync/changes');
+    const { enqueueSyncValueInTransaction, enqueueCollectionProjectionInTransaction } = await import('$lib/sync/changes.server');
     let added = 0;
     for (const track of tracks) {
       if (await recordMusicListen(tx, userId, track.id, data.batchId, 'coast', data.occurredAt ? new Date(data.occurredAt) : undefined)) {

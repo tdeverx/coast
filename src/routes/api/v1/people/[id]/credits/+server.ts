@@ -1,5 +1,5 @@
 import { json, error } from '@sveltejs/kit';
-import { personCredits } from '$lib/server/media-details';
+import { personCredits } from '$lib/catalogue/details.server';
 export const GET = async ({ locals, params, url }) => {
   const id = Number(params.id),
     page = Number(url.searchParams.get('page') ?? 1);

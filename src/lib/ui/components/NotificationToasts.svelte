@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {openNotifications} from '$lib/notifications/client.svelte';
+  import {openNotifications} from '$lib/ui/panels/notifications.svelte';
   import RowFeedback from './RowFeedback.svelte';
   import { actionFeedback, undoAction } from '$lib/ui/action-feedback.svelte';
   import { onMount } from 'svelte';

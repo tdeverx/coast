@@ -40,7 +40,7 @@ export interface ShelfSource {
   readonly shape?: MediaCardShape;
   readonly artworkStyle?: MediaCardArtwork;
   readonly artworkPriority?: ArtworkPriority;
-  readonly mediaKind?: 'screen' | 'music' | 'game';
+  readonly mediaKind?: 'screen' | 'music' | 'game' | 'reading';
   readonly rows?: 1 | 2;
   readonly resetKey?: string;
   readonly empty?: string;

@@ -5,9 +5,10 @@
   import { primaryMediaAction, progressFraction } from '$lib/media/model';
   import { canPlayMusicCard } from '$lib/music/presentation';
   import { goto,pushState } from '$app/navigation';
-  import { cardArtwork, overlayArtwork } from '$lib/ui/artwork-priority';
+  import { cardArtwork, overlayArtwork } from '$lib/media/artwork';
   import type { ArtworkPriority } from '$lib/ui/types';
   import { artworkTypes } from '$lib/artwork';
+  import { displayLabel } from '$lib/ui/labels';
   import { tick, getContext } from 'svelte';
   import type {
     MediaView,
@@ -116,7 +117,7 @@
   }
   const completion = $derived(
     progressFraction(
-      trackedItem?.trackingProgress ?? {
+      item.trackingProgress ?? {
         unit: 'seconds',
         value: trackedItem?.progress ?? 0,
         ...(trackedItem && trackedItem.duration > 0 ? { total: trackedItem.duration } : {}),
@@ -134,7 +135,7 @@
         })
       : canPlayMusicCard(item) ? 'play' : 'open'
   );
-  const cardProgress=$derived(item.captionActor?activityProgress??null:completion!==null&&completion>0&&completion<0.9?completion:null);
+  const cardProgress=$derived(item.captionActor?activityProgress??null:completion!==null&&completion>0&&completion<(item.kind==='book'||item.kind==='comic'?1:0.9)?completion:null);
   const primaryLabel = $derived(
     {
       play: 'Play',
@@ -185,7 +186,7 @@
   {/if}
   <div
     class="art {shape}"
-    class:unavailable={!!page.data.user && page.data.user.settings?.monochromeMissing !== false && trackedItem && !trackedItem.available}
+    class:unavailable={!!page.data.user && page.data.user.settings?.monochromeMissing !== false && item.available === false}
     class:contained
     title={artworkHint}
   >
@@ -207,7 +208,7 @@
               ? 'user'
               : item.kind === 'album' || item.kind === 'track' || item.kind === 'game'
                 ? 'library'
-                : item.kind === 'show'
+                : item.kind === 'show' || item.kind === 'book' || item.kind === 'comic'
                   ? 'library'
                   : 'film'}
             size={32}
@@ -291,17 +292,14 @@
         ).padStart(2, '0')}E{String(trackedItem.episodeNumber ?? 0).padStart(
           2,
           '0'
-        )}{:else}{item.year ?? ''}{#if item.year}<span>·</span>{/if}{item.kind === 'show'
-          ? 'Show'
-          : item.kind === 'movie'
-            ? 'Movie'
-            : item.kind}{/if}{#if !item.captionActor && trackedItem?.rating}<span>·</span><span class="rating"
-          ><Icon name="star" size={14} filled /> {trackedItem.rating}</span
+        )}{:else}{item.year ?? ''}{#if item.year}<span>·</span>{/if}{displayLabel(item.kind)}{/if}{#if !item.captionActor && item.rating}<span>·</span><span class="rating"
+          ><Icon name="star" size={14} filled /> {item.rating}</span
         >{/if}
     </div>{/if}
   </a>
   {/if}
   </div>{/if}
+  {#if 'attribution' in item && item.attribution}<div class="small quiet media-attribution"><a href={item.attribution.href} target="_blank" rel="noreferrer">{item.attribution.label}</a></div>{/if}
   {#if showActivityContext && item.captionActivity && !item.captionActor}
     <div class="activity-reactions small quiet">
       {#if !item.captionActor}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{unknownActivityDate(item.captionActivity.kind)}</span>{/if}{/if}
@@ -311,6 +309,7 @@
 </article>
 
 <style>
+  .media-attribution { margin-top: 6px; font-size: var(--text-sm); }
   .activity-attribution{margin-top:12px;}
   .activity-context{margin-bottom:8px;min-height:24px;}
   .activity-body{display:flex;align-items:flex-start;gap:8px;margin-top:4px;}

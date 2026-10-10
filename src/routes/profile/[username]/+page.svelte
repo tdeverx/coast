@@ -64,7 +64,7 @@
   );
   const expandedStats = $derived(page.url.searchParams.get('section') === 'insights');
   let favouriteAvailable = $state(
-    untrack(() => page.url.searchParams.get('scope') === 'available')
+    untrack(() => page.url.searchParams.get('scope') === 'available' && data.filters.kind!=='book' && data.filters.kind!=='comic')
   );
   let favouriteKind = $state(untrack(() => data.filters.kind));
   let insightPeriod = $state(untrack(() => data.filters.period));
@@ -91,6 +91,7 @@
       total: data.total,
     };
     favouriteKind = data.filters.kind;
+    if(favouriteKind==='book'||favouriteKind==='comic')favouriteAvailable=false;
     insightPeriod = data.filters.period;
     insights = { totals: data.totals, activity: data.activity };
     favouriteRequest++;
@@ -100,6 +101,7 @@
   });
   async function chooseFavourites(kind: typeof favouriteKind, number = 1) {
     favouriteKind = kind;
+    if(kind==='book'||kind==='comic')favouriteAvailable=false;
     favouriteLoading = true;
     favouriteError = '';
     const request = ++favouriteRequest;
@@ -238,7 +240,7 @@
   title={featureTitle}
   note={featureId === data.profile.featuredMediaId ? (data.profile.featuredNote ?? '') : ''}
 />
-{#snippet favouriteFilters()}<RowFilter groups={[{label:"Favourites media type", value:favouriteKind, options:mediaTypeOptions(), change:(kind) => chooseFavourites(kind as typeof favouriteKind)}]} />{#if favouriteError}<span role="alert">{favouriteError}</span><Button
+{#snippet favouriteFilters()}<RowFilter groups={[{label:"Favourites media type", value:favouriteKind, options:mediaTypeOptions(page.data), change:(kind) => chooseFavourites(kind as typeof favouriteKind)}]} />{#if favouriteError}<span role="alert">{favouriteError}</span><Button
       emphasis="subtle"
       onclick={() => chooseFavourites(favouriteKind)}>Retry</Button
     >{/if}{/snippet}
@@ -287,9 +289,9 @@
     pages={favouriteData.pages}
     onpage={layout === 'grid' ? (number) => chooseFavourites(favouriteKind, number) : undefined}
   >
-    {#snippet filters()}<Button {...availabilityControl(favouriteAvailable, available => {
+    {#snippet filters()}{#if favouriteKind!=='book'&&favouriteKind!=='comic'}<Button {...availabilityControl(favouriteAvailable, available => {
       favouriteAvailable = available; void chooseFavourites(favouriteKind);
-    })} />{/snippet}
+    })} />{/if}{/snippet}
     {#snippet controls()}{@render favouriteFilters()}{/snippet}
     {#snippet actions()}{#if data.isOwner}<Button
           emphasis="subtle"
@@ -497,7 +499,7 @@
         <div class="featured-art"><MediaCard item={data.featured} /></div>
         <div>
           <p class="small">Featured favourite</p>
-          <h2><a href={`/media/${data.featured.id}`}>{data.featured.title}</a></h2>
+          <h2><a href={'href' in data.featured?data.featured.href:`/media/${data.featured.id}`}>{data.featured.title}</a></h2>
           {#if data.profile.featuredNote}<p class="feature-note">
               {data.profile.featuredNote}
             </p>{/if}

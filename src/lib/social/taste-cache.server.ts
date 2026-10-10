@@ -1,7 +1,7 @@
 import {sql as query} from 'drizzle-orm';
 import {getDb,getSql,type Database} from '$lib/server/db';
 import {getConfig} from '$lib/server/config';
-import {interestWorks} from '$lib/experiments/interests.server';
+import {interestWorks} from '$lib/recommendations/interests.server';
 import {buildTasteProfile,scoreTaste,namedFeatures,type TasteProfile} from './taste-profile';
 import {workTasteFeatures} from './work-features.server';
 import * as v from 'valibot';
@@ -58,7 +58,7 @@ export async function refreshTasteCaches(){
   const evidence=await interestWorks(user.id),featureMap=await workTasteFeatures(evidence.map(work=>work.id));
   const artistPreferences=await sql<{name:string}[]>`select a.name from music_artist_preferences p join music_artists a on a.id=p.artist_id where p.user_id=${user.id} and p.favourite`;
   const profiles=new Map<string,TasteProfile>();
-  for(const medium of ['movie','show','game','music'])profiles.set(medium,buildTasteProfile(evidence.filter(work=>(work.category==='music'?'music':work.kind)===medium).map(work=>({id:work.id,weight:work.weight,features:featureMap.get(work.id)??{}}))));
+  for(const medium of ['movie','show','game','music','book','comic'])profiles.set(medium,buildTasteProfile(evidence.filter(work=>(work.category==='music'?'music':work.kind)===medium).map(work=>({id:work.id,weight:work.weight,features:featureMap.get(work.id)??{}}))));
   if(config.experimentalMusic&&artistPreferences.length){const musicEvidence=evidence.filter(work=>work.category==='music').map(work=>({id:work.id,weight:work.weight,features:featureMap.get(work.id)??{}}));profiles.set('music',buildTasteProfile([...musicEvidence,...artistPreferences.map(artist=>({id:`artist:${artist.name}`,weight:5,features:{artists:namedFeatures([artist.name])}}))]));}
   const probes=[...profiles].flatMap(([medium,profile])=>Object.entries(profile.dimensions).flatMap(([dimension,features])=>(features??[]).filter(feature=>feature.value>0&&(dimension!=='cast'||feature.samples>=2)).slice(0,8).map(feature=>({medium,features:{[dimension]:[{id:feature.id}]}}))));
   const positive=evidence.filter(work=>work.weight>0),seedIds=positive.map(work=>work.id),genres=[...new Set(positive.flatMap(work=>work.genres))];
@@ -70,9 +70,9 @@ export async function refreshTasteCaches(){
   ), ranked as (
    select w.id,case when w.category='music' then 'music' else w.kind end as medium,
     row_number() over(partition by case when w.category='music' then 'music' else w.kind end order by (p.id is not null) desc,(fi.id is not null) desc,coalesce(m.release_date,g.release_date,a.release_date) desc nulls last,w.id) as rank
-   from works w left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id left join provider_ids p on p.id=w.id left join feature_ids fi on fi.id=w.id
-   where w.kind in ('movie','show','game','album') and (w.category='screen' or w.category='music' and ${config.experimentalMusic} or w.category='game' and ${config.experimentalGaming})
-   and (p.id is not null or fi.id is not null or coalesce(m.genres,g.genres,a.genres,'{}'::text[])&&${sql.array(genres,'TEXT')}::text[])
+   from works w left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id left join reading_works b on b.id=w.id left join provider_ids p on p.id=w.id left join feature_ids fi on fi.id=w.id
+   where w.kind in ('movie','show','game','album','book','comic') and (w.category='screen' or w.category='music' and ${config.experimentalMusic} or w.category='game' and ${config.experimentalGaming} or w.category='book' and ${config.experimentalBooks} or w.category='comic' and ${config.experimentalComics})
+   and (p.id is not null or fi.id is not null or coalesce(m.genres,g.genres,a.genres,b.subjects,'{}'::text[])&&${sql.array(genres,'TEXT')}::text[])
    and not w.id=any(${sql.array(evidence.map(work=>work.id),'UUID')}::uuid[])
    and not exists(select 1 from tracking_state t where t.user_id=${user.id} and t.media_id=w.id and (t.watched or t.dropped or t.collected or t.watchlist or t.favourite))
   ) select id,medium from ranked where rank<=500`;

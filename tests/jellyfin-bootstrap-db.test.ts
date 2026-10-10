@@ -4,12 +4,12 @@ import {getDb, getSql} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {encryptCredential} from '../src/lib/server/security/credentials';
 import {JellyfinAdapter} from '../src/lib/providers/jellyfin/adapter.server';
-import {bootstrapJellyfinUser, syncJellyfinUser, type JellyfinSyncContext} from '../src/lib/sync/jellyfin';
-import {unchangedJellyfinPlayback, seedEmptyJellyfinPlayback, type JellyfinPlaybackObservation} from '../src/lib/sync/jellyfin-playback';
+import {bootstrapJellyfinUser, syncJellyfinUser, type JellyfinSyncContext} from '../src/lib/sync/jellyfin.server';
+import {unchangedJellyfinPlayback, seedEmptyJellyfinPlayback, type JellyfinPlaybackObservation} from '../src/lib/sync/jellyfin-playback.server';
 import {onboardingStatus} from '../src/lib/server/auth/onboarding';
 import {enqueueAction, runQueueOnce, registerActionHandler} from '../src/lib/server/queue';
 import {jobExecution,JobYield} from '../src/lib/server/queue/execution';
-import {track} from '../src/lib/core/tracking/service';
+import {track} from '../src/lib/core/tracking/service.server';
 import {persistMusic} from '../src/lib/music/persistence.server';
 
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;

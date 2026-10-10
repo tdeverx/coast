@@ -1,4 +1,4 @@
-import { enabledCategories } from '../experimental';
+import { enabledCategories, selectedCategory } from '../experimental';
 import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
 import { workCards } from '$lib/collection/query.server';
 import { getConfig } from '../config';
@@ -7,16 +7,16 @@ import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
 import { AppError } from '../security/errors';
-import { getLists } from '../../core/lists/service';
+import { getLists } from '../../core/lists/service.server';
 import { hasPermittedMediaSource, applySequenceEntry } from './media';
-import { sequenceEntries } from '../../core/lists/sequence';
+import { sequenceEntries } from '../../core/lists/sequence.server';
 import { viewingRecency } from './viewing-recency';
 import { pageNumberSchema, PAGE_SIZE, pagination } from './pagination';
 
 const uuidSchema = v.pipe(v.string(), v.uuid());
 
 export const listsOptionsSchema = v.object({
-  category:v.optional(v.picklist(['all','screen','game','music']),'all'),
+  category:v.optional(v.picklist(['all','screen','game','music','reading','book','comic']),'all'),
   view: v.optional(v.union([v.picklist(['watchlist', 'favourites']), uuidSchema]), 'watchlist'),
   filter: v.optional(
     v.picklist(['to-watch', 'progress', 'complete', 'dropped', 'all']),
@@ -24,7 +24,7 @@ export const listsOptionsSchema = v.object({
   ),
   scope: v.optional(v.picklist(['all', 'available']), 'all'),
   page: v.optional(pageNumberSchema, 1),
-  kind: v.optional(v.picklist(['all', 'movie', 'show', 'album', 'track', 'game']), 'all'),
+  kind: v.optional(v.picklist(['all', 'movie', 'show', 'album', 'track', 'game', 'book', 'comic']), 'all'),
 });
 
 /** Read list summaries, then hydrate only the selected list's visible page. */
@@ -39,7 +39,7 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
   if (!selected && !['watchlist', 'favourites'].includes(input.view))
     throw new AppError(404, 'This list was not found.');
   const config=await getConfig();
-  const categoryAllowed=and(enabledCategories(sql`${s.works.category}`,config),input.category==='all' ? undefined : eq(s.works.category,input.category));
+  const categoryAllowed=and(enabledCategories(sql`${s.works.category}`,config),selectedCategory(sql`${s.works.category}`,input.category));
   const available = input.scope === 'available' ? or(hasPermittedMediaSource(viewerId),sql`exists(
     with recursive scope(id,path) as (select ${s.works.id},array[${s.works.id}] union all select r.child_id,d.path||r.child_id from scope d join media_relationships r on r.parent_id=d.id where r.kind in ('contains','collection','sequence') and not r.child_id=any(d.path) and cardinality(d.path)<20)
     select 1 from scope d join availability a on a.media_id=d.id join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${viewerId} and c.user_id=${viewerId} and a.state='available' and c.status='connected' and i.enabled
@@ -99,9 +99,10 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
         and (child.position_seconds > 0 or (child.watched and coalesce(child.duration_seconds, e.runtime_minutes * 60, child_media.runtime_minutes * 60, 0) > 0))
     )))`;
     const gameStatus=sql`(select gp.status from game_playthroughs gp where gp.user_id=${userId} and gp.game_id=${s.works.id} order by gp.created_at desc,gp.id desc limit 1)`;
-    const completed=sql`coalesce(${s.trackingState.watched},false) or exists(select 1 from music_listens ml where ml.user_id=${userId} and ml.track_id=${s.works.id}) or coalesce(${gameStatus}='completed',false)`;
-    const dropped=sql`coalesce(${s.trackingState.dropped},false) or coalesce(${gameStatus}='dropped',false)`;
-    const started=sql`(${progress}) or exists(select 1 from music_progress mp where mp.user_id=${userId} and mp.track_id=${s.works.id} and mp.position_seconds>0) or coalesce(${gameStatus} in ('in-progress','paused'),false)`;
+    const readingState=sql`(select rp.state from reading_progress rp where rp.user_id=${userId} and rp.work_id=${s.works.id})`;
+    const completed=sql`coalesce(${s.trackingState.watched},false) or exists(select 1 from music_listens ml where ml.user_id=${userId} and ml.track_id=${s.works.id}) or coalesce(${gameStatus}='completed',false) or coalesce(${readingState}='completed',false)`;
+    const dropped=sql`coalesce(${s.trackingState.dropped},false) or coalesce(${gameStatus}='dropped',false) or coalesce(${readingState}='dropped',false)`;
+    const started=sql`(${progress}) or exists(select 1 from music_progress mp where mp.user_id=${userId} and mp.track_id=${s.works.id} and mp.position_seconds>0) or coalesce(${gameStatus} in ('in-progress','paused'),false) or coalesce(${readingState} in ('reading','paused'),false)`;
     const watchlistFilter =
       input.filter === 'complete'
         ? sql`(${completed})`
@@ -114,14 +115,14 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
                 sql`not (${dropped})`,
                 input.filter === 'progress'
                   ? started
-                  : sql`not ((${s.works.kind} in ('show','game','track')) and (${started}))`
+                  : sql`not ((${s.works.kind} in ('show','game','track','book','comic')) and (${started}))`
               );
     const where = and(
       available,
       categoryAllowed,
       eq(s.trackingState.userId, userId),
       input.kind === 'all'
-        ? inArray(s.works.kind, ['movie', 'show', 'collection', 'album', 'track', 'game'])
+        ? inArray(s.works.kind, ['movie', 'show', 'collection', 'album', 'track', 'game', 'book', 'comic'])
         : eq(s.works.kind, input.kind),
       input.view === 'favourites'
         ? eq(s.trackingState.favourite, true)

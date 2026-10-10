@@ -5,6 +5,7 @@ export type MediaCardPresentation = Pick<
   MediaView,
   | 'id'
   | 'recommendationIds'
+  | 'trackingProgress'
   | 'title'
   | 'captionTitle'
   | 'captionSubtitle'
@@ -16,9 +17,9 @@ export type MediaCardPresentation = Pick<
   | 'artwork'
   | 'artworkSources'
   | 'logo'
-> & { kind: MusicKind | 'game' | 'person'; href: string; connectionId?: string; workId?: string; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean };
+> & { kind: MusicKind | 'game' | 'person' | 'book' | 'comic'; href: string; connectionId?: string; workId?: string; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean; rating?: number | null; attribution?: {label:string;href:string} };
 /** A server item can be displayed before it has a shared catalogue destination. */
-export type MediaCardDisplay = Omit<MediaCardPresentation,'kind'|'href'> & {kind:MediaKind|MusicKind|'game'|'person';href:null};
+export type MediaCardDisplay = Omit<MediaCardPresentation,'kind'|'href'> & {kind:MediaKind|MusicKind|'game'|'person'|'book'|'comic';href:null};
 export type MediaHeroPresentation = MediaCardPresentation &
   Pick<MediaView, 'overview' | 'genres' | 'runtimeMinutes' | 'certification'>;
 export type MediaCardShape = 'poster' | 'square' | 'circle' | 'fanart' | 'banner';

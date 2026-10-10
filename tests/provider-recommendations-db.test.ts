@@ -3,7 +3,7 @@ import {getSql} from '../src/lib/server/db';
 import {encryptCredential} from '../src/lib/server/security/credentials';
 import {TmdbAdapter} from '../src/lib/providers/tmdb/adapter.server';
 import {TraktAdapter} from '../src/lib/providers/trakt/adapter.server';
-import {refreshProviderRecommendations} from '../src/lib/experiments/provider-recommendations.server';
+import {refreshProviderRecommendations} from '../src/lib/recommendations/providers.server';
 import {enqueueAction,registerActionHandler,runQueueOnce,type OutboxAction} from '../src/lib/server/queue';
 import {jobExecution,JobYield} from '../src/lib/server/queue/execution';
 import {getConfig} from '../src/lib/server/config';

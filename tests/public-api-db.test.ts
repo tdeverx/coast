@@ -7,6 +7,9 @@ import {publicApiHandler} from '../src/lib/server/public-api/handler.server';
 import {publicProgress} from '../src/lib/server/public-api/progress.server';
 import * as s from '../src/lib/server/db/schema';
 import type {MediaCardPresentation} from '../src/lib/ui/types';
+import { getConfig } from '../src/lib/server/config';
+import { importReading } from '../src/lib/catalogue/reading.server';
+import { updateReading } from '../src/lib/core/reading/service.server';
 const target=process.env.TEST_DATABASE_URL;
 const enabled=!!target&&new URL(target).pathname.startsWith('/coast_settings_test');
 describe.skipIf(!enabled)('scoped public API',()=>{
@@ -125,5 +128,72 @@ describe.skipIf(!enabled)('scoped public API',()=>{
   expect((await read(reader.token,'progress')).status).toBe(403);
   expect((await (await read(stranger.token,'library')).json()).items).toHaveLength(0);
   expect((await read(reader.token,'library','GET','?selection=watched')).status).toBe(400);
+ });
+ test('reading writes and history use scoped, owner-only and idempotent public contracts',async()=>{
+  const db=getDb(),config=await getConfig();
+  let fixtureId:string|undefined;
+  const save=async(value:typeof config)=>db.insert(s.systemSettings).values({key:'coast',value}).onConflictDoUpdate({target:s.systemSettings.key,set:{value}});
+  await save({...config,experimentalBooks:true});
+  try{
+   const book=await importReading({provider:'openlibrary',externalId:'OL987654322W',kind:'book',title:'API journal',sourceUrl:'https://openlibrary.org/works/OL987654322W',authors:[],subjects:[]});
+   fixtureId=book.id;
+   const reader=await createApiToken(owner,{name:'Journal reader',scopes:['progress:read']});
+   const writer=await createApiToken(other,{name:'Journal writer',scopes:['reading:write','progress:read','webhooks:manage','library:read']});
+   async function write(token:string,path:string,body:unknown,key:string,method='PUT'){
+    const request=new Request(`http://coast.test/api/public/v1/${path}`,{method,headers:{authorization:`Bearer ${token}`,'content-type':'application/json','idempotency-key':key},body:JSON.stringify(body)});
+    return publicApiHandler({request,url:new URL(request.url),params:{path}} as Parameters<typeof publicApiHandler>[0]);
+   }
+   expect((await write(reader.token,`reading/${book.id}/progress`,{state:'reading',page:1,totalPages:10},'denied')).status).toBe(403);
+   expect((await write(writer.token,'webhooks',{url:'https://example.com/reading',events:['reading.changed']},'reading-subscription','POST')).status).toBe(201);
+   const path=`reading/${book.id}/progress`,body={state:'completed',page:10,totalPages:10};
+   expect((await write(writer.token,path,body,'complete-read')).status).toBe(200);
+   const repeated=await write(writer.token,path,body,'complete-read');expect(repeated.status).toBe(200);expect(repeated.headers.get('idempotency-replayed')).toBe('true');
+   expect((await write(writer.token,path,{page:9},'complete-read')).status).toBe(409);
+   const [events]=await getSql()`select count(*)::int as total from reading_history where user_id=${other.id} and work_id=${book.id}`;expect(events.total).toBe(1);
+   const deliveries=await getSql()`select payload from outbox_actions where user_id=${other.id} and kind='webhook.deliver' and payload->'event'->>'type'='reading.changed'`;
+   expect(deliveries).toHaveLength(1);
+   expect((await (await read(writer.token,`reading/${book.id}/history`)).json()).items[0]).toMatchObject({state:'completed',page:10,totalPages:10});
+   expect((await (await read(reader.token,`reading/${book.id}/history`)).json()).items).toEqual([]);
+   expect((await read(writer.token,`reading/${book.id}/history`,'GET','?username=api-owner')).status).toBe(400);
+   expect((await write(writer.token,path,{restart:true,state:'reading',page:0},'reread')).status).toBe(200);
+   expect((await (await read(writer.token,`reading/${book.id}/history`)).json()).pagination.total).toBe(2);
+   const [connection]=await getSql()`select id,instance_id from provider_connections where user_id=${other.id} limit 1`;
+   const [item]=await db.insert(s.providerItems).values({instanceId:connection.instance_id,mediaId:book.id,externalId:'api-reading-item',kind:'book'}).returning();
+   await db.insert(s.availability).values({userId:other.id,connectionId:connection.id,providerItemId:item.id,mediaId:book.id});
+   const library=await read(writer.token,'library','GET','?category=reading');expect(library.status).toBe(200);expect((await library.json()).items.map((item:{id:string})=>item.id)).toContain(book.id);
+   await save({...config,experimentalBooks:false});
+   expect((await write(writer.token,path,{page:1},'disabled')).status).toBe(404);
+   expect((await read(writer.token,`reading/${book.id}/history`)).status).toBe(404);
+  }finally{if(fixtureId)await getSql()`delete from works where id=${fixtureId}`;await save(config);}
+ });
+ test('reading catalogue gates filter counts and direct IDs and retain comic attribution',async()=>{
+  const db=getDb(), config=await getConfig();
+  const save=async(value:typeof config)=>db.insert(s.systemSettings).values({key:'coast',value}).onConflictDoUpdate({target:s.systemSettings.key,set:{value}});
+  await save({...config,experimentalBooks:true,experimentalComics:true});
+  try {
+   const book=await importReading({provider:'openlibrary',externalId:'OL987654321W',kind:'book',title:'API book',sourceUrl:'https://openlibrary.org/works/OL987654321W',authors:[],subjects:[]});
+   const comic=await importReading({provider:'comic-vine',externalId:'4000-987654321',kind:'comic',title:'API comic',sourceUrl:'https://comicvine.gamespot.com/api-comic/4000-987654321/',authors:[],subjects:[]});
+   const reader=await createApiToken(other,{name:'Reading catalogue',scopes:['catalogue:read']});
+   const books=await read(reader.token,'catalogue','GET','?category=book');
+   expect(books.status).toBe(200);expect((await books.json()).items).toEqual([{id:book.id,kind:'book',title:book.title,year:null}]);
+   const issue=await read(reader.token,`catalogue/${comic.id}`);expect(issue.status).toBe(200);
+   expect(await issue.json()).toHaveProperty('attribution',{label:'Comic Vine',href:comic.sourceUrl});
+   await updateReading(other.id,book.id,{page:20,totalPages:100});
+   await updateReading(owner.id,book.id,{page:50,totalPages:200});
+   expect((await read(reader.token,'progress','GET','?category=reading')).status).toBe(403);
+   const progressReader=await createApiToken(other,{name:'Reading progress',scopes:['progress:read']});
+   const progress=await read(progressReader.token,'progress','GET','?category=reading&view=watching&kind=book');
+   expect(progress.status).toBe(200);
+   const current=(await progress.json()).items[0];
+   expect(current.id).toBe(book.id);expect(current.reading).toMatchObject({state:'reading',page:20,totalPages:100});
+   expect(current).not.toHaveProperty('positionSeconds');expect(current).not.toHaveProperty('music');
+   await save({...config,experimentalBooks:true,experimentalComics:false});
+   expect((await read(reader.token,`catalogue/${comic.id}`)).status).toBe(404);
+   const disabled=await (await read(reader.token,'catalogue','GET','?category=comic')).json();
+   expect(disabled.items).toEqual([]);expect(disabled.pagination.total).toBe(0);
+   expect((await read(reader.token,`catalogue/${book.id}`)).status).toBe(200);
+   await save({...config,experimentalBooks:false,experimentalComics:false});
+   expect((await read(progressReader.token,'progress','GET','?category=reading')).status).toBe(404);
+  } finally {await save(config);}
  });
 });

@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-export const collectionCategories = [{ value: 'screen', label: 'Watch' }, { value: 'game', label: 'Play' }, { value: 'music', label: 'Listen' }] as const;
+export const collectionCategories = [{ value: 'screen', label: 'Watch' }, { value: 'game', label: 'Play' }, { value: 'music', label: 'Listen' }, { value: 'book', label: 'Books' }, { value: 'comic', label: 'Comics' }] as const;
 export const collectionRules = [
   { value: 'watchlist', label: 'Saved for later' }, { value: 'favourite', label: 'Favourites' },
   { value: 'rating', label: 'Rated items' }, { value: 'list', label: 'Items in lists' },
@@ -9,7 +9,7 @@ export const collectionRules = [
 export type CollectionRule = typeof collectionRules[number]['value'];
 export type CollectionPreferences = Record<typeof collectionCategories[number]['value'], Record<CollectionRule, boolean>>;
 const rulesSchema = v.object(Object.fromEntries(collectionRules.map(rule => [rule.value, v.boolean()])) as Record<CollectionRule, ReturnType<typeof v.boolean>>);
-export const collectionPreferencesSchema = v.object({ screen: rulesSchema, game: rulesSchema, music: rulesSchema });
+export const collectionPreferencesSchema = v.object({ screen: rulesSchema, game: rulesSchema, music: rulesSchema, book: rulesSchema, comic: rulesSchema });
 export function collectionPreferences(input?: Partial<CollectionPreferences>): CollectionPreferences {
   return Object.fromEntries(collectionCategories.map(category => [category.value,
     Object.fromEntries(collectionRules.map(rule => [rule.value, input?.[category.value]?.[rule.value] ?? rule.value !== 'dropped']))])) as CollectionPreferences;

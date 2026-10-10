@@ -1,6 +1,6 @@
 import {expect,test} from 'bun:test';
 import {getDb,getSql} from '../src/lib/server/db';
-import {enqueueTraktChangeInTransaction} from '../src/lib/sync/changes';
+import {enqueueTraktChangeInTransaction} from '../src/lib/sync/changes.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 run('unsupported media never enters Trakt export even with a stray screen-provider mapping',async()=>{
  const db=getSql(),user=crypto.randomUUID(),instance=crypto.randomUUID(),connection=crypto.randomUUID();

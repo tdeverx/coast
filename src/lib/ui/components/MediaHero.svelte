@@ -24,7 +24,7 @@
   }: {
     mode?: 'content' | 'player';
     item?: HeroItem;
-    collection?: { items: MediaView[]; selection: string; busy?: boolean };
+    collection?: { items: HeroItem[]; selection: string; busy?: boolean };
     actions?: Snippet;
     parents?: MediaView[];
     items?: HeroItem[];

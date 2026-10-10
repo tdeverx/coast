@@ -252,7 +252,7 @@ run(
   async () => {
     const { refreshSharedMetadata } =
       await import('../src/lib/catalogue/maintenance.server');
-    const { ingestMetadata } = await import('../src/lib/catalogue/service');
+    const { ingestMetadata } = await import('../src/lib/catalogue/service.server');
     const { ProviderHttpError } =
       await import('../src/lib/server/security/provider-fetch');
     let active = 0,

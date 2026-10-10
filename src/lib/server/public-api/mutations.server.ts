@@ -1,3 +1,4 @@
+import { updateReading } from '$lib/core/reading/service.server';
 import { categoryEnabled } from '$lib/experimental';
 import { readJsonBody } from '$lib/server/security/request-body';
 import { encryptCredential,decryptCredential } from '$lib/server/security/credentials';
@@ -7,11 +8,11 @@ import { and,eq,sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { apiIdempotency,apiTokens,users,works } from '$lib/server/db/schema';
 import { AppError } from '$lib/server/security/errors';
-import { trackingInputSchema,bulkTrackingInputSchema } from '$lib/core/tracking/service';
-import { trackWithExports,bulkTrackWithExports,rateWithExports } from '$lib/sync/changes';
-import { ratingInputSchema } from '$lib/core/ratings/service';
+import { trackingInputSchema,bulkTrackingInputSchema } from '$lib/core/tracking/service.server';
+import { trackWithExports,bulkTrackWithExports,rateWithExports } from '$lib/sync/changes.server';
+import { ratingInputSchema } from '$lib/core/ratings/service.server';
 import { logMusic } from '$lib/music/persistence.server';
-import { createPlaythrough,updatePlaythrough,logGameSession } from '$lib/core/games/service';
+import { createPlaythrough,updatePlaythrough,logGameSession } from '$lib/core/games/service.server';
 import { createWebhook,removeWebhook } from './webhooks.server';
 import type { authenticateApiToken } from './tokens.server';
 import { getConfig } from '$lib/server/config';
@@ -22,6 +23,7 @@ export async function publicMutation(user:Awaited<ReturnType<typeof authenticate
  const route=path.join('/'),method=request.method;
  let scope:string;
  if(method==='POST'&&['tracking','tracking/bulk'].includes(route))scope='tracking:write';
+ else if(method==='PUT'&&path.length===3&&path[0]==='reading'&&path[2]==='progress')scope='reading:write';
  else if(method==='PUT'&&path.length===2&&path[0]==='relationships')scope='relationships:write';
  else if(method==='PUT'&&path.length===2&&path[0]==='ratings')scope='ratings:write';
  else if(method==='POST'&&path.length===3&&path[0]==='music'&&path[2]==='listens')scope='music:write';
@@ -56,6 +58,9 @@ export async function publicMutation(user:Awaited<ReturnType<typeof authenticate
    if(scope==='relationships:write'){const input=v.parse(v.strictObject({relationship:v.picklist(['collected','saved','favourite']),value:v.boolean()}),data);const action=({collected:'collect',saved:'watchlist',favourite:'favourite'} as const)[input.relationship];const changed=await trackWithExports(user.id,{mediaId:id,action,value:input.value},tx);result={changed:changed.changed};}
    else if(scope==='ratings:write'){const input=v.parse(v.strictObject({value:ratingInputSchema.entries.value}),data);await rateWithExports(user.id,{mediaId:id,value:input.value},tx);result={workId:id,value:input.value};}
    else result=await logMusic(user.id,id,data,tx);
+  }else if(scope==='reading:write'){
+   const progress=await updateReading(user.id,v.parse(uuid,path[1]),data,tx);
+   result={workId:progress.workId,state:progress.state,page:progress.page,totalPages:progress.totalPages};
   }else if(scope==='games:write'){
    if(!config.experimentalGaming)throw new AppError(404,'Games are disabled.','not_found');
    const id=v.parse(uuid,path[1]);const row=path[0]==='games'?await createPlaythrough(user.id,id,data,tx):method==='PATCH'?await updatePlaythrough(user.id,id,data,tx):await logGameSession(user.id,id,data,tx);

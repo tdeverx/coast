@@ -1,5 +1,5 @@
 import { fallbackArtwork } from '../src/lib/providers/tmdb/fallback.server';
-import { cardArtwork, orderedArtwork, overlayArtwork } from '../src/lib/ui/artwork-priority';
+import { cardArtwork, orderedArtwork, overlayArtwork } from '../src/lib/media/artwork';
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { migrate } from 'drizzle-orm/bun-sql/migrator';
 import { and, eq, inArray } from 'drizzle-orm';
@@ -9,15 +9,15 @@ import { detailsData, mediaViews } from '../src/lib/server/queries/media';
 import { profileData } from '../src/lib/server/queries/profile';
 import { profileUser } from '../src/lib/server/queries/profile-user';
 import { progressData } from '../src/lib/server/queries/progress';
-import { setUpNext } from '../src/lib/core/lists/up-next';
+import { setUpNext } from '../src/lib/core/lists/up-next.server';
 import { homeData } from '../src/lib/server/queries/home';
 import { libraryData } from '../src/lib/server/queries/library';
 import { listsData, userLists } from '../src/lib/server/queries/lists';
 import { requestList } from '../src/lib/server/queries/requests';
-import { bulkTrack, track } from '../src/lib/core/tracking/service';
-import { moveListItem } from '../src/lib/core/lists/service';
-import { savePresentationPreference } from '../src/lib/catalogue/overrides/service';
-import { searchMedia, resolveDiscoveryItems } from '../src/lib/catalogue/service';
+import { bulkTrack, track } from '../src/lib/core/tracking/service.server';
+import { moveListItem } from '../src/lib/core/lists/service.server';
+import { savePresentationPreference } from '../src/lib/catalogue/overrides/service.server';
+import { searchMedia, resolveDiscoveryItems } from '../src/lib/catalogue/service.server';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = databaseUrl ? describe : describe.skip;

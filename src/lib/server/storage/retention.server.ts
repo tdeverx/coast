@@ -18,6 +18,8 @@ export async function pruneTransientRecords() {
     // executing observations; account effects and history remain permanent.
     const staging = await tx.execute(sql`delete from trakt_import_stages where id in (select s.id from trakt_import_stages s join outbox_actions a on a.id=s.action_id where s.updated_at < now()-interval '30 days' and a.state<>'running' order by s.updated_at limit 500 for update of s skip locked) returning id`);
     const snapshots=await tx.execute(sql`delete from provider_job_snapshots where action_id in (select s.action_id from provider_job_snapshots s join outbox_actions a on a.id=s.action_id where s.updated_at < now()-interval '30 days' and a.state<>'running' order by s.updated_at limit 500 for update of s skip locked) returning action_id`);
-    return { busy: false, removed: sessions.length + previews.length + invites.length + rooms.length + diagnostics.length + staging.length + snapshots.length, expired: expired.length, more: [sessions, previews, invites, expired, rooms, diagnostics, staging, snapshots].some(rows => rows.length === 500) };
+    // Preserve the newest bookmark of each edition, including closed sessions.
+    const reading=await tx.execute(sql`delete from reading_sessions where id in (select s.id from reading_sessions s where s.expires_at < now()-interval '30 days' and exists(select 1 from reading_sessions newer where newer.user_id=s.user_id and newer.work_id=s.work_id and newer.edition=s.edition and newer.format=s.format and (newer.updated_at,newer.id)>(s.updated_at,s.id)) order by s.updated_at limit 500 for update of s skip locked) returning id`);
+    return { busy: false, removed: sessions.length + previews.length + invites.length + rooms.length + diagnostics.length + staging.length + snapshots.length + reading.length, expired: expired.length, more: [sessions, previews, invites, expired, rooms, diagnostics, staging, snapshots,reading].some(rows => rows.length === 500) };
   });
 }

@@ -1,36 +1,56 @@
 import { untrack } from 'svelte';
 import { page } from '$app/state';
-import { invalidate, replaceState } from '$app/navigation';
-import { libraryTitles, librarySelections, type LibrarySurface } from '$lib/library';
+import { libraryTitles, type LibrarySurface } from '$lib/library';
 import type { ShelfItem, ShelfSource, ShelfControl } from './types';
+import type { MediumFeatures } from '$lib/experimental';
+import { mediaTypeOptions } from '$lib/ui/filter-options';
+import { refreshRouteDependencies } from '$lib/ui/client';
+
 export type SearchOptions = {
-  surface: LibrarySurface;
+  surface?: LibrarySurface;
+  bucket?: 'available' | 'unavailable';
   query: string;
   items: ShelfItem[];
+  layout?: 'row' | 'grid';
+  kind?: string;
   busy?: boolean;
   failure?: string;
   truncated?: boolean;
-  layout?: 'row' | 'grid';
+  mediums?: Partial<MediumFeatures>;
+  notice?: string;
 };
+
+/** Both search rows share the same finite, lazy shelf and media-type controls. */
 export function createSearchSource(getOptions: () => SearchOptions): ShelfSource {
-  let { surface, query, items, busy = false, failure = '', truncated = false, layout = 'row' } = $derived(getOptions());
-  let kind = $state(untrack(() => layout === 'grid' ? page.url.searchParams.get('kind') ?? 'all' : 'all'));
-  function selectKind(value:string){kind=value;if(layout==='grid'){const url=new URL(page.url);url.searchParams.set('kind',value);replaceState(url.pathname+url.search,page.state);}}
-  let available = $state(untrack(() => layout === 'grid' && page.url.searchParams.get('rowAvailable') === 'true'));
-  function selectAvailable(value:string){available=value==='available';if(layout==='grid'){const url=new URL(page.url);url.searchParams.set('rowAvailable',String(available));replaceState(url.pathname+url.search,page.state);}}
+  let localKind = $state(untrack(() => getOptions().kind ?? 'all'));
+  const options = $derived(getOptions());
+  const kind = $derived(localKind);
+  function selectKind(value: string) {
+    localKind = value;
+  }
   return {
-    get pagination() { return { kind: 'local' as const }; },
-    get title() { return libraryTitles[surface]; },
-    get items() { return surface === 'watch' ? items : items.filter(item => 'href' in item && (kind === 'all' || item.kind === kind) && (!available || item.available)); },
-    get busy() { return busy; }, get ready() { return !busy; }, get error() { return failure; }, activated: true,
-    get href() { return layout === 'row' ? '/search?' + new URLSearchParams({q:query,view:surface,kind,rowAvailable:String(available)}) : undefined; },
-    get filterBy() { return surface === 'watch' ? 'type' : 'none'; },
-    get filters(): ShelfControl[] {return surface==='watch'?[]:[...(surface==='listen'?[{type:'segments' as const,label:'Listen type',value:kind,options:librarySelections.listen,change:selectKind}]:[]),{type:'availability',label:'Available to play only',value:available?'available':'all',change:selectAvailable}];}, controls: [],
-    rows: 2,
-    get shape() { return surface === 'watch' ? undefined : surface === 'listen' ? 'square' : 'poster'; },
-    get mediaKind() { return surface === 'listen' ? 'music' : surface === 'play' ? 'game' : 'screen'; },
-    get notice() { return truncated ? 'Refine your search for more results.' : ''; },
-    get empty() { return busy ? 'Searching…' : surface==='play' && available ? 'No owned games match this selection. Turn off Available to browse all games.' : 'No titles in this selection.'; },
-    load: async () => invalidate('coast:tracking'),
+    pagination: { kind: 'local' },
+    get title() { return options.bucket === 'available' ? 'Available' : options.bucket === 'unavailable' ? 'Unavailable' : libraryTitles[options.surface ?? 'watch']; },
+    get items() {
+      return options.items.filter(item =>
+        (kind === 'all' || item.kind === kind) &&
+        (!options.bucket || (item.available === true) === (options.bucket === 'available')));
+    },
+    get busy() { return options.busy ?? false; },
+    get ready() { return !options.busy; },
+    get error() { return options.failure ?? ''; },
+    activated: true,
+    filterBy: 'none',
+    get filters(): ShelfControl[] {
+      return [{ type: 'segments', label: `${this.title} media type`, value: kind,
+        options: [...mediaTypeOptions(options.mediums ?? page.data), ...((options.mediums ?? page.data).experimentalMusic ? [{ value: 'artist', label: 'Artists' }] : [])], change: selectKind }];
+    },
+    controls: [],
+    actions: [],
+    rows: 1,
+    get resetKey() { return `${options.query}:${kind}`; },
+    get notice() { return options.notice || (options.truncated ? 'Refine your search for more results.' : ''); },
+    get empty() { return options.bucket === 'available' ? 'No available titles match this search.' : 'No unavailable titles match this search.'; },
+    load: async () => refreshRouteDependencies(['tracking', 'reading', 'providers']),
   };
 }

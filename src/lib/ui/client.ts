@@ -67,7 +67,7 @@ export async function refreshAfterChange(path: string) {
     : domain === 'notifications' ? ['notifications']
     : ['providers', 'queue', 'conflicts', 'requests'].includes(domain) ? ['providers', 'tracking', 'notifications']
     : ['settings', 'profile', 'admin'].includes(domain) ? ['session', 'settings', 'tracking', 'social']
-    : ['tracking', 'ratings', 'collection', 'music', 'games', 'game-playthroughs', 'lists', 'up-next', 'continue', 'rewatch', 'media'].includes(domain) ? ['tracking', 'social']
+    : ['tracking', 'ratings', 'collection', 'music', 'games', 'game-playthroughs', 'reading', 'lists', 'up-next', 'continue', 'rewatch', 'media'].includes(domain) ? ['tracking', 'social']
     : [];
   invalidateContentRevision(dependencies.filter((key): key is ContentDomain => ['tracking','social','planning'].includes(key)));
   await refreshRouteDependencies(dependencies);

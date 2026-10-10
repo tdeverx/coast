@@ -6,7 +6,7 @@ import { queueProviderRequest, deferProviderRequests, retryAfterSeconds } from '
 
 export interface ProviderFetchConfig {
   baseUrl: string;
-  provider?: 'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb' | 'steam';
+  provider?: 'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb' | 'steam' | 'openlibrary' | 'comic-vine';
   approved?: boolean;
   allowPrivateNetwork?: boolean;
   allowedPorts?: number[];
@@ -318,7 +318,9 @@ export async function secureProviderFetch(
       if(response.status===429)deferProviderRequests(new URL(config.baseUrl).origin,(retryAfterSeconds(response.headers.get('retry-after'))??60)*1000);
       return new Response([204,205,304].includes(response.status) ? null : bytes, {status:response.status,statusText:response.statusText,headers:response.headers});
     };
-    const interval = config.provider === 'igdb' ? 260 : ['trakt','steam','tmdb'].includes(config.provider ?? '') ? 250 : 0;
+    // Reading discovery is human-driven. Conservative Comic Vine pacing stays
+    // below its 200-per-resource hourly budget without a second hidden queue.
+    const interval = config.provider === 'openlibrary' ? 1100 : config.provider === 'comic-vine' ? 18_100 : config.provider === 'igdb' ? 260 : ['trakt','steam','tmdb'].includes(config.provider ?? '') ? 250 : 0;
     const response = options.stream ? await perform() : await queueProviderRequest(new URL(config.baseUrl).origin,interval,perform,init.signal ?? undefined);
     void logDiagnostic(response.ok ? 'info' : 'warn', 'provider.complete', {
       provider: config.provider,

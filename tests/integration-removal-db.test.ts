@@ -4,7 +4,7 @@ import { closeDb, getDb, getSql } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import { deleteInstance } from '../src/lib/application/provider-sources.server';
 import { previewSourceChange } from '../src/lib/collection/source-changes.server';
-import { ingestMetadata } from '../src/lib/catalogue/service';
+import { ingestMetadata } from '../src/lib/catalogue/service.server';
 
 const enabled = process.env.COAST_DB_TEST === '1', run = enabled ? test : test.skip;
 let adminId: string, userId: string;

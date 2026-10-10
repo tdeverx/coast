@@ -1,3 +1,4 @@
+import {reader} from '$lib/reading/client.svelte';
 import { onMount, untrack } from 'svelte';
 import { useClient } from '$lib/ui/client-context';
 import { heroTitleIds, isHeroTitle } from '$lib/media/hero';
@@ -10,9 +11,9 @@ export type HeroOptions = {
   item?: HeroItem;
   items?: HeroItem[];
   parents?: MediaView[];
-  collection?: { items: MediaView[]; selection: string; busy?: boolean };
+  collection?: { items: HeroItem[]; selection: string; busy?: boolean };
 };
-export function screenItem(item: HeroItem): item is MediaView { return 'available' in item; }
+export function screenItem(item: HeroItem): item is MediaView { return !('href' in item); }
 /** Selection, artwork fallbacks and trailer attachment for a visible hero slot. */
 export function createHeroPresentation(get: () => HeroOptions) {
   const { heroPlayer, player, preview } = usePlayback();
@@ -30,7 +31,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
     gestureDistance = 0,
     gestureTimer: ReturnType<typeof setTimeout>;
   let mounted = $state(false);
-  let chosen = $state<MediaView | null>(null);
+  let chosen = $state<HeroItem | null>(null);
   let previousSelection = '';
   onMount(() => { mounted = true; });
   $effect(() => {
@@ -100,7 +101,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
   }
   $effect(() => {
     const title = active;
-    const obscured = playbackVisible(player);
+    const obscured = playbackVisible(player)||reader.visible;
     if(obscured){if(heroPlayer.id===title?.id)heroPlayer.visible=false;return;}
     backdropFailed = false;
     posterFailed = false;

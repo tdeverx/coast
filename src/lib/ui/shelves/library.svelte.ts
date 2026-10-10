@@ -13,6 +13,7 @@
     type LibrarySurface,
   } from '$lib/library';
   import type { ShelfSource, ShelfControl } from './types';
+  import { readingTypeOptions } from '$lib/ui/filter-options';
 
 export type LibrarySourceOptions = {
     surface: LibrarySurface;
@@ -21,7 +22,7 @@ export type LibrarySourceOptions = {
     genre?: string;
     layout?: 'row' | 'grid';
     initialSelection?: string;
-    initialKind?: 'all' | 'movie' | 'show';
+    initialKind?: 'all' | 'movie' | 'show' | 'book' | 'comic';
     initialScope?: 'all' | 'available';
     collection?: boolean;
     username?: string;
@@ -39,7 +40,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     layout = 'row',
     initialSelection = 'all',
     initialKind = 'all',
-    initialScope = getOptions().preview ? 'all' : 'available',
+    initialScope = getOptions().preview || getOptions().surface === 'read' ? 'all' : 'available',
     collection: initialCollection = false,
     username = '',
     initialRelationship = 'all',
@@ -101,21 +102,22 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     get title() { return title; }, get items() { return content.items; }, get busy() { return busy; }, get ready() { return ready; },
     get error() { return failure; }, get activated() { return resource.activated; },
     get href() { return layout === 'row' ? href() : undefined; },
-    get shape() { return surface==='listen' ? 'square' : 'poster'; }, get mediaKind() { return surface==='listen' ? 'music' : surface==='play' ? 'game' : 'screen'; },
+    get shape() { return surface==='listen' ? 'square' : 'poster'; }, get mediaKind() { return surface==='listen' ? 'music' : surface==='play' ? 'game' : surface==='read' ? 'reading' : 'screen'; },
     get rows() { return preview ? 1 : 2; },
 
     get resetKey() { return preview ? `${selection}:${scope}` : `${collection}:${selection}:${kind}:${scope}:${relationship}:${source}:${availability}`; },
     get filters(): ShelfControl[] { return [
       {type:'segments' as const,label:`${title} selection`,value:selection,options:selections,change:(value:string)=>{selection=value;void load();}},
       ...(!preview ? [{type:'collection' as const,label:'In my Collection only',value:collection ? 'collection' : 'all',change:(value:string)=>{collection=value==='collection';if(collection && selection==='artist') selection='all';if(collection) availability=scope==='available'?'available':availability==='available'?'all':availability;void load();}}] : []),
-      {type:'availability' as const,label:'Available to play only',value:scope,change:(value:string)=>{scope=value as typeof scope;if(collection) availability=value==='available'?'available':'all';void load();}},
+      ...[{type:'availability' as const,label:surface==='read'?'Available to read only':'Available to play only',value:scope,change:(value:string)=>{scope=value as typeof scope;if(collection) availability=value==='available'?'available':'all';void load();}}],
     ]; },
     get controls(): ShelfControl[] {
       return [
         ...(surface==='watch' ? [{type:'media-type' as const,label:'Watch type',value:kind,change:(value:string)=>{kind=value as typeof kind;void load();}}] : []),
+        ...(surface==='read' ? [{type:'select' as const,label:'Reading type',value:kind,options:readingTypeOptions(route.data),change:(value:string)=>{kind=value as typeof kind;void load();}}] : []),
         ...(collection ? [
-          {type:'select' as const,label:`${title} relationships`,value:relationship,options:[{value:'all',label:'All relationships'},{value:'collected',label:'Collected'},{value:'watchlist',label:'Watchlist'},{value:'favourite',label:'Favourites'},{value:'rating',label:'Rated'},{value:'list',label:'Lists'},{value:'queue',label:'Queued'},{value:'activity',label:'Activity'}],change:(value:string)=>{relationship=value;void load();}},
-          {type:'select' as const,label:`${title} availability`,value:availability,options:[{value:'all',label:'All availability'},{value:'available',label:'Available'},{value:'partial',label:'Partial'},{value:'unavailable',label:'Missing'},{value:'unknown',label:'Unknown'},{value:'ready',label:'Ready to continue'}],change:(value:string)=>{availability=value;scope=value==='available'?'available':'all';void load();}},
+          {type:'select' as const,label:`${title} relationships`,value:relationship,options:[{value:'all',label:'All relationships'},{value:'collected',label:'Collected'},{value:'watchlist',label:'Watchlist'},{value:'favourite',label:'Favourites'},{value:'rating',label:'Rated'},{value:'list',label:'Lists'},...(surface!=='read'?[{value:'queue',label:'Queued'}]:[]),{value:'activity',label:'Activity'}],change:(value:string)=>{relationship=value;void load();}},
+          {type:'select' as const,label:`${title} availability`,value:availability,options:[{value:'all',label:'All availability'},{value:'available',label:'Available'},...(surface!=='read'?[{value:'partial',label:'Partial'},{value:'unavailable',label:'Missing'}]:[]),{value:'unknown',label:'Unknown'},{value:'ready',label:'Ready to continue'}],change:(value:string)=>{availability=value;scope=value==='available'?'available':'all';void load();}},
           ...(content.sources?.length ? [{type:'select' as const,label:`${title} sources`,value:source,options:[{value:'all',label:'All sources'},...content.sources.map(item=>({value:item.id,label:item.name}))],change:(value:string)=>{source=value;void load();}}] : []),
         ] : []),
       ];

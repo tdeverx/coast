@@ -11,9 +11,9 @@
     void readCount();const timer=setInterval(()=>void readCount(),15000);
     return ()=>{clearInterval(timer);controller.abort();};
   });
-  import {openNotifications} from '$lib/notifications/client.svelte';
-  import {openFriends} from '$lib/social/panel.svelte';
-  import {openStreams} from '$lib/providers/streams-panel.svelte';
+  import {openNotifications} from '$lib/ui/panels/notifications.svelte';
+  import {openFriends} from '$lib/ui/panels/friends.svelte';
+  import {openStreams} from '$lib/ui/panels/streams.svelte';
   import Avatar from './Avatar.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import { profilePath } from '$lib/profile/url';
@@ -21,6 +21,7 @@
   import Icon from './Icon.svelte';
   import Brand from './Brand.svelte';
 
+  import { reader } from '$lib/reading/client.svelte';
   import { player } from '$lib/playback/client.svelte';
   import { slidingPill } from '$lib/ui/materials/sliding-pill';
   import { liquidGlass } from '$lib/ui/materials/glass';
@@ -57,6 +58,7 @@
     {/if}
     <div class="account">
       {#if user}
+      {#if reader.session&&!reader.visible}<Button icon="library" size="icon" label="Resume reading" onclick={()=>reader.visible=true}/>{/if}
       {#if user.role==='admin'}<button type="button" id="streams-trigger" class="icon-button notification" aria-label={streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}><Icon name="server" size={21}/>{#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}</button>{/if}
       <button type="button" id="friends-trigger" class="icon-button notification" aria-label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</button>
       <button type="button"

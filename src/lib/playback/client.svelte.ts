@@ -100,6 +100,7 @@ export async function playMedia(
   player.preparationStartedAt = performance.now();
   browserDiagnostic('playback.start');
   try {
+    const {reader,closeReading}=await import('$lib/reading/client.svelte');if(reader.session)await closeReading();
     if (player.session) await controller?.stop();
     const video = document.createElement('video');
     const videoCodecs = ['h264'];

@@ -1,4 +1,4 @@
-import { setUpNext } from '$lib/core/lists/up-next';
+import { setUpNext } from '$lib/core/lists/up-next.server';
 import { json } from '@sveltejs/kit';
 import { type ApiContext } from './context.server';
 

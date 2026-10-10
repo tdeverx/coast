@@ -10,7 +10,7 @@ import {companionPlan,validateCompanionPage,type CompanionPage,type CompanionSta
 import {streamPresentation} from './streams';
 import {recordServerStreams} from './stream-history.server';
 import {getConfig} from '$lib/server/config';
-import {syncJellyfinChanges} from '$lib/sync/jellyfin';
+import {syncJellyfinChanges} from '$lib/sync/jellyfin.server';
 import * as v from 'valibot';
 
 type Context=Awaited<ReturnType<typeof getJellyfin>>;
@@ -79,8 +79,8 @@ export async function applyCompanionPage(action:OutboxAction,context:Context,pag
           from provider_items pi where a.provider_item_id=pi.id and pi.instance_id=${current.id}
           and pi.external_id in (${sql.join(plan.removed.map(id=>sql`${id}`),sql`,`)})`);
       }
-      if(schedule.libraryEnabled&&librarySource&&(plan.video.length||config.experimentalMusic&&plan.music.length))
-        await request(librarySource,'jellyfin.delta',{scope:'library',video:plan.video,music:config.experimentalMusic?plan.music:[]},`companion:${page.epoch}:${page.cursor}:library`);
+      if(schedule.libraryEnabled&&librarySource&&(plan.video.length||config.experimentalMusic&&plan.music.length||(config.experimentalBooks||config.experimentalComics)&&plan.reading.length))
+        await request(librarySource,'jellyfin.delta',{scope:'library',video:plan.video,music:config.experimentalMusic?plan.music:[],reading:config.experimentalBooks||config.experimentalComics?plan.reading:[]},`companion:${page.epoch}:${page.cursor}:library`);
       for(const {connection} of accounts){
         const personal=connection.externalUserId?plan.personal.get(connection.externalUserId.replaceAll('-','').toLowerCase()):undefined;
         if(personal?.permissions){
@@ -92,8 +92,9 @@ export async function applyCompanionPage(action:OutboxAction,context:Context,pag
         }
         if(!schedule.userSyncEnabled)continue;
         const video=[...new Set([...plan.video,...(personal?.video??[])])];
+        const reading=config.experimentalBooks||config.experimentalComics?[...new Set([...plan.reading,...(personal?.reading??[])])]:[];
         const music=config.experimentalMusic?[...new Set([...plan.music,...(personal?.music??[])])]:[];
-        if(video.length||music.length)await request(connection,'jellyfin.delta',{scope:'user',video,music},`companion:${page.epoch}:${page.cursor}:user`);
+        if(video.length||music.length||reading.length)await request(connection,'jellyfin.delta',{scope:'user',video,music,reading},`companion:${page.epoch}:${page.cursor}:user`);
       }
     }
     if(schedule.liveEnabled){
@@ -146,10 +147,10 @@ export async function pollCompanion(action:OutboxAction){
 const ids=v.pipe(v.array(v.pipe(v.string(),v.regex(/^[a-f0-9]{32}$/i))),v.maxLength(200));
 export async function applyCompanionDelta(action:OutboxAction){
   if(!action.connectionId)throw new PermanentActionError('The Jellyfin connection is unavailable.');
-  const data=v.parse(v.object({scope:v.picklist(['library','user']),video:ids,music:ids}),action.payload);
+  const data=v.parse(v.object({scope:v.picklist(['library','user']),video:ids,music:ids,reading:v.optional(ids,[])}),action.payload);
   const context=await getJellyfin(action.userId,action.connectionId);
   if(context.connection.accountGeneration!==action.accountGeneration)throw new PermanentActionError('The connected account changed.');
-  const items=[...data.video.map(id=>({id,kind:'video' as const})),...data.music.map(id=>({id,kind:'music' as const}))];
+  const items=[...data.video.map(id=>({id,kind:'video' as const})),...data.music.map(id=>({id,kind:'music' as const})),...data.reading.map(id=>({id,kind:'reading' as const}))];
   if(items.length>200)throw new PermanentActionError('Too many Jellyfin changes in one page.');
   const saved=v.safeParse(v.object({offset:v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(items.length)),
     checked:v.pipe(v.number(),v.integer(),v.minValue(0)),count:v.pipe(v.number(),v.integer(),v.minValue(0))}),await readJobCheckpoint());
@@ -157,9 +158,13 @@ export async function applyCompanionDelta(action:OutboxAction){
   // Commit small targeted batches before yielding, keeping long bursts from
   // holding a worker and preserving completed work across retries/promotions.
   while(offset<items.length){
-    const batch=items.slice(offset,offset+25);
+    // Reading metadata may need a paced provider lookup. Commit each reading
+    // item before yielding rather than retrying an unfinished mixed batch.
+    const nextReading=items.findIndex((item,index)=>index>=offset&&item.kind==='reading');
+    const end=items[offset].kind==='reading'?offset+1:Math.min(offset+25,nextReading<0?items.length:nextReading);
+    const batch=items.slice(offset,end);
     const result=await syncJellyfinChanges(action.userId,action.connectionId,data.scope,
-      {video:batch.filter(item=>item.kind==='video').map(item=>item.id),music:batch.filter(item=>item.kind==='music').map(item=>item.id)},context);
+      {video:batch.filter(item=>item.kind==='video').map(item=>item.id),music:batch.filter(item=>item.kind==='music').map(item=>item.id),reading:batch.filter(item=>item.kind==='reading').map(item=>item.id)},context);
     offset+=batch.length;checked+=result.checked;count+=result.count;
     await saveJobCheckpoint({offset,checked,count});
     await jobCheckpoint();

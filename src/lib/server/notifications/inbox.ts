@@ -9,7 +9,7 @@ import { friends } from '$lib/social/service.server';
 import { statusesForUsers } from '$lib/social/status.server';
 import { defaultNotificationFilters,notificationKinds,notificationDestination,type NotificationFilters,type NotificationEntry } from '$lib/notifications/model';
 const uuid=v.pipe(v.string(),v.uuid());
-const filterSchema=v.object({segment:v.optional(v.picklist(['all','social','requests','system']),'all'),kind:v.optional(v.picklist(notificationKinds.map(k=>k.value)),'all'),unread:v.optional(v.boolean(),false),category:v.optional(v.picklist(['all','screen','game','music']),'all'),period:v.optional(v.picklist(['all','week','month']),'all')});
+const filterSchema=v.object({segment:v.optional(v.picklist(['all','social','requests','system']),'all'),kind:v.optional(v.picklist(notificationKinds.map(k=>k.value)),'all'),unread:v.optional(v.boolean(),false),category:v.optional(v.picklist(['all','screen','game','music','reading']),'all'),period:v.optional(v.picklist(['all','week','month']),'all')});
 export function notificationFilters(input:unknown):NotificationFilters {return v.parse(filterSchema,input);}
 export function notificationParameters(url:URL){return {...Object.fromEntries(['segment','kind','category','period','before','beforeId'].flatMap(key=>url.searchParams.has(key)?[[key,url.searchParams.get(key)]]:[])),unread:url.searchParams.get('unread')==='true'};}
 function visible(userId:string,filters:NotificationFilters=defaultNotificationFilters){
@@ -31,13 +31,13 @@ function visible(userId:string,filters:NotificationFilters=defaultNotificationFi
  from context n left join works w on w.id=n.work_id
  where (${filters.segment}='all' or case when n.kind in ('friend-request','friend-accepted','recommendation','reaction','synced-invite') then 'social' when n.kind in ('request','availability') then 'requests' else 'system' end=${filters.segment})
  and (${filters.kind}='all' or n.kind=${filters.kind}) and (${!filters.unread} or n.read_at is null)
- and (${filters.category}='all' or w.category=${filters.category})
+ and (${filters.category}='all' or w.category=${filters.category} or (${filters.category}='reading' and w.category in ('book','comic')))
+ and (w.id is null or w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true'))
  and (${filters.period}='all' or n.created_at>=now()-case when ${filters.period}='week' then interval '7 days' else interval '30 days' end)
  )`;
 }
 async function notificationSummary(actor:SessionUser|null){
- const user=requireUser(actor);const [row]=await getSql()`select count(*)::int as count,to_char(clock_timestamp() at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as snapshot from notifications n where user_id=${user.id} and kind<>'friend-request' and read_at is null and dismissed_at is null and social_notification_visible(${user.id}::uuid,n.kind,n.data)
- and not exists(select 1 from outbox_actions job where n.kind='external-action' and job.id::text=split_part(n.source_key,':',2) and job.user_id=n.user_id and job.state in ('cancelled','succeeded'))`;
+ const user=requireUser(actor);const [row]=await getSql()`${visible(user.id)} select count(*) filter(where read_at is null)::int as count,to_char(clock_timestamp() at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as snapshot from visible`;
  return {unread:Number(row.count),snapshot:String(row.snapshot)};
 }
 export async function notificationUnread(actor:SessionUser|null){return (await notificationSummary(actor)).unread;}

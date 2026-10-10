@@ -5,7 +5,7 @@ import { getConfig } from '$lib/server/config';
 import { AppError } from '$lib/server/security/errors';
 import { hashToken,randomToken,requireUser,type SessionUser } from '$lib/server/auth';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { startPlayback,streamPlayback } from '$lib/playback/server';
+import { startPlayback,streamPlayback } from '$lib/playback/service.server';
 
 const uuid=v.pipe(v.string(),v.uuid());
 export const shareCookie='coast_share_viewer';

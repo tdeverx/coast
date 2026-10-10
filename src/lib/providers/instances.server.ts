@@ -18,10 +18,11 @@ import { encryptCredential, decryptCredential } from '$lib/server/security/crede
 import { requireExperimentalFeature } from '$lib/server/experimental';
 import { getConfig } from '$lib/server/config';
 import { JellyfinAdapter } from '$lib/providers/jellyfin/adapter.server';
+import { COMIC_VINE_BASE_URL, ComicVineAdapter, comicVineCredentialsSchema } from './comic-vine/adapter.server';
 
 const uuid = v.pipe(v.string(), v.uuid());
 
-const providerSchema = v.picklist(['tmdb', 'jellyfin', 'trakt', 'seerr', 'igdb', 'steam']);
+const providerSchema = v.picklist(['tmdb', 'jellyfin', 'trakt', 'seerr', 'igdb', 'steam', 'comic-vine']);
 
 const configureSchema = v.object({
   id: v.optional(uuid),
@@ -46,8 +47,9 @@ export async function configureInstance(adminId: string, input: unknown) {
   const data = v.parse(configureSchema, input);
   const config = await getConfig();
   if (['igdb','steam'].includes(data.provider)) requireExperimentalFeature(config, 'gaming');
+  if (data.provider === 'comic-vine') requireExperimentalFeature(config, 'comics');
   const baseUrl =
-    data.provider === 'tmdb'
+    data.provider === 'comic-vine' ? COMIC_VINE_BASE_URL : data.provider === 'tmdb'
       ? 'https://api.themoviedb.org'
       : data.provider === 'igdb'
         ? IGDB_BASE_URL
@@ -68,7 +70,7 @@ export async function configureInstance(adminId: string, input: unknown) {
       );
   }
   if (
-    !['tmdb', 'trakt', 'igdb', 'steam'].includes(data.provider) &&
+    !['tmdb', 'trakt', 'igdb', 'steam', 'comic-vine'].includes(data.provider) &&
     config.serverAllowlist.length &&
     !config.serverAllowlist.some(
       (entry) => entry === new URL(baseUrl).hostname || entry === baseUrl.replace(/\/$/, '')
@@ -127,7 +129,14 @@ export async function configureInstance(adminId: string, input: unknown) {
     for (const key of Object.keys(secret))
       if (!['clientId', 'clientSecret'].includes(key)) delete secret[key];
   }
+  if (data.provider === 'comic-vine') {
+    const parsed = v.safeParse(comicVineCredentialsSchema, secret);
+    if (!parsed.success) throw new AppError(400, 'Comic Vine requires an API key.');
+    await new ComicVineAdapter(parsed.output.apiKey, transport).verify();
+    for (const key of Object.keys(secret)) if (key !== 'apiKey') delete secret[key];
+  }
   const values = {
+    // Metadata services keep their credentials server-side, without user links.
     provider: data.provider,
     name: data.name,
     baseUrl: baseUrl.replace(/\/$/, ''),
@@ -172,6 +181,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
     .orderBy(providerConnections.createdAt, providerConnections.id) : [];
   return instances
     .filter((instance) => config.experimentalGaming || !['igdb','steam'].includes(instance.provider))
+    .filter((instance) => config.experimentalComics || instance.provider !== 'comic-vine')
     .map((instance) => {
       const connection = connections.find((connection) => connection.instanceId === instance.id);
       return {
@@ -226,11 +236,12 @@ export async function instanceFetchConfig(
 ): Promise<ProviderFetchConfig> {
   const config = await getConfig();
   if (['igdb','steam'].includes(instance.provider)) requireExperimentalFeature(config, 'gaming');
-  const fixed = ['tmdb', 'trakt', 'igdb', 'steam'].includes(instance.provider);
+  if (instance.provider === 'comic-vine') requireExperimentalFeature(config, 'comics');
+  const fixed = ['tmdb', 'trakt', 'igdb', 'steam', 'comic-vine'].includes(instance.provider);
   if (
     fixed &&
     instance.baseUrl !==
-      (instance.provider === 'tmdb'
+      (instance.provider === 'comic-vine' ? COMIC_VINE_BASE_URL : instance.provider === 'tmdb'
         ? 'https://api.themoviedb.org'
         : instance.provider === 'igdb'
           ? IGDB_BASE_URL

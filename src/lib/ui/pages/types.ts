@@ -10,7 +10,7 @@ export type PageSection = {
   items?: ShelfItem[];
   panels?: InsightPanel[];
   shape?: MediaCardShape;
-  mediaKind?: 'screen' | 'music' | 'game';
+  mediaKind?: 'screen' | 'music' | 'game' | 'reading';
   layout?: 'row' | 'grid';
   href?: string;
   page?: number;

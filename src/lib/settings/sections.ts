@@ -61,6 +61,8 @@ export const policyGroups = [
 export const experimentalPolicies = [
   ['experimentalMusic', 'Music', 'Browse albums and tracks, track listens and play music from connected libraries.'],
   ['experimentalGaming', 'Gaming', 'Track playthroughs and sessions, discover games and connect Steam.'],
+  ['experimentalBooks', 'Books', 'Find books with Open Library and track reading progress in Coast. No media server required.'],
+  ['experimentalComics', 'Comics', 'Find comic issues with Comic Vine and track reading progress in Coast. Requires a Comic Vine API key for non-commercial use.'],
   ['experimentalParties', 'Parties', 'Invite friends and keep video or music playback in sync. Music parties also require Music.'],
   ['experimentalPlanning', 'Planning & calendar', 'Plan what to watch, play or listen to, with reminders and upcoming releases.'],
   ['experimentalMediaModal', 'Media detail overlay', 'Open the existing hero and media details over your current page.'],
@@ -72,6 +74,7 @@ export const policyFields = [
   'registrationMode',
   'registrationProvider',
   'experimentalMusic','experimentalGaming','experimentalParties',
+  'experimentalBooks','experimentalComics',
   'experimentalPlanning','experimentalMediaModal','allowPlaybackSharing',
   'sessionLifetimeDays',
   'playbackDelivery',

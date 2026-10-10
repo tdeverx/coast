@@ -4,7 +4,7 @@ import { collectionPreferences } from '$lib/collection/preferences';
 import {listInvites} from '$lib/server/auth/onboarding';
 import { settingsSections, administratorSettings } from '$lib/settings/sections';
 import type { PageServerLoad } from './$types';
-import { getPendingConflicts } from '$lib/sync/conflicts';
+import { getPendingConflicts } from '$lib/sync/conflicts.server';
 import { error } from '@sveltejs/kit';
 import { requireAdmin, listUsers } from '$lib/server/auth';
 import { listProviders } from '$lib/providers/instances.server';

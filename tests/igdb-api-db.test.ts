@@ -10,7 +10,7 @@ import { getConfig, type CoastConfig } from '../src/lib/server/config';
 import { updateConfig } from '../src/lib/application/configuration.server';
 import { type SessionUser } from '../src/lib/server/auth';
 import { decryptCredential } from '../src/lib/server/security/credentials';
-import { gameDetails, createPlaythrough, logGameSession } from '../src/lib/core/games/service';
+import { gameDetails, createPlaythrough, logGameSession } from '../src/lib/core/games/service.server';
 import { instanceFetchConfig } from '../src/lib/providers/instances.server';
 import { GET, POST } from '../src/routes/api/v1/[...path]/+server';
 

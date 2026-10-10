@@ -1,6 +1,7 @@
 <script lang="ts">
   import {apiScopes,apiScopeLabels,type ApiScope} from '$lib/public-api';
   import { collectionCategories, collectionRules } from '$lib/collection/preferences';
+  import { categoryEnabled } from '$lib/experimental';
   import {audiences,socialSections,socialCategories,type Audience} from '$lib/social/model';
   import {
     personalSettings as links,
@@ -223,10 +224,10 @@
       {#if data.section === 'collection'}
         <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}>
         <p class="small">Explicitly collected items always stay in Collection. These rules only control automatic membership.</p>
-        {#each collectionCategories as category}
+        {#each collectionCategories.filter(category=>categoryEnabled(data,category.value)) as category}
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">{category.label}</legend><h3>{category.label}</h3>
-            {#each collectionRules as rule}
+            {#each collectionRules.filter(rule=>!['book','comic'].includes(category.value)||rule.value!=='queue') as rule}
               <label class="check"><input type="checkbox" bind:checked={prefs.collection[category.value][rule.value]} />{rule.label}</label>
             {/each}
           </fieldset>
@@ -238,7 +239,7 @@
   <label class="field">Profile audience<select bind:value={prefs.social.audience}>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>
   <p class="small">A private profile is hidden from everyone else. Other sections can have their own audience.</p>
   {#each socialSections as section}<label class="field">{section}<select value={prefs.social.sections?.[section]??'default'} onchange={event=>{const value=event.currentTarget.value;prefs.social={...prefs.social,sections:{...prefs.social.sections,[section]:value==='default'?undefined:value as Audience}};}}><option value="default">Use profile audience</option>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>{/each}
-  {#each socialCategories as category}<label class="field">{category} sharing<select value={prefs.social.categories?.[category]??'public'} onchange={event=>{prefs.social={...prefs.social,categories:{...prefs.social.categories,[category]:event.currentTarget.value as Audience}};}}>{#each audiences as audience}<option value={audience}>{audience==='public'?'Use section audience':audience}</option>{/each}</select></label>{/each}
+  {#each socialCategories.filter(category=>categoryEnabled(data,category)) as category}<label class="field">{category} sharing<select value={prefs.social.categories?.[category]??'public'} onchange={event=>{prefs.social={...prefs.social,categories:{...prefs.social.categories,[category]:event.currentTarget.value as Audience}};}}>{#each audiences as audience}<option value={audience}>{audience==='public'?'Use section audience':audience}</option>{/each}</select></label>{/each}
   <Heading title="Social notifications" />
   {#each ['friend-accepted','recommendation','reaction','synced-invite'] as const as kind}<label class="check"><input type="checkbox" checked={prefs.social.notifications?.[kind]!==false} onchange={event=>{prefs.social={...prefs.social,notifications:{...prefs.social.notifications,[kind]:event.currentTarget.checked}};}} />{kind==='synced-invite'?'Synced session invitations':kind}</label>{/each}
   <p class="small">Incoming friend requests appear in Friends.</p>
@@ -668,6 +669,7 @@
       {:else if data.section === 'integrations'}<IntegrationSettings
           providers={data.providers}
           experimentalGaming={data.config?.experimentalGaming ?? false}
+          experimentalComics={data.config?.experimentalComics ?? false}
         />
       {:else if data.section === 'users'}<div class="stack">
           <div class="overflow">

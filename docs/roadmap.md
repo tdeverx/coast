@@ -75,7 +75,9 @@ Browsing-context restoration remains parked under the modal media details review
 
 - Wider social roadmap: see [social.md](social.md), including recaps, collaborative lists, groups, gamification and possible chat features.
 - Wider invitation/onboarding design approval and real-server provisioning certification. Signup links, invitation-scoped Jellyfin provisioning and permission-controlled single-use playback links are implemented.
-- Synced chat/reaction overlays, books/comics, guest/public sessions and wider real-device parity.
+- Synced chat/reaction overlays, guest/public sessions and wider real-device parity.
+- Books/comics follow-up: lazy PDF/EPUB/CBZ readers, bookmarks, state history, guarded Jellyfin file imports and reading-party locations are implemented. Verify real deployment files/provider keys, then consider additional archive/Kindle formats and audiobooks with their own capability/dependency review. Cross-server and local/server edition equivalence needs a verified content identity; see [reading boundaries](reading.md).
+- Reading metadata follow-up: richer author/comic-series entities, provider recommendation sources, exact book release dates where trustworthy, and operator contact identification for Open Library. Keep these within the shared media experience; do not add separate browsing pages or fabricate release/history data.
 
 Coast username/password registration, removal of Jellyfin sign-in, administrator signup/provider requirements, initial Jellyfin/Trakt import gating and optional uploaded/connected-service profile pictures have shipped. These are no longer pending roadmap decisions.
 

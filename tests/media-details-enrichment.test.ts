@@ -11,7 +11,7 @@ export function wait(value){pending=value;}export function offline(){fail=true;}
 `);
 const source=await Bun.file(new URL('../src/lib/application/media-details.server.ts',import.meta.url)).text();
 const code=new Bun.Transpiler({loader:'ts'}).transformSync(source)
- .replaceAll('$lib/server/queries/media',boundaryUrl).replaceAll('$lib/providers/seerr/requests.server',boundaryUrl).replaceAll('$lib/catalogue/service',boundaryUrl);
+ .replaceAll('$lib/server/queries/media',boundaryUrl).replaceAll('$lib/providers/seerr/requests.server',boundaryUrl).replaceAll('$lib/catalogue/service.server',boundaryUrl);
 const {loadMediaDetails}=await import(moduleUrl(code));const boundary=await import(boundaryUrl);
 test('saved page/overlay details return before provider enrichment and retain request capability',async()=>{
  boundary.reset();let complete!:()=>void;boundary.wait(new Promise<void>(resolve=>complete=resolve));

@@ -1,3 +1,4 @@
+import { jellyfinBook, jellyfinBooks, jellyfinBookPage } from './reading.server';
 import {companionPageSchema} from './companion';
 import { artworkKeys, artworkTypes } from '$lib/artwork';
 import {activeSessionsSchema,streamPresentation} from './streams';
@@ -356,6 +357,9 @@ export class JellyfinAdapter {
     }
     return result;
   }
+  async readingItem(userId: string, id: string) { return jellyfinBook((path,init)=>this.call(path,init),userId,id); }
+  async readingPage(userId:string,offset=0){return jellyfinBookPage((path,init)=>this.call(path,init),userId,'',offset);}
+  async readingLibrary(userId: string, search: string, offset=0) { return jellyfinBooks((path,init)=>this.call(path,init),userId,search,offset); }
   async musicLibrary(userId: string, options: MusicBrowseOptions = {}, scan?: MusicScanOptions) {
     return browseMusic((path, init) => this.call(path, init), userId, options, scan);
   }

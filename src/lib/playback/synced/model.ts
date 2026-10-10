@@ -1,3 +1,4 @@
+import type { ReadingLocation, ReadingFormat } from '$lib/reading/model';
 export type PartySettings = {
   playback: 'host' | 'everyone' | 'selected'; controllers: string[];
   invitations: 'host' | 'everyone'; acceptInvites: boolean;
@@ -9,7 +10,7 @@ export function canControl(room: Pick<RoomState,'hostId'|'settings'|'participant
   return room.hostId===userId || room.participants.some(p=>p.userId===userId&&p.joined) && (room.settings.playback==='everyone'||room.settings.playback==='selected'&&room.settings.controllers.includes(userId));
 }
 export type RoomState = {
-  id:string;createdAt:string;hostId:string;mediaId:string|null;mediaType:'audio'|'video';edition:string;durationSeconds:number;
+  id:string;createdAt:string;hostId:string;mediaId:string|null;mediaType:'audio'|'video'|'reading';reading?:ReadingLocation|null;readingFormat?:ReadingFormat|null;edition:string;durationSeconds:number;
   positionSeconds:number;paused:boolean;bufferingPaused:boolean;bufferingPolicy:'together'|'catch-up';
   queue:string[];queueIndex:number;queueItems:{id:string;title:string;availability:string}[];revision:number;updatedAt:string;serverTime:string;ended:boolean;
   settings:PartySettings;

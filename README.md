@@ -79,6 +79,10 @@ Browse Jellyfin artists, albums and tracks; keep listening history and queues; l
 
 Discover games through IGDB, import Steam ownership, playtime and supported achievement progress, and track playthroughs and sessions. Steam ownership is availability evidence, not proof of a local installation.
 
+### Books & comics
+
+Find books through Open Library and comic issues through Comic Vine, browse them through Search, Discover and Library, and track your reading by page in Continue and Next. These are independent experiments and work without Jellyfin. Read your own PDF, EPUB or CBZ files, resume bookmarks, connect accessible Jellyfin books and synchronize reading locations in parties. Comic Vine requires an administrator API key and permits non-commercial use only. See [reading experiments](docs/reading.md).
+
 ### Parties
 
 Invite friends into a shared video or audio session with synced playback, participant controls and buffering policies. Each person needs their own permitted source; listening also requires Music.
@@ -118,7 +122,7 @@ These are roadmap ideas, not available features or promises of a release date.
 - Profile comparison charts.
 - Collaborative lists, groups, shared queues and polls.
 - Chat or reaction overlays during parties.
-- Broader media, including books and comics.
+- Ebook readers, verified book editions and book/comic server imports.
 - More Library, search and playback conveniences.
 
 The chart gallery in the UI preview explores designs with fictional data. The full [roadmap](docs/roadmap.md) records priorities, parked proposals, open questions and the privacy and provider requirements for future work.

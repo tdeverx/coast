@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { personDetails } from '$lib/server/media-details';
+import { personDetails } from '$lib/catalogue/details.server';
 export const load = async ({ params }) => {
   const id = Number(params.id);
   if (!Number.isSafeInteger(id) || id < 1) error(404, 'This person was not found.');

@@ -7,13 +7,13 @@ import {
   projectTracking,
   trackingFilter,
 } from '../src/lib/core/tracking/state';
-import { ratingValueSchema } from '../src/lib/core/ratings/service';
-import { isExactPermutation } from '../src/lib/core/lists/service';
+import { ratingValueSchema } from '../src/lib/core/ratings/service.server';
+import { isExactPermutation } from '../src/lib/core/lists/service.server';
 import { resolveMetadata } from '../src/lib/catalogue/metadata/resolve';
 import {
   metadataOverrideInputSchema,
   presentationInputSchema,
-} from '../src/lib/catalogue/overrides/service';
+} from '../src/lib/catalogue/overrides/service.server';
 
 describe('canonical tracking rules', () => {
   test('a no-op cannot undrop, including a duration-only refresh', () => {

@@ -151,7 +151,7 @@ export async function scheduleProviderMaintenance(
     const [tmdb] = await tx.select({ id: providerInstances.id }).from(providerInstances).where(and(eq(providerInstances.provider, 'tmdb'), eq(providerInstances.enabled, true), sql`${providerInstances.credentials} is not null`)).limit(1);
     const taste=options.instanceId?{queued:0,active:0}:await (await import('$lib/social/taste-cache.server')).scheduleTasteRefresh(tx);
     const metadata = await (await import('$lib/catalogue/maintenance.server')).scheduleMetadataRefresh(tx, options);
-    const recommendations=await (await import('$lib/experiments/provider-recommendations.server')).scheduleRecommendationRefresh(tx,options);
+    const recommendations=await (await import('$lib/recommendations/providers.server')).scheduleRecommendationRefresh(tx,options);
     metadata.queued+=recommendations.queued+taste.queued;metadata.active+=recommendations.active+taste.active;
     const rows = await tx
       .select({ connection: providerConnections, instance: providerInstances, role:users.role })

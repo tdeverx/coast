@@ -1,7 +1,7 @@
 import { beforeAll, afterAll, test, expect } from 'bun:test';
 import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
-import { ingestMetadata } from '../src/lib/catalogue/service';
+import { ingestMetadata } from '../src/lib/catalogue/service.server';
 import { JellyfinAdapter } from '../src/lib/providers/jellyfin/adapter.server';
 import {
   media,

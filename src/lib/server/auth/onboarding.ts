@@ -7,7 +7,7 @@ import { startTraktDevice, finishTraktDevice } from '$lib/providers/trakt/connec
 import { hashToken, randomToken, newSession, requireAdmin, checkLoginRate, type SessionUser } from './index';
 import { AppError } from '../security/errors';
 import { connectJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { libraryScanProgress } from '$lib/sync/jellyfin';
+import { libraryScanProgress } from '$lib/sync/jellyfin.server';
 import { jellyfinImportStage } from '$lib/sync/jellyfin-progress';
 import { enqueueAction } from '../queue';
 

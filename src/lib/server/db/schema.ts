@@ -1,4 +1,5 @@
 import type { ScreenKind, MediaRelationship } from '$lib/media/model';
+import type { ReadingKind, ReadingProvider, ReadingState, ReadingFormat, ReadingLocation } from '$lib/reading/model';
 import { sql } from 'drizzle-orm';
 import {
   pgTable,
@@ -32,7 +33,7 @@ export type ProfileSettings = {
   featuredMediaId?: string | null;
   featuredNote?: string;
   period?: 'month' | 'year' | 'all';
-  favouriteKind?: 'all' | 'movie' | 'show';
+  favouriteKind?: 'all' | 'movie' | 'show' | 'album' | 'track' | 'game' | 'book' | 'comic';
   pinnedFavourites?: string[];
   favouriteOrder?: string[];
 };
@@ -145,6 +146,7 @@ export const media = pgTable(
   },
   (t) => [
     index('media_title_idx').on(t.title),
+    index('media_search_document_idx').using('gin', sql`coast_search_document(${t.title},${t.originalTitle})`),
     index('media_kind_idx').on(t.kind),
     check('media_kind_check', sql`${t.kind} in ('movie','show','season','episode','collection')`),
   ]
@@ -260,7 +262,7 @@ export const externalIds = pgTable(
 
 export const providerInstances = pgTable('provider_instances', {
   id: uuid('id').primaryKey().defaultRandom(),
-  provider: text('provider').$type<'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb' | 'steam'>().notNull(),
+  provider: text('provider').$type<'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb' | 'steam' | 'comic-vine'>().notNull(),
   name: text('name').notNull(),
   baseUrl: text('base_url').notNull(),
   serverIdentity: text('server_identity'),
@@ -368,6 +370,7 @@ export const metadataSnapshots = pgTable(
   },
   (t) => [
     index('metadata_snapshots_media_idx').on(t.mediaId),
+    index('metadata_snapshots_search_document_idx').using('gin', sql`coast_search_document(${t.title},${t.originalTitle})`),
     uniqueIndex('metadata_snapshot_source_unique').on(
       t.mediaId,
       t.provider,
@@ -384,7 +387,7 @@ export const metadataOverrides = pgTable('metadata_overrides', {
   ...metadataColumns(),
   updatedBy: uuid('updated_by').references(() => users.id, { onDelete: 'set null' }),
   updatedAt: updatedAt(),
-});
+}, (t) => [index('metadata_overrides_search_document_idx').using('gin', sql`coast_search_document(${t.title},${t.originalTitle})`)]);
 export type MetadataField =
   | 'title'
   | 'originalTitle'
@@ -420,7 +423,7 @@ export const userMetadataPreferences = pgTable(
     backdropPath: text('backdrop_path'),
     updatedAt: updatedAt(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.mediaId] })]
+  (t) => [primaryKey({ columns: [t.userId, t.mediaId] }), index('user_metadata_preferences_search_document_idx').using('gin', sql`coast_search_document(${t.title})`)]
 );
 
 export type TrackingAction =
@@ -922,7 +925,7 @@ export const games = pgTable('games', {
   publishers: text('publishers').array().notNull().default([]),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
-}, (t) => [index('games_title_idx').on(t.title)]);
+}, (t) => [index('games_title_idx').on(t.title), index('games_search_document_idx').using('gin', sql`coast_search_document(${t.title})`)]);
 
 export const gameExternalIds = pgTable('game_external_ids', {
   gameId: uuid('game_id').notNull().references(() => games.id, { onDelete: 'cascade' }),
@@ -1008,6 +1011,85 @@ export const workEditions = pgTable('work_editions', {
   format: text('format'),
   metadata: jsonb('metadata').$type<JsonObject>().notNull().default({}),
 }, (t) => [uniqueIndex('work_editions_identity_unique').on(t.instanceId, t.externalId)]);
+
+/** Reading metadata shares work identity; pages and private reading state stay independent of playback. */
+export const readingWorks = pgTable('reading_works', {
+  id: uuid('id').primaryKey().references(() => works.id, { onDelete: 'cascade' }),
+  provider: text('provider').$type<ReadingProvider>().notNull(),
+  externalId: text('external_id').notNull(),
+  kind: text('kind').$type<ReadingKind>().notNull(),
+  title: text('title').notNull(),
+  overview: text('overview'),
+  coverUrl: text('cover_url'),
+  sourceUrl: text('source_url').notNull(),
+  authors: text('authors').array().notNull().default([]),
+  subjects: text('subjects').array().notNull().default([]),
+  publishedYear: integer('published_year'),
+  releaseDate: date('release_date'),
+  editionIds: text('edition_ids').array().notNull().default([]),
+  pageCount: integer('page_count'),
+  seriesTitle: text('series_title'),
+  issueNumber: text('issue_number'),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (t) => [
+  index('reading_works_kind_title_idx').on(t.kind, t.title, t.id),
+  index('reading_works_search_document_idx').using('gin', sql`coast_search_document(${t.title},${t.seriesTitle},${t.authors})`),
+  check('reading_works_provider_kind_check', sql`(${t.provider}='openlibrary' and ${t.kind} in ('book','comic')) or (${t.provider}='comic-vine' and ${t.kind}='comic')`),
+  check('reading_works_page_count_check', sql`${t.pageCount} is null or ${t.pageCount} between 1 and 1000000`),
+  check('reading_works_metadata_bounds_check', sql`length(${t.title}) between 1 and 500 and cardinality(${t.authors})<=50 and cardinality(${t.subjects})<=100`),
+  check('reading_works_edition_ids_check', sql`cardinality(${t.editionIds})<=100`),
+]);
+export const readingProgress = pgTable('reading_progress', {
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  workId: uuid('work_id').notNull().references(() => readingWorks.id, { onDelete: 'cascade' }),
+  state: text('state').$type<ReadingState>().notNull().default('planned'),
+  page: integer('page').notNull().default(0),
+  totalPages: integer('total_pages'),
+  startedAt: timestamp('started_at', { withTimezone: true }),
+  completedAt: timestamp('completed_at', { withTimezone: true }),
+  updatedAt: updatedAt(),
+}, (t) => [
+  primaryKey({ columns: [t.userId, t.workId] }),
+  index('reading_progress_user_state_idx').on(t.userId, t.state, t.updatedAt, t.workId),
+  check('reading_progress_state_check', sql`${t.state} in ('planned','reading','completed','paused','dropped')`),
+  check('reading_progress_pages_check', sql`${t.page} between 0 and 1000000 and (${t.totalPages} is null or (${t.totalPages} between 1 and 1000000 and ${t.page}<=${t.totalPages}))`),
+  check('reading_progress_completion_check', sql`(${t.state}='completed')=(${t.completedAt} is not null)`),
+]);
+/** Verified reader sessions never grant another participant access to the underlying file. */
+export const readingSessions = pgTable('reading_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  workId: uuid('work_id').notNull().references(() => readingWorks.id, { onDelete: 'cascade' }),
+  connectionId: uuid('connection_id').references(() => providerConnections.id, { onDelete: 'cascade' }),
+  accountGeneration: uuid('account_generation'),
+  externalId: text('external_id'),
+  format: text('format').$type<ReadingFormat>().notNull(),
+  edition: text('edition').notNull(),
+  location: jsonb('location').$type<ReadingLocation>(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  closedAt: timestamp('closed_at', { withTimezone: true }),
+  createdAt: createdAt(), updatedAt: updatedAt(),
+}, t => [
+  index('reading_sessions_resume_idx').on(t.userId,t.workId,t.edition,t.updatedAt),index('reading_sessions_expiry_idx').on(t.expiresAt),
+  check('reading_sessions_format_check',sql`${t.format} in ('pdf','epub','cbz')`),
+  check('reading_sessions_edition_check',sql`length(${t.edition}) between 1 and 200`),
+  check('reading_sessions_check',sql`(${t.connectionId} is null)=(${t.externalId} is null)`),
+  check('reading_sessions_check1',sql`${t.connectionId} is null or ${t.accountGeneration} is not null`),
+]);
+export const readingHistory = pgTable('reading_history', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  workId: uuid('work_id').notNull().references(() => readingWorks.id, { onDelete: 'cascade' }),
+  state: text('state').$type<ReadingState>().notNull(),
+  page: integer('page').notNull(), totalPages: integer('total_pages'),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
+}, t => [
+  index('reading_history_user_work_idx').on(t.userId,t.workId,t.occurredAt,t.id),
+  check('reading_history_state_check',sql`${t.state} in ('planned','reading','completed','paused','dropped')`),
+  check('reading_history_page_check',sql`${t.page} between 0 and 1000000`),
+  check('reading_history_total_pages_check',sql`${t.totalPages} between 1 and 1000000 and ${t.page}<=${t.totalPages}`),
+]);
 export const musicListenBatches = pgTable('music_listen_batches', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   batchId: uuid('batch_id').notNull(),
@@ -1148,7 +1230,9 @@ export const syncedRooms = pgTable('synced_rooms', {
   id: uuid('id').primaryKey().defaultRandom(),
   hostId: uuid('host_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   mediaId: uuid('media_id').references(() => works.id, { onDelete: 'cascade' }),
-  mediaType: text('media_type').$type<'audio' | 'video'>().notNull(),
+  mediaType: text('media_type').$type<'audio' | 'video' | 'reading'>().notNull(),
+  reading: jsonb('reading').$type<ReadingLocation>(),
+  readingFormat: text('reading_format').$type<ReadingFormat>(),
   edition: text('edition').notNull().default(''),
   durationSeconds: real('duration_seconds').notNull(),
   positionSeconds: real('position_seconds').notNull().default(0),
@@ -1167,6 +1251,7 @@ export const syncedParticipants = pgTable('synced_participants', {
   roomId: uuid('room_id').notNull().references(() => syncedRooms.id, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   playbackId: uuid('playback_id').references(() => playbackSessions.id, { onDelete: 'set null' }),
+  readingSessionId: uuid('reading_session_id').references(() => readingSessions.id, { onDelete: 'set null' }),
   joined: boolean('joined').notNull().default(false),
   buffering: boolean('buffering').notNull().default(false),
   ready: boolean('ready').notNull().default(false),

@@ -58,7 +58,7 @@
     layout?: 'row' | 'grid';
     artworkStyle?: MediaCardArtwork;
     artworkPriority?: ArtworkPriority;
-    mediaKind?: 'screen' | 'music' | 'game';
+    mediaKind?: 'screen' | 'music' | 'game' | 'reading';
     filters?: Snippet;
     controls?: Snippet;
     actions?: Snippet;
@@ -154,7 +154,7 @@
   {#each options as control (control.label)}
     {#if control.type === 'segments'}<SegmentedControl label={control.label} value={control.value} options={control.options ?? []} onchange={value => selectControl(control, value)} />
     {:else if control.type === 'collection'}<Button {...collectionControl(control.value === 'collection', value => selectControl(control, value ? 'collection' : 'all'))} />
-    {:else if control.type === 'availability'}<Button {...availabilityControl(control.value === 'available', value => selectControl(control, value ? 'available' : 'all'))} />
+    {:else if control.type === 'availability'}<Button {...availabilityControl(control.value === 'available', value => selectControl(control, value ? 'available' : 'all'), control.label)} />
     {/if}
   {/each}
   {@const groups = [...options, ...extra].filter(control => control.type !== 'segments' && control.type !== 'availability' && control.type !== 'collection').map(control => ({label: control.label, value: control.value, options: control.type === 'media-type' ? mediaTypeOptions(control.mediums) : control.options ?? [], change: (value: string) => selectControl(control, value)}))}

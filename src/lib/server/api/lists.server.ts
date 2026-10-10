@@ -1,11 +1,11 @@
 import { logDiagnostic } from '$lib/server/diagnostics';
-import { restartPlaylist } from '$lib/core/lists/sequence';
+import { restartPlaylist } from '$lib/core/lists/sequence.server';
 import { json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { AppError } from '$lib/server/security/errors';
-import * as lists from '$lib/core/lists/service';
+import * as lists from '$lib/core/lists/service.server';
 import { userLists } from '$lib/server/queries/lists';
-import { queueTraktListChange, deleteListWithExports } from '$lib/sync/trakt-lists';
+import { queueTraktListChange, deleteListWithExports } from '$lib/sync/trakt-lists.server';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleLists(context: ApiContext): Promise<Response | undefined> {

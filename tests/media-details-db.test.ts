@@ -2,7 +2,7 @@ import { beforeAll, afterAll, test, expect } from 'bun:test';
 import { eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import { ingestMetadata } from '../src/lib/catalogue/service';
+import { ingestMetadata } from '../src/lib/catalogue/service.server';
 import { detailsData } from '../src/lib/server/queries/media';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const uid = crypto.randomUUID(),

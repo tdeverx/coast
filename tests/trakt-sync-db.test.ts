@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
-import { ingestMetadata } from '../src/lib/catalogue/service';
+import { ingestMetadata } from '../src/lib/catalogue/service.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
-import { exportTraktListToAdapter } from '../src/lib/sync/trakt-lists';
-import { exportTraktToAdapter } from '../src/lib/sync/trakt-export';
-import { importTraktFromAdapter } from '../src/lib/sync/trakt-import';
+import { exportTraktListToAdapter } from '../src/lib/sync/trakt-lists.server';
+import { exportTraktToAdapter } from '../src/lib/sync/trakt-export.server';
+import { importTraktFromAdapter } from '../src/lib/sync/trakt-import.server';
 import { externalIds, listItems, lists, media, outboxActions, providerConnections, providerInstances, ratings, seasons, trackingEvents, trackingState, users } from '../src/lib/server/db/schema';
 import { jobExecution, JobYield } from '../src/lib/server/queue/execution';
 import type { SyncPreferences } from '../src/lib/providers/contracts';

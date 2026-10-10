@@ -2,7 +2,7 @@
  import {displayLabel} from '$lib/ui/labels';
  import {goto} from '$app/navigation';
  import {page} from '$app/state';
- import {openFriends} from '$lib/social/panel.svelte';
+ import {openFriends} from '$lib/ui/panels/friends.svelte';
  import Heading from '$lib/ui/components/Heading.svelte';
  import Shelf from '$lib/ui/components/Shelf.svelte';
  import Button from '$lib/ui/components/Button.svelte';

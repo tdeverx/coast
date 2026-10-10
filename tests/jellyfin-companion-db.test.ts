@@ -4,7 +4,7 @@ import {getDb,getSql} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {JellyfinAdapter} from '../src/lib/providers/jellyfin/adapter.server';
 import {applyCompanionPage,applyCompanionDelta} from '../src/lib/providers/jellyfin/updates.server';
-import {syncJellyfinChanges,type JellyfinSyncContext} from '../src/lib/sync/jellyfin';
+import {syncJellyfinChanges,type JellyfinSyncContext} from '../src/lib/sync/jellyfin.server';
 import type {CompanionPage} from '../src/lib/providers/jellyfin/companion';
 import type {OutboxAction} from '../src/lib/server/queue';
 import {jobExecution} from '../src/lib/server/queue/execution';

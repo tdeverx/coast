@@ -1,8 +1,11 @@
+import {reader,alignReading,attachReading,closeReading} from '$lib/reading/client.svelte';
+import type { ReadingSessionView } from '$lib/reading/model';
 import {api,message,ApiError} from '$lib/ui/client';
 import {player,playMedia,playbackSnapshot,alignPlayback,stopPlayback} from '$lib/playback/client.svelte';
 import {timelinePosition,canControl,compatibleSource,type RoomState,type PartySettings} from './model';
 export const syncedPlayer=$state({room:null as RoomState|null,userId:'',busy:false,notice:'',changing:false,joining:false,unavailableMediaId:null as string|null});
 let offset=0,lastResponse=0,polling=false,generation=0;
+function matchesReading(room:RoomState){return room.mediaType==='reading'&&!!reader.session&&reader.session.workId===room.mediaId&&reader.session.edition===room.edition&&reader.session.format===room.readingFormat;}
 function matchesPlayback(room:RoomState){return !!room.mediaId&&!!player.session&&compatibleSource({...room,mediaId:room.mediaId},{...player.session,mediaType:player.session.mediaType??'video',edition:player.session.edition??''});}
 export function isSyncHost(){return !!syncedPlayer.room&&syncedPlayer.room.hostId===syncedPlayer.userId;}
 export const syncPreferences=$state({offsetSeconds:0,keepPlaying:true});
@@ -23,7 +26,7 @@ export function updatePartySettings(patch:Partial<PartySettings>){if(syncedPlaye
 export async function resyncNow(){await pollSynced();align(true);}
 function remember(id:string|null){if(id)sessionStorage.setItem('coast:synced',id);else sessionStorage.removeItem('coast:synced');}
 function align(force=false){
-  const r=syncedPlayer.room;if(!r||syncedPlayer.changing||player.loading||!player.session||!matchesPlayback(r))return;
+  const r=syncedPlayer.room;if(r?.mediaType==='reading'){if(matchesReading(r)&&!reader.syncing)void alignReading(r.reading??null).catch(cause=>syncedPlayer.notice=message(cause));return;}if(!r||syncedPlayer.changing||player.loading||!player.session||!matchesPlayback(r))return;
   alignPlayback({positionSeconds:Math.max(0,Math.min(r.durationSeconds,timelinePosition(r,Date.now()+offset)+syncPreferences.offsetSeconds)),paused:r.paused||r.bufferingPaused||timelinePosition(r,Date.now()+offset)>=r.durationSeconds-0.1,force});
 }
 export async function startSynced(){
@@ -31,13 +34,13 @@ export async function startSynced(){
   if(syncedPlayer.busy)return;
   const epoch=++generation;
   syncedPlayer.busy=true;syncedPlayer.notice='';
-  try{const room=await api<RoomState>('synced',{playbackId:player.session?.id,paused:player.paused,positionSeconds:playbackSnapshot()?.positionSeconds||0,queue:player.audioQueue.map(p=>p.id).slice(0,200),queueIndex:Math.max(0,player.audioIndex)});if(epoch!==generation)return;syncedPlayer.room=room;remember(syncedPlayer.room.id);lastResponse=Date.now();offset=Date.parse(syncedPlayer.room.serverTime)-Date.now();align();}
+  try{const room=await api<RoomState>('synced',{playbackId:reader.session?undefined:player.session?.id,readingSessionId:reader.session?.id,paused:player.paused,positionSeconds:playbackSnapshot()?.positionSeconds||0,queue:player.audioQueue.map(p=>p.id).slice(0,200),queueIndex:Math.max(0,player.audioIndex)});if(epoch!==generation)return;syncedPlayer.room=room;remember(syncedPlayer.room.id);lastResponse=Date.now();offset=Date.parse(syncedPlayer.room.serverTime)-Date.now();align();}
   catch(cause){if(epoch===generation)syncedPlayer.notice=message(cause);}finally{syncedPlayer.busy=false;}
 }
-async function attachPrepared(id:string,playbackId:string){
+async function attachPrepared(id:string,playbackId:string,reading=false){
   for(let attempt=0;attempt<3;attempt++){
     const latest=await api<RoomState>(`synced/${id}`,undefined,'GET');
-    try{return await api<RoomState>(`synced/${id}/join`,{playbackId,revision:latest.revision});}
+    try{return await api<RoomState>(`synced/${id}/join`,{...(reading?{readingSessionId:playbackId}:{playbackId}),revision:latest.revision});}
     catch(cause){if(!(cause instanceof ApiError)||cause.status!==409||attempt===2)throw cause;}
   }
   throw new Error('The session kept changing while joining. Try again.');
@@ -51,9 +54,9 @@ export async function joinSynced(room:RoomState){
     const previous=syncedPlayer.room;if(previous&&previous.id!==room.id)await api(`synced/${previous.id}/leave`,{});
     if(epoch!==generation)return;
     syncedPlayer.room=room;
-    if(room.mediaId)await playMedia(room.mediaId,{mediaType:room.mediaType,edition:room.edition,expectedDuration:room.durationSeconds,fromStart:true});
+    if(room.mediaId){if(room.mediaType==='reading'){if(!matchesReading(room))await attachReading(await api<ReadingSessionView>(`reading/${room.mediaId}/matching`,{edition:room.edition}));}else{if(reader.session)await closeReading();await playMedia(room.mediaId,{mediaType:room.mediaType,edition:room.edition,expectedDuration:room.durationSeconds,fromStart:true});}}
     if(epoch!==generation)return;
-    const attached=room.mediaId?await attachPrepared(room.id,player.session!.id):await api<RoomState>(`synced/${room.id}/join`,{revision:room.revision});
+    const attached=room.mediaId?await attachPrepared(room.id,room.mediaType==='reading'?reader.session!.id:player.session!.id,room.mediaType==='reading'):await api<RoomState>(`synced/${room.id}/join`,{revision:room.revision});
     if(epoch!==generation)return;
     syncedPlayer.room=attached;
     player.audioQueue=attached.mediaType==='audio'?attached.queueItems:[];player.audioIndex=attached.mediaType==='audio'?attached.queueIndex:-1;
@@ -61,9 +64,9 @@ export async function joinSynced(room:RoomState){
   }catch(cause){if(epoch!==generation)return;alignPlayback({positionSeconds:0,paused:true});syncedPlayer.room=null;remember(null);syncedPlayer.notice=message(cause);throw cause;}
   finally{syncedPlayer.busy=false;syncedPlayer.changing=false;syncedPlayer.joining=false;align();}
 }
-export async function syncedCommand(action:'play'|'pause'|'seek'|'policy'|'item'|'stop'|'end'|'kick'|'promote'|'settings'|'ready'|'queue',extra:Record<string,unknown>={}){
+export async function syncedCommand(action:'play'|'pause'|'seek'|'policy'|'item'|'stop'|'end'|'kick'|'promote'|'settings'|'ready'|'queue'|'location',extra:Record<string,unknown>={}){
   const r=syncedPlayer.room;if(!r)return;
-  if(!isSyncHost()&&action!=='ready'&&!(action==='queue'?canEditPartyQueue():['play','pause','seek','item','stop'].includes(action)&&canControlPlayback())){syncedPlayer.notice='Playback is controlled by the host.';align();if(action==='item')throw new Error(syncedPlayer.notice);return;}
+  if(!isSyncHost()&&action!=='ready'&&!(action==='queue'?canEditPartyQueue():['play','pause','seek','item','stop','location'].includes(action)&&canControlPlayback())){syncedPlayer.notice='Playback is controlled by the host.';align();if(action==='item')throw new Error(syncedPlayer.notice);return;}
   const epoch=generation;
   try{
     let revision=r.revision;
@@ -76,7 +79,7 @@ export async function syncedCommand(action:'play'|'pause'|'seek'|'policy'|'item'
         offset=Date.parse(next.serverTime)-Date.now();lastResponse=Date.now();align();return;
       }catch(cause){
         // Item changes must survive a heartbeat revision race, but recheck authority before retrying.
-        if(action!=='item'||!(cause instanceof ApiError)||cause.status!==409||attempt===2)throw cause;
+        if(!['item','location'].includes(action)||!(cause instanceof ApiError)||cause.status!==409||attempt===2)throw cause;
         const latest=await api<RoomState>(`synced/${r.id}`,undefined,'GET');
         if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;
         if(latest.ended||!canControl(latest,syncedPlayer.userId))throw cause;
@@ -90,32 +93,34 @@ export async function leaveSynced(){
   generation++;
   const r=syncedPlayer.room;syncedPlayer.unavailableMediaId=null;syncedPlayer.room=null;remember(null);
   if(r)await api(`synced/${r.id}/leave`,{}).catch(()=>{});
-  if(!syncPreferences.keepPlaying)await stopPlayback();
+  if(!syncPreferences.keepPlaying){await stopPlayback();if(reader.session)await closeReading();}
 }
 export async function pollSynced(){
   const r=syncedPlayer.room;if(!r||polling||syncedPlayer.busy||syncedPlayer.changing)return;
   polling=true;const started=Date.now(), epoch=generation;
   try{
     const snapshot=playbackSnapshot();
-    const unavailable=!!r.mediaId&&(r.mediaId===syncedPlayer.unavailableMediaId||!!snapshot?.unavailable);
-    const next=await api<RoomState>(`synced/${r.id}/heartbeat`,{buffering:!!r.mediaId&&!unavailable&&(!snapshot||snapshot.buffering),unavailable});
+    const unavailable=!!r.mediaId&&(r.mediaId===syncedPlayer.unavailableMediaId||r.mediaType!=='reading'&&!!snapshot?.unavailable);
+    const next=await api<RoomState>(`synced/${r.id}/heartbeat`,{buffering:!!r.mediaId&&!unavailable&&(r.mediaType==='reading'?!matchesReading(r)||reader.loading||reader.rendering:!snapshot||snapshot.buffering),unavailable});
     if(epoch!==generation||syncedPlayer.room?.id!==r.id||syncedPlayer.changing||next.revision<syncedPlayer.room.revision)return;
     offset=Date.parse(next.serverTime)-(started+Date.now())/2;lastResponse=Date.now();
     if(next.ended||!next.participants.some(p=>p.userId===syncedPlayer.userId&&p.joined)){
       alignPlayback({positionSeconds:snapshot?.positionSeconds||0,paused:true});syncedPlayer.notice=next.ended?'Synced session ended.':'You are no longer participating.';syncedPlayer.room=null;remember(null);return;
     }
     syncedPlayer.room=next;
+    if(!next.mediaId&&reader.session)await closeReading();
     if(!next.mediaId&&player.session){syncedPlayer.changing=true;try{await stopPlayback();}finally{syncedPlayer.changing=false;}}
     player.audioQueue=next.mediaType==='audio'?next.queueItems:[];player.audioIndex=next.mediaType==='audio'?next.queueIndex:-1;
-    if(next.mediaId&&next.mediaId!==syncedPlayer.unavailableMediaId&&!matchesPlayback(next)){
+    if(next.mediaId&&next.mediaId!==syncedPlayer.unavailableMediaId&&!(next.mediaType==='reading'?matchesReading(next):matchesPlayback(next))){
       syncedPlayer.changing=true;
       try{
-        await playMedia(next.mediaId,{mediaType:next.mediaType,edition:next.edition,expectedDuration:next.durationSeconds,fromStart:true});
+        if(next.mediaType==='reading')await attachReading(await api<ReadingSessionView>(`reading/${next.mediaId}/matching`,{edition:next.edition}));
+        else {if(reader.session)await closeReading();await playMedia(next.mediaId,{mediaType:next.mediaType,edition:next.edition,expectedDuration:next.durationSeconds,fromStart:true});}
         if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;
-        const attached=await attachPrepared(r.id,player.session!.id);
+        const attached=await attachPrepared(r.id,next.mediaType==='reading'?reader.session!.id:player.session!.id,next.mediaType==='reading');
         if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;
         syncedPlayer.room=attached;
-      }catch(cause){if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;syncedPlayer.notice=`Cannot play the current item: ${message(cause)}`;syncedPlayer.unavailableMediaId=next.mediaId;alignPlayback({positionSeconds:0,paused:true});}
+      }catch(cause){if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;syncedPlayer.notice=`Cannot ${next.mediaType==='reading'?'read':'play'} the current item: ${message(cause)}`;syncedPlayer.unavailableMediaId=next.mediaId;alignPlayback({positionSeconds:0,paused:true});}
       finally{syncedPlayer.changing=false;}
     }
     align();

@@ -1,7 +1,9 @@
+import { ownedReadingSession } from '$lib/reading/sessions.server';
+import { readingLocationSchema } from '$lib/reading/model';
 import * as v from 'valibot';
 import {getSql} from '$lib/server/db';
 import {getConfig} from '$lib/server/config';
-import {requireExperimentalFeature} from '$lib/server/experimental';
+import {requireExperimentalFeature,requireEnabledCategory} from '$lib/server/experimental';
 import {AppError} from '$lib/server/security/errors';
 import {requireFriend} from '$lib/social/service.server';
 import {notify} from '$lib/server/notifications';
@@ -25,6 +27,7 @@ async function authorized(userId:string,id:string){
   const [room]=await getSql()`SELECT r.*,p.joined AS viewer_joined FROM synced_rooms r JOIN synced_participants p ON p.room_id=r.id
     JOIN users h ON h.id=r.host_id JOIN users viewer ON viewer.id=p.user_id WHERE r.id=${v.parse(uuid,id)} AND p.user_id=${userId} AND NOT h.disabled AND NOT viewer.disabled`;
   if(!room)throw new AppError(404,'Synced session not found.');
+  if(room.media_type==='reading'&&room.media_id){const [work]=await getSql()`SELECT kind FROM works WHERE id=${room.media_id}`;if(!work)throw new AppError(404,'Reading work not found.');requireEnabledCategory(await getConfig(),work.kind);}
   if(room.host_id!==userId)await requireFriend(userId,room.host_id);
   return room;
 }
@@ -37,12 +40,14 @@ async function playback(userId:string,id:string){
 }
 function descriptor(p:Record<string,any>){return {mediaId:p.media_id,mediaType:p.media_type,edition:p.edition||'',durationSeconds:Number(p.duration_seconds)};}
 async function leaveOthers(sql:ReturnType<typeof getSql>,userId:string,except:string){
-  await sql`UPDATE synced_participants SET joined=FALSE,buffering=FALSE,playback_id=NULL WHERE user_id=${userId} AND room_id<>${except}`;
+  await sql`UPDATE synced_participants SET joined=FALSE,buffering=FALSE,playback_id=NULL,reading_session_id=NULL WHERE user_id=${userId} AND room_id<>${except}`;
   await sql`UPDATE synced_rooms SET ended_at=NOW(),revision=revision+1 WHERE host_id=${userId} AND id<>${except} AND ended_at IS NULL`;
 }
 export async function createRoom(userId:string,input:unknown){
   await enabled();
-  const data=v.parse(v.object({playbackId:v.optional(uuid),positionSeconds:v.optional(position,0),paused:v.optional(v.boolean(),true),queue:v.optional(v.pipe(v.array(uuid),v.maxLength(200)),[]),queueIndex:v.optional(v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(199)),0)}),input);
+  const data=v.parse(v.object({playbackId:v.optional(uuid),readingSessionId:v.optional(uuid),positionSeconds:v.optional(position,0),paused:v.optional(v.boolean(),true),queue:v.optional(v.pipe(v.array(uuid),v.maxLength(200)),[]),queueIndex:v.optional(v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(199)),0)}),input);
+  if(data.playbackId&&data.readingSessionId)throw new AppError(400,'Choose one party medium.');
+  const reading=data.readingSessionId?await ownedReadingSession(userId,data.readingSessionId):null;
   const p=data.playbackId?await playback(userId,data.playbackId):null;
   if(p&&!(p.duration_seconds>0))throw new AppError(409,'This source has no duration and cannot be synchronized.');
   const queue=p?.media_type==='audio'?data.queue:[];
@@ -52,9 +57,9 @@ export async function createRoom(userId:string,input:unknown){
   await getSql().begin(async sql=>{
     await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`synced-user:${userId}`},0))`;
     await leaveOthers(sql,userId,id);
-    await sql`INSERT INTO synced_rooms (id,host_id,media_id,media_type,edition,duration_seconds,position_seconds,paused,queue,queue_index)
-      VALUES (${id},${userId},${p?.media_id??null},${p?.media_type??'video'},${p?.edition||''},${p?.duration_seconds??0},${Math.min(data.positionSeconds,p?.duration_seconds??0)},${p?data.paused:true},${queue}::jsonb,${data.queueIndex})`;
-    await sql`INSERT INTO synced_participants (room_id,user_id,playback_id,joined,heartbeat_at) VALUES (${id},${userId},${p?.id??null},TRUE,NOW())`;
+    await sql`INSERT INTO synced_rooms (id,host_id,media_id,media_type,edition,duration_seconds,position_seconds,paused,queue,queue_index,reading,reading_format)
+      VALUES (${id},${userId},${reading?.workId??p?.media_id??null},${reading?'reading':p?.media_type??'video'},${reading?.edition??p?.edition??''},${p?.duration_seconds??0},${Math.min(data.positionSeconds,p?.duration_seconds??0)},${p?data.paused:true},${queue}::jsonb,${data.queueIndex},${reading?.location??null}::jsonb,${reading?.format??null})`;
+    await sql`INSERT INTO synced_participants (room_id,user_id,playback_id,reading_session_id,joined,heartbeat_at) VALUES (${id},${userId},${p?.id??null},${reading?.id??null},TRUE,NOW())`;
   });
   return roomState(userId,id);
 }
@@ -78,9 +83,13 @@ export async function inviteParticipant(userId:string,id:string,input:unknown){
 }
 export async function joinRoom(userId:string,id:string,input:unknown){
   const room=await authorized(userId,id);
-  const {playbackId,revision}=v.parse(v.object({playbackId:v.optional(uuid),revision:v.pipe(v.number(),v.integer())}),input);
+  const {playbackId,readingSessionId,revision}=v.parse(v.object({playbackId:v.optional(uuid),readingSessionId:v.optional(uuid),revision:v.pipe(v.number(),v.integer())}),input);
   const p=playbackId?await playback(userId,playbackId):null;
-  if(room.media_id&&(!p||!compatibleSource(descriptor(room),descriptor(p))))throw new AppError(409,'Your source has a different edition or duration. Choose a matching version to join.');
+  const reading=readingSessionId?await ownedReadingSession(userId,readingSessionId):null;
+  if(playbackId&&readingSessionId)throw new AppError(400,'Choose one party medium.');
+  if(room.media_type==='reading'&&(!reading||reading.workId!==room.media_id||reading.edition!==room.edition||reading.format!==room.reading_format))throw new AppError(409,'Open your own copy of the same reading edition before joining.');
+  if(room.media_type!=='reading'&&reading)throw new AppError(409,'This party changed to playback.');
+  if(room.media_id&&room.media_type!=='reading'&&(!p||!compatibleSource(descriptor(room),descriptor(p))))throw new AppError(409,'Your source has a different edition or duration. Choose a matching version to join.');
   await getSql().begin(async sql=>{
     await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`synced-user:${userId}`},0))`;
     const [r]=await sql`SELECT revision,settings,host_id FROM synced_rooms WHERE id=${id} AND ended_at IS NULL AND created_at>NOW()-INTERVAL '24 hours' FOR UPDATE`;
@@ -88,7 +97,7 @@ export async function joinRoom(userId:string,id:string,input:unknown){
     const [member]=await sql`SELECT joined FROM synced_participants WHERE room_id=${id} AND user_id=${userId}`;
     if(r.host_id!==userId&&!member?.joined&&!r.settings.acceptInvites)throw new AppError(409,'This party is closed to new members.');
     await leaveOthers(sql,userId,id);
-    await sql`UPDATE synced_participants SET playback_id=${p?.id??null},joined=TRUE,buffering=FALSE,unavailable=FALSE,heartbeat_at=NOW() WHERE room_id=${id} AND user_id=${userId}`;
+    await sql`UPDATE synced_participants SET playback_id=${p?.id??null},reading_session_id=${reading?.id??null},joined=TRUE,buffering=FALSE,unavailable=FALSE,heartbeat_at=NOW() WHERE room_id=${id} AND user_id=${userId}`;
   });return roomState(userId,id);
 }
 export async function roomState(userId:string,id:string,input?:unknown):Promise<RoomState>{
@@ -102,6 +111,9 @@ export async function roomState(userId:string,id:string,input?:unknown):Promise<
     await sql`UPDATE synced_participants p SET joined=FALSE,buffering=FALSE WHERE p.room_id=${id} AND p.playback_id IS NOT NULL AND NOT EXISTS(
       SELECT 1 FROM playback_sessions b JOIN provider_connections c ON c.id=b.connection_id JOIN provider_instances i ON i.id=c.instance_id
       WHERE b.id=p.playback_id AND b.user_id=p.user_id AND b.expires_at>NOW() AND c.status='connected' AND i.enabled)`;
+    await sql`UPDATE synced_participants p SET joined=FALSE,buffering=FALSE WHERE p.room_id=${id} AND p.reading_session_id IS NOT NULL AND NOT EXISTS(
+      SELECT 1 FROM reading_sessions b JOIN users u ON u.id=b.user_id LEFT JOIN provider_connections c ON c.id=b.connection_id LEFT JOIN provider_instances i ON i.id=c.instance_id
+      WHERE b.id=p.reading_session_id AND b.user_id=p.user_id AND NOT u.disabled AND b.closed_at IS NULL AND b.expires_at>NOW() AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation))`;
     const members:RoomState['participants']=await sql`SELECT p.user_id AS "userId",u.username,CASE WHEN social_visible(u.id,${userId}::uuid,'details') THEN u.settings->'profile'->>'avatar' END AS avatar,p.joined,p.buffering,p.ready,p.unavailable,(p.heartbeat_at>NOW()-INTERVAL '15 seconds') AS online FROM synced_participants p JOIN users u ON u.id=p.user_id WHERE p.room_id=${id} ORDER BY (p.user_id=${r.host_id}) DESC,u.username,p.user_id`;
     const controllers=r.settings.controllers.filter((user:string)=>members.some(member=>member.userId===user&&member.joined));
     if(controllers.length!==r.settings.controllers.length){
@@ -129,15 +141,17 @@ export async function roomState(userId:string,id:string,input?:unknown):Promise<
       await sql`UPDATE synced_rooms SET position_seconds=${pos},buffering_paused=${blocked},updated_at=${now},revision=revision+1,ended_at=${expired?now:null} WHERE id=${id}`;
       Object.assign(r,{position_seconds:pos,buffering_paused:blocked,updated_at:now,revision:r.revision+1,ended_at:expired?now:null});
     }
-    return {id:r.id,createdAt:new Date(r.created_at).toISOString(),hostId:r.host_id,mediaId:r.media_id,mediaType:r.media_type,edition:r.edition,durationSeconds:r.duration_seconds,positionSeconds:r.position_seconds,paused:r.paused,bufferingPaused:r.buffering_paused,bufferingPolicy:r.buffering_policy,settings:r.settings,queue:r.queue,queueIndex:r.queue_index,queueItems,revision:r.revision,updatedAt:new Date(r.updated_at).toISOString(),serverTime:new Date().toISOString(),ended:!!r.ended_at,participants:members.map(p=>({...p,online:!!p.online}))} as RoomState;
+    return {id:r.id,createdAt:new Date(r.created_at).toISOString(),hostId:r.host_id,mediaId:r.media_id,mediaType:r.media_type,reading:r.reading,readingFormat:r.reading_format,edition:r.edition,durationSeconds:r.duration_seconds,positionSeconds:r.position_seconds,paused:r.paused,bufferingPaused:r.buffering_paused,bufferingPolicy:r.buffering_policy,settings:r.settings,queue:r.queue,queueIndex:r.queue_index,queueItems,revision:r.revision,updatedAt:new Date(r.updated_at).toISOString(),serverTime:new Date().toISOString(),ended:!!r.ended_at,participants:members.map(p=>({...p,online:!!p.online}))} as RoomState;
   });
 }
 export async function commandRoom(userId:string,id:string,input:unknown){
   const room=await authorized(userId,id);
-  const data=v.parse(v.object({revision:v.pipe(v.number(),v.integer()),action:v.picklist(['play','pause','seek','policy','item','stop','end','kick','promote','settings','ready','queue']),userId:v.optional(uuid),ready:v.optional(v.boolean()),settings:v.optional(settingsSchema),positionSeconds:v.optional(position),policy:v.optional(v.picklist(['together','catch-up'])),playbackId:v.optional(uuid),queueIndex:v.optional(v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(199))),queue:v.optional(v.pipe(v.array(uuid),v.maxLength(200)))}),input);
+  const data=v.parse(v.object({revision:v.pipe(v.number(),v.integer()),action:v.picklist(['play','pause','seek','policy','item','stop','end','kick','promote','settings','ready','queue','location']),readingSessionId:v.optional(uuid),location:v.optional(readingLocationSchema),userId:v.optional(uuid),ready:v.optional(v.boolean()),settings:v.optional(settingsSchema),positionSeconds:v.optional(position),policy:v.optional(v.picklist(['together','catch-up'])),playbackId:v.optional(uuid),queueIndex:v.optional(v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(199))),queue:v.optional(v.pipe(v.array(uuid),v.maxLength(200)))}),input);
   if(!permitted(room,userId,room.viewer_joined,data.action))throw new AppError(403,'Playback is controlled by the host.');
+  const reading=data.action==='item'&&data.readingSessionId?await ownedReadingSession(userId,data.readingSessionId):null;
+  if(data.playbackId&&data.readingSessionId)throw new AppError(400,'Choose one party medium.');
   const p=data.action==='item'&&data.playbackId?await playback(userId,data.playbackId):null;
-  if(data.action==='item'&&!p)throw new AppError(400,'Prepare the next item first.');
+  if(data.action==='item'&&!p&&!reading)throw new AppError(400,'Prepare the next item first.');
   if(!room.media_id&&['play','pause','seek'].includes(data.action))throw new AppError(409,'Choose something to play first.');
   const queue=p?.media_type==='audio'?(data.queue??(room.media_type==='audio'&&room.queue.includes(p.media_id)?room.queue:[p.media_id])):[];
   const queueIndex=p?.media_type==='audio'?(data.queueIndex??Math.max(0,queue.indexOf(p.media_id))):0;
@@ -152,6 +166,15 @@ export async function commandRoom(userId:string,id:string,input:unknown){
     if(data.action==='policy'&&!data.policy)throw new AppError(400,'Choose a buffering policy.');
     if(data.action==='seek'&&data.positionSeconds===undefined)throw new AppError(400,'Choose a playback position.');
     if(p?.media_type==='audio'&&data.queue&&r.host_id!==userId&&r.settings.queue!=='everyone'&&JSON.stringify(data.queue)!==JSON.stringify(r.queue))throw new AppError(403,'Only the host can change this queue.');
+    if(r.media_type==='reading'&&['play','pause','seek'].includes(data.action))throw new AppError(400,'Reading parties synchronize locations, not playback seconds.');
+    if(data.location!==undefined&&data.action!=='location')throw new AppError(400,'Use the reading location action.');
+    if(data.action==='location'){
+      const location=data.location;
+      const [member]=await sql`SELECT b.* FROM synced_participants p JOIN reading_sessions b ON b.id=p.reading_session_id JOIN users u ON u.id=b.user_id LEFT JOIN provider_connections c ON c.id=b.connection_id LEFT JOIN provider_instances i ON i.id=c.instance_id WHERE p.room_id=${id} AND p.user_id=${userId} AND p.joined AND b.closed_at IS NULL AND b.expires_at>NOW() AND NOT u.disabled AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation)`;
+      if(r.media_type!=='reading'||!location||!member||member.work_id!==r.media_id||member.edition!==r.edition||member.format!==location.format||r.reading_format!==location.format||location.format!=='epub'&&location.page>location.total)throw new AppError(409,'Choose a valid location in your joined reading edition.');
+      if(r.reading&&r.reading.format!==location.format||r.reading&&location.format!=='epub'&&r.reading.total!==location.total)throw new AppError(409,'This file has a different reading layout.');
+      await sql`UPDATE synced_rooms SET reading=${location}::jsonb,updated_at=NOW(),revision=revision+1 WHERE id=${id}`;return;
+    }
     if(data.action==='ready'){
       if(data.ready===undefined)throw new AppError(400,'Choose your ready state.');
       await sql`UPDATE synced_participants SET ready=${data.ready} WHERE room_id=${id} AND user_id=${userId} AND joined`;
@@ -187,15 +210,16 @@ export async function commandRoom(userId:string,id:string,input:unknown){
     }
     const now=new Date();let pos=Math.min(r.duration_seconds,r.position_seconds+(!r.paused&&!r.buffering_paused?Math.max(0,now.getTime()-new Date(r.updated_at).getTime())/1000:0));
     if(data.positionSeconds!==undefined)pos=Math.min(r.duration_seconds,data.positionSeconds);
-    if(data.action==='stop'){pos=0;await sql`UPDATE synced_participants SET playback_id=NULL,buffering=FALSE WHERE room_id=${id}`;}
-    if(p){pos=0;await sql`UPDATE synced_participants SET ready=FALSE,unavailable=FALSE WHERE room_id=${id}`;await sql`UPDATE synced_participants SET playback_id=NULL,buffering=TRUE WHERE room_id=${id} AND user_id<>${userId} AND joined`;await sql`UPDATE synced_participants SET playback_id=${p.id} WHERE room_id=${id} AND user_id=${userId}`;}
-    await sql`UPDATE synced_rooms SET position_seconds=${pos},paused=${data.action==='pause'||data.action==='stop'?true:data.action==='play'||p?false:r.paused},buffering_policy=${data.policy||r.buffering_policy},
-      media_type=${p?.media_type??r.media_type},queue=${p?(p.media_type==='audio'?queue:[]):r.queue}::jsonb,queue_index=${p?queueIndex:r.queue_index},media_id=${data.action==='stop'?null:p?.media_id||r.media_id},edition=${p?p.edition||'':r.edition},duration_seconds=${p?.duration_seconds||r.duration_seconds},updated_at=${now},revision=revision+1,ended_at=${data.action==='end'?now:null} WHERE id=${id}`;
+    if(data.action==='stop'){pos=0;await sql`UPDATE synced_participants SET playback_id=NULL,reading_session_id=NULL,buffering=FALSE WHERE room_id=${id}`;}
+    if(reading){pos=0;await sql`UPDATE synced_participants SET ready=FALSE,unavailable=FALSE,playback_id=NULL,reading_session_id=NULL,buffering=joined WHERE room_id=${id}`;await sql`UPDATE synced_participants SET reading_session_id=${reading.id},buffering=FALSE WHERE room_id=${id} AND user_id=${userId}`;}
+    if(p){pos=0;await sql`UPDATE synced_participants SET ready=FALSE,unavailable=FALSE WHERE room_id=${id}`;await sql`UPDATE synced_participants SET playback_id=NULL,reading_session_id=NULL,buffering=TRUE WHERE room_id=${id} AND user_id<>${userId} AND joined`;await sql`UPDATE synced_participants SET playback_id=${p.id},reading_session_id=NULL WHERE room_id=${id} AND user_id=${userId}`;}
+    await sql`UPDATE synced_rooms SET position_seconds=${pos},paused=${reading||data.action==='pause'||data.action==='stop'?true:data.action==='play'||p?false:r.paused},buffering_policy=${data.policy||r.buffering_policy},
+      reading=${data.action==='stop'||p?null:reading?reading.location:r.reading}::jsonb,reading_format=${data.action==='stop'||p?null:reading?reading.format:r.reading_format},media_type=${reading?'reading':p?.media_type??r.media_type},queue=${reading?[]:p?(p.media_type==='audio'?queue:[]):r.queue}::jsonb,queue_index=${reading?0:p?queueIndex:r.queue_index},media_id=${data.action==='stop'?null:reading?.workId??p?.media_id??r.media_id},edition=${reading?.edition??(p?p.edition||'':r.edition)},duration_seconds=${reading?0:p?.duration_seconds??r.duration_seconds},updated_at=${now},revision=revision+1,ended_at=${data.action==='end'?now:null} WHERE id=${id}`;
   });return roomState(userId,id);
 }
 export async function leaveRoom(userId:string,id:string){
   const r=await authorized(userId,id);
-  await getSql()`UPDATE synced_participants SET joined=FALSE,buffering=FALSE,playback_id=NULL WHERE room_id=${id} AND user_id=${userId}`;
+  await getSql()`UPDATE synced_participants SET joined=FALSE,buffering=FALSE,playback_id=NULL,reading_session_id=NULL WHERE room_id=${id} AND user_id=${userId}`;
   if(r.host_id===userId)await getSql()`UPDATE synced_rooms SET ended_at=NOW(),revision=revision+1 WHERE id=${id}`;
   return {left:true};
 }
@@ -212,9 +236,9 @@ export async function declineInvitation(userId:string,id:string){
   return {declined:true};
 }
 
-export async function listRooms(userId:string):Promise<{id:string;createdAt:string;host:string;hostId:string;mediaId:string|null;mediaType:'audio'|'video';joined:boolean;progress:number|null;durationSeconds:number;positionSeconds:number;paused:boolean;bufferingPaused:boolean;updatedAt:string;participants:{userId:string;username:string;avatar:string|null;joined:boolean}[]}[]>{
+export async function listRooms(userId:string):Promise<{id:string;createdAt:string;host:string;hostId:string;mediaId:string|null;mediaType:'audio'|'video'|'reading';reading?:RoomState['reading'];joined:boolean;progress:number|null;durationSeconds:number;positionSeconds:number;paused:boolean;bufferingPaused:boolean;updatedAt:string;participants:{userId:string;username:string;avatar:string|null;joined:boolean}[]}[]>{
   await enabled();
-  const rows=await getSql()`SELECT r.id,r.created_at AS "createdAt",u.username AS host,r.host_id AS "hostId",r.media_id AS "mediaId",r.media_type AS "mediaType",p.joined,r.duration_seconds AS "durationSeconds",r.position_seconds AS "positionSeconds",r.paused,r.buffering_paused AS "bufferingPaused",r.updated_at AS "updatedAt",
+  const rows=await getSql()`SELECT r.id,r.created_at AS "createdAt",u.username AS host,r.host_id AS "hostId",r.media_id AS "mediaId",r.media_type AS "mediaType",r.reading,p.joined,r.duration_seconds AS "durationSeconds",r.position_seconds AS "positionSeconds",r.paused,r.buffering_paused AS "bufferingPaused",r.updated_at AS "updatedAt",
     CASE WHEN r.media_id IS NOT NULL AND r.duration_seconds>0 THEN least(1.0,greatest(0.0,(r.position_seconds+CASE WHEN NOT r.paused AND NOT r.buffering_paused THEN greatest(0,extract(epoch from now()-r.updated_at)) ELSE 0 END)/r.duration_seconds)) END::real AS progress,
     (SELECT coalesce(jsonb_agg(jsonb_build_object('userId',member.id,'username',member.username,'joined',participant.joined,'avatar',CASE WHEN social_visible(member.id,${userId}::uuid,'details') THEN member.settings->'profile'->>'avatar' END) ORDER BY (member.id=r.host_id) DESC,member.username),'[]'::jsonb)
      FROM synced_participants participant JOIN users member ON member.id=participant.user_id

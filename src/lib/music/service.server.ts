@@ -1,7 +1,7 @@
 import { and,eq } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { trackingState, musicArtists, musicArtistPreferences,musicProgress } from '$lib/server/db/schema';
-import { trackWithExports } from '$lib/sync/changes';
+import { trackWithExports } from '$lib/sync/changes.server';
 import { observeMusicAccess, persistMusic } from './persistence.server';
 import * as v from 'valibot';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';

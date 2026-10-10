@@ -1,4 +1,4 @@
-import { getLists } from '$lib/core/lists/service';
+import { getLists } from '$lib/core/lists/service.server';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { listsData, listsOptionsSchema } from '$lib/server/queries/lists';

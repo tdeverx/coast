@@ -2,11 +2,11 @@ import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import { ingestMetadata } from '../src/lib/catalogue/service';
+import { ingestMetadata } from '../src/lib/catalogue/service.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
-import { importTraktFromAdapter } from '../src/lib/sync/trakt-import';
-import { reconcileProviderValue } from '../src/lib/sync/values';
-import { reconcileProviderList } from '../src/lib/sync/list-values';
+import { importTraktFromAdapter } from '../src/lib/sync/trakt-import.server';
+import { reconcileProviderValue } from '../src/lib/sync/values.server';
+import { reconcileProviderList } from '../src/lib/sync/list-values.server';
 import { jobExecution, JobYield } from '../src/lib/server/queue/execution';
 import type { SyncPreferences } from '../src/lib/providers/contracts';
 

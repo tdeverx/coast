@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { AppError } from '$lib/server/security/errors';
 import * as v from 'valibot';
-import { listGames } from '$lib/core/games/service';
+import { listGames } from '$lib/core/games/service.server';
 import { searchIgdb } from '$lib/providers/igdb/service.server';
 import { listProviders } from '$lib/providers/instances.server';
 import { gameCard } from '$lib/games/presentation';

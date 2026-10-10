@@ -16,7 +16,7 @@
   }: {
     title: string;
     artworkOptions?: boolean;
-    mediaKind?: 'screen' | 'music' | 'game';
+    mediaKind?: 'screen' | 'music' | 'game' | 'reading';
     overridePriority?: ArtworkPriority | null;
     overrideShape?: MediaCardShape | null;
     overrideArtwork?: MediaCardArtwork | null;
@@ -49,7 +49,7 @@
         : (['primary'] as const)
     ).map((value) => ({
       value,
-      label: value === 'primary' && mediaKind === 'music' ? 'Cover' : artworkTypes[value].label,
+      label: value === 'primary' && (mediaKind === 'music' || mediaKind === 'reading') ? 'Cover' : artworkTypes[value].label,
     })),
   ] satisfies { value: MediaCardArtwork; label: string }[]);
   const priorities: ArtworkPriority[] = [

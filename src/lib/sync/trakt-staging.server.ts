@@ -5,8 +5,8 @@ import { JobYield, jobCheckpoint, jobExecution } from '$lib/server/queue/executi
 import { PermanentActionError } from '$lib/server/queue';
 import type { TraktAdapter, TraktRecord } from '$lib/providers/trakt/adapter.server';
 import { compactTraktHistory } from './trakt-history';
-import { reconcileProviderValue, type ValueCategory } from './values';
-import { reconcileProviderList } from './list-values';
+import { reconcileProviderValue, type ValueCategory } from './values.server';
+import { reconcileProviderList } from './list-values.server';
 import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];

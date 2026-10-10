@@ -7,10 +7,11 @@ export const jellyfinScanProgressSchema = v.object({
   startedAt: v.string(),
   scanId: v.optional(v.pipe(v.string(), v.uuid())),
   accountGeneration: v.optional(v.pipe(v.string(), v.uuid())),
-  phase: v.picklist(['scanning', 'watched', 'resume', 'favourites', 'reconciling', 'music-albums', 'music-tracks', 'finalizing', 'complete']),
+  phase: v.picklist(['scanning', 'watched', 'resume', 'favourites', 'reconciling', 'music-albums', 'music-tracks', 'reading', 'finalizing', 'complete']),
   stageProcessed: v.optional(count),
   stageTotal: v.optional(v.nullable(count)),
   playbackCursor: v.optional(v.nullable(v.pipe(v.string(), v.uuid()))),
+  readingOffset: v.optional(count),
   musicOffset: v.optional(count),
   musicFilter: v.optional(v.pipe(count, v.maxValue(3))),
 });
@@ -24,6 +25,7 @@ export function jellyfinImportStage(phase: JellyfinScanProgress['phase']) {
     reconciling: 'Importing progress and favourites',
     'music-albums': 'Importing albums',
     'music-tracks': 'Importing listening history',
+    reading: 'Checking reading files',
     finalizing: 'Finishing your library',
     complete: 'Complete',
   }[phase];

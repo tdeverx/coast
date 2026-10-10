@@ -1,5 +1,5 @@
-import { sequenceEntries, nextSequenceEntry } from '../../core/lists/sequence';
-import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch';
+import { sequenceEntries, nextSequenceEntry } from '../../core/lists/sequence.server';
+import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import { and, or, asc, eq, inArray, sql } from 'drizzle-orm';
 import { getDb } from '../db';
 import * as s from '../db/schema';
