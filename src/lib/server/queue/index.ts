@@ -3,6 +3,7 @@ import { jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, typ
 import { jobExecution, JobYield } from './execution';
 import { requestPriority, providerJob, registerJobRequestPriority, updateJobRequestPriority, releaseJobRequestPriority, type RequestPriority } from '../security/request-priority';
 import { context, logDiagnostic, classifyFailure } from '../diagnostics';
+import { runtimeEvidence } from '../diagnostics/runtime';
 import { refreshDiagnosticConfig,getConfig } from '../config';
 import { correlationId } from '../../diagnostics';
 import { desc, eq, sql, inArray } from 'drizzle-orm';
@@ -268,7 +269,8 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
   const action = await claimNextAction(urgentOnly);
   if (!action) return false;
   // Keep account writes ordered. Read-only live observations can interleave with imports.
-  const reserved = await getSql().reserve();
+  const reserved = await runtimeEvidence.track('reserve', () => getSql().reserve());
+  const releaseEvidence = runtimeEvidence.begin('reservation');
   const lockKeys = [...(action.instanceId && serviceTraversalKinds.includes(action.kind) && !action.kind.endsWith('.live') && !['jellyfin.streams','jellyfin.updates'].includes(action.kind) ? [`queue-traversal:${action.instanceId}`] : []), independentQueueKinds.includes(action.kind)?`queue-action:${action.id}`:`queue-lane:${action.userId}:${action.connectionId ?? 'local'}${action.kind.endsWith('.live') ? ':live' : ''}`];
   const held: string[] = [];
   try {
@@ -297,7 +299,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
       const startedAt=new Date();
       void logDiagnostic('debug', 'job.start', { actionId: action.id, attempts: action.attempts });
       const heartbeat = setInterval(() => {
-        void reserved`UPDATE outbox_actions SET locked_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts}`.catch(
+        void runtimeEvidence.track('heartbeat', () => reserved`UPDATE outbox_actions SET locked_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts}`).catch(
           () => {}
         );
       }, 20_000);
@@ -410,7 +412,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
       for (const key of held.reverse())
         await reserved`SELECT pg_advisory_unlock(hashtextextended(${key}, 0))`;
     } finally {
-      reserved.release();
+      try { reserved.release(); } finally { releaseEvidence(); }
     }
   }
 }
@@ -435,7 +437,7 @@ export function startQueueWorker() {
     if (!running || generation !== workerGeneration) return;
     let worked = false;
     try {
-      worked = await runQueueOnce(urgentOnly);
+      worked = await runtimeEvidence.track('queue', () => runQueueOnce(urgentOnly));
     } catch {
       /* Retain work during database outages. */
     }

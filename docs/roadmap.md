@@ -1,6 +1,15 @@
 # App follow-up roadmap
 
-Updated 7 October 2026. Parked entries record deferred work, not implementation authorization.
+Updated 11 October 2026. Planned and parked entries record priorities, not delivered features or implementation authorization.
+
+## Highest priority — recovery, reliable backups and data ownership
+
+- Establish scheduled, consistent database backups paired with the matching credential key and durable app files. Keep a versioned manifest with capture time, application/database versions, migration state and checksums; protect backups with appropriate access control and encryption. Define retention, independent storage, capacity checks and visible failure/staleness alerts. A Git checkpoint or live sparse-volume copy is not a verified database backup.
+- Verify each backup and regularly restore into a fresh isolated PostgreSQL instance. Test decryption with its paired key, schema/integrity checks, history/Collection/progress preservation and queued work. Publish recovery-point/recovery-time targets and a runbook for graceful shutdown, offline preservation and restore; never treat a damaged original as a working rollback. Exercise the actual bundled-volume procedure as well as the existing logical database/key fixture tests.
+- Add an administrator export for explicitly selected installation/user data with reauthentication, authorization, an audit trail, bounded asynchronous generation, private storage, expiration and cancellation. Separate portable data export from disaster-recovery backups; exclude credential keys, passwords, session/API/provider tokens and raw diagnostics from ordinary exports. Define whether any cross-user personal data is included and require an explicit administrator choice.
+- Add user self-service exports of their own Collection, lists, ratings, history, progress and account/profile data in documented, versioned portable formats. Scope every query and download to the authenticated user's permitted data; exclude other users' private activity, provider credentials and installation secrets. Test ownership boundaries, revocation, bounded memory/disk usage and expiring downloads. Export enables users to manage their data; deletion/import are separately designed operations.
+
+These requirements are selected roadmap priorities. Backup scheduling, installation restore and admin/user export features are not implemented by the diagnostic changes.
 
 ## Selected audit pass — implemented
 
@@ -23,7 +32,6 @@ Implementation and verification limits: [selected follow-ups](audits/2026-10-03-
 - Next major pass: codebase-wide optimisation and performance profiling, with focused automated tests and optional user-assisted acceptance. Measure CPU/RAM spikes, query latency and concurrency, provider/background work, rendering, playback and caches under realistic workloads. Prioritise slow Collection requests, the production HTTP idle timeout, and durable child-process exit diagnostics from the live outage investigation; compare measured before/after results. Follow the [isolated investigation and repair plan](audits/2026-10-03-performance-plan.md).
 - Add an administrator benchmarking section to the performance pass: one Run benchmark button, recorded results and durable run history to compare performance drift over time. Use repeatable workloads and record build, environment, duration, query latency, CPU/RAM and failures so comparisons remain meaningful.
 - Real-account provider/social certification: reconnects/account switching, projection cleanup, genuine sync conflicts, social privacy and taste results across actual integrations.
-- Exercise the bundled-volume backup/restore procedure on the actual deployment. Logical database/key recovery was already tested.
 - Revisit reviewed transitive dependency advisories when compatible parent upgrades are available.
 - Refine Dynamic For You and its exact-next-item prioritisation. “Recently watched”, “From your library” and “Because you watched” have been removed; Activity remains the last row.
 - Review the disabled-by-default modal media details experiment; expand navigation/context restoration after design approval.
@@ -65,7 +73,6 @@ Source audit recorded 5 October 2026. These are proposals, not implementation au
 | Add Not interested and Already seen feedback to influence personal recommendations; friend recommendations already have Dismiss. | 5 | M | Medium |
 | Give notifications problem-specific actions: retry transient failures, reconnect accounts or review conflicts directly. | 5 | M | Medium |
 | Allow planned items to be rescheduled without cancelling and recreating them. | 4 | M | Low |
-| Export personal Collection, progress or history through bounded, permission-checked downloads. | 3 | M | Medium |
 
 Recommended first batch: job error clarity, filter preservation, duplicate-submit protection, unsaved-dialog protection, Undo parity and explicit Copy buttons. Follow with Library sorting, playback shortcuts and recommendation explanations. This ordering is a recommendation, not a selected implementation pass.
 

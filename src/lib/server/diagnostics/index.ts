@@ -25,7 +25,10 @@ export class DiagnosticStore {
   private tail: Promise<void> = Promise.resolve();
   private pending = 0;
   private lastPrune = 0;
-  constructor(private directory: () => string = () => join(dataDirectory(), 'diagnostics')) {}
+  private dropped = 0;
+  private failures = 0;
+  metrics() { return {diagnosticPending: this.pending, diagnosticDropped: this.dropped, diagnosticFailures: this.failures}; }
+  constructor(private directory: () => string = () => join(dataDirectory(), 'diagnostics'), private maxLineBytes = storageLimits.segmentBytes) {}
   private async prune(force = false) {
     if (!force && Date.now() - this.lastPrune < 60_000) return;
     this.lastPrune = Date.now();
@@ -58,10 +61,10 @@ export class DiagnosticStore {
   ) {
     if (
       !enabled(level, this.level) ||
-      !diagnosticEvents.includes(event) ||
-      this.pending >= storageLimits.pending
+      !diagnosticEvents.includes(event)
     )
       return Promise.resolve();
+    if (this.pending >= storageLimits.pending) { this.dropped++; return Promise.resolve(); }
     let line: string;
     try {
       line =
@@ -76,6 +79,7 @@ export class DiagnosticStore {
     } catch {
       return Promise.resolve();
     }
+    if (Buffer.byteLength(line) > this.maxLineBytes) {this.dropped++; return Promise.resolve();}
     this.pending++;
     this.tail = this.tail
       .then(async () => {
@@ -102,7 +106,7 @@ export class DiagnosticStore {
         }
         await appendFile(path, line, { mode: 0o600 });
       })
-      .catch(() => {})
+      .catch(() => { this.failures++; })
       .finally(() => {
         this.pending--;
       });
