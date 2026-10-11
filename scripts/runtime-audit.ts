@@ -3,7 +3,7 @@ import {appendFile, chmod, mkdir, readFile, rename, stat} from 'node:fs/promises
 import {join} from 'node:path';
 
 export const auditLimits = {segmentBytes: 128 * 1024, pending: 8, waitMs: 250};
-type Event = 'migration.start' | 'migration.complete' | 'migration.failed' | 'database.start' | 'database.exit' | 'database.ready' | 'database.failed' | 'database.shutdown';
+type Event = 'migration.start' | 'migration.complete' | 'migration.failed' | 'database.start' | 'database.exit' | 'database.ready' | 'database.failed' | 'database.shutdown' | 'supervisor.shutdown';
 type IO = Pick<typeof import('node:fs/promises'), 'appendFile' | 'chmod' | 'mkdir' | 'rename' | 'stat'>;
 const filesystem: IO = {appendFile, chmod, mkdir, rename, stat};
 
@@ -25,6 +25,9 @@ export function safeAuditFields(input: Record<string, unknown>) {
   const build = input.build;
   if (typeof build === 'string' && /^(?:[a-f0-9]{40}|sha256:[a-f0-9]{64}|unknown)$/.test(build)) fields.build = build;
   if (['storage-corrupt', 'connection-limit', 'panic', 'shutdown-start', 'shutdown-complete'].includes(String(input.code))) fields.code = String(input.code);
+  if (['start', 'drain', 'fast', 'immediate', 'kill', 'unreaped', 'complete'].includes(String(input.stage))) fields.stage = String(input.stage);
+  if (['supervisor', 'application', 'migration', 'database'].includes(String(input.child))) fields.child = String(input.child);
+  if (['TERM', 'INT', 'QUIT', 'KILL'].includes(String(input.signal))) fields.signal = String(input.signal);
   return fields;
 }
 
@@ -32,12 +35,12 @@ export function safeAuditFields(input: Record<string, unknown>) {
 export class RuntimeAudit {
   private pending = 0;
   private tail: Promise<void> = Promise.resolve();
-  constructor(private directory: string, private io: IO = filesystem, private category: 'migrations' | 'database-events' = 'migrations') {}
+  constructor(private directory: string, private io: IO = filesystem, private category: 'migrations' | 'database-events' | 'shutdown-events' = 'migrations') {}
   async write(event: Event, input: Record<string, unknown>) {
     if (this.pending >= auditLimits.pending) return;
     let line: string;
     try {
-      if (!['migration.start', 'migration.complete', 'migration.failed', 'database.start', 'database.exit', 'database.ready', 'database.failed', 'database.shutdown'].includes(event)) return;
+      if (!['migration.start', 'migration.complete', 'migration.failed', 'database.start', 'database.exit', 'database.ready', 'database.failed', 'database.shutdown', 'supervisor.shutdown'].includes(event)) return;
       line = JSON.stringify({createdAt: new Date().toISOString(), kind: event, detail: safeAuditFields(input)}) + '\n';
       if (Buffer.byteLength(line) > 4096) return;
     } catch { return; }
@@ -48,7 +51,7 @@ export class RuntimeAudit {
       await this.io.mkdir(folder, {recursive: true, mode: 0o700});
       await this.io.chmod(folder, 0o700);
       const size = await this.io.stat(path).then(file => file.size).catch(() => 0);
-      if (size + Buffer.byteLength(line) > (this.category === 'migrations' ? auditLimits.segmentBytes : 1024 * 1024)) await this.io.rename(path, path + '.1');
+      if (size + Buffer.byteLength(line) > (this.category === 'database-events' ? 1024 * 1024 : auditLimits.segmentBytes)) await this.io.rename(path, path + '.1');
       await this.io.appendFile(path, line, {mode: 0o600});
       await this.io.chmod(path, 0o600);
     }).catch(() => {}).finally(() => { this.pending--; });

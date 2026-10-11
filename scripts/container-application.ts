@@ -1,10 +1,13 @@
 import { chmodSync, closeSync, mkdirSync, openSync, renameSync, statSync, writeSync } from 'node:fs';
+import {drainStderr} from './container-stderr';
 
 // Keep stderr independently of replaceable container stdout. Two private 256 KiB
 // segments bound disk use; writes are best effort and never change child status.
 const [directory, ...command] = process.argv.slice(2);
+const migration = command[0] === '--migration';
+if (migration) command.shift();
 if (!directory || !command.length) throw new Error('Pass the data directory and application command.');
-const path = `${directory}/runtime/application-stderr.log`;
+const path = `${directory}/runtime/${migration ? 'migration' : 'application'}-stderr.log`;
 const limit = 256 * 1024;
 let fd: number | undefined;
 let size = 0;
@@ -32,17 +35,18 @@ function persist(bytes: Uint8Array) {
   }
 }
 const child = Bun.spawn(command, { stdin: 'inherit', stdout: 'inherit', stderr: 'pipe' });
-const terminate = () => child.kill('SIGTERM');
-const interrupt = () => child.kill('SIGINT');
+let stopping = false;
+const forward = (signal: 'SIGTERM' | 'SIGINT') => { if (!stopping) { stopping = true; child.kill(signal); } };
+const terminate = () => forward('SIGTERM');
+const interrupt = () => forward('SIGINT');
 process.on('SIGTERM', terminate);
 process.on('SIGINT', interrupt);
 persist(new TextEncoder().encode(`\nApplication started ${new Date().toISOString()}\n`));
 try {
-  for await (const bytes of child.stderr) {
+  process.exitCode = await drainStderr(child.stderr, child.exited, bytes => {
     persist(bytes);
     try { writeSync(2, bytes); } catch { /* A disconnected console must not stop the application. */ }
-  }
-  process.exitCode = await child.exited;
+  });
 } finally {
   process.off('SIGTERM', terminate);
   process.off('SIGINT', interrupt);

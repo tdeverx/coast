@@ -30,9 +30,9 @@ test('unwritable database audit still returns the child exit status', async () =
   expect(await child.exited).toBe(11);
 });
 
-test('wrapper forwards shutdown signals and records the child exit', async () => {
+test('TERM requests PostgreSQL fast shutdown via INT and preserves its result', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'coast-pg-signal-'));
-  const script = 'process.on("SIGTERM", () => process.exit(23)); console.log("ready"); setInterval(() => {}, 1000)';
+  const script = 'process.on("SIGINT", () => process.exit(23)); process.on("SIGTERM", () => process.exit(99)); console.log("ready"); setInterval(() => {}, 1000)';
   const child = Bun.spawn([process.execPath, 'scripts/container-postgres.ts', directory, process.execPath, '-e', script], {stdout:'pipe',stderr:'ignore'});
   try {
     const reader = child.stdout.getReader();
@@ -42,5 +42,20 @@ test('wrapper forwards shutdown signals and records the child exit', async () =>
     expect(await child.exited).toBe(23);
     const rows = (await readFile(join(directory, 'runtime', 'database-events.jsonl'), 'utf8')).trim().split('\n').map(line => JSON.parse(line));
     expect(rows.at(-1)).toMatchObject({kind:'database.exit',detail:{exitCode:23}});
+  } finally {child.kill(); await child.exited; await rm(directory, {recursive:true,force:true});}
+});
+
+test('QUIT escalates a pending fast shutdown and preserves the child result', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'coast-pg-escalation-'));
+  const script = 'process.on("SIGINT", () => console.log("fast")); process.on("SIGQUIT", () => process.exit(24)); console.log("ready"); setInterval(() => {}, 1000)';
+  const child = Bun.spawn([process.execPath, 'scripts/container-postgres.ts', directory, process.execPath, '-e', script], {stdout:'pipe',stderr:'ignore'});
+  try {
+    const reader = child.stdout.getReader();
+    expect(new TextDecoder().decode((await reader.read()).value)).toContain('ready');
+    child.kill('SIGTERM');
+    expect(new TextDecoder().decode((await reader.read()).value)).toContain('fast');
+    reader.releaseLock();
+    child.kill('SIGQUIT');
+    expect(await child.exited).toBe(24);
   } finally {child.kill(); await child.exited; await rm(directory, {recursive:true,force:true});}
 });

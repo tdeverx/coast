@@ -10,7 +10,7 @@ import { redirect, json, error, isRedirect, isHttpError, type Handle } from '@sv
 import { authenticateSession, setupRequired } from '$lib/server/auth';
 import { SESSION_COOKIE, setSessionCookie } from '$lib/server/auth/cookies';
 import { assertSameOrigin } from '$lib/server/security/csrf';
-import { initializePlatform } from '$lib/server/startup';
+import { initializePlatform, platformStopping } from '$lib/server/startup';
 import { registerProviderActions } from '$lib/providers/actions.server';
 
 export const init: import('@sveltejs/kit').ServerInit = async () => {
@@ -19,6 +19,7 @@ export const init: import('@sveltejs/kit').ServerInit = async () => {
 
 const applicationHandle: Handle = async ({ event, resolve }) => {
   if (building) return resolve(event);
+  if (platformStopping()) return json({status:'unavailable'}, {status:503, headers:{'Cache-Control':'no-store'}});
   await initializePlatform(registerProviderActions);
   // Public API handlers authenticate only scoped machine tokens, never browser cookies.
   if (event.url.pathname.startsWith('/api/public/v1/')) return resolve(event);
@@ -97,9 +98,11 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
 
 export const handle: Handle = async ({ event, resolve }) => {
   if (building) return resolve(event);
+  if (platformStopping()) return json({status:'unavailable'}, {status:503, headers:{'Cache-Control':'no-store'}});
   const id = correlationId(event.request.headers.get('x-coast-correlation-id'));
   return context.run(id, async () => {
-    await refreshDiagnosticConfig();
+    // Readiness must not first block on a separate, unbounded settings query.
+    if (event.url.pathname !== '/api/v1/health') await refreshDiagnosticConfig();
     const started = performance.now();
     const diagnosticRequest = event.url.pathname.startsWith('/api/v1/diagnostics');
     const segment = event.url.pathname.split('/')[3];

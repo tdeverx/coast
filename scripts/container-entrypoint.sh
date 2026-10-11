@@ -4,19 +4,14 @@ umask 077
 
 data_dir="${COAST_DATA_DIR:-/data}"
 source /usr/local/lib/coast-container-storage.sh
-prepare_coast_storage "$data_dir"
+source /usr/local/lib/coast-container-shutdown.sh
 
 database_pid=""
+postgres_directory=""
 application_pid=""
 migration_pid=""
 completed_pid=""
 termination_signal=""
-shutdown() {
-  if [[ -n "$application_pid" ]]; then kill -TERM "$application_pid" 2>/dev/null || true; fi
-  if [[ -n "$migration_pid" ]]; then kill -TERM "$migration_pid" 2>/dev/null || true; fi
-  if [[ -n "$database_pid" ]]; then kill -TERM "$database_pid" 2>/dev/null || true; fi
-  wait 2>/dev/null || true
-}
 finish() {
   local status=$? child="startup" pid="${completed_pid:-}"
   trap - EXIT
@@ -28,13 +23,25 @@ finish() {
   # Record startup failures as well as completed children, without replacing the
   # original exit status when the independent diagnostic write fails. Persist
   # before waiting for shutdown, which may itself outlast the container grace.
-  gosu coast bun /app/scripts/container-child-exit.ts "$data_dir" "$child" "$pid" "$status" "$termination_signal" || true
-  shutdown
+  timeout --signal=TERM --kill-after=.1 .25 gosu coast bun /app/scripts/container-child-exit.ts "$data_dir" "$child" "$pid" "$status" "$termination_signal" >/dev/null 2>&1 || true
+  shutdown_coast_children "$status"
   exit "$status"
 }
 trap 'termination_signal="TERM"; exit 143' TERM
 trap 'termination_signal="INT"; exit 130' INT
 trap finish EXIT
+prepare_coast_storage "$data_dir"
+# Deadlines can be shortened, never extended beyond the 27-second cleanup budget.
+for setting in COAST_SHUTDOWN_APP_SECONDS:5 COAST_SHUTDOWN_DATABASE_SECONDS:18 COAST_SHUTDOWN_IMMEDIATE_SECONDS:2; do
+  name="${setting%:*}"; maximum="${setting#*:}"; value="${!name:-$maximum}"
+  if [[ ! "$value" =~ ^[1-9][0-9]?$ ]] || ((value > maximum)); then echo 'Invalid Coast shutdown deadline.' >&2; exit 1; fi
+  case "$name" in
+    COAST_SHUTDOWN_APP_SECONDS) shutdown_app_seconds="$value";;
+    COAST_SHUTDOWN_DATABASE_SECONDS) shutdown_database_seconds="$value";;
+    COAST_SHUTDOWN_IMMEDIATE_SECONDS) shutdown_immediate_seconds="$value";;
+  esac
+done
+command -v setsid >/dev/null
 
 if [[ -z "${DATABASE_URL:-}" ]]; then
   pg_bin="$(find /usr/lib/postgresql -mindepth 2 -maxdepth 2 -type d -name bin | sort -V | tail -1)"
@@ -43,6 +50,7 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   export COAST_POSTGRES_VERSION="$("$pg_bin/postgres" --version 2>/dev/null || true)"
   pg_data="$data_dir/postgres"
   prepare_postgres_storage "$pg_data"
+  postgres_directory="$(readlink -f -- "$pg_data")"
   password_file="$data_dir/secrets/database-password"
   if [[ ! -s "$password_file" ]]; then
     gosu coast bash -c 'umask 077; bun -e '\''console.log(Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString("hex"))'\'' > "$1"' _ "$password_file"
@@ -63,8 +71,9 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
     gosu postgres "$pg_bin/initdb" -D "$pg_data" --username=postgres --encoding=UTF8 --locale=C.UTF-8 --auth-local=trust --auth-host=scram-sha-256 --pwfile="$init_password" > /dev/null
     rm -f "$init_password"
   fi
-  bun /app/scripts/container-postgres.ts "$data_dir" gosu postgres "$pg_bin/postgres" -D "$pg_data" -c listen_addresses=127.0.0.1 -c unix_socket_directories=/var/run/postgresql &
+  setsid bun /app/scripts/container-postgres.ts "$data_dir" gosu postgres "$pg_bin/postgres" -D "$pg_data" -c listen_addresses=127.0.0.1 -c unix_socket_directories=/var/run/postgresql &
   database_pid=$!
+  track_child "$database_pid"
   database_ready=false
   for attempt in {1..60}; do
     if gosu postgres "$pg_bin/pg_isready" -q -h /var/run/postgresql -U postgres; then database_ready=true; break; fi
@@ -87,17 +96,26 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
   unset database_password
 fi
 
-gosu coast bun /app/scripts/migrate.ts &
+setsid gosu coast bun /app/scripts/container-application.ts "$data_dir" --migration bun /app/scripts/migrate.ts &
 migration_pid=$!
+track_child "$migration_pid"
 completed_pid="$migration_pid"
 if wait "$migration_pid"; then
+  # A successful migration process must not leave an inherited-pipe descendant.
+  if children_running "$migration_pid"; then
+    shutdown_event kill migration KILL
+    signal_owned_children "$migration_pid" KILL
+    sleep .1
+    if children_running "$migration_pid"; then echo 'Migration descendant did not stop.' >&2; exit 1; fi
+  fi
   migration_pid=""
   completed_pid=""
 else
   exit "$?"
 fi
-gosu coast bun /app/scripts/container-application.ts "$data_dir" bun /app/build/index.js &
+setsid gosu coast bun /app/scripts/container-application.ts "$data_dir" bun /app/build/index.js &
 application_pid=$!
+track_child "$application_pid"
 # If either child dies, stop the other and let the container restart as a unit.
 set +e
 source /usr/local/lib/coast-container-wait.sh

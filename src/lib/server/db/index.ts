@@ -10,6 +10,13 @@ const pools = globalThis as typeof globalThis & { [poolKey]: SQL | undefined };
 // optional application telemetry without importing application-only modules.
 const evidenceKey = Symbol.for('coast.runtime.evidence');
 const evidence = globalThis as typeof globalThis & {[evidenceKey]?: {connection: (error: unknown, closed?: boolean) => void}};
+// Shared with startup without importing application-only modules into the
+// standalone migration copy. Active jobs must not recreate a closing pool.
+const shutdownKey = Symbol.for('coast.platform.shutdown');
+const lifecycle = globalThis as typeof globalThis & {[shutdownKey]?: {started: boolean}};
+function assertRunning() {
+  if (lifecycle[shutdownKey]?.started) throw new Error('Coast is stopping.');
+}
 let database: ReturnType<typeof createDatabase> | undefined;
 function createDatabase(sql: SQL) {
   return drizzle({ client: sql, schema });
@@ -17,6 +24,7 @@ function createDatabase(sql: SQL) {
 
 /** Lazy construction keeps SvelteKit build/prerender independent of a running database. */
 export function getSql(): SQL {
+  assertRunning();
   if (!pools[poolKey]) {
     const url = process.env.DATABASE_URL;
     if (!url)
@@ -34,12 +42,13 @@ export function getSql(): SQL {
   return pools[poolKey];
 }
 export function getDb() {
+  assertRunning();
   return (database ??= createDatabase(getSql()));
 }
 export type Database = ReturnType<typeof getDb>;
-export async function closeDb() {
+export async function closeDb(options?: {timeout?: number}) {
   const client=pools[poolKey];
   pools[poolKey] = undefined;
-  if (client) await client.close();
+  if (client) await client.close(options);
   database = undefined;
 }

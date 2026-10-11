@@ -1,4 +1,5 @@
 import { readJsonBody as readBody } from '$lib/server/security/request-body';
+import {databaseReady} from '$lib/server/readiness';
 import { ProviderHttpError } from '$lib/server/security/provider-fetch';
 import { providerApiError } from '$lib/server/security/provider-api-error';
 import { provisioningAuthority } from '$lib/providers/jellyfin/provisioning.server';
@@ -77,8 +78,8 @@ export const handler: RequestHandler = async (event) => {
   const method = request.method;
   try {
     if (path[0] === 'health' && method === 'GET') {
-      await getSql()`select 1`;
-      return json({ status: 'healthy' });
+      const ready=await databaseReady();
+      return json({status:ready?'healthy':'unavailable'}, {status:ready?200:503, headers:{'Cache-Control':'no-store'}});
     }
     if(path[0]==='profile'&&path[1]==='avatar'&&path.length===4&&method==='GET')
       return await streamGifAvatar(uuid(path[2]),path[3],locals.user?.id??null);
