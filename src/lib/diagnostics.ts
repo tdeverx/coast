@@ -25,6 +25,8 @@ export const diagnosticEvents = [
   'playback.timing',
   'playback.failed',
   'application.failed',
+  'runtime.sample',
+  'runtime.operation',
 ] as const;
 export type DiagnosticEvent = (typeof diagnosticEvents)[number];
 export const eventMessages: Record<DiagnosticEvent, string> = {
@@ -51,6 +53,8 @@ export const eventMessages: Record<DiagnosticEvent, string> = {
   'playback.timing': 'Playback timing sample.',
   'playback.failed': 'Playback failed.',
   'application.failed': 'Application action failed.',
+  'runtime.sample': 'Runtime resource and concurrency sample.',
+  'runtime.operation': 'Runtime operation timing or failure.',
 };
 export function enabled(level: DiagnosticLevel, threshold: DiagnosticLevel) {
   return (
@@ -87,6 +91,13 @@ export function safeFields(input: Record<string, unknown> = {}) {
     'bufferedSeconds',
     'count',
     'expired',
+    'pid', 'uptimeMs', 'rssBytes', 'heapUsedBytes', 'externalBytes', 'cpuUserMs', 'cpuSystemMs',
+    'cgroupBytes', 'cgroupLimitBytes', 'cgroupOom', 'cgroupOomKills', 'cgroupAnonBytes', 'cgroupFileBytes',
+    'connectionsOpened', 'connectionsClosed', 'connectionFailures', 'operationFailures',
+    'reserveInFlight', 'reservationInFlight', 'queueInFlight', 'heartbeatInFlight', 'maintenanceInFlight',
+    'reserveBusyMs', 'reservationBusyMs', 'queueBusyMs', 'heartbeatBusyMs', 'maintenanceBusyMs',
+    'heartbeatOverlap', 'maintenanceOverlap', 'runtimeEventsDropped',
+    'diagnosticPending', 'diagnosticDropped', 'diagnosticFailures',
   ]) {
     const value = input[key];
     if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1e12)
@@ -122,6 +133,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
   if (
     [
       'retention',
+      'runtime', 'reserve', 'reservation', 'queue', 'heartbeat', 'maintenance',
       'connection',
       'identity',
       'checkpoint-read',
@@ -144,6 +156,9 @@ export function safeFields(input: Record<string, unknown> = {}) {
   if (
     [
       'provider.authentication',
+      'ERR_POSTGRES_CONNECTION_CLOSED', 'ERR_POSTGRES_CONNECTION_TIMEOUT',
+      'ERR_POSTGRES_IDLE_TIMEOUT', 'ERR_POSTGRES_COMMIT_ROLLED_BACK',
+      '53300', '57014', '57P01', '57P02', '57P03', 'unknown',
       'provider.permission',
       'provider.item-unavailable',
       'provider.rate-limit',
@@ -153,6 +168,8 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'provider.timeout',
       'action.rejected',
       'jellyfin.incomplete-library-page',
+      'jellyfin.invalid-library-offset',
+      'jellyfin.changed-library-page',
       'jellyfin.cyclic-media-hierarchy',
       'jellyfin.item-missing-show-identity',
       'catalogue.identity-conflict',
@@ -164,6 +181,9 @@ export function safeFields(input: Record<string, unknown> = {}) {
   if (['jellyfin', 'trakt', 'tmdb', 'seerr', 'igdb', 'steam'].includes(String(input.provider)))
     result.provider = String(input.provider);
   if (typeof input.stream === 'boolean') result.stream = input.stream;
+  if (typeof input.failed === 'boolean') result.failed = input.failed;
+  if (['start', 'stop'].includes(String(input.phase))) result.phase = String(input.phase);
+  if (typeof input.bunVersion === 'string' && /^\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(input.bunVersion)) result.bunVersion = input.bunVersion;
   // Session and job IDs are random system IDs, not user/provider/media IDs.
   for (const key of ['sessionId', 'actionId', 'accountGeneration']) {
     const value = input[key];

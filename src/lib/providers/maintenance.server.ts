@@ -16,6 +16,7 @@ import {
 import { getConfig } from '$lib/server/config';
 import { correlationId } from '$lib/diagnostics';
 import { context, logDiagnostic } from '$lib/server/diagnostics';
+import { runtimeEvidence } from '$lib/server/diagnostics/runtime';
 import { requireProviderAdmin, getInstance } from '$lib/providers/instances.server';
 
 export async function updateProviderSchedule(adminId: string, instanceId: string, input: unknown) {
@@ -286,14 +287,14 @@ async function maintenanceTick() {
 export function startProviderMaintenance() {
   if (maintenanceTimer) return;
   maintenanceTimer = setInterval(() => {
-    void maintenanceTick().catch(() =>
+    void runtimeEvidence.track('maintenance', maintenanceTick).catch(() =>
       logDiagnostic('error', 'job.failed', { stage: 'maintenance', failure: 'unexpected' })
     );
   }, 60000);
   maintenanceTimer.unref();
   process.once('SIGTERM', stopProviderMaintenance);
   process.once('SIGINT', stopProviderMaintenance);
-  void maintenanceTick().catch(() =>
+  void runtimeEvidence.track('maintenance', maintenanceTick).catch(() =>
     logDiagnostic('error', 'job.failed', { stage: 'maintenance', failure: 'unexpected' })
   );
 }

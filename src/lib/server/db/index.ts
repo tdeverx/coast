@@ -6,6 +6,10 @@ import * as schema from './schema';
 // process state, while each module generation rebuilds its schema-aware ORM.
 const poolKey = Symbol.for('coast.database.pool');
 const pools = globalThis as typeof globalThis & { [poolKey]: SQL | undefined };
+// The standalone OCI migration copy contains only this db directory. Look up
+// optional application telemetry without importing application-only modules.
+const evidenceKey = Symbol.for('coast.runtime.evidence');
+const evidence = globalThis as typeof globalThis & {[evidenceKey]?: {connection: (error: unknown, closed?: boolean) => void}};
 let database: ReturnType<typeof createDatabase> | undefined;
 function createDatabase(sql: SQL) {
   return drizzle({ client: sql, schema });
@@ -24,7 +28,8 @@ export function getSql(): SQL {
     // Job workers reserve sessions for advisory locks while provider calls wait.
     // Bun's idle timer also closes reserved sessions, losing those locks and
     // raising ERR_POSTGRES_IDLE_TIMEOUT. Keep this bounded pool open until closeDb.
-    pools[poolKey] = new Bun.SQL(url, { max: 10, idleTimeout: 0, connectionTimeout: 10, connection: { jit: 'off' } });
+    pools[poolKey] = new Bun.SQL(url, { max: 10, idleTimeout: 0, connectionTimeout: 10, connection: { jit: 'off' },
+      onconnect: error => evidence[evidenceKey]?.connection(error), onclose: error => evidence[evidenceKey]?.connection(error, true) });
   }
   return pools[poolKey];
 }

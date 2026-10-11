@@ -84,3 +84,46 @@ test('service timeouts have an explicit retry remedy without exposing provider d
   expect(jobFailureMessage(error,false)).toContain('did not respond in time');
   expect(safeFields({provider:'steam',errorCode:'provider.timeout',error})).toEqual({provider:'steam',errorCode:'provider.timeout'});
 });
+
+test('every known queue failure code survives storage without private exception details', async () => {
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const { DiagnosticStore } = await import('../src/lib/server/diagnostics');
+  const { jobFailureDetail } = await import('../src/lib/server/queue');
+  const directory = await mkdtemp(join(tmpdir(), 'coast-queue-codes-'));
+  const store = new DiagnosticStore(() => directory);
+  let invalid: unknown;
+  try { v.parse(v.number(), 'PRIVATE PROVIDER VALUE'); } catch (error) { invalid = error; }
+  const cases: [unknown, boolean, string][] = [
+    [new Error('Jellyfin returned an incomplete library page.'), false, 'jellyfin.incomplete-library-page'],
+    [new Error('Jellyfin returned an unexpected library page offset.'), false, 'jellyfin.invalid-library-offset'],
+    [new Error('Jellyfin library changed during pagination.'), false, 'jellyfin.changed-library-page'],
+    [new Error('Jellyfin returned a cyclic media hierarchy.'), false, 'jellyfin.cyclic-media-hierarchy'],
+    [new Error('Jellyfin returned an item without its show identity.'), false, 'jellyfin.item-missing-show-identity'],
+    [new Error('Conflicting provider identities require administrator review.'), true, 'catalogue.identity-conflict'],
+    [new Error('A season requires its canonical show.'), true, 'catalogue.season-missing-show'],
+    [new Error('An episode requires its canonical show.'), true, 'catalogue.episode-missing-show'],
+    [new ProviderHttpError(401), true, 'provider.authentication'],
+    [new ProviderHttpError(403), true, 'provider.permission'],
+    [new ProviderHttpError(404), true, 'provider.item-unavailable'],
+    [new ProviderHttpError(429), false, 'provider.rate-limit'],
+    [new ProviderHttpError(503), false, 'provider.unavailable'],
+    [invalid, true, 'provider.invalid-data'],
+    [new DOMException('PRIVATE EXCEPTION', 'TimeoutError'), false, 'provider.timeout'],
+    [new Error('PRIVATE EXCEPTION'), true, 'action.rejected'],
+    [new Error('PRIVATE EXCEPTION'), false, 'provider.interrupted'],
+  ];
+  try {
+    for (const [error, permanent, code] of cases) {
+      const errorCode = safeDiagnosticErrorCode(error) ?? jobFailureDetail(error, permanent).code;
+      expect(errorCode).toBe(code);
+      await store.write('error', 'job.failed', {errorCode, error, token: 'PRIVATE TOKEN'});
+    }
+    const rows = await store.recent();
+    expect(rows.map(row => row.detail.errorCode).sort()).toEqual(cases.map(row => row[2]).sort());
+    expect(JSON.stringify(rows)).not.toContain('PRIVATE');
+  } finally {
+    await rm(directory, {recursive: true, force: true});
+  }
+});

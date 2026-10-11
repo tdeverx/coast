@@ -11,7 +11,8 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --production
 
 FROM debian:bookworm-slim AS runtime
-ENV NODE_ENV=production COAST_DATA_DIR=/data HOST=0.0.0.0 PORT=3000 IDLE_TIMEOUT=60
+ARG COAST_BUILD_ID=unknown
+ENV NODE_ENV=production COAST_DATA_DIR=/data HOST=0.0.0.0 PORT=3000 IDLE_TIMEOUT=60 COAST_BUILD_ID=$COAST_BUILD_ID
 RUN mkdir -p /etc/postgresql-common && printf 'create_main_cluster = false\n' > /etc/postgresql-common/createcluster.conf \
     && apt-get update && apt-get install -y --no-install-recommends postgresql postgresql-client ca-certificates tini gosu \
     && rm -rf /var/lib/apt/lists/* \
@@ -24,6 +25,8 @@ COPY --from=build /app/drizzle ./drizzle
 COPY --from=build /app/src/lib/server/db ./src/lib/server/db
 COPY --from=build /app/src/lib/server/build-identity.ts ./src/lib/server/build-identity.ts
 COPY --from=build /app/scripts/migrate.ts ./scripts/migrate.ts
+COPY --from=build /app/scripts/runtime-audit.ts ./scripts/runtime-audit.ts
+COPY --from=build /app/scripts/container-postgres.ts ./scripts/container-postgres.ts
 COPY --from=build /app/scripts/container-child-exit.ts ./scripts/container-child-exit.ts
 COPY --from=build /app/scripts/container-application.ts ./scripts/container-application.ts
 COPY --from=build /app/package.json ./package.json

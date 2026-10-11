@@ -39,6 +39,8 @@ trap finish EXIT
 if [[ -z "${DATABASE_URL:-}" ]]; then
   pg_bin="$(find /usr/lib/postgresql -mindepth 2 -maxdepth 2 -type d -name bin | sort -V | tail -1)"
   if [[ -z "$pg_bin" ]]; then echo 'Bundled PostgreSQL was not found.' >&2; exit 1; fi
+  # Metadata only; audit failure must not interfere with startup.
+  export COAST_POSTGRES_VERSION="$("$pg_bin/postgres" --version 2>/dev/null || true)"
   pg_data="$data_dir/postgres"
   prepare_postgres_storage "$pg_data"
   password_file="$data_dir/secrets/database-password"
@@ -61,7 +63,7 @@ if [[ -z "${DATABASE_URL:-}" ]]; then
     gosu postgres "$pg_bin/initdb" -D "$pg_data" --username=postgres --encoding=UTF8 --locale=C.UTF-8 --auth-local=trust --auth-host=scram-sha-256 --pwfile="$init_password" > /dev/null
     rm -f "$init_password"
   fi
-  gosu postgres "$pg_bin/postgres" -D "$pg_data" -c listen_addresses=127.0.0.1 -c unix_socket_directories=/var/run/postgresql &
+  bun /app/scripts/container-postgres.ts "$data_dir" gosu postgres "$pg_bin/postgres" -D "$pg_data" -c listen_addresses=127.0.0.1 -c unix_socket_directories=/var/run/postgresql &
   database_pid=$!
   database_ready=false
   for attempt in {1..60}; do
