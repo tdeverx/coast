@@ -80,7 +80,17 @@ try {
   assert(observed!==0&&first.exitCode===observed&&['database','application'].includes(first.child),'first observed failure status was replaced');
   assert((await rows(deadDb.data,'database-events')).some(r=>r.kind==='database.exit'&&r.detail.exitCode===137),'DB137 evidence lost');
   const orphanStat=Bun.file('/proc/'+orphanedBackend+'/stat');
-  if(await orphanStat.exists()){const stat=await orphanStat.text();assert(['Z','X'].includes(stat.slice(stat.lastIndexOf(') ')+2).split(' ')[0]),'orphaned backend survived postmaster death cleanup');}
+  if(await orphanStat.exists()){
+    const stat=await orphanStat.text(), state=stat.slice(stat.lastIndexOf(') ')+2).split(' ')[0];
+    if(!['Z','X'].includes(state)) {
+      const link=Bun.spawn(['gosu','postgres','readlink','--','/proc/'+orphanedBackend+'/cwd'],{stdout:'pipe',stderr:'pipe'});
+      const [cwd,error,status]=await Promise.all([new Response(link.stdout).text(),new Response(link.stderr).text(),link.exited]);
+      const comm=(await Bun.file('/proc/'+orphanedBackend+'/comm').text()).trim();
+      console.error('fixture orphan metadata',JSON.stringify({state,comm,cwdReadable:status===0,cwdMatches:cwd.trim()===deadDb.data+'/postgres',readlinkStatus:status}));
+      console.error('fixture shutdown stages',JSON.stringify(await rows(deadDb.data,'shutdown-events')));
+    }
+    assert(['Z','X'].includes(state),'orphaned backend survived postmaster death cleanup');
+  }
   frozenPids=[];
   assert(otherPg.exitCode===null&&await sql('SELECT 1',otherSocket,'postgres','postgres')==='1','cleanup stopped an independent PostgreSQL cluster');
   otherPg.kill('SIGINT');await exit(otherPg,0);
