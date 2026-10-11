@@ -58,6 +58,43 @@ jobs:
         env:
           TEST_DATABASE_URL: postgres://postgres:coast_test@localhost:5432/postgres
 
+  container-smoke:
+    name: Disposable container lifecycle
+    if: github.event_name == 'pull_request'
+    needs: [verify, database]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build without publishing
+        run: docker build --build-arg COAST_BUILD_ID=${{ github.sha }} -t coast-pr-smoke .
+      - name: Verify startup, independent evidence and shutdown
+        run: |
+          set -euo pipefail
+          cleanup() {
+            docker logs coast-pr-smoke || true
+            docker rm -fv coast-pr-smoke || true
+          }
+          trap cleanup EXIT
+          docker run -d --name coast-pr-smoke coast-pr-smoke
+          for attempt in $(seq 1 60); do
+            health=$(docker inspect --format '{{.State.Health.Status}}' coast-pr-smoke)
+            if [ "$health" = healthy ]; then break; fi
+            sleep 2
+          done
+          test "$health" = healthy
+          docker exec coast-pr-smoke bun -e '
+            const read = name => Bun.file("/data/runtime/" + name + ".jsonl").text().then(text => text.trim().split("\n").map(JSON.parse));
+            const migrations = await read("migrations"), database = await read("database-events");
+            if (!migrations.some(row => row.kind === "migration.complete" && row.detail.appliedMigrationCount > 0 && row.detail.postgresVersion !== "unknown")) process.exit(1);
+            if (!database.some(row => row.kind === "database.ready")) process.exit(1);
+          '
+          docker stop --time 30 coast-pr-smoke
+          test "$(docker inspect --format '{{.State.OOMKilled}}' coast-pr-smoke)" = false
+          docker cp coast-pr-smoke:/data/runtime/database-events.jsonl "$RUNNER_TEMP/database-events.jsonl"
+          grep -q '"kind":"database.exit"' "$RUNNER_TEMP/database-events.jsonl"
+          grep -q '"code":"shutdown-complete"' "$RUNNER_TEMP/database-events.jsonl"
+
   image:
     name: Build ${{ matrix.arch }} image
     needs: [verify, database]
