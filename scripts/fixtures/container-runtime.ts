@@ -5,6 +5,19 @@ const pg='/usr/lib/postgresql/15/bin', base='http://127.0.0.1:3971';
 const children:Bun.Subprocess[]=[];
 let frozenPids:number[]=[];
 function assert(ok:unknown,reason:string):asserts ok {if(!ok)throw Error(reason);}
+function processState(pid:number):string|undefined {
+  try {
+    // procfs reports size zero. Use the filesystem reader rather than Bun.file
+    // sizing/caching behavior; empty metadata cannot prove a process survived.
+    const stat=readFileSync('/proc/'+pid+'/stat','utf8'), end=stat.lastIndexOf(') ');
+    const state=stat.slice(end+2).split(' ')[0];
+    assert(end>=0&&/^[A-Zt]$/.test(state),'fixture process-state metadata unreadable');
+    return state;
+  } catch(error) {
+    if(['ENOENT','ESRCH'].includes((error as NodeJS.ErrnoException).code||''))return;
+    throw error;
+  }
+}
 function spawn(args:string[],name:string,env:Record<string,string>={}) {
   const fd=openSync(directory+'/'+name+'.log','w',0o600);
   const child=Bun.spawn(args,{cwd:'/app',detached:true,env:{...process.env,...env},stdin:'ignore',stdout:fd,stderr:fd});
@@ -79,9 +92,9 @@ try {
   const first=(await rows(deadDb.data,'child-exits')).at(-1);
   assert(observed!==0&&first.exitCode===observed&&['database','application'].includes(first.child),'first observed failure status was replaced');
   assert((await rows(deadDb.data,'database-events')).some(r=>r.kind==='database.exit'&&r.detail.exitCode===137),'DB137 evidence lost');
-  const orphanStat=Bun.file('/proc/'+orphanedBackend+'/stat');
-  if(await orphanStat.exists()){
-    const stat=await orphanStat.text(), state=stat.slice(stat.lastIndexOf(') ')+2).split(' ')[0];
+  const orphanState=processState(orphanedBackend);
+  if(orphanState!==undefined){
+    const state=orphanState;
     if(!['Z','X'].includes(state)) {
       const link=Bun.spawn(['gosu','postgres','readlink','--','/proc/'+orphanedBackend+'/cwd'],{stdout:'pipe',stderr:'pipe'});
       const [cwd,error,status]=await Promise.all([new Response(link.stdout).text(),new Response(link.stderr).text(),link.exited]);
@@ -94,7 +107,7 @@ try {
   frozenPids=[];
   assert(otherPg.exitCode===null&&await sql('SELECT 1',otherSocket,'postgres','postgres')==='1','cleanup stopped an independent PostgreSQL cluster');
   otherPg.kill('SIGINT');await exit(otherPg,0);
-  console.log('dead database: DB137 retained, frozen orphan backend killed, independent cluster untouched, no healthy response');
+  console.log('dead database: DB137 retained, frozen orphan backend state='+ (orphanState||'absent')+', independent cluster untouched, no healthy response');
 
   const forced=start('forced-db',{COAST_SHUTDOWN_APP_SECONDS:'1',COAST_SHUTDOWN_DATABASE_SECONDS:'1',COAST_SHUTDOWN_IMMEDIATE_SECONDS:'1'});await ready(forced.child);
   await sql('CREATE TABLE coast_shutdown_fixture(id integer PRIMARY KEY); INSERT INTO coast_shutdown_fixture VALUES (1)');
@@ -106,7 +119,7 @@ try {
   const stages=await rows(forced.data,'shutdown-events');
   assert(stages.some(r=>r.detail.stage==='immediate'&&r.detail.child==='database'),'immediate escalation not recorded');
   assert(stages.some(r=>r.detail.stage==='kill'&&r.detail.child==='database'),'kill escalation not recorded');
-  for(const pid of frozenPids){const file=Bun.file('/proc/'+pid+'/stat');if(await file.exists()){const stat=await file.text();assert(['Z','X'].includes(stat.slice(stat.lastIndexOf(') ')+2).split(' ')[0]),'owned PostgreSQL descendant survived force');}}
+  for(const pid of frozenPids){const state=processState(pid);assert(state===undefined||['Z','X'].includes(state),'owned PostgreSQL descendant survived force');}
   frozenPids=[];
   const recovered=start('forced-db');await ready(recovered.child);assert(await sql('SELECT count(*) FROM coast_shutdown_fixture')==='1','committed marker did not survive crash recovery');await cleanStop(recovered);
   console.log('frozen PostgreSQL: bounded INT/QUIT/KILL, status143, fresh-cluster crash recovery retained committed marker');
