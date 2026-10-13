@@ -29,12 +29,16 @@ COPY --from=build /app/scripts/runtime-audit.ts ./scripts/runtime-audit.ts
 COPY --from=build /app/scripts/container-postgres.ts ./scripts/container-postgres.ts
 COPY --from=build /app/scripts/container-child-exit.ts ./scripts/container-child-exit.ts
 COPY --from=build /app/scripts/container-application.ts ./scripts/container-application.ts
+COPY --from=build /app/scripts/container-stderr.ts ./scripts/container-stderr.ts
+COPY --from=build /app/scripts/container-shutdown-event.ts ./scripts/container-shutdown-event.ts
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/LICENSE /app/NOTICE.md /app/THIRD_PARTY_NOTICES.md ./
 COPY scripts/container-entrypoint.sh /usr/local/bin/coast-entrypoint
 COPY scripts/container-storage.sh /usr/local/lib/coast-container-storage.sh
 COPY scripts/container-wait.sh /usr/local/lib/coast-container-wait.sh
-RUN chmod 755 /usr/local/bin/coast-entrypoint /usr/local/lib/coast-container-storage.sh /usr/local/lib/coast-container-wait.sh
+COPY scripts/container-shutdown.sh /usr/local/lib/coast-container-shutdown.sh
+RUN command -v setsid && command -v timeout \
+    && chmod 755 /usr/local/bin/coast-entrypoint /usr/local/lib/coast-container-storage.sh /usr/local/lib/coast-container-wait.sh /usr/local/lib/coast-container-shutdown.sh
 VOLUME ["/data"]
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 CMD bun -e 'const response = await fetch("http://127.0.0.1:3000/api/v1/health"); process.exit(response.ok ? 0 : 1)'

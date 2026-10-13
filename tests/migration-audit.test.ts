@@ -2,7 +2,13 @@ import {expect, test} from 'bun:test';
 import * as fs from 'node:fs/promises';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
-import {auditLimits, RuntimeAudit, migrationFingerprint} from '../scripts/runtime-audit';
+import {auditLimits, RuntimeAudit, migrationFingerprint, safeAuditFields} from '../scripts/runtime-audit';
+
+test('shutdown escalation accepts only fixed stage, child and signal values', () => {
+  expect(safeAuditFields({stage:'kill',child:'database',signal:'KILL',exitCode:143,sql:'PRIVATE',token:'PRIVATE'}))
+    .toEqual({stage:'kill',child:'database',signal:'KILL',exitCode:143});
+  expect(safeAuditFields({stage:'PRIVATE',child:'PRIVATE',signal:'PRIVATE'})).toEqual({});
+});
 
 test('migration audit retains only source checksums and closed runtime metadata outside PostgreSQL', async () => {
   const directory = await fs.mkdtemp(join(tmpdir(), 'coast-audit-'));

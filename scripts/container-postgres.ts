@@ -1,5 +1,6 @@
 import {writeSync} from 'node:fs';
 import {RuntimeAudit} from './runtime-audit';
+import {drainStderr} from './container-stderr';
 
 /** Project only known server lifecycle/error categories, never statement text. */
 export function databaseEvent(line: string) {
@@ -19,8 +20,12 @@ export async function runPostgres(directory: string, command: string[]) {
   const metadata = {bunVersion: Bun.version,
     postgresVersion: process.env.COAST_POSTGRES_VERSION?.match(/^postgres \(PostgreSQL\) (\d+\.\d+(?:\.\d+)?)/)?.[1] || 'unknown'};
   const child = Bun.spawn(command, {stdin: 'ignore', stdout: 'inherit', stderr: 'pipe'});
-  const terminate = () => child.kill('SIGTERM'), interrupt = () => child.kill('SIGINT');
+  let stopping: 'running' | 'fast' | 'immediate' = 'running';
+  const fastShutdown = () => { if (stopping === 'running') { stopping = 'fast'; child.kill('SIGINT'); } };
+  const immediateShutdown = () => { if (stopping !== 'immediate') { stopping = 'immediate'; child.kill('SIGQUIT'); } };
+  const terminate = fastShutdown, interrupt = fastShutdown;
   process.on('SIGTERM', terminate); process.on('SIGINT', interrupt);
+  process.on('SIGQUIT', immediateShutdown);
   void audit.write('database.start', {...metadata, pid: child.pid});
   const decoder = new TextDecoder();
   let buffer = '', oversized = false, failures = 0, window = performance.now();
@@ -33,11 +38,8 @@ export async function runPostgres(directory: string, command: string[]) {
     if (event.kind === 'database.failed' && failures++ >= 2) return;
     void audit.write(event.kind, {...metadata, pid: child.pid, code: event.code});
   };
-  const reader = child.stderr.getReader();
   try {
-    while (true) {
-      const {done, value: bytes} = await reader.read();
-      if (done) break;
+    const status = await drainStderr(child.stderr, child.exited, bytes => {
       // Console behavior is retained; only the independent audit is redacted.
       try {writeSync(2, bytes);} catch { /* Disconnected console. */ }
       const text = decoder.decode(bytes, {stream: true});
@@ -51,12 +53,11 @@ export async function runPostgres(directory: string, command: string[]) {
         if (next !== -1) {if (!oversized) record(buffer); buffer = ''; oversized = false;}
         offset = end + 1;
       }
-    }
+    });
     if (buffer && !oversized) record(buffer);
-    const status = await child.exited;
     await audit.write('database.exit', {...metadata, pid: child.pid, exitCode: status});
     return status;
-  } finally {reader.releaseLock(); process.off('SIGTERM', terminate); process.off('SIGINT', interrupt);}
+  } finally {process.off('SIGTERM', terminate); process.off('SIGINT', interrupt); process.off('SIGQUIT', immediateShutdown);}
 }
 
 if (import.meta.main) {

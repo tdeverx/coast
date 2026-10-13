@@ -230,8 +230,12 @@ function safeDiagnosticStage(error: unknown) {
 export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | null> {
   // Serialize claims, preserve mutable account ordering, and prioritize initial imports.
 
-  return getSql().begin(async (sql) => {
-  const priority=sql.unsafe(jobPrioritySql('candidate','connection'));
+  const database=getSql();
+  return database.begin(async (sql) => {
+  // These are lazy SQL fragments, not standalone transaction queries. Bun
+  // registers tx.unsafe() in its pending set and rejects the unawaited fragment
+  // on disconnect, even when the containing query/transaction is caught.
+  const priority=database.unsafe(jobPrioritySql('candidate','connection'));
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('queue-claim', 0))`;
     await sql`UPDATE outbox_actions SET state = 'pending', locked_at = NULL, next_attempt_at = NOW(), updated_at = NOW()
       WHERE state = 'running' AND locked_at < NOW() - INTERVAL '5 minutes'`;
@@ -242,8 +246,8 @@ export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | 
         LEFT JOIN provider_connections connection ON connection.id = candidate.connection_id
         LEFT JOIN provider_instances instance ON instance.id = connection.instance_id OR (candidate.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') AND candidate.kind like instance.provider||'.%' AND instance.id::text = candidate.payload->>'instanceId')
         WHERE candidate.state='pending' AND (${urgentOnly}=false OR ${priority}<3)
-          AND ${sql.unsafe(pendingEligibleSql('candidate','connection','instance'))}
-        ORDER BY ${sql.unsafe(agedPrioritySql('candidate','connection'))}, candidate.next_attempt_at, candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
+          AND ${database.unsafe(pendingEligibleSql('candidate','connection','instance'))}
+        ORDER BY ${database.unsafe(agedPrioritySql('candidate','connection'))}, candidate.next_attempt_at, candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
       ) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') AND kind like provider||'.%' AND id::text=payload->>'instanceId')) AS instance_id`;
     const initial = row && ['jellyfin.bootstrap','jellyfin.sync','trakt.import','trakt.lists-import','steam.sync'].includes(row.kind)
       ? (await sql`SELECT NOT EXISTS(SELECT 1 FROM outbox_actions WHERE connection_id=${row.connection_id} AND kind=${row.kind} AND account_generation IS NOT DISTINCT FROM ${row.account_generation}::uuid AND state='succeeded') AND NOT EXISTS(SELECT 1 FROM sync_checkpoints WHERE connection_id=${row.connection_id} AND kind=${'initial:'+row.kind+':'+row.account_generation} AND completed_at IS NOT NULL) AND (${row.kind}<>'jellyfin.sync' OR NOT EXISTS(SELECT 1 FROM sync_checkpoints WHERE connection_id=${row.connection_id} AND kind='jellyfin-personal' AND completed_at IS NOT NULL AND scan_id IS NULL)) AS first`)[0].first : false;

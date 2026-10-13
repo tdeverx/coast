@@ -66,6 +66,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
       - name: Build without publishing
         run: docker build --build-arg COAST_BUILD_ID=${{ github.sha }} -t coast-pr-smoke .
       - name: Verify startup, independent evidence and shutdown
@@ -73,9 +76,13 @@ jobs:
           set -euo pipefail
           cleanup() {
             docker logs coast-pr-smoke || true
+            docker rm -fv coast-lifecycle-test || true
             docker rm -fv coast-pr-smoke || true
           }
           trap cleanup EXIT
+          docker run -d --name coast-lifecycle-test --entrypoint sleep coast-pr-smoke 600
+          bun scripts/test-container-lifecycle.ts --docker coast-lifecycle-test
+          bun scripts/test-container-runtime.ts --docker coast-lifecycle-test
           docker run -d --name coast-pr-smoke coast-pr-smoke
           for attempt in $(seq 1 60); do
             health=$(docker inspect --format '{{.State.Health.Status}}' coast-pr-smoke)
