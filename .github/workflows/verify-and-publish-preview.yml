@@ -81,7 +81,8 @@ jobs:
             docker rm -fv coast-pr-smoke || true
           }
           trap cleanup EXIT
-          docker run -d --name coast-lifecycle-test --entrypoint sleep coast-pr-smoke 600
+          # Keep the production init/reaper while the fixture starts supervisors.
+          docker run -d --name coast-lifecycle-test --entrypoint /usr/bin/tini coast-pr-smoke -- sleep 600
           bun scripts/test-container-lifecycle.ts --docker coast-lifecycle-test
           bun scripts/test-container-runtime.ts --docker coast-lifecycle-test
           docker run -d --name coast-pr-smoke coast-pr-smoke
