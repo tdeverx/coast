@@ -1,5 +1,6 @@
 <script lang="ts">
  import {page} from '$app/state';
+ import {mediumOptions} from '$lib/experimental';
  import FriendRoster from './FriendRoster.svelte';
  import {onDestroy,untrack} from 'svelte';
  import Dialog from './Dialog.svelte';
@@ -79,12 +80,12 @@
  function headline(notice:NotificationEntry){
   if(notice.actor)return notice.actor.username;
   if(notice.sourceLabel)return notice.sourceLabel.split(' · ')[0];
-  return ({request:'Request',availability:'Library',sync:'Sync', 'external-action':'Connected service',administrator:'Coast',recommendation:'Recommendation',reaction:'Reaction','synced-invite':'Watch together','friend-accepted':'Friends'} as Record<string,string>)[notice.kind]??'Coast';
+  return ({request:'Request',availability:'Library',sync:'Sync', 'external-action':'Connected service',administrator:'Coast',recommendation:'Recommendation',reaction:'Reaction','synced-invite':'Party','friend-accepted':'Friends'} as Record<string,string>)[notice.kind]??'Coast';
  }
  function detail(notice:NotificationEntry){
   const event=notice.kind==='recommendation'?'Recommended this to you.':
    notice.kind==='reaction'?`Reacted${notice.reaction?' '+notice.reaction:''} to your activity.`:
-   notice.kind==='synced-invite'?'Invited you to watch together.':
+   notice.kind==='synced-invite'?'Invited you to a party.':
    notice.kind==='friend-accepted'?'Accepted your friend request.':
    notice.kind==='availability'?'A title on your watchlist is now available.':
    notice.kind==='request'?({pending:'Your request is pending.',approved:'Approved and being prepared.',available:'Your request is ready to watch.',declined:'Your request was declined.',failed:'Your request could not be completed.'} as Record<string,string>)[notice.requestState??'']??notice.title:notice.title;
@@ -101,7 +102,7 @@
 {#snippet inboxFilters()}<RowFilter label="Notification options" icon="filter" submenus groups={[
     {label:'Read status',value:criteria.unread?'unread':'all',options:[{value:'all',label:'All'},{value:'unread',label:'Unread'}],change:value=>criteria.unread=value==='unread'},
     {label:'Type',value:criteria.kind,options:[...notificationKinds],change:value=>criteria.kind=value},
-    {label:'Medium',value:criteria.category,options:[{value:'all',label:'All media'},{value:'screen',label:'Watching'},{value:'game',label:'Playing'},{value:'music',label:'Listening'}],change:value=>criteria.category=value as NotificationFilters['category']},
+    {label:'Medium',value:criteria.category,options:[{value:'all',label:'All media'},...mediumOptions(page.data)],change:value=>criteria.category=value as NotificationFilters['category']},
     {label:'Date',value:criteria.period,options:[{value:'all',label:'Any time'},{value:'week',label:'Past week'},{value:'month',label:'Past month'}],change:value=>criteria.period=value as NotificationFilters['period']}
    ]}>{#snippet actions()}<Button item icon="refresh" text="Refresh notifications" disabled={resource.busy||operation.busy} keepOpen={false} onclick={()=>void load()} /><Button item icon="check" text="Mark all as read" disabled={operation.busy||resource.busy||!resource.data.snapshot||!resource.data.unread} title="Mark all matching notifications as read" keepOpen={false} onclick={markAll}/>{/snippet}</RowFilter>{/snippet}
 

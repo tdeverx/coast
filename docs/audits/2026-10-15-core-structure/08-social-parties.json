@@ -1,0 +1,279 @@
+{
+  "section": "social-parties",
+  "coverage": {
+    "read": [
+      "docs/code-organization.md",
+      "docs/architecture.md",
+      "docs/performance.md",
+      "docs/social.md",
+      "docs/synced-experiences.md",
+      "src/lib/social/insights.server.ts",
+      "src/lib/social/live-freshness.server.ts",
+      "src/lib/social/model.ts",
+      "src/lib/social/presence.server.ts",
+      "src/lib/social/privacy.server.ts",
+      "src/lib/social/provider-live.server.ts",
+      "src/lib/social/public.server.ts",
+      "src/lib/social/queries.server.ts",
+      "src/lib/social/service.server.ts",
+      "src/lib/social/status.server.ts",
+      "src/lib/social/status.svelte.ts",
+      "src/lib/social/status.ts",
+      "src/lib/social/taste-cache.server.ts",
+      "src/lib/social/taste-profile.ts",
+      "src/lib/social/taste.ts",
+      "src/lib/social/trakt.server.ts",
+      "src/lib/social/work-features.server.ts",
+      "src/lib/notifications/model.ts",
+      "src/lib/server/notifications/inbox.ts",
+      "src/lib/server/notifications/index.ts",
+      "src/lib/playback/synced/model.ts",
+      "src/lib/playback/synced/client.svelte.ts",
+      "src/lib/playback/synced/service.server.ts",
+      "src/lib/ui/panels/friends.svelte.ts",
+      "src/lib/ui/panels/notifications.svelte.ts",
+      "src/lib/ui/panels/streams.svelte.ts",
+      "src/lib/ui/friends.svelte.ts",
+      "src/lib/ui/shelves/social.svelte.ts",
+      "src/lib/ui/resource.svelte.ts",
+      "src/lib/ui/content-revision.svelte.ts",
+      "src/lib/server/content-revision.server.ts",
+      "src/lib/ui/components/FriendRoster.svelte",
+      "src/lib/ui/components/FriendsPanel.svelte",
+      "src/lib/ui/components/PartyCard.svelte",
+      "src/lib/ui/components/PartyMenu.svelte",
+      "src/lib/ui/components/SyncedControls.svelte",
+      "src/lib/ui/components/NotificationInbox.svelte",
+      "src/lib/ui/components/NotificationToasts.svelte",
+      "src/lib/ui/components/RecommendAction.svelte",
+      "src/lib/ui/components/SocialControls.svelte",
+      "src/routes/profile/[username]/+page.server.ts",
+      "src/routes/profile/[username]/+page.svelte",
+      "src/routes/taste/[friendId]/+page.server.ts",
+      "src/routes/taste/[friendId]/+page.svelte",
+      "src/routes/synced/[id]/+page.server.ts",
+      "src/routes/synced/[id]/+page.svelte",
+      "src/lib/server/api/notifications.server.ts",
+      "drizzle/0025_social_notification_visibility.sql",
+      "drizzle/0038_split_experimental_features.sql",
+      "drizzle/0048_reading_sessions.sql",
+      "tests/social-db.test.ts",
+      "tests/notifications-db.test.ts",
+      "tests/synced-client.test.ts",
+      "tests/synced-playback.test.ts",
+      "tests/social-activity.test.ts",
+      "tests/social-status.test.ts",
+      "tests/provider-live-db.test.ts",
+      "tests/social-status-db.test.ts"
+    ],
+    "scanned": [
+      "docs/roadmap.md",
+      "src/lib/server/api/index.server.ts",
+      "src/routes/+layout.svelte",
+      "src/routes/+layout.server.ts",
+      "src/routes/settings/[[section]]/+page.svelte",
+      "src/routes/settings/[[section]]/+page.server.ts",
+      "src/lib/ui/components/ProfileEditor.svelte",
+      "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/ConnectionCard.svelte",
+      "src/lib/server/db/schema.ts",
+      "src/lib/core/tracking/service.server.ts",
+      "src/lib/playback/client.svelte.ts",
+      "src/lib/reading/client.svelte.ts",
+      "src/lib/reading/presentation.ts",
+      "src/lib/providers/connections.server.ts",
+      "src/lib/providers/trakt/connection.server.ts",
+      "src/lib/providers/tasks.ts",
+      "src/lib/server/queue/index.ts",
+      "src/lib/collection/query.server.ts",
+      "drizzle/0023_swift_the_captain.sql",
+      "drizzle/0028_careless_lady_mastermind.sql",
+      "tests/synced-onboarding-db.test.ts",
+      "tests/social-trakt-db.test.ts",
+      "tests/social.test.ts",
+      "tests/taste-profile.test.ts",
+      "tests/ui-social-enrichment.test.ts"
+    ],
+    "unverified": [
+      "No database suites, real accounts, live providers, browser, services, or application mutations were used.",
+      "Deadlock and music-progress findings are strong static traces with precise disposable-database reproductions, not executed database reproductions.",
+      "Friend-insights growth is established from query/payload/control flow; production latency, heap impact and query plans were not measured.",
+      "Normal playback/reading engines, public API contracts and full profile read models are reviewed by other audit sections; only direct integration points were inspected here.",
+      "Reading-host replacement and cross-profile private playlist-caption issues are cross-section duplicates supplied by the coordinator and are not counted as new SOCIAL findings.",
+      "Activity-feed hydration above 60 work IDs including parents is roadmap-known and is not counted as a new finding."
+    ]
+  },
+  "checks": [
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/social.test.ts tests/social-activity.test.ts tests/social-status.test.ts tests/synced-client.test.ts tests/synced-playback.test.ts tests/taste-profile.test.ts tests/ui-social-enrichment.test.ts",
+      "result": "31 passed, 0 failed, 153 assertions; no database tests enabled."
+    },
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun - (stdin fixture compiles current synced/client.svelte.ts with Svelte compiler and in-memory API/player/storage stubs)",
+      "result": "A heartbeat replacing unavailable-edition with available-edition on same-work called only synced/room/heartbeat. Room edition updated but unavailableMediaId remained same-work and playMedia was never called."
+    }
+  ],
+  "findings": [
+    {
+      "id": "SOCIAL-01",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "A failed party source stays unavailable after the host changes its edition",
+      "rootCause": "party-source-failure-cache-uses-only-work-id",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/lib/playback/synced/client.svelte.ts",
+          "line": 103,
+          "detail": "The next heartbeat reports unavailable solely from equality with unavailableMediaId, independent of source edition/duration/format."
+        },
+        {
+          "path": "src/lib/playback/synced/client.svelte.ts",
+          "line": 114,
+          "detail": "Source preparation is skipped whenever the next mediaId equals the previously failed mediaId."
+        },
+        {
+          "path": "src/lib/playback/synced/client.svelte.ts",
+          "line": 123,
+          "detail": "A failed source preparation records only next.mediaId."
+        }
+      ],
+      "trigger": "A joined guest cannot prepare edition A of work W. The host selects edition B (or another duration/reading format) of the same W that the guest could access.",
+      "impact": "The guest adopts the new room descriptor but never prepares the replacement source, keeps sending unavailable=true and can hold Pause together. Manual Retry/rejoin is required despite a new playable descriptor.",
+      "recommendation": "Remember the failed source descriptor (work, medium, edition, duration and reading format) and suppress retries only while that descriptor is unchanged; clear the failure when it changes. Preserve bounded automatic retries for an unchanged failure.",
+      "verification": "Extend the existing compiled synced-client fixture: fail preparation for W/A, deliver heartbeat W/B, assert one new source preparation and attachment; subsequent unchanged failed W/A polls must remain suppressed. Repeat for reading format/duration changes.",
+      "relatedAreas": [
+        "playback",
+        "reading",
+        "party buffering"
+      ]
+    },
+    {
+      "id": "SOCIAL-02",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Recommendation send and response lock the same rows in opposite orders",
+      "rootCause": "recommendation-friendship-row-lock-order-inversion",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/social/service.server.ts",
+          "line": 102,
+          "detail": "recommend locks the accepted friendship before inserting/updating the pending recommendation."
+        },
+        {
+          "path": "src/lib/social/service.server.ts",
+          "line": 105,
+          "detail": "ON CONFLICT DO UPDATE locks an existing pending recommendation row."
+        },
+        {
+          "path": "src/lib/social/service.server.ts",
+          "line": 114,
+          "detail": "respondRecommendation locks the recommendation first."
+        },
+        {
+          "path": "src/lib/social/service.server.ts",
+          "line": 116,
+          "detail": "The response then requests the friendship lock held first by recommend."
+        }
+      ],
+      "trigger": "A sender repeats a pending recommendation while its recipient saves or dismisses it: send holds friendship F, response holds recommendation R, then each waits for the other's row.",
+      "impact": "PostgreSQL detects a deadlock and aborts one valid user operation; the existing route/client does not transparently retry this database deadlock. Transactional rollback protects stored state but the user sees a failed send or response.",
+      "recommendation": "Use one lock order for both operations, preserving the friendship authorization lock. Read immutable recommendation identities as needed, then lock friendship before locking/rechecking the recommendation, or serialize both on the same narrowly scoped key.",
+      "verification": "In a disposable database, create a pending recommendation and use two transactions/barriers to force F-then-R against R-then-F. Verify no deadlock after the fix, one durable response, and concurrent friendship removal still prevents unauthorized delivery.",
+      "relatedAreas": [
+        "notifications",
+        "tracking save",
+        "friend removal"
+      ]
+    },
+    {
+      "id": "SOCIAL-03",
+      "priority": "P2",
+      "category": "performance",
+      "title": "The paged Taste page rebuilds and transfers both complete libraries",
+      "rootCause": "friend-insights-full-evidence-and-overlap-materialization",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/social/insights.server.ts",
+          "line": 8,
+          "detail": "The candidates query unions all relationship/history/progress evidence for both users, without a sample or page bound."
+        },
+        {
+          "path": "src/lib/social/insights.server.ts",
+          "line": 32,
+          "detail": "Metadata feature hydration receives every candidate ID, including evidence later discarded by the meaningful filter."
+        },
+        {
+          "path": "src/lib/social/insights.server.ts",
+          "line": 41,
+          "detail": "Progress comparisons perform b.find for each work; onlyFriend also performs a.some per work on line 42."
+        },
+        {
+          "path": "src/routes/taste/[friendId]/+page.server.ts",
+          "line": 17,
+          "detail": "Every page/filter load rebuilds the complete comparison."
+        },
+        {
+          "path": "src/routes/taste/[friendId]/+page.server.ts",
+          "line": 19,
+          "detail": "Only overlap card hydration is sliced to 60; the complete comparison with every overlap ID and comparison is returned on line 20."
+        }
+      ],
+      "trigger": "Two friends have large imported screen/music/game libraries, then open Taste & overlap or change a page/filter.",
+      "impact": "Database result size, feature hydration and response payload grow with both complete libraries; application overlap work additionally grows quadratically. The visible 60-card pagination does not bound this workload. No production latency threshold is claimed.",
+      "recommendation": "Use ID maps/sets for linear overlap matching, return exact counts plus only the requested overlap IDs/progress page, and bound the taste feature evidence using an explicit documented sampling policy compatible with the existing bounded taste-profile method. Keep exact aggregate totals separate from sampled scoring and retain every visibility predicate.",
+      "verification": "Disposable fixtures with increasing libraries should verify identical exact overlap counts, bounded returned IDs/progress/features, stable deterministic paging, explicit sparse/sampled taste semantics, and private-section/category exclusion. Measure query rows, response bytes and CPU separately.",
+      "relatedAreas": [
+        "taste ranking",
+        "profile pagination",
+        "server query performance"
+      ]
+    },
+    {
+      "id": "SOCIAL-04",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Saving a music relationship hides its actual progress in friend comparisons",
+      "rootCause": "friend-insights-prefers-screen-projection-zero-over-music-progress",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/social/insights.server.ts",
+          "line": 17,
+          "detail": "COALESCE prefers tracking_state.position_seconds over music_progress.position_seconds."
+        },
+        {
+          "path": "src/lib/server/db/schema.ts",
+          "line": 499,
+          "detail": "tracking_state.position_seconds is non-null with default zero, so an existing relationship projection never falls through to the music position."
+        },
+        {
+          "path": "src/lib/core/tracking/service.server.ts",
+          "line": 71,
+          "detail": "Canonical tracking creates the shared relationship projection with defaults."
+        },
+        {
+          "path": "src/lib/social/insights.server.ts",
+          "line": 31,
+          "detail": "The same precedence controls whether otherwise progress-only evidence survives the SQL predicate."
+        },
+        {
+          "path": "src/lib/social/insights.server.ts",
+          "line": 39,
+          "detail": "Active/planned statistics and progress comparisons use the incorrectly selected position."
+        }
+      ],
+      "trigger": "A music track has music_progress.position_seconds > 0 and no completed listen, and its owner collects/favourites/saves it, creating a tracking_state row with position_seconds=0.",
+      "impact": "Taste & overlap reports 0% instead of the concrete music position, counts the saved track as planned instead of active, or drops progress-only evidence when an empty projection already exists.",
+      "recommendation": "Choose progress from the concrete medium: music_progress for music, tracking_state for screen. Reuse that same expression in both SELECT and eligibility predicates and keep the progress visibility check.",
+      "verification": "Disposable social fixture: accepted friends with shared progress; track with music_progress 30/120 and tracking_state favourite=true, position_seconds=0, no music_listens. Assert 25% comparison and active=1; make progress private and verify the value is withheld. Also test an empty tracking projection.",
+      "relatedAreas": [
+        "music",
+        "shared tracking relationships",
+        "taste statistics"
+      ]
+    }
+  ]
+}

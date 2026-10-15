@@ -56,7 +56,7 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
   return { get page() { return {
     details: true, hero: !section, item: musicHero(item, get().connectionId), commands, sections, error: failure,
     back: section ? { href: path, label: item.title } : undefined,
-    links: [...artists.map(artist => ({ href: musicHref(get().connectionId, artist.id), label: artist.name })),
+    links: [...artists.flatMap(artist => artist.href || get().connectionId ? [{ href: artist.href ?? musicHref(get().connectionId, artist.id), label: artist.name }] : []),
       ...(item.albumId ? [{ href: musicHref(get().connectionId, item.albumId), label: item.album || 'Album' }] : [])],
   }; } };
 }

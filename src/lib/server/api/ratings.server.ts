@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { rateWithExports } from '$lib/sync/changes';
+import { rateWithExports } from '$lib/sync/changes.server';
 import { type ApiContext } from './context.server';
 
 export async function handleRatings(context: ApiContext): Promise<Response | undefined> {

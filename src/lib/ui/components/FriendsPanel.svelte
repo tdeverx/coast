@@ -11,7 +11,7 @@
  import {profilePath} from '$lib/profile/url';
  import SegmentedControl from './SegmentedControl.svelte';
  import PlaybackTimeline from './PlaybackTimeline.svelte';
- import {playbackArtwork} from '$lib/ui/artwork-priority';
+ import {playbackArtwork} from '$lib/media/artwork';
  import {timelinePosition} from '$lib/playback/synced/model';
  import type {MediaCardPresentation} from '$lib/ui/types';
  import {useClock} from '$lib/ui/clock.svelte';
@@ -30,13 +30,13 @@
  let segment=$state('accepted'),number=$state(1),username=$state(''),busy=$state(false),failure=$state('');
  const partyId=$derived(syncedPlayer.room?.id);
  async function inviteFriend(friendId:string){if(busy||syncedPlayer.busy)return;busy=true;failure='';try{if(!syncedPlayer.room)await startSynced();if(!syncedPlayer.room)throw new Error(syncedPlayer.notice||'Could not create a party.');await change(`synced/${syncedPlayer.room.id}/invite`,{friendId});segment='party';await loadParties();}catch(error){failure=message(error);}finally{busy=false;}}
- const parties=createResource<{id:string;createdAt:string;host:string;hostId:string;joined:boolean;mediaType:'audio'|'video';progress:number|null;durationSeconds:number;positionSeconds:number;paused:boolean;bufferingPaused:boolean;updatedAt:string;playingItem:MediaCardPresentation|null;backgroundArtwork?:string|null;nowPlaying:string|null;participants:{userId:string;username:string;avatar:string|null;joined:boolean}[];friend:FriendEntry|null}[]>([]);
+ const parties=createResource<{id:string;createdAt:string;host:string;hostId:string;joined:boolean;mediaType:'audio'|'video'|'reading';reading?:RoomState['reading'];progress:number|null;durationSeconds:number;positionSeconds:number;paused:boolean;bufferingPaused:boolean;updatedAt:string;playingItem:MediaCardPresentation|null;backgroundArtwork?:string|null;nowPlaying:string|null;participants:{userId:string;username:string;avatar:string|null;joined:boolean}[];friend:FriendEntry|null}[]>([]);
  async function loadParties(){await parties.load(signal=>api('synced',undefined,'GET',{signal}));}
- async function joinParty(id:string){failure='';beginPlaybackGesture(parties.data.find(room=>room.id===id)?.mediaType??'video');try{await joinSynced(await api<RoomState>(`synced/${id}`,undefined,'GET'));await loadParties();}catch(error){failure=message(error);}}
+ async function joinParty(id:string){failure='';const type=parties.data.find(room=>room.id===id)?.mediaType;if(type!=='reading')beginPlaybackGesture(type??'video');try{await joinSynced(await api<RoomState>(`synced/${id}`,undefined,'GET'));await loadParties();}catch(error){failure=message(error);}}
  $effect(()=>{if(open&&segment==='party'){partyId;void loadParties();}});
  const roster=createResource<FriendEntry[]>([]);
  let loadedKey=$state('');
- async function load(){const key=`${segment}:${number}`;const result=await roster.load(async signal=>{const [friends,activity]=await Promise.all([api<FriendEntry[]>(`social/friends?state=${segment}&page=${number}`,undefined,'GET',{signal}),api<{userId:string;title:string;href:string;category:string;artwork?:string;progress:number|null}[]>('social/checkins',undefined,'GET',{signal})]);return friends.map(friend=>{const current=activity.find(item=>item.userId===friend.userId);return {...friend,activity:current?{...current,label:current.category==='music'?'Listening':current.category==='game'?'Playing':'Watching'}:undefined};});});if(result)loadedKey=key;}
+ async function load(){const key=`${segment}:${number}`;const result=await roster.load(async signal=>{const [friends,activity]=await Promise.all([api<FriendEntry[]>(`social/friends?state=${segment}&page=${number}`,undefined,'GET',{signal}),api<{userId:string;title:string;href:string;category:string;artwork?:string;progress:number|null}[]>('social/checkins',undefined,'GET',{signal})]);return friends.map(friend=>{const current=activity.find(item=>item.userId===friend.userId);return {...friend,activity:current?{...current,label:current.category==='music'?'Listening':current.category==='game'?'Playing':['book','comic'].includes(current.category)?'Reading':'Watching'}:undefined};});});if(result)loadedKey=key;}
  $effect(()=>{if(open&&segment!=='party'){segment;number;void load();}});
  $effect(()=>{if(!open||preview)return;const timer=setInterval(()=>{if(document.visibilityState==='visible'&&!roster.busy&&!busy){if(segment==='party')void loadParties();else void load();}},30000);return()=>clearInterval(timer);});
  onDestroy(()=>{roster.cancel();parties.cancel();});
@@ -56,7 +56,7 @@
   <div class="party-list">
 
    {#each parties.data.filter(room=>room.id!==syncedPlayer.room?.id) as room (room.id)}
-    {#snippet partyFooter()}<PlaybackTimeline mediaId={room.playingItem?.id} href={room.playingItem?.href} audio={room.mediaType==='audio'} title={room.playingItem?.title??'Idle'} detail={room.playingItem?.captionSubtitle??''} artwork={room.playingItem?playbackArtwork(room.playingItem):undefined} current={room.playingItem?timelinePosition(room,clock.now):0} duration={room.playingItem?room.durationSeconds:0}/>{/snippet}
+    {#snippet partyFooter()}<PlaybackTimeline readingActive={room.mediaType==='reading'} reading={room.reading??null} mediaId={room.playingItem?.id} href={room.playingItem?.href} audio={room.mediaType==='audio'} title={room.playingItem?.title??'Idle'} detail={room.playingItem?.captionSubtitle??''} artwork={room.playingItem?playbackArtwork(room.playingItem):undefined} current={room.playingItem?timelinePosition(room,clock.now):0} duration={room.playingItem?room.durationSeconds:0}/>{/snippet}
     {#snippet inviteHeader()}<ActivityHeader username={room.host} avatar={room.participants.find(member=>member.userId===room.hostId)?.avatar}>{#snippet trailing()}<span aria-label="Party duration">{playbackTime(Math.max(0,(clock.now-Date.parse(room.createdAt))/1000))}</span>{/snippet}</ActivityHeader>{/snippet}
     <PartyCard header={room.joined?undefined:inviteHeader} footer={room.playingItem?partyFooter:undefined} members={room.joined?room.participants:[]} background={room.backgroundArtwork}>
 

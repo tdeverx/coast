@@ -20,7 +20,7 @@ Keep tokens in an application's secret store. Use HTTPS outside your trusted loc
 | `/library` | `library:read` | Library using the token owner's source permissions |
 | `/progress` | `progress:read` | Owner's filtered tracking views and current concrete activity |
 
-Collection accepts `level` (all/root), `category`, `kind`, `relationship`, `activity`, `availability`, `source`, and `page`, using the same filters/preferences as Coast. Library accepts `category` (all/screen/game/music), `kind`, `source` (connection UUID/all), and `page`. It reads persisted accessible works and their parents; it does not contact provider browsing endpoints or expose personal tracking filters. Progress accepts `view` (watching/up-next/next/recommendations/watchlist/favourites/finished/dropped), `category`, `kind`, `scope`, and `page`. Games and music obey the installation's experimental gate; unsupported views return a validation error. Future media categories do not yet have concrete read models.
+Catalogue and Collection also accept enabled experimental `book` and `comic` categories/kinds. Comic work DTOs include `attribution` with a label and source URL; clients displaying Comic Vine metadata must retain the source link. Collection accepts `level` (all/root), `category`, `kind`, `relationship`, `activity`, `availability`, `source`, and `page`, using the same filters/preferences as Coast. Library accepts `category` (all/screen/game/music/reading), `kind`, `source` (connection UUID/all), and `page`. It reads persisted accessible works and their parents; it does not contact provider browsing endpoints or expose personal tracking filters. Progress accepts `view` (watching/up-next/next/recommendations/watchlist/favourites/finished/dropped), `category`, `kind`, `scope`, and `page`. Games, music, books and comics obey their independent installation gates; unsupported views return a validation error. Progress supports `category=reading` with `kind=all/book/comic`; supported views expose the token owner’s `reading` object (state, current page, total pages and start/completion dates). Reading history is available at `GET /reading/{workId}/history?page=1` with `progress:read`, for the token owner only. File-reader sessions remain private browser operations.
 
 All lists return `items` and `pagination`: `page`, `pages`, `total`, `pageSize` (60), `next` and `previous` (relative URLs or null). Filters apply before pagination. Page inputs must be integers 1–10,000; pages beyond the current result are clamped to the final page. Catalogue ordering is stable by UUID. Pagination is a current-state read, not an immutable snapshot.
 
@@ -51,6 +51,7 @@ Every mutation requires its own permission, `Content-Type: application/json`, an
 | `POST /games/{gameId}/playthroughs` | `games:write` | Optional status planned/in-progress, platform, repeat |
 | `PATCH /playthroughs/{playthroughId}` | `games:write` | status and/or progressPercent 0–100 |
 | `POST /playthroughs/{playthroughId}/sessions` | `games:write` | UUID id, minutesPlayed 1–1440, past playedAt, optional owner-only note |
+| `PUT /reading/{workId}/progress` | `reading:write` | Optional state planned/reading/completed/paused/dropped, page, totalPages; restart with state reading and page 0 for an explicit reread |
 | `POST /webhooks` | `webhooks:manage` | url and events |
 | `DELETE /webhooks/{webhookId}` | `webhooks:manage` | No body |
 
@@ -60,7 +61,7 @@ The machine-readable description is available at `/api/public/v1/openapi.json`.
 
 ## Webhooks
 
-`GET /webhooks` lists your subscriptions without their signing secrets. Subscribe to `tracking.changed`, `relationship.changed`, `rating.changed`, `music.listened`, and `game.changed`. Creation returns a random signing secret once (an idempotent replay returns the same secret). Up to ten enabled subscriptions per account are allowed. Endpoints must use public HTTPS on port 443, without credentials, query or fragment. Every delivery rechecks DNS/network policy; redirects and restricted addresses are rejected.
+`GET /webhooks` lists your subscriptions without their signing secrets. Subscribe to `tracking.changed`, `relationship.changed`, `rating.changed`, `music.listened`, `game.changed`, and `reading.changed`. Creation returns a random signing secret once (an idempotent replay returns the same secret). Up to ten enabled subscriptions per account are allowed. Endpoints must use public HTTPS on port 443, without credentials, query or fragment. Every delivery rechecks DNS/network policy; redirects and restricted addresses are rejected.
 
 Changes and delivery intents commit together. The existing outbox retries independently of provider synchronization. Delivery is at least once: deduplicate the envelope's `id`. Each body has `id`, `type`, `occurredAt` and a small `data` object with relevant work/activity IDs and state. Private notes, provider credentials and unrelated account data are excluded. Imported events use their concrete domain change path; the envelope date is the emission time, not an invented historical watch date.
 

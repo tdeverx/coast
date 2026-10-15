@@ -1,6 +1,6 @@
 import { provisioningOffer,provisionOnboarding } from '$lib/providers/jellyfin/provisioning.server';
 import {profileAvatarChoices} from '$lib/core/profile/avatars.server';
-import {updateProfile} from '$lib/core/profile/service';
+import {updateProfile} from '$lib/core/profile/service.server';
 import {fail,redirect,isRedirect} from '@sveltejs/kit';
 import {requireUser} from '$lib/server/auth';
 import {onboardingPending,onboardingServices,onboardingTraktServices,onboardingStatus,linkOnboarding,retryInitialImports,startOnboardingTrakt,pollOnboardingTrakt,beginOnboardingImports} from '$lib/server/auth/onboarding';

@@ -13,6 +13,18 @@ import { safeFields } from '../src/lib/diagnostics';
 import { retryDelayMs } from '../src/lib/server/queue';
 
 describe('provider network boundary', () => {
+  test('buffered provider responses cannot extend the total deadline by dripping chunks',async()=>{
+    const original=globalThis.fetch;let cancelled=false,timer:ReturnType<typeof setInterval>|undefined;
+    try{
+      globalThis.fetch=Object.assign(async()=>new Response(new ReadableStream<Uint8Array>({
+        start(output){timer=setInterval(()=>output.enqueue(new Uint8Array([1])),5);},
+        cancel(){cancelled=true;clearInterval(timer);}
+      })),{preconnect:original.preconnect});
+      await expect(secureProviderFetch({baseUrl:'https://1.1.1.1',approved:true,timeoutMs:30},'/drip')).rejects.toMatchObject({name:'TimeoutError'});
+      expect(cancelled).toBe(true);
+    }finally{clearInterval(timer);globalThis.fetch=original;}
+  });
+
   test('header and body timeouts stay distinct from caller cancellation',async()=>{
     const original=globalThis.fetch;
     const config={baseUrl:'https://1.1.1.1',approved:true,timeoutMs:20};

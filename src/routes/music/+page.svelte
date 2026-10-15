@@ -64,7 +64,7 @@
       </p>
     </div>
     <div class="grid">
-      {#each data.items as item (item.href)}<MediaCard {item} shape="square" />{/each}
+      {#each data.items as item (item.entryId ?? item.href)}<MediaCard {item} shape="square" />{/each}
     </div>
     <Pagination page={data.page} pages={data.pages} {pageUrl} label="Music pages" />
   {:else if !data.failure}

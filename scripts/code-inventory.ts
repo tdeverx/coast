@@ -14,6 +14,10 @@ for(const file of files) {
  const raw=await Bun.file(file).text();
  const text=file.endsWith('.svelte')?[...raw.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)].map(match=>match[1]).join('\n'):raw;
  const imports=ts.preProcessFile(text,true,true).importedFiles.map(imported=>modulePath(imported.fileName,resolve(file))).filter((path):path is string=>!!path);
+ // Vite resolves worker URLs as runtime module edges, without an import statement.
+ for(const match of text.matchAll(/new URL\(['"]([^'"]+)['"],\s*import\.meta\.url\)/g)){
+  const worker=modulePath(match[1],resolve(file));if(worker)imports.push(worker);
+ }
  // A literal glob is a runtime registration edge, not a conventional import.
  for(const match of text.matchAll(/import\.meta\.glob(?:<[\s\S]*?>)?\(['"]([^'"]+)['"]/g)) {
   const prefix=match[1].split('*')[0];

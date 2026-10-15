@@ -1,0 +1,107 @@
+{
+  "section": "Music/gaming audit fixes",
+  "date": "2026-10-15",
+  "status": "Implemented; root reports first focused disposable Steam/music persistence pass succeeded; final integrated gates and browser verification remain with root",
+  "schema": {
+    "migration": "drizzle/0052_music_editions_and_steam_apps.sql",
+    "changes": [
+      "music_works.selected_edition_id nullable FK to work_editions(id), ON DELETE SET NULL",
+      "work_editions.metadata stores albumExternalId, position, discNumber and trackNumber for exact provider occurrences",
+      "game_account_state.app_id required; primary key(account_id,app_id), canonical game_id retained",
+      "game_achievements.app_id required; unique(game_id,provider,app_id,external_id)",
+      "Indexed normalized GUID lookup for music artists/provider items/work editions and indexed release membership"
+    ],
+    "backfill": [
+      "Track occurrence metadata backfilled from a deterministic latest provider snapshot per instance/normalized item/work.",
+      "Existing albums select a deterministic instance/provider release when exact membership is known; native/unattributable album relationships remain explicit native membership until a provider release is selected.",
+      "Selected release's deduplicated recording projection replaces unioned provider-release relationships; ordered occurrence rows remain in work_editions.",
+      "Existing single-AppID imported observations retain totals/schema/progress and gain that exact AppID.",
+      "Per explicit user choice, old account/game imported totals and Steam achievement definitions/progress are discarded when zero or multiple Steam identities prevent exact attribution.",
+      "Affected steam-user checkpoints and retained job snapshots/cursors are invalidated. No live tasks are invoked; normal authoritative jobs repopulate exact AppID observations.",
+      "Manual game playthroughs/sessions, Collection choices and music listen history are untouched. Prior availability suppresses accidental re-collection during resync."
+    ],
+    "metadata": "Root owns final Drizzle journal/snapshot generation; this agent did not edit migration metadata."
+  },
+  "findings": [
+    {
+      "id": "MEDIUM-01",
+      "status": "implemented",
+      "changes": "One stable selected release supplies canonical album detail/queue/log membership. Track editions remain occurrence identities, including repeated recordings. Collection keeps a deduplicated selected-release graph, counts exact occurrences for completeness and accepts only selected-edition membership proofs. Album listens use retry-safe occurrence sub-batches under the original frozen request batch."
+    },
+    {
+      "id": "MEDIUM-02",
+      "status": "implemented",
+      "changes": "Music item/album/artist GUIDs normalize at the Jellyfin mapper and persistence boundaries. Indexed equivalence lookups preserve existing stored mapping/artist/edition UUIDs. Pre-existing mappings of one GUID to conflicting canonical works reject with 409 for review instead of silently merging private histories."
+    },
+    {
+      "id": "MEDIUM-03",
+      "status": "implemented",
+      "changes": "Source cards use connection/item entryId; canonical release occurrences retain edition entryId; Music grid uses that key and shared Shelf already honors it."
+    },
+    {
+      "id": "MEDIUM-04",
+      "status": "implemented",
+      "changes": "Ownership totals, stat eligibility, achievement schema cache and progress are AppID scoped. Canonical detail presentation sums exact app totals and counts only schemas for the account's observed apps. Ambiguous old aggregates follow the explicit discard/resync migration choice."
+    },
+    {
+      "id": "MEDIUM-05",
+      "status": "implemented",
+      "changes": "Canonical detail hydrates persisted role-specific credits. Artist links use only the viewer's enabled owned Jellyfin connection; disconnected/public viewers retain credit text without invalid canonical artist links. Album-only credit names also persist as subtitle fallback."
+    },
+    {
+      "id": "MEDIUM-06",
+      "status": "implemented",
+      "changes": "A full root IGDB refresh clears a removed provider-owned parent relation in the import transaction. Embedded parent snapshots do not revoke the parent's own relation because those snapshots omit ancestor fields."
+    }
+  ],
+  "changedFiles": [
+    "drizzle/0052_music_editions_and_steam_apps.sql",
+    "src/lib/server/db/schema.ts",
+    "src/lib/music/model.ts",
+    "src/lib/music/presentation.ts",
+    "src/lib/music/persistence.server.ts",
+    "src/lib/music/service.server.ts",
+    "src/lib/music/queue.server.ts",
+    "src/lib/music/editions.server.ts",
+    "src/lib/music/credits.server.ts",
+    "src/lib/providers/jellyfin/music.server.ts",
+    "src/lib/providers/steam/sync.server.ts",
+    "src/lib/core/games/service.server.ts",
+    "src/lib/collection/query.server.ts",
+    "src/lib/ui/pages/music.svelte.ts",
+    "src/routes/music/+page.svelte",
+    "src/routes/music/work/[id]/+page.server.ts",
+    "tests/music-presentation.test.ts",
+    "tests/jellyfin-music.test.ts",
+    "tests/jellyfin-music-persistence-db.test.ts",
+    "tests/steam-db.test.ts",
+    "tests/taste-cache-db.test.ts",
+    "tests/benchmarks-db.test.ts",
+    "docs/music.md"
+  ],
+  "checks": [
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/igdb.test.ts tests/steam.test.ts tests/games.test.ts tests/jellyfin-music.test.ts tests/music-presentation.test.ts tests/provider-contracts.test.ts tests/task-timing.test.ts",
+      "result": "75 passed, 0 failed, 365 assertions after new GUID/card regressions."
+    },
+    {
+      "command": "env -u TEST_DATABASE_URL -u COAST_DB_TEST PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/jellyfin-music-persistence-db.test.ts tests/steam-db.test.ts tests/taste-cache-db.test.ts tests/collection-db.test.ts",
+      "result": "49 skipped, 0 failed; imports/transpilation succeed with DB disabled. This does not validate DB behavior."
+    },
+    {
+      "command": "Compile collectionCTE and musicAlbumMembersSql through PgDialect without executing SQL",
+      "result": "SQL generated; parameter binding and parentheses balance checked. Not a PostgreSQL execution/syntax/plan test."
+    },
+    {
+      "command": "git diff --check over owned changed tracked files",
+      "result": "Passed."
+    }
+  ],
+  "pendingVerification": [
+    "Root sequential typecheck/build and migration journal/snapshot generation.",
+    "Disposable PostgreSQL migration test: pre-0052 single-AppID plus dual-AppID account/schema/progress fixtures; assert single values survive, ambiguous imported data/cursors are removed and dated manual sessions/Collection remain.",
+    "Run focused DB regressions for selected standard/deluxe order, repeated recordings, wrong-release completeness evidence, album batch retry counts, normalized old GUID mappings, viewer-scoped artist links, dual-owned Steam aliases/reversed response order and nested/full removed parent cases.",
+    "Render Music grid/shared Shelf with canonical copies and repeated release occurrences to confirm no duplicate-key errors and unchanged visual design.",
+    "No live APIs, credentials, databases or services were used by this agent."
+  ]
+}

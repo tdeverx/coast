@@ -1,6 +1,7 @@
 <script lang="ts">
   import {apiScopes,apiScopeLabels,type ApiScope} from '$lib/public-api';
   import { collectionCategories, collectionRules } from '$lib/collection/preferences';
+  import { categoryEnabled } from '$lib/experimental';
   import {audiences,socialSections,socialCategories,type Audience} from '$lib/social/model';
   import {
     personalSettings as links,
@@ -59,6 +60,8 @@
     disabled: boolean;
     password: string;
     allowPlaybackSharing: boolean;
+    personalBitrateMbps: number;
+    sharedBitrateMbps: number;
   } | null>(null);
   let initializedSection = untrack(() => data.section);
   const fields = $derived(
@@ -223,10 +226,10 @@
       {#if data.section === 'collection'}
         <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}>
         <p class="small">Explicitly collected items always stay in Collection. These rules only control automatic membership.</p>
-        {#each collectionCategories as category}
+        {#each collectionCategories.filter(category=>categoryEnabled(data,category.value)) as category}
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">{category.label}</legend><h3>{category.label}</h3>
-            {#each collectionRules as rule}
+            {#each collectionRules.filter(rule=>!['book','comic'].includes(category.value)||rule.value!=='queue') as rule}
               <label class="check"><input type="checkbox" bind:checked={prefs.collection[category.value][rule.value]} />{rule.label}</label>
             {/each}
           </fieldset>
@@ -238,7 +241,7 @@
   <label class="field">Profile audience<select bind:value={prefs.social.audience}>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>
   <p class="small">A private profile is hidden from everyone else. Other sections can have their own audience.</p>
   {#each socialSections as section}<label class="field">{section}<select value={prefs.social.sections?.[section]??'default'} onchange={event=>{const value=event.currentTarget.value;prefs.social={...prefs.social,sections:{...prefs.social.sections,[section]:value==='default'?undefined:value as Audience}};}}><option value="default">Use profile audience</option>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>{/each}
-  {#each socialCategories as category}<label class="field">{category} sharing<select value={prefs.social.categories?.[category]??'public'} onchange={event=>{prefs.social={...prefs.social,categories:{...prefs.social.categories,[category]:event.currentTarget.value as Audience}};}}>{#each audiences as audience}<option value={audience}>{audience==='public'?'Use section audience':audience}</option>{/each}</select></label>{/each}
+  {#each socialCategories.filter(category=>categoryEnabled(data,category)) as category}<label class="field">{category} sharing<select value={prefs.social.categories?.[category]??'public'} onchange={event=>{prefs.social={...prefs.social,categories:{...prefs.social.categories,[category]:event.currentTarget.value as Audience}};}}>{#each audiences as audience}<option value={audience}>{audience==='public'?'Use section audience':audience}</option>{/each}</select></label>{/each}
   <Heading title="Social notifications" />
   {#each ['friend-accepted','recommendation','reaction','synced-invite'] as const as kind}<label class="check"><input type="checkbox" checked={prefs.social.notifications?.[kind]!==false} onchange={event=>{prefs.social={...prefs.social,notifications:{...prefs.social.notifications,[kind]:event.currentTarget.checked}};}} />{kind==='synced-invite'?'Synced session invitations':kind}</label>{/each}
   <p class="small">Incoming friend requests appear in Friends.</p>
@@ -377,7 +380,7 @@
           </p>
           {@render saveControls('Save playback preferences')}
         </form>
-        {#if data.playbackLinks.length}<div class="stack form-width"><Heading title="Playback invitations"/>{#each data.playbackLinks as link}<div class="panel spread"><div><a href={`/share?id=${link.id}`}>Open invitation</a><p class="small muted">{link.revokedAt?'Revoked':new Date(link.expiresAt)<=new Date()?'Expired':link.claimedAt?'Claimed':'Available'} · {link.together?'Together':'Single item'} · {new Date(link.expiresAt).toLocaleString()}</p></div><Button disabled={busy||!!link.revokedAt} onclick={async()=>{if(busy)return;busy=true;try{await change(`sharing/${link.id}`,undefined,'DELETE');await invalidate('coast:settings');}catch(cause){error=message(cause);}finally{busy=false;}}}>Revoke</Button></div>{/each}</div>{/if}
+        {#if data.playbackLinks.length}<div class="stack form-width"><Heading title="Playback invitations"/>{#each data.playbackLinks as link}<div class="panel spread"><div><a href={`/share?id=${link.id}`}>Open invitation</a><p class="small muted">{link.revokedAt?'Revoked':new Date(link.expiresAt)<=new Date()?'Expired':link.claimedAt?'Opened':'Available'} · {link.together?'Together':'Single item'} · {new Date(link.expiresAt).toLocaleString()}</p></div><Button disabled={busy||!!link.revokedAt} onclick={async()=>{if(busy)return;busy=true;try{await change(`sharing/${link.id}`,undefined,'DELETE');await invalidate('coast:settings');}catch(cause){error=message(cause);}finally{busy=false;}}}>Revoke</Button></div>{/each}</div>{/if}
       {:else if data.section === 'api'}<div class="stack form-width">
         <form class="panel stack" onsubmit={async event=>{
           event.preventDefault();if(busy)return;busy=true;error='';apiToken='';
@@ -668,6 +671,7 @@
       {:else if data.section === 'integrations'}<IntegrationSettings
           providers={data.providers}
           experimentalGaming={data.config?.experimentalGaming ?? false}
+          experimentalComics={data.config?.experimentalComics ?? false}
         />
       {:else if data.section === 'users'}<div class="stack">
           <div class="overflow">
@@ -710,6 +714,8 @@
                             disabled: user.disabled,
                             password: '',
                             allowPlaybackSharing: user.settings.allowPlaybackSharing === true,
+                            personalBitrateMbps: user.settings.personalBitrateMbps ?? data.config?.maxBitrateMbps ?? 120,
+                            sharedBitrateMbps: user.settings.sharedBitrateMbps ?? 20,
                           };
                         }}>Edit</Button
                       >{#if user.id !== page.data.user?.id}<Button
@@ -801,7 +807,7 @@
             <label class="field">Website access<select bind:value={policy.siteAccess}><option value="private">Private · sign-in required</option><option value="public-profiles">Private site · public profiles only</option><option value="public-read-only">Public read-only · profiles, Discover and media details</option></select><small>Public profiles respect each user’s privacy settings.</small></label>
             <label class="field">Registration<select bind:value={policy.registrationMode}><option value="invite">Invite code required</option><option value="open">Open sign-ups</option></select></label>
             <label class="field">Required connection<select bind:value={policy.registrationProvider}><option value="jellyfin">Jellyfin</option><option value="trakt">Trakt</option><option value="either">Jellyfin or Trakt</option><option value="none">None</option></select><small>New accounts complete their selected imports before entering Coast. Manage providers in Integrations.</small></label>
-            <div class="setting"><div><h3>Disposable playback links</h3><p>Administrators can share one accessible item. Other accounts require a sharing grant.</p></div><input type="checkbox" aria-label="Disposable playback links" bind:checked={policy.allowPlaybackSharing}/></div>
+            <div class="setting"><div><h3>Playback sharing</h3><p>Administrators can share one accessible item. Other accounts require a sharing grant.</p></div><input type="checkbox" aria-label="Playback sharing" bind:checked={policy.allowPlaybackSharing}/></div>
           </fieldset>
           <fieldset class="panel stack" id="features" disabled={busy}>
             <legend class="sr-only">Experimental features</legend>
@@ -1048,11 +1054,11 @@
       onsubmit={async (event) => {
         event.preventDefault();
         if (!editing) return;
-        const { email, role, disabled, password, id, allowPlaybackSharing } = editing;
+        const { email, role, disabled, password, id, allowPlaybackSharing, personalBitrateMbps, sharedBitrateMbps } = editing;
         if (
           await save(
             `admin/users/${id}`,
-            { email, role, disabled, allowPlaybackSharing, ...(password ? { password } : {}) },
+            { email, role, disabled, allowPlaybackSharing, personalBitrateMbps, sharedBitrateMbps, ...(password ? { password } : {}) },
             'Account updated.',
             'PATCH'
           )
@@ -1081,7 +1087,9 @@
           disabled={busy || editing.id === page.data.user?.id}
         />Disable Coast account</label
       >
-      <label class="check"><input type="checkbox" bind:checked={editing.allowPlaybackSharing} disabled={busy}/>Allow disposable playback sharing</label>
+      <label class="check"><input type="checkbox" bind:checked={editing.allowPlaybackSharing} disabled={busy}/>Allow playback sharing</label>
+      <label class="field">Personal stream limit (Mbps)<input type="number" min="1" max="1000" bind:value={editing.personalBitrateMbps} disabled={busy}/></label>
+      <label class="field">Shared links budget (Mbps)<input type="number" min="1" max="1000" bind:value={editing.sharedBitrateMbps} disabled={busy}/><small>Shared across this account’s active link viewers. The server limit also applies; headroom is reserved for transport and bitrate bursts.</small></label>
       <p class="small">
         Role, access and password changes sign this account out on every device. Jellyfin role sync
         applies again at its next Jellyfin sign-in.

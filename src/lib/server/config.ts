@@ -2,12 +2,16 @@ import * as v from 'valibot';
 import { diagnosticLevels } from '../diagnostics';
 import { diagnosticStore } from './diagnostics';
 import { getSql } from './db';
+import type { Database } from './db';
+import { sql } from 'drizzle-orm';
 
 export const configSchema = v.object({
   developerMode: v.optional(v.boolean(),false),
   siteAccess: v.optional(v.picklist(['private','public-profiles','public-read-only']),'private'),
   experimentalMusic: v.optional(v.boolean(),false),
   experimentalGaming: v.optional(v.boolean(),false),
+  experimentalBooks: v.optional(v.boolean(),false),
+  experimentalComics: v.optional(v.boolean(),false),
   experimentalParties: v.optional(v.boolean(),false),
   experimentalPlanning: v.optional(v.boolean(),false),
   experimentalMediaModal: v.optional(v.boolean(),false),
@@ -37,6 +41,7 @@ export const defaultConfig: CoastConfig = {
   developerMode:false,
   siteAccess:'private',
   experimentalMusic: false, experimentalGaming: false, experimentalParties: false,
+  experimentalBooks: false, experimentalComics: false,
   experimentalPlanning:false, experimentalMediaModal:false,
   allowPlaybackSharing:false,
   registrationMode: 'invite',
@@ -60,8 +65,11 @@ export const defaultConfig: CoastConfig = {
   enableRequests: true,
 };
 
-export async function getConfig(database = getSql()): Promise<CoastConfig> {
-  const [row] = await database`SELECT value FROM system_settings WHERE key = 'coast'`;
+export async function getConfig(database: ReturnType<typeof getSql> | Pick<Database, 'execute'> = getSql()): Promise<CoastConfig> {
+  // Transactional callers must not acquire another pool connection while holding locks.
+  const [row] = 'execute' in database
+    ? await database.execute<{ value: Partial<CoastConfig> | null }>(sql`SELECT value FROM system_settings WHERE key = 'coast'`)
+    : await database`SELECT value FROM system_settings WHERE key = 'coast'`;
   const config = v.parse(configSchema, { ...defaultConfig, ...(row?.value || {}) });
   return config;
 }

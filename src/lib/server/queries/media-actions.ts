@@ -1,6 +1,7 @@
-import { historyScope } from '../../core/tracking/history-scope';
-import { wholeWorkId } from '../../core/tracking/continue';
-import { rewatchFields } from '../../core/tracking/rewatch';
+import { effectiveReleaseDate } from '$lib/catalogue/metadata/release-date.server';
+import { historyScope } from '../../core/tracking/history-scope.server';
+import { wholeWorkId } from '../../core/tracking/continue.server';
+import { rewatchFields } from '../../core/tracking/rewatch.server';
 import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
@@ -19,10 +20,11 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
   const db = getDb();
   const [item] = await mediaViewsForIds(userId, [mediaId]);
   if (!item) throw new AppError(404, 'This title was not found.');
+  const config = await getConfig();
   const wholeId = await wholeWorkId(db, mediaId);
   const [wholeWork] = wholeId === mediaId ? [item] : await mediaViewsForIds(userId, [wholeId]);
   const [dated] = await db
-    .select({ releaseDate: s.media.releaseDate })
+    .select({ releaseDate: effectiveReleaseDate(sql`${s.media.id}`, config.metadataSource) })
     .from(s.media)
     .where(eq(s.media.id, mediaId));
   const hasReleaseDate = ['show', 'season', 'collection'].includes(item.kind)
@@ -32,7 +34,7 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
           select media_id id from episodes where (show_id=parent.id and not is_special) or season_id=parent.id
           union select child_id from media_relationships where parent_id=parent.id and kind in ('collection','franchise')
         ) edge on true
-      ) select 1 from media where id in (select id from scope) and kind in ('movie','episode') and release_date <= (now() at time zone 'UTC')::date limit 1`)
+      ) select 1 from media where id in (select id from scope) and kind in ('movie','episode') and ${effectiveReleaseDate(sql`media.id`,config.metadataSource)} <= (now() at time zone 'UTC')::date limit 1`)
       ).length > 0
     : !!dated?.releaseDate && dated.releaseDate <= new Date().toISOString().slice(0, 10);
   const children =
@@ -76,8 +78,7 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
       (target) => target?.tmdbId && ['show', 'movie', 'collection'].includes(target.kind)
     ) ?? null;
   const playable = item.available ? await nextPlayable(userId, item) : null;
-  const [config, seerr] = await Promise.all([
-    getConfig(),
+  const [seerr] = await Promise.all([
     db
       .select({ id: s.providerInstances.id })
       .from(s.providerInstances)

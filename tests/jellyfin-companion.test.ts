@@ -9,8 +9,9 @@ const epoch='a'.repeat(32),item='b'.repeat(32),user='c'.repeat(32),now=Date.pars
 const page=(patch:Partial<CompanionPage>={}):CompanionPage=>({protocol:1,serverId:'server',epoch,cursor:1,reset:false,more:false,changes:[],sessions:[],...patch});
 const change=(Sequence:number,Kind:CompanionPage['changes'][number]['Kind'],ItemType='Movie')=>({Sequence,Kind,ItemId:item,UserId:user,ItemType});
 test('native plugin contract strips credentials and paths from sessions',()=>{
- const parsed=v.parse(companionPageSchema,page({sessions:[{Id:'session',UserId:user,NowPlayingItem:{Id:item,Name:'Movie'},PlayState:{IsPaused:false},...{AccessToken:'secret',RemoteEndPoint:'private'}}]}));
+ const parsed=v.parse(companionPageSchema,page({sessions:[{Id:'session',UserId:user,DeviceId:'coast-viewer',NowPlayingItem:{Id:item,Name:'Movie'},PlayState:{IsPaused:false},...{AccessToken:'secret',RemoteEndPoint:'private'}}]}));
  expect(JSON.stringify(parsed)).not.toContain('secret');expect(JSON.stringify(parsed)).not.toContain('private');
+ expect(parsed.sessions[0].DeviceId).toBe('coast-viewer');
  expect(()=>v.parse(companionPageSchema,page({protocol:2 as 1}))).toThrow();
 });
 test('cursor ordering, identity and partial batches are validated before acknowledgement',()=>{

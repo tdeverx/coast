@@ -1,0 +1,90 @@
+# Jobs and synchronization implementation handoff
+
+Status: implemented, awaiting root's combined verification. No finding is marked database/runtime verified by this handoff.
+
+## JOBS-01
+
+- Both queued Seerr handlers now require and pass the queued connectionId/accountGeneration to getSeerr, preventing account establishment/remapping while the worker owns its lane.
+- Moved the existing delivery handlers into provider-owned requests.server.ts with a fixture account resolver argument; action registration remains in actions.server.ts.
+
+Verification:
+
+- tests/seerr-delivery-db.test.ts: queued identity contract and changed-mapping rejection; not executed against a DB.
+
+## JOBS-02
+
+- Trakt export captures list metadata and ordered screen members together under the owner/list locks, uses that snapshot for metadata and item delivery, and returns it for acknowledgement.
+- Removed the post-network mutable membership reread. Acknowledgement now checks current account generation and worker lease.
+- Refuse acknowledgement when the provider does not retain every desired exported item.
+
+Verification:
+
+- tests/provider-list-values.test.ts: later local addition/reorder remains local divergence.
+- tests/jobs-list-delivery-db.test.ts: gated export/concurrent edit and exact sent baseline; DB case not executed.
+
+## JOBS-03
+
+- Provider list comparisons and saved baselines project only movie/show/season/episode works, including normalization of previously stored full-list baselines.
+- Remote replacement fills representable slots while retaining unsupported work IDs and their relative order. Accepted remote deletion retains a list containing unsupported members, clears remote mapping, and records the settled deletion.
+- Conflict refresh uses the same projected comparison. Screen titles without exportable identity fail explicitly instead of silently disappearing.
+
+Verification:
+
+- tests/provider-list-values.test.ts: projected agreement, replacement/reorder/deletion and unsupported order preservation.
+- tests/jobs-list-delivery-db.test.ts: round trip, remote replacement, accepted deletion with game/music/book/comic/collection members; DB case not executed.
+
+## JOBS-04
+
+- Added enqueueTraktListChangeInTransaction to the existing changes module, filtering enabled Trakt services and current opted-in account connections.
+- Create/update/add/remove/reorder/move canonical list transactions retain outbound export intent atomically, with owner-first locking matching reconciliation.
+- Removed browser API best-effort enqueue and swallowed errors. Existing transactional list deletion remains in its established sync workflow.
+
+Verification:
+
+- tests/jobs-list-delivery-db.test.ts: fail the second destination insertion during every browser list mutation and assert canonical state and all intents roll back; not executed against a DB.
+
+## JOBS-05
+
+- Seerr create/manage/conflict publications retain the resolved dual-account scope and reuse assertSeerrAccount after upstream waits.
+- Management request state and related sync baseline updates commit in one guarded transaction; provider-side permission checks remain.
+
+Verification:
+
+- tests/seerr-delivery-db.test.ts: gated create/manage/conflict publication after account status/generation, linked service, Seerr service, user and lease invalidation; plus normal success; DB cases not executed.
+
+## DOMAIN-08
+
+- Initial playlist work selection now rejects book/comic membership with the same rule/message as addListItem.
+
+Verification:
+
+- tests/jobs-list-delivery-db.test.ts: rejected reading playlist creation is atomic, screen playlist and ordinary reading list remain allowed; not executed against a DB.
+
+## Executed checks
+
+```sh
+PATH="$PWD/.tools/bun-darwin-aarch64:$PATH" bun test tests/provider-list-values.test.ts tests/request-priority.test.ts tests/task-timing.test.ts tests/seerr-queries.test.ts tests/job-outcomes.test.ts tests/sync-values.test.ts tests/jobs-list-delivery-db.test.ts tests/seerr-delivery-db.test.ts
+```
+
+25 passed; 7 database cases skipped; 0 failures; 120 assertions. No DB flag, services or providers used.
+
+## Files changed for this handoff
+
+- `src/lib/providers/actions.server.ts`
+- `src/lib/providers/seerr/requests.server.ts`
+- `src/lib/core/lists/service.server.ts`
+- `src/lib/server/api/lists.server.ts`
+- `src/lib/sync/changes.server.ts`
+- `src/lib/sync/list-values.server.ts`
+- `src/lib/sync/trakt-lists.server.ts`
+- `src/lib/sync/conflicts.server.ts`
+- `tests/provider-list-values.test.ts`
+- `tests/jobs-list-delivery-db.test.ts`
+- `tests/seerr-delivery-db.test.ts`
+- `tests/trakt-sync-db.test.ts`
+
+## Remaining verification and limits
+
+- Root must run combined type/build/inventory checks and disposable database suites, including the two new DB test files and existing Trakt staging/sync/conflict/provider-sync/list suites.
+- No live Seerr/Trakt account acceptance was performed; a provider mutation already accepted before disconnect cannot be undone by local publication fencing.
+- No schema changes, dependencies, commits, pushes, publication or UI changes were made.

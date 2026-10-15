@@ -15,8 +15,8 @@ import {
   outboxActions,
   externalIds,
 } from '../src/lib/server/db/schema';
-import { reconcileProviderValue } from '../src/lib/sync/values';
-import { reconcileProviderList } from '../src/lib/sync/list-values';
+import { reconcileProviderValue } from '../src/lib/sync/values.server';
+import { reconcileProviderList } from '../src/lib/sync/list-values.server';
 import { updateUserSettings } from '../src/lib/server/auth';
 
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;

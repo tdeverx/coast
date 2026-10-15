@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import { planEpisodeContinuations } from '../src/lib/server/queries/continuations';
-import { nextSequenceEntry, type SequenceEntry } from '../src/lib/core/lists/sequence';
+import { nextSequenceEntry, type SequenceEntry } from '../src/lib/core/lists/sequence.server';
 import { providerSchedule, providerScheduleSchema } from '../src/lib/providers/schedule';
 import * as v from 'valibot';
 const episode = (id: string, seasonNumber: number, position: number, extra = {}) => ({

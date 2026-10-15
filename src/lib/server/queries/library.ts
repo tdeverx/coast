@@ -1,4 +1,4 @@
-import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch';
+import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getConfig } from '../config';

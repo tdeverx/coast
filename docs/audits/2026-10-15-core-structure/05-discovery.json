@@ -1,0 +1,278 @@
+{
+  "section": "DISCOVERY",
+  "coverage": {
+    "read": [
+      "docs/code-organization.md",
+      "docs/architecture.md",
+      "docs/performance.md",
+      "src/lib/search.ts",
+      "src/lib/discovery.ts",
+      "src/lib/recommendations/model.ts",
+      "src/lib/recommendations/feed.server.ts",
+      "src/lib/recommendations/interests.server.ts",
+      "src/lib/recommendations/providers.server.ts",
+      "src/lib/recommendations/query.server.ts",
+      "src/lib/recommendations/row-ranking.ts",
+      "src/lib/recommendations/row-titles.ts",
+      "src/lib/recommendations/DynamicFeed.svelte",
+      "src/lib/experiments/planning.server.ts",
+      "src/lib/experiments/PlanAction.svelte",
+      "src/lib/experiments/MediaModal.svelte",
+      "src/lib/server/queries/search.ts",
+      "src/lib/server/queries/search-ranking.ts",
+      "src/lib/server/queries/discovery.ts",
+      "src/lib/server/queries/home.ts",
+      "src/routes/search/+page.server.ts",
+      "src/routes/search/+page.svelte",
+      "src/routes/discover/+page.server.ts",
+      "src/routes/discover/+page.svelte",
+      "src/routes/for-you/+page.server.ts",
+      "src/routes/for-you/+page.svelte",
+      "src/routes/planning/+page.server.ts",
+      "src/routes/planning/+page.svelte",
+      "src/lib/ui/shelves/search.svelte.ts",
+      "src/lib/ui/shelves/discovery.svelte.ts",
+      "src/lib/ui/shelves/for-you.svelte.ts",
+      "src/lib/ui/shelves/home.ts",
+      "src/lib/ui/shelves/index.ts",
+      "src/lib/ui/resource.svelte.ts",
+      "src/lib/ui/lazy-content.ts",
+      "src/lib/ui/content-revision.svelte.ts",
+      "src/lib/ui/client.ts",
+      "src/lib/application/media-details.server.ts",
+      "src/lib/games/presentation.ts",
+      "src/lib/games/availability.server.ts",
+      "src/lib/experimental.ts",
+      "tests/search-ranking.test.ts",
+      "tests/dynamic-ranking.test.ts",
+      "tests/ui-search.test.ts",
+      "tests/ui-resource.test.ts",
+      "tests/taste-profile.test.ts",
+      "tests/row-titles.test.ts",
+      "tests/media-details-enrichment.test.ts",
+      "tests/provider-recommendations-db.test.ts",
+      "tests/discovery-db.test.ts",
+      "tests/taste-cache-db.test.ts",
+      "tests/search-db.test.ts"
+    ],
+    "scanned": [
+      "src/lib/catalogue/service.server.ts (search/discover/detail-refresh sections)",
+      "src/lib/server/queries/media.ts (search and permitted-source sections)",
+      "src/lib/server/queries/media-rows.ts (musicRow/gameRow)",
+      "src/lib/core/games/service.server.ts (listGames)",
+      "src/lib/social/taste-cache.server.ts (revision/refresh/ranking)",
+      "src/lib/server/api/index.server.ts (planning/recommendation dispatch)",
+      "src/lib/server/api/media.server.ts (detail dispatch)",
+      "src/lib/ui/components/Shelf.svelte (source lifecycle, settling and pagination)",
+      "src/lib/ui/components/Dialog.svelte (dialog lifecycle)",
+      "src/lib/ui/components/MediaCard.svelte (modal interception)",
+      "src/lib/ui/components/MediaActions.svelte (Plan integration)",
+      "src/lib/reading/ReadingLaunch.svelte",
+      "src/lib/playback/synced/client.svelte.ts (start)",
+      "src/lib/server/content-revision.server.ts",
+      "tests/invites-experiments-db.test.ts (recommendations/planning cases)",
+      "tests/domain-application-db.test.ts (search/discover cases)",
+      "tests/for-you-db.test.ts",
+      "tests/home-data-db.test.ts (discovered only)",
+      "docs/experimental-features.md (partial)",
+      "drizzle/0043_trakt_recommendation_accounts.sql",
+      "drizzle/0039_performance_benchmarks.sql (revision triggers)",
+      "/private/tmp/coast-core-full-db.log (parent test evidence)"
+    ],
+    "unverified": [
+      "No app edits, service startup, browser, live providers, credentials or database operations by this section.",
+      "Recommendation cutoff repro is strong static analysis; disposable-DB execution remains for root/follow-up.",
+      "End-to-end Search duplicate fixture not executed against database/provider stubs; pure presentation effect reproduced.",
+      "Browser viewport behavior and one-row-at-bottom network counts not runtime-tested; source/component control flow inspected.",
+      "Provider HTTP internals, generic Shelf rendering and social taste implementation ownership remain with separate reviewers."
+    ]
+  },
+  "checks": [
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/search-ranking.test.ts tests/dynamic-ranking.test.ts tests/ui-search.test.ts tests/ui-resource.test.ts tests/taste-profile.test.ts",
+      "result": "16 pass, 0 fail, 73 assertions."
+    },
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/row-titles.test.ts tests/media-details-enrichment.test.ts",
+      "result": "6 pass, 0 fail, 77 assertions."
+    },
+    {
+      "command": "bun --eval (actual gameCard/rankSearch fixture; no DB)",
+      "result": "Canonical owned UUID card available:true plus same IGDB result id:123 available:false; distinct detail URLs."
+    },
+    {
+      "command": "bun --eval (compile current discovery.svelte.ts/resource.svelte.ts with fake API and Svelte client runes; no files written)",
+      "result": "After Watch/Listen switch and refreshed options: one API call total; cached music item remains available:true. First harness attempt hit SSR onDestroy; rerun with lifecycle stub passed."
+    },
+    {
+      "command": "Read parent /private/tmp/coast-core-full-db.log and current failing assertions",
+      "result": "Two failures triaged as stale Search ordering and four-versus-six taste profile expectations; no DB access by this reviewer."
+    }
+  ],
+  "findings": [
+    {
+      "id": "DISCOVERY-01",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Unified Search repeats registered games as unavailable provider results",
+      "rootCause": "search-provider-game-identity-not-resolved",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/server/queries/search.ts",
+          "line": 117,
+          "detail": "Reads canonical local game cards with viewer ownership."
+        },
+        {
+          "path": "src/lib/server/queries/search.ts",
+          "line": 131,
+          "detail": "Maps every IGDB result to a card with raw externalId and a remote detail URL, without looking up game_external_ids."
+        },
+        {
+          "path": "src/routes/search/+page.svelte",
+          "line": 21,
+          "detail": "Concatenates play.items and play.discover without canonical deduplication."
+        },
+        {
+          "path": "src/lib/games/presentation.ts",
+          "line": 26,
+          "detail": "Remote cards without available default to false."
+        },
+        {
+          "path": "src/lib/server/queries/discovery.ts",
+          "line": 66,
+          "detail": "Discover already batches IGDB-to-local identity resolution and restores local ownership."
+        }
+      ],
+      "trigger": "Search for a registered game also returned by configured IGDB, especially a Steam-owned game; multiple IGDB instances amplify duplication.",
+      "impact": "The same game appears in Available and Unavailable, or twice in Unavailable, with different links. An imported game outside the 60 local results is also incorrectly shown as unavailable through its remote result.",
+      "recommendation": "Resolve bounded IGDB external IDs against game_external_ids in one batch, prefer canonical viewer-scoped cards, and deduplicate the combined game results. Reuse Discover's existing approach without importing new metadata for search cards.",
+      "verification": "Disposable fixture: registered game with IGDB identity and viewer Steam ownership; stub IGDB search to return it. Assert one canonical card, correct available flag and /games/<UUID> link. Repeat with two IGDB instances and a registered result outside the local first page.",
+      "relatedAreas": [
+        "search",
+        "games",
+        "Steam availability",
+        "provider identities"
+      ]
+    },
+    {
+      "id": "DISCOVERY-02",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Discover's local cache survives source and content changes",
+      "rootCause": "discovery-cache-missing-content-context-invalidation",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/lib/ui/shelves/discovery.svelte.ts",
+          "line": 23,
+          "detail": "Cache key contains only surface/kind/page; no user or content/source revision."
+        },
+        {
+          "path": "src/lib/ui/shelves/discovery.svelte.ts",
+          "line": 35,
+          "detail": "Any cached success returns immediately; even explicit load cannot refresh it."
+        },
+        {
+          "path": "src/lib/ui/shelves/discovery.svelte.ts",
+          "line": 53,
+          "detail": "New initial data replaces only the originally supplied surface; other cached surfaces remain."
+        },
+        {
+          "path": "src/lib/ui/shelves/discovery.svelte.ts",
+          "line": 61,
+          "detail": "Feature withdrawal handling only covers Reading, leaving selected disabled Listen/Play content."
+        }
+      ],
+      "trigger": "Load Listen/Play in a Discover row, change availability/provider permissions or a relevant feature gate while the shelf remains mounted, refresh route data, then revisit that medium.",
+      "impact": "Rows can keep withdrawn titles and stale available flags indefinitely for the mounted shelf. Retrying/refetching through source.load also reuses the old success. Playback authorization still needs to be checked separately; this finding does not establish an access-control bypass.",
+      "recommendation": "Use existing contentRevisionKey with the viewer and relevant tracking/social revisions, clear affected cached/current content on context change, refetch only activated shelves, and reset disabled Listen/Play selections consistently with Reading.",
+      "verification": "Compiled current Svelte rune module with injected fake API: load Listen, return to Watch, publish refreshed initial props/context, revisit Listen. Observed exactly one API call and original available:true item retained. Add a focused source test asserting a second request and withdrawn result clearing after revision/gate changes; unchanged session replacement should remain cached.",
+      "relatedAreas": [
+        "Discover",
+        "Shelf sources",
+        "content revisions",
+        "availability"
+      ]
+    },
+    {
+      "id": "DISCOVERY-03",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Recommendation candidate cutoff can discard every relevant genre or author match",
+      "rootCause": "recommendation-candidate-limit-before-positive-relevance",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/recommendations/query.server.ts",
+          "line": 44,
+          "detail": "General/seed candidate set includes all eligible works in the category, with no positive genre/author/series predicate."
+        },
+        {
+          "path": "src/lib/recommendations/query.server.ts",
+          "line": 53,
+          "detail": "Limits to 2,000 ordered only by provider score, valid taste score and UUID."
+        },
+        {
+          "path": "src/lib/recommendations/query.server.ts",
+          "line": 55,
+          "detail": "Positive genre/author/series evidence is first scored after that limit."
+        },
+        {
+          "path": "src/lib/recommendations/query.server.ts",
+          "line": 56,
+          "detail": "Nonpositive candidates are then removed; none discarded earlier can fill the page."
+        }
+      ],
+      "trigger": "Catalogue has >2,000 eligible works and a user's taste cache is absent/stale with no provider matches; positive genre/author/series matches sort beyond the UUID cutoff.",
+      "impact": "General or More like rows can be empty despite matching titles, or omit the best matches. Results depend on UUID insertion values instead of the evidence these rows promise. New users and users immediately after taste changes are affected.",
+      "recommendation": "Retain bounded candidates, but admit/rank them using positive evidence before truncation. Reuse indexed feature/genre candidate selection already used by taste-cache.server.ts; preserve provider and valid taste matches without genre overlap. Do not replace the bound with an unbounded application scoring pass.",
+      "verification": "Disposable DB repro: favourite Drama seed; 2,000 eligible lower-UUID Comedy movies; one higher-UUID Drama movie; no provider sets or taste scores. General recommendations should include the Drama movie but current query selects and rejects only the Comedy rows, yielding total=0. Also cover author/series-only reading matches and stale taste revisions.",
+      "relatedAreas": [
+        "For You",
+        "dynamic rows",
+        "taste cache",
+        "recommendation ranking"
+      ]
+    },
+    {
+      "id": "DISCOVERY-04",
+      "priority": "P3",
+      "category": "verification",
+      "title": "Two database assertions still encode the previous Search/taste contracts",
+      "rootCause": "discovery-db-assertions-pre-unified-search-reading",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "tests/domain-application-db.test.ts",
+          "line": 1024,
+          "detail": "Requires the other user's unavailable shared show to be absent, relying on old cutoff ordering rather than the unified catalogue contract."
+        },
+        {
+          "path": "src/lib/server/queries/media.ts",
+          "line": 143,
+          "detail": "Authenticated search ranks SQL relevance before UUID, rather than metadata updatedAt; it does not hide shared unavailable metadata."
+        },
+        {
+          "path": "tests/taste-cache-db.test.ts",
+          "line": 22,
+          "detail": "Expects exactly four user_taste_profiles."
+        },
+        {
+          "path": "src/lib/social/taste-cache.server.ts",
+          "line": 61,
+          "detail": "Creates movie/show/game/music/book/comic profiles, including empty profiles."
+        }
+      ],
+      "trigger": "Run the existing disposable database suite on the current working tree.",
+      "impact": "The parent audit's full DB run reports these two failures. The Search assertion does not demonstrate a source/privacy leak; the meaningful !available assertion follows it. The taste count assertion prevents the same test reaching its stale-cache ranking assertions.",
+      "recommendation": "Assert no availability/source grant for the other viewer rather than arbitrary absence from shared metadata results. Update taste expectations to the six supported profile media (prefer explicit medium identities) and retain later score/revision/privacy checks.",
+      "verification": "Parent-run log /private/tmp/coast-core-full-db.log reports failures at domain-application-db.test.ts:1024 and taste-cache-db.test.ts:22 (4 expected, 6 actual). Rerun both suites with disposable DB after test updates. This section did not run DB tests itself.",
+      "relatedAreas": [
+        "Search tests",
+        "taste-cache tests",
+        "Reading feature integration"
+      ]
+    }
+  ]
+}

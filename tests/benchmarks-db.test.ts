@@ -252,11 +252,11 @@ run('pre-migration profile visibility changes without a seeded owner revision',a
 run('private Steam content invalidates its owner while observation bookkeeping leaves all shelves stable',async()=>{
  const db=getSql();
  const [game]=await db`insert into games(title) values('Private revision fixture') returning id`;
- const [achievement]=await db`insert into game_achievements(game_id,provider,external_id,name) values(${game.id},'steam','fixture','Fixture') returning id`;
+ const [achievement]=await db`insert into game_achievements(game_id,provider,app_id,external_id,name) values(${game.id},'steam','123','fixture','Fixture') returning id`;
  const [account]=await db`insert into sync_accounts(user_id,provider,server_identity,external_user_id) values(${actor.id},'steam','fixture','fixture-revision-user') returning id`;
  const [observer]=await db`insert into users(username) values('unrelated-revision-observer') returning id`;
  const owner=await contentRevision(actor.id),other=await contentRevision(observer.id);
- await db`insert into game_account_state(account_id,game_id) values(${account.id},${game.id})`;
+ await db`insert into game_account_state(account_id,game_id,app_id) values(${account.id},${game.id},'123')`;
  await db`insert into game_achievement_progress(account_id,achievement_id,unlocked) values(${account.id},${achievement.id},false)`;
  const content=await contentRevision(actor.id);expect(content.tracking).not.toBe(owner.tracking);expect(await contentRevision(observer.id)).toEqual(other);
  await db`update game_account_state set observed_at=now(),achievements_attempted_at=now() where account_id=${account.id}`;

@@ -1,10 +1,10 @@
 import {beforeAll,afterAll,expect,test} from 'bun:test';
-import {and,eq,inArray} from 'drizzle-orm';
+import {and,eq,inArray,sql} from 'drizzle-orm';
 import {getDb,getSql} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {JellyfinAdapter} from '../src/lib/providers/jellyfin/adapter.server';
 import {applyCompanionPage,applyCompanionDelta} from '../src/lib/providers/jellyfin/updates.server';
-import {syncJellyfinChanges,type JellyfinSyncContext} from '../src/lib/sync/jellyfin';
+import {syncJellyfinChanges,type JellyfinSyncContext} from '../src/lib/sync/jellyfin.server';
 import type {CompanionPage} from '../src/lib/providers/jellyfin/companion';
 import type {OutboxAction} from '../src/lib/server/queue';
 import {jobExecution} from '../src/lib/server/queue/execution';
@@ -51,6 +51,10 @@ run('reset stages baseline work durably, invalidates census and keeps polling un
  const current=await context();expect(current.instance.settings.screenLibraryCensus).toBeUndefined();expect(current.instance.settings.companion).toMatchObject({epoch,cursor:0,status:'reconciling'});
  const jobs=await getDb().select().from(s.outboxActions).where(inArray(s.outboxActions.kind,['jellyfin.library','jellyfin.sync']));expect(jobs).toHaveLength(3);
  for(const job of jobs)await getDb().update(s.outboxActions).set({state:'succeeded'}).where(eq(s.outboxActions.id,job.id));
+ // Finishing a pre-reset worker is insufficient without the matching census marker.
+ await applyCompanionPage(await action(),await context(),page({reset:false}));
+ expect((await context()).instance.settings.companion).toMatchObject({status:'reconciling'});
+ for(const job of jobs)if(job.kind==='jellyfin.sync')await getDb().execute(sql`update provider_connections set settings=settings||jsonb_build_object('userSync',jsonb_build_object('phase','complete','accountGeneration',account_generation::text,'resetId',settings->>'userSyncResetId')) where id=${job.connectionId}`);
  await applyCompanionPage(await action(),await context(),page({reset:false}));
  expect((await context()).instance.settings.companion).toMatchObject({status:'healthy',baselineIds:[]});
 });

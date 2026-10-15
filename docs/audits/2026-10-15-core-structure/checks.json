@@ -1,0 +1,41 @@
+{
+  "typecheck": {
+    "errors": 0,
+    "warnings": 0
+  },
+  "defaultTests": {
+    "passed": 393,
+    "skipped": 534,
+    "failed": 0
+  },
+  "databaseTests": {
+    "suites": 60,
+    "passed": 483,
+    "failed": 2,
+    "failureNames": [
+      "(fail) application PostgreSQL read models > actual search ranks a permitted show before the 100-result cap and reports truncation [62.17ms]",
+      "(fail) task computes private bounded scores and excludes stale cached rankings [68.43ms]"
+    ],
+    "isolation": "scripts/test-database.ts created a fresh migrated DB and temporary data directory per suite; test container restored after run"
+  },
+  "build": "passed",
+  "codeInventory": "zero unused modules",
+  "uiInventory": "63 components verified",
+  "poolConcurrencyProbe": {
+    "result": "confirmed starvation/circular wait until one synthetic waiter is cancelled",
+    "control": "single outer-transaction updateReading succeeds",
+    "boundedRepeatMs": 1538,
+    "advisoryWaiters": 9,
+    "testContainerRestored": "stopped",
+    "applicationChanges": false
+  },
+  "preservation": {
+    "baselineFilesHashed": 842,
+    "changedBaselineFiles": [],
+    "statusChangesOutsideAudit": [],
+    "headPreserved": true,
+    "branchPreserved": true,
+    "testContainerFinalState": "stopped",
+    "note": "Verification generated ignored build/tool output; retained repository source additions are audit documents only."
+  }
+}

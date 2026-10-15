@@ -1,0 +1,98 @@
+{
+  "section": "JELLYFIN",
+  "coverage": {
+    "read": [
+      "docs/code-organization.md", "docs/architecture.md", "docs/performance.md", "docs/jellyfin-companion.md",
+      "src/lib/providers/jellyfin/access-proof.server.ts", "src/lib/providers/jellyfin/adapter.server.ts", "src/lib/providers/jellyfin/companion.ts", "src/lib/providers/jellyfin/connection.server.ts", "src/lib/providers/jellyfin/music.server.ts", "src/lib/providers/jellyfin/paging.ts", "src/lib/providers/jellyfin/provisioning.server.ts", "src/lib/providers/jellyfin/reading.server.ts", "src/lib/providers/jellyfin/stream-history.server.ts", "src/lib/providers/jellyfin/streams.ts", "src/lib/providers/jellyfin/updates.server.ts",
+      "src/lib/sync/jellyfin.server.ts", "src/lib/sync/jellyfin-playback.server.ts", "src/lib/sync/jellyfin-progress.ts", "src/lib/sync/jellyfin-reading.server.ts", "src/lib/sync/changes.server.ts", "src/lib/sync/values.server.ts", "src/lib/music/persistence.server.ts", "src/lib/catalogue/reading-files.server.ts", "src/lib/collection/query.server.ts", "src/lib/collection/freshness.server.ts", "src/lib/providers/connections.server.ts", "src/lib/providers/actions.server.ts", "src/lib/providers/task-timing.ts", "src/lib/server/queue/execution.ts", "src/lib/social/provider-live.server.ts", "src/lib/application/streams.server.ts", "src/lib/sharing/streams.server.ts", "src/lib/server/auth/onboarding.ts", "src/lib/server/api/tracking.server.ts", "src/lib/server/public-api/mutations.server.ts", "src/lib/playback/service.server.ts", "src/lib/ui/components/MediaActions.svelte",
+      "tests/jellyfin-queries.test.ts", "tests/jellyfin-access-proof.test.ts", "tests/jellyfin-access-proof-db.test.ts", "tests/jellyfin-bootstrap-db.test.ts", "tests/jellyfin-companion.test.ts", "tests/jellyfin-companion-db.test.ts", "tests/jellyfin-reconciliation-db.test.ts", "tests/jellyfin-music.test.ts", "tests/jellyfin-music-api.test.ts", "tests/jellyfin-music-persistence-db.test.ts", "tests/reading-sync-db.test.ts", "tests/server-stream-job-db.test.ts", "tests/provider-live-db.test.ts", "tests/active-streams.test.ts",
+      "../coast-plugin/Coast/Updates/ChangeJournal.cs", "../coast-plugin/Coast/Updates/ChangeMonitor.cs", "../coast-plugin/Coast/Api/ChangesController.cs"
+    ],
+    "scanned": ["src/lib/providers/maintenance.server.ts", "src/lib/providers/job-timing.server.ts", "src/lib/server/queue/index.ts", "src/lib/collection/projection.server.ts", "src/lib/core/tracking/service.server.ts", "src/lib/server/public-api/openapi.ts", "tests/provider-contracts.test.ts", "tests/provider-parity-db.test.ts", "tests/developer-live-db.test.ts", "tests/sync-values.test.ts"],
+    "unverified": ["No database suite or application runtime executed; database consequences traced statically with exact fixture reproductions supplied", "No live providers, plugin deployment, authentication credentials or decoding tested", "Provider visibility policy behavior outside the explicit 10.10/10.11 cache-proof allowlist not independently revalidated", "Generic queue, full preference/conflict model, reader browser lifecycle and shared playback admission reviewed only at direct boundaries", "Cross-boundary read inventory includes relevant sections rather than claiming every listed cross-domain file was fully reviewed"]
+  },
+  "checks": [
+    {"command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/jellyfin-queries.test.ts tests/jellyfin-access-proof.test.ts tests/jellyfin-companion.test.ts tests/jellyfin-music.test.ts tests/jellyfin-music-api.test.ts", "result": "30 passed, 0 failed; 184 assertions"},
+    {"command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/active-streams.test.ts tests/sync-values.test.ts", "result": "5 passed, 0 failed; 18 assertions"},
+    {"command": "bun -e: import real sameValue, decideSync and streamPresentation; apply the existing omitted-value/default conversion and two-copy sequence", "result": "Reset desired position=1, sameValue(local position0, desired1)=false; music history copy3 followed by copy0 decides remote; companion-shaped session produces deviceId:null. No database or network."},
+    {"command": "bun -e: JellyfinAdapter.musicLibrary with injected synthetic transport; page1 tracks1..100/201, delete track1, page2 offset100 tracks102..201/200", "result": "Both pages accepted, second reports complete, still-present track101 unseen. No database or network."}
+  ],
+  "findings": [
+    {
+      "id": "JELLYFIN-01", "priority": "P2", "category": "correctness", "title": "Manual progress changes lose their numeric outbound value", "rootCause": "manual-jellyfin-progress-export-omits-committed-position", "confidence": "confirmed",
+      "evidence": [
+        {"path": "src/lib/sync/changes.server.ts", "line": 324, "detail": "trackWithExports passes a value only for favourite, leaving progress undefined"},
+        {"path": "src/lib/sync/changes.server.ts", "line": 198, "detail": "Missing progress value records zero intent"},
+        {"path": "src/lib/sync/changes.server.ts", "line": 231, "detail": "The same missing value instead queues boolean true"},
+        {"path": "src/lib/sync/changes.server.ts", "line": 342, "detail": "Bulk progress reset also omits a numeric value"},
+        {"path": "src/lib/sync/jellyfin.server.ts", "line": 860, "detail": "Boolean true becomes position1; current-value comparison at866 drops ordinary numeric edits and resets"},
+        {"path": "src/lib/ui/components/MediaActions.svelte", "line": 285, "detail": "Reset playback position supplies positionSeconds0 through this path"},
+        {"path": "src/lib/server/public-api/mutations.server.ts", "line": 51, "detail": "Public numeric progress mutations call trackWithExports"}
+      ],
+      "trigger": "Single or group reset, or a numeric progress API edit, for a mapped Jellyfin work; especially automatic reconciliation disabled",
+      "impact": "Queued explicit progress delivery is skipped or near position1 sends an incorrect value; nonzero edits also retain incorrect zero backfill intent. Normal player reports use a separate delivery path.",
+      "recommendation": "Pass committed numeric position/duration, including explicit zero for bulk reset, and derive intent and job payload from the same progress value",
+      "verification": "Disposable fixture: mapped title at position120; single reset and group reset must queue numeric0 and deliver ticks0 with reconciliation off; public edit position300 must retain300 and deliver300 both immediately and after late mapping. Existing adapter tests do not cover this orchestration.",
+      "relatedAreas": ["JOBS", "tracking API", "public API", "manual progress UI"]
+    },
+    {
+      "id": "JELLYFIN-02", "priority": "P2", "category": "correctness", "title": "Music copies overwrite canonical observations in provider item order", "rootCause": "music-reconciliation-per-copy-instead-of-per-canonical-work", "confidence": "strong-static",
+      "evidence": [
+        {"path": "src/lib/music/persistence.server.ts", "line": 27, "detail": "Verified recording/release-group identifiers merge external items into one work"},
+        {"path": "src/lib/sync/jellyfin.server.ts", "line": 721, "detail": "Each music provider item is immediately imported separately"},
+        {"path": "src/lib/sync/jellyfin.server.ts", "line": 457, "detail": "Favourite reconciliation shares canonical work ID across copies"},
+        {"path": "src/lib/sync/jellyfin.server.ts", "line": 466, "detail": "Each accepted copy overwrites canonical playCount; progress is likewise per copy at469"}
+      ],
+      "trigger": "Two accessible audio copies share one recording identifier, or albums share one release group, with differing personal states; copies may be on different pages or changed individually by delta",
+      "impact": "Later sorted copy can clear imported favourite/resume/count; historical listens and playCount can disagree. Real decideSync classifies agreed count3 followed by copy count0 as a remote edit.",
+      "recommendation": "Persist account-scoped observations beside music access and reconcile one bounded canonical-work observation using an explicit merge rule, following the existing screen approach and retaining retry-safe listen identities",
+      "verification": "Disposable fixture with two IDs/one recording on different pages: A favourite/count3/resume40, B false/0/0. Reverse order and repeat scans; canonical observation and listens must remain stable. Test a delta touching only B and genuine removal of A.",
+      "relatedAreas": ["music identity", "sync values", "multi-edition reconciliation"]
+    },
+    {
+      "id": "JELLYFIN-03", "priority": "P2", "category": "correctness", "title": "Companion reset accepts a user baseline started before lost events", "rootCause": "companion-reset-reuses-pre-reset-personal-census", "confidence": "strong-static",
+      "evidence": [
+        {"path": "src/lib/providers/jellyfin/updates.server.ts", "line": 58, "detail": "Existing user sync returned without a fresh/follow-up requirement; only shared library jobs get a follow-up-full flag"},
+        {"path": "src/lib/providers/jellyfin/updates.server.ts", "line": 73, "detail": "Reset uses that request path for personal baselines"},
+        {"path": "src/lib/sync/jellyfin.server.ts", "line": 203, "detail": "Matching scan/progress preserves old start time and cursor/phase"},
+        {"path": "src/lib/providers/jellyfin/updates.server.ts", "line": 110, "detail": "Existing job success satisfies baseline and allows healthy status"},
+        {"path": "src/lib/providers/task-timing.ts", "line": 71, "detail": "Healthy companion extends user import cadence to the full interval"}
+      ],
+      "trigger": "User import commits early pages and yields; an earlier item's state changes; plugin restart/overflow loses that event; reset reuses the yielded import",
+      "impact": "Import resumes after the stale page yet satisfies recovery; missed watched/favourite/progress or access changes can persist until the next full interval",
+      "recommendation": "Require a complete user traversal begun after a durable reset fence, using existing serialized follow-up/restart mechanics while preserving personal bootstrap cursors",
+      "verification": "Disposable fixture: yield a full user scan after page1, modify page1 state, apply epoch reset, resume. Earlier pages must be re-read and companion remain reconciling until the post-reset traversal succeeds.",
+      "relatedAreas": ["companion protocol", "JOBS", "checkpoint recovery"]
+    },
+    {
+      "id": "JELLYFIN-04", "priority": "P2", "category": "correctness", "title": "Companion session DTO drops shared-stream deduplication identity", "rootCause": "companion-session-dto-omits-device-id", "confidence": "confirmed",
+      "evidence": [
+        {"path": "../coast-plugin/Coast/Api/ChangesController.cs", "line": 35, "detail": "Produced session whitelist at35–52 omits DeviceId"},
+        {"path": "src/lib/providers/jellyfin/streams.ts", "line": 16, "detail": "Omitted DeviceId becomes null in persisted stream presentation"},
+        {"path": "src/lib/sharing/streams.server.ts", "line": 29, "detail": "Provider observations excluded solely by snapshot deviceId equality"},
+        {"path": "src/lib/application/streams.server.ts", "line": 44, "detail": "Count adds provider observations after device exclusion to native shared count; cards similarly merge at54–66"}
+      ],
+      "trigger": "Shared Coast playback appears in a healthy companion-fed current-session snapshot",
+      "impact": "Observed provider row cannot match the native shared playback and is counted/rendered again; stream history can retain the duplicate too",
+      "recommendation": "Include existing DeviceId in the companion sanitized contract and assert parity with native session normalization; retain sensitive-field stripping",
+      "verification": "Feed the actual companion DTO shape through applyCompanionPage for a shared playback with matching provider device ID; assert exactly one stream/count and no duplicate history, while token/path/IP fields remain absent",
+      "relatedAreas": ["companion repository", "shared playback", "server streams"]
+    },
+    {
+      "id": "JELLYFIN-05", "priority": "P2", "category": "correctness", "title": "Music and reading scans publish negative coverage after unstable pagination", "rootCause": "music-reading-traversals-lack-cross-page-consistency-fence", "confidence": "strong-static",
+      "evidence": [
+        {"path": "src/lib/sync/jellyfin.server.ts", "line": 718, "detail": "Music loop advances offsets without cross-page total/repeat checks"},
+        {"path": "src/lib/sync/jellyfin.server.ts", "line": 742, "detail": "Reading loop and per-item resumes have the same missing consistency fence"},
+        {"path": "src/lib/providers/jellyfin/music.server.ts", "line": 152, "detail": "Adapter validates each page independently, not traversal total/history"},
+        {"path": "src/lib/providers/jellyfin/reading.server.ts", "line": 22, "detail": "Reading adapter also validates only each individual page"},
+        {"path": "src/lib/sync/jellyfin.server.ts", "line": 788, "detail": "Full user completion marks every older unseen availability row unavailable"},
+        {"path": "src/lib/sync/jellyfin.server.ts", "line": 552, "detail": "Screen path already rejects changed traversal totals"}
+      ],
+      "trigger": "Earlier music/book item is deleted or re-sorted between offset pages or between committed yields, leaving a still-present item skipped",
+      "impact": "A valid-looking completed traversal withdraws prior positive availability for unseen but still accessible works; pure mocked adapter accepted201→200 totals and omitted still-present track101",
+      "recommendation": "Persist per-stage totals/seen-item evidence and reuse screen consistency/restart behavior before negative publication, preserving bounded pages and reading checkpoints",
+      "verification": "Disposable fixtures for music and reading: delete earlier row after page1, change total, repeat prior ID across resume; retain old positives and leave coverage incomplete until a clean full restart succeeds",
+      "relatedAreas": ["music access", "reading imports", "availability", "checkpoint recovery"]
+    }
+  ]
+}

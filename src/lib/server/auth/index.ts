@@ -237,9 +237,9 @@ export async function deleteUser(actor: SessionUser | null, userId: string): Pro
     throw new AppError(400, 'You cannot delete your current administrator account.');
   await getSql().begin(async (sql) => {
     await sql`SELECT pg_advisory_xact_lock(73001602)`;
-    const [target] = await sql`SELECT id, role FROM users WHERE id = ${userId} FOR UPDATE`;
+    const [target] = await sql`SELECT id, role, disabled FROM users WHERE id = ${userId} FOR UPDATE`;
     if (!target) throw new AppError(404, 'Account not found.');
-    if (target.role === 'admin') {
+    if (target.role === 'admin' && !target.disabled) {
       const [count] =
         await sql`SELECT count(*)::int AS total FROM users WHERE role = 'admin' AND disabled = FALSE`;
       if (count.total <= 1) throw new AppError(409, 'Keep at least one administrator account.');
@@ -258,6 +258,8 @@ export async function updateUser(actor: SessionUser | null, userId: string, inpu
         role: v.picklist(['admin', 'user']),
         disabled: v.boolean(),
         allowPlaybackSharing: v.boolean(),
+        personalBitrateMbps: v.pipe(v.number(),v.minValue(1),v.maxValue(1000)),
+        sharedBitrateMbps: v.pipe(v.number(),v.minValue(1),v.maxValue(1000)),
         password: passwordSchema,
       })
     ),
@@ -291,7 +293,7 @@ export async function updateUser(actor: SessionUser | null, userId: string, inpu
       if (!count.total) throw new AppError(409, 'Keep at least one active administrator account.');
     }
     const [row] =
-      await transaction`UPDATE users SET email = ${patch.email === undefined ? target.email : patch.email || null}, role = ${role}, disabled = ${disabled}, settings = ${{...target.settings,...(patch.allowPlaybackSharing===undefined?{}:{allowPlaybackSharing:patch.allowPlaybackSharing})}}::jsonb, password_hash = ${hash ?? target.password_hash} WHERE id = ${userId} RETURNING *`;
+      await transaction`UPDATE users SET email = ${patch.email === undefined ? target.email : patch.email || null}, role = ${role}, disabled = ${disabled}, settings = ${{...target.settings,...(patch.allowPlaybackSharing===undefined?{}:{allowPlaybackSharing:patch.allowPlaybackSharing}),...(patch.personalBitrateMbps===undefined?{}:{personalBitrateMbps:patch.personalBitrateMbps}),...(patch.sharedBitrateMbps===undefined?{}:{sharedBitrateMbps:patch.sharedBitrateMbps})}}::jsonb, password_hash = ${hash ?? target.password_hash} WHERE id = ${userId} RETURNING *`;
     if (role !== target.role || disabled !== target.disabled || hash) {
       await transaction`DELETE FROM sessions WHERE user_id = ${userId}`;
       await transaction`UPDATE api_tokens SET revoked_at=now() WHERE user_id=${userId} AND revoked_at IS NULL`;
@@ -354,5 +356,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
 
 export async function resetUserSettings(actor: SessionUser | null) {
   const user = requireUser(actor);
-  await getSql()`UPDATE users SET settings = CASE WHEN settings ? 'profile' THEN jsonb_build_object('profile', settings->'profile') ELSE '{}'::jsonb END WHERE id = ${user.id}`;
+  const preferences = ['syncConflictWinner','collection','listenThreshold','fullWidth','liquidGlass','originalTitles','monochromeMissing','region','theme','notificationLevel','notificationsSilenced','subtitleLanguages','subtitlesAlways','subtitlePrompt'];
+  // Profile, privacy choices and administrator-owned limits/grants are not personal defaults.
+  await getSql()`UPDATE users SET settings = settings - ${getSql().array(preferences,'TEXT')}::text[] WHERE id = ${user.id}`;
 }

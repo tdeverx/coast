@@ -3,7 +3,7 @@ import {and,eq,sql} from 'drizzle-orm';
 import {getDb} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {JellyfinAdapter} from '../src/lib/providers/jellyfin/adapter.server';
-import {bootstrapJellyfinUser,syncJellyfinUser,scanJellyfinLibrary,type JellyfinSyncContext} from '../src/lib/sync/jellyfin';
+import {bootstrapJellyfinUser,syncJellyfinUser,scanJellyfinLibrary,type JellyfinSyncContext} from '../src/lib/sync/jellyfin.server';
 import {captureScreenAccessProof,tryReuseScreenAccess,screenCensusMaxAgeMs} from '../src/lib/providers/jellyfin/access-proof.server';
 import {providerSchedule} from '../src/lib/providers/schedule';
 import {workAssessments} from '../src/lib/collection/query.server';

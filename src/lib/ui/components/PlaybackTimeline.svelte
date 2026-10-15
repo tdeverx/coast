@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { readingFraction, readingLocationLabel } from '$lib/reading/model';
   import Icon from './Icon.svelte';
   import ProgressBar from './ProgressBar.svelte';
   import { playbackTime as time } from '$lib/playback/time';
 
-  let { mediaId, href, audio = false, disabled = false, title, detail, artwork, current, duration, onseek, scrubbing = $bindable(false) }: {
+  let { mediaId, href, audio = false, disabled = false, title, detail, artwork, current, duration, onseek, reading = null, readingActive = false, scrubbing = $bindable(false) }: {
+    readingActive?: boolean;
+    reading?: import('$lib/reading/model').ReadingLocation | null;
     mediaId?: string;
     href?: string;
     audio?: boolean;
@@ -20,7 +23,7 @@
   let artworkFailed = $state(false);
   const length = $derived(Number.isFinite(duration) ? Math.max(0, duration) : 0);
   const position = $derived(Math.min(length, Math.max(0, scrubbing ? preview : current)));
-  const progress = $derived(length > 0 ? position / length * 100 : 0);
+  const progress = $derived(reading ? readingFraction(reading) * 100 : length > 0 ? position / length * 100 : 0);
   $effect(() => { artwork; artworkFailed = false; });
   function commit(value: string) {
     onseek?.(Number(value));
@@ -35,7 +38,7 @@
     </svelte:element>
   <div class="seek-area">
     <div class="track-info"><div class="track-copy"><strong>{title}</strong><span>{detail}</span></div></div>
-  <div class="times" aria-hidden="true"><span>{time(position)}</span><span>−{time(length - position)}</span></div>
+  <div class="times" aria-hidden="true">{#if reading||readingActive}<span>{readingLocationLabel(reading)}</span>{:else}<span>{time(position)}</span><span>−{time(length - position)}</span>{/if}</div>
   <div class="progress-track" aria-hidden={!!onseek}><ProgressBar progress={progress/100}/></div>
   {#if onseek}<input
     type="range"

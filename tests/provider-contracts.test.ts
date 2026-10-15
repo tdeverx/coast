@@ -11,7 +11,7 @@ import {
 } from '../src/lib/providers/seerr/adapter.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
 import { planPlayback } from '../src/lib/playback/planning';
-import { playbackResourcePath, rewriteHlsManifest } from '../src/lib/playback/server';
+import { playbackResourcePath, rewriteHlsManifest } from '../src/lib/playback/service.server';
 import type { PlaybackSource, BrowserCapabilities } from '../src/lib/providers/contracts';
 
 const browser: BrowserCapabilities = {

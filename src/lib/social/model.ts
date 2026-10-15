@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 export const audiences = ['friends','public','private'] as const;
 export const socialSections = ['details','collection','activity','progress','favourites','ratings','presence','reactions','insights'] as const;
-export const socialCategories = ['screen','music','game'] as const;
+export const socialCategories = ['screen','music','game','book','comic'] as const;
 export type Audience = typeof audiences[number];
 export type SocialSection = typeof socialSections[number];
 export type SocialSettings = {
@@ -19,14 +19,14 @@ export const socialSettingsSchema = v.object({
     presence:v.optional(v.picklist(audiences)),reactions:v.optional(v.picklist(audiences)),
     insights:v.optional(v.picklist(audiences)),
   }),{}),
-  categories:v.optional(v.object({screen:v.optional(v.picklist(audiences)),music:v.optional(v.picklist(audiences)),game:v.optional(v.picklist(audiences))}),{}),
+  categories:v.optional(v.object({screen:v.optional(v.picklist(audiences)),music:v.optional(v.picklist(audiences)),game:v.optional(v.picklist(audiences)),book:v.optional(v.picklist(audiences)),comic:v.optional(v.picklist(audiences))}),{}),
   notifications:v.optional(v.object({'friend-request':v.optional(v.boolean()),'friend-accepted':v.optional(v.boolean()),recommendation:v.optional(v.boolean()),reaction:v.optional(v.boolean()),'synced-invite':v.optional(v.boolean())}),{}),
 });
 export const emojis = ['❤️','😂','😮','😢','🔥'] as const;
 export type NotificationData = {actorId:string; subjectId:string; destination:string; actions?: ('accept'|'decline'|'save'|'dismiss')[]; workId?:string};
 
 export function activityAction(kind:string) {
- return ({watch:'Watched',listen:'Listened',rating:'Rated',favourite:'Favourited',collect:'Collected',collected:'Collected',watchlist:'Saved',play:'Played',played:'Played',session:'Played','game-completed':'Completed','game-in-progress':'Started','game-paused':'Paused','game-dropped':'Stopped',drop:'Stopped',restore:'Resumed',progress:'Progressed',reaction:'Reacted',checkin:'Checked-in'} as Record<string,string>)[kind] ?? kind.replaceAll('-', ' ').replace(/^./, c=>c.toUpperCase());
+ return ({'reading-planned':'Saved','reading-reading':'Reading','reading-completed':'Read','reading-paused':'Paused','reading-dropped':'Stopped',watch:'Watched',listen:'Listened',rating:'Rated',favourite:'Favourited',collect:'Collected',collected:'Collected',watchlist:'Saved',play:'Played',played:'Played',session:'Played','game-completed':'Completed','game-in-progress':'Started','game-paused':'Paused','game-dropped':'Stopped',drop:'Stopped',restore:'Resumed',progress:'Progressed',reaction:'Reacted',checkin:'Checked-in'} as Record<string,string>)[kind] ?? kind.replaceAll('-', ' ').replace(/^./, c=>c.toUpperCase());
 }
 export function unknownActivityDate(kind:string){
  return kind==='collect'||kind==='collected'?'Acquisition date unavailable':kind==='listen'?'Listen date unavailable':kind==='watch'?'Watch date unavailable':['play','played','session'].includes(kind)?'Play date unavailable':'Activity date unavailable';

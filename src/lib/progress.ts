@@ -6,8 +6,8 @@ export const progressOptionsSchema = v.object({
     v.picklist(['watching', 'up-next', 'next', 'recommendations', 'watchlist', 'favourites', 'finished', 'dropped']),
     'watching'
   ),
-  category: v.optional(v.picklist(['screen', 'game', 'music']), 'screen'),
-  kind: v.optional(v.picklist(['all', 'movie', 'show']), 'all'),
+  category: v.optional(v.picklist(['screen', 'game', 'music', 'reading']), 'screen'),
+  kind: v.optional(v.picklist(['all', 'movie', 'show', 'book', 'comic']), 'all'),
   scope: v.optional(v.picklist(['all', 'available']), 'all'),
   page: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(1_000_000)), 1),
 });

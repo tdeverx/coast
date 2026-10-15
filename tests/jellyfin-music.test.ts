@@ -256,4 +256,15 @@ describe('Jellyfin music browsing', () => {
     }, 'device');
     expect((await adapter.library('user')).items).toEqual([]);
   });
+
+  test('equivalent GUID spellings retain one music, album and artist identity', async () => {
+    const compact='abcdef0123456789abcdef0123456789';
+    const formatted='ABCDEF01-2345-6789-ABCD-EF0123456789';
+    const adapter=new JellyfinAdapter(async()=>({Id:compact,Type:'Audio',Name:'Track',AlbumId:formatted,
+      ArtistItems:[{Id:formatted,Name:'Performer'}],AlbumArtists:[{Id:formatted,Name:'Album artist'}]}),'device');
+    const items=await Promise.all([adapter.musicItem('user',compact),adapter.musicItem('user',formatted)]);
+    expect(items[0].id).toBe(compact);expect(items[1].id).toBe(compact);
+    expect(items[1].albumId).toBe(compact);
+    expect(items[1].artists[0].id).toBe(compact);expect(items[1].albumArtists[0].id).toBe(compact);
+  });
 });

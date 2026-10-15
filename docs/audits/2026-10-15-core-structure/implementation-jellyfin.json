@@ -1,0 +1,75 @@
+{
+  "section": "JELLYFIN",
+  "implemented": [
+    "JELLYFIN-02",
+    "JELLYFIN-03",
+    "JELLYFIN-05"
+  ],
+  "rootOwned": [
+    "JELLYFIN-01",
+    "JELLYFIN-04",
+    "queue finish follow-up for jellyfin.sync"
+  ],
+  "files": [
+    "src/lib/sync/jellyfin.server.ts",
+    "src/lib/sync/jellyfin-progress.ts",
+    "src/lib/providers/jellyfin/updates.server.ts",
+    "src/lib/music/persistence.server.ts",
+    "src/lib/catalogue/reading-files.server.ts",
+    "src/lib/sync/jellyfin-reading.server.ts",
+    "tests/jellyfin-recovery-db.test.ts",
+    "tests/jellyfin-companion-db.test.ts",
+    "tests/jellyfin-progress-export-db.test.ts"
+  ],
+  "checks": [
+    {
+      "command": "bun test tests/jellyfin-queries.test.ts tests/jellyfin-companion.test.ts tests/jellyfin-music.test.ts tests/active-streams.test.ts",
+      "result": "26 pass, 0 fail"
+    },
+    {
+      "command": "DB disabled: bun test existing Jellyfin reconciliation/bootstrap/companion/music-persistence and reading-sync DB suites",
+      "result": "30 skip, 0 fail; imports/transpilation only"
+    },
+    {
+      "command": "DB disabled: bun test tests/jellyfin-recovery-db.test.ts tests/jellyfin-companion-db.test.ts",
+      "result": "13 skip, 0 fail; imports/transpilation only"
+    },
+    {
+      "command": "git diff --check on owned tracked edits",
+      "result": "passed"
+    },
+    {
+      "command": "DB disabled: bun test tests/jellyfin-progress-export-db.test.ts",
+      "result": "2 skip, 0 fail; imports/transpilation only"
+    }
+  ],
+  "remainingVerification": [
+    "Root disposable PostgreSQL recovery and existing regression suites",
+    "Root sequential typecheck/build and integrated gates"
+  ],
+  "limitations": [
+    "No live provider/plugin runtime certification",
+    "Offset consistency fences detect changed totals and repeated mapped items; they do not claim upstream snapshot isolation for all same-cardinality reorderings",
+    "No database suite executed by this agent"
+  ],
+  "newProductionDependencies": [],
+  "newTables": [],
+  "preserved": [
+    "MEDIUM selected-release and GUID identities",
+    "CROSS reading category gates and alias resolution",
+    "bootstrap cursors",
+    "account generations",
+    "worker leases",
+    "bounded committed checkpoints",
+    "approved UI"
+  ],
+  "additionalVerification": {
+    "finding": "JELLYFIN-01 (source correction owned by root)",
+    "tests": [
+      "manual numeric300/1200 progress -> committed state -> durable intent -> numeric queued payload -> exact3000000000 provider ticks",
+      "UI-style reset position0 without duration -> retained1200 duration -> numeric0 intent/payload -> exact0 ticks; automatic import/reconciliation off",
+      "bulk screen collection reset of two titles -> own retained durations1200/1800 -> exact0 ticks for each"
+    ],
+    "scope": "No audio bulk path: bulk tracking service validates only screen show/season/collection parents"
+  }
+}

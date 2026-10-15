@@ -1,6 +1,6 @@
 import { context } from '$lib/server/diagnostics';
 import { correlationId } from '$lib/diagnostics';
-import { conflictPreference } from '$lib/sync/preference';
+import { conflictPreference } from '$lib/sync/preference.server';
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb, type Database } from '$lib/server/db';
@@ -14,7 +14,7 @@ import {
   syncValues,
 } from '$lib/server/db/schema';
 import { getConfig } from '$lib/server/config';
-import { enqueueAction } from '$lib/server/queue';
+import { enqueueAction, PermanentActionError, type OutboxAction } from '$lib/server/queue';
 import {
   SeerrAdapter,
   groupDestination,
@@ -23,7 +23,7 @@ import {
 } from '$lib/providers/seerr/adapter.server';
 import { ProviderActionError, type DiscoverKind } from '$lib/providers/contracts';
 import { notify } from '$lib/server/notifications';
-import { trackInTransaction } from '$lib/core/tracking/service';
+import { trackInTransaction } from '$lib/core/tracking/service.server';
 import { getInstance, instanceFetchConfig } from '$lib/providers/instances.server';
 import { connectionFor } from '$lib/providers/connections.server';
 import { getSeerr, assertSeerrAccount } from '$lib/providers/seerr/connection.server';
@@ -358,7 +358,7 @@ export async function refreshRequests(userId: string, instanceId: string,expecte
   const { adapter, connection,account,scope } = await getSeerr(userId, instanceId,expected);
   type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
   const guarded=<T>(work:(tx:Tx)=>Promise<T>)=>getDb().transaction(async tx=>{await assertSeerrAccount(tx,scope);return work(tx);});
-  const { importTmdb } = await import('$lib/catalogue/service');
+  const { importTmdb } = await import('$lib/catalogue/service.server');
   const seen = new Set<string>();
   for (let offset = 0; ; offset += 100) {
     await guarded(async()=>{});
@@ -475,7 +475,7 @@ export async function refreshRequests(userId: string, instanceId: string,expecte
       .set({ remote: { value: request.state }, updatedAt: new Date() })
       .where(eq(syncValues.id, entry.id)));
     if (preference !== 'manual') {
-      const { resolveConflict } = await import('$lib/sync/conflicts');
+      const { resolveConflict } = await import('$lib/sync/conflicts.server');
       await guarded(tx=>resolveConflict(userId, entry.id, preference === 'remote' ? 'accepted' : 'ignored',tx));
     }
   }
@@ -550,5 +550,80 @@ export async function manageRequest(
     connectionId: connection.id,
     kind: 'seerr.manage',
     payload: { requestId, action, expectedState: request.state },
+  });
+}
+
+/** Delivery resolves an existing queued identity; it must never link a replacement
+ * while its worker holds that connection's account lane. */
+function queuedSeerrAccount(action: OutboxAction) {
+  if (!action.connectionId || !action.accountGeneration)
+    throw new PermanentActionError('The queued request account is unavailable.');
+  return { connectionId: action.connectionId, accountGeneration: action.accountGeneration };
+}
+
+/** Authenticated account resolution is injectable for disposable provider fixtures. */
+export async function executeSeerrRequest(action: OutboxAction, resolveAccount: typeof getSeerr = getSeerr) {
+  const requestId = v.parse(uuid, action.payload.requestId);
+  const [request] = await getDb().select().from(mediaRequests)
+    .where(and(eq(mediaRequests.id,requestId),eq(mediaRequests.userId,action.userId)));
+  if (!request || request.state === 'cancelled') return;
+  const [mapping] = await getDb().select().from(externalIds)
+    .where(and(eq(externalIds.mediaId,request.mediaId),eq(externalIds.provider,'tmdb')));
+  if (!mapping || !['movie','show'].includes(mapping.mediaKind))
+    throw new PermanentActionError('A TMDB movie or show identity is required to request media.');
+  const { adapter, scope } = await resolveAccount(action.userId,request.instanceId,queuedSeerrAccount(action));
+  const external = await adapter.create({kind:mapping.mediaKind as DiscoverKind,tmdbId:Number(mapping.externalId),
+    is4k:request.is4k,seasons:request.seasons,serverId:request.serverId ?? undefined});
+  await getDb().transaction(async tx => {
+    await assertSeerrAccount(tx,scope);
+    await tx.update(mediaRequests).set({externalId:String(external.id),
+      state:external.status===2?'approved':external.status===3?'declined':'pending',updatedAt:new Date()})
+      .where(eq(mediaRequests.id,request.id));
+  });
+}
+
+export async function executeSeerrManagement(action: OutboxAction, resolveAccount: typeof getSeerr = getSeerr) {
+  const data = v.parse(v.object({requestId:uuid,action:v.picklist(['cancel','approve','decline']),
+    resolved:v.optional(v.boolean(),false),expectedState:v.optional(v.string())}),action.payload);
+  const [request] = await getDb().select().from(mediaRequests).where(eq(mediaRequests.id,data.requestId));
+  if (!request?.externalId) return;
+  const { adapter, connection, scope } = await resolveAccount(action.userId,request.instanceId,queuedSeerrAccount(action));
+  const desired = data.action==='cancel'?'cancelled':data.action==='approve'?'approved':'declined';
+  if (!data.resolved) {
+    let remoteState: typeof mediaRequests.$inferSelect.state;
+    try {
+      const remote = await adapter.requestDetails(Number(request.externalId));
+      remoteState = (remote.is4k?remote.media?.status4k:remote.media?.status)===5?'available'
+        :remote.status===2?'approved':remote.status===3?'declined':'pending';
+    } catch (error) {
+      if ((error as {status?:number}).status!==404) throw error;
+      remoteState='cancelled';
+    }
+    if (remoteState!==(data.expectedState ?? request.state) && remoteState!==desired) {
+      const handled = await getDb().transaction(async tx => {
+        await assertSeerrAccount(tx,scope);
+        const preference = await conflictPreference(tx,action.userId,connection.id);
+        if (preference==='local') return false;
+        if (preference==='remote') {
+          await tx.update(mediaRequests).set({state:remoteState,updatedAt:new Date()}).where(eq(mediaRequests.id,request.id));
+          await tx.update(syncValues).set({conflict:false,agreed:{value:remoteState},remote:{value:remoteState},updatedAt:new Date()})
+            .where(and(eq(syncValues.connectionId,connection.id),eq(syncValues.category,`request:${request.id}`)));
+        } else {
+          const values={remote:{value:remoteState},agreed:{value:desired},conflict:true,updatedAt:new Date()};
+          await tx.insert(syncValues).values({connectionId:connection.id,mediaId:request.mediaId,category:`request:${request.id}`,...values})
+            .onConflictDoUpdate({target:[syncValues.connectionId,syncValues.mediaId,syncValues.category],set:values});
+        }
+        return true;
+      });
+      if (handled) return;
+    }
+  }
+  await getDb().transaction(tx => assertSeerrAccount(tx,scope));
+  await adapter.manage(Number(request.externalId),data.action);
+  await getDb().transaction(async tx => {
+    await assertSeerrAccount(tx,scope);
+    await tx.update(syncValues).set({conflict:false,agreed:{value:desired},remote:{value:desired},updatedAt:new Date()})
+      .where(and(eq(syncValues.connectionId,connection.id),eq(syncValues.category,`request:${request.id}`)));
+    await tx.update(mediaRequests).set({state:desired,updatedAt:new Date()}).where(eq(mediaRequests.id,request.id));
   });
 }

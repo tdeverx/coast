@@ -1,0 +1,170 @@
+{
+  "section": "Repository structure",
+  "coverage": {
+    "read": [
+      ".github/workflows/verify-and-publish-preview.yml",
+      "docs/architecture.md",
+      "docs/code-organization.md",
+      "docs/performance.md",
+      "package.json",
+      "scripts/code-inventory.ts",
+      "src/app.d.ts",
+      "src/lib/artwork.ts",
+      "src/lib/benchmarks/BenchmarkSettings.svelte",
+      "src/lib/benchmarks/model.ts",
+      "src/lib/benchmarks/service.server.ts",
+      "src/lib/diagnostics.ts",
+      "src/lib/media/Details.svelte",
+      "src/lib/media/actions.ts",
+      "src/lib/media/artwork.ts",
+      "src/lib/media/credits.ts",
+      "src/lib/media/details.ts",
+      "src/lib/media/hero.ts",
+      "src/lib/media/requests.ts",
+      "src/lib/media/statistics.ts",
+      "src/lib/profile/activity.ts",
+      "src/lib/profile/journal.ts",
+      "src/lib/profile/period.ts",
+      "src/lib/profile/url.ts",
+      "src/lib/progress.ts",
+      "src/lib/providers/artwork.server.ts",
+      "src/lib/providers/instances.server.ts",
+      "src/lib/providers/server-artwork.server.ts",
+      "src/lib/reading/reader/engine.ts",
+      "src/lib/reading/reader/epub.ts",
+      "src/lib/reading/reader/pdf.ts",
+      "src/lib/server/api/index.server.ts",
+      "src/lib/server/api/settings.server.ts",
+      "src/lib/server/auth/index.ts",
+      "src/lib/server/build-identity.ts",
+      "src/lib/server/db/jsonb.ts",
+      "src/lib/server/diagnostics/index.ts",
+      "src/lib/server/security/credentials.ts",
+      "src/lib/server/security/errors.ts",
+      "src/lib/server/security/provider-api-error.ts",
+      "src/lib/server/storage/image-cache.server.ts",
+      "src/lib/server/utils/async.ts",
+      "src/lib/sharing/policy.ts",
+      "src/lib/sync/changes.server.ts",
+      "src/lib/sync/jellyfin.server.ts",
+      "src/lib/sync/trakt-history.ts",
+      "src/routes/+error.svelte",
+      "src/routes/+page.server.ts",
+      "src/routes/api/v1/[...path]/+server.ts",
+      "src/routes/api/v1/diagnostics/+server.ts",
+      "src/routes/api/v1/media/[id]/insights/+server.ts",
+      "src/routes/api/v1/media/[id]/statistics/+server.ts",
+      "src/routes/api/v1/people/[id]/credits/+server.ts",
+      "src/routes/games/+page.svelte",
+      "src/routes/library/+page.svelte",
+      "src/routes/media/[id]/history/+page.svelte",
+      "src/routes/people/[id]/+page.svelte",
+      "src/routes/profile/+page.server.ts",
+      "src/routes/progress/+page.svelte",
+      "src/routes/requests/+page.server.ts",
+      "src/routes/requests/+page.svelte"
+    ],
+    "scanned": [
+      "src/",
+      "scripts/",
+      "tests/",
+      "drizzle/",
+      "docs/",
+      ".github/"
+    ],
+    "unverified": [
+      "Live/runtime feature behavior",
+      "Computed/nonliteral imports",
+      "Every function within all inventoried modules",
+      "Root coverage lists substantive architecture/control-flow/presentation inspection; long modules were read in relevant sections and this does not assert every CSS rule or fixture value was independently validated."
+    ]
+  },
+  "checks": [
+    {
+      "command": "bun run code:inventory",
+      "result": "pass: zero unused modules"
+    },
+    {
+      "command": "bun run ui:inventory:check",
+      "result": "pass: 63 components"
+    },
+    {
+      "command": "bun run check",
+      "result": "pass: zero errors/warnings"
+    },
+    {
+      "command": "bun test tests",
+      "result": "393 pass; 534 skip; zero fail"
+    },
+    {
+      "command": "bun run build",
+      "result": "pass"
+    },
+    {
+      "command": "TypeScript import graph inspection",
+      "result": "497 source files, 114 client roots, no direct/transitive server targets; three runtime dependency groups"
+    }
+  ],
+  "findings": [
+    {
+      "id": "STRUCT-01",
+      "priority": "P3",
+      "category": "maintainability",
+      "title": "Dense compound source has no consistent authoring guard",
+      "rootCause": "source-formatting-not-enforced",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/lib/server/queue/index.ts",
+          "line": 48,
+          "detail": "Queue eligibility is a large compound expression; 61 modules have multiple >240-character source lines."
+        },
+        {
+          "path": "package.json",
+          "line": 13,
+          "detail": "Verification scripts cover types/build/tests/inventory but no formatting/lint convention."
+        }
+      ],
+      "trigger": "Reviewing or modifying control flow and multi-branch queries across feature implementations",
+      "impact": "Harder local reasoning and diffs; no runtime failure claimed from formatting alone",
+      "recommendation": "Agree one convention and separate formatting from behavior changes; extract only concrete shared responsibilities",
+      "verification": "Formatting-only diff and existing behavioral checks",
+      "relatedAreas": [
+        "All feature reviewers"
+      ]
+    },
+    {
+      "id": "STRUCT-02",
+      "priority": "P3",
+      "category": "architecture",
+      "title": "Reader engines depend on their dispatcher for a shared cancellation helper",
+      "rootCause": "reader-helper-owned-by-dispatcher",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/lib/reading/reader/engine.ts",
+          "line": 5,
+          "detail": "Shared cancellation helper and lazy format dispatcher are colocated."
+        },
+        {
+          "path": "src/lib/reading/reader/pdf.ts",
+          "line": 4,
+          "detail": "PDF engine imports the dispatcher at runtime for readerLoad."
+        },
+        {
+          "path": "src/lib/reading/reader/epub.ts",
+          "line": 5,
+          "detail": "EPUB engine imports the same dispatcher while dispatcher imports EPUB dynamically."
+        }
+      ],
+      "trigger": "Isolating renderer code for tooling/testing or evolving engine loading",
+      "impact": "Avoidable runtime dependency group; no eager-loading/initialization defect asserted",
+      "recommendation": "Move only cancellation helper into an adjacent pure module, preserving lazy dispatch and type contracts",
+      "verification": "Reader close/abort tests and selected-format lazy chunk checks",
+      "relatedAreas": [
+        "Reading",
+        "UI/performance"
+      ]
+    }
+  ]
+}

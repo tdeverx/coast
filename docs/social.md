@@ -55,7 +55,7 @@ This is an explicit user constraint, applying throughout implementation:
 - Sharing changes do not remove tracking history or alter provider import/export settings. Existing Collection visibility and demand reporting remain separate controls, with demand-sharing opt-outs preserved.
 - Availability is assessed for the visitor/recipient; a friend's accessible source does not grant access to somebody else. Social visibility does not grant playback permission.
 - Use the shared UI library, work registry, concrete activity models and existing notification/delivery infrastructure. Reuse shelves/cards/headers/menus and lazy bounded loading. Do not add a second scheduler, authentication binding system, or speculative generic social framework.
-- Define reactions, feed deduplication/grouping, opt-outs and notification responses once. Reuse those rules for supported media, with concrete activity semantics and existing experimental gates. Future books/audiobooks/comics can extend the work foundation without pretending they are implemented now.
+- Define reactions, feed deduplication/grouping, opt-outs and notification responses once. Reuse those rules for supported media, with concrete activity semantics and existing experimental gates. Books/Comics record dated reading-state transitions and share permitted live reading presence; page turns do not create Activity events. Audiobooks still require their own concrete model.
 
 ## Confirmed decisions
 
@@ -80,6 +80,8 @@ The audience, reaction cardinality, check-in behavior, bidirectional Trakt scope
 
 ## Roadmap
 
+Reviewed 14 October 2026. Remaining social proposals are listed here; the [app roadmap](roadmap.md) owns cross-app acceptance and priorities. Dated implementation notes below are historical evidence, not pending work.
+
 ### Second social pass: profile controls and avatar meanings
 
 Add the owner-only eye control to profile row headers, editing the same privacy settings as the first pass. Define richer avatar/status meanings for leaf and parent works and obtain manual approval of their visual design before implementation.
@@ -92,21 +94,21 @@ Daily, monthly and end-of-year summaries across media, with different detail lev
 
 Challenges, achievements, streaks and other gamification are explicitly wanted, with their own product/design pass. Define meaningful achievements across media, repeat activity, unknown dates and imports deliberately rather than adding incidental badges to social work.
 
-### Invites and onboarding
+### Invitation and onboarding acceptance
 
-Account invitation links are tentative roadmap work under invites and onboarding, potentially an alternative to jfa-go; they are excluded from the first social pass. The selected share-link roadmap includes permission-controlled disposable links for a particular item that a friend can watch alone or together. Define recipient identity/access, expiry, revocation and source permissions in that pass; do not bypass existing playback authorization. This invitation/share-link roadmap is separate from the approved administrator-controlled public read-only website mode; it does not grant anonymous playback by itself.
+Review the wider invitation/onboarding experience and verify Jellyfin provisioning and disposable playback links on the intended server. These checks extend the existing implementation; account invitations, provisioning and reusable item links are implemented. Public website browsing and playback permission remain separate policies.
 
 ### Lists, planning and groups
 
 - Browse friends' lists and collaborative lists.
 - Shared queue planning, polls, groups, group feeds and group lists.
 - Clubs and organised discussions.
-- Movie-night recommendations with accept/decline responses; investigate a larger calendar for upcoming events/releases. Calendar scope remains to be decided.
+- Movie-night recommendations with accept/decline responses; refine the existing experimental planning/calendar experience for shared events.
 - Group recommendations and personally explained recommendations, building on permitted taste/overlap data.
 
 ### Shared playback
 
-Robust synchronised watching and listening are approved follow-up targets, with future books/comics considered when those media exist. Plan source/access compatibility, session leadership, joining/leaving, playback drift, seeking and reconnects together. Co-watching presence and shared listening sessions belong here. Consider an in-session chat/reaction overlay; it does not establish approval for ordinary direct messaging.
+Validate existing video/audio/reading parties across real devices and authorized sources, including edition compatibility, leadership, joining/leaving, drift, seeking and reconnects. Guest/public sessions and an in-session chat/reaction overlay remain future work; an overlay does not establish approval for ordinary direct messaging.
 
 ### Optional or undecided
 
@@ -134,4 +136,11 @@ Real-account social validation and friend-avatar meanings remain deferred. Avata
 
 ### Follow-up implementation — 2 October 2026
 
-Private friend video/music sessions are now implemented behind the existing Experimental features policy. Simple expiring single-use invitation codes and existing-account Jellyfin onboarding are implemented separately, with main-site access gated on the initial user activity import. See [synced experiences and onboarding](synced-experiences.md). Public disposable item links, Jellyfin account provisioning, chat overlays and future-media synchronization remain roadmap work.
+Historical snapshot: invitation provisioning, disposable item links and reading synchronization were implemented after this note. Use the current roadmap above for remaining work.
+
+Private friend video/music sessions are now implemented behind the existing Experimental features policy. Simple expiring single-use invitation codes and existing-account Jellyfin onboarding are implemented separately, with main-site access gated on the initial user activity import. See [synced experiences and onboarding](synced-experiences.md). Reusable public item links and Jellyfin account provisioning were subsequently implemented; native-player sharing acceptance, chat overlays and future-media synchronization remain roadmap work.
+
+
+Taste comparison pages calculate exact visible totals and overlap counts in PostgreSQL, then hydrate only the requested 60-work overlap page. Feature-based taste signals use a deterministic sample of at most 300 visible works per person, prioritising ratings, saved interests and consumption; they are sampled signals, not a full-library census. Private evidence is filtered before sampling, counting or paging. Music progress comes from music_progress, independent of generic saved relationships.
+
+The comparison page currently groups movies, TV, music and games. Reading evidence is excluded from its page counts until that view supports reading groups; the separate personal taste task still supports all six media.

@@ -10,7 +10,7 @@ import { disconnectProvider } from '$lib/application/provider-sources.server';
 import { updateProviderSchedule, runProviderJob } from '$lib/providers/maintenance.server';
 import { musicLibrary, musicDetails, setMusicFavourite } from '$lib/music/service.server';
 import { streamMusicArtwork } from '$lib/music/artwork.server';
-import { libraryScanProgress } from '$lib/sync/jellyfin';
+import { libraryScanProgress } from '$lib/sync/jellyfin.server';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleProviders(context: ApiContext): Promise<Response | undefined> {

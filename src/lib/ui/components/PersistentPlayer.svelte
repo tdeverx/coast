@@ -6,7 +6,7 @@
   import { sequencePath } from '$lib/media/sequence';
   import { onMount, untrack, tick } from 'svelte';
   import { refreshAfterChange } from '$lib/ui/client';
-  import { advanceMusic, playSavedMusicQueue, playMedia, registerPlaybackController, setPlaybackMuted } from '$lib/playback/client.svelte';
+  import { advanceMusic, playSavedMusicQueue, playMedia, registerPlaybackController, setPlaybackMuted, cancelPlaybackPreparation } from '$lib/playback/client.svelte';
   import { usePlayback } from '$lib/playback/context.svelte';
   import { bufferedAhead, streamHasStopped, playbackFailureMessage } from '$lib/playback/failures';
   import { actualPlayedDelta } from '$lib/playback/listening';
@@ -54,6 +54,7 @@
   let scrubbing = $state(false);
   const followingHost=$derived(!!syncedPlayer.room&&!canControlPlayback());
   const audioMode = $derived(player.session?.mediaType === 'audio');
+  const sharedMode = $derived(!!player.session?.shareId);
   const media = $derived<HTMLMediaElement>(audioMode ? audio : video);
   let playedSeconds = 0, playedPosition = 0, playedAt = 0, wasPlaying = false, seeking = false;
   function accountPlayed() {
@@ -191,9 +192,11 @@
     if(lastTouchTap&&now-lastTouchTap.at<=350&&Math.hypot(event.clientX-lastTouchTap.x,event.clientY-lastTouchTap.y)<=24){lastTouchTap=null;toggleCrop();}
     else lastTouchTap={at:now,x:event.clientX,y:event.clientY};
   }
-  async function close() {
+  async function close(cancelPreparing: unknown = true) {
+    if(cancelPreparing!==false)cancelPlaybackPreparation();
     if (closed) return;
     closed = true;
+    const shared=sharedMode;
     if(syncedPlayer.room&&!syncedPlayer.changing){if(isSyncHost())await syncedCommand('stop');else await leaveSynced();}
     pause(true);
     await report('stop');
@@ -204,10 +207,11 @@
     player.subtitlePrompt = false;
     error = '';
     closed = false;
-    void refreshAfterChange('tracking');
+    if(!shared)void refreshAfterChange('tracking');
   }
   async function toggle() {
     if (!media) return;
+    if(sharedMode&&media.ended&&player.session){await playMedia(player.session.mediaId,{fromStart:true});return;}
     if(syncedPlayer.room){if(!canControlPlayback()&&media.paused){try{await media.play();}catch(cause){syncedPlayer.notice=message(cause);}return;}await syncedCommand(player.paused?'play':'pause');return;}
     if (media.paused) {
       try {
@@ -273,7 +277,7 @@
     if (audioMode) {
       accountPlayed();
       const delivered = await report('ended');
-      if (delivered && (!syncedPlayer.room||isSyncHost())) await advanceMusic();
+      if (!sharedMode && delivered && (!syncedPlayer.room||isSyncHost())) await advanceMusic();
       else player.paused = true;
       return;
     }
@@ -282,6 +286,7 @@
     saving = false;
     player.role = 'postplay';
     player.paused = true;
+    if(sharedMode)return;
     void refreshAfterChange('tracking');
     if (!saved || !player.session) return;
     try {
@@ -324,7 +329,7 @@
     try {
       if(syncedPlayer.room&&edition===undefined){await joinSynced(syncedPlayer.room);return;}
       if (audioMode) {
-        await playMedia(session.mediaId, { mediaType: 'audio', fromStart: false });
+        await playMedia(session.mediaId, { mediaType: 'audio', fromStart: false, retry: true });
         return;
       }
       await playMedia(session.mediaId, {
@@ -551,9 +556,9 @@
       </div>{/if}
     {#if player.role === 'postplay' && !error}<div class="postplay solid-surface">
         <Icon name="check" size={30} />
-        <h2>One more story, remembered.</h2>
+        <h2>{sharedMode?'Playback finished':'One more story, remembered.'}</h2>
         <p>
-          {saving
+          {sharedMode?'This shared item has finished.':saving
             ? 'Saving your progress…'
             : saved
               ? 'Your watch history is up to date.'
@@ -578,7 +583,7 @@
               ? `Play S${String(next.seasonNumber ?? 0).padStart(2, '0')}E${String(next.episodeNumber ?? 0).padStart(2, '0')}`
               : `Play ${next.title}`}</Button
           >{/if}<Button  onclick={close}
-          >Back to Coast</Button
+          >{sharedMode?'Close':'Back to Coast'}</Button
         >
       </div>{/if}
     <section
@@ -590,7 +595,7 @@
       <div class="transport">
         <Button size="icon"
           class={`icon-button ${!audioMode ? 'skip-back' : ''}`}
-          disabled={followingHost}
+          disabled={followingHost || audioMode&&sharedMode}
           label={audioMode ? 'Previous track' : 'Back 10 seconds'}
           title={audioMode ? 'Previous track' : 'Back 10 seconds'}
           onclick={() => audioMode ? advanceMusic(-1) : seek(current - 10)} icon={audioMode ? 'left' : 'rewind'} iconSize={20} />
@@ -601,13 +606,13 @@
           onclick={toggle} icon={player.paused ? 'play' : 'pause'} iconSize={28} />
         <Button size="icon"
           class={`icon-button ${!audioMode ? 'skip-forward' : ''}`}
-          disabled={followingHost}
+          disabled={followingHost || audioMode&&sharedMode}
           label={audioMode ? 'Next track' : 'Forward 30 seconds'}
           title={audioMode ? 'Next track' : 'Forward 30 seconds'}
           onclick={() => audioMode ? advanceMusic() : seek(current + 30)} icon={audioMode ? 'right' : 'forward'} iconSize={20} />
       </div>
       <PlaybackTimeline
-        mediaId={player.session!.mediaId}
+        mediaId={sharedMode?undefined:player.session!.mediaId}
         href={audioMode ? `/music/work/${player.session!.mediaId}` : undefined}
         audio={audioMode}
         title={player.session?.title ?? 'Now playing'}
@@ -620,8 +625,8 @@
         bind:scrubbing
       />
       {#if !audioMode}<Button size="icon" icon="home" label={player.browsing?'Hide UI':'Show UI'} pressed={player.browsing} onclick={toggleUi}/>{/if}
-      <Button menu label="Playback options" upward>
-        {#if page.data.experimentalParties}<Button item icon="party" disabled={syncedPlayer.busy} onclick={()=>syncControls?.show()}>{syncedPlayer.room?'Synced session…':'Start synced session…'}</Button>{/if}
+      {#if !audioMode || !sharedMode}<Button menu label="Playback options" upward>
+        {#if page.data.experimentalParties&&!sharedMode}<Button item icon="party" disabled={syncedPlayer.busy} onclick={()=>syncControls?.show()}>{syncedPlayer.room?'Synced session…':'Start synced session…'}</Button>{/if}
         {#if audioMode}
           <Button item icon="list" disabled={followingHost} disabledReason="Playback is controlled by the host" onclick={()=>playSavedMusicQueue().catch(cause=>error=message(cause))}>Play saved music queue</Button>
           {#if player.audioNotice}<p class="menu-status" role="status">{player.audioNotice}</p>{/if}
@@ -667,7 +672,7 @@
           >{crop ? 'Fit video' : 'Crop black bars'}</Button>
         <Button item icon="fullscreen" onclick={fullscreen}>Full screen</Button>
         {/if}
-      </Button>
+      </Button>{/if}
       {#if !audioMode}<div class="control-divider" aria-hidden="true"></div>
       <Button size="icon" class="icon-button fullscreen-button"
         label="Toggle fullscreen"

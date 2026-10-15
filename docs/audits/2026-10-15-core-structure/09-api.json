@@ -1,0 +1,176 @@
+{
+  "section": "Public API, webhooks and browser API dispatch consistency",
+  "coverage": {
+    "read": [
+      "docs/code-organization.md",
+      "docs/architecture.md",
+      "docs/performance.md",
+      "docs/public-api.md",
+      "src/lib/public-api.ts",
+      "src/lib/server/public-api/handler.server.ts",
+      "src/lib/server/public-api/library.server.ts",
+      "src/lib/server/public-api/mutations.server.ts",
+      "src/lib/server/public-api/openapi.ts",
+      "src/lib/server/public-api/progress.server.ts",
+      "src/lib/server/public-api/response.ts",
+      "src/lib/server/public-api/tokens.server.ts",
+      "src/lib/server/public-api/webhooks.server.ts",
+      "src/routes/api/public/v1/[...path]/+server.ts",
+      "src/lib/server/api/index.server.ts",
+      "src/lib/server/api/context.server.ts",
+      "src/lib/server/api/admin.server.ts",
+      "src/lib/server/api/conflicts.server.ts",
+      "src/lib/server/api/continue.server.ts",
+      "src/lib/server/api/game-playthroughs.server.ts",
+      "src/lib/server/api/games.server.ts",
+      "src/lib/server/api/lists.server.ts",
+      "src/lib/server/api/media.server.ts",
+      "src/lib/server/api/notifications.server.ts",
+      "src/lib/server/api/playback.server.ts",
+      "src/lib/server/api/profile.server.ts",
+      "src/lib/server/api/providers.server.ts",
+      "src/lib/server/api/queue.server.ts",
+      "src/lib/server/api/ratings.server.ts",
+      "src/lib/server/api/reading.server.ts",
+      "src/lib/server/api/requests.server.ts",
+      "src/lib/server/api/rewatch.server.ts",
+      "src/lib/server/api/session.server.ts",
+      "src/lib/server/api/settings.server.ts",
+      "src/lib/server/api/tracking.server.ts",
+      "src/lib/server/api/up-next.server.ts",
+      "src/lib/server/security/request-body.ts",
+      "src/lib/server/experimental.ts",
+      "src/lib/experimental.ts",
+      "src/hooks.server.ts",
+      "src/lib/server/db/index.ts",
+      "src/lib/server/queries/pagination.ts",
+      "src/lib/server/queries/library-content.ts",
+      "src/lib/core/reading/service.server.ts",
+      "src/lib/core/errors.ts",
+      "src/lib/games/model.ts",
+      "src/lib/media/sequence.ts",
+      "tests/public-api-db.test.ts",
+      "tests/public-api-response.test.ts",
+      "tests/webhooks-db.test.ts",
+      "tests/experimental-gates-db.test.ts",
+      "tests/api-body.test.ts",
+      "tests/request-body.test.ts"
+    ],
+    "scanned": [
+      "src/lib/core/tracking/service.server.ts",
+      "src/lib/core/games/service.server.ts",
+      "src/lib/core/ratings/service.server.ts",
+      "src/lib/core/lists/sequence.server.ts",
+      "src/lib/music/persistence.server.ts",
+      "src/lib/sync/changes.server.ts",
+      "src/lib/reading/query.server.ts",
+      "src/lib/collection/query.server.ts",
+      "src/lib/server/security/provider-fetch.ts",
+      "src/lib/server/queue/index.ts",
+      "src/lib/server/db/schema.ts",
+      "src/lib/server/config.ts",
+      "src/lib/server/auth/onboarding.ts",
+      "src/lib/providers/actions.server.ts",
+      "docs/connectors.md"
+    ],
+    "unverified": [
+      "No database suites, live token inspection, provider calls, DNS/TLS requests, server startup or browser execution.",
+      "Webhook manual recovery proven by static queue SQL plus isolated mocked deliverWebhook guard execution; full durable claim/retry lifecycle requires disposable database verification.",
+      "Public Library stale-access/source replacement behavior requires disposable database acceptance; no new authorization defect established.",
+      "Nested global config/sequence reads inside pooled transactions are a potential contention lead only; no measured starvation or latency claim.",
+      "Reading history accepts shared page ceiling 1000000 instead of documented public ceiling 10000; queries remain bounded and clamp."
+    ]
+  },
+  "checks": [
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/public-api-response.test.ts tests/request-body.test.ts tests/api-body.test.ts",
+      "result": "6 passed, 0 failed, 21 assertions; non-database tests only."
+    },
+    {
+      "command": "Isolated bun -e: mock authenticateApiToken in memory, import actual publicApiHandler, invoke GET and HEAD /api/public/v1/me with identical credentials.",
+      "result": "GET returned 200; HEAD returned 405 method_not_allowed. No database/network access."
+    },
+    {
+      "command": "Isolated bun -e: mock getDb subscription lookup in memory, import actual deliverWebhook, invoke at attempts 9 and 10 with an active subscription/token.",
+      "result": "Both attempts threw PermanentActionError before transport. No database/network access."
+    },
+    {
+      "command": "Coordinator handoff: isolated same-account transaction/pool probe",
+      "result": "Nested Reading global-config read lead confirmed; see CROSS-03 in13-cross-boundary.json. Not counted twice. Other suggested nested query paths remain unverified."
+    }
+  ],
+  "findings": [
+    {
+      "id": "API-01",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Exhausted webhook events cannot be recovered with manual Retry",
+      "rootCause": "webhook-attempt-cap-survives-manual-retry",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/lib/server/public-api/webhooks.server.ts",
+          "line": 49,
+          "detail": "Every attempts >8 invocation throws before HTTP delivery, including an administrator's renewed attempt."
+        },
+        {
+          "path": "src/lib/server/queue/index.ts",
+          "line": 238,
+          "detail": "Claiming increments the persistent lifetime attempts counter."
+        },
+        {
+          "path": "src/lib/server/queue/index.ts",
+          "line": 626,
+          "detail": "retryAction restores pending/manual state and next_attempt_at but leaves attempts unchanged."
+        },
+        {
+          "path": "tests/webhooks-db.test.ts",
+          "line": 30,
+          "detail": "Existing coverage checks exhaustion but does not exercise retryAction followed by a repaired receiver."
+        }
+      ],
+      "trigger": "A webhook fails eight HTTP deliveries, permanently fails at claim nine, then an administrator repairs the receiver and presses Retry.",
+      "impact": "The retried event fails at the attempt guard without contacting the repaired receiver; its immutable event cannot be recovered through the advertised Jobs operation.",
+      "recommendation": "Renew a bounded delivery budget for a manually retried exhausted webhook within the existing retry/action lifecycle; preserve event identity, audit evidence and claim fencing rather than removing the cap or indiscriminately resetting active attempts.",
+      "verification": "Disposable DB: fail eight deliveries, claim exhaustion, invoke real retryAction after mocked receiver recovery, process again and assert original event ID/body delivered once and action succeeded. Retain automatic exhaustion coverage.",
+      "relatedAreas": [
+        "queue recovery",
+        "public webhooks",
+        "Jobs UI"
+      ]
+    },
+    {
+      "id": "API-02",
+      "priority": "P3",
+      "category": "correctness",
+      "title": "Explicit public HEAD exports reject existing readable resources",
+      "rootCause": "public-head-dispatched-as-mutation",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/routes/api/public/v1/[...path]/+server.ts",
+          "line": 3,
+          "detail": "HEAD explicitly uses publicApiHandler instead of normal GET-derived behavior."
+        },
+        {
+          "path": "src/lib/server/public-api/handler.server.ts",
+          "line": 32,
+          "detail": "Every method other than GET enters publicMutation, which has no HEAD operation."
+        },
+        {
+          "path": "src/lib/server/public-api/handler.server.ts",
+          "line": 29,
+          "detail": "The unauthenticated OpenAPI representation exception also matches only GET."
+        }
+      ],
+      "trigger": "A client sends HEAD to a public read resource with a valid token (or to the public OpenAPI document).",
+      "impact": "Reachability/authorization/header probes return method failure on resources whose GET succeeds; isolated actual-handler reproduction returned GET 200 versus HEAD 405 for /me.",
+      "recommendation": "Use normal GET-derived HEAD handling or dispatch HEAD through the same read authorization path with no response body, including the OpenAPI document.",
+      "verification": "Actual-route GET/HEAD parity tests with valid, missing and insufficient-scope credentials; assert matching status/relevant headers, empty HEAD body and openapi.json parity.",
+      "relatedAreas": [
+        "HTTP method semantics",
+        "public API contract"
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 import { and,eq } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
-import { trackingState, musicArtists, musicArtistPreferences,musicProgress } from '$lib/server/db/schema';
-import { trackWithExports } from '$lib/sync/changes';
+import { trackingState, musicArtistPreferences,musicProgress } from '$lib/server/db/schema';
+import { trackWithExports } from '$lib/sync/changes.server';
 import { observeMusicAccess, persistMusic } from './persistence.server';
 import * as v from 'valibot';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
@@ -37,8 +37,7 @@ export async function setMusicFavourite(
   const item=await persistMusic(instance.id,await adapter.musicItem(connection.externalUserId!,id));
   if(item.workId) await trackWithExports(userId,{mediaId:item.workId,action:'favourite',value:favourite});
   else {
-    const [artist]=await getDb().select().from(musicArtists).where(and(eq(musicArtists.instanceId,instance.id),eq(musicArtists.externalId,id)));
-    await getDb().insert(musicArtistPreferences).values({userId,artistId:artist.id,favourite}).onConflictDoUpdate({target:[musicArtistPreferences.userId,musicArtistPreferences.artistId],set:{favourite}});
+    await getDb().insert(musicArtistPreferences).values({userId,artistId:item.artistId!,favourite}).onConflictDoUpdate({target:[musicArtistPreferences.userId,musicArtistPreferences.artistId],set:{favourite}});
     await adapter.setMusicFavourite(connection.externalUserId!,id,favourite);
   }
   return { favourite };

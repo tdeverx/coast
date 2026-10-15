@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
-import { gameDetails, playthroughDetails } from '$lib/core/games/service';
+import { gameDetails, playthroughDetails } from '$lib/core/games/service.server';
 import { listProviders } from '$lib/providers/instances.server';
 import { DomainError } from '$lib/core/errors';
 import type { PageServerLoad } from './$types';

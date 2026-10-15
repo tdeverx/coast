@@ -328,9 +328,20 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
             await sql`UPDATE outbox_actions SET state = 'succeeded', locked_at = NULL, last_error = NULL, payload = (payload - '_jobFailure') || ${outcome ? { _jobOutcome: outcome } : {}}::jsonb, updated_at = NOW() WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id,payload`;
           if (completed.length && action.purpose==='bootstrap' && action.connectionId && action.accountGeneration)
             await sql`INSERT INTO sync_checkpoints(connection_id,kind,completed_at) VALUES(${action.connectionId},${'initial:'+action.kind+':'+action.accountGeneration},NOW()) ON CONFLICT(connection_id,kind) DO UPDATE SET completed_at=NOW(),updated_at=NOW()`;
-          if(completed.length && completed[0].payload._followupFull === true && action.kind==='jellyfin.library') {
+          if (completed.length && completed[0].payload._followupFull === true &&
+              (action.kind === 'jellyfin.library' || action.kind === 'jellyfin.sync')) {
+            const payload = {
+              ...(action.kind === 'jellyfin.library' ? { full: true } : {}),
+              _manual: true,
+              _jobPurpose: 'manual',
+            };
             await sql`INSERT INTO outbox_actions(user_id,connection_id,account_generation,kind,payload,compaction_key,created_at)
-              VALUES(${action.userId},${action.connectionId},${action.accountGeneration ?? null},${action.kind},${{full:true,_manual:true,_jobPurpose:'manual'}}::jsonb,${action.kind},clock_timestamp())`;
+              SELECT ${action.userId},c.id,c.account_generation,${action.kind},${payload}::jsonb,${action.kind},clock_timestamp()
+              FROM provider_connections c WHERE c.id=${action.connectionId} AND c.account_generation=${action.accountGeneration ?? null}::uuid
+                AND (${action.kind}='jellyfin.library' OR
+                  c.settings->'userSync'->>'resetId' IS DISTINCT FROM c.settings->>'userSyncResetId')
+                AND NOT EXISTS(SELECT 1 FROM outbox_actions a WHERE a.connection_id=c.id
+                  AND a.account_generation=c.account_generation AND a.kind=${action.kind} AND a.state IN ('pending','running'))`;
           }
           if (completed.length)
             await resolveNotification(action.userId, `outbox:${action.id}`, sql);
@@ -629,7 +640,8 @@ export async function retryAction(actor: SessionUser | null, id: string) {
       const [busy]=await sql`select a.id from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id<>${id} and a.kind=${action.kind} and a.state in ('pending','running') and (${jobIdentityScope(action.kind)}='instance' and coalesce(c.instance_id::text,a.payload->>'instanceId')=${action.instance} or ${jobIdentityScope(action.kind)}='account' and a.connection_id is not distinct from ${action.connection_id}::uuid and a.user_id=${action.user_id} and a.account_generation is not distinct from ${action.account_generation}::uuid) limit 1`;
       if(busy)throw new AppError(409,'This task is already queued or running for this service.');
     }
-    const [row]=await sql`UPDATE outbox_actions SET state='pending',payload=payload||'{"_manual":true,"_jobPurpose":"manual"}'::jsonb,next_attempt_at=NOW(),updated_at=NOW() WHERE id=${id} AND (user_id=${user.id} OR ${user.role==='admin'}) AND state IN ('pending','failed') RETURNING id`;
+    const budget=action.kind==='webhook.deliver'&&action.state==='failed'?{_webhookAttemptBase:action.attempts}:{};
+    const [row]=await sql`UPDATE outbox_actions SET state='pending',payload=payload||${budget}::jsonb||'{"_manual":true,"_jobPurpose":"manual"}'::jsonb,next_attempt_at=NOW(),updated_at=NOW() WHERE id=${id} AND (user_id=${user.id} OR ${user.role==='admin'}) AND state IN ('pending','failed') RETURNING id`;
     if(!row)throw new AppError(409,'This action cannot be retried.');
   });
 }

@@ -2,10 +2,10 @@ import {beforeAll,afterAll,test,expect} from 'bun:test';
 import {sql as query} from 'drizzle-orm';
 import {getSql,getDb} from '../src/lib/server/db';
 import {refreshTasteCaches,runTasteRefresh,scheduleTasteRefresh,updateTasteSchedule,tasteJob,tasteRevisionSql} from '../src/lib/social/taste-cache.server';
-import {experimentalRows} from '../src/lib/experiments/recommendations.server';
-import {importIgdbMetadata,gameDetails} from '../src/lib/core/games/service';
+import {recommendationRows} from '../src/lib/recommendations/query.server';
+import {importIgdbMetadata,gameDetails} from '../src/lib/core/games/service.server';
 import {mapIgdbGame} from '../src/lib/providers/igdb/adapter.server';
-import {track} from '../src/lib/core/tracking/service';
+import {track} from '../src/lib/core/tracking/service.server';
 import {workTasteFeatures} from '../src/lib/social/work-features.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),other=crypto.randomUUID(),ids=Array.from({length:4},()=>crypto.randomUUID());
@@ -19,10 +19,10 @@ run('task computes private bounded scores and excludes stale cached rankings',as
  // Match creators/tags even when the candidate's genres do not overlap.
  await getSql()`update media set genres=array['Comedy'] where id=${ids[2]}`;
  await refreshTasteCaches();const sql=getSql();
- const profiles=await sql`select * from user_taste_profiles where user_id=${user}`;expect(profiles).toHaveLength(4);
+ const profiles=await sql`select * from user_taste_profiles where user_id=${user}`;expect(profiles.map((profile:any)=>profile.medium).sort()).toEqual(['book','comic','game','movie','music','show']);
  const [score]=await sql`select * from user_taste_scores where user_id=${user} and work_id=${ids[2]}`;expect(score.score).toBeGreaterThan(50);expect(score.breakdown.reasons.some((r:any)=>r.dimension==='cast')).toBe(true);
  const [none]=await sql`select count(*)::int as count from user_taste_scores where user_id=${other}`;expect(none.count).toBe(0);
- const result=await experimentalRows(user,'recommendations',new URL('http://test/?category=screen'));expect(result.items.some(item=>item.id===ids[2])).toBe(true);
+ const result=await recommendationRows(user,'recommendations',new URL('http://test/?category=screen'));expect(result.items.some(item=>item.id===ids[2])).toBe(true);
  // Shared enrichment queues a later refresh without invalidating private scores mid-backfill.
  await sql`update work_features set updated_at=now() where work_id=${ids[2]}`;
  const [enriched]=await getDb().execute<{revision:string}>(query`select ${tasteRevisionSql} as revision from users u where u.id=${user}::uuid`);expect(enriched.revision).toBe(score.revision);
@@ -50,14 +50,21 @@ run('concurrent changes retry promptly and large backlogs continue in bounded ba
  await sql`delete from outbox_actions where kind='taste.refresh'`;
 });
 run('verified game parent supplies presentation, never transfers ownership or identities',async()=>{
- const parentId=801991,childId=801992;
+ const parentId=801991,childId=801992,ancestorId=801990;
+ const parent=await importIgdbMetadata(mapIgdbGame({id:parentId,name:'Fixture main game',parent_game:{id:ancestorId,name:'Earlier verified parent'}}));
  const child=await importIgdbMetadata(mapIgdbGame({id:childId,name:'Fixture Playtest',parent_game:{id:parentId,name:'Fixture main game',cover:{image_id:'parent_cover'},genres:[{name:'Adventure'}]},external_games:[{uid:'901992',url:'https://store.steampowered.com/app/901992/'}]}));
  const sql=getSql();try{
+  expect(await sql`select * from game_variants where game_id=${parent.id}`).toHaveLength(1);
   await track(user,{mediaId:child.id,action:'collect',value:true});
   const presentation=await gameDetails(user,child.id);expect(presentation.title).toBe('Fixture Playtest');expect(presentation.posterPath).toContain('parent_cover');
   const [variant]=await sql`select parent_id from game_variants where game_id=${child.id}`;
   expect((await sql`select * from tracking_state where user_id=${user} and media_id=${variant.parent_id}`)).toHaveLength(0);
   expect((await sql`select game_id from game_external_ids where provider='steam' and external_id='901992'`)[0].game_id).toBe(child.id);
   expect((await workTasteFeatures([child.id])).get(child.id)?.genres?.[0].name).toBe('Adventure');
- }finally{await sql`delete from games where id in (select game_id from game_external_ids where provider='igdb' and external_id in ('801991','801992'))`;}
+  const refreshed=await importIgdbMetadata(mapIgdbGame({id:childId,name:'Fixture Playtest',genres:[{name:'Puzzle'}],external_games:[{uid:'901992',url:'https://store.steampowered.com/app/901992/'}]}));
+  expect(refreshed.id).toBe(child.id);
+  expect(await sql`select * from game_variants where game_id=${child.id}`).toHaveLength(0);
+  expect((await gameDetails(user,child.id)).posterPath).toBeNull();
+  expect((await workTasteFeatures([child.id])).get(child.id)?.genres?.[0].name).toBe('Puzzle');
+ }finally{await sql`delete from games where id in (select game_id from game_external_ids where provider='igdb' and external_id in ('801990','801991','801992'))`;}
 });

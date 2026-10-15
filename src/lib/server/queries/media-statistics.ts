@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { getDb } from '../db';
-import { recordedWatches } from '$lib/core/tracking/recorded-watches';
+import { recordedWatches } from '$lib/core/tracking/recorded-watches.server';
 import { periodStart, type ProfilePeriod } from '$lib/profile/period';
 import type { MediaStatistics } from '$lib/media/statistics';
 /** Same recorded-watch semantics as profile statistics, scoped to this title and its descendants. */

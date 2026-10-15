@@ -1,10 +1,12 @@
 import {error} from '@sveltejs/kit';
-import {eq,and,asc,sql} from 'drizzle-orm';
+import {eq,and,sql} from 'drizzle-orm';
 import * as v from 'valibot';
 import {getDb} from '$lib/server/db';
 import {musicWorks,mediaRelationships,providerItems,providerConnections,providerInstances,musicProgress,trackingState} from '$lib/server/db/schema';
 import {PAGE_SIZE,pagination,pageNumberSchema} from '$lib/server/queries/pagination';
 import type {MusicItem} from '$lib/music/model';
+import {musicAlbumMembers,musicAlbumMembersSql} from '$lib/music/editions.server';
+import {musicWorkCredits} from '$lib/music/credits.server';
 import type {PageServerLoad} from './$types';
 export const load:PageServerLoad=async({locals,params,url, depends})=>{
   depends('coast:tracking');
@@ -18,8 +20,12 @@ export const load:PageServerLoad=async({locals,params,url, depends})=>{
  const item={...toItem(work),playCount:progress?.playCount??0,positionSeconds:progress?.positionSeconds??0,favourite:state?.favourite??false};if(parent){item.albumId=parent.id;item.album=parent.title;}
  const [image]=locals.user?await db.select({item:providerItems,connectionId:providerConnections.id}).from(providerItems).innerJoin(providerConnections,eq(providerConnections.instanceId,providerItems.instanceId)).innerJoin(providerInstances,eq(providerInstances.id,providerItems.instanceId)).where(and(eq(providerItems.mediaId,id),eq(providerConnections.userId,locals.user.id),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true))).limit(1):[];
  if(image?.item.snapshot.primaryImageTag)item.artworkUrl=`/api/v1/providers/${image.connectionId}/music/${image.item.externalId}/artwork`;
- const [count]=await db.select({total:sql<number>`count(*)::int`}).from(mediaRelationships).where(and(eq(mediaRelationships.parentId,id),eq(mediaRelationships.kind,'contains')));
+ const [count]=await db.execute<{total:number}>(sql`select count(*)::int as total from (${musicAlbumMembersSql(sql`${id}::uuid`)}) members`);
  const {page,pages}=pagination(count.total,requested);
- const children=await db.select({work:musicWorks,position:mediaRelationships.position}).from(mediaRelationships).innerJoin(musicWorks,eq(musicWorks.id,mediaRelationships.childId)).where(and(eq(mediaRelationships.parentId,id),eq(mediaRelationships.kind,'contains'))).orderBy(asc(mediaRelationships.position),asc(musicWorks.id)).limit(PAGE_SIZE).offset((page-1)*PAGE_SIZE);
- return {item,connectionId:'',children:{items:children.map(({work,position})=>({...toItem(work),discNumber:Math.floor(position/10000),trackNumber:position%10000})),total:count.total,nextOffset:page<pages?page*PAGE_SIZE:null},failure:'',page,pages};
+ const members=await musicAlbumMembers(id,db,PAGE_SIZE,(page-1)*PAGE_SIZE);
+ const children=members.length?await db.select().from(musicWorks).where(sql`${musicWorks.id} in (${sql.join(members.map(member=>sql`${member.id}::uuid`),sql`,`)})`):[];
+ const byId=new Map(children.map(child=>[child.id,child]));
+ const credits=await musicWorkCredits([id,...byId.keys()],locals.user?.id??null);
+ Object.assign(item,credits.get(id));
+ return {item,connectionId:'',children:{items:members.map(member=>({...toItem(byId.get(member.id)!),...credits.get(member.id),entryId:member.entryId,discNumber:member.discNumber??undefined,trackNumber:member.trackNumber??undefined})),total:count.total,nextOffset:page<pages?page*PAGE_SIZE:null},failure:'',page,pages};
 };

@@ -25,6 +25,7 @@ export function musicDuration(seconds?: number) {
 export function musicCard(item: MusicItem, connectionId: string): MediaCardPresentation {
   return {
     id: item.id,
+    entryId: item.entryId ?? (connectionId ? `music:${connectionId}:${item.id}` : item.id),
     workId: item.workId,
     kind: item.kind,
     title: item.title,

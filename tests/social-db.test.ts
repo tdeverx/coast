@@ -6,8 +6,9 @@ import {activityFeed,workSocial,reactionSummary} from '../src/lib/social/queries
 import {canView} from '../src/lib/social/privacy.server';
 import {startCheckin,cancelCheckin,completeCheckin} from '../src/lib/social/presence.server';
 import {friendInsights} from '../src/lib/social/insights.server';
-import {reconcileProviderValue} from '../src/lib/sync/values';
-import {track} from '../src/lib/core/tracking/service';
+import {reconcileProviderValue} from '../src/lib/sync/values.server';
+import {track} from '../src/lib/core/tracking/service.server';
+import {addListItem} from '../src/lib/core/lists/service.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const ids=[crypto.randomUUID(),crypto.randomUUID(),crypto.randomUUID()],work=crypto.randomUUID(),prefix='social-'+crypto.randomUUID().slice(0,8);let friendId:string;
 beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const db=getSql();for(let i=0;i<ids.length;i++)await db`insert into users(id,username) values(${ids[i]},${prefix+'-'+i})`;await db`insert into works(id,category,kind) values(${work},'screen','movie')`;await db`insert into media(id,kind,title,runtime_minutes,genres) values(${work},'movie','Social fixture',1,array['Drama'])`;});
@@ -42,6 +43,50 @@ run('reaction replacement and recommendation responses retain one durable result
  expect((await recommendations(ids[1])).find(item=>item.id===rec.id)?.username).toBe(prefix+'-0');
  await respondRecommendation(ids[1],rec.id,{action:'save'});await respondRecommendation(ids[1],rec.id,{action:'save'});
  expect((await getSql()`select watchlist from tracking_state where user_id=${ids[1]} and media_id=${work}`)[0].watchlist).toBe(true);
+});
+run('reading shares ordinary social actions and lists while retaining subtype gates and rejecting playback playlists',async()=>{
+ const db=getSql(),readingIds=[crypto.randomUUID(),crypto.randomUUID()],listId=crypto.randomUUID(),playlistId=crypto.randomUUID();
+ const [settings]=await db`select value from system_settings where key='coast'`;
+ await db`insert into system_settings(key,value) values('coast',${{...settings?.value,experimentalBooks:true,experimentalComics:true}}::jsonb) on conflict(key) do update set value=excluded.value`;
+ await db`insert into works(id,category,kind) values(${readingIds[0]},'book','book'),(${readingIds[1]},'comic','comic')`;
+ await db`insert into lists(id,user_id,name,playlist) values(${listId},${ids[0]},'Reading list',false),(${playlistId},${ids[0]},'Playback list',true)`;
+ try{
+  for(const id of readingIds){
+   const recommendation=await recommend(ids[0],{recipientId:ids[1],workId:id});
+   expect((await recommend(ids[0],{recipientId:ids[1],workId:id})).id).toBe(recommendation.id);
+   await react(ids[0],{targetKind:'work',targetId:id,emoji:'❤️'});
+   const [activity]=await db`insert into social_activity(user_id,work_id,source_key,event_kind,section,source,occurred_at) values(${ids[0]},${id},${'reading-social:'+id},'collect','collection','coast',now()) returning id`;
+   await react(ids[1],{targetKind:'activity',targetId:activity.id,emoji:'🔥'});
+   expect(await db`select target_id from social_reactions where target_id in (${id}::uuid,${activity.id}::uuid)`).toHaveLength(2);
+   expect((await reactionSummary(ids[0],'work',[id]))[id].map(reaction=>reaction.emoji)).toEqual(['❤️']);
+   expect(await db`select id from social_recommendations where work_id=${id}`).toHaveLength(1);
+   await db`update users set settings=${{social:{categories:{book:'private',comic:'private'}}}}::jsonb where id=${ids[0]}`;
+   expect((await reactionSummary(ids[1],'work',[id]))[id]).toEqual([]);
+   await expect(react(ids[1],{targetKind:'activity',targetId:activity.id,emoji:'❤️'})).rejects.toMatchObject({status:404});
+   await db`update users set settings='{}'::jsonb where id=${ids[0]}`;
+   expect(await addListItem(ids[0],listId,id)).toMatchObject({added:true});
+   await expect(addListItem(ids[0],playlistId,id)).rejects.toThrow('playback playlist');
+  }
+  expect(await db`select id from list_items where list_id=${listId}`).toHaveLength(2);
+  expect(await db`select id from list_items where list_id=${playlistId}`).toHaveLength(0);
+  expect(await db`select id from notifications where data->>'workId' in ${db(readingIds)}`).toHaveLength(4);
+  await db`update system_settings set value=value || ${ {experimentalBooks:false,experimentalComics:false} }::jsonb where key='coast'`;
+  for(const id of readingIds){
+   await expect(recommend(ids[0],{recipientId:ids[1],workId:id})).rejects.toMatchObject({status:404});
+   await expect(react(ids[0],{targetKind:'work',targetId:id,emoji:'🔥'})).rejects.toMatchObject({status:404});
+   expect((await reactionSummary(ids[0],'work',[id]))[id]).toEqual([]);
+   expect((await recommendations(ids[0])).some(item=>item.workId===id)).toBe(false);
+   const [pending]=await db`select id from social_recommendations where work_id=${id}`;
+   await expect(respondRecommendation(ids[1],pending.id,{action:'save'})).rejects.toMatchObject({status:404});
+  }
+ }finally{
+  await db`delete from lists where id in (${listId}::uuid,${playlistId}::uuid)`;
+  await db`delete from notifications where data->>'workId' in ${db(readingIds)}`;
+  await db`update users set settings='{}'::jsonb where id=${ids[0]}`;
+  await db`delete from works where id in ${db(readingIds)}`;
+  if(settings)await db`update system_settings set value=${settings.value}::jsonb where key='coast'`;
+  else await db`delete from system_settings where key='coast'`;
+ }
 });
 run('check-in cancellation and repeated completion cannot manufacture extra watches',async()=>{
  const c=await startCheckin(ids[2],{workId:work});await cancelCheckin(ids[2],c.id);await completeCheckin(ids[2],c.id);

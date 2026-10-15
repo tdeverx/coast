@@ -8,16 +8,16 @@ import {
   getList,
   moveListItem,
   removeListItem,
-} from '../src/lib/core/lists/service';
+} from '../src/lib/core/lists/service.server';
 import {
   nextSequenceEntry,
   restartPlaylist,
   sequenceEntries,
-} from '../src/lib/core/lists/sequence';
-import { track } from '../src/lib/core/tracking/service';
-import { deleteListWithExports } from '../src/lib/sync/trakt-lists';
-import { bulkTrack } from '../src/lib/core/tracking/service';
-import { setRewatch } from '../src/lib/core/tracking/rewatch';
+} from '../src/lib/core/lists/sequence.server';
+import { track } from '../src/lib/core/tracking/service.server';
+import { deleteListWithExports } from '../src/lib/sync/trakt-lists.server';
+import { bulkTrack } from '../src/lib/core/tracking/service.server';
+import { setRewatch } from '../src/lib/core/tracking/rewatch.server';
 import { mediaViewsForIds, sequenceNextView } from '../src/lib/server/queries/media';
 import { continuationIds } from '../src/lib/server/queries/continuations';
 import { listsData } from '../src/lib/server/queries/lists';

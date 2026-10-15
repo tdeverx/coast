@@ -1,0 +1,128 @@
+{
+  "section": "Infrastructure: database, common primitives, storage, diagnostics, benchmarks, lifecycle and verification",
+  "coverage": {
+    "read": [
+      "src/lib/server/db/index.ts", "src/lib/server/db/jsonb.ts", "src/lib/server/db/schema.ts",
+      "src/lib/server/security/credentials.ts", "src/lib/server/security/csrf.ts", "src/lib/server/security/errors.ts", "src/lib/server/security/provider-api-error.ts", "src/lib/server/security/provider-fetch.ts", "src/lib/server/security/request-body.ts", "src/lib/server/security/request-priority.ts",
+      "src/lib/server/storage/image-cache.server.ts", "src/lib/server/storage/retention.server.ts",
+      "src/lib/server/utils/async.ts", "src/lib/server/utils/provider-cache.ts", "src/lib/server/utils/provider-single-flight.ts",
+      "src/lib/server/diagnostics/index.ts", "src/lib/diagnostics.ts", "src/lib/server/build-identity.ts", "src/lib/server/startup.ts", "src/lib/server/config.ts", "src/hooks.server.ts",
+      "src/lib/benchmarks/model.ts", "src/lib/benchmarks/service.server.ts", "src/lib/benchmarks/BenchmarkSettings.svelte",
+      "src/lib/providers/server-artwork.server.ts", "src/lib/providers/tmdb/artwork.server.ts", "src/lib/social/taste-cache.server.ts:admission",
+      "scripts/migrate.ts", "scripts/test-database.ts", "scripts/test-recovery.ts", "scripts/test-container-lifecycle.ts", "scripts/container-entrypoint.sh", "scripts/container-storage.sh", "scripts/container-wait.sh", "scripts/container-application.ts", "scripts/container-child-exit.ts", "scripts/performance-verification.ts", "scripts/code-inventory.ts", "scripts/ui-inventory.ts",
+      "scripts/browser-check.ts", "scripts/browser-diagnostics-check.ts", "scripts/browser-experimental-check.ts", "scripts/browser-music-check.ts", "scripts/browser-playback-check.ts", "scripts/provider-browser-fixture.ts",
+      "Dockerfile", "compose.yaml", ".github/workflows/verify-and-publish-preview.yml", ".dockerignore", "package.json", "vite.config.ts", "svelte.config.js", "tsconfig.json", "drizzle.config.ts",
+      "drizzle/0039_performance_benchmarks.sql", "drizzle/0040_collection_freshness.sql", "drizzle/0041_oval_scream.sql", "drizzle/0042_superb_major_mapleleaf.sql", "drizzle/0043_trakt_recommendation_accounts.sql", "drizzle/0044_server_stream_history.sql", "drizzle/0045_trakt_import_staging.sql", "drizzle/0046_provider_job_snapshots.sql", "drizzle/0047_reading_experiments.sql", "drizzle/0048_reading_sessions.sql", "drizzle/0049_search_and_reading_identity.sql", "drizzle/0050_reusable_playback_shares.sql", "drizzle/0051_shared_request_leases.sql", "drizzle/meta/_journal.json",
+      "tests/request-priority.test.ts", "tests/platform-security.test.ts", "tests/request-body.test.ts", "tests/async-work.test.ts", "tests/image-cache.test.ts", "tests/diagnostic-logging.test.ts", "tests/benchmarks.test.ts", "tests/benchmarks-db.test.ts", "tests/retention-db.test.ts", "tests/container-application.test.ts", "tests/container-child-exit.test.ts", "tests/container-storage.test.js", "tests/media-details.test.ts:provider-cache cases",
+      "docs/code-organization.md", "docs/architecture.md", "docs/performance.md", "docs/deployment.md", "docs/diagnostic-logging.md", "docs/verification-platform.md", "docs/experimental-features.md:taste section"
+    ],
+    "scanned": [
+      "drizzle/0000-0038 SQL:table/index/trigger inventory and relevant identity/retention excerpts",
+      "drizzle/meta/*_snapshot.json:file inventory;0042 used as in-memory generation baseline",
+      "src and tests and scripts:jobs-table callers,providerCache/providerSingleFlight callers,artwork callers",
+      "node_modules/drizzle-kit/bin.cjs:19848-19870 and 32158-32218;api.mjs:75252-75298",
+      "README.md:preview image usage", "docs/audits:prior transport/deadline evidence"
+    ],
+    "unverified": [
+      "No database, socket, live provider, credential inspection, service startup, Docker, registry or browser was used.",
+      "No independent historical migration replay, upgrade-path validation, query plans or production benchmarks were run.",
+      "CI stale preview path is strong static reasoning about possible run completion order; no observed live rollback is claimed.",
+      "Authentication, API authorization/dispatch, durable queue execution and feature services are owned by separate reviewers.",
+      "Root's confirmed nested transaction/pool starvation finding and playback cleanup overlap finding are not duplicated.",
+      "Full historical migration snapshots were scanned rather than manually compared column by column; schema declarations and recent migrations were substantively reviewed."
+    ]
+  },
+  "checks": [
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/request-priority.test.ts tests/platform-security.test.ts tests/request-body.test.ts tests/async-work.test.ts tests/image-cache.test.ts tests/diagnostic-logging.test.ts tests/benchmarks.test.ts tests/container-application.test.ts tests/container-child-exit.test.ts",
+      "result": "41 pass,0 fail,230 assertions. Fetch is mocked; generated fixture credentials only; no real DB/provider."
+    },
+    {
+      "command": "In-memory drizzle-kit/api generateMigration(await Bun.file('drizzle/meta/0042_snapshot.json').json(),generateDrizzleJson(currentSchema,previous.id))",
+      "result": "69 statements;10 CREATE TABLE statements for objects already created by applied0044-0051 SQL,plus duplicate ADD COLUMN statements. No output file or SQL execution."
+    },
+    {
+      "command": "Mock secureProviderFetch({baseUrl:'https://1.1.1.1',approved:true,timeoutMs:30}) with fetch replaced by a ReadableStream emitting one byte every15ms,nine bytes then EOF;diagnosticStore.level='off'",
+      "result": "HTTP200,9bytes,174ms. Demonstrates no buffered completion deadline;no networking or diagnostic writes."
+    }
+  ],
+  "findings": [
+    {
+      "id": "INFRA-01",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Buffered provider responses have no completion deadline",
+      "rootCause": "buffered-provider-timeout-resets-per-chunk",
+      "confidence": "confirmed",
+      "evidence": [
+        {"path":"src/lib/server/security/provider-fetch.ts","line":125,"detail":"limitedBody starts a new timeout for each individual reader.read and clears it at161."},
+        {"path":"src/lib/server/security/provider-fetch.ts","line":250,"detail":"Original configured DNS/header timer is cleared when the wrapped response is returned,before body consumption finishes."},
+        {"path":"src/lib/server/security/provider-fetch.ts","line":317,"detail":"Buffered calls await the full body while holding the common per-origin lane at324."}
+      ],
+      "trigger": "An approved provider emits small chunks inside each idle timeout but takes much longer than timeoutMs to finish a metadata/JSON body.",
+      "impact": "Operation and same-origin followers can remain blocked far beyond configured timeout; durable workers/service locks can be occupied beyond normal recovery periods. Mocked30ms request completed after174ms.",
+      "recommendation": "Keep an overall deadline through buffered response consumption and cancel its upstream body on expiry,while preserving byte limits,caller abort,priority/cooldown,and long media-stream idle timeouts.",
+      "verification": "Abort-aware mocked body emits chunks inside idle limit beyond total deadline;expect TimeoutError,cancelled upstream and progress of a queued same-origin request. Retain stream and caller-cancellation cases.",
+      "relatedAreas": ["provider adapters","durable queue","interactive discovery","playback transport"]
+    },
+    {
+      "id": "INFRA-02",
+      "priority": "P2",
+      "category": "verification",
+      "title": "Migration snapshots lag applied SQL and regenerate existing schema",
+      "rootCause": "manual-migration-snapshot-baseline-drift",
+      "confidence": "confirmed",
+      "evidence": [
+        {"path":"package.json","line":20,"detail":"db:generate uses standard drizzle-kit generation."},
+        {"path":"drizzle/meta/_journal.json","line":307,"detail":"Journal includes0043 through0051,but latest saved snapshot is0042_snapshot.json."},
+        {"path":"drizzle/0047_reading_experiments.sql","line":1,"detail":"reading_works is already created in the applied chain,yet absent from0042 generation baseline."},
+        {"path":"drizzle/0051_shared_request_leases.sql","line":1,"detail":"share_request_leases is already created in the chain,yet regenerated by the current schema diff."},
+        {"path":"src/lib/server/db/schema.ts","line":1024,"detail":"Current model declares reading_works and later additions;in-memory generator produced69 statements including ten duplicate table creations."}
+      ],
+      "trigger": "Developer runs the exposed db:generate command for the next schema change or with no change.",
+      "impact": "Generated migration tries to recreate existing tables/columns and fails when applied unless manually repaired;fresh-chain DB tests alone do not detect generation baseline drift.",
+      "recommendation": "Synchronize the latest generation snapshot with schema already represented by0043-0051,retain applied SQL/custom function history,and add a focused no-op generation check. Do not apply duplicate generated SQL.",
+      "verification": "Current-schema generation diff should be empty;isolated temporary schema change should generate only that change. Replay normal migration chain in a disposable DB during implementation.",
+      "relatedAreas": ["schema maintenance","Reading","server streams","playback sharing","Trakt staging"]
+    },
+    {
+      "id": "INFRA-03",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Older successful image workflows can move preview backwards",
+      "rootCause": "mutable-preview-tag-has-no-revision-fence",
+      "confidence": "strong-static",
+      "evidence": [
+        {"path":".github/workflows/verify-and-publish-preview.yml","line":125,"detail":"Each publish waits only for its own image matrix;earlier verify/image stages can overlap between runs."},
+        {"path":".github/workflows/verify-and-publish-preview.yml","line":129,"detail":"Only publishing is serialized;serialization does not order builds by source revision."},
+        {"path":".github/workflows/verify-and-publish-preview.yml","line":152,"detail":"Every completed publishing run unconditionally includes mutable preview tag."},
+        {"path":".github/workflows/verify-and-publish-preview.yml","line":173,"detail":"Manifest creation writes every tag without checking whether revision is still intended current main."}
+      ],
+      "trigger": "Older run A completes its builds after newer B has published,or an older workflow is rerun.",
+      "impact": "preview may point to older application/schema code after newer code was available;Compose preview users can pull an unintended older revision. No live rollback was observed.",
+      "recommendation": "Fence preview updates to the still-current intended revision inside serialized publication;preserve appropriate immutable SHA/version publications and both native architecture checks.",
+      "verification": "Simulate or exercise A-starts-first/B-publishes-first completion order and old-run rerun;preview must not regress while immutable references remain available.",
+      "relatedAreas": ["CI","container releases","deployment documentation"]
+    },
+    {
+      "id": "INFRA-04",
+      "priority": "P3",
+      "category": "architecture",
+      "title": "Taste-outbox uniqueness index targets runtime-unused jobs table",
+      "rootCause": "parallel-dead-jobs-schema-misplaces-invariant",
+      "confidence": "confirmed",
+      "evidence": [
+        {"path":"src/lib/server/db/schema.ts","line":709,"detail":"Separate jobs declaration has no discovered production read/write caller;JSONB codec test inserts it."},
+        {"path":"src/lib/server/db/schema.ts","line":728,"detail":"outbox_taste_one_active_idx is attached to jobs rather than outboxActions."},
+        {"path":"drizzle/0042_superb_major_mapleleaf.sql","line":46,"detail":"Applied SQL creates named unique index ON jobs."},
+        {"path":"src/lib/social/taste-cache.server.ts","line":47,"detail":"Real taste scheduling inserts outbox_actions;manual admission uses advisory lock at34."},
+        {"path":"docs/experimental-features.md","line":68,"detail":"Documentation incorrectly attributes active taste-job admission to a partial unique index."}
+      ],
+      "trigger": "Maintaining the documented taste-job invariant or inspecting the named index as assurance of outbox deduplication.",
+      "impact": "The advertised database invariant does not constrain actual job rows;parallel unused schema obscures ownership. Existing locked scheduling means ordinary duplicate execution is not established.",
+      "recommendation": "Move the intended index to actual outbox via new migration and align schema,or explicitly document advisory-lock-only admission and remove misleading dead constraint. Review unused jobs table and codec test together before removal;do not create a second runtime.",
+      "verification": "Inspect index relation/predicate on disposable migrated DB and test intended active taste-job invariant on outbox_actions including terminal-state transitions;retain scheduler lock tests.",
+      "relatedAreas": ["taste scheduling","outbox","database schema","experimental feature documentation"]
+    }
+  ]
+}

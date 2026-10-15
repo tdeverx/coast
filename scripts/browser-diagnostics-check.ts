@@ -13,6 +13,10 @@ try {
   const setup = page.url().endsWith('/setup');
   await page.getByLabel('Username', { exact: true }).fill('diagnostic-browser-admin');
   await page.locator('input[name="password"]').fill('Diagnostic-test-passphrase-2026!');
+  if (setup) {
+    await page.locator('input[name="displayName"]').fill('Diagnostic administrator');
+    await page.locator('input[name="passwordConfirmation"]').fill('Diagnostic-test-passphrase-2026!');
+  }
   await page
     .getByRole('button', { name: setup ? 'Create your Coast' : 'Sign in', exact: true })
     .click();

@@ -1,4 +1,5 @@
 import { pruneTransientRecords } from '$lib/server/storage/retention.server';
+import {expireSharedViewers} from '$lib/sharing/leases.server';
 import { serviceTasks, maintenanceKinds } from './tasks';
 import { jobIdentityScope } from './job-policy';
 import { eligibleTaskAccounts, recurringTask, taskDue, taskSchedulingEnabled } from './task-timing';
@@ -152,7 +153,7 @@ export async function scheduleProviderMaintenance(
     const [tmdb] = await tx.select({ id: providerInstances.id }).from(providerInstances).where(and(eq(providerInstances.provider, 'tmdb'), eq(providerInstances.enabled, true), sql`${providerInstances.credentials} is not null`)).limit(1);
     const taste=options.instanceId?{queued:0,active:0}:await (await import('$lib/social/taste-cache.server')).scheduleTasteRefresh(tx);
     const metadata = await (await import('$lib/catalogue/maintenance.server')).scheduleMetadataRefresh(tx, options);
-    const recommendations=await (await import('$lib/experiments/provider-recommendations.server')).scheduleRecommendationRefresh(tx,options);
+    const recommendations=await (await import('$lib/recommendations/providers.server')).scheduleRecommendationRefresh(tx,options);
     metadata.queued+=recommendations.queued+taste.queued;metadata.active+=recommendations.active+taste.active;
     const rows = await tx
       .select({ connection: providerConnections, instance: providerInstances, role:users.role })
@@ -273,7 +274,12 @@ export async function scheduleProviderMaintenance(
 }
 
 let retentionDue = 0;
+let maintenancePass: Promise<void> | null = null;
+let sharedCleanup: Promise<void> | null = null;
 async function maintenanceTick() {
+  if (!sharedCleanup) sharedCleanup = Promise.resolve().then(()=>expireSharedViewers()).then(()=>{},()=>{
+    void logDiagnostic('error','job.failed',{failure:'unexpected'});
+  }).finally(()=>{sharedCleanup=null;});
   if((await getConfig()).developerMode)return;
   await scheduleProviderMaintenance();
   if (Date.now() < retentionDue) return;
@@ -284,17 +290,20 @@ async function maintenanceTick() {
   }
 }
 
+function runMaintenance() {
+  return maintenancePass ??= runtimeEvidence.track('maintenance', maintenanceTick).finally(()=>{maintenancePass=null;});
+}
 export function startProviderMaintenance() {
   if (maintenanceTimer) return;
   maintenanceTimer = setInterval(() => {
-    void runtimeEvidence.track('maintenance', maintenanceTick).catch(() =>
+    void runMaintenance().catch(() =>
       logDiagnostic('error', 'job.failed', { stage: 'maintenance', failure: 'unexpected' })
     );
   }, 60000);
   maintenanceTimer.unref();
   process.once('SIGTERM', stopProviderMaintenance);
   process.once('SIGINT', stopProviderMaintenance);
-  void runtimeEvidence.track('maintenance', maintenanceTick).catch(() =>
+  void runMaintenance().catch(() =>
     logDiagnostic('error', 'job.failed', { stage: 'maintenance', failure: 'unexpected' })
   );
 }

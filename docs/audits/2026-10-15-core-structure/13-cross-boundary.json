@@ -1,0 +1,149 @@
+{
+  "section": "Root cross-boundary validation",
+  "coverage": {
+    "read": [
+      "src/lib/sync/jellyfin-reading.server.ts",
+      "src/lib/providers/reading.server.ts",
+      "src/lib/server/experimental.ts",
+      "src/lib/catalogue/reading.server.ts",
+      "docs/reading.md",
+      "src/lib/server/db/index.ts",
+      "src/lib/server/config.ts",
+      "src/lib/server/public-api/mutations.server.ts",
+      "src/lib/core/reading/service.server.ts"
+    ],
+    "scanned": [],
+    "unverified": [
+      "CROSS-01 and CROSS-02: no DB/provider/browser reproduction; conclusions follow explicit branch order and exact identity lookup.",
+      "CROSS-03: disposable PostgreSQL reproduction uses synthetic imported work/account and real application service/pool; no live HTTP load or production incident attribution."
+    ]
+  },
+  "checks": [
+    {
+      "command": "Disposable migrated PostgreSQL fixture: single outer-transaction updateReading control, then ten ordered same-account transaction calls using real app pool; observer cancels one synthetic waiter after 1.5 seconds",
+      "result": "Control succeeds at page1. With ten pool slots held, firstSettled=false and9 sessions wait on advisory lock. Cancelling one waiter releases a slot: first and8 others fulfill, cancelled waiter rejects, elapsed1538ms. Fresh DB dropped and test container restored stopped. Earlier boundedness discovery waited109111ms before scoped release; connectionTimeout10 does not bound this pool acquisition."
+    }
+  ],
+  "findings": [
+    {
+      "id": "CROSS-01",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Source-based Reading gates block Open Library comics in Comics-only mode",
+      "rootCause": "reading-source-name-used-as-medium-feature-gate",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/server/experimental.ts",
+          "line": 12,
+          "detail": "Every Open Library detail route requires Books regardless of resolved kind."
+        },
+        {
+          "path": "src/lib/sync/jellyfin-reading.server.ts",
+          "line": 25,
+          "detail": "Open Library/ISBN identities are considered only when Books is enabled."
+        },
+        {
+          "path": "src/lib/providers/reading.server.ts",
+          "line": 95,
+          "detail": "Metadata details already resolve real kind and apply its authoritative final gate."
+        },
+        {
+          "path": "docs/reading.md",
+          "line": 13,
+          "detail": "Metadata source is explicitly not equivalent to medium."
+        }
+      ],
+      "trigger": "Comics enabled, Books disabled; unresolved exact Open Library comic preview or newly linked Jellyfin comic file",
+      "impact": "Supported graphic novels are rejected/skipped before classification; prior exact file editions can still work",
+      "recommendation": "Use existing aggregate Reading gate before resolution and actual saved/resolved kind gate afterward",
+      "verification": "Comics-only Open Library preview and exact Jellyfin comic import, plus refusal of real books",
+      "relatedAreas": [
+        "Reading",
+        "Jellyfin",
+        "feature gates",
+        "provider previews"
+      ]
+    },
+    {
+      "id": "CROSS-02",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Reading file import requires remote metadata for already registered secondary identities",
+      "rootCause": "reading-file-import-primary-identity-only-lookup",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/sync/jellyfin-reading.server.ts",
+          "line": 18,
+          "detail": "Exact file-edition lookup is local but only covers previously linked file IDs."
+        },
+        {
+          "path": "src/lib/sync/jellyfin-reading.server.ts",
+          "line": 31,
+          "detail": "Fallback saved-work lookup checks primary kind/externalId rather than alias registry."
+        },
+        {
+          "path": "src/lib/catalogue/reading.server.ts",
+          "line": 39,
+          "detail": "Canonical import registers multiple exact provider identities and resolves them at lines59\u201362."
+        }
+      ],
+      "trigger": "Existing comic saved primarily from Comic Vine with Open Library alias; new Jellyfin file/copy has only alias; metadata unavailable",
+      "impact": "Redundant fetches and avoidable file availability failure despite known canonical identity",
+      "recommendation": "Resolve exact registered aliases in a bounded local query before optional remote metadata; preserve conflict/feature/access checks",
+      "verification": "Provider-unavailable fixture must attach new file to registered canonical UUID without metadata fetch; reject unknown/conflicting identities",
+      "relatedAreas": [
+        "Reading",
+        "Jellyfin",
+        "canonical identity",
+        "offline provider behavior"
+      ]
+    },
+    {
+      "id": "CROSS-03",
+      "priority": "P1",
+      "category": "correctness",
+      "title": "Reading API transactions can exhaust the pool while waiting for a query on that same pool",
+      "rootCause": "transaction-calls-global-config-pool-under-account-lock",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/lib/server/db/index.ts",
+          "line": 27,
+          "detail": "Application pool is bounded to ten connections."
+        },
+        {
+          "path": "src/lib/server/public-api/mutations.server.ts",
+          "line": 40,
+          "detail": "Public writes already fetch config outside their transaction, then take the account advisory lock at line43."
+        },
+        {
+          "path": "src/lib/server/public-api/mutations.server.ts",
+          "line": 62,
+          "detail": "Reading write invokes updateReading inside the existing locked transaction."
+        },
+        {
+          "path": "src/lib/core/reading/service.server.ts",
+          "line": 37,
+          "detail": "Transaction helper calls global getConfig rather than using its transaction or the prefetched config."
+        },
+        {
+          "path": "src/lib/server/config.ts",
+          "line": 66,
+          "detail": "Default getConfig database is getSql(), so this read needs another free pooled connection."
+        }
+      ],
+      "trigger": "Ten concurrent same-account reading API writes: first holds account lock, other nine hold pool connections waiting for that lock, and first needs another pooled connection for config.",
+      "impact": "The first cannot release the account lock and the waiters cannot release their connections. Unrelated DB requests also queue behind the exhausted pool. Reproduced until a test waiter was cancelled; no claim that a specific live outage was caused by this.",
+      "recommendation": "Remove independent pool acquisition inside the transaction: pass already resolved config into the transactional reading service or read config on the same transaction, following existing transaction-aware service patterns. Inspect analogous nested global reads without increasing the pool as a workaround.",
+      "verification": "Retain a bounded isolated regression with ten same-account operations plus unrelated read, verify all settle without external cancellation and no extra connection is required; preserve token/idempotency/account locking and disabled-medium checks.",
+      "relatedAreas": [
+        "Public API",
+        "Reading",
+        "Database pool",
+        "transaction boundaries"
+      ]
+    }
+  ]
+}

@@ -1,11 +1,14 @@
+import {readingHistoryData} from '$lib/reading/query.server';
 import { categoryEnabled } from '$lib/experimental';
 import { openApi } from './openapi';
 import { publicMutation } from './mutations.server';
 import { listWebhooks } from './webhooks.server';
 import { json,type RequestHandler } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { getSql } from '$lib/server/db';
 import { getConfig } from '$lib/server/config';
+import { enabledCategories } from '$lib/server/experimental';
+import { sql } from 'drizzle-orm';
+import { getDb } from '$lib/server/db';
 import { AppError } from '$lib/server/security/errors';
 import { DomainError } from '$lib/core/errors';
 import { logDiagnostic,classifyFailure } from '$lib/server/diagnostics';
@@ -20,14 +23,20 @@ import { pagination,PAGE_SIZE } from '$lib/server/queries/pagination';
 import type { ApiScope } from '$lib/public-api';
 
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
-export const publicApiHandler:RequestHandler=async event=>{
+const publicApiResponse:RequestHandler=async event=>{
  const {request,url}=event;
  try {
-  if(request.method==='GET'&&event.params.path==='openapi.json')return json(openApi,{headers});
+  const read=request.method==='GET'||request.method==='HEAD';
+  if(read&&event.params.path==='openapi.json')return json(openApi,{headers});
   const user=await authenticateApiToken(request);
   const path=(event.params.path??'').split('/');
-  if(request.method!=='GET'){const result=await publicMutation(user,request,url,path);return json(result.response,{status:result.status,headers:{...headers,'idempotency-replayed':String(result.replayed)}});}
+  if(!read){const result=await publicMutation(user,request,url,path);return json(result.response,{status:result.status,headers:{...headers,'idempotency-replayed':String(result.replayed)}});}
   if(path.join('/')==='webhooks'){if(!user.scopes.includes('webhooks:manage'))throw new AppError(403,'This endpoint requires webhooks:manage.','insufficient_scope');if(url.searchParams.size)throw new AppError(400,'This endpoint does not accept query parameters.','invalid_input');return json({items:await listWebhooks(user.id)},{headers});}
+  if(path.length===3&&path[0]==='reading'&&path[2]==='history'){
+   if(!user.scopes.includes('progress:read'))throw new AppError(403,'This endpoint requires progress:read.','insufficient_scope');
+   for(const [key] of url.searchParams)if(key!=='page'||url.searchParams.getAll(key).length!==1)throw new AppError(400,'Unsupported history parameters.','invalid_input');
+   const result=await readingHistoryData(user.id,v.parse(v.pipe(v.string(),v.uuid()),path[1]),Number(url.searchParams.get('page')??1));return json(publicPage(result.items,result,url),{headers});
+  }
   const allowed:Record<string,ApiScope>={catalogue:'catalogue:read',collection:'collection:read',library:'library:read',progress:'progress:read'};
   if(path.length===1&&path[0]==='me'){
    if(url.searchParams.size)throw new AppError(400,'This endpoint does not accept query parameters.','invalid_input');
@@ -45,16 +54,17 @@ export const publicApiHandler:RequestHandler=async event=>{
     const id=v.parse(v.pipe(v.string(),v.uuid()),path[1]);
     const item=(await workCards(user.id,user.id,[id]))[0];
     if(!item)throw new AppError(404,'Work not found.','not_found');
-    if(!categoryEnabled(await getConfig(),item.kind==='game'?'game':['album','track'].includes(item.kind)?'music':'screen'))throw new AppError(404,'Work not found.','not_found');
+    if(!categoryEnabled(await getConfig(),item.kind==='game'?'game':item.kind==='book'||item.kind==='comic'?item.kind:['album','track'].includes(item.kind)?'music':'screen'))throw new AppError(404,'Work not found.','not_found');
     return json(publicWork(item),{headers});
    }
-   const category=v.parse(v.picklist(['all','screen','game','music']),url.searchParams.get('category')??'all');
-   const kind=v.parse(v.picklist(['all','movie','show','season','episode','collection','game','album','track']),url.searchParams.get('kind')??'all');
+   const category=v.parse(v.picklist(['all','screen','game','music','book','comic']),url.searchParams.get('category')??'all');
+   const kind=v.parse(v.picklist(['all','movie','show','season','episode','collection','game','album','track','book','comic']),url.searchParams.get('kind')??'all');
    const config=await getConfig();
-   const [count]=await getSql()`select count(*)::int as total from works where category in ('screen','game','music') and (${category}='all' or category=${category}) and (${kind}='all' or kind=${kind}) and (category='screen' or (category='music' and ${config.experimentalMusic}) or (category='game' and ${config.experimentalGaming}))`;
+   const where=sql`(${category}='all' or category=${category}) and (${kind}='all' or kind=${kind}) and ${enabledCategories(sql`category`,config)}`;
+   const [count]=await getDb().execute<{total:number}>(sql`select count(*)::int as total from works where ${where}`);
    const paging=pagination(count.total,page);
-   const rows=await getSql()`select id from works where category in ('screen','game','music') and (${category}='all' or category=${category}) and (${kind}='all' or kind=${kind}) and (category='screen' or (category='music' and ${config.experimentalMusic}) or (category='game' and ${config.experimentalGaming})) order by id limit ${PAGE_SIZE} offset ${(paging.page-1)*PAGE_SIZE}`;
-   const cards=await workCards(user.id,user.id,rows.map((row:{id:string})=>row.id));
+   const rows=await getDb().execute<{id:string}>(sql`select id from works where ${where} order by id limit ${PAGE_SIZE} offset ${(paging.page-1)*PAGE_SIZE}`);
+   const cards=await workCards(user.id,user.id,Array.from(rows).map(row=>row.id));
    return json(publicPage(cards.map(item=>publicWork(item)),{...paging,total:count.total},url),{headers});
   }
   if(path[0]==='collection') {
@@ -74,4 +84,9 @@ export const publicApiHandler:RequestHandler=async event=>{
   if(!invalid&&!known)void logDiagnostic('error','application.failed',{failure:classifyFailure(cause)});
   return json({error:{code:invalid?'invalid_input':known?cause.code:'service_unavailable',message:invalid?'Check the supplied parameters.':known?cause.message:'This request could not be completed.'}},{status,headers:{...headers,...(status===401?{'www-authenticate':'Bearer realm="Coast"'}:{}),...(status===429?{'retry-after':'60'}:{})}});
  }
+};
+
+export const publicApiHandler:RequestHandler=async event=>{
+ const response=await publicApiResponse(event);
+ return event.request.method==='HEAD'?new Response(null,{status:response.status,statusText:response.statusText,headers:response.headers}):response;
 };

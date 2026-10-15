@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-15",
+  "branch": "codex/core-audit-fixes",
+  "integratedMain": "b7e9d865a38951448edabb47cd59b87545a8d50e",
+  "runtime": "Bun 1.4.3",
+  "status": "local checks passed",
+  "regularTests": {
+    "pass": 449,
+    "skip": 591,
+    "fail": 0
+  },
+  "disposableDatabaseTests": {
+    "pass": 540,
+    "fail": 0,
+    "skip": 0,
+    "suites": 77,
+    "testContainerRestored": "stopped"
+  },
+  "typecheck": "0 errors,0 warnings",
+  "build": "passed; existing lazy-reader chunk warning",
+  "inventories": "code and 63-component UI inventory passed",
+  "style": "7 adopted modules passed",
+  "migrationGeneration": "no-op schema generation passes",
+  "conflictResolution": [
+    "Retained main runtime diagnostics, database shutdown/readiness and PostgreSQL15/17 CI matrix.",
+    "Maintenance coalescing wraps each actual pass in runtimeEvidence tracking; its isolated regression passes.",
+    "Recovery/backups/export roadmap priorities retained."
+  ],
+  "scope": "No dev/live migrations, services or deployment changed. Prior implementation-checks.json describes pre-integration verification; this supersedes its counts for publishing."
+}

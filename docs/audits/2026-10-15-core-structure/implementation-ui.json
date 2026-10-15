@@ -1,0 +1,117 @@
+{
+  "section": "shared-ui",
+  "date": "2026-10-15",
+  "status": "implemented",
+  "findings": [
+    {
+      "id": "UI-01",
+      "status": "fixed",
+      "changes": [
+        "Button ordinary items dismiss by default; submenu Back explicitly stays open.",
+        "Multi-list membership and PartyMenu controller multiselect explicitly stay open; playlist commands dismiss.",
+        "RecommendAction deliberately retains its menu owner until dialog close; its picker has an independent menu context. Menu action/focus/keyboard scans stop at dialog boundaries."
+      ],
+      "verification": [
+        "Rendered desktop pointer/keyboard commands close menus and restore root focus.",
+        "Rendered nested retained checkbox remains open; nested ordinary command closes hierarchy.",
+        "Rendered 390x844 retained checkbox, Back, ordinary dismissal and root focus pass.",
+        "Rendered synthetic recommendation recipient selection, Send and Cancel pass; owner remains until native close, then menu closes and root focus returns."
+      ]
+    },
+    {
+      "id": "UI-02",
+      "status": "fixed",
+      "changes": [
+        "Header preview status/presence is local and playback comes from injected context; real reader resume is hidden in preview.",
+        "Preview logout forms prevent native submission. Demo captures native submissions and Heading medium selection is local.",
+        "MediaCard preview primary activation and shallow modal navigation are guarded; prevented navigation remains prevented."
+      ],
+      "verification": [
+        "Rendered local Away and Share activity changes invoke zero global setters and leave global state unchanged.",
+        "Rendered preview Sign out leaves fixture URL unchanged and sends no logout request.",
+        "Rendered MediaCard Play and caption selection leave URL unchanged and navigation counter zero.",
+        "Existing injected transport and preview rejection unit tests pass."
+      ]
+    },
+    {
+      "id": "UI-03",
+      "status": "fixed",
+      "changes": [
+        "docs/design.md now matches icon-only narrow primary navigation and four material/fallback pairs; intentional retained controls are explicit."
+      ],
+      "verification": [
+        "Static comparison with existing Header/material presets; approved visuals preserved."
+      ]
+    },
+    {
+      "id": "DISCOVERY-02",
+      "status": "fixed",
+      "changes": [
+        "Discover local cache resets on viewer/content revisions, section, feature availability, selection and fresh SSR content.",
+        "Explicit load/retry fetches fresh content rather than replaying cache; unchanged medium switches keep bounded cache.",
+        "Feature withdrawal cancels obsolete work, resets unavailable medium/read kind and rejects late delivery; never-activated rows remain lazy."
+      ],
+      "verification": [
+        "Four compiled actual rune-module regression tests pass, covering tracking/social revisions, explicit reload, fresh SSR source payload, disabled listen/play/read pending cancellation, stale-result rejection and lazy activation."
+      ]
+    },
+    {
+      "id": "STRUCT-02",
+      "status": "fixed",
+      "changes": [
+        "Pure readerLoad cancellation helper moved to reading/reader/load.ts; PDF/EPUB adapters no longer runtime-import engine.",
+        "Engine and adapters retain type-only contracts as appropriate; no compatibility reexport."
+      ],
+      "verification": [
+        "Three reader cancellation/error/listener regression tests pass."
+      ]
+    }
+  ],
+  "verification": {
+    "pureTests": {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/ui-discovery-source.test.ts tests/reading-reader.test.ts tests/ui-client.test.ts tests/ui-design-system.test.ts",
+      "files": 4,
+      "passed": 12,
+      "failed": 0,
+      "assertions": 126
+    },
+    "componentCompilation": {
+      "method": "Installed svelte/compiler compile(generate: client), no shared build",
+      "components": [
+        "Button",
+        "Header",
+        "MediaCard",
+        "RecommendAction",
+        "PartyMenu",
+        "ui-preview/Demo"
+      ],
+      "warnings": 0
+    },
+    "browser": {
+      "status": "passed synthetic rendered scope",
+      "preferredBrowserUnavailable": "CUA createBrowserTab(iab) returned Browser unavailable; listBrowsers returned [].",
+      "fallback": "Installed cached Playwright CLI and existing Chromium headless shell; no downloads or dependency changes.",
+      "fixture": "Temporary loopback-only synthetic injected-context fixture at 127.0.0.1:49591. Actual Button/Header/MediaCard/RecommendAction components; other action panels stubbed. No database or provider.",
+      "viewports": [
+        "1440x1000",
+        "390x844"
+      ],
+      "consoleErrors": 0,
+      "consoleWarnings": 0,
+      "unexpectedLiveRequests": 0,
+      "screenshots": [
+        "/private/tmp/coast-ui-fix-fixture/desktop.png",
+        "/private/tmp/coast-ui-fix-fixture/mobile.png"
+      ],
+      "cleanup": "Browser closed; temporary fixture server stopped."
+    }
+  },
+  "dialogAudit": "MediaActions confirmation, sequence, metadata/playback-error dialogs and PresentationActions playback-error dialog are siblings outside their menu children, so default command dismissal does not remove their owners. RecommendAction was the owned lazy-menu dialog requiring explicit retention/context separation.",
+  "limits": [
+    "Rendered verification used bounded synthetic contexts and real browser DOM, not the production app or providers.",
+    "Temporary fixture served source CSS without the Tailwind/font build and screenshots are interaction evidence, not a full visual certification.",
+    "PartyMenu controller selection and Demo form/Heading guards were compiled/static-reviewed; their full workflows were not individually rendered.",
+    "Shared check/build, full database tests, dev/live database, and provider calls were not run by this subagent."
+  ],
+  "preservation": "No discretionary design/style changes, production dependencies, commits, pushes or database operations. Existing unrelated pending edits preserved; tracked diffs include preexisting work."
+}

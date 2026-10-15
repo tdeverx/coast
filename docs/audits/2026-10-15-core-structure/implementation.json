@@ -1,0 +1,373 @@
+{
+  "date": "2026-10-15",
+  "scope": "All 57 canonical findings from findings.json; existing unrelated work preserved.",
+  "status": "All 57 canonical findings implemented; final integrated checks passed",
+  "findings": [
+    {
+      "id": "CROSS-03",
+      "status": "implemented",
+      "change": "Transaction-local configuration and sequence reads; bounded same-account pool liveness.",
+      "verification": "audit-boundaries-db,sequence-transaction-db"
+    },
+    {
+      "id": "DOMAIN-01",
+      "status": "implemented",
+      "change": "Reuse the existing instance-scoped Jellyfin canonical identity on repeated conflict.",
+      "verification": "provider-db"
+    },
+    {
+      "id": "JOBS-01",
+      "status": "implemented",
+      "change": "Deliver Seerr requests through the pinned account context without reacquiring its lane.",
+      "verification": "seerr-delivery-db"
+    },
+    {
+      "id": "JOBS-02",
+      "status": "implemented",
+      "change": "Acknowledge only the list snapshot that was actually transmitted.",
+      "verification": "jobs-list-delivery-db"
+    },
+    {
+      "id": "JOBS-03",
+      "status": "implemented",
+      "change": "Reconcile only provider-representable screen members, preserving unsupported members.",
+      "verification": "jobs-list-delivery-db"
+    },
+    {
+      "id": "API-01",
+      "status": "implemented",
+      "change": "Manual webhook retry grants a fresh bounded budget while retaining monotonic lease attempts.",
+      "verification": "audit-boundaries-db,webhooks-db"
+    },
+    {
+      "id": "AUTH-01",
+      "status": "implemented",
+      "change": "Reset an explicit preference allowlist, preserving privacy and administrator policy.",
+      "verification": "settings-db"
+    },
+    {
+      "id": "AUTH-02",
+      "status": "implemented",
+      "change": "Use the existing disconnect/reconnect lifecycle for failed onboarding authentication.",
+      "verification": "audit-auth-discovery-db"
+    },
+    {
+      "id": "AUTH-03",
+      "status": "implemented",
+      "change": "Reject completed setup before form/hash work and rate-limit fresh setup attempts.",
+      "verification": "setup-action,audit-auth-discovery-db"
+    },
+    {
+      "id": "CROSS-01",
+      "status": "implemented",
+      "change": "Gate Open Library by the resolved work medium rather than its provider name.",
+      "verification": "experimental-features,audit-auth-discovery-db"
+    },
+    {
+      "id": "CROSS-02",
+      "status": "implemented",
+      "change": "Resolve registered secondary reading identities locally before remote metadata.",
+      "verification": "audit-auth-discovery-db"
+    },
+    {
+      "id": "DISCOVERY-01",
+      "status": "implemented",
+      "change": "Map IGDB hits to one canonical owned game before merging provider results.",
+      "verification": "audit-auth-discovery-db"
+    },
+    {
+      "id": "DISCOVERY-02",
+      "status": "implemented",
+      "change": "Invalidate Discover caches on content/source revision, category and viewer changes.",
+      "verification": "ui-discovery-source"
+    },
+    {
+      "id": "DISCOVERY-03",
+      "status": "implemented",
+      "change": "Apply positive recommendation evidence before the bounded candidate cutoff.",
+      "verification": "audit-auth-discovery-db,taste-cache-db"
+    },
+    {
+      "id": "DOMAIN-02",
+      "status": "implemented",
+      "change": "Exclude private playlist planning/context from visitor progress.",
+      "verification": "audit-boundaries-db"
+    },
+    {
+      "id": "DOMAIN-04",
+      "status": "implemented",
+      "change": "Hydrate actual TMDB IDs for actionable refresh targets.",
+      "verification": "audit-boundaries-db"
+    },
+    {
+      "id": "DOMAIN-05",
+      "status": "implemented",
+      "change": "Use one effective release-date precedence in menus and tracking; decode dates consistently.",
+      "verification": "audit-boundaries-db,media-actions-db"
+    },
+    {
+      "id": "DOMAIN-06",
+      "status": "implemented",
+      "change": "Refresh parent completion after new episodes; stable parent and projection fences prevent concurrent stale writes.",
+      "verification": "audit-boundaries-db"
+    },
+    {
+      "id": "DOMAIN-07",
+      "status": "implemented",
+      "change": "Filter permitted filmography IDs before counting, paging and hydration.",
+      "verification": "domain-application-db"
+    },
+    {
+      "id": "INFRA-01",
+      "status": "implemented",
+      "change": "Bound buffered provider responses by a total deadline, including slow-drip bodies.",
+      "verification": "platform-security"
+    },
+    {
+      "id": "INFRA-02",
+      "status": "implemented",
+      "change": "Record new migrations and a current generation snapshot; no-op generation regression.",
+      "verification": "migration-generation"
+    },
+    {
+      "id": "INFRA-03",
+      "status": "implemented",
+      "change": "Only the current main revision may update the mutable preview image tag.",
+      "verification": "static workflow review"
+    },
+    {
+      "id": "JELLYFIN-01",
+      "status": "implemented",
+      "change": "Export numeric committed progress and duration, including explicit zero resets.",
+      "verification": "jellyfin-progress-export-db"
+    },
+    {
+      "id": "JELLYFIN-02",
+      "status": "implemented",
+      "change": "Persist private per-copy observations and aggregate canonical music state across pages/deltas.",
+      "verification": "jellyfin-recovery-db,jellyfin-music-persistence-db"
+    },
+    {
+      "id": "JELLYFIN-03",
+      "status": "implemented",
+      "change": "Fence user baseline resets and queue a fresh traversal after stale completion races.",
+      "verification": "jellyfin-recovery-db,jellyfin-companion-db"
+    },
+    {
+      "id": "JELLYFIN-04",
+      "status": "implemented",
+      "change": "Retain sanitized DeviceId for shared-stream session deduplication.",
+      "verification": "jellyfin-companion,plugin build"
+    },
+    {
+      "id": "JELLYFIN-05",
+      "status": "implemented",
+      "change": "Require stable totals and unique observed IDs before negative music/reading coverage.",
+      "verification": "jellyfin-recovery-db"
+    },
+    {
+      "id": "JOBS-04",
+      "status": "implemented",
+      "change": "Commit list changes and durable export intent in the same transaction.",
+      "verification": "jobs-list-delivery-db"
+    },
+    {
+      "id": "JOBS-05",
+      "status": "implemented",
+      "change": "Guard Seerr publication with account and worker lease authority.",
+      "verification": "seerr-delivery-db"
+    },
+    {
+      "id": "LIFECYCLE-01",
+      "status": "implemented",
+      "change": "Abort/invalidate pending media and reader preparation, capture request authority, and retire late sessions.",
+      "verification": "media-lifecycle-client,playback-generation-db,ui-client,media-lifecycle-client"
+    },
+    {
+      "id": "MEDIUM-01",
+      "status": "implemented",
+      "change": "Keep a selected release and exact ordered track occurrences rather than merged release membership.",
+      "verification": "jellyfin-music-persistence-db,music-presentation"
+    },
+    {
+      "id": "MEDIUM-02",
+      "status": "implemented",
+      "change": "Normalize and index equivalent Jellyfin GUIDs; reject conflicting canonical mappings.",
+      "verification": "jellyfin-music-persistence-db"
+    },
+    {
+      "id": "MEDIUM-03",
+      "status": "implemented",
+      "change": "Use source/occurrence entry IDs for merged music card renderer keys.",
+      "verification": "jellyfin-music-persistence-db"
+    },
+    {
+      "id": "MEDIUM-04",
+      "status": "implemented",
+      "change": "Scope Steam observations and achievements by exact AppID; discard ambiguous imports for authoritative resync.",
+      "verification": "steam-db"
+    },
+    {
+      "id": "PLAYBACK-01",
+      "status": "implemented",
+      "change": "Pin personal playback to account generation at admission, progress, relay, party and scrobble boundaries.",
+      "verification": "playback-generation-db"
+    },
+    {
+      "id": "PLAYBACK-03",
+      "status": "implemented",
+      "change": "Audio retry prepares a replacement session instead of resuming the failed one.",
+      "verification": "media-lifecycle-client"
+    },
+    {
+      "id": "PLAYBACK-04",
+      "status": "implemented",
+      "change": "Coalesce maintenance passes and run bounded shared cleanup independently.",
+      "verification": "maintenance-lifecycle"
+    },
+    {
+      "id": "READING-01",
+      "status": "implemented",
+      "change": "Keep failed final bookmark state and retry UI instead of silently closing it.",
+      "verification": "media-lifecycle-client,media-lifecycle-client"
+    },
+    {
+      "id": "READING-03",
+      "status": "implemented",
+      "change": "Serialize bookmark copying and session insert with Reread on the same owner lock.",
+      "verification": "reading-sessions-db"
+    },
+    {
+      "id": "READING-04",
+      "status": "implemented",
+      "change": "Hand over current reading source before retiring it; preserve only authorized live membership.",
+      "verification": "reading-sessions-db"
+    },
+    {
+      "id": "SOCIAL-01",
+      "status": "implemented",
+      "change": "Invalidate failed party source cache when its exact descriptor changes.",
+      "verification": "synced-client"
+    },
+    {
+      "id": "SOCIAL-02",
+      "status": "implemented",
+      "change": "Acquire friendship before recommendation locks consistently for send and response.",
+      "verification": "audit-boundaries-db,social-db"
+    },
+    {
+      "id": "SOCIAL-03",
+      "status": "implemented",
+      "change": "Aggregate exact counts/pages in SQL and hydrate bounded visible evidence and page IDs.",
+      "verification": "audit-boundaries-db,social-db"
+    },
+    {
+      "id": "SOCIAL-04",
+      "status": "implemented",
+      "change": "Read actual music progress rather than generic saved-state zeros; unknown duration stays zero.",
+      "verification": "audit-boundaries-db"
+    },
+    {
+      "id": "UI-01",
+      "status": "implemented",
+      "change": "Dismiss ordinary menu actions by default; explicitly retain continuous controls and dialog boundaries.",
+      "verification": "ui-client; rendered synthetic browser verification"
+    },
+    {
+      "id": "UI-02",
+      "status": "implemented",
+      "change": "Isolate preview presence, sharing, logout and media navigation from real application state.",
+      "verification": "ui-client; rendered synthetic browser verification"
+    },
+    {
+      "id": "API-02",
+      "status": "implemented",
+      "change": "Treat HEAD as authenticated readable routing and return only status/headers.",
+      "verification": "public-api-db"
+    },
+    {
+      "id": "AUTH-04",
+      "status": "implemented",
+      "change": "Exclude disabled administrator targets from the last-active-administrator guard.",
+      "verification": "audit-boundaries-db"
+    },
+    {
+      "id": "AUTH-05",
+      "status": "implemented",
+      "change": "Supply all setup fields in HTTP/browser fixtures and only fall back to login on existing-setup conflict.",
+      "verification": "audit-auth-discovery-db,setup-action; HTTP fixture review"
+    },
+    {
+      "id": "DISCOVERY-04",
+      "status": "implemented",
+      "change": "Update stale Search and six-medium taste assertions to the actual contracts.",
+      "verification": "domain-application-db,taste-cache-db"
+    },
+    {
+      "id": "DOMAIN-08",
+      "status": "implemented",
+      "change": "Enforce playlist initial-member rules atomically with creation.",
+      "verification": "jobs-list-delivery-db"
+    },
+    {
+      "id": "INFRA-04",
+      "status": "implemented",
+      "change": "Apply the taste admission uniqueness constraint to the real outbox; retain terminal history.",
+      "verification": "audit-boundaries-db,taste-cache-db"
+    },
+    {
+      "id": "MEDIUM-05",
+      "status": "implemented",
+      "change": "Hydrate canonical role-specific artist credits and authorized artist destinations.",
+      "verification": "jellyfin-music-persistence-db,music-presentation"
+    },
+    {
+      "id": "MEDIUM-06",
+      "status": "implemented",
+      "change": "Remove obsolete verified game parent links on authoritative metadata refresh.",
+      "verification": "taste-cache-db"
+    },
+    {
+      "id": "STRUCT-01",
+      "status": "implemented",
+      "change": "Document authoring conventions and incrementally check compound statements using the installed TypeScript parser.",
+      "verification": "source-style,code:style"
+    },
+    {
+      "id": "STRUCT-02",
+      "status": "implemented",
+      "change": "Own the pure cancellation helper beside reader engines, preserving lazy format dispatch.",
+      "verification": "reading-reader"
+    },
+    {
+      "id": "UI-03",
+      "status": "implemented",
+      "change": "Document current mobile icon navigation and the four supported material treatments.",
+      "verification": "design guide and material inventory review"
+    }
+  ],
+  "operations": {
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "devOrLiveDatabaseMigrated": false,
+    "testDatabases": "Disposable only; lifecycle restored by runner."
+  },
+  "limitations": [
+    "Provider behavior tested with synthetic transports, not live accounts.",
+    "UI verification uses rendered synthetic fixtures; it is not full live-device/provider acceptance.",
+    "The workflow publication change is statically reviewed; no GitHub workflow was triggered.",
+    "Offset scans detect changed totals/repeated IDs, not every possible same-cardinality upstream reordering.",
+    "The style guard is deliberately incremental, not a repository-wide formatter.",
+    "Steam ambiguous imported totals/achievements are discarded by migration per user instruction; ordinary sync restores attributable observations. Manual history is retained."
+  ],
+  "verificationSummary": {
+    "defaultTestsPassed": 423,
+    "databaseTestsPassed": 536,
+    "databaseSuites": 76,
+    "typecheck": "0 errors, 0 warnings",
+    "build": "passed",
+    "plugin": "build passed; 11 journal checks passed",
+    "details": "implementation-checks.json"
+  }
+}

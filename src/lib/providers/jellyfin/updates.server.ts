@@ -10,7 +10,7 @@ import {companionPlan,validateCompanionPage,type CompanionPage,type CompanionSta
 import {streamPresentation} from './streams';
 import {recordServerStreams} from './stream-history.server';
 import {getConfig} from '$lib/server/config';
-import {syncJellyfinChanges} from '$lib/sync/jellyfin';
+import {syncJellyfinChanges} from '$lib/sync/jellyfin.server';
 import * as v from 'valibot';
 
 type Context=Awaited<ReturnType<typeof getJellyfin>>;
@@ -49,13 +49,14 @@ export async function applyCompanionPage(action:OutboxAction,context:Context,pag
     const accounts=await tx.select({connection:providerConnections}).from(providerConnections).innerJoin(users,eq(users.id,providerConnections.userId))
       .where(and(eq(providerConnections.instanceId,current.id),eq(providerConnections.status,'connected'),eq(users.disabled,false))).orderBy(providerConnections.id).for('update',{of:providerConnections});
     let queued=0;
-    const request=async(connection:typeof providerConnections.$inferSelect,kind:string,payload:Record<string,unknown>,key:string)=>{
+    const request=async(connection:typeof providerConnections.$inferSelect,kind:string,payload:Record<string,unknown>,key:string,restartUser=false)=>{
       await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${connection.userId}:${connection.id}`},0))`);
       const shared=kind==='jellyfin.library';
       const [existing]=await tx.select({id:outboxActions.id}).from(outboxActions).innerJoin(providerConnections,eq(providerConnections.id,outboxActions.connectionId))
         .where(and(eq(outboxActions.kind,kind),shared?eq(providerConnections.instanceId,current.id):eq(outboxActions.connectionId,connection.id),eq(outboxActions.compactionKey,key),
           sql`${outboxActions.accountGeneration}=${providerConnections.accountGeneration}`,sql`${outboxActions.state} in ('pending','running','failed')`)).limit(1);
       if(existing){
+        if(kind==='jellyfin.sync'&&(page.reset||restartUser))await tx.execute(sql`update outbox_actions set payload=payload||case when state='running' then '{"_followupFull":true}'::jsonb else '{}'::jsonb end where id=${existing.id}`);
         if(shared&&payload.full===true)await tx.execute(sql`update outbox_actions set payload=payload||case when state='pending' then '{"full":true}'::jsonb else '{"_followupFull":true}'::jsonb end where id=${existing.id}`);
         return existing.id;
       }
@@ -70,7 +71,12 @@ export async function applyCompanionPage(action:OutboxAction,context:Context,pag
       // Revoke cached census proofs after lost events; initial imports still keep their own cursors.
       await tx.execute(sql`update provider_instances set settings=settings-'screenLibraryCensus' where id=${current.id}`);
       if(schedule.libraryEnabled&&librarySource)baselineIds.push(await request(librarySource,'jellyfin.library',{full:true},'jellyfin.library'));
-      if(schedule.userSyncEnabled)for(const {connection} of accounts)baselineIds.push(await request(connection,'jellyfin.sync',{},'jellyfin.sync'));
+      if(schedule.userSyncEnabled)for(const {connection} of accounts){
+        // Existing workers cannot publish a pre-reset traversal as recovery.
+        // Bootstrap retains its independent cursor and onboarding behavior.
+        await tx.execute(sql`update provider_connections set settings=settings||jsonb_build_object('userSyncResetId',${crypto.randomUUID()}::text) where id=${connection.id}`);
+        baselineIds.push(await request(connection,'jellyfin.sync',{},'jellyfin.sync'));
+      }
     }else{
       if(plan.items.length)await tx.execute(sql`update provider_instances set settings=settings-'screenLibraryCensus' where id=${current.id}`);
       if(plan.removed.length){
@@ -79,21 +85,23 @@ export async function applyCompanionPage(action:OutboxAction,context:Context,pag
           from provider_items pi where a.provider_item_id=pi.id and pi.instance_id=${current.id}
           and pi.external_id in (${sql.join(plan.removed.map(id=>sql`${id}`),sql`,`)})`);
       }
-      if(schedule.libraryEnabled&&librarySource&&(plan.video.length||config.experimentalMusic&&plan.music.length))
-        await request(librarySource,'jellyfin.delta',{scope:'library',video:plan.video,music:config.experimentalMusic?plan.music:[]},`companion:${page.epoch}:${page.cursor}:library`);
+      if(schedule.libraryEnabled&&librarySource&&(plan.video.length||config.experimentalMusic&&plan.music.length||(config.experimentalBooks||config.experimentalComics)&&plan.reading.length))
+        await request(librarySource,'jellyfin.delta',{scope:'library',video:plan.video,music:config.experimentalMusic?plan.music:[],reading:config.experimentalBooks||config.experimentalComics?plan.reading:[]},`companion:${page.epoch}:${page.cursor}:library`);
       for(const {connection} of accounts){
         const personal=connection.externalUserId?plan.personal.get(connection.externalUserId.replaceAll('-','').toLowerCase()):undefined;
         if(personal?.permissions){
           // Permission edits invalidate access immediately; only this account's authenticated import grants it again.
           await tx.execute(sql`update availability set state='unavailable',verified_at=${checkedAt} where connection_id=${connection.id}`);
+          await tx.execute(sql`update provider_connections set settings=settings||jsonb_build_object('userSyncResetId',${crypto.randomUUID()}::text) where id=${connection.id}`);
           await tx.execute(sql`update sync_checkpoints set cursor=null,scan_id=null,completed_at=null where connection_id=${connection.id} and kind='jellyfin-user'`);
-          if(schedule.userSyncEnabled)await request(connection,'jellyfin.sync',{},'jellyfin.sync');
+          if(schedule.userSyncEnabled)baselineIds.push(await request(connection,'jellyfin.sync',{},'jellyfin.sync',true));
           continue;
         }
         if(!schedule.userSyncEnabled)continue;
         const video=[...new Set([...plan.video,...(personal?.video??[])])];
+        const reading=config.experimentalBooks||config.experimentalComics?[...new Set([...plan.reading,...(personal?.reading??[])])]:[];
         const music=config.experimentalMusic?[...new Set([...plan.music,...(personal?.music??[])])]:[];
-        if(video.length||music.length)await request(connection,'jellyfin.delta',{scope:'user',video,music},`companion:${page.epoch}:${page.cursor}:user`);
+        if(video.length||music.length||reading.length)await request(connection,'jellyfin.delta',{scope:'user',video,music,reading},`companion:${page.epoch}:${page.cursor}:user`);
       }
     }
     if(schedule.liveEnabled){
@@ -107,10 +115,14 @@ export async function applyCompanionPage(action:OutboxAction,context:Context,pag
       }
     }
     const outstanding=baselineIds.length?(await tx.execute(sql`
-      select a.id from outbox_actions a where a.id in (${sql.join(baselineIds.map(id=>sql`${id}::uuid`),sql`,`)}) and a.state<>'succeeded'
-      and not exists(select 1 from outbox_actions completed where completed.connection_id=a.connection_id
+      select a.id from outbox_actions a where a.id in (${sql.join(baselineIds.map(id=>sql`${id}::uuid`),sql`,`)})
+      and not ((a.state='succeeded' or exists(select 1 from outbox_actions completed where completed.connection_id=a.connection_id
         and completed.account_generation=a.account_generation and completed.kind=a.kind and completed.state='succeeded'
-        and completed.created_at>=a.created_at)`) as {id:string}[]):[];
+        and completed.created_at>=a.created_at))
+        and (a.kind<>'jellyfin.sync' or exists(select 1 from provider_connections c where c.id=a.connection_id
+          and c.account_generation=a.account_generation and c.settings->'userSync'->>'phase'='complete'
+          and c.settings->'userSync'->>'accountGeneration'=c.account_generation::text
+          and c.settings->'userSync'->>'resetId' is not distinct from c.settings->>'userSyncResetId')))`) as {id:string}[]):[];
     const [failed]=await tx.execute(sql`select a.id from outbox_actions a join provider_connections c on c.id=a.connection_id
       where c.instance_id=${current.id} and a.account_generation=c.account_generation and a.kind='jellyfin.delta' and a.state='failed' limit 1`);
     const state:State={connectionId:context.connection.id,generation:context.connection.accountGeneration,epoch:page.epoch,cursor:page.cursor,checkedAt:checkedAt.toISOString(),
@@ -146,10 +158,10 @@ export async function pollCompanion(action:OutboxAction){
 const ids=v.pipe(v.array(v.pipe(v.string(),v.regex(/^[a-f0-9]{32}$/i))),v.maxLength(200));
 export async function applyCompanionDelta(action:OutboxAction){
   if(!action.connectionId)throw new PermanentActionError('The Jellyfin connection is unavailable.');
-  const data=v.parse(v.object({scope:v.picklist(['library','user']),video:ids,music:ids}),action.payload);
+  const data=v.parse(v.object({scope:v.picklist(['library','user']),video:ids,music:ids,reading:v.optional(ids,[])}),action.payload);
   const context=await getJellyfin(action.userId,action.connectionId);
   if(context.connection.accountGeneration!==action.accountGeneration)throw new PermanentActionError('The connected account changed.');
-  const items=[...data.video.map(id=>({id,kind:'video' as const})),...data.music.map(id=>({id,kind:'music' as const}))];
+  const items=[...data.video.map(id=>({id,kind:'video' as const})),...data.music.map(id=>({id,kind:'music' as const})),...data.reading.map(id=>({id,kind:'reading' as const}))];
   if(items.length>200)throw new PermanentActionError('Too many Jellyfin changes in one page.');
   const saved=v.safeParse(v.object({offset:v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(items.length)),
     checked:v.pipe(v.number(),v.integer(),v.minValue(0)),count:v.pipe(v.number(),v.integer(),v.minValue(0))}),await readJobCheckpoint());
@@ -157,9 +169,13 @@ export async function applyCompanionDelta(action:OutboxAction){
   // Commit small targeted batches before yielding, keeping long bursts from
   // holding a worker and preserving completed work across retries/promotions.
   while(offset<items.length){
-    const batch=items.slice(offset,offset+25);
+    // Reading metadata may need a paced provider lookup. Commit each reading
+    // item before yielding rather than retrying an unfinished mixed batch.
+    const nextReading=items.findIndex((item,index)=>index>=offset&&item.kind==='reading');
+    const end=items[offset].kind==='reading'?offset+1:Math.min(offset+25,nextReading<0?items.length:nextReading);
+    const batch=items.slice(offset,end);
     const result=await syncJellyfinChanges(action.userId,action.connectionId,data.scope,
-      {video:batch.filter(item=>item.kind==='video').map(item=>item.id),music:batch.filter(item=>item.kind==='music').map(item=>item.id)},context);
+      {video:batch.filter(item=>item.kind==='video').map(item=>item.id),music:batch.filter(item=>item.kind==='music').map(item=>item.id),reading:batch.filter(item=>item.kind==='reading').map(item=>item.id)},context);
     offset+=batch.length;checked+=result.checked;count+=result.count;
     await saveJobCheckpoint({offset,checked,count});
     await jobCheckpoint();

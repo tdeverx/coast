@@ -19,6 +19,7 @@ suite('Coast HTTP journeys', () => {
     const denied = await request('media', { title: 'Must not exist', kind: 'movie' });
     expect(denied.status).toBe(401);
     const payload = new URLSearchParams({ username, password });
+    const setupPayload = new URLSearchParams({username,password,displayName:'HTTP fixture',passwordConfirmation:password});
     const setup = await fetch(`${base}/setup`, {
       method: 'POST',
       headers: {
@@ -26,11 +27,11 @@ suite('Coast HTTP journeys', () => {
         accept: 'text/html',
         'content-type': 'application/x-www-form-urlencoded',
       },
-      body: payload,
+      body: setupPayload,
       redirect: 'manual',
     });
     let response = setup;
-    if (!setup.headers.get('set-cookie'))
+    if (setup.status === 409)
       response = await fetch(`${base}/login`, {
         method: 'POST',
         headers: {

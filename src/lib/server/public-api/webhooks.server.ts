@@ -11,7 +11,7 @@ import { AppError } from '$lib/server/security/errors';
 import { PermanentActionError,type OutboxAction } from '$lib/server/queue';
 
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
-export const webhookEvents=['tracking.changed','relationship.changed','rating.changed','music.listened','game.changed'] as const;
+export const webhookEvents=['tracking.changed','relationship.changed','rating.changed','music.listened','game.changed','reading.changed'] as const;
 export type WebhookEvent=typeof webhookEvents[number];
 export const webhookSchema=v.strictObject({url:v.pipe(v.string(),v.url(),v.maxLength(2048)),events:v.pipe(v.array(v.picklist(webhookEvents)),v.minLength(1),v.maxLength(webhookEvents.length))});
 export function webhookSignature(secret:string,timestamp:string,body:string){return createHmac('sha256',secret).update(`${timestamp}.${body}`).digest('hex');}
@@ -46,7 +46,9 @@ export async function deliverWebhook(action:OutboxAction){
  const subscriptionId=v.parse(v.pipe(v.string(),v.uuid()),action.payload.subscriptionId);
  const [entry]=await getDb().select({webhook:apiWebhooks,token:apiTokens,disabled:users.disabled}).from(apiWebhooks).innerJoin(apiTokens,eq(apiTokens.id,apiWebhooks.tokenId)).innerJoin(users,eq(users.id,apiWebhooks.userId)).where(and(eq(apiWebhooks.id,subscriptionId),eq(apiWebhooks.userId,action.userId)));
  if(!entry||!entry.webhook.enabled||entry.disabled||entry.token.revokedAt||entry.token.expiresAt<=new Date()||!entry.token.scopes.includes('webhooks:manage'))return;
- if(action.attempts>8)throw new PermanentActionError('Webhook delivery failed repeatedly. Review the endpoint before retrying.');
+ const base=action.payload._webhookAttemptBase;
+ const attemptBase=typeof base==='number'&&Number.isInteger(base)&&base>=0&&base<action.attempts?base:0;
+ if(action.attempts-attemptBase>8)throw new PermanentActionError('Webhook delivery failed repeatedly. Review the endpoint before retrying.');
  const body=JSON.stringify(action.payload.event),timestamp=String(Math.floor(Date.now()/1000));
  const destination=new URL(entry.webhook.url);
  const response=await secureProviderFetch({baseUrl:destination.origin,approved:true,allowedPorts:[443],maxResponseBytes:65536,timeoutMs:10000},destination.pathname,{method:'POST',headers:{'content-type':'application/json','x-coast-event-id':String((action.payload.event as {id:string}).id),'x-coast-timestamp':timestamp,'x-coast-signature':`sha256=${webhookSignature(await decryptCredential(entry.webhook.secret),timestamp,body)}`},body});

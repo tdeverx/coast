@@ -1,5 +1,5 @@
-import { sequenceEntries, nextSequenceEntry } from '../../core/lists/sequence';
-import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch';
+import { sequenceEntries, nextSequenceEntry } from '../../core/lists/sequence.server';
+import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import { and, or, asc, eq, inArray, sql } from 'drizzle-orm';
 import { getDb } from '../db';
 import * as s from '../db/schema';
@@ -61,7 +61,7 @@ export function planEpisodeContinuations(episodes: EpisodeEntry[], availableOnly
   return { nextIds: [...nextIds], newSeasonIds: [...newSeasonIds] };
 }
 
-export async function continuationIds(userId: string, startedIds: string[], availableOnly = true) {
+export async function continuationIds(userId: string, startedIds: string[], availableOnly = true, includePrivatePlaylists = true) {
   const db = getDb();
   const available = sql<boolean>`${s.media.id} in (select permitted.media_id from (${permittedMediaSources(userId)}) permitted)`;
   const fields = {
@@ -133,7 +133,7 @@ export async function continuationIds(userId: string, startedIds: string[], avai
         )
       ),
   ]);
-  const playlists = await db
+  const playlists = includePrivatePlaylists ? await db
     .select({ id: s.lists.id, title: s.lists.name })
     .from(s.lists)
     .where(
@@ -142,7 +142,7 @@ export async function continuationIds(userId: string, startedIds: string[], avai
         eq(s.lists.playlist, true),
         sql`${s.lists.playbackStartedAt} is not null`
       )
-    );
+    ) : [];
   const sources = [
     ...collections.map((row) => ({ ...row, kind: 'collection' as const })),
     ...playlists.map((row) => ({ ...row, kind: 'playlist' as const })),

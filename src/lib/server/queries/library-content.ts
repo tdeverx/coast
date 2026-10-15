@@ -3,10 +3,11 @@ import { getConfig } from '$lib/server/config';
 import { requireExperimentalFeature } from '$lib/server/experimental';
 import { libraryData } from './library';
 import { presentationContent } from './media-rows';
-import { listGames } from '$lib/core/games/service';
+import { listGames } from '$lib/core/games/service.server';
 import { gameCard } from '$lib/games/presentation';
 import { musicBrowseData } from './music';
 import type { LibraryContent } from '$lib/library';
+import { readingCatalogue, readingCards } from '$lib/reading/query.server';
 
 export async function libraryContent(userId: string, url: URL): Promise<LibraryContent> {
   if (url.searchParams.get('preview') === 'true') {
@@ -14,7 +15,7 @@ export async function libraryContent(userId: string, url: URL): Promise<LibraryC
     return { ...result, page: 1, pages: 1, total: result.items.length };
   }
   const surface = v.parse(
-    v.picklist(['watch', 'listen', 'play']),
+    v.picklist(['watch', 'listen', 'play', 'read']),
     url.searchParams.get('surface') ?? 'watch'
   );
   const selection = url.searchParams.get('selection') ?? 'all';
@@ -26,6 +27,13 @@ export async function libraryContent(userId: string, url: URL): Promise<LibraryC
       genre: url.searchParams.get('genre') ?? '',
       page: Number(url.searchParams.get('page') ?? 1),
     });
+  if (surface === 'read') {
+    const result = await readingCatalogue(userId, {
+      kind: url.searchParams.get('kind') ?? 'all', state: selection, personal: false, available: v.parse(v.picklist(['all','available']),url.searchParams.get('scope')??'all')==='available',
+      page: Number(url.searchParams.get('page') ?? 1),
+    });
+    return { ...result, items: await readingCards(userId, userId, result.items) };
+  }
   requireExperimentalFeature(await getConfig(), surface === 'listen' ? 'music' : 'gaming');
   if (surface === 'listen') {
     const musicUrl = new URL(url);

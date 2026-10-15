@@ -1,0 +1,56 @@
+{
+  "section": "structure-and-sequence-transactions",
+  "date": "2026-10-15",
+  "status": "implemented; DB regression execution delegated to root",
+  "findings": [
+    {
+      "id": "STRUCT-01",
+      "status": "implemented",
+      "changes": [
+        "Documented two-space, separate-statement, expanded control-flow and transaction-handle conventions in docs/code-organization.md.",
+        "Added dependency-free installed-TypeScript AST guard scripts/source-style.ts, package code:style command and CI hook. Explicit incremental adoption prevents unrelated formatting churn.",
+        "Expanded compound control flow in discovery source and reader load helper, and tracking webhook emission. No new formatter or production dependency."
+      ],
+      "limits": "Guard detects adjacent statements sharing a line in SourceFile/Block/switch-clause scopes. It is not a general formatter, column cap, Svelte template linter or whole-repository style certification."
+    },
+    {
+      "id": "CROSS-03",
+      "status": "remaining sequence paths fixed; root owns original Reading/config fixes",
+      "changes": [
+        "sequenceEntries accepts an optional select/execute database handle, defaulting to global only for ordinary standalone reads.",
+        "Tracking applyChange sequence validation, bulk scope expansion and collection completion expansion all pass tx.",
+        "Reviewed root getConfig(tx) in core Reading, Reading sessions and bulk release-date tracking; no duplicate changes."
+      ],
+      "coverage": [
+        "Substantive review of core/tracking/service.server.ts, core/lists/sequence.server.ts and core/tracking/rewatch.server.ts.",
+        "Followed warningFor, projection, ancestor/collection refresh, bulkTargets, rewatchBoundary/effectiveReleaseDate SQL construction and deferred emitWebhook(tx) call. All database work under these tracking locks now shares tx.",
+        "Inventoried every sequenceEntries caller. Nontracking playback/read-model callers were left unchanged; no claim of a repository-wide nested-query proof."
+      ],
+      "regressions": [
+        "Single, bulk collection and bulk scoped-sequence each start ten real same-account transactions, deliberately occupy the complete application pool, queue an unrelated read and require completion within five seconds without cancellation. Lock-waiter statement timeouts bound cleanup on regression.",
+        "Single path also asserts source-event idempotency; all paths require watched=true/playCount=1.",
+        "Separate test requires sequenceEntries(tx) to see an uncommitted collection and edge."
+      ]
+    }
+  ],
+  "paths": [
+    "src/lib/core/lists/sequence.server.ts",
+    "src/lib/core/tracking/service.server.ts",
+    "src/lib/ui/shelves/discovery.svelte.ts",
+    "src/lib/reading/reader/load.ts",
+    "scripts/source-style.ts",
+    "tests/source-style.test.ts",
+    "tests/sequence-transaction-db.test.ts",
+    "docs/code-organization.md",
+    "package.json",
+    ".github/workflows/verify-and-publish-preview.yml"
+  ],
+  "verification": {
+    "style": "bun run code:style: 7 adopted modules pass",
+    "focusedTests": "bun test tests/source-style.test.ts tests/ui-discovery-source.test.ts tests/reading-reader.test.ts tests/sequence-transaction-db.test.ts: 8 pass, 4 DB skip, 0 fail, 40 assertions",
+    "database": "Not run by this subagent. Root disposable DB runner includes sequence-transaction-db.test.ts.",
+    "typecheck": "Root reported only duplicate-test union inference issue in this scope; fixed with a concrete trackInTransaction call. Final global check belongs to root.",
+    "diffCheck": "Scoped tracked diff --check passes."
+  },
+  "constraints": "No database execution, global check/build, schema/social/auth/playback/queue edits, dependencies, commits or remote operations by this subagent. Existing pending edits preserved."
+}

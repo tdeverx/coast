@@ -1,25 +1,32 @@
-import { removeHistory } from '$lib/sync/history-removal';
+import { readingDetails } from '$lib/reading/query.server';
+import { getDb } from '$lib/server/db';
+import { readingWorks } from '$lib/server/db/schema';
+import { eq } from 'drizzle-orm';
+import { removeHistory } from '$lib/sync/history-removal.server';
 import { mediaActionData, mediaHistory, mediaActivity } from '$lib/server/queries/media-actions';
 import { json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { AppError } from '$lib/server/security/errors';
-import { addLocalSeasonEpisodes } from '$lib/core/media/service';
-import { getMetadataEditor, getPresentationEditor, saveMetadataOverrides, savePresentationPreference, resetPresentationPreference } from '$lib/catalogue/overrides/service';
+import { addLocalSeasonEpisodes } from '$lib/core/media/service.server';
+import { getMetadataEditor, getPresentationEditor, saveMetadataOverrides, savePresentationPreference, resetPresentationPreference } from '$lib/catalogue/overrides/service.server';
 import { loadMediaDetails } from '$lib/application/media-details.server';
 import { detailsData } from '$lib/server/queries/media';
-import { refreshMedia } from '$lib/catalogue/service';
-import { getTrailer } from '$lib/playback/server';
+import { refreshMedia } from '$lib/catalogue/service.server';
+import { getTrailer } from '$lib/playback/service.server';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleMedia(context: ApiContext): Promise<Response | undefined> {
  const { user, uid, path, method, url, body } = context;
  let result: unknown;
  if (path[0] === 'media') {
-      if (path.length === 2 && method === 'GET')
+      if (path.length === 2 && method === 'GET') {
+        const id = uuid(path[1]);
+        const [reading] = await getDb().select({kind:readingWorks.kind}).from(readingWorks).where(eq(readingWorks.id,id));
+        if (reading) return json({reading:{...await readingDetails(uid,id),kind:reading.kind,remote:false}});
         result = url.searchParams.get('enhance') === 'true'
           ? await (await loadMediaDetails(uid, uuid(path[1]))).enhancement
-          : await detailsData(uid, uuid(path[1]));
-      else if (path[2] === 'actions' && method === 'GET')
+          : await detailsData(uid, id);
+      } else if (path[2] === 'actions' && method === 'GET')
         result = await mediaActionData(uid, uuid(path[1]));
       else if (path[2] === 'activity' && method === 'GET')
         result = await mediaActivity(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1));

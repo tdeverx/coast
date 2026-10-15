@@ -1,11 +1,10 @@
-import { logDiagnostic } from '$lib/server/diagnostics';
-import { restartPlaylist } from '$lib/core/lists/sequence';
+import { restartPlaylist } from '$lib/core/lists/sequence.server';
 import { json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { AppError } from '$lib/server/security/errors';
-import * as lists from '$lib/core/lists/service';
+import * as lists from '$lib/core/lists/service.server';
 import { userLists } from '$lib/server/queries/lists';
-import { queueTraktListChange, deleteListWithExports } from '$lib/sync/trakt-lists';
+import { deleteListWithExports } from '$lib/sync/trakt-lists.server';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleLists(context: ApiContext): Promise<Response | undefined> {
@@ -47,13 +46,7 @@ export async function handleLists(context: ApiContext): Promise<Response | undef
       else if (path[2] === 'move' && method === 'POST')
         result = await lists.moveListItem(uid, uuid(path[1]), body);
       else throw new AppError(404, 'Action not found.');
-      if (method !== 'GET' && !(path.length === 2 && method === 'DELETE')) {
-        const listId = path.length === 1 ? (result as { id?: string })?.id : path[1];
-        if (listId)
-          await queueTraktListChange(uid, listId).catch(async () => {
-            void logDiagnostic('error', 'job.failed', { failure: 'unexpected' });
-          });
-      }
+
     } else return undefined;
  return json(result ?? { ok: true });
 }

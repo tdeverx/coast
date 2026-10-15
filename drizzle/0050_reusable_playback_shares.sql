@@ -1,0 +1,17 @@
+ALTER TABLE playback_sessions ADD COLUMN provider_device_id text;
+ALTER TABLE playback_sessions ADD COLUMN max_bitrate integer;
+ALTER TABLE share_viewers ADD COLUMN fingerprint text;
+ALTER TABLE share_viewers ADD COLUMN last_seen_at timestamptz;
+ALTER TABLE share_viewers ADD COLUMN desired_bitrate integer;
+ALTER TABLE share_viewers ADD COLUMN client text NOT NULL DEFAULT 'Browser';
+ALTER TABLE share_viewers ADD COLUMN ended_at timestamptz;
+CREATE INDEX share_viewers_active_idx ON share_viewers(last_seen_at);
+CREATE UNIQUE INDEX share_viewers_fingerprint_idx ON share_viewers(share_id,fingerprint);
+ALTER TABLE share_viewers ADD COLUMN preparation_token uuid;
+ALTER TABLE playback_sessions ADD COLUMN cleanup_pending boolean NOT NULL DEFAULT false;
+ALTER TABLE playback_sessions ADD COLUMN cleanup_attempted_at timestamptz;
+CREATE INDEX playback_sessions_shared_cleanup_idx ON playback_sessions(cleanup_attempted_at) WHERE cleanup_pending;
+ALTER TABLE playback_sessions ADD COLUMN share_viewer_id uuid;
+CREATE INDEX playback_sessions_share_viewer_idx ON playback_sessions(share_viewer_id,created_at) WHERE share_id IS NOT NULL;
+CREATE INDEX playback_sessions_share_history_idx ON playback_sessions(updated_at DESC,id DESC) WHERE share_id IS NOT NULL;
+ALTER TABLE playback_sessions ADD COLUMN bitrate_ceiling integer;

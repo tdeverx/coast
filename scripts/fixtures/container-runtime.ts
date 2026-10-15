@@ -3,6 +3,7 @@ import {mkdtempSync,chmodSync,mkdirSync,openSync,closeSync,readFileSync,chownSyn
 const directory=mkdtempSync('/tmp/coast-runtime-fixture-');chmodSync(directory,0o755);
 const pg='/usr/lib/postgresql/15/bin', base='http://127.0.0.1:3971';
 const children:Bun.Subprocess[]=[];
+const logs=new WeakMap<Bun.Subprocess,string>();
 let frozenPids:number[]=[];
 function assert(ok:unknown,reason:string):asserts ok {if(!ok)throw Error(reason);}
 function processState(pid:number):string|undefined {
@@ -21,6 +22,7 @@ function processState(pid:number):string|undefined {
 function spawn(args:string[],name:string,env:Record<string,string>={}) {
   const fd=openSync(directory+'/'+name+'.log','w',0o600);
   const child=Bun.spawn(args,{cwd:'/app',detached:true,env:{...process.env,...env},stdin:'ignore',stdout:fd,stderr:fd});
+  logs.set(child,directory+'/'+name+'.log');
   children.push(child);void child.exited.then(()=>closeSync(fd));return child;
 }
 async function command(args:string[]) {
@@ -35,7 +37,13 @@ async function health() {
   try {return (await fetch(base+'/api/v1/health',{signal:AbortSignal.timeout(2000)})).status;}catch{return 0;}
 }
 async function ready(child:Bun.Subprocess) {
-  for(let i=0;i<100;i++){assert(child.exitCode===null,'supervisor exited before readiness');if(await health()===200)return;await Bun.sleep(100);}
+  for(let i=0;i<100;i++){
+    if(child.exitCode!==null){
+      const output=readFileSync(logs.get(child)!,'utf8').replace(/postgres(?:ql)?:\/\/[^@\s]+@/g,'postgresql://[redacted]@');
+      throw Error(`supervisor exited before readiness (${child.exitCode})\n${output.slice(-12000)}`);
+    }
+    if(await health()===200)return;await Bun.sleep(100);
+  }
   throw Error('fixture did not become ready');
 }
 async function exit(child:Bun.Subprocess,expected:number|undefined,deadline=8000) {

@@ -16,11 +16,14 @@ Provider definitions, service instances, per-user connections and per-user avail
 - `catalogue`: metadata resolution, canonical ingestion, search and availability.
 - `collection`: personal membership and access assessments, missing demand, source-change previews and managed Trakt Collection projection.
 - `music`: provider browsing, persisted albums/tracks and credits, retry-safe listen batches and ordered audio queues.
+- `reading`: experimental book/comic contracts, presentation, thin route loaders and bounded queries. Canonical metadata ingestion lives in `catalogue/reading.server.ts`; private page/state writes live in `core/reading/service.server.ts`; explicit Add orchestration lives in `application/reading.server.ts`. Provider modules only resolve metadata and service readiness.
 - `providers`: shared capability contracts, integration configuration in `instances.server.ts`, account connections beside each provider's adapter, and Seerr request handling in `seerr/requests.server.ts`. Queue handlers and maintenance scheduling have separate server modules. Routes import the module that owns each operation directly.
-- `sync`: Jellyfin library/state synchronisation, Trakt imports, value exports and list exports have separate modules. `changes.ts` keeps canonical writes and outbound intent in one transaction; reconciliation, conflict preferences and history removal remain shared.
+- `sync`: Jellyfin library/state synchronisation, Trakt imports, value exports and list exports have separate modules. `changes.server.ts` keeps canonical writes and outbound intent in one transaction; reconciliation, conflict preferences and history removal remain shared.
+- `recommendations`: personal interest evidence, cached provider suggestions, feed definitions, candidate queries and row wording. `DynamicFeed.svelte` composes lazy shelves; pure feed contracts live in `model.ts`.
+- `experiments`: gated planning and the media-detail modal. Graduated recommendation features live in `recommendations`.
 - `playback`: source planning, authorised sessions, progress and external scrobbling.
 - `server`: database, local auth, encryption, network policy, queue and notifications. `server/queries` contains the read models for media details, home, library, lists and requests; routes import the relevant query directly.
-- `ui`: shared Svelte components, icons, semantic tokens, materials and motion.
+- `ui`: shared Svelte components, icons, semantic tokens, materials and motion. `ui/shelves` owns client loading adapters; `ui/panels` owns panel URL/navigation state.
 
 Native title creation belongs to `core/media`, alongside its transactional subtype and tracking writes. Query modules only read state. Collection, Library, Lists and Requests filter and count before selecting bounded 60-item pages and resolving media cards. Explicit detail queries retain complete membership. Collection uses the profile owner's personal reasons and the visitor's source permissions. Ordinary inbox, action and user projections use Drizzle column selection, so their camelCase field names and types match the UI without conversion fallbacks.
 
@@ -52,7 +55,7 @@ One OCI container starts PostgreSQL and Bun under minimal supervision. `/data` s
 
 `server/api/index.server.ts` retains the common authentication, viewer/subject, body-size and error boundary. Domain handlers in `server/api` dispatch existing commands and read projections. The route file exports the existing HTTP methods; URLs, account-generation checks and outbox ordering remain stable. This is not a universal data orchestrator or a second scheduler.
 
-Use `.server.ts` for new server-only services and `.svelte.ts` for reactive component resources. Pure contracts/mapping helpers use `.ts`; rendered components use PascalCase `.svelte`. Existing `core` and `server/queries` modules keep their established ownership until a bounded domain change warrants moving them. Do not cosmetically rename persisted identifiers, migrations, UUIDs or routes.
+Use `.server.ts` for server-only services outside the protected `server` directory and `.svelte.ts` for reactive component resources. Pure contracts/mapping helpers use `.ts`; rendered components use PascalCase `.svelte`. Canonical services remain in `core`, with explicit server suffixes; read models remain in `server/queries`. Do not cosmetically rename persisted identifiers, migrations, UUIDs or routes. See the [source organisation guide](code-organization.md) for the tree and placement rules.
 
 Use `workId` for shared work identities, `instanceId` for a configured service, `connectionId` for a user's linked account, `subjectId`/`ownerId` for whose relationships are displayed, and `viewerId` for whose permissions apply. Existing `mediaId` database/API contracts remain unchanged. A provider's external ID is not a Coast UUID and server IDs require an instance scope.
 

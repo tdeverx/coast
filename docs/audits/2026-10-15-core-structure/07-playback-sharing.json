@@ -1,0 +1,290 @@
+{
+  "section": "PLAYBACK",
+  "coverage": {
+    "read": [
+      "docs/code-organization.md",
+      "docs/architecture.md",
+      "docs/performance.md",
+      "src/lib/playback/client.svelte.ts",
+      "src/lib/playback/context.svelte.ts",
+      "src/lib/playback/planning.ts",
+      "src/lib/playback/service.server.ts",
+      "src/lib/playback/time.ts",
+      "src/lib/playback/listening.ts",
+      "src/lib/playback/failures.ts",
+      "src/lib/playback/crop.ts",
+      "src/lib/playback/observe-crop.ts",
+      "src/lib/playback/visibility.ts",
+      "src/lib/sharing/service.server.ts",
+      "src/lib/sharing/leases.server.ts",
+      "src/lib/sharing/request-leases.server.ts",
+      "src/lib/sharing/external.server.ts",
+      "src/lib/sharing/policy.ts",
+      "src/lib/sharing/streams.server.ts",
+      "src/lib/sharing/ShareAction.svelte",
+      "src/lib/ui/components/PersistentPlayer.svelte",
+      "src/lib/ui/components/PlaybackTimeline.svelte",
+      "src/lib/ui/heroes/playback.svelte.ts",
+      "src/lib/ui/heroes/presentation.svelte.ts",
+      "src/lib/ui/client.ts",
+      "src/routes/share/+page.svelte",
+      "src/routes/share/+page.server.ts",
+      "src/routes/share/[token]/+server.ts",
+      "src/routes/api/share/[...path]/+server.ts",
+      "src/lib/server/api/playback.server.ts",
+      "src/lib/application/streams.server.ts",
+      "src/lib/application/provider-sources.server.ts",
+      "src/lib/providers/connections.server.ts",
+      "src/lib/providers/jellyfin/connection.server.ts",
+      "src/lib/providers/jellyfin/streams.ts",
+      "src/lib/providers/jellyfin/adapter.server.ts",
+      "src/lib/providers/maintenance.server.ts",
+      "src/lib/server/startup.ts",
+      "src/lib/server/security/provider-fetch.ts",
+      "src/lib/server/db/schema.ts",
+      "src/lib/sync/changes.server.ts",
+      "src/lib/sync/jellyfin.server.ts",
+      "src/hooks.server.ts",
+      "drizzle/0016_collection_and_music.sql",
+      "drizzle/0022_verified_trakt_identity.sql",
+      "drizzle/0050_reusable_playback_shares.sql",
+      "tests/sharing.test.ts",
+      "tests/sharing-db.test.ts",
+      "tests/active-streams.test.ts",
+      "tests/provider-contracts.test.ts",
+      "tests/playback-failures.test.ts",
+      "tests/playback-time.test.ts",
+      "tests/playback-visibility.test.ts",
+      "tests/listening.test.ts",
+      "tests/crop.test.ts"
+    ],
+    "scanned": [
+      "src/lib/server/api/index.server.ts",
+      "src/lib/server/queue/index.ts",
+      "src/lib/providers/instances.server.ts",
+      "tests/provider-http.test.ts",
+      "tests/synced-client.test.ts",
+      "scripts/browser-playback-check.ts",
+      "scripts/browser-music-check.ts",
+      "scripts/provider-browser-fixture.ts",
+      "docs/verification-platform.md",
+      "docs/readiness.md",
+      "src/lib/ui/components/MediaHero.svelte"
+    ],
+    "unverified": [
+      "No database, live providers, running service, real playback, browser or credentials were used. sharing-db and provider-http database fixtures were inspected, not executed.",
+      "Provider scrobble effects after account replacement require a disposable DB/provider reproduction; source-to-sink account mismatch is strong static evidence, not a demonstrated remote history mutation.",
+      "Native Safari/iOS capability/autoplay behavior, hls.js decoding, bitrate-handoff continuity, subtitles and actual upstream encoder termination were not runtime certified.",
+      "Client probes compiled current playback code with mocked transport/controller/document; maintenance probe used the current scheduling tail with mocked dependencies and captured timer callbacks. They establish control flow, not a rendered browser or production resource measurement.",
+      "Synced-party service/controller internals were assigned to another reviewer; only direct playback integration points were inspected.",
+      "Large cross-domain files listed as read were read in relevant playback/account/transport/schema sections; this is not a claim to have reviewed every unrelated function or CSS rule."
+    ]
+  },
+  "checks": [
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/sharing.test.ts tests/provider-contracts.test.ts tests/playback-failures.test.ts tests/playback-time.test.ts tests/playback-visibility.test.ts tests/listening.test.ts tests/crop.test.ts tests/active-streams.test.ts",
+      "result": "55 pass, 0 fail, 245 assertions across 8 files; no DB flag set."
+    },
+    {
+      "command": "bun run - : compile current src/lib/playback/client.svelte.ts with Svelte compileModule; replace imports by in-memory mocks; exercise exact audio retry arguments and stop-before-delayed-response sequence",
+      "result": "audio retry: resumes=1, preparationRequests=0, session=failed. stop-before-delivery: sessionAfterStopAndDelivery=late, role=playback."
+    },
+    {
+      "command": "bun run - : transpile current maintenance.server.ts tail from retentionDue onward with deferred cleanup, mocked dependencies/process and captured 60000ms interval callback",
+      "result": "Startup plus two manual interval callbacks: cleanupCalls=3, scheduledCalls=0. After resolving cleanup: cleanupCalls=3, scheduledCalls=3."
+    }
+  ],
+  "findings": [
+    {
+      "id": "PLAYBACK-01",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Personal playback can publish scrobbles into a replacement source account",
+      "rootCause": "personal-playback-session-missing-account-generation",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/server/db/schema.ts",
+          "line": 818,
+          "detail": "Personal sessions retain the connection ID and provider IDs, but no account-generation binding."
+        },
+        {
+          "path": "src/lib/playback/service.server.ts",
+          "line": 438,
+          "detail": "Progress admission checks session ID, Coast user and expiry, then rejects shares; it never checks the originating account generation."
+        },
+        {
+          "path": "src/lib/playback/service.server.ts",
+          "line": 486,
+          "detail": "Audio reports enqueue provider actions using the old session connection ID; video does the same at line 520."
+        },
+        {
+          "path": "src/lib/sync/changes.server.ts",
+          "line": 391,
+          "detail": "Playback intent inserts a fresh jellyfin.scrobble action against that connection ID."
+        },
+        {
+          "path": "drizzle/0016_collection_and_music.sql",
+          "line": 234,
+          "detail": "The outbox insertion trigger binds the action to the connection generation current at insertion, rather than the playback origin."
+        },
+        {
+          "path": "drizzle/0022_verified_trakt_identity.sql",
+          "line": 18,
+          "detail": "An account switch rotates the connection generation and cancels existing actions, but does not invalidate playback sessions."
+        },
+        {
+          "path": "src/lib/sync/jellyfin.server.ts",
+          "line": 925,
+          "detail": "Scrobble execution reloads the session by user/connection and resolves current Jellyfin credentials at line 941."
+        },
+        {
+          "path": "src/lib/playback/service.server.ts",
+          "line": 588,
+          "detail": "Media relay also resolves current credentials from an unversioned personal session."
+        }
+      ],
+      "trigger": "Start personal audio/video under Jellyfin account A. Keep the player active while linking account B to the same Coast connection. Allow a subsequent progress/pause/end report from A playback. Buffered playback makes this possible even if B cannot stream the old item.",
+      "impact": "New reports survive the old-action cancellation and are stamped with B generation. The worker sends A session/item IDs using B credentials. If B can access that item and Jellyfin accepts the report, its progress/history can be changed. At minimum stale session requests are sent under the wrong account. No cross-account disclosure or live upstream mutation was demonstrated.",
+      "recommendation": "Pin the selected connection accountGeneration in personal playback sessions; recheck it when publishing preparation, relaying, accepting progress and executing scrobbles. Reject/retire stale sessions before inserting outbound intent. Use the existing account lock/generation boundary so account replacement cannot race the check; do not stamp stale intent with the new account generation.",
+      "verification": "Disposable DB/provider fixture: start A; replace external_user_id/credentials on the same connection with B so the trigger rotates generation; submit old-session progress and inspect outbox plus fixture requests. Assert no B-generation scrobble or B-authenticated relay is emitted, and a fresh B session works. Cover replacement during delayed PlaybackInfo as well.",
+      "relatedAreas": [
+        "provider account replacement",
+        "outbox account fencing",
+        "personal music and screen playback"
+      ]
+    },
+    {
+      "id": "PLAYBACK-02",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Stopping playback does not invalidate an in-flight preparation",
+      "rootCause": "playback-client-preparation-lacks-cancellation-generation",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/lib/playback/client.svelte.ts",
+          "line": 48,
+          "detail": "stopPlayback delegates to the controller without cancelling or invalidating preparation."
+        },
+        {
+          "path": "src/lib/playback/client.svelte.ts",
+          "line": 110,
+          "detail": "The preparation request has no AbortSignal or operation-generation capture."
+        },
+        {
+          "path": "src/lib/playback/client.svelte.ts",
+          "line": 122,
+          "detail": "The response unconditionally publishes its session and sets role to playback, even after stop/teardown."
+        },
+        {
+          "path": "src/lib/ui/components/PersistentPlayer.svelte",
+          "line": 195,
+          "detail": "The controller close path clears the present session but has no pending-prepare invalidation."
+        },
+        {
+          "path": "src/routes/share/+page.svelte",
+          "line": 34,
+          "detail": "Share-route teardown stops playback and resets API routing, so a late shared preparation can repopulate the root player after leaving the route."
+        }
+      ],
+      "trigger": "Delay POST playback. Call stopPlayback before its response arrives, then resolve the request. A concrete UI route is leaving the invitation page while its shared source is preparing.",
+      "impact": "The supposedly stopped player returns to playback and can autoplay after teardown. A late shared session can also survive after API routing has returned to the personal endpoint, so its progress/error operations use the wrong route. The server prepared session is not retired by the earlier stop because its ID was not yet known.",
+      "recommendation": "Give preparation a client-owned AbortController and revision. Invalidate it on explicit stop/teardown; publish only when the revision is still current. Keep the internal old-session stop used during replacement separate from explicit cancellation. Retire any already-created late session through the transport captured for that preparation, rather than the mutable global API mode.",
+      "verification": "Compiled-current-client mock reproduced: delayed preparation -> stopPlayback -> deliver session yielded sessionAfterStopAndDelivery=late and role=playback. Add a focused client regression expecting idle/null after the same sequence, including share teardown and a subsequent fresh playback request. No browser/autoplay or server allocation runtime was exercised.",
+      "relatedAreas": [
+        "share route teardown",
+        "playback transport selection",
+        "root persistent player"
+      ]
+    },
+    {
+      "id": "PLAYBACK-03",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Audio Try again resumes the failed session instead of preparing a replacement",
+      "rootCause": "audio-retry-collides-with-same-item-resume-shortcut",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/lib/ui/components/PersistentPlayer.svelte",
+          "line": 330,
+          "detail": "Audio retry calls playMedia(session.mediaId,{mediaType:audio,fromStart:false})."
+        },
+        {
+          "path": "src/lib/playback/client.svelte.ts",
+          "line": 83,
+          "detail": "Those arguments satisfy the same-item playback shortcut; it calls controller.resume at line 96 and never prepares another session."
+        },
+        {
+          "path": "src/lib/ui/components/PersistentPlayer.svelte",
+          "line": 433,
+          "detail": "Controller resume calls media.play on the existing failed element."
+        },
+        {
+          "path": "src/lib/ui/components/PersistentPlayer.svelte",
+          "line": 550,
+          "detail": "The displayed Try again button invokes this switchEdition path."
+        }
+      ],
+      "trigger": "Let direct or HLS audio enter the persistent player error state, then press Try again. This also affects a shared audio session already retired by the error endpoint.",
+      "impact": "Retry neither replaces the source/session nor clears the error through the session-reset effect. An unrecoverable decode/source failure remains on the same element; a retired shared session cannot be revived by play(). Closing and reopening is required.",
+      "recommendation": "Distinguish explicit recovery from ordinary same-item resume. Have the existing retry path request a fresh session while retaining resume position; bypass the shortcut only for that recovery, and clear the error when the replacement is published.",
+      "verification": "Compiled-current-client mock using the exact audio retry arguments yielded resumes=1, preparationRequests=0, session=failed. Add a client/controller fixture that faults audio, clicks recovery, asserts a new preparation/session and cleared error. Cover direct and HLS audio plus shared-session retirement.",
+      "relatedAreas": [
+        "music playback recovery",
+        "shared audio",
+        "same-item resume"
+      ]
+    },
+    {
+      "id": "PLAYBACK-04",
+      "priority": "P2",
+      "category": "performance",
+      "title": "Slow shared cleanup overlaps maintenance ticks and delays ordinary scheduling",
+      "rootCause": "shared-cleanup-awaited-by-unguarded-maintenance-interval",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/lib/sharing/leases.server.ts",
+          "line": 107,
+          "detail": "A lifecycle pass serially releases up to 20 expired viewers, each awaiting remote stop."
+        },
+        {
+          "path": "src/lib/sharing/leases.server.ts",
+          "line": 111,
+          "detail": "It then selects up to 20 pending stopped sessions and awaits each provider retry; failures remain pending."
+        },
+        {
+          "path": "src/lib/sharing/leases.server.ts",
+          "line": 69,
+          "detail": "Each cleanup can wait for dispatch leases and then call the provider before completing."
+        },
+        {
+          "path": "src/lib/providers/maintenance.server.ts",
+          "line": 277,
+          "detail": "maintenanceTick awaits cleanup before provider scheduling and retention."
+        },
+        {
+          "path": "src/lib/providers/maintenance.server.ts",
+          "line": 290,
+          "detail": "A new asynchronous tick starts every 60 seconds without an in-flight guard; startup also launches a tick at line 298."
+        },
+        {
+          "path": "src/lib/server/security/provider-fetch.ts",
+          "line": 180,
+          "detail": "Provider fetches allow a 15-second default response deadline, so a count-bounded serial cleanup batch need not complete within one minute."
+        }
+      ],
+      "trigger": "Leave several cleanup_pending sessions for a connected Jellyfin source whose stop endpoint times out or responds slowly. A cleanup pass takes longer than the one-minute maintenance interval.",
+      "impact": "Later ticks enter cleanup while earlier ticks are still waiting. Pending sessions can receive duplicate stop attempts, and each tick postpones normal scheduling until its cleanup returns. Per-origin pacing limits concurrent remote calls but does not coalesce these maintenance callers. No production leak, OOM, sustained backlog size or measured outage duration is claimed.",
+      "recommendation": "Coalesce cleanup into one process-local in-flight pass and let normal scheduling proceed without awaiting network cleanup. Preserve durable cleanup_pending retry flags and the existing owner/dispatch fences; use a modest per-pass time/work budget if needed instead of increasing transport concurrency.",
+      "verification": "A bounded mock ran the current maintenanceTick/startProviderMaintenance source unchanged with fake interval callbacks and deferred cleanup. Startup plus two simulated minute ticks produced cleanupCalls=3 and scheduledCalls=0; releasing the promises produced scheduledCalls=3. Add this fake-clock regression and assert only one cleanup pass runs while ordinary scheduling continues. Separately use a disposable provider fixture with multiple delayed stops to test the chosen batch budget.",
+      "relatedAreas": [
+        "provider maintenance lifecycle",
+        "sharing cleanup",
+        "provider-origin request pacing"
+      ]
+    }
+  ]
+}

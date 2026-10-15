@@ -40,3 +40,12 @@ test('music card playback needs a queue identity and preserves artist browsing',
   expect(canPlayMusicCard({kind:'artist',connectionId:'connection'})).toBe(false);
   expect(canPlayMusicCard({kind:'game',workId:'work'})).toBe(false);
 });
+
+test('copies and repeated release occurrences keep distinct renderer keys despite canonical destinations', () => {
+  const workId=crypto.randomUUID();
+  const copies=[musicCard({...album,workId},'first'),musicCard({...album,workId},'second')];
+  expect(copies[0].href).toBe(copies[1].href);
+  expect(new Set(copies.map(card=>card.entryId)).size).toBe(2);
+  const occurrences=['occurrence-one','occurrence-two'].map(entryId=>musicCard({...album,workId,entryId},''));
+  expect(new Set(occurrences.map(card=>card.entryId)).size).toBe(2);
+});

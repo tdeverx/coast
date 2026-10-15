@@ -30,7 +30,7 @@
     menu = false, item = false, trigger, hideTrigger = false,
     align = 'end', upward = false, triggerClass, onopen, panel = false,
     disabledReason, danger = false, branch = false, checked, showCheckmark = true,
-    selection = 'checkbox', keepOpen = true, material, class: className = '', iconSize,
+    selection = 'checkbox', keepOpen = false, material, class: className = '', iconSize,
   }: ButtonProps = $props();
   const id = $props.id();
   let root = $state<HTMLDivElement>(null!), triggerNode = $state<HTMLButtonElement>(null!), surface = $state<HTMLDivElement>(null!);
@@ -98,7 +98,7 @@
   <div bind:this={surface} id={`${id}-menu`} use:liquidGlass={{variant:'glassDark'}} class="menu-surface glass"
     class:menu-panel={panel} class:drill-hidden={controller.childHidden} role="menu" aria-label={label ?? 'More options'} popover="manual" tabindex="-1"
     onclick={controller.action} onkeydown={controller.menuKey} ontoggle={controller.toggle}>
-    {#if nested && controller.compact}<Button item icon="left" text={`Back · ${label}`} onclick={()=>controller.close(true)} />{/if}
+    {#if nested && controller.compact}<Button item keepOpen icon="left" text={`Back · ${label}`} onclick={()=>controller.close(true)} />{/if}
     {#if controller.open}{@render children?.()}{/if}
   </div>
 </div>{:else}{@render control()}{/if}

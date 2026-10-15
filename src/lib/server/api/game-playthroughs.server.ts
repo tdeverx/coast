@@ -1,4 +1,4 @@
-import * as games from '$lib/core/games/service';
+import * as games from '$lib/core/games/service.server';
 import { json } from '@sveltejs/kit';
 import { AppError } from '$lib/server/security/errors';
 import { uuid, type ApiContext } from './context.server';

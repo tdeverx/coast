@@ -1,6 +1,6 @@
 # App follow-up roadmap
 
-Updated 11 October 2026. Planned and parked entries record priorities, not delivered features or implementation authorization.
+Reviewed 15 October 2026 against the current checkout and implementation reports. This lists remaining work only; implemented features are documented elsewhere, even when not yet published. Parked proposals are not implementation authorization. Fixture coverage does not replace real-provider, deployment or device acceptance.
 
 ## Highest priority — recovery, reliable backups and data ownership
 
@@ -11,32 +11,25 @@ Updated 11 October 2026. Planned and parked entries record priorities, not deliv
 
 These requirements are selected roadmap priorities. Backup scheduling, installation restore and admin/user export features are not implemented by the diagnostic changes.
 
-## Selected audit pass — implemented
+## Acceptance and reliability
 
-- Audit unused modules/exports/props/styles and consolidate repeated component logic while preserving the approved design.
-- Improve keyboard, focus, loading announcements and responsive accessibility; verify representative journeys.
-- Exercise actual audio/video playback on desktop/mobile layouts, buffered outages and transitions; distinguish synthetic browser evidence from live-device acceptance.
-- Ship a scoped, token-authenticated public API for catalogue, Collection, Library and personal progress. The initial read-only pass is now extended with scoped writes, idempotency and signed webhooks; external provider connector grants remain deferred.
-- Hide confirmed empty default rows; show skeletons while loading; retain errors and user-selected empty filters so recovery remains reachable.
+- Real-account provider/social acceptance: Jellyfin video, audio and reading access; Trakt linking, history and live activity; Steam ownership/achievements; Seerr requests, cancellations and partial-season updates. Exercise reconnects/account switching, genuine sync conflicts, privacy and taste results with intentional accounts.
+- Validate shared-library onboarding, companion updates and queue recovery under real multi-account load. Measure import throughput, memory and interactive latency; synthetic cache/staging tests do not establish production speed. See [provider job verification limits](audits/2026-10-07-provider-jobs.md).
+- Validate playback on physical desktop/mobile devices and multiple party clients, including codecs, autoplay, source transitions, drift, reconnects and HLS outages. Extend representative accessibility checks to real assistive technology.
+- Exercise bundled-volume backup/restore on the intended deployment. Disposable logical database/key recovery does not certify an installation restore.
+- Continue measured production performance work: investigate remaining CPU/RAM spikes and long-running heap behavior, browser rendering and decoding, cold-cache/network behavior and background contention. Use the existing benchmark history and [performance methods](performance.md); the local benchmark does not cover these workloads.
+- Revisit reviewed transitive dependency advisories when compatible parent upgrades are available; confirm current lockfile paths and reachability before changing dependencies.
 
-Implementation and verification limits: [selected follow-ups](audits/2026-10-03-selected-follow-ups.md). Live-device/provider acceptance is separate from the completed fixture checks.
+## Product and metadata follow-ups
 
-## Parked audit follow-ups
-
-- New-user Library experience: explain the difference between connected libraries and personal Collection, guide users while initial imports run, and make an empty Collection useful without hiding the server catalogue. Collection filtering now defaults off in Library; revisit a more helpful first-run experience when selected.
-
-- Profile comparison / versus view: parked after the first design exploration was rejected. Revisit side-by-side profile identities, blended backgrounds and per-medium comparison charts only when selected again; reuse approved UI and respect profile privacy. The first-pass button, route and comparison implementation have been removed.
-
-- Activity feed card lookup: a page can reference 60 activities plus parent shows, while `workCards` currently limits screen cards to 60 total. Fetch explicit IDs in bounded batches before revisiting feed pagination; investigate whether this omission causes entries to disappear between refreshes. Parked at the user's request.
-
-- Next major pass: codebase-wide optimisation and performance profiling, with focused automated tests and optional user-assisted acceptance. Measure CPU/RAM spikes, query latency and concurrency, provider/background work, rendering, playback and caches under realistic workloads. Prioritise slow Collection requests, the production HTTP idle timeout, and durable child-process exit diagnostics from the live outage investigation; compare measured before/after results. Follow the [isolated investigation and repair plan](audits/2026-10-03-performance-plan.md).
-- Add an administrator benchmarking section to the performance pass: one Run benchmark button, recorded results and durable run history to compare performance drift over time. Use repeatable workloads and record build, environment, duration, query latency, CPU/RAM and failures so comparisons remain meaningful.
-- Real-account provider/social certification: reconnects/account switching, projection cleanup, genuine sync conflicts, social privacy and taste results across actual integrations.
-- Revisit reviewed transitive dependency advisories when compatible parent upgrades are available.
-- Refine Dynamic For You and its exact-next-item prioritisation. “Recently watched”, “From your library” and “Because you watched” have been removed; Activity remains the last row.
-- Review the disabled-by-default modal media details experiment; expand navigation/context restoration after design approval.
-- Revisit friend-avatar meanings with explicit design approval.
-- External provider connector grants and protocol negotiation. Scoped public API writes, idempotency and signed webhooks are implemented.
+- New-user Library experience: explain connected libraries versus personal Collection, guide users during initial imports, and make an empty Collection useful without hiding the server catalogue.
+- Activity feed card lookup: a page can reference 60 activities plus parent shows, while `workCards` still caps screen hydration at 60 total. Fetch explicit IDs in bounded batches and investigate refresh omissions. Feed/row-section pagination remains parked until this is resolved.
+- Dynamic For You: refine exact-next-item prioritisation and evaluate relevance, diversity and repetition with real user data. Extend the existing lazy rows and cached provider/taste ranking rather than rebuilding the feed.
+- Media detail overlay: review the disabled-by-default experiment and, after design approval, preserve loaded rows and horizontal/vertical scroll when navigating back.
+- Books/comics: expand real-provider acceptance beyond the verified comic search, verify deployment reader files, and expand author/comic-series entities, provider recommendation sources, trustworthy exact book release dates and operator contact identification for Open Library. Resolve remaining edition/collected-volume/issue identity conflicts with verified evidence, not title matching.
+- Reading formats: consider additional archives, Kindle and audiobooks with their own capability/dependency review. Cross-server and local/server file equivalence needs verified content identity; see [reading boundaries](reading.md).
+- External provider connector grants and protocol negotiation for the public API.
+- Profile comparison / versus view: parked after the rejected design exploration. Revisit identities, blended backgrounds and per-medium charts only when selected again, with privacy and design approval.
 
 ## Small–medium quality-of-life audit — parked
 
@@ -44,7 +37,7 @@ Source audit recorded 5 October 2026. These are proposals, not implementation au
 
 | Improvement | Value | Size | Risk |
 |---|:---:|:---:|:---:|
-| Keep the actual job error visible in Developer mode; show paused retries separately instead of replacing the failure explanation. | 5 | S | Low |
+| Show the last error for a pending retry alongside its waiting/Developer-mode pause reason in task details; failed-task and last-run error displays already exist. | 5 | S | Low |
 | Clear one Library filter without resetting other selections; clearing genre currently drops other filter state. | 4 | S | Low |
 | Prevent duplicate list creation by disabling submission while saving and guarding repeated clicks. | 4 | S | Low |
 | Protect unsaved profile and metadata dialog edits, matching the protection already present in Settings. | 5 | S | Low |
@@ -58,11 +51,11 @@ Source audit recorded 5 October 2026. These are proposals, not implementation au
 | Fetch search results beyond the current caps in bounded batches. | 4 | M | Medium |
 | Add search across the entire friends roster and optional online/active-first sorting. | 4 | M | Low |
 | Explain Collection membership in a menu detail: playback, import, list or explicit addition. | 4 | S | Low |
-| Allow existing lists to be renamed and their descriptions edited. | 4 | M | Low |
+| Expose existing list rename/description commands through the approved list UI. | 4 | S | Low |
 | Add drag rearrangement for ordered lists alongside the existing keyboard-accessible move actions. | 3 | M | Medium |
 | Add bulk Library/list relationship actions to save, favourite, collect or remove selected items. | 5 | M | Medium |
 | Add personal playback queue reorder, remove, clear and Play next using the party queue's existing patterns. | 4 | M | Medium |
-| Extend playback shortcuts to seek, mute, fullscreen and show UI, respecting party permissions. | 5 | S | Medium |
+| Extend playback shortcuts to seek, mute and fullscreen, respecting party permissions and editable fields. | 5 | S | Medium |
 | Remember playback volume per device instead of starting at full volume after remounting. | 4 | S | Low |
 | Show the projected finishing time through the existing timeline information. | 3 | S | Low |
 | Add optional next-episode autoplay with cancellation, respecting party ownership, availability and progress. | 5 | M | Medium |
@@ -74,17 +67,40 @@ Source audit recorded 5 October 2026. These are proposals, not implementation au
 | Give notifications problem-specific actions: retry transient failures, reconnect accounts or review conflicts directly. | 5 | M | Medium |
 | Allow planned items to be rescheduled without cancelling and recreating them. | 4 | M | Low |
 
-Recommended first batch: job error clarity, filter preservation, duplicate-submit protection, unsaved-dialog protection, Undo parity and explicit Copy buttons. Follow with Library sorting, playback shortcuts and recommendation explanations. This ordering is a recommendation, not a selected implementation pass.
+### First quality-of-life batch — parked
 
-Browsing-context restoration remains parked under the modal media details review above: retain loaded rows and horizontal/vertical scroll positions when returning, subject to the media-modal direction and design approval.
+Parked at the user's request on 14 October 2026. These six proposals have been scoped but are not selected for implementation. Preserve the approved interface and reuse existing controls, mutation helpers, feedback and confirmation methods; no redesign or new dependencies is planned.
 
-## Existing future work
+1. Job errors: show the last failure for pending retries alongside the waiting or Developer-mode pause reason in existing task details.
+2. Library filters: clearing a genre removes only that filter, preserves other selections and resets pagination.
+3. List creation: guard repeated submissions and disable the existing Create button while saving.
+4. Unsaved edits: protect profile and metadata dialog edits when closing or navigating away, following Settings' confirmation pattern.
+5. Undo: reuse the existing Undo notification for reversible music/game relationships, Collection changes and list removal; restore the list position where applicable.
+6. Copy buttons: add explicit Copy actions beside invitation links, playback share links and newly generated API tokens, with existing success/error feedback.
 
-- Wider social roadmap: see [social.md](social.md), including recaps, collaborative lists, groups, gamification and possible chat features.
-- Wider invitation/onboarding design approval and real-server provisioning certification. Signup links, invitation-scoped Jellyfin provisioning and permission-controlled single-use playback links are implemented.
-- Synced chat/reaction overlays, books/comics, guest/public sessions and wider real-device parity.
+Suggested later batch: Library sorting, playback shortcuts and recommendation explanations. The audit's ratings remain estimates; the list-edit row is scoped to its missing UI because server commands already exist.
 
-Coast username/password registration, removal of Jellyfin sign-in, administrator signup/provider requirements, initial Jellyfin/Trakt import gating and optional uploaded/connected-service profile pictures have shipped. These are no longer pending roadmap decisions.
+## Social and shared experiences
+
+- Owner-only profile-row privacy controls and richer friend-avatar meanings require explicit design approval.
+- Daily/monthly/yearly recaps; collaborative lists, shared planning/polls, groups and clubs. Challenges, achievements and streaks need a separate product/design pass. See [social roadmap](social.md#roadmap).
+- Movie-night recommendation responses, group recommendations and planning/calendar refinement behind its existing switch.
+- Wider invitation/onboarding design approval and real-server provisioning acceptance; retain the existing signup and permission-controlled single-use playback links.
+- In-session chat/reaction overlays and guest/public party sessions. Ordinary direct messaging, comments/reviews, spoiler protection and mute/block remain undecided, not selected features.
+
+### Unified playback sharing — remaining acceptance
+
+Reusable expiring grants, browser/media resolution, cookie-free HLS resources, per-viewer provider sessions, administrator-controlled personal/shared bitrate limits, durable bitrate handoff and shared-link attribution in Active streams are implemented. See [reusable playback links](synced-experiences.md#reusable-playback-links) for scope, bounds and verification.
+
+- Verify the single copied URL and explicit `?play=1` media selection in actual VRChat/AVPro/Quest over the intended HTTPS proxy, including HEAD probing, seeking, expiry and revocation.
+- Exercise active quality changes under real contention and simultaneous seeks; retain duration, audio/video continuity and independent player control. Browser feasibility is evidence for the approach, not native-client certification.
+- Verify music-track HLS and bitrate changes on actual target players, including pause/resume and long buffers.
+- Measure address/user-agent lease merging/splitting with real worlds; retain estimated labels and avoid claiming unique people or VRChat usernames.
+- Evaluate budget margins and configurable quality/concurrency bounds from measured deployments. Negotiated bitrate targets are not exact instantaneous byte limits. Browser ↔ game synchronization remains out of v1.
+
+### Browser ↔ VRChat playback sync — investigation needed, parked
+
+Investigate optional two-way synchronization separately from sharing the media URL. VRChat must retain working play/pause/seek controls; browser-only control or inferring player state from buffered segment requests is insufficient. Establish a feasible world/client integration, separate viewing/control permissions, timeline authority and handoff, command ordering, drift correction, feedback-loop prevention and reconnect behavior. Account for external request limits and validate real clients before choosing an approach. This is not part of v1 and does not authorize implementation.
 
 ## Profiles and playback without personal tracking — planned
 
@@ -98,6 +114,6 @@ Coast username/password registration, removal of Jellyfin sign-in, administrator
 General monitoring of other Jellyfin clients remains a separate discussion. Other clients can use the guest account with normal reporting, but a configured guest account does not restore accurate playback visibility when a client disables reports. Server-side HTTP/FFmpeg monitoring can observe delivery activity, not reliably infer actual viewing, pause state or completion. No monitoring plugin implementation is selected by this roadmap entry.
 
 
-## For You and remaining experiments
+## Implementation records
 
-Dynamic For You and personalised recommendations are standard features. The feed loads personalised horizontal rows one at a time at the page bottom, using cached provider suggestions and personal taste signals. Planning/calendar and modal media details retain independent administrator switches, disabled by default. Refinement and wider live acceptance remain future work.
+Completed work belongs in the [selected audit report](audits/2026-10-03-selected-follow-ups.md), [performance implementation](audits/2026-10-03-performance-implementation.md), [provider jobs report](audits/2026-10-07-provider-jobs.md), [reading guide](reading.md) and [public API guide](public-api.md). Current switches and availability are documented in [experimental features](experimental-features.md). Historical reports retain their dated evidence and limits; they are not an active backlog.
