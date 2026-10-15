@@ -31,6 +31,7 @@ export interface MusicItem {
   favourite?: boolean;
   primaryImageTag?: string;
   artworkUrl?: string;
+  backdropUrl?: string;
   externalIds: Record<string, string>;
 }
 export interface MusicPage {

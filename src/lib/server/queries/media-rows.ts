@@ -1,3 +1,4 @@
+import { personaliseWorkCards } from '$lib/catalogue/overrides/presentation.server';
 import { desc, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getConfig } from '$lib/server/config';
@@ -62,7 +63,7 @@ export async function gameRow(userId: string, personal = false, availableOnly = 
       desc(games.id)
     )
     .limit(12);
-  return { items: items.map(({game,available}) => gameCard({...game,available})), failure: '' };
+  return { items: await personaliseWorkCards(userId,items.map(({game,available}) => gameCard({...game,available}))), failure: '' };
 }
 
 export async function presentationContent(userId: string, url: URL): Promise<PresentationRow> {

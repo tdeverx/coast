@@ -1,6 +1,6 @@
 import { notifyAction } from './action-feedback.svelte';
 import { createOperation } from './operation.svelte';
-/** Serialize a menu's writes, then refresh its data and report successful delivery. */
+/** Acknowledged writes succeed even when the optional local refresh fails. */
 export function createMutation(refresh: () => Promise<unknown>) {
   const operation = createOperation();
   return {
@@ -10,8 +10,9 @@ export function createMutation(refresh: () => Promise<unknown>) {
     run(task: () => Promise<unknown>, success = 'Saved.', undo?: () => Promise<void>) {
       return operation.run(async () => {
         if ((await task()) === false) return false;
-        await refresh();
         notifyAction(success, undo);
+        try { await refresh(); }
+        catch { operation.error = 'Saved. Actions could not refresh; reopen or retry loading them.'; }
       });
     },
   };

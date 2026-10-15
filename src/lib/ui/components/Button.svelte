@@ -15,7 +15,7 @@
     disabled?: boolean; type?: 'button' | 'submit'; label?: string; title?: string;
     pressed?: boolean; compact?: boolean;
  trigger?: Snippet; hideTrigger?: boolean;
-    align?: 'start' | 'end'; upward?: boolean; triggerClass?: string; onopen?: () => void;
+    align?: 'start' | 'end'; upward?: boolean; triggerClass?: string; onopen?: () => void; onclose?: () => void;
     panel?: boolean; disabledReason?: string; danger?: boolean; branch?: boolean;
     checked?: boolean; showCheckmark?: boolean; selection?: 'checkbox' | 'radio'; keepOpen?: boolean;
     material?: GlassVariant; class?: string; iconSize?: number;
@@ -28,7 +28,7 @@
     children, text, icon, href, onclick, emphasis = 'standard', size = 'standard', fallback = false, disabled = false,
     type = 'button', label, title, pressed, compact = false,
     menu = false, item = false, trigger, hideTrigger = false,
-    align = 'end', upward = false, triggerClass, onopen, panel = false,
+    align = 'end', upward = false, triggerClass, onopen, onclose, panel = false,
     disabledReason, danger = false, branch = false, checked, showCheckmark = true,
     selection = 'checkbox', keepOpen = false, material, class: className = '', iconSize,
   }: ButtonProps = $props();
@@ -37,7 +37,7 @@
   // Mode is structural, fixed for the lifetime of this control. Values/callbacks remain live.
   const controller = untrack(() => menu ? createMenuController({
     root: () => root, triggerNode: () => triggerNode, surface: () => surface,
-    disabled: () => disabled, align: () => align, upward: () => upward, onopen: () => onopen?.(),
+    disabled: () => disabled, align: () => align, upward: () => upward, onopen: () => onopen?.(), onclose: () => onclose?.(),
   }) : null);
   export function openAt(position: { x: number; y: number }) { controller?.openAt(position); }
   export function focusFirst(last = false) { return controller?.focusFirst(last); }

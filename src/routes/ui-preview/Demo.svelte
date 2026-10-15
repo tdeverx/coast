@@ -15,6 +15,7 @@
   let ChoiceGroup = $state<typeof import('$lib/ui/components/ChoiceGroup.svelte').default>(null!);
   let Field = $state<typeof import('$lib/ui/components/Field.svelte').default>(null!);
   let FormActions = $state<typeof import('$lib/ui/components/FormActions.svelte').default>(null!);
+  let WorkListActions = $state<typeof import('$lib/ui/components/WorkListActions.svelte').default>(null!);
   let WorkActions = $state<typeof import('$lib/ui/components/WorkActions.svelte').default>(null!);
 
   let BarChart = $state<typeof import('$lib/ui/components/BarChart.svelte').default>(null!);
@@ -34,7 +35,7 @@
   let IntegrationSettings = $state<typeof import('$lib/ui/components/IntegrationSettings.svelte').default>(null!);
   let JobSchedule = $state<typeof import('$lib/ui/components/JobSchedule.svelte').default>(null!);
   let JobsSettings = $state<typeof import('$lib/ui/components/JobsSettings.svelte').default>(null!);
-  let MediaActions = $state<typeof import('$lib/ui/components/MediaActions.svelte').default>(null!);
+  let WorkMenu = $state<typeof import('$lib/ui/components/WorkMenu.svelte').default>(null!);
   let MediaActivity = $state<typeof import('$lib/ui/components/MediaActivity.svelte').default>(null!);
   let MediaCard = $state<typeof import('$lib/ui/components/MediaCard.svelte').default>(null!);
   let MediaDetailRows = $state<typeof import('$lib/ui/components/MediaDetailRows.svelte').default>(null!);
@@ -55,7 +56,6 @@
   let Pagination = $state<typeof import('$lib/ui/components/Pagination.svelte').default>(null!);
   let PersistentPlayer = $state<typeof import('$lib/ui/components/PersistentPlayer.svelte').default>(null!);
   let PlaybackTimeline = $state<typeof import('$lib/ui/components/PlaybackTimeline.svelte').default>(null!);
-  let PresentationActions = $state<typeof import('$lib/ui/components/PresentationActions.svelte').default>(null!);
   let ProfileEditor = $state<typeof import('$lib/ui/components/ProfileEditor.svelte').default>(null!);
   let ProfileFeatureEditor = $state<typeof import('$lib/ui/components/ProfileFeatureEditor.svelte').default>(null!);
   let ProfileRecap = $state<typeof import('$lib/ui/components/ProfileRecap.svelte').default>(null!);
@@ -118,7 +118,7 @@
   });
 
   const loaders = import.meta.glob<{default: any}>('/src/lib/ui/components/*.svelte');
-  const recipes: Record<string,string[]> = {"AvatarPicker":["Avatar","Button","Field","RowFilter"],"AccountFields":["Field"],"PartyCard": ["PartyCard", "Button", "PlaybackTimeline"], "ActivityHeader": ["ActivityHeader"], "ProgressBar": ["ProgressBar"], "IdentityCard": ["Avatar", "Button", "IdentityCard"], "FriendsPanel": ["Button", "FriendsPanel"], "StreamsPanel":["Button","StreamsPanel"], "FriendRoster": ["Button", "FriendRoster"], "NotificationInbox": ["Button", "NotificationInbox"], "RecommendAction": ["Button", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "SyncedControls": ["Button", "SyncedControls", "PartyMenu"], "Glass": ["Button"], "BarChart": ["BarChart", "Button"], "Brand": ["Brand", "Button"], "BreakdownChart": ["BreakdownChart", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["Button", "Heading", "Pagination"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "MediaActions": ["Button", "MediaActions"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PersistentPlayer": ["Button", "PersistentPlayer"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "PresentationActions": ["Button", "PresentationActions"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileFeatureEditor": ["Button", "ProfileFeatureEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProgressChart": ["Button", "ProgressChart"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "RowFeedback": ["Button", "RowFeedback"], "Shelf": ["Button", "RowFilter", "Shelf"], "Avatar": ["Button", "Avatar"], "ChoiceGroup": ["Button", "ChoiceGroup"], "Field": ["Button", "Field"], "FormActions": ["Button", "FormActions"], "WorkActions": ["Button", "WorkActions"], "PartyMenu": ["Button", "PartyMenu"]};
+  const recipes: Record<string,string[]> = {"AvatarPicker": ["Avatar", "Button", "Field", "RowFilter"], "AccountFields": ["Field"], "PartyCard": ["PartyCard", "Button", "PlaybackTimeline"], "ActivityHeader": ["ActivityHeader"], "ProgressBar": ["ProgressBar"], "IdentityCard": ["Avatar", "Button", "IdentityCard"], "FriendsPanel": ["Button", "FriendsPanel"], "StreamsPanel": ["Button", "StreamsPanel"], "FriendRoster": ["Button", "FriendRoster"], "NotificationInbox": ["Button", "NotificationInbox"], "RecommendAction": ["Button", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "SyncedControls": ["Button", "SyncedControls", "PartyMenu"], "Glass": ["Button"], "BarChart": ["BarChart", "Button"], "Brand": ["Brand", "Button"], "BreakdownChart": ["BreakdownChart", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["Button", "Heading", "Pagination"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "WorkMenu": ["Button", "WorkMenu"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PersistentPlayer": ["Button", "PersistentPlayer"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileFeatureEditor": ["Button", "ProfileFeatureEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProgressChart": ["Button", "ProgressChart"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "RowFeedback": ["Button", "RowFeedback"], "Shelf": ["Button", "RowFilter", "Shelf"], "Avatar": ["Button", "Avatar"], "ChoiceGroup": ["Button", "ChoiceGroup"], "Field": ["Button", "Field"], "FormActions": ["Button", "FormActions"], "WorkActions": ["Button", "WorkActions"], "PartyMenu": ["Button", "PartyMenu"], "WorkListActions": ["Button", "WorkListActions"]};
   $effect(() => {
     const selected = name;
     ready = false;
@@ -133,6 +133,7 @@
         case 'Field': Field = module.default; break;
         case 'FormActions': FormActions = module.default; break;
         case 'WorkActions': WorkActions = module.default; break;
+        case 'WorkListActions': WorkListActions = module.default; break;
 
         case 'BarChart': BarChart = module.default; break;
         case 'Brand': Brand = module.default; break;
@@ -151,7 +152,7 @@
         case 'IntegrationSettings': IntegrationSettings = module.default; break;
         case 'JobSchedule': JobSchedule = module.default; break;
         case 'JobsSettings': JobsSettings = module.default; break;
-        case 'MediaActions': MediaActions = module.default; break;
+        case 'WorkMenu': WorkMenu = module.default; break;
         case 'MediaActivity': MediaActivity = module.default; break;
         case 'MediaCard': MediaCard = module.default; break;
         case 'MediaDetailRows': MediaDetailRows = module.default; break;
@@ -172,7 +173,6 @@
         case 'Pagination': Pagination = module.default; break;
         case 'PersistentPlayer': PersistentPlayer = module.default; break;
         case 'PlaybackTimeline': PlaybackTimeline = module.default; break;
-        case 'PresentationActions': PresentationActions = module.default; break;
         case 'ProfileEditor': ProfileEditor = module.default; break;
         case 'ProfileFeatureEditor': ProfileFeatureEditor = module.default; break;
         case 'ProfileRecap': ProfileRecap = module.default; break;
@@ -268,8 +268,10 @@
       <JobSchedule {provider} task={serviceTasks("jellyfin")[0]} jobs={[job]} />
     {:else if name==='JobsSettings'}
       <JobsSettings providers={[provider]} actions={[job]} />
-    {:else if name==='MediaActions'}
-      <MediaActions item={movie} showMenuTrigger />
+    {:else if name==='WorkListActions'}
+      <WorkListActions workId={id} select={async()=>{}} />
+    {:else if name==='WorkMenu'}
+      <WorkMenu item={movie} showMenuTrigger />
     {:else if name==='MediaActivity'}
       <MediaActivity mediaId={id} period="month" />
     {:else if name==='MediaCard'}
@@ -318,8 +320,6 @@
       {:else}<p class="notice">This example uses an isolated preview playback session. Open its standalone example to test it.</p><a class="button" href="/ui-preview/demo?component=PersistentPlayer" target="_blank" rel="noreferrer" data-preview-navigation>Open controller example</a>{/if}
     {:else if name==='PlaybackTimeline'}
       <PlaybackTimeline mediaId={id} title={movie.title} detail="2026 · Movie" current={position} duration={6600} onseek={(value)=>position=value} />
-    {:else if name==='PresentationActions'}
-      <PresentationActions item={{id,kind:"game",title:"Preview game",href:"#"}} />
     {:else if name==='ProfileEditor'}
       <ProfileEditor bind:open profile={{displayName:"Preview profile",bio:"A demo profile."}} username="preview" />
     {:else if name==='ProfileFeatureEditor'}

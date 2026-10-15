@@ -2,6 +2,7 @@ import { diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
 import { invalidate, refreshAll } from '$app/navigation';
 import { page } from '$app/state';
 import { invalidateContentRevision, type ContentDomain } from './content-revision.svelte';
+import { notifyAction } from './action-feedback.svelte';
 
 let playbackApi = '/api/v1/';
 let playbackApiRevision = 0;
@@ -61,15 +62,20 @@ export function createApiClient(transport: ApiTransport, afterChange: (path: str
   const api = <T = unknown>(path: string, body?: unknown, method = 'POST', options: Pick<RequestInit, 'signal'> = {}) => requestApi<T>(transport, path, body, method, options);
   const change = async <T = unknown>(path: string, body?: unknown, method = 'POST') => {
     const result = await api<T>(path, body, method);
-    await afterChange(path);
+    await acknowledgeRefresh(() => afterChange(path));
     return result;
   };
   return { api, change };
 }
 export async function change<T = unknown>(path: string, body?: unknown, method = 'POST') {
   const result = await api<T>(path, body, method);
-  await refreshAfterChange(path);
+  await acknowledgeRefresh(() => refreshAfterChange(path));
   return result;
+}
+/** A failed page refresh cannot turn an acknowledged command into a failed write. */
+async function acknowledgeRefresh(refresh: () => Promise<void>) {
+  try { await refresh(); }
+  catch { notifyAction('Saved. The page could not refresh; reload to see the latest data.'); }
 }
 export async function refreshAfterChange(path: string) {
   const domain = path.split('/')[0];

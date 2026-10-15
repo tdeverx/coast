@@ -30,7 +30,7 @@
   void mutation.run(() => change('social/reactions', { targetKind: kind, targetId: id, emoji: selected === emoji ? null : emoji }));
  }
 </script>
-<Button menu label="React" panel {disabled} onopen={load}>
+<Button menu label="React" panel {disabled} onopen={load} onclose={resource.cancel}>
  {#snippet trigger()}{#if selected}<span class="selected-emoji">{selected}</span>{:else}<Icon name="smile" size={20} />{/if}{#if nested}<span class="menu-action-label">React</span><span class="menu-chevron"><Icon name="right" /></span>{/if}{/snippet}
  <div class="reaction-strip">
   {#each emojis as emoji}<Button item class="reaction-choice" label={emoji} checked={selected === emoji} showCheckmark={false} disabled={resource.busy || mutation.busy} keepOpen onclick={() => react(emoji)}><span class="emoji">{emoji}</span></Button>{/each}

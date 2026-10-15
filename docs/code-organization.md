@@ -20,6 +20,7 @@ Keep code beside the feature that owns it. Share a helper when it has a concrete
 | `src/lib/server` | Database, authentication, security, diagnostics, storage and queue infrastructure; API dispatch and read models have dedicated subfolders. |
 | `src/lib/ui/components` | Shared rendered components. Keep this flat for the component viewer and its generated inventory. |
 | `src/lib/ui/shelves` | Cancellable client data sources for the shared Shelf renderer. |
+| `src/lib/ui/work-menu` | Medium-specific action composition and stable game, reading and music command dialogs, behind the shared `WorkMenu` component. |
 | `src/lib/ui/panels` | Browser navigation and URL state for Friends, Notifications and Streams. |
 | `src/routes/ui-preview`, `src/lib/ui/charts` | Preview recipes, fictional chart data and unused chart explorations. |
 | `tests`, `scripts`, `migrations`, `docs` | Verification, operational tooling, immutable schema history and source-of-truth guidance. |
@@ -55,6 +56,8 @@ Current guides should name the current tree. Dated audits retain their original 
 
 ## Boundaries to handle in separate passes
 
-The Settings page, MediaActions, persistent player, Jellyfin synchronisation and database schema remain large. Split them around a concrete responsibility when working on that feature, preserving the approved UI and transactional boundaries; line count alone is not a reason to extract code.
+The Settings page, `ui/work-menu/ScreenActions`, persistent player, Jellyfin synchronisation and database schema remain large. Split them around a concrete responsibility when working on that feature, preserving the approved UI and transactional boundaries; line count alone is not a reason to extract code.
+
+Catalogue cards, heroes and embedded items enter through `ui/components/WorkMenu`; do not add another medium switch at each consumer. Its explicit kind/work/source/occurrence identity selects screen or catalogue composition. `controls/work.svelte.ts` owns local personal action state; `controls/menu-resource.svelte.ts` owns optional menu-read lifetimes. Game, reading and music command components reuse domain endpoints and retain their dialogs outside submenu children. Source/admin metadata fields remain in their domains; shared private title/artwork reads live in `catalogue/overrides/presentation.server.ts` and reference canonical works.
 
 Two runtime dependency loops use deferred imports: sync changes reads the current sync value while reconciliation enqueues changes; the playback controller loads party commands while party playback calls the controller. They are not eager initialisation loops. Breaking them would require changing those coordination boundaries, so this organisational pass leaves their behaviour intact.

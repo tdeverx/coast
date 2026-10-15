@@ -129,7 +129,7 @@ test('reading presentation carries source attribution and local work actions wit
   expect(card.href).toBe(`/media/${local.id}`);
   expect(card.attribution).toEqual({ label: 'Comic Vine', href: issue.site_detail_url });
   expect(readingHero(local).available).toBe(false);
-  const remote = readingCard({ ...local, id: local.externalId }, '/media/comic-vine/4000-123');
+  const remote = readingCard({ ...local, id: local.externalId }, '/media/comic-vine/4000-123', undefined, false);
   expect(remote.workId).toBeUndefined();
   expect(remote.year).toBe(2001);
   expect(remote.available).toBe(false);

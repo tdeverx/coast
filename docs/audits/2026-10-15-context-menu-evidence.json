@@ -1,0 +1,387 @@
+{
+  "baseline": "8a350fd43f16c31aaec32866ca02371297792608",
+  "date": "2026-10-15",
+  "runtime": "Bun 1.4.3",
+  "client": {
+    "boundary": "Actual component scripts + actual resource/work/mutation owners, injected API/lifecycle boundaries; no network/DB/production latency evidence",
+    "requests": [
+      {
+        "name": "screen",
+        "firstOpenPaths": [
+          "media/work/actions"
+        ],
+        "twoOpenPaths": [
+          "media/work/actions",
+          "media/work/actions"
+        ]
+      },
+      {
+        "name": "stored game",
+        "firstOpenPaths": [
+          "collection/work",
+          "games/work"
+        ],
+        "twoOpenPaths": [
+          "collection/work",
+          "games/work",
+          "collection/work",
+          "games/work"
+        ]
+      },
+      {
+        "name": "stored reading",
+        "firstOpenPaths": [
+          "collection/work"
+        ],
+        "twoOpenPaths": [
+          "collection/work",
+          "collection/work"
+        ]
+      },
+      {
+        "name": "known provider music",
+        "firstOpenPaths": [
+          "collection/work",
+          "providers/connection/music/work"
+        ],
+        "twoOpenPaths": [
+          "collection/work",
+          "providers/connection/music/work",
+          "collection/work",
+          "providers/connection/music/work"
+        ]
+      },
+      {
+        "name": "provider music remapped identity",
+        "firstOpenPaths": [
+          "collection/old-work",
+          "providers/connection/music/work",
+          "collection/work"
+        ],
+        "twoOpenPaths": [
+          "collection/old-work",
+          "providers/connection/music/work",
+          "collection/work",
+          "collection/old-work",
+          "providers/connection/music/work",
+          "collection/work"
+        ]
+      },
+      {
+        "name": "unknown provider music",
+        "firstOpenPaths": [
+          "providers/connection/music/work",
+          "collection/work"
+        ],
+        "twoOpenPaths": [
+          "providers/connection/music/work",
+          "collection/work",
+          "providers/connection/music/work",
+          "collection/work"
+        ]
+      },
+      {
+        "name": "canonical music",
+        "firstOpenPaths": [
+          "collection/work"
+        ],
+        "twoOpenPaths": [
+          "collection/work",
+          "collection/work"
+        ]
+      },
+      {
+        "name": "remote comic",
+        "firstOpenPaths": [],
+        "twoOpenPaths": []
+      }
+    ],
+    "disposed": [
+      {
+        "kind": "screen",
+        "atDispose": [
+          {
+            "path": "media/work/actions",
+            "hasSignal": false
+          }
+        ],
+        "lateData": {
+          "item": {
+            "id": "work",
+            "kind": "movie",
+            "title": "Late",
+            "progress": 0,
+            "duration": 100,
+            "available": true,
+            "href": "/media/work"
+          }
+        }
+      },
+      {
+        "kind": "presentation",
+        "atDispose": [
+          {
+            "path": "providers/connection/music/work",
+            "hasSignal": true,
+            "aborted": true
+          }
+        ],
+        "lateData": {
+          "work": {
+            "reasons": [],
+            "rating": null,
+            "queued": false,
+            "lists": []
+          }
+        }
+      }
+    ],
+    "primaryPlay": {
+      "paths": [
+        "providers/connection/music/work",
+        "collection/work"
+      ],
+      "playsWhileCommonStateHeld": [],
+      "playsAfterCommonState": [
+        "work"
+      ]
+    }
+  },
+  "server": {
+    "boundary": "Actual mediaActionData function; injected SQL/query and hydration boundaries. Counts exclude helper internals and are not query-plan or latency evidence.",
+    "samples": [
+      {
+        "children": 1,
+        "localStatementBoundaries": 10,
+        "hydrationRequestedIds": [
+          1,
+          1
+        ],
+        "responseChildren": 1,
+        "responseLists": 1,
+        "serializedBytes": 783
+      },
+      {
+        "children": 60,
+        "localStatementBoundaries": 10,
+        "hydrationRequestedIds": [
+          1,
+          60
+        ],
+        "responseChildren": 60,
+        "responseLists": 60,
+        "serializedBytes": 9951
+      },
+      {
+        "children": 600,
+        "localStatementBoundaries": 10,
+        "hydrationRequestedIds": [
+          1,
+          600
+        ],
+        "responseChildren": 600,
+        "responseLists": 600,
+        "serializedBytes": 96191
+      }
+    ]
+  },
+  "sourceHashes": {
+    "src/lib/ui/components/MediaActions.svelte": "4407a8e6986a8d7418f6dc7e53ff3f0eb8d0f46a4ea256f31d1db55938457f15",
+    "src/lib/ui/components/PresentationActions.svelte": "219f2ffeb563924db067405b477ce4637c61735af9aa0aea40a7f393240c3c69",
+    "src/lib/ui/controls/work.svelte.ts": "67ab201fc5f7329355c3d7d3f78685225ff4b86aa7ab0ae77afb98c54dc1572e",
+    "src/lib/server/queries/media-actions.ts": "884ecafc82c50cd0c3831614ff730bda516fa80ded44f8f87e522f6c79ab9821",
+    "src/lib/collection/query.server.ts": "f781e18efe06b3cf891bd0525973e69fdc8095c2987383eb9caec9f1a9b76403"
+  },
+  "regressions": {
+    "passed": 18,
+    "failed": 0,
+    "assertions": 92,
+    "files": [
+      "ui-context-gesture.test.ts",
+      "ui-request-controls.test.ts",
+      "ui-resource.test.ts",
+      "ui-client.test.ts",
+      "music-presentation.test.ts"
+    ]
+  },
+  "limits": [
+    "No database or network calls",
+    "No live authenticated menu timings, browser frame/heap or cross-browser acceptance",
+    "Statement-boundary counts exclude hydration/assessment helper internals",
+    "Synthetic response size varies children and lists together; it is not production transfer size"
+  ],
+  "refreshFailure": {
+    "boundary": "Actual createApiClient/requestApi/createMutation/createOperation; synthetic 200 transport and rejected route invalidation; no server mutation or real route",
+    "acceptedWrites": 1,
+    "result": false,
+    "error": "Synthetic route refresh failure",
+    "successNotices": []
+  },
+  "implementation": {
+    "date": "2026-10-16",
+    "base": "6060238a310040028b000dff498962ea34edf1cd",
+    "branch": "codex/context-menu-unification",
+    "client": {
+      "boundary": "Actual compiled component/controller scripts; synthetic API/lifecycle, no network or database timings",
+      "results": [
+        {
+          "name": "screen",
+          "paths": [
+            "media/work/actions"
+          ],
+          "coldReads": 1,
+          "warmAdditionalReads": 0
+        },
+        {
+          "name": "known music source",
+          "paths": [
+            "collection/work"
+          ],
+          "coldReads": 1,
+          "warmAdditionalReads": 0
+        },
+        {
+          "name": "canonical music",
+          "paths": [
+            "collection/work"
+          ],
+          "coldReads": 1,
+          "warmAdditionalReads": 0
+        },
+        {
+          "name": "game",
+          "paths": [
+            "collection/work"
+          ],
+          "coldReads": 1,
+          "warmAdditionalReads": 0
+        },
+        {
+          "name": "reading",
+          "paths": [
+            "collection/work"
+          ],
+          "coldReads": 1,
+          "warmAdditionalReads": 0
+        },
+        {
+          "name": "unknown-source playback after menu close",
+          "paths": [
+            "providers/source/music/work"
+          ],
+          "plays": [
+            "work"
+          ]
+        }
+      ]
+    },
+    "screenProjection": {
+      "boundary": "Actual mediaActionData function; injected SQL/query and hydration boundaries. Counts exclude helper internals and are not query-plan or latency evidence.",
+      "samples": [
+        {
+          "children": 1,
+          "localStatementBoundaries": 7,
+          "hydrationRequestedIds": [
+            1,
+            0
+          ],
+          "responseChildren": 0,
+          "responseLists": 0,
+          "serializedBytes": 608
+        },
+        {
+          "children": 60,
+          "localStatementBoundaries": 7,
+          "hydrationRequestedIds": [
+            1,
+            0
+          ],
+          "responseChildren": 0,
+          "responseLists": 0,
+          "serializedBytes": 608
+        },
+        {
+          "children": 600,
+          "localStatementBoundaries": 7,
+          "hydrationRequestedIds": [
+            1,
+            0
+          ],
+          "responseChildren": 0,
+          "responseLists": 0,
+          "serializedBytes": 608
+        }
+      ]
+    },
+    "checks": {
+      "unit": {
+        "passed": 556,
+        "skipped": 639,
+        "failed": 0,
+        "assertions": 31764,
+        "files": 215
+      },
+      "database": {
+        "earlierFullPassed": 586,
+        "disposableDatabases": 81,
+        "finalAffectedSuitesPassed": 38,
+        "scope": "Collection, media actions, work-menu personal preferences/history/picker; disposable only",
+        "finalAuditWorkMenuSuite": {
+          "passed": 6,
+          "assertions": 52
+        }
+      },
+      "typeErrors": 0,
+      "typeWarnings": 0,
+      "productionBuild": "pass",
+      "uiInventoryComponents": 63,
+      "unusedProductionModules": []
+    },
+    "browser": {
+      "engine": "Chromium",
+      "productionBuild": true,
+      "syntheticAccountsOnly": true,
+      "viewports": [
+        [
+          1440,
+          1000
+        ],
+        [
+          390,
+          844
+        ]
+      ],
+      "gameSelectedProgressAndPersonalTitle": "pass",
+      "readingProgressEditionAndDeepLink": "pass",
+      "musicLogAndHistory": "pass",
+      "exactRepeatedPlaylistRemoval": "pass",
+      "warmRootCycles": 30,
+      "rootReadsDuringCycles": 1,
+      "keyboardFocusAndMobileBack": "pass",
+      "pageErrors": [],
+      "readingCardLaunch": "pass",
+      "playableEndpoint": {
+        "unavailableWork": 200,
+        "missingWork": 404,
+        "guestDenied": true
+      },
+      "tabExitsMenu": true,
+      "mobileBackRestoresFocus": true,
+      "readingFailedSnapshotDoesNotOpenDefaultProgress": true,
+      "readingReopenRetry": "pass",
+      "gameLatestPlaythroughSelector": "pass"
+    },
+    "limits": [
+      "No dev/live migration or service change",
+      "No live provider/playback/codec certification",
+      "No Safari/Firefox or physical touch/assistive technology certification",
+      "No production latency, query-plan or retained-heap claim",
+      "Normal admin/user feature gating remains a separate plan"
+    ],
+    "finalAuditFixes": [
+      "Acknowledged field patches preserve unfinished snapshot state and demanded refresh",
+      "Authoritative replacement releases the stale single-flight promise",
+      "Private music alias candidates retain permission-aware availability and report their bound"
+    ]
+  }
+}

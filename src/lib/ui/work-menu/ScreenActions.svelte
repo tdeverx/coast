@@ -1,8 +1,13 @@
 <script lang="ts">
-  import RowFeedback from './RowFeedback.svelte';
-  import WorkActions from './WorkActions.svelte';
-  import { relationshipControls, listMembershipControls } from '$lib/ui/controls/actions';
-  import { getContext } from 'svelte';
+  import RowFeedback from '../components/RowFeedback.svelte';
+  import WorkActions from '../components/WorkActions.svelte';
+  import { relationshipControls } from '$lib/ui/controls/actions';
+  import { getContext, onDestroy, untrack } from 'svelte';
+  import { createResource } from '$lib/ui/resource.svelte';
+  import { createMenuResource } from '$lib/ui/controls/menu-resource.svelte';
+  import { workMenuScope } from '$lib/ui/controls/work.svelte';
+  import type { WorkList } from '$lib/media/work-actions';
+  import WorkListActions from '../components/WorkListActions.svelte';
   import { page } from '$app/state';
   import { createMutation } from '$lib/ui/mutation.svelte';
   import { setRelationship } from '$lib/ui/relationships';
@@ -24,15 +29,15 @@
   import { usePlayback } from '$lib/playback/context.svelte';
   import ShareAction from '$lib/sharing/ShareAction.svelte';
   import PlanAction from '$lib/experiments/PlanAction.svelte';
-  import Button from './Button.svelte';
-  import Icon from './Icon.svelte';
+  import Button from '../components/Button.svelte';
+  import Icon from '../components/Icon.svelte';
 
-  import Dialog from './Dialog.svelte';
-  import RequestDialog from './RequestDialog.svelte';
+  import Dialog from '../components/Dialog.svelte';
+  import RequestDialog from '../components/RequestDialog.svelte';
   import { createRequestControls } from '$lib/ui/controls/requests.svelte';
   import { requestScope } from '$lib/media/requests';
   import { createSequencePlayback } from '$lib/ui/controls/sequence.svelte';
-  import MetadataEditor from './MetadataEditor.svelte';
+  import MetadataEditor from '../components/MetadataEditor.svelte';
 
   const readOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
 
@@ -61,7 +66,6 @@
     | 'root'
     | 'play'
     | 'details'
-    | 'saved'
     | 'history'
     | 'watched'
     | 'rewatch'
@@ -70,18 +74,29 @@
     | 'list-entry';
   let menu = $state<Button>();
   const sequenceControl = createSequencePlayback({ source: () => item.kind === 'collection' || item.sequence ? item.sequence ?? {kind: 'collection', id: item.id} : undefined, from: () => item.sequence?.entryId, experimentalMusic: () => !!page.data.experimentalMusic, preview, api, change });
-  let data = $state<MediaActionData | null>(null), loading = $state(false);
-  const mutation = createMutation(loadActions);
+  const snapshot = createMenuResource<MediaActionData | null>(() => null,
+    () => workMenuScope([item.id, item.sequence, item.listContext]), async signal => {
+      const target = item;
+      const result = await api<MediaActionData>(`media/${target.id}/actions`, undefined, 'GET', { signal });
+      if (target.sequence) {
+        result.item.sequence = target.sequence;
+        const resolved = await api<{ next: MediaView | null }>(sequencePath(target.sequence, { from: target.sequence.entryId }), undefined, 'GET', { signal });
+        if (resolved.next?.id === target.id) result.item = { ...result.item, ...resolved.next };
+        result.playable = resolved.next;
+      }
+      return result;
+    });
+  const data = $derived(snapshot.data), loading = $derived(snapshot.busy);
+  const mutation = createMutation(() => snapshot.refresh());
   const busy = $derived(mutation.busy);
-  const error = $derived(mutation.error);
-  let generation = 0;
-  const identity = $derived(item.id);
+  const error = $derived(mutation.error || snapshot.error);
   $effect(() => {
-    identity;
-    generation++;
-    data = null;
-    loading = false;
+    const key = workMenuScope([item.id, item.sequence, item.listContext]);
+    untrack(() => { key; snapshot.sync(); requests.resetOptions(); if (snapshot.active && !mutation.busy) void snapshot.load(); });
   });
+  const playTarget = createResource<MediaView | null>(null);
+  let alive = true;
+  onDestroy(() => { alive = false; snapshot.dispose(); playTarget.dispose(); requests.resetOptions(); });
   const active = $derived(data?.item ?? item);
   const language = $derived(trackingLanguage(active.category ?? 'screen'));
   const detailTargets = $derived(
@@ -169,40 +184,9 @@
     );
   }
 
-  async function loadActions() {
-    const id = item.id;
-    const token = ++generation;
-    loading = true;
-    mutation.error = '';
-    try {
-      const result = await api<MediaActionData>(`media/${id}/actions`, undefined, 'GET');
-      if (id === item.id && item.sequence) {
-        result.item.sequence = item.sequence;
-        const resolved = await api<{ next: MediaView | null }>(
-          sequencePath(item.sequence, { from: item.sequence.entryId }),
-          undefined,
-          'GET'
-        );
-        if (resolved.next?.id === id) result.item = { ...result.item, ...resolved.next };
-        result.playable = resolved.next;
-      }
-      if (token === generation && id === item.id) {
-        data = result;
-      }
-      return result;
-    } catch (cause) {
-      if (token === generation) mutation.error = message(cause);
-      return null;
-    } finally {
-      if (token === generation) loading = false;
-    }
-  }
-  function openMenu() {
-    data = null;
-    requestOptions = undefined;
-    requests.resetOptions();
-    void loadActions();
-  }
+  function loadActions() { return snapshot.load(true); }
+  function openMenu() { void snapshot.open(); }
+  function closeMenu() { snapshot.close(); requests.cancel(); }
   export function openAt(point: { x: number; y: number }) {
     menu?.openAt(point);
   }
@@ -288,23 +272,20 @@
     );
   }
   async function resolvedPlayback() {
-    if (active.sequence) {
-      const result = await api<{ next: MediaView | null }>(
-        sequencePath(active.sequence, { from: active.sequence.entryId }),
-        undefined,
-        'GET'
-      );
+    const target = active;
+    if (!target.sequence && !isMediaGroup(target)) return data?.playable ?? target;
+    return playTarget.load(async signal => {
+      const result = await api<{ next: MediaView | null }>(target.sequence
+        ? sequencePath(target.sequence, { from: target.sequence.entryId }) : `media/${target.id}/playable`, undefined, 'GET', { signal });
       return result.next;
-    }
-    // A completed episode can change the group's next item while this menu's
-    // lazily loaded action data is still cached.
-    return isMediaGroup(item) ? (await loadActions())?.playable : data?.playable ?? item;
+    });
   }
   async function play(edition?: string, fromStart = false) {
     if (preview) return;
     mutation.error = '';
     try {
       const target = await resolvedPlayback();
+      if (!alive) return;
       if (!target?.available) throw new Error('The next item is not available to play.');
       await playMedia(target.id, {
         edition,
@@ -313,8 +294,7 @@
         continuationId: isGroup ? active.id : target.showId,
       });
     } catch (cause) {
-      mutation.error = message(cause);
-      playbackErrorOpen = true;
+      if (alive) { mutation.error = message(cause); playbackErrorOpen = true; }
     }
   }
   async function startTarget() {
@@ -360,7 +340,7 @@
       await recordWatch('date', new Date(date).toISOString());
     }
   }
-  async function toggleList(list: MediaActionData['lists'][number]) {
+  async function toggleList(list: WorkList) {
     const target = active;
     if (list.playlist || !list.entries.length) {
       let added: { entryId: string; added: boolean } | undefined;
@@ -372,7 +352,7 @@
         async () => {
           if (added?.added)
             await change(`lists/${list.id}/items`, { entryId: added.entryId }, 'DELETE');
-          await loadActions();
+          await snapshot.refresh();
         }
       );
     } else {
@@ -384,7 +364,7 @@
             mediaId: target.id,
             restorePosition: list.entries[0].position,
           });
-          await loadActions();
+          await snapshot.refresh();
         }
       );
     }
@@ -422,7 +402,7 @@
       removing
         ? async () => {
             await change('continue', { mediaId: target.id, action: 'undo', ...result });
-            await loadActions();
+            await snapshot.refresh();
             }
         : undefined
     );
@@ -443,7 +423,7 @@
       `${target.title} · ${previous ? 'Removed from' : 'Added to'} ${label}`,
       async () => {
         await write(previous);
-        await loadActions();
+        await snapshot.refresh();
       }
     );
   }
@@ -546,7 +526,7 @@
 
 {/snippet}
 
-{#snippet branch(label: string, to: View, icon: import('./Icon.svelte').IconName)}
+{#snippet branch(label: string, to: View, icon: import('../components/Icon.svelte').IconName)}
   <Button menu {label} {icon} panel disabled={busy || loading}>
     {@render content(to)}
   </Button>
@@ -598,7 +578,7 @@
       workId={active.id}
       rating={active.rating}
       onrated={(value) => {
-        if (data) data.item.rating = value;
+        snapshot.patch(data => data ? { ...data, item: { ...data.item, rating: value } } : data);
       }}
     />
 
@@ -619,11 +599,9 @@
       );
       else toggleSaved(relationship);
     }, busy || loading)} />
-    {#if data?.lists.length}
-      {@render branch('Lists', 'saved', 'list')}
-    {:else}
-      <Button item icon="list" branch disabled disabledReason="No lists yet">Lists</Button>
-    {/if}
+    <WorkListActions workId={active.id} select={toggleList} disabled={busy || loading}>
+      {#if item.listContext}<div class="menu-divider" role="separator"></div>{@render branch('This list entry', 'list-entry', 'list')}{/if}
+    </WorkListActions>
     <div class="menu-divider" role="separator"></div>
     {#if detailTargets.length || editions.length > 1}{@render branch(
         'Jump to',
@@ -674,13 +652,6 @@
             disabled={player.loading}
             onclick={() => play(edition)}>Play {edition || 'Original'} version</Button>{/if}
       {/each}
-    {/if}
-  {:else if view === 'saved'}
-    <div class="menu-lists">
-      <WorkActions section="lists" workId={active.id} controls={listMembershipControls(data?.lists ?? [], list => !!list.entries.length, toggleList, busy || loading, 'Add to', 'plus')}>{#snippet empty()}<div class="menu-label">No lists yet</div>{/snippet}</WorkActions>
-    </div>
-    {#if item.listContext}<div class="menu-divider" role="separator"></div>
-      {@render branch('This list entry', 'list-entry', 'list')}
     {/if}
   {:else if view === 'watched'}
     <Button item icon="check" disabled={busy || loading} onclick={() => recordWatch('now')}
@@ -742,7 +713,7 @@
       disabled={busy}
       onclick={() =>
         perform(
-          () => api('profile', { action: 'background', mediaId: active.id }),
+          () => change('profile', { action: 'background', mediaId: active.id }),
           'Profile background updated.'
         )}>Set as profile background</Button>
     <Button item
@@ -761,7 +732,7 @@
             'Reset my changes?',
             'Use the original title and artwork again. This only changes your view.',
             async () => {
-              if (await perform(() => api(`media/${active.id}/presentation`, {}, 'DELETE')))
+              if (await perform(() => change(`media/${active.id}/presentation`, {}, 'DELETE')))
                 confirmOpen = false;
             }
           )}>Reset my changes…</Button>
@@ -784,7 +755,7 @@
         disabled={busy}
         onclick={() =>
           perform(() =>
-            api(`lists/${item.listContext!.listId}/move`, {
+            change(`lists/${item.listContext!.listId}/move`, {
               entryId: item.listContext!.entryId,
               direction: -1,
             })
@@ -794,7 +765,7 @@
         disabled={busy}
         onclick={() =>
           perform(() =>
-            api(`lists/${item.listContext!.listId}/move`, {
+            change(`lists/${item.listContext!.listId}/move`, {
               entryId: item.listContext!.entryId,
               direction: 1,
             })
@@ -854,6 +825,7 @@
       panel
       hideTrigger={menuOnly && !showMenuTrigger}
       onopen={openMenu}
+      onclose={closeMenu}
       label={`Actions for ${item.title}`}
       align="start"
       upward={hero}
@@ -871,7 +843,7 @@
       options={requestOptions}
       onsent={() => {
         requestOptions = undefined;
-        void loadActions();
+        void snapshot.refresh();
       }}
       seasonNumber={active.kind === 'episode' || active.kind === 'season'
         ? active.seasonNumber
@@ -944,11 +916,6 @@
 {/if}
 
 <style>
-  .menu-lists {
-    max-height: min(40dvh, 280px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
   .actions {
     gap: 12px;
   }

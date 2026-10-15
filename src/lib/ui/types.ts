@@ -17,7 +17,7 @@ export type MediaCardPresentation = Pick<
   | 'artwork'
   | 'artworkSources'
   | 'logo'
-> & { kind: MusicKind | 'game' | 'person' | 'book' | 'comic'; href: string; connectionId?: string; workId?: string; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean; rating?: number | null; attribution?: {label:string;href:string} };
+> & { kind: MusicKind | 'game' | 'person' | 'book' | 'comic'; href: string; connectionId?: string; workId?: string; artistId?: string; favourite?: boolean; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean; rating?: number | null; attribution?: {label:string;href:string} };
 /** A server item can be displayed before it has a shared catalogue destination. */
 export type MediaCardDisplay = Omit<MediaCardPresentation,'kind'|'href'> & {kind:MediaKind|MusicKind|'game'|'person'|'book'|'comic';href:null};
 export type MediaHeroPresentation = MediaCardPresentation &

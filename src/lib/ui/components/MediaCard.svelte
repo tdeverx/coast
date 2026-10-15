@@ -29,8 +29,7 @@
   import Icon from './Icon.svelte';
   import ActivityHeader from './ActivityHeader.svelte';
   import SocialControls from './SocialControls.svelte';
-  import MediaActions from './MediaActions.svelte';
-  import PresentationActions from './PresentationActions.svelte';
+  import WorkMenu from './WorkMenu.svelte';
   let {
     item,
     shape = item.kind==='person'?'circle':'poster',
@@ -77,8 +76,7 @@
   let imageIndex = $state(0);
   let active = $state(false);
   let primaryMenuButton=$state<Button>();
-  let actions = $state<MediaActions>();
-  let presentationActions = $state<PresentationActions>();
+  let actions = $state<WorkMenu>();
   const selectedType = $derived(
     artworkStyle === 'auto'
       ? shape === 'banner'
@@ -114,8 +112,7 @@
     active = true;
     await tick();
     if(primaryMenu) primaryMenuButton?.openAt(point);
-    else if (trackedItem) actions?.openAt(point);
-    else presentationActions?.openAt(point);
+    else actions?.openAt(point);
   }
   const completion = $derived(
     progressFraction(
@@ -135,7 +132,7 @@
             trackedItem.requestable ??
             ((trackedItem.category ?? 'screen') === 'screen' && !trackedItem.available),
         })
-      : canPlayMusicCard(item) ? 'play' : 'open'
+      : (item.kind === 'book' || item.kind === 'comic') && item.workId ? 'read' : canPlayMusicCard(item) ? 'play' : 'open'
   );
   const cardProgress=$derived(item.captionActor?activityProgress??null:completion!==null&&completion>0&&completion<(item.kind==='book'||item.kind==='comic'?1:0.9)?completion:null);
   const primaryLabel = $derived(
@@ -154,9 +151,9 @@
     if(primaryMenu&&rect){primaryMenuButton?.openAt({x:rect.left,y:rect.bottom});return;}
     if (preview) return;
     if (primaryAction === 'play') {
-      if (trackedItem) await actions?.start();
-      else await presentationActions?.start();
+      await actions?.start();
     }
+    else if (primaryAction === 'read') await actions?.startReading();
     else if (primaryAction === 'request') actions?.request();
     else if(href) await goto(href);
   }
@@ -197,7 +194,10 @@
   >
     <span class="hover-stroke" aria-hidden="true"></span>
     {#if loading}<span class="skeleton artwork-loading" aria-hidden="true"></span>{/if}
-    <a class="art-link" {href} aria-label={item.title} onclick={select} draggable="false">
+    <a class="art-link" {href} aria-label={primaryMenu && !showPrimaryAction ? `Actions for ${item.title}` : item.title}
+      role={primaryMenu && !showPrimaryAction ? 'button' : undefined} aria-haspopup={primaryMenu && !showPrimaryAction ? 'menu' : undefined}
+      onkeydown={event => { if (primaryMenu && !showPrimaryAction && event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}
+      onclick={event => { if (primaryMenu && !showPrimaryAction) { event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); void openMenu({ x: rect.left, y: rect.bottom }); } else select(event); }} draggable="false">
       {#if artwork}<img
           use:lazyImage={artwork}
           alt=""
@@ -241,7 +241,7 @@
         ><Icon
           name={primaryMenu?'more':primaryAction === 'play'
             ? 'play'
-            : primaryAction === 'request'
+            : primaryAction === 'read' ? 'library' : primaryAction === 'request'
               ? 'request'
               : 'arrow'}
           size={28}
@@ -258,14 +258,7 @@
             void openMenu({ x: rect.left, y: rect.bottom });
           }}><Icon name="more" size={18} /></button
         >
-        {#if active}{#if trackedItem}<MediaActions
-              bind:this={actions}
-              item={trackedItem}
-              menuOnly
-            />{:else if 'href' in item&&item.href!==null}<PresentationActions
-              bind:this={presentationActions}
-              {item}
-            />{/if}{/if}
+        {#if active && !('href' in item && item.href === null)}<WorkMenu bind:this={actions} {item} menuOnly />{/if}
       </div>
     {/if}{/if}
     {#if !loading && ((!item.captionActor&&social?.total)||cardProgress!==null)}<div class="card-status">

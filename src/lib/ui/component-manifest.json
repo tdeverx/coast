@@ -103,7 +103,6 @@
       "src/lib/ui/components/Header.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
-      "src/lib/ui/components/MediaActions.svelte",
       "src/lib/ui/components/MediaActivity.svelte",
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
@@ -115,7 +114,6 @@
       "src/lib/ui/components/Pagination.svelte",
       "src/lib/ui/components/PartyMenu.svelte",
       "src/lib/ui/components/PersistentPlayer.svelte",
-      "src/lib/ui/components/PresentationActions.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/QueueList.svelte",
@@ -130,7 +128,14 @@
       "src/lib/ui/components/StreamsPanel.svelte",
       "src/lib/ui/components/SyncedControls.svelte",
       "src/lib/ui/components/WorkActions.svelte",
+      "src/lib/ui/components/WorkListActions.svelte",
+      "src/lib/ui/components/WorkMenu.svelte",
       "src/lib/ui/materials/MaterialTweaker.svelte",
+      "src/lib/ui/work-menu/CatalogueActions.svelte",
+      "src/lib/ui/work-menu/GameCommands.svelte",
+      "src/lib/ui/work-menu/MusicCommands.svelte",
+      "src/lib/ui/work-menu/ReadingCommands.svelte",
+      "src/lib/ui/work-menu/ScreenActions.svelte",
       "src/routes/+error.svelte",
       "src/routes/+layout.svelte",
       "src/routes/discover/+page.svelte",
@@ -222,6 +227,7 @@
       "src/lib/ui/components/MediaActivity.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/work-menu/MusicCommands.svelte",
       "src/routes/games/[id]/+page.svelte",
       "src/routes/profile/[username]/+page.svelte"
     ],
@@ -236,7 +242,6 @@
       "src/lib/experiments/MediaModal.svelte",
       "src/lib/experiments/PlanAction.svelte",
       "src/lib/media/Details.svelte",
-      "src/lib/reading/Details.svelte",
       "src/lib/reading/Reader.svelte",
       "src/lib/reading/ReadingLaunch.svelte",
       "src/lib/sharing/ShareAction.svelte",
@@ -246,11 +251,9 @@
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
-      "src/lib/ui/components/MediaActions.svelte",
       "src/lib/ui/components/MetadataEditor.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/PersistentPlayer.svelte",
-      "src/lib/ui/components/PresentationActions.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/RecommendAction.svelte",
@@ -258,7 +261,11 @@
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/components/StreamsPanel.svelte",
       "src/lib/ui/components/SyncedControls.svelte",
-      "src/routes/games/[id]/+page.svelte",
+      "src/lib/ui/work-menu/CatalogueActions.svelte",
+      "src/lib/ui/work-menu/GameCommands.svelte",
+      "src/lib/ui/work-menu/MusicCommands.svelte",
+      "src/lib/ui/work-menu/ReadingCommands.svelte",
+      "src/lib/ui/work-menu/ScreenActions.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
       "src/routes/requests/+page.svelte",
@@ -281,6 +288,7 @@
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/QueueList.svelte",
       "src/lib/ui/components/StreamsPanel.svelte",
+      "src/lib/ui/work-menu/MusicCommands.svelte",
       "src/routes/+error.svelte",
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
@@ -421,7 +429,6 @@
       "src/lib/ui/components/EmptyState.svelte",
       "src/lib/ui/components/Header.svelte",
       "src/lib/ui/components/Heading.svelte",
-      "src/lib/ui/components/MediaActions.svelte",
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/NotificationToasts.svelte",
@@ -429,6 +436,7 @@
       "src/lib/ui/components/PlaybackTimeline.svelte",
       "src/lib/ui/components/Rating.svelte",
       "src/lib/ui/components/ReactionActions.svelte",
+      "src/lib/ui/work-menu/ScreenActions.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
     ],
@@ -485,24 +493,6 @@
     ],
     "dynamicComposition": false
   },
-  "MediaActions": {
-    "path": "src/lib/ui/components/MediaActions.svelte",
-    "elements": [
-      "Button",
-      "Dialog",
-      "Icon",
-      "MetadataEditor",
-      "RequestDialog",
-      "RowFeedback",
-      "WorkActions"
-    ],
-    "usedBy": [
-      "src/lib/media/Details.svelte",
-      "src/lib/ui/components/MediaCard.svelte",
-      "src/lib/ui/components/MediaHero.svelte"
-    ],
-    "dynamicComposition": true
-  },
   "MediaActivity": {
     "path": "src/lib/ui/components/MediaActivity.svelte",
     "elements": [
@@ -521,11 +511,10 @@
       "ActivityHeader",
       "Button",
       "Icon",
-      "MediaActions",
-      "PresentationActions",
       "ProgressBar",
       "ReactionActions",
-      "SocialControls"
+      "SocialControls",
+      "WorkMenu"
     ],
     "usedBy": [
       "src/lib/ui/components/MediaDetailRows.svelte",
@@ -560,7 +549,7 @@
     "path": "src/lib/ui/components/MediaHero.svelte",
     "elements": [
       "Button",
-      "MediaActions"
+      "WorkMenu"
     ],
     "usedBy": [
       "src/lib/ui/components/MediaPage.svelte",
@@ -603,7 +592,8 @@
       "RowFeedback"
     ],
     "usedBy": [
-      "src/lib/ui/components/MediaActions.svelte"
+      "src/lib/ui/work-menu/CatalogueActions.svelte",
+      "src/lib/ui/work-menu/ScreenActions.svelte"
     ],
     "dynamicComposition": false
   },
@@ -715,22 +705,6 @@
     ],
     "dynamicComposition": false
   },
-  "PresentationActions": {
-    "path": "src/lib/ui/components/PresentationActions.svelte",
-    "elements": [
-      "Button",
-      "Dialog",
-      "RowFeedback",
-      "WorkActions"
-    ],
-    "usedBy": [
-      "src/lib/reading/Details.svelte",
-      "src/lib/ui/components/MediaCard.svelte",
-      "src/routes/music/[connection]/[id]/+page.svelte",
-      "src/routes/music/work/[id]/+page.svelte"
-    ],
-    "dynamicComposition": false
-  },
   "ProfileEditor": {
     "path": "src/lib/ui/components/ProfileEditor.svelte",
     "elements": [
@@ -836,8 +810,7 @@
     ],
     "usedBy": [
       "src/lib/ui/components/MediaCard.svelte",
-      "src/lib/ui/components/WorkActions.svelte",
-      "src/routes/games/[id]/+page.svelte"
+      "src/lib/ui/components/WorkActions.svelte"
     ],
     "dynamicComposition": false
   },
@@ -851,8 +824,7 @@
       "RowFilter"
     ],
     "usedBy": [
-      "src/lib/ui/components/WorkActions.svelte",
-      "src/routes/games/[id]/+page.svelte"
+      "src/lib/ui/components/WorkActions.svelte"
     ],
     "dynamicComposition": false
   },
@@ -865,7 +837,7 @@
       "RowFeedback"
     ],
     "usedBy": [
-      "src/lib/ui/components/MediaActions.svelte"
+      "src/lib/ui/work-menu/ScreenActions.svelte"
     ],
     "dynamicComposition": false
   },
@@ -882,13 +854,11 @@
       "src/lib/ui/components/ConnectionCard.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
-      "src/lib/ui/components/MediaActions.svelte",
       "src/lib/ui/components/MediaActivity.svelte",
       "src/lib/ui/components/MediaPage.svelte",
       "src/lib/ui/components/MetadataEditor.svelte",
       "src/lib/ui/components/NotificationInbox.svelte",
       "src/lib/ui/components/NotificationToasts.svelte",
-      "src/lib/ui/components/PresentationActions.svelte",
       "src/lib/ui/components/ProfileEditor.svelte",
       "src/lib/ui/components/ProfileFeatureEditor.svelte",
       "src/lib/ui/components/ProviderAutomation.svelte",
@@ -899,6 +869,9 @@
       "src/lib/ui/components/RequestDialog.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/components/WorkActions.svelte",
+      "src/lib/ui/components/WorkListActions.svelte",
+      "src/lib/ui/work-menu/CatalogueActions.svelte",
+      "src/lib/ui/work-menu/ScreenActions.svelte",
       "src/routes/planning/+page.svelte"
     ],
     "dynamicComposition": true
@@ -1039,9 +1012,39 @@
       "RowFeedback"
     ],
     "usedBy": [
-      "src/lib/ui/components/MediaActions.svelte",
-      "src/lib/ui/components/PresentationActions.svelte"
+      "src/lib/ui/components/WorkListActions.svelte",
+      "src/lib/ui/work-menu/CatalogueActions.svelte",
+      "src/lib/ui/work-menu/ScreenActions.svelte"
     ],
     "dynamicComposition": true
+  },
+  "WorkListActions": {
+    "path": "src/lib/ui/components/WorkListActions.svelte",
+    "elements": [
+      "Button",
+      "RowFeedback",
+      "WorkActions"
+    ],
+    "usedBy": [
+      "src/lib/ui/work-menu/CatalogueActions.svelte",
+      "src/lib/ui/work-menu/ScreenActions.svelte"
+    ],
+    "dynamicComposition": true
+  },
+  "WorkMenu": {
+    "path": "src/lib/ui/components/WorkMenu.svelte",
+    "elements": [
+      "Button"
+    ],
+    "usedBy": [
+      "src/lib/media/Details.svelte",
+      "src/lib/reading/Details.svelte",
+      "src/lib/ui/components/MediaCard.svelte",
+      "src/lib/ui/components/MediaHero.svelte",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/music/[connection]/[id]/+page.svelte",
+      "src/routes/music/work/[id]/+page.svelte"
+    ],
+    "dynamicComposition": false
   }
 }

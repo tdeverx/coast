@@ -165,7 +165,7 @@ export async function recordMusicListen(tx: Transaction,userId: string,trackId:s
   return event;
 }
 export async function logMusic(userId:string,workId:string,input:unknown,transaction?:Transaction){
-  const data=v.parse(v.strictObject({batchId:v.pipe(v.string(),v.uuid()),occurredAt:v.optional(v.pipe(v.string(),v.isoTimestamp()))}),input);
+  const data=v.parse(v.strictObject({batchId:v.pipe(v.string(),v.uuid()),occurredAt:v.optional(v.pipe(v.string(),v.isoTimestamp(),v.check(value=>Number.isFinite(Date.parse(value))&&Date.parse(value)<=Date.now(),'Listens must have a valid date in the past.')))}),input);
   const apply=async(tx:Transaction)=>{
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const [previous]=await tx.select().from(musicListenBatches).where(and(eq(musicListenBatches.userId,userId),eq(musicListenBatches.batchId,data.batchId)));

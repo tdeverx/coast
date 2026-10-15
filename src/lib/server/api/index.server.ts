@@ -20,9 +20,10 @@ import { friendInsights, friendDiscovery } from '$lib/social/insights.server';
 import { requireVisible } from '$lib/social/privacy.server';
 import { previewProjection, approveProjection, reviewProjection } from '$lib/collection/projection.server';
 import { previewSourceChange } from '$lib/collection/source-changes.server';
-import { musicQueue, savedMusicQueue } from '$lib/music/queue.server';
-import { collectionData, collectionParameters, workActionData, workCards } from '$lib/collection/query.server';
+import { musicQueue, savedMusicQueue, savedMusicQueuePage } from '$lib/music/queue.server';
+import { collectionData, collectionParameters, workActionData, workActionLists, workCards } from '$lib/collection/query.server';
 import { missingDemand, adminDemand } from '$lib/collection/demand.server';
+import { musicHistory } from '$lib/music/history.server';
 import { logMusic } from '$lib/music/persistence.server';
 import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
 import { discoveryContent, discoveryParameters } from '$lib/server/queries/discovery';
@@ -175,12 +176,15 @@ export const handler: RequestHandler = async (event) => {
     // Collection, Progress and mixed favourites enforce actual category privacy in their read models.
     if(subjectId!==uid && !['collection','progress'].includes(path[0]) && !(path[0]==='profile'&&path[1]==='section'&&url.searchParams.get('section')==='favourites'))
       await requireVisible(subjectId,uid,path[1]==='activity'?'activity':'insights','screen');
+    if(path[0]==='music' && path[2]==='history' && path.length===3 && method==='GET')return json(await musicHistory(uid,uuid(path[1]),Number(url.searchParams.get('page')??1)));
     if(path[0]==='music' && path[2]==='queue' && method==='GET') return json(await musicQueue(uid,uuid(path[1])));
-    if(path[0]==='music' && path[1]==='queue' && method==='GET')return json(await savedMusicQueue(uid,url.searchParams.has('listId')?uuid(url.searchParams.get('listId')):undefined));
+    if(path[0]==='music' && path[1]==='queue' && path[2]==='picker' && path.length===3 && method==='GET')return json(await savedMusicQueuePage(uid,Number(url.searchParams.get('page')??1)));
+    if(path[0]==='music' && path[1]==='queue' && path.length===2 && method==='GET')return json(await savedMusicQueue(uid,url.searchParams.has('listId')?uuid(url.searchParams.get('listId')):undefined));
     if (path[0] === 'collection' && path.length === 1 && method === 'GET') return json(await collectionData(uid,collectionParameters(url),url.searchParams.get('username')??undefined));
-    if (path[0] === 'collection' && path[1] && path.length === 2 && method === 'GET') {
-      const [work]=await getDb().select().from(works).where(eq(works.id,uuid(path[1])));if(work)requireEnabledCategory(await getConfig(),work.category);
-      return json(await workActionData(uid,uuid(path[1])));
+    if (path[0] === 'collection' && path[1] && (path.length === 2 || path.length === 3 && path[2] === 'lists') && method === 'GET') {
+      const [work]=await getDb().select().from(works).where(eq(works.id,uuid(path[1])));if(!work)throw new AppError(404,'This work was not found.');requireEnabledCategory(await getConfig(),work.category);
+      if (path[2] === 'lists') return json(await workActionLists(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1), url.searchParams.get('reading') === 'true'));
+      return json(await workActionData(uid,uuid(path[1]),url.searchParams.has('playthrough')?uuid(url.searchParams.get('playthrough')):undefined));
     }
     if (path[0] === 'missing' && method === 'GET') return json(await missingDemand(uid,url));
     if (path[0] === 'admin' && path[1] === 'demand' && method === 'GET') { requireAdmin(user); return json(await adminDemand(url)); }
@@ -234,7 +238,7 @@ export const handler: RequestHandler = async (event) => {
       return streamArtwork(uid, uuid(path[1]), text(path[2]), text(path[3]), request);
     const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method) ? await readBody(request, path[0]==='profile'&&path.length===1&&method==='POST'?avatarRequestLimit:1_048_576) : {};
     const relationshipWork=path[0]==='collection'&&path.length===2?path[1]:['tracking','ratings','up-next','lists'].includes(path[0])?body.mediaId:undefined;
-    if(relationshipWork){const [work]=await getDb().select().from(works).where(eq(works.id,uuid(relationshipWork)));if(work)requireEnabledCategory(await getConfig(),work.category);}
+    if(relationshipWork){const [work]=await getDb().select().from(works).where(eq(works.id,uuid(relationshipWork)));if(!work)throw new AppError(404,'This work was not found.');requireEnabledCategory(await getConfig(),work.category);}
     if(path[0]==='providers' && path[2]==='reconciliation' && method==='POST') return json(await updateJellyfinReconciliation(uid,uuid(path[1]),body));
     if(path[0]==='providers'&&path[2]==='collection-preview'&&method==='POST')return json(await previewProjection(uid,uuid(path[1]),body));
     if(path[0]==='providers'&&path[2]==='collection-approve'&&method==='POST')return json(await approveProjection(uid,uuid(path[1]),body));

@@ -6,7 +6,7 @@
   import { createHeroPlayback } from '$lib/ui/heroes/playback.svelte';
   import { setHeroMuted } from '$lib/playback/client.svelte';
   import { usePlayback } from '$lib/playback/context.svelte';
-  import MediaActions from './MediaActions.svelte';
+  import WorkMenu from './WorkMenu.svelte';
   import Button from './Button.svelte';
 
   const { heroPlayer, preview } = usePlayback();
@@ -112,14 +112,14 @@
     </div>
     <div class="hero-action-row">
       {#if actions}{@render actions()}
-      {:else if screenItem(hero.active)}<MediaActions
+      {:else if screenItem(hero.active)}<WorkMenu
           item={hero.active}
           {context}
           {next}
           {requestable}
           hero
         />
-      {:else}<Button href={hero.active.href} size="hero">View {hero.active.kind}</Button>{/if}
+      {:else}<WorkMenu item={hero.active} hero showTrigger />{/if}
       {#if items.length > 1 || hero.hasTrailer}<div class="hero-pagination">
           {#if hero.hasTrailer}<Button size="icon"
               class="icon-button"

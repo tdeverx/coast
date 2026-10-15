@@ -10,7 +10,7 @@ import { AppError } from '$lib/server/security/errors';
 import { addLocalSeasonEpisodes } from '$lib/core/media/service.server';
 import { getMetadataEditor, getPresentationEditor, saveMetadataOverrides, savePresentationPreference, resetPresentationPreference } from '$lib/catalogue/overrides/service.server';
 import { loadMediaDetails } from '$lib/application/media-details.server';
-import { detailsData } from '$lib/server/queries/media';
+import { mediaViewsForIds, nextPlayable, detailsData } from '$lib/server/queries/media';
 import { refreshMedia } from '$lib/catalogue/service.server';
 import { getTrailer } from '$lib/playback/service.server';
 import { uuid, type ApiContext } from './context.server';
@@ -26,6 +26,10 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
         result = url.searchParams.get('enhance') === 'true'
           ? await (await loadMediaDetails(uid, uuid(path[1]))).enhancement
           : await detailsData(uid, id);
+      } else if (path[2] === 'playable' && path.length === 3 && method === 'GET') {
+        const [item] = await mediaViewsForIds(uid, [uuid(path[1])]);
+        if (!item) throw new AppError(404, 'This title was not found.');
+        result = { next: item.available ? await nextPlayable(uid, item) : null };
       } else if (path[2] === 'actions' && method === 'GET')
         result = await mediaActionData(uid, uuid(path[1]));
       else if (path[2] === 'activity' && method === 'GET')

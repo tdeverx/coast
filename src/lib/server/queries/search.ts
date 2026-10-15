@@ -1,3 +1,7 @@
+import {getDb} from '$lib/server/db';
+import {sql} from 'drizzle-orm';
+import {presentationSearch} from '$lib/catalogue/overrides/presentation.server';
+import {workAssessments,workCards} from '$lib/collection/query.server';
 import { rankSearch, searchFallback, searchScore } from '$lib/search';
 import { musicRow } from './media-rows';
 import { listGames } from '$lib/core/games/service.server';
@@ -107,13 +111,19 @@ export async function searchPresentations(
   if (!query || surface === 'watch')
     return { items: [], discover: [], failure: '', truncated: false };
   if (surface === 'listen') {
+    const aliases=presentationSearch(userId,sql`m.id`,query);
+    const rows=await getDb().execute<{id:string}>(sql`select m.id from music_works m where (${kind}='all' or m.kind=${kind}) and ${aliases.matches()} order by ${aliases.rank} desc,m.id limit 60`);
+    const ids=Array.from(rows).map(row=>row.id);
+    const [cards,assessments]=await Promise.all([workCards(userId,userId,ids),workAssessments(userId,userId,ids)]);
+    const availability=new Map(assessments.map(row=>[row.id,row.availability]));
+    const personal=cards.map(item=>({...item,available:['available','partial'].includes(availability.get(('workId' in item?item.workId:undefined)??item.id)??'unknown')}));
     let result = await musicRow(userId, query, kind as 'all' | 'album' | 'artist' | 'track', 100);
     const fallback = searchFallback(query);
     if (!result.items.length && !result.failure && fallback) {
       const broader = await musicRow(userId, fallback, kind as 'all' | 'album' | 'artist' | 'track', 100);
       result = { ...broader, items: broader.items.filter(item => searchScore(query, item) >= 550) };
     }
-    return { ...result, items: rankSearch(result.items, query), discover: [], truncated: result.items.length >= 100 };
+    return { ...result, items: rankSearch([...new Map([...personal,...result.items].map(item=>[('workId' in item?item.workId:undefined)??item.id,item])).values()] as MediaCardPresentation[], query), discover: [], truncated: rows.length >= 60 || result.items.length >= 100 };
   }
   const local = await listGames(query,1,{userId,personal:false});
   const sources = (await listProviders(userId)).filter(

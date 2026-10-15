@@ -7,6 +7,10 @@ export const styleFiles = [
   'src/lib/core/tracking/service.server.ts',
   'src/lib/reading/reader/load.ts',
   'src/lib/ui/shelves/discovery.svelte.ts',
+  'src/lib/ui/controls/menu-resource.svelte.ts',
+  'src/lib/ui/controls/work.svelte.ts',
+  'src/lib/catalogue/overrides/presentation.server.ts',
+  'src/lib/music/history.server.ts',
   'tests/source-style.test.ts',
   'tests/sequence-transaction-db.test.ts',
 ];

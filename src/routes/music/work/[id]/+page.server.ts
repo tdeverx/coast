@@ -1,3 +1,4 @@
+import {personaliseMusicItems} from '$lib/music/service.server';
 import {error} from '@sveltejs/kit';
 import {eq,and,sql} from 'drizzle-orm';
 import * as v from 'valibot';
@@ -27,5 +28,6 @@ export const load:PageServerLoad=async({locals,params,url, depends})=>{
  const byId=new Map(children.map(child=>[child.id,child]));
  const credits=await musicWorkCredits([id,...byId.keys()],locals.user?.id??null);
  Object.assign(item,credits.get(id));
- return {item,connectionId:'',children:{items:members.map(member=>({...toItem(byId.get(member.id)!),...credits.get(member.id),entryId:member.entryId,discNumber:member.discNumber??undefined,trackNumber:member.trackNumber??undefined})),total:count.total,nextOffset:page<pages?page*PAGE_SIZE:null},failure:'',page,pages};
+ const presented=await personaliseMusicItems(locals.user?.id??null,[item,...members.map(member=>({...toItem(byId.get(member.id)!),...credits.get(member.id),entryId:member.entryId,discNumber:member.discNumber??undefined,trackNumber:member.trackNumber??undefined}))]);
+ return {item:presented[0],connectionId:'',children:{items:presented.slice(1),total:count.total,nextOffset:page<pages?page*PAGE_SIZE:null},failure:'',page,pages};
 };

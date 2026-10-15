@@ -31,7 +31,8 @@
 <MediaPage details
   item={gameHero(
     { ...data.item, id: data.item.externalId },
-    `/games/igdb/${data.instanceId}/${data.item.externalId}`
+    `/games/igdb/${data.instanceId}/${data.item.externalId}`,
+    false
   )}
 >
   {#snippet heroActions()}

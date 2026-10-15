@@ -16,18 +16,11 @@ export type MediaActionData = {
   ownRewatchStartedAt: string | null;
   rewatchTargetIds: string[];
   targets: MediaView[];
-  children: MediaView[];
   requestTarget: MediaView | null;
   requestsEnabled: boolean;
   refreshTarget: MediaView | null;
   playable: MediaView | null;
   editions: string[];
-  lists: {
-    id: string;
-    name: string;
-    playlist: boolean;
-    entries: { id: string; position: number }[];
-  }[];
   requests: {
     id: string;
     state: string;

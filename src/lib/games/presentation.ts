@@ -13,10 +13,12 @@ export type GameMetadata = {
 };
 export function gameCard(
   item: GameMetadata & { id: string },
-  href = `/games/${item.id}`
+  href = `/games/${item.id}`,
+  canonical = true
 ): MediaCardPresentation {
   return {
     id: item.id,
+    workId: canonical ? item.id : undefined,
     kind: 'game',
     title: item.title,
     href,
@@ -41,10 +43,11 @@ export const gameMinutes = (minutes: number) => `${Math.floor(minutes / 60)}h ${
 
 export function gameHero(
   item: GameMetadata & { id: string },
-  href = `/games/${item.id}`
+  href = `/games/${item.id}`,
+  canonical = true
 ): MediaHeroPresentation {
   return {
-    ...gameCard(item, href),
+    ...gameCard(item, href, canonical),
     id: `game:${item.id}`,
     overview: item.overview,
     genres: item.genres,
