@@ -1,0 +1,30 @@
+{
+  "commit": "ea01908654db7c0b4cf591028c7f9b321c6896dd",
+  "runtime": "1.4.3",
+  "method": "compiled real Svelte module + fake observer + pure relative-date function; excludes DOM, layout, network and native decoding",
+  "library": {
+    "afterActivation": 1,
+    "afterRemoteRevision": 1,
+    "afterLocalRevision": 1,
+    "afterEquivalentFilters": 2
+  },
+  "imageQueue": {
+    "startedAfterBLeft": [
+      "a",
+      "b"
+    ]
+  },
+  "labels": {
+    "cards": 300,
+    "simulatedSeconds": 60,
+    "samplesMs": [
+      325.172375,
+      332.45091700000006,
+      275.3181669999999,
+      273.23262499999987,
+      270.183166
+    ],
+    "callsPerRun": 18000,
+    "allLabelsStable": true
+  }
+}

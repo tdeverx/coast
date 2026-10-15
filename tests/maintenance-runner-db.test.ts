@@ -11,6 +11,7 @@ import {
   promoteAction,
 } from '../src/lib/server/queue';
 import {jobCheckpoint, saveJobCheckpoint} from '../src/lib/server/queue/execution';
+import { ProviderQueueBusyError } from '../src/lib/server/security/request-priority';
 import { ProviderHttpError } from '../src/lib/server/security/provider-fetch';
 import {
   scheduleProviderMaintenance,
@@ -377,4 +378,25 @@ run('committed chunks yield without failure attempts and continue the same durab
   const [complete]=await getSql()`select state,attempts,payload from outbox_actions where id=${id}`;
   expect(complete).toMatchObject({state:'succeeded',attempts:1});
   expect(complete.payload._jobOutcome).toEqual({checked:7});
+});
+
+run('local admission deferrals preserve webhook HTTP retry budget and monotonic claim fencing',async()=>{
+  let claims=0,deliveries=0;
+  registerActionHandler('webhook.deliver',async action=>{
+    claims++;
+    if(claims<=9)throw new ProviderQueueBusyError();
+    expect(action.attempts).toBe(10);
+    expect(action.payload._webhookAttemptBase).toBe(9);
+    deliveries++;
+  });
+  const id=await enqueueAction({userId:users[0],connectionId:null,kind:'webhook.deliver',payload:{}});
+  for(let index=0;index<10;index++){
+    await getSql()`update outbox_actions set next_attempt_at=now() where id=${id}`;
+    expect(await runQueueOnce()).toBe(true);
+    const [row]=await getSql()`select attempts,state,payload from outbox_actions where id=${id}`;
+    expect(row.attempts).toBe(index+1);
+    if(index<9){expect(row.state).toBe('pending');expect(row.payload._webhookAttemptBase).toBe(index+1);}
+    else expect(row.state).toBe('succeeded');
+  }
+  expect(deliveries).toBe(1);
 });

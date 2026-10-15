@@ -1,0 +1,1675 @@
+{
+  "build": "ea01908654db7c0b4cf591028c7f9b321c6896dd",
+  "bun": "1.4.3",
+  "query": "SELECT * FROM sessions WHERE token_hash = $1 OR (previous_token_hash = $1 AND previous_valid_until > NOW()) FOR UPDATE",
+  "method": {
+    "warmups": 1,
+    "timedSamples": 5,
+    "plans": "EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)",
+    "normalPlannerSettings": true,
+    "measuredBoundary": "Complete round-trip of synthetic session SELECT FOR UPDATE; no auth route, HTTP, user lookup or request-hook work.",
+    "order": "Before-index warm samples then after-index warm samples on the exact same generated sessions; cache state is warm, not randomized."
+  },
+  "evidence": [
+    {
+      "sessions": 1000,
+      "rotatedSessions": 100,
+      "cases": [
+        {
+          "name": "valid-current",
+          "expectedIds": [
+            "e94edf5f-1926-4e94-a5fc-b857b0e3f7d2"
+          ],
+          "before": {
+            "resultIds": [
+              "e94edf5f-1926-4e94-a5fc-b857b0e3f7d2"
+            ],
+            "samplesMs": [
+              0.4379169999999988,
+              0.3515000000000015,
+              0.42824999999999136,
+              0.5771250000000094,
+              0.41304200000000435
+            ],
+            "medianMs": 0.42824999999999136,
+            "nodes": [
+              "LockRows",
+              "Seq Scan"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 0,
+                  "Total Cost": 40.01,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.046,
+                  "Actual Total Time": 0.046,
+                  "Actual Rows": 1,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 21,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 0,
+                      "Total Cost": 40,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.045,
+                      "Actual Total Time": 0.045,
+                      "Actual Rows": 1,
+                      "Actual Loops": 1,
+                      "Filter": "((token_hash = 'f579f6ca129cc93161e8133cc311a5f91a29e5d5223c608d1ea5228c429240ae'::text) OR ((previous_token_hash = 'f579f6ca129cc93161e8133cc311a5f91a29e5d5223c608d1ea5228c429240ae'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 999,
+                      "Shared Hit Blocks": 20,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.022,
+                "Triggers": [],
+                "Execution Time": 0.05
+              }
+            ]
+          },
+          "after": {
+            "resultIds": [
+              "e94edf5f-1926-4e94-a5fc-b857b0e3f7d2"
+            ],
+            "samplesMs": [
+              0.3679170000000056,
+              0.3572499999999934,
+              0.3503340000000037,
+              0.290458000000001,
+              0.26600000000000534
+            ],
+            "medianMs": 0.3503340000000037,
+            "nodes": [
+              "LockRows",
+              "Bitmap Heap Scan",
+              "BitmapOr",
+              "Bitmap Index Scan (sessions_token_hash_unique)",
+              "Bitmap Index Scan (coast_perf_sessions_previous_token_idx)"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 8.56,
+                  "Total Cost": 14.71,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.004,
+                  "Actual Total Time": 0.005,
+                  "Actual Rows": 1,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 6,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Bitmap Heap Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 8.56,
+                      "Total Cost": 14.7,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.003,
+                      "Actual Total Time": 0.004,
+                      "Actual Rows": 1,
+                      "Actual Loops": 1,
+                      "Recheck Cond": "((token_hash = 'f579f6ca129cc93161e8133cc311a5f91a29e5d5223c608d1ea5228c429240ae'::text) OR (previous_token_hash = 'f579f6ca129cc93161e8133cc311a5f91a29e5d5223c608d1ea5228c429240ae'::text))",
+                      "Rows Removed by Index Recheck": 0,
+                      "Filter": "((token_hash = 'f579f6ca129cc93161e8133cc311a5f91a29e5d5223c608d1ea5228c429240ae'::text) OR ((previous_token_hash = 'f579f6ca129cc93161e8133cc311a5f91a29e5d5223c608d1ea5228c429240ae'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 0,
+                      "Exact Heap Blocks": 1,
+                      "Lossy Heap Blocks": 0,
+                      "Shared Hit Blocks": 5,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "BitmapOr",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 8.56,
+                          "Total Cost": 8.56,
+                          "Plan Rows": 2,
+                          "Plan Width": 0,
+                          "Actual Startup Time": 0.002,
+                          "Actual Total Time": 0.002,
+                          "Actual Rows": 0,
+                          "Actual Loops": 1,
+                          "Shared Hit Blocks": 4,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "sessions_token_hash_unique",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.28,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 1,
+                              "Actual Loops": 1,
+                              "Index Cond": "(token_hash = 'f579f6ca129cc93161e8133cc311a5f91a29e5d5223c608d1ea5228c429240ae'::text)",
+                              "Shared Hit Blocks": 2,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            },
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "coast_perf_sessions_previous_token_idx",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.28,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 0,
+                              "Actual Loops": 1,
+                              "Index Cond": "(previous_token_hash = 'f579f6ca129cc93161e8133cc311a5f91a29e5d5223c608d1ea5228c429240ae'::text)",
+                              "Shared Hit Blocks": 2,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.042,
+                "Triggers": [],
+                "Execution Time": 0.015
+              }
+            ]
+          },
+          "equalIds": true
+        },
+        {
+          "name": "valid-previous",
+          "expectedIds": [
+            "e94edf5f-1926-4e94-a5fc-b857b0e3f7d2"
+          ],
+          "before": {
+            "resultIds": [
+              "e94edf5f-1926-4e94-a5fc-b857b0e3f7d2"
+            ],
+            "samplesMs": [
+              0.4952920000000063,
+              0.5592919999999992,
+              0.570208000000008,
+              0.4352919999999898,
+              0.36420799999999076
+            ],
+            "medianMs": 0.4952920000000063,
+            "nodes": [
+              "LockRows",
+              "Seq Scan"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 0,
+                  "Total Cost": 40.01,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.045,
+                  "Actual Total Time": 0.045,
+                  "Actual Rows": 1,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 21,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 0,
+                      "Total Cost": 40,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.043,
+                      "Actual Total Time": 0.043,
+                      "Actual Rows": 1,
+                      "Actual Loops": 1,
+                      "Filter": "((token_hash = '49aca01d2594b088322ab9a2c6eda3152ea4b95d80d212df563da907d4183d7a'::text) OR ((previous_token_hash = '49aca01d2594b088322ab9a2c6eda3152ea4b95d80d212df563da907d4183d7a'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 999,
+                      "Shared Hit Blocks": 20,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.04,
+                "Triggers": [],
+                "Execution Time": 0.049
+              }
+            ]
+          },
+          "after": {
+            "resultIds": [
+              "e94edf5f-1926-4e94-a5fc-b857b0e3f7d2"
+            ],
+            "samplesMs": [
+              0.36812500000000625,
+              0.48229200000000105,
+              0.642374999999987,
+              0.3038749999999908,
+              0.2937079999999952
+            ],
+            "medianMs": 0.36812500000000625,
+            "nodes": [
+              "LockRows",
+              "Bitmap Heap Scan",
+              "BitmapOr",
+              "Bitmap Index Scan (sessions_token_hash_unique)",
+              "Bitmap Index Scan (coast_perf_sessions_previous_token_idx)"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 8.56,
+                  "Total Cost": 14.71,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.006,
+                  "Actual Total Time": 0.006,
+                  "Actual Rows": 1,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 6,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Bitmap Heap Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 8.56,
+                      "Total Cost": 14.7,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.004,
+                      "Actual Total Time": 0.005,
+                      "Actual Rows": 1,
+                      "Actual Loops": 1,
+                      "Recheck Cond": "((token_hash = '49aca01d2594b088322ab9a2c6eda3152ea4b95d80d212df563da907d4183d7a'::text) OR (previous_token_hash = '49aca01d2594b088322ab9a2c6eda3152ea4b95d80d212df563da907d4183d7a'::text))",
+                      "Rows Removed by Index Recheck": 0,
+                      "Filter": "((token_hash = '49aca01d2594b088322ab9a2c6eda3152ea4b95d80d212df563da907d4183d7a'::text) OR ((previous_token_hash = '49aca01d2594b088322ab9a2c6eda3152ea4b95d80d212df563da907d4183d7a'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 0,
+                      "Exact Heap Blocks": 1,
+                      "Lossy Heap Blocks": 0,
+                      "Shared Hit Blocks": 5,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "BitmapOr",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 8.56,
+                          "Total Cost": 8.56,
+                          "Plan Rows": 2,
+                          "Plan Width": 0,
+                          "Actual Startup Time": 0.003,
+                          "Actual Total Time": 0.003,
+                          "Actual Rows": 0,
+                          "Actual Loops": 1,
+                          "Shared Hit Blocks": 4,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "sessions_token_hash_unique",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.28,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.002,
+                              "Actual Total Time": 0.002,
+                              "Actual Rows": 0,
+                              "Actual Loops": 1,
+                              "Index Cond": "(token_hash = '49aca01d2594b088322ab9a2c6eda3152ea4b95d80d212df563da907d4183d7a'::text)",
+                              "Shared Hit Blocks": 2,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            },
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "coast_perf_sessions_previous_token_idx",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.28,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 1,
+                              "Actual Loops": 1,
+                              "Index Cond": "(previous_token_hash = '49aca01d2594b088322ab9a2c6eda3152ea4b95d80d212df563da907d4183d7a'::text)",
+                              "Shared Hit Blocks": 2,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.048,
+                "Triggers": [],
+                "Execution Time": 0.019
+              }
+            ]
+          },
+          "equalIds": true
+        },
+        {
+          "name": "invalid",
+          "expectedIds": [],
+          "before": {
+            "resultIds": [],
+            "samplesMs": [
+              0.23562499999999886,
+              0.22716599999999687,
+              0.2119169999999997,
+              0.22066699999999173,
+              0.23895900000000836
+            ],
+            "medianMs": 0.22716599999999687,
+            "nodes": [
+              "LockRows",
+              "Seq Scan"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 0,
+                  "Total Cost": 40.01,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.043,
+                  "Actual Total Time": 0.043,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 20,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 0,
+                      "Total Cost": 40,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.043,
+                      "Actual Total Time": 0.043,
+                      "Actual Rows": 0,
+                      "Actual Loops": 1,
+                      "Filter": "((token_hash = 'ffa327755b1607ed1361f2d38aceb8b978bea5497dd1c5a6ae0400e24890c72b'::text) OR ((previous_token_hash = 'ffa327755b1607ed1361f2d38aceb8b978bea5497dd1c5a6ae0400e24890c72b'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 1000,
+                      "Shared Hit Blocks": 20,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.031,
+                "Triggers": [],
+                "Execution Time": 0.047
+              }
+            ]
+          },
+          "after": {
+            "resultIds": [],
+            "samplesMs": [
+              0.46383299999999394,
+              0.2938749999999999,
+              0.18445900000000393,
+              0.1948329999999885,
+              0.22229199999999594
+            ],
+            "medianMs": 0.22229199999999594,
+            "nodes": [
+              "LockRows",
+              "Bitmap Heap Scan",
+              "BitmapOr",
+              "Bitmap Index Scan (sessions_token_hash_unique)",
+              "Bitmap Index Scan (coast_perf_sessions_previous_token_idx)"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 8.56,
+                  "Total Cost": 14.71,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.002,
+                  "Actual Total Time": 0.003,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 4,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Bitmap Heap Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 8.56,
+                      "Total Cost": 14.7,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.002,
+                      "Actual Total Time": 0.003,
+                      "Actual Rows": 0,
+                      "Actual Loops": 1,
+                      "Recheck Cond": "((token_hash = 'ffa327755b1607ed1361f2d38aceb8b978bea5497dd1c5a6ae0400e24890c72b'::text) OR (previous_token_hash = 'ffa327755b1607ed1361f2d38aceb8b978bea5497dd1c5a6ae0400e24890c72b'::text))",
+                      "Rows Removed by Index Recheck": 0,
+                      "Filter": "((token_hash = 'ffa327755b1607ed1361f2d38aceb8b978bea5497dd1c5a6ae0400e24890c72b'::text) OR ((previous_token_hash = 'ffa327755b1607ed1361f2d38aceb8b978bea5497dd1c5a6ae0400e24890c72b'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 0,
+                      "Exact Heap Blocks": 0,
+                      "Lossy Heap Blocks": 0,
+                      "Shared Hit Blocks": 4,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "BitmapOr",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 8.56,
+                          "Total Cost": 8.56,
+                          "Plan Rows": 2,
+                          "Plan Width": 0,
+                          "Actual Startup Time": 0.002,
+                          "Actual Total Time": 0.002,
+                          "Actual Rows": 0,
+                          "Actual Loops": 1,
+                          "Shared Hit Blocks": 4,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "sessions_token_hash_unique",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.28,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 0,
+                              "Actual Loops": 1,
+                              "Index Cond": "(token_hash = 'ffa327755b1607ed1361f2d38aceb8b978bea5497dd1c5a6ae0400e24890c72b'::text)",
+                              "Shared Hit Blocks": 2,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            },
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "coast_perf_sessions_previous_token_idx",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.28,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 0,
+                              "Actual Loops": 1,
+                              "Index Cond": "(previous_token_hash = 'ffa327755b1607ed1361f2d38aceb8b978bea5497dd1c5a6ae0400e24890c72b'::text)",
+                              "Shared Hit Blocks": 2,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.073,
+                "Triggers": [],
+                "Execution Time": 0.015
+              }
+            ]
+          },
+          "equalIds": true
+        }
+      ]
+    },
+    {
+      "sessions": 10000,
+      "rotatedSessions": 1000,
+      "cases": [
+        {
+          "name": "valid-current",
+          "expectedIds": [
+            "cc53f6bb-2eff-43ab-8e46-f77771dc0645"
+          ],
+          "before": {
+            "resultIds": [
+              "cc53f6bb-2eff-43ab-8e46-f77771dc0645"
+            ],
+            "samplesMs": [
+              1.2721249999999884,
+              0.940624999999983,
+              0.9171249999999986,
+              1.0576250000000016,
+              1.3616670000000113
+            ],
+            "medianMs": 1.0576250000000016,
+            "nodes": [
+              "LockRows",
+              "Seq Scan"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 0,
+                  "Total Cost": 420.01,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.612,
+                  "Actual Total Time": 0.612,
+                  "Actual Rows": 1,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 221,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 0,
+                      "Total Cost": 420,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.608,
+                      "Actual Total Time": 0.608,
+                      "Actual Rows": 1,
+                      "Actual Loops": 1,
+                      "Filter": "((token_hash = '3abd80d6c9e79c600ed03ec884d9a785e22e3ae6983949a56849b6d458eaa402'::text) OR ((previous_token_hash = '3abd80d6c9e79c600ed03ec884d9a785e22e3ae6983949a56849b6d458eaa402'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 9999,
+                      "Shared Hit Blocks": 220,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.029,
+                "Triggers": [],
+                "Execution Time": 0.618
+              }
+            ]
+          },
+          "after": {
+            "resultIds": [
+              "cc53f6bb-2eff-43ab-8e46-f77771dc0645"
+            ],
+            "samplesMs": [
+              0.370083999999963,
+              0.4217919999999822,
+              0.4318749999999909,
+              0.39816600000000335,
+              0.277417000000014
+            ],
+            "medianMs": 0.39816600000000335,
+            "nodes": [
+              "LockRows",
+              "Bitmap Heap Scan",
+              "BitmapOr",
+              "Bitmap Index Scan (sessions_token_hash_unique)",
+              "Bitmap Index Scan (coast_perf_sessions_previous_token_idx)"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 8.7,
+                  "Total Cost": 16.18,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.008,
+                  "Actual Total Time": 0.008,
+                  "Actual Rows": 1,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 7,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Bitmap Heap Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 8.7,
+                      "Total Cost": 16.17,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.006,
+                      "Actual Total Time": 0.006,
+                      "Actual Rows": 1,
+                      "Actual Loops": 1,
+                      "Recheck Cond": "((token_hash = '3abd80d6c9e79c600ed03ec884d9a785e22e3ae6983949a56849b6d458eaa402'::text) OR (previous_token_hash = '3abd80d6c9e79c600ed03ec884d9a785e22e3ae6983949a56849b6d458eaa402'::text))",
+                      "Rows Removed by Index Recheck": 0,
+                      "Filter": "((token_hash = '3abd80d6c9e79c600ed03ec884d9a785e22e3ae6983949a56849b6d458eaa402'::text) OR ((previous_token_hash = '3abd80d6c9e79c600ed03ec884d9a785e22e3ae6983949a56849b6d458eaa402'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 0,
+                      "Exact Heap Blocks": 1,
+                      "Lossy Heap Blocks": 0,
+                      "Shared Hit Blocks": 6,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "BitmapOr",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 8.7,
+                          "Total Cost": 8.7,
+                          "Plan Rows": 2,
+                          "Plan Width": 0,
+                          "Actual Startup Time": 0.004,
+                          "Actual Total Time": 0.004,
+                          "Actual Rows": 0,
+                          "Actual Loops": 1,
+                          "Shared Hit Blocks": 5,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "sessions_token_hash_unique",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.42,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.003,
+                              "Actual Total Time": 0.003,
+                              "Actual Rows": 1,
+                              "Actual Loops": 1,
+                              "Index Cond": "(token_hash = '3abd80d6c9e79c600ed03ec884d9a785e22e3ae6983949a56849b6d458eaa402'::text)",
+                              "Shared Hit Blocks": 3,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            },
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "coast_perf_sessions_previous_token_idx",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.28,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 0,
+                              "Actual Loops": 1,
+                              "Index Cond": "(previous_token_hash = '3abd80d6c9e79c600ed03ec884d9a785e22e3ae6983949a56849b6d458eaa402'::text)",
+                              "Shared Hit Blocks": 2,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.019,
+                "Triggers": [],
+                "Execution Time": 0.022
+              }
+            ]
+          },
+          "equalIds": true
+        },
+        {
+          "name": "valid-previous",
+          "expectedIds": [
+            "cc53f6bb-2eff-43ab-8e46-f77771dc0645"
+          ],
+          "before": {
+            "resultIds": [
+              "cc53f6bb-2eff-43ab-8e46-f77771dc0645"
+            ],
+            "samplesMs": [
+              1.313541999999984,
+              0.9069579999999746,
+              0.7489590000000135,
+              1.054834000000028,
+              0.9421249999999759
+            ],
+            "medianMs": 0.9421249999999759,
+            "nodes": [
+              "LockRows",
+              "Seq Scan"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 0,
+                  "Total Cost": 420.01,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.438,
+                  "Actual Total Time": 0.438,
+                  "Actual Rows": 1,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 221,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 0,
+                      "Total Cost": 420,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.436,
+                      "Actual Total Time": 0.436,
+                      "Actual Rows": 1,
+                      "Actual Loops": 1,
+                      "Filter": "((token_hash = 'eeea7e4c33c48790a90b71a15b564de0684926fbc56154d4621d2499894a9aa4'::text) OR ((previous_token_hash = 'eeea7e4c33c48790a90b71a15b564de0684926fbc56154d4621d2499894a9aa4'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 9999,
+                      "Shared Hit Blocks": 220,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.018,
+                "Triggers": [],
+                "Execution Time": 0.442
+              }
+            ]
+          },
+          "after": {
+            "resultIds": [
+              "cc53f6bb-2eff-43ab-8e46-f77771dc0645"
+            ],
+            "samplesMs": [
+              0.2792079999999828,
+              0.285082999999986,
+              0.30570900000003576,
+              0.31016599999998107,
+              0.37725000000000364
+            ],
+            "medianMs": 0.30570900000003576,
+            "nodes": [
+              "LockRows",
+              "Bitmap Heap Scan",
+              "BitmapOr",
+              "Bitmap Index Scan (sessions_token_hash_unique)",
+              "Bitmap Index Scan (coast_perf_sessions_previous_token_idx)"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 8.7,
+                  "Total Cost": 16.18,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.005,
+                  "Actual Total Time": 0.005,
+                  "Actual Rows": 1,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 7,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Bitmap Heap Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 8.7,
+                      "Total Cost": 16.17,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.004,
+                      "Actual Total Time": 0.004,
+                      "Actual Rows": 1,
+                      "Actual Loops": 1,
+                      "Recheck Cond": "((token_hash = 'eeea7e4c33c48790a90b71a15b564de0684926fbc56154d4621d2499894a9aa4'::text) OR (previous_token_hash = 'eeea7e4c33c48790a90b71a15b564de0684926fbc56154d4621d2499894a9aa4'::text))",
+                      "Rows Removed by Index Recheck": 0,
+                      "Filter": "((token_hash = 'eeea7e4c33c48790a90b71a15b564de0684926fbc56154d4621d2499894a9aa4'::text) OR ((previous_token_hash = 'eeea7e4c33c48790a90b71a15b564de0684926fbc56154d4621d2499894a9aa4'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 0,
+                      "Exact Heap Blocks": 1,
+                      "Lossy Heap Blocks": 0,
+                      "Shared Hit Blocks": 6,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "BitmapOr",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 8.7,
+                          "Total Cost": 8.7,
+                          "Plan Rows": 2,
+                          "Plan Width": 0,
+                          "Actual Startup Time": 0.002,
+                          "Actual Total Time": 0.003,
+                          "Actual Rows": 0,
+                          "Actual Loops": 1,
+                          "Shared Hit Blocks": 5,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "sessions_token_hash_unique",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.42,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.002,
+                              "Actual Total Time": 0.002,
+                              "Actual Rows": 0,
+                              "Actual Loops": 1,
+                              "Index Cond": "(token_hash = 'eeea7e4c33c48790a90b71a15b564de0684926fbc56154d4621d2499894a9aa4'::text)",
+                              "Shared Hit Blocks": 3,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            },
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "coast_perf_sessions_previous_token_idx",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.28,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 1,
+                              "Actual Loops": 1,
+                              "Index Cond": "(previous_token_hash = 'eeea7e4c33c48790a90b71a15b564de0684926fbc56154d4621d2499894a9aa4'::text)",
+                              "Shared Hit Blocks": 2,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.013,
+                "Triggers": [],
+                "Execution Time": 0.016
+              }
+            ]
+          },
+          "equalIds": true
+        },
+        {
+          "name": "invalid",
+          "expectedIds": [],
+          "before": {
+            "resultIds": [],
+            "samplesMs": [
+              0.6752920000000131,
+              0.6798329999999737,
+              0.7217909999999961,
+              0.6080420000000117,
+              0.7122079999999755
+            ],
+            "medianMs": 0.6798329999999737,
+            "nodes": [
+              "LockRows",
+              "Seq Scan"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 0,
+                  "Total Cost": 420.01,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.431,
+                  "Actual Total Time": 0.431,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 220,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Seq Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 0,
+                      "Total Cost": 420,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.431,
+                      "Actual Total Time": 0.431,
+                      "Actual Rows": 0,
+                      "Actual Loops": 1,
+                      "Filter": "((token_hash = 'abe0493bf3518e72daa1e71ea250d8a6279f93ae892a72b25e39cc0d1a4bbc8c'::text) OR ((previous_token_hash = 'abe0493bf3518e72daa1e71ea250d8a6279f93ae892a72b25e39cc0d1a4bbc8c'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 10000,
+                      "Shared Hit Blocks": 220,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.016,
+                "Triggers": [],
+                "Execution Time": 0.441
+              }
+            ]
+          },
+          "after": {
+            "resultIds": [],
+            "samplesMs": [
+              0.41679199999998673,
+              0.3679589999999848,
+              0.25925000000000864,
+              0.24949999999995498,
+              0.19591700000000856
+            ],
+            "medianMs": 0.25925000000000864,
+            "nodes": [
+              "LockRows",
+              "Bitmap Heap Scan",
+              "BitmapOr",
+              "Bitmap Index Scan (sessions_token_hash_unique)",
+              "Bitmap Index Scan (coast_perf_sessions_previous_token_idx)"
+            ],
+            "plan": [
+              {
+                "Plan": {
+                  "Node Type": "LockRows",
+                  "Parallel Aware": false,
+                  "Async Capable": false,
+                  "Startup Cost": 8.7,
+                  "Total Cost": 16.18,
+                  "Plan Rows": 1,
+                  "Plan Width": 200,
+                  "Actual Startup Time": 0.003,
+                  "Actual Total Time": 0.003,
+                  "Actual Rows": 0,
+                  "Actual Loops": 1,
+                  "Shared Hit Blocks": 5,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0,
+                  "Plans": [
+                    {
+                      "Node Type": "Bitmap Heap Scan",
+                      "Parent Relationship": "Outer",
+                      "Parallel Aware": false,
+                      "Async Capable": false,
+                      "Relation Name": "sessions",
+                      "Alias": "sessions",
+                      "Startup Cost": 8.7,
+                      "Total Cost": 16.17,
+                      "Plan Rows": 1,
+                      "Plan Width": 200,
+                      "Actual Startup Time": 0.003,
+                      "Actual Total Time": 0.003,
+                      "Actual Rows": 0,
+                      "Actual Loops": 1,
+                      "Recheck Cond": "((token_hash = 'abe0493bf3518e72daa1e71ea250d8a6279f93ae892a72b25e39cc0d1a4bbc8c'::text) OR (previous_token_hash = 'abe0493bf3518e72daa1e71ea250d8a6279f93ae892a72b25e39cc0d1a4bbc8c'::text))",
+                      "Rows Removed by Index Recheck": 0,
+                      "Filter": "((token_hash = 'abe0493bf3518e72daa1e71ea250d8a6279f93ae892a72b25e39cc0d1a4bbc8c'::text) OR ((previous_token_hash = 'abe0493bf3518e72daa1e71ea250d8a6279f93ae892a72b25e39cc0d1a4bbc8c'::text) AND (previous_valid_until > now())))",
+                      "Rows Removed by Filter": 0,
+                      "Exact Heap Blocks": 0,
+                      "Lossy Heap Blocks": 0,
+                      "Shared Hit Blocks": 5,
+                      "Shared Read Blocks": 0,
+                      "Shared Dirtied Blocks": 0,
+                      "Shared Written Blocks": 0,
+                      "Local Hit Blocks": 0,
+                      "Local Read Blocks": 0,
+                      "Local Dirtied Blocks": 0,
+                      "Local Written Blocks": 0,
+                      "Temp Read Blocks": 0,
+                      "Temp Written Blocks": 0,
+                      "Plans": [
+                        {
+                          "Node Type": "BitmapOr",
+                          "Parent Relationship": "Outer",
+                          "Parallel Aware": false,
+                          "Async Capable": false,
+                          "Startup Cost": 8.7,
+                          "Total Cost": 8.7,
+                          "Plan Rows": 2,
+                          "Plan Width": 0,
+                          "Actual Startup Time": 0.002,
+                          "Actual Total Time": 0.003,
+                          "Actual Rows": 0,
+                          "Actual Loops": 1,
+                          "Shared Hit Blocks": 5,
+                          "Shared Read Blocks": 0,
+                          "Shared Dirtied Blocks": 0,
+                          "Shared Written Blocks": 0,
+                          "Local Hit Blocks": 0,
+                          "Local Read Blocks": 0,
+                          "Local Dirtied Blocks": 0,
+                          "Local Written Blocks": 0,
+                          "Temp Read Blocks": 0,
+                          "Temp Written Blocks": 0,
+                          "Plans": [
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "sessions_token_hash_unique",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.42,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.002,
+                              "Actual Total Time": 0.002,
+                              "Actual Rows": 0,
+                              "Actual Loops": 1,
+                              "Index Cond": "(token_hash = 'abe0493bf3518e72daa1e71ea250d8a6279f93ae892a72b25e39cc0d1a4bbc8c'::text)",
+                              "Shared Hit Blocks": 3,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            },
+                            {
+                              "Node Type": "Bitmap Index Scan",
+                              "Parent Relationship": "Member",
+                              "Parallel Aware": false,
+                              "Async Capable": false,
+                              "Index Name": "coast_perf_sessions_previous_token_idx",
+                              "Startup Cost": 0,
+                              "Total Cost": 4.28,
+                              "Plan Rows": 1,
+                              "Plan Width": 0,
+                              "Actual Startup Time": 0.001,
+                              "Actual Total Time": 0.001,
+                              "Actual Rows": 0,
+                              "Actual Loops": 1,
+                              "Index Cond": "(previous_token_hash = 'abe0493bf3518e72daa1e71ea250d8a6279f93ae892a72b25e39cc0d1a4bbc8c'::text)",
+                              "Shared Hit Blocks": 2,
+                              "Shared Read Blocks": 0,
+                              "Shared Dirtied Blocks": 0,
+                              "Shared Written Blocks": 0,
+                              "Local Hit Blocks": 0,
+                              "Local Read Blocks": 0,
+                              "Local Dirtied Blocks": 0,
+                              "Local Written Blocks": 0,
+                              "Temp Read Blocks": 0,
+                              "Temp Written Blocks": 0
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "Planning": {
+                  "Shared Hit Blocks": 0,
+                  "Shared Read Blocks": 0,
+                  "Shared Dirtied Blocks": 0,
+                  "Shared Written Blocks": 0,
+                  "Local Hit Blocks": 0,
+                  "Local Read Blocks": 0,
+                  "Local Dirtied Blocks": 0,
+                  "Local Written Blocks": 0,
+                  "Temp Read Blocks": 0,
+                  "Temp Written Blocks": 0
+                },
+                "Planning Time": 0.017,
+                "Triggers": [],
+                "Execution Time": 0.015
+              }
+            ]
+          },
+          "equalIds": true
+        }
+      ]
+    }
+  ],
+  "postgres": "PostgreSQL 17.11 on aarch64-unknown-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "settings": {
+    "jit": "off",
+    "enableSeqscan": "on",
+    "enableBitmapscan": "on",
+    "enableIndexscan": "on",
+    "sharedBuffers": "128MB",
+    "workMem": "4MB"
+  },
+  "baselineIndexes": [
+    {
+      "indexname": "sessions_expiry_idx",
+      "indexdef": "CREATE INDEX sessions_expiry_idx ON public.sessions USING btree (expires_at)"
+    },
+    {
+      "indexname": "sessions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX sessions_pkey ON public.sessions USING btree (id)"
+    },
+    {
+      "indexname": "sessions_token_hash_unique",
+      "indexdef": "CREATE UNIQUE INDEX sessions_token_hash_unique ON public.sessions USING btree (token_hash)"
+    },
+    {
+      "indexname": "sessions_user_idx",
+      "indexdef": "CREATE INDEX sessions_user_idx ON public.sessions USING btree (user_id)"
+    }
+  ],
+  "scope": "Synthetic generated database only; no real credentials, usernames, URLs or session secrets. UUIDs and hashes are generated fixture identity."
+}

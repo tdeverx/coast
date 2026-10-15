@@ -106,7 +106,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
   if (['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].includes(String(input.method)))
     result.method = String(input.method);
   if (
-    ['network', 'timeout', 'http', 'validation', 'unexpected', 'aborted', 'media'].includes(
+    ['network', 'timeout', 'http', 'validation', 'unexpected', 'aborted', 'media', 'local-busy'].includes(
       String(input.failure)
     )
   )
@@ -166,6 +166,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'provider.invalid-data',
       'provider.interrupted',
       'provider.timeout',
+      'local.provider-busy',
       'action.rejected',
       'jellyfin.incomplete-library-page',
       'jellyfin.invalid-library-offset',

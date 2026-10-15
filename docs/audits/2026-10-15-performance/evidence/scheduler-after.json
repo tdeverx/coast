@@ -1,0 +1,172 @@
+{
+  "build": "ea01908654db7c0b4cf591028c7f9b321c6896dd",
+  "bun": "1.4.3",
+  "cases": [
+    {
+      "generations": {
+        "total": 10000,
+        "legacy": 402,
+        "current": 3600,
+        "old": 5998
+      },
+      "accounts": 10,
+      "perAccount": 1000,
+      "total": 10000,
+      "resultEquivalent": true,
+      "plans": {
+        "old": {
+          "executionMs": 5.802,
+          "sharedHitBlocks": 19660,
+          "rows": 6,
+          "outboxNodes": [
+            {
+              "type": "Bitmap Heap Scan",
+              "rows": 4002,
+              "loops": 1,
+              "removed": 5998
+            }
+          ]
+        },
+        "boundedExistingIndex": {
+          "executionMs": 0.128,
+          "sharedHitBlocks": 151,
+          "rows": 10,
+          "outboxNodes": [
+            {
+              "type": "Index Scan",
+              "rows": 0,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_state_created_idx"
+            },
+            {
+              "type": "Index Only Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_success_generation_idx"
+            },
+            {
+              "type": "Index Only Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_success_generation_idx"
+            }
+          ]
+        },
+        "boundedGenerationIndex": {
+          "executionMs": 0.147,
+          "sharedHitBlocks": 76,
+          "rows": 10,
+          "outboxNodes": [
+            {
+              "type": "Index Scan",
+              "rows": 0,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_state_created_idx"
+            },
+            {
+              "type": "Index Only Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 0,
+              "index": "coast_scheduler_probe_idx"
+            },
+            {
+              "type": "Index Only Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 0,
+              "index": "coast_scheduler_probe_idx"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "generations": {
+        "total": 100000,
+        "legacy": 4002,
+        "current": 36000,
+        "old": 59998
+      },
+      "accounts": 10,
+      "perAccount": 10000,
+      "total": 100000,
+      "resultEquivalent": true,
+      "plans": {
+        "old": {
+          "executionMs": 56.11,
+          "sharedHitBlocks": 197065,
+          "rows": 6,
+          "outboxNodes": [
+            {
+              "type": "Bitmap Heap Scan",
+              "rows": 40002,
+              "loops": 1,
+              "removed": 59998
+            }
+          ]
+        },
+        "boundedExistingIndex": {
+          "executionMs": 0.48,
+          "sharedHitBlocks": 751,
+          "rows": 10,
+          "outboxNodes": [
+            {
+              "type": "Index Scan",
+              "rows": 0,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_state_created_idx"
+            },
+            {
+              "type": "Index Only Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_success_generation_idx"
+            },
+            {
+              "type": "Index Only Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_success_generation_idx"
+            }
+          ]
+        },
+        "boundedGenerationIndex": {
+          "executionMs": 0.284,
+          "sharedHitBlocks": 67,
+          "rows": 10,
+          "outboxNodes": [
+            {
+              "type": "Index Scan",
+              "rows": 0,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_state_created_idx"
+            },
+            {
+              "type": "Index Only Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 0,
+              "index": "coast_scheduler_probe_idx"
+            },
+            {
+              "type": "Index Only Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 0,
+              "index": "coast_scheduler_probe_idx"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

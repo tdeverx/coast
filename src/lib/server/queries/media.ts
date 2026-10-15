@@ -1,5 +1,5 @@
 import type { SequenceSource } from '../../media/sequence';
-import { sequenceEntries, nextSequenceEntry, type SequenceEntry } from '../../core/lists/sequence.server';
+import { sequenceEntries, sequenceSummaries, nextSequenceEntries, nextSequenceEntry, type SequenceEntry } from '../../core/lists/sequence.server';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import { lifecycle } from '$lib/media/model';
 import { tmdbArtworkUrl } from '$lib/providers/tmdb/artwork.server';
@@ -12,6 +12,7 @@ import * as s from '../db/schema';
 import { getConfig } from '../config';
 import { resolveMetadata } from '../../catalogue/metadata/resolve';
 import { AppError } from '../security/errors';
+import { PAGE_SIZE } from './pagination';
 import type { MediaView } from '../../ui/types';
 import { searchDocument, searchSql } from './search-ranking';
 import { rankSearch } from '$lib/search';
@@ -448,18 +449,18 @@ export async function mediaViews(
       seasonNumber: episode?.seasonNumber ?? seasonById.get(row.id)?.seasonNumber,
       episodeNumber: episode?.episodeNumber,
       showId: episode?.showId ?? seasonById.get(row.id)?.showId,
+      showTitle: parentId ? metadataById.get(parentId)?.title ?? undefined : undefined,
     };
   });
-  for (const item of views.filter((item) => item.kind === 'collection')) {
-    const entries = await sequenceEntries(userId, { kind: 'collection', id: item.id });
-    item.completedEpisodes = entries.filter((entry) => entry.watched).length;
-    item.totalEpisodes = entries.length;
-    item.watched = entries.length > 0 && entries.every((entry) => entry.watched);
-    item.duration = entries.reduce((sum, entry) => sum + entry.duration, 0);
-    item.progress = entries.reduce(
-      (sum, entry) => sum + (entry.watched ? entry.duration : entry.progress),
-      0
-    );
+  const collectionViews = views.filter(item => item.kind==='collection');
+  const summaries = await sequenceSummaries(userId,collectionViews.map(item => ({kind:'collection',id:item.id})));
+  for (const item of collectionViews) {
+    const summary = summaries.get(`collection:${item.id}`)!;
+    item.completedEpisodes = summary.completed;
+    item.totalEpisodes = summary.total;
+    item.watched = summary.watched;
+    item.duration = summary.duration;
+    item.progress = summary.progress;
     item.trackingProgress = { unit: 'seconds', value: item.progress, total: item.duration };
     item.status = item.dropped
       ? 'dropped'
@@ -506,21 +507,13 @@ export async function mediaViews(
   return options.query ? rankSearch(views, options.query).sort((a, b) => Number(b.available) - Number(a.available)) : views;
 }
 
-/** Explicit detail/list membership is complete; the 500-row bound only limits each query batch. */
-export async function mediaViewsForIds(
-  userId: string,
-  ids: string[],
-  viewerId = userId
-): Promise<MediaView[]> {
-  const unique = [...new Set(ids)];
-  const batches: string[][] = [];
-  for (let offset = 0; offset < unique.length; offset += 500)
-    batches.push(unique.slice(offset, offset + 500));
-  return (
-    await Promise.all(
-      batches.map((batch) => mediaViews(userId, { ids: batch, limit: 500 }, viewerId))
-    )
-  ).flat();
+/** Explicit membership remains complete; each ordered hydration batch stays bounded. */
+export async function mediaViewsForIds(userId: string, ids: string[], viewerId = userId): Promise<MediaView[]> {
+  const unique = [...new Set(ids)], cards = new Map<string,MediaView>();
+  for (let offset=0;offset<unique.length;offset+=PAGE_SIZE)
+    for (const card of await mediaViews(userId,{ids:unique.slice(offset,offset+PAGE_SIZE),limit:PAGE_SIZE},viewerId))
+      cards.set(card.id,card);
+  return unique.flatMap(id => cards.has(id) ? [cards.get(id)!] : []);
 }
 
 export function applySequenceEntry(
@@ -553,24 +546,30 @@ export async function sequenceNextView(
   afterEntryId?: string,
   fromEntryId?: string
 ) {
-  const entries = await sequenceEntries(userId, source);
-  const first = fromEntryId
-    ? entries.findIndex(
-        (entry) => entry.entryId === fromEntryId || entry.entryId.startsWith(fromEntryId + '/')
-      )
-    : 0;
-  if (first < 0) throw new AppError(409, 'The sequence changed. Open it again to continue.');
-  const selected = fromEntryId
-    ? entries.filter(
-        (entry) => entry.entryId === fromEntryId || entry.entryId.startsWith(fromEntryId + '/')
-      )
-    : [];
-  const next =
-    fromEntryId && !afterEntryId
-      ? entries[first].entryId === fromEntryId
-        ? entries[first]
-        : (nextSequenceEntry(selected) ?? selected[0])
-      : nextSequenceEntry(entries, afterEntryId);
+  let next: SequenceEntry | null | undefined;
+  if (!afterEntryId && !fromEntryId) {
+    // A selected next card needs one entry, not the full expanded sequence.
+    next = (await nextSequenceEntries(userId, [source])).get(`${source.kind}:${source.id}`);
+  } else {
+    const entries = await sequenceEntries(userId, source);
+    const first = fromEntryId
+      ? entries.findIndex(
+          (entry) => entry.entryId === fromEntryId || entry.entryId.startsWith(fromEntryId + '/')
+        )
+      : 0;
+    if (first < 0) throw new AppError(409, 'The sequence changed. Open it again to continue.');
+    const selected = fromEntryId
+      ? entries.filter(
+          (entry) => entry.entryId === fromEntryId || entry.entryId.startsWith(fromEntryId + '/')
+        )
+      : [];
+    next =
+      fromEntryId && !afterEntryId
+        ? entries[first].entryId === fromEntryId
+          ? entries[first]
+          : (nextSequenceEntry(selected) ?? selected[0])
+        : nextSequenceEntry(entries, afterEntryId);
+  }
   if (!next) return null;
   const [item] = await mediaViews(userId, { ids: [next.mediaId] });
   return item ? applySequenceEntry(item, next, source) : null;

@@ -23,6 +23,7 @@ import { pagination,PAGE_SIZE } from '$lib/server/queries/pagination';
 import type { ApiScope } from '$lib/public-api';
 
 const headers={'cache-control':'private, no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer'};
+const apiPageSchema=v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10000));
 const publicApiResponse:RequestHandler=async event=>{
  const {request,url}=event;
  try {
@@ -31,11 +32,17 @@ const publicApiResponse:RequestHandler=async event=>{
   const user=await authenticateApiToken(request);
   const path=(event.params.path??'').split('/');
   if(!read){const result=await publicMutation(user,request,url,path);return json(result.response,{status:result.status,headers:{...headers,'idempotency-replayed':String(result.replayed)}});}
-  if(path.join('/')==='webhooks'){if(!user.scopes.includes('webhooks:manage'))throw new AppError(403,'This endpoint requires webhooks:manage.','insufficient_scope');if(url.searchParams.size)throw new AppError(400,'This endpoint does not accept query parameters.','invalid_input');return json({items:await listWebhooks(user.id)},{headers});}
+  if(path.join('/')==='webhooks'){
+   if(!user.scopes.includes('webhooks:manage'))throw new AppError(403,'This endpoint requires webhooks:manage.','insufficient_scope');
+   for(const [key] of url.searchParams)if(key!=='page'||url.searchParams.getAll(key).length!==1)throw new AppError(400,'Unsupported subscription parameters.','invalid_input');
+   const page=v.parse(apiPageSchema,Number(url.searchParams.get('page')??1));
+   const result=await listWebhooks(user.id,page);
+   return json(publicPage(result.items,result,url),{headers});
+  }
   if(path.length===3&&path[0]==='reading'&&path[2]==='history'){
    if(!user.scopes.includes('progress:read'))throw new AppError(403,'This endpoint requires progress:read.','insufficient_scope');
    for(const [key] of url.searchParams)if(key!=='page'||url.searchParams.getAll(key).length!==1)throw new AppError(400,'Unsupported history parameters.','invalid_input');
-   const result=await readingHistoryData(user.id,v.parse(v.pipe(v.string(),v.uuid()),path[1]),Number(url.searchParams.get('page')??1));return json(publicPage(result.items,result,url),{headers});
+   const result=await readingHistoryData(user.id,v.parse(v.pipe(v.string(),v.uuid()),path[1]),v.parse(apiPageSchema,Number(url.searchParams.get('page')??1)));return json(publicPage(result.items,result,url),{headers});
   }
   const allowed:Record<string,ApiScope>={catalogue:'catalogue:read',collection:'collection:read',library:'library:read',progress:'progress:read'};
   if(path.length===1&&path[0]==='me'){
@@ -48,7 +55,7 @@ const publicApiResponse:RequestHandler=async event=>{
   // No cross-profile reads, UI preview queries or unexpected provider side effects.
   const parameters:Record<string,string[]>={catalogue:['page','category','kind'],collection:['page','level','category','kind','relationship','activity','availability','source'],library:['page','category','kind','source'],progress:['page','view','category','kind','scope']};
   for(const [key] of url.searchParams)if(!parameters[path[0]].includes(key)||url.searchParams.getAll(key).length!==1)throw new AppError(400,`Unsupported or repeated parameter: ${key}.`,'invalid_input');
-  const page=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(10000)),Number(url.searchParams.get('page')??1));
+  const page=v.parse(apiPageSchema,Number(url.searchParams.get('page')??1));
   if(path[0]==='catalogue') {
    if(path[1]) {
     const id=v.parse(v.pipe(v.string(),v.uuid()),path[1]);

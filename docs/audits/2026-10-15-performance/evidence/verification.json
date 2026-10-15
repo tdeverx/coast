@@ -1,0 +1,26 @@
+{
+  "runtime": "Bun 1.4.3",
+  "postgres": "17.11",
+  "unit": {
+    "passed": 543,
+    "guardedSkipped": 625,
+    "failed": 0,
+    "files": 213,
+    "assertions": 31726
+  },
+  "database": {
+    "passed": 574,
+    "failed": 0,
+    "freshMigratedSuites": 80
+  },
+  "checks": {
+    "svelteErrors": 0,
+    "svelteWarnings": 0,
+    "build": "passed",
+    "codeInventory": "passed",
+    "uiInventory": "passed",
+    "adoptedSourceStyle": "passed",
+    "diff": "passed"
+  },
+  "boundary": "Synthetic and disposable fixtures only; no production/device/codec/CPU/RAM certification."
+}

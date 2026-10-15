@@ -100,7 +100,11 @@ export const sessions = pgTable(
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
     createdAt: createdAt(),
   },
-  (t) => [index('sessions_user_idx').on(t.userId), index('sessions_expiry_idx').on(t.expiresAt)]
+  (t) => [
+    index('sessions_user_idx').on(t.userId),
+    index('sessions_expiry_idx').on(t.expiresAt),
+    index('sessions_previous_token_idx').on(t.previousTokenHash).where(sql`${t.previousTokenHash} is not null`),
+  ]
 );
 export const apiTokens = pgTable('api_tokens', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -696,6 +700,7 @@ export const outboxActions = pgTable(
     index('outbox_pending_idx').on(t.state, t.nextAttemptAt),
     index('outbox_connection_order_idx').on(t.userId, t.connectionId, t.createdAt),
     index('outbox_maintenance_idx').on(t.connectionId, t.kind, t.state, t.updatedAt),
+    index('outbox_success_generation_idx').on(t.connectionId, t.kind, t.accountGeneration, t.updatedAt.desc()).where(sql`${t.state}='succeeded'`),
     index('outbox_state_created_idx').on(t.state, t.createdAt),
   ]
 );
@@ -860,6 +865,7 @@ export const mediaRequests = pgTable(
       .references(() => providerInstances.id, { onDelete: 'cascade' }),
     externalId: text('external_id'),
     serverId: integer('server_id'),
+    observedScanId: uuid('observed_scan_id'),
     is4k: boolean('is_4k').notNull().default(false),
     seasons: integer('seasons').array().notNull().default([]),
     state: text('state')

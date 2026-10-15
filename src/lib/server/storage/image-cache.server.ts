@@ -2,10 +2,13 @@ import { mkdir, readdir, readFile, rename, stat, statfs, unlink, writeFile } fro
 import { join } from 'node:path';
 
 /** One app process owns the cache. Admission includes temporary-file allocation. */
-export function createImageCache(directory: string, limits = { bytes: 1024 ** 3, files: 10_000, freeBytes: 128 * 1024 ** 2 }) {
+type ImageCacheLimits = {bytes: number; files: number; freeBytes: number; pendingBytes?: number; pendingWrites?: number};
+export function createImageCache(directory: string, limits: ImageCacheLimits = { bytes: 1024 ** 3, files: 10_000, freeBytes: 128 * 1024 ** 2 }) {
   const entries = new Map<string, { bytes: number; used: number }>();
   let totalBytes = 0;
   let initialized = false;
+  let pendingBytes = 0, pendingWrites = 0;
+  const maxPendingBytes = limits.pendingBytes ?? 64 * 1024 ** 2, maxPendingWrites = limits.pendingWrites ?? 16;
   let tail: Promise<unknown> = Promise.resolve();
   const serial = <T>(operation: () => Promise<T>): Promise<T> => {
     const next = tail.then(operation);
@@ -58,6 +61,10 @@ export function createImageCache(directory: string, limits = { bytes: 1024 ** 3,
       });
     },
     put(key: string, bytes: Uint8Array) {
+      // Decline optional persistence before retaining another body in the disk queue.
+      const reservedBytes = bytes.byteLength;
+      if (pendingWrites >= maxPendingWrites || reservedBytes > maxPendingBytes - pendingBytes) return Promise.resolve(false);
+      pendingWrites++; pendingBytes += reservedBytes;
       return serial(async () => {
         await initialize();
         if (entries.has(key)) return true;
@@ -74,7 +81,7 @@ export function createImageCache(directory: string, limits = { bytes: 1024 ** 3,
         } finally {
           await unlink(temporary).catch(error => { if (error.code !== 'ENOENT') throw error; });
         }
-      });
+      }).finally(() => { pendingWrites--; pendingBytes -= reservedBytes; });
     },
   };
 }

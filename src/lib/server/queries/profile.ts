@@ -55,7 +55,7 @@ function periodHistory(userId: string, period: ProfilePeriod, now = new Date()) 
   const start = periodStart(period, now);
   return sql`select * from (${watches(userId)}) watches where ${start ? sql`occurred_at_known and occurred_at >= (${start}::date::timestamp at time zone 'UTC')` : sql`true`} and occurred_at <= ${now.toISOString()}::timestamptz`;
 }
-export async function profileData(
+async function profileSummary(
   userId: string,
   input: unknown = {},
   now = new Date(),
@@ -75,16 +75,6 @@ export async function profileData(
   if(options.view==='favourites'&&!visibility.favourites||options.view==='ratings'&&!visibility.ratings)
     throw new AppError(404,'Profile section not found.');
   const visibleWork=(section:string)=>sql`${enabledCategories(sql`${s.works.category}`,config)} and social_visible(${userId}::uuid,${viewerId}::uuid,${section},${s.works.category})`;
-  const [user] = await db
-    .select({ settings: s.users.settings })
-    .from(s.users)
-    .where(eq(s.users.id, userId));
-  const profile = visibility.details ? { ...user?.settings.profile } : {};
-  if(visibility.details)profile.backgroundMode??=profile.backgroundMediaId?'fixed':'activity';
-  if (!visibility.favourites) {
-    delete profile.favouriteOrder;
-    delete profile.pinnedFavourites;
-  }
   const periodEvents = sql`select * from (${periodHistory(userId, options.period, now)}) h where ${visibility.activity}`;
   const genreMatches = genreRows(periodEvents);
   const genreFilter = !options.genre
@@ -151,6 +141,43 @@ export async function profileData(
       .leftJoin(s.media, eq(s.media.id, s.works.id))
       .where(favouriteFilter),
   ]);
+  return { options, db, config, visibility, counts, rated, historyCounts, favouriteCount, history, dates, favouriteMembership, favouriteFilter, ratingFilter, visibleWork };
+}
+function profileTotals({visibility,counts,rated,historyCounts}: Awaited<ReturnType<typeof profileSummary>>) {
+  return {
+    movies: visibility.insights?historyCounts[0].movies:0,
+    episodes: visibility.insights?historyCounts[0].episodes:0,
+    unique: visibility.insights?historyCounts[0].unique:0,
+    watches: visibility.insights?historyCounts[0].total:0,
+    favourites: visibility.insights?counts.favourites:0,
+    rated: visibility.insights?rated.insightCount:0,
+  };
+}
+
+/** Period controls reuse the profile counts without hydrating presentation cards. */
+export async function profileInsightsData(userId: string, input: unknown = {}, now = new Date(), viewerId: string | null = userId) {
+  const summary=await profileSummary(userId,input,now,viewerId);
+  return {totals:profileTotals(summary),activity:await profileActivity(userId,now,summary.options.period,viewerId)};
+}
+
+export async function profileData(
+  userId: string,
+  input: unknown = {},
+  now = new Date(),
+  viewerId: string | null = userId
+) {
+  const summary=await profileSummary(userId,input,now,viewerId);
+  const {options,db,config,visibility,counts,rated,historyCounts,favouriteCount,history,dates,favouriteMembership,favouriteFilter,ratingFilter,visibleWork}=summary;
+  const [user] = await db
+    .select({ settings: s.users.settings })
+    .from(s.users)
+    .where(eq(s.users.id, userId));
+  const profile = visibility.details ? { ...user?.settings.profile } : {};
+  if(visibility.details)profile.backgroundMode??=profile.backgroundMediaId?'fixed':'activity';
+  if (!visibility.favourites) {
+    delete profile.favouriteOrder;
+    delete profile.pinnedFavourites;
+  }
   const total =
     options.view === 'ratings'
       ? rated.count
@@ -244,14 +271,10 @@ export async function profileData(
   for(let offset=0;offset<sharedIds.length;offset+=PAGE_SIZE)
     cards.push(...await workCards(userId,viewerId,sharedIds.slice(offset,offset+PAGE_SIZE)));
   const historyViews=await mediaViews(userId,{ids:events.map(row=>row.id),limit:PAGE_SIZE},viewerId);
-  const showIds = [...new Set([...cards,...historyViews].flatMap(item=>'showId' in item&&item.showId?[item.showId]:[]))];
-  const shows=new Map<string,string>();
-  for(let offset=0;offset<showIds.length;offset+=PAGE_SIZE)
-    for(const item of await mediaViews(userId,{ids:showIds.slice(offset,offset+PAGE_SIZE),limit:PAGE_SIZE},viewerId))shows.set(item.id,item.title);
   const episodeCaption=(item:MediaView)=>item.kind==='episode'
         ? {
             ...item,
-            captionTitle: shows.get(item.showId!) ?? item.title,
+            captionTitle: item.showTitle ?? item.title,
             captionSubtitle: `S${String(item.seasonNumber ?? 0).padStart(2, '0')}E${String(item.episodeNumber ?? 0).padStart(2, '0')} · ${item.title}`,
           }
         : item;
@@ -264,7 +287,8 @@ export async function profileData(
       and social_visible(a.user_id,${viewerId}::uuid,a.section,w.category)
       and ${enabledCategories(sql`w.category`,config)}
       order by a.occurred_at desc,a.id desc limit 1`);
-    activityBackground=latest[0]?(await workCards(userId,viewerId,[latest[0].workId]))[0]??null:null;
+    activityBackground=latest[0] ? cards.find(item => (('workId' in item ? item.workId : undefined)??item.id)===latest[0].workId)
+      ?? historyViews.find(item => item.id===latest[0].workId) ?? (await workCards(userId,viewerId,[latest[0].workId]))[0] ?? null : null;
   }
   return {
     visibility,
@@ -288,14 +312,7 @@ export async function profileData(
     featured: featuredState ? (byId.get(featuredState.id) ?? null) : null,
     ratedTitles: ratedItems.flatMap((row) => (byId.has(row.id) ? [{...byId.get(row.id)!,id:row.id,rating:row.value}] : [])),
     background: profile.backgroundMode==='activity'?activityBackground:profile.backgroundMediaId ? (byId.get(profile.backgroundMediaId) ?? null) : null,
-    totals: {
-      movies: visibility.insights?historyCounts[0].movies:0,
-      episodes: visibility.insights?historyCounts[0].episodes:0,
-      unique: visibility.insights?historyCounts[0].unique:0,
-      watches: visibility.insights?historyCounts[0].total:0,
-      favourites: visibility.insights?counts.favourites:0,
-      rated: visibility.insights?rated.insightCount:0,
-    },
+    totals: profileTotals(summary),
     history: Array.from(events).flatMap((row) =>
       historyById.has(row.id)
         ? [

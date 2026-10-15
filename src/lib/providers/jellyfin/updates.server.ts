@@ -4,6 +4,7 @@ import {providerConnections,providerInstances,users,outboxActions,socialLiveStat
 import {getJellyfin} from './connection.server';
 import {providerSchedule} from '../schedule';
 import {ProviderHttpError} from '$lib/server/security/provider-fetch';
+import {ProviderQueueBusyError} from '$lib/server/security/request-priority';
 import {PermanentActionError,type OutboxAction} from '$lib/server/queue';
 import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '$lib/server/queue/execution';
 import {companionPlan,validateCompanionPage,type CompanionPage,type CompanionState} from './companion';
@@ -141,6 +142,7 @@ export async function pollCompanion(action:OutboxAction){
     let page:CompanionPage;
     try{page=await context.adapter.companionChanges(previous?.epoch,previous?.cursor??0);}
     catch(error){
+      if(error instanceof ProviderQueueBusyError)throw error;
       await getDb().transaction(async tx=>{await lockSource(tx,context);
         const state:State={...previous,connectionId:context.connection.id,generation:context.connection.accountGeneration,checkedAt:new Date().toISOString(),status:'unavailable',
           reason:error instanceof ProviderHttpError&&error.status===404?'Plugin not installed or live updates disabled':'Plugin updates unavailable; native polling retained'};

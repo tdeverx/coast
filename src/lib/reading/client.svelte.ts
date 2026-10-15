@@ -79,16 +79,22 @@ export async function closeReading(cancelPendingOpening=true){
  reader.visible=false;reader.session=null;reader.file=null;reader.location=null;reader.unsaved=false;move=null;
  await retireSession(session);await refreshAfterChange('reading');
 }
-let writing:Promise<boolean>|null=null,pending:{id:string;location:ReadingLocation}|null=null,saveError='';
+type BookmarkSnapshot={id:string;location:ReadingLocation};
+let writing:Promise<boolean>|null=null,pending:BookmarkSnapshot|null=null,acknowledged:BookmarkSnapshot|null=null,saveError='';
 /** One writer retains its newest failed bookmark for a page turn, close or explicit retry. */
 export function recordReading(location:ReadingLocation):Promise<boolean>{
  const session=reader.session;if(!session)return Promise.resolve(true);
- reader.location=location;session.location=location;pending={id:session.id,location};reader.unsaved=true;
+ reader.location=location;session.location=location;
+ if(!writing&&acknowledged?.id===session.id&&sameReadingLocation(acknowledged.location,location)){
+  pending=null;reader.unsaved=false;if(reader.error===saveError)reader.error='';saveError='';return Promise.resolve(true);
+ }
+ pending={id:session.id,location};reader.unsaved=true;
  if(!writing)writing=(async()=>{
   try{
    while(pending){const next=pending;pending=null;
-    try{await api(`reading/sessions/${next.id}/location`,next.location);}
-    catch(cause){pending=pending??next;if(reader.session?.id===next.id){saveError=`Bookmark could not be saved. ${message(cause)}`;reader.error=saveError;reader.unsaved=true;}return false;}
+    if(acknowledged?.id===next.id&&sameReadingLocation(acknowledged.location,next.location))continue;
+    try{await api(`reading/sessions/${next.id}/location`,next.location);acknowledged=next;}
+    catch(cause){if(acknowledged?.id===next.id)acknowledged=null;pending=pending??next;if(reader.session?.id===next.id){saveError=`Bookmark could not be saved. ${message(cause)}`;reader.error=saveError;reader.unsaved=true;}return false;}
    }
    reader.unsaved=false;if(reader.error===saveError)reader.error='';saveError='';return true;
   }finally{writing=null;}

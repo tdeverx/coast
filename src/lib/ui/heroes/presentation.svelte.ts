@@ -69,6 +69,18 @@ export function createHeroPresentation(get: () => HeroOptions) {
   let controlFocused = $state(false);
   let idleTimer: ReturnType<typeof setTimeout>;
   const chromeDimmed = $derived(showingTrailer && mouseIdle && !controlFocused);
+  let geometryFrame = 0;
+  function scheduleGeometry() {
+    if (geometryFrame || !host || !heroPlayer.visible || document.hidden) return;
+    const element = host, id = active?.id;
+    geometryFrame = requestAnimationFrame(() => {
+      geometryFrame = 0;
+      if (host !== element || heroPlayer.id !== id || !heroPlayer.visible || document.hidden) return;
+      const rect = element.getBoundingClientRect(), previous = heroPlayer.rect;
+      if (!previous || (['top', 'left', 'width', 'height'] as const).some(key => rect[key] !== previous[key]))
+        heroPlayer.rect = rect;
+    });
+  }
   function noteActivity(event?: PointerEvent) {
     if (event && event.pointerType !== 'mouse') return;
     clearTimeout(idleTimer);
@@ -108,6 +120,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
     logoFailed = false;
     if (preview || !title || !host || !screenItem(title) || (!title.available && !title.trailer)) return;
     const element = host;
+    const controller = new AbortController();
     let visible = true,
       cancelled = false,
       delayPassed = false,
@@ -127,7 +140,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
         existing ||
         title.trailer ||
         (
-          await api<{ url: string | null }>(`media/${title.id}/trailer`, undefined, 'GET').catch(
+          await api<{ url: string | null }>(`media/${title.id}/trailer`, undefined, 'GET', { signal: controller.signal }).catch(
             () => ({ url: null })
           )
         ).url;
@@ -137,7 +150,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
     const observer = new IntersectionObserver(
       (entries) => {
         visible = entries[0].isIntersecting;
-        if (heroPlayer.id === title.id) heroPlayer.visible = visible;
+        if (heroPlayer.id === title.id) { heroPlayer.visible = visible; if (visible) scheduleGeometry(); }
         if (visible && delayPassed) void attach();
       },
       { threshold: 0.3 }
@@ -150,14 +163,15 @@ export function createHeroPresentation(get: () => HeroOptions) {
       },
       existing ? 0 : 3000
     );
-    const reposition = () => {
-      if (heroPlayer.id === title.id) heroPlayer.rect = element.getBoundingClientRect();
-    };
+    const reposition = scheduleGeometry;
     window.addEventListener('scroll', reposition, { passive: true });
     window.addEventListener('resize', reposition);
     return () => {
       cancelled = true;
+      controller.abort();
       clearTimeout(timer);
+      cancelAnimationFrame(geometryFrame);
+      geometryFrame = 0;
       observer.disconnect();
       window.removeEventListener('scroll', reposition);
       window.removeEventListener('resize', reposition);
@@ -174,10 +188,10 @@ export function createHeroPresentation(get: () => HeroOptions) {
     document.addEventListener('pointermove', noteActivity);
     noteActivity();
     const shell = element.closest<HTMLElement>('.page-shell');
-    const resize = new ResizeObserver(() => {
-      const rect = element.getBoundingClientRect();
-      shell?.style.setProperty('--active-hero-height', `${rect.height}px`);
-      if (heroPlayer.id === active?.id) heroPlayer.rect = rect;
+    const resize = new ResizeObserver(entries => {
+      const height = entries[0]?.borderBoxSize?.[0]?.blockSize ?? element.getBoundingClientRect().height;
+      shell?.style.setProperty('--active-hero-height', `${height}px`);
+      scheduleGeometry();
     });
     resize.observe(element);
     return () => {
@@ -186,6 +200,8 @@ export function createHeroPresentation(get: () => HeroOptions) {
       clearTimeout(idleTimer);
       clearTimeout(gestureTimer);
       resize.disconnect();
+      cancelAnimationFrame(geometryFrame);
+      geometryFrame = 0;
       shell?.style.removeProperty('--active-hero-height');
     };
   });

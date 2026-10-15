@@ -125,12 +125,15 @@ export async function sharedStream(token:string|undefined,id:string,request:Requ
  return streamForViewer(viewer,id,request,undefined,true);
 }
 export async function streamForViewer(viewer:Awaited<ReturnType<typeof shareViewer>>,id:string,request:Request,access?:string,validated=false){
+ request.signal.throwIfAborted();
  return requestPriority.run(0,async()=>{
  if(viewer.playback_id!==v.parse(uuid,id))throw new AppError(403,'This session belongs to another viewer.');
  if(!validated)await assertShare(viewer);
+ request.signal.throwIfAborted();
  if(request.method!=='HEAD') {
   await reserveViewer(viewer.owner_id,viewer.viewer_id);
-  await ensureSharedEncoding(viewer.owner_id,viewer.viewer_id);
+  request.signal.throwIfAborted();
+  await ensureSharedEncoding(viewer.owner_id,viewer.viewer_id,request.signal);
  }
  return withSharedRequest(viewer.owner_id,viewer.viewer_id,id,request,(leasedRequest,headersReceived)=>streamPlayback(viewer.owner_id,id,leasedRequest,viewer.id,{headersReceived,url:async(_path,url)=>{
   const target=new URL(url,'http://resource.invalid');

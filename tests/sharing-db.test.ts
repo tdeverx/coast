@@ -261,3 +261,25 @@ run('aborting shared preparation through the API retires its reservation and can
  expect((await getSql()<{id:string}[]>`select id from tracking_events where user_id=${owner}`)).toHaveLength(0);
  const retry=await startShared(grant.token,{mediaId:work,browser});expect(retry.shareId).toBe(link.id);
 });
+
+run('withdrawn quality handoffs leave the encoder generation intact and release their preparation fence',async()=>{
+ const link=await make(),a=await claimShare({token:link.token},null),first=await startShared(a.token,{mediaId:work,browser});
+ const [before]=await getSql()`select provider_session_id,max_bitrate from playback_sessions where id=${first.id}`;
+ let entered!:()=>void,release!:()=>void;
+ const entering=new Promise<void>(resolve=>{entered=resolve;});manifestBarrier={entered,ready:new Promise(resolve=>{release=resolve;})};
+ const resource=sharedStream(a.token,first.id,request(first.url));await entering;
+ const b=await claimShare({token:link.token},null);await startShared(b.token,{mediaId:work,browser});
+ const abort=new AbortController();
+ const changing=sharedStream(a.token,first.id,new Request(request(first.url),{signal:abort.signal}));
+ try{
+  for(let i=0;i<100;i++){if((await getSql()`select preparation_token from share_viewers where playback_id=${first.id}`)[0]?.preparation_token)break;await new Promise(resolve=>setTimeout(resolve,10));}
+  expect((await getSql()`select preparation_token from share_viewers where playback_id=${first.id}`)[0]?.preparation_token).not.toBeNull();
+  abort.abort(new DOMException('Viewer closed','AbortError'));await expect(changing).rejects.toThrow('Viewer closed');
+  expect(stops).toHaveLength(0);
+  const [after]=await getSql()`select provider_session_id,max_bitrate from playback_sessions where id=${first.id}`;
+  expect(after.provider_session_id).toBe(before.provider_session_id);expect(after.max_bitrate).toBe(before.max_bitrate);
+  expect((await getSql()`select preparation_token from share_viewers where playback_id=${first.id}`)[0].preparation_token).toBeNull();
+ }finally{release();await (await resource).text();}
+ const retry=await sharedStream(a.token,first.id,request(first.url));await retry.text();expect(stops).toHaveLength(1);
+ expect((await getSql()`select count(*)::int as n from share_request_leases`)[0].n).toBe(0);
+});

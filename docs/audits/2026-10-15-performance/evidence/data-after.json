@@ -1,0 +1,135 @@
+{
+  "build": "ea01908654db7c0b4cf591028c7f9b321c6896dd",
+  "bun": "1.4.3",
+  "dataset": {
+    "movies": 60,
+    "albums": 12,
+    "collections": 12,
+    "snapshotUnusedBytesPerMapping": 32768
+  },
+  "evidence": {
+    "mappingProjection": {
+      "legacyRows": 72,
+      "narrowRows": 12,
+      "legacyJsonBytes": 2386657,
+      "narrowJsonBytes": 2245,
+      "note": "JSON-serialized driver result size, not physical network transfer. Raw SQL compares old projection to proposed narrow music projection."
+    },
+    "unusedSnapshotOutputEquivalence": {
+      "equal": true,
+      "returned": 60
+    },
+    "collectionHydration": [
+      {
+        "size": 1,
+        "ormQueries": 19,
+        "sequenceExpansionQueries": 0,
+        "elapsedMs": 15.021875000000023,
+        "outputJsonBytes": 529,
+        "summaries": [
+          {
+            "id": "60000000-0000-4000-8000-000000000001",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          }
+        ]
+      },
+      {
+        "size": 12,
+        "ormQueries": 19,
+        "sequenceExpansionQueries": 0,
+        "elapsedMs": 11.226790999999935,
+        "outputJsonBytes": 6339,
+        "summaries": [
+          {
+            "id": "60000000-0000-4000-8000-000000000012",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000011",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000010",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000009",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000008",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000007",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000006",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000005",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000004",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000003",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000002",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          },
+          {
+            "id": "60000000-0000-4000-8000-000000000001",
+            "total": 2,
+            "duration": 10800,
+            "progress": 0,
+            "watched": false
+          }
+        ]
+      }
+    ]
+  },
+  "postgres": "PostgreSQL 17.11 on aarch64-unknown-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit"
+}

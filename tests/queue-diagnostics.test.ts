@@ -127,3 +127,13 @@ test('every known queue failure code survives storage without private exception 
     await rm(directory, {recursive: true, force: true});
   }
 });
+
+test('local provider admission saturation is retryable and does not claim a provider outage',async()=>{
+ const {ProviderQueueBusyError}=await import('../src/lib/server/security/request-priority');
+ const {jobFailureDetail}=await import('../src/lib/server/queue');
+ const error=new ProviderQueueBusyError();
+ expect(error).not.toBeInstanceOf(ProviderHttpError);
+ expect(jobFailureDetail(error,false)).toEqual({code:'local.provider-busy',remedy:'retry',retryable:true});
+ expect(jobFailureMessage(error,false)).toContain('Coast is busy');
+ expect(jobFailureMessage(error,false)).not.toContain('cooldown');
+});

@@ -1,8 +1,8 @@
 import {afterAll,beforeAll,expect,test} from 'bun:test';
-import {and,eq,inArray} from 'drizzle-orm';
+import {and,eq,inArray,sql} from 'drizzle-orm';
 import {getDb} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import {observeMusicPageAccess,persistMusic} from '../src/lib/music/persistence.server';
+import {observeMusicLibraryAccess,observeMusicPageAccess,persistMusic} from '../src/lib/music/persistence.server';
 import type {MusicItem} from '../src/lib/music/model';
 import {jellyfinItemKey} from '../src/lib/providers/jellyfin/paging';
 import {musicQueue} from '../src/lib/music/queue.server';
@@ -110,4 +110,61 @@ run('account generation changes during hydration never grant the old account acc
   const [mapping]=await getDb().select().from(s.providerItems).where(and(eq(s.providerItems.instanceId,instanceId),eq(s.providerItems.externalId,rich.id)));
   if(mapping)workIds.push(mapping.mediaId);
   expect(await getDb().select().from(s.availability).where(eq(s.availability.scanId,scanId))).toHaveLength(0);
+});
+
+run('unchanged album refresh leaves membership tuples untouched and changed positions update only their member',async()=>{
+  const db=getDb(),external=jellyfinItemKey(crypto.randomUUID());
+  const album=await persistMusic(instanceId,{...item(external),kind:'album',externalIds:{}});workIds.push(album.workId!);
+  const tracks=Array.from({length:20},(_,index)=>({...item(crypto.randomUUID()),albumId:external,discNumber:1,trackNumber:index+1}));
+  for(const track of tracks){const saved=await persistMusic(instanceId,track);workIds.push(saved.workId!);}
+  const membership=()=>db.execute<{childId:string;position:number;version:string}>(sql`select child_id as "childId",position,xmin::text as version from media_relationships where parent_id=${album.workId!}::uuid and kind='contains' order by child_id`);
+  const before=Array.from(await membership());expect(before).toHaveLength(20);
+  for(const track of tracks)await persistMusic(instanceId,track);
+  expect(Array.from(await membership())).toEqual(before);
+  const firstId=workIds[workIds.length-20];
+  await persistMusic(instanceId,{...tracks[0],trackNumber:21});
+  const moved=Array.from(await membership());
+  expect(moved.filter(member=>member.childId!==firstId)).toEqual(before.filter(member=>member.childId!==firstId));
+  expect(moved.find(member=>member.childId===firstId)?.position).toBe(10021);
+  expect(moved.find(member=>member.childId===firstId)?.version).not.toBe(before.find(member=>member.childId===firstId)?.version);
+  const otherExternal=jellyfinItemKey(crypto.randomUUID());
+  const other=await persistMusic(instanceId,{...item(otherExternal),kind:'album',externalIds:{}});workIds.push(other.workId!);
+  await persistMusic(instanceId,{...tracks[0],albumId:otherExternal});
+  expect((await membership()).map(member=>member.childId)).not.toContain(firstId);
+  expect((await db.select().from(s.mediaRelationships).where(eq(s.mediaRelationships.parentId,other.workId!))).map(member=>member.childId)).toEqual([firstId]);
+});
+
+
+run('unchanged rich music pages preserve metadata tuples while refreshing access and changed artwork',async()=>{
+ const db=getDb(),external=jellyfinItemKey(crypto.randomUUID()),artist={id:jellyfinItemKey(crypto.randomUUID()),name:'Same rich-page artist'};
+ const album=await persistMusic(instanceId,{...item(external),kind:'album',externalIds:{}});workIds.push(album.workId!);
+ const tracks=Array.from({length:20},(_,index)=>({...item(crypto.randomUUID()),albumId:external,discNumber:1,trackNumber:index+1,artists:[artist],albumArtists:[artist],primaryImageTag:'original'}));
+ const first=await observeMusicLibraryAccess(userId,connection.id,instanceId,connection.accountGeneration,tracks);workIds.push(...first.map(track=>track.workId!));
+ const ids=first.map(track=>track.workId!);
+ const metadata=async()=>({
+  works:Array.from(await db.execute(sql`select id,xmin::text as version from music_works where id in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)}) order by id`)),
+  editions:Array.from(await db.execute(sql`select id,xmin::text as version from work_editions where work_id in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)}) order by id`)),
+  artists:Array.from(await db.execute(sql`select id,xmin::text as version from music_artists where instance_id=${instanceId} and external_id=${artist.id} order by id`)),
+  members:Array.from(await db.execute(sql`select child_id,xmin::text as version from media_relationships where parent_id=${album.workId!}::uuid order by child_id`)),
+ });
+ const before=await metadata(),old=new Date('2000-01-01T00:00:00Z');
+ await db.update(s.availability).set({verifiedAt:old}).where(and(eq(s.availability.connectionId,connection.id),inArray(s.availability.mediaId,ids)));
+ const second=await observeMusicLibraryAccess(userId,connection.id,instanceId,connection.accountGeneration,tracks);
+ expect(second.map(track=>track.workId)).toEqual(first.map(track=>track.workId));expect(await metadata()).toEqual(before);
+ const grants=await db.select().from(s.availability).where(and(eq(s.availability.connectionId,connection.id),inArray(s.availability.mediaId,ids)));
+ expect(grants).toHaveLength(20);expect(grants.every(grant=>grant.verifiedAt!>old)).toBe(true);
+ const changed=await observeMusicLibraryAccess(userId,connection.id,instanceId,connection.accountGeneration,[{...tracks[0],title:'Changed rich title',primaryImageTag:'replacement'}]);
+ expect((await db.select().from(s.musicWorks).where(eq(s.musicWorks.id,changed[0].workId!)))[0].title).toBe('Changed rich title');
+ expect((await db.select().from(s.providerItems).where(eq(s.providerItems.id,changed[0].providerItemId!)))[0].snapshot.primaryImageTag).toBe('replacement');
+ expect((await metadata()).members).toEqual(before.members);
+});
+
+run('rich music page access cannot publish for an obsolete generation or cancelled execution',async()=>{
+ const track={...item(crypto.randomUUID()),externalIds:{}},saved=await persistMusic(instanceId,track);workIds.push(saved.workId!);
+ await expect(observeMusicLibraryAccess(userId,connection.id,instanceId,crypto.randomUUID(),[track])).rejects.toThrow('connected account changed');
+ expect(await getDb().select().from(s.availability).where(and(eq(s.availability.connectionId,connection.id),eq(s.availability.mediaId,saved.workId!)))).toHaveLength(0);
+ const [action]=await getDb().insert(s.outboxActions).values({userId,connectionId:connection.id,kind:'jellyfin.sync',payload:{},state:'cancelled',attempts:1}).returning();
+ const {jobExecution,JobYield}=await import('../src/lib/server/queue/execution');
+ await expect(jobExecution.run({id:action.id,attempts:1,purpose:'scheduled',started:performance.now(),checkpoints:0},()=>observeMusicLibraryAccess(userId,connection.id,instanceId,connection.accountGeneration,[track]))).rejects.toBeInstanceOf(JobYield);
+ expect(await getDb().select().from(s.availability).where(and(eq(s.availability.connectionId,connection.id),eq(s.availability.mediaId,saved.workId!)))).toHaveLength(0);
 });

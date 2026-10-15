@@ -5,6 +5,7 @@ export function createResource<T>(initial: T, ready = false) {
   let error = $state('');
   let settled = $state(ready);
   let activated = false;
+  let disposed = false;
   let controller: AbortController | undefined;
 
   function cancel() {
@@ -13,6 +14,7 @@ export function createResource<T>(initial: T, ready = false) {
     busy = false;
   }
   function replace(value: T, failure = '') {
+    if (disposed) return;
     cancel();
     data = value;
     error = failure;
@@ -26,6 +28,7 @@ export function createResource<T>(initial: T, ready = false) {
       merge?: (previous: T, result: T) => T;
     } = {}
   ): Promise<T | undefined> {
+    if (disposed) return;
     cancel();
     activated = true;
     const request = new AbortController();
@@ -50,14 +53,19 @@ export function createResource<T>(initial: T, ready = false) {
       }
     }
   }
+  /** End ownership permanently; late mutation continuations cannot start new reads. */
+  function dispose() {
+    disposed = true;
+    cancel();
+  }
   return {
     get data() { return data; },
     get busy() { return busy; },
     get error() { return error; },
-    set error(value: string) { error = value; },
+    set error(value: string) { if (!disposed) error = value; },
     get ready() { return settled; },
     get activated() { return activated; },
-    load, replace, cancel,
+    load, replace, cancel, dispose,
   };
 }
 

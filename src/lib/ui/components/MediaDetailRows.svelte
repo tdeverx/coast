@@ -7,7 +7,6 @@
   import type { ProfilePeriod } from '$lib/profile/period';
   import { useClient } from '$lib/ui/client-context';
   import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
-  import { lazyContent } from '$lib/ui/lazy-content';
   import Shelf from './Shelf.svelte';
   import MediaCard from './MediaCard.svelte';
   import { creditRoles } from '$lib/media/credits';
@@ -58,10 +57,23 @@
         return value === 'month' || value === 'year' ? value : 'all';
       })
     );
-  const resources = {
+  const createResources = () => ({
     tmdb: createResource<MediaInsights | null>(null),
     trakt: createResource<MediaInsights | null>(null),
-  };
+  });
+  let resources = $state.raw(createResources());
+  let insightsActive = $state(false), reviewsActive = $state(false), creditsActive = $state(false);
+  const contextKey = $derived(JSON.stringify([item.id, page.data.user?.id ?? '']));
+  let previousContext = untrack(() => contextKey);
+  $effect(() => {
+    const key = contextKey;
+    untrack(() => {
+      if (key === previousContext) return;
+      previousContext = key;
+      sources.forEach(source => resources[source].dispose());
+      resources = createResources();
+    });
+  });
   const data = $derived({ tmdb: resources.tmdb.data, trakt: resources.trakt.data });
   const busy = $derived({
     tmdb: resources.tmdb.busy || (!resources.tmdb.ready && !resources.tmdb.error),
@@ -73,6 +85,25 @@
   );
   const reviews = $derived(sources.filter((s) => reviewSource === 'all' || s === reviewSource));
   const more = $derived(reviews.filter((s) => data[s] && data[s]!.page < data[s]!.pages));
+  const neededSources = $derived.by(() => {
+    const needed = new Set<Source>();
+    if ((!section || section === 'insights') && insightsActive) {
+      if (selection === 'overview') needed.add('tmdb');
+      else if (selection === 'community') community.forEach(source => needed.add(source));
+    }
+    if ((!section || section === 'reviews') && reviewsActive) reviews.forEach(source => needed.add(source));
+    // TMDB owns crew even when the cast was already hydrated with the page.
+    if ((!section || section === 'credits') && creditsActive) needed.add('tmdb');
+    return [...needed];
+  });
+  $effect(() => {
+    const needed = neededSources, current = resources;
+    untrack(() => sources.forEach(source => {
+      const resource = current[source];
+      if (!needed.includes(source)) resource.cancel();
+      else if (!resource.ready && !resource.busy && !resource.error) void load(source);
+    }));
+  });
   async function load(source: Source, page = 1) {
     const path = `media/${item.id}/insights?source=${source}&page=${page}`;
     await resources[source].load(signal => api<MediaInsights | null>(path, undefined, 'GET', { signal }), {
@@ -81,7 +112,7 @@
         : next,
     });
   }
-  onDestroy(() => sources.forEach(source => resources[source].cancel()));
+  onDestroy(() => sources.forEach(source => resources[source].dispose()));
   const credits = createCastSelection(() => ({
     people: cast,
     crew: data.tmdb?.crew ?? [],
@@ -92,8 +123,9 @@
 
 </script>
 
-<div use:lazyContent={{ load: () => { sources.forEach(source => void load(source)); } }}>
+<div>
   {#if !section || section === 'insights'}<Shelf
+      onactivate={() => insightsActive = true}
       title="Insights"
       size="panel"
       preserveHeight
@@ -145,6 +177,7 @@
     </Shelf>
   {/if}
   {#if !section || section === 'reviews'}<Shelf
+      onactivate={() => reviewsActive = true}
       layout={section ? 'grid' : 'row'}
       href={!section ? `/media/${item.id}?section=reviews&source=${reviewSource}` : undefined}
       title="Reviews"
@@ -199,6 +232,7 @@
     </Shelf>
   {/if}
   {#if !section || section === 'credits'}<Shelf
+      onactivate={() => creditsActive = true}
       title="Credits"
       itemCount={credits.people.length+(errors.tmdb?1:0)}
       hideEmpty={credits.selection==='cast' && !data.tmdb?.crew.length}

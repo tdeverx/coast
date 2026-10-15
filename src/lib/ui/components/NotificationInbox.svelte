@@ -75,7 +75,7 @@
  }
  async function markAll(){await operation.run(async()=>{await change('notifications/read-all',{...criteria,snapshot:resource.data.snapshot});await load();});}
  $effect(()=>{if(!open||preview)return;const timer=setInterval(()=>{clock=Date.now();if(document.visibilityState==='visible'&&!resource.busy&&!operation.busy&&resource.data.items.length<=60)void load();},60000);return()=>clearInterval(timer);});
- onDestroy(resource.cancel);
+ onDestroy(resource.dispose);
  function availability(notice:NotificationEntry){return notice.media?.stale?'Last known availability':({available:'Available to you',partial:'Partly available',unavailable:'Not available to you',unknown:'Availability not confirmed'} as Record<string,string>)[notice.media?.availability??'unknown'];}
  function headline(notice:NotificationEntry){
   if(notice.actor)return notice.actor.username;

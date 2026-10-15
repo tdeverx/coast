@@ -1,0 +1,2 @@
+CREATE INDEX "outbox_success_generation_idx" ON "outbox_actions" USING btree ("connection_id","kind","account_generation","updated_at" DESC NULLS LAST) WHERE "outbox_actions"."state"='succeeded';--> statement-breakpoint
+CREATE INDEX "sessions_previous_token_idx" ON "sessions" USING btree ("previous_token_hash") WHERE "sessions"."previous_token_hash" is not null;

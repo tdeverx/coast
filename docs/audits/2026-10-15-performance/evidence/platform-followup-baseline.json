@@ -1,0 +1,63 @@
+{
+  "notificationResults": [
+    {
+      "users": 1,
+      "counts": {
+        "users": 1,
+        "config": 1,
+        "settings": 1,
+        "inserts": 1
+      },
+      "total": 4,
+      "delivered": 1
+    },
+    {
+      "users": 10,
+      "counts": {
+        "users": 1,
+        "config": 10,
+        "settings": 10,
+        "inserts": 10
+      },
+      "total": 31,
+      "delivered": 10
+    },
+    {
+      "users": 100,
+      "counts": {
+        "users": 1,
+        "config": 100,
+        "settings": 100,
+        "inserts": 100
+      },
+      "total": 301,
+      "delivered": 100
+    }
+  ],
+  "artworkResults": [
+    {
+      "requests": 4,
+      "downloads": 4,
+      "diskWritesStarted": 1,
+      "requestsSettled": 0
+    },
+    {
+      "requests": 16,
+      "downloads": 16,
+      "diskWritesStarted": 1,
+      "requestsSettled": 0
+    },
+    {
+      "requests": 64,
+      "downloads": 64,
+      "diskWritesStarted": 1,
+      "requestsSettled": 0
+    }
+  ],
+  "afterRelease": {
+    "downloads": 64,
+    "writes": 64,
+    "settled": 64
+  },
+  "boundary": "Actual source modules; replaced SQL/filesystem/config authorization boundaries only. No services, real provider or database."
+}

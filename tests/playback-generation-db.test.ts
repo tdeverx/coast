@@ -13,7 +13,7 @@ const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),instance=crypto.randomUUID(),connection=crypto.randomUUID(),movie=crypto.randomUUID(),track=crypto.randomUUID();
 const browser={containers:['mp4','m4a'],videoCodecs:['h264'],audioCodecs:['aac'],nativeHls:false,hlsJs:true};
 const deferred=()=>{let resolve!:()=>void;const promise=new Promise<void>(done=>resolve=done);return {promise,resolve};};
-let config:CoastConfig,credential:string,onInfo:()=>Promise<void>=async()=>{},onPresentation:()=>Promise<void>=async()=>{};
+let config:CoastConfig,credential:string,onInfo:(signal?:AbortSignal)=>Promise<void>=async()=>{},onPresentation:()=>Promise<void>=async()=>{};
 let infos=0,relays=0,scrobbles:string[]=[];
 let restore:()=>void=()=>{};
 beforeAll(async()=>{
@@ -35,8 +35,8 @@ beforeAll(async()=>{
  const account=spyOn(connections,'getJellyfin').mockImplementation(async(uid,id)=>{
   const context=await original(uid,id);
   context.adapter.identity=async()=>({id:'synthetic-server',name:'Fixture',version:'fixture'});
-  context.adapter.playbackInfo=async(itemId)=>{
-   infos++;await onInfo();
+  context.adapter.playbackInfo=async(itemId,_userId,_capabilities,_maxBitrate,options)=>{
+   infos++;await onInfo(options?.signal);
    const audio=itemId==='audio-item';
    const source:PlaybackSource={id:'source',name:'Original',container:audio?'m4a':'mp4',bitrate:1_000_000,durationSeconds:120,directPlay:true,directStream:true,transcoding:true,transcodingUrl:`/${audio?'Audio':'Videos'}/${itemId}/master.m3u8`,raw:{},streams:audio?[{type:'Audio',codec:'aac',index:0}]:[{type:'Video',codec:'h264',index:0,width:1280,height:720},{type:'Audio',codec:'aac',index:1}]};
    return {sources:[source],playSessionId:crypto.randomUUID()};
@@ -70,6 +70,14 @@ run('already-aborted preparation does no provider work or session publication',a
  const abort=new AbortController(),reason=new DOMException('Closed','AbortError');abort.abort(reason);
  await expect(startPlayback(user,{mediaId:movie,browser},undefined,abort.signal)).rejects.toBe(reason);
  expect(infos).toBe(0);expect(await sessionRows()).toEqual([]);
+});
+run('cancelling PlaybackInfo reaches the provider boundary and publishes no session',async()=>{
+ const entered=deferred(),abort=new AbortController(),reason=new DOMException('Closed','AbortError');
+ let received:AbortSignal|undefined;
+ onInfo=signal=>{received=signal;entered.resolve();return new Promise((_resolve,reject)=>signal?.addEventListener('abort',()=>reject(signal.reason),{once:true}));};
+ const pending=startPlayback(user,{mediaId:movie,browser},undefined,abort.signal);await entered.promise;
+ expect(received).toBe(abort.signal);abort.abort(reason);
+ await expect(pending).rejects.toBe(reason);expect(infos).toBe(1);expect(await sessionRows()).toEqual([]);
 });
 run('abort during final presentation leaves no new session and preserves existing active playback',async()=>{
  const active=await startPlayback(user,{mediaId:movie,browser});await progressPlayback(user,active.id,{event:'start',positionSeconds:0});

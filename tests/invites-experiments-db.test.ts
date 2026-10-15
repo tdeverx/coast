@@ -108,7 +108,7 @@ run('Upcoming follows watchlist and tracked shows without requiring unreleased C
  expect((await planningData(ownerId,new URL('http://fixture.test?view=releases'))).total).toBe(1);
  await db`update media set release_date=null where id=${movie}`;
 });
-run('Dynamic For You pages distinct horizontal row definitions and loads cards separately',async()=>{
+run('Dynamic For You returns an immutable definition census while cards load separately',async()=>{
  await updateConfig(admin,{experimentalMusic:true,experimentalGaming:true,experimentalParties:true});const db=getSql(),game=crypto.randomUUID(),candidate=crypto.randomUUID(),track=crypto.randomUUID();
  await db`insert into games(id,title,genres) values(${game},'Played',ARRAY['Adventure','Action','Strategy','Puzzle']),(${candidate},'New game',ARRAY['Adventure'])`;
  await db`insert into game_playthroughs(user_id,game_id,status) values(${ownerId},${game},'in-progress')`;
@@ -116,19 +116,9 @@ run('Dynamic For You pages distinct horizontal row definitions and loads cards s
  await db`insert into music_works(id,title,kind,genres) values(${track},'Music','track',ARRAY['Ambient','Electronic'])`;
  await db`insert into music_progress(user_id,track_id,play_count) values(${ownerId},${track},1)`;
  const first=await dynamicFeed(ownerId,new URL('http://fixture.test'));
- expect(first.rows).toHaveLength(3);expect(first.nextOffset).toBe(3);
- const single=await dynamicFeed(ownerId,new URL('http://fixture.test?limit=1'));
- expect(single.rows.map(row=>row.key)).toEqual(first.rows.slice(0,1).map(row=>row.key));expect(single.nextOffset).toBe(1);
- const nextSingle=await dynamicFeed(ownerId,new URL('http://fixture.test?limit=1&offset=1'));
- expect(nextSingle.rows.map(row=>row.key)).toEqual(first.rows.slice(1,2).map(row=>row.key));
- const second=await dynamicFeed(ownerId,new URL('http://fixture.test?offset=3'));
- const keys=new Set(first.rows.map(row=>row.key));expect(second.rows.some(row=>keys.has(row.key))).toBe(false);
- async function allRows(seed:string){
-  const rows:Awaited<ReturnType<typeof dynamicFeed>>['rows']=[];
-  let offset:number|null=0;
-  while(offset!==null){const batch=await dynamicFeed(ownerId,new URL(`http://fixture.test?seed=${seed}&offset=${offset}`));rows.push(...batch.rows);offset=batch.nextOffset;}
-  return rows;
- }
+ expect(first.rows.length).toBeGreaterThan(3);expect(first.rows.length).toBeLessThanOrEqual(10000);
+ expect(first.rows.every(row=>!('items' in row)&&!('weight' in row))).toBe(true);
+ async function allRows(seed:string){return (await dynamicFeed(ownerId,new URL(`http://fixture.test?seed=${seed}`))).rows;}
  const orderA=await allRows('00000000-0000-4000-8000-000000000001'),orderB=await allRows('00000000-0000-4000-8000-000000000002');
  expect(orderA.map(row=>row.key)).toEqual((await allRows('00000000-0000-4000-8000-000000000001')).map(row=>row.key));
  expect(orderA.map(row=>row.key)).not.toEqual(orderB.map(row=>row.key));
@@ -248,8 +238,7 @@ run('negative interests do not produce fan rows and saved-only evidence never cl
  const db=getSql(),dropped=crypto.randomUUID(),saved=crypto.randomUUID();
  await db`insert into media(id,kind,title,genres) values(${dropped},'movie','Dropped',ARRAY['Unique disliked genre']),(${saved},'movie','Saved',ARRAY['Unique saved genre'])`;
  await db`insert into tracking_state(user_id,media_id,dropped,watchlist) values(${otherId},${dropped},true,false),(${otherId},${saved},false,true)`;
- let offset:number|null=0;const rows:Awaited<ReturnType<typeof dynamicFeed>>['rows']=[];
- while(offset!==null){const page=await dynamicFeed(otherId,new URL(`http://fixture.test?offset=${offset}&seed=taste`));rows.push(...page.rows);offset=page.nextOffset;}
+ const {rows}=await dynamicFeed(otherId,new URL('http://fixture.test?seed=taste'));
  expect(rows.some(row=>row.surface==='genre'&&row.genre==='Unique disliked genre')).toBe(false);
  const savedRows=rows.filter(row=>row.surface==='genre'&&row.genre==='Unique saved genre');expect(savedRows).toHaveLength(2);expect(savedRows.every(row=>row.surface==='genre'&&row.reason==='saved')).toBe(true);expect(savedRows.some(row=>row.title.includes('love'))).toBe(false);
 });

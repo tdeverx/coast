@@ -151,7 +151,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
       }
     });
   });
-  onDestroy(resource.cancel);
+  onDestroy(resource.dispose);
   return {
     get pagination(): ShelfPagination {
       return surface === 'read' && get().layout === 'grid'

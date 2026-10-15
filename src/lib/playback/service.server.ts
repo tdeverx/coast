@@ -211,14 +211,14 @@ async function preparePlayback(
         userId,
         row.availability.connectionId
       );
-      await adapter.identity(instance.serverIdentity || undefined);
+      await adapter.identity(instance.serverIdentity || undefined,signal);
       signal?.throwIfAborted();
       const info = await adapter.playbackInfo(
         row.providerItem.externalId,
         connection.externalUserId!,
         data.browser,
         maximum,
-        {shared:!!share,deviceId:providerDeviceId}
+        {shared:!!share,deviceId:providerDeviceId,signal}
       );
       signal?.throwIfAborted();
       for (const source of info.sources) {

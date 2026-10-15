@@ -81,10 +81,6 @@ async function readProgressData(
     (await mediaViewsForIds(userId, visibleIds, viewerId)).map((item) => [item.id, item])
   );
   const items = visibleIds.flatMap((id) => (views.has(id) ? [views.get(id)!] : []));
-  const showIds = [...new Set(items.flatMap((item) => (item.showId ? [item.showId] : [])))];
-  const titles = new Map(
-    (await mediaViewsForIds(userId, showIds, viewerId)).map((item) => [item.id, item.title])
-  );
   for (let index = 0; index < items.length; index++) {
     let item = items[index];
     const context = sequenceById.get(item.id);
@@ -93,7 +89,7 @@ async function readProgressData(
       item.captionSubtitle = context.title + (item.rewatchStartedAt ? ' · Rewatching' : '');
       continue;
     }
-    const title = item.showId ? titles.get(item.showId) : undefined;
+    const title = item.showTitle;
     if (!title) {
       if (item.rewatchStartedAt) item.captionSubtitle = 'Rewatching';
       continue;

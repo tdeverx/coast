@@ -9,29 +9,35 @@
  let { data }: { data: PageData } = $props();
  let shared = $state<PageData['shared']>(untrack(()=>data.shared)), token = $state(''), busy = $state(false), error = $state('');
  let polling = false;
+ const lifetime=new AbortController();
  let preparation:Promise<void>=Promise.resolve();
  async function request<T>(path:string,body?:unknown):Promise<T> {
-  const response = await fetch(`/api/share/${path}`,{method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
-  const value=await response.json(); if(!response.ok)throw new Error(value.error); return value;
+  lifetime.signal.throwIfAborted();
+  const response = await fetch(`/api/share/${path}`,{signal:lifetime.signal,method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
+  const value=await response.json(); lifetime.signal.throwIfAborted(); if(!response.ok)throw new Error(value.error); return value;
  }
  async function open() {
+  if(lifetime.signal.aborted)return;
   busy=true;error='';try {
    await preparation;
-   if(!shared){await request('claim',token?{token}:{id:page.url.searchParams.get('id')});shared=await request('state');token='';}
+   lifetime.signal.throwIfAborted();
+   if(!shared){await request('claim',token?{token}:{id:page.url.searchParams.get('id')});const next=await request<PageData['shared']>('state');lifetime.signal.throwIfAborted();shared=next;token='';}
+   lifetime.signal.throwIfAborted();
    if(shared)await playMedia(shared.workId,{fromStart:true});
-  } catch(cause){error=message(cause);}finally{busy=false;}
+  } catch(cause){if(!lifetime.signal.aborted)error=message(cause);}finally{if(!lifetime.signal.aborted)busy=false;}
  }
  onMount(()=>{
-  preparation=stopPlayback().then(()=>setPlaybackApi(true));
+  let releasePlaybackApi:(()=>void)|undefined;
+  preparation=stopPlayback().then(()=>{if(!lifetime.signal.aborted)releasePlaybackApi=setPlaybackApi(true);});
   token=new URLSearchParams(location.hash.slice(1)).get('invite')??'';
   if(token||page.url.searchParams.has('id'))shared=null;
   if(location.hash)history.replaceState(history.state,'',location.pathname+location.search);
   const timer=setInterval(async()=>{
-   if(!shared||polling)return;polling=true;
-   try {shared=await request('state');if(shared?.together&&!shared.host&&player.session){const elapsed=shared.paused?0:Math.max(0,(Date.now()-Date.parse(String(shared.updatedAt)))/1000);alignPlayback({positionSeconds:Math.min(shared.durationSeconds,shared.positionSeconds+elapsed),paused:shared.paused});}}
-   catch(cause){error=message(cause);await stopPlayback();shared=null;}finally{polling=false;}
+   if(lifetime.signal.aborted||!shared||polling)return;polling=true;
+   try {const next=await request<PageData['shared']>('state');if(lifetime.signal.aborted)return;shared=next;if(shared?.together&&!shared.host&&player.session){const elapsed=shared.paused?0:Math.max(0,(Date.now()-Date.parse(String(shared.updatedAt)))/1000);alignPlayback({positionSeconds:Math.min(shared.durationSeconds,shared.positionSeconds+elapsed),paused:shared.paused});}}
+   catch(cause){if(lifetime.signal.aborted)return;error=message(cause);await stopPlayback();if(!lifetime.signal.aborted)shared=null;}finally{polling=false;}
   },2000);
-  return ()=>{clearInterval(timer);void stopPlayback().finally(()=>setPlaybackApi(false));};
+  return ()=>{lifetime.abort();clearInterval(timer);void stopPlayback().finally(()=>releasePlaybackApi?.());};
  });
 </script>
 <svelte:head><title>Playback invitation — Coast</title><meta name="referrer" content="no-referrer" /></svelte:head>

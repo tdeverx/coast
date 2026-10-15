@@ -38,7 +38,7 @@
     title = '', items = [], source, panels, journal, href, children, heading, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
     mediaKind = 'screen', filters, controls, actions, empty, details,
     busy = false, hideEmpty = true, itemCount, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
-    pageNumber, pages, onpage, pageUrl, onsettled, filterBy = 'none', availability = true, availableOnly = $bindable(false),
+    pageNumber, pages, onpage, pageUrl, onsettled, onactivate, filterBy = 'none', availability = true, availableOnly = $bindable(false),
   }: {
     filterBy?: 'none' | 'type' | 'watched';
     availability?: boolean;
@@ -77,6 +77,7 @@
     onpage?: (page: number) => void;
     pageUrl?: (page: number) => string;
     onsettled?: () => void;
+    onactivate?: () => void;
   } = $props();
   let selected = $state(false);
   let socialActive=$state(false);
@@ -170,7 +171,7 @@
   {#each adapter?.actions ?? [] as action}<Button emphasis="subtle" onclick={action.run}>{action.label}</Button>{/each}
   {@render actions?.()}
 {/snippet}
-<div use:lazyContent={{load: () => {socialActive=true;if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
+<div use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
   {#snippet cards(style: MediaRowStyle)}
     {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
     {#each entries as entry (entry.key)}{@const item = entry.item}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'}>

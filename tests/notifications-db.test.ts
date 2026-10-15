@@ -1,8 +1,9 @@
 import {beforeAll,afterAll,test,expect} from 'bun:test';
-import {getSql} from '../src/lib/server/db';
+import {getSql,getDb} from '../src/lib/server/db';
+import {sql} from 'drizzle-orm';
 import {notificationInbox,notificationUnread,markNotification,markNotificationsRead,markNotificationsSeen} from '../src/lib/server/notifications/inbox';
 import {incomingFriendRequests} from '../src/lib/social/service.server';
-import {notify,inbox} from '../src/lib/server/notifications';
+import {notify,notifyMany,inbox} from '../src/lib/server/notifications';
 import type {SessionUser} from '../src/lib/server/auth';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user:SessionUser={id:crypto.randomUUID(),username:'notifications-'+crypto.randomUUID().slice(0,8),email:null,role:'user',settings:{}};
@@ -10,6 +11,27 @@ const other:SessionUser={...user,id:crypto.randomUUID(),username:user.username+'
 const work=crypto.randomUUID();
 beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const db=getSql();for(const u of [user,other])await db`insert into users(id,username) values(${u.id},${u.username})`;await db`insert into works(id,category,kind) values(${work},'screen','movie')`;await db`insert into media(id,kind,title) values(${work},'movie','Notification fixture')`;});
 afterAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const db=getSql();await db`delete from users where id in (${user.id},${other.id})`;await db`delete from media where id=${work}`;await db`delete from works where id=${work}`;});
+run('transactional notices share uncommitted preferences and roll back with their owning page writes',async()=>{
+ const key='transactional-notice-'+crypto.randomUUID();
+ await expect(getDb().transaction(async tx=>{
+  await tx.execute(sql`update users set settings='{"notificationsSilenced":true}'::jsonb where id=${user.id}`);
+  await notify({userId:user.id,kind:'request',title:'Rolled back notice',sourceKey:key},tx);
+  const [notice]=await tx.execute<{level:string}>(sql`select level from notifications where user_id=${user.id} and source_key=${key}`);
+  expect(notice.level).toBe('silent');
+  throw new Error('Synthetic page rollback');
+ })).rejects.toThrow('Synthetic page rollback');
+ expect((await getSql()`select id from notifications where user_id=${user.id} and source_key=${key}`).length).toBe(0);
+ await getDb().transaction(async tx=>{
+  const ids=await notifyMany([
+   {userId:user.id,kind:'request',title:'Before',sourceKey:key},
+   {userId:user.id,kind:'request',title:'Committed',sourceKey:key,data:{actorId:other.id,subjectId:other.id,destination:'/requests'}},
+  ],tx);
+  expect(ids).toHaveLength(2);expect(ids[0]).toBe(ids[1]);
+ });
+ const [notice]=await getSql()`select title,level,data from notifications where user_id=${user.id} and source_key=${key}`;
+ expect(notice.title).toBe('Committed');expect(notice.level).toBe('normal');expect(notice.data).toEqual({actorId:other.id,subjectId:other.id,destination:'/requests'});
+ await getSql()`delete from notifications where user_id=${user.id} and source_key=${key}`;
+});
 run('incoming friend requests belong to Friends, while acceptance remains in notifications',async()=>{
  const db=getSql(),[a,b]=[user.id,other.id].sort();
  await db`insert into friendships(user_a,user_b,requested_by,state) values(${a},${b},${other.id},'pending')`;

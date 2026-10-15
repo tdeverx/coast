@@ -14,6 +14,31 @@ export function activityBuckets(days: ActivityDay[], today: string, period: stri
   const start = end - (count - 1) * 86400000;
   const byDate = new Map(days.map((day) => [day.date, day]));
   const buckets: (ActivityDay & { end: string })[] = [];
+  // All-time charts already use calendar years after two years. Visit those
+  // boundaries and the recorded days instead of allocating every quiet day.
+  if (period === 'all' && count > 730) {
+    const byYear = new Map<string, ActivityDay & { end: string }>();
+    for (let boundary = start; boundary <= end;) {
+      const first = new Date(boundary);
+      const date = first.toISOString().slice(0, 10);
+      first.setUTCFullYear(first.getUTCFullYear() + 1, 0, 1);
+      first.setUTCHours(0, 0, 0, 0);
+      const next = first.getTime();
+      const bucket = { date, end: new Date(Math.min(end, next - 86400000)).toISOString().slice(0, 10), movies: 0, episodes: 0 };
+      buckets.push(bucket);
+      byYear.set(date.slice(0, 4), bucket);
+      boundary = next;
+    }
+    for (const [date, day] of byDate) {
+      const bucket = byYear.get(date.slice(0, 4));
+      if (!bucket || date < bucket.date || date > bucket.end) continue;
+      const timestamp = Date.parse(`${date}T00:00:00Z`);
+      if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString().slice(0, 10) !== date) continue;
+      bucket.movies += day.movies;
+      bucket.episodes += day.episodes;
+    }
+    return buckets;
+  }
   for (let index = 0; index < count; index++) {
     const date = new Date(start + index * 86400000).toISOString().slice(0, 10);
     if (

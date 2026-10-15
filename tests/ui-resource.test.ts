@@ -47,11 +47,38 @@ describe('shared component resources', () => {
     expect(resource.ready).toBe(true);
     const disposed = deferred<string>();
     const after = resource.load(() => disposed.promise);
-    resource.cancel();
+    resource.dispose();
     disposed.resolve('after unmount');
     await after;
     expect(resource.data).toBe('server data');
     expect(resource.busy).toBe(false);
+  });
+
+  test('terminal disposal prevents post-mutation reads and state publication; cancellation remains reusable', async () => {
+    const resource = createResource('initial', true);
+    const mutation = deferred<void>();
+    let requests = 0;
+    const continuation = (async () => {
+      await mutation.promise;
+      await resource.load(async () => { requests++; return 'after disposal'; });
+      resource.replace('late replacement');
+      resource.error = 'late error';
+    })();
+    resource.dispose();
+    resource.dispose();
+    mutation.resolve();
+    await continuation;
+    expect(requests).toBe(0);
+    expect(resource.data).toBe('initial');
+    expect(resource.error).toBe('');
+    expect(resource.busy).toBe(false);
+
+    const reusable = createResource('initial');
+    reusable.cancel();
+    await reusable.load(async () => 'retry');
+    expect(reusable.data).toBe('retry');
+    reusable.replace('replacement');
+    expect(reusable.data).toBe('replacement');
   });
 
   test('a failed source retains settled content; a partial response publishes its usable items', async () => {

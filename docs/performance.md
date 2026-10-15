@@ -1,6 +1,55 @@
 # Performance methods
 
-This is the current implementation and review guide for performance work. Start here before changing queries, caches, scheduling or rendering. Dated [implementation evidence](audits/2026-10-03-performance-implementation.md) and [raw measurements](audits/2026-10-03-performance-measurements.json) describe controlled fixtures, not production latency guarantees or proof that every CPU/memory spike is resolved.
+This is the current implementation and review guide for performance work. Start here before changing queries, caches, scheduling or rendering. The [cross-feature audit and fixes](audits/2026-10-15-performance/README.md), earlier [implementation evidence](audits/2026-10-03-performance-implementation.md) and [raw measurements](audits/2026-10-03-performance-measurements.json) describe controlled fixtures, not production latency guarantees or proof that every CPU/memory spike is resolved.
+
+## Acceptance criteria for a performance change
+
+An optimisation is complete only when it reduces evidenced work or fixes a demonstrated resource/lifecycle defect, preserves required behaviour, and uses the shared implementation that owns that work. A smaller diff or a faster isolated query alone is insufficient.
+
+| Gate | Required evidence |
+| --- | --- |
+| Work and scale | Identify the input that grows (titles, users, pages, events, concurrent viewers), the work per request and the bound. Measure at multiple input sizes where scale is the finding. Count queries, rows, bytes, requests or writes as well as time. |
+| Correctness | Compare complete identities, order, counts and state, including privacy, availability, enabled media, account generations and retry semantics. Do not optimise by omitting authorised results or weakening checks. |
+| Demand | Opening a route/panel activates only necessary resources. Offscreen work follows the existing Shelf/row policy; hidden or closed renderers stop optional work. Essential playback/party/heartbeat work has an explicit owner and cadence. |
+| Lifetime | Test open → use → replace/close → reopen and cancelled/superseded work. Timers, observers, listeners, workers, object URLs, pending requests and sessions have bounded lifetimes. After repeated cycles, retained state reaches a justified plateau rather than growing per cycle. |
+| Concurrency and failure | Exercise relevant concurrent users/lanes, slow/failed/aborted requests, retries and permission/account changes. Check no duplicate delivery, stale publication, starvation, unbounded queues or pool/lock deadlock. |
+| Resources | Separate process CPU/heap/external memory from PostgreSQL, filesystem cache and container limits. Include idle and active observations. A lower wall time that causes disproportionate CPU, memory, network or write amplification is a tradeoff to report, not an automatic win. |
+| Integration | Fix the common owner so every consumer benefits. Keep feature adapters thin; do not add a private scheduler, cache, loader or alternate renderer to mask a shared problem. Preserve the approved UI. |
+| Verification | Reproduce the issue, verify the smallest fix against the same workload, run focused regressions and the relevant integration/build gates. Runtime behavior tests take precedence over source-string assertions. Report untested cases and synthetic/live boundaries. |
+
+### Measurement record
+
+For each finding retain its ID, affected shared owner/consumers, severity, confidence, reproduction, baseline commit/runtime/dataset, raw observations, proposed cost/bound, smallest fix, correctness checks and before/after results. A hypothesis or unmeasured opportunity is not a confirmed defect. Deduplicate findings by root cause and keep all affected consumer references.
+
+Use stable workloads with an untimed warm-up and alternating/repeated before/after samples. Label cold/warm cache, foreground/background load, concurrency and measurement boundaries. Report median plus samples/spread; small-sample p95 is descriptive, not production tail latency. Build size is not page transfer size: check actual entry imports and demand-loaded modules. Avoid averaging away failed operations, hiding provider errors or loosening assertions to make a timing threshold pass.
+
+Measure one resource-intensive workload at a time. Prefer structural budgets and meaningful operation-count assertions over machine-dependent millisecond limits. Use disposable databases/files/providers; restore test services to their initial state and remove task-owned resources. Real-server tests, migrations, deployment and new production dependencies need the applicable user authorization. Never publish credentials, raw private payloads or diagnostic URLs as evidence.
+
+### Shared budgets
+
+Document the existing bound in the owning module and test it at the boundary: current catalogue pages hydrate 60 cards, Shelf social enrichment runs at most two 60-ID requests, visible artwork is sequenced per rail, a chart preview retains one renderer, readers retain one page/view, and imports yield after five committed boundaries or ten seconds at a safe boundary. These are separate budgets, not permission to add them as competing page-wide queues. Inputs exceeding a cap must produce the existing bounded pagination, backpressure or explicit error—not silent truncation.
+
+User-visible operations should not wait on avoidable background work. No provider request or slow external callback should hold a database transaction or lock unless a documented correctness requirement makes it unavoidable. Cancellation must propagate through owned work and cleanup; abandoning a promise is not cancellation. Permission and generation checks remain authoritative across caches and single-flight results.
+
+### State, cache and write contracts
+
+Check never-activated, visible, offscreen, document-hidden, context-replaced and disposed states separately. A memoization owner must name its primitive key, viewer/permission scope, revision sources, finite size/lifetime and explicit retry behavior. Equivalent object replacement is not a content change. Waiting work must still be needed when admitted; a previously intersecting image is not necessarily still visible.
+
+Configuration snapshots are scoped to one HTTP request, expire when it completes and do not flow into background startup. Explicit database/transaction arguments always read through that connection. Authentication, setup, token and permission checks must not become cross-request cached decisions. A committed settings update may replace only its own request's snapshot.
+
+Timers declare their precision, visibility policy and last-consumer cleanup. Static calendar labels must not require second-precision updates; active party heartbeats and intended audio playback have different visibility requirements. Scroll, resize and mutation paths share the same per-owner geometry frame budget, and scheduled callbacks cannot publish after disposal.
+
+Measure unchanged refreshes as well as first imports: identical final rows can hide repeated relationship rewrites, revision churn and WAL. Include permanent job-history growth, per-title child/achievement cardinality and provider mappings/metadata bytes in scale fixtures. Use database plans before selecting indexes; include old account generations and absent lookup values.
+
+Keep one in-flight control writer and coalesce redundant pending snapshots by session while preserving lifecycle event boundaries and final drain. Renderer ownership starts when a URL/worker/image is allocated, not after decode succeeds. Unchanged settled reading locations are no-ops; resize is an explicit render invalidation. Lease waits have cancellation, capped polling cost and a recoverable state after partial destructive effects.
+
+Benchmark probes reuse the production medium/gate/cohort contracts. Changing measured workload semantics requires a workload-version change; code/build changes being compared do not by themselves require a new version. Preview chart fixture bounds do not certify live datasets: a production consumer must define mark/aggregation limits and preserve truthful exact-data access.
+
+### Audit record
+
+The [15 October cross-feature audit](audits/2026-10-15-performance/README.md) retains seven independent reports, a deduplicated implementation ledger and controlled evidence. Confirmed issues, measurement-gated candidates, policy decisions, acceptance gaps and checked nonissues are separate. Previously parked activity-feed restructuring, long-play/native codec acceptance and material redesign do not become approved changes merely because they appear in an audit.
+
+Reference methods: [PostgreSQL EXPLAIN and buffer evidence](https://www.postgresql.org/docs/17/using-explain.html), [combining indexed OR conditions](https://www.postgresql.org/docs/17/indexes-bitmap-scans.html), and [Page Visibility lifecycle](https://developer.mozilla.org/en-US/docs/Web/API/Page_Visibility_API). Browser throttling is not a substitute for explicit ownership and cleanup.
 
 ## Reuse the existing patterns
 
@@ -112,6 +161,8 @@ For You's initial route returns only its hero and next action. Continue uses the
 
 ### Provider jobs and request scheduling
 
+The common transport admits at most 128 waiting requests per origin and 512 active plus waiting requests overall. Eight per-origin waiting slots and 32 global slots are reserved for bootstrap/interactive work. A local `ProviderQueueBusyError` is retryable capacity pressure, never provider unavailability or a reason to clear live observations. It must not consume a webhook's HTTP delivery budget; cumulative claim attempts remain monotonic for fencing. Idle pacing metadata shares one expiry timer. Do not bypass provider spacing or add another queue when admission is full.
+
 Use `task-timing.ts` for eligibility and due decisions, `job-policy.ts` for work identity and purpose, and the existing durable outbox for claims and recovery. Never add an adapter-private FIFO that hides requests from the common priority transport. An explicit foreground operation can promote an exact shared resource through `providerSingleFlight`; this must not promote unrelated work or duplicate the fetch. Current HTTP arbitration is process-local and retains one request per origin, provider spacing, cooldowns and aging.
 
 Queued traversals use `jobCheckpoint()` only after committing their cursor and effects together, or after an idempotent persisted stage. Workers yield after five committed boundaries or ten seconds at a safe boundary. This is cooperative scheduling, not interruption of an in-flight request or transaction. `JobYield` is control flow: do not catch it as a provider failure or consume retry attempts. Persist large stable responses outside the bounded action payload; Steam uses job-scoped snapshots and Trakt uses staged records. Recommendation jobs retain only their bounded seed selection and completed-set cursor; do not reselect seeds on resume as saving a set changes freshness. Personal publication must check the active job lease inside its guarded transaction, after account locks.
@@ -138,3 +189,26 @@ Reuse the existing authenticated playback relay and pinned provider transport. S
 Signed HLS resource paths remain stable across bitrate-only provider generations. Validate the viewer and share on each resource, then replace only the upstream session/device/bitrate parameters. Keep codecs, dimensions and segment timing fixed, preserve abort signals and never expose provider tokens. Admission/renewal and delivered-position observations coalesce their writes; do not create an outbox job per segment or fetch upstream data per stream card. Active-stream hydration batches by server, uses keyset pagination and excludes duplicated provider device observations. Failed encoder cleanup remains a durable playback-session flag and retries in bounded lifecycle passes.
 
 Use disposable sharing fixtures for concurrent admissions, revoked/expired grants, cross-viewer resource isolation, replaced source accounts, preparation ownership, retryable cleanup and unchanged personal histories. Separately test actual decoding and bitrate transitions with real players; successful segment HTTP responses alone do not prove uninterrupted playback or strict network bandwidth enforcement.
+
+
+### Ownership and bounded optional work
+
+`createResource.cancel()` ends the current request but leaves its owner reusable; `dispose()` ends the component owner permanently. Component teardown uses `dispose`, so a pending mutation's continuation cannot restart a GET after its panel closes. Capture the current session/renderer/revision in asynchronous playback and reader operations, and fence successes, failures and cleanup; an old failure must not overwrite its successor's error or busy state. Propagate owner AbortSignals through adapter metadata/permission requests as well as the final stream download. Do not substitute a post-await check for cancellation of a queued request.
+
+Media detail provider data follows visible/selected row demand through the existing Shelf activation observer. Share each TMDB/Trakt result among its consumers, retain TMDB crew demand for Credits, and cancel sources when no active row needs them. Do not eagerly fetch both providers for an Activity-only section. Geometry callbacks such as Dialog positioning coalesce per frame after synchronous initial placement and release the captured frame on teardown.
+
+Dynamic For You takes one immutable, definition-only census per visit, with an explicit maximum of 10,000 definitions; overflow returns an error rather than silently dropping rows. The current bottom sentinel reveals one row, waits for it to settle and then observes the new bottom. Card/provider pages and artwork remain lazy. Content revisions refresh row contents independently; viewer or enabled-medium changes discard the census. This avoids rebuilding and re-ranking mutable definitions at each numeric offset, which can skip or replay rows during an ordinary tracking edit. Do not add a server snapshot cache or durable feed table for this contract.
+
+Reader bookmark saves deduplicate only successfully acknowledged equal locations for the same session. An ambiguous failure invalidates that acknowledgement; latest pending positions, explicit retries and the final close drain remain required. Server heartbeat/session timestamps express live presence and resume ordering; identical positions are not a reason to remove the explicit 60-second visible-reader heartbeat.
+
+Optional image persistence has its own memory admission, separate from provider rate/admission lanes and the durable disk budget. Each image cache reserves at most 64 MiB and sixteen pending writes before enqueueing a buffer; saturation declines persistence immediately while the authorized response can still deliver its image. Release reserved credit on success, error and declined disk admission. TMDB retains its four active download bound, shares exact-key work among live consumers and cancels upstream only when its last consumer leaves. A canceled download retains active credit until it actually settles; a late cleanup cannot remove a replacement's map entry.
+
+### Complete bounded projections and cooperative effects
+
+Complete membership is different from a bounded browse page. Hydrate explicit guest/detail IDs in ordered batches without silently limiting a season or episode set. Social card projections return the displayed top three people plus an exact total and resolve presence for those displayed people only. Profile insight endpoints use shared card-free totals/summary projections instead of hydrating backgrounds or favourites they discard. Cursor-free next playback uses the bounded sequence-next projection; explicit sequence cursors preserve their existing complete traversal semantics.
+
+Trakt list reconciliation builds one local alias index while preserving first remote occurrence, mixed media kinds, duplicate identity handling and exact order. Music canonical updates compare meaningful values and relationship inputs; avoid rewriting unchanged album membership or re-projecting it for a mere availability observation. Rich browsing still persists changed metadata and batches personal access observations through the existing account/lease fence.
+
+Seerr scans retain a nullable internal request scan UUID, a constant-size task checkpoint and at most one hundred-record page snapshot. Commit each page's request effects, notifications, marker and cursor together under the account and active-attempt fence; a notification failure rolls the page back. Resume slow metadata pages without refetching or serializing an ever-growing census. Only an individual confirmed 404 can cancel a missing request, and the update must still match the captured external identity and scan marker. A failed/incomplete traversal cannot publish `requestsVerifiedAt`. A stale attempt yields before interpreting its saved page.
+
+Notifications own one shared preference/level decision for both single notices and batches. Administrator broadcasts keyset-page enabled users/settings in batches of one hundred and insert bounded groups with one policy read, preserving complete delivery, social opt-outs, locked/silent behavior and source-key upserts. Transactional callers read policy and persist notices on their supplied connection; they must not open another pool connection while holding locks.

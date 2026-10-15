@@ -305,3 +305,19 @@ run('direct item switches reset queues across video and audio and retain members
  expect(r.mediaType).toBe('video');expect(r.queue).toEqual([]);expect(r.queueItems).toEqual([]);expect(r.queueIndex).toBe(0);expect(r.participants.find(p=>p.userId===ids[0])?.joined).toBe(true);
  await leaveRoom(ids[0],r.id);
 });
+
+run('party authorization revokes joined membership once without rewriting revoked or pending participants',async()=>{
+ const db=getSql();
+ await db`INSERT INTO friendships(user_a,user_b,requested_by,state) VALUES(least(${ids[0]}::uuid,${ids[1]}::uuid),greatest(${ids[0]}::uuid,${ids[1]}::uuid),${ids[0]},'accepted') ON CONFLICT(user_a,user_b) DO UPDATE SET state='accepted'`;
+ const room=await createRoom(ids[0],{});await inviteParticipant(ids[0],room.id,{friendId:ids[1]});
+ const [pending]=await db`SELECT xmin::text AS version FROM synced_participants WHERE room_id=${room.id} AND user_id=${ids[1]}`;
+ await roomState(ids[0],room.id);expect((await db`SELECT xmin::text AS version FROM synced_participants WHERE room_id=${room.id} AND user_id=${ids[1]}`)[0].version).toBe(pending.version);
+ await joinRoom(ids[1],room.id,{revision:(await roomState(ids[0],room.id)).revision});
+ await db`DELETE FROM friendships WHERE user_a=least(${ids[0]}::uuid,${ids[1]}::uuid) AND user_b=greatest(${ids[0]}::uuid,${ids[1]}::uuid)`;
+ const revoked=await roomState(ids[0],room.id);expect(revoked.participants.find(member=>member.userId===ids[1])?.joined).toBe(false);
+ const [first]=await db`SELECT xmin::text AS version FROM synced_participants WHERE room_id=${room.id} AND user_id=${ids[1]}`;
+ await roomState(ids[0],room.id);await roomState(ids[0],room.id);
+ expect((await db`SELECT xmin::text AS version FROM synced_participants WHERE room_id=${room.id} AND user_id=${ids[1]}`)[0].version).toBe(first.version);
+ await db`INSERT INTO friendships(user_a,user_b,requested_by,state) VALUES(least(${ids[0]}::uuid,${ids[1]}::uuid),greatest(${ids[0]}::uuid,${ids[1]}::uuid),${ids[0]},'accepted')`;
+ const joined=await joinRoom(ids[1],room.id,{revision:(await roomState(ids[0],room.id)).revision});expect(joined.participants.find(member=>member.userId===ids[1])?.joined).toBe(true);
+});

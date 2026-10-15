@@ -19,13 +19,15 @@
   } = $props();
   let dialog: HTMLElement;
   let destroyed = false;
+  let placementFrame = 0;
   let returnFocus:HTMLElement|null=null;
   function closed() {
     if(dialog?.contains(document.activeElement)&&returnFocus?.isConnected)returnFocus.focus({preventScroll:true});
     returnFocus=null;open=false;onclose?.();
   }
-  onDestroy(() => {destroyed = true;});
+  onDestroy(() => {destroyed = true;if(placementFrame)cancelAnimationFrame(placementFrame);});
   function placePopover() {
+    if (destroyed || !open || !dialog) return;
     const target = anchor ? document.querySelector(anchor) : null;
     const bounds = target?.getBoundingClientRect();
     const width = dialog.getBoundingClientRect().width;
@@ -33,6 +35,13 @@
     const left = Math.max(16, Math.min((bounds?.right ?? window.innerWidth - 16) - width, window.innerWidth - width - 16));
     dialog.style.setProperty('--popover-top', `${top}px`);
     dialog.style.setProperty('--popover-left', `${left}px`);
+  }
+  function schedulePopover() {
+    if (destroyed || !open || placementFrame) return;
+    placementFrame = requestAnimationFrame(() => {
+      placementFrame = 0;
+      placePopover();
+    });
   }
   $effect(() => {
     if (!dialog) return;
@@ -45,11 +54,13 @@
       if (!open && dialog.matches(':popover-open')) dialog.hidePopover();
       if (!open) return;
       placePopover();
-      window.addEventListener('resize', placePopover);
-      window.addEventListener('scroll', placePopover, true);
+      window.addEventListener('resize', schedulePopover);
+      window.addEventListener('scroll', schedulePopover, true);
       return () => {
-        window.removeEventListener('resize', placePopover);
-        window.removeEventListener('scroll', placePopover, true);
+        cancelAnimationFrame(placementFrame);
+        placementFrame = 0;
+        window.removeEventListener('resize', schedulePopover);
+        window.removeEventListener('scroll', schedulePopover, true);
       };
     }
     const modal = dialog as HTMLDialogElement;

@@ -34,7 +34,7 @@ import { profileUser } from '$lib/server/queries/profile-user';
 import { progressData } from '$lib/server/queries/progress';
 import { progressParameters } from '$lib/progress';
 import { listsData } from '$lib/server/queries/lists';
-import { profileData, profileActivity } from '$lib/server/queries/profile';
+import { profileData, profileInsightsData } from '$lib/server/queries/profile';
 import { fallbackArtwork } from '$lib/providers/tmdb/fallback.server';
 import { streamTmdbArtwork } from '$lib/providers/tmdb/artwork.server';
 import { json, type RequestHandler } from '@sveltejs/kit';
@@ -90,8 +90,10 @@ export const handler: RequestHandler = async (event) => {
         const owner=await profileUser(url.searchParams.get('username')!);
         const section=path[1]==='activity'?'activity':v.parse(v.picklist(['favourites','insights']),url.searchParams.get('section'));
         if(section!=='favourites')await requireVisible(owner.id,null,section,'screen');
-        const data=await profileData(owner.id,{view:section==='activity'?'history':section==='favourites'?'favourites':'overview',page:Number(url.searchParams.get('page')??1),period:url.searchParams.get('period')??'all',kind:url.searchParams.get('kind')??'all'},new Date(),null);
-        return json(section==='activity'?{items:data.history,page:data.page,pages:data.pages,total:data.total}:section==='favourites'?{favourites:data.favourites,page:data.page,pages:data.pages,total:data.total}:{totals:data.totals,activity:await profileActivity(owner.id,new Date(),data.filters.period,null)});
+        const options={view:section==='activity'?'history':section==='favourites'?'favourites':'overview',page:Number(url.searchParams.get('page')??1),period:url.searchParams.get('period')??'all',kind:url.searchParams.get('kind')??'all'};
+        if(section==='insights')return json(await profileInsightsData(owner.id,options,new Date(),null));
+        const data=await profileData(owner.id,options,new Date(),null);
+        return json(section==='activity'?{items:data.history,page:data.page,pages:data.pages,total:data.total}:{favourites:data.favourites,page:data.page,pages:data.pages,total:data.total});
       }
     }
     const user = requireUser(locals.user),

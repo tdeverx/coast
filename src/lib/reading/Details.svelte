@@ -32,7 +32,7 @@
   let historyWork='';
   $effect(()=>{const id=data.item.id;untrack(()=>{if(historyWork!==id){history.cancel();history.replace({items:[],page:1,pages:1,total:0});historyWork=id;}});});
   async function loadHistory(number=1){await history.load(signal=>api(`reading/${data.item.id}/history?page=${number}`,undefined,'GET',{signal}));}
-  onDestroy(()=>history.cancel());
+  onDestroy(history.dispose);
   const operation = createOperation();
   const busy = $derived(operation.busy);
   const failure = $derived(operation.error);

@@ -28,7 +28,7 @@
       void load(id, selected);
     });
   });
-  onDestroy(resource.cancel);
+  onDestroy(resource.dispose);
 </script>
 
 {#if error}<DetailCard title="Activity unavailable"

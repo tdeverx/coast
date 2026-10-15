@@ -26,8 +26,8 @@ suite('Steam account imports and ownership availability',()=>{
   let ownedReads=0,igdbReads=0,failIgdb=false;
   let deniedAppId:string|null=null,privacyDenial=true;
   let remoteMinutes=125;
-  const achievementAppIds:string[]=[];
-  const appAchievements=new Map<string,{label:string;achieved:0|1}>();
+  const achievementAppIds:string[]=[],schemaAppIds:string[]=[];
+  const appAchievements=new Map<string,{label:string;achieved:0|1;count?:number}>();
   const job=async(kind='steam.sync'):Promise<OutboxAction>=>{
     const [connection]=await getDb().select().from(s.providerConnections).where(eq(s.providerConnections.id,connectionId));
     return {id:crypto.randomUUID(),userId:owner,connectionId,kind,accountGeneration:connection.accountGeneration,payload:{},attempts:0,correlationId:crypto.randomUUID()};
@@ -51,13 +51,14 @@ suite('Steam account imports and ownership availability',()=>{
         if(appId==='11')return Response.json({error:'Unowned regional version'},{status:403});
       }
       if(url.pathname.includes('GetSchemaForGame')){
+        schemaAppIds.push(url.searchParams.get('appid')!);
         const fixture=appAchievements.get(url.searchParams.get('appid')!);
-        return Response.json({game:{availableGameStats:{achievements:fixture?[{name:'FIRST',displayName:fixture.label,hidden:0}]:[{name:'FIRST',displayName:'First',hidden:0},{name:'SECOND',displayName:'Second',hidden:1}]}}});
+        return Response.json({game:{availableGameStats:{achievements:fixture?.count?Array.from({length:fixture.count},(_,index)=>({name:`BULK_${index}`,displayName:`${fixture.label} ${index}`,hidden:0})):fixture?[{name:'FIRST',displayName:fixture.label,hidden:0}]:[{name:'FIRST',displayName:'First',hidden:0},{name:'SECOND',displayName:'Second',hidden:1}]}}});
       }
       if(url.pathname.includes('GetPlayerAchievements')){
         if(url.searchParams.get('appid')===deniedAppId)return Response.json(privacyDenial?{playerstats:{success:false,error:'Profile is not public'}}:{error:'Invalid Web API key'},{status:403});
         const fixture=appAchievements.get(url.searchParams.get('appid')!);
-        return Response.json({playerstats:{success:!privateStats,steamID:remoteId,achievements:fixture?[{apiname:'FIRST',achieved:fixture.achieved,unlocktime:0}]:[{apiname:'FIRST',achieved:1,unlocktime:0},{apiname:'SECOND',achieved:1,unlocktime:1700000000}]}});
+        return Response.json({playerstats:{success:!privateStats,steamID:remoteId,achievements:fixture?.count?Array.from({length:fixture.count},(_,index)=>({apiname:`BULK_${index}`,achieved:fixture.achieved,unlocktime:0})):fixture?[{apiname:'FIRST',achieved:fixture.achieved,unlocktime:0}]:[{apiname:'FIRST',achieved:1,unlocktime:0},{apiname:'SECOND',achieved:1,unlocktime:1700000000}]}});
       }
       throw new Error('Unexpected fixture endpoint');
     }) as typeof fetch;
@@ -112,7 +113,9 @@ suite('Steam account imports and ownership availability',()=>{
     await getDb().insert(s.gameExternalIds).values({gameId,provider:'steam',externalId:'11'});
     expect((await syncSteamAchievements(await job('steam.achievements'))).checked).toBe(1);
     expect(achievementAppIds).not.toContain('11');expect(achievementAppIds).toContain('10');
+    const versionsBefore=Array.from(await getDb().execute<{id:string;version:string}>(sq`select achievement_id as id,xmin::text as version from game_achievement_progress order by achievement_id`));
     await syncSteamAchievements(await job('steam.achievements'));
+    expect(Array.from(await getDb().execute(sq`select achievement_id as id,xmin::text as version from game_achievement_progress order by achievement_id`))).toEqual(versionsBefore);
     const progress=await getDb().select().from(s.gameAchievementProgress);
     expect(progress.length).toBe(2);expect(progress.filter(p=>p.unlockedAt===null).length).toBe(1);
     expect((await gameDetails(owner,gameId)).steam[0].unlocked).toBe(2);
@@ -122,6 +125,29 @@ suite('Steam account imports and ownership availability',()=>{
     ownership={response:{game_count:1,games:[{appid:10,name:'Steam fixture',playtime_forever:999,has_community_visible_stats:true}]}};
     await syncSteam(await job());expect((await gameDetails(owner,gameId)).steam[0].minutes_played).toBe(remoteMinutes);
     expect((await syncSteamAchievements(await job('steam.achievements'))).checked).toBe(0);
+  });
+  test('large achievement schemas batch safely and unchanged progress avoids tuple rewrites while schema freshness advances',async()=>{
+    const previousOwnership=ownership,appId='903001';
+    appAchievements.set(appId,{label:'Bulk fixture',achieved:1,count:205});
+    try{
+      await updateSteamImports(owner,connectionId,{importOwned:true,importPlaytime:true,importAchievements:true});
+      ownership={response:{game_count:1,games:[{appid:Number(appId),name:'Bulk fixture',playtime_forever:0,has_community_visible_stats:true}]}};
+      await syncSteam(await job());await syncSteamAchievements(await job('steam.achievements'));
+      const versions=()=>getDb().execute<{id:string;unlocked:boolean;version:string}>(sq`select p.achievement_id as id,p.unlocked,p.xmin::text as version from game_achievement_progress p join game_achievements a on a.id=p.achievement_id where a.app_id=${appId} order by p.achievement_id`);
+      const first=Array.from(await versions());expect(first).toHaveLength(205);expect(first.every(row=>row.unlocked)).toBe(true);
+      const reads=schemaAppIds.filter(id=>id===appId).length;
+      await syncSteamAchievements(await job('steam.achievements'));
+      expect(Array.from(await versions())).toEqual(first);expect(schemaAppIds.filter(id=>id===appId)).toHaveLength(reads);
+      appAchievements.set(appId,{label:'Bulk fixture',achieved:0,count:205});await syncSteamAchievements(await job('steam.achievements'));
+      expect(Array.from(await versions()).every(row=>!row.unlocked)).toBe(true);
+      await getDb().update(s.gameAchievements).set({updatedAt:new Date('2000-01-01')}).where(eq(s.gameAchievements.appId,appId));
+      await syncSteamAchievements(await job('steam.achievements'));await syncSteamAchievements(await job('steam.achievements'));
+      expect(schemaAppIds.filter(id=>id===appId)).toHaveLength(reads+1);
+    }finally{
+      appAchievements.delete(appId);ownership=previousOwnership;await syncSteam(await job());
+      const [extra]=await getDb().select().from(s.gameExternalIds).where(eq(s.gameExternalIds.externalId,appId));
+      if(extra)await getDb().delete(s.games).where(eq(s.games.id,extra.gameId));
+    }
   });
   test('one private game retains progress and does not stop other games; invalid keys still fail',async()=>{
     const previousOwnership=ownership;

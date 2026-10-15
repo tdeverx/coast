@@ -3,7 +3,8 @@ import { mkdtemp, rm, readdir, stat, writeFile, utimes, readFile } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { enabled, diagnosticLevels, safeFields, correlationId } from '../src/lib/diagnostics';
-import { DiagnosticStore, storageLimits, context } from '../src/lib/server/diagnostics';
+import { DiagnosticStore, storageLimits, context, classifyFailure } from '../src/lib/server/diagnostics';
+import { ProviderQueueBusyError } from '../src/lib/server/security/request-priority';
 import { listDiagnostics } from '../src/lib/server/notifications';
 import { defaultConfig } from '../src/lib/server/config';
 import { updateConfig } from '../src/lib/application/configuration.server';
@@ -42,6 +43,11 @@ test('safe fields discard secrets, personal data, URLs, bodies and raw exception
     })
   ).toEqual({ status: 503, durationMs: 1.23, failure: 'network', operation: 'collection', stage: 'card-hydration' });
   expect(correlationId('private arbitrary text')).not.toBe('private arbitrary text');
+});
+test('local provider admission pressure is logged distinctly from provider failures', () => {
+  expect(classifyFailure(new ProviderQueueBusyError())).toBe('local-busy');
+  expect(safeFields({failure:'local-busy',errorCode:'local.provider-busy',message:'private request'}))
+    .toEqual({failure:'local-busy',errorCode:'local.provider-busy'});
 });
 test('diagnostic reads and configuration updates require an administrator before IO', async () => {
   const member = {

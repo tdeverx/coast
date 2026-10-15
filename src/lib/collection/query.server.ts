@@ -249,27 +249,36 @@ export async function workActionData(userId:string,id:string){
   return {...assessment[0],rating:score[0]?.value??null,queued:queued.length>0,lists:saved};
 }
 export async function workCards(ownerId: string, viewerId: string | null, ids: string[]): Promise<(MediaView | MediaCardPresentation)[]> {
+  const unique = [...new Set(ids)];
+  const cards = new Map<string,MediaView|MediaCardPresentation>();
+  for (let offset=0;offset<unique.length;offset+=PAGE_SIZE) {
+    for (const card of await workCardPage(ownerId,viewerId,unique.slice(offset,offset+PAGE_SIZE)))
+      cards.set(('workId' in card ? card.workId : undefined)??card.id,card);
+  }
+  return ids.flatMap(id => cards.has(id) ? [cards.get(id)!] : []);
+}
+async function workCardPage(ownerId: string, viewerId: string | null, ids: string[]): Promise<(MediaView | MediaCardPresentation)[]> {
   if (!ids.length) return [];
   const db=getDb(),config=await getConfig();
-  const [screen,gameRows,musicRows,mappings,readingRows] = await Promise.all([
+  const [screen,gameRows,musicRows,readingRows] = await Promise.all([
     mediaViews(ownerId,{ids,limit:PAGE_SIZE},viewerId),
     (await import('$lib/core/games/service.server')).gamePresentationMetadata(ids).then(rows=>[...rows.values()]),
     db.select().from(musicWorks).where(inArray(musicWorks.id,ids)),
-    db.select({item:providerItems,connection:providerConnections.id}).from(providerItems)
-      .innerJoin(providerConnections,eq(providerConnections.instanceId,providerItems.instanceId))
-      .innerJoin(providerInstances,eq(providerInstances.id,providerItems.instanceId))
-      .where(sql`${providerItems.mediaId} in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)}) and ${providerConnections.userId}=${viewerId} and ${providerConnections.status}='connected' and ${providerInstances.enabled}`),
-    (async()=>{
-      const rows:typeof readingWorks.$inferSelect[]=[];
-      if(!config.experimentalBooks&&!config.experimentalComics)return rows;
-      for(let offset=0;offset<ids.length;offset+=PAGE_SIZE)
-        rows.push(...await db.select().from(readingWorks).where(sql`${readingWorks.id} in (${sql.join(ids.slice(offset,offset+PAGE_SIZE).map(id=>sql`${id}::uuid`),sql`,`)}) and ${enabledCategories(sql`${readingWorks.kind}`,config)}`).limit(PAGE_SIZE));
-      return rows;
-    })(),
+    config.experimentalBooks||config.experimentalComics
+      ? db.select().from(readingWorks).where(sql`${inArray(readingWorks.id,ids)} and ${enabledCategories(sql`${readingWorks.kind}`,config)}`).limit(PAGE_SIZE)
+      : Promise.resolve([]),
   ]);
+  const mappings = musicRows.length && viewerId ? await db.select({
+    mediaId:providerItems.mediaId,externalId:providerItems.externalId,
+    primaryImageTag:sql<string|null>`${providerItems.snapshot}->>'primaryImageTag'`,connection:providerConnections.id,
+  }).from(providerItems)
+    .innerJoin(providerConnections,eq(providerConnections.instanceId,providerItems.instanceId))
+    .innerJoin(providerInstances,eq(providerInstances.id,providerItems.instanceId))
+    .where(sql`${inArray(providerItems.mediaId,musicRows.map(row=>row.id))} and ${providerConnections.userId}=${viewerId}
+      and ${providerConnections.status}='connected' and ${providerInstances.enabled}`) : [];
   const cards=new Map<string,MediaView|MediaCardPresentation>(screen.map(i=>[i.id,i]));
   for(const g of gameRows) cards.set(g.id,{id:g.id,kind:'game',title:g.title,href:`/games/${g.id}`,poster:g.posterPath,backdrop:g.backdropPath});
-  for(const m of musicRows){ const source=mappings.find(p=>p.item.mediaId===m.id);cards.set(m.id,{id:source?.item.externalId??m.id,workId:m.id,kind:m.kind,title:m.title,captionSubtitle:m.artistNames.join(', '),year:m.year,href:`/music/work/${m.id}`,connectionId:source?.connection,poster:source?.item.snapshot.primaryImageTag?`/api/v1/providers/${source.connection}/music/${source.item.externalId}/artwork`:undefined}); }
+  for(const m of musicRows){ const source=mappings.find(p=>p.mediaId===m.id);cards.set(m.id,{id:source?.externalId??m.id,workId:m.id,kind:m.kind,title:m.title,captionSubtitle:m.artistNames.join(', '),year:m.year,href:`/music/work/${m.id}`,connectionId:source?.connection,poster:source?.primaryImageTag?`/api/v1/providers/${source.connection}/music/${source.externalId}/artwork`:undefined}); }
   for(const item of await readingCards(ownerId,viewerId,readingRows))cards.set(item.id,item);
   return ids.flatMap(id=>cards.has(id)?[cards.get(id)!]:[]);
 }

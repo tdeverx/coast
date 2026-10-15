@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { createHmac } from 'node:crypto';
 import { isIP } from 'node:net';
-import { and,eq,sql } from 'drizzle-orm';
+import { and,desc,eq,sql } from 'drizzle-orm';
 import { getDb,type Database } from '$lib/server/db';
 import { apiWebhooks,apiTokens,users,outboxActions } from '$lib/server/db/schema';
 import { encryptCredential,decryptCredential } from '$lib/server/security/credentials';
@@ -9,6 +9,7 @@ import { secureProviderFetch,validateProviderUrl,isAllowedAddress } from '$lib/s
 import { randomToken } from '$lib/server/auth';
 import { AppError } from '$lib/server/security/errors';
 import { PermanentActionError,type OutboxAction } from '$lib/server/queue';
+import { pagination,PAGE_SIZE } from '$lib/server/queries/pagination';
 
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
 export const webhookEvents=['tracking.changed','relationship.changed','rating.changed','music.listened','game.changed','reading.changed'] as const;
@@ -34,8 +35,13 @@ export async function emitWebhook(tx:Transaction,userId:string,type:WebhookEvent
  const event={id:crypto.randomUUID(),type,occurredAt:new Date().toISOString(),data};
  await tx.insert(outboxActions).values(subscriptions.map(subscription=>({userId,kind:'webhook.deliver',payload:{subscriptionId:subscription.id,event}})));
 }
-export async function listWebhooks(userId:string){
- return getDb().select({id:apiWebhooks.id,url:apiWebhooks.url,events:apiWebhooks.events,enabled:apiWebhooks.enabled,createdAt:apiWebhooks.createdAt}).from(apiWebhooks).where(eq(apiWebhooks.userId,userId));
+export async function listWebhooks(userId:string,page=1){
+ const db=getDb();
+ const [count]=await db.select({total:sql<number>`count(*)::int`}).from(apiWebhooks).where(eq(apiWebhooks.userId,userId));
+ const paging=pagination(count.total,page);
+ const items=await db.select({id:apiWebhooks.id,url:apiWebhooks.url,events:apiWebhooks.events,enabled:apiWebhooks.enabled,createdAt:apiWebhooks.createdAt}).from(apiWebhooks).where(eq(apiWebhooks.userId,userId))
+   .orderBy(desc(apiWebhooks.enabled),desc(apiWebhooks.createdAt),desc(apiWebhooks.id)).limit(PAGE_SIZE).offset((paging.page-1)*PAGE_SIZE);
+ return {items,...paging,total:count.total};
 }
 export async function removeWebhook(tx:Transaction,userId:string,id:string){
  const removed=await tx.update(apiWebhooks).set({enabled:false}).where(and(eq(apiWebhooks.id,id),eq(apiWebhooks.userId,userId))).returning({id:apiWebhooks.id});

@@ -5,6 +5,7 @@ import * as s from '$lib/server/db/schema';
 import { getSteam } from './connection.server';
 import { steamOwnedGameSchema, type SteamOwnedGame } from './adapter.server';
 import { ProviderHttpError } from '$lib/server/security/provider-fetch';
+import { ProviderQueueBusyError } from '$lib/server/security/request-priority';
 import { PermanentActionError, enqueueAction, type OutboxAction } from '$lib/server/queue';
 import { trackInTransaction } from '$lib/core/tracking/service.server';
 import { importIgdbMetadata } from '$lib/core/games/service.server';
@@ -160,17 +161,26 @@ export async function syncSteamAchievements(action:OutboxAction) {
       await getDb().transaction(async tx=>{
         const current=await assertAccount(tx,action,accountId);
         if(current.settings.importAchievements===false)return;
-        if(schema)for(const definition of schema)await tx.insert(s.gameAchievements).values({gameId:title.gameId,provider:'steam',appId:title.externalId,externalId:definition.name,name:definition.displayName,description:definition.description,hidden:definition.hidden===1,icon:definition.icon,lockedIcon:definition.icongray})
-          .onConflictDoUpdate({target:[s.gameAchievements.gameId,s.gameAchievements.provider,s.gameAchievements.appId,s.gameAchievements.externalId],set:{name:definition.displayName,description:definition.description,hidden:definition.hidden===1,icon:definition.icon,lockedIcon:definition.icongray,updatedAt:new Date()}});
-        const definitions=await tx.select().from(s.gameAchievements).where(and(eq(s.gameAchievements.gameId,title.gameId),eq(s.gameAchievements.provider,'steam'),eq(s.gameAchievements.appId,title.externalId)));
-        for(const item of progress){const definition=definitions.find(d=>d.externalId===item.apiname);if(!definition)continue;
-          const values={unlocked:item.achieved===1,unlockedAt:item.achieved===1&&item.unlocktime>0?new Date(item.unlocktime*1000):null,updatedAt:new Date()};
-          await tx.insert(s.gameAchievementProgress).values({accountId,achievementId:definition.id,...values}).onConflictDoUpdate({target:[s.gameAchievementProgress.accountId,s.gameAchievementProgress.achievementId],set:values});
+        const now=new Date();
+        // Refresh successful schema evidence even when definitions are unchanged;
+        // progress-only no-op guards must not make schema reads repeat forever.
+        const schemaRows=new Map((schema??[]).map(definition=>[definition.name,{gameId:title.gameId,provider:'steam',appId:title.externalId,externalId:definition.name,name:definition.displayName,description:definition.description,hidden:definition.hidden===1,icon:definition.icon,lockedIcon:definition.icongray,updatedAt:now}]));
+        const schemaValues=[...schemaRows.values()];
+        for(let offset=0;offset<schemaValues.length;offset+=100)await tx.insert(s.gameAchievements).values(schemaValues.slice(offset,offset+100))
+          .onConflictDoUpdate({target:[s.gameAchievements.gameId,s.gameAchievements.provider,s.gameAchievements.appId,s.gameAchievements.externalId],set:{name:sql`excluded.name`,description:sql`excluded.description`,hidden:sql`excluded.hidden`,icon:sql`excluded.icon`,lockedIcon:sql`excluded.locked_icon`,updatedAt:now}});
+        const definitions=schema?await tx.select().from(s.gameAchievements).where(and(eq(s.gameAchievements.gameId,title.gameId),eq(s.gameAchievements.provider,'steam'),eq(s.gameAchievements.appId,title.externalId))):existing;
+        const byId=new Map(definitions.map(definition=>[definition.externalId,definition.id]));
+        const values=new Map<string,typeof s.gameAchievementProgress.$inferInsert>();
+        for(const item of progress){const achievementId=byId.get(item.apiname);if(!achievementId)continue;
+          values.set(achievementId,{accountId,achievementId,unlocked:item.achieved===1,unlockedAt:item.achieved===1&&item.unlocktime>0?new Date(item.unlocktime*1000):null,updatedAt:now});
         }
+        const rows=[...values.values()];
+        for(let offset=0;offset<rows.length;offset+=100)await tx.insert(s.gameAchievementProgress).values(rows.slice(offset,offset+100))
+          .onConflictDoUpdate({target:[s.gameAchievementProgress.accountId,s.gameAchievementProgress.achievementId],set:{unlocked:sql`excluded.unlocked`,unlockedAt:sql`excluded.unlocked_at`,updatedAt:now},setWhere:sql`${s.gameAchievementProgress.unlocked} is distinct from excluded.unlocked or ${s.gameAchievementProgress.unlockedAt} is distinct from excluded.unlocked_at`});
         await tx.update(s.gameAccountState).set({achievementsAt:new Date(),achievementsAttemptedAt:new Date()}).where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.gameId,title.gameId),eq(s.gameAccountState.appId,title.externalId)));
       });checked++;
     } catch(cause){
-      if(cause instanceof PermanentActionError)throw cause;
+      if(cause instanceof PermanentActionError||cause instanceof ProviderQueueBusyError)throw cause;
       if(cause instanceof ProviderHttpError&&(cause.status===401||cause.status===403||cause.status===429||cause.status>=500))throw cause;
       await getDb().transaction(async tx=>{await assertAccount(tx,action,accountId);await tx.update(s.gameAccountState).set({achievementsAttemptedAt:new Date()}).where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.gameId,title.gameId),eq(s.gameAccountState.appId,title.externalId)));});deferred++;
     }

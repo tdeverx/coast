@@ -39,7 +39,7 @@
  async function load(){const key=`${segment}:${number}`;const result=await roster.load(async signal=>{const [friends,activity]=await Promise.all([api<FriendEntry[]>(`social/friends?state=${segment}&page=${number}`,undefined,'GET',{signal}),api<{userId:string;title:string;href:string;category:string;artwork?:string;progress:number|null}[]>('social/checkins',undefined,'GET',{signal})]);return friends.map(friend=>{const current=activity.find(item=>item.userId===friend.userId);return {...friend,activity:current?{...current,label:current.category==='music'?'Listening':current.category==='game'?'Playing':['book','comic'].includes(current.category)?'Reading':'Watching'}:undefined};});});if(result)loadedKey=key;}
  $effect(()=>{if(open&&segment!=='party'){segment;number;void load();}});
  $effect(()=>{if(!open||preview)return;const timer=setInterval(()=>{if(document.visibilityState==='visible'&&!roster.busy&&!busy){if(segment==='party')void loadParties();else void load();}},30000);return()=>clearInterval(timer);});
- onDestroy(()=>{roster.cancel();parties.cancel();});
+ onDestroy(()=>{roster.dispose();parties.dispose();});
  async function act(path:string,body:unknown){
   if(busy)return;busy=true;failure='';
   try{await change(path,body);if(path==='social/friends'){username='';segment='pending';number=1;}if(segment==='party')await loadParties();else await load();}

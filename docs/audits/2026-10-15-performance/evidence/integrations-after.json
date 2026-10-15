@@ -1,0 +1,49 @@
+{
+  "runtime": "1.4.3",
+  "boundary": "Compiled actual function bodies; injected SQL/provider/identity boundaries, no database/network, no elapsed-time claim",
+  "seerr": [],
+  "trakt": [
+    {
+      "size": 100,
+      "identityReads": 800,
+      "traktEntryCalls": 100,
+      "exportIdentityCalls": 100,
+      "writeListCalls": 1,
+      "reorderCalls": 1,
+      "sourceSha256": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d"
+    },
+    {
+      "size": 1000,
+      "identityReads": 8000,
+      "traktEntryCalls": 1000,
+      "exportIdentityCalls": 1000,
+      "writeListCalls": 1,
+      "reorderCalls": 1,
+      "sourceSha256": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d"
+    }
+  ],
+  "music": [
+    {
+      "size": 20,
+      "statements": 203,
+      "transactions": 21,
+      "membershipRowsRead": 0,
+      "relationshipChanges": 0,
+      "metadataWriteStatements": 40,
+      "availabilityWriteStatements": 1,
+      "artistWriteStatements": 0,
+      "sourceSha256": "fc4447f6b09dbab68e0a39a563246f7a45aa1cf05102f72d386c603f93375d26"
+    },
+    {
+      "size": 100,
+      "statements": 1003,
+      "transactions": 101,
+      "membershipRowsRead": 0,
+      "relationshipChanges": 0,
+      "metadataWriteStatements": 200,
+      "availabilityWriteStatements": 1,
+      "artistWriteStatements": 0,
+      "sourceSha256": "fc4447f6b09dbab68e0a39a563246f7a45aa1cf05102f72d386c603f93375d26"
+    }
+  ]
+}

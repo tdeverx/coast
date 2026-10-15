@@ -1,0 +1,83 @@
+{
+  "boundary": "Actual TypeScript function bodies compiled in isolation; synthetic SQL/sequence/status boundaries, no real database/provider/server. Rows/JSON bytes denote driver-result boundary, not physical protocol bytes or production latency.",
+  "hashes": {
+    "src/lib/social/queries.server.ts": "f6f826015bfe6e7bbeb7dbd6ebd78d228cdba88e2827310d0b9029d11feec8d4",
+    "src/lib/server/queries/media.ts": "ad23b6ef075c7ab2eaa3da38b580fbf2b1f1a99a6399696633704d165803d665",
+    "src/lib/core/lists/sequence.server.ts": "74601cbeb6ddb6ea92386d6b5401bfc2cb1febfc688098113fd6a09874799809",
+    "src/lib/server/queries/profile.ts": "bf1dd19afe0160c02d091da4935ad169d53e3013c0f874975c5258bf1f2e4288",
+    "src/lib/server/api/profile.server.ts": "a3bb67daf4fee39265c94791c92ae3accfd0d35560fc17628305a5a58c5a24f0"
+  },
+  "socialResults": [
+    {
+      "works": 60,
+      "friendsPerWork": 3,
+      "dbRowsReturned": 180,
+      "serializedDriverRowsBytes": 44251,
+      "statusInputIds": 180,
+      "statusDistinctIds": 3,
+      "returnedFriends": 180,
+      "outputCountCorrect": true,
+      "firstThreeCorrect": true
+    },
+    {
+      "works": 60,
+      "friendsPerWork": 30,
+      "dbRowsReturned": 1800,
+      "serializedDriverRowsBytes": 443701,
+      "statusInputIds": 1800,
+      "statusDistinctIds": 30,
+      "returnedFriends": 180,
+      "outputCountCorrect": true,
+      "firstThreeCorrect": true
+    },
+    {
+      "works": 60,
+      "friendsPerWork": 300,
+      "dbRowsReturned": 18000,
+      "serializedDriverRowsBytes": 4454401,
+      "statusInputIds": 18000,
+      "statusDistinctIds": 300,
+      "returnedFriends": 180,
+      "outputCountCorrect": true,
+      "firstThreeCorrect": true
+    }
+  ],
+  "sequenceResults": [
+    {
+      "entriesCount": 1,
+      "fullSequenceReads": 1,
+      "fullSequenceRowsTransferred": 1,
+      "boundedNextReads": 0,
+      "hydratedCards": 1,
+      "resultCorrect": true
+    },
+    {
+      "entriesCount": 300,
+      "fullSequenceReads": 1,
+      "fullSequenceRowsTransferred": 300,
+      "boundedNextReads": 0,
+      "hydratedCards": 1,
+      "resultCorrect": true
+    },
+    {
+      "entriesCount": 3000,
+      "fullSequenceReads": 1,
+      "fullSequenceRowsTransferred": 3000,
+      "boundedNextReads": 0,
+      "hydratedCards": 1,
+      "resultCorrect": true
+    }
+  ],
+  "profileResults": {
+    "activeConsumer": "src/routes/profile/[username]/+page.svelte:136",
+    "selectedSection": "insights",
+    "profileCardIdsHydrated": 20,
+    "outputKeys": [
+      "totals",
+      "activity"
+    ],
+    "favouriteCardsReturned": false,
+    "actualProfileDataInvoked": true,
+    "boundary": "actual handleProfile + actual profileData with mocked SQL/config/privacy/card hydration; no database claims"
+  }
+}

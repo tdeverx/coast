@@ -25,6 +25,6 @@ export const openApi={openapi:'3.1.0',info:{title:'Coast public API',version:'1.
  '/games/{gameId}/playthroughs':{post:write('/games/{gameId}/playthroughs','games:write',{$ref:'#/components/schemas/Playthrough'})},
  '/playthroughs/{playthroughId}':{patch:write('/playthroughs/{playthroughId}','games:write',{$ref:'#/components/schemas/PlaythroughUpdate'})},
  '/playthroughs/{playthroughId}/sessions':{post:write('/playthroughs/{playthroughId}/sessions','games:write',{$ref:'#/components/schemas/GameSession'})},
- '/webhooks':{get:read('Requires webhooks:manage. Subscriptions without secrets.'),post:write('/webhooks','webhooks:manage',object({url:{type:'string',format:'uri',description:'Public HTTPS endpoint on port 443; no credentials, query or fragment.'},events:{type:'array',minItems:1,maxItems:webhookEvents.length,items:{type:'string',enum:webhookEvents}}},['url','events']))},
+ '/webhooks':{get:read('Requires webhooks:manage. Paginated subscriptions without secrets; enabled first, then newest with stable UUID ties.','',['page']),post:write('/webhooks','webhooks:manage',object({url:{type:'string',format:'uri',description:'Public HTTPS endpoint on port 443; no credentials, query or fragment.'},events:{type:'array',minItems:1,maxItems:webhookEvents.length,items:{type:'string',enum:webhookEvents}}},['url','events']))},
  '/webhooks/{webhookId}':{delete:write('/webhooks/{webhookId}','webhooks:manage')},
 }};

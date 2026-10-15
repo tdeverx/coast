@@ -2,8 +2,7 @@
  import {onDestroy,untrack} from 'svelte';
  import {page} from '$app/state';
  import {useClient} from '$lib/ui/client-context';
- import {createResource,uniqueItems} from '$lib/ui/resource.svelte';
- import {contentRevisionKey} from '$lib/ui/content-revision.svelte';
+ import {createResource} from '$lib/ui/resource.svelte';
  import {lazyContent} from '$lib/ui/lazy-content';
  import Shelf from '$lib/ui/components/Shelf.svelte';
  import RowFeedback from '$lib/ui/components/RowFeedback.svelte';
@@ -13,31 +12,36 @@
  let revision=$state(0);
  let seed=$state('initial');
  let pendingKey=$state<string>();
- const resource=createResource({rows:[] as DynamicRow[],nextOffset:0 as number|null},false);
+ const resource=createResource({rows:[] as DynamicRow[]},false);
+ let snapshotLoaded=$state(false),revealed=$state(0);
+ const rows=$derived(resource.data.rows.slice(0,revealed));
+ const complete=$derived(snapshotLoaded&&revealed>=resource.data.rows.length);
  async function load(){
-  if(resource.busy||pendingKey||resource.data.nextOffset===null)return;
-  const offset=resource.data.nextOffset;
-  await resource.load(signal=>api<typeof resource.data>(`experiments/feed?offset=${offset}&limit=1&seed=${seed}`,undefined,'GET',{signal}),{
-   merge:(previous,next)=>{
-    const rows=uniqueItems([...previous.rows,...next.rows],row=>row.key);
-    if(rows.length>previous.rows.length)pendingKey=rows.at(-1)!.key;
-    return {...next,rows};
-   }
-  });
+  if(resource.busy||pendingKey||complete)return;
+  if(!snapshotLoaded){
+   const visitSeed=seed;
+   const result=await resource.load(signal=>api<typeof resource.data>(`experiments/feed?seed=${seed}`,undefined,'GET',{signal}));
+   if(!result||seed!==visitSeed)return;
+   snapshotLoaded=true;
+  }
+  const next=resource.data.rows[revealed];
+  if(next){pendingKey=next.key;revealed++;}
  }
  function settled(key:string){if(pendingKey===key){pendingKey=undefined;revision++;}}
- const refreshKey=$derived(JSON.stringify([contentRevisionKey(page.data,['tracking','social']),page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics]));
- $effect(()=>{refreshKey;untrack(()=>{
+ // Row contents subscribe to their own revisions. The definition cursor/order
+ // belongs to this visit; edits must not replay all previously consumed pages.
+ const scopeKey=$derived(JSON.stringify([page.data.user?.id,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics]));
+ $effect(()=>{scopeKey;untrack(()=>{
   revision++;
-  if(seed==='initial')seed=Math.random().toString(36).slice(2);
-  const rows=resource.data.rows.filter(row=>(row.category==='screen'||row.category==='game'&&page.data.experimentalGaming||row.category==='music'&&page.data.experimentalMusic||row.category==='reading'&&(page.data.experimentalBooks||page.data.experimentalComics)));
-  if(pendingKey&&!rows.some(row=>row.key===pendingKey))pendingKey=undefined;
-  resource.replace({rows,nextOffset:0});
+  seed=Math.random().toString(36).slice(2);
+  pendingKey=undefined;
+  snapshotLoaded=false;revealed=0;
+  resource.replace({rows:[]});
  });});
- onDestroy(resource.cancel);
+ onDestroy(resource.dispose);
 </script>
 <div aria-label="Dynamic For You" class="dynamic-feed">
- {#each resource.data.rows as row (row.key)}
+ {#each rows as row (row.key)}
   {@const shape=dynamicRowShape(row,seed)}
   {@const artworkStyle=shape==='poster'?'primary':shape==='fanart'?'thumb':undefined}
   {#if row.surface==='popular'}
@@ -52,8 +56,8 @@
  {/each}
  <div class="feed-end">
   <div class="feed-loader">
-   {#if !pendingKey && resource.data.nextOffset!==null}
-    {#key `${revision}:${resource.data.nextOffset}`}
+   {#if !pendingKey && !complete}
+    {#key `${revision}:${revealed}`}
      <div use:lazyContent={{load:()=>void load(),rootMargin:'0px',enabled:()=>!resource.busy&&!resource.error}} aria-busy={resource.busy} style="min-height:1px">
       {#if resource.busy}<span class="sr-only" role="status">Loading the next row…</span>{/if}
       {#if resource.error}<RowFeedback error={resource.error} inline={false} retry={()=>void load()} />{/if}

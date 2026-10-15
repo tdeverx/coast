@@ -206,4 +206,25 @@ describe.skipIf(!enabled)('scoped public API',()=>{
    expect((await read(progressReader.token,'progress','GET','?category=reading')).status).toBe(404);
   } finally {await save(config);}
  });
+ test('webhook subscriptions use bounded deterministic owner-only pages including disabled history',async()=>{
+  const user=await createUser(owner,{username:'api-subscription-pages',password:'API-subscription-pages!'});
+  const token=await createApiToken(user,{name:'Subscription pages',scopes:['webhooks:manage']});
+  const id=(number:number)=>`a0000000-0000-4000-8000-${String(number).padStart(12,'0')}`;
+  const disabled=Array.from({length:75},(_,index)=>id(index+1));
+  const active=Array.from({length:10},(_,index)=>id(index+80));
+  await getDb().insert(s.apiWebhooks).values([...disabled,...active].map(entry=>({id:entry,userId:user.id,tokenId:token.id,url:'https://example.com/synthetic',events:['tracking.changed'],enabled:active.includes(entry),secret:'synthetic-secret-must-stay-private',createdAt:new Date('2030-01-01T00:00:00Z')})));
+  try{
+   const first=await read(token.token,'webhooks'),second=await read(token.token,'webhooks','GET','?page=2');
+   expect(first.status).toBe(200);expect(second.status).toBe(200);
+   const a=await first.json(),b=await second.json(),expected=[...active].reverse().concat([...disabled].reverse());
+   expect(a.items.map((item:{id:string})=>item.id)).toEqual(expected.slice(0,60));
+   expect(b.items.map((item:{id:string})=>item.id)).toEqual(expected.slice(60));
+   expect(a.pagination).toMatchObject({page:1,pages:2,total:85,pageSize:60,next:'/api/public/v1/webhooks?page=2',previous:null});
+   expect(b.pagination).toMatchObject({page:2,pages:2,total:85,pageSize:60,next:null,previous:'/api/public/v1/webhooks?page=1'});
+   expect(JSON.stringify([a,b])).not.toContain('synthetic-secret-must-stay-private');
+   expect((await (await read(token.token,'webhooks','GET','?page=10000')).json()).items).toEqual(b.items);
+   for(const query of ['?page=0','?page=1.5','?page=10001','?page=1&page=2','?enabled=true'])expect((await read(token.token,'webhooks','GET',query)).status).toBe(400);
+   const [retained]=await getSql()`select count(*)::int as total from api_webhooks where user_id=${user.id}`;expect(retained.total).toBe(85);
+  }finally{await getDb().delete(s.users).where((await import('drizzle-orm')).eq(s.users.id,user.id));}
+ });
 });

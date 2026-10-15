@@ -178,22 +178,20 @@ export async function scheduleProviderMaintenance(
     if (!eligible.length) return { ...metadata, connections: 0, busy: false };
     const ids = eligible.map((row) => row.connection.id);
     const [jobs, checkpoints] = await Promise.all([
-      tx
-        .select({
-          connectionId: outboxActions.connectionId,
-          kind: outboxActions.kind,
-          active: sql<boolean>`bool_or(${outboxActions.state} in ('pending','running','failed'))`,
-          last: sql<Date | null>`max(${outboxActions.updatedAt}) filter(where ${outboxActions.state}='succeeded')`,
-        })
-        .from(outboxActions)
-        .where(
-          and(
-            inArray(outboxActions.connectionId, ids),
-            inArray(outboxActions.kind, maintenanceKinds),
-            sql`(${outboxActions.accountGeneration} is null or ${outboxActions.accountGeneration}=(select account_generation from provider_connections where id=${outboxActions.connectionId}))`
-          )
-        )
-        .groupBy(outboxActions.connectionId, outboxActions.kind),
+      tx.execute<{connectionId:string;kind:string;active:boolean;last:Date|null}>(sql`
+        select c.id as "connectionId", requested.kind,
+          exists(select 1 from outbox_actions a where a.connection_id=c.id and a.kind=requested.kind
+            and a.state in ('pending','running','failed')
+            and (a.account_generation is null or a.account_generation=c.account_generation)) as active,
+          greatest(
+            (select a.updated_at from outbox_actions a where a.connection_id=c.id and a.kind=requested.kind
+              and a.state='succeeded' and a.account_generation=c.account_generation order by a.updated_at desc nulls last limit 1),
+            (select a.updated_at from outbox_actions a where a.connection_id=c.id and a.kind=requested.kind
+              and a.state='succeeded' and a.account_generation is null order by a.account_generation,a.updated_at desc nulls last limit 1)
+          ) as last
+        from provider_connections c cross join unnest(array[${sql.join(maintenanceKinds.map(kind=>sql`${kind}`),sql`,`)}]::text[]) as requested(kind)
+        where c.id in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)})
+      `),
       tx.select().from(syncCheckpoints).where(inArray(syncCheckpoints.connectionId, ids)),
     ]);
     const jobsByKey = new Map(jobs.map((job) => [`${job.connectionId}:${job.kind}`, job]));
@@ -212,11 +210,12 @@ export async function scheduleProviderMaintenance(
         or exists(select 1 from social_checkins s where s.user_id=c.user_id and s.state='active' and s.expires_at>now()) as live
       from provider_connections c where c.id in (${sql.join(ids.map(id=>sql`${id}`),sql`,`)})
     `);
+    const presenceById = new Map(presence.map(account=>[account.id,account.live]));
     const requests = new Map<string, { connection: (typeof eligible)[number]['connection']; kind: string; payload: Record<string, unknown>; last: number }[]>();
     for (const instance of new Map(eligible.map(row => [row.instance.id, row.instance])).values()) {
       const schedule = providerSchedule(instance.provider, instance.settings.schedule);
       const linked = eligible.filter(row => row.instance.id === instance.id).map(row => ({
-        ...row.connection, role: row.role, live: presence.find(account => account.id === row.connection.id)?.live ?? false,
+        ...row.connection, role: row.role, live: presenceById.get(row.connection.id) ?? false,
         userCompleted: checkpointByKey.get(`${row.connection.id}:jellyfin-user`) ? new Date(checkpointByKey.get(`${row.connection.id}:jellyfin-user`)!) : null,
       }));
       const source=instance.settings.companion as import('./jellyfin/companion').CompanionState|undefined;

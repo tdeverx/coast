@@ -99,6 +99,7 @@ export interface MediaView {
   seasonNumber?: number;
   episodeNumber?: number;
   showId?: string;
+  showTitle?: string;
   tmdbId?: string;
   trailer?: string | null;
   requestable?: boolean;

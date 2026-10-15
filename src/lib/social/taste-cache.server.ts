@@ -2,9 +2,10 @@ import {sql as query} from 'drizzle-orm';
 import {getDb,getSql,type Database} from '$lib/server/db';
 import {getConfig} from '$lib/server/config';
 import {interestWorks} from '$lib/recommendations/interests.server';
-import {buildTasteProfile,scoreTaste,namedFeatures,type TasteProfile} from './taste-profile';
+import {buildTasteProfile,compileTasteScorer,namedFeatures,type TasteProfile} from './taste-profile';
 import {workTasteFeatures} from './work-features.server';
 import * as v from 'valibot';
+import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '$lib/server/queue/execution';
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
 export const tasteRevisionSql=query`'taste-v1:'||md5(concat_ws(':',
  coalesce((select revision::text from content_revisions where scope=u.id::text and domain='tracking'),'0'),
@@ -47,14 +48,33 @@ export async function scheduleTasteRefresh(tx:Tx,force=false){
  await tx.execute(query`insert into outbox_actions(user_id,kind,payload,compaction_key) values(${needed.userId}::uuid,'taste.refresh',${{_manual:force}}::jsonb,'taste.refresh')`);
  return {queued:1,active:0};
 }
+const refreshCheckpointSchema=v.object({
+ task:v.literal('taste-refresh'),users:v.pipe(v.array(v.pipe(v.string(),v.uuid())),v.maxLength(10)),
+ next:v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(10)),
+ checked:v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(10)),
+ refreshed:v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(10)),
+ deferred:v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(10)),
+});
+type RefreshCheckpoint=v.InferOutput<typeof refreshCheckpointSchema>;
 export async function refreshTasteCaches(){
  const config=await getConfig(),sql=getSql();
- const stale=await getDb().execute<{id:string}>(query`select u.id from users u where not u.disabled and not exists(select 1 from user_taste_profiles p where p.user_id=u.id and p.revision=${tasteRevisionSql} and p.profile->>'catalogueRevision'=${catalogueRevisionSql} and p.updated_at>now()-interval '1 day') order by (select min(updated_at) from user_taste_profiles where user_id=u.id) asc nulls first,u.id limit 10`);
- let checked=0,refreshed=0,deferred=0;
- for(const user of stale){
+ const parsed=v.safeParse(refreshCheckpointSchema,await readJobCheckpoint());
+ let checkpoint:RefreshCheckpoint|null=parsed.success?parsed.output:null;
+ if(!checkpoint){
+  const stale=await getDb().execute<{id:string}>(query`select u.id from users u where not u.disabled and not exists(select 1 from user_taste_profiles p where p.user_id=u.id and p.revision=${tasteRevisionSql} and p.profile->>'catalogueRevision'=${catalogueRevisionSql} and p.updated_at>now()-interval '1 day') order by (select min(updated_at) from user_taste_profiles where user_id=u.id) asc nulls first,u.id limit 10`);
+  checkpoint={task:'taste-refresh',users:stale.map(user=>user.id),next:0,checked:0,refreshed:0,deferred:0};
+  await saveJobCheckpoint(checkpoint);
+ }
+ while(checkpoint.next<checkpoint.users.length){
+  const user:{id:string}={id:checkpoint.users[checkpoint.next]};
   // Other users' calculations must not age this user's revision snapshot.
   const [snapshot]=await getDb().execute<{revision:string;catalogueRevision:string}>(query`select ${tasteRevisionSql} as revision,${catalogueRevisionSql} as "catalogueRevision" from users u where u.id=${user.id}::uuid and not u.disabled`);
-  if(!snapshot)continue;
+  if(!snapshot){
+   checkpoint.next++;
+   await saveJobCheckpoint(checkpoint);
+   if(checkpoint.next<checkpoint.users.length)await jobCheckpoint();
+   continue;
+  }
   const evidence=await interestWorks(user.id),featureMap=await workTasteFeatures(evidence.map(work=>work.id));
   const artistPreferences=await sql<{name:string}[]>`select a.name from music_artist_preferences p join music_artists a on a.id=p.artist_id where p.user_id=${user.id} and p.favourite`;
   const profiles=new Map<string,TasteProfile>();
@@ -77,17 +97,27 @@ export async function refreshTasteCaches(){
    and not exists(select 1 from tracking_state t where t.user_id=${user.id} and t.media_id=w.id and (t.watched or t.dropped or t.collected or t.watchlist or t.favourite))
   ) select id,medium from ranked where rank<=500`;
   const candidateFeatures=await workTasteFeatures(candidates.map(work=>work.id));
-  const scores=candidates.map(work=>({workId:work.id,...scoreTaste(profiles.get(work.medium)!,candidateFeatures.get(work.id)??{})}));
+  const scorers=new Map([...profiles].map(([medium,profile])=>[medium,compileTasteScorer(profile)]));
+  const scores=candidates.map(work=>({workId:work.id,...scorers.get(work.medium)!(candidateFeatures.get(work.id)??{})}));
   // Recheck revisions after calculation; concurrent imports invalidate the result, not history.
-  const applied=await getDb().transaction(async tx=>{
-   const [current]=await tx.execute<{revision:string}>(query`select ${tasteRevisionSql} as revision from users u where u.id=${user.id}::uuid and not u.disabled for update of u`);
-   if(current?.revision!==snapshot.revision)return false;
-   await tx.execute(query`delete from user_taste_scores where user_id=${user.id}::uuid`);
-   for(const [medium,profile] of profiles)await tx.execute(query`insert into user_taste_profiles(user_id,medium,revision,profile) values(${user.id}::uuid,${medium},${snapshot.revision},${{...profile,catalogueRevision:snapshot.catalogueRevision}}::jsonb) on conflict(user_id,medium) do update set revision=excluded.revision,profile=excluded.profile,updated_at=now()`);
-   if(scores.length)await tx.execute(query`insert into user_taste_scores(user_id,work_id,score,confidence,revision,breakdown) select ${user.id}::uuid,r."workId",r.score,r.confidence,${snapshot.revision},to_jsonb(r) from jsonb_to_recordset(${JSON.stringify(scores)}::text::jsonb) r("workId" uuid,score real,confidence real,dimensions jsonb,reasons jsonb,matches int)`);
-   return true;
+  const progress:RefreshCheckpoint=checkpoint;
+  checkpoint=await getDb().transaction<RefreshCheckpoint>(async(tx):Promise<RefreshCheckpoint>=>{
+   const [current]=await tx.execute<{revision:string}>(query`select ${tasteRevisionSql} as revision from users u where u.id=${user.id}::uuid and not u.disabled for update of u`) as {revision:string}[];
+   await assertJobLease(tx,true);
+   const applied:boolean=current?.revision===snapshot.revision;
+   if(applied){
+    await tx.execute(query`delete from user_taste_scores where user_id=${user.id}::uuid`);
+    for(const [medium,profile] of profiles)await tx.execute(query`insert into user_taste_profiles(user_id,medium,revision,profile) values(${user.id}::uuid,${medium},${snapshot.revision},${{...profile,catalogueRevision:snapshot.catalogueRevision}}::jsonb) on conflict(user_id,medium) do update set revision=excluded.revision,profile=excluded.profile,updated_at=now()`);
+    if(scores.length)await tx.execute(query`insert into user_taste_scores(user_id,work_id,score,confidence,revision,breakdown) select ${user.id}::uuid,r."workId",r.score,r.confidence,${snapshot.revision},to_jsonb(r) from jsonb_to_recordset(${JSON.stringify(scores)}::text::jsonb) r("workId" uuid,score real,confidence real,dimensions jsonb,reasons jsonb,matches int)`);
+   }
+   const next:RefreshCheckpoint={...progress,next:progress.next+1,checked:progress.checked+1,refreshed:progress.refreshed+Number(applied),deferred:progress.deferred+Number(!applied)};
+   // Cursor and outcome commit with this user's publication. A yield/restart
+   // resumes the same ten-user census without repeating completed users.
+   await saveJobCheckpoint(next,tx);
+   return next;
   });
-  checked++;if(applied)refreshed++;else deferred++;
+  if(checkpoint.next<checkpoint.users.length)await jobCheckpoint();
  }
+ const {checked,refreshed,deferred}=checkpoint;
  return {checked,refreshed,deferred};
 }

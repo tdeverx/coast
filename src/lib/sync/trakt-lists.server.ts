@@ -24,6 +24,7 @@ import {
   exportIdentity,
 } from '$lib/sync/trakt-identity.server';
 import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
+import { matchTraktList } from './trakt-list-matching';
 
 export async function executeTraktListExport(
   userId: string,
@@ -160,39 +161,25 @@ export async function exportTraktListToAdapter(
   }
   await adapter.writeList(remoteId, payload);
   const remote = await adapter.listItems(remoteId);
-  const matches = (a: Record<string, unknown>, b: Record<string, unknown>) =>
-    ['trakt', 'tmdb', 'tvdb', 'imdb'].some(
-      (key) => a[key] != null && b[key] != null && String(a[key]) === String(b[key])
-    );
+  const matched = matchTraktList(desired, remote.flatMap(record => {
+    const entry = traktEntry(record);
+    return entry ? [{ kind: entry.kind, ids: entry.item.ids, rankId: record.id }] : [];
+  }));
   const removed = {
     movies: [] as { ids: Record<string, unknown> }[],
     shows: [] as { ids: Record<string, unknown> }[],
     seasons: [] as { ids: Record<string, unknown> }[],
     episodes: [] as { ids: Record<string, unknown> }[],
   };
-  for (const record of remote) {
-    const entry = traktEntry(record);
-    if (
-      !entry ||
-      desired.some(
-        (wanted) => wanted.kind === entry.kind && matches(wanted.ids, entry.item.ids)
-      )
-    )
-      continue;
+  for (const entry of matched.removed) {
     removed[traktPlurals[entry.kind]].push({
-      ids: entry.item.ids,
+      ids: entry.ids,
     });
   }
   if (Object.values(removed).some((items) => items.length))
     await adapter.writeList(remoteId, removed, true);
-  const rank = desired
-    .map(
-      (wanted) =>
-        remote.find((record) => {
-          const entry = traktEntry(record);
-          return entry && wanted.kind === entry.kind && matches(wanted.ids, entry.item.ids);
-        })?.id
-    )
+  const rank = matched.matches
+    .map(entry => entry?.rankId)
     .filter((id): id is number => id !== undefined);
   if (rank.length !== desired.length) throw new PermanentActionError('Trakt did not retain every exported list item. Review the title identities before retrying.');
   if (rank.length) await adapter.reorderList(remoteId, rank);

@@ -1,0 +1,104 @@
+{
+  "heroResult": {
+    "requests": 1,
+    "requestHasSignal": false,
+    "latePublications": 0,
+    "pendingTimerCount": 0
+  },
+  "detailCases": [
+    {
+      "input": {
+        "section": "credits",
+        "credits": "cast"
+      },
+      "requests": [
+        "media/title-a/insights?source=tmdb&page=1",
+        "media/title-a/insights?source=trakt&page=1"
+      ]
+    },
+    {
+      "input": {
+        "section": "insights",
+        "insight": "activity"
+      },
+      "requests": [
+        "media/title-a/insights?source=tmdb&page=1",
+        "media/title-a/insights?source=trakt&page=1"
+      ]
+    },
+    {
+      "input": {
+        "section": "insights",
+        "insight": "overview"
+      },
+      "requests": [
+        "media/title-a/insights?source=tmdb&page=1",
+        "media/title-a/insights?source=trakt&page=1"
+      ]
+    },
+    {
+      "input": {
+        "section": "reviews",
+        "source": "tmdb"
+      },
+      "requests": [
+        "media/title-a/insights?source=tmdb&page=1",
+        "media/title-a/insights?source=trakt&page=1"
+      ]
+    }
+  ],
+  "dialogResult": {
+    "events": 100,
+    "reads": 200,
+    "writes": 200,
+    "animationFrames": 0
+  },
+  "streamsCases": [
+    {
+      "cycle": 0,
+      "requestsBeforeMutationCompletion": 2,
+      "requestsAfterClose": [
+        {
+          "path": "providers/streams?view=now",
+          "method": "GET",
+          "aborted": false
+        }
+      ],
+      "busyAfterDispose": true
+    },
+    {
+      "cycle": 1,
+      "requestsBeforeMutationCompletion": 2,
+      "requestsAfterClose": [
+        {
+          "path": "providers/streams?view=now",
+          "method": "GET",
+          "aborted": false
+        }
+      ],
+      "busyAfterDispose": true
+    },
+    {
+      "cycle": 2,
+      "requestsBeforeMutationCompletion": 2,
+      "requestsAfterClose": [
+        {
+          "path": "providers/streams?view=now",
+          "method": "GET",
+          "aborted": false
+        }
+      ],
+      "busyAfterDispose": true
+    }
+  ],
+  "notificationResult": {
+    "requestsAfterClose": [
+      {
+        "path": "notifications?segment=all&kind=all&unread=false&category=all&period=all",
+        "method": "GET",
+        "aborted": false
+      }
+    ],
+    "busyAfterDispose": true
+  }
+}

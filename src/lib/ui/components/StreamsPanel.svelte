@@ -13,9 +13,10 @@
  import {playbackTime} from '$lib/playback/time';
  import type {StreamsSnapshot} from '$lib/application/streams.server';
  let {open=$bindable(false),onclose}:{open:boolean;onclose?:()=>void}=$props();
- const {api}=useClient(),clock=useClock();
+ const {api}=useClient();
  setContext('profile-read-only',()=>true);
  let view=$state('now'),refreshing=$state(false),feedback=$state('');
+ const clock=useClock('minute',()=>open&&view==='history');
  const empty=(view:'now'|'history'):StreamsSnapshot=>({streams:[],issues:[],checkedAt:null,nextCursor:null,view});
  const resource=createResource<StreamsSnapshot>(empty('now'));
  function load(more=false){const selected=view;const before=more?resource.data.nextCursor:null;return resource.load(signal=>api(`providers/streams?view=${selected}${before?`&before=${encodeURIComponent(before)}`:''}`,undefined,'GET',{signal}),{merge:(previous,result)=>more?{...result,streams:[...previous.streams,...result.streams]}:result});}
@@ -26,7 +27,7 @@
   const timer=setInterval(()=>{if(!document.hidden&&!resource.busy&&selected==='now'&&!resource.data.nextCursor&&resource.data.streams.length<=20)void load();},15000);
   return ()=>{clearInterval(timer);resource.cancel();};
  });
- onDestroy(resource.cancel);
+ onDestroy(resource.dispose);
 </script>
 <Dialog bind:open title="Active streams" popover={true} popoverWidth={360} anchor="#streams-trigger" {onclose}>
  {#snippet heading()}<Heading title="Active streams">{#snippet heading()}<SegmentedControl label="Server streams" bind:value={view} options={[{value:'now',label:'Now'},{value:'history',label:'History'}]}/>{/snippet}{#snippet actions()}<div class="actions"><Button size="icon" icon="refresh" label="Run server scan" disabled={refreshing} onclick={()=>void refresh()}/><Button size="icon" icon="close" label="Close streams" onclick={()=>{open=false;onclose?.();}}/></div>{/snippet}</Heading>{/snippet}

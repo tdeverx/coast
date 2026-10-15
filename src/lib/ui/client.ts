@@ -4,7 +4,12 @@ import { page } from '$app/state';
 import { invalidateContentRevision, type ContentDomain } from './content-revision.svelte';
 
 let playbackApi = '/api/v1/';
-export function setPlaybackApi(shared:boolean){playbackApi=shared?'/api/share/':'/api/v1/';}
+let playbackApiRevision = 0;
+export function setPlaybackApi(shared:boolean){
+  const revision=++playbackApiRevision;
+  playbackApi=shared?'/api/share/':'/api/v1/';
+  return ()=>{if(revision===playbackApiRevision)playbackApi='/api/v1/';};
+}
 /** Preparation and its late cleanup must keep the same authority across route teardown. */
 export function capturePlaybackApi() {
   const base = playbackApi;

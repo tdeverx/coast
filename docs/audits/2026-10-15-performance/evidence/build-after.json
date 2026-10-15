@@ -1,0 +1,7 @@
+{
+  "scope": "Complete emitted client JS/CSS assets, not initial-route transfer",
+  "runtime": "Bun 1.4.3",
+  "assets": 227,
+  "bytes": 2964271,
+  "gzipBytes": 953672
+}
