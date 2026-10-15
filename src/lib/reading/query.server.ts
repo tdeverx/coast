@@ -10,7 +10,6 @@ import { enabledCategories, requireEnabledCategory } from '$lib/server/experimen
 import type { ReadingMetadata } from './model';
 import { readingStates, readingReferenceSchema, readingProviderForId, type ReadingKind } from './model';
 import { readingCard } from './presentation';
-import { rankSearch } from '$lib/search';
 import { searchDocument, searchSql } from '$lib/server/queries/search-ranking';
 
 const uuid = v.pipe(v.string(), v.uuid());
@@ -48,7 +47,8 @@ export async function readingDetails(userId: string, id: string) {
     db.select({ value: ratings.value }).from(ratings).where(and(eq(ratings.userId, userId), eq(ratings.mediaId, id))),
   ]);
   const preference=(await presentationPreferences(userId,[id])).get(id);
-  const presented=preference?{...item,title:preference.title??item.title,coverUrl:preference.posterPath??item.coverUrl,backdropUrl:preference.backdropPath}:item;
+  const presented=preference?{...item,title:preference.title??item.title,coverUrl:preference.posterPath??item.coverUrl,
+    ...(preference.backdropPath ? {backdropUrl:preference.backdropPath} : {})}:item;
   return { item:presented, progress: progress ?? null, relationships: relationships ?? { favourite: false, watchlist: false, collected: false }, rating: rating?.value ?? null };
 }
 
@@ -80,7 +80,9 @@ export async function readingCatalogue(userId: string, raw: unknown = {}) {
   if (!totals.total && search) { where = buildWhere(true); [totals] = await db.select({ total: count() }).from(readingWorks).where(where); }
   const { page, pages } = pagination(totals.total, input.page);
   const items = await db.select().from(readingWorks).where(where).orderBy(...(search ? [desc(sql`greatest(${search.rank},${aliases.rank})`)] : []), asc(readingWorks.title), asc(readingWorks.id)).limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE);
-  return { items: rankSearch(items, input.search), total: totals.total, page, pages };
+  // SQL has ranked both canonical metadata and the viewer's private aliases
+  // before paging. Rescoring raw titles here would demote alias-only matches.
+  return { items, total: totals.total, page, pages };
 }
 
 /** Hydrate private page progress for only the selected card page, respecting the actual category. */

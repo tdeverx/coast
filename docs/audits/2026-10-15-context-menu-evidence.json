@@ -328,7 +328,7 @@
         "scope": "Collection, media actions, work-menu personal preferences/history/picker; disposable only",
         "finalAuditWorkMenuSuite": {
           "passed": 6,
-          "assertions": 52
+          "assertions": 55
         }
       },
       "typeErrors": 0,
@@ -381,7 +381,9 @@
     "finalAuditFixes": [
       "Acknowledged field patches preserve unfinished snapshot state and demanded refresh",
       "Authoritative replacement releases the stale single-flight promise",
-      "Private music alias candidates retain permission-aware availability and report their bound"
+      "Private music alias candidates retain permission-aware availability and report their bound",
+      "Retain database reading alias rank instead of rescoring canonical-only titles",
+      "Partial reading preferences override only supplied backdrop fields; provider-cover preservation regression"
     ]
   }
 }

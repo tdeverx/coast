@@ -79,6 +79,15 @@ run('shared presentation preferences work across media, remain private, and rese
   expect((await readingDetails(owner, book)).item.title).toBe('Nebulaprivatebook');
   expect((await readingCatalogue(owner, { search: 'Nebulaprivatebook', personal: false })).total).toBe(1);
   expect((await readingCatalogue(other, { search: 'Nebulaprivatebook', personal: false })).total).toBe(0);
+  const competitor = await importReading({ provider: 'openlibrary', externalId: 'OL987654322W', kind: 'book', title: 'Nebulaprivatebook anthology', authors: [], subjects: [], sourceUrl: 'https://openlibrary.org/works/OL987654322W' });
+  records.push(competitor.id);
+  expect((await readingCatalogue(owner, { search: 'Nebulaprivatebook', personal: false })).items[0].id).toBe(book);
+  await getDb().update(s.readingWorks).set({ coverUrl: 'https://fixture.invalid/provider-cover.jpg' }).where(eq(s.readingWorks.id, book));
+  await resetPresentationPreference(owner, book);
+  await savePresentationPreference(owner, book, { title: 'Nebulaprivatebook' });
+  const partial = (await readingDetails(owner, book)).item;
+  expect(partial.coverUrl).toBe('https://fixture.invalid/provider-cover.jpg');
+  expect(partial).not.toHaveProperty('backdropUrl');
   const music: MusicItem = { id: 'provider-id', workId: track, title: 'Original track', kind: 'track', artists: [], albumArtists: [], artistNames: [], genres: [], externalIds: {} };
   expect((await personaliseMusicItems(owner, [music]))[0].title).toBe('My peculiar track');
   expect((await personaliseMusicItems(other, [music]))[0].title).toBe('Original track');
