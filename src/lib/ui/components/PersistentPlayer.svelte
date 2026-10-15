@@ -12,7 +12,8 @@
   import { actualPlayedDelta } from '$lib/playback/listening';
   import { noCrop, videoFitStyle, type FrameCrop } from '$lib/playback/crop';
   import { observeVideoCrop } from '$lib/playback/observe-crop';
-  import { message } from '$lib/ui/client';
+  import { message, capturePlaybackApi } from '$lib/ui/client';
+  import { createPlaybackReports } from '$lib/playback/reports';
   import { useClient } from '$lib/ui/client-context';
   import type { MediaView } from '$lib/ui/types';
   import { liquidGlass } from '$lib/ui/materials/glass';
@@ -46,9 +47,9 @@
   let lastReport = 0,
     startedSessionId = '',
     acknowledgedSessionId = '',
-    reports: Promise<boolean> = Promise.resolve(true),
     hls: { destroy: () => void } | null = null,
     closed = false;
+  const reports = createPlaybackReports();
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   let keyboardInteraction = false;
   let scrubbing = $state(false);
@@ -146,19 +147,20 @@
       paused: event === 'pause' || media.paused,
       ...(audioMode ? { playedSeconds } : {}),
     };
-    // Preserve play/pause/stop order even while a previous report is in flight.
-    reports = reports.then(async () => {
+    const request = capturePlaybackApi();
+    // Coalesce queued positions without crossing lifecycle or session boundaries.
+    return reports(session.id, event, async () => {
       try {
         if (started && event !== 'start' && acknowledgedSessionId !== session.id) {
-          await change(`playback/${session.id}/progress`, {
+          await request(`playback/${session.id}/progress`, {
             ...payload,
             event: 'start',
             paused: false,
           });
           acknowledgedSessionId = session.id;
         }
-        await change(`playback/${session.id}/progress`, payload);
-        trackingNotice = '';
+        await request(`playback/${session.id}/progress`, payload);
+        if (player.session?.id === session.id) trackingNotice = '';
         if (event === 'start') acknowledgedSessionId = session.id;
         return true;
       } catch (e) {
@@ -166,7 +168,6 @@
         return false;
       }
     });
-    return reports;
   }
   function playing() {
     lastMovement = performance.now();

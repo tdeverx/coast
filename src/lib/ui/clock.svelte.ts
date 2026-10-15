@@ -1,15 +1,40 @@
-import { onMount } from 'svelte';
-let now = $state(Date.now());
-let users = 0;
-let timer: ReturnType<typeof setInterval> | undefined;
-/** Mounted consumers share one timer, released with the last consumer. */
-export function useClock() {
-  onMount(() => {
+import { untrack } from 'svelte';
+
+function createClock(interval: number) {
+  let now = $state(Date.now());
+  let users = 0;
+  let timer: ReturnType<typeof setInterval> | undefined;
+  function stop() {
+    clearInterval(timer);
+    timer = undefined;
+  }
+  function resume() {
+    stop();
+    if (document.hidden || !users) return;
+    now = Date.now();
+    timer = setInterval(() => now = Date.now(), interval);
+  }
+  function subscribe() {
     if (users++ === 0) {
-      now = Date.now();
-      timer = setInterval(() => now = Date.now(), 1000);
+      document.addEventListener('visibilitychange', resume);
+      resume();
     }
-    return () => { if (--users === 0) { clearInterval(timer); timer = undefined; } };
+    return () => {
+      if (--users !== 0) return;
+      stop();
+      document.removeEventListener('visibilitychange', resume);
+    };
+  }
+  return { subscribe, get now() { return now; } };
+}
+const seconds = createClock(1000);
+const minutes = createClock(60000);
+
+/** Visible mounted consumers share precision-specific timers, released with the last consumer. */
+export function useClock(precision: 'second' | 'minute' = 'second', enabled: () => boolean = () => true) {
+  const clock = precision === 'minute' ? minutes : seconds;
+  $effect(() => {
+    if (enabled()) return untrack(clock.subscribe);
   });
-  return { get now() { return now; } };
+  return { get now() { return clock.now; } };
 }

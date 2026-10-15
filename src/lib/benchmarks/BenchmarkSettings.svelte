@@ -6,28 +6,42 @@
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   import { api, message } from '$lib/ui/client';
+  import { createResource } from '$lib/ui/resource.svelte';
   import type { listBenchmarks } from './service.server';
   let {history}:{history:Awaited<ReturnType<typeof listBenchmarks>>}=$props();
-  let current=$state(untrack(()=>history)), busy=$state(false), error=$state('');
-  $effect(()=>{current=history;});
+  const resource=createResource(untrack(()=>history),true);
+  let current=$derived(resource.data), busy=$state(false), queueError=$state('');
+  let error=$derived(queueError||resource.error);
+  let generation=0, queueController:AbortController|undefined;
+  $effect(()=>{
+    const next=history;
+    generation++;
+    resource.replace(next);
+    queueController?.abort();queueController=undefined;
+    busy=false;queueError='';
+  });
   const ms=(value:number)=>`${value.toFixed(2)} ms`;
   const mib=(value:number)=>`${(value/1024/1024).toFixed(1)} MiB`;
   async function run() {
     if(busy||current.activeId)return;
-    busy=true;error='';
-    try {await api('admin/benchmarks',{});current=await api(`admin/benchmarks?page=${current.page}`,undefined,'GET');}
-    catch(problem){error=message(problem);}
-    finally{busy=false;}
+    busy=true;queueError='';
+    const request=new AbortController(), currentGeneration=generation, selectedPage=current.page;
+    queueController=request;
+    try {
+      await api('admin/benchmarks',{},'POST',{signal:request.signal});
+      if(request.signal.aborted||currentGeneration!==generation)return;
+      await resource.load(signal=>api<Awaited<ReturnType<typeof listBenchmarks>>>(`admin/benchmarks?page=${selectedPage}`,undefined,'GET',{signal}));
+    }
+    catch(problem){if(!request.signal.aborted&&currentGeneration===generation)queueError=message(problem);}
+    finally{if(queueController===request){queueController=undefined;busy=false;}}
   }
   onMount(()=>{
-    let polling=false,stopped=false;
     const timer=setInterval(()=>{
-      if(document.hidden||polling||!current.activeId)return;
-      polling=true;
-      void api<Awaited<ReturnType<typeof listBenchmarks>>>(`admin/benchmarks?page=${current.page}`,undefined,'GET')
-        .then(result=>{if(!stopped)current=result;}).catch(problem=>{if(!stopped)error=message(problem);}).finally(()=>{polling=false;});
+      if(document.hidden||resource.busy||busy||!current.activeId)return;
+      const selectedPage=current.page;
+      void resource.load(signal=>api<Awaited<ReturnType<typeof listBenchmarks>>>(`admin/benchmarks?page=${selectedPage}`,undefined,'GET',{signal}));
     },2000);
-    return()=>{stopped=true;clearInterval(timer);};
+    return()=>{generation++;clearInterval(timer);resource.dispose();queueController?.abort();queueController=undefined;};
   });
 </script>
 <div class="stack">

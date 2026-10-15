@@ -3,6 +3,7 @@
   import { onDestroy, untrack } from 'svelte';
   import { useClient } from '$lib/ui/client-context';
   import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
+  import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
   import type { MediaView } from '$lib/ui/types';
   import type { creditRoles } from '$lib/media/credits';
   import type { ShelfSource, ShelfControl } from './types';
@@ -52,11 +53,11 @@ export function createCreditsSource(getOptions: () => CreditsOptions): ShelfSour
       )
     );
   const cache = new Map<string, Content>();
-  async function load(page = 1) {
+  async function request(page = 1, restore = false) {
     const key = `${personId}:${scope}:${type}:${department}:${available}:${page}`;
     const firstKey = `${personId}:${scope}:${type}:${department}:${available}:1`;
     const path = `people/${personId}/credits?${new URLSearchParams({ scope, type, department, available: String(available), page: String(page) })}`;
-    const cached = cache.get(key);
+    const cached = restore ? cache.get(key) : undefined;
     const response = await resource.load(signal => cached ? Promise.resolve(cached)
       : api<Content>(path, undefined, 'GET', { signal }), {
       merge: (previous, next) => !cached && page > 1 && layout === 'row'
@@ -68,11 +69,27 @@ export function createCreditsSource(getOptions: () => CreditsOptions): ShelfSour
       if (cache.size > 8) cache.delete(cache.keys().next().value!);
     }
   }
+  function load(page = 1) { return request(page); }
+  const ownerKey = $derived(JSON.stringify([route.data.user?.id ?? '', personId, scope]));
+  const refreshKey = $derived(contentRevisionKey(route.data, ['tracking', 'social']));
+  let previousOwner = untrack(() => ownerKey);
+  let previousRefresh = untrack(() => refreshKey);
   $effect(() => {
-    personId; scope;
-    untrack(() => { cache.clear(); if (resource.activated) void load(); });
+    const owner = ownerKey, key = refreshKey;
+    untrack(() => {
+      const ownerChanged = owner !== previousOwner;
+      const changed = ownerChanged || key !== previousRefresh;
+      previousOwner = owner;
+      previousRefresh = key;
+      if (!changed) return;
+      const activated = resource.activated;
+      cache.clear();
+      resource.cancel();
+      if (ownerChanged && activated) resource.replace({ items: [], page: 1, pages: 1, total: 0 });
+      if (activated) void load(layout === 'grid' ? result.page : 1);
+    });
   });
-  onDestroy(resource.cancel);
+  onDestroy(resource.dispose);
 
 
   return {
@@ -84,10 +101,10 @@ export function createCreditsSource(getOptions: () => CreditsOptions): ShelfSour
     get rows() { return scope === 'all' ? 2 : 1; },
     get resetKey() { return `${type}:${department}`; },
     get filters(): ShelfControl[] { return [
-      {type:'segments' as const,label:`${title} roles`,value:department,options:[{value:'all',label:'All'},...(result.departments??['Acting','Crew']).map(label=>({value:label,label}))],change:(value:string)=>{department=value;void load();}},
-      ...(scope!=='library' ? [{type:'availability' as const,label:'Available to play only',value:available?'available':'all',change:(value:string)=>{available=value==='available';void load();}}] : []),
+      {type:'segments' as const,label:`${title} roles`,value:department,options:[{value:'all',label:'All'},...(result.departments??['Acting','Crew']).map(label=>({value:label,label}))],change:(value:string)=>{department=value;void request(1, true);}},
+      ...(scope!=='library' ? [{type:'availability' as const,label:'Available to play only',value:available?'available':'all',change:(value:string)=>{available=value==='available';void request(1, true);}}] : []),
     ]; },
-    get controls(): ShelfControl[] { return [{type:'select',label:`${title} type`,value:type,options:[{value:'all',label:'All'},{value:'movie',label:'Movies'},{value:'show',label:'Shows'}],change:value=>{type=value;void load();}}]; },
+    get controls(): ShelfControl[] { return [{type:'select',label:`${title} type`,value:type,options:[{value:'all',label:'All'},{value:'movie',label:'Movies'},{value:'show',label:'Shows'}],change:value=>{type=value;void request(1, true);}}]; },
     details(item) { const roles=rolesById.get(item.id); return roles && roles.remaining>0 ? {summary:'View all roles',body:roles.full} : undefined; },
     get empty() { return !ready ? 'Loading credits…' : scope==='library' ? 'No available titles in your library.' : 'No credits match these filters.'; }, load,
   };

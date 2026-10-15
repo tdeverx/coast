@@ -222,8 +222,9 @@ export class JellyfinAdapter {
     const sessions=v.parse(activeSessionsSchema,await this.call('/Sessions?ActiveWithinSeconds=120'));
     return sessions.flatMap(session=>{const stream=streamPresentation(session);return stream?[stream]:[];});
   }
-  async identity(expectedId?: string) {
-    const info = v.parse(identitySchema, await this.call('/System/Info/Public'));
+  async identity(expectedId?: string, signal?: AbortSignal) {
+    signal?.throwIfAborted();
+    const info = v.parse(identitySchema, await this.call('/System/Info/Public', {signal}));
     if (info.ProductName !== 'Jellyfin Server')
       throw new ProviderActionError('The endpoint is not a Jellyfin server.', 'identity');
     if (expectedId && info.Id !== expectedId)
@@ -357,7 +358,7 @@ export class JellyfinAdapter {
     }
     return result;
   }
-  async readingItem(userId: string, id: string) { return jellyfinBook((path,init)=>this.call(path,init),userId,id); }
+  async readingItem(userId: string, id: string, signal?:AbortSignal) { return jellyfinBook((path,init)=>this.call(path,init),userId,id,signal); }
   async readingPage(userId:string,offset=0){return jellyfinBookPage((path,init)=>this.call(path,init),userId,'',offset);}
   async readingLibrary(userId: string, search: string, offset=0) { return jellyfinBooks((path,init)=>this.call(path,init),userId,search,offset); }
   async musicLibrary(userId: string, options: MusicBrowseOptions = {}, scan?: MusicScanOptions) {
@@ -394,8 +395,9 @@ export class JellyfinAdapter {
     userId: string,
     capabilities: BrowserCapabilities,
     maxBitrate: number,
-    options: { shared?: boolean; deviceId?: string } = {}
+    options: { shared?: boolean; deviceId?: string; signal?: AbortSignal } = {}
   ) {
+    options.signal?.throwIfAborted();
     const profile = {
       Name: 'Coast browser',
       MaxStreamingBitrate: maxBitrate,
@@ -449,6 +451,7 @@ export class JellyfinAdapter {
         ErrorCode: str,
       }),
       await this.call(`/Items/${encodeURIComponent(itemId)}/PlaybackInfo`, {
+        signal: options.signal,
         method: 'POST',
         body: JSON.stringify({
           UserId: userId,

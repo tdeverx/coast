@@ -1,9 +1,10 @@
 import { diagnosticStore } from '../diagnostics';
 import * as v from 'valibot';
-import { and, desc, eq, isNull,sql } from 'drizzle-orm';
-import { getDb, getSql } from '../db';
-import { notifications } from '../db/schema';
-import { getConfig } from '../config';
+import { and, desc, eq, isNull,sql, type SQL } from 'drizzle-orm';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import { getDb, getSql, type Database } from '../db';
+import { notifications, type UserSettings } from '../db/schema';
+import { getConfig, type CoastConfig } from '../config';
 import { requireAdmin, requireUser, type SessionUser } from '../auth';
 import { AppError } from '../security/errors';
 
@@ -17,26 +18,67 @@ export interface NotificationInput {
   sourceKey?: string;
   data?: import('../../social/model').NotificationData;
 }
-export async function notify(input: NotificationInput, database = getSql()) {
-  const config = await getConfig(database);
-  const [user] = await database`SELECT settings FROM users WHERE id = ${input.userId}`;
-  if (!user) return;
-  if (input.data && user.settings?.social?.notifications?.[input.kind] === false) return;
+export type NotificationDatabase = ReturnType<typeof getSql> | Pick<Database, 'execute'>;
+const notificationBatchSize = 100;
+const notificationDialect = new PgDialect();
+async function notificationQuery<T extends Record<string, unknown>>(database: NotificationDatabase, query: SQL): Promise<T[]> {
+  if ('execute' in database) return Array.from(await database.execute<T>(query)) as T[];
+  const compiled = notificationDialect.sqlToQuery(query);
+  return Array.from(await database.unsafe(compiled.sql, compiled.params)) as T[];
+}
+
+function notificationValues(input: NotificationInput, settings: UserSettings, config: CoastConfig) {
+  const socialNotifications: Partial<Record<string, boolean>> | undefined = settings.social?.notifications;
+  if (input.data && socialNotifications?.[input.kind] === false) return null;
   const maySilence = config.allowNotificationSilencing && !input.locked;
-  const userLevel = user.settings?.notificationsSilenced
-    ? 'silent'
-    : user.settings?.notificationLevel;
-  const requestedLevel =
-    maySilence && ['silent', 'normal', 'persistent'].includes(userLevel)
-      ? userLevel
-      : input.level || config.notificationLevel;
+  const userLevel = settings.notificationsSilenced ? 'silent' : settings.notificationLevel;
+  const requestedLevel = maySilence && userLevel && ['silent', 'normal', 'persistent'].includes(userLevel)
+    ? userLevel : input.level || config.notificationLevel;
   const level = input.locked && requestedLevel === 'silent' ? 'normal' : requestedLevel;
-  const [row] =
-    await database`INSERT INTO notifications (user_id, kind, title, body, level, locked, source_key, data)
-    VALUES (${input.userId}, ${input.kind}, ${input.title.slice(0, 160)}, ${input.body?.slice(0, 2000) || null}, ${level}, ${input.locked || false}, ${input.sourceKey || null}, ${input.data??null}::jsonb)
-    ON CONFLICT (user_id, source_key) DO UPDATE SET title = EXCLUDED.title, body = EXCLUDED.body, level = EXCLUDED.level, locked = EXCLUDED.locked, data = EXCLUDED.data
-    RETURNING id`;
-  return row.id as string;
+  return sql`(${input.userId}, ${input.kind}, ${input.title.slice(0, 160)}, ${input.body?.slice(0, 2000) || null},
+    ${level}, ${input.locked || false}, ${input.sourceKey || null}, ${input.data ?? null}::jsonb)`;
+}
+
+/** Share preference decisions and bounded writes across single notices and broadcasts. */
+async function writeNotifications(inputs: NotificationInput[], settings: Map<string, UserSettings>, config: CoastConfig, database: NotificationDatabase) {
+  const ids: string[] = [], values: SQL[] = [], keys = new Set<string>();
+  const flush = async () => {
+    if (!values.length) return;
+    const rows = await notificationQuery<{id: string}>(database, sql`INSERT INTO notifications (user_id, kind, title, body, level, locked, source_key, data)
+      VALUES ${sql.join(values, sql`, `)}
+      ON CONFLICT (user_id, source_key) DO UPDATE SET title = EXCLUDED.title, body = EXCLUDED.body, level = EXCLUDED.level, locked = EXCLUDED.locked, data = EXCLUDED.data
+      RETURNING id`);
+    ids.push(...rows.map(row => row.id)); values.length = 0; keys.clear();
+  };
+  for (const input of inputs) {
+    const user = settings.get(input.userId);
+    if (!user) continue;
+    const value = notificationValues(input, user, config);
+    if (!value) continue;
+    const key = input.sourceKey ? JSON.stringify([input.userId, input.sourceKey]) : null;
+    // Repeated keys preserve sequential upserts instead of failing a multi-row INSERT.
+    if (key && keys.has(key)) await flush();
+    values.push(value); if (key) keys.add(key);
+    if (values.length === notificationBatchSize) await flush();
+  }
+  await flush();
+  return ids;
+}
+
+export async function notifyMany(inputs: NotificationInput[], database: NotificationDatabase = getSql()) {
+  if (!inputs.length) return [];
+  const config = await getConfig(database), ids: string[] = [];
+  for (let offset = 0; offset < inputs.length; offset += notificationBatchSize) {
+    const batch = inputs.slice(offset, offset + notificationBatchSize);
+    const users = await notificationQuery<{id: string; settings: UserSettings | null}>(database,
+      sql`SELECT id, settings FROM users WHERE id IN (${sql.join([...new Set(batch.map(input => input.userId))].map(id => sql`${id}::uuid`), sql`, `)})`);
+    ids.push(...await writeNotifications(batch, new Map(users.map(user => [user.id, user.settings || {}])), config, database));
+  }
+  return ids;
+}
+
+export async function notify(input: NotificationInput, database: NotificationDatabase = getSql()) {
+  return (await notifyMany([input], database))[0];
 }
 
 export async function resolveNotification(userId: string, sourceKey: string, database = getSql()) {
@@ -86,15 +128,19 @@ export async function broadcast(actor: SessionUser | null, input: unknown) {
     }),
     input
   );
-  const users = await getSql()`SELECT id FROM users WHERE disabled = FALSE`;
-  for (const user of users)
-    await notify({
-      ...message,
-      userId: user.id,
-      kind: 'administrator',
-      sourceKey: `broadcast:${crypto.randomUUID()}`,
-    });
-  return { delivered: users.length };
+  const database = getSql(), config = await getConfig(database);
+  let cursor: string | null = null, delivered = 0;
+  while (true) {
+    const users: {id: string; settings: UserSettings | null}[] = await notificationQuery(database,
+      sql`SELECT id, settings FROM users WHERE disabled = FALSE ${cursor ? sql`AND id > ${cursor}::uuid` : sql``}
+        ORDER BY id LIMIT ${notificationBatchSize}`);
+    if (!users.length) break;
+    const inputs = users.map(user => ({...message, userId: user.id, kind: 'administrator', sourceKey: `broadcast:${crypto.randomUUID()}`}));
+    delivered += (await writeNotifications(inputs, new Map(users.map(user => [user.id, user.settings || {}])), config, database)).length;
+    cursor = users[users.length - 1].id;
+    if (users.length < notificationBatchSize) break;
+  }
+  return { delivered };
 }
 
 export async function listDiagnostics(actor: SessionUser | null, limit = 100) {

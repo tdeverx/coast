@@ -1,0 +1,96 @@
+import {expect,test} from 'bun:test';
+import {compileModule} from 'svelte/compiler';
+// @ts-expect-error Svelte's internal rune test runtime has no public declarations.
+import * as runtime from 'svelte/internal/client';
+import type {LibrarySourceOptions} from '../src/lib/ui/shelves/library.svelte';
+import type {LibraryContent} from '../src/lib/library';
+const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
+const compile=async(path:string)=>compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(await Bun.file(new URL(path,import.meta.url)).text()),{filename:'fixture.svelte.js',generate:'client'}).js.code.replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'));
+const resourceUrl=moduleUrl(await compile('../src/lib/ui/resource.svelte.ts'));
+const revisionUrl=moduleUrl(await compile('../src/lib/ui/content-revision.svelte.ts'));
+const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(import.meta.resolve('svelte'))};export const onDestroy=()=>{};`);
+const routeUrl=moduleUrl(compileModule('export const page=$state({data:{user:{id:"viewer"},contentRevision:{tracking:"one",social:"one"},filters:{kind:"all"}},state:{},url:new URL("http://test/library")});',{filename:'route.svelte.js',generate:'client'}).js.code.replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client')));
+const clientUrl=moduleUrl(`export let delivery;export const setDelivery=next=>delivery=next;export const useClient=()=>({api:(...args)=>delivery(...args)});export class ApiError extends Error{constructor(message,status){super(message);this.status=status;}}`);
+const client=await import(clientUrl),{page}=await import(routeUrl),{invalidateContentRevision}=await import(revisionUrl);
+const navigationUrl=moduleUrl('export const replaceState=()=>{};');
+async function adapter(path:string){return import(moduleUrl((await compile(path))
+ .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
+ .replaceAll('$app/state',routeUrl).replaceAll('$app/navigation',navigationUrl)
+ .replaceAll('$lib/ui/client-context',clientUrl).replaceAll('$lib/ui/client',clientUrl)
+ .replaceAll('$lib/ui/resource.svelte',resourceUrl).replaceAll('$lib/ui/content-revision.svelte',revisionUrl)
+ .replaceAll('$lib/library',import.meta.resolve('../src/lib/library'))
+ .replaceAll('$lib/ui/filter-options',import.meta.resolve('../src/lib/ui/filter-options'))));}
+const {createLibrarySource}:typeof import('../src/lib/ui/shelves/library.svelte')=await adapter('../src/lib/ui/shelves/library.svelte.ts');
+const {createCreditsSource}:typeof import('../src/lib/ui/shelves/credits.svelte')=await adapter('../src/lib/ui/shelves/credits.svelte.ts');
+const content=(id='work',available=true):LibraryContent=>({items:[{id,kind:'movie',title:id,available,progress:0,duration:0,watched:false,playCount:0,watchlist:false,favourite:false,collected:false,dropped:false,rating:null}],page:1,pages:1,total:1});
+const settle=async()=>{for(let i=0;i<10;i++){runtime.flush();await Promise.resolve();}};
+function reset(){page.data.user={id:'viewer'};page.data.contentRevision={tracking:'one',social:'one'};page.data.filters={kind:'all'};}
+function library(initial?:LibraryContent){
+ reset();const options=runtime.state({surface:'watch',layout:initial?'grid':'row',initial} as LibrarySourceOptions);
+ let result!:ReturnType<typeof createLibrarySource>;
+ const dispose=runtime.effect_root(()=>result=createLibrarySource(()=>runtime.get(options)));
+ runtime.flush();
+ return {result,dispose,update:(patch:Partial<LibrarySourceOptions>)=>{runtime.set(options,{...runtime.get(options),...patch});runtime.flush();}};
+}
+test('Library refreshes activated rows for relevant revisions, retains lazy rows and ignores equivalent filters/session data',async()=>{
+ let requests=0;client.setDelivery(async()=>{requests++;return content('work-'+requests);});
+ const {result,dispose}=library();
+ try{
+  page.data.contentRevision.tracking='two';page.data.user={id:'next-viewer'};await settle();expect(requests).toBe(0);expect(result.ready).toBe(false);
+  await result.load();expect(requests).toBe(1);
+  page.data.user={id:'next-viewer'};page.data.filters={kind:'all'};await settle();expect(requests).toBe(1);
+  page.data.contentRevision.tracking='three';await settle();expect(requests).toBe(2);
+  invalidateContentRevision(['tracking']);await settle();expect(requests).toBe(3);
+  result.controls[0].change('show');await settle();expect(requests).toBe(4);
+  page.data.contentRevision.social='two';await settle();expect(requests).toBe(5);
+  expect(result.controls[0].value).toBe('show');
+ }finally{dispose();}
+});
+test('Library retains settled cards on transient refresh failure but clears denied or previous-viewer delivery',async()=>{
+ client.setDelivery(async()=>content());const {result,dispose}=library();
+ let finish!:(value:LibraryContent)=>void,signal!:AbortSignal;
+ try{
+  await result.load();
+  client.setDelivery(async()=>{throw new client.ApiError('Temporary',500);});await result.load();
+  expect(result.items[0].id).toBe('work');expect(result.error).toBe('Temporary');
+  client.setDelivery((_path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>{signal=options.signal;return new Promise(resolve=>finish=resolve);});
+  const stale=result.load();const staleSignal=signal,staleFinish=finish;
+  client.setDelivery(async()=>content('replacement'));
+  page.data.user={id:'replacement-viewer'};runtime.flush();
+  expect(staleSignal.aborted).toBe(true);expect(result.items).toEqual([]);
+  await settle();staleFinish(content('private-old-viewer'));await stale;
+  expect(result.items[0].id).toBe('replacement');
+  client.setDelivery(async()=>{throw new client.ApiError('Private',403);});await result.load();
+  expect(result.items).toEqual([]);expect(result.error).toBe('Private');
+ }finally{dispose();}
+});
+test('Library changed SSR payload replaces data once while equivalent wrappers do not refetch',async()=>{
+ let requests=0;client.setDelivery(async()=>{requests++;return content('unexpected');});
+ const initial=content('initial'),{result,dispose,update}=library(initial);
+ try{
+  update({initial:{...initial}});await settle();expect(requests).toBe(0);
+  const fresh=content('fresh');page.data.contentRevision.tracking='two';update({initial:fresh});await settle();
+  expect(requests).toBe(0);expect(result.items[0].id).toBe('fresh');
+  client.setDelivery(async()=>{throw new Error('Temporary');});await result.load();
+  expect(result.items[0].id).toBe('fresh');
+ }finally{dispose();}
+});
+test('Credits caches selection returns but retries/revisions fetch fresh results and cancel prior viewer work',async()=>{
+ reset();let requests=0;client.setDelivery(async()=>{requests++;return content('work-'+requests);});
+ let result!:ReturnType<typeof createCreditsSource>;const dispose=runtime.effect_root(()=>result=createCreditsSource(()=>({personId:1,title:'Credits'})));runtime.flush();
+ try{
+  page.data.contentRevision.tracking='two';page.data.user={id:'next-viewer'};await settle();expect(requests).toBe(0);expect(result.ready).toBe(false);
+  await result.load();expect(requests).toBe(1);
+  result.controls[0].change('movie');await settle();expect(requests).toBe(2);
+  result.controls[0].change('all');await settle();expect(requests).toBe(2);
+  await result.load();expect(requests).toBe(3);
+  page.data.contentRevision.tracking='three';await settle();expect(requests).toBe(4);
+  expect(result.items[0].id).toBe('work-4');
+  let finish!:(value:LibraryContent)=>void,signal!:AbortSignal;
+  client.setDelivery((_path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>{signal=options.signal;return new Promise(resolve=>finish=resolve);});
+  const stale=result.load();const staleFinish=finish,staleSignal=signal;
+  client.setDelivery(async()=>content('new-viewer'));
+  page.data.user={id:'new-viewer'};runtime.flush();expect(staleSignal.aborted).toBe(true);expect(result.items).toEqual([]);
+  await settle();staleFinish(content('stale'));await stale;expect(result.items[0].id).toBe('new-viewer');
+ }finally{dispose();}
+});

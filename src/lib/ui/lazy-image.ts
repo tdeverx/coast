@@ -1,5 +1,5 @@
-// One observer serves all card images; each horizontal rail owns its request queue.
-const pending = new Map<HTMLImageElement, () => void>();
+// One observer serves all pending artwork; each horizontal rail owns its request queue.
+const pending = new Map<HTMLImageElement, (intersecting: boolean) => void>();
 let observer: IntersectionObserver | undefined;
 type Job = { image: HTMLImageElement; start: () => void };
 type Queue = { active?: Job; waiting: Job[]; scheduled: boolean };
@@ -24,7 +24,7 @@ function unobserve(image: HTMLImageElement) {
 /** Lazy artwork loads sequentially within a horizontal shelf, independently of other shelves. */
 export function lazyImage(image: HTMLImageElement, source: string) {
   let currentSource = source;
-  let visible = false;
+  let activated = false;
   let destroyed = false;
   let queue: Queue | undefined;
   let job: Job | undefined;
@@ -41,57 +41,57 @@ export function lazyImage(image: HTMLImageElement, source: string) {
   };
   image.style.visibility = 'hidden';
   const start = () => {
+    unobserve(image);
     if (destroyed || !currentSource) { finish(); return; }
-    visible = true;
-    // Visibility is managed here; native lazy loading must not defer the active queue slot.
+    activated = true;
+    // Native lazy loading must not defer the active queue slot.
     image.loading = 'eager';
     assign(currentSource);
   };
-  const enqueue = () => {
-    if (!queue || !job) { start(); return; }
-    if (queue.active === job) { assign(currentSource); return; }
+  const removeWaiting = () => {
+    if (queue && job) queue.waiting = queue.waiting.filter(candidate => candidate !== job);
+  };
+  const intersect = (visible: boolean) => {
+    if (!visible || !currentSource) { removeWaiting(); return; }
+    const rail = image.closest('.rail:not(.grid-layout)');
+    if (!rail) { start(); return; }
+    queue ??= queues.get(rail);
+    if (!queue) { queue = { waiting: [], scheduled: false }; queues.set(rail, queue); }
+    job ??= { image, start };
     if (!queue.waiting.includes(job)) queue.waiting.push(job);
     pump(queue);
   };
-  const load = () => {
-    unobserve(image);
-    const rail = image.closest('.rail:not(.grid-layout)');
-    if (!rail) { start(); return; }
-    queue = queues.get(rail);
-    if (!queue) { queue = { waiting: [], scheduled: false }; queues.set(rail, queue); }
-    job = { image, start };
-    enqueue();
+  const observe = () => {
+    if (typeof IntersectionObserver === 'undefined') { intersect(true); return; }
+    observer ??= new IntersectionObserver(entries => {
+      for (const entry of entries)
+        pending.get(entry.target as HTMLImageElement)?.(entry.isIntersecting);
+    }, { rootMargin: '300px 0px' });
+    pending.set(image, intersect);
+    observer.observe(image);
   };
   image.addEventListener('load', completed);
   image.addEventListener('error', completed);
-  if (typeof IntersectionObserver === 'undefined') load();
-  else {
-    observer ??= new IntersectionObserver(entries => {
-      for (const entry of entries)
-        if (entry.isIntersecting) pending.get(entry.target as HTMLImageElement)?.();
-    }, { rootMargin: '300px 0px' });
-    pending.set(image, load);
-    observer.observe(image);
-  }
+  observe();
   return {
     update(next: string) {
       if (next === currentSource) return;
       currentSource = next;
-      if (visible && next) {
+      if (!next) { removeWaiting(); unobserve(image); return; }
+      if (activated) {
         image.style.visibility = 'hidden';
-        // Fallbacks and artwork changes share the same rail slot as first loads.
-        enqueue();
-      }
+        // An in-flight fallback retains its slot; later changes re-check current demand.
+        if (queue && job && queue.active === job) assign(next);
+        else observe();
+      } else if (!pending.has(image)) observe();
     },
     destroy() {
       destroyed = true;
       unobserve(image);
       image.removeEventListener('load', completed);
       image.removeEventListener('error', completed);
-      if (queue && job) {
-        queue.waiting = queue.waiting.filter(candidate => candidate !== job);
-        finish();
-      }
+      removeWaiting();
+      finish();
     },
   };
 }

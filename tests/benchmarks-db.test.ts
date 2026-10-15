@@ -1,10 +1,12 @@
 import {beforeAll,afterAll,expect,test} from 'bun:test';
 import {getSql,closeDb} from '../src/lib/server/db';
-import {startBenchmark,listBenchmarks,executeBenchmark} from '../src/lib/benchmarks/service.server';
+import {startBenchmark,listBenchmarks,executeBenchmark,benchmarkCollectionQueries} from '../src/lib/benchmarks/service.server';
+import {PgDialect} from 'drizzle-orm/pg-core';
+import {getConfig} from '../src/lib/server/config';
 import {claimNextAction,cancelAction,retryAction,registerActionHandler,runQueueOnce} from '../src/lib/server/queue';
 import {contentRevision} from '../src/lib/server/content-revision.server';
 import {collectionFreshnessSql} from '../src/lib/collection/freshness.server';
-import {workAssessments} from '../src/lib/collection/query.server';
+import {workAssessments,collectionData,collectionParameters} from '../src/lib/collection/query.server';
 import {workSocial} from '../src/lib/social/queries.server';
 import type {SessionUser} from '../src/lib/server/auth';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
@@ -315,6 +317,32 @@ run('database read-only probes reject accidental writes from called SQL function
   const [record]=await sql`select state,measurements,errors from benchmark_runs where id=${item.run.id}`;
   expect(record.state).toBe('failed');expect(record.measurements.wallMs).toBeGreaterThan(0);
  }finally{await sql.unsafe(saved.definition);await clearJobs();}
+});
+run('benchmark membership and assessment cohorts match enabled Collection media including books and comics',async()=>{
+ const db=getSql(),config=await getConfig(),dialect=new PgDialect();
+ const [owner]=await db`insert into users(username,role) values('benchmark-reading-cohort','admin') returning id`;
+ const [screen]=await db`insert into media(kind,title) values('movie','Benchmark screen cohort') returning id`;
+ const [book,comic]=await db`insert into works(category,kind) values('book','book'),('comic','comic') returning id,kind`;
+ try{
+  for(const item of [book,comic])await db`insert into reading_works(id,provider,external_id,kind,title,source_url) values(${item.id},'openlibrary',${item.id},${item.kind},${`Benchmark ${item.kind} cohort`},'https://fixture.invalid/reading')`;
+  for(const item of [screen,book,comic])await db`insert into tracking_state(user_id,media_id,collected) values(${owner.id},${item.id},true)`;
+  for(const [experimentalBooks,experimentalComics] of [[false,false],[true,false],[false,true],[true,true]]){
+   const enabled={...config,experimentalBooks,experimentalComics};
+   await db`insert into system_settings(key,value) values('coast',${enabled}::jsonb) on conflict(key) do update set value=excluded.value`;
+   const queries=benchmarkCollectionQueries(owner.id,enabled),membership=dialect.sqlToQuery(queries.membership),cohort=dialect.sqlToQuery(queries.assessmentCohort);
+   const [result]=await db.unsafe(membership.sql,membership.params);
+   const expected=[screen.id,...(experimentalBooks?[book.id]:[]),...(experimentalComics?[comic.id]:[])].sort();
+   expect(Number(result.total)).toBe(expected.length);
+   expect(result.items.map((item:{id:string})=>item.id).sort()).toEqual(expected);
+   expect((await db.unsafe(cohort.sql,cohort.params)).map((item:{id:string})=>item.id).sort()).toEqual(expected);
+   const production=await collectionData(owner.id,collectionParameters(new URL('http://coast.test/collection')));
+   expect(production.items.map(item=>item.id).sort()).toEqual(expected);
+  }
+ }finally{
+  await db`update system_settings set value=${config}::jsonb where key='coast'`;
+  await db`delete from users where id=${owner.id}`;
+  for(const item of [screen,book,comic])await db`delete from works where id=${item.id}`;
+ }
 });
 run('metadata overrides use their media key and account cascades preserve benchmark history',async()=>{
  await getSql()`insert into metadata_overrides(media_id,title,updated_by) values(${movie},'Override',${actor.id})`;

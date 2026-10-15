@@ -1,7 +1,7 @@
 import {expect,test} from 'bun:test';
 import {compileModule} from 'svelte/compiler';
 const moduleUrl=(code:string)=>`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
-const deferred=<T=any>()=>{let resolve!:(value:T)=>void;const promise=new Promise<T>(done=>resolve=done);return {promise,resolve};};
+const deferred=<T=any>()=>{let resolve!:(value:T)=>void,reject!:(cause:unknown)=>void;const promise=new Promise<T>((done,fail)=>{resolve=done;reject=fail;});return {promise,resolve,reject};};
 const settle=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
 let fixture=0;
 async function loadClient(kind:'reading'|'playback'){
@@ -24,6 +24,79 @@ async function loadClient(kind:'reading'|'playback'){
 }
 const readingSession=(id:string)=>({id,workId:'book',title:'Book',format:'pdf',edition:'edition',location:{format:'pdf',page:50,total:100},source:'jellyfin',url:'/file'});
 const input={connectionId:'connection',externalId:'external'};
+
+test('acknowledged bookmarks skip identical saves and final flush while failed saves remain retryable',async()=>{
+ const {client:c,transport:t}=await loadClient('reading');c.reader.session=readingSession('a');c.reader.location=c.reader.session.location;
+ const location=c.reader.location;
+ await c.recordReading(location);await c.recordReading({...location});await c.retryReadingSave();await c.closeReading();
+ expect(t.calls.filter((call:any)=>call.args[0].endsWith('/location'))).toHaveLength(1);
+ expect(t.calls.filter((call:any)=>call.args[0].endsWith('/close'))).toHaveLength(1);
+ c.reader.session=readingSession('b');c.reader.location=location;
+ let failed=true;t.delivery(()=>failed?Promise.reject(Error('offline')):Promise.resolve({}));
+ expect(await c.recordReading(location)).toBe(false);expect(c.reader.unsaved).toBe(true);
+ failed=false;await c.retryReadingSave();expect(c.reader.unsaved).toBe(false);expect(c.reader.error).toBe('');
+ expect(t.calls.filter((call:any)=>call.args[0]==='reading/sessions/b/location')).toHaveLength(2);
+});
+test('bookmark drain skips an identical pending snapshot but retains the newest changed page',async()=>{
+ const {client:c,transport:t}=await loadClient('reading'),first=deferred();c.reader.session=readingSession('a');
+ const original=c.reader.session.location,next={...original,page:60};let count=0;
+ t.delivery(()=>++count===1?first.promise:Promise.resolve({}));
+ const saving=c.recordReading(original);c.recordReading({...original});first.resolve({});await saving;
+ expect(t.calls).toHaveLength(1);
+ const held=deferred();t.delivery(()=>held.promise);
+ const changed=c.recordReading(next);c.recordReading({...next,page:70});c.recordReading({...next,page:80});
+ held.resolve({});await changed;
+ expect(t.calls.map((call:any)=>call.args[1].page)).toEqual([50,60,80]);expect(c.reader.unsaved).toBe(false);
+ await c.closeReading();expect(t.calls.filter((call:any)=>call.args[0].endsWith('/location'))).toHaveLength(3);
+});
+test('a failed delivery invalidates acknowledgement before returning to an older saved location',async()=>{
+ const {client:c,transport:t}=await loadClient('reading');c.reader.session=readingSession('a');
+ const original=c.reader.session.location;let stored=original,fail=false;
+ t.delivery((_path:string,location:any)=>{stored=location;return fail?Promise.reject(Error('Response lost after save')):Promise.resolve({});});
+ await c.recordReading(original);fail=true;expect(await c.recordReading({...original,page:60})).toBe(false);
+ expect(stored.page).toBe(60);fail=false;await c.recordReading(original);
+ expect(stored.page).toBe(50);expect(t.calls).toHaveLength(3);expect(c.reader.unsaved).toBe(false);
+});
+
+async function readerEffect(c:any,t:any,go:(location:any)=>Promise<void>){
+ const source=await Bun.file(new URL('../src/lib/reading/Reader.svelte',import.meta.url)).text();
+ const script=source.match(/<script lang="ts">([^]*?)<\/script>/)![1].replace(/^ import .*;\n/gm,'')
+  .replace("import('./reader/engine')",'Promise.resolve({createReader:fixture.createReader})');
+ const intervals:{callback:()=>void;delay:number}[]=[],cleared:unknown[]=[];
+ const fixture={...c,api:t.api,message:(cause:Error)=>cause.message,syncedPlayer:{room:null},canControlPlayback:()=>true,document:{hidden:false},host:{},createReader:async()=>({go,destroy(){}})};
+ const declarations='const {reader,closeReading,recordReading,publishReading,setReadingNavigator,retryReadingSave,api,message,syncedPlayer,canControlPlayback,document}=fixture;const $state=value=>value,$derived=value=>value;let effect;const $effect=fn=>effect=fn;';
+ const compiled=new Bun.Transpiler({loader:'ts'}).transformSync(declarations+script+'\nreturn {start(){host=fixture.host;return effect();},external:()=>external};');
+ const mounted=Function('fixture','setInterval','clearInterval',compiled)(fixture,(callback:()=>void,delay:number)=>{intervals.push({callback,delay});return intervals.length;},(id:unknown)=>cleared.push(id));
+ const cleanup=mounted.start();await settle();return {cleanup,fixture,intervals,cleared,mounted};
+}
+test('reader effect fences delayed navigator publication after close and session replacement',async()=>{
+ for(const replacement of [null,readingSession('b')])for(const failed of [false,true]){
+  const {client:c,transport:t}=await loadClient('reading'),moving=deferred();c.reader.session=readingSession('a');c.reader.location=c.reader.session.location;c.reader.visible=true;
+  const effect=await readerEffect(c,t,()=>moving.promise),target={format:'pdf',page:60,total:100};
+  const aligning=c.alignReading(target);await settle();effect.cleanup();
+  c.reader.session=replacement;c.reader.location=replacement?.location??null;
+  if(failed)moving.reject(Error('Late canceled decoder'));else moving.resolve({});await aligning;await settle();
+  expect(c.reader.location).toEqual(replacement?.location??null);expect(t.calls).toEqual([]);expect(effect.mounted.external()).toBe(false);
+ }
+});
+test('current reader navigation errors remain observable',async()=>{
+ const {client:c,transport:t}=await loadClient('reading');c.reader.session=readingSession('a');c.reader.visible=true;
+ const effect=await readerEffect(c,t,async()=>{throw Error('Current decoder failure');});
+ await expect(c.alignReading({format:'pdf',page:60,total:100})).rejects.toThrow('Current decoder failure');
+ expect(effect.mounted.external()).toBe(false);effect.cleanup();
+});
+test('reader alignment publishes only the newest completion and keeps its explicit visible minute heartbeat',async()=>{
+ const {client:c,transport:t}=await loadClient('reading'),first=deferred(),last=deferred();c.reader.session=readingSession('a');c.reader.location=c.reader.session.location;c.reader.visible=true;
+ const effect=await readerEffect(c,t,location=>location.page===60?first.promise:last.promise);
+ const older=c.alignReading({format:'pdf',page:60,total:100}),newer=c.alignReading({format:'pdf',page:70,total:100});
+ first.resolve({});await older;expect(c.reader.location.page).toBe(50);expect(effect.mounted.external()).toBe(true);
+ last.resolve({});await newer;await settle();expect(c.reader.location.page).toBe(70);expect(effect.mounted.external()).toBe(false);
+ expect(t.calls.filter((call:any)=>call.args[0].endsWith('/location')).map((call:any)=>call.args[1].page)).toEqual([70]);
+ expect(effect.intervals.map(timer=>timer.delay)).toEqual([60000]);
+ effect.intervals[0].callback();await settle();expect(t.calls.filter((call:any)=>call.args[0].endsWith('/heartbeat'))).toHaveLength(1);
+ effect.fixture.document.hidden=true;effect.intervals[0].callback();c.reader.visible=false;effect.fixture.document.hidden=false;effect.intervals[0].callback();await settle();
+ expect(t.calls.filter((call:any)=>call.args[0].endsWith('/heartbeat'))).toHaveLength(1);effect.cleanup();expect(effect.cleared).toEqual([1]);
+});
 
 test('failed final bookmark retains the session and newest location for visible retry',async()=>{
  const {client:c,transport:t}=await loadClient('reading');

@@ -4,7 +4,7 @@ import { context, logDiagnostic, classifyFailure, diagnosticStore } from '$lib/s
 import { correlationId } from '$lib/diagnostics';
 import { featureEnabled } from '$lib/experimental';
 import { experimentalPathFeature } from '$lib/server/experimental';
-import { refreshDiagnosticConfig, getConfig } from '$lib/server/config';
+import { refreshDiagnosticConfig, getConfig, withRequestConfig, withoutRequestConfig } from '$lib/server/config';
 import { building } from '$app/environment';
 import { redirect, json, error, isRedirect, isHttpError, type Handle } from '@sveltejs/kit';
 import { authenticateSession, setupRequired } from '$lib/server/auth';
@@ -20,7 +20,7 @@ export const init: import('@sveltejs/kit').ServerInit = async () => {
 const applicationHandle: Handle = async ({ event, resolve }) => {
   if (building) return resolve(event);
   if (platformStopping()) return json({status:'unavailable'}, {status:503, headers:{'Cache-Control':'no-store'}});
-  await initializePlatform(registerProviderActions);
+  await withoutRequestConfig(() => initializePlatform(registerProviderActions));
   // Public API handlers authenticate only scoped machine tokens, never browser cookies.
   if (event.url.pathname.startsWith('/api/public/v1/')) return resolve(event);
   if (!['GET', 'HEAD', 'OPTIONS'].includes(event.request.method)) {
@@ -71,7 +71,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     redirect(303,'/onboarding');
   }
   const experimentalFeature = experimentalPathFeature(event.url.pathname);
-  if (experimentalFeature && !featureEnabled(await getConfig(), experimentalFeature)) {
+  if (experimentalFeature && !featureEnabled(config, experimentalFeature)) {
     if (event.url.pathname.startsWith('/api/'))
       return json(
         { error: 'Experimental features are disabled.', code: 'experimental_disabled' },
@@ -100,10 +100,10 @@ export const handle: Handle = async ({ event, resolve }) => {
   if (building) return resolve(event);
   if (platformStopping()) return json({status:'unavailable'}, {status:503, headers:{'Cache-Control':'no-store'}});
   const id = correlationId(event.request.headers.get('x-coast-correlation-id'));
-  return context.run(id, async () => {
+  return withRequestConfig(() => context.run(id, async () => {
+    const started = performance.now();
     // Readiness must not first block on a separate, unbounded settings query.
     if (event.url.pathname !== '/api/v1/health') await refreshDiagnosticConfig();
-    const started = performance.now();
     const diagnosticRequest = event.url.pathname.startsWith('/api/v1/diagnostics');
     const segment = event.url.pathname.split('/')[3];
     const operation = [
@@ -161,7 +161,7 @@ export const handle: Handle = async ({ event, resolve }) => {
         });
       throw error;
     }
-  });
+  }));
 };
 export const handleError: import('@sveltejs/kit').HandleServerError = ({ error }) => {
   void logDiagnostic('error', 'application.failed', { failure: classifyFailure(error) });

@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import { requireAdmin, type SessionUser } from '$lib/server/auth';
-import { getConfig, configSchema, type CoastConfig } from '$lib/server/config';
+import { getConfig, configSchema, replaceRequestConfig, type CoastConfig } from '$lib/server/config';
 import { getSql } from '$lib/server/db';
 import { diagnosticStore } from '$lib/server/diagnostics';
 
@@ -22,5 +22,6 @@ export async function updateConfig(
     return next;
   });
   diagnosticStore.level = next.diagnosticLevel;
+  replaceRequestConfig(next);
   return next;
 }

@@ -1,6 +1,17 @@
 import { getSql } from '$lib/server/db';
 import { AppError } from '$lib/server/security/errors';
 
+/** Waits remain cheap under saturation and wake immediately when their request is withdrawn. */
+export function waitSharedRetry(milliseconds:number,signal?:AbortSignal) {
+  signal?.throwIfAborted();
+  return new Promise<void>((resolve,reject)=>{
+    const done=()=>{signal?.removeEventListener('abort',aborted);resolve();};
+    const timer=setTimeout(done,milliseconds);
+    const aborted=()=>{clearTimeout(timer);signal?.removeEventListener('abort',aborted);reject(signal?.reason);};
+    signal?.addEventListener('abort',aborted,{once:true});
+  });
+}
+
 /** Short row locks admit parallel dispatches; no provider I/O holds a transaction. */
 export async function withSharedRequest(
   ownerId:string,viewerId:string,playbackId:string,request:Request,
@@ -10,7 +21,9 @@ export async function withSharedRequest(
   const deadline=new AbortController(),timer=setTimeout(()=>deadline.abort(new DOMException('Stream preparation timed out.','TimeoutError')),25_000);
   const signal=AbortSignal.any([request.signal,deadline.signal]);
   try {
+  signal.throwIfAborted();
   const db=getSql(),id=crypto.randomUUID();
+  let retry=50;
   while(true){
     signal.throwIfAborted();
     const admitted=await db.begin(async tx=>{
@@ -25,7 +38,8 @@ export async function withSharedRequest(
       return true;
     });
     if(admitted)break;
-    await new Promise(resolve=>setTimeout(resolve,50));
+    await waitSharedRetry(retry,signal);
+    retry=Math.min(250,retry*2);
   }
   let released=false;
   async function release(){clearTimeout(timer);if(!released){await db`delete from share_request_leases where id=${id}`;released=true;}}
@@ -37,13 +51,18 @@ export async function withSharedRequest(
 }
 
 /** Call only after stopping the session or fencing new dispatches with its preparation token. */
-export async function waitSharedRequests(playbackId:string) {
+export async function waitSharedRequests(playbackId:string,signal?:AbortSignal) {
+  signal?.throwIfAborted();
   const db=getSql(),deadline=Date.now()+40_000;
+  let retry=50;
   while(true){
+    signal?.throwIfAborted();
     await db`delete from share_request_leases where playback_id=${playbackId} and expires_at<=now()`;
     const [active]=await db`select id from share_request_leases where playback_id=${playbackId} limit 1`;
+    signal?.throwIfAborted();
     if(!active)return;
     if(Date.now()>=deadline)throw new AppError(503,'Previous stream requests are still finishing. Retry shortly.');
-    await new Promise(resolve=>setTimeout(resolve,50));
+    await waitSharedRetry(Math.min(retry,Math.max(0,deadline-Date.now())),signal);
+    retry=Math.min(250,retry*2);
   }
 }

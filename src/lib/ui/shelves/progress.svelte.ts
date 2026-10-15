@@ -139,7 +139,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     preferences[tab] = { ...current, ...patch };
     void select();
   }
-  onDestroy(resource.cancel);
+  onDestroy(resource.dispose);
 
 
   return {

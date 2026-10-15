@@ -61,3 +61,40 @@ test('journal groups only consecutive episodes within the same UTC day', () => {
   ]);
   expect(groups.map((d) => d.runs.map((r) => r.length))).toEqual([[2, 1, 1], [1]]);
 });
+
+test('all-time annual aggregation preserves exact daily-oracle boundaries, duplicates and sparse totals', () => {
+  const today='2026-10-15';
+  for(const start of ['2024-10-16','2024-10-15','2024-10-14','2020-02-29','1976-10-15','1926-10-15']){
+    const days=[{date:start,movies:1,episodes:2},{date:'2024-02-29',movies:3,episodes:4},{date:'2026-10-15',movies:5,episodes:6},{date:'2026-10-15',movies:7,episodes:8},{date:'2026-10-16',movies:99,episodes:99},{date:'2025-02-30',movies:99,episodes:99}];
+    const first=[...days].sort((a,b)=>a.date.localeCompare(b.date))[0].date;
+    const count=Math.ceil((Date.parse(today)-Date.parse(first))/86400000)+1;
+    const byDate=new Map(days.map(day=>[day.date,day]));
+    const expected:ReturnType<typeof activityBuckets>=[];
+    for(let time=Date.parse(first);time<=Date.parse(today);time+=86400000){
+      const date=new Date(time).toISOString().slice(0,10);
+      const previous=expected.at(-1);
+      if(!previous||previous.date.slice(0,count>730?4:7)!==date.slice(0,count>730?4:7))expected.push({date,end:date,movies:0,episodes:0});
+      const bucket=expected.at(-1)!;bucket.end=date;
+      const value=byDate.get(date);bucket.movies+=value?.movies??0;bucket.episodes+=value?.episodes??0;
+    }
+    expect(activityBuckets(days,today,'all')).toEqual(expected);
+  }
+  for(const start of ['2024-10-16','2024-10-15','2024-10-14']){
+    const result=activityBuckets([{date:start,movies:1,episodes:0}],today,'all');
+    expect(result[0].date).toBe(start);expect(result.at(-1)?.end).toBe(today);
+    expect(result).toHaveLength(start==='2024-10-16'?25:3);
+  }
+});
+
+test('sparse all-time activity visits calendar years rather than every quiet day',()=>{
+  const original=Date.prototype.toISOString;
+  let conversions=0;
+  Date.prototype.toISOString=function(){conversions++;return original.call(this);};
+  try{
+    const days=[{date:'1926-10-15',movies:1,episodes:2},{date:'2026-10-15',movies:3,episodes:4}];
+    const buckets=activityBuckets(days,'2026-10-15','all');
+    expect(buckets).toHaveLength(101);
+    expect(conversions).toBeLessThanOrEqual(buckets.length*2+days.length);
+    expect(buckets.reduce((sum,bucket)=>sum+bucket.movies+bucket.episodes,0)).toBe(10);
+  }finally{Date.prototype.toISOString=original;}
+});

@@ -47,7 +47,7 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
  if(input.source==='local'){format=input.format;edition=input.edition;}
  else {
   const {connection,instance,adapter}=await getJellyfin(userId,input.connectionId);
-  const book=await adapter.readingItem(connection.externalUserId!,input.externalId);
+  const book=await adapter.readingItem(connection.externalUserId!,input.externalId,signal);
   signal?.throwIfAborted();
   const supported=bookFormat(book);if(!supported)throw new AppError(409,'This file format is not supported. Choose PDF, EPUB or CBZ.');
   format=supported;edition=sourceEdition(instance.serverIdentity??instance.id,book);connectionId=connection.id;accountGeneration=connection.accountGeneration;externalId=book.Id;
@@ -100,10 +100,11 @@ export async function closeReading(userId:string,id:string) {
  await getDb().update(readingSessions).set({closedAt:new Date()}).where(eq(readingSessions.id,id));return {closed:true};
 }
 export async function streamReading(userId:string,id:string,request:Request) {
+ request.signal.throwIfAborted();
  const session=await ownedReadingSession(userId,id);
  if(!session.connectionId||!session.externalId)throw new AppError(404,'Local reading files remain in your browser.');
  const {connection,instance,adapter}=await getJellyfin(userId,session.connectionId);
- const book=await adapter.readingItem(connection.externalUserId!,session.externalId);
+ const book=await adapter.readingItem(connection.externalUserId!,session.externalId,request.signal);
  if(bookFormat(book)!==session.format||sourceEdition(instance.serverIdentity??instance.id,book)!==session.edition)throw new AppError(409,'This reading file changed. Open the new edition.');
  const credentials=v.parse(v.object({accessToken:v.string()}),JSON.parse(await decryptCredential(connection.credentials!)));
  const headers=new Headers({Authorization:jellyfinAuthorization(userId,credentials.accessToken)});

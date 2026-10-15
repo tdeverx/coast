@@ -1,4 +1,4 @@
-import { requestPriority } from '$lib/server/security/request-priority';
+import { ProviderQueueBusyError, requestPriority } from '$lib/server/security/request-priority';
 import { playbackLimits, sharedResourcePath, minimumSharedBitrate } from '$lib/sharing/policy';
 import {playbackArtwork} from '$lib/media/artwork';
 import { acceptedPlayedTime, listenReached } from './listening';
@@ -201,6 +201,7 @@ async function preparePlayback(
   const maximum = Math.min(share?.maxBitrate ?? playbackLimits(config.maxBitrateMbps,account?.settings??{}).personal, data.browser.maxBitrate || Infinity);
   if(share&&maximum<minimumSharedBitrate)throw new Error('Shared playback requires a bitrate limit of at least 0.5 Mbps.');
   const providerDeviceId = share ? crypto.randomUUID() : userId;
+  let providerBusy: ProviderQueueBusyError | undefined;
   for (const row of rows) {
     signal?.throwIfAborted();
     const key = `${row.availability.connectionId}:${row.providerItem.id}`;
@@ -211,14 +212,14 @@ async function preparePlayback(
         userId,
         row.availability.connectionId
       );
-      await adapter.identity(instance.serverIdentity || undefined);
+      await adapter.identity(instance.serverIdentity || undefined,signal);
       signal?.throwIfAborted();
       const info = await adapter.playbackInfo(
         row.providerItem.externalId,
         connection.externalUserId!,
         data.browser,
         maximum,
-        {shared:!!share,deviceId:providerDeviceId}
+        {shared:!!share,deviceId:providerDeviceId,signal}
       );
       signal?.throwIfAborted();
       for (const source of info.sources) {
@@ -247,12 +248,14 @@ async function preparePlayback(
       }
     } catch (error) {
       signal?.throwIfAborted();
+      if (error instanceof ProviderQueueBusyError) providerBusy ??= error;
       void logDiagnostic('error', 'playback.failed', { failure: classifyFailure(error) });
     }
   }
   signal?.throwIfAborted();
   candidates.sort((a, b) => comparePlaybackPlans(a.plan, b.plan));
   const best = candidates[0];
+  if (!best && providerBusy) throw providerBusy;
   if (!best)
     throw new Error(
       data.expectedDuration!==undefined ? 'No accessible source matches the synced session edition and duration.' : 'No available version can play on this device under the current playback policy.'

@@ -1,0 +1,8 @@
+{
+  "scope": "Complete emitted client JS/CSS assets, not initial-route transfer",
+  "baseline": "ea01908654db7c0b4cf591028c7f9b321c6896dd",
+  "runtime": "1.4.3",
+  "assets": 227,
+  "bytes": 2957794,
+  "gzipBytes": 951221
+}

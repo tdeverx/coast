@@ -1,4 +1,4 @@
-import { sequenceEntries, nextSequenceEntry } from '../../core/lists/sequence.server';
+import { nextSequenceEntries } from '../../core/lists/sequence.server';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import { and, or, asc, eq, inArray, sql } from 'drizzle-orm';
 import { getDb } from '../db';
@@ -147,15 +147,10 @@ export async function continuationIds(userId: string, startedIds: string[], avai
     ...collections.map((row) => ({ ...row, kind: 'collection' as const })),
     ...playlists.map((row) => ({ ...row, kind: 'playlist' as const })),
   ];
-  const sequenceNext = [];
-  for (const source of sources) {
-    const entry = nextSequenceEntry(await sequenceEntries(userId, source));
-    if (entry)
-      sequenceNext.push({
-        entry,
-        source: { id: source.id, kind: source.kind },
-        title: source.title,
-      });
-  }
+  const next = await nextSequenceEntries(userId,sources);
+  const sequenceNext = sources.flatMap(source => {
+    const entry=next.get(`${source.kind}:${source.id}`);
+    return entry ? [{entry,source:{id:source.id,kind:source.kind},title:source.title}] : [];
+  });
   return { ...planEpisodeContinuations(episodes, availableOnly), sequenceNext };
 }

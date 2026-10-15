@@ -1,5 +1,7 @@
 import {beforeAll,beforeEach,afterAll,test,expect,spyOn} from 'bun:test';
 import {getDb,getSql} from '../src/lib/server/db';
+import {ProviderQueueBusyError,providerRequestLimits,queueProviderRequest,requestPriority} from '../src/lib/server/security/request-priority';
+import {handler} from '../src/lib/server/api/index.server';
 import {getConfig,type CoastConfig} from '../src/lib/server/config';
 import {encryptCredential} from '../src/lib/server/security/credentials';
 import {startPlayback,progressPlayback,streamPlayback} from '../src/lib/playback/service.server';
@@ -13,7 +15,8 @@ const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),instance=crypto.randomUUID(),connection=crypto.randomUUID(),movie=crypto.randomUUID(),track=crypto.randomUUID();
 const browser={containers:['mp4','m4a'],videoCodecs:['h264'],audioCodecs:['aac'],nativeHls:false,hlsJs:true};
 const deferred=()=>{let resolve!:()=>void;const promise=new Promise<void>(done=>resolve=done);return {promise,resolve};};
-let config:CoastConfig,credential:string,onInfo:()=>Promise<void>=async()=>{},onPresentation:()=>Promise<void>=async()=>{};
+let config:CoastConfig,credential:string,onInfo:(signal?:AbortSignal)=>Promise<void>=async()=>{},onPresentation:()=>Promise<void>=async()=>{};
+let onIdentity:(signal?:AbortSignal)=>Promise<void>=async()=>{};
 let infos=0,relays=0,scrobbles:string[]=[];
 let restore:()=>void=()=>{};
 beforeAll(async()=>{
@@ -34,9 +37,9 @@ beforeAll(async()=>{
  const original=connections.getJellyfin,views=queries.mediaViews;
  const account=spyOn(connections,'getJellyfin').mockImplementation(async(uid,id)=>{
   const context=await original(uid,id);
-  context.adapter.identity=async()=>({id:'synthetic-server',name:'Fixture',version:'fixture'});
-  context.adapter.playbackInfo=async(itemId)=>{
-   infos++;await onInfo();
+  context.adapter.identity=async(_expected,signal)=>{await onIdentity(signal);return {id:'synthetic-server',name:'Fixture',version:'fixture'};};
+  context.adapter.playbackInfo=async(itemId,_userId,_capabilities,_maxBitrate,options)=>{
+   infos++;await onInfo(options?.signal);
    const audio=itemId==='audio-item';
    const source:PlaybackSource={id:'source',name:'Original',container:audio?'m4a':'mp4',bitrate:1_000_000,durationSeconds:120,directPlay:true,directStream:true,transcoding:true,transcodingUrl:`/${audio?'Audio':'Videos'}/${itemId}/master.m3u8`,raw:{},streams:audio?[{type:'Audio',codec:'aac',index:0}]:[{type:'Video',codec:'h264',index:0,width:1280,height:720},{type:'Audio',codec:'aac',index:1}]};
    return {sources:[source],playSessionId:crypto.randomUUID()};
@@ -50,7 +53,7 @@ beforeAll(async()=>{
 });
 beforeEach(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;
- onInfo=async()=>{};onPresentation=async()=>{};infos=0;relays=0;scrobbles=[];
+ onIdentity=async()=>{};onInfo=async()=>{};onPresentation=async()=>{};infos=0;relays=0;scrobbles=[];
  const db=getSql();
  await db`DELETE FROM synced_rooms WHERE host_id=${user}`;
  await db`DELETE FROM playback_sessions WHERE user_id=${user}`;
@@ -66,10 +69,72 @@ afterAll(async()=>{
 const sessionRows=()=>getSql()<{id:string;state:string;account_generation:string|null}[]>`SELECT id,state,account_generation FROM playback_sessions WHERE user_id=${user}`;
 async function replaceAccount(){await getSql()`UPDATE provider_connections SET external_user_id='account-b',credentials=${credential} WHERE id=${connection}`;}
 
+for(const operation of ['identity','playbackInfo'] as const) {
+ run(`saturated ${operation} preserves retryable 503 for video, music and shared playback`,async()=>{
+  const origin=crypto.randomUUID(),abort=new AbortController(),release=deferred();
+  const active=queueProviderRequest(origin,0,()=>release.promise);
+  const waiting=Array.from({length:providerRequestLimits.perOrigin},()=>
+   requestPriority.run(0,()=>queueProviderRequest(origin,0,async()=>{},abort.signal)).catch(error=>error));
+  const contact=async()=>{await queueProviderRequest(origin,0,async()=>{});};
+  if(operation==='identity')onIdentity=contact;else onInfo=contact;
+  try {
+   for(const mediaId of [movie,track]) {
+    const request=new Request('https://coast.invalid/api/v1/playback',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({mediaId,browser})});
+    const response=await handler({request,url:new URL(request.url),params:{path:'playback'},locals:{user:{id:user,username:'fixture',email:null,role:'admin',settings:{}}}} as Parameters<typeof handler>[0]);
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({code:'provider_queue_busy'});
+   }
+   await expect(startPlayback(user,{mediaId:movie,browser},{id:crypto.randomUUID(),viewerId:user,connectionId:connection,expiresAt:new Date(Date.now()+60000),maxBitrate:2_000_000})).rejects.toBeInstanceOf(ProviderQueueBusyError);
+   expect(await sessionRows()).toEqual([]);
+  } finally {
+   abort.abort();release.resolve();await Promise.all([active,...waiting]);
+  }
+ });
+ for(const failingAttempt of [1,2]) run(`busy ${operation} on candidate ${failingAttempt} still permits another candidate to start`,async()=>{
+  const db=getSql(),externalId='fallback-'+crypto.randomUUID();
+  const [item]=await db`INSERT INTO provider_items(instance_id,media_id,external_id,kind) VALUES(${instance},${movie},${externalId},'movie') RETURNING id`;
+  await db`INSERT INTO availability(user_id,connection_id,media_id,provider_item_id,source_id,duration_seconds) VALUES(${user},${connection},${movie},${item.id},'source',120)`;
+  let attempts=0;
+  const contact=async()=>{if(++attempts===failingAttempt)throw new ProviderQueueBusyError();};
+  if(operation==='identity')onIdentity=contact;else onInfo=contact;
+  try {
+   const session=await startPlayback(user,{mediaId:movie,browser});
+   expect(attempts).toBe(2);expect(session.kind).toBe('direct');
+   expect((await sessionRows()).map(row=>row.id)).toEqual([session.id]);
+  } finally {
+   await db`DELETE FROM availability WHERE provider_item_id=${item.id}`;
+   await db`DELETE FROM provider_items WHERE id=${item.id}`;
+  }
+ });
+}
+run('busy preparation preserves existing playback and cancellation takes precedence',async()=>{
+ const active=await startPlayback(user,{mediaId:movie,browser});
+ await progressPlayback(user,active.id,{event:'start',positionSeconds:0});
+ const busy=new ProviderQueueBusyError();onInfo=async()=>{throw busy;};
+ await expect(startPlayback(user,{mediaId:movie,browser})).rejects.toBe(busy);
+ const abort=new AbortController(),reason=new DOMException('Closed','AbortError');
+ onInfo=async()=>{abort.abort(reason);throw busy;};
+ await expect(startPlayback(user,{mediaId:movie,browser},undefined,abort.signal)).rejects.toBe(reason);
+ expect((await sessionRows()).map(({id,state})=>({id,state}))).toEqual([{id:active.id,state:'active'}]);
+});
+run('ordinary provider failure retains the existing no-playable-version result',async()=>{
+ onInfo=async()=>{throw new Error('Synthetic provider failure');};
+ await expect(startPlayback(user,{mediaId:movie,browser})).rejects.toThrow('No available version can play');
+ expect(await sessionRows()).toEqual([]);
+});
+
 run('already-aborted preparation does no provider work or session publication',async()=>{
  const abort=new AbortController(),reason=new DOMException('Closed','AbortError');abort.abort(reason);
  await expect(startPlayback(user,{mediaId:movie,browser},undefined,abort.signal)).rejects.toBe(reason);
  expect(infos).toBe(0);expect(await sessionRows()).toEqual([]);
+});
+run('cancelling PlaybackInfo reaches the provider boundary and publishes no session',async()=>{
+ const entered=deferred(),abort=new AbortController(),reason=new DOMException('Closed','AbortError');
+ let received:AbortSignal|undefined;
+ onInfo=signal=>{received=signal;entered.resolve();return new Promise((_resolve,reject)=>signal?.addEventListener('abort',()=>reject(signal.reason),{once:true}));};
+ const pending=startPlayback(user,{mediaId:movie,browser},undefined,abort.signal);await entered.promise;
+ expect(received).toBe(abort.signal);abort.abort(reason);
+ await expect(pending).rejects.toBe(reason);expect(infos).toBe(1);expect(await sessionRows()).toEqual([]);
 });
 run('abort during final presentation leaves no new session and preserves existing active playback',async()=>{
  const active=await startPlayback(user,{mediaId:movie,browser});await progressPlayback(user,active.id,{event:'start',positionSeconds:0});

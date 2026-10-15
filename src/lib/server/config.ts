@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { diagnosticLevels } from '../diagnostics';
 import { diagnosticStore } from './diagnostics';
 import { getSql } from './db';
@@ -65,13 +66,49 @@ export const defaultConfig: CoastConfig = {
   enableRequests: true,
 };
 
-export async function getConfig(database: ReturnType<typeof getSql> | Pick<Database, 'execute'> = getSql()): Promise<CoastConfig> {
+type ConfigDatabase = ReturnType<typeof getSql> | Pick<Database, 'execute'>;
+const requestConfig = new AsyncLocalStorage<{ active: boolean; pending?: Promise<CoastConfig> }>();
+
+/** Share only one HTTP request's policy snapshot, never authorization between requests. */
+export function withRequestConfig<T>(work: () => T | Promise<T>): Promise<T> {
+  const current = { active: true, pending: undefined as Promise<CoastConfig> | undefined };
+  return requestConfig.run(current, async () => {
+    try { return await work(); }
+    finally {
+      // Timers or detached jobs can inherit async context from request startup.
+      // They must not retain its settings snapshot after the response completes.
+      current.active = false;
+      current.pending = undefined;
+    }
+  });
+}
+
+/** Background timers started during SSR reload must not inherit request policy. */
+export function withoutRequestConfig<T>(work: () => T): T {
+  return requestConfig.exit(work);
+}
+
+/** A committed settings change replaces this request's snapshot, not another request's. */
+export function replaceRequestConfig(config: CoastConfig) {
+  const current = requestConfig.getStore();
+  if (current?.active) current.pending = Promise.resolve(config);
+}
+
+async function readConfig(database: ConfigDatabase): Promise<CoastConfig> {
   // Transactional callers must not acquire another pool connection while holding locks.
   const [row] = 'execute' in database
     ? await database.execute<{ value: Partial<CoastConfig> | null }>(sql`SELECT value FROM system_settings WHERE key = 'coast'`)
     : await database`SELECT value FROM system_settings WHERE key = 'coast'`;
   const config = v.parse(configSchema, { ...defaultConfig, ...(row?.value || {}) });
   return config;
+}
+
+export function getConfig(database?: ConfigDatabase): Promise<CoastConfig> {
+  // Explicit connections include transactions with their own uncommitted policy writes.
+  if (database) return readConfig(database);
+  const current = requestConfig.getStore();
+  if (current?.active) return current.pending ??= readConfig(getSql());
+  return readConfig(getSql());
 }
 
 /** Refresh between requests and jobs so persisted changes also reach other processes. */

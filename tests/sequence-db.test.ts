@@ -194,3 +194,64 @@ run(
     await expect(getList(other, list.id)).rejects.toThrow();
   }
 );
+
+run('batched sequence summaries and next entries preserve the explicit sequence semantics', async () => {
+  const { sequenceSummaries, nextSequenceEntries } = await import('../src/lib/core/lists/sequence.server');
+  const empty=crypto.randomUUID();
+  await getDb().insert(s.media).values({id:empty,kind:'collection',title:'Empty sequence'});
+  try {
+    const sources=[{kind:'collection' as const,id:collection},{kind:'collection' as const,id:nested},{kind:'collection' as const,id:empty}];
+    const summaries=await sequenceSummaries(owner,sources),next=await nextSequenceEntries(owner,sources);
+    for(const source of sources){
+      const entries=await sequenceEntries(owner,source);
+      expect(summaries.get(`collection:${source.id}`)).toEqual({
+        total:entries.length,completed:entries.filter(entry=>entry.watched).length,
+        watched:entries.length>0&&entries.every(entry=>entry.watched),
+        duration:entries.reduce((sum,entry)=>sum+entry.duration,0),
+        progress:entries.reduce((sum,entry)=>sum+(entry.watched?entry.duration:entry.progress),0),
+      });
+      expect(next.get(`collection:${source.id}`)??null).toEqual(nextSequenceEntry(entries));
+    }
+    expect(summaries.get(`collection:${empty}`)?.total).toBe(0);
+  } finally {await getDb().delete(s.media).where(eq(s.media.id,empty));}
+});
+
+run('selected playlist roots retain repeated entry identity and share the full sequence projection', async () => {
+  const { nextSequenceEntries } = await import('../src/lib/core/lists/sequence.server');
+  const list=await createList(other,{name:'Bounded playlist roots',playlist:true});
+  try {
+    for(const mediaId of [movie,season,movie])await addListItem(other,list.id,mediaId);
+    await restartPlaylist(other,list.id);
+    const source={kind:'playlist' as const,id:list.id};
+    const roots=(await getList(other,list.id)).items.map(item=>item.entryId);
+    const full=await sequenceEntries(other,source);
+    const selected=await sequenceEntries(other,source,getDb(),roots.slice(1));
+    expect(selected).toEqual(full.filter(entry=>roots.slice(1).some(root=>entry.entryId===root||entry.entryId.startsWith(root+'/'))));
+    expect(selected.map(entry=>entry.mediaId)).toEqual([ep1,ep2,movie]);
+    expect((await nextSequenceEntries(other,[source])).get(`playlist:${list.id}`)).toEqual(nextSequenceEntry(full) ?? undefined);
+    await expect(nextSequenceEntries(owner,[source])).rejects.toThrow('not found');
+  } finally {await deleteListWithExports(other,list.id);}
+});
+
+run('collection summary query count stays constant as a card page gains roots', async () => {
+  const { sequenceSummaries } = await import('../src/lib/core/lists/sequence.server');
+  const roots=await getDb().insert(s.media).values(Array.from({length:12},(_,i)=>({kind:'collection' as const,title:`Batched summary ${i}`}))).returning({id:s.media.id});
+  try {
+    await getDb().insert(s.mediaRelationships).values(roots.map(root=>({parentId:root.id,childId:movie,kind:'collection' as const})));
+    // Only this disposable suite's ORM session is instrumented; no timing threshold or production logger changes.
+    const session=(getDb() as unknown as {session:{logger:{logQuery:(query:string,params:unknown[])=>void}}}).session;
+    const saved=session.logger;
+    const counts:number[]=[];
+    try {
+      for(const size of [1,12]){
+        let count=0;session.logger={logQuery:()=>{count++;}};
+        const summaries=await sequenceSummaries(owner,roots.slice(0,size).map(root=>({kind:'collection',id:root.id})));
+        expect(summaries.size).toBe(size);
+        expect([...summaries.values()].every(summary=>summary.total===1)).toBe(true);
+        counts.push(count);
+      }
+    } finally {session.logger=saved;}
+    expect(counts[0]).toBeGreaterThan(0);
+    expect(counts[1]).toBe(counts[0]);
+  } finally {await getDb().delete(s.media).where(inArray(s.media.id,roots.map(root=>root.id)));}
+});

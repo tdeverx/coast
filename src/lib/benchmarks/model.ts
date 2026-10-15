@@ -1,4 +1,4 @@
-export const benchmarkVersion = 'coast-local-v1';
+export const benchmarkVersion = 'coast-local-v2';
 export type BenchmarkState = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled';
 export type BenchmarkSamples = { samplesMs: number[]; medianMs: number; p95Ms: number; rows: number };
 export type BenchmarkMeasurements = {

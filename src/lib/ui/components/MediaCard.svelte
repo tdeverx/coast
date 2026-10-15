@@ -25,7 +25,6 @@
   import {useClock} from '$lib/ui/clock.svelte';
   import {activityDateLabel,unknownActivityDate} from '$lib/social/model';
   import ReactionActions from './ReactionActions.svelte';
-  const clock=useClock();
   const { preview } = useClient();
   import Icon from './Icon.svelte';
   import ActivityHeader from './ActivityHeader.svelte';
@@ -63,6 +62,7 @@
     activityProgress?:number|null;
     social?:{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number};
   } = $props();
+  const clock=useClock('minute',()=>showActivityContext&&!!item.captionActivity?.dateKnown);
   const contextReadOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
   const readOnly = () => !page.data.user || contextReadOnly() || ('href' in item&&item.href===null);
   const trackedItem = $derived('href' in item ? undefined : item);

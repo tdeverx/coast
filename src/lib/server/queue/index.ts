@@ -1,7 +1,7 @@
 import { maintenanceKinds, serviceTraversalKinds } from '$lib/providers/tasks';
 import { jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, type JobPurpose } from '$lib/providers/job-policy';
 import { jobExecution, JobYield } from './execution';
-import { requestPriority, providerJob, registerJobRequestPriority, updateJobRequestPriority, releaseJobRequestPriority, type RequestPriority } from '../security/request-priority';
+import { requestPriority, providerJob, registerJobRequestPriority, updateJobRequestPriority, releaseJobRequestPriority, ProviderQueueBusyError, type RequestPriority } from '../security/request-priority';
 import { context, logDiagnostic, classifyFailure } from '../diagnostics';
 import { runtimeEvidence } from '../diagnostics/runtime';
 import { refreshDiagnosticConfig,getConfig } from '../config';
@@ -145,6 +145,7 @@ export async function enqueueAction(input: {
 
 /** Safe, actionable descriptions without leaking provider response bodies. */
 export function jobFailureMessage(error: unknown, permanent: boolean) {
+  if (error instanceof ProviderQueueBusyError) return 'Coast is busy contacting connected services. This job will retry automatically.';
   if (classifyFailure(error) === 'timeout') return 'The service did not respond in time. Coast will retry automatically; completed import pages are retained.';
   if (error instanceof ProviderHttpError) {
     if (error.status === 401) return 'Authentication failed. Reconnect this account in Connections before retrying.';
@@ -161,6 +162,7 @@ export function jobFailureMessage(error: unknown, permanent: boolean) {
 
 export type JobFailure = { code: string; remedy: 'connection' | 'permissions' | 'metadata' | 'retry'; retryable: boolean };
 export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure {
+  if (error instanceof ProviderQueueBusyError) return {code:'local.provider-busy',remedy:'retry',retryable:true};
   if (classifyFailure(error) === 'timeout') return { code: 'provider.timeout', remedy: 'retry', retryable: true };
   if(error instanceof AppError && error.code === 'steam_private')return {code:'provider.permission',remedy:'permissions',retryable:false};
   const status = error instanceof ProviderHttpError ? error.status : undefined;
@@ -384,12 +386,17 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
             ? Math.min(86_400_000, Math.max(0, (error.retryAfterSeconds || 0) * 1000))
             : 0;
         const next = new Date(Date.now() + Math.max(retryDelayMs(action.attempts), retryAfter));
+        // A refused local admission never attempted HTTP delivery. Keep the
+        // claim generation monotonic while preserving the webhook's retry budget.
+        const base=action.payload._webhookAttemptBase;
+        const capacityCredit=error instanceof ProviderQueueBusyError && action.kind==='webhook.deliver'
+          ? {_webhookAttemptBase:(typeof base==='number'&&Number.isInteger(base)&&base>=0&&base<action.attempts?base:0)+1}:{};
         await getSql().begin(async (sql) => {
           const failed =
-            await sql`UPDATE outbox_actions SET state = ${permanent || developerMode ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, payload = payload || ${{ _jobFailure: failure }}::jsonb, updated_at = NOW()
+            await sql`UPDATE outbox_actions SET state = ${permanent || developerMode ? 'failed' : 'pending'}, next_attempt_at = ${next}, locked_at = NULL, last_error = ${message}, payload = payload || ${{ _jobFailure: failure,...capacityCredit }}::jsonb, updated_at = NOW()
         WHERE id = ${action.id} AND state = 'running' AND attempts = ${action.attempts} RETURNING id`;
           if (!failed.length) return; // A recovered lease owns the outcome now.
-          if(action.kind.endsWith('.live')&&action.connectionId)await sql`UPDATE social_live_state SET work_id=NULL,remote_id=NULL,expires_at=NULL WHERE connection_id=${action.connectionId} AND account_generation=${action.accountGeneration}::uuid AND checked_at<=${startedAt}`;
+          if(!(error instanceof ProviderQueueBusyError)&&action.kind.endsWith('.live')&&action.connectionId)await sql`UPDATE social_live_state SET work_id=NULL,remote_id=NULL,expires_at=NULL WHERE connection_id=${action.connectionId} AND account_generation=${action.accountGeneration}::uuid AND checked_at<=${startedAt}`;
           if (
             action.instanceId &&
             retryAfter > 0 &&
@@ -404,7 +411,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
               {
                 userId: action.userId,
                 kind: 'external-action',
-                title: permanent
+                title: error instanceof ProviderQueueBusyError ? 'Waiting for Coast capacity' : permanent
                   ? 'An external action needs attention'
                   : 'Waiting for a connected service',
                 body: message,

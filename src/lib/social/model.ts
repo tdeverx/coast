@@ -31,11 +31,19 @@ export function activityAction(kind:string) {
 export function unknownActivityDate(kind:string){
  return kind==='collect'||kind==='collected'?'Acquisition date unavailable':kind==='listen'?'Listen date unavailable':kind==='watch'?'Watch date unavailable':['play','played','session'].includes(kind)?'Play date unavailable':'Activity date unavailable';
 }
-export function activityDateLabel(date:string,now:number) {
+let activityDateFormats: {locale: string | undefined; short: Intl.DateTimeFormat; year: Intl.DateTimeFormat} | undefined;
+export function activityDateLabel(date:string,now:number,locale?:string) {
  const seconds=Math.max(0,Math.floor((now-new Date(date).getTime())/1000));
  if(seconds>=7*86400){
   const occurred=new Date(date);
-  return occurred.toLocaleDateString(undefined,{day:'numeric',month:'short',...(occurred.getFullYear()!==new Date(now).getFullYear()?{year:'numeric'}:{})});
+  if (!activityDateFormats || activityDateFormats.locale !== locale) {
+    activityDateFormats = {
+      locale,
+      short: new Intl.DateTimeFormat(locale, {day:'numeric',month:'short'}),
+      year: new Intl.DateTimeFormat(locale, {day:'numeric',month:'short',year:'numeric'}),
+    };
+  }
+  return (occurred.getFullYear()!==new Date(now).getFullYear()?activityDateFormats.year:activityDateFormats.short).format(occurred);
  }
  if(seconds<60)return 'Just now';
  const [value,unit]=seconds<3600?[Math.floor(seconds/60),'m']:seconds<86400?[Math.floor(seconds/3600),'h']:[Math.floor(seconds/86400),'d'];

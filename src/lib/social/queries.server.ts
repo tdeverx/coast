@@ -70,7 +70,7 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
 export async function workSocial(userId:string,ids:string[]) {
  v.parse(v.pipe(v.array(uuid),v.maxLength(60)),ids);if(!ids.length)return {};
  const list=sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`);
- const rows=await getDb().execute<{workId:string;userId:string;username:string;avatar:string|null;rating:number|null;watched:boolean;progress:number}>(sql`
+ const rows=await getDb().execute<{workId:string;userId:string;username:string;avatar:string|null;rating:number|null;watched:boolean;progress:number;total:number}>(sql`
  with recursive edges(parent_id,child_id) as (select parent_id,child_id from media_relationships union select show_id,media_id from episodes union select show_id,media_id from seasons), descendants(root,id) as(select id,id from works where id in (${list}) union select d.root,e.child_id from descendants d join edges e on e.parent_id=d.id), ancestors(root,id) as(select id,id from works where id in (${list}) union select a.root,e.parent_id from ancestors a join edges e on e.child_id=a.id), reasons as (
  select user_id,media_id as id,'collection' as section from tracking_state where collected or watchlist
  union select user_id,media_id,'favourites' from tracking_state where favourite
@@ -84,7 +84,7 @@ export async function workSocial(userId:string,ids:string[]) {
  union select user_id,media_id,'ratings' from ratings
  union select user_id,track_id,'activity' from music_listens
  union select user_id,game_id,'activity' from game_playthroughs where status<>'planned' or progress_percent>0 or exists(select 1 from game_sessions s where s.playthrough_id=game_playthroughs.id)
- )
+ ), visible_friends as (
  select distinct d.root as "workId",u.id as "userId",u.username,
  case when social_visible(u.id,${userId}::uuid,'details') then u.settings->'profile'->>'avatar' end as avatar,
  case when social_visible(u.id,${userId}::uuid,'ratings',w.category) then rating.value end as rating,
@@ -93,11 +93,23 @@ export async function workSocial(userId:string,ids:string[]) {
  from descendants d join reasons r on r.id=d.id join works w on w.id=d.id join users u on u.id=r.user_id
  left join ratings rating on rating.user_id=u.id and rating.media_id=d.root left join tracking_state t on t.user_id=u.id and t.media_id=d.root left join reading_progress rp on rp.user_id=u.id and rp.work_id=d.root
  where (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true')) and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,u.id) and f.user_b=greatest(${userId}::uuid,u.id)) and social_visible(u.id,${userId}::uuid,r.section,w.category)
- order by d.root,u.username`);
+ ), ranked_friends as (
+ select *,count(*) over(partition by "workId")::int as total,
+ row_number() over(partition by "workId" order by username) as ordinal from visible_friends
+ )
+ select "workId","userId",username,avatar,rating,watched,progress,total
+ from ranked_friends where ordinal<=3 order by "workId",ordinal`);
  const reactions=await getDb().execute<{targetId:string;emoji:string;count:number}>(sql`select r.target_id as "targetId",r.emoji,count(*)::int as count from social_reactions r join works w on w.id=r.target_id where r.target_kind='work' and r.target_id in (${list}) and social_visible(r.user_id,${userId}::uuid,'reactions',w.category) group by r.target_id,r.emoji`);
- const socialFriends=Array.from(rows) as {workId:string;userId:string;username:string;avatar:string|null;rating:number|null;watched:boolean;progress:number}[];
+ // Counts and privacy precede ranking; only the displayed three friends need presence.
+ const socialFriends=Array.from(rows);
  const statuses=await statusesForUsers(userId,socialFriends.map(row=>row.userId));
- return Object.fromEntries(ids.map(id=>{const friends=socialFriends.filter(r=>r.workId===id).map(row=>({...row,status:statuses[row.userId]??'offline'}));return [id,{friends:friends.slice(0,3),total:friends.length,reactions:Array.from(reactions).filter(r=>r.targetId===id)}];}));
+ type WorkFriends={friends:(Omit<typeof socialFriends[number],'total'>&{status:import('./status').ActivityStatus})[];total:number};
+ const byWork=new Map<string,WorkFriends>();
+ for(const {total,...friend} of socialFriends){
+  const entry:WorkFriends=byWork.get(friend.workId)??{friends:[],total};
+  entry.friends.push({...friend,status:statuses[friend.userId]??'offline'});byWork.set(friend.workId,entry);
+ }
+ return Object.fromEntries(ids.map(id=>[id,{friends:byWork.get(id)?.friends??[],total:byWork.get(id)?.total??0,reactions:Array.from(reactions).filter(r=>r.targetId===id)}]));
 }
 
 /** Batch reads share the same visibility predicate as activity and media indicators. */

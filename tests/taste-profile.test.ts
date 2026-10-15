@@ -1,5 +1,5 @@
 import {test,expect} from 'bun:test';
-import {buildTasteProfile,scoreTaste,namedFeatures} from '../src/lib/social/taste-profile';
+import {buildTasteProfile,scoreTaste,compileTasteScorer,tasteDimensions,namedFeatures} from '../src/lib/social/taste-profile';
 import {unknownActivityDate} from '../src/lib/social/model';
 const genres=namedFeatures(['Drama']),cast=[{id:'tmdb:1',name:'Actor'}];
 test('explicit negative feedback defeats repeats and consumption for the same title',()=>{
@@ -30,4 +30,18 @@ test('repeated dropped titles never produce a score below zero',()=>{
  const profile=buildTasteProfile(Array.from({length:8},(_,i)=>({id:String(i),weight:-6,features:{genres}})));
  expect(scoreTaste(profile,{genres}).score).toBe(0);
  expect(scoreTaste(profile,{genres}).dimensions.genres).toBe(0);
+});
+
+test('a calculation compiles each affinity once and reuses it without retaining prior candidates',()=>{
+ let reads=0;
+ const profile={version:1 as const,works:300,dimensions:Object.fromEntries(tasteDimensions.map(dimension=>[dimension,Array.from({length:500},(_,index)=>({get id(){reads++;return String(index);},name:String(index),value:index%2?.5:-.5,samples:3}))]))};
+ const score=compileTasteScorer(profile);
+ expect(reads).toBe(6000);
+ const features=Object.fromEntries(tasteDimensions.map(dimension=>[dimension,[{id:'1',name:'One'}]]));
+ const expected=scoreTaste(profile,features);
+ const indexed=reads;
+ for(let index=0;index<500;index++)expect(score(features)).toEqual(expected);
+ expect(reads).toBe(indexed);
+ expect(score({})).toMatchObject({score:null,confidence:0,matches:0,reasons:[]});
+ expect(score(features)).toEqual(expected);
 });

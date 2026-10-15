@@ -14,16 +14,22 @@ export function isPublicReadPath(path:string,access:CoastConfig['siteAccess']) {
 export async function publicMedia(ids?:string[]):Promise<MediaView[]> {
  if(ids?.length===0)return [];
  const config=await getConfig();
- const rows=ids?await getSql()`select m.*,e.show_id,e.season_number,e.episode_number from media m left join episodes e on e.media_id=m.id where m.id in ${getSql()(ids)} limit 500`:await getSql()`select m.* from media m where kind in ('movie','show','collection') and exists(select 1 from external_ids x where x.media_id=m.id and x.provider in ('tmdb','trakt')) order by updated_at desc,id limit 150`;
+ const requested=ids?[...new Set(ids)]:undefined;
+ const rows:any[]=[];
+ // Explicit detail membership remains complete; each metadata read is bounded.
+ if(requested){for(let offset=0;offset<requested.length;offset+=500)rows.push(...await getSql()`select m.*,e.show_id,e.season_number,e.episode_number,parent.title as show_title from media m left join episodes e on e.media_id=m.id left join media parent on parent.id=e.show_id where m.id in ${getSql()(requested.slice(offset,offset+500))} limit 500`);}
+ else rows.push(...await getSql()`select m.* from media m where kind in ('movie','show','collection') and exists(select 1 from external_ids x where x.media_id=m.id and x.provider in ('tmdb','trakt')) order by updated_at desc,id limit 150`);
  const safeArt=(path:string|null)=>path&&/^https:\/\/image\.tmdb\.org\/t\/p\//.test(path)?tmdbArtworkUrl(path,config.cacheTmdbArtwork):null;
- return rows.map((r:any)=>({id:r.id,kind:r.kind,title:r.title,originalTitle:r.original_title,overview:r.overview,year:r.year,runtimeMinutes:r.runtime_minutes,genres:r.genres,poster:safeArt(r.poster_path),backdrop:safeArt(r.backdrop_path),showId:r.show_id??undefined,seasonNumber:r.season_number??undefined,episodeNumber:r.episode_number??undefined,available:false,progress:0,duration:0,watched:false,playCount:0,watchlist:false,favourite:false,collected:false,dropped:false,rating:null}));
+ const cards:MediaView[]=rows.map((r:any)=>({id:r.id,kind:r.kind,title:r.title,originalTitle:r.original_title,overview:r.overview,year:r.year,runtimeMinutes:r.runtime_minutes,genres:r.genres,poster:safeArt(r.poster_path),backdrop:safeArt(r.backdrop_path),showId:r.show_id??undefined,showTitle:r.show_title??undefined,seasonNumber:r.season_number??undefined,episodeNumber:r.episode_number??undefined,available:false,progress:0,duration:0,watched:false,playCount:0,watchlist:false,favourite:false,collected:false,dropped:false,rating:null}));
+ const byId=new Map(cards.map(card=>[card.id,card]));
+ return requested?requested.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]):cards;
 }
 export async function publicDetails(id:string) {
  const [item]=await publicMedia([id]);if(!item)throw new AppError(404,'Media not found.');
- const related=await getSql()`select child_id from media_relationships where parent_id=${id} and kind in ('contains','collection','franchise') union select media_id from episodes where show_id=${id} or season_id=${id} union select media_id from seasons where show_id=${id} limit 500`;
+ const related=await getSql()`select child_id from media_relationships where parent_id=${id} and kind in ('contains','collection','franchise') union select media_id from episodes where show_id=${id} or season_id=${id} union select media_id from seasons where show_id=${id}`;
  const children=await publicMedia(related.map((r:{child_id:string})=>r.child_id));
  const parentIds=await getSql()`select parent_id from media_relationships where child_id=${id} union select show_id from episodes where media_id=${id}`;
- const seasonRows=await getSql()<{mediaId:string;showId:string;seasonNumber:number}[]>`select media_id as "mediaId",show_id as "showId",season_number as "seasonNumber" from seasons where show_id=${id} order by season_number,media_id limit 500`;
+ const seasonRows=await getSql()<{mediaId:string;showId:string;seasonNumber:number}[]>`select media_id as "mediaId",show_id as "showId",season_number as "seasonNumber" from seasons where show_id=${id} order by season_number,media_id`;
  const seasonItems=new Map((await publicMedia(seasonRows.map((season:{mediaId:string})=>season.mediaId))).map(season=>[season.id,season]));
  return {item,episodes:children.filter(m=>m.kind==='episode'),members:children.filter(m=>!['season','episode'].includes(m.kind)),parents:await publicMedia(parentIds.map((r:{parent_id:string})=>r.parent_id)),cast:[],seasons:seasonRows.map(season=>({...season,title:seasonItems.get(season.mediaId)?.title,item:seasonItems.get(season.mediaId)})),next:null,related:[],collections:[],availability:[],history:[]};
 }

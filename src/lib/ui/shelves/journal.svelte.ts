@@ -56,7 +56,7 @@ export function createJournalSource(getOptions:()=>JournalOptions):ShelfSource {
   $effect(() => {
     if (current > 0) onitems?.(loadedItems);
   });
-  onDestroy(resource.cancel);
+  onDestroy(resource.dispose);
 
   const groups = $derived(journalGroups(visible));
   const visibleGroups = $derived(

@@ -26,13 +26,14 @@ export function buildTasteProfile(evidence:TasteEvidence[]):TasteProfile {
  return {version:1,works:works.size,dimensions};
 }
 /** A fit estimate, not a predicted rating. Sparse/missing dimensions do not become dislikes. */
-export function scoreTaste(profile:TasteProfile,features:TasteFeatures){
+export function compileTasteScorer(profile:TasteProfile){
+ const lookups=new Map(tasteDimensions.map(dimension=>[dimension,new Map((profile.dimensions[dimension]??[]).map(feature=>[feature.id,feature]))]));
+ return (features:TasteFeatures)=>{
  const dimensions:Partial<Record<TasteDimension,number>>={},reasons:{dimension:TasteDimension;name:string;strength:number}[]=[];
  let total=0,available=0,matches=0,confidenceTotal=0;
  for(const dimension of tasteDimensions){
-  const candidates=features[dimension]??[],affinities=profile.dimensions[dimension]??[];
-  if(!candidates.length||!affinities.length)continue;
-  const lookup=new Map(affinities.map(feature=>[feature.id,feature]));
+  const candidates=features[dimension]??[],lookup=lookups.get(dimension)!;
+  if(!candidates.length||!lookup.size)continue;
   const known=candidates.flatMap(feature=>{const affinity=lookup.get(feature.id);return affinity?[affinity]:[];});
   if(!known.length)continue;
   // Cast exposure needs repeated titles. One positive actor appearance alone is weak evidence.
@@ -45,4 +46,7 @@ export function scoreTaste(profile:TasteProfile,features:TasteFeatures){
  }
  const confidence=available?Math.min(1,profile.works/10)*(confidenceTotal/available):0;
  return {score:available?Math.round(50+50*total/available):null,confidence:Math.round(confidence*100),dimensions,reasons:reasons.sort((a,b)=>b.strength-a.strength||a.name.localeCompare(b.name)).slice(0,3).map(({dimension,name})=>({dimension,name})),matches};
+ };
 }
+/** Individual callers retain the same result; batch owners compile once per profile. */
+export function scoreTaste(profile:TasteProfile,features:TasteFeatures){return compileTasteScorer(profile)(features);}

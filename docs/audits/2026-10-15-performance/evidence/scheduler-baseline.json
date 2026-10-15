@@ -1,0 +1,172 @@
+{
+  "build": "ea01908654db7c0b4cf591028c7f9b321c6896dd",
+  "bun": "1.4.3",
+  "cases": [
+    {
+      "generations": {
+        "total": 10000,
+        "legacy": 402,
+        "current": 3600,
+        "old": 5998
+      },
+      "accounts": 10,
+      "perAccount": 1000,
+      "total": 10000,
+      "resultEquivalent": true,
+      "plans": {
+        "old": {
+          "executionMs": 5.354,
+          "sharedHitBlocks": 19660,
+          "rows": 6,
+          "outboxNodes": [
+            {
+              "type": "Bitmap Heap Scan",
+              "rows": 4002,
+              "loops": 1,
+              "removed": 5998
+            }
+          ]
+        },
+        "boundedExistingIndex": {
+          "executionMs": 1.798,
+          "sharedHitBlocks": 15057,
+          "rows": 10,
+          "outboxNodes": [
+            {
+              "type": "Index Scan",
+              "rows": 0,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_state_created_idx"
+            },
+            {
+              "type": "Index Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 400,
+              "index": "outbox_maintenance_idx"
+            },
+            {
+              "type": "Index Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 405,
+              "index": "outbox_maintenance_idx"
+            }
+          ]
+        },
+        "boundedGenerationIndex": {
+          "executionMs": 1.022,
+          "sharedHitBlocks": 7564,
+          "rows": 10,
+          "outboxNodes": [
+            {
+              "type": "Index Scan",
+              "rows": 0,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_state_created_idx"
+            },
+            {
+              "type": "Index Only Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 0,
+              "index": "coast_scheduler_probe_idx"
+            },
+            {
+              "type": "Index Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 405,
+              "index": "outbox_maintenance_idx"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "generations": {
+        "total": 100000,
+        "legacy": 4002,
+        "current": 36000,
+        "old": 59998
+      },
+      "accounts": 10,
+      "perAccount": 10000,
+      "total": 100000,
+      "resultEquivalent": true,
+      "plans": {
+        "old": {
+          "executionMs": 50.886,
+          "sharedHitBlocks": 196881,
+          "rows": 6,
+          "outboxNodes": [
+            {
+              "type": "Seq Scan",
+              "rows": 40002,
+              "loops": 1,
+              "removed": 59998
+            }
+          ]
+        },
+        "boundedExistingIndex": {
+          "executionMs": 16.739,
+          "sharedHitBlocks": 143436,
+          "rows": 10,
+          "outboxNodes": [
+            {
+              "type": "Index Scan",
+              "rows": 0,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_state_created_idx"
+            },
+            {
+              "type": "Index Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 4000,
+              "index": "outbox_maintenance_idx"
+            },
+            {
+              "type": "Index Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 4005,
+              "index": "outbox_maintenance_idx"
+            }
+          ]
+        },
+        "boundedGenerationIndex": {
+          "executionMs": 9.097,
+          "sharedHitBlocks": 71747,
+          "rows": 10,
+          "outboxNodes": [
+            {
+              "type": "Index Scan",
+              "rows": 0,
+              "loops": 10,
+              "removed": 0,
+              "index": "outbox_state_created_idx"
+            },
+            {
+              "type": "Index Only Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 0,
+              "index": "coast_scheduler_probe_idx"
+            },
+            {
+              "type": "Index Scan",
+              "rows": 1,
+              "loops": 10,
+              "removed": 4005,
+              "index": "outbox_maintenance_idx"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

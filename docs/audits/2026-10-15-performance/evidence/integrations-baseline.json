@@ -1,0 +1,70 @@
+{
+  "runtime": "1.4.3",
+  "boundary": "Compiled actual function bodies; injected SQL/provider/identity boundaries, no database/network, no elapsed-time claim",
+  "seerr": [
+    {
+      "requests": 100,
+      "pageRequests": 2,
+      "localLookups": 101,
+      "guardedTransactions": 6,
+      "notifications": 0,
+      "writes": 1,
+      "jobCheckpoints": 0,
+      "sourceSha256": "b8623d2484a3abcf4b80c548905cf860eb8d843840085544c9761070e625d765"
+    },
+    {
+      "requests": 1000,
+      "pageRequests": 11,
+      "localLookups": 1001,
+      "guardedTransactions": 24,
+      "notifications": 0,
+      "writes": 1,
+      "jobCheckpoints": 0,
+      "sourceSha256": "b8623d2484a3abcf4b80c548905cf860eb8d843840085544c9761070e625d765"
+    }
+  ],
+  "trakt": [
+    {
+      "size": 100,
+      "identityReads": 40400,
+      "traktEntryCalls": 5150,
+      "exportIdentityCalls": 100,
+      "writeListCalls": 1,
+      "reorderCalls": 1,
+      "sourceSha256": "29e56bb7e79e38cc06295a0f18490c3106e0ed55eff018933e327832e6fc1721"
+    },
+    {
+      "size": 1000,
+      "identityReads": 4004000,
+      "traktEntryCalls": 501500,
+      "exportIdentityCalls": 1000,
+      "writeListCalls": 1,
+      "reorderCalls": 1,
+      "sourceSha256": "29e56bb7e79e38cc06295a0f18490c3106e0ed55eff018933e327832e6fc1721"
+    }
+  ],
+  "music": [
+    {
+      "size": 20,
+      "statements": 340,
+      "transactions": 20,
+      "membershipRowsRead": 400,
+      "relationshipChanges": 0,
+      "metadataWriteStatements": 60,
+      "availabilityWriteStatements": 20,
+      "artistWriteStatements": 40,
+      "sourceSha256": "a322ff4754020e67d20ba554211ce2b6945f95a02d665274ce0274f886c49fd0"
+    },
+    {
+      "size": 100,
+      "statements": 1700,
+      "transactions": 100,
+      "membershipRowsRead": 10000,
+      "relationshipChanges": 0,
+      "metadataWriteStatements": 300,
+      "availabilityWriteStatements": 100,
+      "artistWriteStatements": 200,
+      "sourceSha256": "a322ff4754020e67d20ba554211ce2b6945f95a02d665274ce0274f886c49fd0"
+    }
+  ]
+}

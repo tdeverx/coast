@@ -64,3 +64,12 @@ test('captured playback authority survives share-route teardown for preparation 
   expect(urls).toEqual(['/api/share/playback','/api/share/playback/prepared/progress']);
  }finally{transport.mockRestore();setPlaybackApi(false);}
 });
+test('an older share authority release cannot reset a reopened owner',async()=>{
+ const urls:string[]=[];const transport=spyOn(globalThis,'fetch').mockImplementation(Object.assign(async(input:Parameters<typeof fetch>[0])=>{urls.push(String(input));return Response.json({});},{preconnect:()=>{}}));
+ try{
+  const releaseOld=setPlaybackApi(true),releaseCurrent=setPlaybackApi(true);
+  releaseOld();await capturePlaybackApi()('playback',{});
+  releaseCurrent();await capturePlaybackApi()('playback',{});
+  expect(urls).toEqual(['/api/share/playback','/api/v1/playback']);
+ }finally{transport.mockRestore();setPlaybackApi(false);}
+});

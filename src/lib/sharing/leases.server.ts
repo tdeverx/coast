@@ -3,7 +3,7 @@ import { getConfig } from '$lib/server/config';
 import { AppError } from '$lib/server/security/errors';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import {logDiagnostic,classifyFailure} from '$lib/server/diagnostics';
-import { waitSharedRequests } from './request-leases.server';
+import { waitSharedRequests, waitSharedRetry } from './request-leases.server';
 import { encodingBitrate, playbackLimits, sharedAllocation, viewerIdleSeconds } from './policy';
 
 /** Short owner-scoped transactions allocate all links together. No provider I/O holds a DB lock. */
@@ -42,24 +42,33 @@ export async function reserveViewer(ownerId:string,viewerId:string,force=false) 
 }
 
 /** A durable lease serializes generation changes across processes and survives interrupted requests. */
-export async function ensureSharedEncoding(ownerId:string,viewerId:string) {
+export async function ensureSharedEncoding(ownerId:string,viewerId:string,signal?:AbortSignal) {
+  signal?.throwIfAborted();
   const db=getSql(),deadline=Date.now()+25_000;
+  let retry=50;
   while(Date.now()<deadline) {
+    signal?.throwIfAborted();
     const [row]=await db`select v.desired_bitrate,v.preparing_until,p.* from share_viewers v join playback_sessions p on p.id=v.playback_id where v.id=${viewerId} and p.user_id=${ownerId} and p.state<>'stopped' and p.expires_at>now()`;
+    signal?.throwIfAborted();
     if(!row)throw new AppError(410,'The viewer playback session has expired.');
-    if(row.preparing_until&&new Date(row.preparing_until)>new Date()) {await new Promise(resolve=>setTimeout(resolve,100));continue;}
+    if(row.preparing_until&&new Date(row.preparing_until)>new Date()) {await waitSharedRetry(retry,signal);retry=Math.min(250,retry*2);continue;}
     if(!row.provider_device_id||!row.provider_session_id||!row.desired_bitrate)return;
     const desired=Math.min(row.desired_bitrate,row.bitrate_ceiling??row.desired_bitrate);
     const bitrate=encodingBitrate(row.max_bitrate??desired,desired);
     if(bitrate===row.max_bitrate)return;
     const [lease]=await db`update share_viewers set preparing_until=now()+interval '2 minutes',preparation_token=${crypto.randomUUID()} where id=${viewerId} and desired_bitrate=${row.desired_bitrate} and (preparing_until is null or preparing_until<now()) and exists(select 1 from playback_sessions p where p.id=playback_id and p.provider_session_id=${row.provider_session_id} and p.max_bitrate=${row.max_bitrate}) returning preparation_token`;
-    if(!lease)continue;
+    if(!lease){await waitSharedRetry(retry,signal);retry=Math.min(250,retry*2);continue;}
     try {
-      await waitSharedRequests(row.id);
+      await waitSharedRequests(row.id,signal);
+      signal?.throwIfAborted();
       const {adapter}=await getJellyfin(ownerId,row.connection_id);
+      signal?.throwIfAborted();
+      // Once the encoder is stopped, finish publishing its replacement generation even
+      // if the caller departs; the next request must never reuse the stopped encoder.
       await adapter.stopEncoding(row.provider_device_id,row.provider_session_id);
       const updated=await db`update playback_sessions p set provider_session_id=${crypto.randomUUID()},max_bitrate=${bitrate},updated_at=now() where p.id=${row.id} and p.state<>'stopped' and exists(select 1 from share_viewers v join playback_shares s on s.id=v.share_id where v.id=${viewerId} and v.playback_id=p.id and v.preparation_token=${lease.preparation_token} and s.revoked_at is null and s.expires_at>now()) returning p.id`;
       if(!updated.length)throw new AppError(410,'The shared playback session has expired.');
+      signal?.throwIfAborted();
       return;
     } finally {await db`update share_viewers set preparing_until=null,preparation_token=null where id=${viewerId} and preparation_token=${lease.preparation_token}`;}
   }

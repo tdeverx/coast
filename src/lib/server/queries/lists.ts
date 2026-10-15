@@ -159,7 +159,7 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
     ).map((item) => [('workId' in item?item.workId:undefined)??item.id, item])
   );
   const sequence = selected?.playlist
-    ? await sequenceEntries(userId, { kind: 'playlist', id: selected.id })
+    ? await sequenceEntries(userId, { kind: 'playlist', id: selected.id }, db, selectedIds.flatMap(row=>row.entryId?[row.entryId]:[]))
     : [];
   const entriesById = new Map(sequence.map((entry) => [entry.entryId, entry]));
   const items = selectedIds.flatMap<MediaView|MediaCardPresentation>((row) => {

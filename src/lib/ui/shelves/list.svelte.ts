@@ -71,7 +71,7 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
       resource.error = message(cause);
     }
   }
-  onDestroy(resource.cancel);
+  onDestroy(resource.dispose);
 
 
   return {

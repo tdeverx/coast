@@ -9,9 +9,10 @@ const bookSchema = v.object({
   Size: v.nullish(v.number()), ProviderIds: v.optional(v.record(v.string(),v.string()),{}),
 });
 export type JellyfinBook = v.InferOutput<typeof bookSchema>;
-export async function jellyfinBook(call: ProviderTransport, userId: string, externalId: string) {
+export async function jellyfinBook(call: ProviderTransport, userId: string, externalId: string, signal?:AbortSignal) {
+  signal?.throwIfAborted();
   v.parse(id,externalId);
-  const item = v.parse(bookSchema,await call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(externalId)}?Fields=Path,ProviderIds,DateModified,Size`));
+  const item = v.parse(bookSchema,await call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(externalId)}?Fields=Path,ProviderIds,DateModified,Size`,{signal}));
   if(jellyfinItemKey(item.Id)!==jellyfinItemKey(externalId)) throw new Error('Jellyfin returned a different reading file.');
   return item;
 }

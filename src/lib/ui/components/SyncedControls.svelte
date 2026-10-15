@@ -24,7 +24,7 @@
   const mediaId=$derived(syncedPlayer.room?.mediaId);
   const roomId=$derived(syncedPlayer.room?.id);
   $effect(()=>{if(mediaId&&roomId){media.replace(null);void media.load(signal=>api(`synced/${roomId}/media`,undefined,'GET',{signal}));}else media.replace(null);});
-  onDestroy(media.cancel);
+  onDestroy(media.dispose);
   export async function show(){if(preview)return;open=true;if(!syncedPlayer.room)await startSynced();}
   async function retry(){try{await joinSynced(syncedPlayer.room!);}catch{/* The shared player retains the failure notice. */}}
 </script>

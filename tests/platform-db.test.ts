@@ -22,7 +22,7 @@ import {
   PermanentActionError,
 } from '../src/lib/server/queue';
 import { notify, inbox, listDiagnostics } from '../src/lib/server/notifications';
-import { defaultConfig, getConfig } from '../src/lib/server/config';
+import { defaultConfig, getConfig, withRequestConfig } from '../src/lib/server/config';
 import { updateConfig } from '../src/lib/application/configuration.server';
 const target = process.env.TEST_DATABASE_URL;
 // This suite resets its named, isolated test database. It never uses DATABASE_URL implicitly.
@@ -106,6 +106,25 @@ describe.skipIf(!enabled)('PostgreSQL auth and durable action lifecycle', () => 
       ['off', 'info'],
     ]);
     expect(records.every((row: { actor_id: string }) => row.actor_id === admin.id)).toBe(true);
+  });
+  test('request settings snapshots preserve fresh transaction reads and committed configuration updates', async () => {
+    const previous = await getConfig();
+    try {
+      await withRequestConfig(async () => {
+        expect(await getConfig()).toEqual(previous);
+        const changed = { ...previous, experimentalBooks: !previous.experimentalBooks };
+        await getSql().begin(async tx => {
+          await tx`UPDATE system_settings SET value=${changed}::jsonb WHERE key='coast'`;
+          expect(await getConfig(tx)).toEqual(changed);
+          expect(await getConfig()).toEqual(previous);
+        });
+        expect(await getConfig()).toEqual(previous);
+        expect(await withRequestConfig(() => getConfig())).toEqual(changed);
+        const committed = await updateConfig(admin, { ...changed, experimentalComics: !previous.experimentalComics });
+        expect(await getConfig()).toEqual(committed);
+      });
+      expect((await getConfig()).experimentalComics).toBe(!previous.experimentalComics);
+    } finally { await updateConfig(admin, previous); }
   });
   test('sessions rotate with a brief concurrent-request grace period and expire server-side', async () => {
     const session = await login(

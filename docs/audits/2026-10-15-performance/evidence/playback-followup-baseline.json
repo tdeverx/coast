@@ -1,0 +1,105 @@
+{
+  "shareLateSuccess": [
+    [
+      "stop",
+      "old"
+    ],
+    [
+      "authority",
+      true
+    ],
+    [
+      "clearTimer"
+    ],
+    [
+      "stop",
+      "old"
+    ],
+    [
+      "authority",
+      false
+    ],
+    [
+      "align",
+      "successor",
+      {
+        "positionSeconds": 30,
+        "paused": true
+      }
+    ]
+  ],
+  "shareLateFailure": [
+    [
+      "stop",
+      "old"
+    ],
+    [
+      "authority",
+      true
+    ],
+    [
+      "clearTimer"
+    ],
+    [
+      "stop",
+      "old"
+    ],
+    [
+      "authority",
+      false
+    ],
+    [
+      "stop",
+      "successor"
+    ]
+  ],
+  "shareLatePreparation": [
+    [
+      "stop",
+      "old"
+    ],
+    [
+      "clearTimer"
+    ],
+    [
+      "stop",
+      "old"
+    ],
+    [
+      "authority",
+      false
+    ],
+    [
+      "authority",
+      true
+    ]
+  ],
+  "preparationCancellation": {
+    "beforeRelease": {
+      "finished": false,
+      "calls": [
+        [
+          "identity",
+          [
+            null
+          ]
+        ],
+        [
+          "playbackInfo",
+          [
+            "e",
+            "eu",
+            {},
+            1,
+            {
+              "shared": false,
+              "deviceId": "d"
+            }
+          ]
+        ]
+      ],
+      "playbackInfoHasSignal": false
+    },
+    "outcome": "AbortError"
+  }
+}

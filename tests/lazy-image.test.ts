@@ -27,6 +27,7 @@ test('fallbacks and artwork changes keep the horizontal rail request slot', asyn
     expect(started).toEqual(['left', 'right']);
     // Svelte may deliver an error fallback after the next card has claimed the slot.
     actions[0].update('left-fallback');
+    intersect!([{target:left,isIntersecting:true}] as unknown as IntersectionObserverEntry[], {} as IntersectionObserver);
     expect(started).toEqual(['left', 'right']);
     right.dispatchEvent(new Event('load'));
     await Promise.resolve();
@@ -35,6 +36,7 @@ test('fallbacks and artwork changes keep the horizontal rail request slot', asyn
     await Promise.resolve();
     actions[1].update('right-new');
     actions[0].update('left-new');
+    intersect!([right, left].map(target=>({target,isIntersecting:true})) as unknown as IntersectionObserverEntry[], {} as IntersectionObserver);
     await Promise.resolve();
     expect(started.at(-1)).toBe('left-new');
     left.dispatchEvent(new Event('load'));
@@ -46,6 +48,52 @@ test('fallbacks and artwork changes keep the horizontal rail request slot', asyn
     actions.forEach(action => action.destroy());
     globalThis.IntersectionObserver = original;
   }
+});
+
+test('waiting artwork leaves the rail queue until it intersects again, without duplicate re-entry', async () => {
+  const original = globalThis.IntersectionObserver;
+  let intersect!: IntersectionObserverCallback;
+  const observed = new Set<Element>();
+  const started: string[] = [];
+  globalThis.IntersectionObserver = class {
+    constructor(callback: IntersectionObserverCallback) { intersect = callback; }
+    observe(node: Element) { observed.add(node); }
+    unobserve(node: Element) { observed.delete(node); }
+    disconnect() { observed.clear(); }
+  } as unknown as typeof IntersectionObserver;
+  const rail = {} as Element;
+  function image(index: number) {
+    const target = new EventTarget();
+    Object.assign(target, { style: {visibility:''}, index, closest:()=>rail, compareDocumentPosition:(other:{index:number})=>index<other.index?4:2 });
+    Object.defineProperty(target, 'src', {set(value:string){started.push(value);}});
+    return target as HTMLImageElement;
+  }
+  const a=image(0), b=image(1), c=image(2);
+  const actions=[lazyImage(a,'a'),lazyImage(b,'b'),lazyImage(c,'c')];
+  const delivery = (entries: {target:HTMLImageElement;isIntersecting:boolean}[]) => intersect(entries as unknown as IntersectionObserverEntry[], {} as IntersectionObserver);
+  try {
+    delivery([a,b].map(target=>({target,isIntersecting:true})));
+    await Promise.resolve();
+    expect(started).toEqual(['a']);
+    expect(observed.has(b)).toBe(true);
+    delivery([{target:b,isIntersecting:false},{target:c,isIntersecting:true}]);
+    a.dispatchEvent(new Event('load'));await Promise.resolve();
+    expect(started).toEqual(['a','c']);
+    delivery([{target:b,isIntersecting:true},{target:b,isIntersecting:true}]);
+    c.dispatchEvent(new Event('load'));await Promise.resolve();
+    expect(started).toEqual(['a','c','b']);
+    b.dispatchEvent(new Event('load'));await Promise.resolve();
+    actions[0].update('a-replacement');
+    delivery([{target:a,isIntersecting:false}]);await Promise.resolve();
+    expect(started).toEqual(['a','c','b']);
+    delivery([{target:a,isIntersecting:true}]);
+    actions[0].destroy();await Promise.resolve();
+    expect(started).toEqual(['a','c','b']);
+  } finally {
+    actions.forEach(action=>action.destroy());
+    globalThis.IntersectionObserver=original;
+  }
+  expect(observed.size).toBe(0);
 });
 
 test('horizontal artwork starts left to right and failures/removal release the row queue', async () => {

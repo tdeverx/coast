@@ -1,10 +1,14 @@
 import {expect,test} from 'bun:test';
-import {summarizeSamples,compareBenchmarks,type BenchmarkRun} from '../src/lib/benchmarks/model';
+import {benchmarkVersion,summarizeSamples,compareBenchmarks,type BenchmarkRun} from '../src/lib/benchmarks/model';
 test('sample medians and nearest-rank p95 handle one, odd, even and unordered samples',()=>{
  expect(summarizeSamples([7],1)).toEqual({samplesMs:[7],medianMs:7,p95Ms:7,rows:1});
  expect(summarizeSamples([9,1,5],1).medianMs).toBe(5);
  expect(summarizeSamples([10,2,8,4],1).medianMs).toBe(6);
  expect(summarizeSamples(Array.from({length:20},(_,i)=>20-i),1).p95Ms).toBe(19);
+});
+test('enabled reading changes the workload identity rather than comparing with screen-only history',()=>{
+ expect(benchmarkVersion).not.toBe('coast-local-v1');
+ expect(compareBenchmarks({...run('new'),workloadVersion:benchmarkVersion},{...run('old'),workloadVersion:'coast-local-v1'})).toBeNull();
 });
 const run=(id:string,median=10)=>({id,state:'completed',workloadVersion:'v1',comparisonKey:'same',errors:[],measurements:{datasetChanged:false,backgroundActivity:false,probes:{query:{medianMs:median}}}} as unknown as BenchmarkRun);
 test('drift comparisons require successful matching workload, dataset and environment without background jobs',()=>{

@@ -1,7 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { getSql, type Database } from '../db';
 import { outboxActions } from '../db/schema';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { purposePriority, readJobPurpose, type JobPurpose } from '$lib/providers/job-policy';
 import { updateJobRequestPriority } from '../security/request-priority';
 
@@ -37,9 +37,14 @@ export async function jobCheckpoint() {
 }
 
 /** Persist task-owned cursors without overwriting concurrently promoted intent. */
-export async function saveJobCheckpoint(data: Record<string, unknown>) {
+export async function saveJobCheckpoint(data: Record<string, unknown>, store?: Pick<Database,'execute'>) {
   const execution = jobExecution.getStore();
   if (!execution) return;
+  if (store) {
+    await store.execute(sql`update outbox_actions set payload=jsonb_set(payload,'{_checkpoint}',${data}::jsonb,true),updated_at=now()
+      where id=${execution.id} and state='running' and attempts=${execution.attempts}`);
+    return;
+  }
   await getSql()`update outbox_actions set payload=jsonb_set(payload,'{_checkpoint}',${data}::jsonb,true),updated_at=now()
     where id=${execution.id} and state='running' and attempts=${execution.attempts}`;
 }

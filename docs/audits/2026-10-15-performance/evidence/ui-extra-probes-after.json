@@ -1,0 +1,21 @@
+{
+  "credits": {
+    "beforeRetry": {
+      "requests": 2,
+      "available": false
+    },
+    "afterRetry": {
+      "requests": 3,
+      "available": false
+    }
+  },
+  "scroll": {
+    "eventsBeforeFrame": 100,
+    "geometryPropertyReads": 0,
+    "framesScheduled": 0
+  },
+  "afterFrame": {
+    "geometryPropertyReads": 2
+  },
+  "method": "real compiled Svelte modules, injected client and geometry counters; excludes real DOM/layout timing"
+}

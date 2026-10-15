@@ -1,4 +1,4 @@
-import { profileData, profileActivity } from '$lib/server/queries/profile';
+import { profileData, profileInsightsData } from '$lib/server/queries/profile';
 import { updateProfile } from '$lib/core/profile/service.server';
 import { json } from '@sveltejs/kit';
 import * as v from 'valibot';
@@ -36,7 +36,8 @@ export async function handleProfile(context: ApiContext): Promise<Response | und
         v.picklist(['favourites', 'insights']),
         url.searchParams.get('section')
       );
-      const data = await profileData(
+      const read = section === 'insights' ? profileInsightsData : profileData;
+      const data = await read(
         subjectId,
         {
           scope: url.searchParams.get('scope') ?? 'all',
@@ -48,13 +49,9 @@ export async function handleProfile(context: ApiContext): Promise<Response | und
         new Date(),
         uid
       );
-      result =
-        section === 'favourites'
-          ? { favourites: data.favourites, page: data.page, pages: data.pages, total: data.total }
-          : {
-              totals: data.totals,
-              activity: await profileActivity(subjectId, new Date(), data.filters.period,uid),
-            };
+      result = 'favourites' in data
+        ? { favourites: data.favourites, page: data.page, pages: data.pages, total: data.total }
+        : data;
     } else if (path[0] === 'profile' && path.length === 1 && method === 'POST') result = await updateProfile(uid, body); else return undefined;
  return json(result ?? { ok: true });
 }

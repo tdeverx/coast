@@ -13,6 +13,6 @@ export function createFriendsResource() {
    return { items: rows.slice(0, 60).filter(friend => friend.state === 'accepted'), more: rows.length > 60, page };
   }, { merge: (previous, next) => ({ ...next, items: uniqueItems(reset ? next.items : [...previous.items, ...next.items], item => item.userId) }) });
  }
- onDestroy(resource.cancel);
+ onDestroy(resource.dispose);
  return { get items() { return resource.data.items; }, get more() { return resource.data.more; }, get busy() { return resource.busy; }, get error() { return resource.error; }, load };
 }

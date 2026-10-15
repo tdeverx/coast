@@ -10,18 +10,20 @@
  let host:HTMLElement,engine:ReaderEngine|undefined,busy=$state(false),loading=$state(false);
  const following=$derived(syncedPlayer.room?.mediaType==='reading'&&!!reader.session&&syncedPlayer.room.mediaId===reader.session.workId&&syncedPlayer.room.edition===reader.session.edition&&syncedPlayer.room.readingFormat===reader.session.format);
  const controlled=$derived(!following||canControlPlayback());
- let external=false,minimizing=false;
+ let external=false,minimizing=false,readerOwner=0;
  function close(){void closeReading().catch(()=>{/* Keep the unsaved bookmark and its retry notice visible. */});}
  $effect(()=>{
   const session=reader.session,file=reader.file;if(!session||!host||!reader.visible)return;
   const heartbeat=setInterval(()=>{if(!document.hidden&&reader.visible)void api(`reading/sessions/${session.id}/heartbeat`,{}).catch(()=>{});},60000);
-  const controller=new AbortController();let current:ReaderEngine|undefined,resize:ResizeObserver|undefined;loading=true;reader.rendering=true;
+  const controller=new AbortController(),owner=++readerOwner;let current:ReaderEngine|undefined,resize:ResizeObserver|undefined,navigation=0;loading=true;reader.rendering=true;
+  const ownsNavigation=(revision:number)=>!controller.signal.aborted&&revision===navigation&&reader.session?.id===session.id;
   void import('./reader/engine').then(module=>module.createReader({host,source:file??session.url!,format:session.format,location:session.location,signal:controller.signal,changed:location=>{
     if(controller.signal.aborted)return;
     const room=syncedPlayer.room;
     // EPUB links are navigation too: viewers follow the room's location.
     if(!external&&!controlled&&room?.reading&&current&&!sameReadingLocation(room.reading,location)){
-     external=true;void current.go(room.reading).catch(cause=>{reader.error=message(cause);}).finally(()=>{external=false;});return;
+     const revision=++navigation;external=true;
+     void current.go(room.reading).catch(cause=>{if(ownsNavigation(revision))reader.error=message(cause);}).finally(()=>{if(ownsNavigation(revision))external=false;});return;
     }
     const previous=reader.location;reader.location=location;
     if(external||sameReadingLocation(previous,location))return;
@@ -35,13 +37,20 @@
       void result.resize!().catch(cause=>{if(!controller.signal.aborted)reader.error=message(cause);});
      });resize.observe(host);
     }
-    setReadingNavigator(async location=>{external=true;try{await result.go(location);reader.location=location;void recordReading(location);}finally{external=false;}});
+    setReadingNavigator(async location=>{
+     const revision=++navigation;external=true;
+     try{await result.go(location);if(!ownsNavigation(revision))return;reader.location=location;void recordReading(location);}
+     catch(cause){if(ownsNavigation(revision))throw cause;}
+     finally{if(ownsNavigation(revision))external=false;}
+    });
    }).catch(cause=>{if(!controller.signal.aborted)reader.error=message(cause);}).finally(()=>{if(!controller.signal.aborted){loading=false;reader.rendering=false;}});
-  return ()=>{clearInterval(heartbeat);resize?.disconnect();controller.abort();current?.destroy();setReadingNavigator(null);engine=undefined;reader.rendering=false;};
+  return ()=>{clearInterval(heartbeat);resize?.disconnect();controller.abort();navigation++;if(readerOwner===owner){readerOwner++;busy=false;}external=false;current?.destroy();setReadingNavigator(null);engine=undefined;reader.rendering=false;};
  });
  async function turn(direction:'previous'|'next'){
-  if(busy||!controlled||!engine)return;busy=true;
-  try{await engine[direction]();}catch(cause){reader.error=message(cause);}finally{busy=false;}
+  if(busy||!controlled||!engine)return;
+  const current=engine,owner=readerOwner,sessionId=reader.session?.id;busy=true;
+  const ownsTurn=()=>readerOwner===owner&&engine===current&&reader.session?.id===sessionId&&reader.visible;
+  try{await current[direction]();}catch(cause){if(ownsTurn())reader.error=message(cause);}finally{if(ownsTurn())busy=false;}
  }
 </script>
 <svelte:window onkeydown={event=>{if(!reader.visible||event.target instanceof HTMLInputElement)return;if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();void turn(event.key==='ArrowLeft'?'previous':'next');}}} />

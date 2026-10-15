@@ -11,6 +11,8 @@ import { collectionCTE } from '$lib/collection/query.server';
 import { collectionFreshnessSql } from '$lib/collection/freshness.server';
 import { serverBuildIdentity } from '$lib/server/build-identity';
 import { getConfig } from '$lib/server/config';
+import { enabledCategories } from '$lib/server/experimental';
+import type { MediumFeatures } from '$lib/experimental';
 import { journalGroups, type JournalEntry } from '$lib/profile/journal';
 import { visibleJournalEntries } from '$lib/ui/shelves/journal-visible';
 import { benchmarkVersion, compareBenchmarks, summarizeSamples, type BenchmarkRun, type BenchmarkContext, type BenchmarkMeasurements } from './model';
@@ -136,6 +138,17 @@ async function environment(database:SQL, data:Awaited<ReturnType<typeof dataset>
 }
 const memory=()=>{const {rss,heapUsed,external}=process.memoryUsage();return {rss,heapUsed,external};};
 
+/** These are the actual probe queries, with the same enabled media as Collection. */
+export function benchmarkCollectionQueries(userId: string, config: MediumFeatures) {
+  const enabled = enabledCategories(statement`category`, config);
+  return {
+    membership: statement`${collectionCTE(userId,userId,'all','personal')} select count(*)::int as total,
+      (select jsonb_agg(page) from (select * from collection where ${enabled} order by lower(title),id limit 60) page) as items from collection where ${enabled}`,
+    assessmentCohort: statement`select t.media_id as id from tracking_state t join works w on w.id=t.media_id
+      where t.user_id=${userId} and ${enabledCategories(statement`w.category`,config)} order by t.media_id limit 60`,
+  };
+}
+
 /** Only these bounded local read probes are executed; no provider adapter or domain
  * mutation is reachable. SQL runs in a read-only transaction with per-statement caps. */
 export async function executeBenchmark(action:OutboxAction) {
@@ -180,11 +193,11 @@ export async function executeBenchmark(action:OutboxAction) {
         };
         await probe('Database round trip',async()=>{await database`select 1`;return 1;},10);
         const dialect=new PgDialect(), config=await getConfig(database);
-        const enabled=statement`(category='screen' or (category='music' and ${config.experimentalMusic}) or (category='game' and ${config.experimentalGaming}))`;
-        const page=dialect.sqlToQuery(statement`${collectionCTE(action.userId,action.userId,'all','personal')} select count(*)::int as total,
-          (select jsonb_agg(page) from (select * from collection where ${enabled} order by lower(title),id limit 60) page) as items from collection where ${enabled}`);
+        const queries=benchmarkCollectionQueries(action.userId,config);
+        const page=dialect.sqlToQuery(queries.membership);
         await probe('Collection membership and page',async()=>{const [row]=await database.unsafe(page.sql,page.params);return row?.items?.length??0;});
-        const ids=(await database`select media_id as id from tracking_state where user_id=${action.userId} order by media_id limit 60`).map((row:Record<string,any>)=>row.id as string);
+        const cohort=dialect.sqlToQuery(queries.assessmentCohort);
+        const ids=(await database.unsafe(cohort.sql,cohort.params)).map((row:Record<string,any>)=>row.id as string);
         const assessment=dialect.sqlToQuery(statement`${collectionCTE(action.userId,action.userId,'all',ids)} select count(*)::int as total,md5(jsonb_agg(a order by a.id)::text) as result from assessments a`);
         await probe('Collection assessment',async()=>{const [row]=await database.unsafe(assessment.sql,assessment.params);return Number(row?.total??0);});
         const entries=Array.from({length:6000},(_,index)=>({id:`fixture-${index}`,eventId:`fixture-event-${index}`,kind:'movie',title:'Benchmark fixture',watchedAt:`2026-01-${String(28-Math.floor(index/250)).padStart(2,'0')}T12:00:00Z`,source:'fixture',rewatched:false}) as JournalEntry);

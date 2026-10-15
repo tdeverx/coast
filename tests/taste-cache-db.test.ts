@@ -1,4 +1,4 @@
-import {beforeAll,afterAll,test,expect} from 'bun:test';
+import {beforeAll,afterAll,test,expect,spyOn} from 'bun:test';
 import {sql as query} from 'drizzle-orm';
 import {getSql,getDb} from '../src/lib/server/db';
 import {refreshTasteCaches,runTasteRefresh,scheduleTasteRefresh,updateTasteSchedule,tasteJob,tasteRevisionSql} from '../src/lib/social/taste-cache.server';
@@ -7,6 +7,8 @@ import {importIgdbMetadata,gameDetails} from '../src/lib/core/games/service.serv
 import {mapIgdbGame} from '../src/lib/providers/igdb/adapter.server';
 import {track} from '../src/lib/core/tracking/service.server';
 import {workTasteFeatures} from '../src/lib/social/work-features.server';
+import * as featureReads from '../src/lib/social/work-features.server';
+import {jobExecution,JobYield} from '../src/lib/server/queue/execution';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const user=crypto.randomUUID(),other=crypto.randomUUID(),ids=Array.from({length:4},()=>crypto.randomUUID());
 beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const sql=getSql();for(const id of [user,other])await sql`insert into users(id,username) values(${id},${'taste-'+id})`;
@@ -67,4 +69,69 @@ run('verified game parent supplies presentation, never transfers ownership or id
   expect((await gameDetails(user,child.id)).posterPath).toBeNull();
   expect((await workTasteFeatures([child.id])).get(child.id)?.genres?.[0].name).toBe('Puzzle');
  }finally{await sql`delete from games where id in (select game_id from game_external_ids where provider='igdb' and external_id in ('801990','801991','801992'))`;}
+});
+
+run('taste jobs freeze ten users, commit the cursor with publication and resume without repeating completed users',async()=>{
+ const db=getSql(),extra=Array.from({length:12},()=>crypto.randomUUID()),late=crypto.randomUUID(),job=crypto.randomUUID();
+ await db`delete from outbox_actions where kind='taste.refresh'`;
+ for(const id of extra)await db`insert into users(id,username) values(${id},${'taste-census-'+id})`;
+ await db`insert into outbox_actions(id,user_id,kind,state,attempts,payload) values(${job},${user},'taste.refresh','running',1,'{}')`;
+ const execute=()=>jobExecution.run({id:job,attempts:1,purpose:'scheduled' as const,started:performance.now(),checkpoints:0},()=>refreshTasteCaches());
+ try{
+  await expect(execute()).rejects.toBeInstanceOf(JobYield);
+  const [paused]=await db`select payload->'_checkpoint' as checkpoint from outbox_actions where id=${job}`;
+  expect(paused.checkpoint.users).toHaveLength(10);expect(paused.checkpoint.next).toBe(5);expect(paused.checkpoint.checked).toBe(5);
+  for(const id of paused.checkpoint.users.slice(0,5))expect(await db`select medium from user_taste_profiles where user_id=${id}`).toHaveLength(6);
+  const completed=paused.checkpoint.users[0];
+  await db`update user_taste_profiles set updated_at='2000-01-01' where user_id=${completed}`;
+  await db`insert into users(id,username) values(${late},${'taste-late-'+late})`;
+  expect(await execute()).toEqual({checked:10,refreshed:10,deferred:0});
+  const [finished]=await db`select payload->'_checkpoint' as checkpoint from outbox_actions where id=${job}`;
+  expect(finished.checkpoint.users).toEqual(paused.checkpoint.users);expect(finished.checkpoint.next).toBe(10);
+  expect(await db`select * from user_taste_profiles where user_id=${late}`).toHaveLength(0);
+  expect(await db`select * from user_taste_profiles where user_id=${completed} and updated_at='2000-01-01'`).toHaveLength(6);
+  expect(await execute()).toEqual({checked:10,refreshed:10,deferred:0});
+ }finally{
+  await db`delete from outbox_actions where id=${job}`;
+  await db`delete from users where id=any(${db.array([...extra,late],'UUID')}::uuid[])`;
+ }
+});
+run('cancelled or replaced taste attempts cannot publish profiles or advance their durable cursor',async()=>{
+ const db=getSql(),original=featureReads.workTasteFeatures;
+ for(const replacement of ['cancelled','recovered'] as const){
+  const job=crypto.randomUUID(),checkpoint={task:'taste-refresh',users:[user],next:0,checked:0,refreshed:0,deferred:0};
+  await db`insert into outbox_actions(id,user_id,kind,state,attempts,payload) values(${job},${user},'taste.refresh','running',1,${{_checkpoint:checkpoint}}::jsonb)`;
+  const before=await db`select medium,revision,profile,updated_at from user_taste_profiles where user_id=${user} order by medium`;
+  const reads=spyOn(featureReads,'workTasteFeatures').mockImplementation(async ids=>{
+   const result=await original(ids);
+   if(replacement==='cancelled')await db`update outbox_actions set state='cancelled' where id=${job}`;
+   else await db`update outbox_actions set attempts=2 where id=${job}`;
+   return result;
+  });
+  try{
+   await expect(jobExecution.run({id:job,attempts:1,purpose:'scheduled',started:performance.now(),checkpoints:0},()=>refreshTasteCaches())).rejects.toBeInstanceOf(JobYield);
+   expect(await db`select medium,revision,profile,updated_at from user_taste_profiles where user_id=${user} order by medium`).toEqual(before);
+   const [saved]=await db`select payload->'_checkpoint' as checkpoint from outbox_actions where id=${job}`;
+   expect(saved.checkpoint).toEqual(checkpoint);
+  }finally{reads.mockRestore();await db`delete from outbox_actions where id=${job}`;}
+ }
+});
+run('taste jobs defer concurrent personal edits once and commit the frozen cursor without replacing scores',async()=>{
+ const db=getSql(),job=crypto.randomUUID(),original=featureReads.workTasteFeatures;
+ const checkpoint={task:'taste-refresh',users:[user],next:0,checked:0,refreshed:0,deferred:0};
+ await db`insert into outbox_actions(id,user_id,kind,state,attempts,payload) values(${job},${user},'taste.refresh','running',1,${{_checkpoint:checkpoint}}::jsonb)`;
+ const before=await db`select medium,revision,profile,updated_at from user_taste_profiles where user_id=${user} order by medium`;
+ let changed=false;
+ const reads=spyOn(featureReads,'workTasteFeatures').mockImplementation(async workIds=>{
+  const result=await original(workIds);
+  if(!changed){changed=true;await db`update tracking_state set favourite=not favourite where user_id=${user} and media_id=${ids[0]}`;}
+  return result;
+ });
+ try{
+  const outcome=await jobExecution.run({id:job,attempts:1,purpose:'scheduled',started:performance.now(),checkpoints:0},()=>refreshTasteCaches());
+  expect(outcome).toEqual({checked:1,refreshed:0,deferred:1});
+  const [saved]=await db`select payload->'_checkpoint' as checkpoint from outbox_actions where id=${job}`;
+  expect(saved.checkpoint).toEqual({...checkpoint,next:1,checked:1,deferred:1});
+  expect(await db`select medium,revision,profile,updated_at from user_taste_profiles where user_id=${user} order by medium`).toEqual(before);
+ }finally{reads.mockRestore();await db`delete from outbox_actions where id=${job}`;}
 });

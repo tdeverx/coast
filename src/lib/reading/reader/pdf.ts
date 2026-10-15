@@ -11,19 +11,23 @@ export async function pdfReader({host,source,location,signal,changed}:ReaderOpti
  const abort=()=>{void loading.destroy();};signal.addEventListener('abort',abort,{once:true});
  try {const document=await readerLoad(loading.promise,signal);if(document.numPages>100000)throw new Error('This PDF has too many pages.');
  const pageCanvas=canvas=window.document.createElement('canvas');pageCanvas.setAttribute('aria-label','Reading page');host.replaceChildren(pageCanvas);
- let page=location?.format==='pdf'?Math.min(location.page,document.numPages):1,epoch=0;
+ let page=location?.format==='pdf'?Math.min(location.page,document.numPages):1,epoch=0,rendering=false,renderedPage:number|undefined;
  let task:ReturnType<Awaited<ReturnType<typeof document.getPage>>['render']>|undefined;
- async function render(next:number){
-  const revision=++epoch;task?.cancel();page=Math.max(1,Math.min(document.numPages,next));
+ async function render(next:number,force=false){
+  const target=Math.max(1,Math.min(document.numPages,next));
+  if(!rendering&&renderedPage===target&&!force)return;
+  const revision=++epoch;rendering=true;task?.cancel();page=target;
+  try {
   const item=await document.getPage(page);if(signal.aborted||revision!==epoch){item.cleanup();return;}
   const natural=item.getViewport({scale:1}),ratio=Math.min(window.devicePixelRatio||1,2);
   const scale=Math.min(Math.max(host.clientWidth-32,100)/natural.width,Math.max(host.clientHeight-16,100)/natural.height,2);
-  const viewport=item.getViewport({scale:scale*ratio});pageCanvas.width=viewport.width;pageCanvas.height=viewport.height;
+  const viewport=item.getViewport({scale:scale*ratio});renderedPage=undefined;pageCanvas.width=viewport.width;pageCanvas.height=viewport.height;
   pageCanvas.style.width=`${viewport.width/ratio}px`;pageCanvas.style.height=`${viewport.height/ratio}px`;
   const context=pageCanvas.getContext('2d')!;task=item.render({canvas:pageCanvas,canvasContext:context,viewport});
-  try{await task.promise;if(revision===epoch&&!signal.aborted)changed({format:'pdf',page,total:document.numPages});}catch(error){if((error as Error).name!=='RenderingCancelledException')throw error;}finally{item.cleanup();}
+  try{await task.promise;if(revision===epoch&&!signal.aborted){renderedPage=target;changed({format:'pdf',page:target,total:document.numPages});}}catch(error){if((error as Error).name!=='RenderingCancelledException')throw error;}finally{item.cleanup();}
+  }finally{if(revision===epoch)rendering=false;}
  }
  await render(page);
- return {previous:()=>render(page-1),next:()=>render(page+1),go:target=>render(target.format==='pdf'?target.page:page),resize:()=>render(page),destroy(){epoch++;task?.cancel();signal.removeEventListener('abort',abort);void loading.destroy();pageCanvas.remove();}};
+ return {previous:()=>render(page-1),next:()=>render(page+1),go:target=>render(target.format==='pdf'?target.page:page),resize:()=>render(page,true),destroy(){epoch++;task?.cancel();signal.removeEventListener('abort',abort);void loading.destroy();pageCanvas.remove();}};
  }catch(cause){signal.removeEventListener('abort',abort);canvas?.remove();await loading.destroy();throw cause;}
 }

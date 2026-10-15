@@ -13,7 +13,7 @@ export function createWorkActions(getId: () => string | undefined) {
   const { api, change } = useClient();
   const resource = createResource<WorkState>(empty());
   const direct = $derived(new Set(resource.data.reasons.filter(reason => reason.origin === 'direct').map(reason => reason.relationship)));
-  onDestroy(resource.cancel);
+  onDestroy(resource.dispose);
   return {
     get data() { return resource.data; },
     get error() { return resource.error; },

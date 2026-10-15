@@ -35,7 +35,7 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
    if(changed&&(resource.activated||resource.ready))void load();
   });
  });
- onDestroy(resource.cancel);
+ onDestroy(resource.dispose);
  return {
     get pagination() { return get().layout==='grid' ? { kind: 'cursor' as const, hasMore: resource.data.hasMore } : {kind:'local' as const}; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){return get().layout==='grid'?undefined:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&category=${category}`;}, get shape(){return category==='reading'?'poster' as const:'fanart' as const;}, get artworkStyle(){return category==='reading'?'primary' as const:'thumb' as const;}, artworkPriority:'episode-season-show', get resetKey(){return category;}, get filters(){return get().mediums?[{type:'segments' as const,label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptions(page.data, ['screen','game','music','reading']),change:(value:string)=>{category=value;void load();}}]:[];}, controls: [],
   get emptyConfirmed(){return !get().mediums || resource.data.emptyAllMedia===true;},

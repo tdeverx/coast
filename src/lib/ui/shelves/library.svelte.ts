@@ -5,6 +5,8 @@
   import type { PresentationRow } from '$lib/server/queries/media-rows';
   import { useClient } from '$lib/ui/client-context';
   import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
+  import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
+  import { ApiError } from '$lib/ui/client';
   import {
     libraryBrowsePaths,
     libraryTitles,
@@ -68,13 +70,23 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
   const selections = $derived(collection && surface === 'listen' ? librarySelections.listen.filter(option => option.value !== 'artist') : librarySelections[surface]);
   const paths = (number = 1) => libraryBrowsePaths({ surface, collection, selection, kind, scope, genre, relationship, source, availability, username, page: number }, preview);
   const href = (number = 1) => paths(number).href;
+  let loadedSelection = untrack(() => initial ? paths(1).api : undefined);
   async function load(number = 1, append = false) {
     const path = paths(number).api;
-    if (!append) resource.replace({ items: [], page: 1, pages: 1, total: 0 });
+    const selectionKey = paths(1).api;
+    if (!append && loadedSelection !== selectionKey)
+      resource.replace({ items: [], page: 1, pages: 1, total: 0 });
+    loadedSelection = selectionKey;
     const result = await resource.load(async signal => {
-      if (!preview) return api<Content>(path, undefined, 'GET', { signal });
-      const result = await api<PresentationRow>(path, undefined, 'GET', { signal });
-      return { ...result, page: 1, pages: 1, total: result.items.length };
+      try {
+        if (!preview) return await api<Content>(path, undefined, 'GET', { signal });
+        const result = await api<PresentationRow>(path, undefined, 'GET', { signal });
+        return { ...result, page: 1, pages: 1, total: result.items.length };
+      } catch (cause) {
+        if (!signal.aborted && cause instanceof ApiError && [403, 404].includes(cause.status))
+          resource.replace({ items: [], page: 1, pages: 1, total: 0 }, cause.message);
+        throw cause;
+      }
     }, {
       failure: result => result.failure ?? '',
       usable: result => !result.failure || result.items.length > 0,
@@ -85,16 +97,38 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     });
     if (result && !preview && layout === 'grid') replaceState(href(result.page), route.state);
   }
+  const ownerKey = $derived(JSON.stringify([route.data.user?.id ?? '', username, surface]));
+  const refreshKey = $derived(JSON.stringify([
+    contentRevisionKey(route.data, ['tracking', 'social']), surface, genre, layout, preview?.refreshKey,
+  ]));
+  let previousOwner = untrack(() => ownerKey);
+  let previousRefresh = untrack(() => refreshKey);
+  let previousInitial = untrack(() => initial);
   $effect(() => {
-    route.data.filters;
-    preview?.refreshKey;
+    const owner = ownerKey, key = refreshKey;
     const next = initial;
+    const initialChanged = next?.items !== previousInitial?.items
+      || next?.page !== previousInitial?.page || next?.pages !== previousInitial?.pages
+      || next?.total !== previousInitial?.total || next?.failure !== previousInitial?.failure;
     untrack(() => {
-      if (next && layout === 'grid') resource.replace(next);
-      else if (resource.activated) void load();
+      const ownerChanged = owner !== previousOwner;
+      const changed = ownerChanged || key !== previousRefresh || initialChanged;
+      previousOwner = owner;
+      previousRefresh = key;
+      previousInitial = next;
+      if (!changed) return;
+      const activated = resource.activated || resource.ready;
+      if (ownerChanged && activated) {
+        loadedSelection = undefined;
+        resource.replace({ items: [], page: 1, pages: 1, total: 0 });
+      }
+      if (initialChanged && next && layout === 'grid') {
+        loadedSelection = paths(1).api;
+        resource.replace(next, next.failure ?? '');
+      } else if (activated) void load(layout === 'grid' ? content.page : 1);
     });
   });
-  onDestroy(resource.cancel);
+  onDestroy(resource.dispose);
 
 
   return {

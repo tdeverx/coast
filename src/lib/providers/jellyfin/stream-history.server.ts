@@ -2,6 +2,7 @@ import {getSql} from '$lib/server/db';
 import {getJellyfin} from './connection.server';
 import {PermanentActionError,tagDiagnosticStage,type OutboxAction} from '$lib/server/queue';
 import {ProviderHttpError} from '$lib/server/security/provider-fetch';
+import {ProviderQueueBusyError} from '$lib/server/security/request-priority';
 import type {streamPresentation} from './streams';
 export type ServerStream=NonNullable<ReturnType<typeof streamPresentation>>;
 type Capture={connectionId:string;generation:string;checkedAt:Date;action?:Pick<OutboxAction,'id'|'attempts'>};
@@ -43,6 +44,7 @@ export async function scanServerStreams(action:OutboxAction){
   return {checked:streams.length};
  }catch(error){
   tagDiagnosticStage(error,stage);
+  if(error instanceof ProviderQueueBusyError)throw error;
   const message=error instanceof PermanentActionError?error.message:error instanceof ProviderHttpError&&[401,403].includes(error.status)?'Jellyfin denied access. Check the server streams account permissions.':'Server scan failed. Previous sessions are retained until a successful scan.';
   // Keep the original failure if recording itself is unavailable.
   if(stage!=='streams-recording')try{await recordServerStreams(source,null,message);}catch{/* The worker records the original failure and execution stage. */}

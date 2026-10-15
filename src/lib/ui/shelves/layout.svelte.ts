@@ -1,4 +1,4 @@
-import { tick, untrack } from 'svelte';
+import { onDestroy, tick, untrack } from 'svelte';
 import type { ArtworkPriority, MediaCardArtwork, MediaCardOverlay, MediaCardShape, MediaRowStyle } from '$lib/ui/types';
 
 type LayoutOptions = {
@@ -25,6 +25,9 @@ export function createShelfLayout(get: () => LayoutOptions) {
   let next = $state(false);
   let savedHeight = $state(0);
   let measuredWidth = 0;
+  let frame = 0;
+  let endRequested = false;
+  let destroyed = false;
   const size = $derived(overrideShape ?? get().size);
   const style = $derived<MediaRowStyle>({
     shape: size === 'panel' ? 'poster' : size,
@@ -37,21 +40,35 @@ export function createShelfLayout(get: () => LayoutOptions) {
     const config = get();
     if (config.busy || !scroller) return;
     const width = scroller.clientWidth;
+    const left = scroller.scrollLeft;
+    const total = scroller.scrollWidth;
     if (measuredWidth && width !== measuredWidth) {
       savedHeight = 0;
-      void tick().then(measure);
+      void tick().then(schedule);
     } else if (config.preserveHeight && config.layout === 'row' && size === 'panel') {
       savedHeight = Math.max(savedHeight, scroller.getBoundingClientRect().height);
     }
     measuredWidth = width;
-    previous = scroller.scrollLeft > 1;
-    next = scroller.scrollLeft + scroller.clientWidth < scroller.scrollWidth - 1;
+    previous = left > 1;
+    next = left + width < total - 1;
+    return { left, width, total };
+  }
+  function schedule() {
+    if (destroyed || frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      if (destroyed) return;
+      const bounds = measure();
+      const reached = endRequested;
+      endRequested = false;
+      const config = get();
+      if (reached && bounds && !config.busy && config.hasMore && bounds.left + bounds.width >= bounds.total - 300)
+        config.onend?.();
+    });
   }
   function reachedEnd() {
-    measure();
-    const config = get();
-    if (!config.busy && config.hasMore && scroller && scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 300)
-      config.onend?.();
+    endRequested = true;
+    schedule();
   }
   function scroll(direction: number) {
     const config = get();
@@ -61,25 +78,21 @@ export function createShelfLayout(get: () => LayoutOptions) {
       behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
     });
   }
-  $effect(() => { size; savedHeight = 0; void tick().then(measure); });
-  $effect(() => { if (!get().busy) void tick().then(measure); });
+  $effect(() => { size; savedHeight = 0; void tick().then(schedule); });
+  $effect(() => { if (!get().busy) void tick().then(schedule); });
   $effect(() => { get().resetKey; if (scroller) scroller.scrollLeft = 0; });
   $effect(() => {
     if (!scroller) return;
     return untrack(() => {
-      let frame = 0;
-      const schedule = () => {
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(measure);
-      };
       const resize = new ResizeObserver(schedule);
       const changes = new MutationObserver(schedule);
       resize.observe(scroller!);
       changes.observe(scroller!, { childList: true, subtree: true });
       measure();
-      return () => { cancelAnimationFrame(frame); resize.disconnect(); changes.disconnect(); };
+      return () => { cancelAnimationFrame(frame); frame = 0; endRequested = false; resize.disconnect(); changes.disconnect(); };
     });
   });
+  onDestroy(() => { destroyed = true; cancelAnimationFrame(frame); });
 
   return {
     get scroller() { return scroller; }, set scroller(value) { scroller = value; },

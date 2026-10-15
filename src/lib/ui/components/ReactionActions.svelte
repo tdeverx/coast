@@ -24,7 +24,7 @@
  const mutation = createMutation(load);
  const selected = $derived(loaded ? resource.data.find(row => row.mine)?.emoji ?? null : initialReaction);
  $effect(() => { targetId; targetKind; untrack(() => { resource.replace([]); loaded = false; mutation.error = ''; }); });
- onDestroy(resource.cancel);
+ onDestroy(resource.dispose);
  function react(emoji: typeof emojis[number]) {
   const id = targetId, kind = targetKind;
   void mutation.run(() => change('social/reactions', { targetKind: kind, targetId: id, emoji: selected === emoji ? null : emoji }));

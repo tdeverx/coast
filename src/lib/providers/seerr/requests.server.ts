@@ -2,7 +2,7 @@ import { context } from '$lib/server/diagnostics';
 import { correlationId } from '$lib/diagnostics';
 import { conflictPreference } from '$lib/sync/preference.server';
 import * as v from 'valibot';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { getDb, type Database } from '$lib/server/db';
 import {
   providerInstances,
@@ -12,6 +12,7 @@ import {
   externalIds,
   outboxActions,
   syncValues,
+  providerJobSnapshots,
 } from '$lib/server/db/schema';
 import { getConfig } from '$lib/server/config';
 import { enqueueAction, PermanentActionError, type OutboxAction } from '$lib/server/queue';
@@ -20,14 +21,17 @@ import {
   groupDestination,
   seerrAllows,
   SeerrPermission,
+  requestSchema,
+  type SeerrRequest,
 } from '$lib/providers/seerr/adapter.server';
 import { ProviderActionError, type DiscoverKind } from '$lib/providers/contracts';
-import { notify } from '$lib/server/notifications';
+import { notifyMany } from '$lib/server/notifications';
 import { trackInTransaction } from '$lib/core/tracking/service.server';
 import { getInstance, instanceFetchConfig } from '$lib/providers/instances.server';
 import { connectionFor } from '$lib/providers/connections.server';
 import { getSeerr, assertSeerrAccount } from '$lib/providers/seerr/connection.server';
 import { ProviderHttpError } from '$lib/server/security/provider-fetch';
+import { jobExecution, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
 
 const uuid = v.pipe(v.string(), v.uuid());
 
@@ -354,137 +358,141 @@ export async function requestMedia(userId: string, input: unknown) {
   });
 }
 
-export async function refreshRequests(userId: string, instanceId: string,expected?:{connectionId:string;accountGeneration:string}) {
-  const { adapter, connection,account,scope } = await getSeerr(userId, instanceId,expected);
+const seerrCheckpointSchema=v.object({task:v.literal('seerr-sync'),scanId:uuid,
+  phase:v.picklist(['scanning','missing','conflicts','complete']),offset:v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(100100)),
+  next:v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(100)),after:v.nullable(uuid)});
+type SeerrCheckpoint=v.InferOutput<typeof seerrCheckpointSchema>;
+const seerrPageSchema=v.object({task:v.literal('seerr-sync-page'),scanId:uuid,offset:v.number(),results:v.pipe(v.array(requestSchema),v.maxLength(100))});
+
+/** A bounded page snapshot survives slow metadata work. The scan marker is
+ * separate from visible status timestamps and never proves remote deletion. */
+export async function refreshRequests(userId:string,instanceId:string,expected?:{connectionId:string;accountGeneration:string}) {
+  const {adapter,connection,account,scope}=await getSeerr(userId,instanceId,expected);
   type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
-  const guarded=<T>(work:(tx:Tx)=>Promise<T>)=>getDb().transaction(async tx=>{await assertSeerrAccount(tx,scope);return work(tx);});
-  const { importTmdb } = await import('$lib/catalogue/service.server');
-  const seen = new Set<string>();
-  for (let offset = 0; ; offset += 100) {
-    await guarded(async()=>{});
-    const page = await adapter.requests(offset,false,account);
-    await guarded(async()=>{});
-    for (const remote of page.results) {
-      seen.add(String(remote.id));
-      const [local] = await getDb()
-        .select()
-        .from(mediaRequests)
-        .where(
-          and(
-            eq(mediaRequests.userId, userId),
-            eq(mediaRequests.instanceId, instanceId),
-            eq(mediaRequests.externalId, String(remote.id))
-          )
-        )
-        .limit(1);
-      const available = (remote.is4k ? remote.media?.status4k : remote.media?.status) === 5;
-      const state = available
-        ? 'available'
-        : remote.status === 2
-          ? 'approved'
-          : remote.status === 3
-            ? 'declined'
-            : 'pending';
-      if (local) {
-        if (local.state !== state) {
-          await guarded(tx=>tx
-            .update(mediaRequests)
-            .set({ state, updatedAt: new Date() })
-            .where(eq(mediaRequests.id, local.id)));
-          await notify({
-            userId,
-            kind: 'request',
-            title:
-              state === 'available' ? 'Your requested title is available' : `Request ${state}`,
-            sourceKey: `seerr:${instanceId}:${remote.id}:${state}`,
-            data:{actorId:userId,subjectId:local.id,workId:local.mediaId,destination:'/requests'},
-          });
-        }
-        continue;
-      }
-      if (!remote.media?.tmdbId) continue;
-      const kind = remote.type === 'tv' || remote.media.mediaType === 'tv' ? 'show' : 'movie';
-      const item = await importTmdb(kind, String(remote.media.tmdbId), {
-        includeEpisodes: false,
-      });
-      await guarded(async tx=>{
-        const [existing]=await tx.select({id:mediaRequests.id}).from(mediaRequests).where(and(eq(mediaRequests.userId,userId),eq(mediaRequests.instanceId,instanceId),eq(mediaRequests.externalId,String(remote.id)))).limit(1);
-        if(existing)return;
-        await tx.insert(mediaRequests)
-        .values({
-          userId,
-          instanceId,
-          mediaId: item.id,
-          externalId: String(remote.id),
-          serverId: remote.serverId,
-          is4k: remote.is4k,
-          seasons: remote.seasons.map((s) => s.seasonNumber),
-          state,
-        });
-      });
-    }
-    if (page.results.length < 100) break;
-    if (offset >= 100000)
-      throw new Error('Seerr request sync exceeded the supported page bound.');
-  }
-  // Confirm missing requests individually: a truncated/filtered list must never imply cancellation.
-  const known = await getDb()
-    .select()
-    .from(mediaRequests)
-    .where(and(eq(mediaRequests.userId, userId), eq(mediaRequests.instanceId, instanceId)));
-  for (const request of known) {
-    if (!request.externalId || seen.has(request.externalId) || request.state === 'cancelled')
-      continue;
-    try {
+  const db=getDb(),execution=jobExecution.getStore();
+  const guarded=<T>(work:(tx:Tx)=>Promise<T>)=>db.transaction(async tx=>{await assertSeerrAccount(tx,scope);return work(tx);});
+  await guarded(async()=>{});
+  const saved=await readJobCheckpoint();
+  let point:SeerrCheckpoint=saved?v.parse(seerrCheckpointSchema,saved):{task:'seerr-sync',scanId:crypto.randomUUID(),phase:'scanning',offset:0,next:0,after:null};
+  const retain=async(tx:Tx,next:SeerrCheckpoint)=>{await saveJobCheckpoint(next,tx);point=next;};
+  const expired=()=>!!execution&&performance.now()-execution.started>=10_000;
+  const {importTmdb}=await import('$lib/catalogue/service.server');
+  while(point.phase==='scanning'){
+    if(point.offset>100000)throw new Error('Seerr request sync exceeded the supported page bound.');
+    const [stored]=execution?await db.select().from(providerJobSnapshots).where(eq(providerJobSnapshots.actionId,execution.id)):[];
+    if(stored&&(stored.connectionId!==connection.id||stored.accountGeneration!==connection.accountGeneration))
+      throw new PermanentActionError('The request scan account changed.');
+    let page: v.InferOutput<typeof seerrPageSchema>;
+    if(stored){
+      page=v.parse(seerrPageSchema,stored.data);
+      if(page.scanId!==point.scanId||page.offset!==point.offset)throw new PermanentActionError('The request scan page changed.');
+    }else{
       await guarded(async()=>{});
-      await adapter.requestDetails(Number(request.externalId));
-    } catch (error) {
-      if (!(error instanceof ProviderHttpError)||error.status !== 404) throw error;
-      await guarded(tx=>tx
-        .update(mediaRequests)
-        .set({ state: 'cancelled', updatedAt: new Date() })
-        .where(eq(mediaRequests.id, request.id)));
+      const remote=await adapter.requests(point.offset,false,account);
+      page=v.parse(seerrPageSchema,{task:'seerr-sync-page',scanId:point.scanId,offset:point.offset,results:remote.results});
+      if(execution)await guarded(async tx=>{
+        await tx.insert(providerJobSnapshots).values({actionId:execution.id,connectionId:connection.id,accountGeneration:connection.accountGeneration,data:page});
+        await retain(tx,point);
+      });
     }
-  }
-  const pending = await getDb()
-    .select()
-    .from(syncValues)
-    .where(
-      and(
-        eq(syncValues.connectionId, connection.id),
-        eq(syncValues.conflict, true),
-        sql`${syncValues.category} like 'request:%'`
-      )
-    );
-  const preference = await guarded((tx) =>
-    conflictPreference(tx, userId, connection.id)
-  );
-  for (const entry of pending) {
-    const [request] = await getDb()
-      .select()
-      .from(mediaRequests)
-      .where(
-        and(
-          eq(mediaRequests.id, entry.category.slice('request:'.length)),
-          eq(mediaRequests.userId, userId)
-        )
-      );
-    if (!request) continue;
-    await guarded(tx=>tx
-      .update(syncValues)
-      .set({ remote: { value: request.state }, updatedAt: new Date() })
-      .where(eq(syncValues.id, entry.id)));
-    if (preference !== 'manual') {
-      const { resolveConflict } = await import('$lib/sync/conflicts.server');
-      await guarded(tx=>resolveConflict(userId, entry.id, preference === 'remote' ? 'accepted' : 'ignored',tx));
+    if(point.next>page.results.length)throw new PermanentActionError('The request scan cursor is invalid.');
+    const remaining=page.results.slice(point.next),externalIds=remaining.map(remote=>String(remote.id));
+    const known=externalIds.length?await db.select().from(mediaRequests).where(and(eq(mediaRequests.userId,userId),eq(mediaRequests.instanceId,instanceId),inArray(mediaRequests.externalId,externalIds))):[];
+    const knownById=new Map(known.map(request=>[request.externalId,request]));
+    type Prepared={remote:SeerrRequest;workId?:string};
+    let pending:Prepared[]=[];
+    async function commit(next:number,complete:boolean){
+      await guarded(async tx=>{
+        const ids=pending.map(({remote})=>String(remote.id));
+        // Resolve the page again under the account fence: an interactive/direct
+        // observation may have committed while metadata was being fetched.
+        const current=ids.length?await tx.select().from(mediaRequests).where(and(eq(mediaRequests.userId,userId),eq(mediaRequests.instanceId,instanceId),inArray(mediaRequests.externalId,ids))):[];
+        const byId=new Map(current.map(request=>[request.externalId,request]));
+        const unchanged:string[]=[],insertions:typeof mediaRequests.$inferInsert[]=[],notices:{id:string;mediaId:string;remoteId:number;state:typeof mediaRequests.$inferSelect.state}[]=[];
+        for(const {remote,workId} of pending){
+          const state:typeof mediaRequests.$inferSelect.state=(remote.is4k?remote.media?.status4k:remote.media?.status)===5?'available':remote.status===2?'approved':remote.status===3?'declined':'pending';
+          const local=byId.get(String(remote.id));
+          if(local){
+            if(local.state===state)unchanged.push(local.id);
+            else{
+              await tx.update(mediaRequests).set({state,observedScanId:point.scanId,updatedAt:new Date()}).where(eq(mediaRequests.id,local.id));
+              notices.push({id:local.id,mediaId:local.mediaId,remoteId:remote.id,state});
+            }
+          }else if(workId)insertions.push({userId,instanceId,mediaId:workId,externalId:String(remote.id),serverId:remote.serverId,is4k:remote.is4k,seasons:remote.seasons.map(season=>season.seasonNumber),state,observedScanId:point.scanId});
+        }
+        if(unchanged.length)await tx.update(mediaRequests).set({observedScanId:point.scanId}).where(inArray(mediaRequests.id,unchanged));
+        if(insertions.length)await tx.insert(mediaRequests).values(insertions);
+        // Notification persistence and the cursor are one commit: a resumed page
+        // must never skip a status change whose notification was not stored.
+        await notifyMany(notices.map(notice=>({userId,kind:'request',title:notice.state==='available'?'Your requested title is available':`Request ${notice.state}`,
+          sourceKey:`seerr:${instanceId}:${notice.remoteId}:${notice.state}`,data:{actorId:userId,subjectId:notice.id,workId:notice.mediaId,destination:'/requests' as const}})),tx);
+        await retain(tx,complete?{...point,phase:page.results.length<100?'missing':'scanning',offset:point.offset+100,next:0,after:null}:{...point,next});
+        if(complete&&execution)await tx.delete(providerJobSnapshots).where(eq(providerJobSnapshots.actionId,execution.id));
+      });
+      pending=[];
     }
+    for(let index=point.next;index<page.results.length;index++){
+      const remote=page.results[index];
+      let workId:string|undefined;
+      if(!knownById.has(String(remote.id))&&remote.media?.tmdbId){
+        const kind=remote.type==='tv'||remote.media.mediaType==='tv'?'show':'movie';
+        workId=(await importTmdb(kind,String(remote.media.tmdbId),{includeEpisodes:false})).id;
+      }
+      pending.push({remote,workId});
+      if(expired()&&index+1<page.results.length){await commit(index+1,false);await jobCheckpoint();}
+    }
+    await commit(page.results.length,true);
+    await jobCheckpoint();
   }
-  await guarded(tx=>tx
-    .update(providerConnections)
-    .set({
-      settings: sql`jsonb_set(${providerConnections.settings}, '{requestsVerifiedAt}', ${JSON.stringify(new Date().toISOString())}::jsonb, true)`,
-    })
-    .where(eq(providerConnections.id, connection.id)));
+  while(point.phase==='missing'){
+    const previous=await db.select().from(mediaRequests).where(and(eq(mediaRequests.userId,userId),eq(mediaRequests.instanceId,instanceId),
+      sql`${mediaRequests.externalId} is not null`,sql`${mediaRequests.state}<>'cancelled'`,sql`${mediaRequests.observedScanId} is distinct from ${point.scanId}::uuid`,
+      point.after?sql`${mediaRequests.id}>${point.after}::uuid`:undefined)).orderBy(asc(mediaRequests.id)).limit(100);
+    if(!previous.length){await guarded(tx=>retain(tx,{...point,phase:'conflicts',after:null}));await jobCheckpoint();continue;}
+    for(const request of previous){
+      await guarded(async()=>{});
+      let removed=false;
+      try{await adapter.requestDetails(Number(request.externalId));}
+      catch(error){if(!(error instanceof ProviderHttpError)||error.status!==404)throw error;removed=true;}
+      await guarded(async tx=>{
+        if(removed)await tx.update(mediaRequests).set({state:'cancelled',updatedAt:new Date()}).where(and(eq(mediaRequests.id,request.id),eq(mediaRequests.externalId,request.externalId!),sql`${mediaRequests.observedScanId} is not distinct from ${request.observedScanId}::uuid`));
+        await retain(tx,{...point,after:request.id});
+      });
+      if(expired())await jobCheckpoint();
+    }
+    await jobCheckpoint();
+  }
+  while(point.phase==='conflicts'){
+    const pending=await db.select().from(syncValues).where(and(eq(syncValues.connectionId,connection.id),eq(syncValues.conflict,true),sql`${syncValues.category} like 'request:%'`,
+      point.after?sql`${syncValues.id}>${point.after}::uuid`:undefined)).orderBy(asc(syncValues.id)).limit(100);
+    if(!pending.length){
+      await guarded(async tx=>{
+        await tx.update(providerConnections).set({settings:sql`jsonb_set(${providerConnections.settings},'{requestsVerifiedAt}',${JSON.stringify(new Date().toISOString())}::jsonb,true)`}).where(eq(providerConnections.id,connection.id));
+        await retain(tx,{...point,phase:'complete',after:null});
+      });
+      break;
+    }
+    const ids=pending.map(entry=>entry.category.slice('request:'.length)).filter(id=>v.safeParse(uuid,id).success);
+    const requests=ids.length?await db.select().from(mediaRequests).where(and(eq(mediaRequests.userId,userId),inArray(mediaRequests.id,ids))):[];
+    const byId=new Map(requests.map(request=>[request.id,request]));
+    for(const entry of pending){
+      const request=byId.get(entry.category.slice('request:'.length));
+      await guarded(async tx=>{
+        if(request){
+          const remote={value:request.state};
+          await tx.update(syncValues).set({remote,updatedAt:new Date()}).where(and(eq(syncValues.id,entry.id),sql`${syncValues.remote} is distinct from ${remote}::jsonb`));
+          const preference=await conflictPreference(tx,userId,connection.id);
+          if(preference!=='manual'){
+            const {resolveConflict}=await import('$lib/sync/conflicts.server');
+            await resolveConflict(userId,entry.id,preference==='remote'?'accepted':'ignored',tx);
+          }
+        }
+        await retain(tx,{...point,after:entry.id});
+      });
+      if(expired())await jobCheckpoint();
+    }
+    await jobCheckpoint();
+  }
 }
 
 export async function manageRequest(
