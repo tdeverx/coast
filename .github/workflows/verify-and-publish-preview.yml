@@ -21,6 +21,7 @@ jobs:
           bun-version: 1.4.3
       - run: bun install --frozen-lockfile
       - run: bun run code:inventory
+      - run: bun run code:style
       - run: bun run ui:inventory:check
       - run: bun run check
       - run: bun test
@@ -206,12 +207,24 @@ jobs:
           path: ${{ runner.temp }}/digests
           pattern: digest-*
           merge-multiple: true
+      - name: Check current preview revision
+        id: preview
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          current=$(gh api "repos/${{ github.repository }}/git/ref/heads/main" --jq '.object.sha')
+          if [ "$current" = "$GITHUB_SHA" ]; then
+            echo 'current=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'current=false' >> "$GITHUB_OUTPUT"
+          fi
       - uses: docker/metadata-action@v5
         id: meta
         with:
           images: ghcr.io/${{ github.repository }}
           tags: |
-            type=raw,value=preview
+            type=raw,value=preview,enable=${{ steps.preview.outputs.current }}
             type=sha,prefix=sha-
             type=ref,event=tag
       - name: Assemble and verify image manifest

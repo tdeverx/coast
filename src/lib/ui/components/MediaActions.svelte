@@ -409,7 +409,7 @@
     const target = wholeWork;
     const removing = continuing;
     let result:
-      | { eventId?: string; previous?: import('$lib/core/tracking/continue').ContinueSnapshot }
+      | { eventId?: string; previous?: import('$lib/core/tracking/continue.server').ContinueSnapshot }
       | undefined;
     await perform(
       async () => {

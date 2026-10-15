@@ -28,7 +28,8 @@
   let {
     providers,
     experimentalGaming = false,
-  }: { providers: Instance[]; experimentalGaming?: boolean } = $props();
+    experimentalComics = false,
+  }: { providers: Instance[]; experimentalGaming?: boolean; experimentalComics?: boolean } = $props();
   let open = $state(false),
     editing = $state<Instance | null>(null),
     provider = $state('tmdb'),
@@ -69,7 +70,8 @@
         allowPrivateNetwork: privateNetwork,
       });
       notifyAction(
-        editing ? 'Integration saved.' : 'Integration added. Link your account in Connections.'
+        editing ? 'Integration saved.' : ['jellyfin', 'trakt', 'steam'].includes(provider)
+          ? 'Integration added. Link your account in Connections.' : 'Integration added.'
       );
       open = false;
       form.reset();
@@ -153,10 +155,12 @@
       </Heading>
       <p class="small">{displayLabel(instance.provider)} · {instance.baseUrl}</p>
       <p class="small">
-        {instance.enabled
+        {instance.provider === 'comic-vine'
+          ? instance.enabled ? 'Used on demand for comic search and metadata.' : 'Comic discovery is disabled. Saved metadata and reading progress are retained.'
+          : instance.enabled
           ? 'Available to users.'
-          : 'Hidden from personal connections. Existing tracking data is retained.'} Disabling stops new
-        provider actions; queued work may fail until enabled again.
+          : 'Hidden from personal connections. Existing tracking data is retained.'}
+        {#if instance.provider !== 'comic-vine'}Disabling stops new provider actions; queued work may fail until enabled again.{/if}
       </p>
       <ProviderAutomation {instance} />
     </div>{/each}
@@ -202,7 +206,7 @@
             value="trakt">Trakt</option
           ><option value="seerr">Seerr</option>{#if experimentalGaming}<option value="igdb"
               >IGDB</option
-            ><option value="steam">Steam</option>{/if}</select
+            ><option value="steam">Steam</option>{/if}{#if experimentalComics}<option value="comic-vine">Comic Vine</option>{/if}</select
         ></Field>
       <Field label="Display name"><input
           bind:value={name}
@@ -231,6 +235,7 @@
             required={!editing}
           /><small>From your TMDB account’s API settings.</small></Field>
       {:else if provider === 'steam'}<Field label="Steam Web API key"><input name="apiKey" type="password" autocomplete="off" required={!editing} /><small>From Steam’s Web API key settings. Account linking uses Steam’s sign-in page; private game data remains unavailable.</small></Field>
+      {:else if provider === 'comic-vine'}<Field label="Comic Vine API key"><input name="apiKey" type="password" autocomplete="off" required={!editing} /><small>Metadata only; no personal account connection is needed. Comic Vine permits non-commercial use only. <a href="https://comicvine.gamespot.com/api/" target="_blank" rel="noreferrer">API terms and key</a></small></Field>
       {:else if provider === 'trakt' || provider === 'igdb'}<label class="field"
           >{provider === 'igdb' ? 'Twitch client ID' : 'Application client ID'}<input
             name="clientId"

@@ -1,10 +1,6 @@
 import { requestPriority } from '$lib/server/security/request-priority';
 import { getConfig } from '$lib/server/config';
-import { conflictPreference } from '$lib/sync/preference';
 import * as v from 'valibot';
-import { and, eq } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { mediaRequests, externalIds, syncValues } from '$lib/server/db/schema';
 import {
   registerActionHandler,
   enqueueAction,
@@ -12,11 +8,10 @@ import {
   tagDiagnosticStage,
   type ActionHandler,
 } from '$lib/server/queue';
-import { ProviderActionError, type DiscoverKind } from '$lib/providers/contracts';
+import { ProviderActionError } from '$lib/providers/contracts';
 import { connectionFor } from '$lib/providers/connections.server';
 import { getTrakt } from '$lib/providers/trakt/connection.server';
-import { getSeerr } from '$lib/providers/seerr/connection.server';
-import { refreshRequests } from '$lib/providers/seerr/requests.server';
+import { refreshRequests, executeSeerrRequest, executeSeerrManagement } from '$lib/providers/seerr/requests.server';
 import { startProviderMaintenance } from '$lib/providers/maintenance.server';
 
 const uuid = v.pipe(v.string(), v.uuid());
@@ -51,7 +46,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   register('steam.sync', async action => (await import('$lib/providers/steam/sync.server')).syncSteam(action));
   register('steam.achievements', async action => (await import('$lib/providers/steam/sync.server')).syncSteamAchievements(action));
   register('catalogue.user-scan', async action => (await import('$lib/catalogue/maintenance.server')).scanUserCatalogue(action));
-  for(const provider of ['tmdb','igdb','trakt'])register(`${provider}.recommendations`,async action=>(await import('$lib/experiments/provider-recommendations.server')).refreshProviderRecommendations(action));
+  for(const provider of ['tmdb','igdb','trakt'])register(`${provider}.recommendations`,async action=>(await import('$lib/recommendations/providers.server')).refreshProviderRecommendations(action));
   register('tmdb.refresh', async action => {
     v.parse(v.object({ instanceId: uuid, force: v.optional(v.boolean(), false) }), action.payload);
     return (await import('$lib/catalogue/maintenance.server')).refreshSharedMetadata(action);
@@ -60,120 +55,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   for(const provider of ['jellyfin','steam'] as const)register(`${provider}.live`,async action=>{if(action.connectionId)return (await import('$lib/social/provider-live.server')).pollProviderLive(action.userId,action.connectionId,provider);});
   register('trakt.live',async action=>{if(action.connectionId)await (await import('$lib/social/trakt.server')).pollLive(action.userId,action.connectionId);});
   register('trakt.checkin',async action=>{if(action.connectionId)await (await import('$lib/social/trakt.server')).deliverCheckin(action.userId,action.connectionId,v.parse(uuid,action.payload.checkinId));});
-  register('seerr.manage', async (action) => {
-    const data = v.parse(
-      v.object({
-        requestId: uuid,
-        action: v.picklist(['cancel', 'approve', 'decline']),
-        resolved: v.optional(v.boolean(), false),
-        expectedState: v.optional(v.string()),
-      }),
-      action.payload
-    );
-    const [request] = await getDb()
-      .select()
-      .from(mediaRequests)
-      .where(eq(mediaRequests.id, data.requestId));
-    if (!request?.externalId) return;
-    const { adapter, connection } = await getSeerr(action.userId, request.instanceId);
-    const desired =
-      data.action === 'cancel'
-        ? 'cancelled'
-        : data.action === 'approve'
-          ? 'approved'
-          : 'declined';
-    if (!data.resolved) {
-      let remoteState: typeof mediaRequests.$inferSelect.state;
-      try {
-        const remote = await adapter.requestDetails(Number(request.externalId));
-        remoteState =
-          (remote.is4k ? remote.media?.status4k : remote.media?.status) === 5
-            ? 'available'
-            : remote.status === 2
-              ? 'approved'
-              : remote.status === 3
-                ? 'declined'
-                : 'pending';
-      } catch (error) {
-        if ((error as { status?: number }).status !== 404) throw error;
-        remoteState = 'cancelled';
-      }
-      if (remoteState !== (data.expectedState ?? request.state) && remoteState !== desired) {
-        const preference = await getDb().transaction((tx) =>
-          conflictPreference(tx, action.userId, connection.id)
-        );
-        if (preference === 'remote') {
-          await getDb()
-            .update(mediaRequests)
-            .set({ state: remoteState, updatedAt: new Date() })
-            .where(eq(mediaRequests.id, request.id));
-          await getDb()
-            .update(syncValues)
-            .set({
-              conflict: false,
-              agreed: { value: remoteState },
-              remote: { value: remoteState },
-              updatedAt: new Date(),
-            })
-            .where(
-              and(
-                eq(syncValues.connectionId, connection.id),
-                eq(syncValues.category, `request:${request.id}`)
-              )
-            );
-          return;
-        }
-        if (preference === 'manual') {
-          const values = {
-            remote: { value: remoteState },
-            agreed: { value: desired },
-            conflict: true,
-            updatedAt: new Date(),
-          };
-          await getDb()
-            .insert(syncValues)
-            .values({
-              connectionId: connection.id,
-              mediaId: request.mediaId,
-              category: `request:${request.id}`,
-              ...values,
-            })
-            .onConflictDoUpdate({
-              target: [syncValues.connectionId, syncValues.mediaId, syncValues.category],
-              set: values,
-            });
-          return;
-        }
-      }
-    }
-    await adapter.manage(Number(request.externalId), data.action);
-    await getDb()
-      .update(syncValues)
-      .set({
-        conflict: false,
-        agreed: { value: desired },
-        remote: { value: desired },
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(syncValues.connectionId, connection.id),
-          eq(syncValues.category, `request:${request.id}`)
-        )
-      );
-    await getDb()
-      .update(mediaRequests)
-      .set({
-        state:
-          data.action === 'cancel'
-            ? 'cancelled'
-            : data.action === 'approve'
-              ? 'approved'
-              : 'declined',
-        updatedAt: new Date(),
-      })
-      .where(eq(mediaRequests.id, request.id));
-  });
+  register('seerr.manage', executeSeerrManagement);
   register('trakt.list-delete', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
@@ -193,7 +75,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   register('trakt.progress', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { executeProgressExport } = await import('$lib/sync/trakt-export');
+    const { executeProgressExport } = await import('$lib/sync/trakt-export.server');
     await executeProgressExport(action.userId, action.connectionId, action.payload);
   });
   register('seerr.sync', async (action) => {
@@ -204,7 +86,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   });
   register('history.remove', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The connection is unavailable.');
-    const { executeHistoryRemoval } = await import('$lib/sync/history-removal');
+    const { executeHistoryRemoval } = await import('$lib/sync/history-removal.server');
     await executeHistoryRemoval(action.userId, action.connectionId, action.payload);
   });
   register('trakt.collection-review',async action=>{
@@ -219,30 +101,30 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     if(!action.connectionId)throw new PermanentActionError('The connection is unavailable.');
     const {connection}=await connectionFor(action.userId,action.connectionId,'jellyfin');
     if(connection.settings.reconcileTracking!==true)return;
-    const {executeJellyfinUserState}=await import('$lib/sync/jellyfin');await executeJellyfinUserState(action.userId,action.connectionId,action.payload);
+    const {executeJellyfinUserState}=await import('$lib/sync/jellyfin.server');await executeJellyfinUserState(action.userId,action.connectionId,action.payload);
   });
   register('jellyfin.user-state', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Jellyfin connection is unavailable.');
-    const { executeJellyfinUserState } = await import('$lib/sync/jellyfin');
+    const { executeJellyfinUserState } = await import('$lib/sync/jellyfin.server');
     await executeJellyfinUserState(action.userId, action.connectionId, action.payload);
   });
   register('jellyfin.scrobble', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The playback connection is unavailable.');
-    const { executeJellyfinScrobble } = await import('$lib/sync/jellyfin');
+    const { executeJellyfinScrobble } = await import('$lib/sync/jellyfin.server');
     await executeJellyfinScrobble(action.userId, action.connectionId, action.payload);
   });
   register('trakt.scrobble', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { executeLiveScrobble } = await import('$lib/sync/trakt-export');
+    const { executeLiveScrobble } = await import('$lib/sync/trakt-export.server');
     await executeLiveScrobble(action.userId, action.connectionId, action.payload);
   });
   register('jellyfin.library', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Jellyfin connection is unavailable.');
-    const { scanJellyfinLibrary } = await import('$lib/sync/jellyfin');
+    const { scanJellyfinLibrary } = await import('$lib/sync/jellyfin.server');
     let stage = 'connection';
     try {
       const result = await scanJellyfinLibrary(
@@ -261,7 +143,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   });
   register('jellyfin.bootstrap', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The Jellyfin connection is unavailable.');
-    const { bootstrapJellyfinUser } = await import('$lib/sync/jellyfin');
+    const { bootstrapJellyfinUser } = await import('$lib/sync/jellyfin.server');
     let stage = 'connection';
     try {
       const result = await bootstrapJellyfinUser(action.userId, action.connectionId, next => { stage = next; });
@@ -274,7 +156,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   });
   register('jellyfin.sync', async action => {
     if (!action.connectionId) throw new PermanentActionError('The Jellyfin connection is unavailable.');
-    const {syncJellyfinUser} = await import('$lib/sync/jellyfin');
+    const {syncJellyfinUser} = await import('$lib/sync/jellyfin.server');
     let stage = 'connection';
     try {
       const result = await requestPriority.run(3, () => syncJellyfinUser(action.userId, action.connectionId!, next => {stage = next;}));
@@ -284,57 +166,25 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
   register('trakt.import', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { importTrakt } = await import('$lib/sync/trakt-import');
+    const { importTrakt } = await import('$lib/sync/trakt-import.server');
     await importTrakt(action.userId, action.connectionId, 'tracking',action.payload.initialImport===true);
   });
   register('trakt.lists-import', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { importTrakt } = await import('$lib/sync/trakt-import');
+    const { importTrakt } = await import('$lib/sync/trakt-import.server');
     await importTrakt(action.userId, action.connectionId, 'lists',action.payload.initialImport===true);
   });
   register('trakt.list-export', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { executeTraktListExport } = await import('$lib/sync/trakt-lists');
+    const { executeTraktListExport } = await import('$lib/sync/trakt-lists.server');
     await executeTraktListExport(action.userId, action.connectionId, action.payload);
   });
   register('trakt.export', async (action) => {
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
-    const { executeTraktExport } = await import('$lib/sync/trakt-export');
+    const { executeTraktExport } = await import('$lib/sync/trakt-export.server');
     await executeTraktExport(action.userId, action.connectionId, action.payload);
   });
-  register('seerr.request', async (action) => {
-    const requestId = v.parse(uuid, action.payload.requestId);
-    const [request] = await getDb()
-      .select()
-      .from(mediaRequests)
-      .where(and(eq(mediaRequests.id, requestId), eq(mediaRequests.userId, action.userId)));
-    if (!request || request.state === 'cancelled') return;
-    const [mapping] = await getDb()
-      .select()
-      .from(externalIds)
-      .where(and(eq(externalIds.mediaId, request.mediaId), eq(externalIds.provider, 'tmdb')));
-    if (!mapping || !['movie', 'show'].includes(mapping.mediaKind))
-      throw new PermanentActionError(
-        'A TMDB movie or show identity is required to request media.'
-      );
-    const { adapter } = await getSeerr(action.userId, request.instanceId);
-    const external = await adapter.create({
-      kind: mapping.mediaKind as DiscoverKind,
-      tmdbId: Number(mapping.externalId),
-      is4k: request.is4k,
-      seasons: request.seasons,
-      serverId: request.serverId ?? undefined,
-    });
-    await getDb()
-      .update(mediaRequests)
-      .set({
-        externalId: String(external.id),
-        state:
-          external.status === 2 ? 'approved' : external.status === 3 ? 'declined' : 'pending',
-        updatedAt: new Date(),
-      })
-      .where(eq(mediaRequests.id, request.id));
-  });
+  register('seerr.request', executeSeerrRequest);
 }

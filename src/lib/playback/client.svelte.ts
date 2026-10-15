@@ -1,5 +1,5 @@
 import { browserDiagnostic } from '$lib/ui/diagnostics';
-import { api } from '$lib/ui/client';
+import { api, capturePlaybackApi } from '$lib/ui/client';
 import { notifyAction } from '$lib/ui/action-feedback.svelte';
 import type { PlaybackView } from '$lib/ui/types';
 
@@ -31,7 +31,7 @@ export const heroPlayer = $state({
 
 type PlaybackController = {
   beginPlaybackGesture: (type:'audio'|'video') => void;
-  stop: () => Promise<void>;
+  stop: (cancelPreparing?: boolean) => Promise<void>;
   pause: () => void;
   resume: () => Promise<void>;
   snapshot: () => {positionSeconds:number;buffering:boolean;unavailable?:boolean};
@@ -45,7 +45,11 @@ export function registerPlaybackController(next: PlaybackController) {
   };
 }
 export function beginPlaybackGesture(type:'audio'|'video'){controller?.beginPlaybackGesture(type);}
-export async function stopPlayback(){await controller?.stop();}
+let preparationRevision = 0;
+let preparing: AbortController | undefined;
+let releasePreparation:(()=>void)|undefined;
+export function cancelPlaybackPreparation(){preparationRevision++;preparing?.abort();preparing=undefined;releasePreparation?.();releasePreparation=undefined;player.loading=false;}
+export async function stopPlayback(){cancelPlaybackPreparation();await controller?.stop(false);}
 export function playbackSnapshot(){return controller?.snapshot();}
 export function alignPlayback(state:{positionSeconds:number;paused:boolean;force?:boolean}){controller?.align(state);}
 export function pausePlayback() {
@@ -67,6 +71,7 @@ export async function playMedia(
     edition?: string;
     expectedDuration?: number;
     fromStart?: boolean;
+    retry?: boolean;
     subtitleIndex?: number;
     maxBitrate?: number;
     continuationId?: string;
@@ -74,8 +79,9 @@ export async function playMedia(
   } = {}
 ) {
   if (player.loading) return;
+  const intent = preparationRevision;
   const {syncedPlayer,canControlPlayback,syncedCommand}=await import('./synced/client.svelte');
-  if(player.loading)return;
+  if(player.loading||intent!==preparationRevision)return;
   const room=syncedPlayer.room;
   if(room&&!syncedPlayer.changing&&!canControlPlayback()){syncedPlayer.notice='Playback is controlled by the host.';return;}
   const syncSwitch=!!room&&!syncedPlayer.changing;
@@ -85,6 +91,7 @@ export async function playMedia(
     player.role === 'playback' &&
     JSON.stringify(options.sequence) === JSON.stringify(player.session.sequence) &&
     !options.fromStart &&
+    !options.retry &&
     options.sourceId === undefined &&
     options.edition === undefined &&
     options.expectedDuration === undefined &&
@@ -97,18 +104,26 @@ export async function playMedia(
     return;
   }
   player.loading = true;
+  const revision=++preparationRevision, abort=new AbortController(), request=capturePlaybackApi();
+  preparing=abort;
+  releasePreparation=()=>{if(syncSwitch&&syncedPlayer.room?.id===room?.id)syncedPlayer.changing=false;};
+  const current=()=>revision===preparationRevision&&!abort.signal.aborted;
   player.preparationStartedAt = performance.now();
   browserDiagnostic('playback.start');
   try {
-    if (player.session) await controller?.stop();
+    const {reader,closeReading}=await import('$lib/reading/client.svelte');if(reader.session)await closeReading();
+    if(!current())return;
+    if (player.session) await controller?.stop(false);
+    if(!current())return;
     const video = document.createElement('video');
     const videoCodecs = ['h264'];
     if (video.canPlayType('video/mp4; codecs="hvc1.1.6.L93.B0"')) videoCodecs.push('hevc');
     if (video.canPlayType('video/webm; codecs="vp9"')) videoCodecs.push('vp9');
     if (video.canPlayType('video/mp4; codecs="av01.0.05M.08"')) videoCodecs.push('av1');
-    const session = await api<PlaybackView>('playback', {
+    const requestOptions={...options};delete requestOptions.retry;
+    const session = await request<PlaybackView>('playback', {
       mediaId,
-      ...options,
+      ...requestOptions,
       browser: {
         containers: ['mp4', 'm4v', 'webm', 'mp3', 'flac', 'ogg', 'm4a', 'aac', 'wav'],
         videoCodecs,
@@ -117,7 +132,8 @@ export async function playMedia(
         hlsJs: typeof MediaSource !== 'undefined',
         maxBitrate: options.maxBitrate,
       },
-    });
+    },'POST',{signal:abort.signal});
+    if(!current()){await request(`playback/${session.id}/progress`,{event:'stop',positionSeconds:session.startSeconds,durationSeconds:session.durationSeconds}).catch(()=>{});return;}
     player.session = session;
     player.continuationId = options.continuationId ?? '';
     player.subtitlePrompt = session.subtitlePrompt;
@@ -128,12 +144,12 @@ export async function playMedia(
     setPlaybackMuted(false);
     if(syncSwitch)await syncedCommand('item',{playbackId:session.id,queueIndex:Math.max(0,player.audioIndex),...(session.mediaType==='audio'?{queue:player.audioQueue.map(item=>item.id)}:{})});
   } catch (error) {
+    if(!current())return;
     if(syncSwitch&&player.session)await controller?.stop();
     browserDiagnostic('playback.failed', { failure: 'unexpected' });
     throw error;
   } finally {
-    player.loading = false;
-    if(syncSwitch)syncedPlayer.changing=false;
+    if(current()){preparing=undefined;player.loading = false;releasePreparation?.();releasePreparation=undefined;}
   }
 }
 export function presentTrailer(

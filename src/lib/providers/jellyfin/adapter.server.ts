@@ -1,3 +1,4 @@
+import { jellyfinBook, jellyfinBooks, jellyfinBookPage } from './reading.server';
 import {companionPageSchema} from './companion';
 import { artworkKeys, artworkTypes } from '$lib/artwork';
 import {activeSessionsSchema,streamPresentation} from './streams';
@@ -356,6 +357,9 @@ export class JellyfinAdapter {
     }
     return result;
   }
+  async readingItem(userId: string, id: string) { return jellyfinBook((path,init)=>this.call(path,init),userId,id); }
+  async readingPage(userId:string,offset=0){return jellyfinBookPage((path,init)=>this.call(path,init),userId,'',offset);}
+  async readingLibrary(userId: string, search: string, offset=0) { return jellyfinBooks((path,init)=>this.call(path,init),userId,search,offset); }
   async musicLibrary(userId: string, options: MusicBrowseOptions = {}, scan?: MusicScanOptions) {
     return browseMusic((path, init) => this.call(path, init), userId, options, scan);
   }
@@ -389,13 +393,14 @@ export class JellyfinAdapter {
     itemId: string,
     userId: string,
     capabilities: BrowserCapabilities,
-    maxBitrate: number
+    maxBitrate: number,
+    options: { shared?: boolean; deviceId?: string } = {}
   ) {
     const profile = {
       Name: 'Coast browser',
       MaxStreamingBitrate: maxBitrate,
       MaxStaticBitrate: maxBitrate,
-      DirectPlayProfiles: [
+      DirectPlayProfiles: options.shared ? [] : [
         {
           Container: capabilities.containers.join(','),
           AudioCodec: capabilities.audioCodecs.join(','),
@@ -427,7 +432,7 @@ export class JellyfinAdapter {
           Context: 'Streaming',
           MaxAudioChannels: '2',
           MinSegments: 1,
-          BreakOnNonKeyFrames: true,
+          BreakOnNonKeyFrames: !options.shared,
         },
       ],
       SubtitleProfiles: [
@@ -449,11 +454,12 @@ export class JellyfinAdapter {
           UserId: userId,
           MaxStreamingBitrate: maxBitrate,
           DeviceProfile: profile,
-          EnableDirectPlay: true,
-          EnableDirectStream: true,
+          EnableDirectPlay: !options.shared,
+          EnableDirectStream: !options.shared,
           EnableTranscoding: true,
-          AllowVideoStreamCopy: true,
-          AllowAudioStreamCopy: true,
+          AllowVideoStreamCopy: !options.shared,
+          AllowAudioStreamCopy: !options.shared,
+          ...(options.deviceId ? {DeviceId:options.deviceId} : {}),
         }),
       })
     );
@@ -462,6 +468,9 @@ export class JellyfinAdapter {
       sources: info.MediaSources.map(source),
       playSessionId: info.PlaySessionId || undefined,
     };
+  }
+  async stopEncoding(deviceId:string, playSessionId:string) {
+    await this.call(`/Videos/ActiveEncodings?${new URLSearchParams({DeviceId:deviceId,PlaySessionId:playSessionId})}`, {method:'DELETE'});
   }
   async setUserState(
     userId: string,

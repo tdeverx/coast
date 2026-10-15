@@ -1,11 +1,11 @@
 import type { SequenceSource } from '../../media/sequence';
-import { sequenceEntries, nextSequenceEntry, type SequenceEntry } from '../../core/lists/sequence';
-import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch';
+import { sequenceEntries, nextSequenceEntry, type SequenceEntry } from '../../core/lists/sequence.server';
+import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import { lifecycle } from '$lib/media/model';
 import { tmdbArtworkUrl } from '$lib/providers/tmdb/artwork.server';
 import type { CastMember } from '$lib/providers/contracts';
 import { artworkKeys, type ArtworkImages } from '$lib/artwork';
-import { and, asc, desc, eq, getTableColumns, ilike, inArray, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, inArray, or, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
@@ -13,6 +13,8 @@ import { getConfig } from '../config';
 import { resolveMetadata } from '../../catalogue/metadata/resolve';
 import { AppError } from '../security/errors';
 import type { MediaView } from '../../ui/types';
+import { searchDocument, searchSql } from './search-ranking';
+import { rankSearch } from '$lib/search';
 
 const uuidSchema = v.pipe(v.string(), v.uuid());
 const viewOptionsSchema = v.object({
@@ -85,6 +87,14 @@ export function hasPermittedMediaSource(userId: string, source = 'all') {
   return sql`${s.media.id} in (select permitted.media_id from (${permittedMediaSources(userId, source)}) permitted)`;
 }
 
+/** Mixed work shelves include accessible descendants, such as tracks within albums. */
+export function hasPermittedWorkSource(userId: string) {
+  return or(hasPermittedMediaSource(userId), sql`exists(
+    with recursive scope(id,path) as (select ${s.works.id},array[${s.works.id}] union all select r.child_id,d.path||r.child_id from scope d join media_relationships r on r.parent_id=d.id where r.kind in ('contains','collection','sequence') and not r.child_id=any(d.path) and cardinality(d.path)<20)
+    select 1 from scope d join availability a on a.media_id=d.id join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${userId} and c.user_id=${userId} and a.state='available' and c.status='connected' and i.enabled
+  )`);
+}
+
 export async function mediaViews(
   userId: string,
   rawOptions: {
@@ -101,19 +111,22 @@ export async function mediaViews(
   if (options.ids?.length === 0) return [];
   if(viewerId===null)return (await (await import('$lib/social/public.server')).publicMedia(options.ids)).filter(item=>!options.kind||item.kind===options.kind).slice(0,options.limit??150);
   const db = getDb();
-  const pattern = options.query
-    ? `%${options.query.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_')}%`
-    : undefined;
-  const matches = pattern
-    ? or(
-        ilike(s.media.title, pattern),
-        ilike(s.media.originalTitle, pattern),
-        sql`exists (select 1 from metadata_snapshots ms where ms.media_id = ${s.media.id} and (ms.title ilike ${pattern} or ms.original_title ilike ${pattern}))`,
-        sql`exists (select 1 from metadata_overrides mo where mo.media_id = ${s.media.id} and (mo.title ilike ${pattern} or mo.original_title ilike ${pattern}))`,
-        sql`exists (select 1 from user_metadata_preferences mp where mp.media_id = ${s.media.id} and mp.user_id = ${userId} and mp.title ilike ${pattern})`
-      )
-    : undefined;
-  const rows = await db
+  const search = options.query ? searchSql(options.query,
+    [searchDocument(sql`${s.media.title}`, sql`${s.media.originalTitle}`)],
+    [sql`${s.media.title}`, sql`${s.media.originalTitle}`]) : null;
+  function searchMatches(fallback: boolean) {
+    if (!search || !options.query) return undefined;
+    const match = (title: ReturnType<typeof sql>, original = sql`null`) => {
+      const criterion = searchSql(options.query!, [searchDocument(title, original)], [title, original]);
+      return fallback ? criterion.fallback : criterion.matches;
+    };
+    // Each branch uses its own GIN index. Private title choices remain viewer-scoped.
+    return or(fallback ? search.fallback : search.matches,
+      sql`${s.media.id} in (select ms.media_id from metadata_snapshots ms where ${match(sql`ms.title`, sql`ms.original_title`)})`,
+      sql`${s.media.id} in (select mo.media_id from metadata_overrides mo where ${match(sql`mo.title`, sql`mo.original_title`)})`,
+      sql`${s.media.id} in (select mp.media_id from user_metadata_preferences mp where mp.user_id=${userId} and ${match(sql`mp.title`)})`);
+  }
+  const readRows = (fallback = false) => db
     .select()
     .from(s.media)
     .where(
@@ -124,15 +137,20 @@ export async function mediaViews(
           : options.ids
             ? undefined
             : inArray(s.media.kind, ['movie', 'show', 'collection']),
-        matches
+        searchMatches(fallback)
       )
     )
     .orderBy(
       ...(options.availableFirst ? [desc(hasPermittedMediaSource(viewerId))] : []),
-      desc(s.media.updatedAt),
+      ...(search && options.query ? [desc(sql`greatest(${search.rank},
+        coalesce((select max(${searchSql(options.query, [searchDocument(sql`ms.title`, sql`ms.original_title`)], [sql`ms.title`, sql`ms.original_title`]).rank}) from metadata_snapshots ms where ms.media_id=${s.media.id}),0),
+        coalesce((select max(${searchSql(options.query, [searchDocument(sql`mo.title`, sql`mo.original_title`)], [sql`mo.title`, sql`mo.original_title`]).rank}) from metadata_overrides mo where mo.media_id=${s.media.id}),0),
+        coalesce((select max(${searchSql(options.query, [searchDocument(sql`mp.title`)], [sql`mp.title`]).rank}) from user_metadata_preferences mp where mp.media_id=${s.media.id} and mp.user_id=${userId}),0))`)] : [desc(s.media.updatedAt)]),
       asc(s.media.id)
     )
     .limit(options.limit ?? 150);
+  let rows = await readRows();
+  if (!rows.length && search) rows = await readRows(true);
   if (!rows.length) return [];
   const ids = rows.map((row) => row.id);
   const queued = new Set(
@@ -253,7 +271,7 @@ export async function mediaViews(
       .where(and(inArray(s.providerItems.mediaId, artworkIds), permittedAvailability(viewerId)))
       .orderBy(desc(s.providerItems.lastSeenAt), asc(s.providerItems.id)),
     db
-      .select({ mediaId: s.externalIds.mediaId })
+      .select({ mediaId: s.externalIds.mediaId, externalId: s.externalIds.externalId })
       .from(s.externalIds)
       .where(
         and(
@@ -267,7 +285,7 @@ export async function mediaViews(
       ),
     db.select().from(s.media).where(inArray(s.media.id, artworkIds)),
   ]);
-  const tmdbIds = new Set(tmdbIdentities.map((identity) => identity.mediaId));
+  const tmdbIds = new Map(tmdbIdentities.map((identity) => [identity.mediaId, identity.externalId]));
   const settings = userRows[0]?.settings ?? {};
   const stateById = new Map(states.map((row) => [row.mediaId, row]));
   const ratingById = new Map(scores.map((row) => [row.mediaId, row.value]));
@@ -368,6 +386,7 @@ export async function mediaViews(
       artwork.thumb ||= artwork.backdrop || artwork.primary || fallback('thumb');
     return {
       id: row.id,
+      tmdbId: tmdbIds.get(row.id),
       kind: row.kind,
       title: metadata.title ?? row.title,
       originalTitle: metadata.originalTitle,
@@ -484,7 +503,7 @@ export async function mediaViews(
       if(!visibility.progress){item.progress=0;item.duration=0;item.status=null;item.trackingProgress=undefined;item.trackingParents=[];}
     }
   }
-  return options.query ? views.sort((a, b) => Number(b.available) - Number(a.available)) : views;
+  return options.query ? rankSearch(views, options.query).sort((a, b) => Number(b.available) - Number(a.available)) : views;
 }
 
 /** Explicit detail/list membership is complete; the 500-row bound only limits each query batch. */

@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { AppError } from '$lib/server/security/errors';
-import { getPendingConflicts, resolveConflict } from '$lib/sync/conflicts';
+import { getPendingConflicts, resolveConflict } from '$lib/sync/conflicts.server';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleConflicts(context: ApiContext): Promise<Response | undefined> {

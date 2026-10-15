@@ -1,0 +1,376 @@
+{
+  "section": "Music, gaming and shared provider contracts",
+  "coverage": {
+    "read": [
+      "docs/code-organization.md",
+      "docs/architecture.md",
+      "docs/performance.md",
+      "docs/music.md",
+      "docs/experimental-features.md",
+      "src/lib/music/model.ts",
+      "src/lib/music/presentation.ts",
+      "src/lib/music/service.server.ts",
+      "src/lib/music/persistence.server.ts",
+      "src/lib/music/queue.server.ts",
+      "src/lib/music/artwork.server.ts",
+      "src/lib/games/model.ts",
+      "src/lib/games/presentation.ts",
+      "src/lib/games/availability.server.ts",
+      "src/lib/core/games/service.server.ts",
+      "src/lib/providers/contracts.ts",
+      "src/lib/providers/capabilities.ts",
+      "src/lib/providers/tasks.ts",
+      "src/lib/providers/job-policy.ts",
+      "src/lib/providers/task-timing.ts",
+      "src/lib/providers/steam/adapter.server.ts",
+      "src/lib/providers/steam/connection.server.ts",
+      "src/lib/providers/steam/sync.server.ts",
+      "src/lib/providers/igdb/adapter.server.ts",
+      "src/lib/providers/igdb/service.server.ts",
+      "src/lib/providers/jellyfin/music.server.ts",
+      "src/lib/providers/jellyfin/paging.ts",
+      "src/lib/server/queries/music.ts",
+      "src/lib/server/queries/media-rows.ts",
+      "src/lib/server/api/games.server.ts",
+      "src/lib/server/api/game-playthroughs.server.ts",
+      "src/lib/server/experimental.ts",
+      "src/lib/social/provider-live.server.ts",
+      "src/lib/social/work-features.server.ts",
+      "src/lib/ui/pages/music.svelte.ts",
+      "src/lib/ui/components/PresentationActions.svelte",
+      "src/routes/music/+page.server.ts",
+      "src/routes/music/+page.svelte",
+      "src/routes/music/[connection]/[id]/+page.server.ts",
+      "src/routes/music/[connection]/[id]/+page.svelte",
+      "src/routes/music/work/[id]/+page.server.ts",
+      "src/routes/music/work/[id]/+page.svelte",
+      "src/routes/games/+page.server.ts",
+      "src/routes/games/[id]/+page.server.ts",
+      "src/routes/games/[id]/+page.svelte",
+      "src/routes/games/igdb/[instance]/[id]/+page.server.ts",
+      "src/routes/games/igdb/[instance]/[id]/+page.svelte",
+      "src/routes/connections/steam/callback/+server.ts",
+      "tests/steam.test.ts",
+      "tests/igdb.test.ts",
+      "tests/games-db.test.ts",
+      "tests/jellyfin-music.test.ts",
+      "tests/music-presentation.test.ts"
+    ],
+    "scanned": [
+      "src/hooks.server.ts",
+      "src/lib/server/api/index.server.ts",
+      "src/lib/server/db/schema.ts (relationships, music, game account and variant definitions)",
+      "src/lib/sync/jellyfin.server.ts (music imports and delivery)",
+      "src/lib/ui/components/Shelf.svelte (item key)",
+      "src/lib/ui/components/ConnectionCard.svelte (Steam import controls)",
+      "src/routes/games/+page.svelte",
+      "tests/steam-db.test.ts",
+      "tests/collection-db.test.ts",
+      "tests/taste-cache-db.test.ts",
+      "tests/jellyfin-music-persistence-db.test.ts",
+      "tests/jellyfin-music-api.test.ts",
+      "src/lib/server/queries/library-content.ts"
+    ],
+    "unverified": [
+      "No databases, live provider APIs, credentials, running services or browser sessions were accessed.",
+      "Database-backed identity collisions, exact persisted album editions, Steam alias observations and refresh deletion cases require disposable DB fixtures.",
+      "The duplicate music renderer key is reproduced as pure presentation output; actual Svelte development error and production rendering were not run.",
+      "Queue transport/scheduler infrastructure, playback accounting internals, all public API grants and social privacy were reviewed only at direct callers relevant to this section; their full audits belong to the owning sections.",
+      "Live Steam/OpenID, IGDB query compatibility and live Jellyfin audio/artwork behavior are not certified by injected-adapter tests."
+    ]
+  },
+  "checks": [
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/igdb.test.ts tests/steam.test.ts tests/games.test.ts tests/jellyfin-music.test.ts tests/music-presentation.test.ts tests/provider-contracts.test.ts tests/task-timing.test.ts",
+      "result": "73 pass, 0 fail, 357 assertions; no DB or live provider access."
+    },
+    {
+      "command": "Injected-transport bun -e reproduction: musicItem twice for one compact upstream GUID, using compact and uppercase hyphenated requested IDs; musicCard for two source copies with one workId; mapIgdbGame with two exact Steam links.",
+      "result": "Confirmed different raw returned item IDs [\"abcdef0123456789abcdef0123456789\",\"ABCDEF01-2345-6789-ABCD-EF0123456789\"]; 2 source cards produced 1 unique renderer href key; one IGDB work accepted both Steam AppIDs 10 and 20."
+    }
+  ],
+  "findings": [
+    {
+      "id": "MEDIUM-01",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Album membership loses track occurrences and mixes release editions",
+      "rootCause": "album-membership-is-work-pair-instead-of-edition-occurrence",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/music/persistence.server.ts",
+          "line": 27,
+          "detail": "Albums merge on MusicBrainz release-group and tracks on recording identity."
+        },
+        {
+          "path": "src/lib/music/persistence.server.ts",
+          "line": 41,
+          "detail": "Distinct work editions are stored, but their membership is not retained there."
+        },
+        {
+          "path": "src/lib/music/persistence.server.ts",
+          "line": 47,
+          "detail": "Every provider occurrence upserts one parent/child/kind relationship and overwrites its position."
+        },
+        {
+          "path": "src/lib/server/db/schema.ts",
+          "line": 244,
+          "detail": "The relationship primary key cannot represent the same recording at multiple album positions."
+        },
+        {
+          "path": "src/lib/music/queue.server.ts",
+          "line": 8,
+          "detail": "Album playback expands the global work relationship set, without selecting a release edition."
+        },
+        {
+          "path": "src/lib/music/persistence.server.ts",
+          "line": 117,
+          "detail": "Album logging uses the same global membership set, so edition-only tracks become user listens."
+        }
+      ],
+      "trigger": "Persist two releases with the same release-group ID but different tracklists/order, or one album with the same recording UUID at two positions. Then open, queue or manually log the album.",
+      "impact": "The last observed occurrence wins ordering, repeated recording occurrences disappear, and standard/deluxe releases become a union that may match no real album. Logging an ordinary edition also logs bonus tracks learned from another edition/server, changing personal playcounts and downstream history.",
+      "recommendation": "Retain ordered membership with an edition/occurrence identity beside the existing workEditions boundary; derive canonical browse/queue/logging from one explicit deterministic edition rather than unioning every release. Preserve shared recording activity and batch retry safety.",
+      "verification": "Disposable fixture: persist two album provider IDs with one release-group UUID, one track shared at different positions and a deluxe-only recording. Assert a selected standard queue/log excludes the bonus recording and retains its own order. Add a second occurrence of one recording and assert it remains a distinct queue entry without duplicate retry effects.",
+      "relatedAreas": [
+        "canonical music identity",
+        "album playback",
+        "manual listens",
+        "Collection progress",
+        "provider editions"
+      ]
+    },
+    {
+      "id": "MEDIUM-02",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Equivalent Jellyfin GUID spellings become separate music identities",
+      "rootCause": "music-persistence-keys-unnormalized-jellyfin-guid",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/providers/jellyfin/paging.ts",
+          "line": 2,
+          "detail": "The existing canonical comparison key removes hyphens and lowercases Jellyfin GUIDs."
+        },
+        {
+          "path": "src/lib/providers/jellyfin/music.server.ts",
+          "line": 173,
+          "detail": "Single lookup accepts an equivalent upstream GUID through normalized validation."
+        },
+        {
+          "path": "src/lib/providers/jellyfin/music.server.ts",
+          "line": 174,
+          "detail": "It then overwrites the upstream ID with the raw caller-supplied spelling."
+        },
+        {
+          "path": "src/lib/music/persistence.server.ts",
+          "line": 26,
+          "detail": "Lock and provider mapping lookup use the raw item.id; without a verified MusicBrainz ID a new work UUID is allocated."
+        },
+        {
+          "path": "src/lib/music/persistence.server.ts",
+          "line": 40,
+          "detail": "Provider items and work editions also retain raw GUID spellings as distinct unique keys."
+        }
+      ],
+      "trigger": "Browse a track/album whose Jellyfin ID is compact lowercase, then request the same item through the documented hyphenated or uppercase GUID form. The item lacks a verified MusicBrainz recording/release-group ID.",
+      "impact": "One provider item acquires two canonical works, separate progress/favourites/listens, duplicate availability and potentially split album membership. With a shared MusicBrainz ID it still creates duplicate provider mappings/editions. The injected adapter reproduction confirms different returned identity strings; DB effects follow statically from raw lookup keys.",
+      "recommendation": "Normalize Jellyfin music IDs, parent IDs and artist IDs consistently at the provider/persistence boundary using the existing jellyfinItemKey helper. Resolve any previously stored equivalent spelling before allocation; preserve existing work UUIDs rather than manufacturing a new mapping.",
+      "verification": "Pure adapter regression: compact and uppercase/hyphenated lookups for one upstream GUID return the same normalized ID. Disposable DB regression: persist/browse all accepted spellings without MusicBrainz IDs and assert one work, provider item, edition and personal progress identity.",
+      "relatedAreas": [
+        "Jellyfin provider identity",
+        "music artists",
+        "availability",
+        "listen imports"
+      ]
+    },
+    {
+      "id": "MEDIUM-03",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Merged music copies collide with keyed card renderers",
+      "rootCause": "canonical-music-href-used-as-provider-copy-render-key",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "src/lib/music/presentation.ts",
+          "line": 31,
+          "detail": "Different source items sharing workId get exactly the same canonical href."
+        },
+        {
+          "path": "src/lib/server/queries/music.ts",
+          "line": 65,
+          "detail": "The browse read model concatenates all provider copies without assigning entry identities or collapsing works."
+        },
+        {
+          "path": "src/lib/server/queries/media-rows.ts",
+          "line": 40,
+          "detail": "Home/presentation music rows likewise concatenate copies."
+        },
+        {
+          "path": "src/routes/music/+page.svelte",
+          "line": 67,
+          "detail": "Music grid keys its each block by item.href."
+        },
+        {
+          "path": "src/lib/ui/components/Shelf.svelte",
+          "line": 102,
+          "detail": "Shared shelves default to item.entryId or href."
+        }
+      ],
+      "trigger": "Two editions/copies on one or several connected Jellyfin libraries resolve to the same verified MusicBrainz work and appear on the same music page/row.",
+      "impact": "The read model sends duplicate keys to Svelte keyed each blocks; development raises a duplicate-key error and production keyed updates cannot reliably preserve the separate cards. This affects supported canonical merging, not just random identical server IDs.",
+      "recommendation": "Preserve current source-copy presentation by giving each result an existing-style entryId scoped to connection and provider item, and use that entryId on the standalone grid as Shelf already supports. If the product instead wants one work card, collapse it in the bounded read model and keep count/pagination semantics explicit.",
+      "verification": "Pure reproduction already yields 2 cards and only 1 href key. Add a presenter/read-model case with two sources and one workId, then render both the Music grid and a Shelf in a disposable UI fixture; assert unique keys and correct source actions after reorder/refresh.",
+      "relatedAreas": [
+        "music browsing",
+        "home shelves",
+        "shared Shelf renderer",
+        "canonical music identities"
+      ]
+    },
+    {
+      "id": "MEDIUM-04",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Steam AppID aliases overwrite account playtime and achievement state",
+      "rootCause": "steam-observations-keyed-by-canonical-game-instead-of-appid",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/providers/igdb/adapter.server.ts",
+          "line": 46,
+          "detail": "One IGDB work can carry multiple verified Steam store AppIDs; pure mapping reproduction accepts both 10 and 20."
+        },
+        {
+          "path": "src/lib/providers/steam/sync.server.ts",
+          "line": 63,
+          "detail": "Each owned AppID resolves to its canonical game and overwrites account/game minutes, hasStats and recent playtime."
+        },
+        {
+          "path": "src/lib/server/db/schema.ts",
+          "line": 1282,
+          "detail": "game_account_state has only an account/game key, omitting the exact Steam AppID."
+        },
+        {
+          "path": "src/lib/providers/steam/sync.server.ts",
+          "line": 140,
+          "detail": "Achievement traversal selects exact owned AppIDs but may select several for the same game state."
+        },
+        {
+          "path": "src/lib/providers/steam/sync.server.ts",
+          "line": 156,
+          "detail": "Schema cache lookup uses gameId/provider, so one AppID can reuse another AppID's achievement definitions."
+        },
+        {
+          "path": "src/lib/providers/steam/sync.server.ts",
+          "line": 162,
+          "detail": "Definition identity omits AppID; progress upserts then overwrite a shared definition's account state."
+        }
+      ],
+      "trigger": "An IGDB mapping with two Steam aliases is imported before ownership, then an account owns both AppIDs. Return different playtime/stat availability or same-named achievement API keys for those two apps.",
+      "impact": "The final owned-game response order determines displayed totals and hasStats. Reordering an otherwise identical complete response can change minutes or suppress achievement polling. Achievement schemas/progress from separate apps are also combined or overwritten instead of retained as exact provider observations.",
+      "recommendation": "Retain exact AppID on Steam account observations and achievement identities, then deliberately project those observations to the canonical game display. Do not infer which AppID's totals or schema are authoritative from provider response order; keep existing no-fabricated-session behavior.",
+      "verification": "Disposable fixture: import one IGDB game with Steam IDs 10/20, return owned totals 100/30 with different hasStats values in both orders, and assert equal deliberate aggregate/projected results plus exact observation preservation. Give both apps an achievement named FIRST with different state/schema and assert independent account progress.",
+      "relatedAreas": [
+        "Steam ownership",
+        "Steam cumulative playtime",
+        "achievement schemas",
+        "IGDB aliases",
+        "game details"
+      ]
+    },
+    {
+      "id": "MEDIUM-05",
+      "priority": "P3",
+      "category": "correctness",
+      "title": "Normal canonical music links discard stored artist navigation",
+      "rootCause": "canonical-music-detail-does-not-hydrate-credit-roles",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/music/persistence.server.ts",
+          "line": 42,
+          "detail": "Artist and album-artist credits are persisted with separate roles and instance-scoped artist identities."
+        },
+        {
+          "path": "src/lib/music/presentation.ts",
+          "line": 31,
+          "detail": "Persisted album/track cards route users to the canonical music page."
+        },
+        {
+          "path": "src/routes/music/work/[id]/+page.server.ts",
+          "line": 15,
+          "detail": "Canonical toItem explicitly returns artists:[] and albumArtists:[] without reading persisted credits."
+        },
+        {
+          "path": "src/routes/music/work/[id]/+page.server.ts",
+          "line": 24,
+          "detail": "The route supplies connectionId:'' to the shared presenter."
+        },
+        {
+          "path": "src/lib/ui/pages/music.svelte.ts",
+          "line": 20,
+          "detail": "Artist links are built only from those role-specific artist arrays, so canonical pages lose all artist destinations."
+        }
+      ],
+      "trigger": "Browse an album/track with valid artist credits and follow its ordinary musicCard link after musicLibrary persists it.",
+      "impact": "Provider detail routes preserve album-artist versus performer navigation, but the default canonical detail path always drops it. An album with only album-artist credits may also lose its visible subtitle because persistence falls back to performing artists, not album artists.",
+      "recommendation": "Hydrate persisted role-specific music credits in the canonical read model and map navigable artist links through the viewer's enabled owned connection for that artist instance. Preserve plain credit text when no permitted source exists, using the established shared presenter and interface.",
+      "verification": "Disposable loader fixture: persist an album with only albumArtists and a track with distinct performers, follow musicCard.href, and assert expected subtitle/credit roles and authorised artist links. Disconnect the source and assert credit text remains without generating /music/work/{providerArtistId} links.",
+      "relatedAreas": [
+        "canonical music routes",
+        "artist browsing",
+        "album-artist credits",
+        "UI/core parity"
+      ]
+    },
+    {
+      "id": "MEDIUM-06",
+      "priority": "P3",
+      "category": "correctness",
+      "title": "Removing an IGDB parent does not remove the old verified variant link",
+      "rootCause": "game-variant-refresh-only-upserts-positive-parent",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/providers/igdb/adapter.server.ts",
+          "line": 153,
+          "detail": "Explicit details refresh requests the expanded fields including parent_game/version_parent; this finding concerns a successful full response, not an incremental observation."
+        },
+        {
+          "path": "src/lib/providers/igdb/adapter.server.ts",
+          "line": 70,
+          "detail": "A current parsed response without parent_game/version_parent maps parent to undefined."
+        },
+        {
+          "path": "src/lib/core/games/service.server.ts",
+          "line": 194,
+          "detail": "Import upserts a variant only when a parent exists; no corresponding deletion handles an authoritative parent removal."
+        },
+        {
+          "path": "src/lib/core/games/service.server.ts",
+          "line": 204,
+          "detail": "Presentation continues borrowing the old parent's fields from the surviving row."
+        },
+        {
+          "path": "src/lib/social/work-features.server.ts",
+          "line": 10,
+          "detail": "Taste metadata also keeps selecting features from that surviving parent row."
+        }
+      ],
+      "trigger": "Use the game's explicit Refresh metadata action (games/import -> igdbDetails) after importing a verified parent, and return a successful full expanded IGDB response for that identity with the parent relation removed.",
+      "impact": "The local game indefinitely borrows artwork/overview and taste features from a parent that the current provider response no longer verifies. A successful refresh cannot return the game to independent presentation.",
+      "recommendation": "Within the same metadata import transaction, remove the existing variant relation owned by this provider when the authoritative full response has no distinct parent. Keep the game UUID, Steam ownership and private tracking intact.",
+      "verification": "Extend the existing verified variant DB fixture: import child+parent, reimport the same child with no parent, assert the variant row disappears and gameDetails/workTasteFeatures use the child's own metadata; also test changing to a different verified parent.",
+      "relatedAreas": [
+        "verified game variants",
+        "metadata refresh",
+        "taste features",
+        "game presentation"
+      ]
+    }
+  ]
+}

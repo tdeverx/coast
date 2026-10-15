@@ -25,12 +25,23 @@ describe('Library browsing paths', () => {
     expect(api.searchParams.get('page')).toBe('3');
   });
   test('all media library rows expand through Library', () => {
-    for (const surface of ['watch', 'listen', 'play'] as const) {
+    for (const surface of ['watch', 'listen', 'play', 'read'] as const) {
       const paths = libraryBrowsePaths({ ...base, surface, selection: surface === 'listen' ? 'album' : 'all' });
       expect(url(paths.href).pathname).toBe('/library');
       expect(url(paths.href).searchParams.get('view')).toBe(surface);
       expect(url(paths.api).searchParams.get('surface')).toBe(surface);
       expect(url(paths.href).searchParams.get('collection')).toBe('false');
+    }
+  });
+  test('Reading Collection preserves own source and availability filters', () => {
+    const source = '12345678-1234-1234-1234-123456789012';
+    const paths = libraryBrowsePaths({ ...base, surface: 'read', collection: true, selection: 'reading', kind: 'comic', source, availability: 'available' });
+    for (const path of [paths.api, paths.href]) {
+      expect(url(path).searchParams.get('source')).toBe(source);
+      expect(url(path).searchParams.get('availability')).toBe('available');
+      expect(url(path).searchParams.get('category')).toBe('reading');
+      expect(url(path).searchParams.get('kind')).toBe('comic');
+      expect(url(path).searchParams.get('activity')).toBe('reading');
     }
   });
   test('existing home preview links retain their destination', () => {

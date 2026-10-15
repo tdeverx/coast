@@ -6,8 +6,8 @@ import { getSteam } from './connection.server';
 import { steamOwnedGameSchema, type SteamOwnedGame } from './adapter.server';
 import { ProviderHttpError } from '$lib/server/security/provider-fetch';
 import { PermanentActionError, enqueueAction, type OutboxAction } from '$lib/server/queue';
-import { trackInTransaction } from '$lib/core/tracking/service';
-import { importIgdbMetadata } from '$lib/core/games/service';
+import { trackInTransaction } from '$lib/core/tracking/service.server';
+import { importIgdbMetadata } from '$lib/core/games/service.server';
 import { igdbSteamMatches } from '../igdb/service.server';
 import { jobExecution, JobYield, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -62,10 +62,11 @@ export async function syncSteam(action:OutboxAction) {
     for(const item of owned.slice(start,start+100)){
       const gameId=await steamGame(tx,item);
       const [previous]=await tx.select().from(s.gameAccountState).where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.gameId,gameId)));
+      const [previousAccess]=previous?[]:await tx.select({id:s.availability.id}).from(s.availability).where(and(eq(s.availability.connectionId,current.id),eq(s.availability.mediaId,gameId),eq(s.availability.sourceId,'steam-owned'))).limit(1);
       const values={owned:true,hasStats:item.has_community_visible_stats,observedAt:now,
         ...(current.settings.importPlaytime!==false?{minutesPlayed:item.playtime_forever,recentMinutes:item.playtime_2weeks,lastPlayedAt:item.rtime_last_played?new Date(item.rtime_last_played*1000):null}:{})};
-      await tx.insert(s.gameAccountState).values({accountId,gameId,...values}).onConflictDoUpdate({target:[s.gameAccountState.accountId,s.gameAccountState.gameId],set:values});
-      if(!previous&&current.settings.importOwned!==false){
+      await tx.insert(s.gameAccountState).values({accountId,gameId,appId:String(item.appid),...values}).onConflictDoUpdate({target:[s.gameAccountState.accountId,s.gameAccountState.appId],set:{...values,gameId}});
+      if(!previous&&!previousAccess&&current.settings.importOwned!==false){
         const result=await trackInTransaction(tx,action.userId,{mediaId:gameId,action:'collect',value:true,source:'steam',sourceEventId:`${accountId}:${item.appid}:owned`,occurredAtKnown:false});
         if(result.changed)added++;
       }
@@ -139,9 +140,9 @@ export async function syncSteamAchievements(action:OutboxAction) {
   // batch on resume would extend the same job indefinitely.
   const titles:AchievementTitle[]=resume?savedTitles:await getDb().select({gameId:s.gameAccountState.gameId,externalId:s.providerItems.externalId}).from(s.gameAccountState)
     .innerJoin(s.availability,and(eq(s.availability.mediaId,s.gameAccountState.gameId),eq(s.availability.userId,action.userId),eq(s.availability.connectionId,connection.id),eq(s.availability.sourceId,'steam-owned'),eq(s.availability.state,'available')))
-    .innerJoin(s.providerItems,and(eq(s.providerItems.id,s.availability.providerItemId),eq(s.providerItems.instanceId,connection.instanceId),eq(s.providerItems.kind,'game')))
+    .innerJoin(s.providerItems,and(eq(s.providerItems.id,s.availability.providerItemId),eq(s.providerItems.instanceId,connection.instanceId),eq(s.providerItems.kind,'game'),eq(s.providerItems.externalId,s.gameAccountState.appId)))
     .where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.owned,true),eq(s.gameAccountState.hasStats,true)))
-    .orderBy(sql`${s.gameAccountState.achievementsAttemptedAt} asc nulls first`,s.gameAccountState.gameId).limit(20);
+    .orderBy(sql`${s.gameAccountState.achievementsAttemptedAt} asc nulls first`,s.gameAccountState.gameId,s.gameAccountState.appId).limit(20);
   let checked=typeof resume?.checked==='number'?resume.checked:0,deferred=typeof resume?.deferred==='number'?resume.deferred:0;
   const start=typeof resume?.next==='number'?resume.next:0;
   await saveJobCheckpoint({task:'steam-achievements',titles,next:start,checked,deferred});
@@ -150,28 +151,28 @@ export async function syncSteamAchievements(action:OutboxAction) {
     const [currentTitle]=await getDb().select({id:s.gameAccountState.gameId}).from(s.gameAccountState)
       .innerJoin(s.availability,and(eq(s.availability.mediaId,s.gameAccountState.gameId),eq(s.availability.connectionId,connection.id),eq(s.availability.sourceId,'steam-owned'),eq(s.availability.state,'available')))
       .innerJoin(s.providerItems,and(eq(s.providerItems.id,s.availability.providerItemId),eq(s.providerItems.externalId,title.externalId)))
-      .where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.gameId,title.gameId),eq(s.gameAccountState.owned,true),eq(s.gameAccountState.hasStats,true))).limit(1);
+      .where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.gameId,title.gameId),eq(s.gameAccountState.appId,title.externalId),eq(s.gameAccountState.owned,true),eq(s.gameAccountState.hasStats,true))).limit(1);
     if(currentTitle){
     try {
-      const existing=await getDb().select().from(s.gameAchievements).where(and(eq(s.gameAchievements.gameId,title.gameId),eq(s.gameAchievements.provider,'steam')));
+      const existing=await getDb().select().from(s.gameAchievements).where(and(eq(s.gameAchievements.gameId,title.gameId),eq(s.gameAchievements.provider,'steam'),eq(s.gameAchievements.appId,title.externalId)));
       const schema=!existing.length||existing.some(a=>a.updatedAt.getTime()<Date.now()-7*86400000)?await adapter.achievementSchema(Number(title.externalId)):null;
       const progress=await adapter.achievements(connection.externalUserId!,Number(title.externalId));
       await getDb().transaction(async tx=>{
         const current=await assertAccount(tx,action,accountId);
         if(current.settings.importAchievements===false)return;
-        if(schema)for(const definition of schema)await tx.insert(s.gameAchievements).values({gameId:title.gameId,provider:'steam',externalId:definition.name,name:definition.displayName,description:definition.description,hidden:definition.hidden===1,icon:definition.icon,lockedIcon:definition.icongray})
-          .onConflictDoUpdate({target:[s.gameAchievements.gameId,s.gameAchievements.provider,s.gameAchievements.externalId],set:{name:definition.displayName,description:definition.description,hidden:definition.hidden===1,icon:definition.icon,lockedIcon:definition.icongray,updatedAt:new Date()}});
-        const definitions=await tx.select().from(s.gameAchievements).where(and(eq(s.gameAchievements.gameId,title.gameId),eq(s.gameAchievements.provider,'steam')));
+        if(schema)for(const definition of schema)await tx.insert(s.gameAchievements).values({gameId:title.gameId,provider:'steam',appId:title.externalId,externalId:definition.name,name:definition.displayName,description:definition.description,hidden:definition.hidden===1,icon:definition.icon,lockedIcon:definition.icongray})
+          .onConflictDoUpdate({target:[s.gameAchievements.gameId,s.gameAchievements.provider,s.gameAchievements.appId,s.gameAchievements.externalId],set:{name:definition.displayName,description:definition.description,hidden:definition.hidden===1,icon:definition.icon,lockedIcon:definition.icongray,updatedAt:new Date()}});
+        const definitions=await tx.select().from(s.gameAchievements).where(and(eq(s.gameAchievements.gameId,title.gameId),eq(s.gameAchievements.provider,'steam'),eq(s.gameAchievements.appId,title.externalId)));
         for(const item of progress){const definition=definitions.find(d=>d.externalId===item.apiname);if(!definition)continue;
           const values={unlocked:item.achieved===1,unlockedAt:item.achieved===1&&item.unlocktime>0?new Date(item.unlocktime*1000):null,updatedAt:new Date()};
           await tx.insert(s.gameAchievementProgress).values({accountId,achievementId:definition.id,...values}).onConflictDoUpdate({target:[s.gameAchievementProgress.accountId,s.gameAchievementProgress.achievementId],set:values});
         }
-        await tx.update(s.gameAccountState).set({achievementsAt:new Date(),achievementsAttemptedAt:new Date()}).where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.gameId,title.gameId)));
+        await tx.update(s.gameAccountState).set({achievementsAt:new Date(),achievementsAttemptedAt:new Date()}).where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.gameId,title.gameId),eq(s.gameAccountState.appId,title.externalId)));
       });checked++;
     } catch(cause){
       if(cause instanceof PermanentActionError)throw cause;
       if(cause instanceof ProviderHttpError&&(cause.status===401||cause.status===403||cause.status===429||cause.status>=500))throw cause;
-      await getDb().transaction(async tx=>{await assertAccount(tx,action,accountId);await tx.update(s.gameAccountState).set({achievementsAttemptedAt:new Date()}).where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.gameId,title.gameId)));});deferred++;
+      await getDb().transaction(async tx=>{await assertAccount(tx,action,accountId);await tx.update(s.gameAccountState).set({achievementsAttemptedAt:new Date()}).where(and(eq(s.gameAccountState.accountId,accountId),eq(s.gameAccountState.gameId,title.gameId),eq(s.gameAccountState.appId,title.externalId)));});deferred++;
     }
     }
     // Keep control flow outside the provider failure catch: ordinary yielding

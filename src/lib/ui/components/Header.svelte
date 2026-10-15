@@ -1,8 +1,20 @@
 <script lang="ts">
   import {userStatus,chooseStatus,sharePresence} from '$lib/social/status.svelte';
-  import {preferenceLabels,statusPreferences,statusLabels} from '$lib/social/status';
+  import {activityStatus,preferenceLabels,statusPreferences,statusLabels,type StatusPreference} from '$lib/social/status';
   import {useClient} from '$lib/ui/client-context';
   const {preview,api}=useClient();
+  // Preview controls share the presentation, but never the signed-in account's state.
+  let previewStatus = $state<typeof userStatus>({ preference:'automatic', status:'online', busy:false, error:'', sharePresence:true });
+  const status = preview ? previewStatus : userStatus;
+  function selectStatus(preference: StatusPreference) {
+    if (!preview) return chooseStatus(preference);
+    status.preference = preference;
+    status.status = activityStatus(preference, Date.now(), Date.now(), Date.now());
+  }
+  function togglePresence() {
+    if (!preview) return sharePresence(!status.sharePresence);
+    status.sharePresence = !status.sharePresence;
+  }
   let streamCount=$state<number|null>(null);
   $effect(()=>{
     if(preview||user?.role!=='admin'){streamCount=null;return;}
@@ -11,9 +23,9 @@
     void readCount();const timer=setInterval(()=>void readCount(),15000);
     return ()=>{clearInterval(timer);controller.abort();};
   });
-  import {openNotifications} from '$lib/notifications/client.svelte';
-  import {openFriends} from '$lib/social/panel.svelte';
-  import {openStreams} from '$lib/providers/streams-panel.svelte';
+  import {openNotifications} from '$lib/ui/panels/notifications.svelte';
+  import {openFriends} from '$lib/ui/panels/friends.svelte';
+  import {openStreams} from '$lib/ui/panels/streams.svelte';
   import Avatar from './Avatar.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import { profilePath } from '$lib/profile/url';
@@ -21,7 +33,9 @@
   import Icon from './Icon.svelte';
   import Brand from './Brand.svelte';
 
-  import { player } from '$lib/playback/client.svelte';
+  import { reader } from '$lib/reading/client.svelte';
+  import { usePlayback } from '$lib/playback/context.svelte';
+  const { player } = usePlayback();
   import { slidingPill } from '$lib/ui/materials/sliding-pill';
   import { liquidGlass } from '$lib/ui/materials/glass';
   let { user, unread = 0, friendRequests = 0, publicBrowse = true }: { user: { username: string; role: string; settings?:import('$lib/server/db/schema').UserSettings } | null; unread?: number; friendRequests?:number; publicBrowse?:boolean } =
@@ -57,6 +71,7 @@
     {/if}
     <div class="account">
       {#if user}
+      {#if !preview&&reader.session&&!reader.visible}<Button icon="library" size="icon" label="Resume reading" onclick={()=>reader.visible=true}/>{/if}
       {#if user.role==='admin'}<button type="button" id="streams-trigger" class="icon-button notification" aria-label={streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}><Icon name="server" size={21}/>{#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}</button>{/if}
       <button type="button" id="friends-trigger" class="icon-button notification" aria-label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</button>
       <button type="button"
@@ -66,15 +81,15 @@
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
         ><Icon name="bell" size={21} />{#if unread}<i></i>{/if}</button
       ><Button menu label="Account menu"
-        >{#snippet trigger()}<span class="avatar"><Avatar name={user.username} src={user.settings?.profile?.avatar} label="Your profile" size={28} status={userStatus.status} class="header-icon" /></span
+        >{#snippet trigger()}<span class="avatar"><Avatar name={user.username} src={user.settings?.profile?.avatar} label="Your profile" size={28} status={status.status} class="header-icon" /></span
           >{/snippet}{#snippet children()}
           <Button menu label="Activity status">
-            {#snippet trigger()}{#if userStatus.status!=='offline'}<span class="status-dot" data-status={userStatus.status} aria-hidden="true"></span>{/if}<span class="menu-action-label">{userStatus.preference==='automatic'?statusLabels[userStatus.status]:preferenceLabels[userStatus.preference]}</span><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
+            {#snippet trigger()}{#if status.status!=='offline'}<span class="status-dot" data-status={status.status} aria-hidden="true"></span>{/if}<span class="menu-action-label">{status.preference==='automatic'?statusLabels[status.status]:preferenceLabels[status.preference]}</span><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
             {#snippet children()}
-              {#each statusPreferences as preference}<Button item selection="radio" checked={userStatus.preference===preference} disabled={userStatus.busy} onclick={()=>void chooseStatus(preference)}><span class="status-choice"><span class="status-dot" data-status={preference==='automatic'?'online':preference==='invisible'?'offline':preference} aria-hidden="true"></span>{preferenceLabels[preference]}</span></Button>{/each}
+              {#each statusPreferences as preference}<Button item selection="radio" checked={status.preference===preference} disabled={status.busy} onclick={()=>void selectStatus(preference)}><span class="status-choice"><span class="status-dot" data-status={preference==='automatic'?'online':preference==='invisible'?'offline':preference} aria-hidden="true"></span>{preferenceLabels[preference]}</span></Button>{/each}
               <div class="menu-divider" role="separator"></div>
-              <Button item checked={userStatus.sharePresence} disabled={userStatus.busy} onclick={()=>void sharePresence(!userStatus.sharePresence)}>Share activity</Button>
-              {#if userStatus.error}<p class="status-help error" role="alert">{userStatus.error}</p>{/if}
+              <Button item checked={status.sharePresence} disabled={status.busy} onclick={()=>void togglePresence()}>Share activity</Button>
+              {#if status.error}<p class="status-help error" role="alert">{status.error}</p>{/if}
             {/snippet}
           </Button>
           <div class="menu-divider" role="separator"></div>
@@ -87,7 +102,7 @@
           {#if user.role === 'admin'}<Button item icon="shield" href="/settings/admin"
               >Admin</Button>{/if}
           <div class="menu-divider" role="separator"></div>
-          <form method="POST" action="/logout">
+          <form method="POST" action="/logout" onsubmit={event=>{if(preview)event.preventDefault();}}>
             <button type="submit" class="menu-row menu-row-danger" role="menuitem" data-menu-keep-open
               ><Icon name="logout" /><span class="menu-action-label">Sign out</span></button
             >

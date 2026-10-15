@@ -1,7 +1,7 @@
 import { and, eq, desc } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { media, metadataSnapshots, externalIds, episodes, seasons } from '$lib/server/db/schema';
-import { getTmdb, ingestMetadata } from '$lib/catalogue/service';
+import { getTmdb, ingestMetadata } from '$lib/catalogue/service.server';
 import { getConfig } from '$lib/server/config';
 import type { ArtworkImages } from '$lib/artwork';
 import { tmdbArtworkUrl } from './artwork.server';

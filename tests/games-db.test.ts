@@ -6,7 +6,7 @@ import { gameRow } from '../src/lib/server/queries/media-rows';
 import { getConfig } from '../src/lib/server/config';
 import { libraryContent } from '../src/lib/server/queries/library-content';
 import { users, games, systemSettings } from '../src/lib/server/db/schema';
-import { createGame, createPlaythrough, gameDetails, logGameSession, playthroughDetails, updatePlaythrough, listGames } from '../src/lib/core/games/service';
+import { createGame, createPlaythrough, gameDetails, logGameSession, playthroughDetails, updatePlaythrough, listGames } from '../src/lib/core/games/service.server';
 
 const target = process.env.TEST_DATABASE_URL;
 const suite = target ? describe : describe.skip;

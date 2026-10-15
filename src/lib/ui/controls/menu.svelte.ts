@@ -27,14 +27,14 @@ type MenuOptions = {
   upward: () => boolean;
   onopen?: () => void;
 };
+export type MenuContext = {
+  closeAll: (focus?: boolean) => void;
+  surface: () => HTMLDivElement;
+  side: () => 'left' | 'right';
+  showChild: (close: (() => void) | null, drill: boolean) => void;
+};
 /** One controller for focus, popover positioning, keyboard navigation and nested drill-down. */
 export function createMenuController(options: MenuOptions) {
-  type MenuContext = {
-    closeAll: (focus?: boolean) => void;
-    surface: () => HTMLDivElement;
-    side: () => 'left' | 'right';
-    showChild: (close: (() => void) | null, drill: boolean) => void;
-  };
   const parent = getContext<MenuContext | undefined>('coast-context-menu');
   let stopWatching: (() => void) | undefined;
   let startWatching = () => {};
@@ -141,7 +141,7 @@ export function createMenuController(options: MenuOptions) {
       ...options.surface().querySelectorAll<HTMLElement>('[role^="menuitem"], [data-menu-focus]'),
     ].filter(
       (node) =>
-        node.closest('[role="menu"]') === options.surface() &&
+        node.closest('[role="menu"],dialog,[role="dialog"]') === options.surface() &&
         !node.matches(':disabled') &&
         node.getClientRects().length > 0 &&
         getComputedStyle(node).visibility !== 'hidden'
@@ -186,7 +186,7 @@ export function createMenuController(options: MenuOptions) {
     }
   }
   function menuKey(event: KeyboardEvent) {
-    if (!(event.target instanceof Element) || event.target.closest('[role="menu"]') !== options.surface())
+    if (!(event.target instanceof Element) || event.target.closest('[role="menu"],dialog,[role="dialog"]') !== options.surface())
       return;
     if (
       event.key === 'Escape' ||
@@ -250,7 +250,7 @@ export function createMenuController(options: MenuOptions) {
     const control = event.target instanceof Element ? event.target.closest('a,button') : null;
     if (
       !control ||
-      control.closest('[role="menu"]') !== options.surface() ||
+      control.closest('[role="menu"],dialog,[role="dialog"]') !== options.surface() ||
       control.hasAttribute('data-menu-keep-open')
     )
       return;

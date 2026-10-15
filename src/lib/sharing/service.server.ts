@@ -1,3 +1,4 @@
+import {requestPriority} from '$lib/server/security/request-priority';
 import { categoryEnabled } from '$lib/experimental';
 import * as v from 'valibot';
 import { getSql } from '$lib/server/db';
@@ -5,7 +6,9 @@ import { getConfig } from '$lib/server/config';
 import { AppError } from '$lib/server/security/errors';
 import { hashToken,randomToken,requireUser,type SessionUser } from '$lib/server/auth';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { startPlayback,streamPlayback } from '$lib/playback/server';
+import { startPlayback,streamPlayback } from '$lib/playback/service.server';
+import { withSharedRequest } from './request-leases.server';
+import { reserveViewer, ensureSharedEncoding, releaseViewer, stopViewerPlayback } from './leases.server';
 
 const uuid=v.pipe(v.string(),v.uuid());
 export const shareCookie='coast_share_viewer';
@@ -13,6 +16,7 @@ export async function createShare(actor:SessionUser|null,input:unknown){
  const user=requireUser(actor),config=await getConfig();
  if(!config.allowPlaybackSharing||(user.role!=='admin'&&user.settings.allowPlaybackSharing!==true))throw new AppError(403,'Playback sharing requires administrator permission.');
  const data=v.parse(v.strictObject({workId:uuid,connectionId:uuid,hours:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(24)),6),together:v.optional(v.boolean(),false)}),input);
+ if(!config.allowTranscoding)throw new AppError(400,'Enable Jellyfin transcoding in playback policy before creating shared links.');
  if(data.together&&!config.experimentalParties)throw new AppError(400,'Synced playback is experimental. Enable it before sharing together.');
  const context=await getJellyfin(user.id,data.connectionId);
  await context.adapter.identity(context.instance.serverIdentity??undefined);
@@ -31,7 +35,12 @@ export async function createShare(actor:SessionUser|null,input:unknown){
  });
 }
 export async function listShares(actor:SessionUser|null){const user=requireUser(actor);return getSql()`select id,work_id as "workId",together,expires_at as "expiresAt",claimed_at as "claimedAt",revoked_at as "revokedAt" from playback_shares where owner_id=${user.id} order by created_at desc limit 50`;}
-export async function revokeShare(actor:SessionUser|null,id:string){const user=requireUser(actor);const rows=await getSql()`update playback_shares set revoked_at=coalesce(revoked_at,now()) where id=${v.parse(uuid,id)} and owner_id=${user.id} returning id`;if(!rows.length)throw new AppError(404,'Link not found.');}
+export async function revokeShare(actor:SessionUser|null,id:string){
+ const user=requireUser(actor),rows=await getSql()`update playback_shares set revoked_at=coalesce(revoked_at,now()) where id=${v.parse(uuid,id)} and owner_id=${user.id} returning id`;
+ if(!rows.length)throw new AppError(404,'Link not found.');
+ const viewers=await getSql()<{id:string}[]>`select id from share_viewers where share_id=${id} and ended_at is null limit 64`;
+ for(let i=0;i<viewers.length;i+=2)await Promise.allSettled(viewers.slice(i,i+2).map(viewer=>releaseViewer(user.id,viewer.id)));
+}
 export async function claimShare(input:unknown,actor:SessionUser|null,previous?:string){
  const data=v.parse(v.strictObject({token:v.optional(v.pipe(v.string(),v.regex(/^[A-Za-z0-9_-]{43}$/))),id:v.optional(uuid)}),input);
  if(!data.token&&!data.id)throw new AppError(400,'Supply an invitation.');
@@ -42,50 +51,92 @@ export async function claimShare(input:unknown,actor:SessionUser|null,previous?:
   await assertShare(share,tx);
   const host=actor?.id===share.owner_id;
   if(previous){const [existing]=await tx`select id from share_viewers where token_hash=${await hashToken(previous)} and share_id=${share.id} and host=${host}`;if(existing)return {token:previous,expiresAt:share.expires_at};}
-  if(!host&&share.claimed_at)throw new AppError(410,'This single-use invitation has already been claimed.');
-  if(!host)await tx`update playback_shares set claimed_at=now() where id=${share.id}`;
+  const [count]=await tx`select count(*)::int as total from share_viewers where share_id=${share.id}`;
+  if(count.total>=64)throw new AppError(429,'This link has reached its viewer-session limit. Create a new link.');
+  if(!host)await tx`update playback_shares set claimed_at=coalesce(claimed_at,now()) where id=${share.id}`;
   await tx`insert into share_viewers(share_id,token_hash,host) values(${share.id},${await hashToken(session)},${host})`;
   return {token:session,expiresAt:share.expires_at};
  });
 }
-async function assertShare(share:Record<string,any>,db=getSql()){
+export async function assertShare(share:Record<string,any>,db=getSql()){
  const config=await getConfig(db);
- const [work]=await db`select category from works where id=${share.work_id}`;
- if(!work||(!categoryEnabled(config,work.category)||share.together&&!config.experimentalParties))throw new AppError(410,'This medium is disabled.');
- if(!config.allowPlaybackSharing||share.revoked_at||new Date(share.expires_at)<=new Date())throw new AppError(410,'This playback invitation has expired or was revoked.');
- const [access]=await db`select c.id from provider_connections c join provider_instances i on i.id=c.instance_id join users u on u.id=c.user_id where c.id=${share.connection_id} and c.user_id=${share.owner_id} and c.account_generation=${share.account_generation} and c.status='connected' and i.enabled and not u.disabled and (u.role='admin' or u.settings->>'allowPlaybackSharing'='true') and exists(select 1 from availability a where a.user_id=u.id and a.connection_id=c.id and a.media_id=${share.work_id} and a.state='available')`;
- if(!access)throw new AppError(410,'The shared source is no longer accessible.');
+ const [current]=await db`select s.revoked_at,s.expires_at,s.together,w.category,
+ c.status='connected' and c.account_generation=s.account_generation and i.enabled and not u.disabled and (u.role='admin' or u.settings->>'allowPlaybackSharing'='true') and exists(select 1 from availability a where a.user_id=u.id and a.connection_id=c.id and a.media_id=s.work_id and a.state='available') as accessible
+ from playback_shares s join works w on w.id=s.work_id join provider_connections c on c.id=s.connection_id and c.user_id=s.owner_id join provider_instances i on i.id=c.instance_id join users u on u.id=s.owner_id where s.id=${share.id}`;
+ if(!current||!config.allowPlaybackSharing||current.revoked_at||new Date(current.expires_at)<=new Date())throw new AppError(410,'This playback invitation has expired or was revoked.');
+ if(!config.allowTranscoding)throw new AppError(410,'Shared playback is disabled by the transcoding policy.');
+ if(!categoryEnabled(config,current.category)||current.together&&!config.experimentalParties)throw new AppError(410,'This medium is disabled.');
+ if(!current.accessible)throw new AppError(410,'The shared source is no longer accessible.');
 }
 export async function shareViewer(token?:string){
  if(!token||!/^[A-Za-z0-9_-]{43}$/.test(token))throw new AppError(401,'Open a valid playback invitation.');
- const [row]=await getSql()`select s.*,v.id as viewer_id,v.host,v.playback_id,coalesce(m.title,a.title) as title from share_viewers v join playback_shares s on s.id=v.share_id left join media m on m.id=s.work_id left join music_works a on a.id=s.work_id where v.token_hash=${await hashToken(token)}`;
+ const [row]=await getSql()`select s.*,v.id as viewer_id,v.host,v.playback_id,p.state as playback_state,coalesce(m.title,a.title) as title from share_viewers v join playback_shares s on s.id=v.share_id left join media m on m.id=s.work_id left join music_works a on a.id=s.work_id left join playback_sessions p on p.id=v.playback_id where v.token_hash=${await hashToken(token)}`;
  if(!row)throw new AppError(401,'Open a valid playback invitation.');await assertShare(row);return row;
 }
-export async function sharedState(token?:string){const row=await shareViewer(token);return {id:row.id,workId:row.work_id,title:row.title,host:row.host,together:row.together,positionSeconds:row.position_seconds,durationSeconds:row.duration_seconds,paused:row.paused,updatedAt:row.updated_at,serverTime:new Date().toISOString(),expiresAt:row.expires_at};}
-export async function startShared(token:string|undefined,input:unknown){
+export async function sharedState(token?:string){const row=await shareViewer(token);if(row.playback_id&&row.playback_state!=='stopped')await reserveViewer(row.owner_id,row.viewer_id);return {id:row.id,workId:row.work_id,title:row.title,host:row.host,together:row.together,positionSeconds:row.position_seconds,durationSeconds:row.duration_seconds,paused:row.paused,updatedAt:row.updated_at,serverTime:new Date().toISOString(),expiresAt:row.expires_at};}
+export async function startShared(token:string|undefined,input:unknown,signal?:AbortSignal){
+ signal?.throwIfAborted();
  const viewer=await shareViewer(token);
+ return prepareShared(viewer,input,signal);
+}
+export async function prepareShared(viewer:Awaited<ReturnType<typeof shareViewer>>,input:unknown,signal?:AbortSignal){
+ signal?.throwIfAborted();
  const data=v.parse(v.record(v.string(),v.unknown()),input);
  if(data.mediaId!==viewer.work_id||data.sequence||data.sourceId||data.edition||data.expectedDuration)throw new AppError(403,'This invitation grants only its selected item.');
- const [lease]=await getSql()`update share_viewers set preparing_until=now()+interval '2 minutes' where id=${viewer.viewer_id} and (preparing_until is null or preparing_until<now()) returning id`;
+ const maxBitrate=await reserveViewer(viewer.owner_id,viewer.viewer_id,true);
+ const preparationToken=crypto.randomUUID();
+ let preparedId:string|undefined;
+ const [lease]=await getSql()`update share_viewers set preparing_until=now()+interval '2 minutes',preparation_token=${preparationToken} where id=${viewer.viewer_id} and (preparing_until is null or preparing_until<now()) returning id`;
  if(!lease)throw new AppError(409,'Playback is already preparing.');
  try {
- const playback=await startPlayback(viewer.owner_id,{...data,fromStart:true,...(viewer.together&&viewer.duration_seconds>0?{expectedDuration:viewer.duration_seconds}:{})},{id:viewer.id,connectionId:viewer.connection_id,expiresAt:new Date(viewer.expires_at),sourceId:viewer.together?viewer.source_id??undefined:undefined});
- if(viewer.playback_id)await getSql()`update playback_sessions set state='stopped',updated_at=now() where id=${viewer.playback_id} and share_id=${viewer.id}`;
- await getSql()`update share_viewers set playback_id=${playback.id} where id=${viewer.viewer_id}`;
+ signal?.throwIfAborted();
+ await stopViewerPlayback(viewer.owner_id,viewer.viewer_id);
+ const [current]=await getSql()`select playback_id from share_viewers where id=${viewer.viewer_id} and preparation_token=${preparationToken} and preparing_until>now()`;
+ if(!current)throw new AppError(409,'Playback preparation was superseded. Retry.');
+ const playback=await startPlayback(viewer.owner_id,{...data,fromStart:true,...(viewer.together&&viewer.duration_seconds>0?{expectedDuration:viewer.duration_seconds}:{})},{id:viewer.id,viewerId:viewer.viewer_id,connectionId:viewer.connection_id,expiresAt:new Date(viewer.expires_at),maxBitrate,sourceId:viewer.together?viewer.source_id??undefined:undefined},signal);
+ preparedId=playback.id;
+ const attached=await getSql()`update share_viewers set playback_id=${playback.id} where id=${viewer.viewer_id} and preparation_token=${preparationToken} returning id`;
+ if(!attached.length){await getSql()`update playback_sessions set state='stopped',cleanup_pending=true where id=${playback.id}`;throw new AppError(409,'Playback preparation was superseded. Retry.');}
  const [prepared]=await getSql()`select source_id,edition from playback_sessions where id=${playback.id}`;
  const [selected]=await getSql()`update playback_shares set duration_seconds=case when duration_seconds=0 then ${playback.durationSeconds??0} else duration_seconds end,source_id=coalesce(source_id,${prepared.source_id}),edition=coalesce(edition,${prepared.edition}) where id=${viewer.id} and revoked_at is null and expires_at>now() returning source_id`;
  if(!selected||viewer.together&&selected.source_id!==prepared.source_id){await getSql()`update playback_sessions set state='stopped' where id=${playback.id}`;throw new AppError(409,'The shared edition changed while preparing. Retry playback.');}
- await shareViewer(token);
+ await assertShare(viewer);
+ signal?.throwIfAborted();
  return {...playback,url:`/api/share/playback/${playback.id}/stream`,artwork:undefined,sources:[],subtitles:playback.subtitles.map(subtitle=>({...subtitle,url:subtitle.url?.replace('/api/v1/playback/','/api/share/playback/')})),shareId:viewer.id};
- } finally {await getSql()`update share_viewers set preparing_until=null where id=${viewer.viewer_id}`;}
+ } catch(error){
+  if(preparedId)await getSql()`update playback_sessions set state='stopped',cleanup_pending=true where id=${preparedId}`;
+  if(!viewer.playback_id)await releaseViewer(viewer.owner_id,viewer.viewer_id);
+  throw error;
+ } finally {await getSql()`update share_viewers set preparing_until=null,preparation_token=null where id=${viewer.viewer_id} and preparation_token=${preparationToken}`;}
 }
 export async function sharedProgress(token:string|undefined,id:string,input:unknown){
  const viewer=await shareViewer(token);
  if(viewer.playback_id!==v.parse(uuid,id))throw new AppError(403,'This playback session belongs to another viewer.');
  const data=v.parse(v.strictObject({positionSeconds:v.pipe(v.number(),v.finite(),v.minValue(0),v.maxValue(2592000)),durationSeconds:v.optional(v.pipe(v.number(),v.finite(),v.minValue(0),v.maxValue(2592000))),event:v.picklist(['start','progress','pause','stop','ended']),paused:v.optional(v.boolean()),playedSeconds:v.optional(v.pipe(v.number(),v.finite(),v.minValue(0),v.maxValue(2592000)))}),input);
  const stop=['stop','ended'].includes(data.event),paused=stop||data.event==='pause'||data.paused===true;
- await getSql()`update playback_sessions set state=${stop?'stopped':paused?'paused':'active'},position_seconds=least(${data.positionSeconds},coalesce(duration_seconds,${data.positionSeconds})),updated_at=now() where id=${id} and share_id=${viewer.id}`;
+ const changed=await getSql()`update playback_sessions set state=${stop?'stopped':paused?'paused':'active'},position_seconds=least(${data.positionSeconds},coalesce(duration_seconds,${data.positionSeconds})),updated_at=now() where id=${id} and share_id=${viewer.id} and state<>'stopped' and expires_at>now() returning id`;
+ if(!changed.length&&!stop)throw new AppError(410,'This playback session has stopped. Open the link to play again.');
  if(viewer.host&&viewer.together)await getSql()`update playback_shares set position_seconds=least(${data.positionSeconds},duration_seconds),paused=${paused},updated_at=now() where id=${viewer.id}`;
+ if(stop)await releaseViewer(viewer.owner_id,viewer.viewer_id);
  return {complete:data.event==='ended'};
 }
-export async function sharedStream(token:string|undefined,id:string,request:Request){const viewer=await shareViewer(token);if(viewer.playback_id!==v.parse(uuid,id))throw new AppError(403,'This session belongs to another viewer.');const response=await streamPlayback(viewer.owner_id,id,request,viewer.id);if(response.headers.get('content-type')?.includes('mpegurl')){const body=(await response.text()).replaceAll('/api/v1/playback/','/api/share/playback/');response.headers.delete('content-length');return new Response(body,{status:response.status,headers:response.headers});}return response;}
+export async function sharedStream(token:string|undefined,id:string,request:Request){
+ const viewer=await shareViewer(token);
+ return streamForViewer(viewer,id,request,undefined,true);
+}
+export async function streamForViewer(viewer:Awaited<ReturnType<typeof shareViewer>>,id:string,request:Request,access?:string,validated=false){
+ return requestPriority.run(0,async()=>{
+ if(viewer.playback_id!==v.parse(uuid,id))throw new AppError(403,'This session belongs to another viewer.');
+ if(!validated)await assertShare(viewer);
+ if(request.method!=='HEAD') {
+  await reserveViewer(viewer.owner_id,viewer.viewer_id);
+  await ensureSharedEncoding(viewer.owner_id,viewer.viewer_id);
+ }
+ return withSharedRequest(viewer.owner_id,viewer.viewer_id,id,request,(leasedRequest,headersReceived)=>streamPlayback(viewer.owner_id,id,leasedRequest,viewer.id,{headersReceived,url:async(_path,url)=>{
+  const target=new URL(url,'http://resource.invalid');
+  target.pathname=access?`/api/share/external/${id}/stream`:`/api/share/playback/${id}/stream`;
+  if(access)target.searchParams.set('access',access);
+  return target.pathname+target.search;
+ }}));
+ });
+}

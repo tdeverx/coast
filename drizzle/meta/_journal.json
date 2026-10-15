@@ -330,6 +330,62 @@
       "when": 1791394100000,
       "tag": "0046_provider_job_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1791394200000,
+      "tag": "0047_reading_experiments",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1791394300000,
+      "tag": "0048_reading_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1791394400000,
+      "tag": "0049_search_and_reading_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1791394500000,
+      "tag": "0050_reusable_playback_shares",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1791394600000,
+      "tag": "0051_shared_request_leases",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1791394601000,
+      "tag": "0052_music_editions_and_steam_apps",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1791394602000,
+      "tag": "0053_playback_account_generations",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1791394603000,
+      "tag": "0054_taste_outbox_admission",
+      "breakpoints": true
     }
   ]
 }

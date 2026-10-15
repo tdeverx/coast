@@ -24,22 +24,22 @@ import {
   getTracking,
   track,
   trackInTransaction,
-} from '../src/lib/core/tracking/service';
+} from '../src/lib/core/tracking/service.server';
 import {
   addListItem,
   createList,
   getList,
   removeListItem,
   reorderList,
-} from '../src/lib/core/lists/service';
-import { rate, rateInTransaction } from '../src/lib/core/ratings/service';
+} from '../src/lib/core/lists/service.server';
+import { rate, rateInTransaction } from '../src/lib/core/ratings/service.server';
 import {
   getMetadataEditor,
   resetPresentationPreference,
   saveMetadataOverrides,
   savePresentationPreference,
-} from '../src/lib/catalogue/overrides/service';
-import { addLocalSeasonEpisodes } from '../src/lib/core/media/service';
+} from '../src/lib/catalogue/overrides/service.server';
+import { addLocalSeasonEpisodes } from '../src/lib/core/media/service.server';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const suite = databaseUrl ? describe : describe.skip;

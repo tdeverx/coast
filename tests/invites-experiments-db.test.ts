@@ -4,12 +4,12 @@ import {getConfig} from '../src/lib/server/config';
 import {updateConfig} from '../src/lib/application/configuration.server';
 import {hashToken,updateUser,updateUserSettings} from '../src/lib/server/auth';
 import {claimShare,sharedState,sharedProgress,revokeShare} from '../src/lib/sharing/service.server';
-import {progressPlayback} from '../src/lib/playback/server';
-import {dynamicFeed} from '../src/lib/experiments/dynamic.server';
-import {experimentalRows} from '../src/lib/experiments/recommendations.server';
+import {progressPlayback} from '../src/lib/playback/service.server';
+import {dynamicFeed} from '../src/lib/recommendations/feed.server';
+import {recommendationRows} from '../src/lib/recommendations/query.server';
 import {createPlan,planningData,cancelPlan,completePlan} from '../src/lib/experiments/planning.server';
 import {provisionPolicy} from '../src/lib/providers/jellyfin/provisioning.server';
-import {refreshProviderRecommendations} from '../src/lib/experiments/provider-recommendations.server';
+import {refreshProviderRecommendations} from '../src/lib/recommendations/providers.server';
 import {TraktAdapter} from '../src/lib/providers/trakt/adapter.server';
 import {encryptCredential} from '../src/lib/server/security/credentials';
 import type {OutboxAction} from '../src/lib/server/queue';
@@ -27,10 +27,11 @@ beforeAll(async()=>{
 });
 afterAll(async()=>{if(process.env.COAST_DB_TEST==='1')await closeDb();});
 async function link(token:string,together=false){const [row]=await getSql()`insert into playback_shares(owner_id,work_id,connection_id,account_generation,token_hash,together,expires_at) values(${ownerId},${movie},${connection},${generation},${await hashToken(token)},${together},now()+interval '1 hour') returning id`;return row.id as string;}
-run('single-use share claims are atomic; owner claims and revocation remain isolated',async()=>{
+run('reusable share claims create isolated viewers; owner claims and revocation remain isolated',async()=>{
  await updateConfig(admin,{allowPlaybackSharing:true});const token='a'.repeat(43),id=await link(token);
  const attempts=await Promise.allSettled([claimShare({token},null),claimShare({token},null)]);
- expect(attempts.filter(result=>result.status==='fulfilled')).toHaveLength(1);
+ expect(attempts.filter(result=>result.status==='fulfilled')).toHaveLength(2);
+ expect(new Set(attempts.flatMap(result=>result.status==='fulfilled'?[result.value.token]:[])).size).toBe(2);
  const grant=(attempts.find(result=>result.status==='fulfilled') as PromiseFulfilledResult<Awaited<ReturnType<typeof claimShare>>>).value;
  expect((await sharedState(grant.token)).host).toBe(false);
  expect((await claimShare({token},null,grant.token)).token).toBe(grant.token);
@@ -51,7 +52,7 @@ run('expired links, account replacement and policy changes invalidate grants',as
 run('guest progress cannot alter owner history or another viewer session',async()=>{
  await updateConfig(admin,{experimentalMusic:true,experimentalGaming:true,experimentalParties:true});
  await updateConfig(admin,{allowPlaybackSharing:true});const token='x'.repeat(43),id=await link(token,true),grant=await claimShare({token},null),host=await claimShare({id},admin);
- const playback=crypto.randomUUID();await getSql()`insert into playback_sessions(id,user_id,media_id,share_id,connection_id,provider_item_id,source_id,delivery,stream_path,duration_seconds,expires_at) values(${playback},${ownerId},${movie},${id},${connection},${providerItem},'source','direct','/stream',120,now()+interval '1 hour')`;
+ const playback=crypto.randomUUID();await getSql()`insert into playback_sessions(id,user_id,media_id,share_id,connection_id,account_generation,provider_item_id,source_id,delivery,stream_path,duration_seconds,expires_at) values(${playback},${ownerId},${movie},${id},${connection},(select account_generation from provider_connections where id=${connection}),${providerItem},'source','direct','/stream',120,now()+interval '1 hour')`;
  await getSql()`update share_viewers set playback_id=${playback} where token_hash=${await hashToken(grant.token)}`;
  await sharedProgress(grant.token,playback,{event:'progress',positionSeconds:70,paused:false});
  const [events]=await getSql()`select count(*)::int as total from tracking_events where user_id=${ownerId}`;expect(events.total).toBe(0);
@@ -77,9 +78,9 @@ run('recommendations are standard features even with obsolete disabled flags sav
  await getSql()`update system_settings set value=value || ${{experimentalDynamicForYou:false,experimentalRecommendations:false}}::jsonb where key='coast'`;
  expect(await getConfig()).not.toHaveProperty('experimentalDynamicForYou');
  expect(await getConfig()).not.toHaveProperty('experimentalRecommendations');
- await expect(experimentalRows(ownerId,'unknown',new URL('http://fixture.test'))).rejects.toThrow('Unknown recommendation source');
+ await expect(recommendationRows(ownerId,'unknown',new URL('http://fixture.test'))).rejects.toThrow('Unknown recommendation source');
  await getSql()`insert into tracking_state(user_id,media_id,watched) values(${ownerId},${seed},true)`;
- const result=await experimentalRows(ownerId,'recommendations',new URL('http://fixture.test'));expect(result.items.map(item=>item.id)).toContain(movie);expect(result.items[0].captionSubtitle??'').not.toContain('Shared genres with');
+ const result=await recommendationRows(ownerId,'recommendations',new URL('http://fixture.test'));expect(result.items.map(item=>item.id)).toContain(movie);expect(result.items[0].captionSubtitle??'').not.toContain('Shared genres with');
  expect((await dynamicFeed(ownerId,new URL('http://fixture.test'))).rows.length).toBeGreaterThan(0);
  expect((await getConfig()).experimentalPlanning).toBe(false);
  const [personal]=await getSql()`select count(*)::int as total from tracking_state where user_id=${ownerId} and media_id=${movie}`;expect(personal.total).toBe(0);
@@ -139,35 +140,35 @@ run('Dynamic For You pages distinct horizontal row definitions and loads cards s
  expect(personalised.filter(row=>row.surface==='recommendations').map(row=>row.category).sort()).toEqual(['game','music','screen']);
  expect(personalised.map(row=>row.key)).toEqual((await allRows('00000000-0000-4000-8000-000000000001')).map(row=>row.key));
  for(const row of personalised.filter(row=>row.surface==='recommendations')){
-  const grid=await experimentalRows(ownerId,'recommendations',new URL(`http://fixture.test?category=${row.category}&seed=00000000-0000-4000-8000-000000000001`));
+  const grid=await recommendationRows(ownerId,'recommendations',new URL(`http://fixture.test?category=${row.category}&seed=00000000-0000-4000-8000-000000000001`));
   expect(grid.title).toBe(row.title);
   if(row.category==='game'){expect(grid.items.map(item=>item.id)).toContain(candidate);expect(grid.items.map(item=>item.id)).not.toContain(game);}
  }
  const dramaRows=orderA.filter(row=>row.surface==='genre'&&row.category==='screen'&&row.genre==='Drama');
  expect(dramaRows).toHaveLength(2);
- for(const row of dramaRows){if(row.surface!=='genre')continue;const grid=await experimentalRows(ownerId,'row',new URL(`http://fixture.test?category=${row.category}&genre=${row.genre}&kind=${row.kind}&reason=${row.reason}&seed=00000000-0000-4000-8000-000000000001`));expect(grid.title).toBe(row.title);expect(row.title.toLowerCase()).toContain('drama');}
+ for(const row of dramaRows){if(row.surface!=='genre')continue;const grid=await recommendationRows(ownerId,'row',new URL(`http://fixture.test?category=${row.category}&genre=${row.genre}&kind=${row.kind}&reason=${row.reason}&seed=00000000-0000-4000-8000-000000000001`));expect(grid.title).toBe(row.title);expect(row.title.toLowerCase()).toContain('drama');}
  const show=crypto.randomUUID(),freshMovie=crypto.randomUUID();
  await db`insert into media(id,kind,title,genres) values(${show},'show','Drama show',ARRAY['Drama']),(${freshMovie},'movie','Drama movie',ARRAY['Drama'])`;
- const movies=await experimentalRows(ownerId,'row',new URL('http://fixture.test?category=screen&genre=Drama&kind=movie'));
- const shows=await experimentalRows(ownerId,'row',new URL('http://fixture.test?category=screen&genre=Drama&kind=show'));
+ const movies=await recommendationRows(ownerId,'row',new URL('http://fixture.test?category=screen&genre=Drama&kind=movie'));
+ const shows=await recommendationRows(ownerId,'row',new URL('http://fixture.test?category=screen&genre=Drama&kind=show'));
  expect(movies.items.map(item=>item.id)).toContain(freshMovie);expect(movies.items.map(item=>item.id)).not.toContain(show);
  expect(shows.items.map(item=>item.id)).toContain(show);expect(shows.items.map(item=>item.id)).not.toContain(freshMovie);
  const personalRow=orderA.find(row=>row.surface==='seed'&&row.workId===game);
  expect(personalRow?.title).toContain('Played');
- const linked=await experimentalRows(ownerId,'row',new URL(`http://fixture.test?category=game&work=${game}&seed=00000000-0000-4000-8000-000000000001`));
+ const linked=await recommendationRows(ownerId,'row',new URL(`http://fixture.test?category=game&work=${game}&seed=00000000-0000-4000-8000-000000000001`));
  expect(linked.title).toBe(personalRow?.title);
  expect(linked.items.map(item=>item.id)).toContain(candidate);
  expect(linked.items.map(item=>item.id)).not.toContain(game);
- const unrelated=await experimentalRows(otherId,'row',new URL(`http://fixture.test?category=game&work=${game}`));
+ const unrelated=await recommendationRows(otherId,'row',new URL(`http://fixture.test?category=game&work=${game}`));
  expect(unrelated.items).toHaveLength(0);
  await updateConfig(admin,{experimentalMusic:false,experimentalGaming:false});
  const watchOnly=await allRows('00000000-0000-4000-8000-000000000001');
  expect(watchOnly.filter(row=>row.surface==='popular').map(row=>row.category)).toEqual(['screen']);
  expect(watchOnly.every(row=>row.category==='screen')).toBe(true);
  await updateConfig(admin,{experimentalMusic:true,experimentalGaming:true});
- const row=await experimentalRows(ownerId,'row',new URL('http://fixture.test?category=game&genre=Adventure'));expect(row.items.map(item=>item.id)).toContain(candidate);expect(row.items.map(item=>item.id)).not.toContain(game);
+ const row=await recommendationRows(ownerId,'row',new URL('http://fixture.test?category=game&genre=Adventure'));expect(row.items.map(item=>item.id)).toContain(candidate);expect(row.items.map(item=>item.id)).not.toContain(game);
  for(let index=0;index<8;index++)await db`insert into games(id,title,genres) values(${crypto.randomUUID()},${`Genre candidate ${index}`},ARRAY['Adventure','Action'])`;
- const genreRows=(genre:string,seed:string)=>experimentalRows(ownerId,'row',new URL(`http://fixture.test?category=game&genre=${genre}&seed=${seed}`));
+ const genreRows=(genre:string,seed:string)=>recommendationRows(ownerId,'row',new URL(`http://fixture.test?category=game&genre=${genre}&seed=${seed}`));
  const adventure=await genreRows('Adventure','visit-a'),again=await genreRows('Adventure','visit-a'),anotherVisit=await genreRows('Adventure','visit-b'),action=await genreRows('Action','visit-a');
  expect(adventure.items.map(item=>item.id)).toEqual(again.items.map(item=>item.id));
  expect(adventure.items.map(item=>item.id)).not.toEqual(anotherVisit.items.map(item=>item.id));
@@ -180,7 +181,7 @@ run('music recommendations preserve shared identity and avoid repeated explanati
  await db`insert into works(id,category,kind) values(${album},'music','album')`;
  await db`insert into music_works(id,title,kind,genres) values(${album},'Recommended album','album',ARRAY['Ambient'])`;
  await db`insert into provider_items(instance_id,media_id,external_id,kind) values(${instance},${album},'remote-album','album')`;
- const rows=await experimentalRows(ownerId,'row',new URL('http://fixture.test?category=music&genre=Ambient'));
+ const rows=await recommendationRows(ownerId,'row',new URL('http://fixture.test?category=music&genre=Ambient'));
  const item=rows.items.find(item=>'workId' in item&&item.workId===album);expect(item?.id).toBe('remote-album');expect(item?.captionSubtitle??'').not.toContain('Shared genres with');
  const plan=await createPlan(ownerId,{workId:album,startsAt:new Date(Date.now()+3600000).toISOString()});
  const planned=await planningData(ownerId,new URL('http://fixture.test?category=music'));
@@ -205,14 +206,14 @@ run('provider suggestions work without genre overlap and remain account-generati
  await db`insert into tracking_state(user_id,media_id,favourite) values(${ownerId},${personal},true)`;
  await db`insert into recommendation_sets(instance_id,key,seed_id,items) values(${service},'shared',${personal},${db.array([suggestion],'UUID')})`;
  await db`insert into recommendation_sets(instance_id,key,connection_id,account_generation,items) values(${service},'account:movie',${account},${accountGeneration},${db.array([privateSuggestion],'UUID')})`;
- const linked=await experimentalRows(ownerId,'row',new URL(`http://fixture.test?category=screen&work=${personal}`));
+ const linked=await recommendationRows(ownerId,'row',new URL(`http://fixture.test?category=screen&work=${personal}`));
  expect(linked.items.map(item=>item.id)).toContain(suggestion);expect(linked.items.map(item=>item.id)).not.toContain(privateSuggestion);
- expect((await experimentalRows(ownerId,'recommendations',new URL('http://fixture.test'))).items.map(item=>item.id)).not.toContain(privateSuggestion);
- expect((await experimentalRows(otherId,'recommendations',new URL('http://fixture.test'))).items.map(item=>item.id)).toContain(privateSuggestion);
+ expect((await recommendationRows(ownerId,'recommendations',new URL('http://fixture.test'))).items.map(item=>item.id)).not.toContain(privateSuggestion);
+ expect((await recommendationRows(otherId,'recommendations',new URL('http://fixture.test'))).items.map(item=>item.id)).toContain(privateSuggestion);
  await db`update provider_connections set account_generation=${crypto.randomUUID()} where id=${account}`;
- expect((await experimentalRows(otherId,'recommendations',new URL('http://fixture.test'))).items.map(item=>item.id)).not.toContain(privateSuggestion);
+ expect((await recommendationRows(otherId,'recommendations',new URL('http://fixture.test'))).items.map(item=>item.id)).not.toContain(privateSuggestion);
  await db`insert into ratings(user_id,media_id,value) values(${ownerId},${suggestion},1)`;
- expect((await experimentalRows(ownerId,'row',new URL(`http://fixture.test?category=screen&work=${personal}`))).items.map(item=>item.id)).not.toContain(suggestion);
+ expect((await recommendationRows(ownerId,'row',new URL(`http://fixture.test?category=screen&work=${personal}`))).items.map(item=>item.id)).not.toContain(suggestion);
 });
 run('Trakt refreshes retain separate recommendation sets for every connected account',async()=>{
  await updateConfig(admin,{enableTrakt:true});

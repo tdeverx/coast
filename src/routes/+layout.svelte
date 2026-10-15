@@ -1,8 +1,12 @@
 <script lang="ts">
   import '../app.css';
-  import {closeNotifications} from '$lib/notifications/client.svelte';
-  import {closeFriends} from '$lib/social/panel.svelte';
-  import {closeStreams} from '$lib/providers/streams-panel.svelte';
+  import { reader } from '$lib/reading/client.svelte';
+  let Reader=$state<typeof import('$lib/reading/Reader.svelte').default>();
+  let readerLoading=false;
+  $effect(()=>{if(reader.visible&&!Reader&&!readerLoading){readerLoading=true;void import('$lib/reading/Reader.svelte').then(module=>Reader=module.default).finally(()=>readerLoading=false);}});
+  import {closeNotifications} from '$lib/ui/panels/notifications.svelte';
+  import {closeFriends} from '$lib/ui/panels/friends.svelte';
+  import {closeStreams} from '$lib/ui/panels/streams.svelte';
   import {startPresence,userStatus} from '$lib/social/status.svelte';
   import {playbackVisible} from '$lib/playback/visibility';
   import {syncedPlayer,pollSynced,restoreSynced} from '$lib/playback/synced/client.svelte';
@@ -109,6 +113,7 @@
   class:audio-active={player.session?.mediaType === 'audio'}
   class:watching
 >
+  {#if data.user&&Reader}<Reader />{/if}
   {#if data.user&&data.experiments.mediaModal&&MediaModal}<MediaModal />{/if}<PersistentPlayer /><MediaHero mode="player" />
   {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
   {#if (data.user || data.publicRead || data.publicProfiles) && page.url.pathname !== '/onboarding' && page.url.pathname !== '/share'}<Header

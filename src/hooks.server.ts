@@ -43,7 +43,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     event.locals.expiresAt = session.expiresAt;
     if (session.token) setSessionCookie(event.cookies, session.token, session.expiresAt, event.url);
   }
-  if (event.url.pathname === '/share' || event.url.pathname.startsWith('/api/share/')) {
+  if (event.url.pathname === '/share' || event.url.pathname.startsWith('/share/') || event.url.pathname.startsWith('/api/share/')) {
     const response=await resolve(event);
     response.headers.set('Cache-Control','private, no-store');
     response.headers.set('Referrer-Policy','no-referrer');

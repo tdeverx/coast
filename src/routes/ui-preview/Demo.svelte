@@ -89,6 +89,7 @@
   let failure=$state(''),ready=$state(false),open=$state(untrack(() => initialOpen)),available=$state(false),number=$state(1),choice=$state('all'),mediaType=$state('all'),position=$state(1800);
   let styleMenu = $state<ReturnType<typeof RowStyleMenu>>();
   let shelfExample = $state('cards');
+  let browseSurface = $state('watch');
   let pageExample = $state('screen');
   const musicPage = createMusicPage(() => ({ item: { ...music, workId: id }, connectionId: id, children: { items: [track], total: 1, nextOffset: null }, failure: '', page: 1, pages: 1 }), () => page.url);
   const pagePresentation = $derived<ComponentProps<typeof MediaPage>>(pageExample === 'music' ? musicPage.page : pageExample === 'collection'
@@ -201,7 +202,7 @@
   });
 </script>
 
-<div class="demo" onclickcapture={event => { const link = (event.target as Element).closest('a'); if(link && !link.hasAttribute('data-preview-navigation'))event.preventDefault(); }} class:header-demo={name==='Header'}>
+<div class="demo" onsubmitcapture={event => event.preventDefault()} onclickcapture={event => { const link = (event.target as Element).closest('a'); if(link && !link.hasAttribute('data-preview-navigation'))event.preventDefault(); }} class:header-demo={name==='Header'}>
   {#if failure}<p role="alert">{failure}</p>{/if}
   {#if ready}
     {#if ['StreamsPanel','FriendsPanel','NotificationInbox','Dialog','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog'].includes(name)}
@@ -256,7 +257,7 @@
       <Heading variant="page" title="Page heading" description="Optional description for this page." />
       <Heading title="Row heading" href="#">{#snippet filters()}<Button {...availabilityControl(false, ()=>{})} />{/snippet}{#snippet navigation()}<Pagination page={number} pages={5} onchange={(value)=>number=value} label="Row pages" />{/snippet}</Heading>
       <Heading variant="title" title="Title only" href="#" />
-      <Heading {...browseHeading('watch',true)} />
+      <Heading {...browseHeading('watch',true)} selection={{...browseHeading('watch',true).selection!,value:browseSurface,change:value=>browseSurface=value}} />
     {:else if name==='Header'}
       <Header user={{username:"preview",role:"admin"}} unread={2} />
     {:else if name==='Icon'}

@@ -1,3 +1,4 @@
+import {rankSearch, searchWords, normalizeSearch} from '$lib/search';
 import {getSql} from '$lib/server/db';
 import {getConfig,type CoastConfig} from '$lib/server/config';
 import {AppError} from '$lib/server/security/errors';
@@ -29,7 +30,10 @@ export async function publicDetails(id:string) {
 
 /** Guest searches never consult private provider accounts or expose server artwork. */
 export async function publicSearch(query:string):Promise<MediaView[]> {
- const pattern='%'+query.replace(/[\\%_]/g,'\\$&')+'%';
- const rows=await getSql()`select m.id from media m where m.kind in ('movie','show','collection') and m.title ilike ${pattern} and exists(select 1 from external_ids x where x.media_id=m.id and x.provider in ('tmdb','trakt')) order by m.title,m.id limit 101`;
- return publicMedia(rows.map((r:{id:string})=>r.id));
+ const words=searchWords(query);if(!words.length)return [];
+ const exact=words.map(word=>`${word}:*`).join(' & ');
+ const fallback=words.filter(word=>word.length>=4).map(word=>`${word.slice(0,3)}:*`).join(' | ');
+ const read=(terms:string)=>getSql()`select m.id from media m where m.kind in ('movie','show','collection') and coast_search_document(m.title,m.original_title) @@ to_tsquery('simple',${terms}) and exists(select 1 from external_ids x where x.media_id=m.id and x.provider in ('tmdb','trakt')) order by (coast_search_text(m.title)=${normalizeSearch(query)}) desc,ts_rank(coast_search_document(m.title,m.original_title),to_tsquery('simple',${exact})) desc,m.id limit 101`;
+ let rows=await read(exact);if(!rows.length&&fallback)rows=await read(fallback);
+ return rankSearch(await publicMedia(rows.map((r:{id:string})=>r.id)),query);
 }

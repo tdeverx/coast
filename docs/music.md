@@ -4,6 +4,8 @@ Music browsing uses an existing linked Jellyfin account and Coast's existing int
 
 Albums and tracks persist as canonical works with credits, ordered membership, editions and provider mappings. Shared Jellyfin scans ingest music metadata; independent user sync establishes access, favourites, counts and progress. Server presence alone never adds music to personal Collection. Artists retain separate preference controls; album/track favourites use Coast state and durable delivery. Music retains its own listen/progress models rather than screen watch events, under the existing experimental feature gate.
 
+Each canonical album retains one selected provider release for its track order. New albums select their first known release; migration selects an existing release deterministically. Tracks retain their release occurrence even when several occurrences share one recording. Album pages, queues and logs use that selected release, so other editions cannot add bonus tracks or overwrite its order. Canonical pages retain artist credit text; artist destinations are available through the viewer's own enabled source.
+
 ## Listening and playback
 
 Manual track logs create repeatable listens. Album logging records known member tracks atomically under a caller-supplied batch UUID; retries with that UUID cannot create duplicate listens. Album activity derives from track events. Supported Jellyfin exchange uses existing import and outbound reconciliation controls, preserving Coast history when the server exposes only counts/current state.

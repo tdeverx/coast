@@ -9,7 +9,7 @@ import {
   metadataSnapshots,
   media,
 } from '$lib/server/db/schema';
-import { ingestMetadata, refreshMedia } from './service';
+import { ingestMetadata, refreshMedia } from './service.server';
 import { getTrakt } from '$lib/providers/trakt/connection.server';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import type {

@@ -5,6 +5,11 @@ import { invalidateContentRevision, type ContentDomain } from './content-revisio
 
 let playbackApi = '/api/v1/';
 export function setPlaybackApi(shared:boolean){playbackApi=shared?'/api/share/':'/api/v1/';}
+/** Preparation and its late cleanup must keep the same authority across route teardown. */
+export function capturePlaybackApi() {
+  const base = playbackApi;
+  return <T = unknown>(path: string, body?: unknown, method = 'POST', options: Pick<RequestInit, 'signal'> = {}) => requestApi<T>(fetch, path, body, method, options, base);
+}
 
 export type ApiTransport = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -25,8 +30,8 @@ export async function api<T = unknown>(
 ): Promise<T> {
   return requestApi<T>(fetch, path, body, method, options);
 }
-async function requestApi<T>(transport: ApiTransport, path: string, body: unknown, method: string, options: Pick<RequestInit, 'signal'>): Promise<T> {
-  const sharedPlayback = playbackApi === '/api/share/' && (path === 'playback' || path.startsWith('playback/'));
+async function requestApi<T>(transport: ApiTransport, path: string, body: unknown, method: string, options: Pick<RequestInit, 'signal'>, playbackBase = playbackApi): Promise<T> {
+  const sharedPlayback = playbackBase === '/api/share/' && (path === 'playback' || path.startsWith('playback/'));
   const response = await transport(`${sharedPlayback ? '/api/share/' : '/api/v1/'}${path}`, {
     ...options,
     method,
@@ -67,7 +72,7 @@ export async function refreshAfterChange(path: string) {
     : domain === 'notifications' ? ['notifications']
     : ['providers', 'queue', 'conflicts', 'requests'].includes(domain) ? ['providers', 'tracking', 'notifications']
     : ['settings', 'profile', 'admin'].includes(domain) ? ['session', 'settings', 'tracking', 'social']
-    : ['tracking', 'ratings', 'collection', 'music', 'games', 'game-playthroughs', 'lists', 'up-next', 'continue', 'rewatch', 'media'].includes(domain) ? ['tracking', 'social']
+    : ['tracking', 'ratings', 'collection', 'music', 'games', 'game-playthroughs', 'reading', 'lists', 'up-next', 'continue', 'rewatch', 'media'].includes(domain) ? ['tracking', 'social']
     : [];
   invalidateContentRevision(dependencies.filter((key): key is ContentDomain => ['tracking','social','planning'].includes(key)));
   await refreshRouteDependencies(dependencies);

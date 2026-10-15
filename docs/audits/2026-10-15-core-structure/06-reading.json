@@ -1,0 +1,64 @@
+{
+  "section": "READING",
+  "coverage": {
+    "read": [
+      "docs/code-organization.md", "docs/architecture.md", "docs/performance.md", "docs/reading.md",
+      "src/lib/reading/model.ts", "src/lib/reading/presentation.ts", "src/lib/reading/query.server.ts", "src/lib/reading/routes.server.ts", "src/lib/reading/sessions.server.ts", "src/lib/reading/client.svelte.ts", "src/lib/reading/Reader.svelte", "src/lib/reading/ReadingLaunch.svelte", "src/lib/reading/Details.svelte",
+      "src/lib/reading/reader/engine.ts", "src/lib/reading/reader/pdf.ts", "src/lib/reading/reader/comic.ts", "src/lib/reading/reader/epub.ts", "src/lib/reading/reader/epub-archive.ts", "src/lib/reading/reader/epub-document.ts", "src/lib/reading/reader/hash.ts", "src/lib/reading/reader/hash.worker.ts", "src/lib/reading/reader/file-identity.ts",
+      "src/lib/core/reading/service.server.ts", "src/lib/catalogue/reading.server.ts", "src/lib/catalogue/reading-files.server.ts", "src/lib/application/reading.server.ts", "src/lib/providers/reading.server.ts", "src/lib/providers/openlibrary/adapter.server.ts", "src/lib/providers/comic-vine/adapter.server.ts", "src/lib/providers/jellyfin/reading.server.ts", "src/lib/server/api/reading.server.ts",
+      "src/routes/media/openlibrary/[externalId]/+page.server.ts", "src/routes/media/openlibrary/[externalId]/+page.svelte", "src/routes/media/comic-vine/[externalId]/+page.server.ts", "src/routes/media/comic-vine/[externalId]/+page.svelte", "src/routes/media/[id]/+page.server.ts", "src/routes/media/[id]/+page.svelte",
+      "src/lib/playback/synced/client.svelte.ts", "src/lib/sync/jellyfin-reading.server.ts", "src/lib/experiments/MediaModal.svelte", "src/lib/ui/components/PresentationActions.svelte", "src/lib/ui/components/Dialog.svelte", "src/lib/ui/operation.svelte.ts", "src/lib/server/storage/retention.server.ts", "src/lib/server/utils/provider-cache.ts", "src/lib/server/utils/provider-single-flight.ts",
+      "drizzle/0048_reading_sessions.sql", "drizzle/0049_search_and_reading_identity.sql",
+      "tests/reading.test.ts", "tests/reading-providers.test.ts", "tests/reading-reader.test.ts", "tests/reading-archive.test.ts", "tests/reading-hash.test.ts", "tests/reading-sessions-db.test.ts", "tests/reading-sync-db.test.ts"
+    ],
+    "scanned": [
+      "src/lib/playback/synced/service.server.ts (Reading authorization/create/join/state/command branches substantively read)", "src/lib/server/db/schema.ts (Reading/work-edition tables substantively read)", "src/lib/server/queries/search.ts (Reading initial/provider search substantively read)", "src/lib/social/presence.server.ts (presence query substantively read)", "src/lib/playback/client.svelte.ts (stop/open transition portions substantively read)", "src/lib/providers/jellyfin/connection.server.ts (getJellyfin substantively read)", "src/lib/server/security/provider-fetch.ts (common lane/spacing portions substantively read)", "tests/reading-db.test.ts (test inventory and relevant identity/route/provider cases)", "src/routes/+layout.svelte", "node_modules/@zip.js/zip.js/lib/core/zip-reader.js", "node_modules/@zip.js/zip.js/lib/core/streams/codec-stream.js", "node_modules/@zip.js/zip.js/lib/core/streams/zip-entry-stream.js"
+    ],
+    "unverified": ["No real database or disposable database suite was run", "No browser or actual PDF/EPUB/CBZ decoder acceptance, memory or teardown measurements", "No live Open Library, Comic Vine or Jellyfin calls", "Public API and general social/privacy/query correctness delegated to separate audit sections", "Jellyfin traversal follow-up observations sent to parent; comprehensive traversal reviewed separately"]
+  },
+  "checks": [
+    {"command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/reading.test.ts tests/reading-providers.test.ts tests/reading-reader.test.ts tests/reading-archive.test.ts tests/reading-hash.test.ts", "result": "26 pass, 0 fail, 174 assertions; no DB/provider calls"},
+    {"command": "Isolated bun -e: mock $lib/ui/client and playback modules, set globalThis.$state to identity, import actual reading/client.svelte.ts; defer stopPlayback, await session installation, closeReading, resolve stopPlayback, await openReading", "result": "Confirmed visible=false, session=null, loading=true; API closed session-a and subsequent party item command still carried readingSessionId=session-a"},
+    {"command": "Isolated bun -e: mock $lib/ui/client so /location rejects; import actual reading/client.svelte.ts with identity $state; install session-a at PDF page 50/100 and await closeReading", "result": "Confirmed error empty, session=null, visible=false; both /location and /close called despite rejected final bookmark"}
+  ],
+  "findings": [
+    {
+      "id": "READING-01", "priority": "P2", "category": "correctness", "title": "Failed final bookmark drain silently closes and discards retry state", "rootCause": "reading-close-swallows-final-location-failure", "confidence": "confirmed",
+      "evidence": [
+        {"path": "src/lib/reading/client.svelte.ts", "line": 53, "detail": "Close begins the final recordReading drain, then clears session/location/file before awaiting it and closing the server session."},
+        {"path": "src/lib/reading/client.svelte.ts", "line": 63, "detail": "Location failures are caught without rejecting the writer promise; error reporting is conditional on the session which close has already cleared."}
+      ],
+      "trigger": "Final /location request fails transiently while closing the reader.", "impact": "Latest bookmark can be lost with no error and no retained retry position; reopening resumes an older page/CFI.", "recommendation": "Make final draining return failure and retain the latest unsaved session/location for a visible retry before silently retiring it; keep the existing one-writer coalescing loop.", "verification": "Mock final /location rejection, close, and assert pending position/error survives and session is not silently retired; restore API, retry and assert final page persists without older writes overtaking it.", "relatedAreas": ["reader lifecycle", "bookmark persistence"]
+    },
+    {
+      "id": "READING-02", "priority": "P2", "category": "correctness", "title": "Reader cancellation leaves loading set and permits stale party publication", "rootCause": "reading-open-generation-incomplete-after-installation", "confidence": "confirmed",
+      "evidence": [
+        {"path": "src/lib/reading/client.svelte.ts", "line": 40, "detail": "After installing a session, awaited playback stop/import are followed by item publication without rechecking opening generation or current session."},
+        {"path": "src/lib/reading/client.svelte.ts", "line": 43, "detail": "The old opening finally clears loading only when its generation still matches."},
+        {"path": "src/lib/reading/client.svelte.ts", "line": 45, "detail": "Attaching a party session does not invalidate an older pending explicit open."},
+        {"path": "src/lib/reading/client.svelte.ts", "line": 51, "detail": "Close invalidates generation but never settles loading itself."},
+        {"path": "src/lib/playback/synced/client.svelte.ts", "line": 104, "detail": "Reader.loading contributes to the party buffering heartbeat."}
+      ],
+      "trigger": "Close while prepareReading/stopPlayback is pending, or attach a party session while an explicit open is pending.", "impact": "Cancelled reader remains loading, stale item command can reference its already closed session, and an old open can overwrite a newly attached party reader.", "recommendation": "Recheck existing epoch/session after awaited transitions before party publication; settle cancelled loading without clearing a newer operation, and invalidate old opens on attachment.", "verification": "Defer preparation and stop separately; close or attach another session before resolving each; assert no stale item command, no overwritten attached session, prepared-session cleanup and loading=false.", "relatedAreas": ["reader lifecycle", "party transitions", "hash worker cancellation"]
+    },
+    {
+      "id": "READING-03", "priority": "P2", "category": "correctness", "title": "Session preparation can insert an old bookmark after Reread reset", "rootCause": "reading-session-bookmark-copy-outside-user-transaction-lock", "confidence": "strong-static",
+      "evidence": [
+        {"path": "src/lib/reading/sessions.server.ts", "line": 54, "detail": "Previous bookmark selection and insertion are independent operations with no transaction/user lock."},
+        {"path": "src/lib/core/reading/service.server.ts", "line": 39, "detail": "Personal writes and Reread serialize on the existing user advisory lock."},
+        {"path": "src/lib/core/reading/service.server.ts", "line": 62, "detail": "Reread resets/closes sessions currently visible to this transaction; a later insert can escape it."}
+      ],
+      "trigger": "Prepare in one tab reads old page, another tab commits Reread, then first tab inserts its copied location.", "impact": "Usable post-reread session resumes old page/CFI; numbered-page initialization can overwrite newly reset page-zero progress.", "recommendation": "After network work, select previous bookmark and insert session inside one transaction holding the existing per-user lock shared with Reread.", "verification": "Disposable DB barrier after prepare bookmark read/before insert; commit Reread between them. Preparation must serialize before reset and be closed by it, or serialize afterward and receive null location.", "relatedAreas": ["personal progress", "concurrent tabs", "rereads"]
+    },
+    {
+      "id": "READING-04", "priority": "P2", "category": "correctness", "title": "Reading item replacement can revoke the initiating party participant", "rootCause": "reading-party-replacement-closes-old-source-before-handover", "confidence": "strong-static",
+      "evidence": [
+        {"path": "src/lib/reading/client.svelte.ts", "line": 37, "detail": "Opening replacement closes old reading session before publishing new party item."},
+        {"path": "src/lib/playback/synced/service.server.ts", "line": 114, "detail": "Room-state calls mark participants unjoined when attached reading session has closed."},
+        {"path": "src/lib/playback/synced/service.server.ts", "line": 214, "detail": "Reading item switch installs source but preserves joined=false from an intervening room read."},
+        {"path": "src/lib/playback/synced/client.svelte.ts", "line": 107, "detail": "Following heartbeat drops local room when caller is no longer joined."}
+      ],
+      "trigger": "Guest heartbeat lands between host/controller closing reading A and switching room to prepared reading B.", "impact": "Host can successfully publish B while remaining unjoined and then be dropped from the party; delegated controller may instead lose command permissions mid-switch.", "recommendation": "Handover participant source before retiring old session, or complete only still-authorized reattachment under existing room transaction; retain expiry/revocation checks.", "verification": "Disposable room: prepare B, close host A, guest roomState, host item B with fresh revision, heartbeat. Assert initiating member remains joined to B. Repeat authorized non-host and explicitly removed actor cases.", "relatedAreas": ["reading parties", "source transitions", "room authorization"]
+    }
+  ]
+}

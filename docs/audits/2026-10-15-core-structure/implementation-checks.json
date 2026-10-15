@@ -1,0 +1,443 @@
+{
+  "date": "2026-10-15",
+  "status": "passed",
+  "defaultTests": {
+    "command": "bun test tests",
+    "pass": 423,
+    "skip": 585,
+    "fail": 0,
+    "files": 179,
+    "note": "Database and live/HTTP suites are opt-in. Disposable database results are recorded separately."
+  },
+  "databaseTests": {
+    "command": "bun scripts/test-database.ts; final rerun: synced-onboarding-db.test.ts sharing-db.test.ts",
+    "pass": 536,
+    "fail": 0,
+    "skip": 0,
+    "files": 76,
+    "method": "Complete migrated disposable database suite; after stricter generation guards exposed stale reused party fixtures, corrected fixtures and reran both changed suites. Per-suite results below use each suite\u2019s final run.",
+    "suites": {
+      "account-provenance-db.test.ts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      },
+      "audit-auth-discovery-db.test.ts": {
+        "pass": 7,
+        "fail": 0,
+        "skip": 0
+      },
+      "audit-boundaries-db.test.ts": {
+        "pass": 10,
+        "fail": 0,
+        "skip": 0
+      },
+      "benchmarks-db.test.ts": {
+        "pass": 20,
+        "fail": 0,
+        "skip": 0
+      },
+      "catalogue-cursor-db.test.ts": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "catalogue-maintenance-db.test.ts": {
+        "pass": 6,
+        "fail": 0,
+        "skip": 0
+      },
+      "catalogue-roots-db.test.ts": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "collection-db.test.ts": {
+        "pass": 24,
+        "fail": 0,
+        "skip": 0
+      },
+      "collection-projection-db.test.ts": {
+        "pass": 11,
+        "fail": 0,
+        "skip": 0
+      },
+      "database-pool-db.test.ts": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "developer-live-db.test.ts": {
+        "pass": 14,
+        "fail": 0,
+        "skip": 0
+      },
+      "discovery-db.test.ts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      },
+      "domain-application-db.test.ts": {
+        "pass": 21,
+        "fail": 0,
+        "skip": 0
+      },
+      "domain-db.test.ts": {
+        "pass": 14,
+        "fail": 0,
+        "skip": 0
+      },
+      "domain-jsonb-db.test.ts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      },
+      "experimental-gates-db.test.ts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      },
+      "for-you-db.test.ts": {
+        "pass": 10,
+        "fail": 0,
+        "skip": 0
+      },
+      "games-db.test.ts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      },
+      "home-data-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "igdb-api-db.test.ts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      },
+      "integration-removal-db.test.ts": {
+        "pass": 6,
+        "fail": 0,
+        "skip": 0
+      },
+      "invites-experiments-db.test.ts": {
+        "pass": 15,
+        "fail": 0,
+        "skip": 0
+      },
+      "jellyfin-access-proof-db.test.ts": {
+        "pass": 11,
+        "fail": 0,
+        "skip": 0
+      },
+      "jellyfin-bootstrap-db.test.ts": {
+        "pass": 7,
+        "fail": 0,
+        "skip": 0
+      },
+      "jellyfin-companion-db.test.ts": {
+        "pass": 7,
+        "fail": 0,
+        "skip": 0
+      },
+      "jellyfin-music-persistence-db.test.ts": {
+        "pass": 6,
+        "fail": 0,
+        "skip": 0
+      },
+      "jellyfin-progress-export-db.test.ts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      },
+      "jellyfin-reconciliation-db.test.ts": {
+        "pass": 9,
+        "fail": 0,
+        "skip": 0
+      },
+      "jellyfin-recovery-db.test.ts": {
+        "pass": 6,
+        "fail": 0,
+        "skip": 0
+      },
+      "job-task-summary-db.test.ts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      },
+      "jobs-list-delivery-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "maintenance-db.test.ts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      },
+      "maintenance-runner-db.test.ts": {
+        "pass": 24,
+        "fail": 0,
+        "skip": 0
+      },
+      "media-actions-db.test.ts": {
+        "pass": 9,
+        "fail": 0,
+        "skip": 0
+      },
+      "media-details-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "notifications-db.test.ts": {
+        "pass": 10,
+        "fail": 0,
+        "skip": 0
+      },
+      "platform-db.test.ts": {
+        "pass": 11,
+        "fail": 0,
+        "skip": 0
+      },
+      "playback-generation-db.test.ts": {
+        "pass": 6,
+        "fail": 0,
+        "skip": 0
+      },
+      "profile-db.test.ts": {
+        "pass": 20,
+        "fail": 0,
+        "skip": 0
+      },
+      "provider-db.test.ts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      },
+      "provider-live-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "provider-parity-db.test.ts": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "provider-recommendations-db.test.ts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      },
+      "provider-sync-db.test.ts": {
+        "pass": 6,
+        "fail": 0,
+        "skip": 0
+      },
+      "provisioning-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "public-api-db.test.ts": {
+        "pass": 13,
+        "fail": 0,
+        "skip": 0
+      },
+      "reading-db.test.ts": {
+        "pass": 17,
+        "fail": 0,
+        "skip": 0
+      },
+      "reading-sessions-db.test.ts": {
+        "pass": 13,
+        "fail": 0,
+        "skip": 0
+      },
+      "reading-sync-db.test.ts": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "retention-db.test.ts": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "review-followups-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "search-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "seerr-account-scope-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "seerr-delivery-db.test.ts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      },
+      "sequence-db.test.ts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      },
+      "sequence-transaction-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "server-artwork-db.test.ts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      },
+      "server-stream-job-db.test.ts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      },
+      "settings-db.test.ts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      },
+      "sharing-db.test.ts": {
+        "pass": 17,
+        "fail": 0,
+        "skip": 0
+      },
+      "social-db.test.ts": {
+        "pass": 12,
+        "fail": 0,
+        "skip": 0
+      },
+      "social-status-db.test.ts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      },
+      "social-trakt-db.test.ts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      },
+      "steam-db.test.ts": {
+        "pass": 13,
+        "fail": 0,
+        "skip": 0
+      },
+      "sync-conflicts-db.test.ts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      },
+      "sync-preference-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "synced-onboarding-db.test.ts": {
+        "pass": 19,
+        "fail": 0,
+        "skip": 0
+      },
+      "task-timing-db.test.ts": {
+        "pass": 7,
+        "fail": 0,
+        "skip": 0
+      },
+      "taste-cache-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "tmdb-artwork-scope-db.test.ts": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "trakt-collection-lists-staging-db.test.ts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      },
+      "trakt-history-db.test.ts": {
+        "pass": 1,
+        "fail": 0,
+        "skip": 0
+      },
+      "trakt-staging-db.test.ts": {
+        "pass": 5,
+        "fail": 0,
+        "skip": 0
+      },
+      "trakt-sync-db.test.ts": {
+        "pass": 4,
+        "fail": 0,
+        "skip": 0
+      },
+      "trakt-token-scope-db.test.ts": {
+        "pass": 2,
+        "fail": 0,
+        "skip": 0
+      },
+      "webhooks-db.test.ts": {
+        "pass": 3,
+        "fail": 0,
+        "skip": 0
+      }
+    },
+    "devOrLiveUsed": false,
+    "testContainerRestored": "stopped"
+  },
+  "typecheck": {
+    "command": "bun run check",
+    "errors": 0,
+    "warnings": 0
+  },
+  "build": {
+    "command": "bun run build",
+    "status": "passed",
+    "note": "Existing large lazy reader chunk warning remains; build completes."
+  },
+  "maintenance": {
+    "method": "Real scheduler imported into isolated child, only external boundaries deferred",
+    "status": "passed"
+  },
+  "ui": {
+    "inventoryComponents": 63,
+    "inventoryCheck": "passed",
+    "codeInventory": "no unused modules",
+    "styleGuard": "7 adopted modules passed",
+    "renderedBrowser": "Desktop/mobile synthetic components passed; 0 console errors/warnings and 0 live requests. See implementation-ui.json."
+  },
+  "migrationGeneration": {
+    "command": "tests/migration-generation.test.ts",
+    "newStatements": 0,
+    "status": "passed"
+  },
+  "plugin": {
+    "command": "dotnet restore Coast.slnx; dotnet build Coast.slnx --no-restore; dotnet run --project Tests/Coast.Journal.Tests.csproj",
+    "buildErrors": 0,
+    "buildWarnings": 0,
+    "journalChecks": 11,
+    "published": false
+  },
+  "diffWhitespace": "passed",
+  "verificationLimits": [
+    "No real provider account, VRChat client, live server, or dev database was used.",
+    "No new GitHub workflow was triggered.",
+    "The actual HTTP journey fixtures were corrected, but the whole disposable HTTP browser journey was not launched; the real setup action and rendered synthetic component flows were tested."
+  ]
+}

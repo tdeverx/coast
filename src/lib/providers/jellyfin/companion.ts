@@ -30,14 +30,14 @@ const musicTypes=new Set(['Audio','MusicAlbum']);
 /** Coalesce the batch by final item state; a later re-add supersedes a removal. */
 export function companionPlan(page:CompanionPage){
   const items=new Map<string,CompanionPage['changes'][number]>();
-  const personal=new Map<string,{video:Set<string>;music:Set<string>;permissions:boolean}>();
+  const personal=new Map<string,{video:Set<string>;music:Set<string>;reading:Set<string>;permissions:boolean}>();
   for(const change of page.changes){
     if(change.Kind==='item-updated'||change.Kind==='item-removed'){if(change.ItemId)items.set(change.ItemId,change);continue;}
     if(!change.UserId)continue;
-    const account=personal.get(change.UserId)??{video:new Set<string>(),music:new Set<string>(),permissions:false};
+    const account=personal.get(change.UserId)??{video:new Set<string>(),music:new Set<string>(),reading:new Set<string>(),permissions:false};
     if(change.Kind==='user-updated')account.permissions=true;
-    else if(change.ItemId){if(videoTypes.has(change.ItemType??''))account.video.add(change.ItemId);else if(musicTypes.has(change.ItemType??''))account.music.add(change.ItemId);}
+    else if(change.ItemId){if(videoTypes.has(change.ItemType??''))account.video.add(change.ItemId);else if(musicTypes.has(change.ItemType??''))account.music.add(change.ItemId);else if(change.ItemType==='Book')account.reading.add(change.ItemId);}
     personal.set(change.UserId,account);
   }
-  return {items:[...items.values()],personal,video:[...items.values()].filter(c=>c.Kind==='item-updated'&&videoTypes.has(c.ItemType??'')).map(c=>c.ItemId!),music:[...items.values()].filter(c=>c.Kind==='item-updated'&&musicTypes.has(c.ItemType??'')).map(c=>c.ItemId!),removed:[...items.values()].filter(c=>c.Kind==='item-removed').map(c=>c.ItemId!)};
+  return {items:[...items.values()],personal,video:[...items.values()].filter(c=>c.Kind==='item-updated'&&videoTypes.has(c.ItemType??'')).map(c=>c.ItemId!),music:[...items.values()].filter(c=>c.Kind==='item-updated'&&musicTypes.has(c.ItemType??'')).map(c=>c.ItemId!),reading:[...items.values()].filter(c=>c.Kind==='item-updated'&&c.ItemType==='Book').map(c=>c.ItemId!),removed:[...items.values()].filter(c=>c.Kind==='item-removed').map(c=>c.ItemId!)};
 }

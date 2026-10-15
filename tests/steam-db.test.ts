@@ -8,8 +8,8 @@ import { saveConnection } from '../src/lib/providers/connections.server';
 import { disconnectProvider } from '../src/lib/application/provider-sources.server';
 import { syncSteam, syncSteamAchievements, syncSteamMetadata } from '../src/lib/providers/steam/sync.server';
 import { startSteam, finishSteam, updateSteamImports } from '../src/lib/providers/steam/connection.server';
-import { listGames, gameDetails, importIgdbMetadata, createPlaythrough } from '../src/lib/core/games/service';
-import { track } from '../src/lib/core/tracking/service';
+import { listGames, gameDetails, importIgdbMetadata, createPlaythrough } from '../src/lib/core/games/service.server';
+import { track } from '../src/lib/core/tracking/service.server';
 import { workAssessments, collectionData } from '../src/lib/collection/query.server';
 import { scheduleProviderMaintenance, updateProviderSchedule, runProviderJob } from '../src/lib/providers/maintenance.server';
 import { enqueueAction, type OutboxAction } from '../src/lib/server/queue';
@@ -27,6 +27,7 @@ suite('Steam account imports and ownership availability',()=>{
   let deniedAppId:string|null=null,privacyDenial=true;
   let remoteMinutes=125;
   const achievementAppIds:string[]=[];
+  const appAchievements=new Map<string,{label:string;achieved:0|1}>();
   const job=async(kind='steam.sync'):Promise<OutboxAction>=>{
     const [connection]=await getDb().select().from(s.providerConnections).where(eq(s.providerConnections.id,connectionId));
     return {id:crypto.randomUUID(),userId:owner,connectionId,kind,accountGeneration:connection.accountGeneration,payload:{},attempts:0,correlationId:crypto.randomUUID()};
@@ -49,10 +50,14 @@ suite('Steam account imports and ownership availability',()=>{
         const appId=url.searchParams.get('appid')!;achievementAppIds.push(appId);
         if(appId==='11')return Response.json({error:'Unowned regional version'},{status:403});
       }
-      if(url.pathname.includes('GetSchemaForGame'))return Response.json({game:{availableGameStats:{achievements:[{name:'FIRST',displayName:'First',hidden:0},{name:'SECOND',displayName:'Second',hidden:1}]}}});
+      if(url.pathname.includes('GetSchemaForGame')){
+        const fixture=appAchievements.get(url.searchParams.get('appid')!);
+        return Response.json({game:{availableGameStats:{achievements:fixture?[{name:'FIRST',displayName:fixture.label,hidden:0}]:[{name:'FIRST',displayName:'First',hidden:0},{name:'SECOND',displayName:'Second',hidden:1}]}}});
+      }
       if(url.pathname.includes('GetPlayerAchievements')){
         if(url.searchParams.get('appid')===deniedAppId)return Response.json(privacyDenial?{playerstats:{success:false,error:'Profile is not public'}}:{error:'Invalid Web API key'},{status:403});
-        return Response.json({playerstats:{success:!privateStats,steamID:remoteId,achievements:[{apiname:'FIRST',achieved:1,unlocktime:0},{apiname:'SECOND',achieved:1,unlocktime:1700000000}]}});
+        const fixture=appAchievements.get(url.searchParams.get('appid')!);
+        return Response.json({playerstats:{success:!privateStats,steamID:remoteId,achievements:fixture?[{apiname:'FIRST',achieved:fixture.achieved,unlocktime:0}]:[{apiname:'FIRST',achieved:1,unlocktime:0},{apiname:'SECOND',achieved:1,unlocktime:1700000000}]}});
       }
       throw new Error('Unexpected fixture endpoint');
     }) as typeof fetch;
@@ -256,4 +261,28 @@ suite('Steam account imports and ownership availability',()=>{
     }
   });
 
+  test('two owned aliases retain exact totals, stat eligibility and achievement schemas independently of response order',async()=>{
+    const previous=ownership;
+    const imported=await importIgdbMetadata(mapIgdbGame({id:990555,name:'Two owned aliases',external_games:[
+      {uid:'901001',url:'https://store.steampowered.com/app/901001/'},{uid:'901002',url:'https://store.steampowered.com/app/901002/'}]}));
+    const games=[{appid:901001,name:'First alias',playtime_forever:100,playtime_2weeks:10,has_community_visible_stats:true},
+      {appid:901002,name:'Second alias',playtime_forever:30,playtime_2weeks:5,has_community_visible_stats:false}];
+    try{
+      await updateSteamImports(owner,connectionId,{importOwned:true,importPlaytime:true,importAchievements:true});
+      for(const ordered of [games,[...games].reverse()]){
+        ownership={response:{game_count:2,games:ordered}};await syncSteam(await job());
+        const states=await getDb().select().from(s.gameAccountState).where(eq(s.gameAccountState.gameId,imported.id));
+        expect(states).toHaveLength(2);
+        expect(states.find(row=>row.appId==='901001')).toMatchObject({minutesPlayed:100,hasStats:true});
+        expect(states.find(row=>row.appId==='901002')).toMatchObject({minutesPlayed:30,hasStats:false});
+        expect((await gameDetails(owner,imported.id)).steam[0]).toMatchObject({minutes_played:130,recent_minutes:15});
+      }
+      appAchievements.set('901001',{label:'First schema',achieved:1});appAchievements.set('901002',{label:'Second schema',achieved:0});
+      ownership={response:{game_count:2,games:games.map(game=>({...game,has_community_visible_stats:true}))}};
+      await syncSteam(await job());expect((await syncSteamAchievements(await job('steam.achievements'))).checked).toBe(2);
+      const definitions=await getDb().select().from(s.gameAchievements).where(eq(s.gameAchievements.gameId,imported.id));
+      expect(definitions.map(row=>[row.appId,row.name]).sort()).toEqual([['901001','First schema'],['901002','Second schema']]);
+      expect((await gameDetails(owner,imported.id)).steam[0]).toMatchObject({unlocked:1,total:2});
+    }finally{ownership=previous;appAchievements.clear();await getDb().delete(s.games).where(eq(s.games.id,imported.id));}
+  });
 });

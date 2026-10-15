@@ -7,7 +7,7 @@ import { decryptCredential } from '../../server/security/credentials';
 import { createProviderTransport } from '../../server/security/provider-fetch';
 import { instanceFetchConfig } from '../instances.server';
 import { IgdbAdapter, igdbCredentialsSchema } from './adapter.server';
-import { importIgdbMetadata } from '../../core/games/service';
+import { importIgdbMetadata } from '../../core/games/service.server';
 
 const uuid = v.pipe(v.string(), v.uuid());
 // Keep app tokens in memory, separate from persisted encrypted application credentials.

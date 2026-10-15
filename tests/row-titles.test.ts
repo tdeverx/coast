@@ -1,6 +1,6 @@
 import {expect,test} from 'bun:test';
-import {genreRowTitle,relatedRowTitle,popularRowTitle,genreTitlePatterns,relatedTitlePatterns,type DynamicMedium,type DynamicKind} from '../src/lib/experiments/row-titles';
-import type {GenreReason} from '../src/lib/experiments/row-ranking';
+import {genreRowTitle,relatedRowTitle,popularRowTitle,genreTitlePatterns,relatedTitlePatterns} from '../src/lib/recommendations/row-titles';
+import type {GenreReason,DynamicMedium,DynamicKind} from '../src/lib/recommendations/model';
 
 const visits=Array.from({length:500},(_,i)=>`visit-${i}`);
 test('genre wording varies across visits, remains stable within a visit and preserves medium',()=>{

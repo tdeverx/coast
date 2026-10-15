@@ -1,0 +1,108 @@
+import {expect,test} from 'bun:test';
+import {compileModule} from 'svelte/compiler';
+const moduleUrl=(code:string)=>`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
+const deferred=<T=any>()=>{let resolve!:(value:T)=>void;const promise=new Promise<T>(done=>resolve=done);return {promise,resolve};};
+const settle=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
+let fixture=0;
+async function loadClient(kind:'reading'|'playback'){
+ const unique=++fixture;
+ const transportUrl=moduleUrl(`export const calls=[];export let mode='personal';export const setMode=value=>mode=value;export let handle=async()=>({});export const delivery=fn=>handle=fn;export const message=e=>e.message;export const refreshAfterChange=async()=>{};export const api=(...args)=>{calls.push({mode,args});return handle(...args);};export function capturePlaybackApi(){const captured=mode;return (...args)=>{calls.push({mode:captured,args});return handle(...args);};} // ${unique}`);
+ const syncUrl=moduleUrl(`export const commands=[];export const syncedPlayer={room:null,changing:false,joining:false};export const canControlPlayback=()=>true;export const syncedCommand=async(...args)=>{commands.push(args);}; // ${unique}`);
+ const playbackUrl=moduleUrl(`export let stop=async()=>{};export const stopWith=fn=>stop=fn;export const stopPlayback=()=>stop(); // ${unique}`);
+ const readingUrl=moduleUrl(`export const reader={session:null};export let close=async()=>{};export const closeWith=fn=>close=fn;export const closeReading=()=>close(); // ${unique}`);
+ const model=import.meta.resolve('../src/lib/reading/model.ts');
+ const filename=kind==='reading'?'../src/lib/reading/client.svelte.ts':'../src/lib/playback/client.svelte.ts';
+ const source=await Bun.file(new URL(filename,import.meta.url)).text();
+ const code=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:`${kind}.svelte.js`,generate:'client'}).js.code
+  .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
+  .replaceAll('$lib/ui/client',transportUrl).replaceAll('$lib/ui/diagnostics',moduleUrl('export const browserDiagnostic=()=>{};'))
+  .replaceAll('$lib/ui/action-feedback.svelte',moduleUrl('export const notifyAction=()=>{};'))
+  .replaceAll('$lib/playback/synced/client.svelte',syncUrl).replaceAll('./synced/client.svelte',syncUrl)
+  .replaceAll('$lib/playback/client.svelte',playbackUrl).replaceAll('$lib/reading/client.svelte',readingUrl)
+  .replaceAll('./model',model);
+ return {client:await import(moduleUrl(code)),transport:await import(transportUrl),sync:await import(syncUrl),playback:await import(playbackUrl),reading:await import(readingUrl)};
+}
+const readingSession=(id:string)=>({id,workId:'book',title:'Book',format:'pdf',edition:'edition',location:{format:'pdf',page:50,total:100},source:'jellyfin',url:'/file'});
+const input={connectionId:'connection',externalId:'external'};
+
+test('failed final bookmark retains the session and newest location for visible retry',async()=>{
+ const {client:c,transport:t}=await loadClient('reading');
+ c.reader.session=readingSession('a');c.reader.location=c.reader.session.location;c.reader.visible=true;
+ t.delivery((path:string)=>path.endsWith('/location')?Promise.reject(new Error('offline')):Promise.resolve({}));
+ await expect(c.closeReading()).rejects.toThrow('Bookmark');
+ expect(c.reader.session.id).toBe('a');expect(c.reader.visible).toBe(true);expect(c.reader.unsaved).toBe(true);
+ expect(t.calls.some((call:any)=>call.args[0].endsWith('/close'))).toBe(false);
+ t.delivery(()=>Promise.resolve({}));
+ const newest={format:'pdf',page:60,total:100};await c.recordReading(newest);await c.retryReadingSave();
+ expect(c.reader.unsaved).toBe(false);expect(c.reader.error).toBe('');
+ await c.closeReading();expect(c.reader.session).toBeNull();
+ expect(t.calls.filter((call:any)=>call.args[0].endsWith('/location')).at(-1).args[1]).toEqual(newest);
+});
+test('close during pending reader preparation settles loading and retires a late response',async()=>{
+ const {client:c,transport:t,sync}=await loadClient('reading'),prepared=deferred();
+ t.delivery((path:string)=>path.endsWith('/session')?prepared.promise:Promise.resolve({}));sync.syncedPlayer.room={id:'room'};
+ const pending=c.openReading('book',input);await settle();await c.closeReading();prepared.resolve(readingSession('late'));await pending;
+ expect(c.reader.loading).toBe(false);expect(c.reader.session).toBeNull();expect(sync.commands).toEqual([]);
+ expect(t.calls.some((call:any)=>call.args[0]==='reading/sessions/late/close')).toBe(true);
+});
+test('close during playback stop cannot publish a stale reading party item',async()=>{
+ const {client:c,transport:t,sync,playback}=await loadClient('reading'),stopped=deferred();
+ t.delivery(()=>Promise.resolve(readingSession('late')));sync.syncedPlayer.room={id:'room'};playback.stopWith(()=>stopped.promise);
+ const pending=c.openReading('book',input);await settle();await c.closeReading();stopped.resolve({});await pending;
+ expect(c.reader.loading).toBe(false);expect(c.reader.session).toBeNull();expect(sync.commands).toEqual([]);
+});
+test('party attachment invalidates an older explicit reader open',async()=>{
+ const {client:c,transport:t}=await loadClient('reading'),prepared=deferred();
+ t.delivery((path:string)=>path.endsWith('/session')?prepared.promise:Promise.resolve({}));
+ const pending=c.openReading('book',input);await settle();await c.attachReading(readingSession('attached'));
+ prepared.resolve(readingSession('old'));await pending;
+ expect(c.reader.session.id).toBe('attached');expect(c.reader.loading).toBe(false);
+ expect(t.calls.some((call:any)=>call.args[0]==='reading/sessions/old/close')).toBe(true);
+});
+test('reading party replacement hands over the new source before closing the old one',async()=>{
+ const {client:c,transport:t,sync}=await loadClient('reading');
+ c.reader.session=readingSession('old');c.reader.location=c.reader.session.location;sync.syncedPlayer.room={id:'room'};
+ t.delivery((path:string)=>{if(path==='reading/sessions/old/close')expect(sync.commands).toEqual([['item',{readingSessionId:'new'}]]);return Promise.resolve(path.endsWith('/session')?readingSession('new'):{});});
+ await c.openReading('book',input);expect(c.reader.session.id).toBe('new');expect(c.reader.loading).toBe(false);
+});
+function controller(c:any){const stops:boolean[]=[],resumes:string[]=[];c.registerPlaybackController({stop:async(cancel:boolean)=>{stops.push(cancel);c.player.session=null;c.player.role='idle';},resume:async()=>{resumes.push('resume');},pause:()=>{},beginPlaybackGesture:()=>{},snapshot:()=>({}),align:()=>{}});return {stops,resumes};}
+const withDocument=async(run:()=>Promise<void>)=>{const previous=globalThis.document;globalThis.document={createElement:()=>({canPlayType:()=>''})} as unknown as Document;try{await run();}finally{globalThis.document=previous;}};
+test('stopping pending playback rejects late publication and retires through captured share authority',()=>withDocument(async()=>{
+ const {client:c,transport:t}=await loadClient('playback'),prepared=deferred();controller(c);t.setMode('share');
+ t.delivery((path:string)=>path==='playback'?prepared.promise:Promise.resolve({}));
+ const pending=c.playMedia('track',{fromStart:true});await settle();await c.stopPlayback();t.setMode('personal');
+ prepared.resolve({id:'late',mediaId:'track',startSeconds:12,durationSeconds:100});await pending;
+ expect(c.player.session).toBeNull();expect(c.player.role).toBe('idle');expect(c.player.loading).toBe(false);
+ const retirement=t.calls.find((call:any)=>call.args[0]==='playback/late/progress');expect(retirement.mode).toBe('share');expect(retirement.args[1].event).toBe('stop');
+}));
+test('explicit audio recovery prepares a fresh session while ordinary same-item play resumes',()=>withDocument(async()=>{
+ const {client:c,transport:t}=await loadClient('playback'),events=controller(c);
+ c.player.session={id:'failed',mediaId:'track',mediaType:'audio'};c.player.role='playback';
+ await c.playMedia('track',{mediaType:'audio',fromStart:false});expect(events.resumes).toHaveLength(1);expect(t.calls).toHaveLength(0);
+ t.delivery(()=>Promise.resolve({id:'new',mediaId:'track',mediaType:'audio',startSeconds:12,durationSeconds:100}));
+ await c.playMedia('track',{mediaType:'audio',fromStart:false,retry:true});
+ expect(t.calls.filter((call:any)=>call.args[0]==='playback')).toHaveLength(1);expect(c.player.session.id).toBe('new');expect(events.stops).toEqual([false]);
+}));
+test('cancelling while another reader drains prevents a later playback request',()=>withDocument(async()=>{
+ const {client:c,transport:t,reading}=await loadClient('playback'),drained=deferred();controller(c);reading.reader.session={id:'reader'};reading.closeWith(()=>drained.promise);
+ const pending=c.playMedia('track',{fromStart:true});await settle();await c.stopPlayback();drained.resolve({});await pending;
+ expect(t.calls).toHaveLength(0);expect(c.player.session).toBeNull();expect(c.player.loading).toBe(false);
+}));
+
+test('an older failed bookmark cannot replace a newer queued page on retry',async()=>{
+ const {client:c,transport:t}=await loadClient('reading'),first=deferred();
+ c.reader.session=readingSession('a');let attempts=0;
+ t.delivery(()=>{attempts++;return attempts===1?first.promise:Promise.resolve({});});
+ const old=c.recordReading({format:'pdf',page:10,total:100});
+ c.recordReading({format:'pdf',page:20,total:100});first.resolve(Promise.reject(new Error('offline')));await old;
+ await c.retryReadingSave();expect(t.calls.at(-1).args[1]).toEqual({format:'pdf',page:20,total:100});expect(c.reader.unsaved).toBe(false);
+});
+
+test('a cancelled preparation cannot clear the loading state of its replacement',()=>withDocument(async()=>{
+ const {client:c,transport:t}=await loadClient('playback'),first=deferred(),second=deferred();controller(c);let count=0;
+ t.delivery((path:string)=>path==='playback'?(++count===1?first.promise:second.promise):Promise.resolve({}));
+ const old=c.playMedia('old',{fromStart:true});await settle();await c.stopPlayback();
+ const next=c.playMedia('new',{fromStart:true});await settle();first.resolve({id:'old',mediaId:'old',startSeconds:0,durationSeconds:100});await old;
+ expect(c.player.loading).toBe(true);second.resolve({id:'new',mediaId:'new',startSeconds:0,durationSeconds:100});await next;
+ expect(c.player.session.id).toBe('new');expect(c.player.loading).toBe(false);
+}));

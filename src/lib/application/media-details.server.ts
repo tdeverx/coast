@@ -1,6 +1,6 @@
 import { detailsData } from '$lib/server/queries/media';
 import { requestOptions } from '$lib/providers/seerr/requests.server';
-import { ensureDetails } from '$lib/catalogue/service';
+import { ensureDetails } from '$lib/catalogue/service.server';
 
 /** Saved details render first; page and overlay share the same optional enrichment. */
 export async function loadMediaDetails(userId: string, id: string) {

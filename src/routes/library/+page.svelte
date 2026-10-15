@@ -26,19 +26,19 @@
   {:else}<Heading {title}>{#snippet heading()}<h1>{title}</h1>{/snippet}</Heading>{/if}
   {#if data.filters.genre}<div class="row section"><p class="small">Genre: {data.filters.genre}</p><Button href="/library?view=watch&scope=all" emphasis="subtle" icon="close">Clear genre</Button></div>{/if}
   {#key `${data.view}:${data.collection}:${data.username}:${JSON.stringify(data.filters)}`}
-    {#each ['watch', 'listen', 'play'] as surface}
+    {#each ['watch', 'listen', 'play', 'read'] as surface}
       {#if surfaceEnabled(data,surface) && (data.view === 'overview' || data.view === surface)}
         <Shelf source={{ type: 'library', surface: surface as LibrarySurface, collection: data.collection,
           username: data.username ?? '', layout: data.view === surface ? 'grid' : 'row',
           initial: data.view === surface ? data.content ?? undefined : undefined,
           genre: surface === 'watch' ? data.filters.genre : '', initialSelection: selection(surface as LibrarySurface),
-          initialKind: surface === 'watch' ? data.filters.kind as 'all' | 'movie' | 'show' : 'all',
+          initialKind: surface === 'watch' || surface === 'read' ? data.filters.kind as 'all' | 'movie' | 'show' | 'book' | 'comic' : 'all',
           initialScope: data.filters.scope as 'all' | 'available',
           initialAvailability: data.filters.availability, initialRelationship: data.filters.relationship, initialSource: data.filters.source }} />
       {/if}
     {/each}
   {/key}
-  {#if data.owner}<section class="section">
+  {#if data.owner && data.view !== 'read'}<section class="section">
     <Button emphasis="subtle" href={missingUrl()}>{missing ? 'Hide' : 'Show'} missing and uncertain items</Button>
     {#if missing}{#await data.missing}<p class="notice">Loading missing items…</p>{:then demand}{#if demand?.total}
       <ul>{#each demand.items as item}<li><a href={item.href}>{item.neededTitle}</a> · {item.reason} · {item.availability === 'unknown' ? 'Availability uncertain' : 'Missing for you'}{item.dateUnknown ? ' · Release date unknown' : ''}</li>{/each}</ul>

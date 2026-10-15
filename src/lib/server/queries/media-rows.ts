@@ -81,7 +81,7 @@ export async function presentationContent(userId: string, url: URL): Promise<Pre
   const scope = v.parse(v.picklist(['all', 'available']), url.searchParams.get('scope') ?? 'all');
   const state = v.parse(v.picklist(['all', 'planned', 'in-progress', 'completed', 'paused', 'dropped']), url.searchParams.get('selection') ?? 'all');
   if(state !== 'all') {
-    const {listGames} = await import('$lib/core/games/service');
+    const {listGames} = await import('$lib/core/games/service.server');
     const result = await listGames('',1,{userId,status:state,availableOnly:scope==='available'});
     return {items:result.items.slice(0,12).map(item=>gameCard(item)),failure:''};
   }
@@ -94,5 +94,5 @@ export async function presentationContent(userId: string, url: URL): Promise<Pre
 // Only configuration is needed during SSR; off-screen providers load when their rows approach.
 export async function mediaRows(personal = false) {
   const config=await getConfig();
-  return { experimentalMusic:config.experimentalMusic, experimentalGaming:config.experimentalGaming, personal };
+  return { experimentalMusic:config.experimentalMusic, experimentalGaming:config.experimentalGaming, experimentalBooks:config.experimentalBooks, experimentalComics:config.experimentalComics, personal };
 }

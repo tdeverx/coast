@@ -1,0 +1,163 @@
+{
+  "section": "playback-reading-implementation",
+  "canonicalIds": [
+    "LIFECYCLE-01",
+    "PLAYBACK-03",
+    "READING-01",
+    "READING-03",
+    "READING-04",
+    "SOCIAL-01"
+  ],
+  "changes": [
+    {
+      "id": "LIFECYCLE-01",
+      "status": "implemented",
+      "change": "Playback and reading preparation use revisions and abort signals, recheck after asynchronous transitions, retain current-operation loading state, and retire late returned sessions. Playback captures its API authority before share teardown. Reading attachment cancels older opens and local file hashing terminates on abort. Reading session admission also checks request cancellation.",
+      "paths": [
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/ui/components/PersistentPlayer.svelte",
+        "src/lib/ui/client.ts",
+        "src/lib/reading/client.svelte.ts",
+        "src/lib/reading/reader/file-identity.ts",
+        "src/lib/reading/sessions.server.ts",
+        "src/lib/server/api/reading.server.ts"
+      ],
+      "verification": "Compiled-current-module tests cover stop/close before delayed response, reader stop transition cancellation, attachment supersession, captured share cleanup, replacement loading and hash termination. Playback server cancellation beyond a returned ID is coordinated with the root-owned playback server change."
+    },
+    {
+      "id": "PLAYBACK-03",
+      "status": "implemented",
+      "change": "Explicit audio retry bypasses same-item resume and requests a fresh prepared session without forcing fromStart; normal same-item playback still resumes. The retry-only flag is removed before the server request.",
+      "paths": [
+        "src/lib/playback/client.svelte.ts",
+        "src/lib/ui/components/PersistentPlayer.svelte"
+      ],
+      "verification": "Client fixture asserts normal resume sends no prepare request, recovery sends exactly one new prepare and replacement stop does not cancel its own request."
+    },
+    {
+      "id": "READING-01",
+      "status": "implemented",
+      "change": "Bookmark writes retain the latest failed position and return drain success. Close waits for a successful drain before clearing or retiring the session. Failure leaves the reader and file available with its existing notice and a Retry save action. New page turns replace older failed pending positions.",
+      "paths": [
+        "src/lib/reading/client.svelte.ts",
+        "src/lib/reading/Reader.svelte"
+      ],
+      "verification": "Client regressions reject the final write and assert session/position/unsaved notice remain, no close request is sent, retry saves the newest page, and failed older writes cannot replace newer queued pages."
+    },
+    {
+      "id": "READING-03",
+      "status": "implemented",
+      "change": "After provider work, bookmark selection and session insertion run under the same user advisory transaction lock used by Reread. The transaction rechecks user/category and locks/rechecks connected source generation and enabled instance before copying a bookmark.",
+      "paths": [
+        "src/lib/reading/sessions.server.ts"
+      ],
+      "verification": "Added guarded database race regression: concurrent preparation and Reread must leave preparation either closed by reset or carrying a null bookmark. DB execution remains with the coordinator."
+    },
+    {
+      "id": "READING-04",
+      "status": "implemented",
+      "change": "Reading replacement publishes the prepared new source before closing the old source. Server item handover revalidates the replacement inside the room transaction and can restore only an existing recent host membership whose prior source was deliberately closed but remains unexpired and authorized. Removed actors, expired old sources, expired rooms and invalid replacement sources are rejected.",
+      "paths": [
+        "src/lib/reading/client.svelte.ts",
+        "src/lib/playback/synced/service.server.ts"
+      ],
+      "verification": "Pure ordering test asserts item publication precedes old-session retirement. Added guarded DB tests for intervening roomState, live host retention, expired/missing membership rejection, delegated controller handover and kicked-controller rejection."
+    },
+    {
+      "id": "SOCIAL-01",
+      "status": "implemented",
+      "change": "Failed party source suppression keys work, medium, edition, duration and reading format. A changed descriptor clears suppression and permits one new preparation; unchanged failed descriptors remain suppressed. Existing Retry UI remains unchanged.",
+      "paths": [
+        "src/lib/playback/synced/client.svelte.ts"
+      ],
+      "verification": "Compiled party-client fixtures cover edition recovery and reading format/duration changes while asserting no repeated preparation for unchanged failures."
+    }
+  ],
+  "checks": [
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/ui-client.test.ts tests/media-lifecycle-client.test.ts tests/synced-client.test.ts tests/reading-hash.test.ts tests/reading-reader.test.ts tests/synced-playback.test.ts tests/playback-failures.test.ts",
+      "result": "38 passed, 0 failed; 142 assertions across 7 files."
+    },
+    {
+      "command": "bun test tests/reading-sessions-db.test.ts (COAST_DB_TEST unset)",
+      "result": "13 guarded database cases skipped; import/parse succeeded. No database calls were made."
+    },
+    {
+      "command": "Svelte compiler compile(...,{generate:false}) for Reader.svelte and PersistentPlayer.svelte",
+      "result": "Both components compiled successfully."
+    }
+  ],
+  "limits": [
+    "No check, build, full database suite, live/developer database, provider calls or actual playback/reader browser session was run by this agent.",
+    "Pure client fixtures compile current source with mocked boundaries; they verify ordering/cancellation/retry behavior, not actual media decoding or rendered visual acceptance.",
+    "Three newly added DB regressions require coordinator execution; source-account replacement and host reattachment database behavior remain unverified dynamically until then.",
+    "No schema, dependencies, production UI redesign, commit or push was introduced. Root owns personal playback server/account-generation work; its changes are excluded from this agent implementation."
+  ],
+  "followUp": {
+    "canonicalIds": [
+      "PLAYBACK-01",
+      "LIFECYCLE-01",
+      "READING-03",
+      "READING-04"
+    ],
+    "status": "implemented; coordinator database verification pending",
+    "changes": [
+      "Reviewed root generation pinning at source admission, progress, relay and Jellyfin scrobble execution. No sync/jellyfin edits were needed.",
+      "Closed remaining post-insert asynchronous publication gap: subtitle capability generation, media presentation/details and source option hydration now complete before the final locked session insert. The session UUID is allocated first for capability construction. Abort checks run before preparation, after provider awaits and within final admission; post-commit cancellation retires its row.",
+      "Party playback admission and room-state validation also require the playback generation to match the connected account. Existing valid raw SQL fixtures now copy the current connection generation; no authority fence was weakened.",
+      "Added tests/playback-generation-db.test.ts with generated local test records and mocked provider boundaries: pre-abort, delayed presentation abort preserving existing active playback, replacement during PlaybackInfo or presentation, post-commit cancellation retirement, stale direct/HLS video and audio rejection across progress/relay/party/scrobble plus fresh-account success.",
+      "Strengthened the reading Reread regression with a transaction-entry barrier, forcing reset to commit before bookmark copy and insert; existing handover cases cover live host, expired/missing host and delegated/kicked controller behavior.",
+      "Fixed the captured-authority fetch test mock to preserve Bun fetch.preconnect typing."
+    ],
+    "paths": [
+      "src/lib/playback/service.server.ts",
+      "src/lib/playback/synced/service.server.ts",
+      "tests/playback-generation-db.test.ts",
+      "tests/reading-sessions-db.test.ts",
+      "tests/synced-onboarding-db.test.ts",
+      "tests/invites-experiments-db.test.ts",
+      "tests/ui-client.test.ts"
+    ],
+    "checks": [
+      {
+        "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/ui-client.test.ts tests/media-lifecycle-client.test.ts tests/synced-client.test.ts tests/provider-contracts.test.ts tests/playback-generation-db.test.ts tests/reading-sessions-db.test.ts",
+        "result": "61 passed, 19 guarded DB skips, 0 failed; 227 assertions. No DB flag or live services used by this agent."
+      }
+    ],
+    "limits": [
+      "Coordinator owns global type/build and disposable DB execution; the new database cases were parsed/imported but not executed by this agent.",
+      "No actual provider call, media decoding, player or browser runtime was used for this follow-up.",
+      "Root separately reported broader existing playback/sharing/reading DB suites passing before this final preparation relocation and deterministic Reread barrier; those earlier results do not substitute for rerunning the newly changed cases."
+    ]
+  },
+  "maintenanceRegression": {
+    "id": "PLAYBACK-04",
+    "status": "root implementation verified by focused pure scheduler regression",
+    "paths": [
+      "src/lib/providers/maintenance.server.ts",
+      "tests/maintenance-lifecycle.test.ts"
+    ],
+    "method": "An isolated Bun child imports the complete actual maintenance module. Module-boundary mocks defer expireSharedViewers and the database transaction used by the real scheduleProviderMaintenance. Captured minute callbacks exercise real startProviderMaintenance/runMaintenance/maintenanceTick; mocks never enter the parent test process.",
+    "assertions": [
+      "Ordinary scheduling reaches its transaction while shared cleanup remains stalled.",
+      "Five additional ticks during an outstanding ordinary pass start neither another cleanup nor another ordinary pass.",
+      "After ordinary scheduling completes, later ordinary passes continue while the same cleanup is still stalled.",
+      "Successful cleanup and failed cleanup both release their slot for later retries.",
+      "Developer mode still performs shared cleanup while skipping ordinary scheduling.",
+      "Ordinary retention keeps its independent cadence and stop clears the interval."
+    ],
+    "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/maintenance-lifecycle.test.ts",
+    "result": "1 pass, 0 fail; child observed cleanup=5, schedules=6, retention=1 and cleared=true. No maintenance source fix was needed. No DB or live service used."
+  },
+  "finalFixtureFollowUp": {
+    "paths": [
+      "tests/synced-onboarding-db.test.ts",
+      "tests/sharing-db.test.ts"
+    ],
+    "changes": [
+      "Positive raw-session re-preparation resets now bind the currently connected account generation; the earlier deliberate old-session party revocation remains unchanged, and no production guard was relaxed.",
+      "Added one API-level shared preparation cancellation regression using the existing synthetic HTTP fixture: cancel while PlaybackInfo is held; require failed response, ended viewer reservation, cleared preparation lease/token, no published/active session or personal history, and successful retry."
+    ],
+    "localCheck": "bun test tests/synced-onboarding-db.test.ts tests/sharing-db.test.ts with DB flags unset: 36 guarded skips, 0 failures. Coordinator will execute the focused disposable suites."
+  }
+}

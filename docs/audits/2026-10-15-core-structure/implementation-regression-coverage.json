@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-15",
+  "scope": [
+    "AUTH-02",
+    "AUTH-03",
+    "CROSS-01",
+    "CROSS-02",
+    "DISCOVERY-01",
+    "DISCOVERY-03"
+  ],
+  "paths": [
+    "tests/setup-action.test.ts",
+    "tests/audit-auth-discovery-db.test.ts"
+  ],
+  "productionChanges": false,
+  "verification": {
+    "pure": "3 pass, 0 fail, 19 assertions",
+    "db": "7 cases prepared; not executed by this subagent; root disposable runner owns execution",
+    "style": "Explicit AST check passes both new test files",
+    "typecheck": "All three errors identified by root final log corrected: unused import, typed taste breakdown and literal work kind. Final shared check belongs to root."
+  },
+  "coverage": [
+    "Closed setup rejects twelve repeated valid requests before parsing/hash; open setup quota precedes parsing/hash; complete fresh registration-shaped fixture reaches hash boundary.",
+    "Real concurrent setup actions on a fresh migrated DB require one administrator/session and one 409; displayName and matching passwordConfirmation included.",
+    "Failed Trakt onboarding uses actual disconnect/device/poll/import selection lifecycle with only instanceTransport mocked. Asserts availability unknown, old jobs cancelled, generation changes on verified account switch, old successful jobs cannot complete onboarding, new selected imports must succeed, and an unrelated healthy owner remains unchanged.",
+    "Comics-only Jellyfin import resolves saved OpenLibrary alias to canonical ComicVine UUID with metadata unavailable; saved actual book skipped; unknown same-title ID takes metadata path and adds no mapping.",
+    "Actual OpenLibrary route/provider loader permits resolved comic but blocks resolved book under Comics-only config.",
+    "Two IGDB sources resolve registered owned game to one canonical card outside local first60 and when locally present.",
+    "2005 lower-UUID unrelated movies cannot hide positive Drama; provider-only/fresh-taste-only candidates remain and stale-taste-only candidate is excluded.",
+    "2005 unrelated reading works cannot hide author-only or series-only matches."
+  ],
+  "limits": [
+    "Provider endpoints are mocked/synthetic. No live providers or network calls are authorized by the fixtures.",
+    "Replacement import completion evidence is set directly in synthetic outbox rows; full remote import handlers are covered elsewhere.",
+    "No database, global check/build, dependencies or commits run/changed by this subagent."
+  ]
+}

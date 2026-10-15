@@ -1,16 +1,18 @@
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import { getDb, type Database } from '$lib/server/db';
 import { works, musicWorks, workIdentifiers, providerItems, workEditions, mediaRelationships, musicArtists, musicCredits, musicListens, musicListenBatches,musicProgress, availability, providerConnections, providerInstances, users } from '$lib/server/db/schema';
 import type { MusicItem } from './model';
 import { DomainError } from '$lib/core/errors';
 import * as v from 'valibot';
-import { assertJobLease } from '$lib/server/queue/execution';
+import { assertJobLease, JobYield } from '$lib/server/queue/execution';
+import { jellyfinItemKey } from '$lib/providers/jellyfin/paging';
+import { musicAlbumMembers } from './editions.server';
 
 type Transaction=Parameters<Parameters<Database['transaction']>[0]>[0];
 /** Shared provider metadata must never carry one account's personal state. */
 export function musicMetadataSnapshot(item: MusicItem) {
-  return {id:item.id,kind:item.kind,title:item.title,artists:item.artists,albumArtists:item.albumArtists,
+  return {id:item.id,kind:item.kind,title:item.title,artists:item.artists.map(({id,name})=>({id,name})),albumArtists:item.albumArtists.map(({id,name})=>({id,name})),
     artistNames:item.artistNames,album:item.album,albumId:item.albumId,discNumber:item.discNumber,
     trackNumber:item.trackNumber,durationSeconds:item.durationSeconds,releaseDate:item.releaseDate,
     year:item.year,genres:item.genres,overview:item.overview,primaryImageTag:item.primaryImageTag,
@@ -18,8 +20,10 @@ export function musicMetadataSnapshot(item: MusicItem) {
 }
 /** Only MusicBrainz identifiers with explicit recording/release-group semantics merge works. */
 export async function persistMusic(instanceId: string, item: MusicItem): Promise<MusicItem & { providerItemId?: string }> {
+  item={...item,id:jellyfinItemKey(item.id),albumId:item.albumId?jellyfinItemKey(item.albumId):undefined,
+    artists:item.artists.map(artist=>({...artist,id:jellyfinItemKey(artist.id)})),albumArtists:item.albumArtists.map(artist=>({...artist,id:jellyfinItemKey(artist.id)}))};
   if(item.kind==='artist') {
-    const [artist]=await getDb().insert(musicArtists).values({instanceId,externalId:item.id,name:item.title}).onConflictDoUpdate({target:[musicArtists.instanceId,musicArtists.externalId],set:{name:item.title}}).returning();return { ...item,artistId:artist.id };
+    const artist=await persistArtist(getDb(),instanceId,item.id,item.title);return { ...item,artistId:artist.id };
   }
   const kind=item.kind;
   return getDb().transaction(async tx=>{
@@ -28,26 +32,47 @@ export async function persistMusic(instanceId: string, item: MusicItem): Promise
     const verified=identifier && v.safeParse(v.pipe(v.string(),v.uuid()),identifier).success?identifier.toLowerCase():null;
     const provider=item.kind==='album'?'musicbrainz-release-group':'musicbrainz-recording';
     if(verified) await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${`${provider}:${verified}`},0))`);
-    const [mapping]=await tx.select().from(providerItems).where(and(eq(providerItems.instanceId,instanceId),eq(providerItems.externalId,item.id)));
+    const mappings=await tx.select().from(providerItems).where(and(eq(providerItems.instanceId,instanceId),sql`${providerItems.kind} in ('album','track')`,sql`replace(lower(${providerItems.externalId}),'-','')=${item.id}`));
+    if(new Set(mappings.map(mapping=>mapping.mediaId)).size>1)throw new DomainError('Conflicting music identities require review.',409);
+    const mapping=mappings.sort((a,b)=>a.externalId.localeCompare(b.externalId)||a.id.localeCompare(b.id))[0];
     const [identity]=verified?await tx.select().from(workIdentifiers).where(and(eq(workIdentifiers.provider,provider),eq(workIdentifiers.externalId,verified),eq(workIdentifiers.kind,kind))):[];
     if(mapping && identity && mapping.mediaId!==identity.workId) throw new DomainError('Conflicting music identities require review.',409);
     const id=mapping?.mediaId??identity?.workId??crypto.randomUUID();
     await tx.insert(works).values({id,category:'music',kind}).onConflictDoNothing();
-    const data={id,title:item.title,kind,artistNames:item.artistNames.length?item.artistNames:item.artists.map(a=>a.name),releaseDate:item.releaseDate,year:item.year,durationSeconds:item.durationSeconds,overview:item.overview,genres:item.genres,updatedAt:new Date()};
+    const data={id,title:item.title,kind,artistNames:item.artistNames.length?item.artistNames:(kind==='album'?item.albumArtists:item.artists).map(a=>a.name),releaseDate:item.releaseDate,year:item.year,durationSeconds:item.durationSeconds,overview:item.overview,genres:item.genres,updatedAt:new Date()};
     await tx.insert(musicWorks).values(data).onConflictDoUpdate({target:musicWorks.id,set:data});
     if(verified) await tx.insert(workIdentifiers).values({workId:id,provider,externalId:verified,kind}).onConflictDoNothing();
     const snapshot=musicMetadataSnapshot(item);
-    const [saved]=await tx.insert(providerItems).values({instanceId,externalId:item.id,mediaId:id,kind,snapshot,lastSeenAt:new Date()}).onConflictDoUpdate({target:[providerItems.instanceId,providerItems.externalId],set:{snapshot,lastSeenAt:new Date()}}).returning();
-    await tx.insert(workEditions).values({workId:id,instanceId,externalId:item.id,format:'audio',metadata:{externalIds:item.externalIds}}).onConflictDoUpdate({target:[workEditions.instanceId,workEditions.externalId],set:{metadata:{externalIds:item.externalIds}}});
+    const externalId=mapping?.externalId??item.id;
+    const [saved]=await tx.insert(providerItems).values({instanceId,externalId,mediaId:id,kind,snapshot,lastSeenAt:new Date()}).onConflictDoUpdate({target:[providerItems.instanceId,providerItems.externalId],set:{snapshot,lastSeenAt:new Date()}}).returning();
+    const metadata={externalIds:item.externalIds,albumExternalId:item.albumId??null,position:(item.discNumber??1)*10000+(item.trackNumber??0),discNumber:item.discNumber??null,trackNumber:item.trackNumber??null};
+    const [knownEdition]=await tx.select().from(workEditions).where(and(eq(workEditions.instanceId,instanceId),sql`replace(lower(${workEditions.externalId}),'-','')=${item.id}`)).orderBy(workEditions.id).limit(1);
+    const [edition]=knownEdition?await tx.update(workEditions).set({metadata}).where(eq(workEditions.id,knownEdition.id)).returning():await tx.insert(workEditions).values({workId:id,instanceId,externalId,format:'audio',metadata}).returning();
+    if(kind==='album')await tx.update(musicWorks).set({selectedEditionId:edition.id}).where(and(eq(musicWorks.id,id),sql`${musicWorks.selectedEditionId} is null`));
     for(const [role,artists] of [['artist',item.artists],['album-artist',item.albumArtists]] as const) for(const a of artists){
-      const [artist]=await tx.insert(musicArtists).values({instanceId,externalId:a.id,name:a.name}).onConflictDoUpdate({target:[musicArtists.instanceId,musicArtists.externalId],set:{name:a.name}}).returning();
+      const artist=await persistArtist(tx,instanceId,a.id,a.name);
       await tx.insert(musicCredits).values({workId:id,artistId:artist.id,role}).onConflictDoNothing();
     }
-    if(item.albumId){const [album]=await tx.select().from(providerItems).where(and(eq(providerItems.instanceId,instanceId),eq(providerItems.externalId,item.albumId),eq(providerItems.kind,'album')));
-      if(album) await tx.insert(mediaRelationships).values({parentId:album.mediaId,childId:id,kind:'contains',position:(item.discNumber??1)*10000+(item.trackNumber??0)}).onConflictDoUpdate({target:[mediaRelationships.parentId,mediaRelationships.childId,mediaRelationships.kind],set:{position:(item.discNumber??1)*10000+(item.trackNumber??0)}});
+    // Only the selected release projects membership to shared Collection queries.
+    // Rebuild from its exact occurrences, including tracks observed before albums.
+    const albumIds=[...new Set([item.albumId,typeof knownEdition?.metadata.albumExternalId==='string'?jellyfinItemKey(knownEdition.metadata.albumExternalId):undefined].filter((value):value is string=>!!value))];
+    const albums=kind==='album'?[{id}]:albumIds.length?await tx.select({id:musicWorks.id}).from(workEditions).innerJoin(musicWorks,eq(musicWorks.selectedEditionId,workEditions.id)).where(and(eq(workEditions.instanceId,instanceId),sql`replace(lower(${workEditions.externalId}),'-','') in (${sql.join(albumIds.map(albumId=>sql`${albumId}`),sql`,`)})`)).orderBy(musicWorks.id):[];
+    for(const album of albums){
+      await tx.select({id:musicWorks.id}).from(musicWorks).where(eq(musicWorks.id,album.id)).for('update');
+      const members=await musicAlbumMembers(album.id,tx),positions=new Map<string,number>();
+      for(const member of members)if(!positions.has(member.id))positions.set(member.id,member.position);
+      await tx.delete(mediaRelationships).where(and(eq(mediaRelationships.parentId,album.id),eq(mediaRelationships.kind,'contains')));
+      if(positions.size)await tx.insert(mediaRelationships).values([...positions].map(([childId,position])=>({parentId:album.id,childId,kind:'contains' as const,position})));
     }
     return {...item,workId:id,providerItemId:saved.id};
   });
+}
+
+async function persistArtist(tx: Transaction | Database,instanceId:string,externalId:string,name:string){
+  // Retain existing UUIDs/preferences when an older endpoint used GUID hyphens.
+  const [existing]=await tx.select().from(musicArtists).where(and(eq(musicArtists.instanceId,instanceId),sql`replace(lower(${musicArtists.externalId}),'-','')=${externalId}`)).orderBy(musicArtists.id).limit(1);
+  if(existing){const [saved]=await tx.update(musicArtists).set({name}).where(eq(musicArtists.id,existing.id)).returning();return saved;}
+  const [saved]=await tx.insert(musicArtists).values({instanceId,externalId,name}).onConflictDoUpdate({target:[musicArtists.instanceId,musicArtists.externalId],set:{name}}).returning();return saved;
 }
 export async function observeMusicAccess(userId: string, connectionId: string, instanceId: string, item: MusicItem, scanId?: string) {
   const saved=await persistMusic(instanceId,item);
@@ -60,16 +85,21 @@ export async function observeMusicAccess(userId: string, connectionId: string, i
 /** User sync reuses shared music metadata and grants only this authenticated page's access. */
 export async function observeMusicPageAccess(userId: string, connectionId: string, instanceId: string,
   accountGeneration: string, items: MusicItem[], scanId: string,
-  loadMissing?: (ids: string[]) => Promise<MusicItem[]>) {
+  loadMissing?: (ids: string[]) => Promise<MusicItem[]>, readStage = 'music', expectedResetId?:string|null) {
   if (!items.length) return [];
+  items=items.map(item=>({...item,id:jellyfinItemKey(item.id)}));
   const db = getDb();
   const known = await db.select({externalId: providerItems.externalId, providerItemId: providerItems.id, workId: musicWorks.id, kind: musicWorks.kind})
     .from(providerItems).innerJoin(musicWorks, eq(musicWorks.id, providerItems.mediaId))
-    .where(and(eq(providerItems.instanceId, instanceId), inArray(providerItems.externalId, items.map(item => item.id))));
-  const mappings = new Map(known.map(row => [row.externalId, row]));
+    .where(and(eq(providerItems.instanceId, instanceId),sql`${providerItems.kind} in ('album','track')`,sql`replace(lower(${providerItems.externalId}),'-','') in (${sql.join(items.map(item=>sql`${item.id}`),sql`,`)})`));
+  const mappings = new Map<string,typeof known[number]>();
+  for(const row of known){const key=jellyfinItemKey(row.externalId),previous=mappings.get(key);
+    if(previous&&previous.workId!==row.workId)throw new DomainError('Conflicting music identities require review.',409);
+    if(!previous||row.providerItemId<previous.providerItemId)mappings.set(key,row);
+  }
   const missing=items.filter(item=>mappings.get(item.id)?.kind!==item.kind);
   const hydrated=loadMissing && missing.length ? await loadMissing([...new Set(missing.map(item=>item.id))]) : missing;
-  const details=new Map(hydrated.map(item=>[item.id,item]));
+  const details=new Map(hydrated.map(item=>[jellyfinItemKey(item.id),item]));
   const saved: (MusicItem & {providerItemId?: string})[] = [];
   for (const item of items) {
     const mapping = mappings.get(item.id);
@@ -89,10 +119,11 @@ export async function observeMusicPageAccess(userId: string, connectionId: strin
     const [active] = await tx.select({id: users.id}).from(users).innerJoin(providerInstances, eq(providerInstances.id, instanceId))
       .where(and(eq(users.id, userId), eq(users.disabled, false), eq(providerInstances.enabled, true)));
     if (!connection || !active) throw new Error('The connected account changed during this task.');
+    if(expectedResetId!==undefined&&(connection.settings.userSyncResetId??null)!==expectedResetId)throw new JobYield();
     await assertJobLease(tx,true);
     const rows = new Map(saved.filter(item => item.workId && item.providerItemId).map(item => [item.providerItemId!, {
       userId, connectionId, mediaId: item.workId!, providerItemId: item.providerItemId!, sourceId: 'default',
-      durationSeconds: item.durationSeconds, source:{coastMembershipCount:item.expectedMembers??null},state: 'available' as const, scanId, verifiedAt: new Date(),
+      durationSeconds: item.durationSeconds, source:{coastMembershipCount:item.expectedMembers??null,coastReadStage:readStage,coastMusicGeneration:accountGeneration,coastMusicData:{favourite:item.favourite??null,playCount:item.playCount??0,positionSeconds:item.positionSeconds??0}},state: 'available' as const, scanId, verifiedAt: new Date(),
     }]));
     if (rows.size) await tx.insert(availability).values([...rows.values()]).onConflictDoUpdate({
       target: [availability.userId, availability.connectionId, availability.providerItemId, availability.sourceId],
@@ -114,13 +145,14 @@ export async function logMusic(userId:string,workId:string,input:unknown,transac
     const [previous]=await tx.select().from(musicListenBatches).where(and(eq(musicListenBatches.userId,userId),eq(musicListenBatches.batchId,data.batchId)));
     if(previous){if(previous.workId!==workId)throw new DomainError('This listen batch belongs to another work.',409);return {added:0,batchId:data.batchId};}
     const [work]=await tx.select().from(musicWorks).where(eq(musicWorks.id,workId));if(!work)throw new DomainError('Music not found.',404);
-    const tracks=work.kind==='track'?[{id:workId}]:await tx.select({id:musicWorks.id}).from(mediaRelationships).innerJoin(musicWorks,eq(musicWorks.id,mediaRelationships.childId)).where(and(eq(mediaRelationships.parentId,workId),eq(mediaRelationships.kind,'contains'),eq(musicWorks.kind,'track')));
+    const tracks=work.kind==='track'?[{id:workId,entryId:workId}]:await musicAlbumMembers(workId,tx);
     if(!tracks.length)throw new DomainError('No known tracks to log.');
     await tx.insert(musicListenBatches).values({userId,batchId:data.batchId,workId,tracks:tracks.map(t=>t.id)});
-    const { enqueueSyncValueInTransaction, enqueueCollectionProjectionInTransaction } = await import('$lib/sync/changes');
+    const { enqueueSyncValueInTransaction, enqueueCollectionProjectionInTransaction } = await import('$lib/sync/changes.server');
     let added = 0;
     for (const track of tracks) {
-      if (await recordMusicListen(tx, userId, track.id, data.batchId, 'coast', data.occurredAt ? new Date(data.occurredAt) : undefined)) {
+      const occurrenceBatch=work.kind==='track'?data.batchId:importedListenBatch(data.batchId,track.entryId,0);
+      if (await recordMusicListen(tx, userId, track.id, occurrenceBatch, 'coast', data.occurredAt ? new Date(data.occurredAt) : undefined)) {
         added++;
         await enqueueSyncValueInTransaction(tx, userId, track.id, 'history', { value: true });
       }

@@ -13,6 +13,7 @@
 - [Provider boundaries](providers.md): adapter behavior and verification limits.
 - [Music](music.md): persisted identities, browsing, listening, audio playback and verification limits.
 - [Games](games.md): metadata, shared relationships and private playthrough details.
+- [Books and comics](reading.md): shared browsing/tracking, lazy readers, Jellyfin file access, reading parties and acceptance limits.
 - [Social target and roadmap](social.md): first-pass implementation, privacy decisions and deferred social work.
 - [Future connector contract](connectors.md): proposed HTTP/webhook boundary; not implemented.
 - [Design](design.md): inherited visual language and UI composition.
@@ -24,6 +25,7 @@
 ## Operations and development
 
 - [Architecture](architecture.md): domain, database, service boundaries and security.
+- [Source organisation](code-organization.md): folder ownership, naming and checks when moving code.
 - [Deployment](deployment.md): container, storage, accounts and recovery.
 - [Job scheduling and progress](job-scheduling.md): queue priorities, safe resumable imports, schedules and waiting reasons.
 - [Performance methods](performance.md): shared optimisation patterns, benchmarks, isolated measurements and acceptance checks.

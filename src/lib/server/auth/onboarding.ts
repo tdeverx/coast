@@ -7,7 +7,7 @@ import { startTraktDevice, finishTraktDevice } from '$lib/providers/trakt/connec
 import { hashToken, randomToken, newSession, requireAdmin, checkLoginRate, type SessionUser } from './index';
 import { AppError } from '../security/errors';
 import { connectJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { libraryScanProgress } from '$lib/sync/jellyfin';
+import { libraryScanProgress } from '$lib/sync/jellyfin.server';
 import { jellyfinImportStage } from '$lib/sync/jellyfin-progress';
 import { enqueueAction } from '../queue';
 
@@ -99,10 +99,17 @@ async function pendingOnboarding(userId:string) {
  return row;
 }
 export async function startOnboardingTrakt(userId:string,input:unknown) {
- await pendingOnboarding(userId);
+ const onboarding=await pendingOnboarding(userId);
  const {instanceId}=v.parse(v.object({instanceId:v.pipe(v.string(),v.uuid())}),input);
  if(!(await onboardingTraktServices()).some((entry:{id:string})=>entry.id===instanceId))throw new AppError(403,'Trakt is unavailable.');
  checkLoginRate(`onboarding-trakt:${userId}`);
+ if(onboarding.trakt_connection_id){
+  const [failed]=await getSql()`select c.id from provider_connections c where c.id=${onboarding.trakt_connection_id}
+    and c.user_id=${userId} and c.instance_id=${instanceId} and c.account_generation=${onboarding.trakt_account_generation}
+    and exists(select 1 from outbox_actions a where a.connection_id=c.id and a.account_generation=c.account_generation
+      and a.user_id=${userId} and a.state='failed' and a.payload->'_jobFailure'->>'code'='provider.authentication')`;
+  if(failed)await (await import('$lib/application/provider-sources.server')).disconnectProvider(userId,failed.id);
+ }
  return {...await startTraktDevice(userId,instanceId),instanceId};
 }
 export async function pollOnboardingTrakt(userId:string,input:unknown) {

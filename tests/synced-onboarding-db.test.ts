@@ -22,7 +22,7 @@ beforeAll(async()=>{
  for(const [i,id] of conn.entries()){
   await getSql()`INSERT INTO provider_connections (id,user_id,instance_id,status,external_user_id,credentials) VALUES (${id},${ids[i]},${instance},'connected',${ids[i]},${await encryptCredential(JSON.stringify({accessToken:'fixture'}))})`;
   const [p]=await getSql()`INSERT INTO provider_items (instance_id,external_id,media_id,kind) VALUES (${instance},${ids[i]},${work},'movie') RETURNING id`;
-  await getSql()`INSERT INTO playback_sessions (id,user_id,media_id,connection_id,provider_item_id,source_id,delivery,stream_path,duration_seconds,expires_at) VALUES (${play[i]},${ids[i]},${work},${id},${p.id},'source','direct','/stream',120,NOW()+INTERVAL '1 hour')`;
+  await getSql()`INSERT INTO playback_sessions (id,user_id,media_id,connection_id,account_generation,provider_item_id,source_id,delivery,stream_path,duration_seconds,expires_at) VALUES (${play[i]},${ids[i]},${work},${id},(SELECT account_generation FROM provider_connections WHERE id=${id}),${p.id},'source','direct','/stream',120,NOW()+INTERVAL '1 hour')`;
  }
  await getSql()`INSERT INTO friendships (user_a,user_b,requested_by,state) VALUES (least(${ids[0]}::uuid,${ids[1]}::uuid),greatest(${ids[0]}::uuid,${ids[1]}::uuid),${ids[0]},'accepted')`;
 });
@@ -129,7 +129,7 @@ run('music queue keeps gaps, order and repeated track positions',async()=>{
   await getSql()`INSERT INTO works (id,category,kind) VALUES (${id},'music','track')`;
   await getSql()`INSERT INTO music_works (id,title,kind,duration_seconds) VALUES (${id},${`Track ${i}`},'track',12)`;
   const [item]=await getSql()`INSERT INTO provider_items (instance_id,external_id,media_id,kind) VALUES (${instance},${id},${id},'track') RETURNING id`;
-  const [p]=await getSql()`INSERT INTO playback_sessions (user_id,media_id,media_type,connection_id,provider_item_id,source_id,delivery,stream_path,duration_seconds,expires_at) VALUES (${ids[0]},${id},'audio',${conn[0]},${item.id},'source','direct','/audio',12,NOW()+INTERVAL '1 hour') RETURNING id`;
+  const [p]=await getSql()`INSERT INTO playback_sessions (user_id,media_id,media_type,connection_id,account_generation,provider_item_id,source_id,delivery,stream_path,duration_seconds,expires_at) VALUES (${ids[0]},${id},'audio',${conn[0]},(SELECT account_generation FROM provider_connections WHERE id=${conn[0]}),${item.id},'source','direct','/audio',12,NOW()+INTERVAL '1 hour') RETURNING id`;
   playbackIds.push(p.id);
  }
  let r=await createRoom(ids[0],{playbackId:playbackIds[0],positionSeconds:0,queue:[musicIds[0],musicIds[1],musicIds[0]],queueIndex:2});
@@ -195,7 +195,7 @@ run('idle parties invite and join before playback, then retain membership throug
 });
 
 run('live friend progress uses playback evidence and respects progress privacy',async()=>{
- await getSql()`UPDATE playback_sessions SET state='active',position_seconds=25,duration_seconds=100,updated_at=NOW(),expires_at=NOW()+INTERVAL '1 hour' WHERE id=${play[0]}`;
+ await getSql()`UPDATE playback_sessions SET account_generation=(SELECT account_generation FROM provider_connections WHERE id=playback_sessions.connection_id),state='active',position_seconds=25,duration_seconds=100,updated_at=NOW(),expires_at=NOW()+INTERVAL '1 hour' WHERE id=${play[0]}`;
  const own=(await presence(ids[0])).find((row:{workId:string;progress:number|null})=>row.workId===work);
  expect(own?.progress).toBe(0.25);
  await getSql()`UPDATE users SET settings=jsonb_set(settings,'{social}', '{"audience":"friends","sections":{"progress":"private"}}'::jsonb) WHERE id=${ids[0]}`;
@@ -213,7 +213,8 @@ run('party creation preserves playing and paused state; idle parties remain paus
  expect(idle.mediaId).toBeNull();expect(idle.paused).toBe(true);
 });
 run('party owner can remove pending members and transfer ownership without changing playback',async()=>{
- await getSql()`UPDATE playback_sessions SET state='active',duration_seconds=120,expires_at=NOW()+INTERVAL '1 hour' WHERE id IN (${play[0]},${play[1]})`;
+ // Reused fixture rows represent newly prepared sources after the earlier account switch.
+ await getSql()`UPDATE playback_sessions SET account_generation=(SELECT account_generation FROM provider_connections WHERE id=playback_sessions.connection_id),state='active',duration_seconds=120,expires_at=NOW()+INTERVAL '1 hour' WHERE id IN (${play[0]},${play[1]})`;
  await getSql()`INSERT INTO friendships (user_a,user_b,requested_by,state) VALUES (least(${ids[0]}::uuid,${ids[1]}::uuid),greatest(${ids[0]}::uuid,${ids[1]}::uuid),${ids[0]},'accepted') ON CONFLICT (user_a,user_b) DO UPDATE SET state='accepted'`;
  let r=await createRoom(ids[0],{playbackId:play[0],positionSeconds:20,paused:false});
  await inviteParticipant(ids[0],r.id,{friendId:ids[1]});
@@ -234,7 +235,7 @@ run('party owner can remove pending members and transfer ownership without chang
 
 async function settingsParty(){
  await getSql()`UPDATE provider_connections SET status='connected' WHERE id IN (${conn[0]},${conn[1]})`;
- await getSql()`UPDATE playback_sessions SET state='active',duration_seconds=120,expires_at=NOW()+INTERVAL '1 hour' WHERE id IN (${play[0]},${play[1]})`;
+ await getSql()`UPDATE playback_sessions SET account_generation=(SELECT account_generation FROM provider_connections WHERE id=playback_sessions.connection_id),state='active',duration_seconds=120,expires_at=NOW()+INTERVAL '1 hour' WHERE id IN (${play[0]},${play[1]})`;
  for(const [a,b] of [[ids[0],ids[1]],[ids[0],ids[2]],[ids[1],ids[2]]])await getSql()`INSERT INTO friendships (user_a,user_b,requested_by,state) VALUES (least(${a}::uuid,${b}::uuid),greatest(${a}::uuid,${b}::uuid),${a},'accepted') ON CONFLICT (user_a,user_b) DO UPDATE SET state='accepted'`;
  let r=await createRoom(ids[0],{playbackId:play[0],positionSeconds:20,paused:false});
  await inviteParticipant(ids[0],r.id,{friendId:ids[1]});
@@ -276,7 +277,7 @@ run('host disconnect policy waits, gives bounded grace, or transfers to an eligi
 run('music queue edits preserve playback and enforce queue permissions',async()=>{
  let r=await settingsParty();
  const [audio]=await getSql()`SELECT id FROM playback_sessions WHERE user_id=${ids[0]} AND media_type='audio' LIMIT 1`;
- await getSql()`UPDATE playback_sessions SET state='active',expires_at=NOW()+INTERVAL '1 hour' WHERE id=${audio.id}`;
+ await getSql()`UPDATE playback_sessions SET account_generation=(SELECT account_generation FROM provider_connections WHERE id=playback_sessions.connection_id),state='active',expires_at=NOW()+INTERVAL '1 hour' WHERE id=${audio.id}`;
  r=await commandRoom(ids[0],r.id,{action:'item',playbackId:audio.id,queue:musicIds,queueIndex:0,revision:r.revision});
  await expect(commandRoom(ids[1],r.id,{action:'queue',queue:[...musicIds].reverse(),queueIndex:1,revision:r.revision})).rejects.toThrow('host');
  r=await commandRoom(ids[0],r.id,{action:'settings',settings:{...r.settings,queue:'everyone'},revision:r.revision});
@@ -294,9 +295,9 @@ run('initial imports take priority without overlapping service work',async()=>{
 });
 
 run('direct item switches reset queues across video and audio and retain membership',async()=>{
- await getSql()`UPDATE playback_sessions SET state='active',expires_at=NOW()+INTERVAL '1 hour' WHERE id=${play[0]}`;
+ await getSql()`UPDATE playback_sessions SET account_generation=(SELECT account_generation FROM provider_connections WHERE id=playback_sessions.connection_id),state='active',expires_at=NOW()+INTERVAL '1 hour' WHERE id=${play[0]}`;
  const [audio]=await getSql()`SELECT id,media_id FROM playback_sessions WHERE user_id=${ids[0]} AND media_type='audio' LIMIT 1`;
- await getSql()`UPDATE playback_sessions SET state='active',expires_at=NOW()+INTERVAL '1 hour' WHERE id=${audio.id}`;
+ await getSql()`UPDATE playback_sessions SET account_generation=(SELECT account_generation FROM provider_connections WHERE id=playback_sessions.connection_id),state='active',expires_at=NOW()+INTERVAL '1 hour' WHERE id=${audio.id}`;
  let r=await createRoom(ids[0],{playbackId:play[0]});
  r=await commandRoom(ids[0],r.id,{action:'item',playbackId:audio.id,revision:r.revision});
  expect(r.mediaType).toBe('audio');expect(r.mediaId).toBe(audio.media_id);expect(r.queue).toEqual([audio.media_id]);expect(r.queueIndex).toBe(0);

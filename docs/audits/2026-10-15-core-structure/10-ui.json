@@ -1,0 +1,327 @@
+{
+  "section": "Shared UI, shelves, materials and preview composition",
+  "coverage": {
+    "read": [
+      "docs/code-organization.md",
+      "docs/architecture.md",
+      "docs/performance.md",
+      "docs/design.md",
+      "docs/chart-preview.md",
+      "src/app.css",
+      "src/routes/+layout.svelte",
+      "src/routes/lists/+page.svelte",
+      "src/lib/ui/component-manifest.json",
+      "src/lib/ui/client.ts",
+      "src/lib/ui/client-context.ts",
+      "src/lib/ui/resource.svelte.ts",
+      "src/lib/ui/content-revision.svelte.ts",
+      "src/lib/ui/social-enrichment.ts",
+      "src/lib/ui/lazy-content.ts",
+      "src/lib/ui/lazy-image.ts",
+      "src/lib/ui/context-gesture.ts",
+      "src/lib/ui/operation.svelte.ts",
+      "src/lib/ui/mutation.svelte.ts",
+      "src/lib/ui/clock.svelte.ts",
+      "src/lib/ui/action-feedback.svelte.ts",
+      "src/lib/ui/shelves/index.ts",
+      "src/lib/ui/shelves/types.ts",
+      "src/lib/ui/shelves/layout.svelte.ts",
+      "src/lib/ui/shelves/local.svelte.ts",
+      "src/lib/ui/shelves/library.svelte.ts",
+      "src/lib/ui/shelves/list.svelte.ts",
+      "src/lib/ui/shelves/progress.svelte.ts",
+      "src/lib/ui/shelves/search.svelte.ts",
+      "src/lib/ui/shelves/journal.svelte.ts",
+      "src/lib/ui/shelves/credits.svelte.ts",
+      "src/lib/ui/shelves/cast.svelte.ts",
+      "src/lib/ui/shelves/episodes.svelte.ts",
+      "src/lib/ui/shelves/home.ts",
+      "src/lib/ui/shelves/for-you.svelte.ts",
+      "src/lib/ui/shelves/discovery.svelte.ts",
+      "src/lib/ui/shelves/social.svelte.ts",
+      "src/lib/ui/controls/menu.svelte.ts",
+      "src/lib/ui/controls/actions.ts",
+      "src/lib/ui/controls/work.svelte.ts",
+      "src/lib/ui/controls/requests.svelte.ts",
+      "src/lib/ui/controls/sequence.svelte.ts",
+      "src/lib/ui/controls/queue.svelte.ts",
+      "src/lib/ui/panels/friends.svelte.ts",
+      "src/lib/ui/panels/notifications.svelte.ts",
+      "src/lib/ui/panels/streams.svelte.ts",
+      "src/lib/ui/pages/music.svelte.ts",
+      "src/lib/ui/components/Button.svelte",
+      "src/lib/ui/components/Shelf.svelte",
+      "src/lib/ui/components/Dialog.svelte",
+      "src/lib/ui/components/MediaCard.svelte",
+      "src/lib/ui/components/MediaActions.svelte",
+      "src/lib/ui/components/PresentationActions.svelte",
+      "src/lib/ui/components/WorkActions.svelte",
+      "src/lib/ui/components/Rating.svelte",
+      "src/lib/ui/components/RowFilter.svelte",
+      "src/lib/ui/components/ChoiceGroup.svelte",
+      "src/lib/ui/components/Header.svelte",
+      "src/lib/ui/components/RecommendAction.svelte",
+      "src/lib/ui/components/ReactionActions.svelte",
+      "src/lib/ui/components/MediaPage.svelte",
+      "src/lib/ui/components/MediaHero.svelte",
+      "src/lib/ui/components/DetailCard.svelte",
+      "src/lib/ui/components/Heading.svelte",
+      "src/lib/ui/components/Field.svelte",
+      "src/lib/ui/components/SegmentedControl.svelte",
+      "src/lib/ui/components/Pagination.svelte",
+      "src/lib/ui/components/BarChart.svelte",
+      "src/lib/ui/components/BreakdownChart.svelte",
+      "src/lib/ui/components/ProgressChart.svelte",
+      "src/lib/ui/components/ProgressBar.svelte",
+      "src/lib/ui/components/Avatar.svelte",
+      "src/lib/ui/components/AvatarPicker.svelte",
+      "src/lib/ui/components/ActivityHeader.svelte",
+      "src/lib/ui/heroes/presentation.svelte.ts",
+      "src/lib/ui/heroes/playback.svelte.ts",
+      "src/lib/ui/materials/glass.ts",
+      "src/lib/ui/materials/presets.ts",
+      "src/lib/ui/materials/sliding-pill.ts",
+      "src/lib/ui/charts/types.ts",
+      "src/lib/ui/charts/chart.css",
+      "src/lib/ui/charts/ChartView.svelte",
+      "src/lib/ui/charts/ChartMark.svelte",
+      "src/routes/ui-preview/+layout.server.ts",
+      "src/routes/ui-preview/+page.svelte",
+      "src/routes/ui-preview/PreviewSlot.svelte",
+      "src/routes/ui-preview/Demo.svelte",
+      "src/routes/ui-preview/demo/+page.ts",
+      "src/routes/ui-preview/demo/+page.svelte",
+      "src/routes/ui-preview/demo/fixtures.ts",
+      "src/routes/ui-preview/charts/ChartGallery.svelte",
+      "src/routes/ui-preview/charts/ChartThumbnail.svelte",
+      "src/routes/ui-preview/charts/presentation.ts",
+      "src/lib/social/status.svelte.ts",
+      "src/lib/social/status.server.ts",
+      "src/lib/server/api/session.server.ts",
+      "tests/ui-reference.test.ts",
+      "tests/ui-design-system.test.ts",
+      "tests/ui-resource.test.ts",
+      "tests/lazy-image.test.ts",
+      "src/lib/ui/components/IdentityCard.svelte",
+      "src/lib/ui/components/MediaActivity.svelte",
+      "src/lib/ui/components/MediaDetailRows.svelte",
+      "src/lib/ui/components/MetadataEditor.svelte",
+      "src/lib/ui/components/ProfileEditor.svelte",
+      "src/lib/ui/components/ProfileFeatureEditor.svelte",
+      "src/lib/ui/components/ProfileRecap.svelte",
+      "src/lib/ui/components/ProviderAutomation.svelte",
+      "src/lib/ui/components/QueueList.svelte",
+      "src/lib/ui/components/RequestDialog.svelte",
+      "src/lib/ui/components/RowFeedback.svelte",
+      "src/lib/ui/components/RowStyleMenu.svelte",
+      "src/lib/ui/components/StreamsPanel.svelte",
+      "src/lib/ui/components/ConnectionCard.svelte",
+      "src/lib/ui/components/IntegrationSettings.svelte",
+      "src/lib/ui/components/ConflictList.svelte",
+      "src/lib/ui/components/CollectionProjectionSettings.svelte",
+      "src/lib/ui/components/EmptyState.svelte",
+      "src/lib/ui/components/FactList.svelte",
+      "src/lib/ui/components/FormActions.svelte",
+      "src/lib/ui/components/Icon.svelte",
+      "src/lib/ui/components/Brand.svelte",
+      "src/lib/ui/components/MetricGrid.svelte",
+      "src/lib/ui/insights/community.ts",
+      "src/lib/ui/insights/media.ts",
+      "src/lib/ui/insights/overview.ts",
+      "src/lib/ui/insights/profile.ts",
+      "src/lib/ui/insights/types.ts",
+      "src/lib/ui/materials/MaterialTweaker.svelte",
+      "src/lib/ui/materials/black-fade.ts",
+      "src/lib/ui/materials/experimental.ts",
+      "src/lib/ui/materials/export.ts",
+      "src/lib/ui/materials/tuning.ts",
+      "src/lib/ui/charts/StandardChart.svelte",
+      "src/lib/ui/charts/ExtendedChart.svelte",
+      "src/lib/ui/charts/activity.ts",
+      "src/lib/ui/charts/model.ts",
+      "src/lib/ui/charts/standard-geometry.ts",
+      "src/lib/ui/charts/extended-geometry.ts",
+      "src/lib/ui/shelves/journal-cards.ts",
+      "src/lib/ui/shelves/journal-visible.ts",
+      "src/lib/ui/controls/filters.ts",
+      "src/lib/ui/filter-options.ts",
+      "src/lib/ui/headings.ts",
+      "src/lib/ui/labels.ts",
+      "src/lib/ui/relationships.ts",
+      "src/lib/ui/types.ts",
+      "src/lib/ui/diagnostics.ts",
+      "src/lib/ui/pages/types.ts",
+      "src/routes/ui-preview/catalog.ts",
+      "src/routes/ui-preview/charts/data.ts",
+      "src/routes/ui-preview/charts/types.ts"
+    ],
+    "scanned": [
+      "src/lib/ui/** (imports, fetches, timers, listeners, observers and lifecycle cleanup patterns)",
+      "src/routes/ui-preview/**",
+      "src/routes/**/+page.svelte (file inventory and shared component caller search)",
+      "tests/*ui*.test.ts and tests/*chart*.test.ts (test inventory; selected executions listed below)",
+      "src/lib/media/Details.svelte (targeted caller read: keyed MediaDetailRows lifetime at line 134)"
+    ],
+    "unverified": [
+      "No real browser, screenshot, screen reader, focus-navigation or responsive visual verification was performed. All menu and preview findings are static call-path evidence, except documentation contradictions which are directly confirmed by source.",
+      "No server, database, real provider, playback stream or user-account mutation was invoked. No check/build/inventory generation was run.",
+      "Feature-specific request, account, playback, social, profile, media-detail and job semantics are owned by their independent feature audits; shared components were inspected for cross-boundary composition only.",
+      "Full runtime chunk loading, DOM observer delivery order, native popover behavior in Chromium/WebKit/Gecko, actual artwork decoding, reduced-transparency appearance and CPU/heap behavior remain browser verification work.",
+      "Pure test success validates their modeled inputs and mocked observer callbacks; it does not certify rendered interactions. Charts data/geometry were exercised by their existing test suites rather than independently recalculated in a browser.",
+      "Dense formatting/reader dependency-cycle issues belong to the structural report. Source-specific cache/revision invalidation belongs to the discovery/feature reports and is not counted again here.",
+      "Generation-only request invalidation in RequestDialog/controls/requests prevents stale UI publication, but does not abort underlying option reads. ConnectionCard clears its polling timer without aborting an already-started scan read. This pass did not establish a visible stale-data bug or quantify provider work after close/unmount; preserve transport cancellation as an explicit lifecycle verification invariant.",
+      "The supplemental coverage pass substantively read the remaining component, insight, material and chart code listed in coverage.read. Chart catalog JSON raw fixture entries remain automatically validated by the existing full fixture tests rather than individually hand-audited; chart data normalization and renderer branches were substantively reviewed."
+    ]
+  },
+  "checks": [
+    {
+      "command": "PATH=\"$PWD/.tools/bun-darwin-aarch64:$PATH\" bun test tests/ui-resource.test.ts tests/lazy-image.test.ts tests/ui-context-gesture.test.ts tests/ui-design-system.test.ts tests/ui-reference.test.ts tests/ui-preview-charts.test.ts tests/chart-standard-geometry.test.ts tests/chart-extended-geometry.test.ts tests/chart-presentation.test.ts tests/material-tuning.test.ts tests/material-export.test.ts tests/material-experiment.test.ts tests/ui-operation.test.ts tests/ui-content-revision.test.ts tests/ui-social-enrichment.test.ts tests/ui-client.test.ts tests/hero.test.ts",
+      "result": "PASS: 55 tests across 17 files; 0 failures; 28,307 assertions. Existing non-DB tests only."
+    },
+    {
+      "command": "rg -n 'from .*(server|\\.server)|\\bfetch\\(|setInterval\\(|setTimeout\\(|addEventListener\\(|new (ResizeObserver|IntersectionObserver|MutationObserver)|onDestroy|onMount' src/lib/ui src/routes/ui-preview",
+      "result": "Read-only lifecycle/import scan completed. Type-only server contracts observed; no blanket server/client boundary finding was inferred."
+    }
+  ],
+  "findings": [
+    {
+      "id": "UI-02",
+      "priority": "P1",
+      "category": "correctness",
+      "title": "The isolated Header preview can change the real user’s presence settings and sign them out",
+      "rootCause": "ui-preview-global-effects-bypass-injected-client",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/routes/ui-preview/Demo.svelte",
+          "line": 261,
+          "detail": "Header example renders a synthetic admin; its parent provides preview API/playback contexts."
+        },
+        {
+          "path": "src/routes/ui-preview/Demo.svelte",
+          "line": 204,
+          "detail": "Preview capture only cancels anchor default navigation; it does not stop native form submission or component handlers."
+        },
+        {
+          "path": "src/lib/ui/components/Header.svelte",
+          "line": 76,
+          "detail": "Status choices and Share activity call imported global chooseStatus/sharePresence without checking preview."
+        },
+        {
+          "path": "src/lib/social/status.svelte.ts",
+          "line": 12,
+          "detail": "Global updater calls the live API client, bypassing the synthetic client, and writes into the global userStatus."
+        },
+        {
+          "path": "src/lib/server/api/session.server.ts",
+          "line": 9,
+          "detail": "POST session/presence and session/status write authenticated user settings through the real status service."
+        },
+        {
+          "path": "src/lib/ui/components/Header.svelte",
+          "line": 92,
+          "detail": "Preview Header also retains a native POST /logout form."
+        },
+        {
+          "path": "src/lib/ui/components/MediaCard.svelte",
+          "line": 165,
+          "detail": "With experimental mediaModal enabled, card click handlers also call global pushState despite the parent preventing the anchor default; this can mount the real root modal for a fixture ID."
+        }
+      ],
+      "trigger": "An administrator opens /ui-preview/demo?component=Header (or the Header example in Components), opens Account menu → Activity status, and chooses a status or toggles Share activity. Clicking Sign out submits the real logout form. With mediaModal enabled, clicking a preview MediaCard can open the real root quick view.",
+      "impact": "A page explicitly described as isolated demo data can persist real activity/presence privacy changes, invalidate production route state, or terminate the administrator’s session. This is an isolation/correctness defect, not an authorization bypass: the server still uses the actual authenticated account.",
+      "recommendation": "Keep preview status and account actions local or route them through the existing injected client and a local preview state; guard the native logout submit in preview. Make MediaCard respect preview/defaultPrevented before global navigation. Preserve production Header/Card presentation and behavior.",
+      "verification": "In an isolated browser fixture, intercept and fail any non-fixture POST. Exercise Header status/sharing/logout in both direct and embedded previews; assert no live request, no global userStatus mutation, no route refresh/logout, and no real root modal from preview card selection. Separately confirm ordinary Header actions still use the real authenticated client.",
+      "relatedAreas": [
+        "UI preview isolation",
+        "presence privacy",
+        "Header",
+        "MediaCard shallow navigation"
+      ]
+    },
+    {
+      "id": "UI-01",
+      "priority": "P2",
+      "category": "correctness",
+      "title": "Ordinary menu buttons remain open because keepOpen defaults to true",
+      "rootCause": "button-menu-item-defaults-to-keep-open",
+      "confidence": "strong-static",
+      "evidence": [
+        {
+          "path": "src/lib/ui/components/Button.svelte",
+          "line": 33,
+          "detail": "keepOpen defaults to true for every item button."
+        },
+        {
+          "path": "src/lib/ui/components/Button.svelte",
+          "line": 92,
+          "detail": "Every ordinary item button consequently receives data-menu-keep-open unless explicitly overridden."
+        },
+        {
+          "path": "src/lib/ui/controls/menu.svelte.ts",
+          "line": 254,
+          "detail": "The shared action handler returns without closeAll when that attribute is present."
+        },
+        {
+          "path": "src/lib/ui/components/MediaActions.svelte",
+          "line": 686,
+          "detail": "The concrete Right now tracking action does not override keepOpen. Many ordinary playback, relationship and tracking actions use the same pattern."
+        },
+        {
+          "path": "docs/design.md",
+          "line": 84,
+          "detail": "The design contract says ordinary actions dismiss menus, with rating/volume controls staying open."
+        }
+      ],
+      "trigger": "Open a media action menu, select Mark watched → Right now on a concrete movie/episode, and let the mutation settle; or activate another non-navigation item button that does not move focus outside the menu.",
+      "impact": "The command completes while the menu remains open and focused. Native link items close through the existing action path, so pointer/keyboard behavior varies by whether a command is rendered as a button or anchor. Repeated commands remain immediately reachable despite the documented dismissal policy.",
+      "recommendation": "Default ordinary item buttons to dismissal and explicitly retain keepOpen for continuous rating/volume, deliberate multi-select interactions, and any failed-action/error UX that needs to remain open. Keep menu triggers marked open and preserve existing nested-menu focus restoration.",
+      "verification": "Add a rendered menu interaction test covering pointer and Enter activation of an ordinary item, nested ordinary item, ordinary link, intentionally retained checkbox/rating/volume control, and disabled explanatory item. Assert menu closure and correct focus restoration for ordinary actions, with retained controls still open.",
+      "relatedAreas": [
+        "shared Button",
+        "menu keyboard and pointer behavior",
+        "MediaActions",
+        "PresentationActions"
+      ]
+    },
+    {
+      "id": "UI-03",
+      "priority": "P3",
+      "category": "documentation",
+      "title": "The design guide contradicts the current mobile navigation and material inventory",
+      "rootCause": "design-guide-retains-obsolete-navigation-and-material-contract",
+      "confidence": "confirmed",
+      "evidence": [
+        {
+          "path": "docs/design.md",
+          "line": 68,
+          "detail": "States primary navigation uses text-only pills on desktop and mobile."
+        },
+        {
+          "path": "src/lib/ui/components/Header.svelte",
+          "line": 184,
+          "detail": "Below 640px the actual Header hides text labels and displays navigation icons."
+        },
+        {
+          "path": "docs/design.md",
+          "line": 74,
+          "detail": "Names six shared treatments and says the six recipes are preserved."
+        },
+        {
+          "path": "src/lib/ui/materials/presets.ts",
+          "line": 118,
+          "detail": "Actual supported material variants are four: clear, glassLight, glassDark and glassProminent, each with a paired fallback."
+        }
+      ],
+      "trigger": "A maintainer follows the current source-of-truth design guide while changing shared navigation or material usage.",
+      "impact": "The guide can prompt an accidental restoration of obsolete mobile navigation or invalid material names, conflicting with the requirement to preserve approved UX. Passing token/fixture tests do not resolve which visual contract the documentation intends.",
+      "recommendation": "Reconcile the two guide statements with the approved current UI and actual four-variant API; record approval status accurately. Do not change mobile visuals or reintroduce recipes solely to make the older prose true.",
+      "verification": "Review the current narrow Header and Materials reference against the approved UI, then check that documented variant names match keyof glassPresets.materials and that mobile prose matches the resulting approved behavior.",
+      "relatedAreas": [
+        "design documentation",
+        "mobile Header",
+        "material presets"
+      ]
+    }
+  ]
+}

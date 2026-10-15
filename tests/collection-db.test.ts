@@ -3,9 +3,9 @@ import { afterAll,beforeAll,expect,test } from 'bun:test';
 import { eq,sql,inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import { users,media,providerInstances,providerConnections,providerItems,availability,syncCheckpoints,trackingState,episodes,shows,works,musicWorks,mediaRelationships,musicListens } from '../src/lib/server/db/schema';
-import { collectionData,workAssessments,collectionCTE,collectionRead } from '../src/lib/collection/query.server';
+import { collectionData,workAssessments,collectionCTE,collectionRead,workCards } from '../src/lib/collection/query.server';
 import { logMusic } from '../src/lib/music/persistence.server';
-import { trackWithExports } from '../src/lib/sync/changes';
+import { trackWithExports } from '../src/lib/sync/changes.server';
 import { getConfig } from '../src/lib/server/config';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 let owner:string,viewer:string,server:string,connection:string,movie:string,serverOnly:string,show:string,child:string,sibling:string,album:string,track:string;
@@ -212,4 +212,122 @@ run('in-progress shows remain included when completed history is excluded',async
   await db.update(users).set({settings:{collection:preferences}}).where(eq(users.id,owner));
   expect((await workAssessments(owner,owner,[show]))[0].reasons.some(r=>r.relationship==='activity')).toBe(false);
  }finally{await db.update(users).set({settings:{}}).where(eq(users.id,owner));}
+});
+
+run('reading metadata, private page states and shared lists retain their own semantics',async()=>{
+ const db=getDb();const {systemSettings}=await import('../src/lib/server/db/schema');
+ const {importReading}=await import('../src/lib/catalogue/reading.server');
+ const {ensureReadingSaved,updateReading}=await import('../src/lib/core/reading/service.server');
+ const {createList,addListItem,getList}=await import('../src/lib/core/lists/service.server');
+ const {listsData}=await import('../src/lib/server/queries/lists');
+ const config=await getConfig();
+ const [reader]=await db.insert(users).values({username:`reading-collection-${tag}`}).returning();
+ const ids:string[]=[];
+ await db.insert(systemSettings).values({key:'coast',value:{...config,experimentalBooks:true,experimentalComics:true}}).onConflictDoUpdate({target:systemSettings.key,set:{value:{...config,experimentalBooks:true,experimentalComics:true}}});
+ try{
+  const states=['planned','reading','paused','completed','dropped'] as const;
+  for(let index=0;index<states.length;index++){
+   const item=await importReading({provider:'openlibrary',externalId:`OL${920000001+index}W`,kind:'book',title:`Reading ${states[index]} ${tag}`,sourceUrl:`https://openlibrary.org/works/OL${920000001+index}W`,authors:['Reading Author'],subjects:[],publishedYear:1942,coverUrl:'https://covers.openlibrary.org/b/id/1-L.jpg'});
+   ids.push(item.id);await updateReading(reader.id,item.id,{state:states[index],...(states[index]==='reading'?{page:5,totalPages:100}:{})});
+  }
+  const comic=await importReading({provider:'comic-vine',externalId:'4000-920000001',kind:'comic',title:'Reading comic fixture',sourceUrl:'https://comicvine.gamespot.com/issue/4000-920000001/',authors:[],subjects:[],seriesTitle:'Reading Series',issueNumber:'2'});ids.push(comic.id);
+  expect((await collectionData(reader.id,{category:'book'})).total).toBe(4);
+  expect((await collectionData(reader.id,{category:'comic'})).total).toBe(0);
+  const assessment=(await workAssessments(reader.id,reader.id,[ids[1]]))[0];
+  expect(assessment.title).toBe(`Reading reading ${tag}`);expect(assessment.releaseDate).toBeNull();expect(assessment.active).toBe(true);expect(assessment.availability).toBe('unknown');
+  expect((await collectionData(reader.id,{category:'book',activity:'planned'})).items.map(item=>item.id)).toEqual([ids[0]]);
+  expect((await collectionData(reader.id,{category:'book',activity:'active'})).items.map(item=>item.id).sort()).toEqual([ids[1],ids[2]].sort());
+  expect((await collectionData(reader.id,{category:'book',activity:'paused'})).items.map(item=>item.id)).toEqual([ids[2]]);
+  expect((await collectionData(reader.id,{category:'book',activity:'completed'})).items.map(item=>item.id)).toEqual([ids[3]]);
+  expect(await ensureReadingSaved(reader.id,ids[1])).toMatchObject({state:'reading',page:5,totalPages:100});
+  await db.insert(trackingState).values([...ids.slice(0,5).map(mediaId=>({userId:reader.id,mediaId,watchlist:true})),{userId:reader.id,mediaId:comic.id,favourite:true}]);
+  expect((await listsData(reader.id,{category:'book',view:'watchlist',filter:'to-watch'})).items.map(item=>item.id)).toEqual([ids[0]]);
+  expect((await listsData(reader.id,{category:'book',view:'watchlist',filter:'progress'})).items.map(item=>item.id).sort()).toEqual([ids[1],ids[2]].sort());
+  expect((await listsData(reader.id,{category:'book',view:'watchlist',filter:'complete'})).items.map(item=>item.id)).toEqual([ids[3]]);
+  expect((await listsData(reader.id,{category:'book',view:'watchlist',filter:'dropped'})).items.map(item=>item.id)).toEqual([ids[4]]);
+  const list=await createList(reader.id,{name:'Reading list'});await addListItem(reader.id,list.id,ids[1]);await addListItem(reader.id,list.id,comic.id);
+  expect((await getList(reader.id,list.id)).items.map(entry=>entry.item.title)).toEqual([`Reading reading ${tag}`,comic.title]);
+  const listCards=(await listsData(reader.id,{view:list.id})).items;
+  expect(listCards.map(item=>item.id)).toEqual([ids[1],comic.id]);
+  expect(listCards[0]).toMatchObject({kind:'book',title:`Reading reading ${tag}`,year:1942,poster:'https://covers.openlibrary.org/b/id/1-L.jpg',href:`/media/${ids[1]}`});
+  expect(listCards[1]).toMatchObject({kind:'comic',href:`/media/${comic.id}`,attribution:{label:'Comic Vine',href:comic.sourceUrl}});
+  expect((await listsData(reader.id,{category:'comic',view:'favourites'})).items.map(item=>item.id)).toEqual([comic.id]);
+  await db.update(trackingState).set({collected:true}).where(sql`${trackingState.userId}=${reader.id} and ${trackingState.mediaId} in (${ids[2]},${ids[4]})`);
+  expect((await collectionData(reader.id,{category:'book',activity:'dropped'})).items.map(item=>item.id)).toEqual([ids[4]]);
+  await db.update(users).set({settings:{social:{audience:'public',sections:{activity:'private',progress:'private'}}}}).where(eq(users.id,reader.id));
+  const visitor=await collectionData(viewer,{category:'book'},reader.username);
+  expect(visitor.items.map(item=>item.id)).toContain(ids[2]);expect(visitor.assessments.find(item=>item.id===ids[2])?.active).toBe(false);
+  expect((await collectionData(viewer,{category:'book',activity:'paused'},reader.username)).total).toBe(0);
+  expect((await collectionData(viewer,{category:'book',activity:'completed'},reader.username)).total).toBe(0);
+  expect((await collectionData(reader.id,{category:'book',activity:'paused'})).total).toBe(1);
+ }finally{
+  await db.delete(users).where(eq(users.id,reader.id));if(ids.length)await db.delete(works).where(inArray(works.id,ids));
+  await db.update(systemSettings).set({value:config}).where(eq(systemSettings.key,'coast'));
+ }
+});
+
+run('planned reading activity keeps saved relationships independent and respects activity privacy',async()=>{
+ const db=getDb();const {systemSettings}=await import('../src/lib/server/db/schema');
+ const {importReading}=await import('../src/lib/catalogue/reading.server');
+ const {ensureReadingSaved}=await import('../src/lib/core/reading/service.server');
+ const {readingDetails}=await import('../src/lib/reading/query.server');
+ const {listsData}=await import('../src/lib/server/queries/lists');
+ const config=await getConfig();
+ const [reader]=await db.insert(users).values({username:`planned-reading-${tag}`,settings:{social:{audience:'public'}}}).returning();
+ let id:string|undefined;
+ await db.insert(systemSettings).values({key:'coast',value:{...config,experimentalBooks:true}}).onConflictDoUpdate({target:systemSettings.key,set:{value:{...config,experimentalBooks:true}}});
+ try{
+  const item=await importReading({provider:'openlibrary',externalId:'OL920000011W',kind:'book',title:`Planned reading ${tag}`,sourceUrl:'https://openlibrary.org/works/OL920000011W',authors:[],subjects:[]});id=item.id;
+  expect((await ensureReadingSaved(reader.id,id)).state).toBe('planned');
+  let [assessment]=await workAssessments(reader.id,reader.id,[id]);
+  expect(assessment.reasons).toEqual([{relationship:'activity',origin:'direct',workId:id}]);
+  expect(assessment.active).toBe(false);
+  expect((await readingDetails(reader.id,id)).relationships.watchlist).toBe(false);
+  expect((await listsData(reader.id,{category:'book',view:'watchlist'})).total).toBe(0);
+  expect((await collectionData(reader.id,{category:'book',activity:'planned'})).items.map(item=>item.id)).toEqual([id]);
+  await trackWithExports(reader.id,{mediaId:id,action:'watchlist',value:true});
+  [assessment]=await workAssessments(reader.id,reader.id,[id]);
+  expect(assessment.reasons.some(reason=>reason.relationship==='watchlist'&&reason.origin==='direct')).toBe(true);
+  expect((await listsData(reader.id,{category:'book',view:'watchlist'})).items.map(item=>item.id)).toEqual([id]);
+  await trackWithExports(reader.id,{mediaId:id,action:'watchlist',value:false});
+  [assessment]=await workAssessments(reader.id,reader.id,[id]);
+  expect(assessment.reasons).toEqual([{relationship:'activity',origin:'direct',workId:id}]);
+  expect((await listsData(reader.id,{category:'book',view:'watchlist'})).total).toBe(0);
+  const details=await readingDetails(reader.id,id);
+  expect(details.progress?.state).toBe('planned');expect(details.relationships.watchlist).toBe(false);
+  expect((await collectionData(reader.id,{category:'book',activity:'planned'})).items.map(item=>item.id)).toEqual([id]);
+  expect((await collectionData(viewer,{category:'book'},reader.username)).items.map(item=>item.id)).toEqual([id]);
+  await db.update(users).set({settings:{social:{audience:'public',sections:{activity:'private',progress:'private'}}}}).where(eq(users.id,reader.id));
+  expect((await collectionData(viewer,{category:'book'},reader.username)).total).toBe(0);
+  expect((await workAssessments(reader.id,viewer,[id]))[0].reasons).toEqual([]);
+  expect((await collectionData(reader.id,{category:'book',activity:'planned'})).items.map(item=>item.id)).toEqual([id]);
+  await trackWithExports(reader.id,{mediaId:id,action:'collect',value:true});
+  const shared=await collectionData(viewer,{category:'book'},reader.username);
+  expect(shared.items.map(item=>item.id)).toEqual([id]);
+  expect(shared.assessments[0].reasons).toEqual([{relationship:'collected',origin:'direct',workId:id}]);
+ }finally{
+  await db.delete(users).where(eq(users.id,reader.id));if(id)await db.delete(works).where(eq(works.id,id));
+  await db.update(systemSettings).set({value:config}).where(eq(systemSettings.key,'coast'));
+ }
+});
+
+run('reading gates filter Collection and card hydration before counts and pagination',async()=>{
+ const db=getDb();const {readingWorks,systemSettings}=await import('../src/lib/server/db/schema');
+ const config=await getConfig();const [reader]=await db.insert(users).values({username:`reading-pages-${tag}`}).returning();
+ const ids=Array.from({length:65},()=>crypto.randomUUID());
+ await db.insert(systemSettings).values({key:'coast',value:{...config,experimentalBooks:true,experimentalComics:false}}).onConflictDoUpdate({target:systemSettings.key,set:{value:{...config,experimentalBooks:true,experimentalComics:false}}});
+ try{
+  await db.insert(works).values(ids.map((id,index)=>({id,category:index<3?'comic':'book',kind:index<3?'comic' as const:'book' as const})));
+  await db.insert(readingWorks).values(ids.map((id,index)=>({id,provider:index<3?'comic-vine' as const:'openlibrary' as const,externalId:index<3?`4000-${930000001+index}`:`OL${930000001+index}W`,kind:index<3?'comic' as const:'book' as const,title:index<3?`AAA hidden comic ${index}`:`Book ${String(index).padStart(3,'0')}`,sourceUrl:index<3?`https://comicvine.gamespot.com/issue/4000-${930000001+index}/`:`https://openlibrary.org/works/OL${930000001+index}W`})));
+  await db.insert(trackingState).values(ids.map(mediaId=>({userId:reader.id,mediaId,collected:true})));
+  const first=await collectionData(reader.id),last=await collectionData(reader.id,{page:100});
+  expect(first.total).toBe(62);expect(first.pages).toBe(2);expect(first.items).toHaveLength(60);expect(first.items.every(item=>item.kind==='book')).toBe(true);
+  expect(last.page).toBe(2);expect(last.items).toHaveLength(2);expect(last.total).toBe(62);
+  expect((await workCards(reader.id,reader.id,ids)).map(item=>item.id).sort()).toEqual(ids.slice(3).sort());
+  await expect(collectionData(reader.id,{category:'comic'})).rejects.toThrow('disabled');
+  expect((await workCards(reader.id,reader.id,ids.slice(0,3)))).toEqual([]);
+ }finally{
+  await db.delete(users).where(eq(users.id,reader.id));await db.delete(works).where(inArray(works.id,ids));
+  await db.update(systemSettings).set({value:config}).where(eq(systemSettings.key,'coast'));
+ }
 });

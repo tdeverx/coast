@@ -42,6 +42,7 @@ try {
   await screenshot(isSetup ? 'setup-desktop' : 'login-desktop');
   await page.getByLabel('Username', { exact: true }).fill(username);
   await page.locator('input[name="password"]').fill(password);
+  if(isSetup){await page.locator('input[name="displayName"]').fill('Coast fixture');await page.locator('input[name="passwordConfirmation"]').fill(password);}
   await page
     .getByRole('button', { name: isSetup ? 'Create your Coast' : 'Sign in', exact: true })
     .click();
@@ -179,6 +180,7 @@ try {
   await expect(page).toHaveURL(/\/login$/);
   await page.getByLabel('Username', { exact: true }).fill(username);
   await page.locator('input[name="password"]').fill(password);
+  if(isSetup){await page.locator('input[name="displayName"]').fill('Coast fixture');await page.locator('input[name="passwordConfirmation"]').fill(password);}
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(page).toHaveURL(/\/for-you$/);
   await checkPage();

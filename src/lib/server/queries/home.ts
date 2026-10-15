@@ -2,7 +2,7 @@ import { eq, desc, sql } from 'drizzle-orm';
 import { getDb } from '../db';
 import * as s from '../db/schema';
 import { isHeroTitle } from '../../media/hero';
-import { rewatchFields } from '../../core/tracking/rewatch';
+import { rewatchFields } from '../../core/tracking/rewatch.server';
 import { continueHeroId } from './progress';
 import { mediaViewsForIds, nextPlayable, permittedAvailability } from './media';
 

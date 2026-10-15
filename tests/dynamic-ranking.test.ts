@@ -1,6 +1,6 @@
 import {expect,test} from 'bun:test';
-import {rankRows,genreReason} from '../src/lib/experiments/row-ranking';
-import {genreRowTitle} from '../src/lib/experiments/row-titles';
+import {rankRows,genreReason} from '../src/lib/recommendations/row-ranking';
+import {genreRowTitle} from '../src/lib/recommendations/row-titles';
 import {TraktAdapter} from '../src/lib/providers/trakt/adapter.server';
 test('row priority favours established tastes, stays stable per visit, and retains exploration',()=>{
  const rows=[{key:'interest',category:'screen',weight:12},{key:'explore',category:'game',weight:.35}];

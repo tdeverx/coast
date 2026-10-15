@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
-import { ingestMetadata } from '../src/lib/catalogue/service';
+import { ingestMetadata } from '../src/lib/catalogue/service.server';
 import { TraktAdapter } from '../src/lib/providers/trakt/adapter.server';
-import { exportTraktListToAdapter } from '../src/lib/sync/trakt-lists';
-import { exportTraktToAdapter } from '../src/lib/sync/trakt-export';
-import { importTraktFromAdapter } from '../src/lib/sync/trakt-import';
+import { exportTraktListToAdapter } from '../src/lib/sync/trakt-lists.server';
+import { exportTraktToAdapter } from '../src/lib/sync/trakt-export.server';
+import { importTraktFromAdapter } from '../src/lib/sync/trakt-import.server';
 import { externalIds, listItems, lists, media, outboxActions, providerConnections, providerInstances, ratings, seasons, trackingEvents, trackingState, users } from '../src/lib/server/db/schema';
 import { jobExecution, JobYield } from '../src/lib/server/queue/execution';
 import type { SyncPreferences } from '../src/lib/providers/contracts';
@@ -140,6 +140,7 @@ run('mixed-list reconciliation scopes matching and rank to media kind, including
   await getDb().insert(listItems).values({listId:list.id,mediaId:extraMovieId,position:3});
   const calls:{path:string;body:Record<string,unknown>}[]=[];
   const adapter=new TraktAdapter(async(path,init)=>{
+    if(init?.method==='PUT')return{};
     if(init?.method==='POST'){calls.push({path,body:JSON.parse(String(init.body))});return{};}
     if(path.split('?')[0]===`/users/me/lists/${remoteListId}/items/movie,show,season,episode`)return[
       remoteItems[2],remoteItems[1],remoteItems[0],

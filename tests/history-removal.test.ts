@@ -2,8 +2,8 @@ import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import { track, getTracking } from '../src/lib/core/tracking/service';
-import { removeHistory, removeTraktHistory } from '../src/lib/sync/history-removal';
+import { track, getTracking } from '../src/lib/core/tracking/service.server';
+import { removeHistory, removeTraktHistory } from '../src/lib/sync/history-removal.server';
 
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const [owner, other, movie, another] = Array.from({ length: 4 }, () => crypto.randomUUID());

@@ -109,9 +109,11 @@ describe.skipIf(!enabled)('settings persistence', () => {
       subtitleLanguages: ['de'],
       subtitleDefault: 'always',
     });
+    const retained={profile:{bio:'Kept'},personalBitrateMbps:3,sharedBitrateMbps:6,allowPlaybackSharing:false,shareDemand:false,social:{audience:'private'}};
+    await getSql()`update users set settings=settings||${retained}::jsonb where id=${member.id}`;
     await resetUserSettings(member);
     const [row] = await getSql()`SELECT settings FROM users WHERE id = ${member.id}`;
-    expect(row.settings).toEqual({ profile: { bio: 'Kept' } });
+    expect(row.settings).toEqual(retained);
     expect(row.settings.liquidGlass ?? true).toBe(true);
     expect(row.settings.subtitleLanguages ?? (await getConfig()).subtitleLanguages).toEqual(['de']);
     expect((await getSql()`SELECT count(*)::int AS count FROM users`)[0].count).toBe(2);

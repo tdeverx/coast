@@ -3,9 +3,12 @@ export type MusicKind = 'artist' | 'album' | 'track';
 export interface MusicArtist {
   id: string;
   name: string;
+  /** Only populated when the viewer has an active source for this artist. */
+  href?: string;
 }
 export interface MusicItem {
   id: string;
+  entryId?: string;
   workId?: string;
   artistId?: string;
   playCount?: number;

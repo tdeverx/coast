@@ -6,7 +6,7 @@ import { queueProviderRequest, deferProviderRequests, retryAfterSeconds } from '
 
 export interface ProviderFetchConfig {
   baseUrl: string;
-  provider?: 'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb' | 'steam';
+  provider?: 'jellyfin' | 'trakt' | 'tmdb' | 'seerr' | 'igdb' | 'steam' | 'openlibrary' | 'comic-vine';
   approved?: boolean;
   allowPrivateNetwork?: boolean;
   allowedPorts?: number[];
@@ -115,7 +115,7 @@ function limitedBody(
   max: number,
   controller: AbortController,
   timeout: number,
-  diagnostics: { provider: ProviderFetchConfig['provider']; correlationId?: string; callerSignal?: AbortSignal | null }
+  diagnostics: { provider: ProviderFetchConfig['provider']; correlationId?: string; callerSignal?: AbortSignal | null; deadline?: number }
 ) {
   const reader = body.getReader();
   let bytes = 0;
@@ -124,10 +124,17 @@ function limitedBody(
     async pull(output) {
       const timer = setTimeout(
         () => controller.abort(new DOMException('Service response timed out.', 'TimeoutError')),
-        timeout
+        diagnostics.deadline === undefined ? timeout : Math.max(0, diagnostics.deadline - Date.now())
       );
+      const signal = diagnostics.callerSignal ? AbortSignal.any([controller.signal, diagnostics.callerSignal]) : controller.signal;
+      let onAbort: (() => void) | undefined;
       try {
-        const result = await reader.read();
+        const aborted = new Promise<never>((_, reject) => {
+          onAbort = () => { void reader.cancel(signal.reason).catch(()=>{}); reject(signal.reason); };
+          if(signal.aborted) onAbort(); else signal.addEventListener('abort', onAbort, {once:true});
+        });
+        const result = await Promise.race([reader.read(), aborted]);
+        if(signal.aborted)throw signal.reason;
         if (result.done) {
           output.close();
           return;
@@ -159,6 +166,7 @@ function limitedBody(
         output.error(controller.signal.aborted ? controller.signal.reason : error);
       } finally {
         clearTimeout(timer);
+        if(onAbort) signal.removeEventListener('abort',onAbort);
       }
     },
     async cancel(reason) {
@@ -178,6 +186,7 @@ async function providerFetch(
   const original = validateProviderUrl(config, path);
   const host = original.hostname.replace(/^\[|\]$/g, '');
   const timeout = config.timeoutMs || 15_000;
+  const deadline = Date.now() + timeout;
   const controller = new AbortController();
   const timer = setTimeout(
     () => controller.abort(new DOMException('The service did not respond in time.', 'TimeoutError')),
@@ -241,6 +250,7 @@ async function providerFetch(
             provider: config.provider,
             correlationId: context.getStore(),
             callerSignal: init.signal,
+            deadline: options.stream ? undefined : deadline,
           })
         : null,
       { status: response.status, statusText: response.statusText, headers: response.headers }
@@ -318,7 +328,9 @@ export async function secureProviderFetch(
       if(response.status===429)deferProviderRequests(new URL(config.baseUrl).origin,(retryAfterSeconds(response.headers.get('retry-after'))??60)*1000);
       return new Response([204,205,304].includes(response.status) ? null : bytes, {status:response.status,statusText:response.statusText,headers:response.headers});
     };
-    const interval = config.provider === 'igdb' ? 260 : ['trakt','steam','tmdb'].includes(config.provider ?? '') ? 250 : 0;
+    // Reading discovery is human-driven. Conservative Comic Vine pacing stays
+    // below its 200-per-resource hourly budget without a second hidden queue.
+    const interval = config.provider === 'openlibrary' ? 1100 : config.provider === 'comic-vine' ? 18_100 : config.provider === 'igdb' ? 260 : ['trakt','steam','tmdb'].includes(config.provider ?? '') ? 250 : 0;
     const response = options.stream ? await perform() : await queueProviderRequest(new URL(config.baseUrl).origin,interval,perform,init.signal ?? undefined);
     void logDiagnostic(response.ok ? 'info' : 'warn', 'provider.complete', {
       provider: config.provider,

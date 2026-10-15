@@ -63,22 +63,22 @@ const kinds = {
 } as const;
 function mapItem(item: v.InferOutput<typeof itemSchema>): MusicItem {
   return {
-    id: item.Id,
+    id: jellyfinItemKey(item.Id),
     kind: kinds[item.Type],
     expectedMembers: item.Type === 'MusicAlbum' ? item.ChildCount ?? undefined : undefined,
     title:
       item.Name?.trim() || (item.Type === 'Audio' ? `Track ${item.IndexNumber ?? '?'}` : item.Id),
     artists: item.ArtistItems.map((artist) => ({
-      id: artist.Id,
+      id: jellyfinItemKey(artist.Id),
       name: artist.Name,
     })),
     albumArtists: item.AlbumArtists.map((artist) => ({
-      id: artist.Id,
+      id: jellyfinItemKey(artist.Id),
       name: artist.Name,
     })),
     artistNames: item.Artists,
     album: item.Album || undefined,
-    albumId: item.AlbumId || undefined,
+    albumId: item.AlbumId ? jellyfinItemKey(item.AlbumId) : undefined,
     discNumber: item.Type === 'Audio' ? (item.ParentIndexNumber ?? undefined) : undefined,
     trackNumber: item.Type === 'Audio' ? (item.IndexNumber ?? undefined) : undefined,
     durationSeconds: item.RunTimeTicks == null ? undefined : item.RunTimeTicks / 10000000,

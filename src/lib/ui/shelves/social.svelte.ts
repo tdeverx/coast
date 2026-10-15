@@ -23,7 +23,7 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
   });
  }
  const suppliedCategory=$derived(get().category??(get().mediums?'screen':'all'));
- const refreshKey=$derived(JSON.stringify([contentRevisionKey(page.data,['social']),get().surface,page.data.experimentalMusic,page.data.experimentalGaming]));
+ const refreshKey=$derived(JSON.stringify([contentRevisionKey(page.data,['social']),get().surface,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics]));
  let previousCategory=untrack(()=>suppliedCategory);
  let previousRefresh=untrack(()=>refreshKey);
  $effect(() => {
@@ -37,7 +37,7 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
  });
  onDestroy(resource.cancel);
  return {
-    get pagination() { return get().layout==='grid' ? { kind: 'cursor' as const, hasMore: resource.data.hasMore } : {kind:'local' as const}; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){return get().layout==='grid'?undefined:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&category=${category}`;}, shape: 'fanart', artworkStyle:'thumb', artworkPriority:'episode-season-show', get resetKey(){return category;}, get filters(){return get().mediums?[{type:'segments' as const,label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptions(page.data),change:(value:string)=>{category=value;void load();}}]:[];}, controls: [],
+    get pagination() { return get().layout==='grid' ? { kind: 'cursor' as const, hasMore: resource.data.hasMore } : {kind:'local' as const}; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){return get().layout==='grid'?undefined:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&category=${category}`;}, get shape(){return category==='reading'?'poster' as const:'fanart' as const;}, get artworkStyle(){return category==='reading'?'primary' as const:'thumb' as const;}, artworkPriority:'episode-season-show', get resetKey(){return category;}, get filters(){return get().mediums?[{type:'segments' as const,label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptions(page.data, ['screen','game','music','reading']),change:(value:string)=>{category=value;void load();}}]:[];}, controls: [],
   get emptyConfirmed(){return !get().mediums || resource.data.emptyAllMedia===true;},
   get items() { if(loadedCategory!==category)return []; return get().layout==='grid'?resource.data.items:resource.data.items.slice(0,20); }, get ready() { return resource.ready; }, get busy() { return resource.busy; },
   get error() { return resource.error; }, get activated() { return resource.activated; },

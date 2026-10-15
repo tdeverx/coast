@@ -41,6 +41,7 @@
   let controller: AbortController | undefined;
   onDestroy(() => { generation++; controller?.abort(); });
   const storedGame = $derived(item.kind === 'game' && item.href === `/games/${item.id}`);
+  const reading = $derived(item.kind === 'book' || item.kind === 'comic');
   const workId = $derived(music?.workId ?? item.workId ?? (storedGame ? item.id : undefined));
   const musicPath = $derived(
     item.connectionId ? `providers/${item.connectionId}/music/${item.id}` : ''
@@ -142,6 +143,7 @@
     >Open {item.kind === 'game' ? 'game' : item.kind}</Button>
   {#if item.recommendationIds?.length}<WorkActions section="recommendations" workId={workId??item.id} recommendationIds={item.recommendationIds} disabled={busy||loading} />{/if}
   {#if workId&&page.data.experiments?.planning}<Button item icon="list" onclick={()=>planningOpen=true}>Plan</Button>{/if}
+  {#if workId&&reading}<Button item icon="clock" href={`${item.href}?action=progress`}>Update reading progress…</Button>{/if}
   {#if workId&&page.data.playbackSharing&&item.kind==='track'}<Button item icon="friends" onclick={()=>sharingOpen=true}>Share</Button>{/if}
   {#if workId}<WorkActions section="social" {workId} disabled={busy||loading} />{/if}
   {#if storedGame}<Button item icon="plus" href={gameAction('start')}
@@ -181,12 +183,12 @@
       { kind: 'collected', value: relationships.collected, icon: 'plus', label: `${relationships.collected ? 'Remove from' : 'Add to'} Collection` },
       { kind: 'watchlist', value: relationships.watchlist, icon: 'list', label: `${relationships.watchlist ? 'Remove from' : 'Save for'} later` },
       ...(storedGame || !music ? [{ kind: 'favourite' as const, value: relationships.favourite, icon: 'heart' as const, label: `${relationships.favourite ? 'Remove from' : 'Add to'} favourites` }] : []),
-      { kind: 'queued', value: queued, icon: 'list', label: `${queued ? 'Remove from' : 'Add to'} queue` },
+      ...(!reading ? [{ kind: 'queued' as const, value: queued, icon: 'list' as const, label: `${queued ? 'Remove from' : 'Add to'} queue` }] : []),
     ], relationship, busy)} />
 
     <WorkActions section="rating" {workId} {rating} onrated={value=>work.rate(value)}/>
     <Button menu label="Lists" icon="list" panel disabled={busy}>
-      <WorkActions section="lists" workId={workId} controls={listMembershipControls(lists, list => !!list.entryId, toggleList, busy, "Append to", "list")}>{#snippet empty()}<Button item href="/lists">Create a list…</Button>{/snippet}</WorkActions>
+      <WorkActions section="lists" workId={workId} controls={listMembershipControls(reading?lists.filter(list=>!list.playlist):lists, list => !!list.entryId, toggleList, busy, "Append to", "list")}>{#snippet empty()}<Button item href="/lists">Create a list…</Button>{/snippet}</WorkActions>
     </Button>
   {/if}
   {#if failure}<RowFeedback error={failure} tag="p" class="menu-status notice error" />

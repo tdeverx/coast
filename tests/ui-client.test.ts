@@ -1,4 +1,4 @@
-import { expect, test } from 'bun:test';
+import { expect, test, spyOn } from 'bun:test';
 import { compileModule } from 'svelte/compiler';
 
 // Use the real client contract with local navigation/diagnostic boundaries.
@@ -14,7 +14,7 @@ const { readContentRevision }: typeof import('../src/lib/ui/content-revision.sve
 const source = await Bun.file(new URL('../src/lib/ui/client.ts', import.meta.url)).text();
 const code = new Bun.Transpiler({ loader: 'ts' }).transformSync(source)
   .replaceAll('$app/state',stateUrl).replaceAll('$app/navigation', navigationUrl).replaceAll('./diagnostics', diagnosticsUrl).replaceAll('./content-revision.svelte', revisionUrl);
-const { createApiClient, refreshAfterChange, refreshRouteDependencies }: typeof import('../src/lib/ui/client') = await import(moduleUrl(code));
+const { createApiClient, refreshAfterChange, refreshRouteDependencies, capturePlaybackApi, setPlaybackApi }: typeof import('../src/lib/ui/client') = await import(moduleUrl(code));
 const { invalidations } = await import(navigationUrl);
 const { setRelationship } = await import('../src/lib/ui/relationships');
 
@@ -53,4 +53,14 @@ test('open shallow overlays use a state-preserving refresh while ordinary pages 
   page.state={};await refreshRouteDependencies(['tracking']);
   expect(invalidations).toEqual(['coast:tracking']);
   await refreshRouteDependencies([]);expect(navigation.refreshes).toBe(before+3);
+});
+
+
+test('captured playback authority survives share-route teardown for preparation and cleanup',async()=>{
+ const urls:string[]=[];const transport=spyOn(globalThis,'fetch').mockImplementation(Object.assign(async(input:Parameters<typeof fetch>[0])=>{urls.push(String(input));return Response.json({});},{preconnect:()=>{}}));
+ try{
+  setPlaybackApi(true);const request=capturePlaybackApi();setPlaybackApi(false);
+  await request('playback',{});await request('playback/prepared/progress',{event:'stop'});
+  expect(urls).toEqual(['/api/share/playback','/api/share/playback/prepared/progress']);
+ }finally{transport.mockRestore();setPlaybackApi(false);}
 });

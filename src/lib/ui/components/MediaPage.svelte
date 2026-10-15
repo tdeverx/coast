@@ -24,7 +24,7 @@
     hero?: boolean;
     item?: HeroItem;
     items?: HeroItem[];
-    collection?: { items: MediaView[]; selection: string; busy?: boolean };
+    collection?: { items: HeroItem[]; selection: string; busy?: boolean };
     parents?: MediaView[];
     context?: 'discover' | 'details' | 'home';
     next?: MediaView | null;
