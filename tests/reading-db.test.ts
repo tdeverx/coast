@@ -17,7 +17,7 @@ import { collectionData, workAssessments } from '../src/lib/collection/query.ser
 import { readingProviderConfigured } from '../src/lib/providers/reading.server';
 import { addReading } from '../src/lib/application/reading.server';
 import { load as loadMediaPage } from '../src/routes/media/[id]/+page.server';
-import { readingSearch, readingSearchInitial } from '../src/lib/server/queries/search';
+import { readingSearch, readingSearchInitial, type ReadingSearchContent } from '../src/lib/server/queries/search';
 import { readingDetailLoad } from '../src/lib/reading/routes.server';
 import { discoveryContent } from '../src/lib/server/queries/discovery';
 import * as readingProviders from '../src/lib/providers/reading.server';
@@ -290,6 +290,49 @@ suite('experimental reading identity, private state and bounded local reads', ()
       expect(initial.items.map(item => item.id)).toEqual([bookId]);
       expect(metadata).not.toHaveBeenCalled(); expect(readiness).not.toHaveBeenCalled();
     } finally { release(); readiness.mockRestore(); metadata.mockRestore(); }
+  });
+
+  test('explicit reading searches honor page and kind while unified row segments retain every reading type', async () => {
+    const readiness = spyOn(readingProviders, 'readingProviderConfigured').mockResolvedValue(true);
+    const calls: { kind: string; page: number }[] = [];
+    const remoteBook = { ...book, externalId: 'OL888888882W', title: 'Page-specific remote book', sourceUrl: 'https://openlibrary.org/works/OL888888882W' };
+    const remoteComic = { ...comic, externalId: '4000-888888882', title: 'Page-specific remote comic', sourceUrl: 'https://comicvine.gamespot.com/fixture/4000-888888882/' };
+    const metadata = spyOn(readingProviders, 'searchReading').mockImplementation(async (kind, _query, page = 1) => {
+      calls.push({ kind, page });
+      return { items: kind === 'book' ? [remoteBook] : [remoteComic], total: 40, page, nextPage: page === 1 ? 2 : null };
+    });
+    const route = async (parameters: Record<string, string>) => {
+      const event = { locals: { user: { id: owner } }, url: new URL('http://coast/search?' + new URLSearchParams(parameters)), depends: () => {} };
+      const data = (await loadSearchPage(event as Parameters<typeof loadSearchPage>[0]))!;
+      const responses = await Promise.all([data.read, data.watch, data.listen, data.play]);
+      const result: ReadingSearchContent = responses[0];
+      const initial: ReadingSearchContent = data.readingInitial;
+      return { initial, result };
+    };
+    try {
+      const query = `Paged reading ${owner}`;
+      const first = await route({ q: query, view: 'read', kind: 'book' });
+      calls.length = 0;
+      const second = await route({ q: query, view: 'read', kind: 'book', page: '2' });
+      expect(second.initial.page).toBe(2);
+      expect(second.initial.items).toHaveLength(7);
+      expect(second.initial.items.some(item => first.initial.items.some(previous => previous.id === item.id))).toBe(false);
+      expect(second.result.page).toBe(2);
+      expect(second.result.items.every(item => item.kind === 'book')).toBe(true);
+      expect(calls).toEqual([{ kind: 'book', page: 2 }]);
+      calls.length = 0;
+      const comics = await route({ q: query, view: 'read', kind: 'comic', page: '2' });
+      expect(comics.result.page).toBe(2);
+      expect(comics.result.items.map(item => item.kind)).toEqual(['comic']);
+      expect(calls).toEqual([{ kind: 'book', page: 2 }, { kind: 'comic', page: 2 }]);
+      calls.length = 0;
+      const unified = await route({ q: query, type: 'book' });
+      expect(unified.result.items.some(item => item.kind === 'comic')).toBe(true);
+      expect(calls).toEqual([{ kind: 'book', page: 1 }, { kind: 'comic', page: 1 }]);
+    } finally {
+      readiness.mockRestore();
+      metadata.mockRestore();
+    }
   });
 
   test('saved provider previews redirect to canonical details without requiring a working source', async () => {

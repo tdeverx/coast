@@ -92,7 +92,13 @@ run('admission respects the aggregate budget, and idle viewers release their slo
  const link=await make(),otherLink=await make(),grants=await Promise.all(Array.from({length:4},(_,i)=>claimShare({token:i%2?otherLink.token:link.token},null)));
  for(let i=0;i<3;i++)await startShared(grants[i].token,{mediaId:work,browser});
  await expect(startShared(grants[3].token,{mediaId:work,browser})).rejects.toThrow('bandwidth is full');
- const [old]=await getSql()`update share_viewers set last_seen_at=now()-interval '3 minutes' where token_hash=(select token_hash from share_viewers order by created_at limit 1) returning id`;
+ const unadmitted=await shareViewer(grants[3].token);
+ await getSql()`update share_viewers set created_at=now()-interval '1 hour' where id=${unadmitted.viewer_id}`;
+ // Claims are concurrent: the oldest claim may be the fourth, unadmitted viewer.
+ // Expire a known admitted viewer rather than relying on insertion order.
+ const admitted=await shareViewer(grants[0].token);
+ const [old]=await getSql()`update share_viewers set last_seen_at=now()-interval '3 minutes' where id=${admitted.viewer_id} and playback_id is not null returning id`;
+ expect(old.id).toBe(admitted.viewer_id);
  await expireSharedViewers();expect(stops).toHaveLength(1);
  expect((await getSql()`select ended_at from share_viewers where id=${old.id}`)[0].ended_at).toBeTruthy();
  await startShared(grants[3].token,{mediaId:work,browser});

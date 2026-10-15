@@ -24,6 +24,8 @@ import { streamGifAvatar } from '../src/lib/core/profile/gif-avatar.server';
 import { track } from '../src/lib/core/tracking/service.server';
 import { progressData } from '../src/lib/server/queries/progress';
 import { profileData, profileActivity, profileProgress } from '../src/lib/server/queries/profile';
+import { importReading } from '../src/lib/catalogue/reading.server';
+import { updateReading } from '../src/lib/core/reading/service.server';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const animatedAvatar = 'R0lGODlhAQABAIAAAP8AAAAA/yH/C05FVFNDQVBFMi4wAwEAAAAh+QQAFAAAACwAAAAAAQABAAACAkQBACH5BAAUAAAALAAAAAABAAEAAAICTAEAOw==';
 let owner: string,
@@ -790,4 +792,42 @@ run('last activity is the default background and respects viewer activity privac
   await updateProfile(owner,{action:'background-mode',mode:'activity'});
   expect((await profileData(owner)).background?.id).toBe(ids[0]);
  }finally{await getSql()`delete from social_activity where id=${eventId}`;await db.update(users).set({settings:saved.settings}).where(eq(users.id,owner));}
+});
+
+run('reading activity backgrounds use the latest enabled, visible book or comic', async () => {
+  const db = getDb(), config = await getConfig();
+  const [saved] = await db.select().from(users).where(eq(users.id, owner));
+  const readingIds: string[] = [];
+  const now = new Date('2030-01-03T00:00:00Z');
+  const configure = (patch: Record<string, boolean>) => getSql()`update system_settings set value=value||${patch}::jsonb where key='coast'`;
+  try {
+    await getSql()`insert into system_settings(key,value) values('coast',${{ ...config, experimentalBooks: true, experimentalComics: true }}::jsonb) on conflict(key) do update set value=excluded.value`;
+    await db.update(users).set({ settings: { profile: { backgroundMode: 'activity' }, social: { audience: 'public', sections: { activity: 'public', progress: 'public' } } } }).where(eq(users.id, owner));
+    const book = await importReading({ provider: 'openlibrary', externalId: 'OL978001001W', kind: 'book', title: 'Reading background book', sourceUrl: 'https://openlibrary.org/works/OL978001001W', coverUrl: 'https://covers.openlibrary.org/b/id/978001001-L.jpg', authors: [], subjects: [] });
+    readingIds.push(book.id);
+    await updateReading(owner, book.id, { state: 'reading' });
+    await getSql()`update social_activity set occurred_at='2030-01-01T00:00:00Z' where user_id=${owner} and work_id=${book.id}`;
+    expect((await profileData(owner, {}, now)).background).toMatchObject({ id: book.id, poster: 'https://covers.openlibrary.org/b/id/978001001-L.jpg' });
+    const comic = await importReading({ provider: 'comic-vine', externalId: '4000-978001001', kind: 'comic', title: 'Reading background comic', sourceUrl: 'https://comicvine.gamespot.com/issue/4000-978001001/', coverUrl: 'https://comicvine.gamespot.com/fixture.jpg', authors: [], subjects: [] });
+    readingIds.push(comic.id);
+    await updateReading(owner, comic.id, { state: 'completed' });
+    await getSql()`update social_activity set occurred_at='2030-01-02T00:00:00Z' where user_id=${owner} and work_id=${comic.id}`;
+    expect((await profileData(owner, {}, now, other)).background?.id).toBe(comic.id);
+    expect((await profileData(owner, {}, now, null)).background?.id).toBe(comic.id);
+    await configure({ experimentalComics: false });
+    expect((await profileData(owner, {}, now, other)).background?.id).toBe(book.id);
+    await configure({ experimentalComics: true });
+    await db.update(users).set({ settings: { profile: { backgroundMode: 'activity' }, social: { audience: 'public', sections: { activity: 'public', progress: 'private' } } } }).where(eq(users.id, owner));
+    expect(readingIds).not.toContain((await profileData(owner, {}, now, other)).background?.id);
+    expect((await profileData(owner, {}, now)).background?.id).toBe(comic.id);
+    await db.update(users).set({ settings: { profile: { backgroundMode: 'activity' }, social: { audience: 'public', categories: { comic: 'private' }, sections: { activity: 'public' } } } }).where(eq(users.id, owner));
+    expect((await profileData(owner, {}, now, other)).background?.id).toBe(book.id);
+    expect((await profileData(owner, {}, now)).background?.id).toBe(comic.id);
+    await configure({ experimentalBooks: false, experimentalComics: false });
+    expect(readingIds).not.toContain((await profileData(owner, {}, now)).background?.id);
+  } finally {
+    await db.delete(works).where(inArray(works.id, readingIds));
+    await db.update(users).set({ settings: saved.settings }).where(eq(users.id, owner));
+    await getSql()`update system_settings set value=${config}::jsonb where key='coast'`;
+  }
 });

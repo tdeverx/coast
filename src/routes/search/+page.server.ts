@@ -49,7 +49,11 @@ export const load: PageServerLoad = async ({locals, url, depends}) => {
   }
   if (readingFilters.output.page > READING_PROVIDER_PAGE_LIMIT) error(400, 'Choose a valid reading search page.');
   const readingEnabled = config.experimentalBooks || config.experimentalComics;
-  const readingInput = { query, kind: 'all', page: 1 };
+  // Explicit reading searches have server-side filters. Unified search keeps all
+  // reading types available to its existing local row segments.
+  const readingInput = { query, ...(
+    view.output === 'read' ? readingFilters.output : { kind: 'all' as const, page: 1 }
+  ) };
   const [items, readingInitial] = await Promise.all([
     query
       ? mediaViews(locals.user.id, { query, availableFirst: true, limit: 101 })
