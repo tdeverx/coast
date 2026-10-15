@@ -9,7 +9,9 @@ import {
   metadataSnapshots,
   userMetadataPreferences,
   users,
+  works,
 } from '../../server/db/schema';
+import { requireEnabledCategory } from '../../server/experimental';
 import { getConfig } from '../../server/config';
 import { DomainError } from '../../core/errors';
 import { metadataFields, resolveMetadata } from '../metadata/resolve';
@@ -160,14 +162,24 @@ export async function saveMetadataOverrides(
   return getMetadataEditor(userId, mediaId);
 }
 
+async function requirePresentationAccess(tx: Transaction, userId: string, workId: string, config: Awaited<ReturnType<typeof getConfig>>) {
+  v.parse(uuidSchema, userId); v.parse(uuidSchema, workId);
+  const [user] = await tx.select({ id: users.id }).from(users).where(and(eq(users.id, userId), eq(users.disabled, false)));
+  if (!user) throw new DomainError('Sign in to change presentation preferences.', 401, 'unauthorized');
+  const [work] = await tx.select({ category: works.category }).from(works).where(eq(works.id, workId));
+  if (!work) throw new DomainError('This work was not found.', 404, 'not_found');
+  requireEnabledCategory(config, work.category);
+}
+
 export async function savePresentationPreference(
   userId: string,
   mediaId: string,
   raw: v.InferInput<typeof presentationInputSchema>
 ) {
   const input = v.parse(presentationInputSchema, raw);
+  const config = await getConfig();
   return getDb().transaction(async (tx) => {
-    await requireMetadataAccess(tx, userId, mediaId);
+    await requirePresentationAccess(tx, userId, mediaId, config);
     const [preference] = await tx
       .insert(userMetadataPreferences)
       .values({ userId, mediaId, ...input })
@@ -180,8 +192,9 @@ export async function savePresentationPreference(
   });
 }
 export async function resetPresentationPreference(userId: string, mediaId: string) {
+  const config = await getConfig();
   return getDb().transaction(async (tx) => {
-    await requireMetadataAccess(tx, userId, mediaId);
+    await requirePresentationAccess(tx, userId, mediaId, config);
     await tx
       .delete(userMetadataPreferences)
       .where(
@@ -194,8 +207,9 @@ export async function resetPresentationPreference(userId: string, mediaId: strin
 }
 
 export async function getPresentationEditor(userId: string, mediaId: string) {
+  const config = await getConfig();
   return getDb().transaction(async (tx) => {
-    await requireMetadataAccess(tx, userId, mediaId);
+    await requirePresentationAccess(tx, userId, mediaId, config);
     const [preference] = await tx
       .select()
       .from(userMetadataPreferences)

@@ -27,10 +27,14 @@ export function musicCard(item: MusicItem, connectionId: string): MediaCardPrese
     id: item.id,
     entryId: item.entryId ?? (connectionId ? `music:${connectionId}:${item.id}` : item.id),
     workId: item.workId,
+    artistId: item.artistId,
+    favourite: item.favourite,
     kind: item.kind,
+    ...(item.positionSeconds ? { trackingProgress: { unit: 'seconds' as const, value: item.positionSeconds, ...(item.durationSeconds ? { total: item.durationSeconds } : {}) } } : {}),
     title: item.title,
     href: item.workId?`/music/work/${item.workId}`:musicHref(connectionId, item.id),
     connectionId,
+    backdrop: item.backdropUrl,
     available: item.kind !== 'artist',
     captionSubtitle:
       musicCredits(item) ||

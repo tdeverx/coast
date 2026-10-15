@@ -5,7 +5,7 @@
   import { page } from '$app/state';
   import { playMedia } from '$lib/playback/client.svelte';
   import { change, message } from '$lib/ui/client';
-  import MediaActions from '$lib/ui/components/MediaActions.svelte';
+  import WorkMenu from '$lib/ui/components/WorkMenu.svelte';
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import { createEpisodeTracking } from '$lib/ui/shelves/episodes.svelte';
@@ -150,7 +150,7 @@
       items={collection.items}
       filterBy="type"
     >
-      {#snippet actions()}<MediaActions item={collection.item} menuOnly showMenuTrigger />{/snippet}
+      {#snippet actions()}<WorkMenu item={collection.item} menuOnly showMenuTrigger />{/snippet}
     </Shelf>
   {/each}
   {#if !section || section === 'related'}<Shelf

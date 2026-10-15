@@ -1,3 +1,4 @@
+import { personaliseWorkCards } from '$lib/catalogue/overrides/presentation.server';
 import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { gameExternalIds, games } from '$lib/server/db/schema';
@@ -13,6 +14,6 @@ export async function providerGameCards(userId: string, items: (GameMetadata & {
   const known=new Map(local.map(row=>[row.externalId,row]));
   const cards=items.map(item=>{const saved=known.get(item.externalId);return saved
     ?gameCard({...saved.game,available:saved.available})
-    :gameCard({...item,id:`igdb:${item.externalId}`},`/games/igdb/${item.instanceId}/${item.externalId}`);});
-  return [...new Map(cards.map(card=>[card.id,card])).values()];
+    :gameCard({...item,id:`igdb:${item.externalId}`},`/games/igdb/${item.instanceId}/${item.externalId}`, false);});
+  return personaliseWorkCards(userId,[...new Map(cards.map(card=>[card.id,card])).values()]);
 }

@@ -34,3 +34,24 @@ export async function savedMusicQueue(userId:string,listId?:string){
  const states=new Map(assessments.map(a=>[a.id,a.availability]));
  return {items:entries.map(e=>({...e,availability:states.get(e.id)??'unknown'})),continueId:entries[0]?.id??null};
 }
+
+/** Party picker: unique choices from the personal queue, never the full playback payload. */
+export async function savedMusicQueuePage(userId: string, requestedPage = 1) {
+ const { pageNumberSchema, pagination, PAGE_SIZE } = await import('$lib/server/queries/pagination');
+ const { parse } = await import('valibot');
+ parse(pageNumberSchema, requestedPage);
+ const db = getDb();
+ const choices = sql`with selected as (
+   select q.media_id,row_number() over(order by q.created_at,q.media_id) position from up_next q
+   join works w on w.id=q.media_id where q.user_id=${userId} and w.category='music'
+ ), tracks as (
+   select t.id,t.title,selected.position,0 member_position from selected join music_works t on t.id=selected.media_id and t.kind='track'
+   union all select t.id,t.title,selected.position,t.position member_position from selected cross join lateral (${musicAlbumMembersSql(sql`selected.media_id`)}) t
+ ), choices as (select distinct on(id) id,title,position,member_position from tracks order by id,position,member_position)`;
+ const [count] = await db.execute<{total:number}>(sql`${choices} select count(*)::int total from choices`);
+ const { page, pages } = pagination(count.total, requestedPage);
+ const rows = await db.execute<{id:string;title:string}>(sql`${choices} select id,title from choices order by position,member_position,id limit ${PAGE_SIZE} offset ${(page-1)*PAGE_SIZE}`);
+ const entries = Array.from(rows) as {id:string;title:string}[];
+ const states = new Map((await workAssessments(userId,userId,entries.map(e=>e.id))).map(a=>[a.id,a.availability]));
+ return { items: entries.map(e=>({...e,availability:states.get(e.id)??'unknown'})), page, pages, total: count.total };
+}

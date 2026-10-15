@@ -92,7 +92,7 @@ export function createShelfLayout(get: () => LayoutOptions) {
       return () => { cancelAnimationFrame(frame); frame = 0; endRequested = false; resize.disconnect(); changes.disconnect(); };
     });
   });
-  onDestroy(() => { destroyed = true; cancelAnimationFrame(frame); });
+  onDestroy(() => { destroyed = true; if (frame) cancelAnimationFrame(frame); });
 
   return {
     get scroller() { return scroller; }, set scroller(value) { scroller = value; },

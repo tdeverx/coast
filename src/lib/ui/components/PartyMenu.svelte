@@ -6,6 +6,9 @@
  import {useClock} from '$lib/ui/clock.svelte';
  import {useClient} from '$lib/ui/client-context';
  import {message} from '$lib/ui/client';
+ import {onDestroy,untrack} from 'svelte';
+ import {createMenuResource} from '$lib/ui/controls/menu-resource.svelte';
+ import {workMenuScope} from '$lib/ui/controls/work.svelte';
  import {readingLocationLabel} from '$lib/reading/model';
  let {demoRoom}:{demoRoom?:RoomState}=$props();
  const {api,preview}=useClient();
@@ -22,8 +25,11 @@
  const settings=$derived(room!.settings);
  const self=$derived(room?.participants.find(p=>p.userId===syncedPlayer.userId));
  const drift=$derived.by(()=>{clock.now;return preview?null:localSyncDrift();});
- let saved=$state<{id:string;title:string}[]>([]),loading=$state(false);
- async function loadQueue(){if(preview)return;loading=true;try{saved=(await api<{items:{id:string;title:string}[]}>('music/queue',undefined,'GET')).items.slice(0,200);}catch(cause){syncedPlayer.notice=message(cause);}finally{loading=false;}}
+ let number=$state(1);
+ const saved=createMenuResource<{items:{id:string;title:string;availability:string}[];page:number;pages:number}>(()=>({items:[],page:1,pages:1}),
+  ()=>workMenuScope([room?.id,number]),signal=>preview?Promise.resolve({items:[],page:1,pages:1}):api(`music/queue/picker?page=${number}`,undefined,'GET',{signal}));
+ $effect(()=>{const key=workMenuScope([room?.id,number]);untrack(()=>{key;saved.sync();if(saved.active)void saved.load();});});
+ onDestroy(saved.dispose);
  async function editQueue(index:number,action:'up'|'down'|'remove'){
   if(!room)return;const queue=[...room.queue];let queueIndex=room.queueIndex;
   if(action==='remove'){queue.splice(index,1);if(index<queueIndex)queueIndex--;}
@@ -65,10 +71,12 @@
     {/each}
     {#if !room.queue.length}<Button item disabled>Queue empty</Button>{/if}
     <div class="menu-divider" role="separator"></div>
-    <Button menu text="Add tracks" label="Add tracks" disabled={!canEditPartyQueue()||room.queue.length>=200} onopen={()=>void loadQueue()}>
-     {#if loading}<Button item disabled>Loading</Button>{:else}
-      {#each saved.filter(track=>!room!.queue.includes(track.id)) as track (track.id)}<Button item onclick={()=>syncedCommand('queue',{queue:[...room!.queue,track.id],queueIndex:room!.queueIndex})}>{track.title}</Button>{:else}<Button item disabled>No saved tracks to add</Button>{/each}
+    <Button menu text="Add tracks" label="Add tracks" disabled={!canEditPartyQueue()||room.queue.length>=200} onopen={()=>void saved.open()} onclose={saved.close}>
+     {#if saved.busy}<Button item disabled>Loading</Button>{:else}
+      {#each saved.data.items.filter(track=>!room!.queue.includes(track.id)) as track (track.id)}<Button item disabled={track.availability!=='available'} onclick={()=>syncedCommand('queue',{queue:[...room!.queue,track.id],queueIndex:room!.queueIndex})}>{track.title}</Button>{:else}<Button item disabled>No saved tracks to add</Button>{/each}
      {/if}
+     {#if saved.error}<Button item keepOpen icon="refresh" onclick={()=>saved.load(true)}>Retry loading tracks</Button>{/if}
+     {#if saved.data.pages>1}<Button item keepOpen disabled={saved.busy||saved.data.page<=1} onclick={()=>number=saved.data.page-1}>Previous tracks</Button><Button item keepOpen disabled={saved.busy||saved.data.page>=saved.data.pages} onclick={()=>number=saved.data.page+1}>More tracks</Button>{/if}
     </Button>
    </Button>
   {/if}

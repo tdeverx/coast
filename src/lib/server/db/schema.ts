@@ -425,7 +425,7 @@ export const userMetadataPreferences = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     mediaId: uuid('media_id')
       .notNull()
-      .references(() => media.id, { onDelete: 'cascade' }),
+      .references(() => works.id, { onDelete: 'cascade' }),
     title: text('title'),
     posterPath: text('poster_path'),
     backdropPath: text('backdrop_path'),

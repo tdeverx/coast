@@ -59,7 +59,7 @@ export const load: PageServerLoad = async ({locals, url, depends}) => {
     try {
       const result = await searchIgdb(instanceId, filters.search, filters.page);
       items = result.items.map((item) =>
-        gameCard({ ...item, id: item.externalId }, `/games/igdb/${instanceId}/${item.externalId}`)
+        gameCard({ ...item, id: item.externalId }, `/games/igdb/${instanceId}/${item.externalId}`, false)
       );
       hasMore = result.hasMore;
     } catch (cause) {

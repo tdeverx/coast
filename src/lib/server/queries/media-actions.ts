@@ -2,7 +2,7 @@ import { effectiveReleaseDate } from '$lib/catalogue/metadata/release-date.serve
 import { historyScope } from '../../core/tracking/history-scope.server';
 import { wholeWorkId } from '../../core/tracking/continue.server';
 import { rewatchFields } from '../../core/tracking/rewatch.server';
-import { and, asc, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
 import { getConfig } from '../config';
@@ -37,34 +37,8 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
       ) select 1 from media where id in (select id from scope) and kind in ('movie','episode') and ${effectiveReleaseDate(sql`media.id`,config.metadataSource)} <= (now() at time zone 'UTC')::date limit 1`)
       ).length > 0
     : !!dated?.releaseDate && dated.releaseDate <= new Date().toISOString().slice(0, 10);
-  const children =
-    item.kind === 'show'
-      ? await db
-          .select({ id: s.seasons.mediaId })
-          .from(s.seasons)
-          .where(eq(s.seasons.showId, mediaId))
-          .orderBy(asc(s.seasons.seasonNumber))
-      : item.kind === 'season'
-        ? await db
-            .select({ id: s.episodes.mediaId })
-            .from(s.episodes)
-            .where(eq(s.episodes.seasonId, mediaId))
-            .orderBy(asc(s.episodes.episodeNumber))
-        : item.kind === 'collection'
-          ? await db
-              .select({ id: s.mediaRelationships.childId })
-              .from(s.mediaRelationships)
-              .where(
-                and(
-                  eq(s.mediaRelationships.parentId, mediaId),
-                  inArray(s.mediaRelationships.kind, ['collection', 'franchise'])
-                )
-              )
-              .orderBy(asc(s.mediaRelationships.position))
-          : [];
   const views = await mediaViewsForIds(userId, [
     ...(item.trackingParents ?? []).map((row) => row.id),
-    ...children.map((row) => row.id),
     ...(item.showId ? [item.showId] : []),
   ]);
   const byId = new Map(views.map((view) => [view.id, view]));
@@ -92,7 +66,7 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
       )
       .limit(1),
   ]);
-  const [sources, lists, members, requests] = await Promise.all([
+  const [sources, requests] = await Promise.all([
     playable
       ? db
           .select({ edition: s.availability.edition })
@@ -107,17 +81,6 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
           )
           .where(and(permittedAvailability(userId), eq(s.availability.mediaId, playable.id)))
       : [],
-    db
-      .select({ id: s.lists.id, name: s.lists.name, playlist: s.lists.playlist })
-      .from(s.lists)
-      .where(eq(s.lists.userId, userId))
-      .orderBy(asc(s.lists.name)),
-    db
-      .select({ id: s.listItems.id, listId: s.listItems.listId, position: s.listItems.position })
-      .from(s.listItems)
-      .innerJoin(s.lists, eq(s.lists.id, s.listItems.listId))
-      .where(and(eq(s.lists.userId, userId), eq(s.listItems.mediaId, mediaId)))
-      .orderBy(asc(s.listItems.position)),
     requestTarget
       ? db
           .select({
@@ -193,18 +156,11 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
         byId.has(parent.id) ? [byId.get(parent.id)!] : []
       ),
     ],
-    children: children.flatMap((child) => (byId.has(child.id) ? [byId.get(child.id)!] : [])),
     requestTarget,
     requestsEnabled: config.enableRequests && seerr.length > 0,
     refreshTarget,
     playable,
     editions: [...new Set(sources.map((source) => source.edition ?? ''))],
-    lists: lists.map((list) => ({
-      ...list,
-      entries: members
-        .filter((member) => member.listId === list.id)
-        .map(({ id, position }) => ({ id, position })),
-    })),
     requests: requests
       .filter((request) => !['cancelled', 'declined'].includes(request.state))
       .map(({ externalId, enabled, connectionStatus, settings, ...request }) => {

@@ -5,14 +5,14 @@
  import Dialog from '$lib/ui/components/Dialog.svelte';
  import Button from '$lib/ui/components/Button.svelte';
  import type { ReadingFormat } from './model';
- let {workId,title,compact=false,onopened}:{workId:string;title:string;compact?:boolean;onopened?:()=>Promise<void>}=$props();
+ let {workId,title,compact=false,hideTrigger=false,onopened}:{workId:string;title:string;compact?:boolean;hideTrigger?:boolean;onopened?:()=>Promise<void>}=$props();
  const {api}=useClient(),operation=createOperation();
  let open=$state(false),connections=$state<{id:string;name:string}[]>([]),connectionId=$state(''),query=$state(''),items=$state<{id:string;title:string;format:ReadingFormat|null}[]>([]),offset=$state(0),nextOffset=$state<number|null>(null),searched=$state(false);
- async function show(){if(reader.session?.workId===workId){reader.visible=true;await operation.run(async()=>{await onopened?.();});return;}open=true;searched=false;items=[];query=title;await operation.run(async()=>{connections=await api(`reading/${workId}/connections`,undefined,'GET');connectionId=connections[0]?.id??'';});}
+ export async function show(){if(reader.session?.workId===workId){reader.visible=true;await operation.run(async()=>{await onopened?.();});return;}open=true;searched=false;items=[];query=title;await operation.run(async()=>{connections=await api(`reading/${workId}/connections`,undefined,'GET');connectionId=connections[0]?.id??'';});}
  async function search(next=0){await operation.run(async()=>{const params=new URLSearchParams({connectionId,q:query,offset:String(next)});const result=await api<{items:typeof items;nextOffset:number|null}>(`reading/${workId}/sources?${params}`,undefined,'GET');items=result.items;offset=next;nextOffset=result.nextOffset;searched=true;});}
  async function choose(source:{file:File}|{connectionId:string;externalId:string}){await operation.run(async()=>{await openReading(workId,source);open=false;await onopened?.();});}
 </script>
-<Button size={compact?undefined:'hero'} {compact} icon="library" onclick={show}>{compact?'Start':'Read'}</Button>
+{#if !hideTrigger}<Button size={compact?undefined:'hero'} {compact} icon="library" onclick={show}>{compact?'Start':'Read'}</Button>{/if}
 <Dialog bind:open title="Choose a reading edition">
  <div class="stack">
   {#if operation.error}<p class="notice error" role="alert">{operation.error}</p>{/if}

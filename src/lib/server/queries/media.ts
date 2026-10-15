@@ -125,7 +125,7 @@ export async function mediaViews(
     return or(fallback ? search.fallback : search.matches,
       sql`${s.media.id} in (select ms.media_id from metadata_snapshots ms where ${match(sql`ms.title`, sql`ms.original_title`)})`,
       sql`${s.media.id} in (select mo.media_id from metadata_overrides mo where ${match(sql`mo.title`, sql`mo.original_title`)})`,
-      sql`${s.media.id} in (select mp.media_id from user_metadata_preferences mp where mp.user_id=${userId} and ${match(sql`mp.title`)})`);
+      sql`${s.media.id} in (select mp.media_id from user_metadata_preferences mp where mp.user_id=${viewerId} and ${match(sql`mp.title`)})`);
   }
   const readRows = (fallback = false) => db
     .select()
@@ -146,7 +146,7 @@ export async function mediaViews(
       ...(search && options.query ? [desc(sql`greatest(${search.rank},
         coalesce((select max(${searchSql(options.query, [searchDocument(sql`ms.title`, sql`ms.original_title`)], [sql`ms.title`, sql`ms.original_title`]).rank}) from metadata_snapshots ms where ms.media_id=${s.media.id}),0),
         coalesce((select max(${searchSql(options.query, [searchDocument(sql`mo.title`, sql`mo.original_title`)], [sql`mo.title`, sql`mo.original_title`]).rank}) from metadata_overrides mo where mo.media_id=${s.media.id}),0),
-        coalesce((select max(${searchSql(options.query, [searchDocument(sql`mp.title`)], [sql`mp.title`]).rank}) from user_metadata_preferences mp where mp.media_id=${s.media.id} and mp.user_id=${userId}),0))`)] : [desc(s.media.updatedAt)]),
+        coalesce((select max(${searchSql(options.query, [searchDocument(sql`mp.title`)], [sql`mp.title`]).rank}) from user_metadata_preferences mp where mp.media_id=${s.media.id} and mp.user_id=${viewerId}),0))`)] : [desc(s.media.updatedAt)]),
       asc(s.media.id)
     )
     .limit(options.limit ?? 150);
@@ -254,7 +254,7 @@ export async function mediaViews(
       .from(s.userMetadataPreferences)
       .where(
         and(
-          eq(s.userMetadataPreferences.userId, userId),
+          eq(s.userMetadataPreferences.userId, viewerId),
           inArray(s.userMetadataPreferences.mediaId, artworkIds)
         )
       ),

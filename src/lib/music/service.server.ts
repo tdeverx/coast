@@ -1,3 +1,5 @@
+import { presentationPreferences } from '$lib/catalogue/overrides/presentation.server';
+import type { MusicItem } from './model';
 import { and,eq } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { trackingState, musicArtistPreferences,musicProgress } from '$lib/server/db/schema';
@@ -12,7 +14,7 @@ export async function musicLibrary(userId: string, connectionId: string, input: 
   const { adapter, connection, instance } = await getJellyfin(userId, connectionId);
   const page=await adapter.musicLibrary(connection.externalUserId!, options);
   const items=await observeMusicLibraryAccess(userId,connectionId,instance.id,connection.accountGeneration,page.items);
-  return {connectionId:connection.id,...page,items};
+  return {connectionId:connection.id,...page,items:await personaliseMusicItems(userId,items)};
 }
 
 export async function musicDetails(userId: string, connectionId: string, id: string) {
@@ -22,7 +24,7 @@ export async function musicDetails(userId: string, connectionId: string, id: str
   if(item.workId){const [state]=await getDb().select().from(trackingState).where(and(eq(trackingState.userId,userId),eq(trackingState.mediaId,item.workId)));item.favourite=state?.favourite??false;
     const [progress]=await getDb().select().from(musicProgress).where(and(eq(musicProgress.userId,userId),eq(musicProgress.trackId,item.workId)));item.positionSeconds=progress?.positionSeconds??0;item.playCount=progress?.playCount??0;}
   if(item.artistId){const [preference]=await getDb().select().from(musicArtistPreferences).where(and(eq(musicArtistPreferences.userId,userId),eq(musicArtistPreferences.artistId,item.artistId)));if(preference)item.favourite=preference.favourite;}
-  return {connectionId:connection.id,item};
+  return {connectionId:connection.id,item:(await personaliseMusicItems(userId,[item]))[0]};
 }
 
 export async function setMusicFavourite(
@@ -41,4 +43,14 @@ export async function setMusicFavourite(
     await adapter.setMusicFavourite(connection.externalUserId!,id,favourite);
   }
   return { favourite };
+}
+
+/** Persist provider observations first; personal display preferences never flow back into metadata. */
+export async function personaliseMusicItems(viewerId: string | null, items: MusicItem[]) {
+  const preferences = await presentationPreferences(viewerId, items.flatMap(item => item.workId ? [item.workId] : []));
+  return items.map(item => {
+    const preference = item.workId ? preferences.get(item.workId) : undefined;
+    return preference ? { ...item, title: preference.title ?? item.title, artworkUrl: preference.posterPath ?? item.artworkUrl,
+      backdropUrl: preference.backdropPath ?? item.backdropUrl } : item;
+  });
 }

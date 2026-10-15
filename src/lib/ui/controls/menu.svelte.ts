@@ -26,6 +26,7 @@ type MenuOptions = {
   align: () => 'start' | 'end';
   upward: () => boolean;
   onopen?: () => void;
+  onclose?: () => void;
 };
 export type MenuContext = {
   closeAll: (focus?: boolean) => void;
@@ -48,7 +49,9 @@ export function createMenuController(options: MenuOptions) {
   let lastTyped = 0;
   let point: { x: number; y: number } | undefined;
   let returnFocus: HTMLElement | null = null;
+  let disposed = false;
   function openAt(position: { x: number; y: number }) {
+    if (disposed) return;
     point = position;
     returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     openMenu(true);
@@ -57,15 +60,26 @@ export function createMenuController(options: MenuOptions) {
 
   function closeMenu(focus = false) {
     if (!open) return;
-    for (const child of options.root().querySelectorAll<HTMLElement>('[popover]:popover-open'))
+    for (const child of options.root()?.querySelectorAll<HTMLElement>('[popover]:popover-open') ?? [])
       child.hidePopover();
     open = false;
+    options.onclose?.();
     stopWatching?.();
     stopWatching = undefined;
     childClose = null;
     childHidden = false;
     parent?.showChild(null, false);
-    if (focus) (returnFocus?.isConnected ? returnFocus : options.triggerNode())?.focus({ preventScroll: true });
+    if (focus) {
+      const previousFocus = returnFocus;
+      // A compact submenu hides its parent. Wait for that parent to render
+      // again before returning focus to the submenu trigger.
+      const restoreFocus = () => {
+        if (!disposed && !open)
+          (previousFocus?.isConnected ? previousFocus : options.triggerNode())?.focus({ preventScroll: true });
+      };
+      if (parent && compact) void tick().then(restoreFocus);
+      else restoreFocus();
+    }
     point = undefined;
     returnFocus = null;
   }
@@ -86,12 +100,14 @@ export function createMenuController(options: MenuOptions) {
   const closeFromParent = () => closeMenu();
 
   function place() {
-    if (!open || !options.surface().matches(':popover-open')) return;
+    if (disposed || !open || !options.surface()?.matches(':popover-open') || !options.triggerNode()) return;
     const anchor = options.triggerNode().getBoundingClientRect();
     const menu = options.surface().getBoundingClientRect();
     const gap = 16;
     if (parent) {
-      const parentBounds = parent.surface().getBoundingClientRect();
+      const parentSurface = parent.surface();
+      if (!parentSurface) return;
+      const parentBounds = parentSurface.getBoundingClientRect();
       const right = parentBounds.right + 4;
       const leftEdge = parentBounds.left - menu.width - 4;
       side =
@@ -133,10 +149,12 @@ export function createMenuController(options: MenuOptions) {
     options.surface().style.top = `${Math.round(top)}px`;
   }
   function schedulePlace() {
+    if (disposed || !open) return;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(place);
   }
   function controls() {
+    if (!options.surface()) return [];
     return [
       ...options.surface().querySelectorAll<HTMLElement>('[role^="menuitem"], [data-menu-focus]'),
     ].filter(
@@ -149,6 +167,7 @@ export function createMenuController(options: MenuOptions) {
   }
   async function focusFirst(last = false) {
     await tick();
+    if (disposed || !open) return;
     focusItem(last);
     schedulePlace();
   }
@@ -157,13 +176,16 @@ export function createMenuController(options: MenuOptions) {
     (last ? items.at(-1) : items[0])?.focus({ preventScroll: true });
   }
   function openMenu(focus = false, last = false) {
-    if (options.disabled()) return;
+    if (disposed || options.disabled() || !options.surface() || !options.triggerNode()) return;
     if (!open) {
       parent?.showChild(closeFromParent, compact);
       options.surface().showPopover();
       open = true;
       startWatching();
       place();
+      // Children mount with the open state. Position their real bounds before
+      // the first paint, rather than waiting for a ResizeObserver frame.
+      void tick().then(place);
       options.onopen?.();
     }
     if (focus || (parent && compact)) void focusFirst(last);
@@ -254,7 +276,8 @@ export function createMenuController(options: MenuOptions) {
       control.hasAttribute('data-menu-keep-open')
     )
       return;
-    queueMicrotask(() => closeAll(options.root().contains(document.activeElement)));
+    const focus = options.root()?.contains(document.activeElement) ?? false;
+    queueMicrotask(() => { if (!disposed) closeAll(focus); });
   }
   afterNavigate(() => closeMenu());
   onMount(() => {
@@ -267,10 +290,11 @@ export function createMenuController(options: MenuOptions) {
     updateMode();
     query.addEventListener('change', updateMode);
     const outside = (event: Event) => {
-      if (open && event.target instanceof Node && !options.root().contains(event.target)) closeMenu();
+      const root = options.root();
+      if (open && root && event.target instanceof Node && !root.contains(event.target)) closeMenu();
     };
     startWatching = () => {
-      if (stopWatching) return;
+      if (disposed || stopWatching) return;
       const observer = new ResizeObserver(schedulePlace);
       observer.observe(options.surface());
       observer.observe(options.triggerNode());
@@ -287,6 +311,7 @@ export function createMenuController(options: MenuOptions) {
     };
     if (open) startWatching();
     return () => {
+      disposed = true;
       closeMenu();
       query.removeEventListener('change', updateMode);
       cancelAnimationFrame(frame);
@@ -301,6 +326,6 @@ export function createMenuController(options: MenuOptions) {
     get compact() { return compact; },
     get childHidden() { return childHidden; },
     openAt, focusFirst, close: closeMenu, openMenu, triggerKey, menuKey, action,
-    toggle(event: ToggleEvent) { if (event.newState === 'closed') closeMenu(); else { open = true; startWatching(); schedulePlace(); } },
+    toggle(event: ToggleEvent) { if (disposed) return; if (event.newState === 'closed') closeMenu(); else { open = true; startWatching(); schedulePlace(); } },
   };
 }

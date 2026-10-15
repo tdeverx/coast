@@ -1,3 +1,4 @@
+import { presentationPreferences, presentationSearch } from '$lib/catalogue/overrides/presentation.server';
 import { and, asc, count, desc, eq, sql, getTableColumns } from 'drizzle-orm';
 import * as v from 'valibot';
 import { searchDocument, searchSql } from '../../server/queries/search-ranking';
@@ -44,8 +45,9 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
     uuid(tracking.userId);
     if (tracking.status !== undefined) v.parse(v.picklist(['planned', 'in-progress', 'completed', 'paused', 'dropped']), tracking.status);
   }
+  const aliases = presentationSearch(tracking?.userId ?? null, sql`${games.id}`, query);
   const searchQuery = query ? searchSql(query, [searchDocument(sql`${games.title}`)], [sql`${games.title}`]) : null;
-  const buildWhere = (fallback = false) => and(searchQuery ? fallback ? searchQuery.fallback : searchQuery.matches : undefined,
+  const buildWhere = (fallback = false) => and(searchQuery ? sql`(${fallback ? searchQuery.fallback : searchQuery.matches} or ${aliases.matches(fallback)})` : undefined,
     tracking && (tracking.personal !== false || tracking.status) ? (tracking.status
       ? sql`(select status from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId} order by created_at desc, id desc limit 1) = ${tracking.status}`
       : sql`(exists(select 1 from game_playthroughs where game_id = ${games.id} and user_id = ${tracking.userId}) or exists(select 1 from tracking_state where media_id=${games.id} and user_id=${tracking.userId} and (collected or watchlist or favourite)))`) : undefined,
@@ -55,9 +57,9 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
   let [totals] = await db.select({ total: count() }).from(games).where(where);
   if (!totals.total && searchQuery) { where = buildWhere(true); [totals] = await db.select({ total: count() }).from(games).where(where); }
   const { page, pages } = pagination(totals.total, requestedPage);
-  const items = await db.select({...getTableColumns(games),available:tracking?ownedGameAvailable(tracking.userId):sql<boolean>`false`}).from(games).where(where).orderBy(...(searchQuery ? [desc(searchQuery.rank)] : []), asc(games.title), asc(games.id))
+  const items = await db.select({...getTableColumns(games),available:tracking?ownedGameAvailable(tracking.userId):sql<boolean>`false`}).from(games).where(where).orderBy(...(searchQuery ? [desc(sql`greatest(${searchQuery.rank},${aliases.rank})`)] : []), asc(games.title), asc(games.id))
     .limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE);
-  const presentation=await gamePresentationMetadata(items.map(item=>item.id),items);
+  const presentation=await gamePresentationMetadata(items.map(item=>item.id),items,tracking?.userId ?? null);
   return { items: rankSearch(items.map((item) => ({ ...item,...presentation.get(item.id),category: 'game' as const })), query), total: totals.total, page, pages };
 }
 
@@ -83,7 +85,7 @@ export async function gameDetails(userId: string | null, gameId: string) {
       from game_account_state where game_id=${gameId} group by account_id,game_id) a
     join provider_connections c on c.sync_account_id=a.account_id join provider_instances i on i.id=c.instance_id
     where c.user_id=${userId} and c.status='connected' and i.provider='steam' and i.enabled and a.game_id=${gameId}`) : [];
-  const enriched=(await gamePresentationMetadata([gameId],[game])).get(gameId)??game;
+  const enriched=(await gamePresentationMetadata([gameId],[game],userId)).get(gameId)??game;
   return { ...enriched, steam: Array.from(steam), category: 'game' as const, identities, playthroughs };
 }
 
@@ -206,11 +208,12 @@ export async function importIgdbMetadata(metadata: import('../../providers/igdb/
 }
 
 /** Borrow only presentation fields from a verified main game; retain the variant's identity/title. */
-export async function gamePresentationMetadata(ids:string[],records?:typeof games.$inferSelect[]){
+export async function gamePresentationMetadata(ids:string[],records?:typeof games.$inferSelect[],viewerId:string|null=null){
   if(!ids.length)return new Map<string,typeof games.$inferSelect>();
   const db=getDb(),rows=records??await db.select().from(games).where(sql`${games.id} in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)})`);
   if(!rows.length)return new Map<string,typeof games.$inferSelect>();
   const parents=await db.select({gameId:gameVariants.gameId,parent:games}).from(gameVariants).innerJoin(games,eq(games.id,gameVariants.parentId)).where(sql`${gameVariants.gameId} in (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`)})`);
+  const preferences=await presentationPreferences(viewerId,ids);
   const byGame=new Map(parents.map(row=>[row.gameId,row.parent]));
-  return new Map(rows.map(game=>{const parent=byGame.get(game.id);return [game.id,parent?{...game,posterPath:parent.posterPath??game.posterPath,backdropPath:parent.backdropPath??game.backdropPath,overview:parent.overview??game.overview,genres:parent.genres.length?parent.genres:game.genres,developers:parent.developers.length?parent.developers:game.developers,publishers:parent.publishers.length?parent.publishers:game.publishers}:game];}));
+  return new Map(rows.map(game=>{const parent=byGame.get(game.id);const result=parent?{...game,posterPath:parent.posterPath??game.posterPath,backdropPath:parent.backdropPath??game.backdropPath,overview:parent.overview??game.overview,genres:parent.genres.length?parent.genres:game.genres,developers:parent.developers.length?parent.developers:game.developers,publishers:parent.publishers.length?parent.publishers:game.publishers}:game;const preference=preferences.get(game.id);return [game.id,preference?{...result,title:preference.title??result.title,posterPath:preference.posterPath??result.posterPath,backdropPath:preference.backdropPath??result.backdropPath}:result];}));
 }

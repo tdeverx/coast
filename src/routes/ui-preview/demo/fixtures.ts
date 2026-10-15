@@ -19,7 +19,7 @@ export const provider={id,name:'Preview Jellyfin',provider:'jellyfin',enabled:tr
 export const job={id,kind:'jellyfin.sync',state:'pending',attempts:0,lastError:null,connectionLabel:'Preview account',progress:{processed:12,total:40,phase:'User access'}};
 export const music:MusicItem={id,kind:'album',title:'Preview album',artists:[{id,name:'Preview artist'}],albumArtists:[{id,name:'Preview artist'}],artistNames:['Preview artist'],genres:['Ambient'],year:2026,overview:'An album preview with ordered tracks.',externalIds:{},artworkUrl:'/coast-mark.png'};
 export const track:MusicItem={...music,id:episode.id,kind:'track',title:'Preview track',durationSeconds:240,trackNumber:1,album:music.title,albumId:id};
-export const actionData:MediaActionData={item:movie,wholeWork:movie,releaseDate:'2026-01-01',hasReleaseDate:true,progressTargetIds:[id],hasPersonalOverrides:false,ownRewatchStartedAt:null,rewatchTargetIds:[id],targets:[movie],children:[],requestTarget:movie,requestsEnabled:false,refreshTarget:null,playable:null,editions:[],lists:[],requests:[]};
+export const actionData:MediaActionData={item:movie,wholeWork:movie,releaseDate:'2026-01-01',hasReleaseDate:true,progressTargetIds:[id],hasPersonalOverrides:false,ownRewatchStartedAt:null,rewatchTargetIds:[id],targets:[movie],requestTarget:movie,requestsEnabled:false,refreshTarget:null,playable:null,editions:[],requests:[]};
 
 const notificationExamples:NotificationEntry[]=[
  {id:'00000000-0000-4000-8000-000000000001',kind:'recommendation',title:'Recommended something to you',body:null,actor:{username:'Alice',avatar:null,status:'online'},media:{card:movie,id,title:movie.title,href:`/media/${id}`,artwork:movie.backdrop??movie.poster??null,availability:'available',stale:false},createdAt:today,readAt:null,locked:false,sourceLabel:null,destination:null,requestState:null,sessionState:null,actions:['save','dismiss'],subjectId:id},
@@ -55,6 +55,8 @@ export const fixtureFetch: import('$lib/ui/client').ApiTransport = async (input,
     if(path.endsWith('/options')&&path.includes('/requests/'))return Response.json({destinations:[]});
     if(path.endsWith('/sequence'))return Response.json({next:episode});
     if(path.endsWith('/library')&&url.searchParams.get('preview')==='true')return Response.json({items:[{...music,kind:'album',href:'#',poster:'/coast-mark.png'}],failure:''});
+    if(/\/collection\/[^/]+\/lists$/.test(path))return Response.json({items:[{id,name:'Preview list',playlist:false,entries:[],count:0}],page:1,pages:1,total:1});
+    if(/\/collection\/[^/]+$/.test(path))return Response.json({reasons:[],rating:null,queued:false,game:null,reading:null});
     if(path.endsWith('/collection'))return Response.json(content);
     if(path.endsWith('/library'))return Response.json(content);
     if(path.endsWith('/progress'))return Response.json({...content,view:'watching',kind:'all',scope:'all'});

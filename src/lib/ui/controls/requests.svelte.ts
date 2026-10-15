@@ -12,8 +12,10 @@ export function createRequestControls(options: {
     requestOptionsBusy = $state(false),
     requestOptionsError = $state('');
   let generation = 0;
+  let controller: AbortController | undefined;
+  function cancel() { generation++; controller?.abort(); controller = undefined; requestOptionsBusy = false; }
   function resetOptions() {
-    generation++;
+    cancel();
     requestOptions = undefined;
     requestOptionsBusy = false;
     requestOptionsError = '';
@@ -56,13 +58,15 @@ export function createRequestControls(options: {
     if (requestOptionsBusy || requestOptions || requestDisabledReason || !item) return;
     const id = item.id;
     const token = ++generation;
+    controller = new AbortController();
+    const signal = controller.signal;
     requestOptionsBusy = true;
     requestOptionsError = '';
     try {
       const result = await options.api<{ destinations: RequestDestination[] }>(
         `requests/options?mediaId=${id}`,
         undefined,
-        'GET'
+        'GET', { signal }
       );
       if (options.item()?.id === id && token === generation) requestOptions = result.destinations;
     } catch (cause) {
@@ -75,7 +79,7 @@ export function createRequestControls(options: {
     options.onrequest()(fourK, requestOptions);
   }
 
- return {resetOptions, loadRequestOptions, openRequest,
+ return {cancel, resetOptions, loadRequestOptions, openRequest,
 get requestOptions() { return requestOptions; },
 get requestOptionsError() { return requestOptionsError; },
 get existingRequests() { return existingRequests; },

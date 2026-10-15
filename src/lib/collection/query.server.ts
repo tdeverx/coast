@@ -1,10 +1,11 @@
+import { personaliseWorkCards } from '$lib/catalogue/overrides/presentation.server';
 import { getConfig } from '$lib/server/config';
 import { enabledCategories, requireEnabledCategory, selectedCategory } from '$lib/server/experimental';
 import { sql, eq, inArray, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { logDiagnostic } from '$lib/server/diagnostics';
-import { musicWorks, readingWorks, providerItems, providerConnections, providerInstances, ratings, lists, listItems, upNext } from '$lib/server/db/schema';
+import { musicWorks, readingWorks, providerItems, providerConnections, providerInstances } from '$lib/server/db/schema';
 import { mediaViews } from '$lib/server/queries/media';
 import { profileUser } from '$lib/server/queries/profile-user';
 import { PAGE_SIZE, pageNumberSchema, pagination } from '$lib/server/queries/pagination';
@@ -238,15 +239,42 @@ export async function workAssessments(ownerId: string, viewerId: string, ids: st
   return Array.from(result).map(mapAssessment);
 }
 /** Shared action data is local and loaded only when the existing menu opens. */
-export async function workActionData(userId:string,id:string){
-  const db=getDb();
-  const [assessment,score,saved,queued]=await Promise.all([
-    workAssessments(userId,userId,[id]),
-    db.select({value:ratings.value}).from(ratings).where(sql`${ratings.userId}=${userId} and ${ratings.mediaId}=${id}`),
-    db.select({id:lists.id,name:lists.name,playlist:lists.playlist,entryId:listItems.id}).from(lists).leftJoin(listItems,sql`${listItems.listId}=${lists.id} and ${listItems.mediaId}=${id}`).where(eq(lists.userId,userId)),
-    db.select({id:upNext.mediaId}).from(upNext).where(sql`${upNext.userId}=${userId} and ${upNext.mediaId}=${id}`),
-  ]);
-  return {...assessment[0],rating:score[0]?.value??null,queued:queued.length>0,lists:saved};
+export async function workActionData(userId: string, id: string, playthroughId?: string): Promise<import('$lib/media/work-actions').WorkActionState> {
+  // The menu edits direct relationships. It does not need Collection's recursive
+  // coverage/ancestor assessment or every inherited member's reason payload.
+  const rows = await getDb().execute<import('$lib/media/work-actions').WorkActionState>(sql`
+    select coalesce((select jsonb_agg(jsonb_build_object('relationship',v.relationship,'origin','direct'))
+      from tracking_state t cross join lateral (values ('collected',t.collected),('watchlist',t.watchlist),('favourite',t.favourite)) v(relationship,enabled)
+      where t.user_id=${userId} and t.media_id=${id} and v.enabled),'[]'::jsonb) as reasons,
+      (select value from ratings where user_id=${userId} and media_id=${id}) as rating,
+      exists(select 1 from up_next where user_id=${userId} and media_id=${id}) as queued,
+      (select jsonb_build_object('platforms',g.platforms,'playthrough',
+        (select jsonb_build_object('id',p.id,'status',p.status,'progressPercent',p.progress_percent,'repeat',p.repeat,'platform',p.platform)
+         from game_playthroughs p where p.game_id=g.id and p.user_id=${userId}
+         and (${playthroughId ?? null}::uuid is null or p.id=${playthroughId ?? null}::uuid)
+         order by p.created_at desc,p.id desc limit 1)) from games g where g.id=${id}) as game,
+      (select jsonb_build_object('state',state,'page',page,'totalPages',total_pages)
+       from reading_progress where user_id=${userId} and work_id=${id}) as reading`);
+  return rows[0] as import('$lib/media/work-actions').WorkActionState;
+}
+
+/** Lists are a branch read: one row per list, bounded page, exact membership count.
+ * Only the first occurrence is needed for ordinary-list toggling; contextual actions
+ * retain their own selected entry ID and never substitute this occurrence. */
+export async function workActionLists(userId: string, id: string, requestedPage = 1, readingOnly = false): Promise<import('$lib/media/work-actions').WorkListPage> {
+  v.parse(pageNumberSchema, requestedPage);
+  const db = getDb();
+  const where = sql`l.user_id=${userId} and (not ${readingOnly} or not l.playlist)`;
+  const [count] = await db.execute<{ total: number }>(sql`select count(*)::int total from lists l where ${where}`);
+  const { page, pages } = pagination(count.total, requestedPage);
+  const rows = await db.execute<{ id: string; name: string; playlist: boolean; entryId: string | null; position: number | null; count: number }>(sql`
+    select l.id,l.name,l.playlist,member.id as "entryId",member.position,coalesce(member.total,0)::int as count
+    from lists l left join lateral (
+      select li.id,li.position,count(*) over() total from list_items li
+      where li.list_id=l.id and li.media_id=${id} order by li.position,li.id limit 1
+    ) member on true where ${where} order by l.name,l.id limit ${PAGE_SIZE} offset ${(page - 1) * PAGE_SIZE}`);
+  return { items: Array.from(rows as unknown as { id: string; name: string; playlist: boolean; entryId: string | null; position: number | null; count: number }[]).map(({ entryId, position, ...list }) => ({ ...list,
+    entries: entryId === null ? [] : [{ id: entryId, position: position! }] })), page, pages, total: count.total };
 }
 export async function workCards(ownerId: string, viewerId: string | null, ids: string[]): Promise<(MediaView | MediaCardPresentation)[]> {
   const unique = [...new Set(ids)];
@@ -277,9 +305,11 @@ async function workCardPage(ownerId: string, viewerId: string | null, ids: strin
     .where(sql`${inArray(providerItems.mediaId,musicRows.map(row=>row.id))} and ${providerConnections.userId}=${viewerId}
       and ${providerConnections.status}='connected' and ${providerInstances.enabled}`) : [];
   const cards=new Map<string,MediaView|MediaCardPresentation>(screen.map(i=>[i.id,i]));
-  for(const g of gameRows) cards.set(g.id,{id:g.id,kind:'game',title:g.title,href:`/games/${g.id}`,poster:g.posterPath,backdrop:g.backdropPath});
+  for(const g of gameRows) cards.set(g.id,{id:g.id,workId:g.id,kind:'game',title:g.title,href:`/games/${g.id}`,poster:g.posterPath,backdrop:g.backdropPath});
   for(const m of musicRows){ const source=mappings.find(p=>p.mediaId===m.id);cards.set(m.id,{id:source?.externalId??m.id,workId:m.id,kind:m.kind,title:m.title,captionSubtitle:m.artistNames.join(', '),year:m.year,href:`/music/work/${m.id}`,connectionId:source?.connection,poster:source?.primaryImageTag?`/api/v1/providers/${source.connection}/music/${source.externalId}/artwork`:undefined}); }
   for(const item of await readingCards(ownerId,viewerId,readingRows))cards.set(item.id,item);
+  const personal = await personaliseWorkCards(viewerId,[...cards.values()].filter((card): card is MediaCardPresentation => 'href' in card && card.kind !== 'book' && card.kind !== 'comic'));
+  for (const card of personal) cards.set(card.workId ?? card.id, card);
   return ids.flatMap(id=>cards.has(id)?[cards.get(id)!]:[]);
 }
 export function collectionParameters(url: URL) { return Object.fromEntries(['page','level','category','kind','relationship','activity','availability','source'].flatMap(k=>url.searchParams.has(k)?[[k,k==='page'?Number(url.searchParams.get(k)):url.searchParams.get(k)]]:[])); }

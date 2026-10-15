@@ -38,3 +38,16 @@ test('rail scroll/observer bursts share one frame and cannot publish after dispo
   globalThis.requestAnimationFrame=oldRAF;globalThis.cancelAnimationFrame=oldCancel;globalThis.ResizeObserver=oldResize;globalThis.MutationObserver=oldMutation;globalThis.matchMedia=oldMatch;
  }
 });
+
+test('server-rendered shelves destroy safely without browser animation APIs', async () => {
+ const serverCode=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:'layout.svelte.js',generate:'server'}).js.code
+  .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`);
+ const server=await import(moduleUrl(serverCode));
+ const previous=globalThis.cancelAnimationFrame;
+ try {
+  // Server rendering runs onDestroy, but never schedules a browser frame.
+  globalThis.cancelAnimationFrame=undefined as unknown as typeof cancelAnimationFrame;
+  server.createShelfLayout(()=>({size:'poster',artworkStyle:'auto',overlay:'none',layout:'row',busy:false,preserveHeight:false,hasMore:false}));
+  expect(()=>lifecycle.callbacks.splice(0).forEach((cleanup:()=>void)=>cleanup())).not.toThrow();
+ } finally {globalThis.cancelAnimationFrame=previous;}
+});

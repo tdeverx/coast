@@ -1,6 +1,6 @@
 # App follow-up roadmap
 
-Reviewed 15 October 2026 against the current checkout and implementation reports. This lists remaining work only; implemented features are documented elsewhere, even when not yet published. Parked proposals are not implementation authorization. Fixture coverage does not replace real-provider, deployment or device acceptance.
+Reviewed 16 October 2026 against the current checkout and implementation reports. This lists remaining work only; implemented features are documented elsewhere, even when not yet published. Parked proposals are not implementation authorization. Fixture coverage does not replace real-provider, deployment or device acceptance.
 
 ## Highest priority — recovery, reliable backups and data ownership
 
@@ -16,9 +16,14 @@ These requirements are selected roadmap priorities. Backup scheduling, installat
 - Real-account provider/social acceptance: Jellyfin video, audio and reading access; Trakt linking, history and live activity; Steam ownership/achievements; Seerr requests, cancellations and partial-season updates. Exercise reconnects/account switching, genuine sync conflicts, privacy and taste results with intentional accounts.
 - Validate shared-library onboarding, companion updates and queue recovery under real multi-account load. Measure import throughput, memory and interactive latency; synthetic cache/staging tests do not establish production speed. See [provider job verification limits](audits/2026-10-07-provider-jobs.md).
 - Validate playback on physical desktop/mobile devices and multiple party clients, including codecs, autoplay, source transitions, drift, reconnects and HLS outages. Extend representative accessibility checks to real assistive technology.
+- Extend the unified context-menu fixture checks to Safari/Firefox and physical touch/assistive devices, real-provider permissions and long-running retained-heap measurements. The [implementation record](audits/2026-10-15-context-menus.md#implementation-follow-up--16-october-2026) separates verified local behavior from those remaining acceptance limits.
 - Exercise bundled-volume backup/restore on the intended deployment. Disposable logical database/key recovery does not certify an installation restore.
 - Continue measured production performance work: investigate remaining CPU/RAM spikes and long-running heap behavior, browser rendering and decoding, cold-cache/network behavior and background contention. Use the existing benchmark history and [performance methods](performance.md); the local benchmark does not cover these workloads.
 - Revisit reviewed transitive dependency advisories when compatible parent upgrades are available; confirm current lockfile paths and reachability before changing dependencies.
+
+## Selected next app work — plans ready for review
+
+- Feature controls: audit normal administrator Features settings and user opt-outs separately from Experiments. Define effective policy, dependencies, existing-data preservation and enforcement across navigation, menus, APIs, provider jobs, active sessions and public/share access. See the [feature-gating audit and implementation plan](audits/2026-10-15-feature-gating.md). Normal administrator/user feature toggles remain planning work; the unified menus consume the current role, experiment, read-only and provider rules.
 
 ## Product and metadata follow-ups
 

@@ -13,6 +13,7 @@ import { sequenceEntries } from '../src/lib/core/lists/sequence.server';
 import { changeContinue, wholeWorkId } from '../src/lib/core/tracking/continue.server';
 import { setRewatch } from '../src/lib/core/tracking/rewatch.server';
 import { requestList } from '../src/lib/server/queries/requests';
+import { workActionLists } from '../src/lib/collection/query.server';
 import { mediaViewsForIds } from '../src/lib/server/queries/media';
 const run = process.env.COAST_DB_TEST === '1' ? test : test.skip;
 const [owner, other, show, season, specials, ep1, ep2, special, movie, collection] = Array.from(
@@ -77,26 +78,19 @@ afterAll(async () => {
 run(
   'menu targets navigate show, season, episode and collection; memberships remain private',
   async () => {
-    expect((await mediaActionData(owner, show)).children.map((i) => i.id)).toEqual([
-      specials,
-      season,
-    ]);
-    expect((await mediaActionData(owner, season)).children.map((i) => i.id)).toEqual([ep1, ep2]);
+    expect(await mediaActionData(owner, show)).not.toHaveProperty('children');
     const episode = await mediaActionData(owner, ep1);
     expect(episode.targets.map((i) => i.id).sort()).toEqual([ep1, season, show].sort());
     expect(episode.requestTarget?.id).toBe(show);
     const showActions = await mediaActionData(owner, show);
     expect(showActions.playable).toBeNull();
-    expect((await mediaActionData(owner, collection)).children.map((i) => i.id)).toEqual([
-      show,
-      movie,
-    ]);
+    expect(await mediaActionData(owner, collection)).not.toHaveProperty('children');
     const list = await createList(owner, { name: 'Created with title', mediaId: movie });
     expect((await getList(owner, list.id)).items.map((i) => i.item.id)).toEqual([movie]);
     expect(
-      (await mediaActionData(owner, movie)).lists.find((i) => i.id === list.id)?.entries
+      (await workActionLists(owner, movie)).items.find((i) => i.id === list.id)?.entries
     ).toHaveLength(1);
-    expect((await mediaActionData(other, movie)).lists).toHaveLength(0);
+    expect((await workActionLists(other, movie)).items).toHaveLength(0);
     await expect(
       createList(owner, { name: 'Invalid item', mediaId: crypto.randomUUID() })
     ).rejects.toThrow();
@@ -129,7 +123,7 @@ run(
     });
     const progressActions = await mediaActionData(owner, show);
     expect(progressActions.progressTargetIds).toContain(show);
-    expect(progressActions.progressTargetIds).toContain(season);
+    expect(progressActions.progressTargetIds).not.toContain(season); // Child IDs are no longer root-menu data.
     expect((await mediaActionData(other, show)).progressTargetIds).toEqual([]);
     const count = (await getTracking(owner, ep1)).playCount;
     await getDb()

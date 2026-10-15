@@ -1,3 +1,4 @@
+import { presentationPreferences, personaliseWorkCards, presentationSearch } from '$lib/catalogue/overrides/presentation.server';
 import { and, asc, count, desc, eq, or, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
@@ -9,7 +10,6 @@ import { enabledCategories, requireEnabledCategory } from '$lib/server/experimen
 import type { ReadingMetadata } from './model';
 import { readingStates, readingReferenceSchema, readingProviderForId, type ReadingKind } from './model';
 import { readingCard } from './presentation';
-import { rankSearch } from '$lib/search';
 import { searchDocument, searchSql } from '$lib/server/queries/search-ranking';
 
 const uuid = v.pipe(v.string(), v.uuid());
@@ -46,7 +46,10 @@ export async function readingDetails(userId: string, id: string) {
     db.select({ favourite: trackingState.favourite, watchlist: trackingState.watchlist, collected: trackingState.collected }).from(trackingState).where(and(eq(trackingState.userId, userId), eq(trackingState.mediaId, id))),
     db.select({ value: ratings.value }).from(ratings).where(and(eq(ratings.userId, userId), eq(ratings.mediaId, id))),
   ]);
-  return { item, progress: progress ?? null, relationships: relationships ?? { favourite: false, watchlist: false, collected: false }, rating: rating?.value ?? null };
+  const preference=(await presentationPreferences(userId,[id])).get(id);
+  const presented=preference?{...item,title:preference.title??item.title,coverUrl:preference.posterPath??item.coverUrl,
+    ...(preference.backdropPath ? {backdropUrl:preference.backdropPath} : {})}:item;
+  return { item:presented, progress: progress ?? null, relationships: relationships ?? { favourite: false, watchlist: false, collected: false }, rating: rating?.value ?? null };
 }
 
 /** Personal membership and state filters precede both counts and the bounded page read. */
@@ -56,6 +59,7 @@ export async function readingCatalogue(userId: string, raw: unknown = {}) {
   const config = await getConfig();
   requireEnabledCategory(config, 'reading');
   if (input.kind !== 'all') requireEnabledCategory(config, input.kind);
+  const aliases = presentationSearch(userId,sql`${readingWorks.id}`,input.search);
   const search = input.search ? searchSql(input.search, [searchDocument(sql`${readingWorks.title}`, sql`${readingWorks.seriesTitle}`, sql`${readingWorks.authors}`)], [sql`${readingWorks.title}`, sql`${readingWorks.seriesTitle}`]) : null;
   const personal = sql`exists(select 1 from reading_progress p where p.work_id=${readingWorks.id} and p.user_id=${userId})
     or exists(select 1 from tracking_state t where t.media_id=${readingWorks.id} and t.user_id=${userId} and (t.collected or t.watchlist or t.favourite))
@@ -66,7 +70,7 @@ export async function readingCatalogue(userId: string, raw: unknown = {}) {
     enabledCategories(sql`${readingWorks.kind}`, config),
     input.available?sql`exists(select 1 from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.media_id=${readingWorks.id} and a.user_id=${userId} and a.state='available' and c.status='connected' and i.enabled)`:undefined,
     input.kind === 'all' ? undefined : eq(readingWorks.kind, input.kind),
-    search ? fallback ? search.fallback : search.matches : undefined,
+    search ? sql`(${fallback ? search.fallback : search.matches} or ${aliases.matches(fallback)})` : undefined,
     input.personal ? sql`(${personal})` : undefined,
     input.state === 'all' ? undefined : sql`exists(select 1 from reading_progress p where p.work_id=${readingWorks.id} and p.user_id=${userId} and p.state=${input.state})`,
   );
@@ -75,8 +79,10 @@ export async function readingCatalogue(userId: string, raw: unknown = {}) {
   let [totals] = await db.select({ total: count() }).from(readingWorks).where(where);
   if (!totals.total && search) { where = buildWhere(true); [totals] = await db.select({ total: count() }).from(readingWorks).where(where); }
   const { page, pages } = pagination(totals.total, input.page);
-  const items = await db.select().from(readingWorks).where(where).orderBy(...(search ? [desc(search.rank)] : []), asc(readingWorks.title), asc(readingWorks.id)).limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE);
-  return { items: rankSearch(items, input.search), total: totals.total, page, pages };
+  const items = await db.select().from(readingWorks).where(where).orderBy(...(search ? [desc(sql`greatest(${search.rank},${aliases.rank})`)] : []), asc(readingWorks.title), asc(readingWorks.id)).limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE);
+  // SQL has ranked both canonical metadata and the viewer's private aliases
+  // before paging. Rescoring raw titles here would demote alias-only matches.
+  return { items, total: totals.total, page, pages };
 }
 
 /** Hydrate private page progress for only the selected card page, respecting the actual category. */
@@ -90,7 +96,7 @@ export async function readingCards(ownerId: string, viewerId: string | null, ite
   const available=await getDb().execute<{id:string}>(sql`select distinct a.media_id as id from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.media_id in (${sql.join(items.map(item=>sql`${item.id}::uuid`),sql`,`)}) and a.user_id=${viewerId} and a.state='available' and c.status='connected' and i.enabled`);
   const accessible=new Set(Array.from(available).map(row=>row.id));
   const byId = new Map(progress.map(row => [row.progress.workId, row.progress]));
-  return items.map(item => ({...readingCard(item, undefined, byId.get(item.id)),available:accessible.has(item.id)}));
+  return personaliseWorkCards(viewerId,items.map(item => ({...readingCard(item, undefined, byId.get(item.id)),available:accessible.has(item.id)})));
 }
 
 /** Resolve a bounded provider page in one query, then hydrate only its canonical matches. */
@@ -117,7 +123,7 @@ export async function readingProviderCards(userId: string, metadata: ReadingMeta
       return card ? [[card.id, card] as const] : [];
     })).values()];
     return matches.length === 1 ? matches[0] : readingCard(
-      { ...item, id: `${item.provider}:${item.externalId}` }, `/media/${item.provider}/${item.externalId}`);
+      { ...item, id: `${item.provider}:${item.externalId}` }, `/media/${item.provider}/${item.externalId}`, undefined, false);
   });
   return [...new Map(result.map(card => [card.id, card])).values()];
 }
