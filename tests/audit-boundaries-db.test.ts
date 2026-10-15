@@ -157,11 +157,17 @@ run('taste counts and overlap pages remain exact beyond the scoring sample and u
 run('concurrent recommendation send and response share one lock order', async () => {
   const item = await ingestMetadata({ provider: 'tmdb', externalId: `lock-order-${tag}`, kind: 'movie', title: 'Lock order' });
   const recommendation = await recommend(owner, { recipientId: friend, workId: item.id });
-  await Promise.all([
+  const [sent, response] = await Promise.all([
     recommend(owner, { recipientId: friend, workId: item.id }),
     respondRecommendation(friend, recommendation.id, { action: 'save' }),
   ]);
-  expect(await getSql()`select id from social_recommendations where sender_id=${owner} and recipient_id=${friend} and work_id=${item.id}`).toHaveLength(1);
+  const rows: {id: string; state: string}[] = await getSql()`select id,state from social_recommendations where sender_id=${owner} and recipient_id=${friend} and work_id=${item.id}`;
+  expect(response.state).toBe('saved');
+  expect(rows.filter(row => row.state === 'saved').map(row => row.id)).toEqual([recommendation.id]);
+  // Sending first reuses the pending record; responding first permits a fresh
+  // pending recommendation. Both serial orders must finish without deadlock.
+  expect(rows.filter(row => row.state === 'pending').map(row => row.id)).toEqual(sent.id === recommendation.id ? [] : [sent.id]);
+  expect(rows).toHaveLength(sent.id === recommendation.id ? 1 : 2);
 });
 
 run('manual webhook Retry gets a fresh delivery budget without reusing an old lease attempt', async () => {
