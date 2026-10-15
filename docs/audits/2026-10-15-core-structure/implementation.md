@@ -87,3 +87,7 @@ No commit, push, deployment, or dev/live database migration was performed. Three
 - Migration generation produces no new statements against the current snapshot.
 
 See [machine-readable verification](implementation-checks.json) and the individual implementation reports for exact scopes. Real provider/device acceptance and a complete HTTP/browser journey were not run.
+
+## Publishing verification
+
+Integrated current main (`b7e9d86`) and verified on Bun 1.4.3: **449 regular tests and 540 disposable database tests passed**, zero failures; typecheck/build/inventories/style checks passed. The 77 database suites completed in one full run and the test container was restored to stopped. Main’s runtime diagnostics, shutdown/readiness fixes, recovery priorities and PostgreSQL 15/17 CI remain intact. See [publishing verification](push-verification.json). No dev/live migration or deployment was performed.
