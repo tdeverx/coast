@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import {page} from '$app/state';
   import Icon from './Icon.svelte';
-  import RowFeedback from './RowFeedback.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import { getContext, onDestroy, untrack } from 'svelte';
 
@@ -23,7 +23,7 @@
   const result = await resource.load(async signal => (await api<Record<string, Reaction[]>>(`social/reactions?targetKind=${kind}&ids=${id}`, undefined, 'GET', { signal }))[id] ?? []);
   if (result) loaded = true;
  }
- const mutation = createMutation(load);
+ const mutation = createMutation(load, useClient().feedback.notify);
  const selected = $derived(loaded ? resource.data.find(row => row.mine)?.emoji ?? null : initialReaction);
  $effect(() => { targetId; targetKind;page.data.capabilities?.social; untrack(() => { resource.replace([]); loaded = false; mutation.error = ''; }); });
  onDestroy(resource.dispose);
@@ -31,13 +31,15 @@
   const id = targetId, kind = targetKind;
   void mutation.run(() => change('social/reactions', { targetKind: kind, targetId: id, emoji: selected === emoji ? null : emoji }));
  }
+
+  reportFailure(()=>resource.error || mutation.error);
 </script>
 {#if page.data.capabilities?.social!==false}<Button menu label="React" panel {disabled} onopen={load} onclose={resource.cancel}>
  {#snippet trigger()}{#if selected}<span class="selected-emoji">{selected}</span>{:else}<Icon name="smile" size={20} />{/if}{#if nested}<span class="menu-action-label">React</span><span class="menu-chevron"><Icon name="right" /></span>{/if}{/snippet}
  <div class="reaction-strip">
   {#each emojis as emoji}<Button item class="reaction-choice" label={emoji} checked={selected === emoji} showCheckmark={false} disabled={resource.busy || mutation.busy} keepOpen onclick={() => react(emoji)}><span class="emoji">{emoji}</span></Button>{/each}
  </div>
- {#if resource.error || mutation.error}<RowFeedback error={resource.error || mutation.error} tag="p" class="notice error small" />{/if}
+
 </Button>{/if}
 <style>
  .selected-emoji,.emoji{font-size:var(--text-xl);line-height:var(--leading-solid);}

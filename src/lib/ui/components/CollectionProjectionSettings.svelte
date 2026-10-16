@@ -1,5 +1,5 @@
 <script lang="ts">
-  import RowFeedback from './RowFeedback.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import { untrack } from 'svelte';
   import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
@@ -15,6 +15,8 @@
   async function prepare(){busy=true;failure='';try{preview=await change(`providers/${connectionId}/collection-preview`,config);open=true;}catch(e){failure=message(e);}finally{busy=false;}}
   async function approve(choice:string){if(!preview)return;busy=true;failure='';try{await change(`providers/${connectionId}/collection-approve`,{previewId:preview.id,choice});open=false;}catch(e){failure=message(e);}finally{busy=false;}}
   async function review(workId:string,choice:'remote'|'coast'){if(!preview)return;busy=true;failure='';try{await change(`providers/${connectionId}/collection-review`,{previewId:preview.id,workId,choice});preview={...preview,conflicts:preview.conflicts.filter(e=>e.workId!==workId),uncertain:preview.uncertain.filter(e=>e.workId!==workId)};}catch(e){failure=message(e);}finally{busy=false;}}
+
+  reportFailure(()=>failure);
 </script>
 <div class="stack">
   <h3>Export Trakt Collection</h3>
@@ -27,7 +29,7 @@
   {/if}
   <p class="small">Personal Collection and server availability are separate. This export does not change history, ratings, watchlist or lists.</p>
   <div><Button  disabled={busy} onclick={prepare}>Preview export changes</Button></div>
-  {#if failure&&!open}<RowFeedback error={failure} tag="p" class="notice error" />{/if}
+
 </div>
 <Dialog bind:open title="Trakt Collection preview">
   {#if preview}<div class="stack">
@@ -37,7 +39,7 @@
     {#if preview.unresolved.length}<p class="small">Unresolved: {preview.unresolved.slice(0,60).join(', ')}</p>{/if}
     {#each [...preview.conflicts,...preview.uncertain.filter(e=>!preview?.conflicts.some(c=>c.workId===e.workId))] as entry (entry.workId)}<div class="panel stack"><strong>{entry.title}</strong><p class="small">Keep the remote membership as it is, or confirm Coast may manage this entry. Delivery is queued and rechecks the account and remote state.</p><div class="row"><Button  disabled={busy} onclick={()=>review(entry.workId,'remote')}>Keep remote changes</Button><Button emphasis="subtle" disabled={busy} onclick={()=>review(entry.workId,'coast')}>Use Coast selection</Button></div></div>{/each}
     <p class="small">Managed cleanup removes confirmed Coast additions only. Pre-existing and uncertain entries stay. Replace/Clear all also removes entries created outside Coast.</p>
-    {#if failure}<RowFeedback error={failure} tag="p" class="notice error" />{/if}
+
     <div class="row"><Button disabled={busy} onclick={()=>approve('leave')}>Leave existing entries</Button><Button  disabled={busy||preview.blocked} onclick={()=>approve('remove-managed')}>{config.enabled?'Remove obsolete Coast-added entries':'Remove Coast-added entries'}</Button><Button danger disabled={busy||preview.blocked} onclick={()=>approve(config.enabled?'replace-all':'clear-all')}>{config.enabled?'Replace all':'Clear all'}</Button></div>
   </div>{/if}
 </Dialog>

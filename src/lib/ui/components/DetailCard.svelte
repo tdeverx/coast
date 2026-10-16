@@ -1,8 +1,6 @@
 <script lang="ts">
   import type { InsightContent } from '$lib/ui/insights/types';
-  import BarChart from './BarChart.svelte';
-  import BreakdownChart from './BreakdownChart.svelte';
-  import ProgressChart from './ProgressChart.svelte';
+  import ChartView from '../charts/ChartView.svelte';
   import FactList from './FactList.svelte';
   import MetricGrid from './MetricGrid.svelte';
   import type { Snippet } from 'svelte';
@@ -23,9 +21,7 @@
     {#if description}<p class="description">{description}</p>{/if}
   </header>
   {#if children || content}<div class="body">
-    {#if content?.kind === 'bar'}<BarChart {...content.props} />
-    {:else if content?.kind === 'breakdown'}<BreakdownChart {...content.props} />
-    {:else if content?.kind === 'progress'}<ProgressChart {...content.props} />
+    {#if content?.kind === 'chart'}<ChartView model={content.model} compact />
     {:else if content?.kind === 'facts'}<FactList {...content.props} />
     {:else if content?.kind === 'metrics'}<MetricGrid {...content.props} />
     {:else if content?.kind === 'text'}<p class:muted={content.muted}>{content.text}</p>

@@ -1,5 +1,6 @@
 <script lang="ts" generics="T extends MediaView | MediaCardPresentation">
   import { shelfControls } from '$lib/ui/shelves/controls';
+  import { reportFailure } from '$lib/ui/client-context';
   import type { FilterGroup } from '$lib/ui/controls/filters';
   import { onDestroy, untrack, type Snippet } from 'svelte';
   import { createShelfSource, type ShelfConfig } from '$lib/ui/shelves';
@@ -8,7 +9,6 @@
   import { createShelfLayout } from '$lib/ui/shelves/layout.svelte';
   import { lazyContent } from '$lib/ui/lazy-content';
   import { liquidGlass } from '$lib/ui/materials/glass';
-  import RowFeedback from './RowFeedback.svelte';
   import Pagination from './Pagination.svelte';
   import { createSequencePlayback } from '$lib/ui/controls/sequence.svelte';
   import Dialog from './Dialog.svelte';
@@ -35,16 +35,18 @@
   const sequence = createSequencePlayback({source: () => adapter?.sequence, experimentalMusic: () => !!page.data.experimentalMusic, preview, api, change});
 
   let {
-    title = '', items = [], source, panels, journal, href, children, heading, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
+    title = '', items = [], source, panels, journal, href, children, heading, before, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
     mediaKind = 'screen', segments: customSegments, controls: customControls, filterGroups = [], actions, error = '', retry, empty, details,
     busy = false, hideEmpty = true, itemCount, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
-    pageNumber, pages, onpage, pageUrl, onsettled, onactivate, filterBy = 'none', availability = true, availableOnly = $bindable(false),
+    pageNumber, pages, onpage, pageUrl, onsettled, onactivate, filterBy = 'none', enrichSocial = true, availability = true, availableOnly = $bindable(false),
   }: {
     filterBy?: 'none' | 'type' | 'watched';
     availability?: boolean;
     availableOnly?: boolean;
     children?: Snippet<[MediaRowStyle]>;
     heading?: Snippet;
+    before?:Snippet;
+    enrichSocial?:boolean;
     size?: MediaCardShape | 'panel';
     overlay?: MediaCardOverlay;
     artworkOptions?: boolean;
@@ -114,7 +116,7 @@
   $effect(() => {
     const ids = [...new Set(displayItems.filter(item => !item.captionActor).map(item => 'workId' in item ? item.workId ?? item.id : item.id).filter(id => /^[0-9a-f-]{36}$/.test(id)))];
     const scope = JSON.stringify([socialRevision, displayResetKey, selection.resetKey, adapter?.filters.map(control => [control.label, control.value]), adapter?.controls.map(control => [control.label, control.value])]);
-    const active = socialActive && !!page.data.user && page.data.capabilities?.social!==false;
+    const active = enrichSocial && socialActive && !!page.data.user && page.data.capabilities?.social!==false;
     untrack(() => enrichment.update({ ids, scope, active }));
   });
   onDestroy(enrichment.cancel);
@@ -143,6 +145,7 @@
   const displayPages = $derived(pagination?.kind === 'pages' ? pagination.pages : pages ?? 1);
   const displayOnpage = $derived(adapter ? (pagination?.kind === 'pages' ? adapter.load : undefined) : onpage);
   const displayPageUrl = $derived((pagination?.kind === 'pages' ? pagination.url : undefined) ?? pageUrl);
+  const pagedNavigation = $derived(displayLayout === 'grid' || !adapter && !!onpage);
   const hasNavigation = $derived(displayLayout === 'row' || !!displayOnpage || !!displayPageUrl);
   let styleMenu = $state<RowStyleMenu>();
   const rail = createShelfLayout(() => ({
@@ -153,6 +156,8 @@
   function styleGesture(node: HTMLElement) {
     if (displaySize !== 'panel') return contextGesture(node, point => styleMenu?.openAt(point));
   }
+
+  reportFailure(()=>({text:displayError,retry:adapter ? () => adapter.load(pagination?.kind === 'pages' ? pagination.page : 1) : retry}));
 </script>
 
 {#if adapter?.sequence}<Dialog bind:open={sequence.open} title={sequence.title} message={sequence.message} alert={!!sequence.error} actions={sequence.actions} />{/if}
@@ -183,9 +188,9 @@
       {#if extra?.actions}<div class="order">{#each extra.actions as action}<Button emphasis="subtle" icon={action.icon} label={action.label} disabled={action.disabled} onclick={action.run} />{/each}</div>{/if}
       {#if !entry.activity}{@render details?.(item as T)}{/if}
     </div>{/each}
-    {#if !loading && adapter && !displayItems.length && !adapter.error}<div class="row-empty" aria-live="polite"><RowFeedback message={adapter.empty}>
+    {#if !loading && adapter && !displayItems.length && !adapter.error}<div class="row-empty" aria-live="polite"><p class="quiet" role="status">{adapter.empty}
       {#if adapter.emptyHref}<a href={adapter.emptyHref}>{adapter.emptyLink}</a>{/if}
-    </RowFeedback></div>
+    </p></div>
     {:else if !loading && !adapter && !displayItems.length && (empty || filterMode !== 'none') && (filterMode === 'none' || !busy)}<div class="row-empty" aria-live="polite">
       {#if filterMode !== 'none' && selection.filtered}<p class="muted">No titles in this selection.</p>
       {:else}{@render empty?.()}{/if}
@@ -207,20 +212,20 @@
         {@render customSegments?.()}
       {/snippet}
       {#snippet previous()}{#if hasNavigation}<Button size="icon"
-        label={displayLayout === 'grid' ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}
-        disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber <= 1 : emptyRow || !rail.previous}
-        href={displayLayout === 'grid' ? displayPageUrl?.(displayPageNumber - 1) : undefined}
-        onclick={displayLayout === 'grid' ? displayPageUrl ? undefined : () => displayOnpage?.(displayPageNumber - 1) : () => rail.scroll(-1)}
+        label={pagedNavigation ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}
+        disabled={pagedNavigation ? displayBusy || displayPageNumber <= 1 : emptyRow || !rail.previous}
+        href={pagedNavigation ? displayPageUrl?.(displayPageNumber - 1) : undefined}
+        onclick={pagedNavigation ? displayPageUrl ? undefined : () => displayOnpage?.(displayPageNumber - 1) : () => rail.scroll(-1)}
         icon="left" iconSize={20} />{/if}{/snippet}
       {#snippet controls()}
         {#if groups.length || adapter?.sequence || adapter?.actions?.length || actions}<RowFilter {groups} actions={adapter?.sequence || adapter?.actions?.length || actions ? menuActions : undefined} />{/if}
         {@render customControls?.()}
       {/snippet}
       {#snippet next()}{#if hasNavigation}<Button size="icon"
-        label={displayLayout === 'grid' ? `Next ${displayTitle} page` : `Scroll ${displayTitle} right`}
-        disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber >= displayPages : emptyRow || !rail.next && !displayHasMore}
-        href={displayLayout === 'grid' ? displayPageUrl?.(displayPageNumber + 1) : undefined}
-        onclick={displayLayout === 'grid' ? displayPageUrl ? undefined : () => displayOnpage?.(displayPageNumber + 1) : () => rail.scroll(1)}
+        label={pagedNavigation ? `Next ${displayTitle} page` : `Scroll ${displayTitle} right`}
+        disabled={pagedNavigation ? displayBusy || displayPageNumber >= displayPages : emptyRow || !rail.next && !displayHasMore}
+        href={pagedNavigation ? displayPageUrl?.(displayPageNumber + 1) : undefined}
+        onclick={pagedNavigation ? displayPageUrl ? undefined : () => displayOnpage?.(displayPageNumber + 1) : () => rail.scroll(1)}
         icon="right" iconSize={20} />{/if}{/snippet}
     </Heading>
   </div>
@@ -235,8 +240,9 @@
       bind:overrideArtwork={rail.overrideArtwork}
       bind:overrideOverlay={rail.overrideOverlay}
     />{/if}
-  <RowFeedback error={displayError} retry={adapter ? () => adapter.load(pagination?.kind === 'pages' ? pagination.page : 1) : retry} retryLabel={adapter?.retryLabel ?? 'Try again'} />
+
   {#if adapter?.notice}<p class="small muted">{adapter.notice}</p>{/if}
+  {@render before?.()}
   <div class="rail-shell">
   <div
     class="rail"
@@ -270,7 +276,7 @@
 </div>
 {/if}
 {#if adapter?.appendOnly}<div class="load-more" use:lazyContent={{load:()=>adapter.load(),enabled:()=>!adapter.error,repeat:true}} aria-busy={adapter.busy} aria-live="polite">
-  {#if adapter.error}<RowFeedback error={adapter.error} tag="p" />{/if}
+
   {#if displayHasMore && !adapter.busy}<Button emphasis="subtle" onclick={()=>adapter.load()}>{adapter.error?'Retry':adapter.loadMoreLabel}</Button>
   {:else if !displayHasMore && !adapter.items.length}<p class="muted">{adapter.empty}</p>{/if}
 </div>{/if}

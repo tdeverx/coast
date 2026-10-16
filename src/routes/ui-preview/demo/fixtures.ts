@@ -6,7 +6,7 @@ import type { MediaActionData } from '$lib/media/actions';
 import { providerSchedule } from '$lib/providers/schedule';
 export const id='00000000-0000-4000-8000-000000000074';
 export const today='2026-10-01';
-export const movie:MediaView={id,kind:'movie',title:'Preview title',overview:'Demo content for comparing the existing components. Nothing in this preview is saved.',year:2026,genres:['Drama','Adventure'],runtimeMinutes:110,available:false,progress:1800,duration:6600,watched:false,playCount:0,watchlist:true,favourite:false,collected:true,dropped:false,rating:8,poster:'/coast-mark.png',backdrop:'/coast-mark.png'};
+export const movie:MediaView={id,kind:'movie',title:'Preview title',overview:'Demo content for comparing the existing components. Nothing in this preview is saved.',year:2026,genres:['Drama','Adventure'],runtimeMinutes:110,available:false,progress:1800,duration:6600,watched:false,playCount:0,watchlist:true,favourite:false,collected:true,dropped:false,rating:4,poster:'/coast-mark.png',backdrop:'/coast-mark.png'};
 export const show:MediaView={...movie,id:'00000000-0000-4000-8000-000000000075',kind:'show',title:'Preview series',progress:0,totalEpisodes:8,completedEpisodes:3};
 export const episode:MediaView={...movie,id:'00000000-0000-4000-8000-000000000076',kind:'episode',title:'A first chapter',showId:show.id,seasonNumber:1,episodeNumber:1};
 export const items=[movie,show];

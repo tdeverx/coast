@@ -1,5 +1,6 @@
 <script lang="ts">
-  import RowFeedback from './RowFeedback.svelte';
+  import OperationProgress from './OperationProgress.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import CollectionProjectionSettings from './CollectionProjectionSettings.svelte';
   import type {SourceImpact} from '$lib/collection/source-changes.server';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
@@ -184,6 +185,8 @@
     lists: 'Custom lists',
     scrobble: 'Live scrobbling',
   };
+
+  reportFailure(()=>error);
 </script>
 
 <section class="panel stack">
@@ -213,7 +216,7 @@
       >{provider.connection?.status === 'connected' ? 'Connected' : 'Not connected'}</span
     >
   </div>
-  {#if error && !disconnect}<RowFeedback error={error} tag="div" class="notice error" />{/if}{#if provider.connection?.status === 'connected'}<p class="small">
+  {#if provider.connection?.status === 'connected'}<p class="small">
       Connected as {provider.connection.username}
     </p>
     {#if provider.provider === 'jellyfin'}<div class="stack">
@@ -296,11 +299,7 @@
                 · {scanPercent}%{/if}</span
             >{:else if scanning}<span>{scan.processed.toLocaleString()} items processed</span>{/if}
         </div>
-        {#if scanning}<progress
-            aria-label="Activity sync progress"
-            max="100"
-            value={scanPercent ?? undefined}
-          ></progress>{/if}
+        {#if scanning}<OperationProgress label="Activity sync progress" processed={scan.processed} total={scan.total} />{/if}
         {#if scan.error && scan.state !== 'succeeded'}<p class="small text-danger">
             {scan.error}
           </p>{/if}
@@ -359,7 +358,7 @@
 </section>
 <Dialog bind:open={disconnect} title="Disconnect this account?"
   ><div class="stack">
-    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+
     <p>
       Your imported tracking data stays in Coast. Pending external actions for this connection will
       be cancelled.
@@ -393,45 +392,6 @@
     gap: 12px;
     flex-wrap: wrap;
   }
-  progress {
-    width: 100%;
-    height: 6px;
-    border: 0;
-    border-radius: 99px;
-    overflow: hidden;
-    accent-color: var(--ink);
-  }
-  progress:indeterminate {
-    background: linear-gradient(90deg, var(--line) 25%, var(--muted) 50%, var(--line) 75%);
-    background-size: 200% 100%;
-    animation: scan-pending 1.8s linear infinite;
-  }
-  progress:indeterminate::-webkit-progress-bar {
-    background: transparent;
-  }
-  @keyframes scan-pending {
-    to {
-      background-position: -200% 0;
-    }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    progress:indeterminate {
-      animation: none;
-    }
-  }
-  progress::-webkit-progress-bar {
-    background: var(--line);
-    border-radius: 99px;
-  }
-  progress::-webkit-progress-value {
-    background: var(--ink);
-    border-radius: 99px;
-  }
-  progress::-moz-progress-bar {
-    background: var(--ink);
-    border-radius: 99px;
-  }
-
   .provider-icon {
     width: 42px;
     height: 42px;

@@ -1,6 +1,8 @@
 <script lang="ts">
+  import FormActions from '$lib/ui/components/FormActions.svelte';
+  import Field from '$lib/ui/components/Field.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import {page} from '$app/state';
-  import RowFeedback from './RowFeedback.svelte';
   import { useClock } from '$lib/ui/clock.svelte';
   import { untrack } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
@@ -151,6 +153,8 @@
     )
       cancel();
   });
+
+  reportFailure(()=>error);
 </script>
 
 <article id={`job-${provider.id}-${task.id}`} class="task-row" aria-label={`${provider.name}: ${task.title}`}>
@@ -178,7 +182,7 @@
       {#if !local}<div class="menu-divider" role="separator"></div><Button item icon="settings" href="/settings/integrations" keepOpen={false}>Manage integration</Button>{/if}
     </Button>
   </div>
-  {#if error && !open && !detailsOpen}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+
 </article>
 <Dialog bind:open={detailsOpen} title={`${task.title} · ${provider.name}`}>
   {#if detailsOpen}<div class="stack task-details">
@@ -234,7 +238,7 @@
     {#if task.scope}<Button  icon="refresh" disabled={busy || !provider.enabled || (!provider.connectedAccounts && !local && !['tmdb','igdb'].includes(provider.provider))} onclick={() => void run()}>Run now</Button>
       <Button emphasis="subtle" icon="clock" disabled={busy || !provider.enabled} onclick={editSchedule}>Edit schedule</Button>{/if}
   </div>
-    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+
   </div>{/if}
 </Dialog>
 <Dialog bind:open title={`${task.title} schedule · ${provider.name}`}>
@@ -249,8 +253,7 @@
       {automatic ? 'Automatic runs are enabled.' : 'Automatic runs are paused.'} Manage automatic-run
       toggles in <a class="text-accent" href="/settings/integrations">Integrations</a>.
     </p>{/if}
-    {#if task.interval}<label class="field"
-        >{local?'Refresh taste profiles every (minutes)':task.interval==='recommendationsIntervalMinutes' ? 'Refresh recommendations every (minutes)' : task.scope === 'library'
+    {#if task.interval}<Field label={local?'Refresh taste profiles every (minutes)':task.interval==='recommendationsIntervalMinutes' ? 'Refresh recommendations every (minutes)' : task.scope === 'library'
           ? 'Library changes every (minutes)'
           : task.scope === 'users'
             ? 'User activity every (minutes)'
@@ -258,7 +261,7 @@
               ? 'Lists every (minutes)'
               : task.scope === 'tracking'
                 ? 'Tracking every (minutes)'
-                : task.scope === 'catalogue' ? 'User catalogue every (minutes)' : task.scope === 'metadata' ? 'Refresh each title every (minutes)' : 'Requests every (minutes)'}<input
+                : task.scope === 'catalogue' ? 'User catalogue every (minutes)' : task.scope === 'metadata' ? 'Refresh each title every (minutes)' : 'Requests every (minutes)'}><input
           type="number"
           min="1"
           max="10080"
@@ -266,13 +269,11 @@
           required
           bind:value={draft[task.interval]}
           disabled={busy}
-        /></label
-      >{/if}
+        /></Field>{/if}
     {#if task.scope==='streams'}<div class="field"><span>Server administrator account</span><RowFilter selection groups={[{label:'Administrator account',value:draft.streamsConnectionId??'auto',options:[{value:'auto',label:'Automatic · first connected administrator'},...provider.accounts.filter(account=>account.role==='admin').map(account=>({value:account.id,label:account.username}))],change:value=>(draft.streamsConnectionId=value==='auto'?null:value)}]}/><small>This account must also be a Jellyfin administrator.</small></div>{/if}
-    {#if task.scope==='live'}<label class="field">Active checks every (minutes)<input type="number" min="1" max="10080" step="1" required bind:value={draft.liveActiveMinutes} disabled={busy} /></label>{/if}
+    {#if task.scope==='live'}<Field label="Active checks every (minutes)"><input type="number" min="1" max="10080" step="1" required bind:value={draft.liveActiveMinutes} disabled={busy} /></Field>{/if}
     {#if task.scope === 'library'}
-      <label class="field"
-        >Full library scan every (hours)<input
+      <Field label="Full library scan every (hours)"><input
           type="number"
           min="1"
           max="720"
@@ -280,8 +281,7 @@
           required
           bind:value={draft.fullIntervalHours}
           disabled={busy}
-        /></label
-      >
+        /></Field>
       <div class="field">
         <span>Library source account</span><RowFilter selection groups={[{label:"Library source account", value:draft.libraryConnectionId ?? 'auto', options:[
             { value: 'auto', label: 'Automatic · first connected account' },
@@ -292,11 +292,11 @@
         >
       </div>
     {/if}
-    <div class="row">
+    <FormActions>
       <Button type="submit" disabled={busy || !dirty}>{busy ? 'Saving…' : 'Save schedule'}</Button
       ><Button emphasis="subtle" disabled={busy} onclick={() => (open = false)}>Cancel</Button>
-    </div>
-    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+    </FormActions>
+
   </form>
 </Dialog>
 

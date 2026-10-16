@@ -1,4 +1,6 @@
 <script lang="ts">
+  import FormActions from '$lib/ui/components/FormActions.svelte';
+  import Field from '$lib/ui/components/Field.svelte';
   import { onDestroy } from 'svelte';
   import { useClient } from '../client-context';
   import { createMutation } from '../mutation.svelte';
@@ -10,7 +12,7 @@
   let { workId, progress, ensure, changed }: { workId: string; progress?: ReadingActionState | null;
     ensure: () => Promise<unknown>; changed: () => Promise<unknown> } = $props();
   const { change } = useClient();
-  const mutation = createMutation(() => changed());
+  const mutation = createMutation(() => changed(), useClient().feedback.notify);
   export function failure() { return mutation.error; }
   export function isBusy() { return mutation.busy; }
   let alive = true;
@@ -38,10 +40,10 @@
 <Dialog bind:open title="Update reading progress">
   <form class="stack" onsubmit={event => { event.preventDefault(); void save(); }}>
     {#if mutation.error}<div class="notice error" role="alert">{mutation.error}</div>{/if}
-    <label class="field">Reading state<select bind:value={readingState}>{#each readingStates as entry}<option value={entry}>{displayLabel(entry)}</option>{/each}</select></label>
-    <label class="field">Current page<input type="number" bind:value={currentPage} required min="0" max="1000000" step="1" /></label>
-    <label class="field">Total pages (optional)<input type="number" bind:value={totalPages} min="1" max="1000000" step="1" placeholder="Page count of your edition" /></label>
+    <Field label="Reading state"><select bind:value={readingState}>{#each readingStates as entry}<option value={entry}>{displayLabel(entry)}</option>{/each}</select></Field>
+    <Field label="Current page"><input type="number" bind:value={currentPage} required min="0" max="1000000" step="1" /></Field>
+    <Field label="Total pages (optional)"><input type="number" bind:value={totalPages} min="1" max="1000000" step="1" placeholder="Page count of your edition" /></Field>
     <p class="small quiet">Completing the page count keeps your current reading state. Choose Completed when you have finished.</p>
-    <div class="row"><Button disabled={mutation.busy} onclick={() => open = false}>Cancel</Button><Button type="submit" disabled={mutation.busy}>{mutation.busy ? 'Saving…' : 'Save progress'}</Button></div>
+    <FormActions><Button disabled={mutation.busy} onclick={() => open = false}>Cancel</Button><Button type="submit" disabled={mutation.busy}>{mutation.busy ? 'Saving…' : 'Save progress'}</Button></FormActions>
   </form>
 </Dialog>

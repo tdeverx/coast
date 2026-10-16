@@ -1,5 +1,5 @@
 <script lang="ts">
-  import RowFeedback from './RowFeedback.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import Field from './Field.svelte';
   import { createOperation } from '$lib/ui/operation.svelte';
   import { message } from '$lib/ui/client';
@@ -97,6 +97,8 @@
     });
     if (!completed) error = operation.error;
   }
+
+  reportFailure(()=>error);
 </script>
 
 <Dialog bind:open title={admin ? 'Shared metadata' : 'Your presentation preferences'}
@@ -112,7 +114,7 @@
         ? 'Overrides stay separate from provider snapshots. Lock a field to prevent user presentation preferences from replacing it.'
         : 'These preferences apply only to you. Administrator field locks take precedence.'}
     </p>
-    {#if error}<RowFeedback error={error} tag="div" class="notice error" />{/if}{#if loadState !== 'loading' && loadState !== 'ready'}<Button
+    {#if loadState !== 'loading' && loadState !== 'ready'}<Button
 
         onclick={load}>Try again</Button
       >{/if}

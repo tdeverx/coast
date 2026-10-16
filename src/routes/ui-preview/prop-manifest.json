@@ -1,0 +1,4078 @@
+{
+  "AccountFields": {
+    "path": "src/lib/ui/components/AccountFields.svelte",
+    "props": []
+  },
+  "ActivityHeader": {
+    "path": "src/lib/ui/components/ActivityHeader.svelte",
+    "props": [
+      {
+        "name": "username",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "avatar",
+        "type": "string|null",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true
+      },
+      {
+        "name": "status",
+        "type": "ActivityStatus",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "online",
+          "away",
+          "busy",
+          "offline"
+        ]
+      },
+      {
+        "name": "trailing",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "nonApproved",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "showAvatar",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "profileHref",
+        "type": "string|null",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true,
+        "defaultSource": "profilePath(username)"
+      }
+    ]
+  },
+  "Avatar": {
+    "path": "src/lib/ui/components/Avatar.svelte",
+    "props": [
+      {
+        "name": "name",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "src",
+        "type": "string | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "class",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "''",
+        "defaultValue": ""
+      },
+      {
+        "name": "size",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "32",
+        "defaultValue": 32
+      },
+      {
+        "name": "status",
+        "type": "ActivityStatus",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "online",
+          "away",
+          "busy",
+          "offline"
+        ]
+      }
+    ]
+  },
+  "AvatarPicker": {
+    "path": "src/lib/ui/components/AvatarPicker.svelte",
+    "props": [
+      {
+        "name": "avatar",
+        "type": "string|null",
+        "optional": true,
+        "bindable": true,
+        "kind": "text",
+        "nullable": true,
+        "defaultSource": "$bindable(null)",
+        "defaultValue": null
+      },
+      {
+        "name": "reading",
+        "type": "boolean",
+        "optional": true,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      },
+      {
+        "name": "name",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "choices",
+        "type": "{id:string;provider:string;name:string}[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      }
+    ]
+  },
+  "Brand": {
+    "path": "src/lib/ui/components/Brand.svelte",
+    "props": [
+      {
+        "name": "compact",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "size",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "30",
+        "defaultValue": 30
+      }
+    ]
+  },
+  "Button": {
+    "path": "src/lib/ui/components/Button.svelte",
+    "props": [
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "icon",
+        "type": "IconName",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "filter",
+          "smile",
+          "user",
+          "friends",
+          "home",
+          "library",
+          "collection",
+          "discover",
+          "search",
+          "play",
+          "party",
+          "pause",
+          "rewind",
+          "forward",
+          "plus",
+          "check",
+          "heart",
+          "star",
+          "more",
+          "close",
+          "left",
+          "right",
+          "bell",
+          "settings",
+          "list",
+          "bookmark",
+          "request",
+          "logout",
+          "volume",
+          "muted",
+          "subtitles",
+          "crop",
+          "fullscreen",
+          "refresh",
+          "server",
+          "clock",
+          "film",
+          "arrow",
+          "download",
+          "shield"
+        ]
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "href",
+        "type": "never | string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "onclick",
+        "type": "(event: MouseEvent) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "emphasis",
+        "type": "'standard' | 'subtle'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "standard",
+          "subtle"
+        ],
+        "defaultSource": "'standard'",
+        "defaultValue": "standard"
+      },
+      {
+        "name": "size",
+        "type": "'standard' | 'hero' | 'icon'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "standard",
+          "hero",
+          "icon"
+        ],
+        "defaultSource": "'standard'",
+        "defaultValue": "standard"
+      },
+      {
+        "name": "fallback",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "type",
+        "type": "'button' | 'submit'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "button",
+          "submit"
+        ],
+        "defaultSource": "'button'",
+        "defaultValue": "button"
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "pressed",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false
+      },
+      {
+        "name": "compact",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "menu",
+        "type": "true | false",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "item",
+        "type": "false | true",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "trigger",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "hideTrigger",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "align",
+        "type": "'start' | 'end'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "start",
+          "end"
+        ],
+        "defaultSource": "'end'",
+        "defaultValue": "end"
+      },
+      {
+        "name": "upward",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "triggerClass",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "onopen",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "onclose",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "panel",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "disabledReason",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "danger",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "branch",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "checked",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false
+      },
+      {
+        "name": "showCheckmark",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "selection",
+        "type": "'checkbox' | 'radio'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "checkbox",
+          "radio"
+        ],
+        "defaultSource": "'checkbox'",
+        "defaultValue": "checkbox"
+      },
+      {
+        "name": "keepOpen",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "material",
+        "type": "GlassVariant",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "clear",
+          "glassLight",
+          "glassDark",
+          "glassProminent"
+        ]
+      },
+      {
+        "name": "class",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "''",
+        "defaultValue": ""
+      },
+      {
+        "name": "iconSize",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      }
+    ]
+  },
+  "ChoiceGroup": {
+    "path": "src/lib/ui/components/ChoiceGroup.svelte",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "value",
+        "type": "string | null",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true
+      },
+      {
+        "name": "options",
+        "type": "{ value: string; label: string }[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "change",
+        "type": "(value: string | null) => void",
+        "optional": false,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "defaultOption",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      }
+    ]
+  },
+  "CollectionProjectionSettings": {
+    "path": "src/lib/ui/components/CollectionProjectionSettings.svelte",
+    "props": [
+      {
+        "name": "connectionId",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "settings",
+        "type": "Record<string,unknown>",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "sources",
+        "type": "{id:string;name:string}[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      }
+    ]
+  },
+  "ConflictList": {
+    "path": "src/lib/ui/components/ConflictList.svelte",
+    "props": [
+      {
+        "name": "conflicts",
+        "type": "Conflict[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      }
+    ]
+  },
+  "ConnectionCard": {
+    "path": "src/lib/ui/components/ConnectionCard.svelte",
+    "props": [
+      {
+        "name": "provider",
+        "type": "{\n      id: string;\n      name: string;\n      provider: string;\n      configured: boolean;\n      connection: {\n        id: string;\n        accountGeneration?: string;\n        username: string | null;\n        status: string;\n        settings: Record<string, unknown>;\n      } | null;\n    }",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "sources",
+        "type": "{id:string;name:string}[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "dynamicCollectionExports",
+        "type": "string[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      }
+    ]
+  },
+  "DetailCard": {
+    "path": "src/lib/ui/components/DetailCard.svelte",
+    "props": [
+      {
+        "name": "title",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "footer",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "content",
+        "type": "InsightContent",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "footerText",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "footerLink",
+        "type": "{href:string;label:string;external?:boolean}",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      }
+    ]
+  },
+  "Dialog": {
+    "path": "src/lib/ui/components/Dialog.svelte",
+    "props": [
+      {
+        "name": "open",
+        "type": "boolean",
+        "optional": false,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "actions",
+        "type": "ComponentProps<typeof Button>[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "alert",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "wide",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "edgeToEdge",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "popover",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "popoverWidth",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "560",
+        "defaultValue": 560
+      },
+      {
+        "name": "anchor",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "heading",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "footer",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "onclose",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      }
+    ]
+  },
+  "EmptyState": {
+    "path": "src/lib/ui/components/EmptyState.svelte",
+    "props": [
+      {
+        "name": "title",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "icon",
+        "type": "IconName",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "filter",
+          "smile",
+          "user",
+          "friends",
+          "home",
+          "library",
+          "collection",
+          "discover",
+          "search",
+          "play",
+          "party",
+          "pause",
+          "rewind",
+          "forward",
+          "plus",
+          "check",
+          "heart",
+          "star",
+          "more",
+          "close",
+          "left",
+          "right",
+          "bell",
+          "settings",
+          "list",
+          "bookmark",
+          "request",
+          "logout",
+          "volume",
+          "muted",
+          "subtitles",
+          "crop",
+          "fullscreen",
+          "refresh",
+          "server",
+          "clock",
+          "film",
+          "arrow",
+          "download",
+          "shield"
+        ],
+        "defaultSource": "'film'",
+        "defaultValue": "film"
+      },
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "level",
+        "type": "1 | 2",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          1,
+          2
+        ],
+        "defaultSource": "2",
+        "defaultValue": 2
+      }
+    ]
+  },
+  "FactList": {
+    "path": "src/lib/ui/components/FactList.svelte",
+    "props": [
+      {
+        "name": "items",
+        "type": "{ label: string; value: string }[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      }
+    ]
+  },
+  "Field": {
+    "path": "src/lib/ui/components/Field.svelte",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "hint",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": false,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "class",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'field'",
+        "defaultValue": "field"
+      }
+    ]
+  },
+  "FormActions": {
+    "path": "src/lib/ui/components/FormActions.svelte",
+    "props": [
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": false,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "cancel",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      }
+    ]
+  },
+  "FriendRoster": {
+    "path": "src/lib/ui/components/FriendRoster.svelte",
+    "props": [
+      {
+        "name": "friends",
+        "type": "FriendEntry[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "userId",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "busy",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "act",
+        "type": "(path:string,body:unknown)=>void",
+        "optional": false,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "oninvite",
+        "type": "(userId:string)=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "inviteDisabled",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      }
+    ]
+  },
+  "FriendsPanel": {
+    "path": "src/lib/ui/components/FriendsPanel.svelte",
+    "props": [
+      {
+        "name": "open",
+        "type": "boolean",
+        "optional": false,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      },
+      {
+        "name": "onclose",
+        "type": "()=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "initialView",
+        "type": "'accepted'|'pending'|'party'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "accepted",
+          "pending",
+          "party"
+        ],
+        "defaultSource": "'accepted'",
+        "defaultValue": "accepted"
+      }
+    ]
+  },
+  "Header": {
+    "path": "src/lib/ui/components/Header.svelte",
+    "props": [
+      {
+        "name": "user",
+        "type": "{ username: string; role: string; settings?:import('$lib/server/db/schema').UserSettings } | null",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": true
+      },
+      {
+        "name": "unread",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "0",
+        "defaultValue": 0
+      },
+      {
+        "name": "friendRequests",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "0",
+        "defaultValue": 0
+      },
+      {
+        "name": "publicBrowse",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      }
+    ]
+  },
+  "Heading": {
+    "path": "src/lib/ui/components/Heading.svelte",
+    "props": [
+      {
+        "name": "title",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "variant",
+        "type": "'row' | 'page' | 'title'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "row",
+          "page",
+          "title"
+        ],
+        "defaultSource": "'row'",
+        "defaultValue": "row"
+      },
+      {
+        "name": "level",
+        "type": "1 | 2 | 3",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          1,
+          2,
+          3
+        ],
+        "defaultSource": "2",
+        "defaultValue": 2
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "selection",
+        "type": "HeadingSelection",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "heading",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "segments",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "controls",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "previous",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "next",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "actions",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "href",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      }
+    ]
+  },
+  "Icon": {
+    "path": "src/lib/ui/components/Icon.svelte",
+    "props": [
+      {
+        "name": "name",
+        "type": "IconName",
+        "optional": false,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "filter",
+          "smile",
+          "user",
+          "friends",
+          "home",
+          "library",
+          "collection",
+          "discover",
+          "search",
+          "play",
+          "party",
+          "pause",
+          "rewind",
+          "forward",
+          "plus",
+          "check",
+          "heart",
+          "star",
+          "more",
+          "close",
+          "left",
+          "right",
+          "bell",
+          "settings",
+          "list",
+          "bookmark",
+          "request",
+          "logout",
+          "volume",
+          "muted",
+          "subtitles",
+          "crop",
+          "fullscreen",
+          "refresh",
+          "server",
+          "clock",
+          "film",
+          "arrow",
+          "download",
+          "shield"
+        ]
+      },
+      {
+        "name": "size",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "20",
+        "defaultValue": 20
+      },
+      {
+        "name": "filled",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false
+      }
+    ]
+  },
+  "IdentityCard": {
+    "path": "src/lib/ui/components/IdentityCard.svelte",
+    "props": [
+      {
+        "name": "background",
+        "type": "string|null",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true
+      },
+      {
+        "name": "identity",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "title",
+        "type": "Snippet",
+        "optional": false,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "details",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "actions",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "progress",
+        "type": "number|null",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": true
+      },
+      {
+        "name": "wrapActions",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      }
+    ]
+  },
+  "IntegrationSettings": {
+    "path": "src/lib/ui/components/IntegrationSettings.svelte",
+    "props": [
+      {
+        "name": "providers",
+        "type": "Instance[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "experimentalGaming",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "experimentalComics",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      }
+    ]
+  },
+  "JobSchedule": {
+    "path": "src/lib/ui/components/JobSchedule.svelte",
+    "props": [
+      {
+        "name": "provider",
+        "type": "{\n      id: string;\n      name: string;\n      provider: string;\n      enabled: boolean;\n      connectedAccounts: number;\n      accounts: { id: string; username: string; role?:string }[];\n      schedule: ProviderSchedule;\n      libraryScan?: unknown;\n      companion?: unknown;\n    }",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "task",
+        "type": "ServiceTask",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "jobs",
+        "type": "QueueAction[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "timing",
+        "type": "JobTiming",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "local",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "showSource",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      }
+    ]
+  },
+  "JobsSettings": {
+    "path": "src/lib/ui/components/JobsSettings.svelte",
+    "props": [
+      {
+        "name": "providers",
+        "type": "{\n      id: string;\n      name: string;\n      provider: string;\n      enabled: boolean;\n      connectedAccounts: number;\n      accounts: { id: string; username: string }[];\n      libraryScan?: unknown;\n      schedule: ProviderSchedule;\n    }[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "actions",
+        "type": "QueueAction[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "timing",
+        "type": "import('$lib/providers/job-timing.server').JobTiming[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "tasteJob",
+        "type": "Awaited<ReturnType<typeof import('$lib/social/taste-cache.server').tasteJob>>|null",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": true,
+        "defaultSource": "null",
+        "defaultValue": null
+      }
+    ]
+  },
+  "MediaActivity": {
+    "path": "src/lib/ui/components/MediaActivity.svelte",
+    "props": [
+      {
+        "name": "mediaId",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "period",
+        "type": "ProfilePeriod",
+        "optional": false,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "month",
+          "year",
+          "all"
+        ]
+      }
+    ]
+  },
+  "MediaCard": {
+    "path": "src/lib/ui/components/MediaCard.svelte",
+    "props": [
+      {
+        "name": "item",
+        "type": "MediaView | MediaCardPresentation | MediaCardDisplay",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "shape",
+        "type": "MediaCardShape",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "poster",
+          "square",
+          "circle",
+          "fanart",
+          "banner"
+        ],
+        "defaultSource": "item.kind==='person'?'circle':'poster'"
+      },
+      {
+        "name": "artworkStyle",
+        "type": "MediaCardArtwork",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "auto",
+          "none",
+          "primary",
+          "backdrop",
+          "thumb",
+          "banner",
+          "screenshot"
+        ],
+        "defaultSource": "'auto'",
+        "defaultValue": "auto"
+      },
+      {
+        "name": "overlay",
+        "type": "MediaCardOverlay",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "none",
+          "logo",
+          "art",
+          "disc"
+        ],
+        "defaultSource": "'none'",
+        "defaultValue": "none"
+      },
+      {
+        "name": "artworkPriority",
+        "type": "ArtworkPriority",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "episode-season-show",
+          "episode-show-season",
+          "season-episode-show",
+          "season-show-episode",
+          "show-season-episode",
+          "show-episode-season"
+        ]
+      },
+      {
+        "name": "onselect",
+        "type": "(item: MediaView) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "social",
+        "type": "{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number}",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "wrapActivity",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "showActivityContext",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "showCaption",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "showPrimaryAction",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "primaryMenu",
+        "type": "import('svelte').Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "activityTrailing",
+        "type": "import('svelte').Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "activityProgress",
+        "type": "number|null",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": true
+      }
+    ]
+  },
+  "MediaDetailRows": {
+    "path": "src/lib/ui/components/MediaDetailRows.svelte",
+    "props": [
+      {
+        "name": "item",
+        "type": "MediaView",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "members",
+        "type": "MediaView[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "seasons",
+        "type": "MediaView[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "cast",
+        "type": "CastMember[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "section",
+        "type": "string | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true
+      }
+    ]
+  },
+  "MediaHero": {
+    "path": "src/lib/ui/components/MediaHero.svelte",
+    "props": [
+      {
+        "name": "mode",
+        "type": "'content' | 'player'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "content",
+          "player"
+        ],
+        "defaultSource": "'content'",
+        "defaultValue": "content"
+      },
+      {
+        "name": "item",
+        "type": "HeroItem",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "collection",
+        "type": "{ items: HeroItem[]; selection: string; busy?: boolean }",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "parents",
+        "type": "MediaView[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "items",
+        "type": "HeroItem[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "context",
+        "type": "'discover' | 'details' | 'home'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "discover",
+          "details",
+          "home"
+        ],
+        "defaultSource": "'details'",
+        "defaultValue": "details"
+      },
+      {
+        "name": "next",
+        "type": "MediaView | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": true,
+        "defaultSource": "null",
+        "defaultValue": null
+      },
+      {
+        "name": "requestable",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "actions",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      }
+    ]
+  },
+  "MediaPage": {
+    "path": "src/lib/ui/components/MediaPage.svelte",
+    "props": [
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "hero",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "item",
+        "type": "HeroItem",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "items",
+        "type": "HeroItem[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "collection",
+        "type": "{ items: HeroItem[]; selection: string; busy?: boolean }",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "parents",
+        "type": "MediaView[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "context",
+        "type": "'discover' | 'details' | 'home'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "discover",
+          "details",
+          "home"
+        ],
+        "defaultSource": "'details'",
+        "defaultValue": "details"
+      },
+      {
+        "name": "next",
+        "type": "MediaView | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": true,
+        "defaultSource": "null",
+        "defaultValue": null
+      },
+      {
+        "name": "requestable",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "heroActions",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "commands",
+        "type": "PageCommand[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "links",
+        "type": "{ href: string; label: string }[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "sections",
+        "type": "PageSection[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "error",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "''",
+        "defaultValue": ""
+      },
+      {
+        "name": "back",
+        "type": "{ href: string; label: string }",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "details",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "page",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false
+      },
+      {
+        "name": "class",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "''",
+        "defaultValue": ""
+      }
+    ]
+  },
+  "MetadataEditor": {
+    "path": "src/lib/ui/components/MetadataEditor.svelte",
+    "props": [
+      {
+        "name": "open",
+        "type": "boolean",
+        "optional": false,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      },
+      {
+        "name": "mediaId",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "admin",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      }
+    ]
+  },
+  "MetricGrid": {
+    "path": "src/lib/ui/components/MetricGrid.svelte",
+    "props": [
+      {
+        "name": "items",
+        "type": "{ label: string; value: string | number; detail?: string; text?: boolean }[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      }
+    ]
+  },
+  "NotificationInbox": {
+    "path": "src/lib/ui/components/NotificationInbox.svelte",
+    "props": [
+      {
+        "name": "open",
+        "type": "boolean",
+        "optional": false,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      },
+      {
+        "name": "initialKind",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'all'",
+        "defaultValue": "all"
+      },
+      {
+        "name": "initialFilters",
+        "type": "NotificationFilters",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "onclose",
+        "type": "()=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      }
+    ]
+  },
+  "NotificationToasts": {
+    "path": "src/lib/ui/components/NotificationToasts.svelte",
+    "props": [
+      {
+        "name": "notifications",
+        "type": "InboxNotification[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      }
+    ]
+  },
+  "OperationProgress": {
+    "path": "src/lib/ui/components/OperationProgress.svelte",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "processed",
+        "type": "number",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "total",
+        "type": "number|null",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": true
+      }
+    ]
+  },
+  "Pagination": {
+    "path": "src/lib/ui/components/Pagination.svelte",
+    "props": [
+      {
+        "name": "page",
+        "type": "number",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "pages",
+        "type": "number",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "pageUrl",
+        "type": "(page: number) => string",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "onchange",
+        "type": "(page: number) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "busy",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      }
+    ]
+  },
+  "PartyCard": {
+    "path": "src/lib/ui/components/PartyCard.svelte",
+    "props": [
+      {
+        "name": "background",
+        "type": "string|null",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true
+      },
+      {
+        "name": "header",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "actions",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "footer",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "members",
+        "type": "PartyMember[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "inParty",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "embedded",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "memberActions",
+        "type": "Snippet<[PartyMember]>",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      }
+    ]
+  },
+  "PartyMenu": {
+    "path": "src/lib/ui/components/PartyMenu.svelte",
+    "props": [
+      {
+        "name": "demoRoom",
+        "type": "RoomState",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "demoUserId",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      }
+    ]
+  },
+  "PersistentPlayer": {
+    "path": "src/lib/ui/components/PersistentPlayer.svelte",
+    "props": []
+  },
+  "PlaybackTimeline": {
+    "path": "src/lib/ui/components/PlaybackTimeline.svelte",
+    "props": [
+      {
+        "name": "mediaId",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "href",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "audio",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "detail",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "artwork",
+        "type": "string | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true
+      },
+      {
+        "name": "current",
+        "type": "number",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "duration",
+        "type": "number",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "onseek",
+        "type": "(seconds: number) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "reading",
+        "type": "import('$lib/reading/model').ReadingLocation | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": true,
+        "defaultSource": "null",
+        "defaultValue": null
+      },
+      {
+        "name": "readingActive",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "scrubbing",
+        "type": "boolean",
+        "optional": true,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      }
+    ]
+  },
+  "ProfileEditor": {
+    "path": "src/lib/ui/components/ProfileEditor.svelte",
+    "props": [
+      {
+        "name": "open",
+        "type": "boolean",
+        "optional": false,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      },
+      {
+        "name": "profile",
+        "type": "ProfileSettings",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "username",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      }
+    ]
+  },
+  "ProfileFeatureEditor": {
+    "path": "src/lib/ui/components/ProfileFeatureEditor.svelte",
+    "props": [
+      {
+        "name": "open",
+        "type": "boolean",
+        "optional": false,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      },
+      {
+        "name": "mediaId",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "note",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      }
+    ]
+  },
+  "ProfileRecap": {
+    "path": "src/lib/ui/components/ProfileRecap.svelte",
+    "props": [
+      {
+        "name": "subject",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'you'",
+        "defaultValue": "you"
+      },
+      {
+        "name": "movies",
+        "type": "number",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "episodes",
+        "type": "number",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "seasons",
+        "type": "number",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "previousCount",
+        "type": "number | null",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": true
+      },
+      {
+        "name": "period",
+        "type": "ProfilePeriod",
+        "optional": false,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "month",
+          "year",
+          "all"
+        ]
+      }
+    ]
+  },
+  "ProgressBar": {
+    "path": "src/lib/ui/components/ProgressBar.svelte",
+    "props": [
+      {
+        "name": "progress",
+        "type": "number",
+        "optional": false,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'Playback progress'",
+        "defaultValue": "Playback progress"
+      }
+    ]
+  },
+  "ProviderAutomation": {
+    "path": "src/lib/ui/components/ProviderAutomation.svelte",
+    "props": [
+      {
+        "name": "instance",
+        "type": "{ id: string; provider: string; enabled: boolean; schedule: ProviderSchedule }",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      }
+    ]
+  },
+  "QueueList": {
+    "path": "src/lib/ui/components/QueueList.svelte",
+    "props": [
+      {
+        "name": "actions",
+        "type": "QueueAction[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "emptyTitle",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'No pending jobs'",
+        "defaultValue": "No pending jobs"
+      },
+      {
+        "name": "emptyDescription",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'Jobs for connected services appear here. Coast will retry automatically if a service is unavailable.'",
+        "defaultValue": "Jobs for connected services appear here. Coast will retry automatically if a service is unavailable."
+      }
+    ]
+  },
+  "Rating": {
+    "path": "src/lib/ui/components/Rating.svelte",
+    "props": [
+      {
+        "name": "mediaId",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "value",
+        "type": "number | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": true,
+        "defaultSource": "null",
+        "defaultValue": null
+      },
+      {
+        "name": "menu",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "onrated",
+        "type": "(value: number | null) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      }
+    ]
+  },
+  "ReactionActions": {
+    "path": "src/lib/ui/components/ReactionActions.svelte",
+    "props": [
+      {
+        "name": "targetId",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "targetKind",
+        "type": "'work' | 'activity'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "work",
+          "activity"
+        ],
+        "defaultSource": "'work'",
+        "defaultValue": "work"
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "initialReaction",
+        "type": "string | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true,
+        "defaultSource": "null",
+        "defaultValue": null
+      }
+    ]
+  },
+  "RecommendAction": {
+    "path": "src/lib/ui/components/RecommendAction.svelte",
+    "props": [
+      {
+        "name": "workId",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      }
+    ]
+  },
+  "RequestDialog": {
+    "path": "src/lib/ui/components/RequestDialog.svelte",
+    "props": [
+      {
+        "name": "item",
+        "type": "MediaView",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "seasonNumber",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "initial4k",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "options",
+        "type": "RequestDestination[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "onsent",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "open",
+        "type": "boolean",
+        "optional": false,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      }
+    ]
+  },
+  "RowFilter": {
+    "path": "src/lib/ui/components/RowFilter.svelte",
+    "props": [
+      {
+        "name": "groups",
+        "type": "FilterGroup[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'Filters'",
+        "defaultValue": "Filters"
+      },
+      {
+        "name": "selection",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "actions",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "icon",
+        "type": "IconName",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "filter",
+          "smile",
+          "user",
+          "friends",
+          "home",
+          "library",
+          "collection",
+          "discover",
+          "search",
+          "play",
+          "party",
+          "pause",
+          "rewind",
+          "forward",
+          "plus",
+          "check",
+          "heart",
+          "star",
+          "more",
+          "close",
+          "left",
+          "right",
+          "bell",
+          "settings",
+          "list",
+          "bookmark",
+          "request",
+          "logout",
+          "volume",
+          "muted",
+          "subtitles",
+          "crop",
+          "fullscreen",
+          "refresh",
+          "server",
+          "clock",
+          "film",
+          "arrow",
+          "download",
+          "shield"
+        ]
+      },
+      {
+        "name": "submenus",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false
+      }
+    ]
+  },
+  "RowStyleMenu": {
+    "path": "src/lib/ui/components/RowStyleMenu.svelte",
+    "props": [
+      {
+        "name": "title",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "artworkOptions",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "mediaKind",
+        "type": "'screen' | 'music' | 'game' | 'reading'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "screen",
+          "music",
+          "game",
+          "reading"
+        ],
+        "defaultSource": "'screen'",
+        "defaultValue": "screen"
+      },
+      {
+        "name": "overridePriority",
+        "type": "ArtworkPriority | null",
+        "optional": true,
+        "bindable": true,
+        "kind": "select",
+        "nullable": true,
+        "choices": [
+          "episode-season-show",
+          "episode-show-season",
+          "season-episode-show",
+          "season-show-episode",
+          "show-season-episode",
+          "show-episode-season"
+        ],
+        "defaultSource": "$bindable(null)",
+        "defaultValue": null
+      },
+      {
+        "name": "overrideShape",
+        "type": "MediaCardShape | null",
+        "optional": true,
+        "bindable": true,
+        "kind": "select",
+        "nullable": true,
+        "choices": [
+          "poster",
+          "square",
+          "circle",
+          "fanart",
+          "banner"
+        ],
+        "defaultSource": "$bindable(null)",
+        "defaultValue": null
+      },
+      {
+        "name": "overrideArtwork",
+        "type": "MediaCardArtwork | null",
+        "optional": true,
+        "bindable": true,
+        "kind": "select",
+        "nullable": true,
+        "choices": [
+          "auto",
+          "none",
+          "primary",
+          "backdrop",
+          "thumb",
+          "banner",
+          "screenshot"
+        ],
+        "defaultSource": "$bindable(null)",
+        "defaultValue": null
+      },
+      {
+        "name": "overrideOverlay",
+        "type": "MediaCardOverlay | null",
+        "optional": true,
+        "bindable": true,
+        "kind": "select",
+        "nullable": true,
+        "choices": [
+          "none",
+          "logo",
+          "art",
+          "disc"
+        ],
+        "defaultSource": "$bindable(null)",
+        "defaultValue": null
+      }
+    ]
+  },
+  "SegmentedControl": {
+    "path": "src/lib/ui/components/SegmentedControl.svelte",
+    "props": [
+      {
+        "name": "options",
+        "type": "{ value: string; label: string }[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "value",
+        "type": "string",
+        "optional": false,
+        "bindable": true,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "$bindable()"
+      },
+      {
+        "name": "onchange",
+        "type": "(value: string) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      }
+    ]
+  },
+  "SettingsRow": {
+    "path": "src/lib/ui/components/SettingsRow.svelte",
+    "props": [
+      {
+        "name": "title",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "reason",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "details",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": false,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      }
+    ]
+  },
+  "Shelf": {
+    "path": "src/lib/ui/components/Shelf.svelte",
+    "props": [
+      {
+        "name": "title",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "''",
+        "defaultValue": ""
+      },
+      {
+        "name": "items",
+        "type": "T[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "source",
+        "type": "ShelfConfig",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "panels",
+        "type": "InsightPanel[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "journal",
+        "type": "JournalCards",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "href",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "children",
+        "type": "Snippet<[MediaRowStyle]>",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "heading",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "before",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "size",
+        "type": "MediaCardShape | 'panel'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "poster",
+          "square",
+          "circle",
+          "fanart",
+          "banner",
+          "panel"
+        ],
+        "defaultSource": "'poster'",
+        "defaultValue": "poster"
+      },
+      {
+        "name": "overlay",
+        "type": "MediaCardOverlay",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "none",
+          "logo",
+          "art",
+          "disc"
+        ],
+        "defaultSource": "'none'",
+        "defaultValue": "none"
+      },
+      {
+        "name": "artworkOptions",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "shape",
+        "type": "MediaCardShape",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "poster",
+          "square",
+          "circle",
+          "fanart",
+          "banner"
+        ]
+      },
+      {
+        "name": "layout",
+        "type": "'row' | 'grid'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "row",
+          "grid"
+        ],
+        "defaultSource": "'row'",
+        "defaultValue": "row"
+      },
+      {
+        "name": "artworkStyle",
+        "type": "MediaCardArtwork",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "auto",
+          "none",
+          "primary",
+          "backdrop",
+          "thumb",
+          "banner",
+          "screenshot"
+        ]
+      },
+      {
+        "name": "artworkPriority",
+        "type": "ArtworkPriority",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "episode-season-show",
+          "episode-show-season",
+          "season-episode-show",
+          "season-show-episode",
+          "show-season-episode",
+          "show-episode-season"
+        ]
+      },
+      {
+        "name": "mediaKind",
+        "type": "'screen' | 'music' | 'game' | 'reading'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "screen",
+          "music",
+          "game",
+          "reading"
+        ],
+        "defaultSource": "'screen'",
+        "defaultValue": "screen"
+      },
+      {
+        "name": "segments",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "controls",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "filterGroups",
+        "type": "FilterGroup[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "actions",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "error",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "''",
+        "defaultValue": ""
+      },
+      {
+        "name": "retry",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "empty",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "details",
+        "type": "Snippet<[T]>",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "busy",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "hideEmpty",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "itemCount",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "preserveHeight",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false
+      },
+      {
+        "name": "rows",
+        "type": "1 | 2",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          1,
+          2
+        ],
+        "defaultSource": "1",
+        "defaultValue": 1
+      },
+      {
+        "name": "hasMore",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "onend",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "resetKey",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "pageNumber",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "pages",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false
+      },
+      {
+        "name": "onpage",
+        "type": "(page: number) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "pageUrl",
+        "type": "(page: number) => string",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "onsettled",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "onactivate",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "filterBy",
+        "type": "'none' | 'type' | 'watched'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "none",
+          "type",
+          "watched"
+        ],
+        "defaultSource": "'none'",
+        "defaultValue": "none"
+      },
+      {
+        "name": "enrichSocial",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "availability",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "availableOnly",
+        "type": "boolean",
+        "optional": true,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      }
+    ]
+  },
+  "SocialControls": {
+    "path": "src/lib/ui/components/SocialControls.svelte",
+    "props": [
+      {
+        "name": "friends",
+        "type": "{username:string;avatar?:string|null;status?:ActivityStatus}[]",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "total",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "friends.length"
+      },
+      {
+        "name": "showOverflow",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "true",
+        "defaultValue": true
+      },
+      {
+        "name": "size",
+        "type": "number",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": false,
+        "defaultSource": "32",
+        "defaultValue": 32
+      }
+    ]
+  },
+  "StreamsPanel": {
+    "path": "src/lib/ui/components/StreamsPanel.svelte",
+    "props": [
+      {
+        "name": "open",
+        "type": "boolean",
+        "optional": false,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      },
+      {
+        "name": "onclose",
+        "type": "()=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "initialView",
+        "type": "'now'|'history'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "now",
+          "history"
+        ],
+        "defaultSource": "'now'",
+        "defaultValue": "now"
+      }
+    ]
+  },
+  "SyncedControls": {
+    "path": "src/lib/ui/components/SyncedControls.svelte",
+    "props": [
+      {
+        "name": "inline",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "embedded",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      }
+    ]
+  },
+  "Toast": {
+    "path": "src/lib/ui/components/Toast.svelte",
+    "props": [
+      {
+        "name": "text",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "description",
+        "type": "string|null",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true
+      },
+      {
+        "name": "error",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "kind",
+        "type": "'info'|'error'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "info",
+          "error"
+        ],
+        "defaultSource": "'info'",
+        "defaultValue": "info"
+      },
+      {
+        "name": "busy",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "actionLabel",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "onaction",
+        "type": "()=>unknown",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "onopen",
+        "type": "()=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "ondismiss",
+        "type": "()=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "dismissLabel",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'Dismiss message'",
+        "defaultValue": "Dismiss message"
+      }
+    ]
+  },
+  "WorkActions": {
+    "path": "src/lib/ui/components/WorkActions.svelte",
+    "props": [
+      {
+        "name": "section",
+        "type": "'recommendations' | 'social' | 'rating' | 'relationships'",
+        "optional": false,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "recommendations",
+          "social",
+          "rating",
+          "relationships"
+        ]
+      },
+      {
+        "name": "workId",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "rating",
+        "type": "number | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "number",
+        "nullable": true,
+        "defaultSource": "null",
+        "defaultValue": null
+      },
+      {
+        "name": "onrated",
+        "type": "(value: number | null) => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "controls",
+        "type": "ComponentProps<typeof Button>[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "recommendationIds",
+        "type": "string[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      }
+    ]
+  },
+  "WorkListActions": {
+    "path": "src/lib/ui/components/WorkListActions.svelte",
+    "props": [
+      {
+        "name": "workId",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "reading",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "disabled",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "select",
+        "type": "(list: WorkList) => Promise<unknown>",
+        "optional": false,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "children",
+        "type": "import('svelte').Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      }
+    ]
+  },
+  "WorkMenu": {
+    "path": "src/lib/ui/components/WorkMenu.svelte",
+    "props": [
+      {
+        "name": "item",
+        "type": "MediaView | MediaCardPresentation",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "context",
+        "type": "'discover' | 'details' | 'home'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "discover",
+          "details",
+          "home"
+        ],
+        "defaultSource": "'details'",
+        "defaultValue": "details"
+      },
+      {
+        "name": "next",
+        "type": "MediaView | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": true,
+        "defaultSource": "null",
+        "defaultValue": null
+      },
+      {
+        "name": "requestable",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "hero",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "menuOnly",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "showTrigger",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
+        "name": "gameState",
+        "type": "GameActionState",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "readingState",
+        "type": "ReadingActionState | null",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": true
+      },
+      {
+        "name": "selectedPlaythrough",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "ongamecreated",
+        "type": "(id: string) => Promise<void>",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "onchanged",
+        "type": "() => void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "refreshGame",
+        "type": "() => Promise<void>",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      }
+    ]
+  }
+}

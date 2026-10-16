@@ -23,7 +23,7 @@ const noticeCode = compileRunes(`import {untrack} from ${JSON.stringify(svelteUr
  import {createOperation} from ${JSON.stringify(operationUrl)};
  import {notificationKinds,defaultNotificationFilters} from ${JSON.stringify(import.meta.resolve('../src/lib/notifications/model'))};
  export function create(transport){
- const callbacks=[],useClient=()=>({api:transport,change:transport,preview:false}),onDestroy=fn=>callbacks.push(fn);
+ const callbacks=[],reportFailure=()=>{},useClient=()=>({api:transport,change:transport,preview:false}),onDestroy=fn=>callbacks.push(fn);
  ${noticeScript}
  return {act,markAll,close(){open=false;},get busy(){return resource.busy;},cleanup(){callbacks.forEach(fn=>fn());}};
  }`);

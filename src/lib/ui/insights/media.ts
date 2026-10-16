@@ -1,3 +1,4 @@
+import { distributionModel, targetModel, barModel } from '../charts/insights';
 import type { MediaView } from '$lib/ui/types';
 import type { MediaStatistics } from '$lib/media/statistics';
 import type { ProfilePeriod } from '$lib/profile/period';
@@ -80,18 +81,18 @@ export function mediaOverviewPanels(item:MediaView,members:MediaView[]=[],season
   return [
     {title:group?'Completion':'Playback progress',description:group?`Across ${total} ${unit}`:
       item.progress>0 && position<duration?'Your saved resume point':item.watched?'Marked as watched':'Not started',
-      content:(group && total) || duration ? {kind:'breakdown',props:{label:group?'Viewing completion':'Playback progress',items:progressItems,
-        centre:`${group?Math.round((completed/Math.max(1,total))*100):percent}%`,unit:group?'watched':'played'}}
+      content:(group && total) || duration ? {kind:'chart' as const,model:distributionModel({label:group?'Viewing completion':'Playback progress',items:progressItems,
+        centre:`${group?Math.round((completed/Math.max(1,total))*100):percent}%`,unit:group?unit:'minutes',centreLabel:group?'watched':'played'})}
       : {kind:'text',muted:true,text:group?'No episodes or titles have been added yet.':'Progress will appear when a playback duration is available.'},
       footerText:group?'Completion reflects your current watched state. Rewatches stay in your history.':'Playback is measured in minutes. Recorded plays and viewing history are kept separately.'},
     {title:'At a glance',content:{kind:'metrics',props:{items:metrics}}},
-    ...(seasonItems.length?[{title:'Season progress',description:'Episodes watched in each season',content:{kind:'progress' as const,props:{label:'Season progress',items:seasonItems}}}]:[]),
+    ...(seasonItems.length?[{title:'Season progress',description:'Episodes watched in each season',content:{kind:'chart' as const,model:targetModel({label:'Season progress',items:seasonItems})}}]:[]),
   ];
 }
 export function mediaActivityPanels(result:MediaStatistics,period:ProfilePeriod):InsightPanel[] {
   const date=(value:string|null)=>value?new Date(value).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}):'—';
   return [
-    {title:'Watching activity',content:{kind:'bar',props:activityChart(result.days,result.today,period)},
+    {title:'Watching activity',content:{kind:'chart' as const,model:barModel(activityChart(result.days,result.today,period))},
       footerText:`Completed watches, including rewatches. Dates use UTC.${result.undated?` ${result.undated} undated watches are included in totals, but not plotted.`:''}`},
     {title:'Your history',content:{kind:'metrics',props:{items:[
       {label:'Recorded watches',value:result.watches},{label:'Unique titles',value:result.unique},

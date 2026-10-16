@@ -6,16 +6,20 @@
   import PreviewExample from './PreviewExample.svelte';
   import Browser from './Browser.svelte';
   import { referenceEntries, elements } from './catalog';
-  import { scenarios, selectedScenario, scenarioLabel, approvalLabel } from './reference';
-  import { editable, exampleDefaults, exampleConfiguration, type WorkspaceParts } from './workspace';
+  import { scenarios, selectedScenario, scenarioLabel } from './reference';
+  import { useCanvas, type WorkspaceParts } from './workspace';
+  import PropEditor from './PropEditor.svelte';
+  import { contracts,defaultSlot,emptyCustomisation,handlerMode,specimenDefaults,type Customisation } from './props';
   let { name, options, initialScenario, change, onscenario, layout }: {
     name:string; options:{value:string;label:string}[]; initialScenario?:string|null; change:(name:string)=>void;
     onscenario:(value:string)=>void; layout:Snippet<[WorkspaceParts]>;
   } = $props();
-  let values = $state(untrack(() => exampleDefaults(name)));
+  let values = $state<Customisation>(emptyCustomisation());
   let scenario = $state(untrack(() => selectedScenario(name, initialScenario)));
-  let custom = $state(untrack(()=>!initialScenario && editable(name)));
-  let background = $state('theme');
+  let custom = $state(untrack(()=>!initialScenario && !!contracts[name]));
+  let events=$state<{name:string;value:string}[]>([]);
+  let revision=$state(0);
+  const canvasSettings = useCanvas();
   let width = $state(1100);
   let exported = $state(false);
   let notice = $state('');
@@ -25,15 +29,20 @@
     const requested=selectedScenario(selected,initialScenario);
     untrack(()=>{
       if(previousName!==selected){
-        previousName=selected;values=exampleDefaults(selected);scenario=requested;custom=!initialScenario && editable(selected);exported=false;notice='';
+        previousName=selected;values=emptyCustomisation();scenario=requested;custom=!initialScenario && !!contracts[selected];exported=false;notice='';events=[];
       }else if(scenario!==requested){
         scenario=requested;custom=false;
       }
     });
   });
   const entry = $derived(referenceEntries.find(entry => entry.id === name)!);
-  const configuration = $derived(JSON.stringify({...(custom && editable(name) ? exampleConfiguration(name, values, scenario) : {reference:name,scenario,sources:entry.sources}),preview:{background,width}},null,2));
-  function reset() {values = exampleDefaults(name);custom = editable(name);notice = '';}
+  const configuration = $derived.by(()=>{
+    const contract=contracts[name];
+    return JSON.stringify({...(custom&&contract?{component:name,props:{...Object.fromEntries(contract.props.filter(prop=>prop.defaultValue!==undefined).map(prop=>[prop.name,prop.defaultValue])),...specimenDefaults(name),...values.props},slots:Object.fromEntries(contract.props.filter(prop=>prop.kind==='snippet').map(prop=>[prop.name,values.slots[prop.name]?.kind&&values.slots[prop.name].kind!=='example'?values.slots[prop.name]:defaultSlot(name,prop)])),handlers:Object.fromEntries(contract.props.filter(prop=>prop.kind==='callback').map(prop=>[prop.name,handlerMode(name,prop,values)]))}:{reference:name,scenario,sources:entry.sources}),preview:{background:canvasSettings.background,color:canvasSettings.color,hasImage:Boolean(canvasSettings.image),width}},null,2);
+  });
+  function reset() {values=emptyCustomisation();custom=!!contracts[name];events=[];notice='';revision++;}
+  function setProp(key:string,value:unknown) {values={...values,props:{...values.props,[key]:value}};}
+  function record(name:string,args:unknown[]) {events=[...events.slice(-7),{name,value:JSON.stringify(args,(_key,value)=>value instanceof Event?{type:value.type}:value)??''}];}
   async function copy() {
     exported = true;
     try {await navigator.clipboard.writeText(configuration);notice = 'Configuration copied.';}
@@ -45,10 +54,10 @@
 {@render layout({title:entry.title,canvas,inspector,browser})}
 
 {#snippet canvas()}
-  <div class="canvas-toolbar"><span class="small quiet">{approvalLabel(name)}</span><span class="small quiet">Isolated example</span></div>
-  <div class="element-stage" data-background={background}>
+
+  <div class="element-stage">
     <div class="element-width" style:max-width={`${width}px`}>
-      {#key name}<PreviewExample {name} scenarioValue={scenario} options={custom && editable(name) ? values : undefined} />{/key}
+      {#key `${name}:${revision}`}<PreviewExample {name} scenarioValue={scenario} custom={custom&&contracts[name]?values:undefined} onprop={setProp} onevent={record} />{/key}
     </div>
   </div>
 {/snippet}
@@ -56,30 +65,12 @@
 {#snippet inspector()}
   <div class="stack">
     <Field label="Example state"><select value={scenario} onchange={event => selectState(event.currentTarget.value)}>{#each scenarios(name) as value}<option {value}>{scenarioLabel(value)}</option>{/each}</select></Field>
-    {#if editable(name)}
+    {#if contracts[name]}
       <label class="check"><input type="checkbox" bind:checked={custom} />Customise component props</label>
-      {#if custom}<fieldset class="stack property-controls">
-        <legend class="sr-only">Component props</legend>
-        {#if name !== 'ProgressBar'}<Field label={name === 'Button' || name === 'Field' ? 'Label' : name === 'Avatar' ? 'Name' : 'Title'}><input bind:value={values.text} /></Field>{/if}
-        {#if ['Field','Heading','DetailCard','EmptyState'].includes(name)}<Field label="Description"><input bind:value={values.description} /></Field>{/if}
-        {#if name === 'DetailCard'}<Field label="Body"><textarea rows="3" bind:value={values.body}></textarea></Field>{/if}
-        {#if name === 'Button'}
-          <Field label="Emphasis"><select bind:value={values.emphasis}><option value="standard">Standard</option><option value="subtle">Subtle</option></select></Field>
-          <Field label="Size"><select bind:value={values.size}><option value="standard">Standard</option><option value="hero">Hero</option><option value="icon">Icon</option></select></Field>
-          <label class="check"><input type="checkbox" bind:checked={values.icon} />Show play icon</label>
-          <label class="check"><input type="checkbox" bind:checked={values.disabled} />Disabled</label>
-          <label class="check"><input type="checkbox" bind:checked={values.danger} />Destructive</label>
-        {:else if name === 'Avatar' || name === 'ProgressBar'}
-          <Field label={`${name === 'Avatar' ? 'Size' : 'Progress'} · ${values.number}${name === 'Avatar' ? 'px' : '%'}`}><input type="range" min={name === 'Avatar' ? 24 : 0} max={name === 'Avatar' ? 120 : 100} step="1" bind:value={values.number} /></Field>
-        {:else if name === 'MediaCard'}
-          <Field label="Shape"><select bind:value={values.shape}><option value="fanart">Landscape</option><option value="poster">Poster</option><option value="square">Square</option><option value="circle">Circle</option></select></Field>
-          <label class="check"><input type="checkbox" bind:checked={values.showCaption} />Show caption</label>
-          <label class="check"><input type="checkbox" bind:checked={values.showPrimaryAction} />Show primary action</label>
-        {/if}
-      </fieldset>{/if}
+      {#if custom}<PropEditor {name} custom={values} change={value=>values=value} />{/if}
+      <details><summary>Preview events · {events.length}</summary><div class="stack source-details" aria-live="polite">{#each events as event}<div><code>{event.name}</code><pre>{event.value}</pre></div>{:else}<p class="small quiet">Use a component control to inspect its local callback events.</p>{/each}</div></details>
     {/if}
     <details><summary>Canvas</summary><div class="stack canvas-options">
-      <Field label="Background"><select bind:value={background}><option value="theme">App canvas</option><option value="surface">Surface</option><option value="light">Light</option><option value="artwork">Artwork colours</option></select></Field>
       <Field label={`Preview width · ${width}px`}><input type="range" min="320" max="1400" step="10" bind:value={width} /></Field>
     </div></details>
     <div class="row"><Button emphasis="subtle" onclick={reset}>Reset</Button><Button emphasis="subtle" onclick={copy}>Copy configuration</Button></div>
@@ -94,18 +85,13 @@
   </div>
 {/snippet}
 
-{#snippet browser()}<Browser title="Browse items" {options} value={name} change={change} />{/snippet}
+{#snippet browser({heading}:{heading:Snippet})}<Browser title="Browse items" {heading} {options} value={name} change={change} />{/snippet}
 
 <style>
-  .canvas-toolbar {display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:16px 20px;border-bottom:1px solid var(--line);flex:none;}
-  .element-stage {padding:24px;display:flex;align-items:safe center;justify-content:center;flex:1;min-height:0;min-width:0;border-radius:0 0 20px 20px;}
-  .element-stage[data-background=surface] {background:var(--surface);}
-  .element-stage[data-background=light] {background:var(--white);}
-  .element-stage[data-background=artwork] {background:linear-gradient(140deg,color-mix(in srgb,var(--accent) 40%,var(--surface)),var(--surface),color-mix(in srgb,var(--rating) 25%,var(--canvas)));}
-  .element-width {width:100%;min-width:0;min-height:0;overflow:auto;max-height:100%;}
-  fieldset {border:0;padding:0;margin:0;min-width:0;}
+  .element-stage {padding:0;display:flex;align-items:safe center;justify-content:center;flex:1;min-height:0;min-width:0;border-radius:0 0 20px 20px;}
+  .element-width {width:100%;min-width:0;min-height:0;overflow:visible;}
   .canvas-options,.source-details {margin-top:16px;}
   .source-details code {font-size:var(--text-sm);overflow-wrap:anywhere;}
   .row {flex-wrap:wrap;gap:8px;}
-  @media(max-width:800px) {.element-stage {padding:12px;}.canvas-toolbar {padding:12px;}.element-width :global(.demo.custom-example) {min-height:160px;padding:16px;}}
+  pre {font-size:var(--text-sm);white-space:pre-wrap;overflow-wrap:anywhere;}
 </style>

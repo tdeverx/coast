@@ -1,4 +1,5 @@
 <script lang="ts">
+ import OperationProgress from '$lib/ui/components/OperationProgress.svelte';
  import {enhance,deserialize} from '$app/forms';import {invalidate} from '$app/navigation';import {onMount,untrack} from 'svelte';
  import AvatarPicker from '$lib/ui/components/AvatarPicker.svelte';
  import Brand from '$lib/ui/components/Brand.svelte';import Button from '$lib/ui/components/Button.svelte';
@@ -40,7 +41,7 @@
  {:else if data.requiredProvider==='trakt'}<p class="notice">An administrator needs to enable Trakt.</p>{/if}
  {#if data.phase==='connections'}<Button href="/onboarding?step=picture" disabled={!canContinue}>Continue</Button>{:else}<form method="POST" action="?/begin" use:enhance><Button type="submit" disabled={!canContinue}>Continue import</Button></form>{/if}
  {:else}<h1>Importing your data.</h1><p>You can leave this page and return later. Your account opens when these imports finish.</p>
- {#each data.imports as item}<div class="stack"><p role="status">{item.label}: {item.state==='succeeded'?'Complete':item.state==='running'?item.stage:['failed','cancelled'].includes(item.state)?'Needs attention':item.processed?'Waiting to resume':'Queued'}{item.state==='running'||item.processed?item.total!==null?` · ${item.processed} of ${item.total} items`:item.processed?` · ${item.processed} items`:'':''}</p>{#if item.total&&item.state!=='succeeded'}<progress value={item.processed} max={item.total} aria-label={`${item.label}: ${item.stage}`}></progress>{/if}{#if item.error}<p class="notice error">{item.error}</p>{/if}</div>{/each}
+ {#each data.imports as item}<div class="stack"><p role="status">{item.label}: {item.state==='succeeded'?'Complete':item.state==='running'?item.stage:['failed','cancelled'].includes(item.state)?'Needs attention':item.processed?'Waiting to resume':'Queued'}{item.state==='running'||item.processed?item.total!==null?` · ${item.processed} of ${item.total} items`:item.processed?` · ${item.processed} items`:'':''}</p>{#if item.state==='running'}<OperationProgress processed={item.processed} total={item.total} label={`${item.label}: ${item.stage}`} />{/if}{#if item.error}<p class="notice error">{item.error}</p>{/if}</div>{/each}
  {#if data.imports.some(item=>['failed','cancelled'].includes(item.state))}<form method="POST" action="?/retry" use:enhance><Button type="submit">Retry import</Button></form>{/if}
  {/if}
  {#if form&&'error' in form&&form.error}<p class="notice error" role="alert">{form.error}</p>{/if}{#if deviceError}<p class="notice error">{deviceError}</p>{/if}

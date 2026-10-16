@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
  import {page} from '$app/state';
  import {mediumOptions} from '$lib/experimental';
  import FriendRoster from './FriendRoster.svelte';
@@ -14,7 +15,6 @@
  import Icon from './Icon.svelte';
 
  import EmptyState from './EmptyState.svelte';
- import RowFeedback from './RowFeedback.svelte';
  import {useClient} from '$lib/ui/client-context';
  import {createResource,uniqueItems} from '$lib/ui/resource.svelte';
  import {createOperation} from '$lib/ui/operation.svelte';
@@ -98,6 +98,9 @@
 
 
 
+
+  reportFailure(()=>open ? {text:resource.error,retry:()=>load()} : '');
+  reportFailure(()=>operation.error);
 </script>
 {#snippet inboxFilters()}<RowFilter label="Notification options" icon="filter" submenus groups={[
     {label:'Read status',value:criteria.unread?'unread':'all',options:[{value:'all',label:'All'},{value:'unread',label:'Unread'}],change:value=>criteria.unread=value==='unread'},
@@ -114,7 +117,7 @@
  {/snippet}
  {#snippet inboxContent()}
  {#if preview}<p class="small quiet" data-design-status="non-approved">Non-approved · Notification popover treatment</p>{/if}
- <RowFeedback error={resource.error} retry={()=>void load()} tag="div" /><RowFeedback error={operation.error} tag="div" />
+
  {#if resource.busy&&!resource.ready}<div class="loading" aria-label="Loading notifications">{#each [1,2,3,4] as _}<div class="skeleton"></div>{/each}</div>
  {:else if !resource.data.items.length&&!resource.error}<EmptyState title="You’re all caught up." description={criteria.unread?'No unread notifications match these criteria.':'No notifications match these criteria.'} icon="bell" />
  {:else}<div class="notification-inbox" use:readWhenVisible={{items:resource.data.items,open}} data-design-status="non-approved" aria-busy={resource.busy}>

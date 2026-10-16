@@ -1,7 +1,7 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import FormActions from './FormActions.svelte';
   import Field from './Field.svelte';
-  import RowFeedback from './RowFeedback.svelte';
   import { createOperation } from '$lib/ui/operation.svelte';
   import type { ProfileSettings } from '$lib/server/db/schema';
   import { useClient } from '$lib/ui/client-context';
@@ -46,6 +46,8 @@
     });
     if (!completed) error = operation.error;
   }
+
+  reportFailure(()=>error);
 </script>
 
 <Dialog bind:open title="Edit profile">
@@ -56,7 +58,7 @@
       void save();
     }}
   >
-    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+
     {#if open}<AvatarPicker bind:avatar bind:reading name={displayName || username} disabled={busy} choices={iconChoices} />{/if}
     <Field label="Display name" class=""><input
         bind:value={displayName}

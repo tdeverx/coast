@@ -3,19 +3,19 @@
   import { chartCategoryColor, chartFill, formatValue, type ChartModel } from './model';
   import { bandPath, frequencyDensity, linePath, overlapGeometry, polar, scale, sectorPath, spreadLabels } from './standard-geometry';
 
-  let { model, selected, onselect }: { model: ChartModel; selected: number; onselect: (index: number) => void } = $props();
-  const width = 900;
-  const plot = { left: 92, right: 806, top: 40, bottom: 350 };
+  let { model, selected, onselect, compact = false }: { model: ChartModel; selected: number; onselect: (index: number) => void; compact?:boolean } = $props();
+  const width = $derived(compact && !model.styleId.startsWith('3') ? (model.styleId === '2B' ? Math.max(320,model.rows.length*44) : 320) : 900);
+  const plot = $derived(compact ? {left:36,right:width-16,top:32,bottom:200} : { left: 92, right: 806, top: 40, bottom: 350 });
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const hourBands = ['00–04', '04–08', '08–12', '12–16', '16–20', '20–24'];
   let style = $derived(model.styleId);
   let raw = $derived(model.raw);
   let signedColors = $derived(raw.lowerIsBetter === true ? ['var(--danger)', 'var(--success)'] : ['var(--success)', 'var(--danger)']);
-  let uid = $derived(`chart-${model.id.replace(/[^a-z0-9]/gi, '-')}`);
-  let height = $derived(style === '4A' ? 275 : style === '4B' ? 490 : ['2A','2C'].includes(style) ? Math.max(435,model.rows.length*44+110) : 435);
+  const uid = $props.id();
+  let height = $derived(compact && !style.startsWith('3') ? (style==='2A'?Math.max(100,model.rows.length*64+48):245) : style === '4A' ? 275 : style === '4B' ? 490 : ['2A','2C'].includes(style) ? Math.max(435,model.rows.length*44+110) : 435);
   // Keep token-sized SVG labels readable; a small viewport scrolls this canvas locally.
-  const minimumWidth = width;
+  const minimumWidth = $derived(width);
   let xPositions = $derived(model.labels.map((_, i) => scale(i, [0, Math.max(1, model.labels.length - 1)], plot.left, plot.right)));
   let valueTicks = $derived(model.ticks.length ? model.ticks : [model.domain[0], model.domain[1]]);
   const valueY = (value: number) => scale(value, model.domain, plot.bottom, plot.top);
@@ -119,7 +119,7 @@
   {/each}
   <line x1={plot.left} x2={plot.left} y1={plot.top} y2={plot.bottom} class="axis" />
   <line x1={plot.left} x2={plot.right} y1={plot.bottom} y2={plot.bottom} class="axis" />
-  <text x={plot.left} y={22} class="tick">{model.unit}</text>
+  <text x={plot.left} y={22} class="tick">{String(raw.centerLabel ?? model.unit)}</text>
 {/snippet}
 
 {#snippet categoryAxis()}
@@ -135,10 +135,10 @@
 {/snippet}
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard users need to scroll a wide chart canvas.) -->
-<div class="chart-scroll" class:wide-chart={composition||style==='5C'} style:--chart-min-width={`${minimumWidth}px`} tabindex="0" role="region" aria-label="Chart canvas; scroll horizontally on smaller screens">
+<div class="chart-scroll" class:compact-card={compact} class:wide-chart={composition||style==='5C'} style:--chart-min-width={`${minimumWidth}px`} tabindex="0" role="region" aria-label="Chart canvas; scroll horizontally on smaller screens">
   <svg viewBox={`0 0 ${width} ${height}`} role="group" aria-label={`${model.title}. ${model.subtitle}`}>
     <title>{model.title}</title>
-    <desc>Fictional preview. Select a mark to inspect its exact values in the accompanying data table.</desc>
+    <desc>{compact ? 'Select a mark to inspect its value or open its linked records.' : 'Select a mark to inspect its exact values in the accompanying data table.'}</desc>
     <defs>
       <linearGradient id={`${uid}-area`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color={chartCategoryColor(timeline[0]?.name ?? 'Recorded watches')} stop-opacity="0.38" /><stop offset="100%" stop-color={chartCategoryColor(timeline[0]?.name ?? 'Recorded watches')} stop-opacity="0.03" /></linearGradient>
     </defs>
@@ -170,24 +170,24 @@
       {/if}
 
     {:else if style === '2A' || style === '2C'}
-      {@const left = 232}
-      {@const right = 814}
-      {@const bottom = height-85}
-      {@const rowHeight = (bottom-60) / Math.max(1, model.rows.length)}
+      {@const left = compact ? 12 : 232}
+      {@const right = compact ? width-60 : 814}
+      {@const bottom = height-(compact?36:85)}
+      {@const rowHeight = (bottom-(compact?12:60)) / Math.max(1, model.rows.length)}
       {@const zero = scale(0, model.domain, left, right)}
       {#if style === '2C'}
         {#each valueTicks as tick}<line x1={scale(tick, model.domain, left, right)} x2={scale(tick, model.domain, left, right)} y1="36" y2={bottom} class={tick === 0 ? 'axis' : 'grid-line'} />{/each}
       {/if}
       {#each model.rows as row, index}
-        {@const y = 46 + index * rowHeight}
+        {@const y = (compact?12:46) + index * rowHeight}
         {@const end = scale(row.value ?? 0, model.domain, left, right)}
         <ChartMark label={rowLabel(index)} {index} {selected} {onselect}>
-          <rect x="12" y={y - 7} width="864" height={rowHeight} fill="transparent" />
-          <text x="12" y={y + 17} class="row-label">{row.label}</text>
-          <rect x={Math.min(zero, end)} y={y + 1} width={Math.max(0, Math.abs(end - zero))} height="24" class="rounded-mark chart-shape" fill={style === '2C' ? signedColors[(row.value ?? 0) >= 0 ? 0 : 1] : chartCategoryColor(row.label)} fill-opacity={selected === index ? 1 : 0.8} />
-          <text x={end + ((row.value ?? 0) < 0 ? -9 : 9)} y={y + 18} text-anchor={(row.value ?? 0) < 0 ? 'end' : 'start'} class="value">{style === '2C' && (row.value ?? 0) > 0 ? '+' : ''}{formatValue(row.value)}</text>
+          <rect x="12" y={y - 7} width={width-24} height={rowHeight} fill="transparent" />
+          <text x="12" y={y + 17} class="row-label">{compact && row.label.length>34?`${row.label.slice(0,33)}…`:row.label}</text>
+          <rect x={Math.min(zero, end)} y={y + (compact?28:1)} width={Math.max(0, Math.abs(end - zero))} height="24" class="rounded-mark chart-shape" fill={style === '2C' ? signedColors[(row.value ?? 0) >= 0 ? 0 : 1] : row.tone ?? chartCategoryColor(row.label)} fill-opacity={selected === index ? 1 : 0.8} />
+          <text x={end + ((row.value ?? 0) < 0 ? -9 : 9)} y={y + (compact?45:18)} text-anchor={(row.value ?? 0) < 0 ? 'end' : 'start'} class="value">{style === '2C' && (row.value ?? 0) > 0 ? '+' : ''}{formatValue(row.value)}</text>
         </ChartMark>
-        {#if style === '2A'}<line x1="12" x2="875" y1={y + rowHeight - 8} y2={y + rowHeight - 8} class="rule" />{/if}
+        {#if style === '2A'}<line x1="12" x2={width-12} y1={y + rowHeight - 8} y2={y + rowHeight - 8} class="rule" />{/if}
       {/each}
       {@render horizontalAxis(left, right, bottom)}
 
@@ -215,13 +215,13 @@
     {:else if style === '3A' || style === '3B'}
       {#each compositions as slice}
         <ChartMark label={`${rowLabel(slice.index)} · ${formatValue(slice.fraction * 100, '%')}`} index={slice.index} {selected} {onselect}>
-          <path class="chart-shape" d={slice.path} fill={chartFill(chartCategoryColor(model.rows[slice.index].label))} stroke={selected === slice.index ? 'var(--ink)' : 'var(--canvas)'} stroke-width="1.5" />
+          <path class="chart-shape" d={slice.path} fill={chartFill((model.rows[slice.index].tone ?? chartCategoryColor(model.rows[slice.index].label)))} stroke={selected === slice.index ? 'var(--ink)' : 'var(--canvas)'} stroke-width="1.5" />
           {#if style === '3B' && slice.fraction >= 0.07}<text x={slice.label.x} y={slice.label.y + 5} text-anchor="middle" class="on-fill percentage">{Math.round(slice.fraction * 100)}%</text>{/if}
         </ChartMark>
       {/each}
       {#if style === '3A'}
-        <text x="254" y="214" text-anchor="middle" class="total">{model.total ?? model.rows.reduce((sum, row) => sum + (row.value ?? 0), 0)}</text>
-        <text x="254" y="242" text-anchor="middle" class="tick">{model.unit}</text>
+        <text x="254" y="214" text-anchor="middle" class="total">{String(raw.center ?? model.total ?? model.rows.reduce((sum, row) => sum + (row.value ?? 0), 0))}</text>
+        <text x="254" y="242" text-anchor="middle" class="tick">{String(raw.centerLabel ?? model.unit)}</text>
       {/if}
       {#each model.rows as row, index}
         {@const y = 114 + index * 65}
@@ -479,7 +479,7 @@
 
 
 {#if composition}
-  <div class="compact-chart">
+  <div class="compact-chart" class:compact-card={compact}>
     <svg class="compact-composition" viewBox={style === '3C' ? '102 38 356 356' : '76 39 356 356'} role="group" aria-label={model.title}>
       {#if style === '3C'}
         {#each model.rows as row, index}
@@ -495,22 +495,22 @@
       {:else}
         {#each compositions as slice}
           <ChartMark label={rowLabel(slice.index)} index={slice.index} {selected} {onselect}>
-            <path class="chart-shape" d={slice.path} fill={chartFill(chartCategoryColor(model.rows[slice.index].label))} stroke="var(--canvas)" stroke-width="1.5" />
+            <path class="chart-shape" d={slice.path} fill={chartFill((model.rows[slice.index].tone ?? chartCategoryColor(model.rows[slice.index].label)))} stroke="var(--canvas)" stroke-width="1.5" />
             {#if style === '3B' && slice.fraction >= .07}<text x={slice.label.x} y={slice.label.y + 5} text-anchor="middle" class="on-fill percentage">{Math.round(slice.fraction * 100)}%</text>{/if}
           </ChartMark>
         {/each}
-        {#if style === '3A'}<text x="254" y="214" text-anchor="middle" class="total">{model.total ?? model.rows.reduce((sum, row) => sum + (row.value ?? 0), 0)}</text><text x="254" y="242" text-anchor="middle" class="tick">{model.unit}</text>{/if}
+        {#if style === '3A'}<text x="254" y="214" text-anchor="middle" class="total">{String(raw.center ?? model.total ?? model.rows.reduce((sum, row) => sum + (row.value ?? 0), 0))}</text><text x="254" y="242" text-anchor="middle" class="tick">{String(raw.centerLabel ?? model.unit)}</text>{/if}
       {/if}
     </svg>
-    <div class="chart-legend-list" aria-label="Legend">
+    {#if raw.showLegend !== false}<div class="chart-legend-list" aria-label="Legend">
       {#each model.rows as row, index}
-        <button type="button" class="chart-legend-row" aria-pressed={selected === index} onpointerenter={() => onselect(index)} onfocus={() => onselect(index)} onclick={() => onselect(index)}>
-          <i style:background={chartCategoryColor(row.label)}></i><span>{row.label}</span>
+        <a href={row.href} role={row.href ? undefined : 'button'} tabindex="0" class="chart-legend-row" aria-pressed={row.href ? undefined : selected === index} onkeydown={event=>{if(!row.href && (event.key==='Enter'||event.key===' ')){event.preventDefault();onselect(index);}}} onpointerenter={() => onselect(index)} onfocus={() => onselect(index)} onclick={() => onselect(index)}>
+          <i style:background={row.tone ?? chartCategoryColor(row.label)}></i><span>{row.label}</span>
           <strong>{formatValue(row.value, model.unit)}{#if row.capacity !== undefined} / {formatValue(row.capacity)}{/if}</strong>
           <small>{row.value === null ? '' : `${Math.round(style === '3C' ? (row.capacity ? row.value / row.capacity * 100 : 0) : (compositions[index]?.fraction ?? 0) * 100)}%`}</small>
-        </button>
+        </a>
       {/each}
-    </div>
+    </div>{/if}
   </div>
 {/if}
 {#if style==='5C'}
@@ -545,6 +545,9 @@
 {/if}
 
 <style>
+  .wide-chart.compact-card {display:none;}
+  .compact-chart.compact-card {display:grid;gap:var(--chart-gap);}
+  .compact-chart.compact-card svg.compact-composition {max-width:220px;}
   svg.compact-composition { min-width: 0; }
   svg { display: block; width: 100%; min-width: var(--chart-min-width); height: auto; overflow: visible; }
 </style>

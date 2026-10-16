@@ -9,10 +9,11 @@
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import Icon from '$lib/ui/components/Icon.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';
-  import ProgressChart from '$lib/ui/components/ProgressChart.svelte';
+  import ChartView from '$lib/ui/charts/ChartView.svelte';
+  import { targetModel } from '$lib/ui/charts/insights';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import RowFeedback from '$lib/ui/components/RowFeedback.svelte';
+  import Toast from '$lib/ui/components/Toast.svelte';
   import ReadingLaunch from '$lib/reading/ReadingLaunch.svelte';
   import Reader from '$lib/reading/Reader.svelte';
   import { gameCard, gameHero, gameFacts, gameMinutes } from '$lib/games/presentation';
@@ -56,13 +57,13 @@
     {/if}
   {:else if name === 'catalogue.rows'}
     <Shelf title="Related titles" href="/discover" items={scenario === 'loading' || scenario === 'empty' || scenario === 'error' ? [] : rowItems} busy={scenario === 'loading' || scenario === 'refresh'} hideEmpty={false} error={scenario === 'error' ? 'This preview source is temporarily unavailable.' : ''} retry={() => notice = 'Preview retry requested.'} />
-    <RowFeedback message={notice} />
+    {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
   {:else if name === 'catalogue.details'}
     <p class="small quiet">Composition reference using the production MediaPage, presentation adapters and Shelf. Commands are preview-only.</p>
     {#if scenario === 'music'}<MediaPage {...musicPage.page} />
     {:else}<MediaPage details item={detailItem}>
       {#snippet heroActions()}{#if (detailKind === 'book' || detailKind === 'comic') && scenario !== 'remote-reading'}<ReadingLaunch workId={detailKind === 'comic' ? comic.id : book.id} title={detailKind === 'comic' ? comic.title : book.title} />{/if}<Button size="hero" icon={scenario === 'remote-reading' || ['game','book','comic'].includes(detailKind) ? 'plus' : 'play'} onclick={() => notice = 'Preview action acknowledged.'}>{scenario === 'remote-reading' ? 'Add book' : detailKind === 'game' ? scenario === 'game-remote' ? 'Add game' : 'Start playthrough' : detailKind === 'book' || detailKind === 'comic' ? 'Update reading' : 'Play'}</Button>{/snippet}
-      <RowFeedback message={notice} />
+      {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
       {#if detailKind === 'show'}<Shelf title="Seasons" items={[season]} filterBy="watched" />
       {:else if detailKind === 'season'}<Shelf title="Episodes" items={[episode]} shape="fanart" artworkStyle="thumb" filterBy="watched">
         {#snippet details(item)}
@@ -80,7 +81,7 @@
       <Shelf title="Overview" size="panel" artworkOptions={false} panels={detailPanels} />
       {#if ['book', 'comic', 'game'].includes(detailKind) && scenario !== 'remote-reading' && scenario !== 'game-remote'}
         <Shelf title="Progress" size="panel" artworkOptions={false}>
-          <DetailCard title={detailKind === 'game' ? 'In progress' : 'Reading'}><ProgressChart label="Preview progress" items={[{ label: detailKind === 'game' ? 'Completion' : 'Pages', value: detailKind === 'game' ? 42 : 80, total: detailKind === 'game' ? 100 : 320 }]} /></DetailCard>
+          <DetailCard title={detailKind === 'game' ? 'In progress' : 'Reading'}><ChartView model={targetModel({label:'Preview progress',items:[{ label: detailKind === 'game' ? 'Completion' : 'Pages', value: detailKind === 'game' ? 42 : 80, total: detailKind === 'game' ? 100 : 320 }]})} compact /></DetailCard>
           <DetailCard title="At a glance" content={{ kind: 'metrics', props: { items: [{ label: detailKind === 'game' ? 'Time played' : 'Current page', value: detailKind === 'game' ? '12h 30m' : 80 }, { label: 'Started', value: '1 October 2026', text: true }] } }} />
         </Shelf>
       {/if}
@@ -106,19 +107,19 @@
       <label class="search-input"><Icon name="search" /><input type="search" aria-label="Search your library and beyond" placeholder="Search your library and beyond" autocomplete="off" maxlength="200" bind:value={query} /></label>
       <Button type="submit" onclick={() => searched = true}>Search</Button>
     </form>
-    {#if scenario === 'error'}<RowFeedback error="Global screen search is temporarily unavailable. Showing your local catalogue." tag="div" class="notice error" />{/if}
+    {#if scenario === 'error'}<Toast kind="error" text={'Global screen search is temporarily unavailable. Showing your local catalogue.'} />{/if}
     {#if scenario === 'results' || searched}<Shelf title="Available" items={[{ ...movie, available: true }]} /><Shelf title="Unavailable" items={[readingCard(book), gameCard({ ...game, available: false })]} />
     {:else if scenario !== 'error'}<EmptyState title="Find your next story" description="Search movies, shows, music, games, books and comics in your library and beyond." icon="search" />{/if}
   {:else if name === 'catalogue.status'}
     {#if scenario === 'edition'}<section class="row edition-details" aria-label="Selected edition"><div><h2>Original edition</h2><p class="small">Preview Jellyfin</p></div><Button icon="play" onclick={() => notice = 'Preview playback requested.'}>Play this edition</Button><Button emphasis="subtle" href="/media/preview">All details</Button></section>
     {:else if scenario === 'missing-demand'}<section class="section"><Button emphasis="subtle" onclick={() => selected = !selected}>{selected ? 'Hide' : 'Show'} missing and uncertain items</Button>{#if selected}<ul><li><a href="/media/preview">Preview series · Season two</a> · No accessible source · Availability uncertain · Release date unknown</li></ul><Pagination page={1} pages={1} onchange={() => {}} label="Missing demand pages" />{/if}</section>
     {:else}<Shelf title="Your requests" items={[movie]} layout="grid" availability={false}>{#snippet details()}<div class="request-details stack"><span class="badge" class:available={scenario === 'available'}>{scenario === 'available' ? 'Available' : 'Pending approval'}</span><p class="small">Preview Seerr · 4K · Seasons 1, 2</p><p class="small">Requested 1 October 2026</p>{#if scenario !== 'available'}<Button danger onclick={() => notice = 'Preview cancellation acknowledged.'}>Cancel request</Button>{/if}</div>{/snippet}</Shelf>{/if}
-    <RowFeedback message={notice} />
+    {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
   {:else if name === 'catalogue.history'}
     {#if scenario === 'game-table'}<Heading title="Play history" /><div class="overflow"><table class="table"><thead><tr><th scope="col">Date</th><th scope="col">Time played</th><th scope="col">Note</th></tr></thead><tbody>{#each [30, 90, 125] as minutes, index}<tr><td>{index + 1} October 2026</td><td>{gameMinutes(minutes)}</td><td>{index ? '—' : 'A fictional play session.'}</td></tr>{/each}</tbody></table></div><Pagination page={number} pages={3} onchange={value => number = value} label="Play history pages" />
     {:else if scenario === 'selection'}<Heading title="Preview title · History" /><div class="stack"><p>Select the entries you want to remove.</p><div class="row"><Button emphasis="subtle" onclick={() => selected = true}>Select shown</Button><Button emphasis="subtle" onclick={() => selected = false}>Clear selection</Button><Button danger disabled={!selected} onclick={() => confirming = true}>Remove entry…</Button></div><Field label="Select preview watch"><input type="checkbox" bind:checked={selected} /></Field></div><Shelf title="1 October 2026" items={[episode]} shape="fanart" />
     {:else}<Shelf title="Reading history" size="panel" artworkOptions={false}><DetailCard title="Reading" description="1 October 2026, 18:00"><p class="small quiet">Page 80 of 320</p></DetailCard><DetailCard title="Planned" description="30 September 2026, 12:00"><p class="small quiet">Page 0 of 320</p></DetailCard></Shelf>{/if}
-    <RowFeedback message={notice} />
+    {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
     <Dialog bind:open={confirming} title="Remove from history?">
       <div class="stack">
         <p>Remove <strong>1 entry</strong> from <strong>{movie.title}</strong>?</p>

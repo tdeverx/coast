@@ -1,11 +1,11 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
  import {onDestroy,untrack} from 'svelte';
  import {page} from '$app/state';
  import {useClient} from '$lib/ui/client-context';
  import {createResource} from '$lib/ui/resource.svelte';
  import {lazyContent} from '$lib/ui/lazy-content';
  import Shelf from '$lib/ui/components/Shelf.svelte';
- import RowFeedback from '$lib/ui/components/RowFeedback.svelte';
  import type {DynamicRow} from './model';
  import {dynamicRowShape} from './row-ranking';
  const {api}=useClient();
@@ -39,6 +39,8 @@
   resource.replace({rows:[]});
  });});
  onDestroy(resource.dispose);
+
+  reportFailure(()=>resource.error, ()=>void load());
 </script>
 <div aria-label="Dynamic For You" class="dynamic-feed">
  {#each rows as row (row.key)}
@@ -60,7 +62,7 @@
     {#key `${revision}:${revealed}`}
      <div use:lazyContent={{load:()=>void load(),rootMargin:'0px',enabled:()=>!resource.busy&&!resource.error}} aria-busy={resource.busy} style="min-height:1px">
       {#if resource.busy}<span class="sr-only" role="status">Loading the next row…</span>{/if}
-      {#if resource.error}<RowFeedback error={resource.error} inline={false} retry={()=>void load()} />{/if}
+
      </div>
     {/key}
    {/if}

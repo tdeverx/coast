@@ -1,5 +1,5 @@
 <script lang="ts">
-  import RowFeedback from './RowFeedback.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import { onDestroy, untrack } from 'svelte';
   import type { ProfilePeriod } from '$lib/profile/period';
   import type { MediaStatistics } from '$lib/media/statistics';
@@ -29,10 +29,12 @@
     });
   });
   onDestroy(resource.dispose);
+
+  reportFailure(()=>error);
 </script>
 
 {#if error}<DetailCard title="Activity unavailable"
-    ><RowFeedback error={error} tag="p" class="" />
+    >
     <Button emphasis="subtle" onclick={() => load(mediaId, period)}>Try again</Button></DetailCard
   >{/if}
 {#if data}{#each mediaActivityPanels(data,loadedPeriod) as panel}<DetailCard {...panel} />{/each}{/if}

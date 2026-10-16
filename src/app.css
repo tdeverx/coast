@@ -738,7 +738,6 @@ form.stack,
 .menu-row.menu-row-danger, .menu-row.menu-row-danger:hover:not(:disabled), .menu-row.menu-row-danger:focus-visible { color: var(--danger); }
 .menu-row.menu-row-danger:hover:not(:disabled), .menu-row.menu-row-danger:focus-visible { background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .menu-row:disabled, .menu-row[aria-disabled="true"] { opacity: .45; cursor: default; }
-.menu-feedback { padding: 6px var(--menu-item-inset); font-size: var(--text-sm); }
 
 .menu-row[aria-disabled="true"]:hover, .menu-row[aria-disabled="true"]:focus-visible { background: transparent; }
 

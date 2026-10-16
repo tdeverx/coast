@@ -1,6 +1,6 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import Field from './Field.svelte';
-  import RowFeedback from './RowFeedback.svelte';
   import { createOperation } from '$lib/ui/operation.svelte';
   import { untrack } from 'svelte';
   import type { MediaView } from '$lib/ui/types';
@@ -111,6 +111,8 @@
     });
     if (!completed) error = operation.error;
   }
+
+  reportFailure(()=>error);
 </script>
 
 <Dialog bind:open title={`Request ${item.title}`}>
@@ -124,7 +126,7 @@
     <p class="small">
       Choose where you’d like to watch. Your request stays here while the server prepares it.
     </p>
-    {#if error}<RowFeedback error={error} tag="div" class="notice error" />
+    {#if error}
       <Button emphasis="subtle" onclick={load}>Retry</Button>{/if}
     {#if destinations.length}
       <Field label="Destination server"><select bind:value={destination} onchange={chooseDestination}

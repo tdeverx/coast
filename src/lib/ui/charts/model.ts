@@ -3,6 +3,8 @@ export { chartColors, chartCategoryColor, chartFill } from '$lib/ui/charts/types
 
 export interface ChartRow {
   label: string;
+  href?: string;
+  tone?: string;
   value: number | null;
   values?: (number | null)[];
   reference?: number;

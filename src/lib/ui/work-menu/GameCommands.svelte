@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Field from '$lib/ui/components/Field.svelte';
   import { onDestroy } from 'svelte';
   import { randomId } from '$lib/diagnostics';
   import { useClient } from '../client-context';
@@ -11,7 +12,7 @@
   let { workId, gameData, ensure, changed, created }: { workId: string; gameData?: GameActionState | null;
     ensure: () => Promise<unknown>; changed: () => Promise<unknown>; created?: (id: string) => Promise<void> } = $props();
   const { change } = useClient();
-  const mutation = createMutation(() => changed());
+  const mutation = createMutation(() => changed(), useClient().feedback.notify);
   export function failure() { return mutation.error; }
   export function isBusy() { return mutation.busy; }
   let alive = true;
@@ -60,16 +61,16 @@
   <form class="stack" onsubmit={event => { event.preventDefault(); void submit(); }}>
     {#if mutation.error}<div class="notice error" role="alert">{mutation.error}</div>{/if}
     {#if form === 'start'}
-      <label class="field">Platform<input bind:value={platform} maxlength="250" list={`platforms-${workId}`} placeholder="Choose a platform" /></label>
+      <Field label="Platform"><input bind:value={platform} maxlength="250" list={`platforms-${workId}`} placeholder="Choose a platform" /></Field>
       <datalist id={`platforms-${workId}`}>{#each gameData?.platforms ?? [] as entry}<option value={entry}></option>{/each}</datalist>
       <label class="check"><input type="checkbox" bind:checked={repeat} />This is a replay</label>
     {:else if form === 'progress'}
-      <label class="field">Completion percentage<input type="number" bind:value={percent} required min="0" max="100" step="0.1" /></label>
-      <label class="field">Status<select bind:value={status}>{#each gameStatuses as entry}<option value={entry}>{displayLabel(entry)}</option>{/each}</select></label>
+      <Field label="Completion percentage"><input type="number" bind:value={percent} required min="0" max="100" step="0.1" /></Field>
+      <Field label="Status"><select bind:value={status}>{#each gameStatuses as entry}<option value={entry}>{displayLabel(entry)}</option>{/each}</select></Field>
     {:else if form === 'log'}
-      <label class="field">Time played (minutes)<input type="number" bind:value={minutes} required min="1" max="1440" step="1" /></label>
-      <label class="field">Played at<input type="datetime-local" bind:value={playedAt} required /></label>
-      <label class="field">Note<textarea bind:value={note} maxlength="2000" rows="3"></textarea></label>
+      <Field label="Time played (minutes)"><input type="number" bind:value={minutes} required min="1" max="1440" step="1" /></Field>
+      <Field label="Played at"><input type="datetime-local" bind:value={playedAt} required /></Field>
+      <Field label="Note"><textarea bind:value={note} maxlength="2000" rows="3"></textarea></Field>
     {/if}
     <Button type="submit" disabled={mutation.busy}>{mutation.busy ? 'Saving…' : form === 'start' ? 'Start playthrough' : form === 'log' ? 'Save session' : 'Save progress'}</Button>
   </form>

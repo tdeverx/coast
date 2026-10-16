@@ -3,21 +3,24 @@
   import { untrack } from 'svelte';
   import { providePreviewClient } from '$lib/ui/client-context';
   import { providePreviewPlayback } from '$lib/playback/context.svelte';
+  import NotificationToasts from '$lib/ui/components/NotificationToasts.svelte';
   import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Demo from './Demo.svelte';
   import { createPreviewTransport } from './demo/fixtures';
   import { recipe, scenarios, selectedScenario, scenarioLabel, type ReferenceFamily } from './reference';
-  import type { ExampleValues } from './workspace';
+  import type { Customisation } from './props';
+  import ComponentSpecimen from './ComponentSpecimen.svelte';
 
-  let { name, initialOpen = false, initialScenario, onchange, scenarioValue, options }: {
+  let { name, initialOpen = false, initialScenario, onchange, scenarioValue, custom, onprop, onevent }: {
     name: string; initialOpen?: boolean; initialScenario?: string | null; onchange?: (value: string) => void;
-    scenarioValue?:string; options?:ExampleValues;
+    scenarioValue?:string; custom?:Customisation; onprop?:(key:string,value:unknown)=>void; onevent?:(name:string,args:unknown[])=>void;
   } = $props();
   let localScenario = $state(untrack(() => selectedScenario(name, initialScenario)));
   $effect(() => { localScenario = selectedScenario(name, initialScenario); });
   const scenario = $derived(scenarioValue ?? localScenario);
   const composition = $derived(recipe(name));
-  const socialNames = new Set(['PartyCard', 'PartyMenu', 'SyncedControls', 'FriendRoster', 'FriendsPanel', 'NotificationInbox', 'StreamsPanel', 'NotificationToasts', 'PlaybackTimeline']);
+  const customActive = $derived(custom !== undefined);
+  const socialNames = new Set(['PartyCard', 'PartyMenu', 'PersistentPlayer', 'SyncedControls', 'FriendRoster', 'FriendsPanel', 'NotificationInbox', 'StreamsPanel', 'NotificationToasts', 'PlaybackTimeline']);
   const family = $derived<ReferenceFamily | undefined>(composition?.family ?? (socialNames.has(name) ? 'social' : undefined));
   const transport = $derived(createPreviewTransport(name, scenario));
   providePreviewClient((input, init) => transport(input, init));
@@ -31,7 +34,7 @@
     feature: () => import('./FeatureExamples.svelte'),
   };
   $effect(() => {
-    const selected = family;
+    const selected = customActive ? undefined : family;
     let cancelled = false;
     Renderer = undefined;
     failure = '';
@@ -47,14 +50,16 @@
 {/if}
 {#key `${name}:${scenario}`}
   <div class="reference-example" data-reference={name} data-scenario={scenario} onclickcapture={event => { const link = (event.target as Element).closest('a'); if (link && !link.hasAttribute('data-preview-navigation')) event.preventDefault(); }} onsubmitcapture={event => event.preventDefault()}>
-    {#if failure}<p role="alert">{failure}</p>
+    {#if custom}<ComponentSpecimen {name} {custom} change={(key,value)=>onprop?.(key,value)} onevent={(name,args)=>onevent?.(name,args)} />
+    {:else if failure}<p role="alert">{failure}</p>
     {:else if family}
       {#if Renderer}<Renderer name={composition?.family === 'admin' ? composition.example : name} {scenario} />{:else}<p role="status" class="quiet">Loading example…</p>{/if}
-    {:else}<Demo {name} {scenario} {initialOpen} {options} />{/if}
+    {:else}<Demo {name} {scenario} {initialOpen} />{/if}
+    {#if name!=='NotificationToasts'}<NotificationToasts notifications={[]} />{/if}
   </div>
 {/key}
 
 <style>
   .scenario-controls { margin-block: 12px; }
-  .reference-example { position: relative; min-width: 0; contain: layout; }
+  .reference-example { position: relative; min-width: 0; contain: layout;display:grid;justify-items:center; }
 </style>

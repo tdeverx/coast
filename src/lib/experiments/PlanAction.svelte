@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Field from '$lib/ui/components/Field.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import { message } from '$lib/ui/client';
@@ -41,7 +42,7 @@
 
 <Dialog bind:open title={`Plan · ${title}`}>
   <form class="stack" onsubmit={save}>
-    <label class="field">Date and time<input type="datetime-local" bind:value={date} required /></label>
+    <Field label="Date and time"><input type="datetime-local" bind:value={date} required /></Field>
     {#if partyAllowed}<label class="check"><input type="checkbox" bind:checked={party} />Plan a party</label>{/if}
     {#if party}
       <fieldset class="stack">

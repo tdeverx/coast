@@ -13,7 +13,8 @@
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
-  import ProgressChart from '$lib/ui/components/ProgressChart.svelte';
+  import ChartView from '$lib/ui/charts/ChartView.svelte';
+  import { targetModel } from '$lib/ui/charts/insights';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
 
   import WorkMenu from '$lib/ui/components/WorkMenu.svelte';
@@ -88,7 +89,7 @@
     {#if playthrough}
       <Shelf title="Progress" size="panel" artworkOptions={false}>
         <DetailCard title={displayLabel(playthrough.status)} description={playthrough.repeat ? 'Replaying' : 'Current playthrough'}>
-          <ProgressChart label="Game completion" items={[{ label: 'Completion', value: playthrough.progressPercent, total: 100 }]} />
+          <ChartView model={targetModel({label:'Game completion',items:[{ label: 'Completion', value: playthrough.progressPercent, total: 100 }]})} compact />
         </DetailCard>
         <DetailCard title="At a glance"><MetricGrid items={[
           { label: 'Time played', value: gameMinutes(playthrough.minutesPlayed) },

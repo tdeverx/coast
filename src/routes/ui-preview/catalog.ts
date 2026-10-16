@@ -15,11 +15,11 @@ export const referenceSections = [
 
 // Small controls, content primitives and charts used to compose larger components.
 export const elements = [
-  'Avatar', 'ChoiceGroup', 'Field', 'FormActions', 'BarChart', 'Brand', 'BreakdownChart', 'Button',
+  'Avatar', 'ChoiceGroup', 'Field', 'FormActions', 'Brand', 'Button',
   'ActivityHeader', 'ProgressBar', 'IdentityCard', 'DetailCard', 'EmptyState', 'FactList', 'Heading', 'Icon',
-  'MetricGrid',
-  'Pagination', 'PlaybackTimeline', 'ProgressChart', 'Rating',
-  'RowFeedback', 'RowFilter', 'RowStyleMenu', 'SegmentedControl',
+  'MetricGrid', 'Toast', 'OperationProgress', 'SettingsRow',
+  'Pagination', 'PlaybackTimeline', 'Rating',
+  'RowFilter', 'RowStyleMenu', 'SegmentedControl',
 ] as const satisfies readonly (typeof components[number])[];
 
 export const composedComponents = components.filter(name => !elements.some(element => element === name));

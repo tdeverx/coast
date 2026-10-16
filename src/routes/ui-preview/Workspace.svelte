@@ -1,85 +1,62 @@
 <script lang="ts">
-  import { onMount, tick, type Snippet } from 'svelte';
+  import type { Snippet } from 'svelte';
   import Button from '$lib/ui/components/Button.svelte';
-  import Dialog from '$lib/ui/components/Dialog.svelte';
   import Heading from '$lib/ui/components/Heading.svelte';
-  import type { WorkspaceParts } from './workspace';
-  let { title, canvas, inspector, browser, categories, open = $bindable(false), pinned = $bindable(false) }: WorkspaceParts & {
-    categories: Snippet; open?: boolean; pinned?: boolean;
+  import Field from '$lib/ui/components/Field.svelte';
+  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
+  import type { CanvasSettings, WorkspaceParts } from './workspace';
+  let { title, canvas, inspector, browser, categories, canvasSettings, updateCanvas, setBackgroundImage, backgroundError }: WorkspaceParts & {
+    categories:Snippet; canvasSettings: CanvasSettings; updateCanvas:(values:Partial<Pick<CanvasSettings,'background'|'color'>>)=>void; setBackgroundImage:(file?:File)=>void; backgroundError:string;
   } = $props();
-  const id = $props.id();
-  let inspectorNode = $state<HTMLElement>();
-  let mobile = $state(false);
-  onMount(() => {
-    const query = matchMedia('(max-width: 800px)');
-    const update = () => mobile = query.matches;
-    update(); query.addEventListener('change', update);
-    return () => query.removeEventListener('change', update);
-  });
-  function close() {
-    open=false;
-    void tick().then(()=>document.getElementById(`${id}-customise`)?.querySelector('button')?.focus({preventScroll:true}));
-  }
-  function pin() {
-    pinned=!pinned;
-    if(pinned)void tick().then(()=>{if(inspectorNode?.isConnected)inspectorNode.querySelector('button')?.focus({preventScroll:true});});
-  }
 </script>
 
-<div class="workspace" class:studio={open && pinned && !mobile}>
+<div class="workspace">
   <section class="canvas-column" aria-label={`${title} preview`}>
-    <Heading {title} level={2}>
-      {#snippet actions()}<div id={`${id}-customise`}><Button emphasis="subtle" icon="settings" pressed={open} onclick={() => open = !open}>Customise</Button></div>{/snippet}
-    </Heading>
     <!-- svelte-ignore a11y_no_noninteractive_tabindex (The bounded preview canvas must be keyboard-scrollable.) -->
-    <div class="preview-canvas" role="region" aria-label={`${title} preview canvas`} tabindex="0">{@render canvas()}</div>
-  </section>
-  {#if open && pinned && !mobile}
-    <aside bind:this={inspectorNode} class="inspector solid-surface" aria-label="Customiser">
-      {@render inspectorHeading()}
-      <div class="inspector-content">{@render inspector()}</div>
-    </aside>
-  {:else if open}
-    <div class="floating-inspector" class:mobile>
-      <Dialog bind:open title="Customiser" popover={!mobile} popoverWidth={360} anchor={`#${id}-customise`}>
-        {#snippet heading()}{@render inspectorHeading()}{/snippet}
-        <div class="inspector-content">{@render inspector()}</div>
-      </Dialog>
+    <div class="preview-canvas" role="region" aria-label={`${title} preview canvas`} tabindex="0">
+      <div class="canvas-content">{@render canvas()}</div>
     </div>
-  {/if}
+  </section>
+    <aside class="inspector solid-surface" aria-label="Customiser">
+      <Heading title="Customiser" level={3} />
+      <div class="inspector-content">{@render inspector()}{@render canvasControls()}</div>
+    </aside>
   <section class="browser solid-surface" aria-label="UI browser">
-    <div class="categories">{@render categories()}</div>
-    {@render browser()}
+
+    {@render browser({heading:categories})}
   </section>
 </div>
 
-{#snippet inspectorHeading()}
-  <Heading title="Customiser" level={3}>
-    {#snippet actions()}
-      {#if !mobile}<Button emphasis="subtle" pressed={pinned} onclick={pin}>{pinned ? 'Unpin' : 'Pin'}</Button>{/if}
-      <Button size="icon" icon="close" label="Close customiser" onclick={close} />
-    {/snippet}
-  </Heading>
+{#snippet canvasControls()}
+  <section class="canvas-controls" aria-label="Preview background">
+    <Heading title="Canvas background" level={3} />
+    <SegmentedControl label="Preview background" value={canvasSettings.background} options={[{value:'theme',label:'App'},{value:'pattern',label:'Pattern'},{value:'color',label:'Color'},{value:'image',label:'Image'}]} onchange={value=>updateCanvas({background:value})} />
+    {#if canvasSettings.background === 'color'}
+      <Field label="Preview background color"><input type="color" value={canvasSettings.color} oninput={event=>updateCanvas({color:event.currentTarget.value})} /></Field>
+      <div class="row"><Button emphasis="subtle" onclick={()=>updateCanvas({color:'#ffffff'})}>White</Button><Button emphasis="subtle" onclick={()=>updateCanvas({color:'#000000'})}>Black</Button></div>
+    {:else if canvasSettings.background === 'image'}
+      <Field label="Preview background image"><input type="file" accept="image/*" onchange={event=>setBackgroundImage(event.currentTarget.files?.[0])} /></Field>
+      {#if canvasSettings.image}<Button emphasis="subtle" onclick={()=>setBackgroundImage()}>Remove image</Button>{/if}
+    {/if}
+    {#if backgroundError}<p class="small text-danger" role="alert">{backgroundError}</p>{/if}
+    <p class="small quiet">Preview only. Images stay in this browser.</p>
+  </section>
 {/snippet}
 
 <style>
-  .workspace {display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:24px;align-items:start;min-width:0;height:max(560px,calc(100dvh - 220px));}
-  .workspace.studio {grid-template-columns:minmax(0,1fr) 340px;}
+  .workspace {--preview-stage-height:max(360px,calc(100dvh - 104px - var(--gutter) * 2 - 180px));display:grid;grid-template-columns:minmax(0,1fr) 340px;grid-template-rows:minmax(var(--preview-stage-height),auto) auto;gap:var(--preview-gap);align-items:start;min-width:0;}
   .canvas-column {min-width:0;min-height:0;height:100%;display:flex;flex-direction:column;}
-  .preview-canvas {border:1px solid var(--line);border-radius:20px;min-height:0;min-width:0;position:relative;flex:1;display:flex;flex-direction:column;overflow:auto;overscroll-behavior:contain;}
-  .inspector {padding:20px;border:1px solid var(--line);border-radius:20px;min-width:0;min-height:0;height:100%;max-height:100%;overflow:auto;overscroll-behavior:contain;}
+  .preview-canvas {min-height:0;min-width:0;position:relative;flex:1;display:flex;flex-direction:column;overflow:visible;}
+  .canvas-content {position:relative;display:flex;flex-direction:column;justify-content:safe center;align-items:safe center;flex:1;min-width:0;min-height:0;padding:var(--preview-inset);}
+  .canvas-content > :global(*) {width:100%;min-width:0;}
+  .canvas-content :global(.reference-example > .demo) {padding:0;}
+  .canvas-controls {border-top:1px solid var(--line);padding-top:var(--preview-inset);margin-top:var(--preview-gap);display:grid;gap:16px;}
+  .inspector {padding:var(--preview-inset);border:1px solid var(--line);border-radius:20px;min-width:0;min-height:0;height:var(--preview-stage-height);overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;}
   .inspector-content {min-width:0;}
   .inspector :global(.row-header) {gap:8px;}
   .inspector-content :global(.field) {min-width:0;}
   .inspector-content :global(input:not([type=checkbox]):not([type=radio])),.inspector-content :global(select),.inspector-content :global(textarea) {max-width:100%;min-width:0;width:100%;}
   .inspector-content :global(input[type=range]) {padding:0;accent-color:var(--accent);}
-  .browser {grid-column:1/-1;position:sticky;bottom:16px;z-index:15;border:1px solid var(--line);border-radius:20px;padding:16px;box-shadow:var(--elevation-raised);min-width:0;}
-  .categories {margin-bottom:12px;min-width:0;}
-  .floating-inspector {position:absolute;}
-  .floating-inspector :global(.popover-content) {padding:20px;}
-  .floating-inspector :global(.popover-heading) {padding:12px 20px;}
-  .floating-inspector :global(.row-header) {margin-bottom:0;}
-  .floating-inspector.mobile :global(.dialog) {margin:auto auto 0;width:100%;max-height:80dvh;border-radius:20px 20px 0 0;padding:20px;}
-  .floating-inspector.mobile :global(.inspector-content) {margin-top:20px;}
-  @media(max-width:800px) {.browser {bottom:calc(84px + env(safe-area-inset-bottom));padding:12px;}.workspace {gap:16px;height:max(460px,calc(100dvh - 300px - env(safe-area-inset-bottom)));}}
+  .browser {grid-column:1/-1;position:sticky;bottom:var(--preview-inset);z-index:15;border:1px solid var(--line);border-radius:20px;padding:var(--preview-inset);box-shadow:var(--elevation-raised);min-width:0;}
+  @media(max-width:800px) {.workspace {grid-template-columns:minmax(0,1fr);}.canvas-column {height:auto;min-height:420px;}.inspector {height:min(560px,calc(100dvh - 180px));}.browser {bottom:calc(84px + env(safe-area-inset-bottom));}}
 </style>

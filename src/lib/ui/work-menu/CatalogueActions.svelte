@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import { page } from '$app/state';
   import { onDestroy, untrack } from 'svelte';
   import PlanAction from '$lib/experiments/PlanAction.svelte';
@@ -8,7 +9,6 @@
   import MusicCommands from './MusicCommands.svelte';
   import GameCommands from './GameCommands.svelte';
   import ReadingCommands from './ReadingCommands.svelte';
-  import RowFeedback from '../components/RowFeedback.svelte';
   import WorkActions from '../components/WorkActions.svelte';
   import WorkListActions from '../components/WorkListActions.svelte';
   import Button from '../components/Button.svelte';
@@ -50,7 +50,7 @@
   const game = $derived(work.data.game ?? gameState);
   const progress = $derived(work.data.reading ?? readingState);
   const relationships = $derived(work.relationships);
-  const mutation = createMutation(async () => { await work.refresh(); onchanged?.(); });
+  const mutation = createMutation(async () => { await work.refresh(); onchanged?.(); }, useClient().feedback.notify);
   const playback = createOperation();
   const playIdentity = createResource<MusicItem | null>(null);
   let alive = true;
@@ -111,6 +111,8 @@
     if (await mutation.run(() => change(`${sourcePath}/favourite`, { favourite: value }), value ? 'Added to favourites.' : 'Removed from favourites.')) artistFavourite = value;
   }
   async function changed() { await work.refresh(); onchanged?.(); }
+
+  reportFailure(()=>error);
 </script>
 
 {#if primary && music && page.data.capabilities?.playback!==false}<Button size="hero" icon="play" disabled={busy || preview} onclick={() => start()}>Play</Button>{:else if primary}<Button size="hero" icon="arrow" href={item.href}>View {item.kind}</Button>{/if}
@@ -177,7 +179,7 @@
     {#if refreshGame}<div class="menu-divider" role="separator"></div><Button item icon="refresh" disabled={busy} onclick={() => mutation.run(refreshGame!, 'Metadata refreshed.')}>Refresh metadata</Button>{/if}
   {/if}
   {#if work.busy}<div class="menu-label" role="status">Loading actions…</div>{/if}
-  {#if error}<RowFeedback {error} tag="div" class="menu-feedback text-danger" /><Button item keepOpen icon="refresh" disabled={busy} onclick={() => workId ? work.load(true) : identity.load(true)}>Retry</Button>{/if}
+  {#if error}<Button item keepOpen icon="refresh" disabled={busy} onclick={() => workId ? work.load(true) : identity.load(true)}>Retry</Button>{/if}
 </Button>
 
 {#if workId && item.kind === 'game'}<GameCommands bind:this={gameCommands} {workId} gameData={game} ensure={() => work.load()} {changed} created={ongamecreated} />{/if}

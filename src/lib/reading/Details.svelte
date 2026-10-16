@@ -9,7 +9,8 @@
   import Heading from '$lib/ui/components/Heading.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
-  import ProgressChart from '$lib/ui/components/ProgressChart.svelte';
+  import ChartView from '$lib/ui/charts/ChartView.svelte';
+  import { targetModel } from '$lib/ui/charts/insights';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import WorkMenu from '$lib/ui/components/WorkMenu.svelte';
@@ -87,7 +88,7 @@
       {#if data.progress}
         <Shelf title="Progress" size="panel" artworkOptions={false}>
           <DetailCard title={displayLabel(data.progress.state)} description={`${data.progress.page.toLocaleString()} pages read`}>
-            {#if data.progress.totalPages}<ProgressChart label="Reading page progress" items={[{ label: 'Pages', value: data.progress.page, total: data.progress.totalPages }]} />{:else}<p class="small quiet">Add the page count of your edition to show progress.</p>{/if}
+            {#if data.progress.totalPages}<ChartView model={targetModel({label:'Reading page progress',items:[{ label: 'Pages', value: data.progress.page, total: data.progress.totalPages }]})} compact />{:else}<p class="small quiet">Add the page count of your edition to show progress.</p>{/if}
           </DetailCard>
           <DetailCard title="At a glance"><MetricGrid items={[
             { label: 'Current page', value: data.progress.page },
@@ -99,11 +100,9 @@
       {:else}<EmptyState title="Track your reading" description="Choose a reading state and record your current page. Add the page count for the edition you are reading." icon="library"><Button onclick={() => menu?.editReading()}>Start reading</Button></EmptyState>{/if}
     </section>
     {#key data.item.id}<div id="reading-history" use:lazyContent={{load:()=>void loadHistory()}}>
-      <Shelf title="Reading history" size="panel" artworkOptions={false} hideEmpty={false} busy={history.busy&&!history.data.items.length}>
-        {#each history.data.items as event(event.id)}<DetailCard title={displayLabel(event.state)} description={new Date(event.occurredAt).toLocaleString()}><p class="small quiet">{event.totalPages?`Page ${event.page} of ${event.totalPages}`:`Page ${event.page}`}</p></DetailCard>{:else}<DetailCard title="No reading history yet" />{/each}
+      <Shelf title="Reading history" size="panel" artworkOptions={false} hideEmpty={false} itemCount={history.data.items.length} busy={!history.ready && !history.error || history.busy} error={history.error} retry={()=>void loadHistory(history.data.page)} pageNumber={history.data.page} pages={history.data.pages} onpage={number=>void loadHistory(number)}>
+        {#each history.data.items as event(event.id)}<DetailCard title={displayLabel(event.state)} description={new Date(event.occurredAt).toLocaleString()}><p class="small quiet">{event.totalPages?`Page ${event.page} of ${event.totalPages}`:`Page ${event.page}`}</p></DetailCard>{/each}
       </Shelf>
-      {#if history.error}<p role="alert" class="notice error">{history.error}<Button onclick={()=>loadHistory(history.data.page)}>Retry</Button></p>{/if}
-      {#if history.data.pages>1}<div class="row"><Button disabled={history.busy||history.data.page<=1} onclick={()=>loadHistory(history.data.page-1)}>Previous</Button><Button disabled={history.busy||history.data.page>=history.data.pages} onclick={()=>loadHistory(history.data.page+1)}>Next</Button></div>{/if}
     </div>{/key}
   {/if}
 </MediaPage>
