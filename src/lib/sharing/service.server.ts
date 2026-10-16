@@ -1,8 +1,8 @@
+import { getFeatureConfig } from '$lib/server/features';
 import {requestPriority} from '$lib/server/security/request-priority';
 import { categoryEnabled } from '$lib/experimental';
 import * as v from 'valibot';
 import { getSql } from '$lib/server/db';
-import { getConfig } from '$lib/server/config';
 import { AppError } from '$lib/server/security/errors';
 import { hashToken,randomToken,requireUser,type SessionUser } from '$lib/server/auth';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
@@ -13,7 +13,7 @@ import { reserveViewer, ensureSharedEncoding, releaseViewer, stopViewerPlayback 
 const uuid=v.pipe(v.string(),v.uuid());
 export const shareCookie='coast_share_viewer';
 export async function createShare(actor:SessionUser|null,input:unknown){
- const user=requireUser(actor),config=await getConfig();
+ const user=requireUser(actor),config=await getFeatureConfig(user.id);
  if(!config.allowPlaybackSharing||(user.role!=='admin'&&user.settings.allowPlaybackSharing!==true))throw new AppError(403,'Playback sharing requires administrator permission.');
  const data=v.parse(v.strictObject({workId:uuid,connectionId:uuid,hours:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(24)),6),together:v.optional(v.boolean(),false)}),input);
  if(!config.allowTranscoding)throw new AppError(400,'Enable Jellyfin transcoding in playback policy before creating shared links.');
@@ -59,7 +59,7 @@ export async function claimShare(input:unknown,actor:SessionUser|null,previous?:
  });
 }
 export async function assertShare(share:Record<string,any>,db=getSql()){
- const config=await getConfig(db);
+ const config=await getFeatureConfig(share.owner_id,db);
  const [current]=await db`select s.revoked_at,s.expires_at,s.together,w.category,
  c.status='connected' and c.account_generation=s.account_generation and i.enabled and not u.disabled and (u.role='admin' or u.settings->>'allowPlaybackSharing'='true') and exists(select 1 from availability a where a.user_id=u.id and a.connection_id=c.id and a.media_id=s.work_id and a.state='available') as accessible
  from playback_shares s join works w on w.id=s.work_id join provider_connections c on c.id=s.connection_id and c.user_id=s.owner_id join provider_instances i on i.id=c.instance_id join users u on u.id=s.owner_id where s.id=${share.id}`;

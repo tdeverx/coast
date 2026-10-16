@@ -1,3 +1,4 @@
+import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
 import {and,eq} from 'drizzle-orm';
 import {getDb,getSql} from '$lib/server/db';
 import {socialLiveState,socialLiveDeliveries,providerConnections,externalIds} from '$lib/server/db/schema';
@@ -12,6 +13,8 @@ export async function pollLive(userId:string,connectionId:string) {
  return pollLiveFromAdapter(userId,connectionId,await getTrakt(userId,connectionId));
 }
 export async function pollLiveFromAdapter(userId:string,connectionId:string,{adapter,connection,instance,sync}:TraktContext) {
+ await requireFeature(userId,'presence');
+ await requireFeature(userId,'screen');
  if(connection.settings.liveRead===false)return;
  const db=getDb();
  const [previous]=await db.select().from(socialLiveState).where(eq(socialLiveState.connectionId,connectionId));
@@ -30,6 +33,7 @@ export async function pollLiveFromAdapter(userId:string,connectionId:string,{ada
   await reconcileProviderValue(userId,connectionId,item.id,'history',{value:true},{source:'trakt',accountGeneration:connection.accountGeneration,occurredAt:record.watched_at,apply:tx=>trackInTransaction(tx,userId,{mediaId:item.id,action:'watch',source:'trakt',sourceEventId:`${connectionId}:history:${record.id}:${record.watched_at}`,occurredAt:record.watched_at,rewatch:true})});
  }
  await db.transaction(async tx=>{
+  await requireFeatureInTransaction(tx,userId,'presence');
   const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId)).for('update');
   if(!current||current.accountGeneration!==connection.accountGeneration||current.status!=='connected')throw new PermanentActionError('The connected account changed.');
   await tx.insert(socialLiveState).values({connectionId,accountGeneration:connection.accountGeneration,workId:work?.id??null,remoteId:null,expiresAt:expires,checkedAt:now,historyCursor:now}).onConflictDoUpdate({target:socialLiveState.connectionId,set:{accountGeneration:connection.accountGeneration,workId:work?.id??null,remoteId:null,expiresAt:expires,checkedAt:now,historyCursor:now}});
@@ -44,6 +48,7 @@ export async function deliverCheckinToAdapter(userId:string,connectionId:string,
  if(!checkin)return;
  const [evidence]=await getDb().select().from(socialLiveDeliveries).where(and(eq(socialLiveDeliveries.connectionId,connectionId),eq(socialLiveDeliveries.checkinId,checkinId)));
  if(evidence&&evidence.accountGeneration!==connection.accountGeneration)return;
+ if(checkin.state==='active'){await requireFeature(userId,'presence');await requireFeature(userId,'screen');}
  const remote=await adapter.watching();
  if(checkin.state!=='active'||new Date(checkin.expires_at).getTime()<=Date.now()){
   if(evidence?.state==='uncertain'&&remote)throw new PermanentActionError('Check-in delivery is uncertain. Review Trakt before cancelling remote activity.');

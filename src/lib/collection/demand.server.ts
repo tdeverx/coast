@@ -1,6 +1,5 @@
 import { sql, type SQL } from 'drizzle-orm';
 import { collectionCTE, collectionRead } from './query.server';
-import { getConfig } from '$lib/server/config';
 import { pagination, PAGE_SIZE } from '$lib/server/queries/pagination';
 import * as v from 'valibot';
 
@@ -8,17 +7,16 @@ import * as v from 'valibot';
 export async function missingDemand(userId:string,url:URL) {
   const requested=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1)),Number(url.searchParams.get('page')??1));
   const source=url.searchParams.get('source')??'all';if(source!=='all')v.parse(v.pipe(v.string(),v.uuid()),source);
-  const config=await getConfig();
-  const [result]=await collectionRead(demandStatement(userId,requested,source,config));
+  const [result]=await collectionRead(demandStatement(userId,requested,source));
   return demandResult(result,requested);
 }
 
-function demandStatement(userId:string|SQL,requested:number,source:string,config: import('$lib/experimental').MediumFeatures){
+function demandStatement(userId:string|SQL,requested:number,source:string){
   const candidates=sql`select c.*,case when c.active or exists(select 1 from up_next q where q.user_id=${userId} and q.media_id=c.id) then 'next' else 'planned' end as reason,
     a.availability as needed_availability,a.title as needed_title,a.release_date as needed_release_date,a.category as needed_category
     from collection c join assessments a on a.id=c.next_id where c.kind<>'season' and not c.dropped and not c.completed
       and (c.active or exists(select 1 from up_next q where q.user_id=${userId} and q.media_id=c.id) or exists(select 1 from jsonb_array_elements(c.reasons) r where r->>'relationship'='watchlist' and r->>'origin'='direct'))
-      and (a.release_date is null or a.release_date::date<=current_date) and a.availability in ('unknown','unavailable') and (c.category='screen' or (c.category='music' and ${config.experimentalMusic}) or (c.category='game' and ${config.experimentalGaming}))`;
+      and (a.release_date is null or a.release_date::date<=current_date) and a.availability in ('unknown','unavailable') and c.category in ('screen','music','game') and coast_category_enabled(${userId}::uuid,c.category)`;
   return sql`${collectionCTE(userId,userId,source,'personal')}, demand as (select distinct on (next_id) * from (${candidates}) candidates order by next_id,reason,case when kind in ('show','album') then 0 else 1 end,id), totals as (select count(*)::int as total from demand)
     select totals.total,coalesce((select jsonb_agg(selected order by selected.reason,selected.title,selected.id) from (
       select d.*,
@@ -38,10 +36,9 @@ export async function adminDemand(url:URL){
   const requested=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1)),Number(url.searchParams.get('page')??1));
   const userId=url.searchParams.get('userId'); if(userId)v.parse(v.pipe(v.string(),v.uuid()),userId);
   const itemsPage=v.parse(v.pipe(v.number(),v.integer(),v.minValue(1)),Number(url.searchParams.get('itemsPage')??1));
-  const config=await getConfig();
   const [result]=await collectionRead(sql`with demand_users as materialized (
     select u.id,u.username,d.total,d.items from users u
-    cross join lateral (${demandStatement(sql`u.id`,itemsPage,'all',config)}) d
+    cross join lateral (${demandStatement(sql`u.id`,itemsPage,'all')}) d
     where not u.disabled and coalesce((u.settings->>'shareDemand')::boolean,true)
       and (${userId}::uuid is null or u.id=${userId}::uuid) and d.total>0
   ), totals as (select count(*)::int as total from demand_users)

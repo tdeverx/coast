@@ -16,6 +16,8 @@ const target = process.env.TEST_DATABASE_URL;
     await closeDb(); process.env.DATABASE_URL = target!;
     await migrate(getDb(), { migrationsFolder: `${import.meta.dir}/../drizzle` });
     const db = getDb();
+  const {getConfig}=await import('../src/lib/server/config');const {getSql}=await import('../src/lib/server/db');const config=await getConfig();
+  await getSql()`insert into system_settings(key,value) values('coast',${{...config,experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true}}::jsonb) on conflict(key) do update set value=excluded.value`;
     await db.insert(users).values([owner, other].map(id => ({ id, username: `search-${id}`, passwordHash: 'fixture' })));
     await db.insert(media).values([
       { id: longer, kind: 'movie', title: 'Quest for Tomorrow Again', updatedAt: new Date('2026-01-01') },

@@ -1,3 +1,4 @@
+import { requireFeature, requireFeatureInTransaction, getFeatureConfig } from '$lib/server/features';
 import { context } from '$lib/server/diagnostics';
 import { correlationId } from '$lib/diagnostics';
 import { conflictPreference } from '$lib/sync/preference.server';
@@ -14,7 +15,6 @@ import {
   syncValues,
   providerJobSnapshots,
 } from '$lib/server/db/schema';
-import { getConfig } from '$lib/server/config';
 import { enqueueAction, PermanentActionError, type OutboxAction } from '$lib/server/queue';
 import {
   SeerrAdapter,
@@ -59,7 +59,8 @@ type RequestCache = {
 };
 
 export async function requestOptions(userId: string, mediaId: string) {
-  if (!(await getConfig()).enableRequests) return [];
+  const config=await getFeatureConfig(userId);
+  if (!config.features.requests||!config.features.screen) return [];
   const [item] = await getDb().select().from(media).where(eq(media.id, mediaId));
   const [mapping] = await getDb()
     .select()
@@ -228,6 +229,8 @@ export async function requestOptions(userId: string, mediaId: string) {
 }
 
 export async function requestMedia(userId: string, input: unknown) {
+  await requireFeature(userId,'requests');
+  await requireFeature(userId,'screen');
   const data = v.parse(
     v.object({
       mediaId: uuid,
@@ -280,6 +283,8 @@ export async function requestMedia(userId: string, input: unknown) {
   )
     throw new Error('Choose at least one valid season.');
   return getDb().transaction(async (tx) => {
+    await requireFeatureInTransaction(tx,userId,'requests');
+    await requireFeatureInTransaction(tx,userId,'screen');
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`request:${data.mediaId}:${data.instanceId}:${serverId}:${data.is4k}`},0))`
@@ -571,6 +576,8 @@ function queuedSeerrAccount(action: OutboxAction) {
 
 /** Authenticated account resolution is injectable for disposable provider fixtures. */
 export async function executeSeerrRequest(action: OutboxAction, resolveAccount: typeof getSeerr = getSeerr) {
+  await requireFeature(action.userId,'requests');
+  await requireFeature(action.userId,'screen');
   const requestId = v.parse(uuid, action.payload.requestId);
   const [request] = await getDb().select().from(mediaRequests)
     .where(and(eq(mediaRequests.id,requestId),eq(mediaRequests.userId,action.userId)));

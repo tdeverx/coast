@@ -73,7 +73,7 @@
       {#if user}
       {#if !preview&&reader.session&&!reader.visible}<Button icon="library" size="icon" label="Resume reading" onclick={()=>reader.visible=true}/>{/if}
       {#if user.role==='admin'}<button type="button" id="streams-trigger" class="icon-button notification" aria-label={streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}><Icon name="server" size={21}/>{#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}</button>{/if}
-      <button type="button" id="friends-trigger" class="icon-button notification" aria-label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</button>
+      {#if page.data.capabilities?.social!==false}<button type="button" id="friends-trigger" class="icon-button notification" aria-label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</button>{/if}
       <button type="button"
         id="notification-trigger"
         class="icon-button notification"
@@ -81,9 +81,9 @@
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
         ><Icon name="bell" size={21} />{#if unread}<i></i>{/if}</button
       ><Button menu label="Account menu"
-        >{#snippet trigger()}<span class="avatar"><Avatar name={user.username} src={user.settings?.profile?.avatar} label="Your profile" size={28} status={status.status} class="header-icon" /></span
+        >{#snippet trigger()}<span class="avatar"><Avatar name={user.username} src={user.settings?.profile?.avatar} label="Your profile" size={28} status={page.data.capabilities?.presence===false?'offline':status.status} class="header-icon" /></span
           >{/snippet}{#snippet children()}
-          <Button menu label="Activity status">
+          {#if page.data.capabilities?.presence!==false}<Button menu label="Activity status">
             {#snippet trigger()}{#if status.status!=='offline'}<span class="status-dot" data-status={status.status} aria-hidden="true"></span>{/if}<span class="menu-action-label">{status.preference==='automatic'?statusLabels[status.status]:preferenceLabels[status.preference]}</span><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
             {#snippet children()}
               {#each statusPreferences as preference}<Button item selection="radio" checked={status.preference===preference} disabled={status.busy} onclick={()=>void selectStatus(preference)}><span class="status-choice"><span class="status-dot" data-status={preference==='automatic'?'online':preference==='invisible'?'offline':preference} aria-hidden="true"></span>{preferenceLabels[preference]}</span></Button>{/each}
@@ -92,10 +92,10 @@
               {#if status.error}<p class="status-help error" role="alert">{status.error}</p>{/if}
             {/snippet}
           </Button>
-          <div class="menu-divider" role="separator"></div>
+          {/if}<div class="menu-divider" role="separator"></div>
           <Button item icon="user" href={profilePath(user.username)}>Profile</Button>
           <Button item icon="list" href="/lists">Your lists</Button>
-          <Button item icon="request" href="/requests">Requests</Button>
+          {#if page.data.capabilities?.requests!==false}<Button item icon="request" href="/requests">Requests</Button>{/if}
           {#if page.data.experiments.planning}<Button item icon="list" href="/planning">Planning · experimental</Button>{/if}
           <div class="menu-divider" role="separator"></div>
           <Button item icon="settings" href="/settings">Settings</Button>

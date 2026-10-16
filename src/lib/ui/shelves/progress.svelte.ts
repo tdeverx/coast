@@ -1,4 +1,4 @@
-import { mediumOptions } from '$lib/experimental';
+import { mediumOptions, categoryEnabled } from '$lib/experimental';
 
   import { onDestroy, untrack } from 'svelte';
   import { replaceState } from '$app/navigation';
@@ -86,7 +86,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
       page: String(number),
     });
   const href = (number = 1) => '/progress?' + parameters(number);
-  const refreshKey = $derived(JSON.stringify([contentRevisionKey(route.data, ['tracking', 'social']), username, surface, route.data.experimentalMusic, route.data.experimentalGaming, route.data.experimentalBooks, route.data.experimentalComics]));
+  const refreshKey = $derived(JSON.stringify([contentRevisionKey(route.data, ['tracking', 'social']), username, surface, route.data.experimentalMusic, route.data.experimentalGaming, route.data.experimentalBooks, route.data.experimentalComics,route.data.capabilities]));
   let previousRefreshKey = untrack(() => refreshKey);
   let previousInitial = untrack(() => initial);
   $effect(() => {
@@ -122,6 +122,13 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     onitems?.(content.items, [content.view, content.category, content.kind, content.scope].join(':'));
   });
   async function select(number = 1) {
+    const features={...route.data,features:route.data.capabilities};
+    if(!categoryEnabled(features,category)){
+      const next=mediumOptions(features)[0]?.value;
+      if(!next){resource.replace(emptyContent());return;}
+      category=next as ProgressOptions['category'];
+    }
+    if(surface==='recommendations'&&route.data.capabilities?.social===false){resource.replace(emptyContent());return;}
     const path = `progress?${parameters(number)}`;
     const owner = username;
     const result = await resource.load(async signal => {
@@ -153,11 +160,11 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
 
 
     get filters(): ShelfControl[] { return [
-      ...(mediums ? [{type:'segments' as const,label:`${title} medium`,value:category,options:mediumOptions(route.data),change:(value:string)=>{category=value as ProgressOptions['category'];preferences[tab]=defaults();void select();}}] : []),
+      ...(mediums ? [{type:'segments' as const,label:`${title} medium`,value:category,options:mediumOptions({...route.data,features:route.data.capabilities}),change:(value:string)=>{category=value as ProgressOptions['category'];preferences[tab]=defaults();void select();}}] : []),
       ...(!saved && !mediums ? [{type:'segments' as const, label:`${title} selection`, value:tab, options, change:(value:string)=>{tab=value;void select();}}] : []),
       ...(surface !== 'profile' ? [{type:'availability' as const,label:category==='reading'?'Available to read only':'Available to play only',value:current.scope,change:(value:string)=>update({scope:value as Filters['scope']})}] : []),
     ]; },
-    get controls(): ShelfControl[] { return category === 'screen' ? [{type:'media-type',label:`${title} media type`,value:current.kind,change:value=>update({kind:value as Filters['kind']})}] : category === 'reading' ? [{type:'select',label:`${title} reading type`,value:current.kind,options:readingTypeOptions(route.data),change:value=>update({kind:value as Filters['kind']})}] : []; },
+    get controls(): ShelfControl[] { return category === 'screen' ? [{type:'media-type',label:`${title} media type`,value:current.kind,change:value=>update({kind:value as Filters['kind']})}] : category === 'reading' ? [{type:'select',label:`${title} reading type`,value:current.kind,options:readingTypeOptions({...route.data,features:route.data.capabilities}),change:value=>update({kind:value as Filters['kind']})}] : []; },
     get empty() { return busy ? 'Loading titles…' : ready ? 'No titles in this selection.' : 'Loading titles…'; },
     retryLabel:'Retry', load:select,
   };

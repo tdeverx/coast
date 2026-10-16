@@ -1,3 +1,4 @@
+import { requireFeatureInTransaction } from '$lib/server/features';
 import { and, eq, sql } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
@@ -89,6 +90,7 @@ async function persistArtist(tx: Transaction | Database,instanceId:string,extern
   const [saved]=await tx.insert(musicArtists).values({instanceId,externalId,name}).onConflictDoUpdate({target:[musicArtists.instanceId,musicArtists.externalId],set:{name}}).returning();return saved;
 }
 async function assertMusicAccount(tx:Transaction,userId:string,connectionId:string,instanceId:string,accountGeneration:string,expectedResetId?:string|null){
+ await requireFeatureInTransaction(tx,userId,'music');
   const [connection]=await tx.select().from(providerConnections).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId),eq(providerConnections.instanceId,instanceId),eq(providerConnections.accountGeneration,accountGeneration),eq(providerConnections.status,'connected'))).for('update');
   const [active]=await tx.select({id:users.id}).from(users).innerJoin(providerInstances,eq(providerInstances.id,instanceId))
     .where(and(eq(users.id,userId),eq(users.disabled,false),eq(providerInstances.enabled,true)));
@@ -167,6 +169,7 @@ export async function recordMusicListen(tx: Transaction,userId: string,trackId:s
 export async function logMusic(userId:string,workId:string,input:unknown,transaction?:Transaction){
   const data=v.parse(v.strictObject({batchId:v.pipe(v.string(),v.uuid()),occurredAt:v.optional(v.pipe(v.string(),v.isoTimestamp(),v.check(value=>Number.isFinite(Date.parse(value))&&Date.parse(value)<=Date.now(),'Listens must have a valid date in the past.')))}),input);
   const apply=async(tx:Transaction)=>{
+    await requireFeatureInTransaction(tx,userId,'music');
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const [previous]=await tx.select().from(musicListenBatches).where(and(eq(musicListenBatches.userId,userId),eq(musicListenBatches.batchId,data.batchId)));
     if(previous){if(previous.workId!==workId)throw new DomainError('This listen batch belongs to another work.',409);return {added:0,batchId:data.batchId};}

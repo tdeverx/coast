@@ -1,3 +1,4 @@
+import { getFeatureConfig, requireFeature } from '$lib/server/features';
 import { mapConcurrent } from '$lib/server/utils/async';
 import { searchFallback, searchScore } from '$lib/search';
 import { providerSingleFlight } from '$lib/server/utils/provider-single-flight';
@@ -411,6 +412,7 @@ async function refreshMediaNow(id: string, region = 'GB', includeRecommendations
 }
 /** Refresh only a relevant detail page when its regional snapshot is missing or stale. */
 export async function ensureDetails(userId: string, id: string) {
+  await requireFeature(userId,'screen');
   const [viewer] = await getDb()
     .select({ settings: users.settings })
     .from(users)
@@ -471,7 +473,7 @@ async function seerrDiscovery(userId: string) {
 }
 export async function searchMedia(userId: string, query: string) {
   const needle = query.trim().slice(0, 200);
-  if (!needle) return { items: [], providerUnavailable: false, truncated: false };
+  if (!needle || !(await getFeatureConfig(userId)).features.screen) return { items: [], providerUnavailable: false, truncated: false };
   let providerUnavailable = false;
   try {
     const adapter = (await getTmdb()) || (await seerrDiscovery(userId));
@@ -491,6 +493,7 @@ export async function searchMedia(userId: string, query: string) {
   return { items: items.slice(0, 100), providerUnavailable, truncated: items.length > 100 };
 }
 export async function discoverMedia(userId: string | null) {
+  if(!(await getFeatureConfig(userId)).features.screen)return {items:[],trending:[],recent:[],configured:true,providerUnavailable:false};
   const tmdb = await getTmdb();
   const adapter = tmdb || (userId ? await seerrDiscovery(userId) : null);
   let providerUnavailable = false;

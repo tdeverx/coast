@@ -21,7 +21,7 @@ run('task computes private bounded scores and excludes stale cached rankings',as
  // Match creators/tags even when the candidate's genres do not overlap.
  await getSql()`update media set genres=array['Comedy'] where id=${ids[2]}`;
  await refreshTasteCaches();const sql=getSql();
- const profiles=await sql`select * from user_taste_profiles where user_id=${user}`;expect(profiles.map((profile:any)=>profile.medium).sort()).toEqual(['book','comic','game','movie','music','show']);
+ const profiles=await sql`select * from user_taste_profiles where user_id=${user}`;expect(profiles.map((profile:any)=>profile.medium).sort()).toEqual(['game','movie','music','show']);
  const [score]=await sql`select * from user_taste_scores where user_id=${user} and work_id=${ids[2]}`;expect(score.score).toBeGreaterThan(50);expect(score.breakdown.reasons.some((r:any)=>r.dimension==='cast')).toBe(true);
  const [none]=await sql`select count(*)::int as count from user_taste_scores where user_id=${other}`;expect(none.count).toBe(0);
  const result=await recommendationRows(user,'recommendations',new URL('http://test/?category=screen'));expect(result.items.some(item=>item.id===ids[2])).toBe(true);
@@ -81,7 +81,7 @@ run('taste jobs freeze ten users, commit the cursor with publication and resume 
   await expect(execute()).rejects.toBeInstanceOf(JobYield);
   const [paused]=await db`select payload->'_checkpoint' as checkpoint from outbox_actions where id=${job}`;
   expect(paused.checkpoint.users).toHaveLength(10);expect(paused.checkpoint.next).toBe(5);expect(paused.checkpoint.checked).toBe(5);
-  for(const id of paused.checkpoint.users.slice(0,5))expect(await db`select medium from user_taste_profiles where user_id=${id}`).toHaveLength(6);
+  for(const id of paused.checkpoint.users.slice(0,5))expect(await db`select medium from user_taste_profiles where user_id=${id}`).toHaveLength(4);
   const completed=paused.checkpoint.users[0];
   await db`update user_taste_profiles set updated_at='2000-01-01' where user_id=${completed}`;
   await db`insert into users(id,username) values(${late},${'taste-late-'+late})`;
@@ -89,7 +89,7 @@ run('taste jobs freeze ten users, commit the cursor with publication and resume 
   const [finished]=await db`select payload->'_checkpoint' as checkpoint from outbox_actions where id=${job}`;
   expect(finished.checkpoint.users).toEqual(paused.checkpoint.users);expect(finished.checkpoint.next).toBe(10);
   expect(await db`select * from user_taste_profiles where user_id=${late}`).toHaveLength(0);
-  expect(await db`select * from user_taste_profiles where user_id=${completed} and updated_at='2000-01-01'`).toHaveLength(6);
+  expect(await db`select * from user_taste_profiles where user_id=${completed} and updated_at='2000-01-01'`).toHaveLength(4);
   expect(await execute()).toEqual({checked:10,refreshed:10,deferred:0});
  }finally{
   await db`delete from outbox_actions where id=${job}`;

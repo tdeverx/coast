@@ -45,7 +45,7 @@
 <svelte:head><title>Planning · Coast</title></svelte:head>
 <div class="content page">
   <Heading title="Planning" variant="page" description="Experimental · your scheduled plans. Visual treatment unapproved.">
-    {#snippet filters()}<SegmentedControl label="Planning medium" value={data.category} options={mediumOptions(page.data, ['screen','game','music','reading'])} onchange={category=>{const url=new URL(page.url);url.searchParams.set('category',category);url.searchParams.delete('page');void goto(url,{keepFocus:true,noScroll:true});}} />{/snippet}
+    {#snippet filters()}<SegmentedControl label="Planning medium" value={data.category} options={mediumOptions({...page.data,features:page.data.capabilities}, ['screen','game','music','reading'])} onchange={category=>{const url=new URL(page.url);url.searchParams.set('category',category);url.searchParams.delete('page');void goto(url,{keepFocus:true,noScroll:true});}} />{/snippet}
   </Heading>
   <RowFeedback error={operation.error} inline={false} />
   <Shelf title="Your plans" items={data.items} layout="grid" availability={false} hideEmpty={false} pageNumber={data.page} pages={data.pages} {pageUrl}>

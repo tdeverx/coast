@@ -1,3 +1,4 @@
+import { resolveFeatures } from '$lib/features';
 import {listShares} from '$lib/sharing/service.server';
 import {listApiTokens} from '$lib/server/public-api/tokens.server';
 import { collectionPreferences } from '$lib/collection/preferences';
@@ -39,6 +40,7 @@ export const load = (async ({locals, params, depends, url}) => {
   const config = await getConfig();
   return {
     section,
+    featureDecisions: resolveFeatures(config),
     benchmarks:section==='benchmarks'?await listBenchmarks(locals.user,Number(url.searchParams.get('page'))||1):null,
     playbackLinks:section==='playback'?await listShares(locals.user):[],
     apiTokens:section==='api'?await listApiTokens(locals.user):[],
@@ -67,6 +69,7 @@ export const load = (async ({locals, params, depends, url}) => {
     config: admin ? config : null,
     allowNotificationSilencing: config.allowNotificationSilencing,
     defaults: {
+      features: {},
       collection: collectionPreferences(locals.user?.settings.collection),
       social:{audience:'friends' as const,sections:{},categories:{},notifications:{}},
       syncConflictWinner: 'manual',

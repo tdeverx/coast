@@ -1,5 +1,7 @@
 <script lang="ts">
-  import DynamicFeed from '$lib/recommendations/DynamicFeed.svelte';
+  let DynamicFeed=$state<typeof import('$lib/recommendations/DynamicFeed.svelte').default>();
+  let dynamicLoading=false;
+  $effect(()=>{if(page.data.capabilities?.personalisation&&!DynamicFeed&&!dynamicLoading){dynamicLoading=true;void import('$lib/recommendations/DynamicFeed.svelte').then(module=>DynamicFeed=module.default).finally(()=>dynamicLoading=false);}});
   import {dynamicKind,type GenreReason} from '$lib/recommendations/model';
   import { page } from '$app/state';
   import Heading from '$lib/ui/components/Heading.svelte';
@@ -41,10 +43,10 @@
     {/if}
     <Shelf source={{type:'progress',mediums:true}} />
     <Shelf source={{type:'progress',surface:'next',mediums:true}} />
-    <Shelf source={{type:'progress',surface:'recommendations',mediums:true}} />
+    {#if page.data.capabilities.social}<Shelf source={{type:'progress',surface:'recommendations',mediums:true}} />{/if}
     <Shelf source={{type:'progress',surface:'favourites',mediums:true}} />
     {#if page.data.experiments.planning}<Shelf source={{type:'for-you',feature:'upcoming'}} />{/if}
-    <Shelf source={{type:'social',mediums:true}} />
-    <DynamicFeed />
+    {#if page.data.capabilities.social}<Shelf source={{type:'social',mediums:true}} />{/if}
+    {#if page.data.capabilities?.personalisation&&DynamicFeed}<DynamicFeed />{/if}
   {/if}
 </div>

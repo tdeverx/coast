@@ -1,3 +1,4 @@
+import { requireFeature } from '$lib/server/features';
 import { serverArtwork } from '$lib/providers/server-artwork.server';
 import * as v from 'valibot';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
@@ -14,6 +15,7 @@ export async function streamMusicArtwork(
   request: Request
 ) {
   v.parse(jellyfinMusicIdSchema, id);
+  await requireFeature(userId,'music');
   const { adapter, connection, instance } = await getJellyfin(userId, connectionId);
   // Verify music type and access through this account before fetching artwork.
   await adapter.musicItem(connection.externalUserId!, id);

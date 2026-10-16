@@ -1,3 +1,4 @@
+import { requireWorkFeature } from '$lib/server/features';
 import { effectiveReleaseDate } from '$lib/catalogue/metadata/release-date.server';
 import { getConfig } from '$lib/server/config';
 import { sequenceContextSchema } from '../../media/sequence';
@@ -488,6 +489,7 @@ export async function trackInTransaction(
 ): Promise<TrackingResult> {
   v.parse(uuidSchema, userId);
   const input = v.parse(trackingInputSchema, raw);
+  await requireWorkFeature(tx,userId,input.mediaId);
   if (
     input.source === 'coast' &&
     input.occurredAt &&
@@ -545,6 +547,7 @@ export async function bulkTrackInTransaction(
 ) {
   v.parse(uuidSchema, userId);
   const input = v.parse(bulkTrackingInputSchema, raw);
+  await requireWorkFeature(tx,userId,input.mediaId);
   if (input.occurredAt && new Date(input.occurredAt).getTime() > Date.now())
     throw new DomainError('Choose a watch date in the past or now.');
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);

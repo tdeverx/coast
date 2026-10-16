@@ -47,3 +47,15 @@ test('Steam exposes a live game only when its profile response supplies one',asy
  const idle=new SteamAdapter(async()=>({response:{players:[{steamid:id,personaname:'Fixture'}]}}),'fixture');
  expect((await idle.profile(id)).playingId).toBeNull();
 });
+
+run('personal Presence opt-out stops upstream observation and fences a response already in flight',async()=>{
+ const db=getSql(),context=await connectionFor(user,connection,'jellyfin');let calls=0;
+ await db`delete from social_live_state where connection_id=${connection}`;
+ const adapter=new JellyfinAdapter(async()=>{calls++;await db`update users set settings=${{features:{presence:false}}}::jsonb where id=${user}`;return [{UserId:'own-user',NowPlayingItem:{Id:'playing'}}];},user);
+ try{
+  await pollProviderLiveFromContext(user,connection,'jellyfin',{...context,adapter});
+  expect(calls).toBe(1);expect(await db`select 1 from social_live_state where connection_id=${connection}`).toHaveLength(0);
+  await expect(pollProviderLiveFromContext(user,connection,'jellyfin',{...context,adapter})).rejects.toMatchObject({code:'feature_disabled'});
+  expect(calls).toBe(1);
+ }finally{await db`update users set settings='{}'::jsonb where id=${user}`;}
+});

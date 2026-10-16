@@ -148,7 +148,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
     get controls(): ShelfControl[] {
       return [
         ...(surface==='watch' ? [{type:'media-type' as const,label:'Watch type',value:kind,change:(value:string)=>{kind=value as typeof kind;void load();}}] : []),
-        ...(surface==='read' ? [{type:'select' as const,label:'Reading type',value:kind,options:readingTypeOptions(route.data),change:(value:string)=>{kind=value as typeof kind;void load();}}] : []),
+        ...(surface==='read' ? [{type:'select' as const,label:'Reading type',value:kind,options:readingTypeOptions({...route.data,features:route.data.capabilities}),change:(value:string)=>{kind=value as typeof kind;void load();}}] : []),
         ...(collection ? [
           {type:'select' as const,label:`${title} relationships`,value:relationship,options:[{value:'all',label:'All relationships'},{value:'collected',label:'Collected'},{value:'watchlist',label:'Watchlist'},{value:'favourite',label:'Favourites'},{value:'rating',label:'Rated'},{value:'list',label:'Lists'},...(surface!=='read'?[{value:'queue',label:'Queued'}]:[]),{value:'activity',label:'Activity'}],change:(value:string)=>{relationship=value;void load();}},
           {type:'select' as const,label:`${title} availability`,value:availability,options:[{value:'all',label:'All availability'},{value:'available',label:'Available'},...(surface!=='read'?[{value:'partial',label:'Partial'},{value:'unavailable',label:'Missing'}]:[]),{value:'unknown',label:'Unknown'},{value:'ready',label:'Ready to continue'}],change:(value:string)=>{availability=value;scope=value==='available'?'available':'all';void load();}},

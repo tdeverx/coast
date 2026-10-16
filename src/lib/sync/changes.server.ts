@@ -410,6 +410,7 @@ export async function enqueuePlaybackActionsInTransaction(
     positionSeconds: number;
     durationSeconds: number;
     paused: boolean;
+    operationalOnly?: boolean;
   }
 ) {
   await enqueueInTransaction(tx, {
@@ -425,13 +426,15 @@ export async function enqueuePlaybackActionsInTransaction(
     compactionKey:
       input.jellyfinEvent === 'progress' ? `playback:${input.sessionId}:progress` : undefined,
   });
+  if(input.operationalOnly)return;
   const connections = await traktConnectionsForMedia(tx, userId, input.mediaId);
+  const [presence]=await tx.execute<{enabled:boolean}>(sql`select coast_feature_enabled(${userId}::uuid,'presence') as enabled`);
   const progress = input.durationSeconds
     ? (input.positionSeconds / input.durationSeconds) * 100
     : 0;
   for (const { connection } of connections) {
     const sync = connection.settings.sync as Record<string, boolean> | undefined;
-    if (sync?.scrobble && input.traktEvent)
+    if (sync?.scrobble && input.traktEvent && presence.enabled)
       await enqueueInTransaction(tx, {
         userId,
         connectionId: connection.id,

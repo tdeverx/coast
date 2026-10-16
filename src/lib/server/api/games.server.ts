@@ -1,3 +1,4 @@
+import { requireFeature } from '$lib/server/features';
 import { searchIgdb, igdbDetails, importIgdbGame } from '$lib/providers/igdb/service.server';
 import * as games from '$lib/core/games/service.server';
 import { json } from '@sveltejs/kit';
@@ -8,6 +9,7 @@ export async function handleGames(context: ApiContext): Promise<Response | undef
  const { uid, path, method, url, body } = context;
  let result: unknown;
  if (path[0] === 'games') {
+      await requireFeature(uid,'game');
       if (path.length === 3 && path[1] === 'igdb' && path[2] === 'search' && method === 'GET')
         result = await searchIgdb(uuid(url.searchParams.get('instanceId')), url.searchParams.get('q') ?? '', Number(url.searchParams.get('page') ?? 1));
       else if (path.length === 3 && path[1] === 'igdb' && method === 'GET')

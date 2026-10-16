@@ -1,5 +1,6 @@
 /** Shared labels, navigation order and access classification for settings. */
 export const personalSettings = [
+  ['features', 'Features'],
   ['appearance', 'Appearance'],
   ['playback', 'Playback'],
   ['collection', 'Collection'],
@@ -15,6 +16,7 @@ export const administratorSettings = [
   ['jobs', 'Jobs & schedules'],
   ['benchmarks', 'Benchmarking'],
   ['users', 'Accounts'],
+  ['features-policy', 'Feature availability'],
   ['policies', 'Policies'],
   ['activity', 'Activity & diagnostics'],
 ] as const;
@@ -22,6 +24,8 @@ export const settingsSections = [...personalSettings, ...administratorSettings];
 export const settingsTitles: Record<string, string> = Object.fromEntries(settingsSections);
 
 export const settingsDescriptions: Record<string, string> = {
+  features: 'Choose the optional features you use. Turning one off preserves your data and stops affected use at the next safe boundary.',
+  'features-policy': 'Set which normal features are available to everyone. Experimental features remain in Policies.',
   appearance: 'Choose how Coast displays your library and optional notifications.',
   collection: 'Choose what automatically appears in your Collection for each medium. History and relationships are preserved.',
   playback: 'Set subtitle and music listening preferences for your next playback session.',
@@ -40,6 +44,7 @@ export const settingsDescriptions: Record<string, string> = {
 };
 
 export const preferenceFields = {
+  features: ['features'],
   collection: ['collection'],
   privacy:['social'],
   appearance: ['shareDemand', 'fullWidth', 'liquidGlass', 'originalTitles', 'monochromeMissing', 'region', 'notificationsSilenced'],

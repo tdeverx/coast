@@ -1,3 +1,4 @@
+import { getFeatureConfig } from '$lib/server/features';
 import {statusesForUsers} from './status.server';
 import {activityAction} from './model';
 import {getDb} from '$lib/server/db';
@@ -23,7 +24,7 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
   left join episodes e on e.media_id=a.work_id
   left join seasons se on se.media_id=a.work_id
   left join lateral(select parent_id from media_relationships where child_id=a.work_id and kind='contains' order by position limit 1) r on true
-  where (a.user_id=${userId}::uuid or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,a.user_id) and f.user_b=greatest(${userId}::uuid,a.user_id)))
+  where coast_category_enabled(${userId}::uuid,w.category) and (a.user_id=${userId}::uuid or coast_feature_enabled(a.user_id,'social') and coast_feature_enabled(${userId}::uuid,'social')) and (a.user_id=${userId}::uuid or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,a.user_id) and f.user_b=greatest(${userId}::uuid,a.user_id)))
    and social_visible(a.user_id,${userId}::uuid,a.section,w.category)
    and (${activityIds===undefined} or a.id in (${activityIds?.length?sql.join(activityIds.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))
    and (${o.category}='all' or w.category=${o.category} or ${o.category}='reading' and w.category in ('book','comic')) and (${o.kind}='all' or a.event_kind=${o.kind})
@@ -68,7 +69,7 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
  return {items,events:page,hasMore:rows.length>60,next:last?{before:new Date(last.occurredAt).toISOString(),beforeId:last.id,beforeKnown:String(last.dateKnown)}:null};
 }
 export async function workSocial(userId:string,ids:string[]) {
- v.parse(v.pipe(v.array(uuid),v.maxLength(60)),ids);if(!ids.length)return {};
+ v.parse(v.pipe(v.array(uuid),v.maxLength(60)),ids);if(!ids.length||!(await getFeatureConfig(userId)).features.social)return {};
  const list=sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`);
  const rows=await getDb().execute<{workId:string;userId:string;username:string;avatar:string|null;rating:number|null;watched:boolean;progress:number;total:number}>(sql`
  with recursive edges(parent_id,child_id) as (select parent_id,child_id from media_relationships union select show_id,media_id from episodes union select show_id,media_id from seasons), descendants(root,id) as(select id,id from works where id in (${list}) union select d.root,e.child_id from descendants d join edges e on e.parent_id=d.id), ancestors(root,id) as(select id,id from works where id in (${list}) union select a.root,e.parent_id from ancestors a join edges e on e.child_id=a.id), reasons as (
@@ -90,7 +91,7 @@ export async function workSocial(userId:string,ids:string[]) {
  case when social_visible(u.id,${userId}::uuid,'ratings',w.category) then rating.value end as rating,
  case when w.category in ('book','comic') then social_visible(u.id,${userId}::uuid,'progress',w.category) and coalesce(rp.state='completed',false) when social_visible(u.id,${userId}::uuid,'activity',w.category) then coalesce(t.watched,false) else false end as watched,
  case when social_visible(u.id,${userId}::uuid,'progress',w.category) then case when w.category in ('book','comic') then coalesce(rp.page,0) else coalesce(t.position_seconds,0) end else 0 end as progress
- from descendants d join reasons r on r.id=d.id join works w on w.id=d.id join users u on u.id=r.user_id
+ from descendants d join reasons r on r.id=d.id join works w on w.id=d.id join users u on u.id=r.user_id and coast_feature_enabled(u.id,'social')
  left join ratings rating on rating.user_id=u.id and rating.media_id=d.root left join tracking_state t on t.user_id=u.id and t.media_id=d.root left join reading_progress rp on rp.user_id=u.id and rp.work_id=d.root
  where (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true')) and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,u.id) and f.user_b=greatest(${userId}::uuid,u.id)) and social_visible(u.id,${userId}::uuid,r.section,w.category)
  ), ranked_friends as (
@@ -114,14 +115,14 @@ export async function workSocial(userId:string,ids:string[]) {
 
 /** Batch reads share the same visibility predicate as activity and media indicators. */
 export async function reactionSummary(userId:string,targetKind:'work'|'activity',ids:string[]) {
- v.parse(v.pipe(v.array(uuid),v.maxLength(60)),ids);if(!ids.length)return {};
+ v.parse(v.pipe(v.array(uuid),v.maxLength(60)),ids);if(!ids.length||!(await getFeatureConfig(userId)).features.social)return {};
  const targets=sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`);
  const rows=await getDb().execute<{targetId:string;emoji:string;count:number;mine:boolean}>(sql`
  select r.target_id as "targetId",r.emoji,count(*)::int as count,bool_or(r.user_id=${userId}) as mine
  from social_reactions r
  left join social_activity a on r.target_kind='activity' and a.id=r.target_id
  join works w on w.id=case when r.target_kind='work' then r.target_id else a.work_id end
- where r.target_kind=${targetKind} and r.target_id in (${targets})
+ where coast_feature_enabled(r.user_id,'social') and coast_category_enabled(${userId}::uuid,w.category) and r.target_kind=${targetKind} and r.target_id in (${targets})
  and (r.target_kind='work' or social_visible(a.user_id,${userId}::uuid,a.section,w.category))
  and social_visible(r.user_id,${userId}::uuid,'reactions',w.category)
  and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true'))

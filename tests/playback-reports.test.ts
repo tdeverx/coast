@@ -39,3 +39,19 @@ test('actual player report preserves start acknowledgement retry and final liste
  expect(calls.map(call=>call.event)).toEqual(['start','start','progress','stop']);
  expect(calls.at(-1)).toMatchObject({positionSeconds:40,playedSeconds:25,event:'stop'});expect(fixture.notice()).toBe('');
 });
+
+test('the actual player stops at a withdrawn report acknowledgement without submitting the next position',async()=>{
+ const source=await Bun.file(new URL('../src/lib/ui/components/PersistentPlayer.svelte',import.meta.url)).text();
+ const handler=source.slice(source.indexOf('  async function report('),source.indexOf('  function playing()'));
+ for(const replaced of [false,true]){
+  const calls:string[]=[],closed:unknown[]=[],pauses:boolean[]=[];
+  const create=new Function('createPlaybackReports','capturePlaybackApi','close','pause',new Bun.Transpiler({loader:'ts'}).transformSync(`
+   let preview=false,active=true,startedSessionId='a',acknowledgedSessionId='',current=20,duration=100,audioMode=false,playedSeconds=0,trackingNotice='';
+   const reports=createPlaybackReports(),player={session:{id:'a',startSeconds:0,durationSeconds:100},subtitlePrompt:false},media={paused:false};function accountPlayed(){};
+   ${handler}
+   return {report,replace:()=>player.session={...player.session,id:'replacement'}};`));
+  let fixture:any;fixture=create(createPlaybackReports,()=>async(_path:string,input:{event:string})=>{calls.push(input.event);if(replaced)fixture.replace();return {disabled:true};},(...args:unknown[])=>closed.push(args),(value:boolean)=>pauses.push(value));
+  expect(await fixture.report('progress')).toBe(false);expect(calls).toEqual(['start']);
+  expect(closed).toEqual(replaced?[]:[[true,true]]);expect(pauses).toEqual(replaced?[]:[true]);
+ }
+});

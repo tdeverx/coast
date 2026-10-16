@@ -1,3 +1,4 @@
+import { getFeatureConfig, requireFeature } from '$lib/server/features';
 import { readJsonBody as readBody } from '$lib/server/security/request-body';
 import {databaseReady} from '$lib/server/readiness';
 import { ProviderHttpError } from '$lib/server/security/provider-fetch';
@@ -115,7 +116,7 @@ export const handler: RequestHandler = async (event) => {
       if(path.length===1&&method==='GET')return json(await listShares(user));
       if(path.length===1&&method==='POST')return json(await createShare(user,await readBody(request)));
       if(path.length===2&&method==='DELETE'){await revokeShare(user,path[1]);return json({revoked:true});}
-      if(path.length===2&&path[1]==='sources'&&method==='GET'){const workId=uuid(url.searchParams.get('workId')??'');return json(await getSql()`select distinct c.id,i.name from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${uid} and a.media_id=${workId} and a.state='available' and c.status='connected' and i.enabled`);}
+      if(path.length===2&&path[1]==='sources'&&method==='GET'){await requireFeature(uid,'sharing');const workId=uuid(url.searchParams.get('workId')??'');return json(await getSql()`select distinct c.id,i.name from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${uid} and a.media_id=${workId} and a.state='available' and c.status='connected' and i.enabled and exists(select 1 from works where id=${workId}::uuid and coast_category_enabled(${uid}::uuid,category))`);}
     }
     if(path[0]==='planning'){if(method==='POST'&&path.length===3&&path[2]==='complete')return json(await completePlan(uid,path[1]));if(path.length===1&&method==='GET')return json(await planningData(uid,url));if(path.length===1&&method==='POST')return json(await createPlan(uid,await readBody(request)));if(method==='DELETE'&&path.length===2)return json(await cancelPlan(uid,path[1]));}
     if(path[0]==='experiments'&&path.length===2&&method==='GET')return json(await (path[1]==='feed'?dynamicFeed(uid,url):recommendationRows(uid,path[1],url)));
@@ -182,7 +183,7 @@ export const handler: RequestHandler = async (event) => {
     if(path[0]==='music' && path[1]==='queue' && path.length===2 && method==='GET')return json(await savedMusicQueue(uid,url.searchParams.has('listId')?uuid(url.searchParams.get('listId')):undefined));
     if (path[0] === 'collection' && path.length === 1 && method === 'GET') return json(await collectionData(uid,collectionParameters(url),url.searchParams.get('username')??undefined));
     if (path[0] === 'collection' && path[1] && (path.length === 2 || path.length === 3 && path[2] === 'lists') && method === 'GET') {
-      const [work]=await getDb().select().from(works).where(eq(works.id,uuid(path[1])));if(!work)throw new AppError(404,'This work was not found.');requireEnabledCategory(await getConfig(),work.category);
+      const [work]=await getDb().select().from(works).where(eq(works.id,uuid(path[1])));if(!work)throw new AppError(404,'This work was not found.');requireEnabledCategory(await getFeatureConfig(uid),work.category);
       if (path[2] === 'lists') return json(await workActionLists(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1), url.searchParams.get('reading') === 'true'));
       return json(await workActionData(uid,uuid(path[1]),url.searchParams.has('playthrough')?uuid(url.searchParams.get('playthrough')):undefined));
     }
@@ -232,13 +233,15 @@ export const handler: RequestHandler = async (event) => {
       return await streamTrailer(uid, uuid(path[1]), request);
     if (path[0] === 'artwork' && path[1] === 'tmdb' && path.length === 4 && method === 'GET')
       return streamTmdbArtwork(text(path[2]), text(path[3]), request);
-    if (path[0] === 'artwork' && path[1] === 'fallback' && path.length === 4 && method === 'GET')
+    if (path[0] === 'artwork' && path[1] === 'fallback' && path.length === 4 && method === 'GET') {
+      await requireFeature(uid,'screen');
       return fallbackArtwork(uuid(path[2]), text(path[3]));
+    }
     if (path[0] === 'artwork' && method === 'GET')
       return streamArtwork(uid, uuid(path[1]), text(path[2]), text(path[3]), request);
     const body = ['POST', 'PATCH', 'PUT', 'DELETE'].includes(method) ? await readBody(request, path[0]==='profile'&&path.length===1&&method==='POST'?avatarRequestLimit:1_048_576) : {};
     const relationshipWork=path[0]==='collection'&&path.length===2?path[1]:['tracking','ratings','up-next','lists'].includes(path[0])?body.mediaId:undefined;
-    if(relationshipWork){const [work]=await getDb().select().from(works).where(eq(works.id,uuid(relationshipWork)));if(!work)throw new AppError(404,'This work was not found.');requireEnabledCategory(await getConfig(),work.category);}
+    if(relationshipWork){const [work]=await getDb().select().from(works).where(eq(works.id,uuid(relationshipWork)));if(!work)throw new AppError(404,'This work was not found.');requireEnabledCategory(await getFeatureConfig(uid),work.category);}
     if(path[0]==='providers' && path[2]==='reconciliation' && method==='POST') return json(await updateJellyfinReconciliation(uid,uuid(path[1]),body));
     if(path[0]==='providers'&&path[2]==='collection-preview'&&method==='POST')return json(await previewProjection(uid,uuid(path[1]),body));
     if(path[0]==='providers'&&path[2]==='collection-approve'&&method==='POST')return json(await approveProjection(uid,uuid(path[1]),body));

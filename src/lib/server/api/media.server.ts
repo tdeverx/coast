@@ -1,3 +1,4 @@
+import { requireFeature } from '$lib/server/features';
 import { readingDetails } from '$lib/reading/query.server';
 import { getDb } from '$lib/server/db';
 import { readingWorks } from '$lib/server/db/schema';
@@ -40,8 +41,10 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
         result = await mediaHistory(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1));
       else if (path[2] === 'trailer' && method === 'GET')
         result = { url: await getTrailer(uid, uuid(path[1])) };
-      else if (path[2] === 'refresh' && method === 'POST')
+      else if (path[2] === 'refresh' && method === 'POST') {
+        await requireFeature(uid,'screen');
         result = await refreshMedia(uuid(path[1]), (user.settings.region as string) || 'GB');
+      }
       else if (path[2] === 'episodes' && method === 'POST')
         result = await addLocalSeasonEpisodes(
           uid,

@@ -21,6 +21,8 @@ const external=[1991000001,1991000002];
 beforeAll(async()=>{
   if(!enabled)return;
   const db=getDb();
+  const {getConfig}=await import('../src/lib/server/config');const {getSql}=await import('../src/lib/server/db');const config=await getConfig();
+  await getSql()`insert into system_settings(key,value) values('coast',${{...config,experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true}}::jsonb) on conflict(key) do update set value=excluded.value`;
   [userId]=(await db.insert(s.users).values({username:`list-delivery-${tag}`}).returning()).map(row=>row.id);
   for(let n=0;n<2;n++){
     const [instance]=await db.insert(s.providerInstances).values({provider:'trakt',name:tag,baseUrl:'https://fixture.invalid'}).returning();

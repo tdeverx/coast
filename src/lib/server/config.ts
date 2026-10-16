@@ -1,4 +1,5 @@
 import * as v from 'valibot';
+import { administratorFeatures } from '$lib/features';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { diagnosticLevels } from '../diagnostics';
 import { diagnosticStore } from './diagnostics';
@@ -7,6 +8,7 @@ import type { Database } from './db';
 import { sql } from 'drizzle-orm';
 
 export const configSchema = v.object({
+  features: v.optional(v.partial(v.object(Object.fromEntries(administratorFeatures.map(key => [key, v.boolean()])) as Record<typeof administratorFeatures[number], v.BooleanSchema<undefined>>)), {}),
   developerMode: v.optional(v.boolean(),false),
   siteAccess: v.optional(v.picklist(['private','public-profiles','public-read-only']),'private'),
   experimentalMusic: v.optional(v.boolean(),false),
@@ -39,6 +41,7 @@ export const configSchema = v.object({
 });
 export type CoastConfig = v.InferOutput<typeof configSchema>;
 export const defaultConfig: CoastConfig = {
+  features: {},
   developerMode:false,
   siteAccess:'private',
   experimentalMusic: false, experimentalGaming: false, experimentalParties: false,
@@ -67,7 +70,7 @@ export const defaultConfig: CoastConfig = {
 };
 
 type ConfigDatabase = ReturnType<typeof getSql> | Pick<Database, 'execute'>;
-const requestConfig = new AsyncLocalStorage<{ active: boolean; pending?: Promise<CoastConfig> }>();
+const requestConfig = new AsyncLocalStorage<{ active: boolean; pending?: Promise<CoastConfig>; subjects?: Map<string, Promise<{settings:import('./db/schema').UserSettings;disabled:boolean}|undefined>> }>();
 
 /** Share only one HTTP request's policy snapshot, never authorization between requests. */
 export function withRequestConfig<T>(work: () => T | Promise<T>): Promise<T> {
@@ -79,6 +82,7 @@ export function withRequestConfig<T>(work: () => T | Promise<T>): Promise<T> {
       // They must not retain its settings snapshot after the response completes.
       current.active = false;
       current.pending = undefined;
+      requestConfig.getStore()?.subjects?.clear();
     }
   });
 }
@@ -91,7 +95,7 @@ export function withoutRequestConfig<T>(work: () => T): T {
 /** A committed settings change replaces this request's snapshot, not another request's. */
 export function replaceRequestConfig(config: CoastConfig) {
   const current = requestConfig.getStore();
-  if (current?.active) current.pending = Promise.resolve(config);
+  if (current?.active) {current.pending = Promise.resolve(config);current.subjects?.clear();}
 }
 
 async function readConfig(database: ConfigDatabase): Promise<CoastConfig> {
@@ -99,7 +103,7 @@ async function readConfig(database: ConfigDatabase): Promise<CoastConfig> {
   const [row] = 'execute' in database
     ? await database.execute<{ value: Partial<CoastConfig> | null }>(sql`SELECT value FROM system_settings WHERE key = 'coast'`)
     : await database`SELECT value FROM system_settings WHERE key = 'coast'`;
-  const config = v.parse(configSchema, { ...defaultConfig, ...(row?.value || {}) });
+  const config = parseConfig(row?.value);
   return config;
 }
 
@@ -118,4 +122,20 @@ export async function refreshDiagnosticConfig() {
   } catch {
     /* Keep the last known level during outages. */
   }
+}
+
+/** Read-model snapshots are shared only inside this request; transactions bypass them. */
+export function featureSubject(userId:string) {
+  const read=async()=>{const [user]=await getSql()`select settings,disabled from users where id=${userId}`;return user as {settings:import('./db/schema').UserSettings;disabled:boolean}|undefined;};
+  const current=requestConfig.getStore();
+  if(!current?.active)return read();
+  current.subjects??=new Map();
+  const existing=current.subjects.get(userId);if(existing)return existing;
+  const pending=read();if(current.subjects.size<40)current.subjects.set(userId,pending);
+  return pending;
+}
+export function invalidateFeatureSubject(userId:string) {requestConfig.getStore()?.subjects?.delete(userId);}
+
+export function parseConfig(value:unknown):CoastConfig {
+  return v.parse(configSchema,{...defaultConfig,...(value&&typeof value==='object'?value:{})});
 }

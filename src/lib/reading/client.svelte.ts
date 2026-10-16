@@ -1,4 +1,4 @@
-import { api, message, refreshAfterChange } from '$lib/ui/client';
+import { api, message, refreshAfterChange, isFeatureDisabled, ApiError } from '$lib/ui/client';
 import { readingFormat, sameReadingLocation, type ReadingLocation, type ReadingSessionView } from './model';
 export const reader = $state({session:null as ReadingSessionView|null,file:null as File|null,visible:false,loading:false,rendering:false,syncing:false,unsaved:false,error:'',location:null as ReadingLocation|null});
 let move:((location:ReadingLocation)=>Promise<void>)|null=null;
@@ -69,11 +69,12 @@ export async function attachReading(session:ReadingSessionView){
   install(session,null);installed=true;
  }finally{if(!installed)await retireSession(session);}
 }
-export async function closeReading(cancelPendingOpening=true){
+export async function closeReading(cancelPendingOpening=true,save=true){
  if(cancelPendingOpening)cancelOpening();
  const session=reader.session;
  if(!session)return;
- const flushed=reader.location?await recordReading(reader.location):await writing;
+ const flushed=save?(reader.location?await recordReading(reader.location):await writing):true;
+ if(!save)pending=null;
  if(flushed===false){reader.visible=true;throw new Error(reader.error);}
  if(reader.session?.id!==session.id)return;
  reader.visible=false;reader.session=null;reader.file=null;reader.location=null;reader.unsaved=false;move=null;
@@ -94,7 +95,7 @@ export function recordReading(location:ReadingLocation):Promise<boolean>{
    while(pending){const next=pending;pending=null;
     if(acknowledged?.id===next.id&&sameReadingLocation(acknowledged.location,next.location))continue;
     try{await api(`reading/sessions/${next.id}/location`,next.location);acknowledged=next;}
-    catch(cause){if(acknowledged?.id===next.id)acknowledged=null;pending=pending??next;if(reader.session?.id===next.id){saveError=`Bookmark could not be saved. ${message(cause)}`;reader.error=saveError;reader.unsaved=true;}return false;}
+    catch(cause){if(isFeatureDisabled(cause)||cause instanceof ApiError&&cause.status===410){if(reader.session?.id===next.id){pending=null;await closeReading(true,false);return false;}continue;}if(acknowledged?.id===next.id)acknowledged=null;pending=pending??next;if(reader.session?.id===next.id){saveError=`Bookmark could not be saved. ${message(cause)}`;reader.error=saveError;reader.unsaved=true;}return false;}
    }
    reader.unsaved=false;if(reader.error===saveError)reader.error='';saveError='';return true;
   }finally{writing=null;}

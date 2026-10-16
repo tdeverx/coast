@@ -1,3 +1,4 @@
+import { getFeatureConfig } from '$lib/server/features';
 import {getDb} from '$lib/server/db';
 import {sql} from 'drizzle-orm';
 import {presentationSearch} from '$lib/catalogue/overrides/presentation.server';
@@ -10,7 +11,6 @@ import { searchIgdb } from '$lib/providers/igdb/service.server';
 import { gameCard } from '$lib/games/presentation';
 import { providerGameCards } from '$lib/games/presentation.server';
 import * as v from 'valibot';
-import { getConfig } from '$lib/server/config';
 import { AppError } from '$lib/server/security/errors';
 import { ProviderHttpError } from '$lib/server/security/provider-fetch';
 import { providerApiError } from '$lib/server/security/provider-api-error';
@@ -38,7 +38,7 @@ const inputSchema = v.object({
 /** Local results can render while the route streams its provider search. */
 export async function readingSearchInitial(userId: string, raw: unknown): Promise<ReadingSearchContent> {
   const input = v.parse(inputSchema, raw);
-  await searchKinds(input.kind);
+  await searchKinds(userId, input.kind);
   const empty = { items: [], failure: '', notice: '', truncated: false, page: input.page, pages: 1, total: 0 };
   if (!input.query) return empty;
   // Local pages remain bounded and appear first. Do not repeat a clamped last page
@@ -49,8 +49,8 @@ export async function readingSearchInitial(userId: string, raw: unknown): Promis
   return { ...empty, items: localCards, total: local.total, pages, truncated: input.page < pages };
 }
 
-async function searchKinds(kind: 'all' | ReadingKind) {
-  const config = await getConfig();
+async function searchKinds(userId: string, kind: 'all' | ReadingKind) {
+  const config = await getFeatureConfig(userId);
   const kinds = (['book', 'comic'] as const).filter(value =>
     (kind === 'all' || kind === value) && (value === 'book' ? config.experimentalBooks : config.experimentalComics));
   if (!kinds.length) throw new AppError(404, 'This reading type is unavailable.', 'experimental_disabled');
@@ -61,7 +61,7 @@ async function searchKinds(kind: 'all' | ReadingKind) {
  * Routes pass their already-rendered local page to avoid reading it a second time. */
 export async function readingSearch(userId: string, raw: unknown, initial?: ReadingSearchContent): Promise<ReadingSearchContent> {
   const input = v.parse(inputSchema, raw);
-  const kinds = await searchKinds(input.kind);
+  const kinds = await searchKinds(userId, input.kind);
   const local = initial ?? await readingSearchInitial(userId, input);
   if (!input.query) return local;
   const empty = { items: [] as ReadingMetadata[], failure: '', notice: '', truncated: false, page: input.page, pages: 1, total: 0 };

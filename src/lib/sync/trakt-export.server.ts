@@ -1,3 +1,4 @@
+import { requireFeature } from '$lib/server/features';
 import {
   reconcileProviderValue,
   acknowledgeProviderValue,
@@ -238,6 +239,8 @@ export async function executeLiveScrobbleToAdapter(userId:string,connectionId:st
     input
   );
   if (!sync.scrobble) return;
+  await requireFeature(userId,'presence');
+  await requireFeature(userId,'screen');
   const [item] = await getDb().select().from(media).where(eq(media.id, data.mediaId));
   if (!item || !['movie', 'episode'].includes(item.kind)) return;
   const mappings = await getDb()

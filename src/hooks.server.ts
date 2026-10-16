@@ -1,10 +1,11 @@
+import { getFeatureConfig } from '$lib/server/features';
 import {onboardingPending} from '$lib/server/auth/onboarding';
 import {isPublicReadPath} from '$lib/social/public.server';
 import { context, logDiagnostic, classifyFailure, diagnosticStore } from '$lib/server/diagnostics';
 import { correlationId } from '$lib/diagnostics';
 import { featureEnabled } from '$lib/experimental';
 import { experimentalPathFeature } from '$lib/server/experimental';
-import { refreshDiagnosticConfig, getConfig, withRequestConfig, withoutRequestConfig } from '$lib/server/config';
+import { refreshDiagnosticConfig, withRequestConfig, withoutRequestConfig } from '$lib/server/config';
 import { building } from '$app/environment';
 import { redirect, json, error, isRedirect, isHttpError, type Handle } from '@sveltejs/kit';
 import { authenticateSession, setupRequired } from '$lib/server/auth';
@@ -53,7 +54,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     return response;
   }
   event.locals.setup = await setupRequired();
-  const config=await getConfig();
+  const config=await getFeatureConfig(event.locals.user?.id??null);
   const isPublic = ['/login', '/setup', '/register'].includes(event.url.pathname) || (['GET','HEAD'].includes(event.request.method) && isPublicReadPath(event.url.pathname,config.siteAccess));
   if (!event.locals.user && !isPublic) {
     if (event.url.pathname.startsWith('/api/'))
@@ -71,7 +72,7 @@ const applicationHandle: Handle = async ({ event, resolve }) => {
     redirect(303,'/onboarding');
   }
   const experimentalFeature = experimentalPathFeature(event.url.pathname);
-  if (experimentalFeature && !featureEnabled(config, experimentalFeature)) {
+  if (experimentalFeature && !(/\/synced\/[^/]+\/(leave|decline)$/.test(event.url.pathname)) && !featureEnabled(config, experimentalFeature)) {
     if (event.url.pathname.startsWith('/api/'))
       return json(
         { error: 'Experimental features are disabled.', code: 'experimental_disabled' },

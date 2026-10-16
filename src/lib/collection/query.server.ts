@@ -1,5 +1,5 @@
+import { getFeatureConfig } from '$lib/server/features';
 import { personaliseWorkCards } from '$lib/catalogue/overrides/presentation.server';
-import { getConfig } from '$lib/server/config';
 import { enabledCategories, requireEnabledCategory, selectedCategory } from '$lib/server/experimental';
 import { sql, eq, inArray, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -287,7 +287,7 @@ export async function workCards(ownerId: string, viewerId: string | null, ids: s
 }
 async function workCardPage(ownerId: string, viewerId: string | null, ids: string[]): Promise<(MediaView | MediaCardPresentation)[]> {
   if (!ids.length) return [];
-  const db=getDb(),config=await getConfig();
+  const db=getDb(),config=await getFeatureConfig(viewerId);
   const [screen,gameRows,musicRows,readingRows] = await Promise.all([
     mediaViews(ownerId,{ids,limit:PAGE_SIZE},viewerId),
     (await import('$lib/core/games/service.server')).gamePresentationMetadata(ids).then(rows=>[...rows.values()]),
@@ -317,7 +317,7 @@ export async function collectionData(viewerId: string, raw: unknown={}, username
   const owner=username?await profileUser(username):null, ownerId=owner?.id??viewerId;
   const input=v.parse(collectionOptionsSchema,raw);
   if(ownerId!==viewerId && input.category!=='reading')await (await import('$lib/social/privacy.server')).requireVisible(ownerId,viewerId,'collection',input.category==='all'?undefined:input.category);
-  const config=await getConfig();if(input.category!=='all')requireEnabledCategory(config,input.category);
+  const config=await getFeatureConfig(viewerId);if(input.category!=='all')requireEnabledCategory(config,input.category);
   const condition=sql`(select collection_visible from visibility where category=c.category) and ${enabledCategories(sql`c.category`,config)} and ${selectedCategory(sql`c.category`,input.category)} and (${input.kind}='all' or c.kind=${input.kind})
     and (${input.level}='all' or (c.kind not in ('episode','season') and not exists(select 1 from edges e join works parent on parent.id=e.parent_id where e.child_id=c.id and parent.kind in ('show','season','album'))))
     and (${input.relationship}='all' or exists(select 1 from jsonb_array_elements(c.reasons) r where r->>'relationship'=${input.relationship}))

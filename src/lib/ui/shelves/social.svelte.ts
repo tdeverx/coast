@@ -1,4 +1,4 @@
-import { mediumOptions } from '$lib/experimental';
+import { mediumOptions, categoryEnabled } from '$lib/experimental';
 import {page} from '$app/state';
 import { onDestroy, untrack } from 'svelte';
 import { useClient } from '$lib/ui/client-context';
@@ -15,6 +15,12 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
  const initial = untrack(() => get().initial);
  const resource = createResource<Feed>(initial ?? { items: [], hasMore: false, next: null }, !!initial);
  async function load(_page = 1, append = false) {
+  if(page.data.capabilities?.social===false){resource.replace({items:[],hasMore:false,next:null});return;}
+  if(category!=='all'&&!categoryEnabled({...page.data,features:page.data.capabilities},category)){
+    const next=mediumOptions({...page.data,features:page.data.capabilities})[0]?.value;
+    if(!next){resource.replace({items:[],hasMore:false,next:null});return;}
+    category=next;
+  }
   if (append && resource.busy) return;
   const requestedCategory=category;
   const query = new URLSearchParams({ category, ...(append && resource.data.next ? resource.data.next : {}) });
@@ -23,7 +29,7 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
   });
  }
  const suppliedCategory=$derived(get().category??(get().mediums?'screen':'all'));
- const refreshKey=$derived(JSON.stringify([contentRevisionKey(page.data,['social']),get().surface,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics]));
+ const refreshKey=$derived(JSON.stringify([contentRevisionKey(page.data,['social']),get().surface,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities]));
  let previousCategory=untrack(()=>suppliedCategory);
  let previousRefresh=untrack(()=>refreshKey);
  $effect(() => {
@@ -37,7 +43,7 @@ export function createSocialSource(get: () => SocialShelfOptions): ShelfSource {
  });
  onDestroy(resource.dispose);
  return {
-    get pagination() { return get().layout==='grid' ? { kind: 'cursor' as const, hasMore: resource.data.hasMore } : {kind:'local' as const}; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){return get().layout==='grid'?undefined:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&category=${category}`;}, get shape(){return category==='reading'?'poster' as const:'fanart' as const;}, get artworkStyle(){return category==='reading'?'primary' as const:'thumb' as const;}, artworkPriority:'episode-season-show', get resetKey(){return category;}, get filters(){return get().mediums?[{type:'segments' as const,label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptions(page.data, ['screen','game','music','reading']),change:(value:string)=>{category=value;void load();}}]:[];}, controls: [],
+    get pagination() { return get().layout==='grid' ? { kind: 'cursor' as const, hasMore: resource.data.hasMore } : {kind:'local' as const}; }, get title(){return get().title??(get().surface==='popular'?'Popular with friends':'Activity');}, get href(){return get().layout==='grid'?undefined:`/for-you?section=${get().surface==='popular'?'popular':'activity'}&category=${category}`;}, get shape(){return category==='reading'?'poster' as const:'fanart' as const;}, get artworkStyle(){return category==='reading'?'primary' as const:'thumb' as const;}, artworkPriority:'episode-season-show', get resetKey(){return category;}, get filters(){return get().mediums?[{type:'segments' as const,label:get().surface==='popular'?'Popular with friends medium':'Activity medium',value:category,options:mediumOptions({...page.data,features:page.data.capabilities}, ['screen','game','music','reading']),change:(value:string)=>{category=value;void load();}}]:[];}, controls: [],
   get emptyConfirmed(){return !get().mediums || resource.data.emptyAllMedia===true;},
   get items() { if(loadedCategory!==category)return []; return get().layout==='grid'?resource.data.items:resource.data.items.slice(0,20); }, get ready() { return resource.ready; }, get busy() { return resource.busy; },
   get error() { return resource.error; }, get activated() { return resource.activated; },

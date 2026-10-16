@@ -5,7 +5,7 @@
  import Dialog from '$lib/ui/components/Dialog.svelte';
  import Button from '$lib/ui/components/Button.svelte';
  import ProgressBar from '$lib/ui/components/ProgressBar.svelte';
- import { api, message } from '$lib/ui/client';
+ import { api, message, isFeatureDisabled, ApiError } from '$lib/ui/client';
  import type { ReaderEngine } from './reader/engine';
  let host:HTMLElement,engine:ReaderEngine|undefined,busy=$state(false),loading=$state(false);
  const following=$derived(syncedPlayer.room?.mediaType==='reading'&&!!reader.session&&syncedPlayer.room.mediaId===reader.session.workId&&syncedPlayer.room.edition===reader.session.edition&&syncedPlayer.room.readingFormat===reader.session.format);
@@ -14,7 +14,7 @@
  function close(){void closeReading().catch(()=>{/* Keep the unsaved bookmark and its retry notice visible. */});}
  $effect(()=>{
   const session=reader.session,file=reader.file;if(!session||!host||!reader.visible)return;
-  const heartbeat=setInterval(()=>{if(!document.hidden&&reader.visible)void api(`reading/sessions/${session.id}/heartbeat`,{}).catch(()=>{});},60000);
+  const heartbeat=setInterval(()=>{if(!document.hidden&&reader.visible)void api(`reading/sessions/${session.id}/heartbeat`,{}).catch(cause=>{if((isFeatureDisabled(cause)||cause instanceof ApiError&&cause.status===410)&&reader.session?.id===session.id)void closeReading(true,false).catch(()=>{});});},60000);
   const controller=new AbortController(),owner=++readerOwner;let current:ReaderEngine|undefined,resize:ResizeObserver|undefined,navigation=0;loading=true;reader.rendering=true;
   const ownsNavigation=(revision:number)=>!controller.signal.aborted&&revision===navigation&&reader.session?.id===session.id;
   void import('./reader/engine').then(module=>module.createReader({host,source:file??session.url!,format:session.format,location:session.location,signal:controller.signal,changed:location=>{

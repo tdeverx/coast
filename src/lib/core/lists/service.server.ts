@@ -1,3 +1,4 @@
+import { requireWorkFeature } from '$lib/server/features';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';
@@ -37,6 +38,7 @@ export async function createList(userId: string, raw: v.InferInput<typeof create
   return getDb().transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     if (mediaId) {
+      await requireWorkFeature(tx,userId,mediaId);
       const [item] = await tx.select({ id: works.id, category: works.category }).from(works).where(eq(works.id, mediaId));
       if (!item) throw new DomainError('This title was not found.', 404, 'not_found');
       if (input.playlist && (item.category === 'book' || item.category === 'comic'))
@@ -91,7 +93,7 @@ export async function getLists(userId: string) {
       playlist: lists.playlist,
       createdAt: lists.createdAt,
       updatedAt: lists.updatedAt,
-      itemCount: sql<number>`count(${listItems.mediaId})::int`,
+      itemCount: sql<number>`count(${listItems.mediaId}) filter(where exists(select 1 from works w where w.id=${listItems.mediaId} and coast_category_enabled(${userId}::uuid,w.category)))::int`,
     })
     .from(lists)
     .leftJoin(listItems, eq(listItems.listId, lists.id))
@@ -122,7 +124,7 @@ export async function getList(userId: string, listId: string) {
     .leftJoin(games, eq(games.id, works.id))
     .leftJoin(musicWorks, eq(musicWorks.id, works.id))
     .leftJoin(readingWorks, eq(readingWorks.id, works.id))
-    .where(eq(listItems.listId, listId))
+    .where(and(eq(listItems.listId, listId),sql`coast_category_enabled(${userId}::uuid,${works.category})`))
     .orderBy(asc(listItems.position), asc(listItems.addedAt));
   return { ...list, items: items.map(({screen,title,...entry})=>({...entry,item:screen??{...entry.item,title}})) };
 }
@@ -138,6 +140,7 @@ export async function addListItem(
   return getDb().transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const list = await ownedList(tx, userId, listId);
+    await requireWorkFeature(tx,userId,mediaId);
     if (!list.playlist) {
       const [existing] = await tx
         .select()

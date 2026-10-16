@@ -1,7 +1,7 @@
 import { serverArtwork } from './server-artwork.server';
 import { fallbackArtwork } from './tmdb/fallback.server';
 import { artworkTypes, isArtworkType } from '$lib/artwork';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { availability, providerItems } from '$lib/server/db/schema';
 import { getJellyfin } from './jellyfin/connection.server';
@@ -29,7 +29,8 @@ export async function streamArtwork(
         eq(availability.userId, userId),
         eq(providerItems.instanceId, instanceId),
         eq(providerItems.externalId, itemId),
-        eq(availability.state, 'available')
+        eq(availability.state, 'available'),
+        sql`exists(select 1 from works w where w.id=${providerItems.mediaId} and coast_category_enabled(${userId}::uuid,w.category))`
       )
     )
     .limit(1);

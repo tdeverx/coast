@@ -16,6 +16,7 @@ export const player = $state({
   continuationId: '',
   muted: true,
   loading: false,
+  preparationMediaType: 'video' as 'audio' | 'video',
   preparationStartedAt: 0,
 });
 export const heroPlayer = $state({
@@ -103,6 +104,7 @@ export async function playMedia(
     await controller?.resume();
     return;
   }
+  player.preparationMediaType=options.mediaType??'video';
   player.loading = true;
   const revision=++preparationRevision, abort=new AbortController(), request=capturePlaybackApi();
   preparing=abort;

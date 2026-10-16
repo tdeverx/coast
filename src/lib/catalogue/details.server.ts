@@ -1,3 +1,4 @@
+import { requireFeature } from '$lib/server/features';
 import { creditRoles } from '$lib/media/credits';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { getDb } from '../server/db/index';
@@ -19,6 +20,7 @@ async function viewerRegion(userId: string) {
   return user?.settings.region ?? 'GB';
 }
 export async function titleInsights(userId: string, id: string, source: string, page = 1) {
+  await requireFeature(userId,'screen');
   const db = getDb();
   const [media] = await db.select().from(s.media).where(eq(s.media.id, id));
   if (!media) error(404, 'This title was not found.');
@@ -73,6 +75,7 @@ export async function personCredits(
     available?: boolean;
   } = {}
 ) {
+  await requireFeature(userId,'screen');
   const person = await personDetails(id);
   const matches = person.credits.filter(
     (c) =>

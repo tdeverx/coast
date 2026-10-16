@@ -1,3 +1,4 @@
+import { requireFeatureInTransaction } from '$lib/server/features';
 import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../../server/db';
@@ -28,6 +29,7 @@ export async function addLocalSeasonEpisodes(
       .from(users)
       .where(and(eq(users.id, userId), eq(users.disabled, false)));
     if (!user) throw new DomainError('Sign in to add episodes.', 401, 'unauthorized');
+    await requireFeatureInTransaction(tx,userId,'screen');
     const [show] = await tx
       .select()
       .from(media)

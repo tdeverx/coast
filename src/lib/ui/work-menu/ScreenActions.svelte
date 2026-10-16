@@ -534,7 +534,7 @@
 {#snippet playbackChoices(edition?: string)}
   <Button item
     icon="play"
-    disabled={player.loading || !playable?.available}
+    disabled={page.data.capabilities?.playback===false || player.loading || !playable?.available}
     disabledReason={!playable?.available ? 'Not available to play' : undefined}
     onclick={() => (edition === undefined ? startTarget() : play(edition))}
   >
@@ -555,7 +555,7 @@
     {#if error}<RowFeedback error={error} tag="div" class="menu-feedback text-danger" />{/if}
   {/if}
   {#if view === 'root'}
-    {#if active.available || data?.progressTargetIds.includes(active.id)}
+    {#if page.data.capabilities?.playback!==false && (active.available || data?.progressTargetIds.includes(active.id))}
       {@render branch(playLabel, 'play', 'play')}
     {:else}
       <Button item
@@ -569,7 +569,7 @@
     {#if page.data.experiments?.planning}<Button item icon="list" onclick={()=>planningOpen=true}>Plan</Button>{/if}
     {#if item.recommendationIds?.length}<WorkActions section="recommendations" workId={active.id} recommendationIds={item.recommendationIds} disabled={busy||loading} />{/if}
     <WorkActions section="social" workId={active.id} disabled={busy||loading} />
-    {#if ['movie','episode'].includes(active.kind)}<Button item icon="clock" disabled={busy||loading||!active.runtimeMinutes} onclick={checkIn}>Check in</Button>{/if}
+    {#if page.data.capabilities?.presence!==false && ['movie','episode'].includes(active.kind)}<Button item icon="clock" disabled={busy||loading||!active.runtimeMinutes} onclick={checkIn}>Check in</Button>{/if}
     <div class="menu-divider" role="separator"></div>
     {@render branch(language.mark, 'watched', 'check')}
     {@render branch('Rewatch', 'rewatch', 'refresh')}
@@ -787,7 +787,7 @@
           href={`/media/${item.id}`}
           icon="arrow">Learn more</Button
         >
-      {:else if (next ?? item).available}<Button
+      {:else if (next ?? item).available && page.data.capabilities?.playback!==false}<Button
           size={hero ? "hero" : "standard"}
           icon="play"
           disabled={player.loading}

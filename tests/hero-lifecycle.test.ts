@@ -4,6 +4,7 @@ import * as runtime from 'svelte/internal/client';
 import {compileRunes,moduleUrl,svelteUrl} from './fixtures/ui-script';
 const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(svelteUrl)};export const onMount=()=>{};`);
 const stubUrl=moduleUrl(`
+ export const page={data:{capabilities:{playback:true,screen:true}}};
  export const reader={visible:false},heroPlayer={id:null,url:null,visible:false},player={};
  export const requests=[],presentations=[];
  export const useClient=()=>({api:(path,body,method,options)=>new Promise(resolve=>requests.push({path,signal:options?.signal,resolve}))});
@@ -14,6 +15,7 @@ const stubUrl=moduleUrl(`
 const stub=await import(stubUrl);
 const source=(await Bun.file(new URL('../src/lib/ui/heroes/presentation.svelte.ts',import.meta.url)).text())
  .replaceAll(/from ['"]svelte['"]/g,`from ${JSON.stringify(lifecycleUrl)}`)
+ .replaceAll(/from ['"]\$app\/state['"]/g,`from ${JSON.stringify(stubUrl)}`)
  .replaceAll(/from ['"]\$lib\/[^'"]+['"]/g,`from ${JSON.stringify(stubUrl)}`);
 const {createHeroPresentation}=await import(moduleUrl(compileRunes(source)));
 

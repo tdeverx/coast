@@ -1,3 +1,4 @@
+import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
 import * as v from 'valibot';
 import {and,eq,sql} from 'drizzle-orm';
 import {getDb,getSql} from '$lib/server/db';
@@ -15,7 +16,7 @@ export async function presence(userId:string) {
  case when e.media_id is not null then coalesce(show.title,m.title)||' — S'||lpad(e.season_number::text,greatest(2,length(e.season_number::text)),'0')||'E'||lpad(e.episode_number::text,greatest(2,length(e.episode_number::text)),'0') else coalesce(m.title,music.title,g.title,b.title) end as title,
  case when w.category='music' then '/music/work/'||w.id when w.category='game' then '/games/'||w.id else '/media/'||w.id end as href,p.source,p.expires_at as "expiresAt",
  case when p.duration_seconds>0 and social_visible(p.user_id,${userId}::uuid,'progress',w.category) then least(1.0,greatest(0.0,p.position_seconds/p.duration_seconds)) end::real as progress from candidates p join works w on w.id=p.work_id join users u on u.id=p.user_id left join media m on m.id=w.id left join music_works music on music.id=w.id left join games g on g.id=w.id left join reading_works b on b.id=w.id left join episodes e on e.media_id=w.id left join media show on show.id=e.show_id
- where not u.disabled and (p.user_id=${userId}::uuid or coalesce(u.settings->>'activityStatus','automatic')<>'invisible') and (p.user_id=${userId} or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(p.user_id,${userId}::uuid) and f.user_b=greatest(p.user_id,${userId}::uuid))) and social_visible(p.user_id,${userId}::uuid,'presence',w.category) and (w.category='screen' or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true') or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true'))
+ where coast_feature_enabled(p.user_id,'presence') and coast_feature_enabled(${userId}::uuid,'presence') and coast_category_enabled(${userId}::uuid,w.category) and not u.disabled and (p.user_id=${userId}::uuid or coalesce(u.settings->>'activityStatus','automatic')<>'invisible') and (p.user_id=${userId} or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(p.user_id,${userId}::uuid) and f.user_b=greatest(p.user_id,${userId}::uuid))) and social_visible(p.user_id,${userId}::uuid,'presence',w.category) and (w.category='screen' or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true') or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true'))
  order by p.user_id,p.priority,p.observed_at desc`;
 }
 async function queueCheckin(tx:Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0],userId:string,id:string) {
@@ -23,9 +24,13 @@ async function queueCheckin(tx:Parameters<Parameters<ReturnType<typeof getDb>['t
  for(const c of connections)await enqueueInTransaction(tx,{userId,connectionId:c.id,kind:'trakt.checkin',payload:{checkinId:id},compactionKey:`checkin:${id}`});
 }
 export async function startCheckin(userId:string,raw:unknown) {
+ await requireFeature(userId,'presence');
+ await requireFeature(userId,'screen');
  const {workId}=v.parse(v.object({workId:v.pipe(v.string(),v.uuid())}),raw);
  return getDb().transaction(async tx=>{
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
+  await requireFeatureInTransaction(tx,userId,'presence');
+  await requireFeatureInTransaction(tx,userId,'screen');
   const [work]=await tx.execute<{runtime:number|null;kind:string}>(sql`select kind,runtime_minutes as runtime from media where id=${workId}`);
   if(!work||!['movie','episode'].includes(work.kind)||!work.runtime||work.runtime<=0)throw new AppError(400,'Check-ins need a movie or episode with a known runtime.');
   const [playing]=await tx.execute(sql`select id from playback_sessions where share_id is null and user_id=${userId} and state='active' and expires_at>now() and updated_at>now()-interval '2 minutes'`);

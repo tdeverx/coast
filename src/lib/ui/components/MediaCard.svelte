@@ -124,13 +124,11 @@
     )
   );
   const primaryAction = $derived(
-    trackedItem
+    page.data.capabilities?.playback===false && !['game','book','comic'].includes(item.kind) || page.data.capabilities?.reader===false && ['book','comic'].includes(item.kind) ? 'open' : trackedItem
       ? primaryMediaAction({
           category: trackedItem.category ?? 'screen',
           canOpen: trackedItem.canOpen ?? trackedItem.available,
-          canRequest:
-            trackedItem.requestable ??
-            ((trackedItem.category ?? 'screen') === 'screen' && !trackedItem.available),
+          canRequest: page.data.capabilities?.requests!==false && (trackedItem.requestable ?? ((trackedItem.category ?? 'screen') === 'screen' && !trackedItem.available)),
         })
       : (item.kind === 'book' || item.kind === 'comic') && item.workId ? 'read' : canPlayMusicCard(item) ? 'play' : 'open'
   );

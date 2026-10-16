@@ -53,7 +53,7 @@ test('social projection retains exact totals and resolves presence only for disp
   const ids=Array.from({length:60},()=>crypto.randomUUID()),selected=Array.from({length:3},()=>crypto.randomUUID());
   const rows=ids.slice(0,-1).flatMap(workId=>selected.map((userId,i)=>({workId,userId,username:`friend-${i}`,avatar:null,rating:null,watched:false,progress:0,total:300})));
   const reaction={targetId:ids[0],emoji:'❤️',count:8};let statement=0,statusIds:string[]=[];
-  const workSocial=compile(socialFunction,{v,uuid:v.pipe(v.string(),v.uuid()),sql,
+  const workSocial=compile(socialFunction,{getFeatureConfig:async()=>({features:{social:true}}),v,uuid:v.pipe(v.string(),v.uuid()),sql,
     getDb:()=>({execute:async()=>++statement===1?rows:[reaction]}),
     statusesForUsers:async(_viewer:string,ids:string[])=>{statusIds=ids;return {[selected[0]]:'online'};},
   },'workSocial');
@@ -76,7 +76,7 @@ test('guest explicit metadata retains complete ordered membership in bounded bat
     if(!batch)return Promise.resolve([{id:'discovery',kind:'movie',title:'Discovery',genres:[]}]);
     batches.push(batch);return Promise.resolve(batch.toReversed().map(id=>({id,kind:'episode',title:id,genres:[],poster_path:'https://private.invalid/art',backdrop_path:'https://image.tmdb.org/t/p/original/safe.jpg'})));
   };
-  const {publicMedia}=compile(publicFunctions,{getConfig:async()=>({cacheTmdbArtwork:false}),getSql:()=>db,tmdbArtworkUrl:(path:string)=>path,AppError},'{publicMedia,publicDetails}');
+  const {publicMedia}=compile(publicFunctions,{getFeatureConfig:async()=>({cacheTmdbArtwork:false,features:{screen:true}}),getSql:()=>db,tmdbArtworkUrl:(path:string)=>path,AppError},'{publicMedia,publicDetails}');
   const cards=await publicMedia([...ids,ids[0]]);
   expect(cards.map((card:{id:string})=>card.id)).toEqual(ids);expect(batches.map(batch=>batch.length)).toEqual([500,500,1]);
   expect(cards.every((card:{poster:unknown;available:boolean;watched:boolean;rating:unknown})=>card.poster===null&&!card.available&&!card.watched&&card.rating===null)).toBe(true);
@@ -101,7 +101,7 @@ test('insight projection reuses identical totals without activating profile card
         }};return query;
     }};
   const {profileData,profileInsightsData}=compile(profileFunctions,{v,profileOptionsSchema,getDb:()=>db,s,sql,and,desc,eq,inArray,
-    profileVisibility:async()=>({details:true,insights:true,activity:true,progress:true,collection:true}),getConfig:async()=>({}),enabledCategories:()=>sql`true`,
+    profileVisibility:async()=>({details:true,insights:true,activity:true,progress:true,collection:true}),getFeatureConfig:async()=>({}),enabledCategories:()=>sql`true`,
     periodHistory:()=>sql`history`,genreRows:()=>sql`genres`,periodStart,AppError,requireVisible:async()=>{},pagination,PAGE_SIZE,
     workCards:async(_owner:string,_viewer:string|null,ids:string[])=>{hydrated+=ids.length;return ids.map(id=>({id,title:id,kind:'movie'}));},mediaViews:async()=>[],
     profileActivity:async(_owner:string,_now:Date,period:string,viewerId:string|null)=>({period,viewerId}),

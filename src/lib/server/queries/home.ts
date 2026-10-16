@@ -1,3 +1,4 @@
+import { getFeatureConfig } from '$lib/server/features';
 import { eq, desc, sql } from 'drizzle-orm';
 import { getDb } from '../db';
 import * as s from '../db/schema';
@@ -8,6 +9,7 @@ import { mediaViewsForIds, nextPlayable, permittedAvailability } from './media';
 
 /** Keep the initial route limited to its hero; every shelf loads through its own source. */
 export async function homeData(userId: string) {
+  if(!(await getFeatureConfig(userId)).features.screen)return {hero:null,heroNext:null};
   const heroId = await continueHeroId(userId)
     ?? await trackedHeroId(userId, true)
     ?? await libraryHeroId(userId)

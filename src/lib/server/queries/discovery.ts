@@ -1,8 +1,8 @@
+import { getFeatureConfig } from '$lib/server/features';
 import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { providerInstances } from '$lib/server/db/schema';
-import { getConfig } from '$lib/server/config';
 import { requireExperimentalFeature } from '$lib/server/experimental';
 import { AppError } from '$lib/server/security/errors';
 import { discoverIgdb } from '$lib/providers/igdb/service.server';
@@ -21,8 +21,9 @@ import { surfaceEnabled } from '$lib/experimental';
 import { pageNumberSchema } from './pagination';
 export async function discoveryContent(userId:string,raw:unknown):Promise<DiscoveryContent>{
   const input=v.parse(v.object({surface:v.picklist(['watch','play','listen','read']),section:v.picklist(['trending','recent']),kind:v.optional(v.picklist(['all','book','comic']),'all'),page:v.optional(pageNumberSchema,1)}),raw);
+  if(!surfaceEnabled(await getFeatureConfig(userId),input.surface))throw new AppError(404,'This medium is disabled.','feature_disabled');
   if(input.surface==='read'){
-    const config = await getConfig();
+    const config = await getFeatureConfig(userId);
     if (!surfaceEnabled(config, 'read')) throw new AppError(404, 'Reading is disabled.', 'experimental_disabled');
     if (input.kind !== 'all') requireEnabledCategory(config, input.kind);
     v.parse(v.pipe(pageNumberSchema, v.maxValue(READING_PROVIDER_PAGE_LIMIT)), input.page);
@@ -46,7 +47,7 @@ export async function discoveryContent(userId:string,raw:unknown):Promise<Discov
       notice: results.map(result => result.notice).filter(Boolean).join(' '),
     };
   }
-  if(input.surface!=='watch')requireExperimentalFeature(await getConfig(), input.surface === 'listen' ? 'music' : 'gaming');
+  if(input.surface!=='watch')requireExperimentalFeature(await getFeatureConfig(userId), input.surface === 'listen' ? 'music' : 'gaming');
   return input.surface==='watch'?screenDiscovery(userId,input.section):input.surface==='play'?gameDiscovery(userId,input.section):musicDiscovery(userId,input.section);
 }
 async function screenDiscovery(userId:string,section:DiscoverySection):Promise<DiscoveryContent>{

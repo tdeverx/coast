@@ -1,3 +1,4 @@
+import {requireFeature} from '$lib/server/features';
 import { presentationPreferences } from '$lib/catalogue/overrides/presentation.server';
 import { eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -10,6 +11,7 @@ import { musicAlbumMembersSql } from './editions.server';
 /** Track history, or the selected album edition's tracks, with owner filtering before paging. */
 export async function musicHistory(userId: string, workId: string, requestedPage = 1) {
   v.parse(pageNumberSchema, requestedPage);
+  await requireFeature(userId,'music');
   const db = getDb();
   const [work] = await db.select({ kind: musicWorks.kind }).from(musicWorks).where(eq(musicWorks.id, workId));
   if (!work) throw new DomainError('Music not found.', 404);

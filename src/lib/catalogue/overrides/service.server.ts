@@ -1,3 +1,4 @@
+import { requireWorkFeature } from '$lib/server/features';
 import { and, eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';
@@ -82,6 +83,7 @@ async function requireMetadataAccess(
     throw new DomainError('Only an administrator can change shared metadata.', 403, 'forbidden');
   const [item] = await tx.select().from(media).where(eq(media.id, mediaId));
   if (!item) throw new DomainError('This title was not found.', 404, 'not_found');
+  await requireWorkFeature(tx,userId,mediaId);
   return { user, item };
 }
 
@@ -169,6 +171,7 @@ async function requirePresentationAccess(tx: Transaction, userId: string, workId
   const [work] = await tx.select({ category: works.category }).from(works).where(eq(works.id, workId));
   if (!work) throw new DomainError('This work was not found.', 404, 'not_found');
   requireEnabledCategory(config, work.category);
+  await requireWorkFeature(tx,userId,workId);
 }
 
 export async function savePresentationPreference(

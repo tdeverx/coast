@@ -24,7 +24,7 @@ function visible(userId:string,filters:NotificationFilters=defaultNotificationFi
  left join social_recommendations recommendation on n.kind='recommendation' and recommendation.id::text=n.data->>'subjectId' and recommendation.recipient_id=n.user_id
  left join synced_rooms room on n.kind='synced-invite' and room.id::text=n.data->>'subjectId'
  left join lateral(select media_id,state from media_requests r where r.user_id=n.user_id and n.kind='request' and (r.id::text=n.data->>'subjectId' or n.source_key like 'seerr:'||r.instance_id||':'||r.external_id||':%') order by updated_at desc limit 1) request on true
- where n.user_id=${userId} and n.kind<>'friend-request' and n.dismissed_at is null and social_notification_visible(${userId}::uuid,n.kind,n.data)
+ where n.user_id=${userId} and n.kind<>'friend-request' and n.dismissed_at is null and coast_notification_visible(${userId}::uuid,n.kind,n.data,n.source_key)
  and (job.id is null or job.state not in ('cancelled','succeeded'))
  ), visible as (
  select n.*,w.category
@@ -32,7 +32,7 @@ function visible(userId:string,filters:NotificationFilters=defaultNotificationFi
  where (${filters.segment}='all' or case when n.kind in ('friend-request','friend-accepted','recommendation','reaction','synced-invite') then 'social' when n.kind in ('request','availability') then 'requests' else 'system' end=${filters.segment})
  and (${filters.kind}='all' or n.kind=${filters.kind}) and (${!filters.unread} or n.read_at is null)
  and (${filters.category}='all' or w.category=${filters.category} or (${filters.category}='reading' and w.category in ('book','comic')))
- and (w.id is null or w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true'))
+ and (w.id is null or coast_category_enabled(${userId}::uuid,w.category))
  and (${filters.period}='all' or n.created_at>=now()-case when ${filters.period}='week' then interval '7 days' else interval '30 days' end)
  )`;
 }

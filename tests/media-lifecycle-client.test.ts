@@ -3,10 +3,12 @@ import {compileModule} from 'svelte/compiler';
 const moduleUrl=(code:string)=>`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
 const deferred=<T=any>()=>{let resolve!:(value:T)=>void,reject!:(cause:unknown)=>void;const promise=new Promise<T>((done,fail)=>{resolve=done;reject=fail;});return {promise,resolve,reject};};
 const settle=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
+const apiSource=await Bun.file(new URL('../src/lib/ui/client.ts',import.meta.url)).text();
+const apiErrors=new Bun.Transpiler({loader:'ts'}).transformSync(apiSource.slice(apiSource.indexOf('export class ApiError'),apiSource.indexOf('export async function api<')));
 let fixture=0;
 async function loadClient(kind:'reading'|'playback'){
  const unique=++fixture;
- const transportUrl=moduleUrl(`export const calls=[];export let mode='personal';export const setMode=value=>mode=value;export let handle=async()=>({});export const delivery=fn=>handle=fn;export const message=e=>e.message;export const refreshAfterChange=async()=>{};export const api=(...args)=>{calls.push({mode,args});return handle(...args);};export function capturePlaybackApi(){const captured=mode;return (...args)=>{calls.push({mode:captured,args});return handle(...args);};} // ${unique}`);
+ const transportUrl=moduleUrl(`${apiErrors}export const calls=[];export let mode='personal';export const setMode=value=>mode=value;export let handle=async()=>({});export const delivery=fn=>handle=fn;export const message=e=>e.message;export const refreshAfterChange=async()=>{};export const api=(...args)=>{calls.push({mode,args});return handle(...args);};export function capturePlaybackApi(){const captured=mode;return (...args)=>{calls.push({mode:captured,args});return handle(...args);};} // ${unique}`);
  const syncUrl=moduleUrl(`export const commands=[];export const syncedPlayer={room:null,changing:false,joining:false};export const canControlPlayback=()=>true;export const syncedCommand=async(...args)=>{commands.push(args);}; // ${unique}`);
  const playbackUrl=moduleUrl(`export let stop=async()=>{};export const stopWith=fn=>stop=fn;export const stopPlayback=()=>stop(); // ${unique}`);
  const readingUrl=moduleUrl(`export const reader={session:null};export let close=async()=>{};export const closeWith=fn=>close=fn;export const closeReading=()=>close(); // ${unique}`);
@@ -179,3 +181,28 @@ test('a cancelled preparation cannot clear the loading state of its replacement'
  expect(c.player.loading).toBe(true);second.resolve({id:'new',mediaId:'new',startSeconds:0,durationSeconds:100});await next;
  expect(c.player.session.id).toBe('new');expect(c.player.loading).toBe(false);
 }));
+
+test('a withdrawn reader closes at its rejected page write and does not retry the unaccepted bookmark',async()=>{
+ const {client:c,transport:t}=await loadClient('reading');c.reader.session=readingSession('withdrawn');c.reader.visible=true;
+ t.delivery((path:string)=>path.endsWith('/location')?Promise.reject(new t.ApiError('Disabled',403,{code:'feature_disabled'})):Promise.resolve({closed:true}));
+ expect(await c.recordReading({format:'pdf',page:60,total:100})).toBe(false);
+ expect(c.reader.session).toBeNull();expect(c.reader.visible).toBe(false);expect(c.reader.unsaved).toBe(false);
+ expect(t.calls.filter((call:any)=>call.args[0].endsWith('/location'))).toHaveLength(1);
+ expect(t.calls.filter((call:any)=>call.args[0].endsWith('/close'))).toHaveLength(1);
+ await c.retryReadingSave();expect(t.calls).toHaveLength(2);
+});
+
+test('resource withdrawal distinguishes explicit feature refusal from ordinary permission/network failures',async()=>{
+ const {transport:t}=await loadClient('reading');
+ expect(t.isFeatureDisabled(new t.ApiError('Disabled',403,{code:'feature_disabled'}))).toBe(true);
+ expect(t.isFeatureDisabled(new t.ApiError('Medium disabled',404,{code:'experimental_disabled'}))).toBe(true);
+ expect(t.isFeatureDisabled(new t.ApiError('No access',403,{code:'forbidden'}))).toBe(false);
+ expect(t.isFeatureDisabled(Error('offline'))).toBe(false);
+});
+
+test('a reader already retired by durable cleanup also closes on its terminal session response',async()=>{
+ const {client:c,transport:t}=await loadClient('reading');c.reader.session=readingSession('retired');c.reader.visible=true;
+ t.delivery((path:string)=>path.endsWith('/location')?Promise.reject(new t.ApiError('Session ended',410)):Promise.resolve({closed:true}));
+ expect(await c.recordReading({format:'pdf',page:60,total:100})).toBe(false);
+ expect(c.reader.session).toBeNull();expect(c.reader.visible).toBe(false);expect(c.reader.unsaved).toBe(false);
+});

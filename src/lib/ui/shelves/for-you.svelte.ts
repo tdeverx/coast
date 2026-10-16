@@ -17,8 +17,9 @@ export function createForYouSource(get:()=>ForYouOptions):ShelfSource {
  let available=$state(get().feature!=='upcoming'&&get().layout==='grid'&&page.url.searchParams.get('available')==='true');
  const resource=createResource({items:[] as ShelfItem[],total:0,page:1,pages:1,title:undefined as string|undefined},false);
  const empty=()=>({items:[] as ShelfItem[],total:0,page:1,pages:1,title:undefined as string|undefined});
- function enabled(){return categoryEnabled(page.data,category)&&(get().kind!=='book'||page.data.experimentalBooks)&&(get().kind!=='comic'||page.data.experimentalComics)&&(get().feature!=='upcoming'||page.data.experiments.planning);}
+ function enabled(){return (get().feature==='upcoming'?page.data.capabilities?.planning!==false:page.data.capabilities?.personalisation!==false)&&categoryEnabled({...page.data,features:page.data.capabilities},category)&&(get().kind!=='book'||page.data.experimentalBooks)&&(get().kind!=='comic'||page.data.experimentalComics)&&(get().feature!=='upcoming'||page.data.experiments.planning);}
  async function load(number?:number,append=false) {
+  if(!get().category&&!categoryEnabled({...page.data,features:page.data.capabilities},category))category=mediumOptions({...page.data,features:page.data.capabilities})[0]?.value??category;
   if(!enabled()){resource.replace(empty());return;}
   number??=get().layout==='grid'?Number(page.url.searchParams.get('page')??1):1;
   if(append)number=resource.data.page+1;
@@ -41,12 +42,12 @@ export function createForYouSource(get:()=>ForYouOptions):ShelfSource {
  }
  const refreshKey=$derived(JSON.stringify([
   contentRevisionKey(page.data,get().feature==='upcoming'?['tracking','planning']:['tracking','social']),
-  page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,
+  page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities,
   get().feature==='upcoming'&&page.data.experiments.planning,
   get().feature,get().genre,get().kind,get().reason,get().workId,get().category,
  ]));
  const scopeKey=$derived(JSON.stringify([
-  page.data.user?.id,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,
+  page.data.user?.id,page.data.experimentalMusic,page.data.experimentalGaming,page.data.experimentalBooks,page.data.experimentalComics,page.data.capabilities,
   get().feature==='upcoming'&&page.data.experiments.planning,
   get().feature,get().genre,get().kind,get().reason,get().workId,get().category,
  ]));
@@ -80,7 +81,7 @@ export function createForYouSource(get:()=>ForYouOptions):ShelfSource {
   get pagination(){return {kind:'pages' as const,page:resource.data.page,pages:resource.data.pages,append:get().layout!=='grid',controls:(get().layout==='grid'?'both':'header') as 'both'|'header'};},
   get controls(){return [];},
   get filters():ShelfControl[]{return [
-   ...(get().feature==='row'||get().feature==='recommendations'&&get().category!==undefined&&get().layout!=='grid'?[]:[{type:'segments' as const,label:`${get().feature} medium`,value:category,options:mediumOptions(page.data, ['screen','game','music','reading']),change:selectMedium}]),
+   ...(get().feature==='row'||get().feature==='recommendations'&&get().category!==undefined&&get().layout!=='grid'?[]:[{type:'segments' as const,label:`${get().feature} medium`,value:category,options:mediumOptions({...page.data,features:page.data.capabilities}, ['screen','game','music','reading']),change:selectMedium}]),
    ...(get().feature!=='upcoming'?[{type:'availability' as const,label:'Available',value:available?'available':'all',change:(value:string)=>{available=value==='available';void load(1);}}]:[])
   ];},load
  };

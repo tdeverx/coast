@@ -1,3 +1,4 @@
+import { requireWorkFeature } from '$lib/server/features';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';
@@ -51,6 +52,7 @@ export async function changeContinue(userId: string, raw: unknown) {
   );
   return getDb().transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
+    await requireWorkFeature(tx,userId,input.mediaId);
     const mediaId = await wholeWorkId(tx, input.mediaId);
     const scope = await rewatchScope(tx, mediaId);
     if (input.action === 'undo') {

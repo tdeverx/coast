@@ -1,3 +1,4 @@
+import { assertJobFeaturePolicy, JobYield } from '$lib/server/queue/execution';
 import { logDiagnostic, classifyFailure, context } from '../diagnostics';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
@@ -321,6 +322,7 @@ export async function secureProviderFetch(
   });
   try {
     const perform = async () => {
+      await assertJobFeaturePolicy();
       const response = await providerFetch(config, path, init, options);
       if (options.stream) return response;
       // Buffer the bounded body before releasing the lane, not a multi-hour media stream.
@@ -342,6 +344,8 @@ export async function secureProviderFetch(
     });
     return response;
   } catch (error) {
+    // Policy withdrawal yields before any upstream request; it is worker control flow.
+    if (error instanceof JobYield) throw error;
     void logDiagnostic(init.signal?.aborted ? 'info' : 'error', 'provider.failed', {
       provider: config.provider,
       failure: classifyFailure(error),

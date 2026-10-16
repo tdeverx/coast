@@ -1,3 +1,4 @@
+import { requireFeature } from '$lib/server/features';
 import * as v from 'valibot';
 import {workTasteFeatures} from './work-features.server';
 import {getSql} from '$lib/server/db';
@@ -6,6 +7,7 @@ import {requireVisible} from './privacy.server';
 import {median,tasteSignals,type TasteWork} from './taste';
 export async function friendInsights(viewerId:string,friendId:string,options:{page?:number;medium?:string;overlap?:'shared'|'onlyYou'|'onlyFriend'}={}) {
  options=v.parse(v.object({page:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(100000)),1),medium:v.optional(v.picklist(['all','movies','tv','music','game']),'all'),overlap:v.optional(v.picklist(['shared','onlyYou','onlyFriend']),'shared')}),options);
+ await requireFeature(viewerId,'personalisation');await requireFeature(friendId,'personalisation');
  await requireFriend(viewerId,friendId);await requireVisible(friendId,viewerId,'insights');
  const sql=getSql();
  const evidence=sql`with candidates as (
@@ -25,12 +27,12 @@ export async function friendInsights(viewerId:string,friendId:string,options:{pa
  case when social_visible(u.id,${viewerId}::uuid,'reactions',w.category) then reaction.emoji end as reaction,
  (social_visible(u.id,${viewerId}::uuid,'collection',w.category) and (coalesce(t.collected,false) or coalesce(t.watchlist,false))) or (social_visible(u.id,${viewerId}::uuid,'favourites',w.category) and coalesce(t.favourite,false)) as interest,
  social_visible(u.id,${viewerId}::uuid,'activity',w.category) and (coalesce(t.watched,false) or coalesce(t.play_count,0)>0 or exists(select 1 from music_listens where user_id=u.id and track_id=w.id) or exists(select 1 from game_playthroughs where user_id=u.id and game_id=w.id and status='completed')) as consumed
- from candidates c join users u on u.id=c.user_id join works w on w.id=c.work_id left join media m on m.id=w.id left join music_works mu on mu.id=w.id left join games g on g.id=w.id
+ from candidates c join users u on u.id=c.user_id and coast_feature_enabled(u.id,'social') join works w on w.id=c.work_id left join media m on m.id=w.id left join music_works mu on mu.id=w.id left join games g on g.id=w.id
  left join music_progress mp on mp.user_id=u.id and mp.track_id=w.id
  left join lateral(select progress_percent,status from game_playthroughs where user_id=u.id and game_id=w.id order by created_at desc,id desc limit 1) gp on true
  left join tracking_state t on t.user_id=u.id and t.media_id=w.id left join ratings r on r.user_id=u.id and r.media_id=w.id
  left join social_reactions reaction on reaction.user_id=u.id and reaction.target_kind='work' and reaction.target_id=w.id
- where u.id in (${viewerId},${friendId}) and not u.disabled and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true'))
+ where coast_category_enabled(${viewerId}::uuid,w.category) and u.id in (${viewerId},${friendId}) and not u.disabled and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true'))
  and (t.collected or t.watchlist or t.favourite or t.watched or t.play_count>0 or r.value is not null or reaction.emoji is not null or exists(select 1 from music_listens where user_id=u.id and track_id=w.id) or case when w.category='music' then coalesce(mp.position_seconds,0) else coalesce(t.position_seconds,0) end>0 or gp.status in ('in-progress','paused','completed','dropped'))`;
 
  // This comparison currently supports screen, music and games. Reading taste profiles
@@ -86,13 +88,14 @@ export async function friendInsights(viewerId:string,friendId:string,options:{pa
 }
 
 export async function friendDiscovery(viewerId:string,category:'all'|'screen'|'game'|'music'|'reading'='all'):Promise<{workId:string;friends:number;discoveredAt:Date}[]> {
+ await requireFeature(viewerId,'social');
  return getSql()`with visible as (
  select a.user_id,a.occurred_at,coalesce(e.show_id,se.show_id,r.parent_id,a.work_id) as root_id
  from social_activity a join works w on w.id=a.work_id
  left join episodes e on e.media_id=a.work_id
  left join seasons se on se.media_id=a.work_id
  left join lateral(select parent_id from media_relationships where child_id=a.work_id and kind='contains' order by position limit 1) r on w.category='music'
- where a.event_kind<>'reading-dropped' and a.occurred_at>=now()-interval '30 days' and a.date_known and social_visible(a.user_id,${viewerId}::uuid,a.section,w.category)
+ where coast_feature_enabled(a.user_id,'social') and a.event_kind<>'reading-dropped' and a.occurred_at>=now()-interval '30 days' and a.date_known and social_visible(a.user_id,${viewerId}::uuid,a.section,w.category)
  and (${category}='all' or w.category=${category} or ${category}='reading' and w.category in ('book','comic'))
  and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true'))
  and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(a.user_id,${viewerId}::uuid) and f.user_b=greatest(a.user_id,${viewerId}::uuid))

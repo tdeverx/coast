@@ -1,3 +1,4 @@
+import { requireFeatureInTransaction } from '$lib/server/features';
 import { sequenceSourceSchema, type SequenceSource } from '../../media/sequence';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb, type Database } from '../../server/db';
@@ -81,7 +82,7 @@ function sequenceRows(userId: string, sources: SequenceSource[], entryIds?: stri
         and parent_state.media_id=any(n.path) and parent_state.dropped) as dropped
     from nodes n join media m on m.id=n.media_id
     left join tracking_state t on t.media_id=n.media_id and t.user_id=${userId}
-    where m.kind in ('movie','episode')
+    where coast_feature_enabled(${userId}::uuid,'screen') and m.kind in ('movie','episode')
   ), entries as (
     select *,case when not watched and duration>0 and raw_progress>=duration*0.9 then 0 else raw_progress end as progress
     from observed
@@ -153,10 +154,13 @@ export function nextSequenceEntry(entries: SequenceEntry[], afterEntryId?: strin
   return entries.slice(start + 1).find((entry) => !entry.dropped && !entry.watched) ?? null;
 }
 export async function restartPlaylist(userId: string, listId: string) {
-  const [list] = await getDb()
+  return getDb().transaction(async tx=>{
+  await requireFeatureInTransaction(tx,userId,'playback');
+  const [list] = await tx
     .update(lists)
     .set({ playbackStartedAt: new Date() })
     .where(and(eq(lists.id, listId), eq(lists.userId, userId), eq(lists.playlist, true)))
     .returning();
   if (!list) throw new DomainError('This playlist was not found.', 404, 'not_found');
+  });
 }

@@ -1,3 +1,6 @@
+import { getFeatureConfig } from '$lib/server/features';
+import { featureValues, type FeatureConfiguration } from '$lib/features';
+import { defaultConfig } from '$lib/server/config';
 import {jellyfinItemKey} from '$lib/providers/jellyfin/paging';
 import {importJellyfinReading} from './jellyfin-reading.server';
 import { persistMusic, observeMusicPageAccess, recordMusicListen, importedListenBatch } from '$lib/music/persistence.server';
@@ -31,7 +34,6 @@ import {
 import { PermanentActionError } from '$lib/server/queue';
 import { notify } from '$lib/server/notifications';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { getConfig } from '$lib/server/config';
 import { ingestMetadata } from '$lib/catalogue/service.server';
 import type { AvailableItem } from '$lib/providers/contracts';
 import {captureScreenAccessProof,observeScreenLibraryPage,publishScreenLibraryCensus,sameScreenAccessProof,tryReuseScreenAccess,type ScreenAccessProof} from '$lib/providers/jellyfin/access-proof.server';
@@ -129,7 +131,7 @@ export async function bootstrapJellyfinUser(userId: string, connectionId: string
   if (ready) return {checked: 0, count: 0, full: false};
   const context=await jellyfinContext(userId,connectionId,provided);
   onStage?.('cached-library-access');
-  await tryReuseScreenAccess(context);
+  if((await getFeatureConfig(userId)).features.screen)await tryReuseScreenAccess(context);
   return runJellyfinScan(userId, connectionId, 'personal', true, onStage, context);
 }
 
@@ -158,6 +160,9 @@ async function runJellyfinScan(
   const db = getDb(),
     kind = scope === 'personal' ? 'jellyfin-personal' : scope === 'user' ? 'jellyfin-user' : full ? 'jellyfin-full' : 'jellyfin-recent';
   const userScope = scope !== 'library';
+  const featureConfig=userScope?await getFeatureConfig(userId):await getFeatureConfig(null);
+  const signatureOf=(values:ReturnType<typeof featureValues>)=>['screen','music','book','comic'].map(key=>Number(values[key as keyof typeof values])).join('');
+  const featureSignature=signatureOf(featureConfig.features);
   const progressKey = scope === 'personal' ? 'initialSync' : 'userSync';
   const filters = ['IsPlayed', 'IsResumable', 'IsFavorite'] as const;
   const filterPhases = ['watched', 'resume', 'favourites'] as const;
@@ -168,7 +173,7 @@ async function runJellyfinScan(
     .where(and(eq(syncCheckpoints.connectionId, connectionId), eq(syncCheckpoints.kind, kind)));
   let scanId = checkpoint?.scanId ?? crypto.randomUUID();
   const accessContext={adapter,connection,instance};
-  let inventoryProof=!changes&&scope!=='personal'&&full?await captureScreenAccessProof(accessContext):null;
+  let inventoryProof=featureConfig.features.screen&&!changes&&scope!=='personal'&&full?await captureScreenAccessProof(accessContext):null;
   let libraryIndex=0,libraryCompleted=0,libraryTotal:number|null=null;
   let offset = 0;
   if (checkpoint?.scanId && checkpoint.cursor) {
@@ -201,7 +206,7 @@ async function runJellyfinScan(
   const parsedProgress = v.safeParse(jellyfinScanProgressSchema, changes ? undefined : scope === 'library' ? previousScan : connection.settings[progressKey]);
   const scanProgress = parsedProgress.success ? parsedProgress.output : undefined;
   const resetId=scope==='user'&&typeof connection.settings.userSyncResetId==='string'?connection.settings.userSyncResetId:undefined;
-  const retainedStart=scope==='user'&&scanProgress?.resetId!==resetId?undefined:scanProgress?.startedAt;
+  const retainedStart=scanProgress?.featureSignature!==featureSignature||scope==='user'&&scanProgress?.resetId!==resetId?undefined:scanProgress?.startedAt;
   const startedAt = checkpoint?.scanId===scanProgress?.scanId && retainedStart && Number.isFinite(Date.parse(retainedStart)) ? retainedStart : new Date().toISOString();
   // If progress no longer belongs to this checkpoint, restart rather than skip changed pages.
   if(startedAt!==retainedStart){offset=0;filterIndex=0;libraryIndex=0;libraryCompleted=0;libraryTotal=null;if(checkpoint?.scanId)scanId=crypto.randomUUID();}
@@ -214,7 +219,7 @@ async function runJellyfinScan(
   async function report(processed: number, total: number | null, nextPhase: JellyfinScanProgress['phase'] = 'scanning',
     details: Pick<JellyfinScanProgress, 'playbackCursor' | 'readingOffset' | 'musicOffset' | 'musicFilter' | 'musicPlaybackCursor' | 'traversalTotal' | 'stageProcessed' | 'stageTotal'> = {}) {
     phase = nextPhase;
-    const progress = { processed, total, phase, startedAt, scanId, accountGeneration: connection.accountGeneration, resetId, ...details };
+    const progress = { featureSignature, processed, total, phase, startedAt, scanId, accountGeneration: connection.accountGeneration, resetId, ...details };
     if (scope === 'library')
       await db
         .update(providerInstances)
@@ -260,7 +265,7 @@ async function runJellyfinScan(
   const expectedMembers = new Map<string, number>();
   async function ensureConnected(store: Pick<Database, 'select'> = db, lock = false) {
     const query = store
-      .select({ settings: providerConnections.settings })
+      .select({ settings: providerConnections.settings, featureChoices:users.settings, featurePolicy:sql<FeatureConfiguration>`(select value from system_settings where key='coast')` })
       .from(providerConnections)
       .innerJoin(users, eq(users.id, providerConnections.userId))
       .innerJoin(providerInstances, eq(providerInstances.id, providerConnections.instanceId))
@@ -277,6 +282,7 @@ async function runJellyfinScan(
       );
     const [current] = await (lock ? query.for('update', {of: providerConnections}) : query);
     if (!current) throw new PermanentActionError('The connected account changed during this task.');
+    if(signatureOf(featureValues({...defaultConfig,...current.featurePolicy},userScope?current.featureChoices.features:undefined))!==featureSignature)throw new JobYield();
     if(scope==='user'&&!changes&&current.settings.userSyncResetId!==resetId)throw new JobYield();
     await assertJobLease(store,lock);
     return current;
@@ -514,7 +520,7 @@ async function runJellyfinScan(
     }
   }
   if(changes){
-    const items=await adapter.items(connection.externalUserId!,changes.video);
+    const items=featureConfig.features.screen?await adapter.items(connection.externalUserId!,changes.video):[];
     for(const item of items)hydratedItems.set(item.id,item);
     for(const item of items)await importItem(item);
     const touched=[...visited.values()];
@@ -529,7 +535,7 @@ async function runJellyfinScan(
           where present.item_id=a.provider_item_id and present.source_id=a.source_id)`);
     });
     importPlayback=(await ensureConnected()).settings.importPlayback!==false;
-    if(userScope && changes.video.length){
+    if(userScope && featureConfig.features.screen && changes.video.length){
       // A complete IDs lookup can confirm loss only for its requested IDs, not other titles.
       const missing=changes.video.filter(id=>!hydratedItems.has(id));
       if(missing.length)await db.transaction(async tx=>{
@@ -557,7 +563,7 @@ async function runJellyfinScan(
         }
       }
     }
-    if(changes.music.length && (await getConfig()).experimentalMusic){
+    if(changes.music.length && featureConfig.experimentalMusic){
       const previous=await db.select({id:providerItems.mediaId}).from(providerItems).where(and(eq(providerItems.instanceId,instance.id),
         sql`replace(lower(${providerItems.externalId}),'-','') in (${sql.join(changes.music.map(id=>sql`${jellyfinItemKey(id)}`),sql`,`)})`));
       const musicWorks=new Set(previous.map(row=>row.id));
@@ -586,13 +592,13 @@ async function runJellyfinScan(
       }
       await (await import('$lib/sync/changes.server')).enqueueCollectionProjectionInTransaction(tx,userId);
     });
-    if((await getConfig()).experimentalBooks||(await getConfig()).experimentalComics){for(const id of changes.reading??[]){const book=await adapter.readingItem(connection.externalUserId!,id);await importJellyfinReading({adapter,connection,instance},[book],{access:userScope,scanId});}}
+    if(featureConfig.experimentalBooks||featureConfig.experimentalComics){for(const id of changes.reading??[]){const book=await adapter.readingItem(connection.externalUserId!,id);await importJellyfinReading({adapter,connection,instance},[book],{access:userScope,scanId});}}
     return {checked:items.length+changes.music.length+(changes.reading?.length??0),count:touched.length,full:false};
   }
   let count = 0,
     processed = resume?.processed ?? offset,
     total: number | null = resume?.total ?? null;
-  while (phase === 'scanning' || phase === 'watched' || phase === 'resume' || phase === 'favourites') {
+  while (featureConfig.features.screen && (phase === 'scanning' || phase === 'watched' || phase === 'resume' || phase === 'favourites')) {
     if(inventoryProof&&libraryIndex>=inventoryProof.libraryIds.length){processed=libraryCompleted;total=libraryCompleted;await report(processed,total,'reconciling');break;}
     onStage?.('library-page');
     const current = await ensureConnected();
@@ -619,7 +625,7 @@ async function runJellyfinScan(
     knownItems.clear();
     hydratedItems.clear();
     missingItems.clear();
-    if (userScope && page.items.length) {
+    if (userScope && featureConfig.features.screen && page.items.length) {
       const mapped = await db
         .select({ providerItem: providerItems, saved: media })
         .from(providerItems)
@@ -715,7 +721,7 @@ async function runJellyfinScan(
   // Multiple accessible editions may disagree. Apply one account-level observation
   // per canonical title after a complete traversal; persisted access snapshots also
   // survive checkpoints/retries without retaining the entire catalogue in memory.
-  if(userScope && phase === 'reconciling' && (await ensureConnected()).settings.importPlayback!==false) {
+  if(userScope && featureConfig.features.screen && phase === 'reconciling' && (await ensureConnected()).settings.importPlayback!==false) {
     let after: string | null = resume?.phase === 'reconciling' ? resume.playbackCursor ?? null : null;
     const [size] = await db.execute<{total: number}>(sql`select count(distinct media_id)::integer as total from availability
       where user_id=${userId} and connection_id=${connectionId} and scan_id=${scanId} and state='available'
@@ -755,8 +761,9 @@ async function runJellyfinScan(
     }
   }
   // Metadata and per-user access remain separate for music, within the same service task.
+  if(!featureConfig.features.screen&&['scanning','watched','resume','favourites'].includes(phase))await report(processed,total,'reconciling');
   if (phase === 'reconciling') await report(processed, total, 'music-albums', {musicOffset: 0, stageProcessed: 0, stageTotal: null});
-  for(const musicKind of (await getConfig()).experimentalMusic?['album','track'] as const:[]){
+  for(const musicKind of featureConfig.experimentalMusic?['album','track'] as const:[]){
     const musicPhase = musicKind === 'album' ? 'music-albums' : 'music-tracks';
     if (phase === 'music-reconciling' || phase === 'reading' || phase === 'finalizing' || phase === 'music-tracks' && musicKind === 'album') continue;
     let musicOffset = resume?.phase === musicPhase ? resume.musicOffset ?? 0 : 0;
@@ -788,7 +795,7 @@ async function runJellyfinScan(
   }
   if(phase==='music-reconciling'){
     let after=resume?.phase==='music-reconciling'?resume.musicPlaybackCursor??null:null;
-    if(userScope&&(await getConfig()).experimentalMusic&&(await ensureConnected()).settings.importPlayback!==false){
+    if(userScope&&featureConfig.experimentalMusic&&(await ensureConnected()).settings.importPlayback!==false){
       for(;;){
         const observed=await reconcileMusicObservations(undefined,after);
         after=observed.at(-1)?.id??after;
@@ -799,7 +806,7 @@ async function runJellyfinScan(
     }
     await report(processed,total,'reading',{readingOffset:0,traversalTotal:null});
   }
-  const readingConfig=await getConfig();
+  const readingConfig=featureConfig;
   if(scope!=='personal'&&(readingConfig.experimentalBooks||readingConfig.experimentalComics)&&phase!=='finalizing'){
     let readingOffset=resume?.phase==='reading'?resume.readingOffset??0:0;
     let traversalTotal=resume?.phase==='reading'?resume.traversalTotal??null:null;
@@ -831,7 +838,7 @@ async function runJellyfinScan(
       and (parent.last_seen_at>=${startedAt}::timestamptz or exists(select 1 from provider_items child join episodes e on e.media_id=child.media_id
         where child.instance_id=parent.instance_id and child.last_seen_at>=${startedAt}::timestamptz
         and (parent.kind='show' and e.show_id=parent.media_id or parent.kind='season' and e.season_id=parent.media_id)))`);
-  if(scope === 'user' && (await ensureConnected()).settings.reconcileTracking===true){
+  if(scope === 'user' && featureConfig.features.screen && (await ensureConnected()).settings.reconcileTracking===true){
     await db.transaction(async tx=>{
       await ensureConnected(tx,true);
       // Include state imported while no mapping existed, without treating empty rows as intent.
@@ -861,6 +868,7 @@ async function runJellyfinScan(
           and(
             eq(availability.userId, userId),
             eq(availability.connectionId, connectionId),
+            sql`exists(select 1 from works w where w.id=${availability.mediaId} and ((w.category='screen' and ${featureConfig.features.screen}) or (w.category='music' and ${featureConfig.features.music}) or (w.category='book' and ${featureConfig.features.book}) or (w.category='comic' and ${featureConfig.features.comic})))`,
             lte(availability.verifiedAt,new Date(startedAt)),
             or(ne(availability.scanId, scanId), isNull(availability.scanId))
           )

@@ -1,6 +1,7 @@
 import {afterAll,beforeAll,expect,test} from 'bun:test';
 import {and,eq,inArray,sql} from 'drizzle-orm';
-import {getDb} from '../src/lib/server/db';
+import {getDb,getSql} from '../src/lib/server/db';
+import {getConfig} from '../src/lib/server/config';
 import * as s from '../src/lib/server/db/schema';
 import {observeMusicLibraryAccess,observeMusicPageAccess,persistMusic} from '../src/lib/music/persistence.server';
 import type {MusicItem} from '../src/lib/music/model';
@@ -16,6 +17,8 @@ let userId:string,instanceId:string,connection:typeof s.providerConnections.$inf
 const item=(id:string):MusicItem=>({id:jellyfinItemKey(id),kind:'track',title:'Rich metadata',artists:[],albumArtists:[],artistNames:[],genres:['Fixture'],externalIds:{musicbrainztrack:crypto.randomUUID()},overview:'Kept shared description',durationSeconds:60});
 beforeAll(async()=>{
   if(!enabled)return;const db=getDb();
+  const config=await getConfig();
+  await getSql()`insert into system_settings(key,value) values('coast',${{...config,experimentalMusic:true}}::jsonb) on conflict(key) do update set value=excluded.value`;
   const [user]=await db.insert(s.users).values({username:`music-persistence-${tag}`}).returning();userId=user.id;
   const [instance]=await db.insert(s.providerInstances).values({provider:'jellyfin',name:tag,baseUrl:'https://fixture.invalid'}).returning();instanceId=instance.id;
   [connection]=await db.insert(s.providerConnections).values({userId,instanceId,externalUserId:tag}).returning();

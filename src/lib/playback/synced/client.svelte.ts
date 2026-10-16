@@ -1,6 +1,6 @@
 import {reader,alignReading,attachReading,closeReading} from '$lib/reading/client.svelte';
 import type { ReadingSessionView } from '$lib/reading/model';
-import {api,message,ApiError} from '$lib/ui/client';
+import {api,message,ApiError,isFeatureDisabled} from '$lib/ui/client';
 import {player,playMedia,playbackSnapshot,alignPlayback,stopPlayback} from '$lib/playback/client.svelte';
 import {timelinePosition,canControl,compatibleSource,type RoomState,type PartySettings} from './model';
 export const syncedPlayer=$state({room:null as RoomState|null,userId:'',busy:false,notice:'',changing:false,joining:false,unavailableMediaId:null as string|null});
@@ -92,11 +92,11 @@ export async function syncedCommand(action:'play'|'pause'|'seek'|'policy'|'item'
   }
   catch(cause){if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;syncedPlayer.notice=message(cause);if(action==='item')throw cause;if(cause instanceof ApiError&&cause.status===409)await pollSynced();}
 }
-export async function leaveSynced(){
+export async function leaveSynced(keepPlaying=syncPreferences.keepPlaying){
   generation++;
   const r=syncedPlayer.room;clearUnavailable();syncedPlayer.room=null;remember(null);
   if(r)await api(`synced/${r.id}/leave`,{}).catch(()=>{});
-  if(!syncPreferences.keepPlaying){await stopPlayback();if(reader.session)await closeReading();}
+  if(!keepPlaying){await stopPlayback();if(reader.session)await closeReading();}
 }
 export async function pollSynced(){
   const r=syncedPlayer.room;if(!r||polling||syncedPlayer.busy||syncedPlayer.changing)return;
@@ -128,7 +128,7 @@ export async function pollSynced(){
       finally{syncedPlayer.changing=false;}
     }
     align();
-  }catch(cause){if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;syncedPlayer.notice=message(cause);if(cause instanceof ApiError&&[401,403,404].includes(cause.status)){await leaveSynced();alignPlayback({positionSeconds:0,paused:true});}else if(Date.now()-lastResponse>15000)alignPlayback({positionSeconds:playbackSnapshot()?.positionSeconds||0,paused:true});}
+  }catch(cause){if(epoch!==generation||syncedPlayer.room?.id!==r.id)return;syncedPlayer.notice=message(cause);if(isFeatureDisabled(cause)){await leaveSynced(true);return;}if(cause instanceof ApiError&&[401,403,404].includes(cause.status)){await leaveSynced();alignPlayback({positionSeconds:0,paused:true});}else if(Date.now()-lastResponse>15000)alignPlayback({positionSeconds:playbackSnapshot()?.positionSeconds||0,paused:true});}
   finally{polling=false;}
 }
 export async function restoreSynced(){

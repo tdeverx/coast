@@ -1,3 +1,4 @@
+import { AppError } from '$lib/server/security/errors';
 import { json, error } from '@sveltejs/kit';
 import { mediaStatistics } from '$lib/server/queries/media-statistics';
 import type { ProfilePeriod } from '$lib/profile/period';
@@ -7,7 +8,10 @@ export const GET = async ({ locals, params, url }) => {
     error(400, 'Invalid title.');
   const period = url.searchParams.get('period') ?? 'all';
   if (!['month', 'year', 'all'].includes(period)) error(400, 'Invalid period.');
-  return json(await mediaStatistics(locals.user.id, params.id, period as ProfilePeriod), {
+  try { return json(await mediaStatistics(locals.user.id, params.id, period as ProfilePeriod), {
     headers: { 'Cache-Control': 'private, no-store' },
-  });
+  }); } catch(cause) {
+    if(cause instanceof AppError)return json({error:cause.message,code:cause.code},{status:cause.status});
+    throw cause;
+  }
 };

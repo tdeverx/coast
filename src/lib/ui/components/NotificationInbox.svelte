@@ -102,7 +102,7 @@
 {#snippet inboxFilters()}<RowFilter label="Notification options" icon="filter" submenus groups={[
     {label:'Read status',value:criteria.unread?'unread':'all',options:[{value:'all',label:'All'},{value:'unread',label:'Unread'}],change:value=>criteria.unread=value==='unread'},
     {label:'Type',value:criteria.kind,options:[...notificationKinds],change:value=>criteria.kind=value},
-    {label:'Medium',value:criteria.category,options:[{value:'all',label:'All media'},...mediumOptions(page.data)],change:value=>criteria.category=value as NotificationFilters['category']},
+    {label:'Medium',value:criteria.category,options:[{value:'all',label:'All media'},...mediumOptions({...page.data,features:page.data.capabilities})],change:value=>criteria.category=value as NotificationFilters['category']},
     {label:'Date',value:criteria.period,options:[{value:'all',label:'Any time'},{value:'week',label:'Past week'},{value:'month',label:'Past month'}],change:value=>criteria.period=value as NotificationFilters['period']}
    ]}>{#snippet actions()}<Button item icon="refresh" text="Refresh notifications" disabled={resource.busy||operation.busy} keepOpen={false} onclick={()=>void load()} /><Button item icon="check" text="Mark all as read" disabled={operation.busy||resource.busy||!resource.data.snapshot||!resource.data.unread} title="Mark all matching notifications as read" keepOpen={false} onclick={markAll}/>{/snippet}</RowFilter>{/snippet}
 

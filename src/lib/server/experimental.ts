@@ -22,7 +22,7 @@ export function requireEnabledCategory(config: MediumFeatures, category: string)
 }
 /** Filter before counting/pagination; disabled media remain stored. */
 export function enabledCategories(category: SQL, config: MediumFeatures) {
-  return sql`(${category}='screen' or (${category}='music' and ${config.experimentalMusic}) or (${category}='game' and ${config.experimentalGaming}) or (${category}='book' and ${config.experimentalBooks}) or (${category}='comic' and ${config.experimentalComics}))`;
+  return sql`((${category}='screen' and ${categoryEnabled(config,'screen')}) or (${category}='music' and ${categoryEnabled(config,'music')}) or (${category}='game' and ${categoryEnabled(config,'game')}) or (${category}='book' and ${categoryEnabled(config,'book')}) or (${category}='comic' and ${categoryEnabled(config,'comic')}))`;
 }
 
 /** Reading is a UI group; canonical works retain their book/comic categories. */

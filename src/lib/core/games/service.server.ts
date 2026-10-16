@@ -1,3 +1,4 @@
+import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
 import { presentationPreferences, presentationSearch } from '$lib/catalogue/overrides/presentation.server';
 import { and, asc, count, desc, eq, sql, getTableColumns } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -41,6 +42,7 @@ export async function createGame(raw: unknown) {
 export async function listGames(search = '', requestedPage = 1, tracking?: { userId: string; status?: import('../../games/model').GameStatus; personal?:boolean; availableOnly?:boolean }) {
   v.parse(pageNumberSchema, requestedPage);
   const query = v.parse(v.pipe(v.string(), v.trim(), v.maxLength(250)), search);
+  if(tracking)await requireFeature(tracking.userId,'game');
   if (tracking) {
     uuid(tracking.userId);
     if (tracking.status !== undefined) v.parse(v.picklist(['planned', 'in-progress', 'completed', 'paused', 'dropped']), tracking.status);
@@ -64,6 +66,7 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
 }
 
 export async function gameDetails(userId: string | null, gameId: string) {
+  if(userId)await requireFeature(userId,'game');
   if(userId)uuid(userId); uuid(gameId);
   const db = getDb();
   const [game] = await db.select().from(games).where(eq(games.id, gameId));
@@ -93,6 +96,7 @@ export async function createPlaythrough(userId: string, gameId: string, raw: unk
   uuid(userId); uuid(gameId);
   const input = v.parse(playthroughInputSchema, raw);
   const apply=async(tx:Transaction)=>{
+    await requireFeatureInTransaction(tx,userId,'game');
     const [game] = await tx.select({ id: games.id }).from(games).where(eq(games.id, gameId));
     if (!game) throw new DomainError('Game not found.', 404, 'not_found');
     const [row] = await tx.insert(gamePlaythroughs).values({ userId, gameId, ...input, startedAt: input.status === 'in-progress' ? new Date() : null }).returning();
@@ -105,6 +109,7 @@ export async function createPlaythrough(userId: string, gameId: string, raw: unk
 }
 
 async function ownedPlaythrough(tx: Transaction, userId: string, id: string) {
+  await requireFeatureInTransaction(tx,userId,'game');
   const [row] = await tx.select().from(gamePlaythroughs)
     .where(and(eq(gamePlaythroughs.id, id), eq(gamePlaythroughs.userId, userId))).for('update');
   if (!row) throw new DomainError('Playthrough not found.', 404, 'not_found');
