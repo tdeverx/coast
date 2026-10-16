@@ -4,7 +4,7 @@ import * as runtime from 'svelte/internal/client';
 import { compileRunes, componentScript, moduleUrl, resourceUrl, svelteUrl } from './fixtures/ui-script';
 
 const streamScript = (await componentScript('src/lib/ui/components/StreamsPanel.svelte'))
-  .replace('let {open=$bindable(false),onclose}:{open:boolean;onclose?:()=>void}=$props();', 'let open=$state(true),onclose;');
+  .replace("let {open=$bindable(false),onclose,initialView='now'}:{open:boolean;onclose?:()=>void;initialView?:'now'|'history'}=$props();", "let open=$state(true),onclose,initialView='now';");
 const streamCode = compileRunes(`import {untrack} from ${JSON.stringify(svelteUrl)};
  import {createResource} from ${JSON.stringify(resourceUrl)};
  export function create(transport){

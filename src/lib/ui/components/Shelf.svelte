@@ -1,5 +1,6 @@
 <script lang="ts" generics="T extends MediaView | MediaCardPresentation">
- import { availabilityControl, collectionControl } from '$lib/ui/controls/actions';
+  import { shelfControls } from '$lib/ui/shelves/controls';
+  import type { FilterGroup } from '$lib/ui/controls/filters';
   import { onDestroy, untrack, type Snippet } from 'svelte';
   import { createShelfSource, type ShelfConfig } from '$lib/ui/shelves';
   import type { ShelfControl } from '$lib/ui/shelves/types';
@@ -17,7 +18,6 @@
   import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
   import { createSocialEnrichment, type SocialEnrichment } from '$lib/ui/social-enrichment';
 
-  import { mediaTypeOptions } from '$lib/ui/filter-options';
   import RowFilter from './RowFilter.svelte';
   import SegmentedControl from './SegmentedControl.svelte';
   import type { ArtworkPriority, MediaView, MediaCardPresentation, MediaCardShape, MediaCardArtwork } from '$lib/ui/types';
@@ -36,7 +36,7 @@
 
   let {
     title = '', items = [], source, panels, journal, href, children, heading, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
-    mediaKind = 'screen', filters, controls, actions, empty, details,
+    mediaKind = 'screen', segments: customSegments, controls: customControls, filterGroups = [], actions, error = '', retry, empty, details,
     busy = false, hideEmpty = true, itemCount, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
     pageNumber, pages, onpage, pageUrl, onsettled, onactivate, filterBy = 'none', availability = true, availableOnly = $bindable(false),
   }: {
@@ -59,9 +59,12 @@
     artworkStyle?: MediaCardArtwork;
     artworkPriority?: ArtworkPriority;
     mediaKind?: 'screen' | 'music' | 'game' | 'reading';
-    filters?: Snippet;
+    segments?: Snippet;
+    filterGroups?: FilterGroup[];
     controls?: Snippet;
     actions?: Snippet;
+    error?: string;
+    retry?: () => void;
     empty?: Snippet;
     details?: Snippet<[T]>;
     busy?: boolean;
@@ -87,6 +90,7 @@
   const filterMode = $derived(adapter?.filterBy ?? filterBy);
   const inputItems = $derived(adapter ? adapter.items as T[] : items);
   const displayTitle = $derived(adapter?.title ?? title);
+  const displayError = $derived(adapter?.error || error);
   const displayBusy = $derived(adapter?.busy ?? busy);
   const displayLayout = $derived(source?.layout ?? layout);
   const selection = createShelfSelection(() => ({
@@ -96,9 +100,9 @@
   const displayItems = $derived(selection.items);
   const count = $derived(panels?.length ?? itemCount ?? (children ? null : journal ? journal.runs.length : displayItems.length));
   const loading = $derived(count === 0 && (displayBusy || !!adapter && !adapter.ready && !adapter.error));
-  const emptyRow = $derived(displayLayout === 'row' && count === 0 && !loading && !adapter?.error);
+  const emptyRow = $derived(displayLayout === 'row' && count === 0 && !loading && !displayError);
   // Keep failed rows and user-selected empty filters reachable; never hide a grid page.
-  const hidden = $derived(hideEmpty && displayLayout === 'row' && !loading && !selected && !selection.filtered && count === 0 && !adapter?.error && !adapter?.notice && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false);
+  const hidden = $derived(hideEmpty && displayLayout === 'row' && !loading && !selected && !selection.filtered && count === 0 && !displayError && !adapter?.notice && (!adapter || adapter.ready) && adapter?.emptyConfirmed !== false);
   function selectControl(control: ShelfControl, value: string) { selected = true; control.change(value); }
   const key = (item: T) => item.entryId ?? ('href' in item ? item.href : item.id);
 
@@ -119,9 +123,12 @@
     journal ? journalCards(journal.runs, !!journal.selection).map(entry => entry) : displayItems.map(item => ({ key: key(item), item }))
   );
   const displayHref = $derived(selection.href);
-  const displayFilters = $derived(adapter && filterMode === 'none' ? (adapter.filters.length ? adapterFilters : undefined) : filterMode === 'none' ? filters : filters || filterMode === 'watched' || availability ? localFilters : undefined);
-  const displayControls = $derived(adapter && filterMode === 'none' ? (adapter.controls.length || adapter.filters.some(control => !['segments', 'availability'].includes(control.type)) ? adapterControls : undefined) : filterMode === 'none' ? controls : localControls);
-  const displayActions = $derived(adapter ? adapterActions : actions);
+  const headerControls = $derived(shelfControls(
+    adapter && filterMode === 'none' ? [...adapter.filters, ...adapter.controls]
+      : filterMode !== 'none' ? [...selection.filters, ...selection.controls] : [],
+    selectControl,
+  ));
+  const groups = $derived([...headerControls.groups, ...filterGroups.map(group => ({...group, change:(value:string)=>{selected=true;group.change(value);}}))]);
   const displaySize = $derived(shape ?? adapter?.shape ?? size);
   const displayArtworkStyle = $derived(artworkStyle ?? adapter?.artworkStyle ?? 'auto');
   const displayArtworkPriority = $derived(adapter?.artworkPriority ?? artworkPriority);
@@ -134,7 +141,9 @@
   const displayResetKey = $derived(adapter?.resetKey ?? resetKey ?? (filterMode !== 'none' ? selection.resetKey : undefined));
   const displayPageNumber = $derived(pagination?.kind === 'pages' ? pagination.page : pageNumber ?? 1);
   const displayPages = $derived(pagination?.kind === 'pages' ? pagination.pages : pages ?? 1);
-  const displayOnpage = $derived(adapter ? (pagination?.kind === 'pages' && ['header','both'].includes(pagination.controls) ? adapter.load : undefined) : onpage);
+  const displayOnpage = $derived(adapter ? (pagination?.kind === 'pages' ? adapter.load : undefined) : onpage);
+  const displayPageUrl = $derived((pagination?.kind === 'pages' ? pagination.url : undefined) ?? pageUrl);
+  const hasNavigation = $derived(displayLayout === 'row' || !!displayOnpage || !!displayPageUrl);
   let styleMenu = $state<RowStyleMenu>();
   const rail = createShelfLayout(() => ({
     size: displaySize, artworkStyle: displayArtworkStyle, artworkPriority: displayArtworkPriority,
@@ -146,29 +155,10 @@
   }
 </script>
 
-{#snippet localFilters()}
-  {@render filters?.()}
-  {@render renderControls(selection.filters, [], false)}
-{/snippet}
-{#snippet localControls()}{@render renderControls(selection.controls, selection.filters)}{/snippet}
-{#snippet renderControls(options: ShelfControl[], extra: ShelfControl[] = [], showGroups = true)}
-  {#each options as control (control.label)}
-    {#if control.type === 'segments'}<SegmentedControl label={control.label} value={control.value} options={control.options ?? []} onchange={value => selectControl(control, value)} />
-    {:else if control.type === 'collection'}<Button {...collectionControl(control.value === 'collection', value => selectControl(control, value ? 'collection' : 'all'))} />
-    {:else if control.type === 'availability'}<Button {...availabilityControl(control.value === 'available', value => selectControl(control, value ? 'available' : 'all'), control.label)} />
-    {/if}
-  {/each}
-  {@const groups = [...options, ...extra].filter(control => control.type !== 'segments' && control.type !== 'availability' && control.type !== 'collection').map(control => ({label: control.label, value: control.value, options: control.type === 'media-type' ? mediaTypeOptions(control.mediums) : control.options ?? [], change: (value: string) => selectControl(control, value)}))}
-  {#if showGroups && groups.length}<RowFilter {groups} />{/if}
-{/snippet}
-{#snippet adapterFilters()}{@render renderControls(adapter?.filters ?? [], [], false)}{/snippet}
-{#snippet adapterControls()}{@render renderControls(adapter?.controls ?? [], adapter?.filters ?? [])}{/snippet}
 {#if adapter?.sequence}<Dialog bind:open={sequence.open} title={sequence.title} message={sequence.message} alert={!!sequence.error} actions={sequence.actions} />{/if}
-{#snippet adapterActions()}
-  {#if adapter?.sequence}<Button emphasis="subtle" icon="play" disabled={sequence.busy} onclick={() => sequence.start()}>Play playlist</Button>{/if}
-  <RowFeedback error={adapter?.error} retry={() => adapter?.load(pagination?.kind === 'pages' ? pagination.page : 1)} retryLabel={adapter?.retryLabel ?? 'Try again'} />
-  {#if adapter?.notice}<span class="small muted">{adapter.notice}</span>{/if}
-  {#each adapter?.actions ?? [] as action}<Button emphasis="subtle" onclick={action.run}>{action.label}</Button>{/each}
+{#snippet menuActions()}
+  {#if adapter?.sequence}<Button item text="Play playlist" icon="play" disabled={sequence.busy} onclick={() => sequence.start()} />{/if}
+  {#each adapter?.actions ?? [] as action}<Button item text={action.label} onclick={action.run} />{/each}
   {@render actions?.()}
 {/snippet}
 <div use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
@@ -208,27 +198,30 @@
     {#snippet heading()}{#if group.heading}<h3>{group.heading}</h3><span class="small muted">{group.count} {group.count===1?'entry':'entries'}</span>{:else}<Heading variant="title" title={group.title} href={group.href} />{/if}{/snippet}
   </Shelf>{/each}
 </div>
-{:else if children || adapter || filterMode === 'none' || selection.sourceItems.length || filters || empty}
+{:else if children || adapter || filterMode === 'none' || selection.sourceItems.length || customSegments || customControls || filterGroups.length || empty}
 <section hidden={hidden} class="content-row section" aria-label={displayTitle} aria-busy={displayBusy}>
   <div use:styleGesture>
-    <Heading title={displayTitle} {heading} filters={displayFilters} actions={displayActions} href={displayHref}>
-      {#snippet navigation()}{#if displayLayout === 'row' || displayControls || displayOnpage}<div class="navigation">
-            {#if displayLayout === 'row' || displayOnpage}
-              <Button size="icon"
-                class="icon-button"
-                label={displayLayout === 'grid' ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}
-                disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber <= 1 : emptyRow || !rail.previous}
-                onclick={() => (displayLayout === 'grid' ? displayOnpage?.(displayPageNumber - 1) : rail.scroll(-1))}
-                 icon="left" iconSize={20} />{/if}
-            {#if displayControls}<div class="row-controls">{@render displayControls()}</div>{/if}
-            {#if displayLayout === 'row' || displayOnpage}
-              <Button size="icon"
-                class="icon-button"
-                label={displayLayout === 'grid' ? `Next ${displayTitle} page` : `Scroll ${displayTitle} right`}
-                disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber >= displayPages : emptyRow || !rail.next && !displayHasMore}
-                onclick={() => (displayLayout === 'grid' ? displayOnpage?.(displayPageNumber + 1) : rail.scroll(1))}
-                 icon="right" iconSize={20} />{/if}
-          </div>{/if}{/snippet}
+    <Heading title={displayTitle} {heading} href={displayHref}>
+      {#snippet segments()}
+        {#each headerControls.segments as control (control.label)}<SegmentedControl label={control.label} value={control.value} options={control.options ?? []} onchange={value => selectControl(control, value)} />{/each}
+        {@render customSegments?.()}
+      {/snippet}
+      {#snippet previous()}{#if hasNavigation}<Button size="icon"
+        label={displayLayout === 'grid' ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}
+        disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber <= 1 : emptyRow || !rail.previous}
+        href={displayLayout === 'grid' ? displayPageUrl?.(displayPageNumber - 1) : undefined}
+        onclick={displayLayout === 'grid' ? displayPageUrl ? undefined : () => displayOnpage?.(displayPageNumber - 1) : () => rail.scroll(-1)}
+        icon="left" iconSize={20} />{/if}{/snippet}
+      {#snippet controls()}
+        {#if groups.length || adapter?.sequence || adapter?.actions?.length || actions}<RowFilter {groups} actions={adapter?.sequence || adapter?.actions?.length || actions ? menuActions : undefined} />{/if}
+        {@render customControls?.()}
+      {/snippet}
+      {#snippet next()}{#if hasNavigation}<Button size="icon"
+        label={displayLayout === 'grid' ? `Next ${displayTitle} page` : `Scroll ${displayTitle} right`}
+        disabled={displayLayout === 'grid' ? displayBusy || displayPageNumber >= displayPages : emptyRow || !rail.next && !displayHasMore}
+        href={displayLayout === 'grid' ? displayPageUrl?.(displayPageNumber + 1) : undefined}
+        onclick={displayLayout === 'grid' ? displayPageUrl ? undefined : () => displayOnpage?.(displayPageNumber + 1) : () => rail.scroll(1)}
+        icon="right" iconSize={20} />{/if}{/snippet}
     </Heading>
   </div>
   {#if displaySize !== 'panel'}<RowStyleMenu
@@ -242,6 +235,8 @@
       bind:overrideArtwork={rail.overrideArtwork}
       bind:overrideOverlay={rail.overrideOverlay}
     />{/if}
+  <RowFeedback error={displayError} retry={adapter ? () => adapter.load(pagination?.kind === 'pages' ? pagination.page : 1) : retry} retryLabel={adapter?.retryLabel ?? 'Try again'} />
+  {#if adapter?.notice}<p class="small muted">{adapter.notice}</p>{/if}
   <div class="rail-shell">
   <div
     class="rail"
@@ -374,28 +369,6 @@
   }
   .grid-layout :global(.row-empty) {
     grid-column: 1 / -1;
-  }
-  .row-controls {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    min-width: 0;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .navigation {
-    align-items: center;
-    min-width: 0;
-    display: flex;
-    gap: 2px;
-  }
-  .navigation :global(.icon-button) {
-    width: var(--control-compact-height);
-    height: var(--control-compact-height);
-    color: var(--muted);
-  }
-  .navigation :global(.icon-button:disabled) {
-    opacity: 0.25;
   }
   @media (max-width: 500px) {
     .rail {

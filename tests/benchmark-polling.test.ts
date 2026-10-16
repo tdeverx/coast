@@ -16,10 +16,11 @@ const script=component.match(/<script lang="ts">([\s\S]*?)<\/script>/)![1]
  .replace('let {history}:{history:Awaited<ReturnType<typeof listBenchmarks>>}=$props();','let history=$state(initial);');
 const harness=compile(`import {untrack} from ${JSON.stringify(import.meta.resolve('svelte'))};
  import {createResource} from ${JSON.stringify(moduleUrl(resource))};
- export function createBenchmarkSettings(initial,api){
+ export function createBenchmarkSettings(initial,transport,inPreview=false){
  const mounts=[];const onMount=callback=>mounts.push(callback);const message=error=>error.message;
+ const useClient=()=>({api:transport,preview:inPreview});const goto=()=>{throw new Error('Unexpected real navigation');};
  ${script}
- return {get current(){return current;},get busy(){return busy;},get error(){return error;},setHistory(next){history=next;},run,mount(){const cleanups=mounts.map(callback=>callback());return ()=>cleanups.forEach(cleanup=>cleanup?.());}};
+ return {get current(){return current;},get busy(){return busy;},get error(){return error;},setHistory(next){history=next;},run,changePage,mount(){const cleanups=mounts.map(callback=>callback());return ()=>cleanups.forEach(cleanup=>cleanup?.());}};
  }`,'benchmark-settings.svelte.js');
 const {createBenchmarkSettings}=await import(moduleUrl(harness));
 const history=(page=1,active=true):History=>({runs:[],total:40,page,pages:2,activeId:active?'synthetic-active':null});
@@ -58,4 +59,19 @@ test('benchmark queue requests cannot refresh a superseded page after navigation
   controller.setHistory(history(2,false));runtime.flush();expect(requests[0].signal.aborted).toBe(true);
   requests[0].pending.resolve(history(1));await queued;expect(requests).toHaveLength(1);expect(controller.current.page).toBe(2);expect(controller.busy).toBe(false);
  }finally{dispose();}
+});
+
+test('benchmark preview has no polling owner and queues and pages through its injected client',async()=>{
+ const calls:{path:string;method:string}[]=[];let controller:any;
+ const dispose=runtime.effect_root(()=>controller=createBenchmarkSettings(history(1,false),async(path:string,_body:unknown,method:string)=>{
+  calls.push({path,method});return history(path.endsWith('page=2')?2:1,false);
+ },true));
+ const oldInterval=globalThis.setInterval;
+ let cleanup=()=>{};
+ globalThis.setInterval=(()=>{throw Error('Preview must not poll');}) as unknown as typeof setInterval;
+ try{
+  runtime.flush();cleanup=controller.mount();expect(calls).toHaveLength(0);
+  await controller.run();expect(calls).toEqual([{path:'admin/benchmarks',method:'POST'},{path:'admin/benchmarks?page=1',method:'GET'}]);
+  await controller.changePage(2);expect(calls.at(-1)).toEqual({path:'admin/benchmarks?page=2',method:'GET'});expect(controller.current.page).toBe(2);
+ }finally{cleanup();dispose();globalThis.setInterval=oldInterval;}
 });

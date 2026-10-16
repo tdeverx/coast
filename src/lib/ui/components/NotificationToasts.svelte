@@ -21,6 +21,7 @@
   let hidden = $state<string[]>([]),
     mounted = $state(false);
   const observed = new Set<string>();
+  const timers = new Map<string, ReturnType<typeof setTimeout>>();
   const feedback = $derived(preview ? null : actionFeedback.current);
   onMount(() => {
     hidden = notifications
@@ -28,6 +29,8 @@
       .map((n) => n.id);
     mounted = true;
     return () => {
+      for (const timer of timers.values()) clearTimeout(timer);
+      timers.clear();
       if (!preview) actionFeedback.current = null;
     };
   });
@@ -42,9 +45,10 @@
     for (const n of visible) {
       if (n.level === 'normal' && !observed.has(n.id)) {
         observed.add(n.id);
-        setTimeout(() => {
+        timers.set(n.id,setTimeout(() => {
+          timers.delete(n.id);
           hidden = [...hidden, n.id];
-        }, 7000);
+        }, 7000));
       }
     }
   });

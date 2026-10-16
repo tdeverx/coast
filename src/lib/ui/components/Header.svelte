@@ -3,6 +3,7 @@
   import {activityStatus,preferenceLabels,statusPreferences,statusLabels,type StatusPreference} from '$lib/social/status';
   import {useClient} from '$lib/ui/client-context';
   const {preview,api}=useClient();
+  const previewId=$props.id();
   // Preview controls share the presentation, but never the signed-in account's state.
   let previewStatus = $state<typeof userStatus>({ preference:'automatic', status:'online', busy:false, error:'', sharePresence:true });
   const status = preview ? previewStatus : userStatus;
@@ -72,10 +73,10 @@
     <div class="account">
       {#if user}
       {#if !preview&&reader.session&&!reader.visible}<Button icon="library" size="icon" label="Resume reading" onclick={()=>reader.visible=true}/>{/if}
-      {#if user.role==='admin'}<button type="button" id="streams-trigger" class="icon-button notification" aria-label={streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}><Icon name="server" size={21}/>{#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}</button>{/if}
-      {#if page.data.capabilities?.social!==false}<button type="button" id="friends-trigger" class="icon-button notification" aria-label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</button>{/if}
+      {#if user.role==='admin'}<button type="button" id={preview?`${previewId}-streams`:"streams-trigger"} class="icon-button notification" aria-label={streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}><Icon name="server" size={21}/>{#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}</button>{/if}
+      {#if page.data.capabilities?.social!==false}<button type="button" id={preview?`${previewId}-friends`:"friends-trigger"} class="icon-button notification" aria-label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</button>{/if}
       <button type="button"
-        id="notification-trigger"
+        id={preview?`${previewId}-notifications`:"notification-trigger"}
         class="icon-button notification"
         onclick={()=>{if(!preview)openNotifications();}}
         aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}

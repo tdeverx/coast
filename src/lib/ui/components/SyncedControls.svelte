@@ -16,36 +16,41 @@
 
   let {inline=false,embedded=false}:{inline?:boolean;embedded?:boolean}=$props();
   const { preview,api } = useClient();
-  const clock=useClock();
+  const clock=useClock('second',()=>!preview&&(inline||open)&&!!room);
 
   let open=$state(false);
   const media=createResource<MediaCardPresentation|null>(null);
-  const members=$derived(syncedPlayer.room?.participants??[]);
-  const mediaId=$derived(syncedPlayer.room?.mediaId);
-  const roomId=$derived(syncedPlayer.room?.id);
+  // Rich party examples use PartyCard props; never borrow a live party for preview.
+  const room=$derived(preview?null:syncedPlayer.room);
+  const notice=$derived(preview?'':syncedPlayer.notice);
+  const unavailableMediaId=$derived(preview?null:syncedPlayer.unavailableMediaId);
+  const busy=$derived(!preview&&syncedPlayer.busy);
+  const members=$derived(room?.participants??[]);
+  const mediaId=$derived(room?.mediaId);
+  const roomId=$derived(room?.id);
   $effect(()=>{if(mediaId&&roomId){media.replace(null);void media.load(signal=>api(`synced/${roomId}/media`,undefined,'GET',{signal}));}else media.replace(null);});
   onDestroy(media.dispose);
   export async function show(){if(preview)return;open=true;if(!syncedPlayer.room)await startSynced();}
-  async function retry(){try{await joinSynced(syncedPlayer.room!);}catch{/* The shared player retains the failure notice. */}}
+  async function retry(){if(preview||!room)return;try{await joinSynced(room);}catch{/* The shared player retains the failure notice. */}}
 </script>
 {#snippet content()}
-  {#if syncedPlayer.room}
+  {#if room}
     {#snippet partyBody()}
-      {#if syncedPlayer.unavailableMediaId}<Button disabled={syncedPlayer.busy} onclick={retry}>{syncedPlayer.room?.mediaType==='reading'?'Retry reading':'Retry playback'}</Button>{/if}
-      {#if syncedPlayer.notice}<p class="notice" role="status">{syncedPlayer.notice}</p>{/if}
+      {#if unavailableMediaId}<Button disabled={busy} onclick={retry}>{room?.mediaType==='reading'?'Retry reading':'Retry playback'}</Button>{/if}
+      {#if notice}<p class="notice" role="status">{notice}</p>{/if}
     {/snippet}
     {#snippet partyFooter()}
-      <PlaybackTimeline readingActive={syncedPlayer.room?.mediaType==='reading'} reading={syncedPlayer.room?.reading??null} mediaId={syncedPlayer.room?.mediaId??undefined} href={media.data?.href} audio={syncedPlayer.room?.mediaType==='audio'} title={media.data?.title??'Now playing'} detail={media.data?.captionSubtitle??''} artwork={media.data?playbackArtwork(media.data):undefined} current={mediaId&&syncedPlayer.room?timelinePosition(syncedPlayer.room,clock.now):0} duration={mediaId?syncedPlayer.room?.durationSeconds??0:0}/>
+      <PlaybackTimeline readingActive={room?.mediaType==='reading'} reading={room?.reading??null} mediaId={room?.mediaId??undefined} href={media.data?.href} audio={room?.mediaType==='audio'} title={media.data?.title??'Now playing'} detail={media.data?.captionSubtitle??''} artwork={media.data?playbackArtwork(media.data):undefined} current={mediaId&&room?timelinePosition(room,clock.now):0} duration={mediaId?room?.durationSeconds??0:0}/>
     {/snippet}
-    <PartyCard inParty {embedded} footer={mediaId?partyFooter:undefined} {members} children={syncedPlayer.unavailableMediaId||syncedPlayer.notice?partyBody:undefined} label="Current party" background={mediaId&&media.data?playbackBackground(media.data):null}>
+    <PartyCard inParty {embedded} footer={mediaId?partyFooter:undefined} {members} children={unavailableMediaId||notice?partyBody:undefined} label="Current party" background={mediaId&&media.data?playbackBackground(media.data):null}>
 
-      {#snippet memberActions(member)}<Button item icon="user" href={profilePath(member.username)}>Profile</Button>{#if isSyncHost()&&member.userId!==syncedPlayer.room?.hostId}<Button item disabled={syncedPlayer.busy||!member.joined} keepOpen={false} onclick={()=>syncedCommand('promote',{userId:member.userId})}>Promote to owner</Button><div class="menu-divider" role="separator"></div><Button item danger disabled={syncedPlayer.busy} keepOpen={false} onclick={()=>syncedCommand('kick',{userId:member.userId})}>Kick</Button>{/if}{/snippet}
+      {#snippet memberActions(member)}<Button item icon="user" href={profilePath(member.username)}>Profile</Button>{#if !preview&&isSyncHost()&&member.userId!==room?.hostId}<Button item disabled={busy||!member.joined} keepOpen={false} onclick={()=>syncedCommand('promote',{userId:member.userId})}>Promote to owner</Button><div class="menu-divider" role="separator"></div><Button item danger disabled={busy} keepOpen={false} onclick={()=>syncedCommand('kick',{userId:member.userId})}>Kick</Button>{/if}{/snippet}
       {#snippet actions()}
-        <span class="small quiet" aria-label="Party duration">{playbackTime(Math.max(0,(clock.now-Date.parse(syncedPlayer.room?.createdAt??''))/1000))}</span>
-        <Button size="icon" icon="close" label="Leave party" title="Leave party" disabled={syncedPlayer.busy} onclick={async()=>{await leaveSynced();open=false;}}/>
+        <span class="small quiet" aria-label="Party duration">{playbackTime(Math.max(0,(clock.now-Date.parse(room?.createdAt??''))/1000))}</span>
+        <Button size="icon" icon="close" label="Leave party" title="Leave party" disabled={busy} onclick={async()=>{if(preview)return;await leaveSynced();open=false;}}/>
         <PartyMenu/>
       {/snippet}
     </PartyCard>
-  {:else if syncedPlayer.notice}<p class="notice" role="status">{syncedPlayer.notice}</p>{/if}
+  {:else if notice}<p class="notice" role="status">{notice}</p>{/if}
 {/snippet}
 {#if inline}{@render content()}{:else}<Dialog bind:open title="Party · Experimental">{@render content()}</Dialog>{/if}

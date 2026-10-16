@@ -61,12 +61,12 @@
 
 <script lang="ts">
   const instance = $props.id();
-  let { styleId }: { styleId: string } = $props();
+  let { styleId, height = 92 }: { styleId: string; height?:number } = $props();
   let family = $derived(Number.parseInt(styleId));
   let framed = $derived(['1B', '2B', '6B', '7B', '8B', '9B', '10B', '11B'].includes(styleId));
 </script>
 
-<svg class="chart-thumbnail" viewBox="0 0 180 108" aria-hidden="true" focusable="false">
+<svg class="chart-thumbnail" style:height={`${height}px`} viewBox="0 0 180 108" aria-hidden="true" focusable="false">
   {#if framed}<rect x="8" y="8" width="164" height="92" class="thumbnail-frame" fill="var(--coast-glass-fill)" stroke="var(--line)"/>{/if}
   {#if family === 1}
     {#each [30, 58, 86] as y}<line x1="18" x2="162" y1={y} y2={y} class="grid"/>{/each}

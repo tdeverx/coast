@@ -135,7 +135,7 @@
   {#if error && !open}<RowFeedback error={error} tag="div" class="notice error" />{/if}
   {#each providers as instance (instance.id)}<div class="panel stack">
       <Heading title={instance.name}>
-        {#snippet filters()}<span class="badge">{instance.enabled ? 'Enabled' : 'Disabled'}</span
+        {#snippet segments()}<span class="badge">{instance.enabled ? 'Enabled' : 'Disabled'}</span
           >{/snippet}
         {#snippet actions()}<Button menu
             label={`${instance.name} integration actions`}

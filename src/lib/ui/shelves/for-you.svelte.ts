@@ -11,7 +11,7 @@ import { ApiError } from '$lib/ui/client';
 import type { ShelfSource, ShelfItem, ShelfControl } from './types';
 export type ForYouOptions = {type:'for-you';feature:'row'|'recommendations'|'upcoming';category?:'screen'|'game'|'music'|'reading';genre?:string;kind?:DynamicKind;reason?:GenreReason;workId?:string;title?:string;seed?:string;layout?:'row'|'grid'};
 export function createForYouSource(get:()=>ForYouOptions):ShelfSource {
- const {api}=useClient();
+ const {api,preview}=useClient();
  const orderSeed=untrack(()=>get().seed??page.url.searchParams.get('seed')??Math.random().toString(36).slice(2));
  let category=$state(get().category??(get().layout==='grid'?page.url.searchParams.get('category')??'screen':'screen'));
  let available=$state(get().feature!=='upcoming'&&get().layout==='grid'&&page.url.searchParams.get('available')==='true');
@@ -23,7 +23,7 @@ export function createForYouSource(get:()=>ForYouOptions):ShelfSource {
   if(!enabled()){resource.replace(empty());return;}
   number??=get().layout==='grid'?Number(page.url.searchParams.get('page')??1):1;
   if(append)number=resource.data.page+1;
-  if(get().layout==='grid'){const url=new URL(page.url);url.searchParams.set('category',category);if(get().feature==='upcoming')url.searchParams.delete('available');else url.searchParams.set('available',String(available));url.searchParams.set('page',String(number));replaceState(url,page.state);}
+  if(!preview&&get().layout==='grid'){const url=new URL(page.url);url.searchParams.set('category',category);if(get().feature==='upcoming')url.searchParams.delete('available');else url.searchParams.set('available',String(available));url.searchParams.set('page',String(number));replaceState(url,page.state);}
   const params=new URLSearchParams({category,available:String(available),page:String(number)});
   if(get().feature==='upcoming')params.set('view','releases');
   if(get().genre)params.set('genre',get().genre!);
@@ -37,7 +37,7 @@ export function createForYouSource(get:()=>ForYouOptions):ShelfSource {
   },{
    merge:append?(old,next)=>({...next,items:uniqueItems([...old.items,...next.items],item=>'workId' in item?item.workId??item.id:item.id)}):undefined
   });
-  if(result&&get().layout==='grid'){const url=new URL(page.url);url.searchParams.set('page',String(result.page));replaceState(url,page.state);}
+  if(result&&!preview&&get().layout==='grid'){const url=new URL(page.url);url.searchParams.set('page',String(result.page));replaceState(url,page.state);}
   return result;
  }
  const refreshKey=$derived(JSON.stringify([

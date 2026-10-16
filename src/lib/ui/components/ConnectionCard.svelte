@@ -10,7 +10,7 @@
   import Icon from './Icon.svelte';
   import Dialog from './Dialog.svelte';
 
-  const { api, change } = useClient();
+  const { api, change, preview } = useClient();
 
   let {
     provider,
@@ -60,15 +60,26 @@
   const scanPercent = $derived(
     scan?.total ? Math.min(100, Math.floor((scan.processed / scan.total) * 100)) : null
   );
+  let scanController: AbortController | undefined;
   async function refreshScan() {
     if (provider.provider !== 'jellyfin' || provider.connection?.status !== 'connected') return;
+    scanController?.abort();
+    const controller = new AbortController();
+    scanController = controller;
     try {
-      scan = await api<Scan | null>(`providers/${provider.connection.id}/scan`, undefined, 'GET');
+      const result = await api<Scan | null>(`providers/${provider.connection.id}/scan`, undefined, 'GET', {signal: controller.signal});
+      if (controller.signal.aborted) return;
+      scan = result;
       scanError = '';
     } catch (e) {
-      scanError = message(e);
+      if (!controller.signal.aborted) scanError = message(e);
     }
   }
+  $effect(() => {
+    provider.connection?.id;
+    provider.connection?.accountGeneration;
+    return () => scanController?.abort();
+  });
   onMount(() => {
     let lastRefresh = 0;
     let refreshing = false;
@@ -83,8 +94,9 @@
       }
     }
     void poll();
+    if (preview) return () => scanController?.abort();
     const timer = setInterval(poll, 2000);
-    return () => clearInterval(timer);
+    return () => { clearInterval(timer); scanController?.abort(); };
   });
   let initialized = '';
   const defaultSync = {
@@ -120,7 +132,7 @@
     busy = true;
     try {
       const result = await change<T>(path, body);
-      if (label) notifyAction(label);
+      if (label && !preview) notifyAction(label);
       return { result };
     } catch (e) {
       error = message(e);
@@ -138,7 +150,7 @@
   }
   async function startSteam() {
     const result=await action<{url:string}>('providers/steam/start',{instanceId:provider.id});
-    if(result)window.location.assign(result.result.url);
+    if(result && !preview)window.location.assign(result.result.url);
   }
   let steamImports=$state({importOwned:true,importPlaytime:true,importAchievements:true});
   $effect(()=>{const settings=provider.connection?.settings;steamImports={importOwned:settings?.importOwned!==false,importPlaytime:settings?.importPlaytime!==false,importAchievements:settings?.importAchievements!==false};});
@@ -160,7 +172,7 @@
     pending = result?.result?.pending ?? false;
     if (result && !result.result?.pending) {
       device = null;
-      notifyAction('Trakt connected.');
+      if (!preview) notifyAction('Trakt connected.');
     }
   }
   const labels: Record<string, string> = {

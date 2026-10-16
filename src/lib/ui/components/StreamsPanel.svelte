@@ -12,10 +12,10 @@
  import {activityDateLabel} from '$lib/social/model';
  import {playbackTime} from '$lib/playback/time';
  import type {StreamsSnapshot} from '$lib/application/streams.server';
- let {open=$bindable(false),onclose}:{open:boolean;onclose?:()=>void}=$props();
- const {api}=useClient();
+ let {open=$bindable(false),onclose,initialView='now'}:{open:boolean;onclose?:()=>void;initialView?:'now'|'history'}=$props();
+ const {api,preview}=useClient();
  setContext('profile-read-only',()=>true);
- let view=$state('now'),refreshing=$state(false),feedback=$state('');
+ let view=$state<string>(untrack(()=>initialView)),refreshing=$state(false),feedback=$state('');
  const clock=useClock('minute',()=>open&&view==='history');
  const empty=(view:'now'|'history'):StreamsSnapshot=>({streams:[],issues:[],checkedAt:null,nextCursor:null,view});
  const resource=createResource<StreamsSnapshot>(empty('now'));
@@ -24,12 +24,13 @@
  $effect(()=>{
   const selected=view;if(!open){resource.cancel();return;}
   untrack(()=>{resource.replace(empty(selected as 'now'|'history'));void load();});
+  if(preview)return()=>resource.cancel();
   const timer=setInterval(()=>{if(!document.hidden&&!resource.busy&&selected==='now'&&!resource.data.nextCursor&&resource.data.streams.length<=20)void load();},15000);
   return ()=>{clearInterval(timer);resource.cancel();};
  });
  onDestroy(resource.dispose);
 </script>
-<Dialog bind:open title="Active streams" popover={true} popoverWidth={360} anchor="#streams-trigger" {onclose}>
+<Dialog bind:open title="Active streams" popover={true} popoverWidth={360} anchor={preview?undefined:"#streams-trigger"} {onclose}>
  {#snippet heading()}<Heading title="Active streams">{#snippet heading()}<SegmentedControl label="Server streams" bind:value={view} options={[{value:'now',label:'Now'},{value:'history',label:'History'}]}/>{/snippet}{#snippet actions()}<div class="actions"><Button size="icon" icon="refresh" label="Run server scan" disabled={refreshing} onclick={()=>void refresh()}/><Button size="icon" icon="close" label="Close streams" onclick={()=>{open=false;onclose?.();}}/></div>{/snippet}</Heading>{/snippet}
  <div class="streams" aria-busy={resource.busy}>
   {#if resource.error}<p class="notice error full" role="alert">{resource.error}</p>{/if}

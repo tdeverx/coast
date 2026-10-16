@@ -4,7 +4,7 @@
   import { browseHeading } from '$lib/ui/headings';
   import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
   import { librarySelections } from '$lib/library';
-  import { availabilityControl } from '$lib/ui/controls/actions';
+  import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import MediaCard from '$lib/ui/components/MediaCard.svelte';
@@ -23,7 +23,12 @@
 
 <svelte:head><title>Music · Coast</title></svelte:head>
 <div class="content page route-content">
-  <Heading {...browseHeading("listen", data.experimentalMusic)}>{#snippet filters()}<SegmentedControl label="Listen type" value={data.filters.kind} options={librarySelections.listen} onchange={kind => goto(pageUrl(1,kind as typeof data.filters.kind),{keepFocus:true,noScroll:true})} /><Button {...availabilityControl(data.filters.scope === 'available', value => goto(pageUrl(1,data.filters.kind,value?'available':'all'),{keepFocus:true,noScroll:true}))} />{/snippet}</Heading>
+  <Heading {...browseHeading("listen", data.experimentalMusic)}>
+    {#snippet segments()}<SegmentedControl label="Listen type" value={data.filters.kind} options={librarySelections.listen} onchange={kind => goto(pageUrl(1,kind as typeof data.filters.kind),{keepFocus:true,noScroll:true})} />{/snippet}
+    {#snippet previous()}<Button size="icon" icon="left" label="Previous music page" disabled={data.page<=1} href={pageUrl(data.page-1)} />{/snippet}
+    {#snippet controls()}<RowFilter groups={[{label:'Availability',value:data.filters.scope,options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:value=>{void goto(pageUrl(1,data.filters.kind,value as typeof data.filters.scope),{keepFocus:true,noScroll:true});}}]}/>{/snippet}
+    {#snippet next()}<Button size="icon" icon="right" label="Next music page" disabled={data.page>=data.pages} href={pageUrl(data.page+1)} />{/snippet}
+  </Heading>
   <form class="filter-row browse-search" action="/music" method="GET">
     <input type="hidden" name="kind" value={data.filters.kind} />
     <input type="hidden" name="scope" value={data.filters.scope} />

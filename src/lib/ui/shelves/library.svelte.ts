@@ -33,7 +33,7 @@ export type LibrarySourceOptions = {
     initialAvailability?: string;
   };
 export function createLibrarySource(getOptions: () => LibrarySourceOptions): ShelfSource {
-  const { api } = useClient();
+  const { api, preview: isolatedPreview } = useClient();
 
   let {
     surface,
@@ -95,7 +95,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
         item => item.entryId ?? ('href' in item ? item.href : item.id)
       ) }),
     });
-    if (result && !preview && layout === 'grid') replaceState(href(result.page), route.state);
+    if (result && !preview && !isolatedPreview && layout === 'grid') replaceState(href(result.page), route.state);
   }
   const ownerKey = $derived(JSON.stringify([route.data.user?.id ?? '', username, surface]));
   const refreshKey = $derived(JSON.stringify([

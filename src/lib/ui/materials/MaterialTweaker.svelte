@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, type Snippet } from 'svelte';
+  let { layout, picker }: { layout: Snippet<[{ title:string; canvas:Snippet; inspector:Snippet; browser:Snippet }]>; picker:Snippet<[{options:{value:string;label:string}[];value:string;change:(value:string)=>void}]> } = $props();
   import Heading from '../components/Heading.svelte';
   import Button from '../components/Button.svelte';
   import SegmentedControl from '../components/SegmentedControl.svelte';
@@ -111,18 +112,8 @@
   }
 </script>
 
-<Heading title="Material tweaker" description="Non-approved drafts · saved in this browser. Current app presets stay unchanged."
-  selection={{ label: 'Glass treatment', value: variant, options: choices, change: value => { variant = value as typeof variant; } }}>
-  {#snippet actions()}
-    {#if experimental}<Button  onclick={tryTogether}>Try together</Button>{/if}
-    <Button emphasis="subtle" onclick={() => reset()}>Reset selected</Button>
-    <Button emphasis="subtle" onclick={() => reset(true)}>{experimental ? 'Reset experiment' : 'Reset all'}</Button>
-    <Button  onclick={copy}>Copy preset</Button>
-    <Button  onclick={download}>Download</Button>
-  {/snippet}
-</Heading>
-<div class="tweaker">
-  <div class="preview-column">
+{#snippet canvas()}
+<div class="preview-column">
     <div class="preview" class:plain={background !== 'pattern'} style:--preview-radius={`${radius}px`} style:background={background === 'color' ? backgroundColor : undefined}>
       {#if background === 'image' && backgroundImage}<img class="preview-image" src={backgroundImage} alt="" aria-hidden="true" />{/if}
       <div class="scene" aria-hidden="true"><span>COAST</span><div></div><span>Glass / light / motion</span></div>
@@ -152,7 +143,18 @@
     <p class="quiet">Both previews update live. Native refraction depends on your browser; CSS fallback has no refraction. Preview radius and background do not change presets. Preview images stay in this browser.</p>
     <p role="status" class="quiet">{message}</p>
   </div>
-  <div class="controls">
+{/snippet}
+{#snippet inspector()}
+<Heading title="Material tweaker" description="Non-approved drafts · saved in this browser. Current app presets stay unchanged.">
+  {#snippet actions()}
+    {#if experimental}<Button  onclick={tryTogether}>Try together</Button>{/if}
+    <Button emphasis="subtle" onclick={() => reset()}>Reset selected</Button>
+    <Button emphasis="subtle" onclick={() => reset(true)}>{experimental ? 'Reset experiment' : 'Reset all'}</Button>
+    <Button  onclick={copy}>Copy preset</Button>
+    <Button  onclick={download}>Download</Button>
+  {/snippet}
+</Heading>
+<div class="controls">
     {#if experimental}
       <p class="quiet">Temporary material only. Effects are shared by both previews for comparison; base surfaces remain independently editable. No app presets are changed.</p>
       {#each effectGroups as group}
@@ -208,16 +210,20 @@
       </section>
     {/each}
   </div>
-</div>
 {#if exported}<section class="export"><Heading title="Preset export" description="Complete snapshot of the selected treatment and its fallback, with resolved colors. Copy again after further edits." /><textarea aria-label="Preset export" readonly value={source} rows="12"></textarea></section>{/if}
+{/snippet}
+{#snippet browser()}
+  {@render picker({options:choices,value:variant,change:value=>variant=value as typeof variant})}
+{/snippet}
+{@render layout({title,canvas,inspector,browser})}
 
 {#snippet colorControl(id: string, label: string, value: string, change: (value: string) => void)}
   <div class="field"><label for={id}>{label}</label><div class="color-control"><span class="swatch" style:background={value}></span><input {id} {value} onchange={event => setColor(event.currentTarget.value, change)} />{#if loaded}<input type="color" aria-label={`${label} picker`} value={/^#[0-9a-f]{6}$/i.test(value) ? value : '#ffffff'} oninput={event => setColor(event.currentTarget.value, change)} />{/if}</div></div>
 {/snippet}
 
 <style>
-  .tweaker { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start; }
-  .preview-column { position: sticky; top: 100px; min-width: 0; }
+  .preview-column {position:static;padding:20px;min-width:0;}
+  .controls .control-grid {grid-template-columns:1fr;}
   .preview { position: relative; overflow: hidden; border-radius: 24px; min-height: 440px; padding: 40px 24px; display: grid; align-content: center; gap: 40px; background: linear-gradient(135deg, var(--surface), var(--accent), var(--canvas)); }
   .preview.plain { background: var(--surface); }
   .preview-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
@@ -248,6 +254,6 @@
   output { color: var(--muted); white-space: nowrap; }
   .quiet { font-size: var(--text-sm); color: var(--muted); line-height: var(--leading-normal); }
   .export textarea { width: 100%; font-size: var(--text-sm); }
-  @media (max-width: 900px) { .tweaker { grid-template-columns: 1fr; } .preview-column { position: static; } .preview { min-height: 360px; padding: 24px; gap: 24px; } }
+  @media (max-width: 900px) { .preview-column { position: static; } .preview { min-height: 360px; padding: 24px; gap: 24px; } }
   @media (max-width: 480px) { .control-grid { grid-template-columns: 1fr; } }
 </style>

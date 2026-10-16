@@ -63,8 +63,7 @@
   {#each sections as section (section.key)}<Shelf title={section.title} items={section.items ?? []} panels={section.panels}
     size={section.panels ? 'panel' : section.shape ?? 'poster'} shape={section.shape} mediaKind={section.mediaKind}
     artworkOptions={!section.panels} layout={section.layout ?? 'row'} href={section.href}
-    pageNumber={section.page} pages={section.pages} pageUrl={section.pageUrl}>
-    {#snippet actions()}<RowFeedback error={section.error} retry={section.retry} />{/snippet}
+    pageNumber={section.page} pages={section.pages} pageUrl={section.pageUrl} error={section.error} retry={section.retry}>
     {#snippet empty()}{#if !section.error && section.empty}<EmptyState {...section.empty} icon="library" />{/if}{/snippet}
   </Shelf>{/each}
   {#if friendDetails.length}<section class="section"><Heading title="Friends on this title" /><div class="row">{#each friendDetails as friend}<Button emphasis="subtle" href={`/profile/${encodeURIComponent(friend.username)}`}>{friend.username}{friend.rating!==null?` · ${friend.rating} stars`:''}{friend.watched?' · Completed':friend.progress?' · In progress':''}</Button>{/each}{#if friendTotal>friendDetails.length}<span class="small quiet">+{friendTotal-friendDetails.length} more friends</span>{/if}</div></section>{/if}

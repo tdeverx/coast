@@ -4,21 +4,25 @@
  import Button from './Button.svelte';
  import RowFilter from './RowFilter.svelte';
  import {message} from '$lib/ui/client';
+ import {useClient} from '$lib/ui/client-context';
+ const {fetch:requestAvatar}=useClient();
  let {avatar=$bindable(null),reading=$bindable(false),name,disabled=false,choices}:{avatar?:string|null;reading?:boolean;name:string;disabled?:boolean;choices:{id:string;provider:string;name:string}[]}=$props();
  let error=$state(''),iconChoice=$state('');
  const iconChoices=$derived(choices),busy=$derived(disabled);
  let avatarVersion=0;
- $effect(()=>()=>{avatarVersion++;reading=false;});
+ let providerRequest:AbortController|undefined;
+ let fileReader:FileReader|undefined;
+ const providerKey=$derived(`${name}:${choices.map(choice=>choice.id).join(',')}`);
+ function cancelRead(){avatarVersion++;providerRequest?.abort();providerRequest=undefined;fileReader?.abort();fileReader=undefined;reading=false;}
+ function beginRead(){cancelRead();error='';reading=true;return avatarVersion;}
+ $effect(()=>{if(providerKey)return cancelRead;});
   async function selectAvatar(event: Event) {
     const file = (event.currentTarget as HTMLInputElement).files?.[0];
     if (!file) return;
     iconChoice='';
-    await prepareAvatar(file);
+    await prepareAvatar(file,beginRead());
   }
-  async function prepareAvatar(file:Blob){
-    const version = ++avatarVersion;
-    error = '';
-    reading = true;
+  async function prepareAvatar(file:Blob,version:number){
     let url = '';
     try {
       if (
@@ -30,11 +34,14 @@
       const image = new Image();
       image.src = url;
       await image.decode();
+      if(version!==avatarVersion)return;
       if (file.type === 'image/gif') {
         const result = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
+          fileReader=reader;
           reader.onload = () => resolve(String(reader.result));
           reader.onerror = () => reject(new Error('Your browser could not read this GIF.'));
+          reader.onabort = () => reject(new DOMException('Avatar reading cancelled.','AbortError'));
           reader.readAsDataURL(file);
         });
         if (version === avatarVersion) avatar = result;
@@ -60,22 +67,22 @@
       if (result.length > 220000) throw new Error('Choose a smaller image.');
       if (version === avatarVersion) avatar = result;
     } catch (e) {
-      error = message(e);
+      if(version===avatarVersion)error = message(e);
     } finally {
       if (url) URL.revokeObjectURL(url);
-      if (version === avatarVersion) reading = false;
+      if (version === avatarVersion){reading = false;fileReader=undefined;}
     }
   }
   async function selectProvider(id:string){
-    iconChoice=id;if(!id)return;
-    const version=++avatarVersion;error='';reading=true;
+    iconChoice=id;if(!id){cancelRead();return;}
+    const version=beginRead(),controller=new AbortController();providerRequest=controller;
     try{
-      const response=await fetch(`/api/v1/profile/avatars/${id}`);
+      const response=await requestAvatar(`/api/v1/profile/avatars/${id}`,{signal:controller.signal});
       if(!response.ok){const result=await response.json().catch(()=>null);throw Error(result?.error??'The service icon could not be imported.');}
       const image=await response.blob();
-      if(version!==avatarVersion)return;
-      await prepareAvatar(image);
-    }catch(cause){error=message(cause);}finally{reading=false;}
+      if(version!==avatarVersion||controller.signal.aborted)return;
+      await prepareAvatar(image,version);
+    }catch(cause){if(version===avatarVersion&&!controller.signal.aborted)error=message(cause);}finally{if(version===avatarVersion)reading=false;if(providerRequest===controller)providerRequest=undefined;}
   }
 </script>
 {#if error}<p class="notice error" role="alert">{error}</p>{/if}
@@ -90,7 +97,7 @@
           /></Field>{#if avatar}<Button
             emphasis="subtle"
             onclick={() => {
-              avatarVersion++;
+              cancelRead();
               avatar = null;
               reading = false;
             }}>Remove avatar</Button

@@ -5,7 +5,6 @@
   import { browseHeading } from '$lib/ui/headings';
   import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
   import { librarySelections } from '$lib/library';
-  import { availabilityControl } from '$lib/ui/controls/actions';
   import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
@@ -25,26 +24,15 @@
 
 <svelte:head><title>Games · Coast</title></svelte:head>
 <div class="content page route-content">
-  <Heading {...browseHeading("play", data.experimentalGaming)}>{#snippet filters()}{#if data.filters.view === 'library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state => goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{keepFocus:true,noScroll:true})} /><Button {...availabilityControl(data.filters.scope === 'available', value => goto(pageUrl(1,data.filters.view,data.filters.state,data.filters.personal,value?'available':'all'),{keepFocus:true,noScroll:true}))} />{/if}{/snippet}{#snippet actions()}<RowFilter groups={[{label:"Games view", value:data.filters.view === 'library' && data.filters.personal
-          ? 'personal'
-          : data.filters.view, options:[
-          { value: 'library', label: 'All games' },
-          { value: 'personal', label: 'Your games' },
-          { value: 'igdb', label: 'Discover' },
-        ], change:(view) =>
-          goto(
-            pageUrl(
-              1,
-              view === 'igdb' ? 'igdb' : 'library',
-              data.filters.state,
-              view === 'personal'
-            ),
-            { keepFocus: true, noScroll: true }
-          )}]} />{#if page.data.user?.role === 'admin'}<Button
-          emphasis="subtle"
-          href="/settings/integrations"
-          icon="server">Integrations</Button
-        >{/if}{/snippet}</Heading>
+  <Heading {...browseHeading("play", data.experimentalGaming)}>
+    {#snippet segments()}{#if data.filters.view==='library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state=>goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{keepFocus:true,noScroll:true})}/>{/if}{/snippet}
+    {#snippet previous()}<Button size="icon" icon="left" label="Previous games page" disabled={data.page<=1} href={pageUrl(data.page-1)} />{/snippet}
+    {#snippet controls()}<RowFilter groups={[
+      {label:'Games view',value:data.filters.view==='library'&&data.filters.personal?'personal':data.filters.view,options:[{value:'library',label:'All games'},{value:'personal',label:'Your games'},{value:'igdb',label:'Discover'}],change:view=>{void goto(pageUrl(1,view==='igdb'?'igdb':'library',data.filters.state,view==='personal'),{keepFocus:true,noScroll:true});}},
+      ...(data.filters.view==='library'?[{label:'Availability',value:data.filters.scope,options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:(value:string)=>{void goto(pageUrl(1,data.filters.view,data.filters.state,data.filters.personal,value as typeof data.filters.scope),{keepFocus:true,noScroll:true});}}]:[]),
+    ]}>{#snippet actions()}{#if page.data.user?.role==='admin'}<Button item href="/settings/integrations" icon="server">Integrations</Button>{/if}{/snippet}</RowFilter>{/snippet}
+    {#snippet next()}<Button size="icon" icon="right" label="Next games page" disabled={data.page>=data.pages} href={pageUrl(data.page+1)} />{/snippet}
+  </Heading>
   <form class="filter-row browse-search" action="/games" method="GET">
     <input type="hidden" name="view" value={data.filters.view} />
     <input type="hidden" name="personal" value={String(data.filters.personal)} />

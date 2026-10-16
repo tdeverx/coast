@@ -1,7 +1,9 @@
 <script lang="ts">
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
-  import { api, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
+  const {api,preview}=useClient();
 
   let { workId, title, open = $bindable(false) }: {
     workId: string; title: string; open?: boolean;
@@ -53,8 +55,10 @@
   }
   async function copyLink() {
     if(!created)return;
-    try {await navigator.clipboard.writeText(`${location.origin}/share/${created.token}`);copied=true;}
-    catch {error='Select the link and copy it using your browser.';}
+    if(preview){copied=true;return;}
+    const scope=activeDialog;
+    try {await navigator.clipboard.writeText(`${location.origin}/share/${created.token}`);if(scope===activeDialog&&!scope?.signal.aborted)copied=true;}
+    catch {if(scope===activeDialog&&!scope?.signal.aborted)error='Select the link and copy it using your browser.';}
   }
 </script>
 
@@ -62,7 +66,7 @@
   <p class="small muted">Anyone with this link can play this item until it expires or you revoke it. Each viewer controls their own playback.</p>
   {#if created}
     <label class="field">Invitation link
-      <input readonly value={`${location.origin}/share/${created.token}`} onfocus={event => event.currentTarget.select()} />
+      <input readonly value={`${preview?'https://coast.example':location.origin}/share/${created.token}`} onfocus={event => event.currentTarget.select()} />
     </label>
     <Button onclick={copyLink}>{copied?'Copied':'Copy'}</Button>
     <Button disabled={busy} onclick={revoke}>Revoke</Button>

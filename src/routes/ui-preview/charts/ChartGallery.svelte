@@ -1,12 +1,14 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { tick } from 'svelte';
+  import type { Snippet } from 'svelte';
+  import type { WorkspaceParts } from '../workspace';
+  import Browser from '../Browser.svelte';
+  import Field from '$lib/ui/components/Field.svelte';
+  let {layout}: {layout:Snippet<[WorkspaceParts]>} = $props();
   import { goto } from '$app/navigation';
   import Heading from '$lib/ui/components/Heading.svelte';
-  import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import { liquidGlass } from '$lib/ui/materials/glass';
-  import { createShelfLayout } from '$lib/ui/shelves/layout.svelte';
   import { chartRowContext, chartRowSummary } from './presentation';
   import ChartView from '$lib/ui/charts/ChartView.svelte';
   import ChartThumbnail from './ChartThumbnail.svelte';
@@ -27,21 +29,18 @@
   const model = $derived(getChartModel(fixture, medium));
   const datasetOptions = $derived(getDatasetOptions(style.id, context, medium));
   const period = $derived(getChartPeriod(model));
-  const styleIndex = $derived(available.findIndex(item => item.id === style.id));
   const rows = $derived(dataRows(model));
   let selected = $state(0);
-  let search = $state('');
+  let navigating = $state(false);
   let familyFilter = $state('all');
+  const families = $derived([...new Set(available.map(item=>item.family))]);
+  const activeFamily = $derived(families.includes(familyFilter)?familyFilter:'all');
+  const filteredStyles = $derived(available.filter(item=>activeFamily==='all'||item.family===activeFamily));
   let tablePage = $state(0);
-  let chartSection: HTMLElement;
   const pageSize = 24;
   const tableRows = $derived(rows.slice(tablePage * pageSize, (tablePage + 1) * pageSize));
   const tablePages = $derived(Math.max(1, Math.ceil(rows.length / pageSize)));
   const selection = $derived(rows[selected]);
-  const families = $derived([...new Set(available.map(item => item.family))]);
-  const activeFamily = $derived(families.includes(familyFilter) ? familyFilter : 'all');
-  const filteredStyles = $derived(available.filter(item => (activeFamily === 'all' || item.family === activeFamily) && `${item.id} ${item.name} ${item.family}`.toLowerCase().includes(search.trim().toLowerCase())));
-  const rail = createShelfLayout(() => ({ size:'poster', artworkStyle:'auto', overlay:'none', layout:'row', busy:false, preserveHeight:false, hasMore:false, resetKey:`${context}:${search}:${activeFamily}` }));
   const glassStyles = new Set(['1B', '2B', '6B', '7B', '8B', '9B', '10B', '11B']);
   const glass = $derived(glassStyles.has(style.id));
   const plotWidth = $derived(Number.parseInt(style.id) <= 7 ? 900 : style.id === '14B' ? 520 : 760);
@@ -61,24 +60,22 @@
   }
   $effect(() => { model; selected = 0; tablePage = 0; });
   async function change(values: Record<string, string>) {
+    if(navigating)return;
     const url = new URL(page.url);
     const next = { context, chart: style.id, dataset, medium, ...values };
     const nextFixture = fixtures.find(item => item.sourceId === next.chart && item.context === next.context && item.variant === next.dataset)!;
     const nextMedia = supportedMediums(nextFixture);
     next.medium = nextMedia.find(item => item === next.medium) ?? nextMedia[0];
     for (const [key, value] of Object.entries(next)) url.searchParams.set(key, value);
-    await goto(url, { noScroll: true, keepFocus: true });
+    navigating=true;
+    try {await goto(url,{noScroll:true,keepFocus:true,replaceState:true});}
+    finally {navigating=false;}
   }
   function changeContext(value: string) {
     const next = styles.find(item => item.id === style.id && item.contexts.includes(value as ChartContext)) ?? styles.find(item => item.contexts.includes(value as ChartContext))!;
     void change({ context: value, chart: next.id });
   }
   function select(index: number) { selected = Math.max(0, Math.min(rows.length - 1, index)); }
-  async function viewStyle(id: string) {
-    await change({ chart: id });
-    await tick();
-    chartSection?.scrollIntoView({ block: 'start' });
-  }
   function rowValue(row: ChartRow) {
     return row.values?.length && model.series.length
       ? row.values.map((value, i) => `${model.series[i]?.name ?? `Series ${i + 1}`}: ${formatValue(value, model.unit)}`).join(' · ')
@@ -86,23 +83,9 @@
   }
 </script>
 
-<section class="section chart-exploration" aria-label="Chart exploration">
-  <div class="chart-header">
-    <Heading title="Chart exploration" selection={{label:'Chart data context',value:context,options:contextOptions,change:changeContext}}>
-      {#snippet actions()}
-        <span class="small quiet">Non-approved · Demo data</span>
-        {#if mediumOptions.length > 1}<RowFilter label="Chart medium" selection groups={[{label:'Medium',value:medium,options:mediumOptions,change:value=>{void change({medium:value});}}]} />{/if}
-        <RowFilter label="Chart dataset" selection groups={[{label:'Dataset',value:dataset,options:datasetOptions,change:value=>{void change({dataset:value});}}]} />
-        <div class="navigation">
-          <Button size="icon" icon="left" iconSize={20} label="Previous chart style" disabled={styleIndex === 0} onclick={() => { void change({chart:available[styleIndex - 1].id}); }} />
-          <RowFilter label="Chart style" selection groups={[{label:'Style',value:style.id,options:available.map(item=>({value:item.id,label:`${item.id} · ${item.name}`})),change:value=>{void change({chart:value});}}]} />
-          <Button size="icon" icon="right" iconSize={20} label="Next chart style" disabled={styleIndex === available.length - 1} onclick={() => { void change({chart:available[styleIndex + 1].id}); }} />
-        </div>
-      {/snippet}
-    </Heading>
-  </div>
-
-  <section bind:this={chartSection} class="chart-specimen" aria-labelledby="chart-title" data-chart-style={style.id} data-chart-fixture={fixture.id} data-chart-medium={medium}>
+{@render layout({title:style.name,canvas,inspector,browser})}
+{#snippet canvas()}
+  <section class="chart-specimen" aria-labelledby="chart-title" data-chart-style={style.id} data-chart-fixture={fixture.id} data-chart-medium={medium}>
     <div class="stage-title"><Heading title={model.title}>
       {#snippet heading()}<h3 id="chart-title">{model.title}</h3>{/snippet}
     </Heading><p class="small quiet chart-meta">{model.unit}{#if period} · {period}{/if}</p></div>
@@ -118,6 +101,15 @@
       </p>
       <Button size="icon" icon="right" label="Next data point" disabled={selected >= rows.length - 1} onclick={() => select(selected + 1)} />
     </div>
+  </section>
+{/snippet}
+{#snippet inspector()}
+  <div class="stack">
+    <Field label="Context"><select disabled={navigating} value={context} onchange={event => changeContext(event.currentTarget.value)}>{#each contextOptions as option}<option value={option.value}>{option.label}</option>{/each}</select></Field>
+    {#if mediumOptions.length > 1}<Field label="Medium"><select disabled={navigating} value={medium} onchange={event => void change({medium:event.currentTarget.value})}>{#each mediumOptions as option}<option value={option.value}>{option.label}</option>{/each}</select></Field>{/if}
+    <Field label="Dataset"><select disabled={navigating} value={dataset} onchange={event => void change({dataset:event.currentTarget.value})}>{#each datasetOptions as option}<option value={option.value}>{option.label}</option>{/each}</select></Field>
+    <Field label="Style family"><select value={activeFamily} onchange={event=>familyFilter=event.currentTarget.value}><option value="all">All families</option>{#each families as family}<option value={family}>{family}</option>{/each}</select></Field>
+    <p class="small quiet">{style.id} · {style.family} · Fictional preview data</p>
     <div class="chart-details">
     <details class="small chart-notes"><summary>Data meaning and limits</summary><p>{model.subtitle}</p>{#each model.notes as note}<p>{note}</p>{/each}</details>
     <details class="small chart-data">
@@ -137,29 +129,16 @@
     </details>
     <details class="small preview-details"><summary>About this preview</summary><p>{styles.length} explored styles · {fixtures.length} contextual fixtures. All values are fictional, local demo data. These fictional datasets stay in the preview.</p><p>Hover or tap a mark to inspect it. Use the previous and next data-point buttons or the exact-data table with a keyboard. Dense charts scroll within their own region.</p><p>Style thumbnails illustrate the encoding and do not display the selected dataset. Selecting a chart does not approve it for the product.</p></details>
     </div>
-  </section>
-
-  <div class="style-browser-heading"><Heading title="Browse styles" level={3}>
-    {#snippet filters()}<RowFilter label="Chart family" selection groups={[{label:'Family',value:activeFamily,options:[{value:'all',label:'All families'},...families.map(value=>({value,label:value}))],change:value=>{familyFilter=value;}}]} />{/snippet}
-    {#snippet actions()}<label class="field small"><span class="sr-only">Find a chart style</span><input type="search" bind:value={search} placeholder="Name or family" /></label>{/snippet}
-    {#snippet navigation()}<div class="navigation"><Button size="icon" icon="left" iconSize={20} label="Scroll chart styles left" disabled={!rail.previous} onclick={()=>rail.scroll(-1)} /><Button size="icon" icon="right" iconSize={20} label="Scroll chart styles right" disabled={!rail.next} onclick={()=>rail.scroll(1)} /></div>{/snippet}
-  </Heading><span class="sr-only" role="status">{filteredStyles.length} / {available.length} styles in this context</span></div>
-  <nav class="style-catalog" aria-label="Chart styles">
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex (The horizontal rail needs a keyboard focus target for scrolling.) -->
-    <div class="style-rail" bind:this={rail.scroller} onscroll={rail.reachedEnd} role="region" aria-label="Chart style thumbnails; scroll horizontally" tabindex="0">
-      {#each filteredStyles as item}<Button class="style-option" emphasis="subtle" label={`${item.id} · ${item.name}`} pressed={style.id === item.id} onclick={() => { void viewStyle(item.id); }}><span class="small quiet style-family">{item.family}</span><ChartThumbnail styleId={item.id} /><span class="style-name"><span class="quiet">{item.id}</span> {item.name}</span></Button>{/each}
-    </div>
-    {#if !filteredStyles.length}<p class="quiet">No matching chart styles.</p>{/if}
-  </nav>
-</section>
+  </div>
+{/snippet}
+{#snippet browser()}
+  <Browser title="Browse styles" options={filteredStyles.map(item=>({value:item.id,label:item.name,detail:item.family}))} value={style.id} change={value=>void change({chart:value})} thumbnailHeight={48} disabled={navigating}>
+    {#snippet thumbnail(option)}<ChartThumbnail styleId={option.value} height={48} />{/snippet}
+  </Browser>
+{/snippet}
 
 <style>
-  .chart-exploration { min-width:0; margin-top:var(--gutter); }
-  .chart-header :global(.actions) { gap:8px; }
-  .navigation { display:flex; align-items:center; gap:2px; min-width:0; }
-  .navigation :global(.icon-button) { width:var(--control-compact-height); height:var(--control-compact-height); color:var(--muted); }
-  .navigation :global(.icon-button:disabled) { opacity:.25; }
-  .chart-specimen { max-width:948px; margin:0 auto; border-bottom:1px solid var(--line); padding:16px 0 var(--gutter); min-width:0; scroll-margin-top:calc(var(--gutter) * 3); }
+  .chart-specimen {width:100%;max-width:1100px;margin:0 auto;padding:20px;min-width:0;}
   .stage-title { text-align:center; margin-bottom:16px; }
   .stage-title :global(.row-header) { margin-bottom:8px; }
   .stage-title :global(.identity) { justify-content:center; }
@@ -180,19 +159,10 @@
   th { font-weight:var(--weight-semibold); }
   th button { background:transparent; border:0; padding:0; text-align:left; }
   .table-pagination { justify-content:flex-end; margin-top:12px; flex-wrap:wrap; }
-  .style-browser-heading { margin:calc(var(--gutter) * 2) 0 20px; }
-  .style-browser-heading input { max-width:240px; }
-  .style-catalog { min-width:0; }
-  .style-rail { --row-card-width:clamp(155px,14vw,210px); display:grid; grid-auto-flow:column; grid-auto-columns:min(100%,var(--row-card-width)); align-items:stretch; gap:20px; overflow:auto; padding:24px var(--gutter); margin:-24px calc(-1 * var(--gutter)); scroll-padding-inline:var(--gutter); overscroll-behavior-x:contain; scrollbar-width:none; scroll-snap-type:x proximity; }
-  .style-rail :global(.style-option) { display:flex; flex-direction:column; align-items:flex-start; width:100%; min-width:0; height:100%; padding:12px 8px; border:1px solid var(--line); border-radius:8px; scroll-snap-align:start; }
-  .style-rail :global(.style-option[aria-pressed=true]) { border-color:var(--accent); background:color-mix(in srgb,var(--accent) 8%,transparent); color:var(--ink); }
-  .style-family { min-height:18px; text-align:left; }
-  .style-name { width:100%; min-height:36px; font-size:var(--text-sm); text-align:left; overflow-wrap:anywhere; }
   @media(max-width:600px) {
     .chart-stage { min-height:0; }
     .chart-inspect { gap:4px; }
     .chart-details { justify-content:flex-start; }
     th,td { padding:8px; }
   }
-  @media(max-width:500px) { .style-rail { --row-card-width:145px; gap:14px; } }
 </style>

@@ -20,7 +20,7 @@
   import {companionHealthy,type CompanionState} from '$lib/providers/jellyfin/companion';
   import {jobIdentityScope} from '$lib/providers/job-policy';
 
-  const { change } = useClient();
+  const { change, preview } = useClient();
 
   let {
     provider,
@@ -47,7 +47,7 @@
     local?:boolean;
     showSource?:boolean;
   } = $props();
-  const clock = useClock();
+  const clock = useClock('second',()=>!preview);
   const companion=$derived(provider.companion as CompanionState|undefined);
   const pluginHealthy=$derived(provider.schedule.updatesEnabled&&companionHealthy(companion,clock.now,provider.schedule.updatesIntervalMinutes));
   const countdown = $derived(timing?.nextAt ? Math.max(0, Math.ceil((new Date(timing.nextAt).getTime() - clock.now) / 1000)) : null);
@@ -57,7 +57,7 @@
     busy=true;error='';
     try{
       const result=await change<{updated:number;skipped:number}>(`queue/tasks/${action}`,{kind:task.kinds[0],instanceId:jobs[0]?.instanceId??null});
-      notifyAction(`${result.updated} jobs ${action==='retry'?'queued for retry':action==='cancel'?'cancelled':'prioritized'}${result.skipped?` · ${result.skipped} unchanged because the job changed or already has active work`:''}.`);
+      if (!preview) notifyAction(`${result.updated} jobs ${action==='retry'?'queued for retry':action==='cancel'?'cancelled':'prioritized'}${result.skipped?` · ${result.skipped} unchanged because the job changed or already has active work`:''}.`);
     }catch(cause){error=message(cause);}finally{busy=false;}
   }
   let open = $state(false),
@@ -116,7 +116,7 @@
       );
       saved = JSON.stringify(draft);
       open = false;
-      notifyAction('Schedule saved.');
+      if (!preview) notifyAction('Schedule saved.');
     } catch (cause) {
       error = message(cause);
     } finally {
@@ -132,7 +132,7 @@
         local?'admin/taste-refresh':`providers/${provider.id}/run-job`,
         { task: task.scope, kind: task.kinds[0] }
       );
-      notifyAction(
+      if (!preview) notifyAction(
         result.busy
           ? 'Maintenance is already being checked.'
           : `${result.queued} jobs queued${result.active ? `; ${result.active} existing jobs requested now` : ''}.`
@@ -145,7 +145,7 @@
   }
   beforeNavigate(({ cancel, to }) => {
     if (
-      to &&
+      !preview && to &&
       to.url.pathname !== window.location.pathname &&
       (busy || (dirty && !window.confirm('Discard unsaved schedule changes?')))
     )

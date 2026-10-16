@@ -48,7 +48,7 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
       key, title: item.kind === 'artist' ? 'Albums' : 'Tracks', items: data.children.items.map(child => musicCard(child, data.connectionId)),
       shape: 'square', mediaKind: 'music', layout: section ? 'grid' : 'row', href: !section ? `${path}?section=${key}` : undefined,
       page: data.page, pages: data.pages, pageUrl: number => `${path}?section=${key}&page=${number}`,
-      error: data.failure, retry: () => refreshAfterChange('music'),
+      error: data.failure, retry: () => preview ? Promise.resolve() : refreshAfterChange('music'),
       empty: { title: item.kind === 'artist' ? 'No albums available' : 'No tracks available', description: 'This Jellyfin account has no matching music here.' },
     });
     return result;
