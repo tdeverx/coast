@@ -141,7 +141,7 @@
   {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??page.url.searchParams.get('notificationKind')??'all'} onclose={closeNotifications}/>{/if}
   {#if friendsOpen&&FriendsPanel}<FriendsPanel open={true} onclose={closeFriends}/>{/if}
   {#if streamsOpen&&StreamsPanel}<StreamsPanel open={true} onclose={closeStreams}/>{/if}
-  {#if data.user}<NotificationToasts notifications={data.notifications} />{/if}{#if expired}<div
+  <NotificationToasts notifications={data.user ? data.notifications : []} />{#if expired}<div
       class="session-notice solid-surface"
       role="alert"
     >

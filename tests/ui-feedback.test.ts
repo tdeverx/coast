@@ -59,3 +59,21 @@ test('closing an operation removes its scoped failure and releases the retry cal
   expect(feedback.current?.text).toBe('Unrelated action');
  } finally {dispose();for(const hook of lifecycle.hooks.splice(0))hook();}
 });
+test('overlapping failures restore the remaining operation and its latest retry',async()=>{
+ const feedback=createFeedback(),first=runtime.state('First failure'),second=runtime.state('');
+ const attempt=runtime.state(1);let retried=0;
+ const dispose=runtime.effect_root(()=>{
+  feedback.watch(()=>{const value=runtime.get(attempt);return {text:runtime.get(first),retry:()=>{retried=value;}};});
+  feedback.watch(()=>runtime.get(second));
+ });
+ try {
+  runtime.flush();const original=feedback.current;
+  runtime.set(second,'Second failure');runtime.flush();expect(feedback.current?.text).toBe('Second failure');
+  runtime.set(attempt,2);runtime.flush();expect(feedback.current?.text).toBe('Second failure');
+  runtime.set(second,'');runtime.flush();expect(feedback.current).toBe(original);
+  await feedback.act();expect(retried).toBe(2);
+  runtime.set(second,'Second failure');runtime.flush();runtime.set(first,'');runtime.flush();
+  expect(feedback.current?.text).toBe('Second failure');
+  runtime.set(second,'');runtime.flush();expect(feedback.current).toBeNull();
+ } finally {dispose();for(const hook of lifecycle.hooks.splice(0))hook();}
+});
