@@ -1,3 +1,4 @@
+import { getFeatureConfig } from '$lib/server/features';
 import { presentationPreferences, personaliseWorkCards, presentationSearch } from '$lib/catalogue/overrides/presentation.server';
 import { and, asc, count, desc, eq, or, sql } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -40,7 +41,7 @@ export async function readingDetails(userId: string, id: string) {
   const db = getDb();
   const [item] = await db.select().from(readingWorks).where(eq(readingWorks.id, id));
   if (!item) throw new DomainError('Reading work not found.', 404, 'not_found');
-  requireEnabledCategory(await getConfig(), item.kind);
+  requireEnabledCategory(await getFeatureConfig(userId), item.kind);
   const [[progress], [relationships], [rating]] = await Promise.all([
     db.select().from(readingProgress).where(and(eq(readingProgress.userId, userId), eq(readingProgress.workId, id))),
     db.select({ favourite: trackingState.favourite, watchlist: trackingState.watchlist, collected: trackingState.collected }).from(trackingState).where(and(eq(trackingState.userId, userId), eq(trackingState.mediaId, id))),
@@ -56,7 +57,7 @@ export async function readingDetails(userId: string, id: string) {
 export async function readingCatalogue(userId: string, raw: unknown = {}) {
   v.parse(uuid, userId);
   const input = v.parse(readingCatalogueSchema, raw);
-  const config = await getConfig();
+  const config = await getFeatureConfig(userId);
   requireEnabledCategory(config, 'reading');
   if (input.kind !== 'all') requireEnabledCategory(config, input.kind);
   const aliases = presentationSearch(userId,sql`${readingWorks.id}`,input.search);
@@ -103,7 +104,7 @@ export async function readingCards(ownerId: string, viewerId: string | null, ite
 export async function readingProviderCards(userId: string, metadata: ReadingMetadata[]) {
   if (!metadata.length) return [];
   if (metadata.length > PAGE_SIZE) throw new DomainError('Too many reading results.', 400, 'invalid_input');
-  const config = await getConfig();
+  const config = await getFeatureConfig(userId);
   const identities = metadata.flatMap(item => [{ provider: item.provider, externalId: item.externalId, kind: item.kind },
     ...(item.identities ?? []).map(identity => ({ ...identity, kind: item.kind }))]);
   const registered = await getDb().select({ identity: workIdentifiers, work: readingWorks }).from(workIdentifiers)

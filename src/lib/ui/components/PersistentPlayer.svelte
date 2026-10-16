@@ -152,14 +152,16 @@
     return reports(session.id, event, async () => {
       try {
         if (started && event !== 'start' && acknowledgedSessionId !== session.id) {
-          await request(`playback/${session.id}/progress`, {
+          const acknowledgement=await request<{disabled?:boolean}>(`playback/${session.id}/progress`, {
             ...payload,
             event: 'start',
             paused: false,
           });
+          if(acknowledgement?.disabled){if(player.session?.id===session.id){pause(true);void close(true,true);}return false;}
           acknowledgedSessionId = session.id;
         }
-        await request(`playback/${session.id}/progress`, payload);
+        const result=await request<{disabled?:boolean}>(`playback/${session.id}/progress`, payload);
+        if(result?.disabled){if(player.session?.id===session.id){pause(true);void close(true,true);}return false;}
         if (player.session?.id === session.id) trackingNotice = '';
         if (event === 'start') acknowledgedSessionId = session.id;
         return true;
@@ -193,14 +195,15 @@
     if(lastTouchTap&&now-lastTouchTap.at<=350&&Math.hypot(event.clientX-lastTouchTap.x,event.clientY-lastTouchTap.y)<=24){lastTouchTap=null;toggleCrop();}
     else lastTouchTap={at:now,x:event.clientX,y:event.clientY};
   }
-  async function close(cancelPreparing: unknown = true) {
+  async function close(cancelPreparing: unknown = true, withdrawn=false) {
     if(cancelPreparing!==false)cancelPlaybackPreparation();
     if (closed) return;
     closed = true;
-    const shared=sharedMode;
-    if(syncedPlayer.room&&!syncedPlayer.changing){if(isSyncHost())await syncedCommand('stop');else await leaveSynced();}
+    const closingSession=player.session?.id,shared=sharedMode;
+    if(syncedPlayer.room&&!syncedPlayer.changing){if(withdrawn)await leaveSynced(true);else if(isSyncHost())await syncedCommand('stop');else await leaveSynced();}
     pause(true);
-    await report('stop');
+    if(!withdrawn)await report('stop');
+    if(player.session?.id!==closingSession){closed=false;return;}
     player.role = 'idle';
     player.paused = true;
     player.session = null;

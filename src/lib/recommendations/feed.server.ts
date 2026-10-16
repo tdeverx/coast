@@ -1,6 +1,6 @@
+import { getFeatureConfig } from '$lib/server/features';
 import * as v from 'valibot';
 import {getSql} from '$lib/server/db/index';
-import {getConfig} from '$lib/server/config';
 import {AppError} from '$lib/server/security/errors';
 import {genreRowTitle,relatedRowTitle,popularRowTitle,recommendationRowTitle} from './row-titles';
 import {genreReason,rankRows} from './row-ranking';
@@ -8,9 +8,10 @@ import {interestWorks} from './interests.server';
 import type {DynamicRow,DynamicMedium,DynamicKind,GenreReason} from './model';
 /** One immutable definition census per visit; card pages remain separate lazy requests. */
 export async function dynamicFeed(userId:string,url:URL){
- const config=await getConfig();
+ const config=await getFeatureConfig(userId);
+ if(!config.features.personalisation)throw new AppError(403,'Personalisation is turned off.','feature_disabled');
  const seed=url.searchParams.has('seed')?v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(64),v.regex(/^[a-zA-Z0-9-]+$/)),url.searchParams.get('seed')):`${userId}:${new Date().toISOString().slice(0,10)}`;
- const enabled=(category:DynamicMedium)=>category==='screen'||category==='music'&&config.experimentalMusic||category==='game'&&config.experimentalGaming||category==='reading'&&(config.experimentalBooks||config.experimentalComics);
+ const enabled=(category:DynamicMedium)=>category==='screen'&&config.features.screen||category==='music'&&config.experimentalMusic||category==='game'&&config.experimentalGaming||category==='reading'&&(config.experimentalBooks||config.experimentalComics);
  const interests=(await interestWorks(userId)).filter(work=>enabled(work.category)&&(work.kind!=='book'||config.experimentalBooks)&&(work.kind!=='comic'||config.experimentalComics));
  const genres=new Map<string,{category:DynamicMedium;genre:string;score:number;consumed:number;positive:number}>();
  const definitions:(DynamicRow&{weight:number})[]=[];
@@ -43,7 +44,7 @@ export async function dynamicFeed(userId:string,url:URL){
    const adjacent=await db<{genre:string}[]>`with candidates as(select coalesce(m.genres,g.genres,a.genres,b.subjects,'{}'::text[]) as genres from works w left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id left join reading_works b on b.id=w.id where (w.category=${category} or ${category}='reading' and w.kind in ('book','comic')) and (w.kind<>'book' or ${config.experimentalBooks}) and (w.kind<>'comic' or ${config.experimentalComics}) and w.kind in ('movie','show','game','album','book','comic') and coalesce(m.genres,g.genres,a.genres,b.subjects,'{}'::text[]) && ${db.array(liked,'TEXT')}::text[] order by w.id limit 2000) select genre from candidates cross join lateral unnest(genres) genre where length(trim(genre)) between 1 and 100 group by genre order by count(*) desc,genre limit 30`;
    for(const {genre} of adjacent.filter(g=>!genres.has(`${category}:${g.genre}`)).slice(0,2))addGenre(category,genre,.35,'explore');
   }
-  if(interests.some(work=>work.category===category&&work.weight>0))addDefinition({key:`popular:${category}`,surface:'popular',category,title:popularRowTitle(category,seed),weight:3});
+  if(config.features.social&&interests.some(work=>work.category===category&&work.weight>0))addDefinition({key:`popular:${category}`,surface:'popular',category,title:popularRowTitle(category,seed),weight:3});
  }
  const ordered=rankRows(definitions,seed);
  return {rows:ordered.map(({weight,...row})=>row)};

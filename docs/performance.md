@@ -127,6 +127,8 @@ bun run test:db
 bun run build
 ```
 
+Run SvelteKit generation/check and production build sequentially in one checkout. They share generated files; concurrent runs can produce different server/client bootstrap identities. Start browser acceptance only after the final build finishes, and restart any fixture server that loaded an earlier build.
+
 `test:db` requires the create-database-capable `TEST_DATABASE_URL` described above and isolates each suite. Database tests and lifecycle hooks have a bounded 30-second default so bulk import fixtures and FK cleanup can complete on slower CI runners; this is a correctness-test allowance, not a production latency target. Unit tests and benchmark deadlines retain their own limits. Choose focused tests while iterating, including resource cancellation, content revisions, request priority, journals and benchmark fixtures. Add tests for meaningful regression behavior, not timing thresholds that vary with the host. See [verification platform](verification-platform.md).
 
 For rendering changes, exercise a production build as well as development mode. Record desktop/mobile viewport, browser and device; developer tooling and hot reload affect measurements. Check:
@@ -222,3 +224,10 @@ Trakt list reconciliation builds one local alias index while preserving first re
 Seerr scans retain a nullable internal request scan UUID, a constant-size task checkpoint and at most one hundred-record page snapshot. Commit each page's request effects, notifications, marker and cursor together under the account and active-attempt fence; a notification failure rolls the page back. Resume slow metadata pages without refetching or serializing an ever-growing census. Only an individual confirmed 404 can cancel a missing request, and the update must still match the captured external identity and scan marker. A failed/incomplete traversal cannot publish `requestsVerifiedAt`. A stale attempt yields before interpreting its saved page.
 
 Notifications own one shared preference/level decision for both single notices and batches. Administrator broadcasts keyset-page enabled users/settings in batches of one hundred and insert bounded groups with one policy read, preserving complete delivery, social opt-outs, locked/silent behavior and source-key upserts. Transactional callers read policy and persist notices on their supplied connection; they must not open another pool connection while holding locks.
+
+
+### Feature policy and withdrawn consumers
+
+Feature choices are explicit subjects, not a process-wide actor cache. Request read models may share one config/subject snapshot only for that request; transaction/publication checks and queued provider admission use current policy. Filter admitted categories/cohorts before counts, ranking, pagination and taste construction. A scheduling actor's personal opt-out cannot disable shared work serving other users. Administrator stream inspection remains independent of optional personal presence.
+
+Off must remove optional resource owners, module consumers, timers and observers, rather than fetching empty results behind hidden UI. Use primitive effective-policy keys with existing cancellation/disposal. Withdrawal uses bounded, resumable outbox cleanup (forty users, one hundred resources/jobs per batch); it must not hold a settings transaction over provider I/O, create another scheduler, or flush disabled-period webhook/reminder backlog on reenabling. Operational stop/revocation remains admitted. Preserve imported positive availability when a medium is skipped, and invalidate scan checkpoints when their medium-policy signature changes.

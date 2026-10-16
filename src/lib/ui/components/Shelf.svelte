@@ -110,7 +110,7 @@
   $effect(() => {
     const ids = [...new Set(displayItems.filter(item => !item.captionActor).map(item => 'workId' in item ? item.workId ?? item.id : item.id).filter(id => /^[0-9a-f-]{36}$/.test(id)))];
     const scope = JSON.stringify([socialRevision, displayResetKey, selection.resetKey, adapter?.filters.map(control => [control.label, control.value]), adapter?.controls.map(control => [control.label, control.value])]);
-    const active = socialActive && !!page.data.user;
+    const active = socialActive && !!page.data.user && page.data.capabilities?.social!==false;
     untrack(() => enrichment.update({ ids, scope, active }));
   });
   onDestroy(enrichment.cancel);

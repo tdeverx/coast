@@ -1,10 +1,10 @@
+import { getFeatureConfig } from '$lib/server/features';
 import * as v from 'valibot';
 import { error, redirect, type ServerLoadEvent } from '@sveltejs/kit';
 import { readingDetails, readingStoredWorkId } from '$lib/reading/query.server';
 import type { ReadingDetailData } from '$lib/reading/presentation';
 import type { ReadingKind } from '$lib/reading/model';
 import { readingProviderDetails } from '$lib/providers/reading.server';
-import { getConfig } from '$lib/server/config';
 import { requireEnabledCategory } from '$lib/server/experimental';
 import { AppError } from '$lib/server/security/errors';
 import { ProviderHttpError } from '$lib/server/security/provider-fetch';
@@ -23,7 +23,7 @@ function routeError(cause: unknown, event: ServerLoadEvent): never {
   throw cause;
 }
 async function requireReading(event: ServerLoadEvent, kind: ReadingKind | 'reading') {
-  requireEnabledCategory(await getConfig(), kind);
+  requireEnabledCategory(await getFeatureConfig(event.locals.user?.id??null), kind);
   if (!event.locals.user) error(401, 'Sign in to browse reading.');
   event.depends('coast:tracking');
   event.depends('coast:reading');
@@ -39,6 +39,7 @@ export function readingDetailLoad(kind: ReadingKind, remote = false) {
         const storedId = await readingStoredWorkId(kind, id);
         if (storedId) redirect(303, `/media/${storedId}`);
         const item = await readingProviderDetails(kind, id);
+        requireEnabledCategory(await getFeatureConfig(user.id),item.kind);
         return { kind: item.kind, remote, item: { ...item, id: item.externalId }, progress: null, relationships: { favourite: false, watchlist: false, collected: false }, rating: null };
       }
       const detail = await readingDetails(user.id, id);

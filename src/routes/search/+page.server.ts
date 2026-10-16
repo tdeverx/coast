@@ -1,10 +1,10 @@
+import { getFeatureConfig } from '$lib/server/features';
 import { categoryEnabled, surfaceEnabled } from '$lib/experimental';
 import { error } from '@sveltejs/kit';
 import { publicSearch } from '$lib/social/public.server';
 import * as v from 'valibot';
 import { searchMedia } from '$lib/catalogue/service.server';
 import { mediaViews } from '$lib/server/queries/media';
-import { getConfig } from '$lib/server/config';
 import { readingSearch, readingSearchInitial, searchPresentations, type ReadingSearchContent } from '$lib/server/queries/search';
 import { READING_PROVIDER_PAGE_LIMIT } from '$lib/reading/model';
 import { pageNumberSchema } from '$lib/server/queries/pagination';
@@ -34,14 +34,14 @@ export const load: PageServerLoad = async ({locals, url, depends}) => {
   if (!readingFilters.success) error(400, 'Choose valid reading search filters.');
   const readingEmpty: ReadingSearchContent = { items: [], failure: '', notice: '', truncated: false, page: readingFilters.output.page, pages: 1, total: 0 };
   if (!locals.user) {
-    if ((await getConfig()).siteAccess !== 'public-read-only') error(401, 'Sign in to search.');
+    if ((await getFeatureConfig(null)).siteAccess !== 'public-read-only') error(401, 'Sign in to search.');
     const items = query ? await publicSearch(query) : [];
     const initial = {items:items.slice(0,100),providerUnavailable:false,truncated:items.length>100};
     const empty = {items:[],discover:[],failure:'',truncated:false};
     return {query,kind:['movie','show'].includes(type.output)?type.output:'all',view:'watch',initial,readingInitial:readingEmpty,watch:Promise.resolve(initial),listen:Promise.resolve(empty),play:Promise.resolve(empty),read:Promise.resolve(readingEmpty),readingFilters:readingFilters.output};
   }
 
-  const config = await getConfig();
+  const config = await getFeatureConfig(locals.user?.id??null);
   if (selectedView !== 'all' && !surfaceEnabled(config,selectedView))
     error(404, 'This search view is unavailable.');
   if (selectedView === 'read') {

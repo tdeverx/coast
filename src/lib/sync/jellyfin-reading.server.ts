@@ -1,7 +1,7 @@
 import {and,eq} from 'drizzle-orm';
 import {getDb} from '$lib/server/db';
 import {workEditions,readingWorks,workIdentifiers} from '$lib/server/db/schema';
-import {getConfig} from '$lib/server/config';
+import {getFeatureConfig} from '$lib/server/features';
 import {bookFormat,type JellyfinBook} from '$lib/providers/jellyfin/reading.server';
 import {readingProviderDetails,readingWorkForEdition} from '$lib/providers/reading.server';
 import {importReading} from '$lib/catalogue/reading.server';
@@ -12,7 +12,7 @@ import * as v from 'valibot';
 type Context=Awaited<ReturnType<typeof import('$lib/providers/jellyfin/connection.server').getJellyfin>>;
 /** Exact plugin identifiers or the user's explicit file link; never a title/filename guess. */
 export async function importJellyfinReading(context:Context,books:JellyfinBook[],options:{access:boolean;scanId?:string;expectedResetId?:string|null;checkpoint?:(processed:number)=>Promise<void>}){
- const config=await getConfig();let imported=0;
+ const config=await getFeatureConfig(options.access?context.connection.userId:null);let imported=0;
  async function importBook(book:JellyfinBook):Promise<number>{
   if(!bookFormat(book))return 0;
   const [edition]=await getDb().select({work:readingWorks}).from(workEditions).innerJoin(readingWorks,eq(readingWorks.id,workEditions.workId)).where(and(eq(workEditions.instanceId,context.instance.id),eq(workEditions.externalId,book.Id)));

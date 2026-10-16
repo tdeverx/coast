@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { featureDefinitions, administratorFeatures, type PersonalFeature } from '$lib/features';
   import {apiScopes,apiScopeLabels,type ApiScope} from '$lib/public-api';
   import { collectionCategories, collectionRules } from '$lib/collection/preferences';
   import { categoryEnabled } from '$lib/experimental';
@@ -65,7 +66,7 @@
   } | null>(null);
   let initializedSection = untrack(() => data.section);
   const fields = $derived(
-    data.section === 'policies'
+    data.section === 'features-policy' ? ['features'] : data.section === 'policies'
       ? policyFields
       : data.section === 'activity'
         ? ['diagnosticLevel']
@@ -75,7 +76,7 @@
     untrack(() =>
       JSON.stringify(
         selectSettings(
-          ['policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
+          ['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
           fields
         )
       )
@@ -83,7 +84,7 @@
   );
   const draft = $derived({
     ...selectSettings(
-      ['policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
+      ['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
       fields
     ),
     ...(data.section === 'playback'
@@ -107,7 +108,7 @@
     allowlistText = policy?.serverAllowlist.join('\n') ?? '';
     saved = JSON.stringify(
       selectSettings(
-        ['policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
+        ['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? (policy ?? {}) : prefs,
         fields
       )
     );
@@ -135,7 +136,7 @@
     const submitted = $state.snapshot(draft);
     if (
       await save(
-        ['policies', 'activity', 'users'].includes(data.section) ? 'settings/system' : 'settings',
+        ['features-policy', 'policies', 'activity', 'users'].includes(data.section) ? 'settings/system' : 'settings',
         submitted,
         data.section === 'activity'
           ? 'Diagnostic logging updated. Changes are active now.'
@@ -223,10 +224,25 @@
         >
           {error}
         </div>{/if}
-      {#if data.section === 'collection'}
+      {#if data.section === 'features' || data.section === 'features-policy'}
+        <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}>
+          <fieldset class="panel stack" disabled={busy}>
+          {#each featureDefinitions.filter(([key])=>data.section==='features-policy' ? administratorFeatures.includes(key as typeof administratorFeatures[number]) : key!=='api') as [key,title,description]}
+            {@const reason=(key==='presence'||key==='parties')&&prefs.features?.social===false?'social':key==='sharing'&&prefs.features?.playback===false?'playback':data.featureDecisions[key].reason==='personal'?null:data.featureDecisions[key].reason}
+            <div class="setting"><div><h3>{title}</h3><p>{description}</p>{#if key==='requests'}<a class="small" href="/requests">Manage existing requests</a>{/if}
+              {#if data.section==='features' && reason}<p class="small muted">{reason==='experiment'?'Requires its experiment in Policies.':reason==='social'?'Requires Social.':reason==='playback'?'Requires Playback.':'Unavailable in installation settings.'} Your choice is remembered.</p>{/if}
+            </div><input type="checkbox" aria-label={title}
+              checked={data.section==='features-policy' ? policy?.features[key as typeof administratorFeatures[number]]!==false : prefs.features?.[key as PersonalFeature]!==false}
+              onchange={event=>{if(data.section==='features-policy'&&policy)policy.features={...policy.features,[key]:event.currentTarget.checked};else prefs.features={...prefs.features,[key]:event.currentTarget.checked};}} /></div>
+          {/each}
+          </fieldset>
+          <p class="small muted">Privacy, connection sync choices, playback limits and sharing permissions remain in their existing settings. Stored history and saved preferences are preserved.</p>
+          {@render saveControls('Save features')}
+        </form>
+      {:else if data.section === 'collection'}
         <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}>
         <p class="small">Explicitly collected items always stay in Collection. These rules only control automatic membership.</p>
-        {#each collectionCategories.filter(category=>categoryEnabled(data,category.value)) as category}
+        {#each collectionCategories.filter(category=>categoryEnabled({...data,features:page.data.capabilities},category.value)) as category}
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">{category.label}</legend><h3>{category.label}</h3>
             {#each collectionRules.filter(rule=>!['book','comic'].includes(category.value)||rule.value!=='queue') as rule}
@@ -241,7 +257,7 @@
   <label class="field">Profile audience<select bind:value={prefs.social.audience}>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>
   <p class="small">A private profile is hidden from everyone else. Other sections can have their own audience.</p>
   {#each socialSections as section}<label class="field">{section}<select value={prefs.social.sections?.[section]??'default'} onchange={event=>{const value=event.currentTarget.value;prefs.social={...prefs.social,sections:{...prefs.social.sections,[section]:value==='default'?undefined:value as Audience}};}}><option value="default">Use profile audience</option>{#each audiences as audience}<option value={audience}>{audience}</option>{/each}</select></label>{/each}
-  {#each socialCategories.filter(category=>categoryEnabled(data,category)) as category}<label class="field">{category} sharing<select value={prefs.social.categories?.[category]??'public'} onchange={event=>{prefs.social={...prefs.social,categories:{...prefs.social.categories,[category]:event.currentTarget.value as Audience}};}}>{#each audiences as audience}<option value={audience}>{audience==='public'?'Use section audience':audience}</option>{/each}</select></label>{/each}
+  {#each socialCategories.filter(category=>categoryEnabled({...data,features:page.data.capabilities},category)) as category}<label class="field">{category} sharing<select value={prefs.social.categories?.[category]??'public'} onchange={event=>{prefs.social={...prefs.social,categories:{...prefs.social.categories,[category]:event.currentTarget.value as Audience}};}}>{#each audiences as audience}<option value={audience}>{audience==='public'?'Use section audience':audience}</option>{/each}</select></label>{/each}
   <Heading title="Social notifications" />
   {#each ['friend-accepted','recommendation','reaction','synced-invite'] as const as kind}<label class="check"><input type="checkbox" checked={prefs.social.notifications?.[kind]!==false} onchange={event=>{prefs.social={...prefs.social,notifications:{...prefs.social.notifications,[kind]:event.currentTarget.checked}};}} />{kind==='synced-invite'?'Synced session invitations':kind}</label>{/each}
   <p class="small">Incoming friend requests appear in Friends.</p>
@@ -390,7 +406,7 @@
           <label class="field">Token name<input required maxlength="60" bind:value={apiName}/></label>
           <label class="field">Expires in days<input type="number" min="1" max="365" required bind:value={apiDays}/></label>
           <fieldset class="stack"><legend>Permissions</legend>{#each apiScopes as scope}<label class="check"><input type="checkbox" bind:group={apiGrants} value={scope}/>{apiScopeLabels[scope]}</label>{/each}</fieldset>
-          <Button type="submit" disabled={busy||!apiGrants.length}>Create token</Button>
+          <Button type="submit" disabled={busy||!apiGrants.length||page.data.capabilities?.api===false}>Create token</Button>
         </form>
         {#if apiToken}<div class="panel stack"><p role="status">Copy this token now. It will not be shown again.</p><label class="field">API token<input readonly autocomplete="off" spellcheck={false} value={apiToken} onclick={event=>event.currentTarget.select()}/></label><Button emphasis="subtle" onclick={()=>apiToken=''}>Hide</Button></div>{/if}
         {#each data.apiTokens as token (token.id)}<div class="panel stack"><div class="spread"><strong>{token.name}</strong><Button emphasis="subtle" danger disabled={busy||!!token.revokedAt} onclick={async()=>{if(busy)return;busy=true;error='';try{await change(`settings/tokens/${token.id}`,undefined,'DELETE');}catch(cause){error=message(cause);}finally{busy=false;}}}>{token.revokedAt?'Revoked':'Revoke'}</Button></div><p class="small muted">{token.scopes.join(', ')} · Expires {new Date(token.expiresAt).toLocaleDateString()}</p></div>{/each}

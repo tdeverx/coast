@@ -35,7 +35,7 @@ function notificationValues(input: NotificationInput, settings: UserSettings, co
   const requestedLevel = maySilence && userLevel && ['silent', 'normal', 'persistent'].includes(userLevel)
     ? userLevel : input.level || config.notificationLevel;
   const level = input.locked && requestedLevel === 'silent' ? 'normal' : requestedLevel;
-  return sql`(${input.userId}, ${input.kind}, ${input.title.slice(0, 160)}, ${input.body?.slice(0, 2000) || null},
+  return sql`(${input.userId}::uuid, ${input.kind}, ${input.title.slice(0, 160)}, ${input.body?.slice(0, 2000) || null},
     ${level}, ${input.locked || false}, ${input.sourceKey || null}, ${input.data ?? null}::jsonb)`;
 }
 
@@ -45,7 +45,8 @@ async function writeNotifications(inputs: NotificationInput[], settings: Map<str
   const flush = async () => {
     if (!values.length) return;
     const rows = await notificationQuery<{id: string}>(database, sql`INSERT INTO notifications (user_id, kind, title, body, level, locked, source_key, data)
-      VALUES ${sql.join(values, sql`, `)}
+      SELECT proposed.* FROM (VALUES ${sql.join(values, sql`, `)}) AS proposed(user_id,kind,title,body,level,locked,source_key,data)
+      WHERE coast_notification_visible(proposed.user_id::uuid,proposed.kind,proposed.data,proposed.source_key)
       ON CONFLICT (user_id, source_key) DO UPDATE SET title = EXCLUDED.title, body = EXCLUDED.body, level = EXCLUDED.level, locked = EXCLUDED.locked, data = EXCLUDED.data
       RETURNING id`);
     ids.push(...rows.map(row => row.id)); values.length = 0; keys.clear();
@@ -99,7 +100,7 @@ export async function inbox(actor: SessionUser | null, limit = 50,filters:{kind?
       createdAt: notifications.createdAt,
     })
     .from(notifications)
-    .where(and(eq(notifications.userId, user.id),sql`${notifications.kind}<>'friend-request'`, isNull(notifications.dismissedAt),sql`social_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data})`,sql`not exists(select 1 from outbox_actions job where ${notifications.kind}='external-action' and job.id::text=split_part(${notifications.sourceKey},':',2) and job.user_id=${notifications.userId} and job.state in ('cancelled','succeeded'))`,filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread?isNull(notifications.readAt):undefined))
+    .where(and(eq(notifications.userId, user.id),sql`${notifications.kind}<>'friend-request'`, isNull(notifications.dismissedAt),sql`coast_notification_visible(${user.id}::uuid,${notifications.kind},${notifications.data},${notifications.sourceKey})`,sql`not exists(select 1 from outbox_actions job where ${notifications.kind}='external-action' and job.id::text=split_part(${notifications.sourceKey},':',2) and job.user_id=${notifications.userId} and job.state in ('cancelled','succeeded'))`,filters.kind&&filters.kind!=='all'?eq(notifications.kind,filters.kind):undefined,filters.unread?isNull(notifications.readAt):undefined))
     .orderBy(desc(notifications.createdAt))
     .limit(Math.max(1, Math.min(200, limit)));
   return rows;

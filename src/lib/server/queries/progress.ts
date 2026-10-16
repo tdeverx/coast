@@ -1,3 +1,4 @@
+import { getFeatureConfig } from '$lib/server/features';
 import { enabledCategories, requireEnabledCategory, selectedCategory } from '../experimental';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import type { MediaView } from '$lib/ui/types';
@@ -9,7 +10,6 @@ import { progressOptionsSchema, type ProgressContent } from '../../progress';
 import { continuationIds } from './continuations';
 import { profileProgress } from './profile';
 import { listsData } from './lists';
-import { getConfig } from '../config';
 import { AppError } from '../security/errors';
 import { requireVisible } from '$lib/social/privacy.server';
 import { workAssessments, workCards } from '$lib/collection/query.server';
@@ -27,7 +27,7 @@ export async function progressData(userId:string, raw:unknown = {}, viewerId=use
   // Do not probe private activity in another medium when viewing someone else's profile.
   if(userId!==viewerId)return {...result,emptyAllMedia:false};
   if(result.total)return {...result,emptyAllMedia:false};
-  const config=await getConfig();
+  const config=await getFeatureConfig(viewerId);
   // An empty default medium cannot hide another medium's personal content.
   // Check lightweight relationship/activity evidence instead of hydrating extra card pages.
   const [other]=await getDb().execute<{present:boolean}>(sql`select exists(select 1 from works w where ${enabledCategories(sql`w.category`,config)} and not (${selectedCategory(sql`w.category`,result.category)}) and (
@@ -106,7 +106,7 @@ async function readProgressData(
 
 /** A single local page shares Continue/Next/saved rows without treating pages as playback. */
 async function readingProgress(userId:string, viewerId:string, options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
-  const config=await getConfig();
+  const config=await getFeatureConfig(viewerId);
   requireEnabledCategory(config,'reading');
   if(options.kind!=='all'&&!['book','comic'].includes(options.kind))throw new AppError(400,'Choose Books or Comics.');
   if(options.kind!=='all')requireEnabledCategory(config,options.kind);
@@ -265,7 +265,7 @@ async function screenProgressPlan(userId: string, options: import('$lib/progress
 
 /** Concrete game/music activity stays in its own tables; only presentation is shared. */
 async function mediumProgress(userId:string, viewerId:string, options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
-  requireEnabledCategory(await getConfig(),options.category);
+  requireEnabledCategory(await getFeatureConfig(viewerId),options.category);
   if(['finished','dropped'].includes(options.view))throw new AppError(400,'Choose Continue, Next or a saved view for this medium.');
   const saved=options.view==='watchlist'||options.view==='favourites';
   if(saved) {
@@ -299,7 +299,7 @@ async function mediumProgress(userId:string, viewerId:string, options:import('$l
 /** Received recommendations outlive notification delivery; filter IDs before hydrating a page. */
 async function recommendationProgress(userId:string,viewerId:string,options:import('$lib/progress').ProgressOptions):Promise<ProgressContent> {
   if(userId!==viewerId)throw new AppError(403,'Recommendations are private to their recipient.');
-  const config=await getConfig();requireEnabledCategory(config,options.category);
+  const config=await getFeatureConfig(viewerId);requireEnabledCategory(config,options.category);
   if(options.category==='reading'&&options.kind!=='all'&&!['book','comic'].includes(options.kind)||options.category!=='reading'&&['book','comic'].includes(options.kind))throw new AppError(400,'Choose a type for the selected medium.');
   if(['book','comic'].includes(options.kind))requireEnabledCategory(config,options.kind);
   const rows=await getDb().execute<{workId:string;ids:string[];names:string[]}>(sql`

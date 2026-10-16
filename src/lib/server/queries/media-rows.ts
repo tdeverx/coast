@@ -1,7 +1,7 @@
+import { getFeatureConfig } from '$lib/server/features';
 import { personaliseWorkCards } from '$lib/catalogue/overrides/presentation.server';
 import { desc, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getConfig } from '$lib/server/config';
 import { requireExperimentalFeature } from '$lib/server/experimental';
 import { mapConcurrent } from '$lib/server/utils/async';
 import { ownedGameAvailable } from '$lib/games/availability.server';
@@ -68,7 +68,7 @@ export async function gameRow(userId: string, personal = false, availableOnly = 
 
 export async function presentationContent(userId: string, url: URL): Promise<PresentationRow> {
   const surface = v.parse(v.picklist(['listen', 'play']), url.searchParams.get('surface'));
-  requireExperimentalFeature(await getConfig(), surface === 'listen' ? 'music' : 'gaming');
+  requireExperimentalFeature(await getFeatureConfig(userId), surface === 'listen' ? 'music' : 'gaming');
   if (surface === 'listen') {
     const kind = v.parse(
       v.picklist(['all', 'album', 'artist', 'track']),
@@ -93,7 +93,7 @@ export async function presentationContent(userId: string, url: URL): Promise<Pre
 }
 
 // Only configuration is needed during SSR; off-screen providers load when their rows approach.
-export async function mediaRows(personal = false) {
-  const config=await getConfig();
+export async function mediaRows(personal = false, userId: string | null = null) {
+  const config=await getFeatureConfig(userId);
   return { experimentalMusic:config.experimentalMusic, experimentalGaming:config.experimentalGaming, experimentalBooks:config.experimentalBooks, experimentalComics:config.experimentalComics, personal };
 }

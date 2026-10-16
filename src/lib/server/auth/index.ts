@@ -1,3 +1,7 @@
+import { featureValues, hasWithdrawnFeatures } from '$lib/features';
+import { invalidateFeatureSubject } from '$lib/server/config';
+import { queueFeatureTransition } from '$lib/application/feature-transition.server';
+import { featureChoicesSchema } from '$lib/server/features';
 import { usernameSchema, passwordSchema } from '$lib/auth/registration';
 import { collectionPreferencesSchema } from '$lib/collection/preferences';
 import { socialSettingsSchema } from '$lib/social/model';
@@ -312,6 +316,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
           v.literal('coast'),
           v.pipe(v.string(), v.uuid()),
         ]),
+        features: featureChoicesSchema,
         social: socialSettingsSchema,
         collection: collectionPreferencesSchema,
         shareDemand: v.boolean(),
@@ -350,7 +355,17 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
       );
     if (!connection) throw new AppError(400, 'Choose one of your connected accounts.');
   }
-  await getSql()`UPDATE users SET settings = settings || ${settings}::jsonb WHERE id = ${user.id}`;
+  // Merge against the locked current row: a partial feature patch cannot erase other choices.
+  await getSql().begin(async tx => {
+    const [current] = await tx`select settings from users where id=${user.id} for update`;
+    const patch = {...settings, ...(settings.features ? {features:{...current.settings.features,...settings.features}} : {})};
+    await tx`update users set settings=settings||${patch}::jsonb where id=${user.id}`;
+    if(settings.features){
+      const config=await getConfig(tx);
+      if(hasWithdrawnFeatures(featureValues(config,current.settings.features),featureValues(config,patch.features)))await queueFeatureTransition(tx,user.id,config,user.id,patch.features);
+    }
+  });
+  invalidateFeatureSubject(user.id);
   return settings;
 }
 

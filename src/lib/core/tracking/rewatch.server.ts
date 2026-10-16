@@ -1,3 +1,4 @@
+import { requireWorkFeature } from '$lib/server/features';
 import { and, eq, sql, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../../server/db';
@@ -50,6 +51,7 @@ export async function setRewatch(userId: string, raw: unknown) {
     return;
   }
   await db.transaction(async (tx) => {
+    await requireWorkFeature(tx,userId,input.mediaId);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
     // A whole-show run supersedes old season/episode boundaries, never historical watches.
     if (item.kind === 'show')

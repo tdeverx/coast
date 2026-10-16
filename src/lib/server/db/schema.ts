@@ -39,6 +39,7 @@ export type ProfileSettings = {
   favouriteOrder?: string[];
 };
 export type UserSettings = {
+  features?: import('../../features').FeatureChoices;
   collection?: import('../../collection/preferences').CollectionPreferences;
   presenceAudience?: import('../../social/model').Audience;
   activityStatus?: import('../../social/status').StatusPreference;

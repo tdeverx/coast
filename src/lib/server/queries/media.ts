@@ -1,3 +1,4 @@
+import { getFeatureConfig } from '$lib/server/features';
 import type { SequenceSource } from '../../media/sequence';
 import { sequenceEntries, sequenceSummaries, nextSequenceEntries, nextSequenceEntry, type SequenceEntry } from '../../core/lists/sequence.server';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
@@ -110,6 +111,7 @@ export async function mediaViews(
   v.parse(uuidSchema, userId);
   const options = v.parse(viewOptionsSchema, rawOptions);
   if (options.ids?.length === 0) return [];
+  if(!(await getFeatureConfig(viewerId)).features.screen)return [];
   if(viewerId===null)return (await (await import('$lib/social/public.server')).publicMedia(options.ids)).filter(item=>!options.kind||item.kind===options.kind).slice(0,options.limit??150);
   const db = getDb();
   const search = options.query ? searchSql(options.query,

@@ -11,7 +11,7 @@ export function workMenuScope(target: unknown) {
   return JSON.stringify([target, contentRevisionKey(page.data, ['tracking']),
     page.data.user?.role, page.data.user?.settings, page.data.experimentalMusic,
     page.data.experimentalGaming, page.data.experimentalBooks, page.data.experimentalComics,
-    page.data.experimentalParties, page.data.experiments, page.data.playbackSharing]);
+    page.data.experimentalParties, page.data.experiments, page.data.playbackSharing, page.data.capabilities]);
 }
 const empty = (): WorkActionState => ({ reasons: [], rating: null, queued: false, game: null, reading: null });
 /** Shared personal state is local; provider resolution and dialogs belong to their domains. */

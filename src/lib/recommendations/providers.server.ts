@@ -15,13 +15,14 @@ import {serviceTasks} from '$lib/providers/tasks';
 import {taskDue,taskSchedulingEnabled} from '$lib/providers/task-timing';
 import {promotedPurpose,readJobPurpose} from '$lib/providers/job-policy';
 import {PermanentActionError,type OutboxAction} from '$lib/server/queue/index';
-import {interestWorks} from './interests.server';
+import {interestWorks,interestPolicyRevision} from './interests.server';
 type Tx=Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0];
 type RecommendationAccount={id:string;user_id:string|undefined;account_generation:string|null;external_user_id:string|null;settings:Record<string,unknown>;completed:Date|null};
 type Options={instanceId?:string;adminId?:string;kind?:string;task?:string;force?:boolean};
 /** Existing maintenance transaction/queue owns deduplication, pauses, service pacing and retries. */
 export async function scheduleRecommendationRefresh(tx:Tx,options:Options){
  const config=await getConfig();
+ if(config.features.personalisation===false)return {queued:0,active:0};
  if(options.task&&!['all','metadata','tracking'].includes(options.task))return {queued:0,active:0};
  const instances=await tx.execute<{id:string;provider:string;settings:Record<string,unknown>}>(sql`select id,provider,settings from provider_instances where enabled and credentials is not null and provider in ('tmdb','igdb','trakt') and (${options.instanceId??null}::uuid is null or id=${options.instanceId??null}::uuid) order by id`);
  let queued=0,active=0;
@@ -29,6 +30,7 @@ export async function scheduleRecommendationRefresh(tx:Tx,options:Options){
  for(const instance of instances){
   const kind=`${instance.provider}.recommendations`,schedule=providerSchedule(instance.provider,instance.settings.schedule);
   const task=serviceTasks(instance.provider).find(entry=>entry.kinds[0]===kind)!;
+  if(instance.provider!=='trakt'&&!(await tx.execute<{allowed:boolean}>(sql`select coast_job_allowed(null,${kind},'{}'::jsonb) as allowed`))[0].allowed)continue;
   if(options.kind&&options.kind!==kind||!taskSchedulingEnabled(instance.provider,true,task,schedule,config,options.force))continue;
   if(options.task==='tracking'&&instance.provider!=='trakt'||options.task==='metadata'&&instance.provider==='trakt')continue;
   const busy=await tx.execute<{id:string;connection_id:string|null;payload:Record<string,unknown>}>(sql`select a.id,a.connection_id,a.payload from outbox_actions a
@@ -45,7 +47,7 @@ export async function scheduleRecommendationRefresh(tx:Tx,options:Options){
    select c.id,c.user_id,c.account_generation,c.external_user_id,c.settings,
     (select max(a.updated_at) from outbox_actions a where a.connection_id=c.id and a.kind=${kind} and a.state='succeeded' and (a.account_generation is null or a.account_generation=c.account_generation)) as completed
    from provider_connections c join users u on u.id=c.user_id and not u.disabled
-   where c.instance_id=${instance.id} and c.status='connected' and c.credentials is not null order by c.created_at,c.id`)) as RecommendationAccount[]:[];
+   where coast_feature_enabled(c.user_id,'personalisation') and coast_feature_enabled(c.user_id,'screen') and c.instance_id=${instance.id} and c.status='connected' and c.credentials is not null order by c.created_at,c.id`)) as RecommendationAccount[]:[];
   const [last]=instance.provider==='trakt'?[]:await tx.execute<{updated:Date|null}>(sql`select max(updated_at) as updated from outbox_actions where kind=${kind} and payload->>'instanceId'=${instance.id} and state='succeeded'`);
   const [admin]=instance.provider==='trakt'?[]:await tx.execute<{id:string}>(sql`select id from users where role='admin' and not disabled order by created_at,id limit 1`);
   const candidates:RecommendationAccount[]=instance.provider==='trakt'?accounts:[{id:instance.id,user_id:admin?.id,account_generation:null,external_user_id:null,settings:{},completed:last?.updated??null}];
@@ -66,7 +68,7 @@ export async function scheduleRecommendationRefresh(tx:Tx,options:Options){
  return {queued,active};
 }
 const checkpointSchema=v.object({
- task:v.literal('provider-recommendations'),instanceId:v.string(),
+ task:v.literal('provider-recommendations'),instanceId:v.string(),policyRevision:v.string(),
  seeds:v.pipe(v.array(v.object({id:v.nullable(v.string()),external_id:v.string(),kind:v.picklist(['movie','show','game'])})),v.maxLength(6)),
  next:v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(6)),
  added:v.pipe(v.number(),v.integer(),v.minValue(0)),
@@ -82,6 +84,8 @@ async function saveSet(instanceId:string,key:string,ids:string[],seedId:string|n
   const [user]=await tx.select().from(users).where(eq(users.id,action.userId)).for('update');
   if(!instance?.enabled||!instance.credentials||!user||user.disabled)throw new PermanentActionError('The recommendation service is unavailable.');
   await assertJobLease(tx,true);
+  const [admission]=await tx.execute<{allowed:boolean}>(sql`select coast_job_allowed(${action.userId}::uuid,${action.kind},${action.payload}::jsonb) as allowed`);
+  if(!admission.allowed)throw new PermanentActionError('Personalisation is turned off.');
   const items=[...new Set(ids)].slice(0,60);
   await tx.insert(recommendationSets).values({instanceId,key,seedId,connectionId:action.connectionId,accountGeneration:action.accountGeneration??null,items})
    .onConflictDoUpdate({target:[recommendationSets.instanceId,recommendationSets.key],set:{seedId,connectionId:action.connectionId,accountGeneration:action.accountGeneration??null,items,updatedAt:new Date()}});
@@ -103,7 +107,7 @@ export async function refreshProviderRecommendations(action:OutboxAction){
    const workIds=interests.sort((a,b)=>b.weight-a.weight||new Date(b.updated).getTime()-new Date(a.updated).getTime()).map(work=>work.id);
    seeds=workIds.length?Array.from(await db<{id:string;external_id:string;kind:'movie'|'show'|'game'}[]>`select w.id,w.kind,coalesce(e.external_id,g.external_id) as external_id from works w left join external_ids e on e.media_id=w.id and e.provider='tmdb' and e.media_kind=w.kind left join game_external_ids g on g.game_id=w.id and g.provider='igdb' left join recommendation_sets r on r.instance_id=${instance.id} and r.seed_id=w.id where w.id=any(${db.array(workIds,'UUID')}::uuid[]) and coalesce(e.external_id,g.external_id) is not null and (${!!action.payload.force} or r.updated_at is null or r.updated_at<now()-interval '1 day') order by r.updated_at nulls first,array_position(${db.array(workIds,'UUID')},w.id),w.id limit 6`):[];
   }
-  checkpoint={task:'provider-recommendations',instanceId:instance.id,seeds,next:0,added:0};
+  checkpoint={task:'provider-recommendations',instanceId:instance.id,policyRevision:await interestPolicyRevision(),seeds,next:0,added:0};
   // Freeze the bounded selection before any set's freshness changes. A resumed
   // forced run must not select the same first seeds or a different batch.
   await saveJobCheckpoint(checkpoint);
@@ -111,8 +115,10 @@ export async function refreshProviderRecommendations(action:OutboxAction){
  if(checkpoint.next>=checkpoint.seeds.length)return {checked:checkpoint.next,added:checkpoint.added};
  const trakt=instance.provider==='trakt'?(await getTrakt(action.userId,action.connectionId!)).adapter:null;
  const tmdb=instance.provider==='tmdb'?await getTmdb('en-US','GB',instance.id):null;
+ const consentChanged=instance.provider!=='trakt'&&checkpoint.policyRevision!==await interestPolicyRevision();
  for(;checkpoint.next<checkpoint.seeds.length;){
   const seed=checkpoint.seeds[checkpoint.next],ids:string[]=[];
+  if(consentChanged){checkpoint.next++;await saveJobCheckpoint(checkpoint);await jobCheckpoint();continue;}
   if(trakt&&seed.kind!=='game'){
    for(const item of (await trakt.recommendations(seed.kind)).slice(0,40)){
     if(!item.ids.tmdb)continue;

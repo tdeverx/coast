@@ -10,7 +10,7 @@ import {trackWithExports} from '../src/lib/sync/changes.server';
 const enabled=process.env.COAST_DB_TEST==='1',run=enabled?test:test.skip;
 const tag=crypto.randomUUID(),albumExternal='a'.repeat(32),trackExternal='b'.repeat(32);
 const remote={Played:false,PlayCount:0,PlaybackPositionTicks:0,IsFavorite:false};
-const writes:Record<string,unknown>[]=[];
+const writes:Record<string,unknown>[]=[],reads:string[]=[];
 let screenCopies:Record<string,unknown>[]=[];
 let screenPageSize=1;
 let failure=false,userId:string,trackId:string,albumId:string,connection:typeof s.providerConnections.$inferSelect,instance:typeof s.providerInstances.$inferSelect,oldConfig:Record<string,unknown>|null=null;
@@ -23,6 +23,7 @@ const adapter=new JellyfinAdapter(async(path,init)=>{
  if(url.pathname==='/Items'){
   if(failure)throw new Error('Interrupted first page');
   const type=url.searchParams.get('includeItemTypes')??'';
+  reads.push(type);
   const items=type==='MusicAlbum'?[album]:type==='Audio'?[track]:screenCopies;
   const offset=Number(url.searchParams.get('startIndex')??0);
   return {Items:items===screenCopies?items.slice(offset,offset+screenPageSize):items,TotalRecordCount:items.length,StartIndex:offset};
@@ -61,7 +62,7 @@ run('late mappings deliver retained music intent independently of import opt-out
 run('resuming a traversal preserves its original observation watermark',async()=>{
  const scanId=crypto.randomUUID(),startedAt=new Date(Date.now()-120000).toISOString(),db=getDb();
  await db.update(s.syncCheckpoints).set({cursor:'0',scanId}).where(and(eq(s.syncCheckpoints.connectionId,connection.id),eq(s.syncCheckpoints.kind,'jellyfin-user')));
- await settings({...connection.settings,userSync:{scanId,startedAt,processed:0,total:null,phase:'scanning'}});
+ await settings({...connection.settings,userSync:{featureSignature:'1100',scanId,startedAt,processed:0,total:null,phase:'scanning'}});
  await syncJellyfinUser(userId,connection.id,undefined,context());
  const [checkpoint]=await db.select().from(s.syncCheckpoints).where(and(eq(s.syncCheckpoints.connectionId,connection.id),eq(s.syncCheckpoints.kind,'jellyfin-user')));
  expect(checkpoint.completedAt?.toISOString()).toBe(startedAt);expect(checkpoint.scanId).toBeNull();
@@ -141,4 +142,17 @@ run('screen reconciliation crosses its 100-title boundary without skipping or re
   await db.delete(s.media).where(inArray(s.media.id,titles.map(title=>title.id)));
   await db.delete(s.works).where(inArray(s.works.id,titles.map(title=>title.id)));
  }
+});
+
+run('a music-only account resumes its retained track stage without restarting albums',async()=>{
+ const db=getDb(),scanId=crypto.randomUUID(),startedAt=new Date(Date.now()-120000).toISOString();
+ await db.update(s.users).set({settings:{features:{screen:false}}}).where(eq(s.users.id,userId));
+ await db.insert(s.syncCheckpoints).values({connectionId:connection.id,kind:'jellyfin-user',cursor:'0',scanId}).onConflictDoUpdate({target:[s.syncCheckpoints.connectionId,s.syncCheckpoints.kind],set:{cursor:'0',scanId,completedAt:null}});
+ await settings({...connection.settings,userSync:{featureSignature:'0100',scanId,startedAt,accountGeneration:connection.accountGeneration,processed:0,total:null,phase:'music-tracks',musicOffset:0,musicFilter:0,traversalTotal:null}});
+ reads.length=0;
+ try{
+  await syncJellyfinUser(userId,connection.id,undefined,context());
+  expect(reads).toContain('Audio');expect(reads).not.toContain('MusicAlbum');
+  expect(reads.every(type=>type==='Audio')).toBe(true);
+ }finally{await db.update(s.users).set({settings:{}}).where(eq(s.users.id,userId));}
 });

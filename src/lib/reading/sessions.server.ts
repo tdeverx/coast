@@ -1,8 +1,8 @@
+import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
 import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { readingSessions, readingProgress, readingWorks, providerConnections, providerInstances, workEditions, users } from '$lib/server/db/schema';
-import { getConfig } from '$lib/server/config';
 import { requireEnabledCategory } from '$lib/server/experimental';
 import { AppError } from '$lib/server/security/errors';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
@@ -24,7 +24,7 @@ async function work(userId:string,workId:string) {
  const [user]=await getDb().select({id:users.id}).from(users).where(and(eq(users.id,userId),eq(users.disabled,false)));if(!user)throw new AppError(401,'Sign in to read.');
  const [item]=await getDb().select().from(readingWorks).where(eq(readingWorks.id,workId));
  if(!item)throw new AppError(404,'Reading work not found.');
- requireEnabledCategory(await getConfig(),item.kind);return item;
+ requireEnabledCategory(await requireFeature(userId,'reader'),item.kind);return item;
 }
 export async function readingConnections(userId:string,workId:string) {
  await work(userId,workId);
@@ -59,7 +59,8 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
   signal?.throwIfAborted();
   const [user]=await tx.select({id:users.id}).from(users).where(and(eq(users.id,userId),eq(users.disabled,false)));
   if(!user)throw new AppError(401,'Sign in to read.');
-  requireEnabledCategory(await getConfig(tx),item.kind);
+  await requireFeatureInTransaction(tx,userId,'reader');
+  await requireFeatureInTransaction(tx,userId,item.kind);
   if(connectionId){
    const [source]=await tx.select({id:providerConnections.id}).from(providerConnections).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId)).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId),eq(providerConnections.accountGeneration,accountGeneration!),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true))).for('share');
    if(!source)throw new AppError(410,'Reconnect this reading source.');
@@ -71,7 +72,7 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
   return prepared;
  });
  if(signal?.aborted){await db.update(readingSessions).set({closedAt:new Date()}).where(eq(readingSessions.id,session.id));signal.throwIfAborted();}
- return {id:session.id,workId,title:item.title,format,edition,location:session.location,source:input.source,url:input.source==='jellyfin'?`/api/v1/reading/sessions/${session.id}/file`:null};
+ return {id:session.id,workId,kind:item.kind,title:item.title,format,edition,location:session.location,source:input.source,url:input.source==='jellyfin'?`/api/v1/reading/sessions/${session.id}/file`:null};
 }
 export async function ownedReadingSession(userId:string,id:string) {
  v.parse(uuid,id);
@@ -85,6 +86,7 @@ export async function moveReading(userId:string,id:string,raw:unknown) {
  const session=await ownedReadingSession(userId,id),location=v.parse(readingLocationSchema,raw);
  if(location.format!==session.format||location.format!=='epub'&&location.page>location.total)throw new AppError(400,'Choose a location inside this edition.');
  await getDb().transaction(async tx=>{
+  await requireFeatureInTransaction(tx,userId,'reader');
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
   const saved=await tx.update(readingSessions).set({location,updatedAt:new Date()}).where(and(eq(readingSessions.id,id),isNull(readingSessions.closedAt),gt(readingSessions.expiresAt,new Date()))).returning({id:readingSessions.id});
   if(!saved.length)throw new AppError(410,'This reading session has ended.');
@@ -96,8 +98,8 @@ export async function moveReading(userId:string,id:string,raw:unknown) {
  return {location};
 }
 export async function closeReading(userId:string,id:string) {
- await ownedReadingSession(userId,id);
- await getDb().update(readingSessions).set({closedAt:new Date()}).where(eq(readingSessions.id,id));return {closed:true};
+ v.parse(uuid,id);
+ await getDb().update(readingSessions).set({closedAt:new Date()}).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId)));return {closed:true};
 }
 export async function streamReading(userId:string,id:string,request:Request) {
  request.signal.throwIfAborted();

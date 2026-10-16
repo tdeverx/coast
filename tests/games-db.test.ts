@@ -17,6 +17,7 @@ suite('game catalog and private playthroughs', () => {
   beforeAll(async () => {
     await closeDb(); process.env.DATABASE_URL = target!;
     await migrate(getDb(), { migrationsFolder: `${import.meta.dir}/../drizzle` });
+    const config=await getConfig();await getDb().insert(systemSettings).values({key:'coast',value:{...config,experimentalGaming:true}}).onConflictDoUpdate({target:systemSettings.key,set:{value:{...config,experimentalGaming:true}}});
     await getDb().insert(users).values([owner, other].map((id) => ({ id, username: `games-${id}`, passwordHash: 'fixture' })));
   });
   afterAll(async () => {

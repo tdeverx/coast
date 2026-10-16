@@ -5,7 +5,7 @@ import { rewatchFields } from '../../core/tracking/rewatch.server';
 import { and, desc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
-import { getConfig } from '../config';
+import { getFeatureConfig } from '../features';
 import { seerrAllows, SeerrPermission } from '../../providers/seerr/adapter.server';
 import * as s from '../db/schema';
 import { mediaViewsForIds, nextPlayable, permittedAvailability } from './media';
@@ -20,7 +20,7 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
   const db = getDb();
   const [item] = await mediaViewsForIds(userId, [mediaId]);
   if (!item) throw new AppError(404, 'This title was not found.');
-  const config = await getConfig();
+  const config = await getFeatureConfig(userId);
   const wholeId = await wholeWorkId(db, mediaId);
   const [wholeWork] = wholeId === mediaId ? [item] : await mediaViewsForIds(userId, [wholeId]);
   const [dated] = await db
@@ -51,7 +51,7 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
     [item, requestTarget].find(
       (target) => target?.tmdbId && ['show', 'movie', 'collection'].includes(target.kind)
     ) ?? null;
-  const playable = item.available ? await nextPlayable(userId, item) : null;
+  const playable = config.features.playback && item.available ? await nextPlayable(userId, item) : null;
   const [seerr] = await Promise.all([
     db
       .select({ id: s.providerInstances.id })

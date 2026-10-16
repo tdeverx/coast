@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {page} from '$app/state';
   import Icon from './Icon.svelte';
   import RowFeedback from './RowFeedback.svelte';
   import Button from '$lib/ui/components/Button.svelte';
@@ -17,26 +18,27 @@
  let loaded = $state(false);
  const resource = createResource<Reaction[]>([]);
  async function load() {
+  if(page.data.capabilities?.social===false){resource.replace([]);return;}
   const id = targetId, kind = targetKind;
   const result = await resource.load(async signal => (await api<Record<string, Reaction[]>>(`social/reactions?targetKind=${kind}&ids=${id}`, undefined, 'GET', { signal }))[id] ?? []);
   if (result) loaded = true;
  }
  const mutation = createMutation(load);
  const selected = $derived(loaded ? resource.data.find(row => row.mine)?.emoji ?? null : initialReaction);
- $effect(() => { targetId; targetKind; untrack(() => { resource.replace([]); loaded = false; mutation.error = ''; }); });
+ $effect(() => { targetId; targetKind;page.data.capabilities?.social; untrack(() => { resource.replace([]); loaded = false; mutation.error = ''; }); });
  onDestroy(resource.dispose);
  function react(emoji: typeof emojis[number]) {
   const id = targetId, kind = targetKind;
   void mutation.run(() => change('social/reactions', { targetKind: kind, targetId: id, emoji: selected === emoji ? null : emoji }));
  }
 </script>
-<Button menu label="React" panel {disabled} onopen={load} onclose={resource.cancel}>
+{#if page.data.capabilities?.social!==false}<Button menu label="React" panel {disabled} onopen={load} onclose={resource.cancel}>
  {#snippet trigger()}{#if selected}<span class="selected-emoji">{selected}</span>{:else}<Icon name="smile" size={20} />{/if}{#if nested}<span class="menu-action-label">React</span><span class="menu-chevron"><Icon name="right" /></span>{/if}{/snippet}
  <div class="reaction-strip">
   {#each emojis as emoji}<Button item class="reaction-choice" label={emoji} checked={selected === emoji} showCheckmark={false} disabled={resource.busy || mutation.busy} keepOpen onclick={() => react(emoji)}><span class="emoji">{emoji}</span></Button>{/each}
  </div>
  {#if resource.error || mutation.error}<RowFeedback error={resource.error || mutation.error} tag="p" class="notice error small" />{/if}
-</Button>
+</Button>{/if}
 <style>
  .selected-emoji,.emoji{font-size:var(--text-xl);line-height:var(--leading-solid);}
  .reaction-strip{display:flex;gap:0;}

@@ -68,7 +68,7 @@
   }
   export function openAt(point: { x: number; y: number }) { menu?.openAt(point); }
   export async function start(continuing = false) {
-    if (preview || busy || !music) return;
+    if (preview || busy || !music || page.data.capabilities?.playback===false) return;
     const targetId = workId, path = sourcePath;
     const played = await playback.run(async () => {
       // Playback owns this read independently of the transient menu.
@@ -113,11 +113,11 @@
   async function changed() { await work.refresh(); onchanged?.(); }
 </script>
 
-{#if primary && music}<Button size="hero" icon="play" disabled={busy || preview} onclick={() => start()}>Play</Button>{:else if primary}<Button size="hero" icon="arrow" href={item.href}>View {item.kind}</Button>{/if}
+{#if primary && music && page.data.capabilities?.playback!==false}<Button size="hero" icon="play" disabled={busy || preview} onclick={() => start()}>Play</Button>{:else if primary}<Button size="hero" icon="arrow" href={item.href}>View {item.kind}</Button>{/if}
 <Button menu panel bind:this={menu} label={`Actions for ${item.title}`} hideTrigger={!showTrigger} upward={hero} triggerClass={hero ? 'icon-button hero-icon-action' : 'icon-button'} onopen={open} onclose={close}>
-  {#if music}<Button item icon="play" disabled={busy || preview} onclick={() => start()}>Play</Button>
+  {#if music && page.data.capabilities?.playback!==false}<Button item icon="play" disabled={busy || preview} onclick={() => start()}>Play</Button>
     {#if item.kind === 'album' || item.trackingProgress?.value}<Button item icon="play" disabled={busy || preview} onclick={() => start(true)}>Continue</Button>{/if}{/if}
-  {#if reading && workId}<Button item icon="library" disabled={busy} onclick={() => readingLaunch?.show()}>Read</Button>{/if}
+  {#if reading && workId && page.data.capabilities?.reader!==false}<Button item icon="library" disabled={busy} onclick={() => readingLaunch?.show()}>Read</Button>{/if}
   <Button item icon="arrow" href={item.href}>Open {item.kind === 'game' ? 'game' : item.kind}</Button>
   {#if !workId && sourcePath && item.kind !== 'artist'}<Button item icon="refresh" keepOpen disabled={identity.busy} onclick={resolve}>Prepare music actions</Button>{/if}
   {#if item.kind === 'artist' && sourcePath}<Button item icon="heart" checked={artistFavourite ?? item.favourite ?? false} disabled={busy} onclick={favouriteArtist}>{(artistFavourite ?? item.favourite) ? 'Remove from' : 'Add to'} favourites</Button>{/if}

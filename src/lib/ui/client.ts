@@ -28,6 +28,11 @@ export class ApiError extends Error {
     super(message);
   }
 }
+/** A feature withdrawal is a terminal resource boundary, not a transient network failure. */
+export function isFeatureDisabled(cause:unknown) {
+  return cause instanceof ApiError && !!cause.details && typeof cause.details==='object' &&
+    'code' in cause.details && ['feature_disabled','experimental_disabled'].includes(String(cause.details.code));
+}
 export async function api<T = unknown>(
   path: string,
   body?: unknown,

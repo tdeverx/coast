@@ -1,7 +1,7 @@
+import { getFeatureConfig } from '$lib/server/features';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getConfig } from '../config';
 import { getDb } from '../db';
 import * as s from '../db/schema';
 import { mediaViews, hasPermittedMediaSource } from './media';
@@ -51,7 +51,7 @@ export async function libraryData(userId: string, rawOptions: unknown = {}) {
   const pageSize = PAGE_SIZE;
   const permittedSource = hasPermittedMediaSource(userId, input.source);
   const tracking = libraryTrackingCondition(userId, input.tracking);
-  const config = await getConfig();
+  const config = await getFeatureConfig(userId);
   // Match the same override/provider precedence used by the cards, before pagination.
   const genre = input.genre
     ? sql`exists(select 1 from unnest(coalesce(

@@ -133,7 +133,7 @@ export async function scheduleProviderMaintenance(
       insert into outbox_actions(user_id,kind,payload,compaction_key)
       select c.user_id,'social.checkin-complete',jsonb_build_object('checkinId',c.id),'checkin-complete:'||c.id
       from social_checkins c join users u on u.id=c.user_id
-      where c.state='active' and c.expires_at<=now() and not u.disabled
+      where coast_feature_enabled(c.user_id,'presence') and c.state='active' and c.expires_at<=now() and not u.disabled
       and not exists(select 1 from outbox_actions a where a.user_id=c.user_id and a.compaction_key='checkin-complete:'||c.id and a.state in ('pending','running','failed'))
     `);
     // Queued jobs from the combined scanner cannot safely run under the split task model.
@@ -178,8 +178,8 @@ export async function scheduleProviderMaintenance(
     if (!eligible.length) return { ...metadata, connections: 0, busy: false };
     const ids = eligible.map((row) => row.connection.id);
     const [jobs, checkpoints] = await Promise.all([
-      tx.execute<{connectionId:string;kind:string;active:boolean;last:Date|null}>(sql`
-        select c.id as "connectionId", requested.kind,
+      tx.execute<{connectionId:string;kind:string;active:boolean;last:Date|null;allowed:boolean}>(sql`
+        select c.id as "connectionId", requested.kind, coast_job_allowed(c.user_id,requested.kind,'{}'::jsonb) as allowed,
           exists(select 1 from outbox_actions a where a.connection_id=c.id and a.kind=requested.kind
             and a.state in ('pending','running','failed')
             and (a.account_generation is null or a.account_generation=c.account_generation)) as active,
@@ -233,6 +233,7 @@ export async function scheduleProviderMaintenance(
         const sharedJobs = jobs.filter(job => job.kind === kind && linked.some(account => account.id === job.connectionId));
         for (const account of accounts) {
           const job = jobsByKey.get(`${account.id}:${kind}`);
+          if(job?.allowed===false)continue;
           const evidence = shared ? {
             blocked: sharedJobs.some(entry => entry.active),
             completed: new Date(Math.max(0, ...sharedJobs.map(entry => new Date(entry.last ?? 0).getTime()))),

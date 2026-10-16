@@ -1,3 +1,4 @@
+import { getFeatureConfig } from '$lib/server/features';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { libraryOptionsSchema } from '$lib/server/queries/library';
@@ -8,7 +9,6 @@ import { profileUser } from '$lib/server/queries/profile-user';
 import type { PageServerLoad } from './$types';
 import { libraryBrowseDefaults } from '$lib/library';
 import { requireEnabledCategory } from '$lib/server/experimental';
-import { getConfig } from '$lib/server/config';
 import { AppError } from '$lib/server/security/errors';
 
 const loadLibrary = async ({ locals, url, depends }: Parameters<PageServerLoad>[0]) => {
@@ -22,7 +22,7 @@ const loadLibrary = async ({ locals, url, depends }: Parameters<PageServerLoad>[
   const defaults = libraryBrowseDefaults(parameters, !!profile);
   const collection = defaults.collection, scope = defaults.scope;
   const category = view === 'listen' ? 'music' : view === 'play' ? 'game' : view === 'read' ? 'reading' : 'screen';
-  if (view !== 'overview') requireEnabledCategory(await getConfig(), category);
+  if (view !== 'overview') requireEnabledCategory(await getFeatureConfig(locals.user?.id??null), category);
   const parsed = v.safeParse(collectionOptionsSchema, { ...collectionParameters(url), ...(!collection && parameters.get('kind') === 'artist' ? { kind: 'all' } : {}), category, level: 'root' });
   if (!parsed.success) error(400, 'Choose valid Collection filters and a positive page number.');
   const tracking = parameters.get('tracking') ?? (parsed.output.activity === 'active' ? view === 'play' ? 'in-progress' : view === 'read' ? 'reading' : 'progress' : parsed.output.activity === 'completed' && ['watch','overview'].includes(view) ? 'watched' : parsed.output.activity);

@@ -1,3 +1,4 @@
+import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
 import { presentationPreferences } from '$lib/catalogue/overrides/presentation.server';
 import type { MusicItem } from './model';
 import { and,eq } from 'drizzle-orm';
@@ -11,6 +12,7 @@ import { jellyfinMusicIdSchema, musicBrowseSchema } from '$lib/providers/jellyfi
 
 export async function musicLibrary(userId: string, connectionId: string, input: unknown = {}) {
   const options = v.parse(musicBrowseSchema, input);
+  await requireFeature(userId,'music');
   const { adapter, connection, instance } = await getJellyfin(userId, connectionId);
   const page=await adapter.musicLibrary(connection.externalUserId!, options);
   const items=await observeMusicLibraryAccess(userId,connectionId,instance.id,connection.accountGeneration,page.items);
@@ -19,6 +21,7 @@ export async function musicLibrary(userId: string, connectionId: string, input: 
 
 export async function musicDetails(userId: string, connectionId: string, id: string) {
   v.parse(jellyfinMusicIdSchema, id);
+  await requireFeature(userId,'music');
   const { adapter, connection, instance } = await getJellyfin(userId, connectionId);
   const item=await observeMusicAccess(userId,connectionId,instance.id,await adapter.musicItem(connection.externalUserId!,id),connection.accountGeneration);
   if(item.workId){const [state]=await getDb().select().from(trackingState).where(and(eq(trackingState.userId,userId),eq(trackingState.mediaId,item.workId)));item.favourite=state?.favourite??false;
@@ -34,12 +37,14 @@ export async function setMusicFavourite(
   input: unknown
 ) {
   v.parse(jellyfinMusicIdSchema, id);
+  await requireFeature(userId,'music');
   const { favourite } = v.parse(v.object({ favourite: v.boolean() }), input);
   const { adapter, connection, instance } = await getJellyfin(userId, connectionId);
   const item=await persistMusic(instance.id,await adapter.musicItem(connection.externalUserId!,id));
   if(item.workId) await trackWithExports(userId,{mediaId:item.workId,action:'favourite',value:favourite});
   else {
-    await getDb().insert(musicArtistPreferences).values({userId,artistId:item.artistId!,favourite}).onConflictDoUpdate({target:[musicArtistPreferences.userId,musicArtistPreferences.artistId],set:{favourite}});
+    await getDb().transaction(async tx=>{await requireFeatureInTransaction(tx,userId,'music');await tx.insert(musicArtistPreferences).values({userId,artistId:item.artistId!,favourite}).onConflictDoUpdate({target:[musicArtistPreferences.userId,musicArtistPreferences.artistId],set:{favourite}});});
+    await requireFeature(userId,'music');
     await adapter.setMusicFavourite(connection.externalUserId!,id,favourite);
   }
   return { favourite };

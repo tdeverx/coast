@@ -205,6 +205,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
               username: connection.username,
               status: connection.status,
               settings: {
+                liveRead: connection.settings.liveRead,
                 sync: connection.settings.sync,
                 importOwned: connection.settings.importOwned,
                 importPlaytime: connection.settings.importPlaytime,

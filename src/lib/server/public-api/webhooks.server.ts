@@ -1,8 +1,9 @@
+import { requireFeatureInTransaction, getFeatureConfig } from '$lib/server/features';
 import * as v from 'valibot';
 import { createHmac } from 'node:crypto';
 import { isIP } from 'node:net';
 import { and,desc,eq,sql } from 'drizzle-orm';
-import { getDb,type Database } from '$lib/server/db';
+import { getDb,getSql,type Database } from '$lib/server/db';
 import { apiWebhooks,apiTokens,users,outboxActions } from '$lib/server/db/schema';
 import { encryptCredential,decryptCredential } from '$lib/server/security/credentials';
 import { secureProviderFetch,validateProviderUrl,isAllowedAddress } from '$lib/server/security/provider-fetch';
@@ -17,6 +18,7 @@ export type WebhookEvent=typeof webhookEvents[number];
 export const webhookSchema=v.strictObject({url:v.pipe(v.string(),v.url(),v.maxLength(2048)),events:v.pipe(v.array(v.picklist(webhookEvents)),v.minLength(1),v.maxLength(webhookEvents.length))});
 export function webhookSignature(secret:string,timestamp:string,body:string){return createHmac('sha256',secret).update(`${timestamp}.${body}`).digest('hex');}
 export async function createWebhook(tx:Transaction,userId:string,tokenId:string,input:unknown){
+ await requireFeatureInTransaction(tx,userId,'api');
  const data=v.parse(webhookSchema,input),url=new URL(data.url);
  if(url.protocol!=='https:'||url.search||url.hash||url.username||url.password)throw new AppError(400,'Use an HTTPS endpoint without credentials, query or fragment.','invalid_input');
  validateProviderUrl({baseUrl:data.url,approved:true,allowedPorts:[443]});
@@ -30,7 +32,7 @@ export async function createWebhook(tx:Transaction,userId:string,tokenId:string,
  return {...row,secret};
 }
 export async function emitWebhook(tx:Transaction,userId:string,type:WebhookEvent,data:Record<string,unknown>){
- const subscriptions=await tx.select({id:apiWebhooks.id}).from(apiWebhooks).innerJoin(apiTokens,eq(apiTokens.id,apiWebhooks.tokenId)).where(and(eq(apiWebhooks.userId,userId),eq(apiWebhooks.enabled,true),sql`${apiWebhooks.events} ? ${type}`,sql`${apiTokens.revokedAt} is null and ${apiTokens.expiresAt}>now()`));
+ const subscriptions=await tx.select({id:apiWebhooks.id}).from(apiWebhooks).innerJoin(apiTokens,eq(apiTokens.id,apiWebhooks.tokenId)).where(and(sql`coast_feature_enabled(${userId}::uuid,'api')`,eq(apiWebhooks.userId,userId),eq(apiWebhooks.enabled,true),sql`${apiWebhooks.events} ? ${type}`,sql`${apiTokens.revokedAt} is null and ${apiTokens.expiresAt}>now()`));
  if(!subscriptions.length)return;
  const event={id:crypto.randomUUID(),type,occurredAt:new Date().toISOString(),data};
  await tx.insert(outboxActions).values(subscriptions.map(subscription=>({userId,kind:'webhook.deliver',payload:{subscriptionId:subscription.id,event}})));
@@ -52,6 +54,7 @@ export async function deliverWebhook(action:OutboxAction){
  const subscriptionId=v.parse(v.pipe(v.string(),v.uuid()),action.payload.subscriptionId);
  const [entry]=await getDb().select({webhook:apiWebhooks,token:apiTokens,disabled:users.disabled}).from(apiWebhooks).innerJoin(apiTokens,eq(apiTokens.id,apiWebhooks.tokenId)).innerJoin(users,eq(users.id,apiWebhooks.userId)).where(and(eq(apiWebhooks.id,subscriptionId),eq(apiWebhooks.userId,action.userId)));
  if(!entry||!entry.webhook.enabled||entry.disabled||entry.token.revokedAt||entry.token.expiresAt<=new Date()||!entry.token.scopes.includes('webhooks:manage'))return;
+ if(!(await getFeatureConfig(action.userId,getSql())).features.api)return;
  const base=action.payload._webhookAttemptBase;
  const attemptBase=typeof base==='number'&&Number.isInteger(base)&&base>=0&&base<action.attempts?base:0;
  if(action.attempts-attemptBase>8)throw new PermanentActionError('Webhook delivery failed repeatedly. Review the endpoint before retrying.');

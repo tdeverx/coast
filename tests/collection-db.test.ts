@@ -13,6 +13,8 @@ const tag=crypto.randomUUID();
 const extraMedia:string[]=[];
 beforeAll(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;const db=getDb();
+ const {systemSettings}=await import('../src/lib/server/db/schema');const config=await getConfig();
+ await db.insert(systemSettings).values({key:'coast',value:{...config,experimentalMusic:true,experimentalGaming:true}}).onConflictDoUpdate({target:systemSettings.key,set:{value:{...config,experimentalMusic:true,experimentalGaming:true}}});
  const actors=await db.insert(users).values([{username:`collection-owner-${tag}`},{username:`collection-viewer-${tag}`}]).returning();[owner,viewer]=actors.map(u=>u.id);
  const [instance]=await db.insert(providerInstances).values({provider:'jellyfin',name:`collection-${tag}`,baseUrl:'https://fixture.invalid'}).returning();server=instance.id;
  const [account]=await db.insert(providerConnections).values({userId:owner,instanceId:server,externalUserId:tag}).returning();connection=account.id;

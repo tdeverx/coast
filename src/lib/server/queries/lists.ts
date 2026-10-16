@@ -1,7 +1,7 @@
+import { getFeatureConfig } from '$lib/server/features';
 import { enabledCategories, selectedCategory } from '../experimental';
 import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
 import { workCards } from '$lib/collection/query.server';
-import { getConfig } from '../config';
 import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
@@ -38,7 +38,7 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
   const selected = lists.find((list) => list.id === input.view) ?? null;
   if (!selected && !['watchlist', 'favourites'].includes(input.view))
     throw new AppError(404, 'This list was not found.');
-  const config=await getConfig();
+  const config=await getFeatureConfig(viewerId);
   const categoryAllowed=and(enabledCategories(sql`${s.works.category}`,config),selectedCategory(sql`${s.works.category}`,input.category));
   const available = input.scope === 'available' ? hasPermittedWorkSource(viewerId) : undefined;
   const pageSize = PAGE_SIZE;

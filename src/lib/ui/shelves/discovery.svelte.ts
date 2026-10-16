@@ -1,3 +1,4 @@
+import { surfaceEnabled } from '$lib/experimental';
 import { onDestroy, untrack } from 'svelte';
 import { page } from '$app/state';
 import { goto, replaceState } from '$app/navigation';
@@ -43,6 +44,10 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
   }
   function pageUrl(number: number) { return `/discover?${parameters(number)}`; }
   async function load() {
+    if(!surfaceAvailable(surface)){
+      resource.replace({items:[],failure:''});
+      return;
+    }
     const key = cacheKey();
     const result = await resource.load(signal => api<DiscoveryContent>(`discover?${parameters()}`, undefined, 'GET', { signal }), { failure: result => result.failure });
     if (result && key === cacheKey())
@@ -55,13 +60,10 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     else
       void load();
   }
-  function surfaceAvailable(value: string) {
-    const features = get().mediums;
-    return value === 'watch'
-      || value === 'listen' && !!features?.experimentalMusic
-      || value === 'play' && !!features?.experimentalGaming
-      || value === 'read' && !!(features?.experimentalBooks || features?.experimentalComics);
+  function surfaceAvailable(value:string) {
+    return surfaceEnabled({...get().mediums, experimentalMusic:get().mediums?.experimentalMusic??false,experimentalGaming:get().mediums?.experimentalGaming??false,experimentalBooks:get().mediums?.experimentalBooks??false,experimentalComics:get().mediums?.experimentalComics??false},value);
   }
+
   function select(value: string) {
     if (value === surface || !surfaceAvailable(value))
       return;
@@ -118,7 +120,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
       previousSelection = selection;
       const withdrawn = !surfaceAvailable(surface);
       if (withdrawn) {
-        surface = 'watch';
+        surface = discoverySegments.find(option=>surfaceAvailable(option.value))?.value as DiscoverySurface??'watch';
         kind = 'all';
         currentPage = 1;
         available = false;
@@ -181,7 +183,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
         {
           type: 'segments', label: `${title} medium`, value: surface,
           options: discoverySegments.filter(option =>
-            option.value === 'watch'
+            option.value === 'watch' && surfaceAvailable('watch')
             || option.value === 'play' && get().mediums?.experimentalGaming
             || option.value === 'listen' && get().mediums?.experimentalMusic
             || option.value === 'read' && (get().mediums?.experimentalBooks || get().mediums?.experimentalComics)

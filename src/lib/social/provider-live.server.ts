@@ -1,4 +1,5 @@
-import { eq } from 'drizzle-orm';
+import { requireFeature } from '$lib/server/features';
+import { eq, sql } from 'drizzle-orm';
 import { getDb,getSql } from '$lib/server/db';
 import { providerConnections,socialLiveState } from '$lib/server/db/schema';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
@@ -11,6 +12,8 @@ export async function pollProviderLive(userId:string,connectionId:string,provide
  return pollProviderLiveFromContext(userId,connectionId,provider,provider==='jellyfin'?await getJellyfin(userId,connectionId):await getSteam(userId,connectionId));
 }
 export async function pollProviderLiveFromContext(userId:string,connectionId:string,provider:'jellyfin'|'steam',context:Awaited<ReturnType<typeof getJellyfin>>|Awaited<ReturnType<typeof getSteam>>){
+ const config=await requireFeature(userId,'presence');
+ if(provider==='steam'&&!config.features.game)return {checked:0};
  const {connection,instance}=context;
  if(connection.userId!==userId || connection.id!==connectionId)throw new PermanentActionError('The connected account changed.');
  if(connection.settings.liveRead===false)return;
@@ -18,7 +21,7 @@ export async function pollProviderLiveFromContext(userId:string,connectionId:str
  if(provider==='jellyfin'){
    const {adapter}=context as Awaited<ReturnType<typeof getJellyfin>>;
    const sessions=await adapter.sessions(connection.externalUserId!);
-   const current=sessions.find(s=>s.NowPlayingItem && !s.PlayState?.IsPaused);
+   const current=sessions.find(s=>s.NowPlayingItem && !s.PlayState?.IsPaused && (s.NowPlayingItem.Type==='Audio'?config.features.music:config.features.screen));
    remoteId=current?.NowPlayingItem?.Id??null;
    if(remoteId){
      const [work]=await getSql()`select media_id as id from provider_items where instance_id=${instance.id} and external_id=${remoteId} union select work_id as id from work_editions where instance_id=${instance.id} and external_id=${remoteId} limit 1`;
@@ -32,6 +35,8 @@ export async function pollProviderLiveFromContext(userId:string,connectionId:str
  const now=new Date();
  const expiresAt=remoteId?await liveObservationExpiry(instance,now):null;
  await getDb().transaction(async tx=>{
+   const [admission]=await tx.execute<{allowed:boolean}>(sql`select coast_feature_enabled(${userId}::uuid,'presence') and (${provider}<>'steam' or coast_feature_enabled(${userId}::uuid,'game')) and (${workId}::uuid is null or exists(select 1 from works where id=${workId}::uuid and coast_category_enabled(${userId}::uuid,category))) as allowed`);
+   if(!admission.allowed)return;
    const [current]=await tx.select().from(providerConnections).where(eq(providerConnections.id,connectionId)).for('update');
    if(!current || current.accountGeneration!==connection.accountGeneration || current.status!=='connected')throw new PermanentActionError('The connected account changed.');
    const value={connectionId,accountGeneration:connection.accountGeneration,workId,remoteId,expiresAt,checkedAt:now};

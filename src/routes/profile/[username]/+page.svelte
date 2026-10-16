@@ -240,7 +240,7 @@
   title={featureTitle}
   note={featureId === data.profile.featuredMediaId ? (data.profile.featuredNote ?? '') : ''}
 />
-{#snippet favouriteFilters()}<RowFilter groups={[{label:"Favourites media type", value:favouriteKind, options:mediaTypeOptions(page.data), change:(kind) => chooseFavourites(kind as typeof favouriteKind)}]} />{#if favouriteError}<span role="alert">{favouriteError}</span><Button
+{#snippet favouriteFilters()}<RowFilter groups={[{label:"Favourites media type", value:favouriteKind, options:mediaTypeOptions({...page.data,features:page.data.capabilities}), change:(kind) => chooseFavourites(kind as typeof favouriteKind)}]} />{#if favouriteError}<span role="alert">{favouriteError}</span><Button
       emphasis="subtle"
       onclick={() => chooseFavourites(favouriteKind)}>Retry</Button
     >{/if}{/snippet}

@@ -108,6 +108,8 @@ export async function applyCompanionPage(action:OutboxAction,context:Context,pag
     if(schedule.liveEnabled){
       for(const {connection} of accounts){
         if(connection.settings.liveRead===false)continue;
+        const [presencePolicy]=await tx.execute<{allowed:boolean}>(sql`select coast_feature_enabled(${connection.userId}::uuid,'presence') as allowed`);
+        if(!presencePolicy.allowed)continue;
         const session=page.sessions.find(s=>s.UserId?.replaceAll('-','').toLowerCase()===connection.externalUserId?.replaceAll('-','').toLowerCase()&&s.NowPlayingItem&&!s.PlayState?.IsPaused);
         const remoteId=session?.NowPlayingItem?.Id??null;
         const [work]=remoteId?await tx.execute<{id:string}>(sql`select media_id as id from provider_items where instance_id=${current.id} and external_id=${remoteId} union select work_id as id from work_editions where instance_id=${current.id} and external_id=${remoteId} limit 1`):[];

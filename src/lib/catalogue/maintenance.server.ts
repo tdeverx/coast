@@ -287,7 +287,7 @@ export async function scheduleMetadataRefresh(
     id: string;
     settings: Record<string, unknown>;
   }>(sql`
-    select id,settings from provider_instances where provider='tmdb' and enabled and credentials is not null
+    select id,settings from provider_instances where provider='tmdb' and enabled and credentials is not null and coast_job_allowed(null,'tmdb.refresh','{}'::jsonb)
     and (${options.instanceId ?? null}::uuid is null or id=${options.instanceId ?? null}::uuid) order by id limit 1
   `);
   if (!instance) return { queued: 0, active: 0 };

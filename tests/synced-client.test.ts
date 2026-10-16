@@ -1,7 +1,9 @@
 import { expect, test } from 'bun:test';
 import { compileModule } from 'svelte/compiler';
 const moduleUrl = (code:string)=>`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
-const clientUrl = moduleUrl(`export let respond=async()=>{}; export function delivery(fn){respond=fn;} export function api(...args){return respond(...args);} export const message=e=>e.message; export class ApiError extends Error {constructor(status){super('fixture');this.status=status;}}`);
+const apiSource=await Bun.file(new URL('../src/lib/ui/client.ts',import.meta.url)).text();
+const featureError=new Bun.Transpiler({loader:'ts'}).transformSync(apiSource.slice(apiSource.indexOf('export function isFeatureDisabled'),apiSource.indexOf('export async function api<')));
+const clientUrl = moduleUrl(`${featureError}export let respond=async()=>{}; export function delivery(fn){respond=fn;} export function api(...args){return respond(...args);} export const message=e=>e.message; export class ApiError extends Error {constructor(status,details){super('fixture');this.status=status;this.details=details;}}`);
 const playbackUrl = moduleUrl(`export const player={session:{id:'playback',mediaId:'media',mediaType:'audio',edition:'',durationSeconds:100},audioQueue:[],audioIndex:0};export const alignments=[];export let stops=0;export const plays=[];export let play=async()=>{};export const playWith=fn=>play=fn;export const playMedia=async(...args)=>{plays.push(args);await play(...args);};export const playbackSnapshot=()=>({positionSeconds:10,buffering:false});export const alignPlayback=state=>alignments.push(state);export const stopPlayback=async()=>{stops++;};`);
 const readingUrl = moduleUrl(`export const reader={session:null,location:null,loading:false,rendering:false,syncing:false}; export const alignments=[];export const alignReading=async location=>alignments.push(location);export const attachReading=async session=>{reader.session=session;};export const closeReading=async()=>{reader.session=null;};`);
 const modelUrl = moduleUrl('export const compatibleSource=(r,p)=>r.mediaId===p.mediaId&&r.mediaType===p.mediaType&&r.edition===(p.edition||"")&&Math.abs(r.durationSeconds-p.durationSeconds)<=2;export const timelinePosition=()=>10;export const canControl=(r,u)=>r.hostId===u||r.participants.some(p=>p.userId===u&&p.joined)&&(r.settings.playback==="everyone"||r.settings.playback==="selected"&&r.settings.controllers.includes(u));');
@@ -134,4 +136,11 @@ test('reading failure descriptors distinguish format and duration without retryi
   await sync.pollSynced();expect(matching).toBe(2);await sync.leaveSynced();
  }
  sync.syncedPlayer.userId='host';
+});
+
+test('feature withdrawal ends party polling without stopping admitted standalone playback',async()=>{
+ const playback=await import(playbackUrl);sync.syncedPlayer.userId='host';sync.syncedPlayer.room=room;
+ sync.setSyncPreferences({offsetSeconds:0,keepPlaying:false});const before=playback.stops;
+ client.delivery((path:string)=>path.endsWith('/heartbeat')?Promise.reject(new client.ApiError(403,{code:'feature_disabled'})):Promise.resolve({}));
+ await sync.pollSynced();expect(sync.syncedPlayer.room).toBeNull();expect(playback.stops).toBe(before);
 });

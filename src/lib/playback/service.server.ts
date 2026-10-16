@@ -1,3 +1,5 @@
+import { requireEnabledCategory } from '$lib/server/experimental';
+import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
 import { ProviderQueueBusyError, requestPriority } from '$lib/server/security/request-priority';
 import { playbackLimits, sharedResourcePath, minimumSharedBitrate } from '$lib/sharing/policy';
 import {playbackArtwork} from '$lib/media/artwork';
@@ -27,7 +29,6 @@ import {
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { instanceFetchConfig } from '$lib/providers/instances.server';
 import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
-import { getConfig } from '$lib/server/config';
 import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
 import { secureProviderFetch } from '$lib/server/security/provider-fetch';
 import { logDiagnostic, classifyFailure, context } from '$lib/server/diagnostics';
@@ -155,12 +156,13 @@ async function preparePlayback(
   const started = performance.now();
   void logDiagnostic('debug', 'playback.start');
   const data = v.parse(playbackInput, input),
-    config = await getConfig();
+    config = await requireFeature(userId, 'playback');
   const [screen] = await getDb().select().from(media).where(eq(media.id,data.mediaId));
   const [music] = screen ? [] : await getDb().select().from(musicWorks).where(eq(musicWorks.id,data.mediaId));
   const item=screen??(music?{...music,runtimeMinutes:(music.durationSeconds??0)/60}:undefined);
   const mediaType=music?'audio':'video';
   if(!item || !['movie','episode','track'].includes(item.kind))throw new Error('Choose a movie, episode or track to play.');
+  requireEnabledCategory(config, music?'music':'screen');
   if(music && !config.experimentalMusic)throw new Error('Music is disabled by the administrator.');
   const sequenceEntry = data.sequence
     ? (await sequenceEntries(userId, data.sequence)).find(
@@ -380,6 +382,8 @@ async function preparePlayback(
   signal?.throwIfAborted();
   // A user has one prepared/active playback session across audio and video.
   const session=await getDb().transaction(async tx=>{
+  await requireFeatureInTransaction(tx,userId,'playback');
+  await requireFeatureInTransaction(tx,userId,mediaType==='audio'?'music':'screen');
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
   signal?.throwIfAborted();
   const [current]=await tx.select({generation:providerConnections.accountGeneration}).from(providerConnections).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
@@ -469,6 +473,14 @@ export async function progressPlayback(userId: string, sessionId: string, input:
         )
       );
     if (!session || session.shareId) throw new Error('This playback session has expired.');
+    const [admission]=await tx.execute<{allowed:boolean}>(sql`select coast_feature_enabled(${userId}::uuid,'playback') and coast_feature_enabled(${userId}::uuid,${session.mediaType==='audio'?'music':'screen'}) as allowed`);
+    if(!admission.allowed){
+      if(session.state!=='stopped'){
+        await enqueuePlaybackActionsInTransaction(tx,userId,{sessionId,connectionId:session.connectionId,mediaId:session.mediaId,jellyfinEvent:'stop',positionSeconds:session.positionSeconds,durationSeconds:session.durationSeconds??0,paused:true,operationalOnly:true});
+        await tx.update(playbackSessions).set({state:'stopped',updatedAt:new Date()}).where(eq(playbackSessions.id,sessionId));
+      }
+      return {complete:false,state:null,disabled:true};
+    }
     const [account]=await tx.select({generation:providerConnections.accountGeneration}).from(providerConnections)
       .innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId))
       .where(and(eq(providerConnections.id,session.connectionId),eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true))).for('update',{of:providerConnections});
@@ -610,6 +622,8 @@ export async function streamPlayback(
     );
   if (!session || (session.shareId ?? undefined) !== shareId || session.state === 'stopped')
     return new Response('Playback session expired.', { status: 410 });
+  const policy=await requireFeature(userId,'playback');
+  requireEnabledCategory(policy,session.mediaType==='audio'?'music':'screen');
   context.enterWith(session.correlationId);
   void logDiagnostic('trace', 'playback.timing', { sessionId: session.id });
   const { connection, instance } = await getJellyfin(userId, session.connectionId);
@@ -708,6 +722,8 @@ export async function streamPlayback(
 
 /** Local trailers use the persistent native video element without creating tracking events. */
 export async function getTrailer(userId: string, mediaId: string): Promise<string | null> {
+  await requireFeature(userId,'playback');
+  await requireFeature(userId,'screen');
   const rows = await getDb()
     .select({ availability, providerItem: providerItems })
     .from(availability)
@@ -769,6 +785,8 @@ export async function streamTrailer(
   mediaId: string,
   request: Request
 ): Promise<Response> {
+  await requireFeature(userId,'playback');
+  await requireFeature(userId,'screen');
   const resource = new URL(request.url).searchParams.get('resource');
   if (!resource) return new Response('Trailer unavailable.', { status: 404 });
   let payload;

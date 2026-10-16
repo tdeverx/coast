@@ -31,7 +31,7 @@ export interface OutboxAction {
 export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number };
 export type ActionHandler = (action: OutboxAction) => Promise<void | JobOutcome>;
 
-const independentQueueKinds=['webhook.deliver','planning.reminder','benchmark.run','taste.refresh','jellyfin.streams','jellyfin.updates'];
+const independentQueueKinds=['feature.reconcile','webhook.deliver','planning.reminder','benchmark.run','taste.refresh','jellyfin.streams','jellyfin.updates'];
 const automaticQueueKinds=[...maintenanceKinds,'jellyfin.delta','taste.refresh','social.checkin-complete','planning.reminder','webhook.deliver'];
 const handlers = new Map<string, ActionHandler>();
 function defaultJobPurpose(kind: string): JobPurpose {
@@ -69,6 +69,10 @@ function accountOrderBlockedSql(action:string,connection:string) {
 /** Read models and workers share eligibility; priority never bypasses a gate. */
 function pendingEligibleSql(action:string,connection:string,instance:string) {
   return `(${action}.next_attempt_at<=NOW()
+    AND (${action}.kind NOT IN ('webhook.deliver','planning.reminder','jellyfin.sync','catalogue.user-scan','tmdb.refresh','trakt.import','trakt.lists-import','trakt.export','trakt.list-export','trakt.progress','trakt.collection-project','trakt.collection-review','jellyfin.live','steam.live','trakt.live','trakt.scrobble','trakt.checkin','social.checkin-complete','seerr.request','seerr.sync','steam.sync','steam.achievements','igdb.steam-metadata','trakt.recommendations','tmdb.recommendations','igdb.recommendations','taste.refresh') OR NOT EXISTS(
+      SELECT 1 FROM outbox_actions transition WHERE transition.kind='feature.reconcile' AND transition.state IN ('pending','running','failed')
+      AND (transition.payload->>'subjectId' IS NULL OR transition.payload->>'subjectId'=${action}.user_id::text)
+      AND ${action}.created_at<=(transition.payload->>'cutoff')::timestamptz))
     AND (coalesce((SELECT value->>'developerMode' FROM system_settings WHERE key='coast'),'false')<>'true'
       OR ${action}.kind NOT IN ${sqlKinds(automaticQueueKinds)} OR ${action}.payload->>'_manual'='true')
     AND (${instance}.settings->>'jobsRetryAt' IS NULL OR (${instance}.settings->>'jobsRetryAt')::timestamptz<=NOW())
@@ -102,6 +106,8 @@ export async function enqueueAction(input: {
   )
     throw new AppError(400, 'Invalid external action.');
   return getSql().begin(async (sql) => {
+    const [admission]=await sql`select coast_job_allowed(${input.userId}::uuid,${input.kind},${input.payload}::jsonb) as allowed`;
+    if(!admission.allowed)throw new AppError(403,'This task is disabled by feature settings.','feature_disabled');
     if (maintenanceKinds.includes(input.kind)) await sql`SELECT pg_advisory_xact_lock(hashtextextended('provider-maintenance',0))`;
     await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.userId}:${input.connectionId || 'local'}`}, 0))`;
     if (input.connectionId) {
@@ -241,6 +247,7 @@ export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | 
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('queue-claim', 0))`;
     await sql`UPDATE outbox_actions SET state = 'pending', locked_at = NULL, next_attempt_at = NOW(), updated_at = NOW()
       WHERE state = 'running' AND locked_at < NOW() - INTERVAL '5 minutes'`;
+    await sql`update outbox_actions set state='cancelled',last_error='Disabled in feature settings.',updated_at=now() where id in (select id from outbox_actions where state in ('pending','failed') and not coast_job_allowed(user_id,kind,payload) order by id limit 100 for update skip locked)`;
     const [row] =
       await sql`UPDATE outbox_actions SET state = 'running', attempts = attempts + 1, locked_at = NOW(), updated_at = NOW()
       WHERE id = (
@@ -300,7 +307,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
     action.purpose=readJobPurpose(current.payload,action.purpose ?? 'interactive');
     action.priority=purposePriority(action.purpose);
     updateJobRequestPriority(action.id, action.priority);
-    return await providerJob.run(action.id, () => jobExecution.run({id:action.id,attempts:action.attempts,purpose:action.purpose ?? 'interactive',started:performance.now(),checkpoints:0}, () => requestPriority.run(action.priority??1, () => context.run(action.correlationId, async () => {
+    return await providerJob.run(action.id, () => jobExecution.run({id:action.id,userId:action.userId,kind:action.kind,payload:action.payload,attempts:action.attempts,purpose:action.purpose ?? 'interactive',started:performance.now(),checkpoints:0}, () => requestPriority.run(action.priority??1, () => context.run(action.correlationId, async () => {
       const started = performance.now();
       const startedAt=new Date();
       void logDiagnostic('debug', 'job.start', { actionId: action.id, attempts: action.attempts });
@@ -322,6 +329,8 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
           )
             throw new PermanentActionError('The connected account is unavailable.');
         }
+        const [admission]=await getSql()`select coast_job_allowed(${action.userId}::uuid,${action.kind},${action.payload}::jsonb) as allowed`;
+        if(!admission.allowed)throw new PermanentActionError('This task is disabled by feature settings.');
         const handler = handlers.get(action.kind);
         if (!handler) throw new PermanentActionError('This action type is no longer supported.');
         const outcome = await handler(action);

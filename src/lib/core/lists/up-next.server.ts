@@ -1,3 +1,4 @@
+import { requireWorkFeature } from '$lib/server/features';
 import { and, eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../../server/db';
@@ -18,6 +19,7 @@ export async function setUpNext(userId: string, raw: unknown) {
     await enqueueCollectionProjectionInTransaction(db,userId);
     return;
   }
+  await requireWorkFeature(db,userId,input.mediaId);
   const [item] = await db.select({ id: works.id }).from(works).where(eq(works.id, input.mediaId));
   if (!item) throw new DomainError('This title was not found.', 404, 'not_found');
   await db.insert(upNext).values({ userId, mediaId: input.mediaId }).onConflictDoNothing();

@@ -1,3 +1,4 @@
+import { getFeatureConfig } from '$lib/server/features';
 import {profileVisibility,requireVisible} from '$lib/social/privacy.server';
 import {workCards} from '$lib/collection/query.server';
 import { recordedWatches as watches } from '$lib/core/tracking/recorded-watches.server';
@@ -7,7 +8,6 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
-import { getConfig } from '../config';
 import { enabledCategories } from '../experimental';
 import { AppError } from '../security/errors';
 import type { MediaCardPresentation, MediaView } from '$lib/ui/types';
@@ -63,7 +63,7 @@ async function profileSummary(
 ) {
   const options = v.parse(profileOptionsSchema, input);
   const db = getDb();
-  const [screenVisibility,config]=await Promise.all([profileVisibility(userId,viewerId),getConfig()]);
+  const [screenVisibility,config]=await Promise.all([profileVisibility(userId,viewerId),getFeatureConfig(viewerId)]);
   const [sharedVisibility]=await db.execute<{favourites:boolean;ratings:boolean}>(sql`select
     coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'favourites',category)),false) as favourites,
     coalesce(bool_or(social_visible(${userId}::uuid,${viewerId}::uuid,'ratings',category)),false) as ratings
@@ -352,7 +352,7 @@ export async function profileActivity(
 ) {
   await requireVisible(userId,viewerId,'insights','screen');
   const visibility=await profileVisibility(userId,viewerId);
-  const config=await getConfig();
+  const config=await getFeatureConfig(viewerId);
   const history = sql`select * from (${periodHistory(userId, period, now)}) h where ${visibility.activity}`;
   const previousNow =
     period === 'all' ? undefined : new Date(Date.parse(periodStart(period, now)!) - 1);

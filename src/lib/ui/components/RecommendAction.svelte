@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {page} from '$app/state';
   import RowFeedback from './RowFeedback.svelte';
   import { createOperation } from '$lib/ui/operation.svelte';
   import FormActions from './FormActions.svelte';
@@ -22,6 +23,7 @@
   let open=$state(false),failure=$state(''),recipient=$state('');
   const busy=$derived(operation.busy || friends.busy);
   async function load(reset=false){
+    if(page.data.capabilities?.social===false)return;
     if(reset){open=true;recipient='';}
     await friends.load(reset);
   }
@@ -32,11 +34,11 @@
   }
 </script>
 <!-- Retain this owner until its dialog closes; closing the menu unmounts its children. -->
-<Button item icon="user" disabled={disabled||busy} keepOpen onclick={()=>load(true)}>Recommend to a friend…</Button>
+{#if page.data.capabilities?.social!==false}<Button item icon="user" disabled={disabled||busy} keepOpen onclick={()=>load(true)}>Recommend to a friend…</Button>
 <Dialog bind:open title="Recommend to a friend" onclose={()=>parentMenu?.closeAll(true)}>
   <RowFilter selection groups={[{label:"Friend", value:recipient, options:[{value:'',label:'Choose a friend'},...friends.items.map(friend=>({value:friend.userId,label:friend.username}))], change:value=>recipient=value}]} />
   {#if !friends.items.length&&!busy}<p class="small">Add a friend to send recommendations.</p>{/if}
   {#if friends.more}<Button emphasis="subtle" disabled={busy} onclick={()=>load()}>Load more friends</Button>{/if}
   {#if failure || friends.error}<RowFeedback error={failure || friends.error} tag="p" class="notice error" />{/if}
   <FormActions cancel={()=>open=false}><Button disabled={!recipient||busy} onclick={send}>Send recommendation</Button></FormActions>
-</Dialog>
+</Dialog>{/if}

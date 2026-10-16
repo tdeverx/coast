@@ -1,3 +1,4 @@
+import { page } from '$app/state';
 import {reader} from '$lib/reading/client.svelte';
 import { onMount, untrack } from 'svelte';
 import { useClient } from '$lib/ui/client-context';
@@ -113,7 +114,7 @@ export function createHeroPresentation(get: () => HeroOptions) {
   }
   $effect(() => {
     const title = active;
-    const obscured = playbackVisible(player)||reader.visible;
+    const obscured = playbackVisible(player)||reader.visible||page.data.capabilities?.playback===false||page.data.capabilities?.screen===false;
     if(obscured){if(heroPlayer.id===title?.id)heroPlayer.visible=false;return;}
     backdropFailed = false;
     posterFailed = false;

@@ -2,6 +2,7 @@ import * as v from 'valibot';
 
 const count = v.pipe(v.number(), v.integer(), v.minValue(0));
 export const jellyfinScanProgressSchema = v.object({
+  featureSignature: v.optional(v.string()),
   processed: count,
   total: v.nullable(count),
   startedAt: v.string(),

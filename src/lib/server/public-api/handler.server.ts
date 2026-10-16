@@ -1,3 +1,4 @@
+import { getFeatureConfig } from '$lib/server/features';
 import {readingHistoryData} from '$lib/reading/query.server';
 import { categoryEnabled } from '$lib/experimental';
 import { openApi } from './openapi';
@@ -5,7 +6,6 @@ import { publicMutation } from './mutations.server';
 import { listWebhooks } from './webhooks.server';
 import { json,type RequestHandler } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { getConfig } from '$lib/server/config';
 import { enabledCategories } from '$lib/server/experimental';
 import { sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
@@ -61,12 +61,12 @@ const publicApiResponse:RequestHandler=async event=>{
     const id=v.parse(v.pipe(v.string(),v.uuid()),path[1]);
     const item=(await workCards(user.id,user.id,[id]))[0];
     if(!item)throw new AppError(404,'Work not found.','not_found');
-    if(!categoryEnabled(await getConfig(),item.kind==='game'?'game':item.kind==='book'||item.kind==='comic'?item.kind:['album','track'].includes(item.kind)?'music':'screen'))throw new AppError(404,'Work not found.','not_found');
+    if(!categoryEnabled(await getFeatureConfig(user.id),item.kind==='game'?'game':item.kind==='book'||item.kind==='comic'?item.kind:['album','track'].includes(item.kind)?'music':'screen'))throw new AppError(404,'Work not found.','not_found');
     return json(publicWork(item),{headers});
    }
    const category=v.parse(v.picklist(['all','screen','game','music','book','comic']),url.searchParams.get('category')??'all');
    const kind=v.parse(v.picklist(['all','movie','show','season','episode','collection','game','album','track','book','comic']),url.searchParams.get('kind')??'all');
-   const config=await getConfig();
+   const config=await getFeatureConfig(user.id);
    const where=sql`(${category}='all' or category=${category}) and (${kind}='all' or kind=${kind}) and ${enabledCategories(sql`category`,config)}`;
    const [count]=await getDb().execute<{total:number}>(sql`select count(*)::int as total from works where ${where}`);
    const paging=pagination(count.total,page);

@@ -32,6 +32,7 @@ export function readingFormat(filename: string): ReadingFormat | null {
   return readingFormats.includes(extension as ReadingFormat) ? extension as ReadingFormat : null;
 }
 export type ReadingSessionView = {
+  kind: ReadingKind;
   id: string; workId: string; title: string; format: ReadingFormat; edition: string;
   location: ReadingLocation | null; url: string | null; source: 'local' | 'jellyfin';
 };

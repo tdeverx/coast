@@ -1,3 +1,4 @@
+import { requireFeature } from '$lib/server/features';
 import { sql } from 'drizzle-orm';
 import { getDb } from '../db';
 import { recordedWatches } from '$lib/core/tracking/recorded-watches.server';
@@ -10,6 +11,7 @@ export async function mediaStatistics(
   period: ProfilePeriod,
   now = new Date()
 ): Promise<MediaStatistics> {
+  await requireFeature(userId,'screen');
   const start = periodStart(period, now);
   const history = sql`select * from (${recordedWatches(userId, mediaId)}) h where occurred_at <= ${now.toISOString()}::timestamptz and ${start ? sql`occurred_at_known and occurred_at >= (${start}::date::timestamp at time zone 'UTC')` : sql`true`}`;
   const rows = await getDb().execute(sql`with history as (${history})

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { surfaceEnabled } from '$lib/experimental';
   import type { DiscoverySection } from '$lib/discovery';
   import type { ShelfConfig } from '$lib/ui/shelves';
   import Heading from '$lib/ui/components/Heading.svelte';
@@ -15,8 +16,8 @@
   let { data } = $props();
   setContext('profile-read-only',()=>!page.data.user);
   const section = $derived(page.url.searchParams.get('section') ?? (data.selection.surface==='read'?'trending':null));
-  const mediums=$derived(data.mediaRows);
-  const mediumOptions=$derived(discoverySegments.filter(option=>option.value==='watch'||option.value==='read'&&(mediums.experimentalBooks||mediums.experimentalComics)||option.value==='listen'&&mediums.experimentalMusic||option.value==='play'&&mediums.experimentalGaming));
+  const mediums=$derived({...data.mediaRows,features:page.data.capabilities});
+  const mediumOptions=$derived(discoverySegments.filter(option=>surfaceEnabled(mediums,option.value)));
   function discoverSource(row:DiscoverySection,grid=false):ShelfConfig {
     return {type:'discovery',section:row,layout:grid?'grid':'row',mediums,surface:grid?data.selection.surface:'watch',kind:grid?data.selection.kind:'all',page:grid?data.selection.page:1,initial:grid&&data.selected?data.selected:{items:row==='recent'?data.recent:data.trending.length?data.trending:data.items,failure:data.providerUnavailable?'Some discovery providers are unavailable. Please try again.':''}};
   }

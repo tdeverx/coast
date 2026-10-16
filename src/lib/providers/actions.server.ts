@@ -17,6 +17,7 @@ import { startProviderMaintenance } from '$lib/providers/maintenance.server';
 const uuid = v.pipe(v.string(), v.uuid());
 
 export function registerProviderActions(options: { maintenance?: boolean } = {}) {
+  registerActionHandler('feature.reconcile', async action => (await import('$lib/application/feature-transition.server')).reconcileFeatures(action));
   registerActionHandler('benchmark.run', async action => (await import('$lib/benchmarks/service.server')).executeBenchmark(action));
   const register = (kind: string, handler: ActionHandler) =>
     registerActionHandler(kind, async (action) => {

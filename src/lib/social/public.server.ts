@@ -1,6 +1,7 @@
+import { getFeatureConfig } from '$lib/server/features';
 import {rankSearch, searchWords, normalizeSearch} from '$lib/search';
 import {getSql} from '$lib/server/db';
-import {getConfig,type CoastConfig} from '$lib/server/config';
+import {type CoastConfig} from '$lib/server/config';
 import {AppError} from '$lib/server/security/errors';
 import type {MediaView} from '$lib/ui/types';
 import {tmdbArtworkUrl} from '$lib/providers/tmdb/artwork.server';
@@ -13,7 +14,8 @@ export function isPublicReadPath(path:string,access:CoastConfig['siteAccess']) {
 }
 export async function publicMedia(ids?:string[]):Promise<MediaView[]> {
  if(ids?.length===0)return [];
- const config=await getConfig();
+ const config=await getFeatureConfig(null);
+ if(!config.features.screen)return [];
  const requested=ids?[...new Set(ids)]:undefined;
  const rows:any[]=[];
  // Explicit detail membership remains complete; each metadata read is bounded.
@@ -39,7 +41,7 @@ export async function publicSearch(query:string):Promise<MediaView[]> {
  const words=searchWords(query);if(!words.length)return [];
  const exact=words.map(word=>`${word}:*`).join(' & ');
  const fallback=words.filter(word=>word.length>=4).map(word=>`${word.slice(0,3)}:*`).join(' | ');
- const read=(terms:string)=>getSql()`select m.id from media m where m.kind in ('movie','show','collection') and coast_search_document(m.title,m.original_title) @@ to_tsquery('simple',${terms}) and exists(select 1 from external_ids x where x.media_id=m.id and x.provider in ('tmdb','trakt')) order by (coast_search_text(m.title)=${normalizeSearch(query)}) desc,ts_rank(coast_search_document(m.title,m.original_title),to_tsquery('simple',${exact})) desc,m.id limit 101`;
+ const read=(terms:string)=>getSql()`select m.id from media m where coast_category_enabled(null,'screen') and m.kind in ('movie','show','collection') and coast_search_document(m.title,m.original_title) @@ to_tsquery('simple',${terms}) and exists(select 1 from external_ids x where x.media_id=m.id and x.provider in ('tmdb','trakt')) order by (coast_search_text(m.title)=${normalizeSearch(query)}) desc,ts_rank(coast_search_document(m.title,m.original_title),to_tsquery('simple',${exact})) desc,m.id limit 101`;
  let rows=await read(exact);if(!rows.length&&fallback)rows=await read(fallback);
  return rankSearch(await publicMedia(rows.map((r:{id:string})=>r.id)),query);
 }

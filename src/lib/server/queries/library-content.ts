@@ -1,5 +1,5 @@
+import { getFeatureConfig } from '$lib/server/features';
 import * as v from 'valibot';
-import { getConfig } from '$lib/server/config';
 import { requireExperimentalFeature } from '$lib/server/experimental';
 import { libraryData } from './library';
 import { presentationContent } from './media-rows';
@@ -34,7 +34,7 @@ export async function libraryContent(userId: string, url: URL): Promise<LibraryC
     });
     return { ...result, items: await readingCards(userId, userId, result.items) };
   }
-  requireExperimentalFeature(await getConfig(), surface === 'listen' ? 'music' : 'gaming');
+  requireExperimentalFeature(await getFeatureConfig(userId), surface === 'listen' ? 'music' : 'gaming');
   if (surface === 'listen') {
     const musicUrl = new URL(url);
     musicUrl.searchParams.set('kind', selection);

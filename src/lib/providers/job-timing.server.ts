@@ -8,7 +8,7 @@ import { eligibleTaskAccounts, recurringTask, taskDue, taskSchedulingEnabled, ty
 type Settings = TaskSettings;
 type Instance = { id: string; provider: string; enabled: boolean; settings: Settings; configured: boolean };
 type Account = { account_generation:string; role:string; id: string; instance_id: string; external_user_id: string; settings: Settings; configured: boolean; live: boolean; user_completed: Date | null; reviews: number };
-type Evidence = { connection_id: string | null; kind: string; instance_id: string | null; completed: Date | null; blocked: boolean; latest_state: string | null };
+type Evidence = { connection_id: string | null; kind: string; instance_id: string | null; completed: Date | null; blocked: boolean; latest_state: string | null; allowed?:boolean };
 export type LastJobRun = {id:string;state:'succeeded'|'failed'|'cancelled';at:string;outcome:import('$lib/server/queue').JobOutcome|null;lastError:string|null};
 export type JobTiming = {lastRun?:LastJobRun|null; completed?:number; instanceId: string; kind: string; nextAt: string | null; lastAt: string | null; eligible: number; fresh: number; reviews: number; reason?: string };
 /** Scheduling evidence is read independently of the bounded recent-run display. */
@@ -24,13 +24,13 @@ export async function jobTimings(): Promise<JobTiming[]> {
       (select completed_at from sync_checkpoints s where s.connection_id=c.id and s.kind='jellyfin-user') as user_completed,
       (select count(distinct media_id)::int from sync_values s where s.connection_id=c.id and s.conflict) as reviews
       from provider_connections c join users u on u.id=c.user_id where c.status='connected' and not u.disabled order by c.created_at,c.id`,
-    sql<Evidence[]>`select c.id as connection_id,k.kind,null::text as instance_id,
+    sql<Evidence[]>`select c.id as connection_id,k.kind,null::text as instance_id,coast_job_allowed(c.user_id,k.kind,'{}'::jsonb) as allowed,
       (select a.updated_at from outbox_actions a where a.connection_id=c.id and a.kind=k.kind and a.state='succeeded' and (a.account_generation is null or a.account_generation=c.account_generation) order by a.updated_at desc limit 1) as completed,
       (select a.state from outbox_actions a where a.connection_id=c.id and a.kind=k.kind and (a.account_generation is null or a.account_generation=c.account_generation) order by a.created_at desc,a.id desc limit 1) as latest_state,
       exists(select 1 from outbox_actions a where a.connection_id=c.id and a.kind=k.kind and a.state in ('pending','running','failed') and (a.account_generation is null or a.account_generation=c.account_generation)) as blocked
       from provider_connections c join users u on u.id=c.user_id join provider_instances i on i.id=c.instance_id cross join unnest(${sql.array(maintenanceKinds, 'TEXT')}) as k(kind) where c.status='connected' and not u.disabled
       and (k.kind like i.provider||'.%' or k.kind='catalogue.user-scan' and i.provider in ('jellyfin','trakt'))
-      union all select null::uuid,k.kind,i.id::text,
+      union all select null::uuid,k.kind,i.id::text,coast_job_allowed(null,k.kind,'{}'::jsonb),
       (select updated_at from outbox_actions a where a.kind=k.kind and a.payload->>'instanceId'=i.id::text and a.state='succeeded' order by updated_at desc limit 1),null::text,
       exists(select 1 from outbox_actions a where a.kind=k.kind and a.payload->>'instanceId'=i.id::text and a.state in ('pending','running','failed'))
       from provider_instances i cross join lateral unnest(case when i.provider='tmdb' then ARRAY['tmdb.refresh','tmdb.recommendations'] else ARRAY['igdb.recommendations'] end) as k(kind) where i.provider in ('tmdb','igdb')`,
@@ -70,14 +70,16 @@ export async function jobTimings(): Promise<JobTiming[]> {
       const kind = task.kinds[0];
       if (!kind) continue;
       if(!task.scope){result.push({instanceId:instance.id,kind,nextAt:null,lastAt:null,eligible:0,fresh:0,reviews:0,reason:'Requested by a user action'});continue;}
-      const eligible = eligibleTaskAccounts(kind, linked.map(account => ({ ...account,
+      const candidates = eligibleTaskAccounts(kind, linked.map(account => ({ ...account,
         externalUserId: account.external_user_id, userCompleted: account.user_completed,
       })), schedule, instance.settings, tmdb);
+      const eligible=candidates.filter(account=>evidence.find(entry=>entry.connection_id===account.id&&entry.kind===kind)?.allowed!==false);
       const shared = jobIdentityScope(kind) === 'instance';
       const rows = evidence.filter(entry => entry.kind === kind && (shared
         ? linked.some(account => account.id === entry.connection_id) || entry.instance_id === instance.id
         : eligible.some(account => account.id === entry.connection_id)));
-      const enabled = taskSchedulingEnabled(instance.provider, instance.enabled, task, schedule, config) && (kind !== 'trakt.recommendations' || instance.configured);
+      const policyAllowed=evidence.find(entry=>entry.instance_id===instance.id&&entry.kind===kind)?.allowed!==false;
+      const enabled = policyAllowed && taskSchedulingEnabled(instance.provider, instance.enabled, task, schedule, config) && (kind !== 'trakt.recommendations' || instance.configured);
       const last = rows.map(entry => new Date(entry.completed ?? 0).getTime()).filter(Boolean);
       const sharedEvidence = { blocked: rows.some(entry => entry.blocked), completed: last.length ? new Date(Math.max(...last)) : null };
       const accountDue = eligible.map(account => ({ account, due: taskDue(task, schedule, effectiveSettings, account,
@@ -92,17 +94,17 @@ export async function jobTimings(): Promise<JobTiming[]> {
         const latest = last.length ? Math.max(...last) : 0;
         result.push({ instanceId: instance.id, kind,
           nextAt: enabled && instance.configured && !sharedEvidence.blocked ? new Date(Math.max(now, taskDue(task, schedule, instance.settings, { id: instance.id, externalUserId: null, role: 'admin', settings: {} }, sharedEvidence, now).at!)).toISOString() : null,
-          lastAt: latest ? new Date(latest).toISOString() : null, eligible: Number(instance.configured), fresh: 0, reviews: 0,
-          reason: !enabled ? 'Automatic runs paused' : !instance.configured ? 'Service credentials required' : sharedEvidence.blocked ? 'Waiting for current work or account attention' : undefined });
+          lastAt: latest ? new Date(latest).toISOString() : null, eligible: Number(instance.configured&&policyAllowed), fresh: 0, reviews: 0,
+          reason: !policyAllowed ? 'Disabled in feature settings' : !enabled ? 'Automatic runs paused' : !instance.configured ? 'Service credentials required' : sharedEvidence.blocked ? 'Waiting for current work or account attention' : undefined });
         continue;
       }
       result.push({ instanceId: instance.id, kind,
         nextAt: enabled && (metadata ? instance.configured && metadataAt && !sharedEvidence.blocked : due.length)
           ? new Date(Math.max(now, metadata ? new Date(metadataAt!).getTime() : Math.min(...due))).toISOString() : null,
         lastAt: last.length ? new Date(Math.max(...last)).toISOString() : null,
-        fresh, completed, eligible: metadata ? Number(instance.configured) : eligible.length,
+        fresh, completed, eligible: metadata ? Number(instance.configured&&policyAllowed) : eligible.length,
         reviews: kind === 'jellyfin.sync' || kind === 'trakt.import' ? eligible.reduce((sum, account) => sum + account.reviews, 0) : 0,
-        reason: !recurringTask(kind) ? 'Requested when an account connects' : !enabled ? 'Automatic runs paused'
+        reason: !policyAllowed||candidates.length&&!eligible.length ? 'Disabled in feature settings' : !recurringTask(kind) ? 'Requested when an account connects' : !enabled ? 'Automatic runs paused'
           : !metadata && !eligible.length ? 'No eligible connected accounts'
           : metadata && !metadataAt ? 'No shared records to refresh'
           : (metadata && sharedEvidence.blocked || !metadata && !due.length) ? (effectiveSettings.companion?.status==='healthy'&&['jellyfin.live','jellyfin.streams'].includes(kind)?'Handled by plugin updates':'Waiting for current work or account attention') : undefined,

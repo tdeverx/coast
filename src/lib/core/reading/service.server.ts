@@ -1,3 +1,4 @@
+import { requireFeatureInTransaction } from '$lib/server/features';
 import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '$lib/server/db';
@@ -42,6 +43,7 @@ async function writeReadingInTransaction(tx:Transaction,userId:string,id:string,
     const [item] = await tx.select({ id: readingWorks.id, kind: readingWorks.kind }).from(readingWorks).where(eq(readingWorks.id, id));
     if (!item) throw new DomainError('Reading work not found.', 404, 'not_found');
     requireEnabledCategory(config, item.kind);
+    await requireFeatureInTransaction(tx,userId,item.kind);
     const key = and(eq(readingProgress.userId, userId), eq(readingProgress.workId, id));
     const [existing] = await tx.select().from(readingProgress).where(key);
     if(input.restart&&existing?.state!=='completed')throw new DomainError('Complete this read before starting a reread.',409);

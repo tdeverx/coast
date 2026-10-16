@@ -1,3 +1,4 @@
+import { requireFeature } from '$lib/server/features';
 import { and,eq,inArray,sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { musicWorks,musicProgress,lists } from '$lib/server/db/schema';
@@ -5,6 +6,7 @@ import { workAssessments } from '$lib/collection/query.server';
 import { DomainError } from '$lib/core/errors';
 import { musicAlbumMembers, musicAlbumMembersSql } from './editions.server';
 export async function musicQueue(userId:string,workId:string){
+  await requireFeature(userId,'music');
   const db=getDb();const [work]=await db.select().from(musicWorks).where(eq(musicWorks.id,workId));if(!work)throw new DomainError('Music not found.',404);
   const entries=work.kind==='track'?[work]:await musicAlbumMembers(workId);
   if (!entries.length) return { items: [], continueId: null };
@@ -17,6 +19,7 @@ export async function musicQueue(userId:string,workId:string){
 /** Expand the existing ordered personal queue/list into music leaves, retaining
  * repeats and previously listened tracks. Screen playlist skipping is unchanged. */
 export async function savedMusicQueue(userId:string,listId?:string){
+ await requireFeature(userId,'music');
  const db=getDb();
  if(listId){
   const [list]=await db.select().from(lists).where(and(eq(lists.id,listId),eq(lists.userId,userId)));
@@ -37,6 +40,7 @@ export async function savedMusicQueue(userId:string,listId?:string){
 
 /** Party picker: unique choices from the personal queue, never the full playback payload. */
 export async function savedMusicQueuePage(userId: string, requestedPage = 1) {
+ await requireFeature(userId,'music');
  const { pageNumberSchema, pagination, PAGE_SIZE } = await import('$lib/server/queries/pagination');
  const { parse } = await import('valibot');
  parse(pageNumberSchema, requestedPage);

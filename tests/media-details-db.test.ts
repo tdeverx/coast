@@ -145,6 +145,10 @@ run(
     expect(combined.undated).toBe(1);
     expect((await mediaStatistics(uid, collection, 'month', now)).watches).toBe(2);
     expect((await profileActivity(uid, now, 'all')).days).toEqual(showStats.days);
-    expect((await mediaStatistics(crypto.randomUUID(), collection, 'all', now)).watches).toBe(0);
+    const emptyUser=crypto.randomUUID();
+    await getDb().insert(s.users).values({id:emptyUser,username:`details-empty-${emptyUser}`});
+    try{expect((await mediaStatistics(emptyUser, collection, 'all', now)).watches).toBe(0);}
+    finally{await getDb().delete(s.users).where(eq(s.users.id,emptyUser));}
+    await expect(mediaStatistics(crypto.randomUUID(), collection, 'all', now)).rejects.toMatchObject({code:'feature_disabled'});
   }
 );

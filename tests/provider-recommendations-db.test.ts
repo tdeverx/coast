@@ -1,3 +1,4 @@
+import {interestPolicyRevision} from '../src/lib/recommendations/interests.server';
 import {afterAll,beforeAll,expect,test} from 'bun:test';
 import {getSql} from '../src/lib/server/db';
 import {encryptCredential} from '../src/lib/server/security/credentials';
@@ -57,7 +58,7 @@ run('a forced recommendation refresh freezes six seeds and resumes without repea
 });
 run('a cancelled recommendation worker cannot publish a set after an upstream wait',async()=>{
  const id=crypto.randomUUID(),seed=works[6];
- const checkpoint={task:'provider-recommendations',instanceId:instance,seeds:[{id:seed,external_id:String(base+6),kind:'movie'}],next:0,added:0};
+ const checkpoint={task:'provider-recommendations',policyRevision:await interestPolicyRevision(),instanceId:instance,seeds:[{id:seed,external_id:String(base+6),kind:'movie'}],next:0,added:0};
  await getSql()`insert into outbox_actions(id,user_id,kind,state,attempts,payload) values(${id},${user},'tmdb.recommendations','running',1,${{instanceId:instance,_checkpoint:checkpoint}}::jsonb)`;
  TmdbAdapter.prototype.recommendations=async()=>{await getSql()`update outbox_actions set state='cancelled' where id=${id}`;return [];};
  const action:OutboxAction={id,userId:user,connectionId:null,kind:'tmdb.recommendations',payload:{instanceId:instance},attempts:1,correlationId:crypto.randomUUID()};

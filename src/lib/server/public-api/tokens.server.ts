@@ -1,3 +1,4 @@
+import { requireFeature } from '$lib/server/features';
 import * as v from 'valibot';
 import { getSql } from '$lib/server/db';
 import { hashToken, randomToken, requireUser, type SessionUser } from '$lib/server/auth';
@@ -17,10 +18,12 @@ export async function listApiTokens(actor: SessionUser|null) {
 }
 export async function createApiToken(actor: SessionUser|null,input:unknown) {
   const user=requireUser(actor), settings=v.parse(inputSchema,input);
+  await requireFeature(user.id,'api');
   if(await onboardingPending(user.id)) throw new AppError(403,'Complete onboarding first.','onboarding_required');
   const token=`coast_${randomToken()}`, hash=await hashToken(token);
   const expiresAt=new Date(Date.now()+settings.days*86400000);
   const id=await getSql().begin(async sql=>{
+    await requireFeature(user.id,'api',sql);
     const active=await sql`select id from users where id=${user.id} and not disabled for update`;
     if(!active.length)throw new AppError(401,'Account unavailable.','invalid_token');
     const [count]=await sql`select count(*)::int as total from api_tokens where user_id=${user.id} and revoked_at is null and expires_at>now()`;
@@ -42,6 +45,7 @@ export async function authenticateApiToken(request:Request) {
   const [row]=await getSql()`select t.id,t.user_id as "userId",t.scopes,u.username from api_tokens t join users u on u.id=t.user_id
     where t.token_hash=${hash} and t.revoked_at is null and t.expires_at>now() and not u.disabled`;
   if(!row) throw new AppError(401,'This token is invalid or expired.','invalid_token');
+  await requireFeature(row.userId,'api');
   if(await onboardingPending(row.userId)) throw new AppError(403,'Complete onboarding first.','onboarding_required');
   // Atomic durable quota: concurrent requests and multiple server workers share one budget.
   const accepted=await getSql()`update api_tokens set window_requests=case when window_started_at<=now()-interval '1 minute' then 1 else window_requests+1 end,

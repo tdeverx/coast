@@ -1,6 +1,6 @@
+import { getFeatureConfig } from '$lib/server/features';
 import {categoryEnabled} from '$lib/experimental';
 import {getSql} from '$lib/server/db/index';
-import {getConfig} from '$lib/server/config';
 import {AppError} from '$lib/server/security/errors';
 import {workCards} from '$lib/collection/query.server';
 import * as v from 'valibot';
@@ -14,7 +14,8 @@ import {genreReason} from './row-ranking';
 import {dynamicKinds,type GenreReason} from './model';
 /** Provider suggestions are read from cache; page reads never perform remote requests. */
 export async function recommendationRows(userId:string,feature:string,url:URL){
- const config=await getConfig();if(feature!=='row'&&feature!=='recommendations')throw new AppError(404,'Unknown recommendation source.');
+ const config=await getFeatureConfig(userId);
+ if(!config.features.personalisation)throw new AppError(403,'Personalisation is turned off.','feature_disabled');if(feature!=='row'&&feature!=='recommendations')throw new AppError(404,'Unknown recommendation source.');
  const category=v.parse(v.picklist(['screen','game','music','reading']),url.searchParams.get('category')??'screen');
  const workId=feature==='row'&&url.searchParams.has('work')?v.parse(v.pipe(v.string(),v.uuid()),url.searchParams.get('work')):null;
  const kind=feature==='row'&&url.searchParams.has('kind')?v.parse(v.picklist(dynamicKinds),url.searchParams.get('kind')):null;

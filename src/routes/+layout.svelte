@@ -1,6 +1,6 @@
 <script lang="ts">
   import '../app.css';
-  import { reader } from '$lib/reading/client.svelte';
+  import { reader, closeReading } from '$lib/reading/client.svelte';
   let Reader=$state<typeof import('$lib/reading/Reader.svelte').default>();
   let readerLoading=false;
   $effect(()=>{if(reader.visible&&!Reader&&!readerLoading){readerLoading=true;void import('$lib/reading/Reader.svelte').then(module=>Reader=module.default).finally(()=>readerLoading=false);}});
@@ -9,7 +9,7 @@
   import {closeStreams} from '$lib/ui/panels/streams.svelte';
   import {startPresence,userStatus} from '$lib/social/status.svelte';
   import {playbackVisible} from '$lib/playback/visibility';
-  import {syncedPlayer,pollSynced,restoreSynced} from '$lib/playback/synced/client.svelte';
+  import {syncedPlayer,pollSynced,restoreSynced,leaveSynced} from '$lib/playback/synced/client.svelte';
   import { refreshRouteDependencies } from '$lib/ui/client';
   import { installBrowserDiagnostics } from '$lib/ui/diagnostics';
   import { onMount } from 'svelte';
@@ -19,13 +19,13 @@
   import Header from '$lib/ui/components/Header.svelte';
   import PersistentPlayer from '$lib/ui/components/PersistentPlayer.svelte';
   import MediaHero from '$lib/ui/components/MediaHero.svelte';
-  import { player, pausePlayback } from '$lib/playback/client.svelte';
+  import { player, pausePlayback, stopPlayback } from '$lib/playback/client.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   let { data, children } = $props();
   let expired = $state(false);
   let content: HTMLElement;
   const notificationOpen=$derived(!!data.user&&(page.state.notificationPopover??page.url.searchParams.get('notifications')==='true'));
-  const friendsOpen=$derived(!!data.user&&(page.state.friendsPopover??page.url.searchParams.get('friends')==='true'));
+  const friendsOpen=$derived(!!data.user&&data.capabilities.social&&(page.state.friendsPopover??page.url.searchParams.get('friends')==='true'));
   let NotificationInbox=$state<typeof import('$lib/ui/components/NotificationInbox.svelte').default>();
   let FriendsPanel=$state<typeof import('$lib/ui/components/FriendsPanel.svelte').default>();
   const streamsOpen=$derived(data.user?.role==='admin'&&(page.state.streamsPopover??page.url.searchParams.get('streams')==='true'));
@@ -65,17 +65,30 @@
   });
   $effect(()=>{syncedPlayer.userId=data.user?.id||'';});
   const presenceUserId=$derived(data.user?.id);
+  const presenceEnabled=$derived(data.capabilities.presence), partiesEnabled=$derived(data.capabilities.parties);
   $effect(()=>{
     userStatus.preference=data.user?.settings?.activityStatus??'automatic';
     userStatus.sharePresence=(data.user?.settings?.social?.sections?.presence??data.user?.settings?.social?.audience??'friends')!=='private';
   });
   $effect(()=>{
-    if(!presenceUserId)return;
+    if(!presenceUserId||!presenceEnabled)return;
     return startPresence(()=>!!player.session&&!player.paused,()=>false);
   });
+  $effect(()=>{
+    if(!presenceUserId||!partiesEnabled)return;
+    void restoreSynced();
+  });
+  $effect(()=>{
+    if(!presenceUserId||!partiesEnabled||!syncedPlayer.room?.id)return;
+    const syncTimer=setInterval(()=>void pollSynced(),2000);
+    return ()=>clearInterval(syncTimer);
+  });
+  $effect(()=>{
+    if((player.session||player.loading)&&(!data.capabilities.playback||player.session&&!(player.session.mediaType==='audio'?data.capabilities.music:data.capabilities.screen)||player.loading&&!(player.preparationMediaType==='audio'?data.capabilities.music:data.capabilities.screen)))void stopPlayback();
+    if((reader.session||reader.loading)&&(!data.capabilities.reader||reader.session&&!data.capabilities[reader.session.kind]))void closeReading(true,false);
+    if(syncedPlayer.room&&!data.capabilities.parties)void leaveSynced(true);
+  });
   onMount(() => {
-    if(data.user&&data.experimentalParties)void restoreSynced();
-    const syncTimer=setInterval(()=>{if(data.user&&data.experimentalParties)void pollSynced();},2000);
     const stopDiagnostics = data.user ? installBrowserDiagnostics() : () => {};
     const expire = () => (expired = true);
     window.addEventListener('coast:auth-expired', expire);
@@ -95,7 +108,7 @@
       stopDiagnostics();
       window.removeEventListener('coast:auth-expired', expire);
       clearInterval(timer);
-      clearInterval(syncTimer);
+
     };
   });
 </script>

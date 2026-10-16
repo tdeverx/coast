@@ -1,9 +1,9 @@
+import { requireFeature } from '$lib/server/features';
 import { ownedReadingSession } from '$lib/reading/sessions.server';
 import { readingLocationSchema } from '$lib/reading/model';
 import * as v from 'valibot';
 import {getSql} from '$lib/server/db';
-import {getConfig} from '$lib/server/config';
-import {requireExperimentalFeature,requireEnabledCategory} from '$lib/server/experimental';
+import {requireEnabledCategory} from '$lib/server/experimental';
 import {AppError} from '$lib/server/security/errors';
 import {requireFriend} from '$lib/social/service.server';
 import {notify} from '$lib/server/notifications';
@@ -21,21 +21,32 @@ async function validOwner(sql:ReturnType<typeof getSql>,id:string,userId:string)
  const [unconnected]=await sql`SELECT 1 FROM synced_participants p WHERE p.room_id=${id} AND p.user_id<>${userId} AND NOT EXISTS(SELECT 1 FROM friendships f WHERE f.user_a=least(p.user_id,${userId}::uuid) AND f.user_b=greatest(p.user_id,${userId}::uuid) AND f.state='accepted') LIMIT 1`;
  return !unconnected;
 }
-async function enabled(){requireExperimentalFeature(await getConfig(), 'parties');}
-async function authorized(userId:string,id:string){
-  await enabled();
+async function enabled(userId:string){await requireFeature(userId,'parties');}
+/** Recheck actual item and both participants in the committing snapshot. Idle parties need no playback capability. */
+async function requirePartyUse(sql:ReturnType<typeof getSql>,userId:string,workId:string|null,mediaType:string,hostId=userId){
+ const [policy]=await sql`select coast_feature_enabled(${userId}::uuid,'parties') and coast_feature_enabled(${hostId}::uuid,'parties')
+   and (${workId}::uuid is null or exists(select 1 from works where id=${workId}::uuid
+     and coast_category_enabled(${userId}::uuid,category) and coast_category_enabled(${hostId}::uuid,category)
+     and coast_feature_enabled(${userId}::uuid,case when ${mediaType}='reading' then 'reader' else 'playback' end)
+     and coast_feature_enabled(${hostId}::uuid,case when ${mediaType}='reading' then 'reader' else 'playback' end))) as allowed`;
+ if(!policy.allowed)throw new AppError(403,'This party or its medium is disabled.','feature_disabled');
+}
+async function authorized(userId:string,id:string,cleanup=false){
+  if(!cleanup)await enabled(userId);
   const [room]=await getSql()`SELECT r.*,p.joined AS viewer_joined FROM synced_rooms r JOIN synced_participants p ON p.room_id=r.id
     JOIN users h ON h.id=r.host_id JOIN users viewer ON viewer.id=p.user_id WHERE r.id=${v.parse(uuid,id)} AND p.user_id=${userId} AND NOT h.disabled AND NOT viewer.disabled`;
   if(!room)throw new AppError(404,'Synced session not found.');
-  if(room.media_type==='reading'&&room.media_id){const [work]=await getSql()`SELECT kind FROM works WHERE id=${room.media_id}`;if(!work)throw new AppError(404,'Reading work not found.');requireEnabledCategory(await getConfig(),work.kind);}
-  if(room.host_id!==userId)await requireFriend(userId,room.host_id);
+  if(!cleanup&&room.media_id&&room.media_type!=='reading')requireEnabledCategory(await requireFeature(userId,'playback'),room.media_type==='audio'?'music':'screen');
+  if(!cleanup&&room.media_type==='reading'&&room.media_id){const [work]=await getSql()`SELECT kind FROM works WHERE id=${room.media_id}`;if(!work)throw new AppError(404,'Reading work not found.');requireEnabledCategory(await requireFeature(userId,'reader'),work.kind);}
+  if(!cleanup)await requireFeature(room.host_id,'parties');
+  if(!cleanup&&room.host_id!==userId)await requireFriend(userId,room.host_id);
   return room;
 }
 async function playback(userId:string,id:string){
   const [p]=await getSql()`SELECT p.* FROM playback_sessions p JOIN provider_connections c ON c.id=p.connection_id JOIN provider_instances i ON i.id=c.instance_id
     WHERE p.share_id IS NULL AND p.id=${v.parse(uuid,id)} AND p.user_id=${userId} AND p.expires_at>NOW() AND p.state<>'stopped' AND c.account_generation=p.account_generation AND c.status='connected' AND i.enabled`;
   if(!p)throw new AppError(409,'Prepare your own playable source before joining.');
-  if(p.media_type==='audio')requireExperimentalFeature(await getConfig(), 'music');
+  requireEnabledCategory(await requireFeature(userId,'playback'),p.media_type==='audio'?'music':'screen');
   return p;
 }
 function descriptor(p:Record<string,any>){return {mediaId:p.media_id,mediaType:p.media_type,edition:p.edition||'',durationSeconds:Number(p.duration_seconds)};}
@@ -44,7 +55,7 @@ async function leaveOthers(sql:ReturnType<typeof getSql>,userId:string,except:st
   await sql`UPDATE synced_rooms SET ended_at=NOW(),revision=revision+1 WHERE host_id=${userId} AND id<>${except} AND ended_at IS NULL`;
 }
 export async function createRoom(userId:string,input:unknown){
-  await enabled();
+  await enabled(userId);
   const data=v.parse(v.object({playbackId:v.optional(uuid),readingSessionId:v.optional(uuid),positionSeconds:v.optional(position,0),paused:v.optional(v.boolean(),true),queue:v.optional(v.pipe(v.array(uuid),v.maxLength(200)),[]),queueIndex:v.optional(v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(199)),0)}),input);
   if(data.playbackId&&data.readingSessionId)throw new AppError(400,'Choose one party medium.');
   const reading=data.readingSessionId?await ownedReadingSession(userId,data.readingSessionId):null;
@@ -55,6 +66,7 @@ export async function createRoom(userId:string,input:unknown){
   if(queue.length){const [invalid]=await getSql()`SELECT count(*)::int AS count FROM unnest(${getSql().array(queue,'TEXT')}::uuid[]) q(id) LEFT JOIN works w ON w.id=q.id WHERE w.kind IS DISTINCT FROM 'track'`;if(invalid.count)throw new AppError(400,'Choose music tracks for the shared queue.');}
   const id=crypto.randomUUID();
   await getSql().begin(async sql=>{
+    await requirePartyUse(sql,userId,reading?.workId??p?.media_id??null,reading?'reading':p?.media_type??'video');
     await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`synced-user:${userId}`},0))`;
     await leaveOthers(sql,userId,id);
     await sql`INSERT INTO synced_rooms (id,host_id,media_id,media_type,edition,duration_seconds,position_seconds,paused,queue,queue_index,reading,reading_format)
@@ -70,6 +82,8 @@ export async function inviteParticipant(userId:string,id:string,input:unknown){
   await getSql().begin(async sql=>{
     const [r]=await sql`SELECT * FROM synced_rooms WHERE id=${id} AND ended_at IS NULL AND created_at>NOW()-INTERVAL '24 hours' FOR UPDATE`;
     if(!r)throw new AppError(409,'This session has ended.');
+    await requirePartyUse(sql,userId,r.media_id,r.media_type,r.host_id);
+    await requirePartyUse(sql,friendId,r.media_id,r.media_type,r.host_id);
     const [member]=await sql`SELECT joined FROM synced_participants WHERE room_id=${id} AND user_id=${userId}`;
     if(!r.settings.acceptInvites)throw new AppError(409,'Invitations are closed for this party.');
     if(r.host_id!==userId&&(!member?.joined||r.settings.invitations!=='everyone'))throw new AppError(403,'Only the host can invite friends to this party.');
@@ -91,6 +105,7 @@ export async function joinRoom(userId:string,id:string,input:unknown){
   if(room.media_type!=='reading'&&reading)throw new AppError(409,'This party changed to playback.');
   if(room.media_id&&room.media_type!=='reading'&&(!p||!compatibleSource(descriptor(room),descriptor(p))))throw new AppError(409,'Your source has a different edition or duration. Choose a matching version to join.');
   await getSql().begin(async sql=>{
+    await requirePartyUse(sql,userId,room.media_id,room.media_type,room.host_id);
     await sql`SELECT pg_advisory_xact_lock(hashtextextended(${`synced-user:${userId}`},0))`;
     const [r]=await sql`SELECT revision,settings,host_id FROM synced_rooms WHERE id=${id} AND ended_at IS NULL AND created_at>NOW()-INTERVAL '24 hours' FOR UPDATE`;
     if(!r||r.revision!==revision)throw new AppError(409,'The session changed while preparing. Refresh and try again.');
@@ -105,6 +120,7 @@ export async function roomState(userId:string,id:string,input?:unknown):Promise<
   const heartbeat=input===undefined?null:v.parse(v.object({buffering:v.boolean(),unavailable:v.optional(v.boolean(),false)}),input);
   return getSql().begin(async sql=>{
     const [r]=await sql`SELECT * FROM synced_rooms WHERE id=${id} FOR UPDATE`;
+    await requirePartyUse(sql,userId,r.media_id,r.media_type,r.host_id);
     if(heartbeat)await sql`UPDATE synced_participants SET heartbeat_at=NOW(),buffering=${heartbeat.buffering},unavailable=${heartbeat.unavailable} WHERE room_id=${id} AND user_id=${userId} AND joined`;
     // Friendship removal and disabled accounts revoke session participation too.
     await sql`UPDATE synced_participants p SET joined=FALSE,buffering=FALSE WHERE p.room_id=${id} AND p.joined AND p.user_id<>${r.host_id} AND (EXISTS(SELECT 1 FROM users u WHERE u.id=p.user_id AND u.disabled) OR NOT EXISTS(SELECT 1 FROM friendships f WHERE f.user_a=least(p.user_id,${r.host_id}::uuid) AND f.user_b=greatest(p.user_id,${r.host_id}::uuid) AND f.state='accepted'))`;
@@ -163,6 +179,7 @@ export async function commandRoom(userId:string,id:string,input:unknown){
     if(!actor)throw new AppError(403,'You are no longer participating.');
     if(!permitted(r,userId,actor?.joined??false,data.action))throw new AppError(403,'Playback is controlled by the host.');
     if(r.ended_at||new Date(r.created_at).getTime()<=Date.now()-86400000||r.revision!==data.revision)throw new AppError(409,'The session changed. Refresh before changing playback.');
+    await requirePartyUse(sql,userId,reading?.workId??p?.media_id??r.media_id,reading?'reading':p?.media_type??r.media_type,r.host_id);
     let restoreReadingHost=false;
     if(reading){
       const [source]=await sql`SELECT b.id FROM reading_sessions b JOIN users u ON u.id=b.user_id LEFT JOIN provider_connections c ON c.id=b.connection_id LEFT JOIN provider_instances i ON i.id=c.instance_id WHERE b.id=${reading.id} AND b.user_id=${userId} AND b.closed_at IS NULL AND b.expires_at>NOW() AND NOT u.disabled AND (b.connection_id IS NULL OR c.status='connected' AND i.enabled AND c.account_generation=b.account_generation) FOR SHARE OF b`;
@@ -231,14 +248,14 @@ export async function commandRoom(userId:string,id:string,input:unknown){
   });return roomState(userId,id);
 }
 export async function leaveRoom(userId:string,id:string){
-  const r=await authorized(userId,id);
+  const r=await authorized(userId,id,true);
   await getSql()`UPDATE synced_participants SET joined=FALSE,buffering=FALSE,playback_id=NULL,reading_session_id=NULL WHERE room_id=${id} AND user_id=${userId}`;
   if(r.host_id===userId)await getSql()`UPDATE synced_rooms SET ended_at=NOW(),revision=revision+1 WHERE id=${id}`;
   return {left:true};
 }
 
 export async function declineInvitation(userId:string,id:string){
-  const room=await authorized(userId,id);
+  const room=await authorized(userId,id,true);
   if(room.host_id===userId)throw new AppError(409,'The host cannot decline their own session.');
   await getSql().begin(async sql=>{
     const [participant]=await sql`SELECT joined FROM synced_participants WHERE room_id=${id} AND user_id=${userId} FOR UPDATE`;
@@ -250,15 +267,17 @@ export async function declineInvitation(userId:string,id:string){
 }
 
 export async function listRooms(userId:string):Promise<{id:string;createdAt:string;host:string;hostId:string;mediaId:string|null;mediaType:'audio'|'video'|'reading';reading?:RoomState['reading'];joined:boolean;progress:number|null;durationSeconds:number;positionSeconds:number;paused:boolean;bufferingPaused:boolean;updatedAt:string;participants:{userId:string;username:string;avatar:string|null;joined:boolean}[]}[]>{
-  await enabled();
+  await enabled(userId);
   const rows=await getSql()`SELECT r.id,r.created_at AS "createdAt",u.username AS host,r.host_id AS "hostId",r.media_id AS "mediaId",r.media_type AS "mediaType",r.reading,p.joined,r.duration_seconds AS "durationSeconds",r.position_seconds AS "positionSeconds",r.paused,r.buffering_paused AS "bufferingPaused",r.updated_at AS "updatedAt",
     CASE WHEN r.media_id IS NOT NULL AND r.duration_seconds>0 THEN least(1.0,greatest(0.0,(r.position_seconds+CASE WHEN NOT r.paused AND NOT r.buffering_paused THEN greatest(0,extract(epoch from now()-r.updated_at)) ELSE 0 END)/r.duration_seconds)) END::real AS progress,
     (SELECT coalesce(jsonb_agg(jsonb_build_object('userId',member.id,'username',member.username,'joined',participant.joined,'avatar',CASE WHEN social_visible(member.id,${userId}::uuid,'details') THEN member.settings->'profile'->>'avatar' END) ORDER BY (member.id=r.host_id) DESC,member.username),'[]'::jsonb)
      FROM synced_participants participant JOIN users member ON member.id=participant.user_id
-     WHERE participant.room_id=r.id AND NOT member.disabled AND
+     WHERE participant.room_id=r.id AND NOT member.disabled AND coast_feature_enabled(member.id,'parties') AND
      (member.id=r.host_id OR EXISTS(SELECT 1 FROM friendships f WHERE f.user_a=least(member.id,r.host_id) AND f.user_b=greatest(member.id,r.host_id) AND f.state='accepted'))) AS participants FROM synced_rooms r
     JOIN synced_participants p ON p.room_id=r.id JOIN users u ON u.id=r.host_id
     WHERE p.user_id=${userId} AND NOT u.disabled AND r.ended_at IS NULL
+    AND coast_feature_enabled(r.host_id,'parties')
+    AND (r.media_id is null or exists(select 1 from works w where w.id=r.media_id and coast_category_enabled(${userId}::uuid,w.category) and coast_category_enabled(r.host_id,w.category) and coast_feature_enabled(${userId}::uuid,case when r.media_type='reading' then 'reader' else 'playback' end) and coast_feature_enabled(r.host_id,case when r.media_type='reading' then 'reader' else 'playback' end)))
     AND r.created_at>NOW()-INTERVAL '24 hours'
     AND (r.host_id=${userId} OR EXISTS(SELECT 1 FROM friendships f WHERE f.user_a=least(r.host_id,${userId}::uuid) AND f.user_b=greatest(r.host_id,${userId}::uuid) AND f.state='accepted'))
     ORDER BY r.updated_at DESC LIMIT 60`;

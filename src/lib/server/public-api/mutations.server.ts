@@ -15,7 +15,7 @@ import { logMusic } from '$lib/music/persistence.server';
 import { createPlaythrough,updatePlaythrough,logGameSession } from '$lib/core/games/service.server';
 import { createWebhook,removeWebhook } from './webhooks.server';
 import type { authenticateApiToken } from './tokens.server';
-import { getConfig } from '$lib/server/config';
+import { getFeatureConfig } from '$lib/server/features';
 
 const uuid=v.pipe(v.string(),v.uuid());
 export function canonicalJson(value:unknown):string{if(Array.isArray(value))return `[${value.map(canonicalJson).join(',')}]`;if(value!==null&&typeof value==='object')return `{${Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>`${JSON.stringify(key)}:${canonicalJson(item)}`).join(',')}}`;return JSON.stringify(value);}
@@ -37,7 +37,7 @@ export async function publicMutation(user:Awaited<ReturnType<typeof authenticate
  const data=method==='DELETE'?{}:await readJsonBody(request,65536,false);
  if(['source','sourceEventId','userId'].some(key=>key in data))throw new AppError(400,'Source and owner are assigned by Coast.','invalid_input');
  const hash=createHash('sha256').update(`${method}:${route}:${canonicalJson(data)}`).digest('hex');
- const config=await getConfig();
+ const config=await getFeatureConfig(user.id);
  return getDb().transaction(async tx=>{
   // Lock the account before replay state: the same order as concrete tracking writes.
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${user.id},0))`);
