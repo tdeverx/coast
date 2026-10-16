@@ -22,6 +22,8 @@ const kinds = [
   { value: 'album', label: 'Albums' },
   { value: 'track', label: 'Tracks' },
   { value: 'game', label: 'Games' },
+  { value: 'book', label: 'Books' },
+  { value: 'comic', label: 'Comics' },
 ];
 
 /** Local selection for finite shelves; remote sources own their query filters. */

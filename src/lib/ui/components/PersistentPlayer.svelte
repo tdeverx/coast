@@ -53,7 +53,11 @@
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   let keyboardInteraction = false;
   let scrubbing = $state(false);
-  const followingHost=$derived(!!syncedPlayer.room&&!canControlPlayback());
+  const partyRoom=$derived(preview?null:syncedPlayer.room);
+  const partyNotice=$derived(preview?'':syncedPlayer.notice);
+  const partyBusy=$derived(!preview&&syncedPlayer.busy);
+  const partyHost=$derived(!preview&&isSyncHost());
+  const followingHost=$derived(!!partyRoom&&!canControlPlayback());
   const audioMode = $derived(player.session?.mediaType === 'audio');
   const sharedMode = $derived(!!player.session?.shareId);
   const media = $derived<HTMLMediaElement>(audioMode ? audio : video);
@@ -73,7 +77,7 @@
     current = media.currentTime;
     wasPlaying = !media.paused && media.readyState >= 3;
   }
-  function pause(remote=false) { if(syncedPlayer.room&&!remote&&!syncedPlayer.changing){void syncedCommand('pause');return;} accountPlayed(); media?.pause(); }
+  function pause(remote=false) { if(preview){player.paused=true;return;} if(partyRoom&&!remote&&!syncedPlayer.changing){void syncedCommand('pause');return;} accountPlayed(); media?.pause(); }
   function waiting() { accountPlayed(); wasPlaying = false; tracePlayback('playback.waiting'); if (!streamFailure) streamInterrupted({ code: 2 }); else checkStreamFailure(); }
   function seekingStarted() { seeking = true; accountPlayed(); tracePlayback('playback.seek'); }
   function seekingEnded() { seeking = false; playedPosition = media.currentTime; playedAt = performance.now(); wasPlaying = !media.paused && media.readyState >= 3; }
@@ -93,7 +97,7 @@
     ...new Set(player.session?.sources.map((source) => source.edition ?? '') ?? []),
   ]);
   function seek(seconds: number,remote=false) {
-    if(syncedPlayer.room&&!remote){void syncedCommand('seek',{positionSeconds:seconds});return;}
+    if(partyRoom&&!remote){void syncedCommand('seek',{positionSeconds:seconds});return;}
     if (!media || !Number.isFinite(duration) || duration <= 0) return;
     accountPlayed();
     current = Math.max(0, Math.min(duration, seconds));
@@ -104,12 +108,13 @@
   }
   function toggleUi(){player.browsing=!player.browsing;revealControls();}
   function fullscreen() {
+    if(preview)return;
     if (document.fullscreenElement) void document.exitFullscreen();
     else void document.documentElement.requestFullscreen();
   }
   function armIdle() {
     clearTimeout(idleTimer);
-    if (!active || audioMode || player.browsing || player.paused || player.role === 'postplay' || error) return;
+    if (preview || !active || audioMode || player.browsing || player.paused || player.role === 'postplay' || error) return;
     idleTimer = setTimeout(() => {
       const focused =
         keyboardInteraction && document.activeElement?.closest('.playback-chrome, header');
@@ -196,11 +201,12 @@
     else lastTouchTap={at:now,x:event.clientX,y:event.clientY};
   }
   async function close(cancelPreparing: unknown = true, withdrawn=false) {
+    if(preview){player.session=null;player.role='idle';player.paused=true;player.subtitlePrompt=false;return;}
     if(cancelPreparing!==false)cancelPlaybackPreparation();
     if (closed) return;
     closed = true;
     const closingSession=player.session?.id,shared=sharedMode;
-    if(syncedPlayer.room&&!syncedPlayer.changing){if(withdrawn)await leaveSynced(true);else if(isSyncHost())await syncedCommand('stop');else await leaveSynced();}
+    if(partyRoom&&!syncedPlayer.changing){if(withdrawn)await leaveSynced(true);else if(partyHost)await syncedCommand('stop');else await leaveSynced();}
     pause(true);
     if(!withdrawn)await report('stop');
     if(player.session?.id!==closingSession){closed=false;return;}
@@ -214,9 +220,10 @@
     if(!shared)void refreshAfterChange('tracking');
   }
   async function toggle() {
+    if(preview){player.paused=!player.paused;return;}
     if (!media) return;
     if(sharedMode&&media.ended&&player.session){await playMedia(player.session.mediaId,{fromStart:true});return;}
-    if(syncedPlayer.room){if(!canControlPlayback()&&media.paused){try{await media.play();}catch(cause){syncedPlayer.notice=message(cause);}return;}await syncedCommand(player.paused?'play':'pause');return;}
+    if(partyRoom){if(!canControlPlayback()&&media.paused){try{await media.play();}catch(cause){syncedPlayer.notice=message(cause);}return;}await syncedCommand(player.paused?'play':'pause');return;}
     if (media.paused) {
       try {
         await media.play();
@@ -278,10 +285,11 @@
     if (!audioMode) applySubtitles();
   }
   async function ended() {
+    if(preview)return;
     if (audioMode) {
       accountPlayed();
       const delivered = await report('ended');
-      if (!sharedMode && delivered && (!syncedPlayer.room||isSyncHost())) await advanceMusic();
+      if (!sharedMode && delivered && (!partyRoom||partyHost)) await advanceMusic();
       else player.paused = true;
       return;
     }
@@ -328,10 +336,11 @@
     next = result.next;
   }
   async function switchEdition(edition?: string) {
+    if(preview)return;
     const session = player.session;
     if (!session) return;
     try {
-      if(syncedPlayer.room&&edition===undefined){await joinSynced(syncedPlayer.room);return;}
+      if(partyRoom&&edition===undefined){await joinSynced(partyRoom);return;}
       if (audioMode) {
         await playMedia(session.mediaId, { mediaType: 'audio', fromStart: false, retry: true });
         return;
@@ -395,13 +404,13 @@
         });
         engine.on(Hls.Events.FRAG_LOADED, () => { restartedNetwork = false; clearStreamFailure(); });
         engine.on(Hls.Events.MANIFEST_PARSED, () => {
-          void (syncedPlayer.room?Promise.resolve():element.play()).catch(() => {
+          void (partyRoom?Promise.resolve():element.play()).catch(() => {
             player.paused = true;
           });
         });
       } else {
         if (element.getAttribute('src') !== url) element.src = url;
-        await (syncedPlayer.room?Promise.resolve():element.play()).catch(() => {
+        await (partyRoom?Promise.resolve():element.play()).catch(() => {
           player.paused = true;
         });
       }
@@ -435,7 +444,7 @@
       },
       stop: close,
       pause,
-      resume: () => syncedPlayer.room ? syncedCommand('play') : media.play(),
+      resume: () => partyRoom ? syncedCommand('play') : media.play(),
       snapshot: () => ({positionSeconds:media?.currentTime||0,buffering:!media||media.readyState<3||!!media.error,unavailable:!!error}),
       align: state => {
         if(!media||media.readyState<1)return;
@@ -489,6 +498,7 @@
   });
   let lastTiming = 0;
   function tracePlayback(event: import('$lib/diagnostics').DiagnosticEvent) {
+    if(preview)return;
     browserDiagnostic(event, { sessionId: player.session?.id, durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0, bufferedSeconds: media?.buffered.length ? Math.max(0, media.buffered.end(media.buffered.length - 1) - media.currentTime) : 0, positionSeconds: media?.currentTime, readyState: media?.readyState, networkState: media?.networkState, code: media?.error?.code });
   }
 </script>
@@ -547,7 +557,7 @@
     class:browsing={player.browsing}
     inert={!player.controlsVisible && !player.paused}
   >
-    {#if syncedPlayer.notice}<p class="small" role="status">{syncedPlayer.notice}</p>{/if}
+    {#if partyNotice}<p class="small" role="status">{partyNotice}</p>{/if}
     {#if trackingNotice}<p class="small" role="status">{trackingNotice}</p>{/if}
     {#if error}<div class="play-error solid-surface" role="alert">
         <p>{error}</p>
@@ -578,7 +588,7 @@
           >{:else if next}<Button
             icon="play"
             onclick={() =>
-              next &&
+              !preview && next &&
               playMedia(next.id, {
                 continuationId: player.continuationId || next.showId,
                 sequence: next.sequence,
@@ -602,9 +612,9 @@
           disabled={followingHost || audioMode&&sharedMode}
           label={audioMode ? 'Previous track' : 'Back 10 seconds'}
           title={audioMode ? 'Previous track' : 'Back 10 seconds'}
-          onclick={() => audioMode ? advanceMusic(-1) : seek(current - 10)} icon={audioMode ? 'left' : 'rewind'} iconSize={20} />
+          onclick={() => {if(!preview)audioMode ? advanceMusic(-1) : seek(current - 10);}} icon={audioMode ? 'left' : 'rewind'} iconSize={20} />
         <Button size="icon" class="icon-button play-toggle"
-          disabled={followingHost&&(!player.paused||syncedPlayer.room!.paused||syncedPlayer.room!.bufferingPaused)}
+          disabled={followingHost&&(!player.paused||partyRoom!.paused||partyRoom!.bufferingPaused)}
           title={followingHost?'Playback is controlled by the host':undefined}
           label={player.paused ? 'Play' : 'Pause'}
           onclick={toggle} icon={player.paused ? 'play' : 'pause'} iconSize={28} />
@@ -613,14 +623,14 @@
           disabled={followingHost || audioMode&&sharedMode}
           label={audioMode ? 'Next track' : 'Forward 30 seconds'}
           title={audioMode ? 'Next track' : 'Forward 30 seconds'}
-          onclick={() => audioMode ? advanceMusic() : seek(current + 30)} icon={audioMode ? 'right' : 'forward'} iconSize={20} />
+          onclick={() => {if(!preview)audioMode ? advanceMusic() : seek(current + 30);}} icon={audioMode ? 'right' : 'forward'} iconSize={20} />
       </div>
       <PlaybackTimeline
         mediaId={sharedMode?undefined:player.session!.mediaId}
         href={audioMode ? `/music/work/${player.session!.mediaId}` : undefined}
         audio={audioMode}
         title={player.session?.title ?? 'Now playing'}
-        detail={`${player.session?.detail ?? ''}${syncedPlayer.room ? isSyncHost()?' · Synced host':' · Synced member':''}`}
+        detail={`${player.session?.detail ?? ''}${partyRoom ? partyHost?' · Synced host':' · Synced member':''}`}
         disabled={followingHost}
         artwork={player.session?.artwork}
         {current}
@@ -630,14 +640,14 @@
       />
       {#if !audioMode}<Button size="icon" icon="home" label={player.browsing?'Hide UI':'Show UI'} pressed={player.browsing} onclick={toggleUi}/>{/if}
       {#if !audioMode || !sharedMode}<Button menu label="Playback options" upward>
-        {#if page.data.experimentalParties&&!sharedMode}<Button item icon="party" disabled={syncedPlayer.busy} onclick={()=>syncControls?.show()}>{syncedPlayer.room?'Synced session…':'Start synced session…'}</Button>{/if}
+        {#if page.data.experimentalParties&&!sharedMode}<Button item icon="party" disabled={partyBusy} onclick={()=>syncControls?.show()}>{partyRoom?'Synced session…':'Start synced session…'}</Button>{/if}
         {#if audioMode}
-          <Button item icon="list" disabled={followingHost} disabledReason="Playback is controlled by the host" onclick={()=>playSavedMusicQueue().catch(cause=>error=message(cause))}>Play saved music queue</Button>
+          <Button item icon="list" disabled={followingHost} disabledReason="Playback is controlled by the host" onclick={()=>{if(!preview)void playSavedMusicQueue().catch(cause=>error=message(cause));}}>Play saved music queue</Button>
           {#if player.audioNotice}<p class="menu-status" role="status">{player.audioNotice}</p>{/if}
           <Button menu label="Queue" icon="list" upward panel>
             {#each player.audioQueue as entry, index}
               <Button item selection="radio" checked={index === player.audioIndex} disabled={followingHost||entry.availability !== 'available'} disabledReason={followingHost?'Playback is controlled by the host':entry.availability === 'unknown' ? 'Availability unresolved' : entry.availability !== 'available' ? 'Unavailable' : undefined}
-                onclick={() => { player.audioIndex = index - 1; void advanceMusic(); }}>{entry.title}</Button>
+                onclick={() => { if(preview)return;player.audioIndex = index - 1; void advanceMusic(); }}>{entry.title}</Button>
             {/each}
           </Button>
         {:else}
@@ -693,7 +703,7 @@
             icon={player.muted ? 'muted' : 'volume'}
             checked={player.muted}
             showCheckmark={false}
-            onclick={() => setPlaybackMuted(!player.muted)}
+            onclick={() => {if(preview)player.muted=!player.muted;else setPlaybackMuted(!player.muted);}}
             >{player.muted ? 'Unmute' : 'Mute'}</Button>
           <div class="menu-divider" role="separator"></div>
           <label class="volume" data-menu-interactive
@@ -706,6 +716,7 @@
               aria-valuetext={`${Math.round(volume * 100)} percent`}
               bind:value={volume}
               oninput={() => {
+                if(preview){player.muted=volume===0;return;}
                 media.volume = volume;
                 setPlaybackMuted(volume === 0);
               }}

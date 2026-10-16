@@ -4,6 +4,8 @@
   import {recurringTask} from '$lib/providers/task-timing';
   import { onMount } from 'svelte';
   import { invalidate } from '$app/navigation';
+  import { useClient } from '$lib/ui/client-context';
+  const { preview } = useClient();
   import { maintenanceKinds, serviceTasks, type ServiceTask } from '$lib/providers/tasks';
   import type { ProviderSchedule } from '$lib/providers/schedule';
   import Heading from './Heading.svelte';
@@ -81,6 +83,7 @@
     {id:'manual',title:'Manual',description:undefined,entries:sections.manual},
   ].filter(group=>(filter==='all'||filter===group.id)&&group.entries.length));
   onMount(() => {
+    if (preview) return;
     let polling = false;
     const timer = setInterval(() => {
       if (!document.hidden && !polling) {

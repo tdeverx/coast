@@ -19,7 +19,7 @@ export type DiscoveryOptions = {
   layout?: 'row' | 'grid';
 };
 export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource {
-  const { api } = useClient();
+  const { api, preview } = useClient();
   const initial = untrack(get);
   let surface = $state<DiscoverySurface>(initial.surface ?? 'watch');
   let kind = $state<string>(initial.kind ?? 'all');
@@ -71,7 +71,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     kind = 'all';
     currentPage = 1;
     available = false;
-    if (get().layout === 'grid')
+    if (!preview && get().layout === 'grid')
       replaceState(pageUrl(1), page.state);
     resource.replace({ items: [], failure: '' });
     restoreOrLoad();
@@ -79,7 +79,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
   function selectKind(value: string) {
     kind = value;
     currentPage = 1;
-    if (get().layout === 'grid') {
+    if (!preview && get().layout === 'grid') {
       void goto(pageUrl(1), { keepFocus: true, noScroll: true });
       return;
     }
@@ -134,7 +134,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
         kind = 'all';
         currentPage = 1;
       }
-      if ((withdrawn || kindWithdrawn) && option.layout === 'grid')
+      if (!preview && (withdrawn || kindWithdrawn) && option.layout === 'grid')
         replaceState(pageUrl(currentPage), page.state);
       if (!changed && !withdrawn && !kindWithdrawn)
         return;

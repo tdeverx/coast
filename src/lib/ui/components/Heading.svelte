@@ -6,9 +6,11 @@
   let {
     title, variant = 'row', level = 2, description, selection,
     heading,
-    filters,
+    segments,
+    controls,
+    previous,
+    next,
     actions,
-    navigation,
     href,
   }: {
     title: string;
@@ -17,9 +19,11 @@
     description?: string;
     selection?: HeadingSelection;
     heading?: Snippet;
-    filters?: Snippet;
+    segments?: Snippet;
+    controls?: Snippet;
+    previous?: Snippet;
+    next?: Snippet;
     actions?: Snippet;
-    navigation?: Snippet;
     href?: string;
   } = $props();
 </script>
@@ -36,13 +40,16 @@
     {#if heading}{@render heading()}
     {:else}{@render titleContent()}{/if}
     {#if description}<p>{description}</p>{/if}
-    {#if selection || filters}<div class="filters">
+    {#if selection || segments}<div class="filters">
       {#if selection}<SegmentedControl label={selection.label} value={selection.value} options={selection.options} onchange={selection.change} />{/if}
-      {@render filters?.()}
+      {@render segments?.()}
     </div>{/if}
   </div>
-  {#if actions || navigation}<div class={variant === 'page' ? 'row' : 'actions'}>
-    {@render actions?.()}{@render navigation?.()}
+  {#if actions || previous || controls || next}<div class="actions">
+    {@render actions?.()}
+    {#if previous || controls || next}<div class="navigation">
+      {@render previous?.()}{@render controls?.()}{@render next?.()}
+    </div>{/if}
   </div>{/if}
 </svelte:element>
 {/if}
@@ -91,6 +98,18 @@
     flex-wrap: wrap;
     gap: 12px;
   }
+  .navigation {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+  }
+  .navigation :global(.icon-button) {
+    width: var(--control-compact-height);
+    height: var(--control-compact-height);
+    color: var(--muted);
+  }
+  .navigation :global(.icon-button:disabled) { opacity: .25; }
   @media (max-width: 600px) {
     .identity:has(:global(.picker-container)) {
       flex-basis: 100%;

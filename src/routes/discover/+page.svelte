@@ -43,7 +43,7 @@
         title="Discover"
         description="Find your next story."
       >
-      {#snippet filters()}{#if page.data.user && mediumOptions.length>1}<SegmentedControl label="Discovery medium" value="watch" options={mediumOptions} onchange={surface=>goto(surface==='watch'?'/discover':`/discover?${new URLSearchParams({section:'trending',surface})}`)} />{/if}{/snippet}
+      {#snippet segments()}{#if page.data.user && mediumOptions.length>1}<SegmentedControl label="Discovery medium" value="watch" options={mediumOptions} onchange={surface=>goto(surface==='watch'?'/discover':`/discover?${new URLSearchParams({section:'trending',surface})}`)} />{/if}{/snippet}
       </Heading>
       <EmptyState
         title="A wider world of stories."

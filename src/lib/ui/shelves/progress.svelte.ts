@@ -27,7 +27,7 @@ export type ProgressSourceOptions = {
     onitems?: (items: (MediaView | MediaCardPresentation)[], selection: string) => void;
   };
 export function createProgressSource(getOptions: () => ProgressSourceOptions): ShelfSource {
-  const { api } = useClient();
+  const { api, preview } = useClient();
 
   let {
     initial,
@@ -140,7 +140,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
         throw cause;
       }
     });
-    if (result && layout === 'grid') replaceState(href(result.page), route.state);
+    if (result && !preview && layout === 'grid') replaceState(href(result.page), route.state);
   }
   function update(patch: Partial<Filters>) {
     preferences[tab] = { ...current, ...patch };

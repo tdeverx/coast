@@ -891,6 +891,7 @@
       "src/lib/ui/components/RecommendAction.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/routes/games/+page.svelte",
+      "src/routes/music/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/taste/[friendId]/+page.svelte"
     ],

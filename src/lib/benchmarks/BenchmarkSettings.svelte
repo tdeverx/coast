@@ -5,9 +5,11 @@
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
-  import { api, message } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { createResource } from '$lib/ui/resource.svelte';
   import type { listBenchmarks } from './service.server';
+  const {api,preview}=useClient();
   let {history}:{history:Awaited<ReturnType<typeof listBenchmarks>>}=$props();
   const resource=createResource(untrack(()=>history),true);
   let current=$derived(resource.data), busy=$state(false), queueError=$state('');
@@ -35,7 +37,13 @@
     catch(problem){if(!request.signal.aborted&&currentGeneration===generation)queueError=message(problem);}
     finally{if(queueController===request){queueController=undefined;busy=false;}}
   }
+  function changePage(selected:number){
+    return preview
+      ? resource.load(signal=>api<Awaited<ReturnType<typeof listBenchmarks>>>(`admin/benchmarks?page=${selected}`,undefined,'GET',{signal}))
+      : goto(`/settings/benchmarks?page=${selected}`);
+  }
   onMount(()=>{
+    if(preview)return()=>{generation++;resource.dispose();queueController?.abort();queueController=undefined;};
     const timer=setInterval(()=>{
       if(document.hidden||resource.busy||busy||!current.activeId)return;
       const selectedPage=current.page;
@@ -79,7 +87,7 @@
         {#if run.state==='queued'||run.state==='running'}<p class="small">This run uses the existing background job queue. <a href="/settings/jobs">Review Jobs &amp; schedules</a></p>{/if}
       </div>
     {/each}{/if}
-    <Pagination page={current.page} pages={current.pages} label="Benchmark history pages" onchange={page=>goto(`/settings/benchmarks?page=${page}`)} />
+    <Pagination page={current.page} pages={current.pages} label="Benchmark history pages" onchange={changePage} />
   </section>
 </div>
 <style>

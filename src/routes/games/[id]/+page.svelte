@@ -78,7 +78,7 @@
   {#if overview.length}<Shelf title="Overview" size="panel" artworkOptions={false} panels={overview} />{/if}
   <section class="section" aria-label="Playthroughs">
     <Heading title="Playthroughs">
-      {#snippet filters()}{#if data.item.playthroughs.length}
+      {#snippet segments()}{#if data.item.playthroughs.length}
         <select aria-label="Playthrough" value={playthrough?.id ?? ''} onchange={(event) => goto(selectedUrl(event.currentTarget.value), { noScroll: true, keepFocus: true })}>
           {#each data.item.playthroughs as entry, index}<option value={entry.id}>{entry.repeat ? 'Replay' : 'Playthrough'} · {entry.platform || 'All platforms'} · {displayLabel(entry.status)} · {data.item.playthroughs.length - index}</option>{/each}
         </select>

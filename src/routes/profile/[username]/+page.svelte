@@ -1,5 +1,4 @@
 <script lang="ts">
- import { availabilityControl } from '$lib/ui/controls/actions';
   import { homeShelves } from '$lib/ui/shelves/home';
   import Avatar from '$lib/ui/components/Avatar.svelte';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
@@ -240,10 +239,6 @@
   title={featureTitle}
   note={featureId === data.profile.featuredMediaId ? (data.profile.featuredNote ?? '') : ''}
 />
-{#snippet favouriteFilters()}<RowFilter groups={[{label:"Favourites media type", value:favouriteKind, options:mediaTypeOptions({...page.data,features:page.data.capabilities}), change:(kind) => chooseFavourites(kind as typeof favouriteKind)}]} />{#if favouriteError}<span role="alert">{favouriteError}</span><Button
-      emphasis="subtle"
-      onclick={() => chooseFavourites(favouriteKind)}>Retry</Button
-    >{/if}{/snippet}
 {#snippet favouriteActions(id: string)}
   {@const item = favouriteData.favourites.find((i) => i.id === id)!}{@const adjacent =
     neighbours(id)}
@@ -285,16 +280,16 @@
     href={layout === 'row' ? url('favourites') : undefined}
     {layout}
     busy={favouriteLoading}
+    error={favouriteError} retry={()=>void chooseFavourites(favouriteKind)}
     pageNumber={favouriteData.page}
     pages={favouriteData.pages}
     onpage={layout === 'grid' ? (number) => chooseFavourites(favouriteKind, number) : undefined}
+    filterGroups={[
+      {label:'Media type', value:favouriteKind, options:mediaTypeOptions({...page.data,features:page.data.capabilities}), change:kind=>void chooseFavourites(kind as typeof favouriteKind)},
+      ...(favouriteKind!=='book'&&favouriteKind!=='comic'?[{label:'Availability',value:favouriteAvailable?'available':'all',options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:(value:string)=>{favouriteAvailable=value==='available';void chooseFavourites(favouriteKind);}}]:[]),
+    ]}
   >
-    {#snippet filters()}{#if favouriteKind!=='book'&&favouriteKind!=='comic'}<Button {...availabilityControl(favouriteAvailable, available => {
-      favouriteAvailable = available; void chooseFavourites(favouriteKind);
-    })} />{/if}{/snippet}
-    {#snippet controls()}{@render favouriteFilters()}{/snippet}
-    {#snippet actions()}{#if data.isOwner}<Button
-          emphasis="subtle"
+    {#snippet actions()}{#if data.isOwner}<Button item
           onclick={() => (arranging = !arranging)}>{arranging ? 'Done' : 'Arrange'}</Button
         >{/if}{/snippet}
     {#snippet details(item)}{@render favouriteActions(item.id)}{/snippet}
@@ -310,7 +305,7 @@
 {#snippet activity(layout: 'row' | 'grid')}
   <section class="section">
     {#snippet activityFilters()}<RowFilter groups={[{label:"Activity media type", value:activityType, options:mediaTypeOptions(), change:next=>{activityType=next as typeof activityType; if (layout === 'grid') { const url = new URL(page.url); url.searchParams.set('type', activityType === 'show' ? 'episode' : activityType); url.searchParams.delete('page'); replaceState(url, page.state); }}}]} />{/snippet}
-    {#if layout === 'grid'}<Heading title="Activity" filters={activityFilters} />{/if}
+    {#if layout === 'grid'}<Heading title="Activity" controls={activityFilters} />{/if}
     {#if layout === 'grid' && data.filters.genre}<p class="small">
         Genre: {data.filters.genre === '__other__' ? 'Other genres' : data.filters.genre} · {periodLabel(
           data.filters.period
@@ -379,8 +374,9 @@
     {layout}
     href={layout === 'row' ? `${profileUrl}?section=insights&period=${insightPeriod}` : undefined}
     busy={insightLoading}
+    error={insightError} retry={()=>void choosePeriod(insightPeriod)}
   >
-    {#snippet filters()}
+    {#snippet segments()}
       <SegmentedControl
         label="Profile statistics period"
         value={insightPeriod}
@@ -391,12 +387,6 @@
         ]}
         onchange={(period) => choosePeriod(period as ProfilePeriod)}
       />
-    {/snippet}
-    {#snippet actions()}
-      {#if insightError}<span role="alert">{insightError}</span><Button
-          emphasis="subtle"
-          onclick={() => choosePeriod(insightPeriod)}>Retry</Button
-        >{/if}
     {/snippet}
     <DetailCard title={data.isOwner ? 'Your summary' : 'Summary'}>
       {#await insights.activity then activity}{#if activity}<ProfileRecap

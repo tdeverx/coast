@@ -1,8 +1,8 @@
 <script lang="ts">
  import Button from './Button.svelte';
- import {syncedPlayer,isSyncHost as liveIsSyncHost,canControlPlayback as liveCanControlPlayback,canEditPartyQueue as liveCanEditPartyQueue,syncedCommand as liveCommand,updatePartySettings as liveSettings,resyncNow as liveResync,leaveSynced as liveLeave,syncPreferences,setSyncPreferences as livePreferences,localSyncDrift} from '$lib/playback/synced/client.svelte';
+ import {syncedPlayer,isSyncHost as liveIsSyncHost,canControlPlayback as liveCanControlPlayback,canEditPartyQueue as liveCanEditPartyQueue,syncedCommand as liveCommand,updatePartySettings as liveSettings,resyncNow as liveResync,leaveSynced as liveLeave,syncPreferences as liveSyncPreferences,setSyncPreferences as livePreferences,localSyncDrift} from '$lib/playback/synced/client.svelte';
  import {player,advanceMusic} from '$lib/playback/client.svelte';
- import {type RoomState,type PartySettings} from '$lib/playback/synced/model';
+ import {type RoomState,type PartySettings,canControl} from '$lib/playback/synced/model';
  import {useClock} from '$lib/ui/clock.svelte';
  import {useClient} from '$lib/ui/client-context';
  import {message} from '$lib/ui/client';
@@ -10,20 +10,38 @@
  import {createMenuResource} from '$lib/ui/controls/menu-resource.svelte';
  import {workMenuScope} from '$lib/ui/controls/work.svelte';
  import {readingLocationLabel} from '$lib/reading/model';
- let {demoRoom}:{demoRoom?:RoomState}=$props();
+ let {demoRoom,demoUserId}:{demoRoom?:RoomState;demoUserId?:string}=$props();
  const {api,preview}=useClient();
- const clock=useClock();
- const room=$derived(preview?demoRoom:syncedPlayer.room);
- const isSyncHost=()=>preview||liveIsSyncHost();
- const canControlPlayback=()=>preview||liveCanControlPlayback();
- const canEditPartyQueue=()=>preview||liveCanEditPartyQueue();
- const syncedCommand=(...args:Parameters<typeof liveCommand>)=>{if(!preview)return liveCommand(...args);};
- const updatePartySettings=(patch:Partial<PartySettings>)=>{if(!preview)return liveSettings(patch);};
- const setSyncPreferences=(patch:Partial<typeof syncPreferences>)=>{if(!preview)livePreferences(patch);};
+ const clock=useClock('second',()=>!preview);
+ // A demo owns its room/preferences locally; it never borrows the signed-in room.
+ let previewRoom=$state<RoomState>();
+ let previewPreferences=$state({offsetSeconds:0,keepPlaying:true});
+ $effect(()=>{if(preview)previewRoom=demoRoom?{...demoRoom,settings:{...demoRoom.settings},participants:demoRoom.participants.map(member=>({...member}))}:undefined;});
+ const room=$derived(preview?previewRoom:syncedPlayer.room);
+ const userId=$derived(preview?demoUserId??room?.hostId:syncedPlayer.userId);
+ const preferences=$derived(preview?previewPreferences:liveSyncPreferences);
+ const isSyncHost=()=>preview?!!room&&room.hostId===userId:liveIsSyncHost();
+ const canControlPlayback=()=>preview?!!room&&!!userId&&canControl(room,userId):liveCanControlPlayback();
+ const canEditPartyQueue=()=>preview?!!room&&(isSyncHost()||room.settings.queue==='everyone'):liveCanEditPartyQueue();
+ const syncedCommand=(...args:Parameters<typeof liveCommand>)=>{
+  if(!preview)return liveCommand(...args);
+  if(!previewRoom)return;
+  const [command,payload]=args;
+  if(command==='ready')previewRoom.participants=previewRoom.participants.map(member=>member.userId===userId?{...member,ready:!!payload?.ready}:member);
+  if(command==='policy'&&(payload?.policy==='together'||payload?.policy==='catch-up'))previewRoom.bufferingPolicy=payload.policy;
+  if(command==='queue'&&Array.isArray(payload?.queue)&&payload.queue.every(id=>typeof id==='string')){
+   const items=new Map(previewRoom.queueItems.map(item=>[item.id,item]));
+   previewRoom.queue=payload.queue;
+   previewRoom.queueItems=payload.queue.flatMap(id=>{const item=items.get(id);return item?[item]:[];});
+   if(typeof payload.queueIndex==='number')previewRoom.queueIndex=payload.queueIndex;
+  }
+ };
+ const updatePartySettings=(patch:Partial<PartySettings>)=>{if(!preview)return liveSettings(patch);if(previewRoom)previewRoom.settings={...previewRoom.settings,...patch};};
+ const setSyncPreferences=(patch:Partial<typeof liveSyncPreferences>)=>{if(!preview)return livePreferences(patch);Object.assign(previewPreferences,patch);};
  const resyncNow=()=>{if(!preview)return liveResync();};
  const leaveSynced=()=>{if(!preview)return liveLeave();};
  const settings=$derived(room!.settings);
- const self=$derived(room?.participants.find(p=>p.userId===syncedPlayer.userId));
+ const self=$derived(room?.participants.find(p=>p.userId===userId));
  const drift=$derived.by(()=>{clock.now;return preview?null:localSyncDrift();});
  let number=$state(1);
  const saved=createMenuResource<{items:{id:string;title:string;availability:string}[];page:number;pages:number}>(()=>({items:[],page:1,pages:1}),
@@ -49,11 +67,11 @@
   </Button>
   {#if room.mediaType!=='reading'&&settings.readyCheck}<Button item checked={self?.ready??false} onclick={()=>syncedCommand('ready',{ready:!self?.ready})}>Ready</Button>{/if}
   <Button menu text="Personal" label="Personal">
-   <Button item checked={syncPreferences.keepPlaying} onclick={()=>setSyncPreferences({keepPlaying:!syncPreferences.keepPlaying})}>{room.mediaType==='reading'?'Keep reading when leaving':'Keep playing when leaving'}</Button>
+   <Button item checked={preferences.keepPlaying} onclick={()=>setSyncPreferences({keepPlaying:!preferences.keepPlaying})}>{room.mediaType==='reading'?'Keep reading when leaving':'Keep playing when leaving'}</Button>
    {#if room.mediaType!=='reading'}
    <Button menu text="Playback offset" label="Playback offset">
-    <label class="offset-control">{syncPreferences.offsetSeconds>0?'+':''}{syncPreferences.offsetSeconds.toFixed(1)}s
-     <input aria-label="Personal playback offset" type="range" min="-5" max="5" step="0.1" value={syncPreferences.offsetSeconds} oninput={event=>setSyncPreferences({offsetSeconds:Number(event.currentTarget.value)})}/>
+    <label class="offset-control">{preferences.offsetSeconds>0?'+':''}{preferences.offsetSeconds.toFixed(1)}s
+     <input aria-label="Personal playback offset" type="range" min="-5" max="5" step="0.1" value={preferences.offsetSeconds} oninput={event=>setSyncPreferences({offsetSeconds:Number(event.currentTarget.value)})}/>
     </label>
     <Button item onclick={()=>setSyncPreferences({offsetSeconds:0})}>Reset</Button>
    </Button>

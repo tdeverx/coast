@@ -6,6 +6,8 @@
   import type { GlassVariant } from '$lib/ui/materials/presets';
   import { createMenuController } from '$lib/ui/controls/menu.svelte';
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
+  import { useClient } from '$lib/ui/client-context';
+  const { preview } = useClient();
 
   type ButtonProps = {
 
@@ -61,7 +63,7 @@
     return {update, destroy() {action?.destroy?.();}};
   }
   function activate(event: MouseEvent) {
-    if (disabled) {event.preventDefault(); if (disabledReason) notifyAction(disabledReason); return;}
+    if (disabled) {event.preventDefault(); if (disabledReason && !preview) notifyAction(disabledReason); return;}
     if (controller) {if (controller.open && !nested) controller.close(); else controller.openMenu(event.detail === 0);}
     else onclick?.(event);
   }

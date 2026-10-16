@@ -1,19 +1,24 @@
 <script lang="ts">
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
-  import { change, message, api } from '$lib/ui/client';
+  import { message } from '$lib/ui/client';
+  import { useClient } from '$lib/ui/client-context';
   import { createOperation } from '$lib/ui/operation.svelte';
 
   let { workId, title, partyAllowed = false, open = $bindable(false) }: {
     workId: string; title: string; partyAllowed?: boolean; open?: boolean;
   } = $props();
   const operation = createOperation();
+  const {api,change}=useClient();
+  let generation=0;
   let date = $state(''), party = $state(false), friendsError = $state('');
   let friends = $state.raw<{ userId: string; username: string }[]>([]), selected = $state<string[]>([]);
   $effect(() => {
     if (!open) return;
     workId;
     date = ''; party = false; selected = []; friends = []; friendsError = ''; operation.error = '';
+    generation++;
+    return()=>{generation++;};
   });
   $effect(() => {
     if (!open || !partyAllowed || !party) return;
@@ -25,9 +30,11 @@
   });
   function save(event: SubmitEvent) {
     event.preventDefault();
+    const current=generation;
     void operation.run(async () => {
-      await change('planning', { workId, startsAt: new Date(date).toISOString(), party: partyAllowed && party, friends: partyAllowed && party ? selected : [] });
-      open = false;
+      try{await change('planning', { workId, startsAt: new Date(date).toISOString(), party: partyAllowed && party, friends: partyAllowed && party ? selected : [] });}
+      catch(cause){if(current===generation)throw cause;return false;}
+      if(current===generation)open = false;
     });
   }
 </script>

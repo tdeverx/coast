@@ -28,7 +28,7 @@ export type ListSourceOptions = {
     ondelete?: () => void;
   };
 export function createListSource(getOptions: () => ListSourceOptions): ShelfSource {
-  const { api, change } = useClient();
+  const { api, change, preview } = useClient();
 
   let {
     view,
@@ -60,7 +60,7 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
   async function load(number = 1) {
     const path = `lists/content?${new URLSearchParams({ view, kind, filter, scope, page: String(number) })}`;
     const result = await resource.load(signal => api<Content>(path, undefined, 'GET', { signal }));
-    if (result && layout === 'grid') replaceState(href(result.page), page.state);
+    if (result && !preview && layout === 'grid') replaceState(href(result.page), page.state);
   }
   async function edit(id: string, direction?: number) {
     try {

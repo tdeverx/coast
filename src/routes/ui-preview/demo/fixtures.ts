@@ -31,7 +31,7 @@ const notificationExamples:NotificationEntry[]=[
 ];
 /** Synthetic transport is injected only into preview descendants. */
 export const fixtureFetch: import('$lib/ui/client').ApiTransport = async (input, init) => {
-    const url=new URL(input instanceof Request?input.url:String(input),location.href);
+    const url=new URL(input instanceof Request?input.url:String(input),'http://preview.invalid');
     if(!url.pathname.startsWith('/api/'))return new Response('Preview only', {status:409});
     const method=(init?.method??(input instanceof Request?input.method:'GET')).toUpperCase();
     if(url.pathname.endsWith('/providers/streams/refresh')&&method==='POST')return Response.json({queued:1});
@@ -59,8 +59,74 @@ export const fixtureFetch: import('$lib/ui/client').ApiTransport = async (input,
     if(/\/collection\/[^/]+$/.test(path))return Response.json({reasons:[],rating:null,queued:false,game:null,reading:null});
     if(path.endsWith('/collection'))return Response.json(content);
     if(path.endsWith('/library'))return Response.json(content);
-    if(path.endsWith('/progress'))return Response.json({...content,view:'watching',kind:'all',scope:'all'});
+    if(path.endsWith('/progress'))return Response.json({...content,view:'watching',category:'screen',kind:'all',scope:'all'});
     if(path.endsWith('/content'))return Response.json({...content,kind:'all',filter:'all'});
     if(path.endsWith('/history'))return Response.json({items:[],page:1,pages:1,total:0});
     return Response.json({error:'This action requires a live session outside the component preview.'},{status:409});
 };
+
+/** A finite transport per mounted specimen. Nothing falls through to network fetch. */
+export function createPreviewTransport(name: string, scenario: string): import('$lib/ui/client').ApiTransport {
+  let dismissed = new Set<string>();
+  let sharingCreated = false;
+  let benchmarkQueued = false;
+  return async (input, init) => {
+    const request = input instanceof Request ? input : null;
+    const url = new URL(request?.url ?? String(input), 'http://preview.invalid');
+    const path = url.pathname.replace(/^\/api\/v1\//, '');
+    const method = (init?.method ?? request?.method ?? 'GET').toUpperCase();
+    const signal = init?.signal ?? request?.signal;
+    if (signal?.aborted) throw new DOMException('Preview request cancelled', 'AbortError');
+    if (!url.pathname.startsWith('/api/v1/')) return Response.json({error: 'No live requests are permitted in this example.'}, {status: 409});
+    if (scenario === 'error') return Response.json({error: 'The example service could not respond. You can retry safely.'}, {status: 503});
+    if (scenario === 'loading' && method === 'GET' && signal) {
+      // A held read, released by the existing component resource on close/replacement.
+      await new Promise<never>((_, reject) => signal.addEventListener('abort', () => reject(new DOMException('Preview request cancelled', 'AbortError')), {once: true}));
+    }
+    if (method !== 'GET') {
+      if (name === 'sharing.action' && path === 'sharing' && method === 'POST') { sharingCreated = true; return Response.json({id, token: 'preview-only-not-a-real-link'}); }
+      if (path === `sharing/${id}` && method === 'DELETE' && sharingCreated) { sharingCreated = false; return Response.json({ok: true}); }
+      if (path === 'planning' && method === 'POST') return Response.json({id});
+      if (name === 'admin.benchmark' && path === 'admin/benchmarks' && method === 'POST') { benchmarkQueued = true; return Response.json({queued:1, activeId:id}); }
+      if (path.startsWith('notifications/') && method === 'POST') {
+        dismissed.add(path.split('/')[1]);
+        return Response.json({ids: [], ok: true});
+      }
+      // Unknown writes deliberately fail closed; there is never a production fallback.
+      return fixtureFetch(input, init);
+    }
+    if (/^providers\/[^/]+\/scan$/.test(path)) return Response.json(scenario === 'disconnected' ? null : {state: 'completed', processed: 40, total: 40, phase: 'Ready', error: null, attempts: 0});
+    if (path === 'sharing/sources') return Response.json(scenario === 'empty' ? [] : [{id, name: 'Preview Jellyfin'}]);
+    if (/^reading\/[^/]+\/connections$/.test(path)) return Response.json(scenario === 'local' ? [] : [{id, name: 'Preview reading library'}]);
+    if (/^reading\/[^/]+\/sources$/.test(path)) return Response.json({items: scenario === 'empty' ? [] : [{id, title: 'Preview edition', format: 'epub'}, {id: episode.id, title: 'A PDF edition', format: 'pdf'}, {id: show.id, title: 'Unsupported archive', format: null}], nextOffset: null});
+    if (path.startsWith('profile/avatars/')) {
+      const bytes = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='), letter => letter.charCodeAt(0));
+      return new Response(bytes, {headers: {'content-type': 'image/png'}});
+    }
+    if (name === 'admin.benchmark' && path === 'admin/benchmarks') return Response.json({runs:benchmarkQueued?[{id,actionId:null,userId:null,state:'queued',workloadVersion:'coast-local-v2',createdAt:today,startedAt:null,finishedAt:null,context:null,measurements:null,comparisonKey:null,errors:[]}]:[],total:benchmarkQueued?1:0,page:1,pages:1,activeId:benchmarkQueued?id:null});
+    if (path === 'synced') return Response.json([]);
+    if (path === 'experiments/feed') return Response.json({rows: scenario === 'empty' ? [] : [{key:'preview-row', title:'More stories to discover', category:'screen', surface:'genre', genre:'Drama', kind:'movie', reason:'liked'}]});
+    if (path === 'experiments/row' || path === 'experiments/recommendations') return Response.json({...content, title:'More stories to discover'});
+    const response = await fixtureFetch(input, init);
+    if (!response.ok) return response;
+    const result = await response.json();
+    if (path === 'notifications') {
+      result.items = result.items.filter((notice: NotificationEntry) => notice.kind !== 'friend-request' && !dismissed.has(notice.id))
+        .map((notice: NotificationEntry) => ({...notice, readAt: scenario === 'read' ? today : null, locked: scenario === 'locked', ...(notice.kind === 'reaction' ? {reaction:'❤️', media:null, activity:{...movie, captionActor:{username:'Preview',avatar:null}, captionSubtitle:'Watched this movie'}} : {})}));
+      if (scenario === 'attachments') result.items.push({id:show.id, kind:'friend-accepted', title:'Accepted your friend request', body:null, createdAt:today, readAt:null, locked:false, actor:{username:'Sam',avatar:null,status:'online'}, friend:{id:show.id,userId:show.id,username:'Sam',state:'accepted',requestedBy:id,avatar:null,canCompare:true,activityStatus:'online'}, media:null, sourceLabel:null,destination:null,requestState:null,sessionState:null,actions:[],subjectId:show.id});
+      if (scenario === 'empty') result.items = [];
+      result.unread = scenario === 'read' ? 0 : result.items.length;
+    }
+    if (scenario === 'requests' && path === 'social/friends') return Response.json([{id, userId: id, username: 'Alice', state: 'pending', requestedBy: episode.id, avatar: null, canCompare: false, activityStatus: 'offline'}]);
+    if (path === 'providers/streams') {
+      if (scenario === 'issues') result.issues = [{server:'Preview library',message:'The server could not respond; settled sessions remain visible.'}];
+      if (scenario === 'shared' && result.streams.length) result.streams[0].sharing = {creator:'Preview',viewers:4,estimated:true,bitrateMbps:6};
+    }
+    if (scenario === 'empty') {
+      if (Array.isArray(result)) return Response.json([]);
+      if (result.items) { result.items = []; result.total = 0; result.pages = 1; }
+      if (result.streams) result.streams = [];
+    }
+    return Response.json(result);
+  };
+}

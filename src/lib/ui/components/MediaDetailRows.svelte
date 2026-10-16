@@ -134,7 +134,7 @@
         ? `/media/${item.id}?section=insights&insight=${selection}&source=${communitySource}&period=${period}`
         : undefined}
     >
-      {#snippet filters()}<SegmentedControl
+      {#snippet segments()}<SegmentedControl
           label="Insights selection"
           bind:value={selection}
           options={[
@@ -243,7 +243,7 @@
       preserveHeight
       busy={credits.busy}
     >
-      {#snippet filters()}<SegmentedControl
+      {#snippet segments()}<SegmentedControl
           label="Credits selection"
           bind:value={credits.selection}
           options={[{ value: 'cast', label: 'Cast' }, { value: 'crew', label: 'Crew' }]}

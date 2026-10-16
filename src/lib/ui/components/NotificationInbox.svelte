@@ -145,7 +145,7 @@
  </div>{#if resource.data.hasMore}<Button emphasis="subtle" disabled={resource.busy} onclick={()=>void load(true)}>{resource.busy?'Loading…':'Load older notifications'}</Button>{/if}{/if}
 
 {/snippet}
-<Dialog bind:open title="Notifications" popover={true} anchor="#notification-trigger" onclose={()=>onclose?.()}>{#snippet heading()}{@render inboxHeading()}{/snippet}{@render inboxContent()}</Dialog>
+<Dialog bind:open title="Notifications" popover={true} anchor={preview?undefined:"#notification-trigger"} onclose={()=>onclose?.()}>{#snippet heading()}{@render inboxHeading()}{/snippet}{@render inboxContent()}</Dialog>
 <style>
  .notification-header-actions{display:flex;align-items:center;gap:0;}
  article{margin-inline:calc(-1 * var(--popover-inset));padding:12px var(--popover-inset);border-top:1px solid var(--line);}
