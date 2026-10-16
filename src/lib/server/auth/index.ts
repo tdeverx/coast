@@ -357,6 +357,8 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
   }
   // Merge against the locked current row: a partial feature patch cannot erase other choices.
   await getSql().begin(async tx => {
+    // Same global-first order as admitted commands; the user update is exclusive.
+    await tx`select pg_advisory_xact_lock_shared(hashtextextended('coast:configuration',0))`;
     const [current] = await tx`select settings from users where id=${user.id} for update`;
     const patch = {...settings, ...(settings.features ? {features:{...current.settings.features,...settings.features}} : {})};
     await tx`update users set settings=settings||${patch}::jsonb where id=${user.id}`;

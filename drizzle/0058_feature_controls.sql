@@ -1,3 +1,13 @@
+-- Commands hold shared policy/subject locks until commit. Settings updates acquire the
+-- corresponding exclusive lock, so withdrawal is ordered against admitted writes.
+-- Read projections keep using the non-locking predicates below.
+CREATE FUNCTION coast_lock_feature_policy(subject_id uuid) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+ PERFORM pg_advisory_xact_lock_shared(hashtextextended('coast:configuration',0));
+ PERFORM id FROM users WHERE id=subject_id FOR SHARE;
+END
+$$;
+--> statement-breakpoint
 -- Policy is evaluated against the actual subject, including workers and cross-user reads.
 CREATE FUNCTION coast_feature_enabled(subject_id uuid, feature text) RETURNS boolean LANGUAGE sql STABLE AS $$
  WITH policy AS (

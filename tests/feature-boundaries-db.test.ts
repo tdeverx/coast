@@ -1,5 +1,6 @@
 import {beforeAll,beforeEach,afterAll,test,expect} from 'bun:test';
 import {getSql} from '../src/lib/server/db';
+import {sql} from 'drizzle-orm';
 import {defaultConfig} from '../src/lib/server/config';
 import {changeContinue} from '../src/lib/core/tracking/continue.server';
 import {setRewatch} from '../src/lib/core/tracking/rewatch.server';
@@ -131,4 +132,59 @@ run('playlist starts and sharing-source selection enforce their own capability i
  const url=new URL(`https://coast.test/api/v1/sharing/sources?workId=${movie}`),request=new Request(url);
  const response=await handler({request,url,params:{path:'sharing/sources'},locals:{user:{id:a,username:'fixture',role:'admin',settings:{}}}} as Parameters<typeof handler>[0]);
  expect(response.status).toBe(403);expect((await response.json()).code).toBe('feature_disabled');
+});
+
+run('personal and administrator withdrawal wait for an admitted tracking transaction to commit',async()=>{
+ const {getDb}=await import('../src/lib/server/db');
+ const {trackInTransaction,track}=await import('../src/lib/core/tracking/service.server');
+ const {updateUserSettings}=await import('../src/lib/server/auth');
+ const {updateConfig}=await import('../src/lib/application/configuration.server');
+ const actor={id:a,username:'gate-admin',role:'admin',settings:{}} as import('../src/lib/server/auth').SessionUser;
+ for(const global of [false,true]){
+  await choices(a,{});await getSql()`update system_settings set value=${config}::jsonb where key='coast'`;
+  let entered!:()=>void,release!:()=>void,pid=0,disabled=false;
+  const ready=new Promise<void>(resolve=>entered=resolve),hold=new Promise<void>(resolve=>release=resolve);
+  const writing=getDb().transaction(async tx=>{
+   pid=(await tx.execute<{pid:number}>(sql`select pg_backend_pid() as pid`))[0].pid;
+   await trackInTransaction(tx,a,{mediaId:movie,action:'favourite',value:true});entered();await hold;
+  });
+  await ready;
+  const disabling=(global?updateConfig(actor,{features:{screen:false}}):updateUserSettings(actor,{features:{screen:false}})).then(()=>{disabled=true;});
+  try{
+   let blocked=false;
+   for(let i=0;i<100&&!blocked;i++){
+    blocked=!!(await getSql()`select 1 from pg_stat_activity where ${pid}::int=any(pg_blocking_pids(pid)) limit 1`).length;
+    if(!blocked)await Bun.sleep(10);
+   }
+   expect(blocked).toBe(true);expect(disabled).toBe(false);
+  }finally{release();await writing;await disabling;}
+  expect(disabled).toBe(true);
+  await expect(track(a,{mediaId:movie,action:'favourite',value:false})).rejects.toMatchObject({code:'feature_disabled'});
+ }
+});
+
+run('tracking rechecks current policy after waiting for a personal or administrator settings writer',async()=>{
+ const {track}=await import('../src/lib/core/tracking/service.server');
+ for(const global of [false,true]){
+  await choices(a,{});await getSql()`update system_settings set value=${config}::jsonb where key='coast'`;
+  let entered!:()=>void,release!:()=>void,pid=0;
+  const ready=new Promise<void>(resolve=>entered=resolve),hold=new Promise<void>(resolve=>release=resolve);
+  const disabling=getSql().begin(async tx=>{
+   pid=(await tx`select pg_backend_pid() as pid`)[0].pid;
+   if(global){await tx`select pg_advisory_xact_lock(hashtextextended('coast:configuration',0))`;await tx`update system_settings set value=jsonb_set(value,'{features}','{"screen":false}'::jsonb) where key='coast'`;}
+   else await tx`update users set settings=jsonb_set(settings,'{features}','{"screen":false}'::jsonb) where id=${a}`;
+   entered();await hold;
+  });
+  await ready;
+  const writing=track(a,{mediaId:movie,action:'watchlist',value:true}).then(()=>null,cause=>cause);
+  try{
+   let blocked=false;
+   for(let i=0;i<100&&!blocked;i++){
+    blocked=!!(await getSql()`select 1 from pg_stat_activity where ${pid}::int=any(pg_blocking_pids(pid)) limit 1`).length;
+    if(!blocked)await Bun.sleep(10);
+   }
+   expect(blocked).toBe(true);
+  }finally{release();await disabling;}
+  expect(await writing).toMatchObject({code:'feature_disabled'});
+ }
 });
