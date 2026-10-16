@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SettingsRow from '$lib/ui/components/SettingsRow.svelte';
   import { featureDefinitions, administratorFeatures, type PersonalFeature } from '$lib/features';
   import {apiScopes,apiScopeLabels,type ApiScope} from '$lib/public-api';
   import { collectionCategories, collectionRules } from '$lib/collection/preferences';
@@ -229,11 +230,12 @@
           <fieldset class="panel stack" disabled={busy}>
           {#each featureDefinitions.filter(([key])=>data.section==='features-policy' ? administratorFeatures.includes(key as typeof administratorFeatures[number]) : key!=='api') as [key,title,description]}
             {@const reason=(key==='presence'||key==='parties')&&prefs.features?.social===false?'social':key==='sharing'&&prefs.features?.playback===false?'playback':data.featureDecisions[key].reason==='personal'?null:data.featureDecisions[key].reason}
-            <div class="setting"><div><h3>{title}</h3><p>{description}</p>{#if key==='requests'}<a class="small" href="/requests">Manage existing requests</a>{/if}
-              {#if data.section==='features' && reason}<p class="small muted">{reason==='experiment'?'Requires its experiment in Policies.':reason==='social'?'Requires Social.':reason==='playback'?'Requires Playback.':'Unavailable in installation settings.'} Your choice is remembered.</p>{/if}
-            </div><input type="checkbox" aria-label={title}
-              checked={data.section==='features-policy' ? policy?.features[key as typeof administratorFeatures[number]]!==false : prefs.features?.[key as PersonalFeature]!==false}
-              onchange={event=>{if(data.section==='features-policy'&&policy)policy.features={...policy.features,[key]:event.currentTarget.checked};else prefs.features={...prefs.features,[key]:event.currentTarget.checked};}} /></div>
+            <SettingsRow {title} {description} reason={data.section==='features' && reason ? `${reason==='experiment'?'Requires its experiment in Policies.':reason==='social'?'Requires Social.':reason==='playback'?'Requires Playback.':'Unavailable in installation settings.'} Your choice is remembered.` : undefined}>
+              {#snippet details()}{#if key==='requests'}<a class="small" href="/requests">Manage existing requests</a>{/if}{/snippet}
+              <input type="checkbox" aria-label={title}
+                checked={data.section==='features-policy' ? policy?.features[key as typeof administratorFeatures[number]]!==false : prefs.features?.[key as PersonalFeature]!==false}
+                onchange={event=>{if(data.section==='features-policy'&&policy)policy.features={...policy.features,[key]:event.currentTarget.checked};else prefs.features={...prefs.features,[key]:event.currentTarget.checked};}} />
+            </SettingsRow>
           {/each}
           </fieldset>
           <p class="small muted">Privacy, connection sync choices, playback limits and sharing permissions remain in their existing settings. Stored history and saved preferences are preserved.</p>
@@ -273,38 +275,18 @@
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">Display</legend>
             <h3>Display</h3>
-            <div class="setting">
-              <div>
-                <h3>Liquid glass</h3>
-                <p>Use glass effects where supported. Turn off to use the blur fallback.</p>
-              </div>
-              <input type="checkbox" aria-label="Liquid glass" bind:checked={prefs.liquidGlass} />
-            </div>
-            <div class="setting">
-              <div>
-                <h3>Full-width content</h3>
-                <p>
-                  Let your library make the most of the screen. Heroes always stay edge-to-edge.
-                </p>
-              </div>
-              <input
+            <SettingsRow title="Liquid glass" description="Use glass effects where supported. Turn off to use the blur fallback."><input type="checkbox" aria-label="Liquid glass" bind:checked={prefs.liquidGlass} /></SettingsRow>
+            <SettingsRow title="Full-width content" description="Let your library make the most of the screen. Heroes always stay edge-to-edge."><input
                 type="checkbox"
                 aria-label="Full-width content"
                 bind:checked={prefs.fullWidth}
-              />
-            </div>
-            <div class="setting">
-              <div>
-                <h3>Prefer original titles</h3>
-                <p>Use a title’s original language where it is available.</p>
-              </div>
-              <input
+              /></SettingsRow>
+            <SettingsRow title="Prefer original titles" description="Use a title’s original language where it is available."><input
                 type="checkbox"
                 aria-label="Prefer original titles"
                 bind:checked={prefs.originalTitles}
-              />
-            </div>
-          <div class="setting"><div><h3>Black and white missing artwork</h3><p>Show unavailable media in black and white.</p></div><input type="checkbox" aria-label="Black and white missing artwork" bind:checked={prefs.monochromeMissing}/></div>
+              /></SettingsRow>
+          <SettingsRow title="Black and white missing artwork" description="Show unavailable media in black and white."><input type="checkbox" aria-label="Black and white missing artwork" bind:checked={prefs.monochromeMissing}/></SettingsRow>
           </fieldset>
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">Regional metadata</legend>
@@ -325,20 +307,12 @@
             <h3>Notifications</h3>
             <label class="check"><input type="checkbox" bind:checked={prefs.shareDemand} />Share missing demand with administrators</label>
             <p class="small">Administrators can see your needed titles and request status. This does not change profile visibility.</p>
-            <div class="setting">
-              <div>
-                <h3>Silence optional notifications</h3>
-                <p>
-                  Keep optional updates in your inbox. Important administrator notices still appear.
-                </p>
-              </div>
-              <input
+            <SettingsRow title="Silence optional notifications" description="Keep optional updates in your inbox. Important administrator notices still appear."><input
                 type="checkbox"
                 aria-label="Silence optional notifications"
                 disabled={!data.allowNotificationSilencing}
                 bind:checked={prefs.notificationsSilenced}
-              />
-            </div>
+              /></SettingsRow>
             {#if !data.allowNotificationSilencing}<p class="small">
                 Your administrator requires optional notifications to remain visible.
               </p>{/if}
@@ -356,36 +330,22 @@
             <legend class="sr-only">Subtitles</legend>
             <h3>Subtitles</h3>
             {#if data.experimentalMusic}<label class="field">Listen threshold (%)<input type="number" min="1" max="100" step="1" bind:value={prefs.listenThreshold} /><small>Count a listen after this percentage is actually played. Captured when playback starts.</small></label>{/if}
-            <div class="setting">
-              <div>
-                <h3>Always enable subtitles</h3>
-                <p>
-                  Enable your preferred track, or the first available track if no language matches.
-                </p>
-              </div>
-              <input
+            <SettingsRow title="Always enable subtitles" description="Enable your preferred track, or the first available track if no language matches."><input
                 type="checkbox"
                 aria-label="Always enable subtitles"
                 bind:checked={prefs.subtitlesAlways}
-              />
-            </div>
+              /></SettingsRow>
             <label class="field"
               >Preferred subtitle languages<input
                 bind:value={subtitleLanguagesText}
                 placeholder="en, fr"
               /><small>Language codes in preference order, separated by commas.</small></label
             >
-            <div class="setting">
-              <div>
-                <h3>Ask before playback</h3>
-                <p>Choose subtitle preferences before starting a title.</p>
-              </div>
-              <input
+            <SettingsRow title="Ask before playback" description="Choose subtitle preferences before starting a title."><input
                 type="checkbox"
                 aria-label="Ask before playback"
                 bind:checked={prefs.subtitlePrompt}
-              />
-            </div>
+              /></SettingsRow>
             <p class="small">
               When Always enable is off, the administrator’s default subtitle mode applies.
             </p>
@@ -815,7 +775,7 @@
           </nav>
           <fieldset class="panel stack" id="development" disabled={busy}>
             <legend class="sr-only">Development</legend>
-            <div class="setting"><div><h3>Developer mode</h3><p>Pause automatic jobs, queued background work and retention cleanup. Run and Retry remain available, as do actions you explicitly take. Running jobs finish their current run.</p></div><input type="checkbox" aria-label="Developer mode" bind:checked={policy.developerMode}/></div>
+            <SettingsRow title="Developer mode" description="Pause automatic jobs, queued background work and retention cleanup. Run and Retry remain available, as do actions you explicitly take. Running jobs finish their current run."><input type="checkbox" aria-label="Developer mode" bind:checked={policy.developerMode}/></SettingsRow>
           </fieldset>
           <fieldset class="panel stack" id="access" disabled={busy}>
             <legend class="sr-only">Access & registration</legend>
@@ -823,14 +783,14 @@
             <label class="field">Website access<select bind:value={policy.siteAccess}><option value="private">Private · sign-in required</option><option value="public-profiles">Private site · public profiles only</option><option value="public-read-only">Public read-only · profiles, Discover and media details</option></select><small>Public profiles respect each user’s privacy settings.</small></label>
             <label class="field">Registration<select bind:value={policy.registrationMode}><option value="invite">Invite code required</option><option value="open">Open sign-ups</option></select></label>
             <label class="field">Required connection<select bind:value={policy.registrationProvider}><option value="jellyfin">Jellyfin</option><option value="trakt">Trakt</option><option value="either">Jellyfin or Trakt</option><option value="none">None</option></select><small>New accounts complete their selected imports before entering Coast. Manage providers in Integrations.</small></label>
-            <div class="setting"><div><h3>Playback sharing</h3><p>Administrators can share one accessible item. Other accounts require a sharing grant.</p></div><input type="checkbox" aria-label="Playback sharing" bind:checked={policy.allowPlaybackSharing}/></div>
+            <SettingsRow title="Playback sharing" description="Administrators can share one accessible item. Other accounts require a sharing grant."><input type="checkbox" aria-label="Playback sharing" bind:checked={policy.allowPlaybackSharing}/></SettingsRow>
           </fieldset>
           <fieldset class="panel stack" id="features" disabled={busy}>
             <legend class="sr-only">Experimental features</legend>
             <h3>Experimental features</h3>
             <p class="small">Enable each feature separately. Turning one off hides its controls and blocks access without deleting saved data.</p>
             {#each experimentalPolicies as [field, title, description]}
-              <div class="setting"><div><h3>{title}</h3><p>{description}</p></div><input type="checkbox" aria-label={title} bind:checked={policy[field]}/></div>
+              <SettingsRow {title} {description}><input type="checkbox" aria-label={title} bind:checked={policy[field]}/></SettingsRow>
             {/each}
           </fieldset>
           <fieldset class="panel stack" id="sessions" disabled={busy}>
@@ -1163,31 +1123,6 @@
     min-width: 0;
     max-width: 1100px;
   }
-  .setting {
-    display: flex;
-    align-items: center;
-    gap: 28px;
-    padding: 0 0 16px;
-    border-bottom: 1px solid var(--line);
-  }
-  .setting:last-child {
-    padding-bottom: 0;
-    border-bottom: 0;
-  }
-  .setting > div {
-    flex: 1;
-  }
-  .setting h3 {
-    font-size: var(--text-sm);
-  }
-  .setting p {
-    font-size: var(--text-sm);
-    margin-top: 6px;
-    line-height: var(--leading-relaxed);
-  }
-  .setting input {
-    flex: none;
-  }
   .health-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -1234,9 +1169,6 @@
     }
     .health-grid .panel {
       padding: 20px;
-    }
-    .setting {
-      gap: 16px;
     }
   }
 </style>

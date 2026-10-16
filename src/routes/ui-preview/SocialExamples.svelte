@@ -7,7 +7,8 @@
   import PlaybackTimeline from '$lib/ui/components/PlaybackTimeline.svelte';
   import FriendRoster from '$lib/ui/components/FriendRoster.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import RowFeedback from '$lib/ui/components/RowFeedback.svelte';
+  import Toast from '$lib/ui/components/Toast.svelte';
+  import { usePlayback } from '$lib/playback/context.svelte';
   import type { FriendEntry } from '$lib/social/model';
   import { defaultPartySettings, type RoomState } from '$lib/playback/synced/model';
   import { id, movie, today } from './demo/fixtures';
@@ -16,6 +17,7 @@
   let open = $state(false);
   let feedback = $state('');
   let position = $state(945);
+  const {player} = usePlayback();
   const names = ['Alice', 'Sam', 'Taylor', 'Morgan', 'Jamie', 'Robin', 'Alex', 'Casey'];
   const reading = { format: 'cbz', page: 12, total: 32 } as const;
   const participants = names.map((username, index) => ({
@@ -66,6 +68,7 @@
   let NotificationInbox = $state<typeof import('$lib/ui/components/NotificationInbox.svelte').default>();
   let StreamsPanel = $state<typeof import('$lib/ui/components/StreamsPanel.svelte').default>();
   let NotificationToasts = $state<typeof import('$lib/ui/components/NotificationToasts.svelte').default>();
+  let PersistentPlayer = $state<typeof import('$lib/ui/components/PersistentPlayer.svelte').default>();
   $effect(() => {
     const selected = name;
     scenario;
@@ -75,7 +78,14 @@
     if (selected === 'NotificationInbox') void import('$lib/ui/components/NotificationInbox.svelte').then(module => { if (!disposed) NotificationInbox = module.default; }).catch(() => { if (!disposed) feedback = 'This example could not be loaded. Reopen it to retry.'; });
     if (selected === 'StreamsPanel') void import('$lib/ui/components/StreamsPanel.svelte').then(module => { if (!disposed) StreamsPanel = module.default; }).catch(() => { if (!disposed) feedback = 'This example could not be loaded. Reopen it to retry.'; });
     if (selected === 'NotificationToasts') void import('$lib/ui/components/NotificationToasts.svelte').then(module => { if (!disposed) NotificationToasts = module.default; }).catch(() => { if (!disposed) feedback = 'This example could not be loaded. Reopen it to retry.'; });
-    return () => { disposed = true; };
+    if (selected === 'PersistentPlayer' && scenario === 'controller') {
+      untrack(()=>{
+        player.session={id,mediaId:id,mediaType:'audio',title:'Preview track',detail:'Preview artist · Preview album',artwork:movie.poster,url:'',kind:'direct',startSeconds:0,durationSeconds:240,provider:'Preview',defaultSubtitleIndex:null,subtitlePrompt:false,subtitles:[],sources:[]};
+        player.role='playback';player.paused=true;player.controlsVisible=true;
+      });
+      void import('$lib/ui/components/PersistentPlayer.svelte').then(module=>{if(!disposed)PersistentPlayer=module.default;}).catch(()=>{if(!disposed)feedback='This example could not be loaded. Reopen it to retry.';});
+    }
+    return () => { disposed = true; if(selected==='PersistentPlayer'){player.session=null;player.role='idle';} };
   });
   function action(label: string) { feedback = `${label} · Preview only; nothing was saved.`; }
 </script>
@@ -102,7 +112,9 @@
     </div>
   {:else if name === 'PartyMenu'}
     <PartyMenu demoRoom={room} demoUserId={scenario === 'member' ? participants[1].userId : id} />
-  {:else if name === 'PartyCard' || name === 'SyncedControls'}
+  {:else if name === 'SyncedControls'}
+    <p class="small quiet">SyncedControls owns party playback synchronization. Its presentation is represented by PartyCard.</p><a href="/ui-preview?section=components&component=PartyCard" data-preview-navigation>Explore party states</a>
+  {:else if name === 'PartyCard'}
     <div class="panel-example party-example">
       {#snippet timeline()}<PlaybackTimeline mediaId={movie.id} href="#" audio={audioMode} title={readingMode ? 'Preview comic' : audioMode ? 'Preview track' : 'Preview series'} detail={readingMode ? 'Reading together' : audioMode ? 'Preview artist · Preview album' : 'S01E03 · Preview episode'} artwork={movie.poster} current={position} duration={2700} readingActive={readingMode} reading={readingMode ? reading : null} />{/snippet}
       {#snippet inviteHeader()}<ActivityHeader username="Alice">{#snippet trailing()}15:45{/snippet}</ActivityHeader>{/snippet}
@@ -117,23 +129,27 @@
           {#if invited || scenario === 'rejoin'}<Button class="join-action" onclick={() => action(invited ? 'Joined' : 'Rejoined')}>{invited ? 'Join' : 'Rejoin'}</Button>
           {:else}<PartyMenu demoRoom={room} demoUserId={follower ? participants[1].userId : id} />{/if}
         {/snippet}
-        {#if scenario === 'unavailable'}<RowFeedback message="This title is unavailable from your connected sources."><Button emphasis="subtle" onclick={() => action('Retry playback')}>Retry playback</Button></RowFeedback>{/if}
+        {#if scenario === 'unavailable'}<div class="stack"><p>This title is unavailable from your connected sources.</p><Button emphasis="subtle" onclick={() => action('Retry playback')}>Retry playback</Button></div>{/if}
       </PartyCard>
     </div>
-    {#if name === 'SyncedControls'}<p class="small quiet">Current-party presentation using PartyCard, PartyMenu and PlaybackTimeline. No live party is attached.</p>{/if}
   {:else if name === 'PlaybackTimeline'}
     <div class="panel-example"><PlaybackTimeline mediaId={scenario === 'unknown' ? undefined : movie.id} href="#" audio={audioMode} title={scenario === 'long' ? 'A long title showing the controller’s existing truncation' : readingMode ? 'Preview comic' : audioMode ? 'Preview track' : 'Preview series'} detail={audioMode ? 'Preview artist · Preview album' : 'S01E03 · Preview episode'} artwork={scenario === 'unknown' ? null : movie.poster} current={position} duration={scenario === 'unknown' ? 0 : 2700} readingActive={readingMode} reading={readingMode ? reading : null} onseek={scenario === 'seekable' ? value => position = value : undefined} /></div>
-  {:else if name === 'PlaybackStates'}
-    <p class="small quiet">Controller composition only. No video/audio engine or real playback session is mounted.</p>
-    {#if scenario === 'error'}<RowFeedback error="This source could not be played." retry={() => action('Retried playback')} />
+  {:else if name === 'PersistentPlayer'}
+    {#if scenario === 'controller'}
+      <div class="controller-example"><p class="small quiet">Real controller with isolated preview playback. No media source, tracking or live party is attached.</p>{#if PersistentPlayer}<PersistentPlayer />{:else}<p class="quiet" role="status">Loading controller…</p>{/if}</div>
+    {:else}
+    <p class="small quiet">State composition using the shared timeline and controls. No video/audio engine or real playback session is mounted.</p>
+    {#if scenario === 'error'}<Toast kind="error" text="This source could not be played." onaction={() => action('Retried playback')} />
     {:else if scenario === 'postplay'}<EmptyState title="Playback finished" description="This shared item has finished." icon="check" /><Button onclick={() => action('Closed')}>Close</Button>
     {:else if scenario === 'hidden'}<p class="small quiet">Playback chrome is hidden while the player’s existing controls visibility is off.</p>
     {:else}<div class="row"><Button size="icon" icon={scenario === 'playing' ? 'pause' : 'play'} label={scenario === 'playing' ? 'Pause' : 'Play'} disabled={follower} onclick={() => action(scenario === 'playing' ? 'Paused' : 'Playing')} /><PlaybackTimeline audio={audioMode} title={audioMode ? 'Preview track' : 'Preview series'} detail={follower ? 'Playback is controlled by the host' : 'S01E03 · Preview episode'} current={position} duration={2700} onseek={follower ? undefined : value => position = value} /><Button size="icon" icon="close" label="Close player" onclick={() => action('Closed')} /></div>{/if}
+    {/if}
   {/if}
 {/key}
-<RowFeedback message={feedback} />
+{#if feedback}<p class="small quiet" role="status">{feedback}</p>{/if}
 
 <style>
+  .controller-example {min-height:320px;}
   .panel-example { width:min(560px,100%); }
   .party-example :global(.join-action), .party-example :global(.join-action:hover) { color:var(--success); }
 </style>

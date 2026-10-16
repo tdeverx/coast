@@ -1,13 +1,12 @@
 <script lang="ts">
-  import RowFeedback from './RowFeedback.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import { tick } from 'svelte';
   import type { ProviderSchedule } from '$lib/providers/schedule';
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
   import Heading from './Heading.svelte';
 
-  const { change } = useClient();
+  const { change, feedback } = useClient();
 
   let {
     instance,
@@ -42,7 +41,7 @@
     pending = { [key]: checked };
     try {
       await change(`providers/${instance.id}/schedule`, { [key]: checked });
-      notifyAction(checked ? 'Automatic work enabled.' : 'Automatic work paused.');
+      feedback.notify(checked ? 'Automatic work enabled.' : 'Automatic work paused.');
     } catch (cause) {
       error = message(cause);
     } finally {
@@ -51,6 +50,8 @@
       busy = false;
     }
   }
+
+  reportFailure(()=>error);
 </script>
 
 {#if ['jellyfin', 'trakt', 'seerr', 'tmdb', 'steam'].includes(instance.provider)}
@@ -83,7 +84,7 @@
           ? 'Automatic work is paused. Your task settings are saved.'
           : 'Selected tasks run on their schedules.'} Already queued jobs remain available in Jobs.
     </p>
-    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+
   </div>
 {/if}
 

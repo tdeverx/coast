@@ -1,13 +1,10 @@
 <script lang="ts">
   import {openNotifications} from '$lib/ui/panels/notifications.svelte';
-  import RowFeedback from './RowFeedback.svelte';
-  import { actionFeedback, undoAction } from '$lib/ui/action-feedback.svelte';
   import { onMount } from 'svelte';
   import { useClient } from '$lib/ui/client-context';
-  import Icon from './Icon.svelte';
-  import Button from './Button.svelte';
+  import Toast from './Toast.svelte';
 
-  const { preview, change } = useClient();
+  const { preview, change, feedback:delivery } = useClient();
 
   type InboxNotification = {
     id: string;
@@ -22,7 +19,7 @@
     mounted = $state(false);
   const observed = new Set<string>();
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
-  const feedback = $derived(preview ? null : actionFeedback.current);
+  const feedback = $derived(delivery.activeHost === null ? delivery.current : null);
   onMount(() => {
     hidden = notifications
       .filter((n) => n.level === 'normal' && Date.now() - new Date(n.createdAt).getTime() > 30000)
@@ -31,7 +28,7 @@
     return () => {
       for (const timer of timers.values()) clearTimeout(timer);
       timers.clear();
-      if (!preview) actionFeedback.current = null;
+      delivery.clear();
     };
   });
   const visible = $derived(
@@ -55,39 +52,11 @@
 </script>
 
 {#if visible.length || feedback}<div class="toasts" aria-live="polite">
-    {#if feedback}<div class="toast solid-surface" role="status">
-        <div class="action-message">
-          <p>{feedback.text}</p>
-          {#if feedback.error}<RowFeedback error={feedback.error} tag="p" />{/if}
-          {#if feedback.undo}<Button
-              emphasis="subtle"
-              disabled={feedback.busy}
-              onclick={undoAction}>Undo</Button
-            >{/if}
-        </div>
-        <button
-          class="icon-button"
-          aria-label="Dismiss action feedback"
-          disabled={feedback.busy}
-          onclick={() => (actionFeedback.current = null)}><Icon name="close" size={17} /></button
-        >
-      </div>{/if}
-    {#each visible as n (n.id)}<div class="toast solid-surface">
-        <button class="toast-open" onclick={()=>{if(!preview)openNotifications();}}
-          ><h3>{n.title}</h3>
-          {#if n.body}<p>{n.body}</p>{/if}</button
-        ><button
-          class="icon-button"
-          aria-label={`Dismiss notification: ${n.title}`}
-          onclick={() => {
-            hidden = [...hidden, n.id];
-            if (n.level === 'persistent')
-              void change(`notifications/${n.id}`, { action: 'dismiss' }).catch(() => {
-                hidden = hidden.filter((id) => id !== n.id);
-              });
-          }}><Icon name="close" size={17} /></button
-        >
-      </div>{/each}
+    {#if feedback}<Toast text={feedback.text} kind={feedback.kind} error={feedback.error} busy={feedback.busy} actionLabel={feedback.undo ? 'Undo' : 'Retry'} onaction={feedback.undo || feedback.retry ? delivery.act : undefined} ondismiss={()=>delivery.clear()} dismissLabel="Dismiss action feedback" />{/if}
+    {#each visible as n (n.id)}<Toast text={n.title} description={n.body} onopen={()=>{if(!preview)openNotifications();}} dismissLabel={`Dismiss notification: ${n.title}`} ondismiss={()=>{
+      hidden=[...hidden,n.id];
+      if(n.level==='persistent')void change(`notifications/${n.id}`,{action:'dismiss'}).catch(()=>{hidden=hidden.filter(id=>id!==n.id);});
+    }} />{/each}
   </div>{/if}
 
 <style>
@@ -100,33 +69,7 @@
     display: grid;
     gap: 12px;
   }
-  .toast {
-    border-radius: 16px;
-    padding: 16px;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    animation: appear var(--motion);
-  }
-  :global(.player-active) .toasts {
-    bottom: calc(96px + env(safe-area-inset-bottom));
-  }
-  .action-message,
-  .toast > .toast-open {
-    flex: 1;
-  }
-  .toast-open {text-align:left;color:inherit;cursor:pointer;}
-  .toast h3 {
-    font-size: var(--text-sm);
-  }
-  .toast p {
-    font-size: var(--text-sm);
-    margin-top: 5px;
-  }
-  .toast .icon-button {
-    width: 28px;
-    height: 28px;
-  }
+  :global(.player-active) .toasts {bottom:calc(96px + env(safe-area-inset-bottom));}
   @media (max-width: 600px) {
     .toasts {
       right: 16px;

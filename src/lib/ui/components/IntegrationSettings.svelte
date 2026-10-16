@@ -1,8 +1,7 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import Field from './Field.svelte';
-  import RowFeedback from './RowFeedback.svelte';
   import { displayLabel } from '$lib/ui/labels';
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
   import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
   import type {SourceImpact} from '$lib/collection/source-changes.server';
@@ -13,7 +12,7 @@
   import ProviderAutomation from './ProviderAutomation.svelte';
   import type { ProviderSchedule } from '$lib/providers/schedule';
 
-  const { api, change } = useClient();
+  const { api, change, feedback } = useClient();
 
   type Instance = {
     id: string;
@@ -69,7 +68,7 @@
         linkedMediaInstanceId: linked || undefined,
         allowPrivateNetwork: privateNetwork,
       });
-      notifyAction(
+      feedback.notify(
         editing ? 'Integration saved.' : ['jellyfin', 'trakt', 'steam'].includes(provider)
           ? 'Integration added. Link your account in Connections.' : 'Integration added.'
       );
@@ -89,7 +88,7 @@
       if(instance.provider==='jellyfin'&&instance.enabled&&!approved){impact=await api(`providers/${instance.id}/instance-source-preview`,undefined,'GET');changing=instance;return;}
       await change(`providers/${instance.id}/${instance.enabled ? 'disable' : 'enable'}`, {previewId:impact?.id});
       changing=null;impact=null;
-      notifyAction(`${instance.name} ${instance.enabled ? 'disabled' : 'enabled'}.`);
+      feedback.notify(`${instance.name} ${instance.enabled ? 'disabled' : 'enabled'}.`);
     } catch (e) {
       error = message(e);
     } finally {
@@ -110,13 +109,15 @@
       await change(`providers/${instance.id}`, { previewId: impact?.id }, 'DELETE');
       deleting = null;
       impact = null;
-      notifyAction(`${instance.name} deleted.`);
+      feedback.notify(`${instance.name} deleted.`);
     } catch (e) {
       error = message(e);
     } finally {
       busy = false;
     }
   }
+
+  reportFailure(()=>error);
 </script>
 
 <div class="stack form-width">
@@ -132,7 +133,7 @@
     <a class="text-accent" href="/settings/connections">Link your account in Connections</a>
     · <a class="text-accent" href="/settings/jobs">Manage schedules</a>
   </p>
-  {#if error && !open}<RowFeedback error={error} tag="div" class="notice error" />{/if}
+
   {#each providers as instance (instance.id)}<div class="panel stack">
       <Heading title={instance.name}>
         {#snippet segments()}<span class="badge">{instance.enabled ? 'Enabled' : 'Disabled'}</span
@@ -167,7 +168,7 @@
 </div>
 <Dialog open={!!changing} onclose={()=>changing=null} title="Disable this Collection source?">
   <div class="stack"><p>Existing tracking stays in Coast. Remote Trakt entries stay until their owner approves cleanup.</p>
-    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+
     {#each impact?.accounts??[] as account}<h3>{account.username}</h3><p>{account.removals.length} potential removals{account.uncertain?' · uncertain coverage or delivery':''} · {account.unresolved.length} unresolved identities.</p><ul>{#each account.removals.slice(0,60) as item}<li>{item.title}</li>{/each}</ul>{/each}
     {#if !impact?.accounts.length}<p>No active Trakt Collection export depends on this source.</p>{/if}
     <div class="row"><Button danger disabled={busy} onclick={()=>changing&&toggle(changing,true)}>Disable and leave Trakt entries</Button><Button  disabled={busy} onclick={()=>changing=null}>Keep enabled</Button></div>
@@ -184,7 +185,7 @@
         <ul>{#each account.removals.slice(0,60) as item}<li>{item.title}</li>{/each}</ul>
       {/each}
     {/if}
-    {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+
     <div class="row">
       <Button danger disabled={busy} onclick={() => deleting && remove(deleting, true)}>Delete integration</Button>
       <Button disabled={busy} onclick={() => { deleting = null; impact = null; }}>Cancel</Button>
@@ -200,7 +201,7 @@
         void save(event.currentTarget);
       }}
     >
-      {#if error}<RowFeedback error={error} tag="div" class="notice error" />{/if}
+
       <Field label="Provider"><select bind:value={provider} disabled={!!editing}
           ><option value="tmdb">TMDB</option><option value="jellyfin">Jellyfin</option><option
             value="trakt">Trakt</option

@@ -65,11 +65,11 @@
     {#if showExport}<Field label="Configuration"><textarea readonly rows="6" value={configuration}></textarea></Field>{/if}
   </div>
 {/snippet}
-{#snippet browser()}<Browser title={section==='typography'?'Browse text tokens':'Browse colours'} {options} value={selected} change={change}>
+{#snippet browser({heading}:{heading:Snippet})}<Browser title={section==='typography'?'Browse text tokens':'Browse colours'} {heading} {options} value={selected} change={change}>
   {#snippet thumbnail(option)}{#if section==='colors'}<span class="token-dot" style:background={`var(${option.value})`}></span>{:else}<span class="token-letters">Aa</span>{/if}{/snippet}
 </Browser>{/snippet}
 <style>
-  .foundation-stage {min-height:100%;display:grid;align-content:safe center;justify-items:center;gap:24px;padding:32px;min-width:0;text-align:center;}
+  .foundation-stage {min-height:100%;display:grid;align-content:safe center;justify-items:center;gap:var(--preview-gap);padding:0;min-width:0;text-align:center;}
   .type-sample {overflow-wrap:anywhere;max-width:100%;}
   .native-styles {display:grid;gap:8px;}
   .swatch {width:min(100%,320px);height:200px;border-radius:20px;border:1px solid var(--line);}
@@ -77,5 +77,4 @@
   .token-letters {font-size:var(--text-xl);font-weight:var(--weight-semibold);}
   code {font-size:var(--text-sm);overflow-wrap:anywhere;}
   .row {flex-wrap:wrap;gap:8px;}
-  @media(max-width:800px) {.foundation-stage {padding:20px;}}
 </style>

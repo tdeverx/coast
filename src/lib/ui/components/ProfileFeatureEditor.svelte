@@ -1,5 +1,5 @@
 <script lang="ts">
-  import RowFeedback from './RowFeedback.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import { createOperation } from '$lib/ui/operation.svelte';
   import Field from './Field.svelte';
   import FormActions from './FormActions.svelte';
@@ -35,6 +35,8 @@
     });
     if (!completed) error = operation.error;
   }
+
+  reportFailure(()=>error);
 </script>
 
 <Dialog bind:open title={`Feature ${title}`}
@@ -45,7 +47,7 @@
       void save();
     }}
   >
-    {#if error}<RowFeedback error={error} tag="p" class="" />{/if}<Field label="Why this one?" class=""><textarea
+    <Field label="Why this one?" class=""><textarea
         bind:value={draft}
         maxlength="300"
         rows="3"

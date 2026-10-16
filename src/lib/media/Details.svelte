@@ -9,7 +9,6 @@
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import { createEpisodeTracking } from '$lib/ui/shelves/episodes.svelte';
-  import Icon from '$lib/ui/components/Icon.svelte';
   import Rating from '$lib/ui/components/Rating.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
@@ -111,14 +110,7 @@
               <div class="episode-meta">
                 {#if episode.runtimeMinutes}<small>{episode.runtimeMinutes} min</small>{/if}
                 <Rating mediaId={episode.id} value={episode.rating} />
-                <button
-                  class="icon-button"
-                  class:selected={episode.watched}
-                  aria-pressed={episode.watched}
-                  disabled={episodeTracking.busy}
-                  aria-label={`${episode.watched ? 'Mark unwatched' : 'Mark watched'}: ${episode.title}`}
-                  onclick={() => episodeTracking.watch(episode.id, episode.watched)}><Icon name="check" /></button
-                >
+                <Button size="icon" icon="check" iconSize={20} class={episode.watched?'selected':''} pressed={episode.watched} disabled={episodeTracking.busy} label={`${episode.watched ? 'Mark unwatched' : 'Mark watched'}: ${episode.title}`} onclick={() => episodeTracking.watch(episode.id, episode.watched)} />
               </div>
             </div>
           {/snippet}
@@ -150,7 +142,7 @@
       items={collection.items}
       filterBy="type"
     >
-      {#snippet actions()}<WorkMenu item={collection.item} menuOnly showMenuTrigger />{/snippet}
+      {#snippet actions()}<WorkMenu item={collection.item} menuOnly showTrigger />{/snippet}
     </Shelf>
   {/each}
   {#if !section || section === 'related'}<Shelf
@@ -223,7 +215,7 @@
   .episode-meta small {
     color: var(--muted);
   }
-  .episode-meta .icon-button {
+  .episode-meta :global(.icon-button) {
     margin-left: auto;
   }
 </style>

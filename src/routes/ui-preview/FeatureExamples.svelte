@@ -9,7 +9,7 @@
   import Field from '$lib/ui/components/Field.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import RowFeedback from '$lib/ui/components/RowFeedback.svelte';
+  import Toast from '$lib/ui/components/Toast.svelte';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';
   import PlanAction from '$lib/experiments/PlanAction.svelte';
@@ -56,7 +56,7 @@
         </div>
       </header>
     {/if}
-    <RowFeedback message={feedback} />
+    {#if feedback}<p class="small quiet" role="status">{feedback}</p>{/if}
   {:else if name === 'profile.insights'}
     {#if scenario === 'activity'}<Shelf title="Insights" size="panel" artworkOptions={false} panels={progressPanels} />
     {:else}<Heading variant="page" title="Taste & overlap" description="Alex Example" /><MetricGrid items={[{ label: 'Overall taste', value: scenario === 'unknown' ? 'Not enough data' : '78%', detail: 'Median across qualifying media' }]} />
@@ -74,19 +74,19 @@
     {:else if scenario === 'music'}<Heading variant="page" title="Music" /><Shelf title="Albums and tracks" items={musicItems} shape="square" layout="grid" />
     {:else if scenario === 'games'}<Heading variant="page" title="Games" /><Shelf title="Your games" items={[game]} shape="poster" layout="grid" />
     {:else if scenario === 'planning'}<Heading title="Planning" variant="page" description="Experimental · your scheduled plans. Visual treatment unapproved." /><Shelf title="Your plans" items={[movie, readingCard(reading)]} layout="grid" availability={false}>{#snippet details()}<div class="row"><Button compact onclick={() => feedback = 'Preview start requested.'}>Start</Button><Button compact emphasis="subtle" onclick={() => feedback = 'Preview cancellation requested.'}>Cancel</Button></div>{/snippet}</Shelf>{/if}
-    <RowFeedback message={feedback} />
+    {#if feedback}<p class="small quiet" role="status">{feedback}</p>{/if}
   {:else if name === 'recommendations.dynamic'}
     <p class="small quiet">The production dynamic feed uses a finite synthetic definition set. Scroll to its bottom to reveal one row at a time.</p>
-    {#if dynamicFailure}<RowFeedback error={dynamicFailure} />{:else if DynamicFeed}<DynamicFeed />{:else}<RowFeedback message="Loading the recommendation example…" />{/if}
+    {#if dynamicFailure}<Toast kind="error" text={dynamicFailure} />{:else if DynamicFeed}<DynamicFeed />{:else}<p class="small quiet" role="status">{'Loading the recommendation example…'}</p>{/if}
   {:else if name === 'planning.action'}
     <Button onclick={() => opened = true}>Open planning dialog</Button><PlanAction workId={id} title={movie.title} partyAllowed bind:open={opened} />
   {:else if name === 'sharing.action'}
     <Button onclick={() => opened = true}>Open sharing dialog</Button><ShareAction workId={id} title={movie.title} bind:open={opened} />
   {:else if name === 'sharing.landing'}
     {#if scenario === 'party'}<Heading title="Synced session" variant="page" /><div class="stack form-width"><p>Experimental · Join using your own accessible Jellyfin source. Playback follows the host.</p><Button onclick={() => feedback = 'Preview join requested. No party is joined.'}>Join session</Button></div>
-    {:else}<Heading title="Playback invitation" /><p>Play this shared item. You control your own playback.</p>{#if scenario === 'expired'}<p class="notice">This preview invitation has expired.</p>{:else}<Button onclick={() => feedback = 'Preview invitation requested. No playback starts.'}>Open invitation</Button>{/if}{#if scenario === 'error'}<p role="alert">This preview invitation could not be opened.</p>{/if}{/if}<RowFeedback message={feedback} />
+    {:else}<Heading title="Playback invitation" /><p>Play this shared item. You control your own playback.</p>{#if scenario === 'expired'}<p class="notice">This preview invitation has expired.</p>{:else}<Button onclick={() => feedback = 'Preview invitation requested. No playback starts.'}>Open invitation</Button>{/if}{#if scenario === 'error'}<p role="alert">This preview invitation could not be opened.</p>{/if}{/if}{#if feedback}<p class="small quiet" role="status">{feedback}</p>{/if}
   {:else if name === 'experiments.modal'}
-    <Button onclick={() => opened = true}>Open media details</Button><Dialog bind:open={opened} title="Media details" wide edgeToEdge>{#if scenario === 'error'}<RowFeedback error="These preview details could not be loaded." inline={false} />{:else}<MediaPage details item={scenario === 'reading' ? readingHero(reading) : movie}><Shelf title="Overview" size="panel" artworkOptions={false} panels={scenario === 'reading' ? overviewPanels(reading.overview, readingFacts(reading)) : mediaOverviewPanels(movie)} /></MediaPage><div class="modal-footer"><Button href="/media/preview" onclick={() => opened = false}>Full page</Button></div>{/if}</Dialog>
+    <Button onclick={() => opened = true}>Open media details</Button><Dialog bind:open={opened} title="Media details" wide edgeToEdge>{#if scenario === 'error'}<Toast kind="error" text={'These preview details could not be loaded.'} />{:else}<MediaPage details item={scenario === 'reading' ? readingHero(reading) : movie}><Shelf title="Overview" size="panel" artworkOptions={false} panels={scenario === 'reading' ? overviewPanels(reading.overview, readingFacts(reading)) : mediaOverviewPanels(movie)} /></MediaPage><div class="modal-footer"><Button href="/media/preview" onclick={() => opened = false}>Full page</Button></div>{/if}</Dialog>
   {:else if name === 'app.shell'}
     {#if scenario === 'error'}<div class="content page"><EmptyState level={1} title="Page not found" description="This fictional page could not be found."><Button href="/for-you">Back to For You</Button></EmptyState></div>
     {:else}<div class="shell-example"><Header user={scenario === 'guest' ? null : { username: 'preview', role: 'admin' }} unread={2} friendRequests={1} /></div>{/if}

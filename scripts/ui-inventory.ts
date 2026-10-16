@@ -2,6 +2,7 @@ import { parse } from 'svelte/compiler';
 import { readdir } from 'node:fs/promises';
 import { resolve, relative, dirname } from 'node:path';
 import { compositions, componentScenarios, dynamicOwners, type ReferenceRecipe, type ReferenceFamily } from '../src/routes/ui-preview/reference';
+import {previewProps,type PreviewProp} from './ui-props';
 
 const root = process.cwd(), folder = 'src/lib/ui/components';
 type ManifestEntry = { path: string; elements: string[]; usedBy: string[]; dynamicComposition: boolean };
@@ -165,7 +166,12 @@ export function validateReferenceCoverage(options: {
 async function main() {
   const paths = (await readdir(folder)).filter(name => name.endsWith('.svelte')).map(name => `${folder}/${name}`).sort();
   const manifest: Record<string, ManifestEntry> = {};
-  for (const path of paths) manifest[path.split('/').at(-1)!.replace('.svelte', '')] = { path, elements: [], usedBy: [], dynamicComposition: false };
+  const propManifest:Record<string,{path:string;props:PreviewProp[]}>={};
+  for (const path of paths) {
+    const name=path.split('/').at(-1)!.replace('.svelte','');
+    manifest[name]={path,elements:[],usedBy:[],dynamicComposition:false};
+    propManifest[name]={path,props:previewProps(path)};
+  }
   const files = await walk('src');
   const rendered: Record<string, string[]> = {};
   const dynamicImports: Record<string, string[]> = {};
@@ -198,6 +204,10 @@ async function main() {
   if (process.argv.includes('--check')) {
     if (await Bun.file(file).text() !== content) throw new Error('UI composition inventory is stale. Run bun run ui:inventory.');
   } else await Bun.write(file, content);
+  const propFile='src/routes/ui-preview/prop-manifest.json',propContent=JSON.stringify(propManifest,null,2)+'\n';
+  if(process.argv.includes('--check')) {
+    if(await Bun.file(propFile).text()!==propContent)throw new Error('UI prop inventory is stale. Run bun run ui:inventory.');
+  }else await Bun.write(propFile,propContent);
   console.log(`UI inventory: ${paths.length} components, ${coverage.compositions} explicit compositions, ${coverage.internal} internal renderers and ${coverage.delegated} delegated routes verified.`);
 }
 if (import.meta.main) await main();

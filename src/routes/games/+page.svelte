@@ -8,8 +8,7 @@
   import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import MediaCard from '$lib/ui/components/MediaCard.svelte';
-  import Pagination from '$lib/ui/components/Pagination.svelte';
+  import Shelf from '$lib/ui/components/Shelf.svelte';
   let { data } = $props();
   function pageUrl(
     page: number,
@@ -24,15 +23,15 @@
 
 <svelte:head><title>Games · Coast</title></svelte:head>
 <div class="content page route-content">
-  <Heading {...browseHeading("play", data.experimentalGaming)}>
-    {#snippet segments()}{#if data.filters.view==='library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state=>goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{keepFocus:true,noScroll:true})}/>{/if}{/snippet}
-    {#snippet previous()}<Button size="icon" icon="left" label="Previous games page" disabled={data.page<=1} href={pageUrl(data.page-1)} />{/snippet}
+
+  <Shelf title="Games" layout="grid" items={data.items} shape="poster" mediaKind="game" enrichSocial={false} artworkOptions={false} hideEmpty={false} error={data.failure} retry={()=>invalidateAll()} pageNumber={data.page} pages={data.pages} {pageUrl}>
+    {#snippet heading()}<Heading title="Library" level={1} variant="title" />{/snippet}
+    {#snippet segments()}{@const browse=browseHeading('play',data.experimentalGaming)}{#if browse.selection}<SegmentedControl label={browse.selection.label} value={browse.selection.value} options={browse.selection.options} onchange={browse.selection.change} />{/if}{#if data.filters.view==='library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state=>goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{keepFocus:true,noScroll:true})}/>{/if}{/snippet}
     {#snippet controls()}<RowFilter groups={[
       {label:'Games view',value:data.filters.view==='library'&&data.filters.personal?'personal':data.filters.view,options:[{value:'library',label:'All games'},{value:'personal',label:'Your games'},{value:'igdb',label:'Discover'}],change:view=>{void goto(pageUrl(1,view==='igdb'?'igdb':'library',data.filters.state,view==='personal'),{keepFocus:true,noScroll:true});}},
       ...(data.filters.view==='library'?[{label:'Availability',value:data.filters.scope,options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:(value:string)=>{void goto(pageUrl(1,data.filters.view,data.filters.state,data.filters.personal,value as typeof data.filters.scope),{keepFocus:true,noScroll:true});}}]:[]),
     ]}>{#snippet actions()}{#if page.data.user?.role==='admin'}<Button item href="/settings/integrations" icon="server">Integrations</Button>{/if}{/snippet}</RowFilter>{/snippet}
-    {#snippet next()}<Button size="icon" icon="right" label="Next games page" disabled={data.page>=data.pages} href={pageUrl(data.page+1)} />{/snippet}
-  </Heading>
+    {#snippet before()}
   <form class="filter-row browse-search" action="/games" method="GET">
     <input type="hidden" name="view" value={data.filters.view} />
     <input type="hidden" name="personal" value={String(data.filters.personal)} />
@@ -49,18 +48,10 @@
     />
     <Button type="submit"  icon="search">Search</Button>
   </form>
-  {#if data.failure}<div class="notice error" role="alert">{data.failure}</div>
-    <Button  icon="refresh" onclick={() => invalidateAll()}>Try again</Button>
-  {:else if data.items.length}
-    <p class="small" style="margin-bottom:22px">
-      {data.total}
-      {data.filters.view === 'igdb' ? 'results on this page' : data.total === 1 ? 'game' : 'games'}
-    </p>
-    <div class="grid">
-      {#each data.items as item (item.id)}<MediaCard {item} shape="poster" />{/each}
-    </div>
-    <Pagination page={data.page} pages={data.pages} {pageUrl} label="Games pages" />
-  {:else if data.filters.view === 'library' && data.filters.scope === 'available'}
+    {#if data.items.length}<p class="small result-count">{data.total.toLocaleString()} games</p>{/if}
+    {/snippet}
+    {#snippet empty()}
+  {#if !data.items.length && !data.failure && data.filters.view === 'library' && data.filters.scope === 'available'}
     <EmptyState title="No owned games in this selection" description="Steam ownership provides availability; installation is unknown. Turn off Available to browse all games." icon="library" />
   {:else if data.filters.view === 'igdb' && !data.sources.length}
     <EmptyState
@@ -92,9 +83,12 @@
       <Button  href="/games?view=igdb">Discover games</Button>
     </EmptyState>
   {/if}
+    {/snippet}
+  </Shelf>
 </div>
 
 <style>
+  .result-count {margin:16px 0 22px;}
   .browse-search input[type='search'] {
     flex: 1;
     min-width: min(100%, 200px);

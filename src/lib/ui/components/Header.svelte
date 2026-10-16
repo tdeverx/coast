@@ -73,14 +73,14 @@
     <div class="account">
       {#if user}
       {#if !preview&&reader.session&&!reader.visible}<Button icon="library" size="icon" label="Resume reading" onclick={()=>reader.visible=true}/>{/if}
-      {#if user.role==='admin'}<button type="button" id={preview?`${previewId}-streams`:"streams-trigger"} class="icon-button notification" aria-label={streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}><Icon name="server" size={21}/>{#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}</button>{/if}
-      {#if page.data.capabilities?.social!==false}<button type="button" id={preview?`${previewId}-friends`:"friends-trigger"} class="icon-button notification" aria-label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</button>{/if}
-      <button type="button"
+      {#if user.role==='admin'}<Button size="icon" id={preview?`${previewId}-streams`:"streams-trigger"} class="notification" label={streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}><Icon name="server" size={21}/>{#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}</Button>{/if}
+      {#if page.data.capabilities?.social!==false}<Button size="icon" id={preview?`${previewId}-friends`:"friends-trigger"} class="notification" label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</Button>{/if}
+      <Button size="icon"
         id={preview?`${previewId}-notifications`:"notification-trigger"}
-        class="icon-button notification"
+        class="notification"
         onclick={()=>{if(!preview)openNotifications();}}
-        aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
-        ><Icon name="bell" size={21} />{#if unread}<i></i>{/if}</button
+        label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
+        ><Icon name="bell" size={21} />{#if unread}<i></i>{/if}</Button
       ><Button menu label="Account menu"
         >{#snippet trigger()}<span class="avatar"><Avatar name={user.username} src={user.settings?.profile?.avatar} label="Your profile" size={28} status={page.data.capabilities?.presence===false?'offline':status.status} class="header-icon" /></span
           >{/snippet}{#snippet children()}
@@ -104,9 +104,7 @@
               >Admin</Button>{/if}
           <div class="menu-divider" role="separator"></div>
           <form method="POST" action="/logout" onsubmit={event=>{if(preview)event.preventDefault();}}>
-            <button type="submit" class="menu-row menu-row-danger" role="menuitem" data-menu-keep-open
-              ><Icon name="logout" /><span class="menu-action-label">Sign out</span></button
-            >
+            <Button type="submit" item danger keepOpen icon="logout">Sign out</Button>
           </form>{/snippet}</Button
       >
       {:else}<Button href="/login">Sign in</Button>{/if}
@@ -173,11 +171,11 @@
     font-size: var(--text-sm);
     font-weight: var(--weight-semibold);
   }
-  .notification {
+  .account :global(.notification) {
     position: relative;
   }
   .friend-count{position:absolute;top:0;right:0;min-width:16px;height:16px;display:grid;place-items:center;padding-inline:3px;border-radius:8px;background:var(--accent);color:var(--canvas);font-size:var(--text-sm);font-weight:var(--weight-semibold);}
-  .notification i {
+  .account :global(.notification i) {
     position: absolute;
     top: 9px;
     right: 9px;

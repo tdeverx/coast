@@ -11,7 +11,7 @@
 
   type ButtonProps = {
 
-    children?: Snippet; text?: string; icon?: IconName;
+    children?: Snippet; text?: string; icon?: IconName; id?:string;
     onclick?: (event: MouseEvent) => void;
     emphasis?: 'standard' | 'subtle'; size?: 'standard' | 'hero' | 'icon'; fallback?: boolean;
     disabled?: boolean; type?: 'button' | 'submit'; label?: string; title?: string;
@@ -27,7 +27,7 @@
     | { menu?: false; item?: false; href?: string }
   );
   let {
-    children, text, icon, href, onclick, emphasis = 'standard', size = 'standard', fallback = false, disabled = false,
+    children, text, icon, id: suppliedId, href, onclick, emphasis = 'standard', size = 'standard', fallback = false, disabled = false,
     type = 'button', label, title, pressed, compact = false,
     menu = false, item = false, trigger, hideTrigger = false,
     align = 'end', upward = false, triggerClass, onopen, onclose, panel = false,
@@ -82,12 +82,12 @@
 {#snippet control()}
   {#if href && !menu}<a class={controlClass} class:glass={usesMaterial} class:light-material={usesMaterial && controlMaterial === 'glassLight'} class:menu-row-danger={item && danger} class:control-danger={!item && danger}
     use:surfaceMaterial={{enabled:usesMaterial,variant:controlMaterial,blur:fallback}}
-    href={disabled ? undefined : href} role={role ?? (disabled ? 'link' : undefined)} tabindex={disabled ? -1 : undefined}
+    id={suppliedId} href={disabled ? undefined : href} role={role ?? (disabled ? 'link' : undefined)} tabindex={disabled ? -1 : undefined}
     aria-label={label} aria-disabled={disabled || undefined} aria-describedby={disabled && disabledReason ? `${id}-reason` : undefined}
     {title} onclick={activate}>{@render content()}</a>
   {:else}<button bind:this={triggerNode} class={controlClass} class:glass={usesMaterial} class:light-material={usesMaterial && controlMaterial === 'glassLight'} class:active={pressed} class:menu-row-danger={item && danger} class:control-danger={!item && danger}
     use:surfaceMaterial={{enabled:usesMaterial,variant:controlMaterial,blur:fallback}}
-    id={menu ? `${id}-trigger` : undefined} {type} hidden={hideTrigger} disabled={disabled && !(item && disabledReason)}
+    id={suppliedId ?? (menu ? `${id}-trigger` : undefined)} {type} hidden={hideTrigger} disabled={disabled && !(item && disabledReason)}
     {role} aria-label={label ?? (menu ? 'More options' : undefined)} aria-pressed={pressed} aria-checked={checked}
     aria-disabled={disabled || undefined} aria-describedby={disabled && disabledReason ? `${id}-reason` : undefined}
     aria-haspopup={menu || branch ? 'menu' : undefined} aria-expanded={controller?.open} aria-controls={menu ? `${id}-menu` : undefined}

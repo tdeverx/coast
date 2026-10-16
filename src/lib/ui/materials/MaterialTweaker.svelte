@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
-  let { layout, picker }: { layout: Snippet<[{ title:string; canvas:Snippet; inspector:Snippet; browser:Snippet }]>; picker:Snippet<[{options:{value:string;label:string}[];value:string;change:(value:string)=>void}]> } = $props();
+  let { layout, picker }: { layout: Snippet<[{title:string;canvas:Snippet;inspector:Snippet;browser:Snippet<[{heading:Snippet}]>}]>; picker:Snippet<[{options:{value:string;label:string}[];value:string;change:(value:string)=>void;heading?:Snippet}]> } = $props();
   import Heading from '../components/Heading.svelte';
   import Button from '../components/Button.svelte';
   import SegmentedControl from '../components/SegmentedControl.svelte';
@@ -25,9 +25,6 @@
   let loaded = $state(false);
   let message = $state('');
   let exported = $state(false);
-  let background = $state('pattern');
-  let backgroundColor = $state('#ffffff');
-  let backgroundImage = $state('');
   let radius = $state(24);
   const surface = $derived(selected[layer]);
   const title = $derived(experimental ? 'Temporary experiment' : materialNames.find(item => item.value === variant)?.label ?? 'Glass');
@@ -49,7 +46,6 @@
       }
     } catch { message = 'Temporary experiment could not be loaded.'; }
     loaded = true;
-    return () => { if (backgroundImage) URL.revokeObjectURL(backgroundImage); };
   });
   $effect(() => {
     const current = JSON.stringify(drafts);
@@ -63,11 +59,6 @@
     effects = { ...experimentalDefaults, sheenAmount: 16, vignetteAmount: 12, edgeAmount: 28, interactionAmount: 20 };
     experiment.materials.noiseOpacity = 4; experiment.fallbacks.noiseOpacity = 4;
     message = 'Non-approved combination. Tune or disable each effect below.';
-  }
-  function setBackgroundImage(file?: File) {
-    if (file && !file.type.startsWith('image/')) { message = 'Choose an image for the preview background.'; return; }
-    if (backgroundImage) URL.revokeObjectURL(backgroundImage);
-    backgroundImage = file ? URL.createObjectURL(file) : '';
   }
   function setColor(value: string, change: (value: string) => void) {
     if (CSS.supports('color', value)) { change(value); message = ''; }
@@ -114,9 +105,7 @@
 
 {#snippet canvas()}
 <div class="preview-column">
-    <div class="preview" class:plain={background !== 'pattern'} style:--preview-radius={`${radius}px`} style:background={background === 'color' ? backgroundColor : undefined}>
-      {#if background === 'image' && backgroundImage}<img class="preview-image" src={backgroundImage} alt="" aria-hidden="true" />{/if}
-      <div class="scene" aria-hidden="true"><span>COAST</span><div></div><span>Glass / light / motion</span></div>
+    <div class="preview" style:--preview-radius={`${radius}px`}>
       {#each previewModes as mode}
         <div class="sample glass" class:light={variant === 'glassLight'}
           data-material-sample={mode}
@@ -130,17 +119,6 @@
         </div>
       {/each}
     </div>
-    <div class="preview-options">
-      <SegmentedControl label="Preview background" value={background} options={[{ value: 'pattern', label: 'Pattern' }, { value: 'color', label: 'Color' }, { value: 'image', label: 'Image' }]} onchange={value => background = value} />
-      {#if background === 'color'}
-        <div class="background-color"><label class="field">Preview background color<input type="color" bind:value={backgroundColor} /></label><Button onclick={() => backgroundColor = '#ffffff'}>White</Button><Button onclick={() => backgroundColor = '#000000'}>Black</Button></div>
-      {:else if background === 'image'}
-        <label class="field">Preview background image<input type="file" accept="image/*" onchange={event => setBackgroundImage(event.currentTarget.files?.[0])} /></label>
-        {#if backgroundImage}<Button emphasis="subtle" onclick={() => setBackgroundImage()}>Remove image</Button>{/if}
-      {/if}
-      <label class="field">Preview corner radius · {radius}px<input type="range" min="0" max="80" step="1" aria-valuetext={`${radius} pixels`} bind:value={radius} /></label>
-    </div>
-    <p class="quiet">Both previews update live. Native refraction depends on your browser; CSS fallback has no refraction. Preview radius and background do not change presets. Preview images stay in this browser.</p>
     <p role="status" class="quiet">{message}</p>
   </div>
 {/snippet}
@@ -155,6 +133,8 @@
   {/snippet}
 </Heading>
 <div class="controls">
+    <label class="field">Preview corner radius · {radius}px<input type="range" min="0" max="80" step="1" aria-valuetext={`${radius} pixels`} bind:value={radius} /></label>
+    <p class="quiet">Native refraction depends on your browser. The CSS fallback has no refraction. Radius and canvas settings do not change presets.</p>
     {#if experimental}
       <p class="quiet">Temporary material only. Effects are shared by both previews for comparison; base surfaces remain independently editable. No app presets are changed.</p>
       {#each effectGroups as group}
@@ -212,8 +192,8 @@
   </div>
 {#if exported}<section class="export"><Heading title="Preset export" description="Complete snapshot of the selected treatment and its fallback, with resolved colors. Copy again after further edits." /><textarea aria-label="Preset export" readonly value={source} rows="12"></textarea></section>{/if}
 {/snippet}
-{#snippet browser()}
-  {@render picker({options:choices,value:variant,change:value=>variant=value as typeof variant})}
+{#snippet browser({heading}:{heading:Snippet})}
+  {@render picker({heading,options:choices,value:variant,change:value=>variant=value as typeof variant})}
 {/snippet}
 {@render layout({title,canvas,inspector,browser})}
 
@@ -222,26 +202,17 @@
 {/snippet}
 
 <style>
-  .preview-column {position:static;padding:20px;min-width:0;}
+  .preview-column {position:static;padding:0;min-width:0;}
   .controls .control-grid {grid-template-columns:1fr;}
-  .preview { position: relative; overflow: hidden; border-radius: 24px; min-height: 440px; padding: 40px 24px; display: grid; align-content: center; gap: 40px; background: linear-gradient(135deg, var(--surface), var(--accent), var(--canvas)); }
-  .preview.plain { background: var(--surface); }
-  .preview-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
-  .scene { position: absolute; inset: 0; display: grid; align-content: space-evenly; text-align: center; color: var(--white); font-size: var(--text-2xl); font-weight: var(--weight-bold); transform: rotate(-15deg); }
-  .scene div { height: 70px; background: repeating-linear-gradient(90deg, var(--white) 0 5px, transparent 5px 30px); }
-  .plain .scene { display: none; }
+  .preview { position: relative; overflow: visible; border-radius: 24px; min-height: 440px; padding: 0; display: grid; align-content: center; gap: var(--preview-gap,24px); }
   .sample { border-radius: var(--preview-radius); padding: 24px; min-height: 140px; display: grid; align-content: center; gap: 8px; color: var(--white); }
   .sample.light { color: var(--canvas); }
   .sample strong { font-size: var(--text-xl); font-weight: var(--weight-bold); }
   .sample span { font-size: var(--text-md); }
   .sample .sample-detail { font-size: var(--text-sm); }
-  .preview-options { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 20px; align-items: center; }
-  .preview-options .field { flex: 1; min-width: 160px; }
-  .background-color { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; }
-  .background-color input { height: 32px; padding: 2px; cursor: pointer; }
   .controls { min-width: 0; }
   section { padding-top: 24px; margin-top: 24px; border-top: 1px solid var(--line); }
-  .control-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+  .control-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   .texture-options { margin-bottom: 20px; }
   .field { min-width: 0; }
   .color-control { display: flex; gap: 8px; align-items: center; }
@@ -254,6 +225,6 @@
   output { color: var(--muted); white-space: nowrap; }
   .quiet { font-size: var(--text-sm); color: var(--muted); line-height: var(--leading-normal); }
   .export textarea { width: 100%; font-size: var(--text-sm); }
-  @media (max-width: 900px) { .preview-column { position: static; } .preview { min-height: 360px; padding: 24px; gap: 24px; } }
+  @media (max-width: 900px) { .preview-column { position: static; } .preview { min-height: 360px; gap: var(--preview-gap,24px); } }
   @media (max-width: 480px) { .control-grid { grid-template-columns: 1fr; } }
 </style>

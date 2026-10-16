@@ -1,5 +1,5 @@
 <script lang="ts">
-  import RowFeedback from './RowFeedback.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import { displayLabel } from '$lib/ui/labels';
   import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
@@ -53,10 +53,12 @@
       busy = false;
     }
   }
+
+  reportFailure(()=>error);
 </script>
 
 <div class="stack">
-  {#if error}<RowFeedback error={error} tag="div" class="notice error" />{/if}
+
   {#each conflicts as conflict}<article class="panel stack">
       <div class="spread">
         <div>

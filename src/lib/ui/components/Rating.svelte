@@ -1,11 +1,10 @@
 <script lang="ts">
-  import RowFeedback from './RowFeedback.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
   import Icon from './Icon.svelte';
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
 
-  const { change } = useClient();
+  const { change, feedback } = useClient();
 
   let {
     mediaId,
@@ -47,13 +46,15 @@
       await change('ratings', { mediaId, value: score });
       preview = null;
       onrated?.(score);
-      notifyAction(score === null ? 'Rating removed.' : `Rated ${score} stars.`);
+      feedback.notify(score === null ? 'Rating removed.' : `Rated ${score} stars.`);
     } catch (e) {
       error = message(e);
     } finally {
       busy = false;
     }
   }
+
+  reportFailure(()=>error);
 </script>
 
 {#if menu}
@@ -118,7 +119,7 @@
         >{/each}<option value="">Remove rating</option></select
     >
   </div>{/if}
-{#if error}<RowFeedback error={error} tag="p" class="text-danger small" />{/if}
+
 
 <style>
   .menu-rating {

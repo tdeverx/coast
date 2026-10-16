@@ -1,5 +1,5 @@
 <script lang="ts">
-  import RowFeedback from './RowFeedback.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import Button from '$lib/ui/components/Button.svelte';
   import { untrack } from 'svelte';
   import { createQueueActions } from '$lib/ui/controls/queue.svelte';
@@ -14,12 +14,10 @@
 
   let {
     actions,
-    compact = false,
     emptyTitle = 'No pending jobs',
     emptyDescription = 'Jobs for connected services appear here. Coast will retry automatically if a service is unavailable.',
   }: {
     actions: QueueAction[];
-    compact?: boolean;
     emptyTitle?: string;
     emptyDescription?: string;
   } = $props();
@@ -31,12 +29,14 @@
   });
   const update = queue.run;
 
+
+  reportFailure(()=>error);
 </script>
 
-{#if error}<RowFeedback error={error} tag="div" class="notice error" />{/if}
+
 {#if actions.length}<div class="queue">
     {#each actions as action (action.id)}{@const waiting = jobWaiting(action)}
-<div class="row action" class:compact use:contextGesture={(point) => menus[action.id]?.openAt(point)}>
+<div class="row action" use:contextGesture={(point) => menus[action.id]?.openAt(point)}>
   <div class="details">
     <h3>{displayLabel(action.kind)}</h3>
     {#if action.connectionLabel}<p>{action.connectionLabel}</p>{/if}
@@ -103,8 +103,5 @@
   }
   .job-error {
     color: var(--ink);
-  }
-  .compact {
-    padding: 12px 0;
   }
 </style>

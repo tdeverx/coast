@@ -1,28 +1,37 @@
 import {expect,test} from 'bun:test';
-import {editable,editableExamples,exampleDefaults,exampleConfiguration} from '../src/routes/ui-preview/workspace';
+import {contracts,defaultSlot,emptyCustomisation,handlerMode,parseData,specimenDefaults} from '../src/routes/ui-preview/props';
+import {previewProps} from '../scripts/ui-props';
 
-test('playground drafts are local values and expose only supported component controls',()=>{
-  const first=exampleDefaults('Button'),second=exampleDefaults('Button');
-  first.text='Changed';
-  expect(second.text).toBe('Play');
-  expect(editable('Button')).toBe(true);
-  expect(editable('JobsSettings')).toBe(false);
-  expect(new Set(editableExamples).size).toBe(editableExamples.length);
+test('each reusable component has a source-matched contract and independent synthetic input',()=>{
+ for(const [name,contract] of Object.entries(contracts)) {
+  expect(contract.props).toEqual(previewProps(contract.path));
+  const first=specimenDefaults(name),second=specimenDefaults(name);
+  expect(first).toEqual(second);
+  if(first.item) {(first.item as {title:string}).title='Changed';expect((second.item as {title:string}).title).not.toBe('Changed');}
+  expect(new Set(contract.props.map(prop=>prop.name)).size).toBe(contract.props.length);
+ }
 });
-
-test('component configuration reflects genuine props rather than canvas geometry or invented properties',()=>{
-  const values=exampleDefaults('Button');
-  Object.assign(values,{text:'Watch',disabled:true,icon:false});
-  const button=exampleConfiguration('Button',values,'disabled');
-  expect(JSON.parse(JSON.stringify(button))).toEqual({component:'Button',scenario:'disabled',props:{text:'Watch',label:'Watch',emphasis:'standard',size:'standard',disabled:true,danger:false}});
-  const progress=exampleConfiguration('ProgressBar',{...values,number:65},'default');
-  expect(progress.props).toEqual({progress:0.65});
-  expect(exampleConfiguration('Avatar',{...values,number:80},'default').props).toEqual({name:'Watch',size:80});
+test('contracts retain nullable values, full enum choices, bindings, callbacks and snippet roles',()=>{
+ const prop=(name:string,key:string)=>contracts[name].props.find(prop=>prop.name===key)!;
+ expect(prop('Icon','name').choices).toContain('collection');
+ expect(prop('MediaCard','shape').choices).toEqual(['poster','square','circle','fanart','banner']);
+ expect(prop('Button','menu').kind).toBe('boolean');
+ expect(prop('Button','href').kind).toBe('text');
+ expect(prop('Button','material').choices).toEqual(['clear','glassLight','glassDark','glassProminent']);
+ expect(prop('Dialog','open').bindable).toBe(true);
+ expect(prop('Heading','heading').kind).toBe('snippet');
+ expect(prop('Pagination','onchange').kind).toBe('callback');
+ expect(prop('OperationProgress','total')).toMatchObject({kind:'number',nullable:true});
+ expect(defaultSlot('IdentityCard',prop('IdentityCard','title')).kind).toBe('text');
+ expect(defaultSlot('Field',prop('Field','children')).kind).toBe('field');
+ expect(handlerMode('Button',prop('Button','onclick'),emptyCustomisation())).toBe('example');
+ expect(handlerMode('Pagination',prop('Pagination','pageUrl'),emptyCustomisation())).toBe('off');
 });
-
-test('media-card configuration includes the complete synthetic item and the selected rendering props',()=>{
-  const values={...exampleDefaults('MediaCard'),showCaption:false,shape:'circle' as const};
-  const config=exampleConfiguration('MediaCard',values,'default');
-  expect(config.props.item).toMatchObject({id:expect.any(String),kind:'movie',title:'The Magicians',poster:'/coast-mark.png'});
-  expect(config.props).toMatchObject({shape:'circle',showCaption:false,showPrimaryAction:true});
+test('structured prop editing rejects invalid JSON and the wrong container without replacing the fixture',()=>{
+ const items=contracts.FactList.props.find(prop=>prop.name==='items')!;
+ expect(()=>parseData('{',items)).toThrow();
+ expect(()=>parseData('{}',items)).toThrow('array');
+ expect(()=>parseData('null',items)).toThrow('null');
+ expect(parseData('[{"label":"Count","value":"0"}]',items)).toEqual([{label:'Count',value:'0'}]);
+ expect((specimenDefaults('FactList').items as unknown[]).length).toBeGreaterThan(1);
 });

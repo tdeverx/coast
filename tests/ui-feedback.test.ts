@@ -1,0 +1,61 @@
+import {expect,test} from 'bun:test';
+import {compileModule} from 'svelte/compiler';
+// @ts-expect-error Svelte's internal rune test runtime has no public declarations.
+import * as runtime from 'svelte/internal/client';
+const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`;
+const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};export const hooks=[];export const onDestroy=fn=>hooks.push(fn);`);
+const lifecycle=await import(lifecycleUrl);
+const source=await Bun.file(new URL('../src/lib/ui/action-feedback.svelte.ts',import.meta.url)).text();
+const compiled=compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(source),{filename:'feedback.svelte.js',generate:'client'}).js.code
+  .replaceAll('svelte/internal/client',import.meta.resolve('svelte/internal/client'))
+  .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
+  .replaceAll('./client',moduleUrl('export const message=cause=>cause.message;'));
+const {createFeedback,actionFeedback}:typeof import('../src/lib/ui/action-feedback.svelte')=await import(moduleUrl(compiled));
+
+test('isolated feedback, modal ownership and failed retries stay in their owning delivery scope',async()=>{
+ const preview=createFeedback();
+ preview.failure('Unavailable',async()=>{throw new Error('Still unavailable');});
+ expect(actionFeedback.current).toBeNull();
+ const closeFirst=preview.host('first'),closeSecond=preview.host('second');
+ expect(preview.activeHost).toBe('second');
+ closeFirst();expect(preview.activeHost).toBe('second');
+ await preview.act();expect(preview.current?.error).toBe('Still unavailable');expect(preview.current?.busy).toBe(false);
+ closeSecond();expect(preview.activeHost).toBeNull();
+ preview.notify('Saved');expect(actionFeedback.current).toBeNull();
+});
+test('a failure is announced once, releases its retry on destruction, and does not dismiss another operation',async()=>{
+ const feedback=createFeedback(),error=runtime.state('Unavailable');
+ let retries=0;
+ const dispose=runtime.effect_root(()=>feedback.watch(()=>runtime.get(error),async()=>{retries++;runtime.set(error,'');runtime.flush();}));
+ try {
+  runtime.flush();const first=feedback.current;
+  runtime.flush();expect(feedback.current).toBe(first);
+  await feedback.act();expect(retries).toBe(1);expect(feedback.current).toBeNull();
+  runtime.set(error,'Unavailable');runtime.flush();expect(feedback.current?.text).toBe('Unavailable');
+  feedback.notify('Another operation succeeded.');
+  runtime.set(error,'');runtime.flush();expect(feedback.current?.text).toBe('Another operation succeeded.');
+ } finally {dispose();for(const hook of lifecycle.hooks.splice(0))hook();}
+});
+test('a watched retry retains an unchanged failure until its source clears',async()=>{
+ const feedback=createFeedback(),error=runtime.state('Unavailable');
+ let finish!:()=>void;
+ const dispose=runtime.effect_root(()=>feedback.watch(()=>runtime.get(error),()=>new Promise<void>(resolve=>{finish=resolve;})));
+ try {
+  runtime.flush();
+  const pending=feedback.act();expect(feedback.current?.busy).toBe(true);
+  finish();await pending;
+  expect(feedback.current?.text).toBe('Unavailable');expect(feedback.current?.busy).toBe(false);
+  runtime.set(error,'');runtime.flush();expect(feedback.current).toBeNull();
+ } finally {dispose();for(const hook of lifecycle.hooks.splice(0))hook();}
+});
+test('closing an operation removes its scoped failure and releases the retry callback',()=>{
+ const feedback=createFeedback(),open=runtime.state(true);
+ const dispose=runtime.effect_root(()=>feedback.watch(()=>runtime.get(open)?{text:'Unavailable',retry:()=>{}}:''));
+ try {
+  runtime.flush();expect(feedback.current?.retry).toBeFunction();
+  runtime.set(open,false);runtime.flush();expect(feedback.current).toBeNull();
+  runtime.set(open,true);runtime.flush();expect(feedback.current?.text).toBe('Unavailable');
+  feedback.notify('Unrelated action');runtime.set(open,false);runtime.flush();
+  expect(feedback.current?.text).toBe('Unrelated action');
+ } finally {dispose();for(const hook of lifecycle.hooks.splice(0))hook();}
+});

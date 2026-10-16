@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import {page as route} from '$app/state';
   import { useClient } from '$lib/ui/client-context';
   import Heading from './Heading.svelte';
@@ -10,7 +11,6 @@
   import MediaHero from './MediaHero.svelte';
   import Shelf from './Shelf.svelte';
   import Button from './Button.svelte';
-  import RowFeedback from './RowFeedback.svelte';
   import EmptyState from './EmptyState.svelte';
 
   const { api } = useClient();
@@ -49,6 +49,8 @@
     void api<Record<string,{friends:typeof friendDetails;total:number}>>(`social/works?ids=${id}`,undefined,'GET',{signal:controller.signal}).then(result=>{friendDetails=result[id]?.friends??[];friendTotal=result[id]?.total??0;}).catch(()=>{});
     return ()=>controller.abort();
   });
+
+  reportFailure(()=>error);
 </script>
 
 {#snippet actionControls()}
@@ -58,7 +60,7 @@
 {#if hasHero}<MediaHero {item} {items} {collection} {parents} {context} {next} {requestable} actions={commands.length || heroActions ? actionControls : undefined} />{/if}
 <div class={`content ${className}`} class:details class:page={page ?? !hasHero} class:route-content={!hasHero && !details}>
   {#if back}<Button emphasis="subtle" href={back.href} icon="left">{back.label}</Button>{/if}
-  {#if error}<RowFeedback error={error} tag="p" class="notice error" />{/if}
+
   {#if links.length}<div class="row detail-links">{#each links as link}<Button emphasis="subtle" href={link.href}>{link.label}</Button>{/each}</div>{/if}
   {#each sections as section (section.key)}<Shelf title={section.title} items={section.items ?? []} panels={section.panels}
     size={section.panels ? 'panel' : section.shape ?? 'poster'} shape={section.shape} mediaKind={section.mediaKind}

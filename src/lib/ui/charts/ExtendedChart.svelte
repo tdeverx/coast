@@ -3,9 +3,9 @@
   import { chartColors, chartCategoryColor, chartFill, formatValue, mediumColor, type ChartModel, type ChartRow } from './model';
   import { isotypeFractions, layoutBubbles, layoutFlows, partitionTreemap, radialLength, radialSector } from './extended-geometry';
 
-  let { model, selected, onselect }: { model: ChartModel; selected: number; onselect: (index: number) => void } = $props();
+  let { model, selected, onselect, compact = false }: { model: ChartModel; selected: number; onselect: (index: number) => void; compact?:boolean } = $props();
   const instance = $props.id();
-  const chartWidth = 760;
+  const chartWidth = $derived(compact ? 320 : 760);
   const label = (row: ChartRow) => `${row.group ? `${row.group} · ` : ''}${row.label}: ${formatValue(row.value, row.valueUnit ?? model.unit)}${row.detail ? `; ${row.detail}` : ''}`;
   const number = (value: unknown, fallback = 0) => typeof value === 'number' && Number.isFinite(value) ? value : fallback;
   const text = (value: unknown, fallback = '') => typeof value === 'string' ? value : fallback;
@@ -80,7 +80,9 @@
     const referenceLabel = text(raw.referenceLabel, text(raw.comparisonPeriod, raw.previous !== undefined ? 'Previous run' : raw.comparison !== undefined ? 'Comparison' : 'Reference'));
     return { domain, ranges, referenceLabel, budget: typeof raw.budget === 'number' ? raw.budget : null };
   });
-  const bulletX = (value: number) => 64 + fraction(value, bullet.domain) * 632;
+  const bulletLeft = $derived(compact ? 12 : 64);
+  const bulletRight = $derived(compact ? chartWidth-12 : 696);
+  const bulletX = (value: number, domain = bullet.domain) => bulletLeft + fraction(value, domain) * (bulletRight-bulletLeft);
   let funnel = $derived.by(() => {
     if (!model.styleId.startsWith('12')) return [];
     const maximum = Math.max(1, model.rows[0]?.value ?? 0);
@@ -208,30 +210,35 @@
   </div>
 {:else if model.styleId.startsWith('11')}
   <!-- svelte-ignore a11y_no_noninteractive_tabindex (Focusable overflow regions support keyboard scrolling.) -->
-  <div class="chart-scroll" tabindex="0" role="region" aria-label="Bullet chart with numeric reference; scroll horizontally on smaller screens">
-  <svg viewBox={`0 0 ${chartWidth} 290`} role="group" aria-label={`${model.title}; value and labeled reference on a common scale`}>
-    {#each model.rows as row, index}
+  <div class="chart-scroll" tabindex="0" role="region" aria-label="Bullet chart with numeric reference" class:compact>
+  {#each model.rows as row, index}
+    {@const domain = compact && row.capacity !== undefined ? [0,Math.max(1,row.capacity,row.value??0)] as [number,number] : bullet.domain}
+    {@const known = !compact || row.capacity !== undefined}
+    {@const top = compact ? 44 : 78}
+    {@const bottom = compact ? 72 : 182}
+    <svg class:compact viewBox={`0 0 ${chartWidth} ${compact?108:290}`} role="group" aria-label={`${row.label}; value ${formatValue(row.value)}; ${row.capacity === undefined ? 'total unknown' : `total ${row.capacity}`}`}>
       <ChartMark {index} {selected} {onselect} label={label(row)}>
-        <defs><clipPath id={`${instance}-reference-track-${index}`}><rect class="rounded-frame" x="64" y="78" width="632" height="104" /></clipPath></defs>
+        {#if compact}<text x={bulletLeft} y="22" class="strong-text">{row.label.length>36?`${row.label.slice(0,35)}…`:row.label}</text>{/if}
+        <defs><clipPath id={`${instance}-reference-track-${index}`}><rect class="rounded-frame" x={bulletLeft} y={top} width={bulletRight-bulletLeft} height={bottom-top} /></clipPath></defs>
         <g clip-path={`url(#${instance}-reference-track-${index})`}>
-        <rect x="64" y="78" width="632" height="104" fill="var(--surface)"/>
-        {#if model.styleId === '11B'}
-          {#each bullet.ranges as range, rangeIndex}<rect x={bulletX(range[0])} y="78" width={bulletX(range[1]) - bulletX(range[0])} height="104" fill={chartColors[rangeIndex % chartColors.length]} fill-opacity=".12"/>{/each}
-        {/if}
+          <rect x={bulletLeft} y={top} width={bulletRight-bulletLeft} height={bottom-top} fill="var(--chart-track)"/>
+          {#if model.styleId === '11B'}{#each bullet.ranges as range, rangeIndex}<rect x={bulletX(range[0],domain)} y={top} width={bulletX(range[1],domain)-bulletX(range[0],domain)} height={bottom-top} fill={chartColors[rangeIndex % chartColors.length]} fill-opacity=".12"/>{/each}{/if}
+          {#if known && row.value !== null}<rect x={bulletLeft} y={compact?52:113} width={Math.max(0,bulletX(row.value,domain)-bulletLeft)} height={compact?12:32} class="rounded-mark chart-shape" fill={colour(index)} />{/if}
         </g>
-        {#if row.value !== null}<rect x="64" y="113" width={Math.max(0, bulletX(row.value) - 64)} height="32" class="rounded-mark chart-shape" fill={colour(index)}/>{/if}
         {#if row.reference !== undefined}
-          {#if model.styleId === '11B'}<circle cx={bulletX(row.reference)} cy="96" r="6" fill="none" stroke="var(--danger)" stroke-width="2" vector-effect="non-scaling-stroke"/>
-          {:else}<line x1={bulletX(row.reference)} x2={bulletX(row.reference)} y1="78" y2="182" stroke="var(--success)" stroke-width="3" vector-effect="non-scaling-stroke"/>{/if}
-          <text x={bulletX(row.reference)} y="54" text-anchor="middle" class="muted-text">{bullet.referenceLabel}: {formatValue(row.reference)}</text>
+          {#if model.styleId === '11B'}<circle cx={bulletX(row.reference,domain)} cy={compact?48:96} r="6" fill="none" stroke="var(--danger)" stroke-width="2" vector-effect="non-scaling-stroke"/>
+          {:else}<line x1={bulletX(row.reference,domain)} x2={bulletX(row.reference,domain)} y1={top} y2={bottom} stroke="var(--success)" stroke-width="3" vector-effect="non-scaling-stroke"/>{/if}
+          {#if !compact}<text x={bulletX(row.reference,domain)} y="54" text-anchor="middle" class="muted-text">{bullet.referenceLabel}: {formatValue(row.reference)}</text>{/if}
         {/if}
-        {#if bullet.budget !== null}<line x1={bulletX(bullet.budget)} x2={bulletX(bullet.budget)} y1="68" y2="182" stroke="var(--success)" stroke-width="2" stroke-dasharray="5 5" vector-effect="non-scaling-stroke"/><text x={bulletX(bullet.budget)} y="30" text-anchor="middle" fill="var(--success)">Budget {formatValue(bullet.budget)}</text>{/if}
-        <text x="64" y="232" class="strong-text">Current {formatValue(row.value)}</text>
+        {#if bullet.budget !== null}<line x1={bulletX(bullet.budget,domain)} x2={bulletX(bullet.budget,domain)} y1={top-10} y2={bottom} stroke="var(--success)" stroke-width="2" stroke-dasharray="5 5" vector-effect="non-scaling-stroke"/><text x={bulletX(bullet.budget,domain)} y="30" text-anchor="middle" fill="var(--success)">Budget {formatValue(bullet.budget)}</text>{/if}
+        <text x={bulletLeft} y={compact?96:232} class="strong-text">{compact?'':'Current '}{formatValue(row.value)}{compact ? row.capacity===undefined?' · Total unknown':` / ${formatValue(row.capacity)}`:''}</text>
       </ChartMark>
-    {/each}
-    {#each model.ticks.filter((tick) => tick >= bullet.domain[0] && tick <= bullet.domain[1]) as tick}<line x1={bulletX(tick)} x2={bulletX(tick)} y1="182" y2="190" class="axis"/><text x={bulletX(tick)} y="211" text-anchor="middle" class="muted-text">{formatValue(tick)}</text>{/each}
-    <text x="380" y="270" text-anchor="middle" class="muted-text">{model.unit}</text>
-  </svg>
+      {#if !compact}
+        {#each model.ticks.filter(tick=>tick>=domain[0]&&tick<=domain[1]) as tick}<line x1={bulletX(tick,domain)} x2={bulletX(tick,domain)} y1={bottom} y2={bottom+8} class="axis"/><text x={bulletX(tick,domain)} y="211" text-anchor="middle" class="muted-text">{formatValue(tick)}</text>{/each}
+        <text x="380" y="270" text-anchor="middle" class="muted-text">{model.unit}</text>
+      {/if}
+    </svg>
+  {/each}
   </div>
 {:else if model.styleId === '12A'}
   <!-- svelte-ignore a11y_no_noninteractive_tabindex (Focusable overflow regions support keyboard scrolling.) -->
@@ -365,7 +372,8 @@
 
 <style>
   svg { display: block; width: 100%; overflow: visible; }
-  svg:not(.sparkline) { min-width: 760px; }
+  svg.compact {min-width:0;}
+  svg:not(.sparkline):not(.compact) { min-width: 760px; }
   .compact-bubbles svg { min-width: 0; }
   .unit-symbol :is(path, rect, ellipse) { vector-effect: non-scaling-stroke; }
   .dense { min-width: 660px; }

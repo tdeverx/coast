@@ -1,9 +1,9 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import ReadingLaunch from '$lib/reading/ReadingLaunch.svelte';
   import { goto } from '$app/navigation';
   import { mediumOptions } from '$lib/experimental';
   import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
-  import RowFeedback from '$lib/ui/components/RowFeedback.svelte';
   import { page } from '$app/state';
   import Heading from '$lib/ui/components/Heading.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
@@ -40,6 +40,8 @@
     url.searchParams.set('page', String(number));
     return url.pathname + url.search;
   }
+
+  reportFailure(()=>operation.error);
 </script>
 
 <svelte:head><title>Planning · Coast</title></svelte:head>
@@ -47,7 +49,7 @@
   <Heading title="Planning" variant="page" description="Experimental · your scheduled plans. Visual treatment unapproved.">
     {#snippet segments()}<SegmentedControl label="Planning medium" value={data.category} options={mediumOptions({...page.data,features:page.data.capabilities}, ['screen','game','music','reading'])} onchange={category=>{const url=new URL(page.url);url.searchParams.set('category',category);url.searchParams.delete('page');void goto(url,{keepFocus:true,noScroll:true});}} />{/snippet}
   </Heading>
-  <RowFeedback error={operation.error} inline={false} />
+
   <Shelf title="Your plans" items={data.items} layout="grid" availability={false} hideEmpty={false} pageNumber={data.page} pages={data.pages} {pageUrl}>
     {#snippet details(item)}
       <div class="row">

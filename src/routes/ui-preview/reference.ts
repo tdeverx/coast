@@ -37,14 +37,13 @@ export const compositions: ReferenceRecipe[] = [
   { id: 'app.shell', title: 'Application shell', family: 'feature', example: 'app.shell', sources: ['src/routes/+layout.svelte', 'src/routes/+error.svelte'], scenarios: ['member', 'guest', 'error'] },
   { id: 'ui.native', title: 'Styled native elements', family: 'feature', example: 'ui.native', sources: ['src/app.css'], scenarios: ['inputs', 'notices', 'badges', 'disclosure', 'skeletons'] },
   { id: 'foundation.controls', title: 'Control sizes and surface roles', family: 'feature', example: 'foundation.controls', sources: ['src/app.css', 'src/lib/ui/components/Button.svelte'], scenarios: ['sizes', 'focus', 'motion', 'surfaces'] },
-  { id: 'PlaybackStates', title: 'Playback controller compositions', family: 'social', example: 'PlaybackStates', sources: ['src/lib/ui/components/PersistentPlayer.svelte'], scenarios: ['paused', 'playing', 'audio', 'follower', 'error', 'postplay', 'hidden'] },
 ];
 
 export const componentScenarios: Record<string, string[]> = {
   FriendsPanel: ['friends', 'requests', 'parties', 'loading', 'empty', 'error'],
   FriendRoster: ['accepted', 'pending', 'activity', 'long', 'empty', 'busy'],
   PartyCard: ['joined', 'invite', 'rejoin', 'idle', 'music', 'reading', 'embedded', 'many', 'pending', 'buffering', 'follower', 'unavailable', 'disconnected'],
-  SyncedControls: ['joined', 'idle', 'music', 'reading', 'embedded', 'follower', 'unavailable'],
+  PersistentPlayer: ['controller', 'paused', 'playing', 'audio', 'follower', 'error', 'postplay', 'hidden'],
   PartyMenu: ['host', 'member', 'music', 'reading', 'buffering', 'queue'],
   PlaybackTimeline: ['seekable', 'passive', 'audio', 'reading', 'unknown', 'long'],
   NotificationInbox: ['all', 'unread', 'attachments', 'read', 'locked', 'loading', 'empty', 'error'],
@@ -57,7 +56,9 @@ export const componentScenarios: Record<string, string[]> = {
   Dialog: ['default', 'long'],
   MediaHero: ['movie', 'show', 'collection', 'missing-art'],
   RequestDialog: ['empty', 'movie', 'show', 'four-k'],
-  RowFeedback: ['loading', 'error', 'empty', 'success'],
+  Toast: ['success','error'],
+  OperationProgress: ['known','unknown','complete','zero'],
+  SettingsRow: ['normal','unavailable'],
 };
 
 export function recipe(id: string) { return compositions.find(item => item.id === id); }
@@ -68,7 +69,8 @@ export function selectedScenario(id: string, value?: string | null) {
 }
 export function scenarioLabel(value: string) { return value.replace(/-/g, ' ').replace(/^./, letter => letter.toUpperCase()); }
 const nonApproved = new Set(['Button', 'SocialControls', 'NotificationInbox', 'StreamsPanel']);
-export function approvalLabel(id: string) { return nonApproved.has(id) ? 'Non-approved' : 'Existing composition · approval not recorded'; }
+export type ApprovalStatus='unknown'|'unapproved'|'approved';
+export function approvalStatus(id:string):ApprovalStatus { return nonApproved.has(id)||id==='experiment'?'unapproved':'unknown'; }
 
 /** Dynamic owners are declarations only: reference browsing must not eagerly import them. */
 export const dynamicOwners = {

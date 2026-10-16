@@ -5,9 +5,9 @@ import {compileRunes,componentScript,moduleUrl} from './fixtures/ui-script';
 let script=await componentScript('src/lib/ui/components/Dialog.svelte');
 const start=script.indexOf('let {'),end=script.indexOf('} = $props();',start);
 script=(script.slice(0,start)+"let open=$state(true),popover=true,popoverWidth=560,anchor=initial.anchor,onclose;"+script.slice(end+'} = $props();'.length))
- .replace('let dialog: HTMLElement;','let dialog=element;');
+ .replace('let dialog: HTMLElement;','let dialog=element;').replace('$props.id()', '"fixture-dialog"');
 const code=compileRunes(`export function create(initial,element,document,window,requestAnimationFrame,cancelAnimationFrame){
- const callbacks=[],onDestroy=fn=>callbacks.push(fn),tick=()=>Promise.resolve();
+ const useClient=()=>({feedback:{host:()=>()=>{}}});const callbacks=[],onDestroy=fn=>callbacks.push(fn),tick=()=>Promise.resolve();
  ${script}
  return {close(){open=false;},reopen(){open=true;},cleanup(){callbacks.forEach(fn=>fn());}};
 }`);

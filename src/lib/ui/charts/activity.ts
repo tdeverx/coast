@@ -36,6 +36,7 @@ export function activityChart(
   }));
   return {
     items,
+    axis: true,
     label: 'Watching activity',
     summary: `${total.toLocaleString()} ${total === 1 ? 'watch' : 'watches'}`,
     caption: periodLabel(period),

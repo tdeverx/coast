@@ -2,6 +2,8 @@
   import type { Snippet } from 'svelte';
   import {onDestroy,tick} from 'svelte';
   import Button from './Button.svelte';
+  import Toast from './Toast.svelte';
+  import { useClient } from '$lib/ui/client-context';
   import { liquidGlass } from '$lib/ui/materials/glass';
   import type { ComponentProps } from 'svelte';
   let {
@@ -17,6 +19,9 @@
     wide?: boolean; edgeToEdge?: boolean; popover?: boolean; popoverWidth?:number; anchor?:string; heading?:Snippet; footer?:Snippet;
     onclose?: () => void;
   } = $props();
+  const {feedback} = useClient();
+  const hostId = $props.id();
+  $effect(()=>{if(open)return feedback.host(hostId);});
   let dialog: HTMLElement;
   let destroyed = false;
   let placementFrame = 0;
@@ -114,9 +119,14 @@
     <div class="popover-content">{@render dialogContent()}</div>
     {#if footer}<div class="popover-footer">{@render footer()}</div>{/if}
   {:else}{@render dialogHeading()}{@render dialogContent()}{@render footer?.()}{/if}
+  {#if feedback.activeHost === hostId && feedback.current}
+    <div class="dialog-feedback"><Toast text={feedback.current.text} kind={feedback.current.kind} error={feedback.current.error} busy={feedback.current.busy} actionLabel={feedback.current.undo?'Undo':'Retry'} onaction={feedback.current.undo || feedback.current.retry ? feedback.act : undefined} ondismiss={()=>feedback.clear()} /></div>
+  {/if}
 </svelte:element>
 
 <style>
+  .dialog-feedback {position:sticky;bottom:0;z-index:2;flex:none;margin-top:16px;}
+  .notification-popover > .dialog-feedback {margin:0;padding:12px 16px;}
   .dialog {
     color: var(--ink);
     border-radius: 12px;

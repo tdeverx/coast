@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Field from '$lib/ui/components/Field.svelte';
   import { onDestroy, untrack } from 'svelte';
   import { useClient } from '../client-context';
   import { createMutation } from '../mutation.svelte';
@@ -10,7 +11,7 @@
   import EmptyState from '../components/EmptyState.svelte';
   let { workId, album = false, changed }: { workId: string; album?: boolean; changed: () => Promise<unknown> } = $props();
   const { change, api } = useClient();
-  const mutation = createMutation(() => changed());
+  const mutation = createMutation(() => changed(), useClient().feedback.notify);
   let logOpen = $state(false), historyOpen = $state(false), date = $state(''), batch = $state('');
   let number = $state(1);
   type History = { items: { id: string; title: string; occurredAt: string; dateKnown: boolean; source: string }[]; page: number; pages: number; total: number };
@@ -36,7 +37,7 @@
 <Dialog bind:open={logOpen} title={album ? 'Log album' : 'Log listen'}>
   <form class="stack" onsubmit={event => { event.preventDefault(); void log(new Date(date).toISOString()); }}>
     {#if mutation.error}<p role="alert" class="notice error">{mutation.error}</p>{/if}
-    <label class="field">Listened at<input type="datetime-local" bind:value={date} required /></label>
+    <Field label="Listened at"><input type="datetime-local" bind:value={date} required /></Field>
     <Button type="submit" disabled={mutation.busy}>Log {album ? 'album' : 'listen'}</Button>
   </form>
 </Dialog>

@@ -31,6 +31,7 @@
   const period = $derived(getChartPeriod(model));
   const rows = $derived(dataRows(model));
   let selected = $state(0);
+  let compact = $state(false);
   let navigating = $state(false);
   let familyFilter = $state('all');
   const families = $derived([...new Set(available.map(item=>item.family))]);
@@ -91,7 +92,7 @@
     </Heading><p class="small quiet chart-meta">{model.unit}{#if period} · {period}{/if}</p></div>
     <div class="chart-stage">
       <div class="chart-surface" class:glass style:--plot-width={`${plotWidth}px`} use:chartMaterial={material}>
-        <ChartView {model} {selected} onselect={select} />
+        <ChartView {model} {selected} onselect={select} {compact} />
       </div>
     </div>
     <div class="row chart-inspect" aria-label="Inspect chart data">
@@ -105,6 +106,7 @@
 {/snippet}
 {#snippet inspector()}
   <div class="stack">
+    <label class="check"><input type="checkbox" bind:checked={compact} />Compact presentation</label>
     <Field label="Context"><select disabled={navigating} value={context} onchange={event => changeContext(event.currentTarget.value)}>{#each contextOptions as option}<option value={option.value}>{option.label}</option>{/each}</select></Field>
     {#if mediumOptions.length > 1}<Field label="Medium"><select disabled={navigating} value={medium} onchange={event => void change({medium:event.currentTarget.value})}>{#each mediumOptions as option}<option value={option.value}>{option.label}</option>{/each}</select></Field>{/if}
     <Field label="Dataset"><select disabled={navigating} value={dataset} onchange={event => void change({dataset:event.currentTarget.value})}>{#each datasetOptions as option}<option value={option.value}>{option.label}</option>{/each}</select></Field>
@@ -131,14 +133,14 @@
     </div>
   </div>
 {/snippet}
-{#snippet browser()}
-  <Browser title="Browse styles" options={filteredStyles.map(item=>({value:item.id,label:item.name,detail:item.family}))} value={style.id} change={value=>void change({chart:value})} thumbnailHeight={48} disabled={navigating}>
+{#snippet browser({heading}:{heading:import('svelte').Snippet})}
+  <Browser title="Browse styles" {heading} options={filteredStyles.map(item=>({value:item.id,label:item.name,detail:item.family}))} value={style.id} change={value=>void change({chart:value})} thumbnailHeight={48} disabled={navigating}>
     {#snippet thumbnail(option)}<ChartThumbnail styleId={option.value} height={48} />{/snippet}
   </Browser>
 {/snippet}
 
 <style>
-  .chart-specimen {width:100%;max-width:1100px;margin:0 auto;padding:20px;min-width:0;}
+  .chart-specimen {width:100%;max-width:1100px;margin:0 auto;padding:0;min-width:0;}
   .stage-title { text-align:center; margin-bottom:16px; }
   .stage-title :global(.row-header) { margin-bottom:8px; }
   .stage-title :global(.identity) { justify-content:center; }

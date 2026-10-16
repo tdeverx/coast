@@ -9,11 +9,11 @@
   import type { GameActionState, ReadingActionState } from '$lib/media/work-actions';
   import type { GameStatus } from '$lib/games/model';
   let { item, context = 'details', next = null, requestable = false, hero = false,
-    menuOnly = false, showMenuTrigger = false, showTrigger = false, gameState, readingState,
+    menuOnly = false, showTrigger = false, gameState, readingState,
     selectedPlaythrough, ongamecreated, onchanged, refreshGame }: {
     item: MediaView | MediaCardPresentation; context?: 'discover' | 'details' | 'home';
     next?: MediaView | null; requestable?: boolean; hero?: boolean; menuOnly?: boolean;
-    showMenuTrigger?: boolean; showTrigger?: boolean; gameState?: GameActionState; readingState?: ReadingActionState | null;
+    showTrigger?: boolean; gameState?: GameActionState; readingState?: ReadingActionState | null;
     selectedPlaythrough?: string; ongamecreated?: (id: string) => Promise<void>;
     onchanged?: () => void; refreshGame?: () => Promise<void>;
   } = $props();
@@ -32,6 +32,6 @@
 </script>
 {#key identity}
   {#if !page.data.user || readOnly()}<Button href={isScreenWork(item) ? `/media/${item.id}` : item.href} size={hero ? 'hero' : undefined}>{isScreenWork(item) ? 'Learn more' : `Open ${item.kind}`}</Button>
-  {:else if isScreenWork(item)}<ScreenActions bind:this={screen} {item} {context} {next} {requestable} {hero} {menuOnly} showMenuTrigger={showMenuTrigger || showTrigger} />
-  {:else}<CatalogueActions bind:this={catalogue} {item} {hero} {gameState} {readingState} {selectedPlaythrough} {ongamecreated} {onchanged} {refreshGame} primary={hero && !menuOnly} showTrigger={showTrigger || showMenuTrigger} />{/if}
+  {:else if isScreenWork(item)}<ScreenActions bind:this={screen} {item} {context} {next} {requestable} {hero} {menuOnly} {showTrigger} />
+  {:else}<CatalogueActions bind:this={catalogue} {item} {hero} {gameState} {readingState} {selectedPlaythrough} {ongamecreated} {onchanged} {refreshGame} primary={hero && !menuOnly} {showTrigger} />{/if}
 {/key}

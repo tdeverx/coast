@@ -1,5 +1,5 @@
 <script lang="ts">
-  import RowFeedback from '../components/RowFeedback.svelte';
+  import { reportFailure } from '$lib/ui/client-context';
   import WorkActions from '../components/WorkActions.svelte';
   import { relationshipControls } from '$lib/ui/controls/actions';
   import { getContext, onDestroy, untrack } from 'svelte';
@@ -52,7 +52,7 @@
     requestable = false,
     hero = false,
     menuOnly = false,
-    showMenuTrigger = false,
+    showTrigger = false,
   }: {
     item: MediaView;
     context?: 'discover' | 'details' | 'home';
@@ -60,7 +60,7 @@
     requestable?: boolean;
     hero?: boolean;
     menuOnly?: boolean;
-    showMenuTrigger?: boolean;
+    showTrigger?: boolean;
   } = $props();
   type View =
     | 'root'
@@ -87,7 +87,7 @@
       return result;
     });
   const data = $derived(snapshot.data), loading = $derived(snapshot.busy);
-  const mutation = createMutation(() => snapshot.refresh());
+  const mutation = createMutation(() => snapshot.refresh(), useClient().feedback.notify);
   const busy = $derived(mutation.busy);
   const error = $derived(mutation.error || snapshot.error);
   $effect(() => {
@@ -433,6 +433,8 @@
       void perform(() => change(`media/${target.id}/refresh`, {}), 'Metadata refreshed.');
   }
   async function checkIn(){try{await change('social/checkins',{workId:active.id});}catch(cause){mutation.error=message(cause);}}
+
+  reportFailure(()=>error);
 </script>
 
 {#snippet requestManagement(request: MediaActionData['requests'][number])}
@@ -464,7 +466,7 @@
       onclick={() => manageRequest(request, 'cancel')}>Cancel request…</Button>{/if}
 {/snippet}
 {#snippet choices()}
-  {#if error}<RowFeedback error={error} tag="div" class="menu-feedback text-danger" />{/if}
+
   {#if requests.canRequestStandard}
     <Button item icon="request" onclick={() => requests.openRequest()}
       >{requestItem?.kind === 'show'
@@ -551,9 +553,6 @@
   {/if}
 {/snippet}
 {#snippet content(view: View)}
-  {#if view !== 'root'}
-    {#if error}<RowFeedback error={error} tag="div" class="menu-feedback text-danger" />{/if}
-  {/if}
   {#if view === 'root'}
     {#if page.data.capabilities?.playback!==false && (active.available || data?.progressTargetIds.includes(active.id))}
       {@render branch(playLabel, 'play', 'play')}
@@ -799,31 +798,13 @@
           onclick={request}>Request</Button
         >
       {:else}<span class="badge">Not available to play</span>{/if}
-      <button
-        class="icon-button"
-        class:hero-icon-action={hero}
-        class:selected={item.watchlist}
-        aria-label={item.watchlist ? 'Remove from watchlist' : 'Add to watchlist'}
-        aria-pressed={item.watchlist}
-        disabled={busy}
-        onclick={() => toggleSaved('watchlist', item)}
-        ><Icon name="bookmark" filled={item.watchlist} /></button
-      >
-      <button
-        class="icon-button"
-        class:hero-icon-action={hero}
-        class:selected={item.favourite}
-        aria-label={item.favourite ? 'Remove from favourites' : 'Add to favourites'}
-        aria-pressed={item.favourite}
-        disabled={busy}
-        onclick={() => toggleSaved('favourite', item)}
-        ><Icon name="heart" filled={item.favourite} /></button
-      >
+      <Button size="icon" icon="bookmark" iconSize={20} class={`${hero?'hero-icon-action ':''}${item.watchlist?'selected':''}`} label={item.watchlist?'Remove from watchlist':'Add to watchlist'} pressed={item.watchlist} disabled={busy} onclick={()=>toggleSaved('watchlist',item)} />
+      <Button size="icon" icon="heart" iconSize={20} class={`${hero?'hero-icon-action ':''}${item.favourite?'selected':''}`} label={item.favourite?'Remove from favourites':'Add to favourites'} pressed={item.favourite} disabled={busy} onclick={()=>toggleSaved('favourite',item)} />
     {/if}
     <Button menu
       bind:this={menu}
       panel
-      hideTrigger={menuOnly && !showMenuTrigger}
+      hideTrigger={menuOnly && !showTrigger}
       onopen={openMenu}
       onclose={closeMenu}
       label={`Actions for ${item.title}`}
@@ -831,7 +812,7 @@
       upward={hero}
       triggerClass={hero ? 'icon-button hero-icon-action' : 'icon-button'}
     >
-      {#if error}<RowFeedback error={error} tag="div" class="menu-feedback text-danger" />
+      {#if error}
         <Button item icon="refresh" onclick={() => loadActions()}>Retry</Button>{/if}
       {@render content('root')}
     </Button>
@@ -851,7 +832,7 @@
       bind:open={requestOpen}
     />{/if}
   <Dialog bind:open={playbackErrorOpen} title="Playback unavailable"
-    ><RowFeedback error={error} tag="p" class="" /></Dialog
+    ></Dialog
   >
   {#if page.data.experiments?.planning}<PlanAction bind:open={planningOpen} workId={active.id} title={active.title} partyAllowed={page.data.experimentalParties&&['movie','episode','track'].includes(active.kind)}/>{/if}
   {#if page.data.playbackSharing}<ShareAction bind:open={sharingOpen} workId={active.id} title={active.title}/>{/if}
@@ -859,7 +840,7 @@
   <Dialog bind:open={confirmOpen} title={confirmation?.title ?? 'Confirm change'}
     ><div class="stack">
       <p>{confirmation?.text}</p>
-      {#if error}<RowFeedback error={error} tag="p" class="text-danger" />{/if}
+
       <div class="row">
         <Button
           danger={confirmation?.danger}
@@ -885,7 +866,7 @@
         void submitForm();
       }}
     >
-      {#if error}<RowFeedback error={error} tag="p" class="text-danger" />{/if}
+
       <label class="field"
         >{form === 'log' ? 'Watched at' : 'Start date and time'}<input
           type="datetime-local"

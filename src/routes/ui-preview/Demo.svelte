@@ -2,15 +2,14 @@
  import AvatarPicker from '$lib/ui/components/AvatarPicker.svelte';
  import AccountFields from '$lib/ui/components/AccountFields.svelte';
  import { availabilityControl } from '$lib/ui/controls/actions';
-  import { onMount, tick, untrack } from 'svelte';
+  import { tick, untrack } from 'svelte';
   import { page } from '$app/state';
   import type { IconName } from '$lib/ui/components/Icon.svelte';
   import type { MediaCardShape } from '$lib/ui/types';
   import { serviceTasks } from '$lib/providers/tasks';
-  import { liquidGlass } from '$lib/ui/materials/glass';
   import { providePreviewPlayback } from '$lib/playback/context.svelte';
-  const { player } = providePreviewPlayback();
-  import { id,today,movie,show,episode,items,facts,chart,days,journal,provider,job,music,track } from './demo/fixtures';
+  providePreviewPlayback();
+  import { id,today,movie,show,episode,items,facts,days,journal,provider,job,music,track } from './demo/fixtures';
   let Avatar = $state<typeof import('$lib/ui/components/Avatar.svelte').default>(null!);
   let ChoiceGroup = $state<typeof import('$lib/ui/components/ChoiceGroup.svelte').default>(null!);
   let Field = $state<typeof import('$lib/ui/components/Field.svelte').default>(null!);
@@ -18,9 +17,10 @@
   let WorkListActions = $state<typeof import('$lib/ui/components/WorkListActions.svelte').default>(null!);
   let WorkActions = $state<typeof import('$lib/ui/components/WorkActions.svelte').default>(null!);
 
-  let BarChart = $state<typeof import('$lib/ui/components/BarChart.svelte').default>(null!);
+  let Toast = $state<typeof import('$lib/ui/components/Toast.svelte').default>(null!);
+  let SettingsRow = $state<typeof import('$lib/ui/components/SettingsRow.svelte').default>(null!);
+  let OperationProgress = $state<typeof import('$lib/ui/components/OperationProgress.svelte').default>(null!);
   let Brand = $state<typeof import('$lib/ui/components/Brand.svelte').default>(null!);
-  let BreakdownChart = $state<typeof import('$lib/ui/components/BreakdownChart.svelte').default>(null!);
   let Button = $state<typeof import('$lib/ui/components/Button.svelte').default>(null!);
   let CollectionProjectionSettings = $state<typeof import('$lib/ui/components/CollectionProjectionSettings.svelte').default>(null!);
   let ConflictList = $state<typeof import('$lib/ui/components/ConflictList.svelte').default>(null!);
@@ -54,12 +54,10 @@
   let NotificationInbox = $state<typeof import('$lib/ui/components/NotificationInbox.svelte').default>(null!);
   let NotificationToasts = $state<typeof import('$lib/ui/components/NotificationToasts.svelte').default>(null!);
   let Pagination = $state<typeof import('$lib/ui/components/Pagination.svelte').default>(null!);
-  let PersistentPlayer = $state<typeof import('$lib/ui/components/PersistentPlayer.svelte').default>(null!);
   let PlaybackTimeline = $state<typeof import('$lib/ui/components/PlaybackTimeline.svelte').default>(null!);
   let ProfileEditor = $state<typeof import('$lib/ui/components/ProfileEditor.svelte').default>(null!);
   let ProfileFeatureEditor = $state<typeof import('$lib/ui/components/ProfileFeatureEditor.svelte').default>(null!);
   let ProfileRecap = $state<typeof import('$lib/ui/components/ProfileRecap.svelte').default>(null!);
-  let ProgressChart = $state<typeof import('$lib/ui/components/ProgressChart.svelte').default>(null!);
   let ProviderAutomation = $state<typeof import('$lib/ui/components/ProviderAutomation.svelte').default>(null!);
   let QueueList = $state<typeof import('$lib/ui/components/QueueList.svelte').default>(null!);
   let Rating = $state<typeof import('$lib/ui/components/Rating.svelte').default>(null!);
@@ -74,19 +72,15 @@
   let RowStyleMenu = $state<typeof import('$lib/ui/components/RowStyleMenu.svelte').default>(null!);
   let SegmentedControl = $state<typeof import('$lib/ui/components/SegmentedControl.svelte').default>(null!);
 
-  let RowFeedback = $state<typeof import('$lib/ui/components/RowFeedback.svelte').default>(null!);
   let MediaPage = $state<typeof import('$lib/ui/components/MediaPage.svelte').default>(null!);
   import { createMusicPage } from '$lib/ui/pages/music.svelte';
   import type { ComponentProps } from 'svelte';
   let RecommendAction = $state<typeof import('$lib/ui/components/RecommendAction.svelte').default>(null!);
   let ReactionActions = $state<typeof import('$lib/ui/components/ReactionActions.svelte').default>(null!);
   let SocialControls = $state<typeof import('$lib/ui/components/SocialControls.svelte').default>(null!);
-  let SyncedControls = $state<typeof import('$lib/ui/components/SyncedControls.svelte').default>(null!);
-  let syncedControls = $state<ReturnType<typeof SyncedControls>>();
   let Shelf = $state<typeof import('$lib/ui/components/Shelf.svelte').default>(null!);
   import type { ShelfConfig } from '$lib/ui/shelves';
-  import type { ExampleValues } from './workspace';
-  let { name, initialOpen = false, scenario = 'default', options: customised }: { name: string; initialOpen?: boolean; scenario?: string; options?:ExampleValues } = $props();
+  let { name, initialOpen = false, scenario = 'default' }: { name: string; initialOpen?: boolean; scenario?: string } = $props();
   let failure=$state(''),ready=$state(false),open=$state(untrack(() => initialOpen)),available=$state(false),number=$state(1),choice=$state('all'),mediaType=$state('all'),position=$state(1800);
   let styleMenu = $state<ReturnType<typeof RowStyleMenu>>();
   let shelfExample = $state('cards');
@@ -108,18 +102,8 @@
   const example = $derived(shelfExamples.find(option => option.value === shelfExample)!);
   function openStyleMenu() { styleMenu?.openAt({ x: 24, y: 84 }); }
   const options=[{value:'all',label:'All'},{value:'watching',label:'Watching'},{value:'completed',label:'Completed'}];
-  const materials=[{variant:'clear',label:'Clear glass'},{variant:'glassLight',label:'Light glass'},{variant:'glassDark',label:'Dark glass'},{variant:'glassProminent',label:'Prominent glass'}] as const;
-  onMount(()=>{
-    if(name==='PersistentPlayer' && !player.session){
-      player.session={id,mediaId:id,mediaType:'audio',title:'Preview track',detail:'Preview artist · Preview album',artwork:'/coast-mark.png',url:'',kind:'direct',startSeconds:0,durationSeconds:240,provider:'Preview',defaultSubtitleIndex:null,subtitlePrompt:false,subtitles:[],sources:[]};
-      player.role='playback';player.paused=true;
-    }
-
-
-  });
-
   const loaders = import.meta.glob<{default: any}>('/src/lib/ui/components/*.svelte');
-  const recipes: Record<string,string[]> = {"AvatarPicker": ["Avatar", "Button", "Field", "RowFilter"], "AccountFields": ["Field"], "PartyCard": ["PartyCard", "Button", "PlaybackTimeline"], "ActivityHeader": ["ActivityHeader"], "ProgressBar": ["ProgressBar"], "IdentityCard": ["Avatar", "Button", "IdentityCard"], "FriendsPanel": ["Button", "FriendsPanel"], "StreamsPanel": ["Button", "StreamsPanel"], "FriendRoster": ["Button", "FriendRoster"], "NotificationInbox": ["Button", "NotificationInbox"], "RecommendAction": ["Button", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "SyncedControls": ["Button", "SyncedControls", "PartyMenu"], "Glass": ["Button"], "BarChart": ["BarChart", "Button"], "Brand": ["Brand", "Button"], "BreakdownChart": ["BreakdownChart", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["Button", "Heading", "RowFilter"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "WorkMenu": ["Button", "WorkMenu"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PersistentPlayer": ["Button", "PersistentPlayer"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileFeatureEditor": ["Button", "ProfileFeatureEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProgressChart": ["Button", "ProgressChart"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "RowFeedback": ["Button", "RowFeedback"], "Shelf": ["Button", "RowFilter", "Shelf"], "Avatar": ["Button", "Avatar"], "ChoiceGroup": ["Button", "ChoiceGroup"], "Field": ["Button", "Field"], "FormActions": ["Button", "FormActions"], "WorkActions": ["Button", "WorkActions"], "PartyMenu": ["Button", "PartyMenu"], "WorkListActions": ["Button", "WorkListActions"]};
+  const recipes: Record<string,string[]> = {"PersistentPlayer":[],"SyncedControls":[],"OperationProgress":["OperationProgress","Button"],"SettingsRow":["SettingsRow","Button"],"Toast":["Toast","Button"],"AvatarPicker": ["Avatar", "Button", "Field", "RowFilter"], "AccountFields": ["Field"], "PartyCard": ["PartyCard", "Button", "PlaybackTimeline"], "ActivityHeader": ["ActivityHeader"], "ProgressBar": ["ProgressBar"], "IdentityCard": ["Avatar", "Button", "IdentityCard"], "FriendsPanel": ["Button", "FriendsPanel"], "StreamsPanel": ["Button", "StreamsPanel"], "FriendRoster": ["Button", "FriendRoster"], "NotificationInbox": ["Button", "NotificationInbox"], "RecommendAction": ["Button", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "Brand": ["Brand", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["Button", "Heading", "RowFilter"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "WorkMenu": ["Button", "WorkMenu"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileFeatureEditor": ["Button", "ProfileFeatureEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "Shelf": ["Button", "RowFilter", "Shelf"], "Avatar": ["Button", "Avatar"], "ChoiceGroup": ["Button", "ChoiceGroup"], "Field": ["Button", "Field"], "FormActions": ["Button", "FormActions"], "WorkActions": ["Button", "WorkActions"], "PartyMenu": ["Button", "PartyMenu"], "WorkListActions": ["Button", "WorkListActions"]};
   $effect(() => {
     const selected = name;
     ready = false;
@@ -136,9 +120,10 @@
         case 'WorkActions': WorkActions = module.default; break;
         case 'WorkListActions': WorkListActions = module.default; break;
 
-        case 'BarChart': BarChart = module.default; break;
+        case 'Toast': Toast = module.default; break;
+        case 'SettingsRow': SettingsRow = module.default; break;
+        case 'OperationProgress': OperationProgress = module.default; break;
         case 'Brand': Brand = module.default; break;
-        case 'BreakdownChart': BreakdownChart = module.default; break;
         case 'Button': Button = module.default; break;
         case 'CollectionProjectionSettings': CollectionProjectionSettings = module.default; break;
         case 'ConflictList': ConflictList = module.default; break;
@@ -172,12 +157,10 @@
         case 'NotificationInbox': NotificationInbox=module.default;break;
         case 'NotificationToasts': NotificationToasts = module.default; break;
         case 'Pagination': Pagination = module.default; break;
-        case 'PersistentPlayer': PersistentPlayer = module.default; break;
         case 'PlaybackTimeline': PlaybackTimeline = module.default; break;
         case 'ProfileEditor': ProfileEditor = module.default; break;
         case 'ProfileFeatureEditor': ProfileFeatureEditor = module.default; break;
         case 'ProfileRecap': ProfileRecap = module.default; break;
-        case 'ProgressChart': ProgressChart = module.default; break;
         case 'ProviderAutomation': ProviderAutomation = module.default; break;
         case 'QueueList': QueueList = module.default; break;
         case 'Rating': Rating = module.default; break;
@@ -187,12 +170,10 @@
         case 'RowStyleMenu': RowStyleMenu = module.default; break;
         case 'SegmentedControl': SegmentedControl = module.default; break;
 
-        case 'RowFeedback': RowFeedback = module.default; break;
         case 'MediaPage': MediaPage = module.default; break;
         case 'RecommendAction': RecommendAction = module.default; break;
         case 'ReactionActions': ReactionActions = module.default; break;
         case 'SocialControls': SocialControls = module.default; break;
-        case 'SyncedControls': SyncedControls = module.default; break;
         case 'Shelf': Shelf = module.default; break;
       }
     })).then(() => { if(!cancelled) ready = true; }).catch(error => { if(!cancelled) failure = error instanceof Error ? error.message : 'Preview could not load.'; });
@@ -203,7 +184,7 @@
   });
 </script>
 
-<div class="demo" class:custom-example={!!customised} onsubmitcapture={event => event.preventDefault()} onclickcapture={event => { const link = (event.target as Element).closest('a'); if(link && !link.hasAttribute('data-preview-navigation'))event.preventDefault(); }} class:header-demo={name==='Header'}>
+<div class="demo" onsubmitcapture={event => event.preventDefault()} onclickcapture={event => { const link = (event.target as Element).closest('a'); if(link && !link.hasAttribute('data-preview-navigation'))event.preventDefault(); }} class:header-demo={name==='Header'}>
   {#if failure}<p role="alert">{failure}</p>{/if}
   {#if ready}
     {#if ['StreamsPanel','FriendsPanel','NotificationInbox','Dialog','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog'].includes(name)}
@@ -211,10 +192,9 @@
     {/if}
     {#if name==='AvatarPicker'}<AvatarPicker name="Coast" choices={scenario==='connected'?[{id,provider:'jellyfin',name:'Preview Jellyfin'}]:[]} />
     {:else if name==='AccountFields'}<form class="stack"><AccountFields /></form>
-    {:else if name==='Avatar'}{#if customised}<Avatar name={customised.text} size={customised.number} />{:else}<Avatar name="Alice" /><Avatar name="Sam" size={48} />{/if}
+    {:else if name==='Avatar'}<Avatar name="Alice" /><Avatar name="Sam" size={48} />
     {:else if name==='ChoiceGroup'}<Button menu label="Choose"><ChoiceGroup label="Status" value={choice} {options} change={value=>choice=value ?? 'all'} /></Button>
-    {:else if name==='Field'}{#if customised}<Field label={customised.text} hint={customised.description}><input placeholder="Your display name" /></Field>
-      {:else if scenario==='select'}<Field label="Language"><select><option>English</option><option>French</option></select></Field>
+    {:else if name==='Field'}{#if scenario==='select'}<Field label="Language"><select><option>English</option><option>French</option></select></Field>
       {:else if scenario==='file'}<Field label="Profile image"><input type="file" accept="image/*" /></Field>
       {:else if scenario==='range'}<Field label="Vertical position"><input type="range" min="0" max="100" value="50" /></Field>
       {:else if scenario==='checkbox'}<label class="check"><input type="checkbox" checked />Show unavailable titles</label>
@@ -224,26 +204,16 @@
     {:else if name==='RecommendAction'}<Button menu label="Media actions"><RecommendAction workId={id} /></Button>
     {:else if name==='ReactionActions'}<ReactionActions targetId={id} />
     {:else if name==='SocialControls'}<SocialControls friends={[{username:'Alice',status:'online'},{username:'Sam',status:'away'},{username:'Taylor',status:'busy'}]} total={7} />
-    {:else if name==='SyncedControls'}
-      <p class="small">Experimental. Start playback to open the session controls.</p>
-      <Button  disabled={!player.session} onclick={() => syncedControls?.show()}>Open session controls</Button>
-      <SyncedControls bind:this={syncedControls} />
-    {:else if name==='Glass'}
-      <div class="glass-samples">{#each materials as material}<div class="glass glass-sample" class:light={material.variant==='glassLight'} use:liquidGlass={{variant:material.variant,preview:true}}><strong>{material.label}</strong><span>Glass</span></div><div class="glass glass-sample" class:light={material.variant==='glassLight'} use:liquidGlass={{variant:material.variant,renderer:'css',preview:true}}><strong>{material.label}</strong><span>Blur fallback</span></div>{/each}</div>
-    {:else if name==='BarChart'}
-      <BarChart items={chart} label="Demo activity" summary="25 watches" caption="Demo data" axis />
     {:else if name==='Brand'}
       <Brand /><Brand compact size={44} />
-    {:else if name==='BreakdownChart'}
-      <BreakdownChart items={chart} label="Demo breakdown" centre="25" unit="watches" />
     {:else if name==='Button'}
-      {#if customised}<Button text={customised.text} label={customised.text} emphasis={customised.emphasis} size={customised.size} disabled={customised.disabled} danger={customised.danger} icon={customised.icon ? 'play' : undefined} />{:else}
+
       <p class="small quiet">Non-approved · unified button treatment pending visual review.</p>
       <div class="stack">
         <div class="row"><Button disabled={scenario==='disabled'||scenario==='busy'} pressed={scenario==='pressed'}>{scenario==='busy'?'Saving…':'Text'}</Button><Button icon="plus" label="Icon only" /><Button icon="plus">Icon + text</Button><Button emphasis="subtle">Subtle</Button><Button danger>Destructive</Button></div>
         <div class="row"><Button fallback>Blur fallback</Button><Button {...availabilityControl(available,value=>available=value)} /><Button menu text="Action menu" label="Action menu"><Button item icon="heart" checked>Favourite</Button><Button item icon="bookmark">Watchlist</Button><Button menu label="More actions" icon="list"><Button item icon="plus">Add to list</Button><Button item disabled disabledReason="This example is unavailable">Unavailable action</Button></Button><Button item danger icon="close">Remove</Button></Button></div>
       </div>
-      {/if}
+
     {:else if name==='CollectionProjectionSettings'}
       <CollectionProjectionSettings connectionId={id} settings={{collectionProjection:{enabled:false,source:"collected"}}} sources={[{id,name:"Preview server"}]} />
     {:else if name==='ConflictList'}
@@ -251,25 +221,25 @@
     {:else if name==='ConnectionCard'}
       <ConnectionCard provider={{id,name:provider.name,provider:"jellyfin",configured:true,connection:scenario==='disconnected'?null:{id,username:"preview",status:"connected",settings:{}}}} />
     {:else if name==='DetailCard'}
-      {#if customised}<DetailCard title={customised.text} description={customised.description}><p>{customised.body}</p></DetailCard>{:else}
+
       <DetailCard title="Detail card" description="Optional description"><p>Existing detail card body.</p>{#snippet footer()}Supporting footer{/snippet}</DetailCard>
       <Shelf title="Media insights" size="panel" panels={mediaOverviewPanels(movie)} />
       <Shelf title="Profile insights" size="panel" panels={[...profileActivityPanels(days,today,'month'),...profileBreakdownPanels([{name:'Drama',count:8,filter:'Drama'}],[{value:4,count:6}],'month')]} />
       <Shelf title="Metadata overview" size="panel" artworkOptions={false} panels={overviewPanels('Demo overview.',facts)} />
-      {/if}
+
     {:else if name==='Dialog'}
       <Dialog bind:open title="Preview dialog"><p>{scenario==='long'?'Existing dialog with scrolling and focus management. '.repeat(60):'Existing dialog with scrolling and focus management.'}</p><Button onclick={()=>open=false}>Close</Button></Dialog>
     {:else if name==='EmptyState'}
-      <EmptyState title={customised?.text ?? 'Nothing here yet'} description={customised?.description ?? 'Items will appear here when you add them.'} />
+      <EmptyState title="Nothing here yet" description="Items will appear here when you add them." />
     {:else if name==='FactList'}
       <FactList items={facts} />
     {:else if name==='Heading'}
-      {#if customised}<Heading title={customised.text} description={customised.description} />{:else}
+
       <Heading variant="page" title="Page heading" description="Optional description for this page." />
       <Heading title="Row heading" href="#" selection={{label:'Example selection',value:'all',options:[{value:'all',label:'All'},{value:'saved',label:'Saved'}],change:()=>{}}}>{#snippet previous()}<Button size="icon" icon="left" label="Previous row page" disabled={number<=1} onclick={()=>number--}/>{/snippet}{#snippet controls()}<RowFilter groups={[{label:'Availability',value:'all',options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:()=>{}}]}/>{/snippet}{#snippet next()}<Button size="icon" icon="right" label="Next row page" disabled={number>=5} onclick={()=>number++}/>{/snippet}</Heading>
       <Heading variant="title" title="Title only" href="#" />
       <Heading {...browseHeading('watch',true)} selection={{...browseHeading('watch',true).selection!,value:browseSurface,change:value=>browseSurface=value}} />
-      {/if}
+
     {:else if name==='Header'}
       <Header user={{username:"preview",role:"admin"}} unread={2} />
     {:else if name==='Icon'}
@@ -283,13 +253,13 @@
     {:else if name==='WorkListActions'}
       <WorkListActions workId={id} select={async()=>{}} />
     {:else if name==='WorkMenu'}
-      <WorkMenu item={movie} showMenuTrigger />
+      <WorkMenu item={movie} showTrigger />
     {:else if name==='MediaActivity'}
       <MediaActivity mediaId={id} period="month" />
     {:else if name==='MediaCard'}
-      {#if customised}<div class="custom-card"><MediaCard item={{...movie,title:customised.text}} shape={customised.shape} showCaption={customised.showCaption} showPrimaryAction={customised.showPrimaryAction} /></div>{:else}
+
       <div class="card-examples">{#each ["poster","square","circle","fanart","banner"] as shape}<div><MediaCard item={movie} shape={shape as MediaCardShape} /><small>{shape}</small></div>{/each}<div><MediaCard item={{...movie,captionActor:{username:"preview"},captionSubtitle:"Watched 3 episodes",captionActivity:{id:movie.id,kind:"watch",dateKnown:true,occurredAt:new Date().toISOString(),action:"Watched",detail:"3 episodes"}}} shape="fanart" /><small>Friend activity · Non-approved</small></div></div>
-      {/if}
+
     {:else if name==='MediaDetailRows'}
       <MediaDetailRows item={show} members={[episode]} />
     {:else if name==='MediaPage'}
@@ -305,7 +275,7 @@
       <p class="small quiet">Non-approved · stream card arrangement pending visual review.</p>
       <StreamsPanel bind:open />
     {:else if name==='FriendsPanel'}<FriendsPanel bind:open />
-    {:else if name==='ProgressBar'}<div style="height:6px"><ProgressBar progress={customised ? customised.number / 100 : 0.42}/></div>
+    {:else if name==='ProgressBar'}<div style="height:6px"><ProgressBar progress={0.42}/></div>
     {:else if name==='ActivityHeader'}<ActivityHeader username="Alice">{#snippet trailing()}12:34{/snippet}</ActivityHeader>
     {:else if name==='IdentityCard'}
       <IdentityCard progress={0.42} background={movie.backdrop} label="Identity card preview">
@@ -328,10 +298,6 @@
       <NotificationToasts notifications={[{id,title:"Preview notification",body:"Demo notification; nothing has changed.",level:"persistent",readAt:null,createdAt:today}]} />
     {:else if name==='Pagination'}
       <Pagination page={number} pages={5} onchange={(value)=>number=value} label="Preview pages" />
-    {:else if name==='PersistentPlayer'}
-      <fieldset disabled><PersistentPlayer /></fieldset>
-      {#if initialOpen}<p class="notice">The existing persistent controller is shown below in its idle audio state. No media or tracking is sent.</p>
-      {:else}<p class="notice">This example uses an isolated preview playback session. Open its standalone example to test it.</p><a class="button" href="/ui-preview/demo?component=PersistentPlayer" target="_blank" rel="noreferrer" data-preview-navigation>Open controller example</a>{/if}
     {:else if name==='PlaybackTimeline'}
       <PlaybackTimeline mediaId={id} title={movie.title} detail="2026 · Movie" current={position} duration={6600} onseek={(value)=>position=value} />
     {:else if name==='ProfileEditor'}
@@ -340,14 +306,12 @@
       <ProfileFeatureEditor bind:open mediaId={id} title={movie.title} note="A preview featured-title note." />
     {:else if name==='ProfileRecap'}
       <ProfileRecap movies={8} episodes={14} seasons={2} previousCount={17} period="month" />
-    {:else if name==='ProgressChart'}
-      <ProgressChart label="Preview progress" items={[{label:"Series one",value:3,total:8},{label:"Series two",value:5,total:10}]} />
     {:else if name==='ProviderAutomation'}
       <ProviderAutomation instance={provider} />
     {:else if name==='QueueList'}
       <QueueList actions={[job]} />
     {:else if name==='Rating'}
-      <Rating mediaId={id} value={8} menu />
+      <Rating mediaId={id} value={4} menu />
     {:else if name==='RequestDialog'}
       <RequestDialog bind:open item={scenario==='show'?show:movie} initial4k={scenario==='four-k'} options={scenario==='empty'?[]:[{id,name:'Preview request server',variants:{standard:{serverId:1,requestable:true,seasons:scenario==='show'?[{number:1,requested:false,mine:false,available:false},{number:2,requested:true,mine:false,available:false},{number:3,requested:false,mine:false,available:true}]:[]},fourK:{serverId:2,requestable:true,seasons:[]}}}]} />
     {:else if name==='RowFilter'}
@@ -358,8 +322,12 @@
       <RowStyleMenu bind:this={styleMenu} title="Preview row" />
     {:else if name==='SegmentedControl'}
       <SegmentedControl label="Preview segments" bind:value={choice} {options} />
-    {:else if name==='RowFeedback'}
-      <RowFeedback message={scenario==='error'?'':scenario==='success'?'Saved.':scenario==='empty'?'Nothing here yet.':'Loading titles…'} error={scenario==='error'?'A source is unavailable.':''} retry={()=>{}} />
+    {:else if name==='Toast'}
+      <Toast text={scenario==='error'?'A source is unavailable.':'Changes saved.'} kind={scenario==='error'?'error':'info'} actionLabel={scenario==='error'?'Retry':'Undo'} onaction={()=>{}} ondismiss={()=>{}} />
+    {:else if name==='SettingsRow'}
+      <SettingsRow title="Social" description="Friends, recommendations and shared activities." reason={scenario==='unavailable'?'Unavailable in installation settings. Your choice is remembered.':undefined}><input type="checkbox" aria-label="Social" bind:checked={available} disabled={scenario==='unavailable'} /></SettingsRow>
+    {:else if name==='OperationProgress'}
+      <OperationProgress label="Importing history" processed={scenario==='zero'?0:scenario==='complete'?100:42} total={scenario==='unknown'?null:scenario==='zero'?0:100} />
     {:else if name==='Shelf'}
       <RowFilter selection groups={[{label:"Shelf example", value:shelfExample, options:shelfExamples, change:value => { shelfExample = value; }}]} />
       <p class="small">{example.description}</p>
@@ -370,18 +338,11 @@
 
 <style>
   /* Fixed chrome stays within inline examples; dialogs open only on request. */
-  .demo { padding:24px; position:relative; contain:layout paint; min-height:360px; }
-  .custom-example {display:grid;align-content:center;}
-  .custom-example :global(.button),.custom-example :global(.avatar) {justify-self:center;}
+  .demo { padding:24px; position:relative; contain:layout; min-height:360px;width:100%;display:grid;justify-items:center;align-content:safe center;gap:16px; }
   .header-demo { padding:0; }
   .demo :global(.row) { flex-wrap:wrap; }
   .demo :global(.content) { padding:24px; }
   .demo :global(.hero) { min-height:520px; }
   .card-examples { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
-  .custom-card {width:min(300px,100%);margin:auto;}
   .icon-sample { display:grid; justify-items:center; gap:8px; padding:10px; }
-  .glass-samples { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; padding:24px; background:linear-gradient(135deg,var(--surface-hover),var(--accent),var(--surface)); }
-  .glass-sample { position:relative; min-height:100px; border-radius:18px; display:flex; flex-direction:column; justify-content:center; gap:8px; padding:20px; }
-  .glass-sample.light { color:var(--canvas); }
-  @media(max-width:600px) { .glass-samples { grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; padding:16px; } }
 </style>

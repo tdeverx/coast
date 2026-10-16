@@ -260,7 +260,7 @@
       </div>
     {/if}{/if}
     {#if !loading && ((!item.captionActor&&social?.total)||cardProgress!==null)}<div class="card-status">
-      {#if !item.captionActor&&social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} showLabel={false} showReactions={false} /></div>{/if}
+      {#if !item.captionActor&&social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} /></div>{/if}
       {#if cardProgress!==null}<div class="card-progress"><ProgressBar progress={cardProgress} label={`${item.title}${item.captionActor?' playback':''} progress`} /></div>{/if}
     </div>{/if}
   </div>
