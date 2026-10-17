@@ -38,9 +38,6 @@
 <MediaDetails {detailHref} view={{hero:!section,item:gameHero({...data.item,id:data.item.externalId},href,false)}} {model} {section}>
   {#if section&&!detailHref}<Button emphasis="subtle" href={href} icon="left">{data.item.title}</Button>{/if}
   {#snippet heroActions()}
-    <Button emphasis="subtle" href={`/games?view=igdb&instance=${data.instanceId}`} icon="left"
-      >Games</Button
-    >
     <Button size="hero" icon="plus" disabled={busy} onclick={add}
       >{busy ? 'Adding…' : 'Add game'}</Button
     >

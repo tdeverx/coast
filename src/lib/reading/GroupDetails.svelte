@@ -2,7 +2,6 @@
  import {page} from '$app/state';
  import MediaDetails from '$lib/ui/components/MediaDetails.svelte';
  import Shelf from '$lib/ui/components/Shelf.svelte';
- import Button from '$lib/ui/components/Button.svelte';
  import type {DetailRowsModel} from '$lib/ui/pages/detail-rows';
  let {data,detailHref}:{detailHref?:string;data:{group:{id:string;title:string};cover:string|null;statistics?:{issues:number;completed:number;reading:number;available:number}}}=$props();
  const detailUrl=$derived(detailHref?new URL(detailHref,page.url):page.url);
@@ -14,7 +13,6 @@
 <svelte:head><title>{data.group.title} · Coast</title></svelte:head>
 <MediaDetails {detailHref} {section} view={{hero:!section,item:{id:`reading-group:${data.group.id}`,kind:'collection',title:data.group.title,
  href:`/media/reading-collection/${data.group.id}`,poster:data.cover,captionSubtitle:'Comic volume'}}} {model}>
- {#snippet heroActions()}<Button emphasis="subtle" href="/library?view=read" icon="left">Library</Button>{/snippet}
  {#snippet hierarchy()}{#if !section||section==='issues'}<Shelf source={{type:'detail',title:'Issues',path:`reading/collections/${data.group.id}`,layout:'grid',
   mediaKind:'reading',page:Number(detailUrl.searchParams.get('page')??1)}} />{/if}{/snippet}
 </MediaDetails>

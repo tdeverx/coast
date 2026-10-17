@@ -39,7 +39,6 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
       { label: 'Play', size:'hero' as const, icon: 'play' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, false)) },
       ...(item.kind==='album'||item.positionSeconds ? [{ label: 'Continue', size:'hero' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, true)) }] : []),
     ] : []),
-    { label: 'Music', emphasis: 'subtle', icon: 'left', href: `/music?connection=${get().connectionId}` },
   ] : []);
   const rows = $derived.by((): DetailRow[] => {
     const data = get();

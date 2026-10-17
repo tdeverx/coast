@@ -29,7 +29,6 @@
   let insight=$state(untrack(()=>['overview','activity','community'].includes(detailUrl.searchParams.get('insight')??'')?detailUrl.searchParams.get('insight')!:'overview'));
   const baseHref=$derived(readingHref(data.item,data.remote));
   const rowHref=(name:string)=>`${baseHref}?section=${name}`;
-  const library = $derived(`/library?view=read&kind=${data.kind}&scope=all`);
   const overview = $derived(overviewPanels(data.item.overview, readingFacts(data.item)).map(panel=>panel.title==='Details'?{...panel,footerLink:{href:data.item.sourceUrl,label:`View on ${readingProviderLabel(data.item.provider)} ↗`,external:true}}:panel));
   const { change, api,preview } = useClient();
   const credits=createResource<ReadingCredit[]|null>(null);
@@ -109,7 +108,6 @@
 <MediaDetails {detailHref} view={{hero:!section,item:readingHero(data.item,data.remote)}} {model} {section}>
   {#if section&&!modal}<Button emphasis="subtle" href={baseHref} icon="left">{data.item.title}</Button>{/if}
   {#snippet heroActions()}
-    <Button emphasis="subtle" href={library} icon="left">Library</Button>
     {#if data.remote}<Button size="hero" icon="plus" disabled={busy} onclick={add}>Add {data.kind}</Button>
     {:else}
       {#if page.data.capabilities?.reader!==false}<ReadingLaunch workId={data.item.id} title={data.item.title} />{/if}
