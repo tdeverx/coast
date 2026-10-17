@@ -1,14 +1,15 @@
 import {expect,test} from 'bun:test';
 import * as v from 'valibot';
 import {PAGE_SIZE,pagination,pageNumberSchema} from '../src/lib/server/queries/pagination';
+import {AppError} from '../src/lib/server/security/errors';
 const source=(await Bun.file(new URL('../src/lib/music/details.server.ts',import.meta.url)).text())
  .replace(/^import .*;\n/gm,'').replace('export async function musicChildren','async function musicChildren');
 const compiled=new Bun.Transpiler({loader:'ts'}).transformSync(source);
 const connection='11111111-1111-4111-8111-111111111111',signal=new AbortController().signal;
 function fixture(totals=[125],kind='album',afterRead?:()=>void,expectedSignal=signal){
  const calls:{offset:number;limit:number;kind:string;albumId?:string;artistId?:string}[]=[];
- const read=new Function('v','PAGE_SIZE','pagination','pageNumberSchema','requireFeature','musicDetails','musicLibrary','musicCard',compiled+';return musicChildren;')(
-  v,PAGE_SIZE,pagination,pageNumberSchema,async()=>{},async()=>({item:{id:'a'.repeat(32),kind}}),
+ const read=new Function('v','PAGE_SIZE','pagination','pageNumberSchema','AppError','requireFeature','musicDetails','musicLibrary','musicCard',compiled+';return musicChildren;')(
+  v,PAGE_SIZE,pagination,pageNumberSchema,AppError,async()=>{},async()=>({item:{id:'a'.repeat(32),kind}}),
   async(_user:unknown,id:string,options:typeof calls[number],requestSignal:AbortSignal)=>{
    expect(id).toBe(connection);expect(requestSignal).toBe(expectedSignal);calls.push(options);afterRead?.();
    const total=totals[Math.min(calls.length-1,totals.length-1)];
@@ -27,6 +28,16 @@ test('stale music pages clamp and fetch the actual final page with at most one c
  const f=fixture(),result=await f.read(999);
  expect(result).toMatchObject({page:3,pages:3,total:125});expect(result.items).toHaveLength(5);
  expect(result.items[0].id).toBe('120');expect(f.calls.map(call=>call.offset)).toEqual([998*PAGE_SIZE,120]);
+});
+test('music pages re-clamp a source that shrinks during correction before returning items',async()=>{
+ const f=fixture([125,61]),result=await f.read(999);
+ expect(result).toMatchObject({page:2,pages:2,total:61});expect(result.items.map((item:{id:string})=>item.id)).toEqual(['60']);
+ expect(f.calls.map(call=>call.offset)).toEqual([998*PAGE_SIZE,120,60]);
+});
+test('continually shrinking music pages fail explicitly after three bounded reads',async()=>{
+ const f=fixture([125,61,1]);
+ await expect(f.read(999)).rejects.toMatchObject({status:409,message:'The music library changed. Try loading this page again.'});
+ expect(f.calls.map(call=>call.offset)).toEqual([998*PAGE_SIZE,120,60]);
 });
 test('empty or concurrently emptied libraries return valid page-one bounds without a retry loop',async()=>{
  for(const totals of [[0],[125,0]]){

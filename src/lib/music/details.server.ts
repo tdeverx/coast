@@ -20,11 +20,17 @@ export async function musicChildren(userId:string,id:string,url:URL,signal?:Abor
   if(item.kind==='track')return {items:[],total:0,page:1,pages:1};
   const options={kind:item.kind==='artist'?'album' as const:'track' as const,
    ...(item.kind==='artist'?{artistId:item.id}:{albumId:item.id}),limit:PAGE_SIZE};
-  let result=await musicLibrary(userId,connection,{...options,offset:(requested-1)*PAGE_SIZE},signal);
-  const {page}=pagination(result.total,requested);
-  // A stale URL needs at most one corrected page read, never a whole-library scan.
-  if(page!==requested&&result.total){signal?.throwIfAborted();result=await musicLibrary(userId,connection,{...options,offset:(page-1)*PAGE_SIZE},signal);}
-  return {items:result.items.map(child=>musicCard(child,connection)),total:result.total,...pagination(result.total,page)};
+  let page=requested;
+  // Recheck each response: the source may shrink again while correcting a stale page.
+  for(let attempt=0;attempt<3;attempt++){
+   signal?.throwIfAborted();
+   const result=await musicLibrary(userId,connection,{...options,offset:(page-1)*PAGE_SIZE},signal);
+   const bounds=pagination(result.total,page);
+   if(!result.total)return {items:[],total:0,...bounds};
+   if(bounds.page===page)return {items:result.items.map(child=>musicCard(child,connection)),total:result.total,...bounds};
+   page=bounds.page;
+  }
+  throw new AppError(409,'The music library changed. Try loading this page again.');
  }
  v.parse(v.pipe(v.string(),v.uuid()),id);const db=getDb();
  const [album]=await db.select().from(musicWorks).where(eq(musicWorks.id,id));if(!album)throw new AppError(404,'Music not found.');
