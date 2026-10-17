@@ -52,3 +52,9 @@ Follow-up scroll and responsiveness checks reproduced a single uninterrupted Chr
 The real signed-in dev app also reopened a title, Continue and Next consecutively without refreshing or console warnings/errors. The shared Dialog now ignores an older queued native close event if the element has already reopened; a lifecycle regression protects that race.
 
 The stale-link sweep also found game/reading menu links to deleted `#play-history` and `#reading-history` anchors. All media-menu viewing links now open the shared Activity section with its consumed filter; the redundant listening-history dialog and its private loader were removed. Raw history APIs remain available to their existing callers.
+
+## PR review follow-up
+
+The person and reading-collection route adapters now translate known application/validation failures into the intended 403/404/400 responses. The same pass fixed adjacent game and music adapters; unexpected errors still propagate to diagnostics, and source-backed music retains its existing provider-outage response. Eight focused route regressions cover known failures and successful payloads.
+
+The reported missing synced-room constraint was not reproducible: migration 0048 declares an inline CHECK, which PostgreSQL automatically names `synced_rooms_reading_format_check`. A disposable transaction reproduces that exact 0048 statement, verifies the generated name, runs the actual 0061 upgrade, and accepts all six supported formats. The migration remains unchanged; it also passed the fresh PostgreSQL 15/17 CI migrations.

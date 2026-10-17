@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import {AppError} from '$lib/server/security/errors';
 import * as v from 'valibot';
 import { musicSourceDetailData } from '$lib/music/detail.server';
 import { jellyfinMusicIdSchema } from '$lib/providers/jellyfin/music.server';
@@ -19,6 +20,7 @@ export const load: PageServerLoad = async ({locals, params, url, depends}) => {
     error(400, 'Choose a positive music page number.');
   return await musicSourceDetailData(locals.user.id, params.connection, params.id,page).catch(
     async (cause) => {
+      if(cause instanceof AppError)error(cause.status,cause.message);
       await logDiagnostic('error', 'application.failed', {
         failure: classifyFailure(cause),
       });
