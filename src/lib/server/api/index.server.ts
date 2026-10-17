@@ -25,6 +25,7 @@ import { musicQueue, savedMusicQueue, savedMusicQueuePage } from '$lib/music/que
 import { collectionData, collectionParameters, workActionData, workActionLists, workCards } from '$lib/collection/query.server';
 import { missingDemand, adminDemand } from '$lib/collection/demand.server';
 import { musicHistory } from '$lib/music/history.server';
+import {musicChildren} from '$lib/music/details.server';
 import { logMusic } from '$lib/music/persistence.server';
 import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
 import { discoveryContent, discoveryParameters } from '$lib/server/queries/discovery';
@@ -177,6 +178,7 @@ export const handler: RequestHandler = async (event) => {
     // Collection, Progress and mixed favourites enforce actual category privacy in their read models.
     if(subjectId!==uid && !['collection','progress'].includes(path[0]) && !(path[0]==='profile'&&path[1]==='section'&&url.searchParams.get('section')==='favourites'))
       await requireVisible(subjectId,uid,path[1]==='activity'?'activity':'insights','screen');
+    if(path[0]==='music' && path[2]==='children' && path.length===3 && method==='GET')return json(await musicChildren(uid,path[1],url,request.signal));
     if(path[0]==='music' && path[2]==='history' && path.length===3 && method==='GET')return json(await musicHistory(uid,uuid(path[1]),Number(url.searchParams.get('page')??1)));
     if(path[0]==='music' && path[2]==='queue' && method==='GET') return json(await musicQueue(uid,uuid(path[1])));
     if(path[0]==='music' && path[1]==='queue' && path[2]==='picker' && path.length===3 && method==='GET')return json(await savedMusicQueuePage(uid,Number(url.searchParams.get('page')??1)));

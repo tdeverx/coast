@@ -1,7 +1,7 @@
 import {beforeAll,afterAll,test,expect,spyOn} from 'bun:test';
 import {getDb,getSql} from '../src/lib/server/db';
 import {getConfig,type CoastConfig} from '../src/lib/server/config';
-import {prepareReading,moveReading,ownedReadingSession,closeReading,matchingReading} from '../src/lib/reading/sessions.server';
+import {prepareReading,moveReading,ownedReadingSession,closeReading,matchingReading,linkedReadingSources} from '../src/lib/reading/sessions.server';
 import {updateReading} from '../src/lib/core/reading/service.server';
 import {createRoom,inviteParticipant,joinRoom,commandRoom,roomState} from '../src/lib/playback/synced/service.server';
 import {presence} from '../src/lib/social/presence.server';
@@ -106,6 +106,14 @@ run('reading files share metadata but never grant another account cached availab
   expect((await progressData(users[0],{category:'reading',view:'watching',scope:'available'})).items.map(item=>item.id)).not.toContain(work);
   expect((await readingCatalogue(users[0],{available:true})).items.map(item=>item.id)).not.toContain(work);
   await observeReadingFile(input);
+  expect((await linkedReadingSources(users[0],work)).map(source=>source.externalId)).toContain(book.Id);
+  // Shared metadata is a candidate only; the other account still needs a connected source.
+  await sql`UPDATE provider_connections SET status='disconnected' WHERE id=${connections[1]}`;
+  expect(await linkedReadingSources(users[1],work)).toEqual([]);
+  await sql`UPDATE provider_connections SET status='connected' WHERE id=${connections[1]}`;
+  await sql`UPDATE work_editions SET metadata=metadata||'{"identityConflict":true}'::jsonb WHERE work_id=${work} AND instance_id=${instance}`;
+  expect(await linkedReadingSources(users[0],work)).toEqual([]);
+  await sql`UPDATE work_editions SET metadata=metadata-'identityConflict' WHERE work_id=${work} AND instance_id=${instance}`;
   expect((await progressData(users[0],{category:'reading',view:'watching',scope:'available'})).items.map(item=>item.id)).toContain(work);
   expect((await readingCatalogue(users[0],{available:true})).items.map(item=>item.id)).toContain(work);
   expect((await readingCatalogue(users[1],{available:true})).items.map(item=>item.id)).not.toContain(work);

@@ -106,7 +106,7 @@
         {#if !screenItem(hero.active)}<span>{hero.active.captionSubtitle}</span>{/if}
         {#if hero.active.year}<span>{hero.active.year}</span>{/if}
         {#if hero.active.certification}<span>{hero.active.certification}</span>{/if}
-        {#if hero.active.runtimeMinutes}<span>{hero.active.runtimeMinutes} min</span>{/if}
+        {#if hero.active.durationLabel}<span>{hero.active.durationLabel}</span>{:else if hero.active.runtimeMinutes}<span>{hero.active.runtimeMinutes} min</span>{/if}
       </div>
       {#if hero.active.overview}<p class="overview">{hero.active.overview}</p>{/if}
     </div>

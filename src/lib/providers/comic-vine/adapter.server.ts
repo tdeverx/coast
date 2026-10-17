@@ -77,6 +77,7 @@ function mapIssue(issue: v.InferOutput<typeof issueSchema>): ReadingMetadata {
     ...(issue.store_date&&v.safeParse(v.pipe(v.string(),v.isoDate()),issue.store_date).success?{releaseDate:issue.store_date}:{}),
     authors, subjects: [], publishedYear: publishedYear && Number(publishedYear) > 0 ? Number(publishedYear) : undefined,
     seriesTitle: seriesTitle || undefined, issueNumber: issueNumber || undefined,
+    ...(issue.volume&&seriesTitle?{group:{provider:'comic-vine' as const,externalId:`4050-${issue.volume.id}`,title:seriesTitle}}:{}),
   };
 }
 function providerError(error: unknown): never {
@@ -159,6 +160,16 @@ export class ComicVineAdapter {
       if (`4000-${result.results.id}` !== id) throw new AppError(502, 'Comic Vine returned a different issue identity.', 'comic_vine_unavailable');
       return mapIssue(result.results);
     } catch (error) { providerError(error); }
+  }
+  async groupIssues(externalId:string,page=1):Promise<ReadingPage>{
+    const id=v.parse(v.pipe(v.string(),v.regex(/^4050-[1-9][0-9]{0,14}$/)),externalId);v.parse(pageSchema,page);
+    try {
+    const raw=await this.read('/api/issues/',new URLSearchParams({filter:`volume:${id.slice(5)}`,sort:'issue_number:asc',limit:String(COMIC_VINE_PAGE_SIZE),offset:String((page-1)*COMIC_VINE_PAGE_SIZE)}));
+    const result=v.parse(searchSchema,raw);
+    if(result.results.some(issue=>String(issue.volume?.id)!==id.slice(5)))throw new AppError(502,'Comic Vine returned an unrelated collection issue.','comic_vine_unavailable');
+    return {items:result.results.map(mapIssue),total:result.number_of_total_results,page,
+      nextPage:page<READING_PROVIDER_PAGE_LIMIT&&result.results.length>0&&page*COMIC_VINE_PAGE_SIZE<result.number_of_total_results?page+1:null};
+    }catch(error){providerError(error);}
   }
   async verify() { await this.search('comics', 1); }
 }

@@ -7,7 +7,9 @@ import { createProgressSource, type ProgressSourceOptions } from './progress.sve
 import { createListSource, type ListSourceOptions } from './list.svelte';
 import { createCreditsSource, type CreditsOptions } from './credits.svelte';
 import { createLibrarySource, type LibrarySourceOptions } from './library.svelte';
+import {createDetailSource,type DetailSourceOptions} from './detail.svelte';
 export type ShelfConfig =
+  | DetailSourceOptions
   | ForYouOptions
   | DiscoveryOptions
   | SocialShelfOptions
@@ -20,6 +22,7 @@ export type ShelfConfig =
 export function createShelfSource(get: () => ShelfConfig) {
   // The source type is fixed for a mounted shelf; changing features mounts a new shelf.
   switch (get().type) {
+    case 'detail':return createDetailSource(()=>get() as DetailSourceOptions);
     case 'for-you':return createForYouSource(()=>get() as ForYouOptions);
     case 'discovery':return createDiscoverySource(()=>get() as DiscoveryOptions);
     case 'social':return createSocialSource(()=>get() as SocialShelfOptions);

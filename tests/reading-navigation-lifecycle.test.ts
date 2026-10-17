@@ -1,7 +1,7 @@
 import {expect,test} from 'bun:test';
 // @ts-expect-error Svelte's internal rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
-import {compileRunes,componentScript,moduleUrl} from './fixtures/ui-script';
+import {compileRunes,componentScript,moduleUrl,resourceUrl} from './fixtures/ui-script';
 
 const script=(await componentScript('src/lib/reading/Reader.svelte'))
  .replace('let host:HTMLElement,engine:', 'let host:HTMLElement=fixtureHost,engine:')
@@ -65,9 +65,12 @@ test('preview Reader shell never starts an engine or mutates live reader/bookmar
  expect(owner.calls).toEqual([]);
 });
 
-const launchScript=(await componentScript('src/lib/reading/ReadingLaunch.svelte')).replace('$props()', '({workId:"work",title:"Preview book",onopened:opened})').replace('export async function show', 'async function show');
+const launchScript=(await componentScript('src/lib/reading/ReadingLaunch.svelte')).replace('$props()', '({workId:"work",title:"Preview book",onopened:opened})').replace('export async function show', 'async function show').replace('export function isBusy','function isBusy');
 const launchCode=compileRunes(`
+ import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
+ import {createResource} from ${JSON.stringify(resourceUrl)};
  export function create(transport,opened){
+  const onDestroy=()=>{};
   const reader=$state({session:{workId:'work'},visible:false});
   const useClient=()=>({api:transport,preview:true}),createOperation=()=>({run:async task=>task(),error:'',busy:false});
   let realOpenCalls=0;const openReading=async()=>{realOpenCalls++;};
@@ -77,8 +80,62 @@ const launchCode=compileRunes(`
 const {create:createLaunch}=await import(moduleUrl(launchCode));
 test('preview reading edition choice never resumes a live singleton or opens/uploads the chosen file',async()=>{
  const calls:string[]=[];let opened=0;
- const owner=createLaunch(async(path:string)=>{calls.push(path);return [{id:'preview-connection',name:'Preview Jellyfin'}];},async()=>{opened++;});
+ let owner:any;const dispose=runtime.effect_root(()=>owner=createLaunch(async(path:string)=>{calls.push(path);return [{id:'preview-connection',name:'Preview Jellyfin'}];},async()=>{opened++;}));
  await owner.show();expect(owner.open).toBe(true);expect(owner.liveVisible).toBe(false);expect(calls).toEqual(['reading/work/connections']);
  await owner.choose({file:new File(['not decoded'],'preview.cbz')});
- expect(owner.open).toBe(false);expect(owner.realOpenCalls).toBe(0);expect(opened).toBe(0);expect(calls).toHaveLength(1);
+ expect(owner.open).toBe(false);expect(owner.realOpenCalls).toBe(0);expect(opened).toBe(0);expect(calls).toHaveLength(1);dispose();
+});
+
+const connectedLaunchCode=compileRunes(`
+ import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
+ import {createResource} from ${JSON.stringify(resourceUrl)};
+ export function create(transport,openFile){
+  const onDestroy=()=>{},opened=async()=>{};
+  const reader=$state({session:null,visible:false});
+  const useClient=()=>({api:transport,preview:false}),createOperation=()=>({run:async task=>task(),error:'',busy:false});
+  const openReading=openFile;
+  ${launchScript}
+  return {show,close(){open=false;cancel();},get open(){return open;},get items(){return items;}};
+ }`);
+const {create:createConnectedLaunch}=await import(moduleUrl(connectedLaunchCode));
+test('Read opens one verified linked copy automatically, but leaves absent or multiple copies for explicit choice',async()=>{
+ for(const count of [0,1,2]){
+  const copies=Array.from({length:count},(_,index)=>({connectionId:'connection',externalId:String(index),name:'Edition',format:'epub'}));
+  const opened:any[]=[];let owner:any;
+  const dispose=runtime.effect_root(()=>owner=createConnectedLaunch(async(path:string)=>path.endsWith('/linked')?copies:[{id:'connection',name:'Library'}],async(...args:any[])=>opened.push(args)));
+  try{await owner.show();expect(opened).toHaveLength(count===1?1:0);expect(owner.open).toBe(count!==1);if(count===1)expect(opened[0].slice(0,2)).toEqual(['work',copies[0]]);}
+  finally{dispose();}
+ }
+});
+test('closing the edition picker aborts its reads and prevents a late linked copy from opening',async()=>{
+ const late=deferred();let signal:AbortSignal|undefined,opened=0,owner:any;
+ const dispose=runtime.effect_root(()=>owner=createConnectedLaunch(async(path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>{
+  signal=options.signal;if(path.endsWith('/linked')){await late.promise;return [{connectionId:'connection',externalId:'copy',name:'Edition',format:'pdf'}];}return [];
+ },async()=>{opened++;}));
+ try{const pending=owner.show();owner.close();expect(signal?.aborted).toBe(true);late.resolve();await pending;expect(opened).toBe(0);expect(owner.open).toBe(false);}
+ finally{late.resolve();dispose();}
+});
+
+const readingClient=await Bun.file(new URL('../src/lib/reading/client.svelte.ts',import.meta.url)).text();
+const openScript=readingClient.slice(readingClient.indexOf('export async function openReading'),readingClient.indexOf('export async function attachReading')).replace('export async function','async function');
+const openerCode=compileRunes(`
+ export function create(api){
+  const reader=$state({loading:false,unsaved:false,error:'',session:null,location:null});
+  let generation=0,opening=null;const retired=[];
+  function cancelOpening(){generation++;opening?.abort();opening=null;reader.loading=false;}
+  const retireSession=async session=>{retired.push(session.id);};
+  const message=error=>error.message,recordReading=async()=>true,closeReading=async()=>{},install=()=>{throw Error('Cancelled work was installed');};
+  ${openScript}
+  return {openReading,reader,retired};
+ }`);
+const {create:createOpener}=await import(moduleUrl(openerCode));
+test('external picker cancellation clears the current loading owner and retires any late prepared session',async()=>{
+ let finish!:(session:unknown)=>void;
+ const owner=createOpener(()=>new Promise(resolve=>finish=resolve)),cancel=new AbortController();
+ const pending=owner.openReading('work',{connectionId:'connection',externalId:'copy'},cancel.signal);
+ expect(owner.reader.loading).toBe(true);cancel.abort();finish({id:'obsolete-session'});await pending;
+ expect(owner.reader.loading).toBe(false);expect(owner.reader.session).toBeNull();expect(owner.reader.error).toBe('');
+ expect(owner.retired).toEqual(['obsolete-session']);
+ const already=new AbortController();already.abort();await owner.openReading('work',{connectionId:'connection',externalId:'copy'},already.signal);
+ expect(owner.reader.loading).toBe(false);
 });

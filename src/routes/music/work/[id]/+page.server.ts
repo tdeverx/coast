@@ -1,13 +1,13 @@
 import {personaliseMusicItems} from '$lib/music/service.server';
 import {error} from '@sveltejs/kit';
-import {eq,and,sql} from 'drizzle-orm';
+import {eq,and} from 'drizzle-orm';
 import * as v from 'valibot';
 import {getDb} from '$lib/server/db';
-import {musicWorks,mediaRelationships,providerItems,providerConnections,providerInstances,musicProgress,trackingState} from '$lib/server/db/schema';
-import {PAGE_SIZE,pagination,pageNumberSchema} from '$lib/server/queries/pagination';
+import {musicWorks,mediaRelationships} from '$lib/server/db/schema';
+import {pageNumberSchema} from '$lib/server/queries/pagination';
 import type {MusicItem} from '$lib/music/model';
-import {musicAlbumMembers,musicAlbumMembersSql} from '$lib/music/editions.server';
-import {musicWorkCredits} from '$lib/music/credits.server';
+
+import {hydrateMusicItems} from '$lib/music/presentation.server';
 import type {PageServerLoad} from './$types';
 export const load:PageServerLoad=async({locals,params,url, depends})=>{
   depends('coast:tracking');
@@ -16,18 +16,7 @@ export const load:PageServerLoad=async({locals,params,url, depends})=>{
  const [work]=await db.select().from(musicWorks).where(eq(musicWorks.id,id));if(!work)error(404,'Music not found.');
  const [parent]=await db.select({id:musicWorks.id,title:musicWorks.title}).from(mediaRelationships).innerJoin(musicWorks,eq(musicWorks.id,mediaRelationships.parentId)).where(and(eq(mediaRelationships.childId,id),eq(mediaRelationships.kind,'contains'),eq(musicWorks.kind,'album'))).limit(1);
  const toItem=(m:typeof work):MusicItem=>({id:m.id,workId:m.id,kind:m.kind,title:m.title,artistNames:m.artistNames,artists:[],albumArtists:[],genres:m.genres,externalIds:{},durationSeconds:m.durationSeconds??undefined,year:m.year??undefined,releaseDate:m.releaseDate??undefined,overview:m.overview??undefined});
- const [progress]=locals.user?await db.select().from(musicProgress).where(and(eq(musicProgress.userId,locals.user.id),eq(musicProgress.trackId,id))):[];
- const [state]=locals.user?await db.select().from(trackingState).where(and(eq(trackingState.userId,locals.user.id),eq(trackingState.mediaId,id))):[];
- const item={...toItem(work),playCount:progress?.playCount??0,positionSeconds:progress?.positionSeconds??0,favourite:state?.favourite??false};if(parent){item.albumId=parent.id;item.album=parent.title;}
- const [image]=locals.user?await db.select({item:providerItems,connectionId:providerConnections.id}).from(providerItems).innerJoin(providerConnections,eq(providerConnections.instanceId,providerItems.instanceId)).innerJoin(providerInstances,eq(providerInstances.id,providerItems.instanceId)).where(and(eq(providerItems.mediaId,id),eq(providerConnections.userId,locals.user.id),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true))).limit(1):[];
- if(image?.item.snapshot.primaryImageTag)item.artworkUrl=`/api/v1/providers/${image.connectionId}/music/${image.item.externalId}/artwork`;
- const [count]=await db.execute<{total:number}>(sql`select count(*)::int as total from (${musicAlbumMembersSql(sql`${id}::uuid`)}) members`);
- const {page,pages}=pagination(count.total,requested);
- const members=await musicAlbumMembers(id,db,PAGE_SIZE,(page-1)*PAGE_SIZE);
- const children=members.length?await db.select().from(musicWorks).where(sql`${musicWorks.id} in (${sql.join(members.map(member=>sql`${member.id}::uuid`),sql`,`)})`):[];
- const byId=new Map(children.map(child=>[child.id,child]));
- const credits=await musicWorkCredits([id,...byId.keys()],locals.user?.id??null);
- Object.assign(item,credits.get(id));
- const presented=await personaliseMusicItems(locals.user?.id??null,[item,...members.map(member=>({...toItem(byId.get(member.id)!),...credits.get(member.id),entryId:member.entryId,discNumber:member.discNumber??undefined,trackNumber:member.trackNumber??undefined}))]);
- return {item:presented[0],connectionId:'',children:{items:presented.slice(1),total:count.total,nextOffset:page<pages?page*PAGE_SIZE:null},failure:'',page,pages};
+ const item=toItem(work);if(parent){item.albumId=parent.id;item.album=parent.title;}
+ const [presented]=await personaliseMusicItems(locals.user?.id??null,await hydrateMusicItems(locals.user?.id??null,[item]));
+ return {item:presented,connectionId:'',page:requested,pages:1,failure:'',children:{items:[],total:0,nextOffset:null}};
 };

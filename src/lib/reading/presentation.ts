@@ -6,9 +6,11 @@ export type ReadingDisplay = {
   backdropUrl?: string | null;
   overview?: string | null; coverUrl?: string | null; publishedYear?: number | null;
   editionIds?: string[]; releaseDate?: string | null;
+  available?: boolean;
+  hasEditions?: boolean;
   pageCount?: number | null; seriesTitle?: string | null; issueNumber?: string | null;
 };
-export type ReadingCardMetadata = Pick<ReadingDisplay, 'id' | 'kind' | 'title' | 'authors'> & Partial<Pick<ReadingDisplay, 'provider' | 'backdropUrl' | 'coverUrl' | 'publishedYear' | 'seriesTitle' | 'issueNumber' | 'sourceUrl'>>;
+export type ReadingCardMetadata = Pick<ReadingDisplay, 'id' | 'kind' | 'title' | 'authors'> & Partial<Pick<ReadingDisplay, 'available' | 'provider' | 'backdropUrl' | 'coverUrl' | 'publishedYear' | 'seriesTitle' | 'issueNumber' | 'sourceUrl'>>;
 export type ReadingProgressView = {
   state: ReadingState; page: number; totalPages: number | null;
   startedAt: Date | string | null; completedAt: Date | string | null;
@@ -27,7 +29,7 @@ export function readingCard(item: ReadingCardMetadata, href = `/media/${item.id}
   return {
     id: item.id, kind: item.kind, title: item.title, href,
     workId: canonical ? item.id : undefined,
-    poster: item.coverUrl, backdrop: item.backdropUrl, year: item.publishedYear, available: false,
+    poster: item.coverUrl, backdrop: item.backdropUrl, year: item.publishedYear, available: item.available ?? false,
     ...(progress ? { watched: progress.state === 'completed', trackingProgress: { unit: 'pages' as const, value: progress.page, ...(progress.totalPages ? { total: progress.totalPages } : {}) } } : {}),
     captionSubtitle: subtitle || (issue ? undefined : item.kind === 'book' ? 'Book' : 'Comic'),
     attribution: item.provider === 'comic-vine' || (!item.provider && item.sourceUrl?.startsWith('https://comicvine.gamespot.com/')) ? { label: 'Comic Vine', href: item.sourceUrl ?? 'https://comicvine.gamespot.com' } : undefined,

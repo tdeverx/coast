@@ -421,6 +421,13 @@
       "when": 1792232013270,
       "tag": "0059_provider_file_identity_lookup",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1792236739889,
+      "tag": "0060_reading_groups",
+      "breakpoints": true
     }
   ]
 }

@@ -100,21 +100,24 @@ async function assertMusicAccount(tx:Transaction,userId:string,connectionId:stri
 }
 /** Rich browse observations still refresh changed metadata/artwork, then grant
  * the bounded page together under the current account generation. */
-export async function observeMusicLibraryAccess(userId:string,connectionId:string,instanceId:string,accountGeneration:string,items:MusicItem[]){
+export async function observeMusicLibraryAccess(userId:string,connectionId:string,instanceId:string,accountGeneration:string,items:MusicItem[],signal?:AbortSignal){
   const saved: (MusicItem & {providerItemId?:string})[]=[];
-  for(const item of items)saved.push(await persistMusic(instanceId,item));
+  for(const item of items){signal?.throwIfAborted();saved.push(await persistMusic(instanceId,item));}
   await getDb().transaction(async tx=>{
+    signal?.throwIfAborted();
     await assertMusicAccount(tx,userId,connectionId,instanceId,accountGeneration);
+    signal?.throwIfAborted();
     const rows=new Map(saved.filter(item=>item.workId&&item.providerItemId).map(item=>[item.providerItemId!,{
       userId,connectionId,mediaId:item.workId!,providerItemId:item.providerItemId!,sourceId:'default',durationSeconds:item.durationSeconds,state:'available' as const,verifiedAt:new Date(),
     }]));
     if(rows.size)await tx.insert(availability).values([...rows.values()]).onConflictDoUpdate({target:[availability.userId,availability.connectionId,availability.providerItemId,availability.sourceId],
       set:{mediaId:sql`excluded.media_id`,durationSeconds:sql`excluded.duration_seconds`,state:'available',verifiedAt:sql`excluded.verified_at`}});
+    signal?.throwIfAborted();
   });
   return saved;
 }
-export async function observeMusicAccess(userId:string,connectionId:string,instanceId:string,item:MusicItem,accountGeneration:string){
-  return (await observeMusicLibraryAccess(userId,connectionId,instanceId,accountGeneration,[item]))[0];
+export async function observeMusicAccess(userId:string,connectionId:string,instanceId:string,item:MusicItem,accountGeneration:string,signal?:AbortSignal){
+  return (await observeMusicLibraryAccess(userId,connectionId,instanceId,accountGeneration,[item],signal))[0];
 }
 
 /** User sync reuses shared music metadata and grants only this authenticated page's access. */

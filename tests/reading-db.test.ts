@@ -4,7 +4,7 @@ import { eq, inArray, sql } from 'drizzle-orm';
 import { closeDb, getDb } from '../src/lib/server/db';
 import { getConfig } from '../src/lib/server/config';
 import { contentRevision } from '../src/lib/server/content-revision.server';
-import { listItems, lists, media, providerInstances, ratings, readingProgress, readingWorks, systemSettings, trackingState, upNext, users, workEditions, workIdentifiers, works } from '../src/lib/server/db/schema';
+import { readingGroups, readingGroupMembers, listItems, lists, media, providerInstances, ratings, readingProgress, readingWorks, systemSettings, trackingState, upNext, users, workEditions, workIdentifiers, works } from '../src/lib/server/db/schema';
 import { importReading } from '../src/lib/catalogue/reading.server';
 import { ensureReadingSaved, updateReading } from '../src/lib/core/reading/service.server';
 import { readingCatalogue, readingDetails, readingStoredWorkId, readingProviderCards } from '../src/lib/reading/query.server';
@@ -74,6 +74,21 @@ suite('experimental reading identity, private state and bounded local reads', ()
     fixtureIds.add(distinct.id);
     expect(distinct.id).not.toBe(bookId);
     comicId = (await importReading(comic)).id; fixtureIds.add(comicId);
+  });
+
+  test('verified groups preserve independent works, update exact membership and avoid revision churn',async()=>{
+    const group={provider:'comic-vine' as const,externalId:'4050-900000001',title:'A verified volume'};
+    const first=await importReading({...comic,group});
+    const second=await importReading({...comic,externalId:'4000-900000002',issueNumber:'2',group});fixtureIds.add(second.id);
+    expect(second.id).not.toBe(first.id);
+    const [saved]=await getDb().select().from(readingGroups).where(eq(readingGroups.externalId,group.externalId));
+    expect(await getDb().select().from(readingGroupMembers).where(eq(readingGroupMembers.groupId,saved.id))).toHaveLength(2);
+    const revision=await contentRevision(owner);await importReading({...comic,group});
+    expect(await contentRevision(owner)).toEqual(revision);
+    await importReading({...comic,group:{...group,externalId:'4050-900000002'}});
+    expect(await getDb().select().from(readingGroupMembers).where(eq(readingGroupMembers.workId,first.id))).toHaveLength(1);
+    expect((await getDb().select().from(readingGroupMembers).where(eq(readingGroupMembers.workId,first.id)))[0].groupId).not.toBe(saved.id);
+    await getDb().delete(readingGroups).where(inArray(readingGroups.externalId,['4050-900000001','4050-900000002']));
   });
 
   test('page progress is private and explicit completion is idempotent', async () => {

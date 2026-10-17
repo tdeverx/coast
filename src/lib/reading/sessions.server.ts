@@ -31,11 +31,23 @@ export async function readingConnections(userId:string,workId:string) {
  await work(userId,workId);
  return getDb().select({id:providerConnections.id,name:providerInstances.name}).from(providerConnections).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId)).where(and(eq(providerConnections.userId,userId),eq(providerConnections.status,'connected'),eq(providerInstances.provider,'jellyfin'),eq(providerInstances.enabled,true))).limit(20);
 }
-export async function readingSources(userId:string,workId:string,connectionId:string,search:string,offset:number) {
+/** Saved links are candidates, never an access grant: preparation rechecks the user's source. */
+export async function linkedReadingSources(userId:string,workId:string) {
+ await work(userId,workId);
+ return getDb().select({connectionId:providerConnections.id,externalId:workEditions.externalId,
+   name:providerInstances.name,format:workEditions.format})
+  .from(workEditions).innerJoin(providerConnections,and(eq(providerConnections.instanceId,workEditions.instanceId),eq(providerConnections.userId,userId)))
+  .innerJoin(providerInstances,eq(providerInstances.id,workEditions.instanceId))
+  .where(and(eq(workEditions.workId,workId),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true),
+    eq(providerInstances.provider,'jellyfin'),sql`coalesce(${workEditions.metadata}->>'identityConflict','false')<>'true'`,
+    sql`${workEditions.format} in ('pdf','epub','cbz')`))
+  .orderBy(providerInstances.name,workEditions.id).limit(20);
+}
+export async function readingSources(userId:string,workId:string,connectionId:string,search:string,offset:number,signal?:AbortSignal) {
  await work(userId,workId);v.parse(uuid,connectionId);
  v.parse(v.pipe(v.string(),v.maxLength(250)),search);v.parse(v.pipe(v.number(),v.integer(),v.minValue(0),v.maxValue(60000)),offset);
  const {adapter,connection}=await getJellyfin(userId,connectionId);
- return adapter.readingLibrary(connection.externalUserId!,search,offset);
+ return adapter.readingLibrary(connection.externalUserId!,search,offset,signal);
 }
 export function sourceEdition(instanceIdentity:string,book:Awaited<ReturnType<typeof import('$lib/providers/jellyfin/reading.server').jellyfinBook>>) {
  // Scope versions to the actual server and item. Titles, editions and page counts are not file identities.

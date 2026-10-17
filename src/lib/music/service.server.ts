@@ -10,20 +10,21 @@ import * as v from 'valibot';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { jellyfinMusicIdSchema, musicBrowseSchema } from '$lib/providers/jellyfin/music.server';
 
-export async function musicLibrary(userId: string, connectionId: string, input: unknown = {}) {
+export async function musicLibrary(userId: string, connectionId: string, input: unknown = {},signal?:AbortSignal) {
   const options = v.parse(musicBrowseSchema, input);
   await requireFeature(userId,'music');
   const { adapter, connection, instance } = await getJellyfin(userId, connectionId);
-  const page=await adapter.musicLibrary(connection.externalUserId!, options);
-  const items=await observeMusicLibraryAccess(userId,connectionId,instance.id,connection.accountGeneration,page.items);
+  const page=await adapter.musicLibrary(connection.externalUserId!, options,undefined,signal);
+  signal?.throwIfAborted();
+  const items=await observeMusicLibraryAccess(userId,connectionId,instance.id,connection.accountGeneration,page.items,signal);
   return {connectionId:connection.id,...page,items:await personaliseMusicItems(userId,items)};
 }
 
-export async function musicDetails(userId: string, connectionId: string, id: string) {
+export async function musicDetails(userId: string, connectionId: string, id: string,signal?:AbortSignal) {
   v.parse(jellyfinMusicIdSchema, id);
   await requireFeature(userId,'music');
   const { adapter, connection, instance } = await getJellyfin(userId, connectionId);
-  const item=await observeMusicAccess(userId,connectionId,instance.id,await adapter.musicItem(connection.externalUserId!,id),connection.accountGeneration);
+  const item=await observeMusicAccess(userId,connectionId,instance.id,await adapter.musicItem(connection.externalUserId!,id,signal),connection.accountGeneration,signal);
   if(item.workId){const [state]=await getDb().select().from(trackingState).where(and(eq(trackingState.userId,userId),eq(trackingState.mediaId,item.workId)));item.favourite=state?.favourite??false;
     const [progress]=await getDb().select().from(musicProgress).where(and(eq(musicProgress.userId,userId),eq(musicProgress.trackId,item.workId)));item.positionSeconds=progress?.positionSeconds??0;item.playCount=progress?.playCount??0;}
   if(item.artistId){const [preference]=await getDb().select().from(musicArtistPreferences).where(and(eq(musicArtistPreferences.userId,userId),eq(musicArtistPreferences.artistId,item.artistId)));if(preference)item.favourite=preference.favourite;}

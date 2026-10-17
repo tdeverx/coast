@@ -3,8 +3,9 @@ import type Button from '$lib/ui/components/Button.svelte';
 import type { InsightPanel } from '$lib/ui/insights/types';
 import type { ShelfItem } from '$lib/ui/shelves/types';
 import type { MediaCardShape } from '$lib/ui/types';
-export type PageCommand = Pick<ComponentProps<typeof Button>, 'icon' | 'emphasis' | 'disabled' | 'href'> & { label: string; run?: () => void | Promise<unknown> };
+export type PageCommand = Pick<ComponentProps<typeof Button>, 'icon' | 'emphasis' | 'disabled' | 'href' | 'size'> & { label: string; run?: () => void | Promise<unknown> };
 export type PageSection = {
+  source?: import('$lib/ui/shelves').ShelfConfig;
   key: string;
   title: string;
   items?: ShelfItem[];

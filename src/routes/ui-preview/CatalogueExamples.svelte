@@ -2,6 +2,7 @@
   import { providePreviewPlayback } from '$lib/playback/context.svelte';
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
+  import Pagination from '$lib/ui/components/Pagination.svelte';
   import Heading from '$lib/ui/components/Heading.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Field from '$lib/ui/components/Field.svelte';
@@ -9,17 +10,18 @@
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import Icon from '$lib/ui/components/Icon.svelte';
   import DetailCard from '$lib/ui/components/DetailCard.svelte';
-  import ChartView from '$lib/ui/charts/ChartView.svelte';
-  import { targetModel } from '$lib/ui/charts/insights';
-  import Pagination from '$lib/ui/components/Pagination.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Toast from '$lib/ui/components/Toast.svelte';
   import ReadingLaunch from '$lib/reading/ReadingLaunch.svelte';
+  import ReadingDetails from '$lib/reading/Details.svelte';
+  import GroupDetails from '$lib/reading/GroupDetails.svelte';
+  import MusicDetails from '$lib/music/Details.svelte';
+  import GameDetails from '$lib/games/Details.svelte';
+  import RemoteGameDetails from '$lib/games/RemoteDetails.svelte';
   import Reader from '$lib/reading/Reader.svelte';
-  import { gameCard, gameHero, gameFacts, gameMinutes } from '$lib/games/presentation';
-  import { readingCard, readingHero, readingFacts, type ReadingDisplay } from '$lib/reading/presentation';
+  import { gameCard } from '$lib/games/presentation';
+  import { readingCard, type ReadingDisplay } from '$lib/reading/presentation';
   import { musicCard } from '$lib/music/presentation';
-  import { createMusicPage } from '$lib/ui/pages/music.svelte';
   import { overviewPanels } from '$lib/ui/insights/overview';
   import type { MediaView, MediaCardPresentation, MediaCardShape } from '$lib/ui/types';
   import { movie, show, episode, music, track, id } from './demo/fixtures';
@@ -29,23 +31,24 @@
   const artwork = '/coast-mark.png';
   const season: MediaView = { ...show, id: '00000000-0000-4000-8000-000000000077', kind: 'season', title: 'Season one', seasonNumber: 1 };
   const game = { id: '00000000-0000-4000-8000-000000000078', title: 'Preview game', available: true, overview: 'A fictional game for inspecting the existing media presentation.', releaseDate: '2026-01-01', posterPath: artwork, backdropPath: artwork, platforms: ['PC'], genres: ['Adventure'], developers: ['Preview studio'], publishers: ['Preview publisher'] };
+  const gameSession={id,gameId:game.id,platform:'PC',status:'in-progress' as const,progressPercent:40,repeat:false,startedAt:new Date('2026-10-01'),completedAt:null,createdAt:new Date('2026-10-01'),updatedAt:new Date('2026-10-01'),minutesPlayed:245,total:3};
+  const gameData={item:{...game,category:'game' as const,identities:[],steam:[],playthroughs:[gameSession],createdAt:new Date('2026-01-01'),updatedAt:new Date('2026-01-01')},playthrough:gameSession,sources:[]};
   const book: ReadingDisplay = { id: '00000000-0000-4000-8000-000000000079', kind: 'book', title: 'A different chapter', provider: 'openlibrary', externalId: 'OL123W', authors: ['Alex Example'], subjects: ['Fantasy'], sourceUrl: 'https://openlibrary.org/works/OL123W', coverUrl: artwork, overview: 'Fictional book metadata for inspecting the shared reading presentation.', publishedYear: 2026, pageCount: 320 };
   const comic: ReadingDisplay = { ...book, id: '00000000-0000-4000-8000-000000000080', kind: 'comic', title: 'Preview comic', provider: 'comic-vine', externalId: '4000-123', sourceUrl: 'https://comicvine.gamespot.com/', seriesTitle: 'Preview series', issueNumber: '3' };
   const person: MediaCardPresentation = { id: 'preview-person', kind: 'person', title: 'Alex Example', href: '/people/1', poster: artwork, captionSubtitle: 'Actor · Director' };
   const allCards: Record<string, MediaView | MediaCardPresentation> = {
     movie, show, season, episode, collection: { ...movie, id: '00000000-0000-4000-8000-000000000081', kind: 'collection', title: 'Preview collection' },
     game: gameCard(game), album: musicCard({ ...music, workId: id }, id), track: musicCard({ ...track, workId: track.id }, id),
-    artist: musicCard({ ...music, kind: 'artist', workId: id, title: 'Preview artist' }, id),
+    artist: musicCard({ ...music, kind: 'artist', workId: undefined, title: 'Preview artist' }, id),
     book: readingCard(book), comic: readingCard(comic), person,
   };
   const chosen = $derived(allCards[scenario] ?? movie);
   const shape = (kind: string): MediaCardShape => ['album', 'track', 'game'].includes(kind) ? 'square' : ['artist', 'person'].includes(kind) ? 'circle' : kind === 'episode' ? 'fanart' : 'poster';
   const rowItems = Object.values(allCards).slice(0, 8);
-  let query = $state(''), searched = $state(false), number = $state(1), notice = $state(''), selected = $state(false), episodeWatched = $state(false), confirming = $state(false);
-  const musicPage = createMusicPage(() => ({ item: { ...music, workId: id }, connectionId: id, children: { items: [track], total: 1, nextOffset: null }, failure: '', page: 1, pages: 1 }), () => new URL('https://preview.invalid/music/preview'));
-  const detailKind = $derived(scenario === 'remote-reading' ? 'book' : scenario === 'game-remote' ? 'game' : scenario);
-  const detailItem = $derived(detailKind === 'game' ? gameHero(game, scenario === 'game-remote' ? '/games/igdb/preview/123' : undefined, scenario !== 'game-remote') : detailKind === 'book' || detailKind === 'comic' ? readingHero(detailKind === 'comic' ? comic : book, scenario === 'remote-reading') : 'href' in (allCards[detailKind] ?? movie) ? undefined : allCards[detailKind] as MediaView ?? movie);
-  const detailPanels = $derived(detailKind === 'game' ? overviewPanels(game.overview, gameFacts(game)) : detailKind === 'book' || detailKind === 'comic' ? overviewPanels(book.overview, readingFacts(detailKind === 'comic' ? comic : book)) : overviewPanels(movie.overview, [{ label: 'Released', value: '2026' }, { label: 'Duration', value: '1h 50m' }]));
+  let query = $state(''), searched = $state(false), notice = $state(''), selected = $state(false), episodeWatched = $state(false), confirming = $state(false);
+  const detailKind = $derived(scenario);
+  const detailItem = $derived(allCards[scenario]??movie);
+  const detailPanels = overviewPanels(movie.overview,[{label:'Released',value:'2026'},{label:'Duration',value:'1h 50m'}]);
 </script>
 
 <div class="catalogue-examples" onclickcapture={event => { if ((event.target as Element).closest('a')) event.preventDefault(); }} onsubmitcapture={event => event.preventDefault()}>
@@ -60,9 +63,13 @@
     {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
   {:else if name === 'catalogue.details'}
     <p class="small quiet">Composition reference using the production MediaPage, presentation adapters and Shelf. Commands are preview-only.</p>
-    {#if scenario === 'music'}<MediaPage {...musicPage.page} />
+    {#if scenario === 'music'}<MusicDetails data={{item:{...music,workId:id},connectionId:id,children:{items:[],total:0,nextOffset:null},failure:'',page:1,pages:1}} />
+    {:else if scenario==='reading-collection'}<GroupDetails data={{group:{id,title:'Preview comic volume'},cover:artwork}} />
+    {:else if ['book','comic','remote-reading'].includes(scenario)}<ReadingDetails data={{item:scenario==='comic'?comic:book,kind:scenario==='comic'?'comic':'book',remote:scenario==='remote-reading',progress:null,relationships:{favourite:false,watchlist:false,collected:false},rating:null}} />
+    {:else if scenario==='game'}<GameDetails data={{item:{...game,category:'game',identities:[],steam:[],playthroughs:[],createdAt:new Date('2026-01-01'),updatedAt:new Date('2026-01-01')},playthrough:null,sources:[]}} />
+    {:else if scenario==='game-remote'}<RemoteGameDetails data={{item:{...game,externalId:'123'},instanceId:id}} />
     {:else}<MediaPage details item={detailItem}>
-      {#snippet heroActions()}{#if (detailKind === 'book' || detailKind === 'comic') && scenario !== 'remote-reading'}<ReadingLaunch workId={detailKind === 'comic' ? comic.id : book.id} title={detailKind === 'comic' ? comic.title : book.title} />{/if}<Button size="hero" icon={scenario === 'remote-reading' || ['game','book','comic'].includes(detailKind) ? 'plus' : 'play'} onclick={() => notice = 'Preview action acknowledged.'}>{scenario === 'remote-reading' ? 'Add book' : detailKind === 'game' ? scenario === 'game-remote' ? 'Add game' : 'Start playthrough' : detailKind === 'book' || detailKind === 'comic' ? 'Update reading' : 'Play'}</Button>{/snippet}
+      {#snippet heroActions()}<Button size="hero" icon="play" onclick={()=>notice='Preview action acknowledged.'}>Play</Button>{/snippet}
       {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
       {#if detailKind === 'show'}<Shelf title="Seasons" items={[season]} filterBy="watched" />
       {:else if detailKind === 'season'}<Shelf title="Episodes" items={[episode]} shape="fanart" artworkStyle="thumb" filterBy="watched">
@@ -79,12 +86,7 @@
       </Shelf>
       {:else if detailKind === 'collection'}<Shelf title="In this collection" items={[movie, show]} filterBy="type" />{/if}
       <Shelf title="Overview" size="panel" artworkOptions={false} panels={detailPanels} />
-      {#if ['book', 'comic', 'game'].includes(detailKind) && scenario !== 'remote-reading' && scenario !== 'game-remote'}
-        <Shelf title="Progress" size="panel" artworkOptions={false}>
-          <DetailCard title={detailKind === 'game' ? 'In progress' : 'Reading'}><ChartView model={targetModel({label:'Preview progress',items:[{ label: detailKind === 'game' ? 'Completion' : 'Pages', value: detailKind === 'game' ? 42 : 80, total: detailKind === 'game' ? 100 : 320 }]})} compact /></DetailCard>
-          <DetailCard title="At a glance" content={{ kind: 'metrics', props: { items: [{ label: detailKind === 'game' ? 'Time played' : 'Current page', value: detailKind === 'game' ? '12h 30m' : 80 }, { label: 'Started', value: '1 October 2026', text: true }] } }} />
-        </Shelf>
-      {/if}
+
     </MediaPage>{/if}
   {:else if name === 'reading.launch'}
     <p class="small quiet">The production edition chooser uses synthetic connections and files. File selection never opens an engine or uploads a file in this reference.</p>
@@ -116,7 +118,7 @@
     {:else}<Shelf title="Your requests" items={[movie]} layout="grid" availability={false}>{#snippet details()}<div class="request-details stack"><span class="badge" class:available={scenario === 'available'}>{scenario === 'available' ? 'Available' : 'Pending approval'}</span><p class="small">Preview Seerr · 4K · Seasons 1, 2</p><p class="small">Requested 1 October 2026</p>{#if scenario !== 'available'}<Button danger onclick={() => notice = 'Preview cancellation acknowledged.'}>Cancel request</Button>{/if}</div>{/snippet}</Shelf>{/if}
     {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
   {:else if name === 'catalogue.history'}
-    {#if scenario === 'game-table'}<Heading title="Play history" /><div class="overflow"><table class="table"><thead><tr><th scope="col">Date</th><th scope="col">Time played</th><th scope="col">Note</th></tr></thead><tbody>{#each [30, 90, 125] as minutes, index}<tr><td>{index + 1} October 2026</td><td>{gameMinutes(minutes)}</td><td>{index ? '—' : 'A fictional play session.'}</td></tr>{/each}</tbody></table></div><Pagination page={number} pages={3} onchange={value => number = value} label="Play history pages" />
+    {#if scenario === 'game-table'}<GameDetails data={gameData} />
     {:else if scenario === 'selection'}<Heading title="Preview title · History" /><div class="stack"><p>Select the entries you want to remove.</p><div class="row"><Button emphasis="subtle" onclick={() => selected = true}>Select shown</Button><Button emphasis="subtle" onclick={() => selected = false}>Clear selection</Button><Button danger disabled={!selected} onclick={() => confirming = true}>Remove entry…</Button></div><Field label="Select preview watch"><input type="checkbox" bind:checked={selected} /></Field></div><Shelf title="1 October 2026" items={[episode]} shape="fanart" />
     {:else}<Shelf title="Reading history" size="panel" artworkOptions={false}><DetailCard title="Reading" description="1 October 2026, 18:00"><p class="small quiet">Page 80 of 320</p></DetailCard><DetailCard title="Planned" description="30 September 2026, 12:00"><p class="small quiet">Page 0 of 320</p></DetailCard></Shelf>{/if}
     {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}

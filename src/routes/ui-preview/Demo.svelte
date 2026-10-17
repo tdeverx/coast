@@ -238,7 +238,7 @@
       <Heading variant="page" title="Page heading" description="Optional description for this page." />
       <Heading title="Row heading" href="#" selection={{label:'Example selection',value:'all',options:[{value:'all',label:'All'},{value:'saved',label:'Saved'}],change:()=>{}}}>{#snippet previous()}<Button size="icon" icon="left" label="Previous row page" disabled={number<=1} onclick={()=>number--}/>{/snippet}{#snippet controls()}<RowFilter groups={[{label:'Availability',value:'all',options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:()=>{}}]}/>{/snippet}{#snippet next()}<Button size="icon" icon="right" label="Next row page" disabled={number>=5} onclick={()=>number++}/>{/snippet}</Heading>
       <Heading variant="title" title="Title only" href="#" />
-      <Heading {...browseHeading('watch',true)} selection={{...browseHeading('watch',true).selection!,value:browseSurface,change:value=>browseSurface=value}} />
+      <Heading {...browseHeading('watch',{experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true})} selection={{...browseHeading('watch',{experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true}).selection!,value:browseSurface,change:value=>browseSurface=value}} />
 
     {:else if name==='Header'}
       <Header user={{username:"preview",role:"admin"}} unread={2} />

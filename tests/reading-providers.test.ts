@@ -255,3 +255,45 @@ test('a successful empty book search permits one filtered fallback, never retrie
   await expect(failing.search('Harly Quinn')).rejects.toMatchObject({ status: 429 });
   expect(calls).toBe(3);
 });
+
+
+test('verified comic collections page one exact volume without merging issues into its identity',async()=>{
+ const paths:URL[]=[];
+ const adapter=new ComicVineAdapter('fixture',async path=>{
+  const url=new URL(path,'https://comicvine.gamespot.com');paths.push(url);
+  return {status_code:1,number_of_total_results:21,results:[issue]};
+ });
+ const page=await adapter.groupIssues('4050-456',2);
+ expect(paths).toHaveLength(1);expect(paths[0].searchParams.get('filter')).toBe('volume:456');
+ expect(paths[0].searchParams.get('offset')).toBe('10');expect(paths[0].searchParams.get('limit')).toBe('10');
+ expect(page.items[0].externalId).toBe('4000-123');
+ expect(page.items[0].group).toEqual({provider:'comic-vine',externalId:'4050-456',title:'A Series'});
+ expect(page.nextPage).toBe(3);
+ await expect(adapter.groupIssues('4000-123')).rejects.toThrow();expect(paths).toHaveLength(1);
+ await expect(adapter.groupIssues('4050-789')).rejects.toThrow('unrelated collection');
+ expect((await adapter.groupIssues('4050-456',1000)).nextPage).toBeNull();
+});
+
+test('editions use bounded work membership, not title matching or edition identities as works',async()=>{
+ const edition={key:'/books/OL456M',title:'A Book',works:[{key:'/works/OL123W'}],publishers:['Publisher'],covers:[-1,42]};
+ let calls=0;
+ const adapter=new OpenLibraryAdapter(async path=>{
+  calls++;expect(path).toBe('/works/OL123W/editions.json?limit=20&offset=20');
+  return {size:41,entries:[edition]};
+ });
+ const result=await adapter.editions('OL123W',2);
+ expect(calls).toBe(1);expect(result.pages).toBe(3);
+ expect(result.items[0]).toMatchObject({externalId:'OL456M',sourceUrl:'https://openlibrary.org/books/OL456M',coverUrl:'https://covers.openlibrary.org/b/id/42-L.jpg?default=false'});
+ await expect(adapter.editions('OL456M')).rejects.toThrow();expect(calls).toBe(1);
+ const unrelated=new OpenLibraryAdapter(async()=>({size:1,entries:[{...edition,works:[{key:'/works/OL999W'}]}]}));
+ await expect(unrelated.editions('OL123W')).rejects.toThrow('unrelated edition');
+});
+
+
+test('collection and edition payload failures remain provider errors and preserve cooldowns',async()=>{
+ await expect(new ComicVineAdapter('key',async()=>({status_code:1,results:'bad'})).groupIssues('4050-456')).rejects.toMatchObject({status:502});
+ await expect(new OpenLibraryAdapter(async()=>({entries:'bad'})).editions('OL123W')).rejects.toMatchObject({status:502});
+ const limited=new ProviderHttpError(429,60);
+ await expect(new ComicVineAdapter('key',async()=>{throw limited;}).groupIssues('4050-456')).rejects.toBe(limited);
+ await expect(new OpenLibraryAdapter(async()=>{throw limited;}).editions('OL123W')).rejects.toBe(limited);
+});
