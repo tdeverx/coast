@@ -4,6 +4,20 @@ import { ComicVineAdapter } from '../src/lib/providers/comic-vine/adapter.server
 import { readingPlainText, READING_PROVIDER_PAGE_LIMIT } from '../src/lib/reading/model';
 import { ProviderHttpError } from '../src/lib/server/security/provider-fetch';
 import { readingCard, readingHero } from '../src/lib/reading/presentation';
+import { jellyfinComicVineId, jellyfinOpenLibraryId } from '../src/lib/providers/jellyfin/reading.server';
+
+test('Jellyfin Open Library references normalize exact work and edition URLs without confusing the two',()=>{
+  for(const value of ['OL123W','/works/OL123W','https://openlibrary.org/works/OL123W/','http://openlibrary.org/works/OL123W'])expect(jellyfinOpenLibraryId(value)).toBe('OL123W');
+  for(const value of ['OL123M','/books/OL123M','https://openlibrary.org/books/OL123M/'])expect(jellyfinOpenLibraryId(value)).toBe('OL123M');
+  for(const value of ['https://evil.example/works/OL123W','/books/OL123W','/works/OL123M','OL0W','/works/OL123W/other','https://openlibrary.org/works/OL123W?other=1'])expect(jellyfinOpenLibraryId(value)).toBeNull();
+});
+
+test('Jellyfin Comic Vine identities accept issue permalinks without guessing volumes or numeric IDs', () => {
+  for (const value of ['4000-876657', 'harley-quinn-the-animated-series-the-eat-bang-kill/4000-876657', '/harley-quinn/4000-876657/', 'https://comicvine.gamespot.com/harley-quinn/4000-876657/'])
+    expect(jellyfinComicVineId(value)).toBe('4000-876657');
+  for (const value of [undefined, '', '876657', '4050-876657', 'a-series/4050-876657', '4000-0', '4000-9007199254740992', '4000-876657/extra', '../4000-876657', 'https://evil.example/4000-876657/', 'https://comicvine.gamespot.com/4000-876657/?id=other'])
+    expect(jellyfinComicVineId(value)).toBeNull();
+});
 
 const book = { key: '/works/OL123W', title: 'A Book', author_name: ['Writer'], subject: ['Fiction'], first_publish_year: 2001, cover_i: 42, edition_key: ['OL456M'] };
 const issue = { id: 123, site_detail_url: 'https://comicvine.gamespot.com/a-series-12/4000-123/', resource_type: 'issue', name: null, issue_number: '½', volume: { id: 456, name: 'A Series' }, description: '<p>A &amp; B</p><script>unsafe()</script>', store_date: '2001-02-03', image: { super_url: 'https://comicvine.gamespot.com/a/uploads/scale_large/1/2/123-cover.jpg' }, person_credits: [{ name: 'Writer', role: 'writer' }, { name: 'Artist', role: 'penciler' }] };

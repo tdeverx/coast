@@ -41,7 +41,7 @@ suite('Steam account imports and ownership availability',()=>{
       const url=new URL(input instanceof Request?input.url:String(input)),headers=new Headers(init?.headers);
       expect(init?.redirect).toBe('manual');expect(url.searchParams.has('key')).toBe(false);
       if(headers.get('host')==='id.twitch.tv')return Response.json({access_token:'fixture-token',expires_in:3600,token_type:'bearer'});
-      if(headers.get('host')==='api.igdb.com'){igdbReads++;if(failIgdb)return Response.json({error:'offline'},{status:503});return Response.json([{id:556,name:'Late enrichment fixture',external_games:[{uid:'777',url:'https://store.steampowered.com/app/777/'}]}]);}
+      if(headers.get('host')==='api.igdb.com'){igdbReads++;if(failIgdb)return Response.json({error:'offline'},{status:503});if(url.pathname==='/v4/external_games')return Response.json([{id:1,game:556,uid:'777',external_game_source:1}]);return Response.json([{id:556,name:'Late enrichment fixture',external_games:[{uid:'777',url:'https://store.steampowered.com/app/777/'}]}]);}
       if(headers.get('host')==='steamcommunity.com')return new Response('ns:http://specs.openid.net/auth/2.0\nis_valid:true\n');
       expect(headers.get('host')).toBe('api.steampowered.com');expect(headers.get('x-webapi-key')).toBe(key);
       if(url.pathname.includes('GetPlayerSummaries'))return Response.json({response:{players:[{steamid:remoteId,personaname:'Fixture Steam user'}]}});

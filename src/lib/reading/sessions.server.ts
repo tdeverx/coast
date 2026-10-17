@@ -7,6 +7,7 @@ import { requireEnabledCategory } from '$lib/server/experimental';
 import { AppError } from '$lib/server/security/errors';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { bookFormat } from '$lib/providers/jellyfin/reading.server';
+import { jellyfinItemKey } from '$lib/providers/jellyfin/paging';
 import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
 import { instanceFetchConfig } from '$lib/providers/instances.server';
 import { decryptCredential } from '$lib/server/security/credentials';
@@ -50,7 +51,7 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
   const book=await adapter.readingItem(connection.externalUserId!,input.externalId,signal);
   signal?.throwIfAborted();
   const supported=bookFormat(book);if(!supported)throw new AppError(409,'This file format is not supported. Choose PDF, EPUB or CBZ.');
-  format=supported;edition=sourceEdition(instance.serverIdentity??instance.id,book);connectionId=connection.id;accountGeneration=connection.accountGeneration;externalId=book.Id;
+  format=supported;edition=sourceEdition(instance.serverIdentity??instance.id,book);connectionId=connection.id;accountGeneration=connection.accountGeneration;externalId=jellyfinItemKey(book.Id);
   await observeReadingFile({userId,workId,connectionId:connection.id,instanceId:instance.id,generation:connection.accountGeneration,book,edition});
  }
  const session=await db.transaction(async tx=>{
@@ -76,7 +77,7 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
 }
 export async function ownedReadingSession(userId:string,id:string) {
  v.parse(uuid,id);
- const [session]=await getDb().select().from(readingSessions).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId),isNull(readingSessions.closedAt),gt(readingSessions.expiresAt,new Date())));
+ const [session]=await getDb().select().from(readingSessions).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId),isNull(readingSessions.closedAt),gt(readingSessions.expiresAt,new Date()),sql`not exists(select 1 from work_editions e join provider_connections c on c.instance_id=e.instance_id where c.id=${readingSessions.connectionId} and replace(lower(e.external_id),'-','')=replace(lower(${readingSessions.externalId}),'-','') and e.metadata->>'identityConflict'='true')`));
  if(!session)throw new AppError(410,'This reading session has ended.');
  await work(userId,session.workId);
  if(session.connectionId){const {connection}=await getJellyfin(userId,session.connectionId);if(connection.accountGeneration!==session.accountGeneration)throw new AppError(410,'Reconnect this reading source.');}
@@ -121,7 +122,7 @@ export async function streamReading(userId:string,id:string,request:Request) {
 /** Only previously linked files on the viewer's connected servers are considered; no title matching. */
 export async function matchingReading(userId:string,workId:string,edition:string) {
  await work(userId,workId);v.parse(v.pipe(v.string(),v.regex(/^[a-f0-9]{64}$/)),edition);
- const candidates=await getDb().select({connectionId:providerConnections.id,externalId:workEditions.externalId}).from(workEditions).innerJoin(providerConnections,and(eq(providerConnections.instanceId,workEditions.instanceId),eq(providerConnections.userId,userId))).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId)).where(and(eq(workEditions.workId,workId),sql`${workEditions.metadata}->>'version'=${edition}`,eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true))).limit(20);
+ const candidates=await getDb().select({connectionId:providerConnections.id,externalId:workEditions.externalId}).from(workEditions).innerJoin(providerConnections,and(eq(providerConnections.instanceId,workEditions.instanceId),eq(providerConnections.userId,userId))).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId)).where(and(eq(workEditions.workId,workId),sql`${workEditions.metadata}->>'version'=${edition} and coalesce(${workEditions.metadata}->>'identityConflict','false')<>'true'`,eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true))).limit(20);
  for(const candidate of candidates){
   // A library cache never substitutes for this user's permission check.
   try{const session=await prepareReading(userId,workId,{source:'jellyfin',...candidate});if(session.edition===edition)return session;await closeReading(userId,session.id);}catch(cause){if(!(cause instanceof AppError)&&!(cause instanceof Error&&'status' in cause))throw cause;}

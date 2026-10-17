@@ -1,9 +1,32 @@
 import { describe, expect, test } from 'bun:test';
 import { SteamAdapter } from '../src/lib/providers/steam/adapter.server';
 import { steamAssertion, steamLoginUrl } from '../src/lib/providers/steam/connection.server';
-import { mapIgdbGame } from '../src/lib/providers/igdb/adapter.server';
+import { mapIgdbGame, IgdbAdapter } from '../src/lib/providers/igdb/adapter.server';
 import { createProviderTransport, ProviderHttpError } from '../src/lib/server/security/provider-fetch';
 const id='76561198000000000';
+test('Steam enrichment resolves source-scoped external records before bounded game hydration',async()=>{
+ const requests:string[]=[];
+ const adapter=new IgdbAdapter({clientId:'fixture',clientSecret:'fixture'},async(path,init)=>{
+  requests.push(path);const body=String(init?.body);
+  if(path==='/v4/external_games'){
+   expect(body).toContain('external_game_source = 1 & uid = ("10")');
+   return Array.from({length:61},(_,index)=>({id:index+1,uid:'10',game:index+1,external_game_source:1}));
+  }
+  const ids=body.match(/where id = \(([^)]+)\)/)![1].split(',').map(Number);
+  expect(ids.length).toBeLessThanOrEqual(60);
+  return ids.map(id=>({id,name:`Fixture ${id}`}));
+ },async()=>({access_token:'token',expires_in:3600,token_type:'bearer'}));
+ const games=await adapter.steamMatches(['10','10']);
+ expect(games).toHaveLength(61);expect(requests).toEqual(['/v4/external_games','/v4/games','/v4/games']);
+ expect(games.at(-1)?.identities).toEqual([{provider:'steam',externalId:'10'}]);
+});
+test('Steam enrichment rejects unrelated sources and a full mapping page instead of declaring missing games',async()=>{
+ let rows:unknown=[{id:1,uid:'10',game:1,external_game_source:5}];let games=0;
+ const adapter=new IgdbAdapter({clientId:'fixture',clientSecret:'fixture'},async(path)=>{if(path==='/v4/games')games++;return rows;},async()=>({access_token:'token',expires_in:3600,token_type:'bearer'}));
+ await expect(adapter.steamMatches(['10'])).rejects.toThrow();expect(games).toBe(0);
+ rows=Array.from({length:500},(_,index)=>({id:index+1,uid:'10',game:index+1,external_game_source:1}));
+ await expect(adapter.steamMatches(['10'])).rejects.toThrow('incomplete');expect(games).toBe(0);
+});
 describe('Steam provider contracts',()=>{
   test('ownership uses an API key header and distinguishes private, incomplete, and empty libraries',async()=>{
     let raw:unknown={response:{game_count:1,games:[{appid:10,name:'Fixture',playtime_forever:42}]}};

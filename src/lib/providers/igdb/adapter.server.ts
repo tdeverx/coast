@@ -135,9 +135,24 @@ export class IgdbAdapter {
     return ids.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]);
   }
   async steamMatches(ids:string[]) {
-    const selected=ids.slice(0,50).map(id=>v.parse(v.pipe(v.string(),v.regex(/^[1-9][0-9]*$/)),id));
+    const selected=[...new Set(ids.slice(0,50).map(id=>v.parse(v.pipe(v.string(),v.regex(/^[1-9][0-9]*$/)),id)))];
     if(!selected.length)return [];
-    return this.query(`fields ${expandedFields}; where external_games.uid = (${selected.map(id=>JSON.stringify(id)).join(',')}); limit ${IGDB_PAGE_SIZE};`);
+    // Filter the external record itself: conditions on two expanded game-array
+    // fields can otherwise match a Steam entry and another store's UID.
+    const mappingSchema=v.pipe(v.array(v.object({id:v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(Number.MAX_SAFE_INTEGER)),uid:v.string(),game:v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(Number.MAX_SAFE_INTEGER)),external_game_source:v.literal(1)})),v.maxLength(500));
+    const raw=await this.requestQuery(`fields id,uid,game,external_game_source; where external_game_source = 1 & uid = (${selected.map(id=>JSON.stringify(id)).join(',')}); sort id asc; limit 500;`,'external_games');
+    // Do not publish an apparently complete negative result if the mapping page
+    // hit its bound. Retain previous metadata and retry through the common queue.
+    const mappings=v.parse(mappingSchema,raw);
+    if(mappings.length===500||mappings.some(row=>!selected.includes(row.uid)))throw new AppError(502,'IGDB returned an incomplete or unrelated Steam mapping page.','igdb_unavailable');
+    const gameIds=[...new Set(mappings.map(row=>row.game))],games:IgdbGame[]=[];
+    for(let start=0;start<gameIds.length;start+=IGDB_PAGE_SIZE){
+      const page=gameIds.slice(start,start+IGDB_PAGE_SIZE);
+      const result=await this.query(`fields ${expandedFields}; where id = (${page.join(',')}); limit ${IGDB_PAGE_SIZE};`);
+      if(result.some(game=>!page.includes(Number(game.externalId))))throw new AppError(502,'IGDB returned unrelated Steam game metadata.','igdb_unavailable');
+      for(const game of result)games.push({...game,identities:[...new Map([...game.identities,...mappings.filter(row=>row.game===Number(game.externalId)).map(row=>({provider:'steam',externalId:row.uid}))].map(identity=>[`${identity.provider}:${identity.externalId}`,identity])).values()]});
+    }
+    return games;
   }
   async verify() {
     await this.query('fields name; limit 1;');
