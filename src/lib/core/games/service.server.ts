@@ -69,7 +69,7 @@ export async function gameDetails(userId: string | null, gameId: string) {
   if(userId)await requireFeature(userId,'game');
   if(userId)uuid(userId); uuid(gameId);
   const db = getDb();
-  const [game] = await db.select().from(games).where(eq(games.id, gameId));
+  const [game] = await db.select({...getTableColumns(games),available:userId?ownedGameAvailable(userId):sql<boolean>`false`}).from(games).where(eq(games.id, gameId));
   if (!game) throw new DomainError('Game not found.', 404, 'not_found');
   const identities = await db.select({ provider: gameExternalIds.provider, externalId: gameExternalIds.externalId })
     .from(gameExternalIds).where(eq(gameExternalIds.gameId, gameId));
@@ -167,17 +167,19 @@ export async function logGameSession(userId: string, id: string, raw: unknown, t
   return transaction?apply(transaction):getDb().transaction(apply);
 }
 
-export async function playthroughDetails(userId: string, id: string, requestedPage = 1) {
-  uuid(userId); uuid(id); v.parse(pageNumberSchema, requestedPage);
-  const db = getDb();
-  const [playthrough] = await db.select(playthroughFields).from(gamePlaythroughs)
-    .where(and(eq(gamePlaythroughs.id, id), eq(gamePlaythroughs.userId, userId)));
-  if (!playthrough) throw new DomainError('Playthrough not found.', 404, 'not_found');
-  const [totals] = await db.select({ total: count() }).from(gameSessions).where(eq(gameSessions.playthroughId, id));
-  const { page, pages } = pagination(totals.total, requestedPage);
-  const sessions = await db.select().from(gameSessions).where(eq(gameSessions.playthroughId, id))
-    .orderBy(desc(gameSessions.playedAt), desc(gameSessions.id)).limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE);
-  return { ...playthrough, sessions, total: totals.total, page, pages };
+export async function playthroughSummary(userId:string,id:string){
+  uuid(userId);uuid(id);await requireFeature(userId,'game');const db=getDb();
+  const [playthrough]=await db.select(playthroughFields).from(gamePlaythroughs).where(and(eq(gamePlaythroughs.id,id),eq(gamePlaythroughs.userId,userId)));
+  if(!playthrough)throw new DomainError('Playthrough not found.',404,'not_found');
+  const [totals]=await db.select({total:count()}).from(gameSessions).where(eq(gameSessions.playthroughId,id));
+  return {...playthrough,total:totals.total};
+}
+export async function playthroughDetails(userId:string,id:string,requestedPage=1){
+  v.parse(pageNumberSchema,requestedPage);const playthrough=await playthroughSummary(userId,id),db=getDb();
+  const {page,pages}=pagination(playthrough.total,requestedPage);
+  const sessions=await db.select().from(gameSessions).where(eq(gameSessions.playthroughId,id))
+    .orderBy(desc(gameSessions.playedAt),desc(gameSessions.id)).limit(PAGE_SIZE).offset((page-1)*PAGE_SIZE);
+  return {...playthrough,sessions,page,pages};
 }
 
 /** Refresh provider-owned metadata while retaining the game's ID and all private playthroughs. */

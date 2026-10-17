@@ -360,15 +360,15 @@ export class JellyfinAdapter {
   }
   async readingItem(userId: string, id: string, signal?:AbortSignal) { return jellyfinBook((path,init)=>this.call(path,init),userId,id,signal); }
   async readingPage(userId:string,offset=0){return jellyfinBookPage((path,init)=>this.call(path,init),userId,'',offset);}
-  async readingLibrary(userId: string, search: string, offset=0) { return jellyfinBooks((path,init)=>this.call(path,init),userId,search,offset); }
-  async musicLibrary(userId: string, options: MusicBrowseOptions = {}, scan?: MusicScanOptions) {
-    return browseMusic((path, init) => this.call(path, init), userId, options, scan);
+  async readingLibrary(userId: string, search: string, offset=0, signal?:AbortSignal) { return jellyfinBooks((path,init)=>this.call(path,{...init,signal}),userId,search,offset); }
+  async musicLibrary(userId: string, options: MusicBrowseOptions = {}, scan?: MusicScanOptions,signal?:AbortSignal) {
+    return browseMusic((path, init) => this.call(path, {...init,signal}), userId, options, scan);
   }
   async musicItems(userId: string, ids: string[]) {
     return musicItems((path, init) => this.call(path, init), userId, ids);
   }
-  async musicItem(userId: string, id: string) {
-    return musicItem((path, init) => this.call(path, init), userId, id);
+  async musicItem(userId: string, id: string,signal?:AbortSignal) {
+    return musicItem((path, init) => this.call(path, {...init,signal}), userId, id);
   }
   async setMusicFavourite(userId: string, id: string, value: boolean) {
     const item = await this.musicItem(userId, id);

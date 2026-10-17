@@ -3,7 +3,7 @@ import type { ProviderTransport } from '../contracts';
 import { AppError } from '../../server/security/errors';
 import { ProviderHttpError } from '../../server/security/provider-fetch';
 import { rankSearch, searchFallback, searchScore } from '../../search';
-import { openLibraryIdSchema, openLibraryKind, comicVineIdSchema, READING_PROVIDER_PAGE_LIMIT, readingPlainText, type ReadingMetadata, type ReadingPage } from '../../reading/model';
+import { openLibraryIdSchema, openLibraryKind, comicVineIdSchema, READING_PROVIDER_PAGE_LIMIT, readingPlainText, type ReadingEdition, type ReadingMetadata, type ReadingPage } from '../../reading/model';
 
 export const OPEN_LIBRARY_BASE_URL = 'https://openlibrary.org';
 export const OPEN_LIBRARY_PAGE_SIZE = 20;
@@ -149,6 +149,23 @@ export class OpenLibraryAdapter {
         coverUrl: cover ? `https://covers.openlibrary.org/b/id/${cover}-L.jpg?default=false` : metadata.coverUrl,
       };
     } catch (error) { providerError(error); }
+  }
+  async editions(id:string,page=1):Promise<{items:ReadingEdition[];total:number;page:number;pages:number}>{
+    v.parse(openLibraryIdSchema,id);v.parse(pageSchema,page);
+    try {
+    const size=20;
+    const entry=v.object({key:editionKey,title:label,publish_date:v.optional(label),publishers:v.optional(labels,[]),
+      number_of_pages:v.optional(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(1000000))),
+      covers:v.optional(v.array(v.number()),[]),works:v.array(v.object({key:workKey}))});
+    const result=v.parse(v.object({size:total,entries:v.pipe(v.array(entry),v.maxLength(size))}),await this.request(`/works/${id}/editions.json?limit=${size}&offset=${(page-1)*size}`,{headers:{accept:'application/json','User-Agent':this.userAgent}}));
+    if(result.entries.some(item=>!item.works.some(work=>canonicalWorkId(work.key)===id)))throw new AppError(502,'Open Library returned an unrelated edition.','openlibrary_unavailable');
+    return {page,pages:Math.min(READING_PROVIDER_PAGE_LIMIT,Math.max(1,Math.ceil(result.size/size))),total:result.size,
+      items:result.entries.map(item=>{const externalId=item.key.replace(/^\/books\//,''),cover=item.covers.find(value=>Number.isSafeInteger(value)&&value>0);return {
+        externalId,title:readingPlainText(item.title).slice(0,500),sourceUrl:`${OPEN_LIBRARY_BASE_URL}/books/${externalId}`,
+        coverUrl:cover?`https://covers.openlibrary.org/b/id/${cover}-L.jpg?default=false`:undefined,
+        published:item.publish_date,publishers:cleanLabels(item.publishers,20),pageCount:item.number_of_pages,
+      };})};
+    }catch(error){providerError(error);}
   }
   async verify() { await this.search('books', 1); }
 }

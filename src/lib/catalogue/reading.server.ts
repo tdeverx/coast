@@ -1,10 +1,10 @@
 import { and, eq, or, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
-import { readingWorks, workIdentifiers, works, workFeatures } from '$lib/server/db/schema';
+import { readingWorks, readingGroups, readingGroupMembers, workIdentifiers, works, workFeatures } from '$lib/server/db/schema';
 import {namedFeatures} from '$lib/social/taste-profile';
 import { DomainError } from '$lib/core/errors';
-import { openLibraryEditionIdSchema, readingReferenceSchema, readingIdentitySchema, readingProviderForId, type ReadingMetadata } from '$lib/reading/model';
+import { openLibraryEditionIdSchema, readingReferenceSchema, readingIdentitySchema, readingGroupSchema, readingProviderForId, type ReadingMetadata } from '$lib/reading/model';
 import { getConfig } from '$lib/server/config';
 import { requireEnabledCategory } from '$lib/server/experimental';
 
@@ -27,6 +27,7 @@ export const readingMetadataSchema = v.pipe(v.strictObject({
   issueNumber: v.optional(v.pipe(v.string(), v.maxLength(100))),
   identities: v.optional(v.pipe(v.array(readingIdentitySchema), v.maxLength(10))),
   editionIds: v.optional(v.pipe(v.array(openLibraryEditionIdSchema), v.maxLength(100))),
+  group:v.optional(readingGroupSchema),
 }), v.check((item) => item.provider === readingProviderForId(item.externalId)
   && v.safeParse(readingReferenceSchema, { kind: item.kind, externalId: item.externalId }).success
   && (item.kind === 'comic' || !(item.identities ?? []).some(identity => identity.provider === 'comic-vine')),  'Choose a valid provider work identity.'));
@@ -35,7 +36,7 @@ export const readingMetadataSchema = v.pipe(v.strictObject({
 export async function importReading(metadata: ReadingMetadata) {
   const input = v.parse(readingMetadataSchema, metadata);
   requireEnabledCategory(await getConfig(), input.kind);
-  const { identities: aliases = [], ...metadataValues } = input;
+  const { identities: aliases = [], group, ...metadataValues } = input;
   const identities = [...new Map([{ provider: input.provider, externalId: input.externalId }, ...aliases]
     .map(identity => [`${identity.provider}:${identity.externalId}`, identity])).values()]
     .sort((a, b) => `${a.provider}:${a.externalId}`.localeCompare(`${b.provider}:${b.externalId}`));
@@ -97,6 +98,14 @@ export async function importReading(metadata: ReadingMetadata) {
     if (saved.length !== identities.length || saved.some(identity => identity.workId !== item.id))
       throw new DomainError('This provider identity changed. Retry the import.', 409, 'identity_conflict');
     await saveFeatures(item.id);
+    if(group&&input.kind==='comic'&&input.provider===group.provider){
+      const [changedGroup]=await tx.insert(readingGroups).values({...group,kind:input.kind}).onConflictDoUpdate({target:[readingGroups.provider,readingGroups.externalId],set:{title:group.title},setWhere:sql`${readingGroups.title} is distinct from ${group.title}`}).returning();
+      const container=changedGroup??(await tx.select().from(readingGroups).where(and(eq(readingGroups.provider,group.provider),eq(readingGroups.externalId,group.externalId))))[0];
+      await tx.delete(readingGroupMembers).where(and(eq(readingGroupMembers.workId,item.id),
+        sql`${readingGroupMembers.groupId}<>${container.id}::uuid and ${readingGroupMembers.groupId} in (select id from reading_groups where provider=${group.provider})`));
+      await tx.insert(readingGroupMembers).values({groupId:container.id,workId:item.id,position:input.issueNumber??''})
+        .onConflictDoUpdate({target:[readingGroupMembers.groupId,readingGroupMembers.workId],set:{position:input.issueNumber??''},setWhere:sql`${readingGroupMembers.position} is distinct from ${input.issueNumber??''}`});
+    }
     return item;
   });
 }

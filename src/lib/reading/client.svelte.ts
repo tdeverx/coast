@@ -25,9 +25,10 @@ export function publishReading(roomId:string,location:ReadingLocation){
 }
 async function retireSession(session:ReadingSessionView){await api(`reading/sessions/${session.id}/close`,{}).catch(()=>{});}
 function install(session:ReadingSessionView,file:File|null){reader.session=session;reader.file=file;reader.location=session.location;reader.visible=true;reader.unsaved=false;reader.error='';}
-export async function openReading(workId:string,input:{file:File}|{connectionId:string;externalId:string}){
+export async function openReading(workId:string,input:{file:File}|{connectionId:string;externalId:string},signal?:AbortSignal){
  cancelOpening();const epoch=generation,abort=new AbortController();opening=abort;reader.loading=true;if(!reader.unsaved)reader.error='';
  const current=()=>epoch===generation&&!abort.signal.aborted;
+ const cancel=()=>abort.abort();signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)abort.abort();
  let prepared:ReadingSessionView|undefined,installed=false;
  try{
   let body;
@@ -55,7 +56,7 @@ export async function openReading(workId:string,input:{file:File}|{connectionId:
   if(!current())return;
   install(session,'file' in input?input.file:null);installed=true;
  }catch(cause){if(current()){reader.error=message(cause);throw cause;}}
- finally{if(prepared&&!installed)await retireSession(prepared);if(current()){opening=null;reader.loading=false;}}
+ finally{signal?.removeEventListener('abort',cancel);if(prepared&&!installed)await retireSession(prepared);if(epoch===generation&&opening===abort){opening=null;reader.loading=false;}}
 }
 export async function attachReading(session:ReadingSessionView){
  cancelOpening();const epoch=generation;

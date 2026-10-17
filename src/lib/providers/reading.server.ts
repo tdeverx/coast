@@ -95,3 +95,17 @@ export async function readingWorkForEdition(identifier:string){
  v.parse(v.pipe(v.string(),v.regex(/^(?:OL[1-9][0-9]{0,19}M|[0-9]{9}[0-9X]|[0-9]{13})$/)),identifier);
  return editionFlight(identifier,()=>editionCache(identifier,()=>adapter.workForEdition(identifier)));
 }
+const groupPages=providerCache<ReadingPage>(60,60*60_000);
+const groupFlight=providerSingleFlight<ReadingPage>('reading-groups');
+export async function readingGroupIssues(externalId:string,page=1){
+ const {key,adapter}=await source('comic');
+ if(!(adapter instanceof ComicVineAdapter))throw new Error('Invalid comic source.');
+ const identity=JSON.stringify([key,externalId,page]);
+ return groupFlight(identity,()=>groupPages(identity,()=>adapter.groupIssues(externalId,page)));
+}
+type EditionPage=Awaited<ReturnType<OpenLibraryAdapter['editions']>>;
+const editions=providerCache<EditionPage>(60,60*60_000),editionPageFlight=providerSingleFlight<EditionPage>('reading-editions');
+export async function readingEditions(externalId:string,page=1){
+ const {adapter}=await source('book');if(!(adapter instanceof OpenLibraryAdapter))throw new Error('Invalid book source.');
+ const key=JSON.stringify([externalId,page]);return editionPageFlight(key,()=>editions(key,()=>adapter.editions(externalId,page)));
+}

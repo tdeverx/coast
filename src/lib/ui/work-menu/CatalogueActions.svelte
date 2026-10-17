@@ -84,6 +84,7 @@
 
   export function gameAction(action: 'start' | 'progress' | 'log') { return gameCommands?.open(action); }
   export function updateGame(status: GameStatus) { return gameCommands?.update(status); }
+  export function isBusy() { return busy; }
   export function startReading() { return readingLaunch?.show(); }
   export function editReading() { return readingCommands?.edit(); }
   export function setReading(state: ReadingState, restart = false) { return readingCommands?.setState(state, restart); }
@@ -147,7 +148,7 @@
         <Button item icon="clock" onclick={editReading}>Update progress…</Button>
         <Button item icon="check" onclick={() => setReading(progress?.state === 'completed' ? 'reading' : 'completed')}>{progress?.state === 'completed' ? 'Mark unfinished' : 'Mark completed'}</Button>
         {#if progress?.state === 'completed'}<Button item icon="refresh" onclick={() => setReading('reading', true)}>Reread</Button>{/if}
-        {#if progress?.state === 'reading'}<Button item icon="pause" onclick={() => setReading('paused')}>Pause reading</Button>{:else if progress && ['paused','dropped'].includes(progress.state)}<Button item icon="play" onclick={() => setReading('reading')}>Resume reading</Button>{/if}
+        {#if progress?.state === 'reading'}<Button item icon="pause" onclick={() => setReading('paused')}>Pause tracking</Button>{:else if progress && ['paused','dropped'].includes(progress.state)}<Button item icon="play" onclick={() => setReading('reading')}>Resume tracking</Button>{/if}
         {#if progress?.state !== 'dropped'}<Button item icon="close" onclick={() => setReading('dropped')}>Drop reading</Button>{/if}
       </Button>
       <Button item icon="clock" href={`${item.href}#reading-history`}>View history</Button>

@@ -61,11 +61,14 @@ export const internalReferenceOwners: Record<string, InternalOwner> = {
 
 /** These thin routes delegate presentation to registered detail compositions. */
 export const delegatedReferenceRoutes: Record<string, readonly string[]> = {
+  'src/routes/media/reading-collection/[id]/+page.svelte':['src/lib/reading/GroupDetails.svelte'],
+  'src/routes/games/[id]/+page.svelte':['src/lib/games/Details.svelte'],
+  'src/routes/games/igdb/[instance]/[id]/+page.svelte':['src/lib/games/RemoteDetails.svelte'],
   'src/routes/media/[id]/+page.svelte': ['src/lib/media/Details.svelte', 'src/lib/reading/Details.svelte'],
   'src/routes/media/openlibrary/[externalId]/+page.svelte': ['src/lib/reading/Details.svelte'],
   'src/routes/media/comic-vine/[externalId]/+page.svelte': ['src/lib/reading/Details.svelte'],
-  'src/routes/music/[connection]/[id]/+page.svelte': ['src/lib/ui/components/MediaPage.svelte'],
-  'src/routes/music/work/[id]/+page.svelte': ['src/lib/ui/components/MediaPage.svelte'],
+  'src/routes/music/[connection]/[id]/+page.svelte': ['src/lib/music/Details.svelte'],
+  'src/routes/music/work/[id]/+page.svelte': ['src/lib/music/Details.svelte'],
 };
 
 async function walk(dir: string): Promise<string[]> {

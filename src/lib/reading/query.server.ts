@@ -1,6 +1,6 @@
 import { getFeatureConfig } from '$lib/server/features';
 import { presentationPreferences, personaliseWorkCards, presentationSearch } from '$lib/catalogue/overrides/presentation.server';
-import { and, asc, count, desc, eq, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, or, sql, getTableColumns } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { ratings, readingProgress, readingWorks, workIdentifiers, trackingState } from '$lib/server/db/schema';
@@ -36,12 +36,20 @@ export const readingCatalogueSchema = v.object({
   personal: v.optional(v.boolean(), true),
 });
 
-export async function readingDetails(userId: string, id: string) {
+export async function readingWork(userId: string, id: string) {
   v.parse(uuid, userId); v.parse(uuid, id);
   const db = getDb();
-  const [item] = await db.select().from(readingWorks).where(eq(readingWorks.id, id));
+  const [item] = await db.select({...getTableColumns(readingWorks),
+    available:sql<boolean>`exists(select 1 from availability a join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.media_id=${id}::uuid and a.user_id=${userId}::uuid and a.state='available' and c.status='connected' and i.enabled)`,
+    hasEditions:sql<boolean>`exists(select 1 from work_identifiers wi where wi.work_id=${id}::uuid and wi.provider='openlibrary')`,
+  }).from(readingWorks).where(eq(readingWorks.id,id));
   if (!item) throw new DomainError('Reading work not found.', 404, 'not_found');
   requireEnabledCategory(await getFeatureConfig(userId), item.kind);
+  return item;
+}
+
+export async function readingDetails(userId:string,id:string){
+  const item=await readingWork(userId,id),db=getDb();
   const [[progress], [relationships], [rating]] = await Promise.all([
     db.select().from(readingProgress).where(and(eq(readingProgress.userId, userId), eq(readingProgress.workId, id))),
     db.select({ favourite: trackingState.favourite, watchlist: trackingState.watchlist, collected: trackingState.collected }).from(trackingState).where(and(eq(trackingState.userId, userId), eq(trackingState.mediaId, id))),
@@ -131,7 +139,7 @@ export async function readingProviderCards(userId: string, metadata: ReadingMeta
 
 /** Owner-only journal. State transitions use real timestamps; page turns never fabricate read events. */
 export async function readingHistoryData(userId:string,id:string,requested=1){
- await readingDetails(userId,id);const page=v.parse(pageNumberSchema,requested),db=getDb();
+ await readingWork(userId,id);const page=v.parse(pageNumberSchema,requested),db=getDb();
  const {readingHistory}=await import('$lib/server/db/schema');
  const where=and(eq(readingHistory.userId,userId),eq(readingHistory.workId,id));
  const [result]=await db.select({total:count()}).from(readingHistory).where(where);const paging=pagination(result.total,page);

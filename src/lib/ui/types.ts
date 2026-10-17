@@ -8,6 +8,7 @@ export type MediaCardPresentation = Pick<
   | 'trackingProgress'
   | 'title'
   | 'captionTitle'
+  | 'durationLabel'
   | 'captionSubtitle'
   | 'captionActor'
   | 'captionActivity'
@@ -17,7 +18,7 @@ export type MediaCardPresentation = Pick<
   | 'artwork'
   | 'artworkSources'
   | 'logo'
-> & { kind: MusicKind | 'game' | 'person' | 'book' | 'comic'; href: string; connectionId?: string; workId?: string; artistId?: string; favourite?: boolean; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean; rating?: number | null; attribution?: {label:string;href:string} };
+> & { kind: MusicKind | 'game' | 'person' | 'book' | 'comic' | 'collection'; href: string; connectionId?: string; workId?: string; artistId?: string; favourite?: boolean; entryId?: string; listContext?: {listId:string;entryId:string}; available?: boolean; watched?: boolean; rating?: number | null; attribution?: {label:string;href:string} };
 /** A server item can be displayed before it has a shared catalogue destination. */
 export type MediaCardDisplay = Omit<MediaCardPresentation,'kind'|'href'> & {kind:MediaKind|MusicKind|'game'|'person'|'book'|'comic';href:null};
 export type MediaHeroPresentation = MediaCardPresentation &
@@ -63,6 +64,7 @@ export interface MediaView {
   overview?: string | null;
   year?: number | null;
   runtimeMinutes?: number | null;
+  durationLabel?: string;
   poster?: string | null;
   backdrop?: string | null;
   artworkSources?: Partial<Record<ArtworkLevel, ArtworkImages>>;

@@ -47,7 +47,7 @@ test('explicit reference recipes account for every production route and feature-
   const coverage=validateReferenceCoverage(reference());
   expect(coverage.compositions).toBe(compositions.length);
   expect(coverage.internal).toBe(10);
-  expect(coverage.delegated).toBe(5);
+  expect(coverage.delegated).toBe(8);
   expect(coverage.owners).toBeGreaterThan(Object.keys(manifest).length);
 });
 

@@ -10,6 +10,7 @@ export interface MusicItem {
   id: string;
   entryId?: string;
   workId?: string;
+  available?: boolean;
   artistId?: string;
   playCount?: number;
   positionSeconds?: number;

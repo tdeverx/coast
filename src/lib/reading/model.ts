@@ -50,6 +50,8 @@ export const readingIdentitySchema = v.variant('provider', [
   v.strictObject({ provider: v.literal('comic-vine'), externalId: comicVineIdSchema }),
 ]);
 export type ReadingIdentity = v.InferOutput<typeof readingIdentitySchema>;
+export const readingGroupSchema=v.strictObject({provider:v.literal('comic-vine'),externalId:v.pipe(v.string(),v.regex(/^4050-[1-9][0-9]{0,14}$/)),title:v.pipe(v.string(),v.minLength(1),v.maxLength(500))});
+export type ReadingGroupReference=v.InferOutput<typeof readingGroupSchema>;
 export const readingProviderForId = (id: string): ReadingProvider => id.startsWith('OL') ? 'openlibrary' : 'comic-vine';
 
 /** Subject labels describe a work's medium; the metadata source does not. */
@@ -75,6 +77,7 @@ export interface ReadingMetadata {
   editionIds?: string[];
   /** Explicit provider cross-references only; titles and ISBN edition groups are not identities. */
   identities?: ReadingIdentity[];
+  group?: ReadingGroupReference;
 }
 
 export interface ReadingPage {
@@ -83,6 +86,7 @@ export interface ReadingPage {
   nextPage: number | null;
   page: number;
 }
+export type ReadingEdition={externalId:string;title:string;sourceUrl:string;coverUrl?:string;published?:string;publishers:string[];pageCount?:number};
 
 /** Provider descriptions are displayed as escaped text, never HTML. */
 export function readingPlainText(value: string): string {

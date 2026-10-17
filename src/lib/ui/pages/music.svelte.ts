@@ -1,8 +1,8 @@
-import { refreshAfterChange } from '$lib/ui/client';
+import { page } from '$app/state';
 import { playMusic } from '$lib/playback/client.svelte';
 import { message } from '$lib/ui/client';
 import { useClient } from '$lib/ui/client-context';
-import { musicCard, musicDuration, musicHero, musicHref } from '$lib/music/presentation';
+import { musicDuration, musicHero, musicHref } from '$lib/music/presentation';
 import type { MusicItem, MusicPage } from '$lib/music/model';
 import { overviewPanels } from '$lib/ui/insights/overview';
 import type { PageCommand, PageSection } from './types';
@@ -20,8 +20,8 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
   const artists = $derived(item.kind === 'album' ? item.albumArtists : item.artists);
   const facts = $derived([
     ...(item.kind === 'track' ? [{ label: 'Listens', value: String(item.playCount ?? 0) }, ...(item.positionSeconds ? [{ label: 'Progress', value: musicDuration(item.positionSeconds) }] : [])] : []),
-    ...(item.releaseDate ? [{ label: 'Released', value: item.releaseDate }] : item.year ? [{ label: 'Year', value: String(item.year) }] : []),
-    ...(item.durationSeconds !== undefined ? [{ label: 'Duration', value: musicDuration(item.durationSeconds) }] : []),
+    ...(item.kind!=='artist' && item.releaseDate ? [{ label: 'Released', value: item.releaseDate }] : item.kind!=='artist' && item.year ? [{ label: 'Year', value: String(item.year) }] : []),
+    ...(item.kind!=='artist' && item.durationSeconds !== undefined && item.durationSeconds>0 ? [{ label: 'Duration', value: musicDuration(item.durationSeconds) }] : []),
     ...(item.discNumber !== undefined ? [{ label: 'Disc', value: String(item.discNumber) }] : []),
     ...(item.trackNumber !== undefined ? [{ label: 'Track', value: String(item.trackNumber) }] : []),
     ...(item.genres.length ? [{ label: 'Genres', value: item.genres.join(', ') }] : []),
@@ -33,9 +33,9 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
     try { await task(); } catch (cause) { failure = message(cause); } finally { busy = false; }
   }
   const commands = $derived<PageCommand[]>(canAct() ? [
-    ...(item.workId ? [
-      { label: 'Play', icon: 'play' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, false)) },
-      ...(item.kind==='album'||item.positionSeconds ? [{ label: 'Continue', disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, true)) }] : []),
+    ...(item.workId && item.kind!=='artist' && item.available!==false && page.data.capabilities?.playback!==false ? [
+      { label: 'Play', size:'hero' as const, icon: 'play' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, false)) },
+      ...(item.kind==='album'||item.positionSeconds ? [{ label: 'Continue', size:'hero' as const, disabled: busy, run: () => act(() => preview ? Promise.resolve() : playMusic(item.workId!, true)) }] : []),
     ] : []),
     { label: 'Music', emphasis: 'subtle', icon: 'left', href: `/music?connection=${get().connectionId}` },
   ] : []);
@@ -45,11 +45,11 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
     if (overview.length && (!section || section === 'insights')) result.push({ key: 'insights', title: 'Insights', panels: overview, layout: section ? 'grid' : 'row', href: !section ? `${path}?section=insights` : undefined });
     const key = item.kind === 'artist' ? 'albums' : 'tracks';
     if (item.kind !== 'track' && (!section || section === key)) result.push({
-      key, title: item.kind === 'artist' ? 'Albums' : 'Tracks', items: data.children.items.map(child => musicCard(child, data.connectionId)),
-      shape: 'square', mediaKind: 'music', layout: section ? 'grid' : 'row', href: !section ? `${path}?section=${key}` : undefined,
-      page: data.page, pages: data.pages, pageUrl: number => `${path}?section=${key}&page=${number}`,
-      error: data.failure, retry: () => preview ? Promise.resolve() : refreshAfterChange('music'),
-      empty: { title: item.kind === 'artist' ? 'No albums available' : 'No tracks available', description: 'This Jellyfin account has no matching music here.' },
+      key,title:item.kind==='artist'?'Albums':'Tracks',
+      source:{type:'detail',title:item.kind==='artist'?'Albums':'Tracks',
+        path:data.connectionId?`music/source/children?${new URLSearchParams({connectionId:data.connectionId,externalId:item.id})}`:`music/${item.workId??item.id}/children`,
+        href:`${path}?section=${key}`,shape:'square',mediaKind:'music',layout:section?'grid':'row',page:data.page},
+
     });
     return result;
   });

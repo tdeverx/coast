@@ -25,9 +25,11 @@
 
   let { data }: { data: ReadingDetailData } = $props();
   const title = $derived(readingLabel(data.kind));
+  const section=$derived(page.url.searchParams.get('section'));
+  const rowHref=(name:string)=>`/media/${data.item.id}?section=${name}`;
   const library = $derived(`/library?view=read&kind=${data.kind}&scope=all`);
   const overview = $derived(overviewPanels(data.item.overview, readingFacts(data.item)));
-  const { change, api } = useClient();
+  const { change, api,preview } = useClient();
   const history=createResource<{items:{id:string;state:ReadingState;page:number;totalPages:number|null;occurredAt:string}[];page:number;pages:number;total:number}>({items:[],page:1,pages:1,total:0});
   let historyWork='';
   $effect(()=>{const id=data.item.id;untrack(()=>{if(historyWork!==id){history.cancel();history.replace({items:[],page:1,pages:1,total:0});historyWork=id;}});});
@@ -50,38 +52,39 @@
   async function add() {
     await act(async () => {
       const item = await change<{ id: string }>('reading/import', { kind: data.kind, externalId: data.item.externalId });
-      await goto(`/media/${item.id}`);
+      if(!preview)await goto(`/media/${item.id}`);
     });
   }
 </script>
 
 <svelte:head><title>{data.item.title} · {title} · Coast</title></svelte:head>
-<MediaPage details item={readingHero(data.item, data.remote)}>
+<MediaPage details hero={!section} item={readingHero(data.item, data.remote)}>
+  {#if section}<Button emphasis="subtle" href={`/media/${data.item.id}`} icon="left">{data.item.title}</Button>{/if}
   {#snippet heroActions()}
     <Button emphasis="subtle" href={library} icon="left">Library</Button>
     {#if data.remote}<Button size="hero" icon="plus" disabled={busy} onclick={add}>Add {data.kind}</Button>
     {:else}
-      <ReadingLaunch workId={data.item.id} title={data.item.title} />
-      <Button size="hero" icon="plus" disabled={busy} onclick={() => menu?.editReading()}>{data.progress ? 'Update reading' : 'Start reading'}</Button>
+      {#if page.data.capabilities?.reader!==false}<ReadingLaunch workId={data.item.id} title={data.item.title} />{/if}
       <WorkMenu bind:this={menu} item={readingCard(data.item)} readingState={data.progress} showTrigger hero menuOnly onchanged={() => { if (history.activated) void loadHistory(); }} />
     {/if}
-    <Button emphasis="subtle" href={data.item.sourceUrl}>View on {readingProviderLabel(data.item.provider)}</Button>
   {/snippet}
   {#if failure}<div class="notice error" role="alert">{failure}</div>{/if}
-  <p class="small quiet">Experimental · Metadata from <a href={data.item.sourceUrl} target="_blank" rel="noreferrer">{readingProviderLabel(data.item.provider)}</a>.</p>
-  {#if overview.length}<Shelf title="Overview" size="panel" artworkOptions={false} panels={overview} />{/if}
-  {#if data.item.authors.length||data.item.seriesTitle}
-    <Shelf title="Explore" size="panel" artworkOptions={false}>
+
+  {#if overview.length&&(!section||section==='insights')}<Shelf title="Insights" href={!section?rowHref('insights'):undefined} layout={section?'grid':'row'} size="panel" artworkOptions={false} panels={overview} />{/if}
+  {#if (!section||section==='credits')}
+    <Shelf title="Credits" href={!section?rowHref('credits'):undefined} layout={section?'grid':'row'} size="panel" artworkOptions={false}>
       {#if data.item.authors.length}<DetailCard title="Authors"><div class="row wrap">{#each data.item.authors as author}<Button href={`/search?view=read&q=${encodeURIComponent(author)}`}>{author}</Button>{/each}</div></DetailCard>{/if}
       {#if data.item.seriesTitle}<DetailCard title="Series"><Button href={`/search?view=read&kind=comic&q=${encodeURIComponent(data.item.seriesTitle)}`}>{data.item.seriesTitle}</Button></DetailCard>{/if}
-      {#if data.item.editionIds?.length}<DetailCard title="Editions"><Button href={`https://openlibrary.org/works/${data.item.externalId}/editions`}>View editions on Open Library</Button></DetailCard>{/if}
+      <DetailCard title="Metadata source"><Button emphasis="subtle" href={data.item.sourceUrl}>View on {readingProviderLabel(data.item.provider)}</Button></DetailCard>
     </Shelf>
   {/if}
   {#if !data.remote}
-    <section class="section" aria-label="Reading progress">
-      <div class="reading-heading"><Heading title="Reading progress">
-        {#snippet actions()}<Button icon="plus" disabled={busy} onclick={() => menu?.editReading()}>Update progress</Button>
-          {#if data.progress?.state==='completed'}<Button disabled={busy} onclick={() => menu?.setReading('reading', true)}>Reread</Button>{/if}
+    {#if (!section||section==='collections')&&data.kind==='comic'}<Shelf source={{type:'detail',title:'Collections',path:`reading/${data.item.id}/groups`,href:rowHref('collections'),layout:section?'grid':'row',mediaKind:'reading'}} />{/if}
+    {#if (!section||section==='editions')&&(data.item.provider==='openlibrary'||data.item.hasEditions)}<Shelf source={{type:'detail',title:'Editions',path:`reading/${data.item.id}/editions`,href:rowHref('editions'),layout:section?'grid':'row',mediaKind:'reading',page:Number(page.url.searchParams.get('page')??1)}} />{/if}
+    {#if !section||section==='activity'}<section class="section" aria-label="Reading progress">
+      <div class="reading-heading"><Heading title="Your activity" href={!section?rowHref('activity'):undefined}>
+        {#snippet actions()}<Button icon="plus" disabled={busy||menu?.isBusy()} onclick={() => menu?.editReading()}>Update progress</Button>
+          {#if data.progress?.state==='completed'}<Button disabled={busy||menu?.isBusy()} onclick={() => menu?.setReading('reading', true)}>Reread</Button>{/if}
           {#if data.progress}<Button icon="check" disabled={busy} onclick={() => menu?.setReading(data.progress!.state === 'completed' ? 'reading' : 'completed')}>{data.progress.state === 'completed' ? 'Mark unfinished' : 'Mark completed'}</Button>{/if}
         {/snippet}
       </Heading></div>
@@ -97,13 +100,13 @@
             { label: 'Completed', value: data.progress.completedAt ? new Date(data.progress.completedAt).toLocaleDateString() : 'Unfinished', text: true },
           ]} /></DetailCard>
         </Shelf>
-      {:else}<EmptyState title="Track your reading" description="Choose a reading state and record your current page. Add the page count for the edition you are reading." icon="library"><Button onclick={() => menu?.editReading()}>Start reading</Button></EmptyState>{/if}
+      {:else}<EmptyState title="Track your reading" description="Choose Update progress to record your reading state, current page and edition page count." icon="library" />{/if}
     </section>
     {#key data.item.id}<div id="reading-history" use:lazyContent={{load:()=>void loadHistory()}}>
       <Shelf title="Reading history" size="panel" artworkOptions={false} hideEmpty={false} itemCount={history.data.items.length} busy={!history.ready && !history.error || history.busy} error={history.error} retry={()=>void loadHistory(history.data.page)} pageNumber={history.data.page} pages={history.data.pages} onpage={number=>void loadHistory(number)}>
         {#each history.data.items as event(event.id)}<DetailCard title={displayLabel(event.state)} description={new Date(event.occurredAt).toLocaleString()}><p class="small quiet">{event.totalPages?`Page ${event.page} of ${event.totalPages}`:`Page ${event.page}`}</p></DetailCard>{/each}
       </Shelf>
-    </div>{/key}
+    </div>{/key}{/if}
   {/if}
 </MediaPage>
 

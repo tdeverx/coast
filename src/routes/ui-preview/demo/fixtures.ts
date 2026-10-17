@@ -104,6 +104,12 @@ export function createPreviewTransport(name: string, scenario: string): import('
       return new Response(bytes, {headers: {'content-type': 'image/png'}});
     }
     if (name === 'admin.benchmark' && path === 'admin/benchmarks') return Response.json({runs:benchmarkQueued?[{id,actionId:null,userId:null,state:'queued',workloadVersion:'coast-local-v2',createdAt:today,startedAt:null,finishedAt:null,context:null,measurements:null,comparisonKey:null,errors:[]}]:[],total:benchmarkQueued?1:0,page:1,pages:1,activeId:benchmarkQueued?id:null});
+    if (/^music\/[^/]+\/children$/.test(path)) return Response.json({items:[{...track,workId:track.id,kind:'track',href:'#',poster:'/coast-mark.png',available:true}],page:1,pages:1,total:1});
+    if (/^reading\/[^/]+\/groups$/.test(path)) return Response.json({items:[{id:`reading-group:${id}`,kind:'collection',title:'Preview comic volume',href:'#',poster:'/coast-mark.png'}],page:1,pages:1,total:1});
+    if (/^reading\/collections\/[^/]+$/.test(path)) return Response.json({items:[{id:'4000-123',kind:'comic',title:'Preview comic #1',href:'#',poster:'/coast-mark.png'}],page:1,pages:1,total:1});
+    if (/^reading\/[^/]+\/editions$/.test(path)) return Response.json({items:[{id:'edition:OL456M',kind:'book',title:'Preview edition',href:'#',poster:'/coast-mark.png',captionSubtitle:'2026 · Preview publisher'}],page:1,pages:1,total:1});
+    if (/^reading\/[^/]+\/linked$/.test(path)) return Response.json([]);
+    if (/^game-playthroughs\/[^/]+$/.test(path)) return Response.json({sessions:[30,90,125].map((minutes,index)=>({id:`preview-session-${index}`,playedAt:`2026-10-0${index+1}T18:00:00Z`,minutesPlayed:minutes,note:'Preview play session'})),page:1,pages:1,total:3});
     if (path === 'synced') return Response.json([]);
     if (path === 'experiments/feed') return Response.json({rows: scenario === 'empty' ? [] : [{key:'preview-row', title:'More stories to discover', category:'screen', surface:'genre', genre:'Drama', kind:'movie', reason:'liked'}]});
     if (path === 'experiments/row' || path === 'experiments/recommendations') return Response.json({...content, title:'More stories to discover'});

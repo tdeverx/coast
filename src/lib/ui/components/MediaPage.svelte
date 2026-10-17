@@ -54,7 +54,7 @@
 </script>
 
 {#snippet actionControls()}
-  {#each commands as command}<Button icon={command.icon} emphasis={command.emphasis} disabled={command.disabled} href={command.href} onclick={command.run}>{command.label}</Button>{/each}
+  {#each commands as command}<Button size={command.size} icon={command.icon} emphasis={command.emphasis} disabled={command.disabled} href={command.href} onclick={command.run}>{command.label}</Button>{/each}
   {@render heroActions?.()}
 {/snippet}
 {#if hasHero}<MediaHero {item} {items} {collection} {parents} {context} {next} {requestable} actions={commands.length || heroActions ? actionControls : undefined} />{/if}
@@ -62,7 +62,7 @@
   {#if back}<Button emphasis="subtle" href={back.href} icon="left">{back.label}</Button>{/if}
 
   {#if links.length}<div class="row detail-links">{#each links as link}<Button emphasis="subtle" href={link.href}>{link.label}</Button>{/each}</div>{/if}
-  {#each sections as section (section.key)}<Shelf title={section.title} items={section.items ?? []} panels={section.panels}
+  {#each sections as section (section.key)}<Shelf source={section.source} title={section.title} items={section.items ?? []} panels={section.panels}
     size={section.panels ? 'panel' : section.shape ?? 'poster'} shape={section.shape} mediaKind={section.mediaKind}
     artworkOptions={!section.panels} layout={section.layout ?? 'row'} href={section.href}
     pageNumber={section.page} pages={section.pages} pageUrl={section.pageUrl} error={section.error} retry={section.retry}>

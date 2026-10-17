@@ -26,6 +26,7 @@
   export function request() { screen?.request(); }
   export function gameAction(action: 'start' | 'progress' | 'log') { return catalogue?.gameAction(action); }
   export function updateGame(status: GameStatus) { return catalogue?.updateGame(status); }
+  export function isBusy() { return catalogue?.isBusy() ?? false; }
   export function startReading() { return catalogue?.startReading(); }
   export function editReading() { return catalogue?.editReading(); }
   export function setReading(state: import('$lib/reading/model').ReadingState, restart = false) { return catalogue?.setReading(state, restart); }

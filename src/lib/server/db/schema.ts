@@ -1064,6 +1064,20 @@ export const readingWorks = pgTable('reading_works', {
   check('reading_works_metadata_bounds_check', sql`length(${t.title}) between 1 and 500 and cardinality(${t.authors})<=50 and cardinality(${t.subjects})<=100`),
   check('reading_works_edition_ids_check', sql`cardinality(${t.editionIds})<=100`),
 ]);
+/** Verified provider containers are distinct from editions of an individual work. */
+export const readingGroups=pgTable('reading_groups',{
+  id:uuid('id').primaryKey().defaultRandom(),
+  provider:text('provider').$type<ReadingProvider>().notNull(),
+  externalId:text('external_id').notNull(),
+  kind:text('kind').$type<ReadingKind>().notNull(),
+  title:text('title').notNull(),
+},t=>[uniqueIndex('reading_groups_identity_idx').on(t.provider,t.externalId),
+  check('reading_groups_identity_check',sql`${t.provider}='comic-vine' and ${t.kind}='comic' and ${t.externalId} ~ '^4050-[1-9][0-9]{0,14}$'`)]);
+export const readingGroupMembers=pgTable('reading_group_members',{
+  groupId:uuid('group_id').notNull().references(()=>readingGroups.id,{onDelete:'cascade'}),
+  workId:uuid('work_id').notNull().references(()=>readingWorks.id,{onDelete:'cascade'}),
+  position:text('position').notNull(),
+},t=>[primaryKey({columns:[t.groupId,t.workId]}),index('reading_group_members_work_idx').on(t.workId)]);
 export const readingProgress = pgTable('reading_progress', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   workId: uuid('work_id').notNull().references(() => readingWorks.id, { onDelete: 'cascade' }),

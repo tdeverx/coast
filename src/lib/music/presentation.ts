@@ -35,7 +35,7 @@ export function musicCard(item: MusicItem, connectionId: string): MediaCardPrese
     href: item.workId?`/music/work/${item.workId}`:musicHref(connectionId, item.id),
     connectionId,
     backdrop: item.backdropUrl,
-    available: item.kind !== 'artist',
+    available: item.kind !== 'artist' && (item.available ?? !!connectionId),
     captionSubtitle:
       musicCredits(item) ||
       (item.kind === 'artist' ? 'Artist' : item.kind === 'album' ? 'Album' : 'Track'),
@@ -52,6 +52,7 @@ export function musicHero(item: MusicItem, connectionId: string): MediaHeroPrese
     id: `music:${connectionId}:${item.id}`,
     overview: item.overview,
     genres: item.genres,
-    runtimeMinutes: item.durationSeconds ? Math.round(item.durationSeconds / 60) : undefined,
+    year:item.kind==='artist'?undefined:item.year,
+    durationLabel:item.kind!=='artist'&&item.durationSeconds?musicDuration(item.durationSeconds):undefined,
   };
 }

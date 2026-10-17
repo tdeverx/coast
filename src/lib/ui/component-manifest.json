@@ -70,8 +70,12 @@
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/experiments/MediaModal.svelte",
       "src/lib/experiments/PlanAction.svelte",
+      "src/lib/games/Details.svelte",
+      "src/lib/games/RemoteDetails.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/music/Details.svelte",
       "src/lib/reading/Details.svelte",
+      "src/lib/reading/GroupDetails.svelte",
       "src/lib/reading/Reader.svelte",
       "src/lib/reading/ReadingLaunch.svelte",
       "src/lib/sharing/ShareAction.svelte",
@@ -123,8 +127,6 @@
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
-      "src/routes/games/[id]/+page.svelte",
-      "src/routes/games/igdb/[instance]/[id]/+page.svelte",
       "src/routes/library/+page.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/login/+page.svelte",
@@ -200,12 +202,13 @@
       "MetricGrid"
     ],
     "usedBy": [
+      "src/lib/games/Details.svelte",
+      "src/lib/music/Details.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/ui/components/MediaActivity.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/Shelf.svelte",
       "src/lib/ui/work-menu/MusicCommands.svelte",
-      "src/routes/games/[id]/+page.svelte",
       "src/routes/profile/[username]/+page.svelte"
     ],
     "dynamicComposition": true
@@ -258,6 +261,7 @@
     ],
     "usedBy": [
       "src/lib/benchmarks/BenchmarkSettings.svelte",
+      "src/lib/games/Details.svelte",
       "src/lib/media/Details.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
@@ -271,7 +275,6 @@
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
-      "src/routes/games/[id]/+page.svelte",
       "src/routes/music/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/requests/+page.svelte",
@@ -294,6 +297,7 @@
     "elements": [],
     "usedBy": [
       "src/lib/experiments/PlanAction.svelte",
+      "src/lib/reading/ReadingLaunch.svelte",
       "src/lib/ui/components/AccountFields.svelte",
       "src/lib/ui/components/AvatarPicker.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
@@ -374,6 +378,7 @@
     ],
     "usedBy": [
       "src/lib/benchmarks/BenchmarkSettings.svelte",
+      "src/lib/games/Details.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
@@ -387,7 +392,6 @@
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
-      "src/routes/games/[id]/+page.svelte",
       "src/routes/library/+page.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
@@ -549,14 +553,14 @@
       "Shelf"
     ],
     "usedBy": [
+      "src/lib/games/Details.svelte",
+      "src/lib/games/RemoteDetails.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/music/Details.svelte",
       "src/lib/reading/Details.svelte",
-      "src/routes/games/[id]/+page.svelte",
-      "src/routes/games/igdb/[instance]/[id]/+page.svelte",
+      "src/lib/reading/GroupDetails.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
-      "src/routes/music/[connection]/[id]/+page.svelte",
-      "src/routes/music/work/[id]/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/progress/+page.svelte"
     ],
@@ -579,9 +583,9 @@
     "path": "src/lib/ui/components/MetricGrid.svelte",
     "elements": [],
     "usedBy": [
+      "src/lib/games/Details.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/ui/components/DetailCard.svelte",
-      "src/routes/games/[id]/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/taste/[friendId]/+page.svelte"
     ],
@@ -631,7 +635,6 @@
     "usedBy": [
       "src/lib/benchmarks/BenchmarkSettings.svelte",
       "src/lib/ui/components/Shelf.svelte",
-      "src/routes/games/[id]/+page.svelte",
       "src/routes/library/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
       "src/routes/requests/+page.svelte",
@@ -875,16 +878,18 @@
       "SegmentedControl"
     ],
     "usedBy": [
+      "src/lib/games/Details.svelte",
+      "src/lib/games/RemoteDetails.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/music/Details.svelte",
       "src/lib/reading/Details.svelte",
+      "src/lib/reading/GroupDetails.svelte",
       "src/lib/recommendations/DynamicFeed.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/MediaPage.svelte",
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte",
       "src/routes/games/+page.svelte",
-      "src/routes/games/[id]/+page.svelte",
-      "src/routes/games/igdb/[instance]/[id]/+page.svelte",
       "src/routes/library/+page.svelte",
       "src/routes/lists/+page.svelte",
       "src/routes/media/[id]/history/+page.svelte",
@@ -979,13 +984,12 @@
       "Button"
     ],
     "usedBy": [
+      "src/lib/games/Details.svelte",
       "src/lib/media/Details.svelte",
+      "src/lib/music/Details.svelte",
       "src/lib/reading/Details.svelte",
       "src/lib/ui/components/MediaCard.svelte",
-      "src/lib/ui/components/MediaHero.svelte",
-      "src/routes/games/[id]/+page.svelte",
-      "src/routes/music/[connection]/[id]/+page.svelte",
-      "src/routes/music/work/[id]/+page.svelte"
+      "src/lib/ui/components/MediaHero.svelte"
     ],
     "dynamicComposition": false
   }

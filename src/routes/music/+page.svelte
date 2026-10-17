@@ -25,7 +25,7 @@
 
   <Shelf title="Music" layout="grid" items={data.items} shape="square" mediaKind="music" enrichSocial={false} artworkOptions={false} hideEmpty={false} error={data.failure} retry={()=>invalidateAll()} pageNumber={data.page} pages={data.pages} {pageUrl}>
     {#snippet heading()}<Heading title="Library" level={1} variant="title" />{/snippet}
-    {#snippet segments()}{@const browse=browseHeading('listen',data.experimentalMusic)}{#if browse.selection}<SegmentedControl label={browse.selection.label} value={browse.selection.value} options={browse.selection.options} onchange={browse.selection.change} />{/if}<SegmentedControl label="Listen type" value={data.filters.kind} options={librarySelections.listen} onchange={kind => goto(pageUrl(1,kind as typeof data.filters.kind),{keepFocus:true,noScroll:true})} />{/snippet}
+    {#snippet segments()}{@const browse=browseHeading('listen',{...data,features:data.capabilities})}{#if browse.selection}<SegmentedControl label={browse.selection.label} value={browse.selection.value} options={browse.selection.options} onchange={browse.selection.change} />{/if}<SegmentedControl label="Listen type" value={data.filters.kind} options={librarySelections.listen} onchange={kind => goto(pageUrl(1,kind as typeof data.filters.kind),{keepFocus:true,noScroll:true})} />{/snippet}
     {#snippet controls()}<RowFilter groups={[{label:'Availability',value:data.filters.scope,options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:value=>{void goto(pageUrl(1,data.filters.kind,value as typeof data.filters.scope),{keepFocus:true,noScroll:true});}}]}/>{/snippet}
     {#snippet before()}
   <form class="filter-row browse-search" action="/music" method="GET">

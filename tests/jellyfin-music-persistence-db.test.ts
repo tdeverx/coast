@@ -9,6 +9,8 @@ import {jellyfinItemKey} from '../src/lib/providers/jellyfin/paging';
 import {musicQueue} from '../src/lib/music/queue.server';
 import {logMusic} from '../src/lib/music/persistence.server';
 import {musicWorkCredits} from '../src/lib/music/credits.server';
+import {hydrateMusicItems} from '../src/lib/music/presentation.server';
+import {musicChildren} from '../src/lib/music/details.server';
 import {workAssessments} from '../src/lib/collection/query.server';
 
 const enabled=process.env.COAST_DB_TEST==='1',run=enabled?test:test.skip;
@@ -170,4 +172,23 @@ run('rich music page access cannot publish for an obsolete generation or cancell
  const {jobExecution,JobYield}=await import('../src/lib/server/queue/execution');
  await expect(jobExecution.run({id:action.id,attempts:1,purpose:'scheduled',started:performance.now(),checkpoints:0},()=>observeMusicLibraryAccess(userId,connection.id,instanceId,connection.accountGeneration,[track]))).rejects.toBeInstanceOf(JobYield);
  expect(await getDb().select().from(s.availability).where(and(eq(s.availability.connectionId,connection.id),eq(s.availability.mediaId,saved.workId!)))).toHaveLength(0);
+});
+
+run('detail children retain ordered repeats, private progress, artwork and effective source availability',async()=>{
+ const db=getDb(),external=jellyfinItemKey(crypto.randomUUID());
+ const album=await persistMusic(instanceId,{...item(external),kind:'album',externalIds:{}});workIds.push(album.workId!);
+ const recording=crypto.randomUUID(),track={...item(crypto.randomUUID()),albumId:external,trackNumber:1,primaryImageTag:'art',externalIds:{musicbrainztrack:recording}};
+ const [saved]=await observeMusicLibraryAccess(userId,connection.id,instanceId,connection.accountGeneration,[track]);workIds.push(saved.workId!);
+ await persistMusic(instanceId,{...track,id:jellyfinItemKey(crypto.randomUUID()),trackNumber:2});
+ await db.insert(s.musicProgress).values({userId,trackId:saved.workId!,playCount:3,positionSeconds:12});
+ await db.insert(s.trackingState).values({userId,mediaId:saved.workId!,favourite:true});
+ const children=await musicChildren(userId,album.workId!,new URL('http://coast'));
+ expect(children.items).toHaveLength(2);expect(children.items.map(child=>child.id)).toEqual([saved.workId!,saved.workId!]);
+ expect(new Set(children.items.map(child=>child.entryId)).size).toBe(2);
+ expect(children.items.every(child=>child.available===true&&child.favourite===true&&child.trackingProgress?.value===12&&!!child.poster)).toBe(true);
+ const guest=await hydrateMusicItems(null,[{...track,workId:saved.workId!}]);
+ expect(guest[0].available).toBe(false);expect(guest[0].playCount).toBe(0);expect(guest[0].favourite).toBe(false);
+ await db.update(s.providerConnections).set({status:'disconnected'}).where(eq(s.providerConnections.id,connection.id));
+ try{expect((await hydrateMusicItems(userId,[{...track,workId:saved.workId!}]))[0].available).toBe(false);}
+ finally{await db.update(s.providerConnections).set({status:'connected'}).where(eq(s.providerConnections.id,connection.id));}
 });
