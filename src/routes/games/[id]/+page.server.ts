@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
-import { gameDetails, playthroughSummary } from '$lib/core/games/service.server';
-import { listProviders } from '$lib/providers/instances.server';
+import {gameDetailData} from '$lib/games/detail.server';
+import {AppError} from '$lib/server/security/errors';
 import { DomainError } from '$lib/core/errors';
 import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({locals, params, url, depends}) => {
@@ -9,15 +9,10 @@ export const load: PageServerLoad = async ({locals, params, url, depends}) => {
 
   depends('coast:games');
   try {
-    const item = await gameDetails(locals.user?.id??null, params.id);
-    const id = url.searchParams.get('playthrough') ?? item.playthroughs[0]?.id;
-    const playthrough = id && locals.user ? await playthroughSummary(locals.user.id,id) : null;
-    if (playthrough && playthrough.gameId !== item.id) error(404, 'Playthrough not found.');
-    const sources = (locals.user ? await listProviders(locals.user.id) : []).filter((provider) => provider.provider === 'igdb' && provider.configured);
-    return { item, playthrough, sources };
+    return await gameDetailData(locals.user?.id??null,params.id,url.searchParams.get('playthrough'));
   } catch (cause) {
     if (v.isValiError(cause)) error(400, 'Check the game and playthrough identifiers.');
-    if (cause instanceof DomainError) error(cause.status, cause.message);
+    if (cause instanceof DomainError || cause instanceof AppError) error(cause.status, cause.message);
     throw cause;
   }
 };

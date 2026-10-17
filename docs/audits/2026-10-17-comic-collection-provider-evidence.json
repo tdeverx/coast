@@ -1,0 +1,109 @@
+{
+  "date": "2026-10-17",
+  "scope": "Public read-only API and published contract investigation; no account credentials used",
+  "gcd": {
+    "production_v2_status": 404,
+    "beta_v2_status": 200,
+    "parent_series_id": 188558,
+    "beta_requests": 6,
+    "beta_bytes": 44637,
+    "volumes": [
+      {
+        "id": 2427253,
+        "reprint_rows": 27,
+        "all_reprint_origin_ids": 20,
+        "story_rows": 15,
+        "story_issue_members": [
+          {
+            "id": 2262124,
+            "descriptor": "1",
+            "first_target_sequence": 2.0
+          },
+          {
+            "id": 2268026,
+            "descriptor": "2",
+            "first_target_sequence": 4.0
+          },
+          {
+            "id": 2274459,
+            "descriptor": "3",
+            "first_target_sequence": 6.0
+          },
+          {
+            "id": 2286071,
+            "descriptor": "4",
+            "first_target_sequence": 8.0
+          },
+          {
+            "id": 2297299,
+            "descriptor": "5",
+            "first_target_sequence": 10.0
+          },
+          {
+            "id": 2306165,
+            "descriptor": "6",
+            "first_target_sequence": 12.0
+          }
+        ],
+        "all_pages_complete": true
+      },
+      {
+        "id": 2567801,
+        "reprint_rows": 35,
+        "all_reprint_origin_ids": 22,
+        "story_rows": 38,
+        "story_issue_members": [
+          {
+            "id": 2426940,
+            "descriptor": "1",
+            "first_target_sequence": 2.0
+          },
+          {
+            "id": 2440295,
+            "descriptor": "1",
+            "first_target_sequence": 9.0
+          },
+          {
+            "id": 2449881,
+            "descriptor": "2",
+            "first_target_sequence": 11.0
+          },
+          {
+            "id": 2466153,
+            "descriptor": "3",
+            "first_target_sequence": 13.0
+          },
+          {
+            "id": 2479026,
+            "descriptor": "4",
+            "first_target_sequence": 15.0
+          },
+          {
+            "id": 2494777,
+            "descriptor": "5",
+            "first_target_sequence": 17.0
+          },
+          {
+            "id": 2507184,
+            "descriptor": "6",
+            "first_target_sequence": 19.0
+          }
+        ],
+        "all_pages_complete": true
+      }
+    ],
+    "beta_source_commit": "51251f0f82c1c198b6439dcb19c34c2a71b97069",
+    "live_v1_parent": "https://www.comics.org/api/series/188558/?format=json",
+    "beta_parent": "https://beta.comics.org/api/v2/series/188558/",
+    "membership_rule": "Join reprints.target_story to the selected volume stories; retain type.name=comic story; deduplicate origin_issue.id; order by earliest target sequence_number. Verified only on these two books."
+  },
+  "metron": {
+    "unauthenticated_status": 401,
+    "live_harley_coverage": "Not verified; account token required"
+  },
+  "hardcover": {
+    "unauthenticated_status": 400,
+    "reason": "No Authorization header",
+    "live_harley_coverage": "Not verified; account token required"
+  }
+}

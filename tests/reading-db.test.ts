@@ -5,6 +5,8 @@ import { closeDb, getDb } from '../src/lib/server/db';
 import { getConfig } from '../src/lib/server/config';
 import { contentRevision } from '../src/lib/server/content-revision.server';
 import { readingGroups, readingGroupMembers, listItems, lists, media, providerInstances, ratings, readingProgress, readingWorks, systemSettings, trackingState, upNext, users, workEditions, workIdentifiers, works } from '../src/lib/server/db/schema';
+import {readingCredits,readingCommunity,relatedReading} from '../src/lib/reading/detail.server';
+import {readingIssuesForWork,readingGroupData,readingGroupStatistics} from '../src/lib/reading/groups.server';
 import { importReading } from '../src/lib/catalogue/reading.server';
 import { ensureReadingSaved, updateReading } from '../src/lib/core/reading/service.server';
 import { readingCatalogue, readingDetails, readingStoredWorkId, readingProviderCards } from '../src/lib/reading/query.server';
@@ -83,6 +85,18 @@ suite('experimental reading identity, private state and bounded local reads', ()
     expect(second.id).not.toBe(first.id);
     const [saved]=await getDb().select().from(readingGroups).where(eq(readingGroups.externalId,group.externalId));
     expect(await getDb().select().from(readingGroupMembers).where(eq(readingGroupMembers.groupId,saved.id))).toHaveLength(2);
+    const calls:{id:string;page:number}[]=[];
+    const provider=spyOn(readingProviders,'readingGroupIssues').mockImplementation(async(id,page=1)=>{
+      calls.push({id,page});return {items:[{...comic,group},{...comic,externalId:'4000-900000002',issueNumber:'2',group}],total:12,page,nextPage:null};
+    });
+    try{
+      const row=await readingIssuesForWork(owner,first.id,2);
+      expect(row.title).toBe(group.title);expect('href' in row&&row.href).toBe(`/media/reading-collection/${saved.id}`);
+      expect(row.items.map(item=>item.id)).toEqual([first.id,second.id]);expect(row.page).toBe(2);expect(row.pages).toBe(2);
+      const full=await readingGroupData(owner,saved.id,2);expect(full.items).toEqual(row.items);
+      expect(await readingGroupStatistics(owner,saved.id)).toEqual({issues:2,reading:0,completed:0,available:0});
+      expect(calls).toEqual([{id:group.externalId,page:2},{id:group.externalId,page:2}]);
+    }finally{provider.mockRestore();}
     const revision=await contentRevision(owner);await importReading({...comic,group});
     expect(await contentRevision(owner)).toEqual(revision);
     await importReading({...comic,group:{...group,externalId:'4050-900000002'}});
@@ -485,6 +499,42 @@ suite('experimental reading identity, private state and bounded local reads', ()
     }
     const indexes = await getDb().execute<{indexname:string}>(sql`select indexname from pg_indexes where indexname='reading_works_search_document_idx'`);
     expect(Array.from(indexes)).toHaveLength(1);
+  });
+
+  test('detail credits reuse exact provider identity without changing canonical authors',async()=>{
+    const metadata=spyOn(readingProviders,'readingProviderDetails').mockResolvedValue({...comic,credits:[{name:'Writer',role:'writer'},{name:'Artist',role:'penciler'},{name:'Artist',role:'penciler'}]});
+    try{
+      expect(await readingCredits(owner,bookId)).toEqual([{name:'Author',role:'Author'}]);
+      expect(metadata).not.toHaveBeenCalled();
+      expect(await readingCredits(owner,comicId)).toEqual([{name:'Writer',role:'writer'},{name:'Artist',role:'penciler'}]);
+      expect(metadata).toHaveBeenCalledWith('comic',comic.externalId);
+      expect((await readingDetails(owner,comicId)).item.authors).toEqual([]);
+    }finally{metadata.mockRestore();}
+  });
+  test('related reading ranks shared authors ahead of subjects and returns only a bounded, stable page',async()=>{
+    const root=await importReading({...book,externalId:'OL987000001W',sourceUrl:'https://openlibrary.org/works/OL987000001W',authors:['Related author'],subjects:['Related subject']});fixtureIds.add(root.id);
+    const saved=await Promise.all(Array.from({length:65},(_,i)=>importReading({...book,externalId:`OL${987000002+i}W`,sourceUrl:`https://openlibrary.org/works/OL${987000002+i}W`,title:`Related ${String(i).padStart(3,'0')}`,authors:i===64?['Related author']:['Other author'],subjects:['Related subject']})));
+    saved.forEach(item=>fixtureIds.add(item.id));
+    const first=await relatedReading(owner,root.id);expect(first.total).toBe(65);expect(first.items).toHaveLength(60);expect(first.items[0].id).toBe(saved[64].id);
+    const second=await relatedReading(owner,root.id,2);expect(second.items).toHaveLength(5);expect(new Set([...first.items,...second.items].map(item=>item.id)).size).toBe(65);
+    expect(first.items.every(item=>item.id!==root.id&&!item.available)).toBe(true);
+    await expect(relatedReading(owner,root.id,0)).rejects.toThrow();
+  });
+  test('reading community totals obey independent privacy sections, disabled accounts and viewer Social choice',async()=>{
+    const root=await importReading({...book,externalId:'OL987000100W',sourceUrl:'https://openlibrary.org/works/OL987000100W'});fixtureIds.add(root.id);
+    const db=getDb();
+    await db.insert(ratings).values([{userId:owner,mediaId:root.id,value:4},{userId:other,mediaId:root.id,value:1}]);
+    await db.insert(readingProgress).values([{userId:owner,workId:root.id,state:'reading'},{userId:other,workId:root.id,state:'completed',completedAt:new Date()}]);
+    try{
+      await db.update(users).set({settings:{social:{audience:'public',sections:{ratings:'private',progress:'public'}}}}).where(eq(users.id,other));
+      expect(await readingCommunity(owner,root.id)).toEqual({rated:1,rating:4,completed:1,reading:1});
+      await db.update(users).set({settings:{social:{audience:'public',sections:{ratings:'public',progress:'private'}}}}).where(eq(users.id,other));
+      expect(await readingCommunity(owner,root.id)).toEqual({rated:2,rating:2.5,completed:0,reading:1});
+      await db.update(users).set({disabled:true}).where(eq(users.id,other));
+      expect(await readingCommunity(owner,root.id)).toEqual({rated:1,rating:4,completed:0,reading:1});
+      await db.update(users).set({settings:{features:{social:false}}}).where(eq(users.id,owner));
+      await expect(readingCommunity(owner,root.id)).rejects.toMatchObject({status:403});
+    }finally{await db.update(users).set({settings:{},disabled:false}).where(inArray(users.id,[owner,other]));}
   });
 
 });

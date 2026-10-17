@@ -6,6 +6,8 @@ This file records known notices; it is not a complete software bill of materials
 
 UI icons use Hugeicons' free Stroke Rounded set (`@hugeicons/core-free-icons`) and its Svelte renderer (`@hugeicons/svelte`), both MIT licensed, copyright 2025 Hugeicons. Their shared MIT notice is included at `static/licenses/Hugeicons-MIT.txt`. Only the free packages are distributed; no Pro assets are included. Coast's brand mark is the user-supplied asset, separate from the UI icon library.
 
+The optional CBR/CB7/CBT reader uses `libarchive-wasm` 1.2.0 (MIT). Its WebAssembly runtime reports libarchive 3.7.7, zlib 1.3.1, liblzma 5.6.4 and bzip2 1.0.8. Their upstream notices and source links are retained in `static/licenses/reading-archives.txt`; the BSD, zlib, public-domain and bzip2 terms are compatible with Coast's existing AGPL distribution. The decoder runs only when one of those formats is opened, in a disposable worker. No project licence is changed.
+
 Contributions are accepted under the same AGPL-3.0-only license. Coast does not require a separate CLA or claim an additional proprietary license.
 
 TMDB, Jellyfin, Trakt and Seerr are independent services. Their names are used to identify integrations. Metadata and artwork remain subject to their providers' terms. This product uses the TMDB API but is not endorsed or certified by TMDB.

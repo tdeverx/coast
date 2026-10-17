@@ -5,13 +5,20 @@ export type ReadingKind = (typeof readingKinds)[number];
 export type ReadingProvider = 'openlibrary' | 'comic-vine';
 export const readingStates = ['planned', 'reading', 'completed', 'paused', 'dropped'] as const;
 export type ReadingState = (typeof readingStates)[number];
-export const readingFormats = ['pdf', 'epub', 'cbz'] as const;
+export const comicFormats = ['cbz', 'cbr', 'cb7', 'cbt'] as const;
+export const readingFormats = ['pdf', 'epub', ...comicFormats] as const;
 export type ReadingFormat = (typeof readingFormats)[number];
+export type ComicFormat = (typeof comicFormats)[number];
+export const readingFileAccept = '.pdf,.epub,.cbz,.zip,.cbr,.rar,.cb7,.7z,.cbt';
+export const readingFileLabel = 'PDF, EPUB, CBZ/ZIP, CBR/RAR, CB7/7z or CBT';
 const readerPage = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100000));
 /** EPUB uses a canonical fragment identifier, never a layout-dependent page number. */
 export const readingLocationSchema = v.variant('format', [
   v.strictObject({ format: v.literal('pdf'), page: readerPage, total: readerPage }),
   v.strictObject({ format: v.literal('cbz'), page: readerPage, total: readerPage }),
+  v.strictObject({ format: v.literal('cbr'), page: readerPage, total: readerPage }),
+  v.strictObject({ format: v.literal('cb7'), page: readerPage, total: readerPage }),
+  v.strictObject({ format: v.literal('cbt'), page: readerPage, total: readerPage }),
   v.strictObject({ format: v.literal('epub'), cfi: v.pipe(v.string(), v.maxLength(2000), v.regex(/^epubcfi\([^\u0000-\u001f]*\)$/)), fraction: v.pipe(v.number(), v.minValue(0), v.maxValue(1)) }),
 ]);
 export type ReadingLocation = v.InferOutput<typeof readingLocationSchema>;
@@ -29,6 +36,10 @@ export function readingLocationLabel(location: ReadingLocation | null | undefine
 }
 export function readingFormat(filename: string): ReadingFormat | null {
   const extension = filename.toLowerCase().split('.').pop();
+  // ZIP comics use the same decoder and numbered-page contract as CBZ.
+  if (extension === 'zip') return 'cbz';
+  if (extension === 'rar') return 'cbr';
+  if (extension === '7z') return 'cb7';
   return readingFormats.includes(extension as ReadingFormat) ? extension as ReadingFormat : null;
 }
 export type ReadingSessionView = {
@@ -59,6 +70,7 @@ export function openLibraryKind(subjects: string[]): ReadingKind {
   return subjects.some(subject => /\b(comic books|comics|graphic novels|manga|bandes dessin[ée]es)\b/i.test(subject)) ? 'comic' : 'book';
 }
 
+export type ReadingCredit={name:string;role:string};
 export interface ReadingMetadata {
   provider: ReadingProvider;
   externalId: string;
@@ -68,6 +80,8 @@ export interface ReadingMetadata {
   coverUrl?: string;
   sourceUrl: string;
   authors: string[];
+  /** On-demand provider credits; not a second canonical person catalogue. */
+  credits?: ReadingCredit[];
   subjects: string[];
   publishedYear?: number;
   releaseDate?: string;

@@ -7,7 +7,7 @@
  import Dialog from '$lib/ui/components/Dialog.svelte';
  import Button from '$lib/ui/components/Button.svelte';
  import Field from '$lib/ui/components/Field.svelte';
- import type { ReadingFormat } from './model';
+ import {readingFileAccept,readingFileLabel,type ReadingFormat} from './model';
  let {workId,title,compact=false,hideTrigger=false,onopened}:{workId:string;title:string;compact?:boolean;hideTrigger?:boolean;onopened?:()=>Promise<void>}=$props();
  const {api,preview}=useClient(),operation=createOperation();
  type Linked={connectionId:string;externalId:string;name:string;format:string|null};
@@ -49,8 +49,8 @@
   {#if resource.busy}<p class="small quiet" role="status">Checking reading sources…</p>{/if}
   {#if resource.data.linked.length>1}{#each resource.data.linked as linked}<div class="spread"><span>{linked.name} · {linked.format?.toUpperCase()}</span><Button disabled={busy} onclick={()=>void choose(linked)}>Read</Button></div>{/each}{/if}
   {#if operation.error}<p class="notice error" role="alert">{operation.error}</p>{/if}
-  <label class="field">Open a file<input type="file" accept=".pdf,.epub,.cbz" disabled={busy} onchange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';if(file)void choose({file});}} /></label>
-  <p class="small quiet">PDF, EPUB or CBZ. Local files stay in this browser. Party members need the same edition and their own copy.</p>
+  <label class="field">Open a file<input type="file" accept={readingFileAccept} disabled={busy} onchange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';if(file)void choose({file});}} /></label>
+  <p class="small quiet">{readingFileLabel}. Local files stay in this browser. Party members need the same edition and their own copy.</p>
   {#if connections.length}
    <form class="stack" onsubmit={event=>{event.preventDefault();void search();}}>
     <label class="field">Jellyfin server<select bind:value={connectionId} onchange={()=>{resource.replace({...resource.data,items:[],nextOffset:null});offset=0;searched=false;}}>{#each connections as connection}<option value={connection.id}>{connection.name}</option>{/each}</select></label>

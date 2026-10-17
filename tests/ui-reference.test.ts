@@ -47,7 +47,7 @@ test('explicit reference recipes account for every production route and feature-
   const coverage=validateReferenceCoverage(reference());
   expect(coverage.compositions).toBe(compositions.length);
   expect(coverage.internal).toBe(10);
-  expect(coverage.delegated).toBe(8);
+  expect(coverage.delegated).toBe(9);
   expect(coverage.owners).toBeGreaterThan(Object.keys(manifest).length);
 });
 
@@ -85,6 +85,6 @@ test('every composition has a real name dispatch in its selected renderer',()=>{
 });
 
 test('dynamic import evidence excludes TypeScript-only imports',()=>{
-  const source="<script lang='ts'>let Reader: typeof import('$lib/reading/Reader.svelte').default; const open=()=>import('$lib/experiments/MediaModal.svelte');</script>";
-  expect(renderedComponents('src/routes/+layout.svelte',source).dynamicImports).toEqual(['src/lib/experiments/MediaModal.svelte']);
+  const source="<script lang='ts'>let Reader: typeof import('$lib/reading/Reader.svelte').default; const open=()=>import('$lib/media/DetailPanel.svelte');</script>";
+  expect(renderedComponents('src/routes/+layout.svelte',source).dynamicImports).toEqual(['src/lib/media/DetailPanel.svelte']);
 });

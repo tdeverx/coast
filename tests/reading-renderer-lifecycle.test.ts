@@ -6,5 +6,5 @@ test('actual comic/PDF renderers cancel pending resources and skip settled page 
  });
  const [status,output,errors]=await Promise.all([child.exited,new Response(child.stdout).text(),new Response(child.stderr).text()]);
  expect({status,errors}).toEqual({status:0,errors:''});
- expect(JSON.parse(output)).toEqual({comicCases:6,pdfCases:3});
+ expect(JSON.parse(output)).toEqual({comicCases:6,archiveCases:3,pdfCases:3});
 });

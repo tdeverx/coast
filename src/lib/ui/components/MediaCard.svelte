@@ -4,7 +4,7 @@
   import ProgressBar from './ProgressBar.svelte';
   import { primaryMediaAction, progressFraction } from '$lib/media/model';
   import { canPlayMusicCard } from '$lib/music/presentation';
-  import { goto,pushState } from '$app/navigation';
+  import {navigateMedia} from '$lib/ui/media-navigation';
   import { cardArtwork, overlayArtwork } from '$lib/media/artwork';
   import type { ArtworkPriority } from '$lib/ui/types';
   import { artworkTypes } from '$lib/artwork';
@@ -153,7 +153,7 @@
     }
     else if (primaryAction === 'read') await actions?.startReading();
     else if (primaryAction === 'request') actions?.request();
-    else if(href) await goto(href);
+    else if(href) await navigateMedia(href);
   }
   function cardGesture(node: HTMLElement) {
     return contextGesture(node, openMenu);
@@ -162,7 +162,6 @@
     if (preview) { event.preventDefault(); return; }
     if (event.defaultPrevented) return;
     if(!href)return;
-    if(!onselect&&page.data.user&&page.data.experiments?.mediaModal&&/^\/media\/[0-9a-f-]{36}$/.test(href)&&!event.ctrlKey&&!event.metaKey&&!event.shiftKey&&!event.altKey&&event.button===0){event.preventDefault();pushState(page.url,{...page.state,mediaModalId:href.split('/')[2]});return;}
     if (onselect && trackedItem) {
       event.preventDefault();
       onselect(trackedItem);
@@ -185,7 +184,7 @@
     </div>
   {/if}
   <div
-    class="art {shape}"
+    class="art media-surface-edge {shape}"
     class:unavailable={!!page.data.user && page.data.user.settings?.monochromeMissing !== false && item.available === false}
     class:contained
     title={artworkHint}
@@ -348,7 +347,7 @@
     aspect-ratio: 5.4 / 1;
   }
   .media-card:is(:hover, :focus-within) .art {
-    transform: scale(1.02);
+    transform: scale(var(--media-surface-hover-scale));
   }
   .media-card.loading .art {background:transparent;transform:none;}
   .media-card.loading .art::before,.media-card.loading .art::after {display:none;}
@@ -408,16 +407,6 @@
     opacity: 0.4;
   }
   .art::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border: 1.5px solid white;
-    border-radius: inherit;
-    pointer-events: none;
-    mix-blend-mode: overlay;
-    z-index: 0;
-    box-sizing: border-box;
-    opacity: 0.5;
     transition:
       border-width var(--fast),
       opacity var(--fast);

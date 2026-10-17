@@ -12,7 +12,6 @@ export const featureDefinitions = [
   ['reader', 'File reader', 'Open supported book and comic files. Manual reading progress remains available.'],
   ['parties', 'Parties', 'Join friends for synchronized playback or reading. Requires Social.'],
   ['planning', 'Planning & Upcoming', 'Plan media and receive reminders.'],
-  ['mediaModal', 'Media detail overlay', 'Open media details over the current page.'],
   ['sharing', 'Playback sharing', 'Create stream links when your administrator has granted permission.'],
   ['requests', 'Media requests', 'Request new media from connected services.'],
   ['api', 'Application API', 'Allow scoped application tokens and webhook delivery.'],
@@ -28,10 +27,10 @@ export type FeatureConfiguration = {
   features?: FeaturePolicy;
   experimentalMusic: boolean; experimentalGaming: boolean;
   experimentalBooks: boolean; experimentalComics: boolean;
-  experimentalParties: boolean; experimentalPlanning: boolean; experimentalMediaModal: boolean;
+  experimentalParties: boolean; experimentalPlanning: boolean;
   allowPlaybackSharing: boolean; enableRequests: boolean;
 };
-const experimentFields = {music:'experimentalMusic',game:'experimentalGaming',book:'experimentalBooks',comic:'experimentalComics',parties:'experimentalParties',planning:'experimentalPlanning',mediaModal:'experimentalMediaModal'} as const;
+const experimentFields = {music:'experimentalMusic',game:'experimentalGaming',book:'experimentalBooks',comic:'experimentalComics',parties:'experimentalParties',planning:'experimentalPlanning'} as const;
 export type FeatureDecision = { enabled: boolean; reason: 'administrator' | 'experiment' | 'personal' | 'social' | 'playback' | null };
 export function resolveFeatures(config: FeatureConfiguration, choices: FeatureChoices = {}): Record<Feature, FeatureDecision> {
   const decisions = Object.fromEntries(featureDefinitions.map(([key]) => {

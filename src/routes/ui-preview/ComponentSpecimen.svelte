@@ -73,7 +73,7 @@
  {/if}
 {/snippet}
 
-<div class="component-specimen" class:wide={['MediaHero','MediaPage','Shelf','Header'].includes(name)} data-custom-component={name}>
+<div class="component-specimen" class:wide={['MediaHero','MediaPage','MediaDetails','Shelf','Header'].includes(name)} data-custom-component={name}>
  {#if failure}<p class="small text-danger" role="alert">{failure}</p>
  {:else if !Current}<p class="quiet" role="status">Loading component…</p>
  {:else}

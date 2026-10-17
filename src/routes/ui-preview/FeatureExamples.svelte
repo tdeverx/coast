@@ -5,9 +5,11 @@
   import Heading from '$lib/ui/components/Heading.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import MediaPage from '$lib/ui/components/MediaPage.svelte';
+  import MediaDetails from '$lib/ui/components/MediaDetails.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Field from '$lib/ui/components/Field.svelte';
-  import Dialog from '$lib/ui/components/Dialog.svelte';
+  import SectionDetails from '$lib/ui/pages/SectionDetails.svelte';
+  import DetailOverlay from '$lib/ui/components/DetailOverlay.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Toast from '$lib/ui/components/Toast.svelte';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
@@ -25,6 +27,7 @@
   let { name, scenario }: { name: string; scenario: string } = $props();
   providePreviewPlayback();
   let opened = $state(false), feedback = $state(''), backgroundMode = $state('activity'), positioning = $state(false), position = $state(50), range = $state(50), enabled = $state(true), title = $state(''), selected = $state('one');
+  let detailStep=$state(0);
   let DynamicFeed = $state<typeof import('$lib/recommendations/DynamicFeed.svelte').default>();
   let dynamicFailure = $state('');
   $effect(() => {
@@ -85,8 +88,8 @@
   {:else if name === 'sharing.landing'}
     {#if scenario === 'party'}<Heading title="Synced session" variant="page" /><div class="stack form-width"><p>Experimental · Join using your own accessible Jellyfin source. Playback follows the host.</p><Button onclick={() => feedback = 'Preview join requested. No party is joined.'}>Join session</Button></div>
     {:else}<Heading title="Playback invitation" /><p>Play this shared item. You control your own playback.</p>{#if scenario === 'expired'}<p class="notice">This preview invitation has expired.</p>{:else}<Button onclick={() => feedback = 'Preview invitation requested. No playback starts.'}>Open invitation</Button>{/if}{#if scenario === 'error'}<p role="alert">This preview invitation could not be opened.</p>{/if}{/if}{#if feedback}<p class="small quiet" role="status">{feedback}</p>{/if}
-  {:else if name === 'experiments.modal'}
-    <Button onclick={() => opened = true}>Open media details</Button><Dialog bind:open={opened} title="Media details" wide edgeToEdge>{#if scenario === 'error'}<Toast kind="error" text={'These preview details could not be loaded.'} />{:else}<MediaPage details item={scenario === 'reading' ? readingHero(reading) : movie}><Shelf title="Overview" size="panel" artworkOptions={false} panels={scenario === 'reading' ? overviewPanels(reading.overview, readingFacts(reading)) : mediaOverviewPanels(movie)} /></MediaPage><div class="modal-footer"><Button href="/media/preview" onclick={() => opened = false}>Full page</Button></div>{/if}</Dialog>
+  {:else if name === 'media.details'}
+    <Button onclick={() => {detailStep=0;opened=true;}}>Open media details</Button><DetailOverlay bind:open={opened} sectionPage={scenario==='row'} contentKey={scenario==='row'?'/progress?view=watching':scenario==='section'?`/media/${id}?section=related`:String(detailStep)} onback={detailStep?()=>detailStep=0:undefined} editions={scenario==='editions'?[{value:'theatrical',label:'Theatrical'},{value:'extended',label:'Extended Edition'}]:[]}>{#if scenario==='row'}<SectionDetails href="/progress?view=watching" />{:else if scenario === 'error'}<Toast kind="error" text={'These preview details could not be loaded.'} />{:else}<MediaDetails detailHref={scenario==='section'?`/media/${id}?section=related`:undefined} view={{hero:scenario!=='section',item:scenario==='reading'?readingHero(reading):detailStep?show:movie}} model={scenario==='section'?undefined:{insights:{selection:'overview',tabs:[{value:'overview',label:'Overview',panels:scenario==='reading'?overviewPanels(reading.overview,readingFacts(reading)):mediaOverviewPanels(movie)}]}}}>{#if scenario==='nested'}<Button onclick={()=>detailStep=1}>Open related preview</Button>{/if}<Shelf title="Related titles" items={items} layout={scenario==='section'?'grid':'row'} filterBy={scenario==='section'?'watched':'none'} /></MediaDetails>{/if}</DetailOverlay>
   {:else if name === 'app.shell'}
     {#if scenario === 'error'}<div class="content page"><EmptyState level={1} title="Page not found" description="This fictional page could not be found."><Button href="/for-you">Back to For You</Button></EmptyState></div>
     {:else}<div class="shell-example"><Header user={scenario === 'guest' ? null : { username: 'preview', role: 'admin' }} unread={2} friendRequests={1} /></div>{/if}
@@ -105,6 +108,7 @@
 </div>
 
 <style>
+
   .feature-examples { min-width: 0; }
   .profile-header { position: relative; isolation: isolate; padding-block: 24px 0; }
   .profile-header.with-background { min-height: clamp(340px, 48vh, 580px); display: flex; align-items: flex-end; padding-bottom: 20px; }
@@ -122,7 +126,6 @@
   .actions { flex-wrap: wrap; }
   .position-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin-top: 16px; }
   .position-controls label { display: grid; gap: 6px; }
-  .modal-footer { padding: 16px 24px; }
   .shell-example { position: relative; contain: layout paint; min-height: 180px; }
   @media (max-width: 600px) { .profile-header.with-background { min-height: 280px; padding-bottom: 0; } .profile-heading { padding-bottom: 18px; gap: 18px; padding-top: 0; } .avatar { width: 76px; height: 76px; font-size: var(--text-2xl); } }
 </style>

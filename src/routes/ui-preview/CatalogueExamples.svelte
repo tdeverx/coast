@@ -1,6 +1,6 @@
 <script lang="ts">
   import { providePreviewPlayback } from '$lib/playback/context.svelte';
-  import MediaPage from '$lib/ui/components/MediaPage.svelte';
+  import MediaDetails from '$lib/ui/components/MediaDetails.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   import Heading from '$lib/ui/components/Heading.svelte';
@@ -9,7 +9,6 @@
   import Rating from '$lib/ui/components/Rating.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import Icon from '$lib/ui/components/Icon.svelte';
-  import DetailCard from '$lib/ui/components/DetailCard.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Toast from '$lib/ui/components/Toast.svelte';
   import ReadingLaunch from '$lib/reading/ReadingLaunch.svelte';
@@ -19,6 +18,7 @@
   import GameDetails from '$lib/games/Details.svelte';
   import RemoteGameDetails from '$lib/games/RemoteDetails.svelte';
   import Reader from '$lib/reading/Reader.svelte';
+  import PersonDetails from '$lib/media/PersonDetails.svelte';
   import { gameCard } from '$lib/games/presentation';
   import { readingCard, type ReadingDisplay } from '$lib/reading/presentation';
   import { musicCard } from '$lib/music/presentation';
@@ -62,13 +62,13 @@
     <Shelf title="Related titles" href="/discover" items={scenario === 'loading' || scenario === 'empty' || scenario === 'error' ? [] : rowItems} busy={scenario === 'loading' || scenario === 'refresh'} hideEmpty={false} error={scenario === 'error' ? 'This preview source is temporarily unavailable.' : ''} retry={() => notice = 'Preview retry requested.'} />
     {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
   {:else if name === 'catalogue.details'}
-    <p class="small quiet">Composition reference using the production MediaPage, presentation adapters and Shelf. Commands are preview-only.</p>
+    <p class="small quiet">Composition reference using the production MediaDetails, presentation adapters and Shelf. Commands are preview-only.</p>
     {#if scenario === 'music'}<MusicDetails data={{item:{...music,workId:id},connectionId:id,children:{items:[],total:0,nextOffset:null},failure:'',page:1,pages:1}} />
-    {:else if scenario==='reading-collection'}<GroupDetails data={{group:{id,title:'Preview comic volume'},cover:artwork}} />
+    {:else if scenario==='reading-collection'}<GroupDetails data={{group:{id,title:'Preview comic volume'},cover:artwork,statistics:{issues:12,reading:2,completed:5,available:8}}} />
     {:else if ['book','comic','remote-reading'].includes(scenario)}<ReadingDetails data={{item:scenario==='comic'?comic:book,kind:scenario==='comic'?'comic':'book',remote:scenario==='remote-reading',progress:null,relationships:{favourite:false,watchlist:false,collected:false},rating:null}} />
     {:else if scenario==='game'}<GameDetails data={{item:{...game,category:'game',identities:[],steam:[],playthroughs:[],createdAt:new Date('2026-01-01'),updatedAt:new Date('2026-01-01')},playthrough:null,sources:[]}} />
     {:else if scenario==='game-remote'}<RemoteGameDetails data={{item:{...game,externalId:'123'},instanceId:id}} />
-    {:else}<MediaPage details item={detailItem}>
+    {:else}<MediaDetails view={{item:detailItem}} model={{insights:{selection:'overview',tabs:[{value:'overview',label:'Overview',panels:detailPanels}]}}}>
       {#snippet heroActions()}<Button size="hero" icon="play" onclick={()=>notice='Preview action acknowledged.'}>Play</Button>{/snippet}
       {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
       {#if detailKind === 'show'}<Shelf title="Seasons" items={[season]} filterBy="watched" />
@@ -85,24 +85,16 @@
         {/snippet}
       </Shelf>
       {:else if detailKind === 'collection'}<Shelf title="In this collection" items={[movie, show]} filterBy="type" />{/if}
-      <Shelf title="Overview" size="panel" artworkOptions={false} panels={detailPanels} />
 
-    </MediaPage>{/if}
+
+    </MediaDetails>{/if}
   {:else if name === 'reading.launch'}
     <p class="small quiet">The production edition chooser uses synthetic connections and files. File selection never opens an engine or uploads a file in this reference.</p>
     <ReadingLaunch workId={book.id} title={book.title} />
   {:else if name === 'reading.reader'}
     <Reader example={{ title: book.title, state: (scenario === 'loading' ? 'opening' : ['opening','error','unsaved','follower'].includes(scenario) ? scenario : 'ready') as 'ready'|'opening'|'error'|'unsaved'|'follower' }} />
   {:else if name === 'people.intro'}
-    <section class="person-intro">
-      {#if scenario !== 'missing-art'}<img class="portrait" src={artwork} alt="Alex Example" />{/if}
-      <div class="bio"><Heading variant="page" title="Alex Example" description="Acting" />
-        <dl><div><dt>Born</dt><dd>1980-04-12 · Preview city</dd></div></dl>
-        <div><p>A fictional biography demonstrating the existing person-page composition.</p>{#if scenario === 'long-bio'}<details><summary>More about Alex Example</summary><p>{'Additional biography text follows the existing native disclosure. '.repeat(12)}</p></details>{/if}</div>
-        <a class="small" href="https://www.themoviedb.org/person/1">View on TMDB ↗</a>
-      </div>
-    </section>
-    <Shelf title="Known for" items={[movie, show]} />
+    <PersonDetails data={{person:{id:1,name:'Alex Example',department:'Acting',birthday:'1980-04-12',birthplace:'Preview city',portrait:scenario==='missing-art'?undefined:artwork,biography:scenario==='long-bio'?'A fictional biography.\n\n'+'Additional biography text follows the existing native disclosure. '.repeat(12):'A fictional biography demonstrating the existing person-page composition.'}}}/>
   {:else if name === 'search.form'}
     <Heading variant="page" title="Search" />
     <form class="filter-row search-controls" onsubmit={() => searched = true}>
@@ -120,7 +112,10 @@
   {:else if name === 'catalogue.history'}
     {#if scenario === 'game-table'}<GameDetails data={gameData} />
     {:else if scenario === 'selection'}<Heading title="Preview title · History" /><div class="stack"><p>Select the entries you want to remove.</p><div class="row"><Button emphasis="subtle" onclick={() => selected = true}>Select shown</Button><Button emphasis="subtle" onclick={() => selected = false}>Clear selection</Button><Button danger disabled={!selected} onclick={() => confirming = true}>Remove entry…</Button></div><Field label="Select preview watch"><input type="checkbox" bind:checked={selected} /></Field></div><Shelf title="1 October 2026" items={[episode]} shape="fanart" />
-    {:else}<Shelf title="Reading history" size="panel" artworkOptions={false}><DetailCard title="Reading" description="1 October 2026, 18:00"><p class="small quiet">Page 80 of 320</p></DetailCard><DetailCard title="Planned" description="30 September 2026, 12:00"><p class="small quiet">Page 0 of 320</p></DetailCard></Shelf>{/if}
+    {:else}<Shelf title="Activity" shape="poster" artworkOptions={false} availability={false} enrichSocial={false} items={[
+      {...readingCard(book),entryId:'reading-progress',captionActor:{username:'alex',avatar:artwork,status:'offline'},captionActivity:{id,occurredAt:'2026-10-01T18:00:00Z',dateKnown:true,kind:'reading-reading',action:'Reading',detail:'80 of 320 pages',myReaction:null},captionSubtitle:'Reading · 80 of 320 pages'},
+      {...readingCard(book),entryId:'reading-planned',captionActor:{username:'alex',avatar:artwork,status:'offline'},captionActivity:{id:'00000000-0000-4000-8000-000000000081',occurredAt:'2026-09-30T12:00:00Z',dateKnown:true,kind:'reading-planned',action:'Saved',detail:'',myReaction:null},captionSubtitle:'Saved'},
+    ]}/>{/if}
     {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
     <Dialog bind:open={confirming} title="Remove from history?">
       <div class="stack">
@@ -134,19 +129,6 @@
 
 <style>
   .catalogue-examples { min-width: 0; }
-  .person-intro { display: flex; gap: 32px; align-items: start; margin: 24px 0 40px; }
-  .portrait { width: clamp(110px, 18vw, 230px); aspect-ratio: 2/3; object-fit: cover; border-radius: 12px; }
-  .bio { min-width: 0; max-width: 800px; display: grid; gap: 18px; }
-  .bio :global(.page-heading) { margin: 0; }
-  .bio p { white-space: pre-line; line-height: var(--leading-relaxed); font-size: var(--text-sm); margin-top: 16px; }
-  .bio summary { cursor: pointer; }
-  .bio dl { display: grid; gap: 12px; }
-  .bio dt { font-size: var(--text-sm); color: var(--muted); }
-  .bio dd { font-size: var(--text-sm); margin-top: 4px; }
-  .search-controls { flex-wrap: wrap; }
-  .search-input { display: flex; align-items: center; position: relative; flex: 1; min-width: min(100%, 200px); }
-  .search-input :global(svg) { position: absolute; left: 14px; color: var(--muted); pointer-events: none; }
-  .search-input input { width: 100%; padding-left: 42px; }
   .edition-details { padding: 24px 0; }
   .episode-details { display: grid; gap: 12px; margin-top: 8px; }
   .episode-details p { font-size: var(--text-sm); line-height: var(--leading-relaxed); }
@@ -155,5 +137,5 @@
   .episode-meta .icon-button { margin-left: auto; }
   .request-details { gap: 10px; margin-top: 14px; align-items: start; }
   .request-details p { overflow-wrap: anywhere; }
-  @media (max-width: 600px) { .person-intro { gap: 20px; flex-wrap: wrap; } .portrait { width: 120px; } .bio { width: 100%; } }
+
 </style>

@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
+import {AppError} from '$lib/server/security/errors';
 import * as v from 'valibot';
-import { musicDetails } from '$lib/music/service.server';
+import { musicSourceDetailData } from '$lib/music/detail.server';
 import { jellyfinMusicIdSchema } from '$lib/providers/jellyfin/music.server';
 import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
 import type { PageServerLoad } from './$types';
@@ -17,13 +18,13 @@ export const load: PageServerLoad = async ({locals, params, url, depends}) => {
   const page = Number(url.searchParams.get('page') ?? 1);
   if (!Number.isInteger(page) || page < 1 || page > 42949673)
     error(400, 'Choose a positive music page number.');
-  const detail = await musicDetails(locals.user.id, params.connection, params.id).catch(
+  return await musicSourceDetailData(locals.user.id, params.connection, params.id,page).catch(
     async (cause) => {
+      if(cause instanceof AppError)error(cause.status,cause.message);
       await logDiagnostic('error', 'application.failed', {
         failure: classifyFailure(cause),
       });
       error(503, 'This music item is unavailable. Return to Music and try again.');
     }
   );
-  return {...detail,children:{items:[],total:0,nextOffset:null},failure:'',page,pages:1};
 };

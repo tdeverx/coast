@@ -30,6 +30,7 @@
     "drizzle-orm": "^0.45.2",
     "epubjs": "^0.3.93",
     "hls.js": "^1.6.0",
+    "libarchive-wasm": "1.2.0",
     "pdfjs-dist": "^6.4.299",
     "valibot": "^1.1.0"
   },

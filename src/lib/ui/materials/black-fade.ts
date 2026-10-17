@@ -3,9 +3,9 @@ const blackFadeStops = [
   ['60%', 0.22], ['72%', 0.35], ['82%', 0.52], ['91%', 0.74], ['100%', 1],
 ] as const;
 
-export function blackFadeGradient(edge: 'top' | 'bottom') {
+export function blackFadeGradient(edge: 'top' | 'bottom',colour?:string) {
   const direction = edge === 'bottom' ? 'to bottom' : 'to top';
   const stops = blackFadeStops.map(([position, opacity]) =>
-    `${opacity === 0 ? 'transparent' : `rgb(0 0 0 / ${opacity})`} ${position}`);
+    `${opacity === 0 ? 'transparent' : colour ? `color-mix(in srgb, ${colour} ${opacity*100}%, transparent)` : `rgb(0 0 0 / ${opacity})`} ${position}`);
   return `linear-gradient(${direction}, ${stops.join(', ')})`;
 }

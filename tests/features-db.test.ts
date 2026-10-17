@@ -11,7 +11,7 @@ import {interestWorks} from '../src/lib/recommendations/interests.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 const a=crypto.randomUUID(),b=crypto.randomUUID();let original:unknown;
 const actor={id:a,username:'feature-fixture-a',role:'admin',settings:{}} as SessionUser;
-const config={...defaultConfig,experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true,experimentalParties:true,experimentalPlanning:true,experimentalMediaModal:true,allowPlaybackSharing:true};
+const config={...defaultConfig,experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true,experimentalParties:true,experimentalPlanning:true,allowPlaybackSharing:true};
 beforeAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const db=getSql();original=(await db`select value from system_settings where key='coast'`)[0]?.value;await db`insert into users(id,username,role) values(${a},${actor.username},'admin'),(${b},'feature-fixture-b','user')`;await db`insert into system_settings(key,value) values('coast',${config}::jsonb) on conflict(key) do update set value=excluded.value`;});
 afterAll(async()=>{if(process.env.COAST_DB_TEST!=='1')return;const db=getSql();await db`delete from users where id in (${a},${b})`;if(original)await db`update system_settings set value=${original}::jsonb where key='coast'`;else await db`delete from system_settings where key='coast'`;});
 run('SQL and application policies agree for two users, guest, all gates and prerequisites',async()=>{

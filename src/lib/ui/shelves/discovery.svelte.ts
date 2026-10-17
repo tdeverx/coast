@@ -1,9 +1,10 @@
+import {useShelfLocation} from '$lib/ui/detail-section.svelte';
 import { surfaceEnabled } from '$lib/experimental';
 import { onDestroy, untrack } from 'svelte';
 import { page } from '$app/state';
 import { goto, replaceState } from '$app/navigation';
 import { useClient } from '$lib/ui/client-context';
-import { createResource } from '$lib/ui/resource.svelte';
+import { createResource,uniqueItems } from '$lib/ui/resource.svelte';
 import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
 import { readingTypeOptions } from '$lib/ui/filter-options';
 import { discoverySegments, discoveryTitles, type DiscoveryContent, type DiscoverySurface, type DiscoverySection } from '$lib/discovery';
@@ -19,6 +20,7 @@ export type DiscoveryOptions = {
   layout?: 'row' | 'grid';
 };
 export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource {
+ const location=useShelfLocation();
   const { api, preview } = useClient();
   const initial = untrack(get);
   let surface = $state<DiscoverySurface>(initial.surface ?? 'watch');
@@ -43,13 +45,14 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     return new URLSearchParams({ section: get().section, surface, ...(surface === 'read' ? { kind, page: String(number) } : {}) });
   }
   function pageUrl(number: number) { return `/discover?${parameters(number)}`; }
-  async function load() {
+  async function load(number=currentPage,append=false) {
+    currentPage=number;
     if(!surfaceAvailable(surface)){
       resource.replace({items:[],failure:''});
       return;
     }
     const key = cacheKey();
-    const result = await resource.load(signal => api<DiscoveryContent>(`discover?${parameters()}`, undefined, 'GET', { signal }), { failure: result => result.failure });
+    const result = await resource.load(signal => api<DiscoveryContent>(`discover?${parameters()}`, undefined, 'GET', { signal }), { failure: result => result.failure,merge:(old,next)=>({...next,items:append?uniqueItems([...old.items,...next.items],item=>item.entryId??item.id):next.items}) });
     if (result && key === cacheKey())
       remember(result);
   }
@@ -71,7 +74,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     kind = 'all';
     currentPage = 1;
     available = false;
-    if (!preview && get().layout === 'grid')
+    if (!location.embedded && !preview && get().layout === 'grid')
       replaceState(pageUrl(1), page.state);
     resource.replace({ items: [], failure: '' });
     restoreOrLoad();
@@ -79,7 +82,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
   function selectKind(value: string) {
     kind = value;
     currentPage = 1;
-    if (!preview && get().layout === 'grid') {
+    if (!location.embedded && !preview && get().layout === 'grid') {
       void goto(pageUrl(1), { keepFocus: true, noScroll: true });
       return;
     }
@@ -134,7 +137,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
         kind = 'all';
         currentPage = 1;
       }
-      if (!preview && (withdrawn || kindWithdrawn) && option.layout === 'grid')
+      if (!location.embedded && !preview && (withdrawn || kindWithdrawn) && option.layout === 'grid')
         replaceState(pageUrl(currentPage), page.state);
       if (!changed && !withdrawn && !kindWithdrawn)
         return;

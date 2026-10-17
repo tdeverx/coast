@@ -1,24 +1,41 @@
 <script lang="ts">
-  import MediaDetailRows from '$lib/ui/components/MediaDetailRows.svelte';
+  import MediaDetailRows from './DetailRows.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import {setContext} from 'svelte';
+  import {setContext,onDestroy,untrack} from 'svelte';
   import { page } from '$app/state';
   import { playMedia } from '$lib/playback/client.svelte';
   import { change, message } from '$lib/ui/client';
   import WorkMenu from '$lib/ui/components/WorkMenu.svelte';
-  import MediaPage from '$lib/ui/components/MediaPage.svelte';
+  import MediaDetails from '$lib/ui/components/MediaDetails.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import { createEpisodeTracking } from '$lib/ui/shelves/episodes.svelte';
   import Rating from '$lib/ui/components/Rating.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
-  let { data,modal=false }: {data:Extract<import('../../routes/media/[id]/$types').PageData,{enhancement:unknown}>;modal?:boolean} = $props();
+  import {useClient,reportFailure} from '$lib/ui/client-context';
+  import type {MediaView} from '$lib/ui/types';
+  import {createResource} from '$lib/ui/resource.svelte';
+  let { data,modal=false,editionName,detailHref }: {data:Awaited<ReturnType<typeof import('$lib/application/media-details.server').loadMediaDetails>>;modal?:boolean;editionName?:string;detailHref?:string} = $props();
+  const detailUrl=$derived(modal?new URL(detailHref??`/media/${data.item.id}`,page.url):page.url);
   setContext('profile-read-only',()=>!page.data.user);
   let enriched = $state<Awaited<typeof data.enhancement> | null>(null);
   const view = $derived(enriched ?? data);
-  const section = $derived(modal?null:page.url.searchParams.get('section'));
+  const client=useClient();
+  const edition=createResource<MediaView|null>(null);
+  const item=$derived(edition.data??view.item);
+  reportFailure(()=>edition.error);
+  onDestroy(edition.dispose);
+  $effect(()=>{
+    const id=view.item.id,cut=editionName;
+    untrack(()=>{
+      edition.replace(null);
+      if(cut!==undefined&&!client.preview)void edition.load(signal=>client.api<MediaView>(`media/${id}/edition?name=${encodeURIComponent(cut)}`,undefined,'GET',{signal}));
+    });
+    return edition.cancel;
+  });
+  const section = $derived(detailUrl.searchParams.get('section'));
   const rowHref = (name: string) => `/media/${view.item.id}?section=${name}`;
-  const selectedEdition = $derived(page.url.searchParams.get('edition'));
+  const selectedEdition = $derived(modal?null:detailUrl.searchParams.get('edition'));
   const editionSources = $derived(
     selectedEdition === null
       ? []
@@ -42,8 +59,12 @@
     episodeCount = $state(10);
 </script>
 
-<svelte:head><title>{view.item.title} · Coast</title></svelte:head><MediaPage details hero={!section} item={view.item} parents={view.parents} next={view.next} requestable={view.requestable} page={!!section}>
-  {#if section}<Button emphasis="subtle" href={`/media/${view.item.id}`} icon="left"
+<svelte:head><title>{item.title} · Coast</title></svelte:head><MediaDetailRows detailHref={modal?detailUrl.href:undefined} {section} {item} cast={view.cast}
+ seasons={view.seasons.flatMap(season=>season.item?[season.item]:[])}
+ members={view.item.kind==='season'?view.episodes:view.item.kind==='collection'?view.members:[]}>
+ {#snippet children(model)}
+<MediaDetails {detailHref} {model} {section} view={{hero:!section,item,parents:view.parents,next:view.next,requestable:view.requestable,page:!!section,editionName}}>
+  {#if section&&!modal}<Button emphasis="subtle" href={`/media/${view.item.id}`} icon="left"
       >{view.item.title}</Button
     >{/if}
   {#if selectedEdition !== null}<section class="row edition-details" aria-label="Selected edition">
@@ -67,9 +88,10 @@
       Metadata could not be refreshed. Showing the saved details.
     </div>{/if}
   {#if error}<div class="notice error" role="alert">{error}</div>{/if}
+  {#snippet hierarchy()}
   <section class="episode-section">
     {#if view.item.kind === 'show' && (!section || section === 'seasons')}
-      <Shelf
+      <Shelf url={detailUrl}
         title="Seasons"
         layout={section ? 'grid' : 'row'}
         href={!section ? rowHref('seasons') : undefined}
@@ -92,7 +114,7 @@
           onclick={() => (episodesOpen = true)}>Add a season</Button
         >{/if}
     {:else if view.item.kind === 'season' && (!section || section === 'episodes')}
-      {#if view.episodes.length}<Shelf
+      {#if view.episodes.length}<Shelf url={detailUrl}
           title="Episodes"
           layout={section ? 'grid' : 'row'}
           href={!section ? rowHref('episodes') : undefined}
@@ -123,19 +145,9 @@
         />{/if}
     {/if}
   </section>
-  {#if !section || ['insights', 'reviews', 'credits'].includes(section)}{#key `${view.item.id}:${section}`}<MediaDetailRows
-        {section}
-        item={view.item}
-        cast={view.cast}
-        seasons={view.seasons.flatMap((season) => (season.item ? [season.item] : []))}
-        members={view.item.kind === 'season'
-          ? view.episodes
-          : view.item.kind === 'collection'
-            ? view.members
-            : []}
-      />{/key}{/if}
+  {/snippet}
   {#each view.collections.filter((c) => !section || section === c.id) as collection (collection.id)}
-    <Shelf
+    <Shelf url={detailUrl}
       layout={section ? 'grid' : 'row'}
       href={!section ? rowHref(collection.id) : undefined}
       title={collection.title}
@@ -145,7 +157,7 @@
       {#snippet actions()}<WorkMenu item={collection.item} menuOnly showTrigger />{/snippet}
     </Shelf>
   {/each}
-  {#if !section || section === 'related'}<Shelf
+  {#if !section || section === 'related'}<Shelf url={detailUrl}
       layout={section ? 'grid' : 'row'}
       href={!section ? rowHref('related') : undefined}
       filterBy="type"
@@ -154,7 +166,9 @@
         ? view.members
         : view.related.filter((item) => item.kind !== 'collection')}
     />{/if}
-</MediaPage>
+</MediaDetails>
+ {/snippet}
+</MediaDetailRows>
 <Dialog bind:open={episodeTracking.confirm} title="Review episode change">
   <div class="stack">
     <p>{episodeTracking.warning}</p>
@@ -193,9 +207,6 @@
 <style>
   .edition-details {
     padding: 24px 0;
-  }
-  .episode-section {
-    margin-top: 40px;
   }
   .episode-details {
     display: grid;

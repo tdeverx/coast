@@ -5,7 +5,7 @@ import { requireUser } from '$lib/server/auth';
 import { mediaViewsForIds } from '$lib/server/queries/media';
 import { mediaActivity } from '$lib/server/queries/media-actions';
 
-export const load: PageServerLoad = async ({locals, params, url, depends}) => {
+export const load: PageServerLoad = async ({locals, params, depends}) => {
   depends('coast:tracking');
 
   const user = requireUser(locals.user);
@@ -14,7 +14,6 @@ export const load: PageServerLoad = async ({locals, params, url, depends}) => {
   if (!item) error(404, 'Title not found.');
   return {
     item,
-    selecting: url.searchParams.get('remove') === '1',
     activity: await mediaActivity(user.id, item.id),
     historySnapshot: new Date().toISOString(),
     today: new Date().toISOString().slice(0, 10),

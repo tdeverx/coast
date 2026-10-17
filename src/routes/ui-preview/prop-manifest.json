@@ -786,6 +786,81 @@
       }
     ]
   },
+  "DetailOverlay": {
+    "path": "src/lib/ui/components/DetailOverlay.svelte",
+    "props": [
+      {
+        "name": "open",
+        "type": "boolean",
+        "optional": false,
+        "bindable": true,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "$bindable(false)",
+        "defaultValue": false
+      },
+      {
+        "name": "editions",
+        "type": "{value:string;label:string}[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "editionName",
+        "type": "string",
+        "optional": true,
+        "bindable": true,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "$bindable()"
+      },
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "onclose",
+        "type": "()=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "onback",
+        "type": "()=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "contentKey",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "sectionPage",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      }
+    ]
+  },
   "Dialog": {
     "path": "src/lib/ui/components/Dialog.svelte",
     "props": [
@@ -862,6 +937,16 @@
         "defaultValue": false
       },
       {
+        "name": "expanding",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
+      },
+      {
         "name": "popover",
         "type": "boolean",
         "optional": true,
@@ -906,11 +991,27 @@
         "nullable": false
       },
       {
+        "name": "floating",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
         "name": "onclose",
         "type": "() => void",
         "optional": true,
         "bindable": false,
         "kind": "callback",
+        "nullable": false
+      },
+      {
+        "name": "contentKey",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
         "nullable": false
       }
     ]
@@ -1800,47 +1901,107 @@
     "path": "src/lib/ui/components/MediaDetailRows.svelte",
     "props": [
       {
-        "name": "item",
-        "type": "MediaView",
+        "name": "model",
+        "type": "DetailRowsModel",
         "optional": false,
         "bindable": false,
         "kind": "data",
         "nullable": false
       },
       {
-        "name": "members",
-        "type": "MediaView[]",
-        "optional": true,
-        "bindable": false,
-        "kind": "data",
-        "nullable": false,
-        "defaultSource": "[]"
-      },
-      {
-        "name": "seasons",
-        "type": "MediaView[]",
-        "optional": true,
-        "bindable": false,
-        "kind": "data",
-        "nullable": false,
-        "defaultSource": "[]"
-      },
-      {
-        "name": "cast",
-        "type": "CastMember[]",
-        "optional": true,
-        "bindable": false,
-        "kind": "data",
-        "nullable": false,
-        "defaultSource": "[]"
-      },
-      {
         "name": "section",
-        "type": "string | null",
+        "type": "string|null",
         "optional": true,
         "bindable": false,
         "kind": "text",
         "nullable": true
+      }
+    ]
+  },
+  "MediaDetails": {
+    "path": "src/lib/ui/components/MediaDetails.svelte",
+    "props": [
+      {
+        "name": "view",
+        "type": "DetailPage",
+        "optional": false,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "model",
+        "type": "DetailRowsModel",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false
+      },
+      {
+        "name": "section",
+        "type": "string|null",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": true
+      },
+      {
+        "name": "detailHref",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "before",
+        "type": "DetailRow[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "after",
+        "type": "DetailRow[]",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "[]"
+      },
+      {
+        "name": "intro",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "hierarchy",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "heroActions",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "children",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
       }
     ]
   },
@@ -1937,6 +2098,29 @@
         "bindable": false,
         "kind": "snippet",
         "nullable": false
+      },
+      {
+        "name": "editionName",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "alignment",
+        "type": "'left'|'center'|'adaptive'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "left",
+          "center",
+          "adaptive"
+        ],
+        "defaultSource": "'left'",
+        "defaultValue": "left"
       }
     ]
   },
@@ -2100,6 +2284,29 @@
         "bindable": false,
         "kind": "boolean",
         "nullable": false
+      },
+      {
+        "name": "editionName",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "heroAlignment",
+        "type": "'left'|'center'|'adaptive'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "left",
+          "center",
+          "adaptive"
+        ],
+        "defaultSource": "'left'",
+        "defaultValue": "left"
       },
       {
         "name": "class",
@@ -3141,6 +3348,34 @@
         "bindable": false,
         "kind": "text",
         "nullable": false
+      },
+      {
+        "name": "material",
+        "type": "GlassVariant",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "clear",
+          "glassLight",
+          "glassDark",
+          "glassProminent"
+        ]
+      },
+      {
+        "name": "presentation",
+        "type": "'standard'|'navigation'",
+        "optional": true,
+        "bindable": false,
+        "kind": "select",
+        "nullable": false,
+        "choices": [
+          "standard",
+          "navigation"
+        ],
+        "defaultSource": "'standard'",
+        "defaultValue": "standard"
       }
     ]
   },
@@ -3391,7 +3626,7 @@
       },
       {
         "name": "segments",
-        "type": "Snippet",
+        "type": "Snippet<[Pick<ComponentProps<typeof SegmentedControl>,'material'|'presentation'>]>",
         "optional": true,
         "bindable": false,
         "kind": "snippet",
@@ -3531,6 +3766,15 @@
         "bindable": false,
         "kind": "text",
         "nullable": false
+      },
+      {
+        "name": "url",
+        "type": "URL",
+        "optional": true,
+        "bindable": false,
+        "kind": "data",
+        "nullable": false,
+        "defaultSource": "page.url"
       },
       {
         "name": "pageNumber",
@@ -4040,6 +4284,14 @@
         "bindable": false,
         "kind": "data",
         "nullable": true
+      },
+      {
+        "name": "editionName",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
       },
       {
         "name": "selectedPlaythrough",
