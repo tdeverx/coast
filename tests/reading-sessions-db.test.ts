@@ -169,6 +169,38 @@ run('reading files share metadata but never grant another account cached availab
  }finally{await sql`DELETE FROM provider_instances WHERE id=${instance}`;}
 });
 
+run('unchanged linked reading files open without metadata lookups while changed identities still quarantine',async()=>{
+ const connectionModule=await import('../src/lib/providers/jellyfin/connection.server');
+ const metadata=await import('../src/lib/providers/reading.server');
+ const {observeReadingFile}=await import('../src/lib/catalogue/reading-files.server');
+ const {sourceEdition}=await import('../src/lib/reading/sessions.server');
+ const {JellyfinAdapter}=await import('../src/lib/providers/jellyfin/adapter.server');
+ const {encryptCredential}=await import('../src/lib/server/security/credentials');
+ const sql=getSql(),instance=crypto.randomUUID(),connection=crypto.randomUUID();
+ await sql`INSERT INTO provider_instances(id,provider,name,base_url,server_identity) VALUES(${instance},'jellyfin','Linked reader fixture','https://fixture.invalid',${instance})`;
+ const credential=await encryptCredential(JSON.stringify({accessToken:'synthetic'}));
+ await sql`INSERT INTO provider_connections(id,instance_id,user_id,status,external_user_id,credentials) VALUES(${connection},${instance},${users[0]},'connected','fixture-reader',${credential})`;
+ await sql`INSERT INTO work_identifiers(work_id,provider,external_id,kind) VALUES(${work},'openlibrary','OL999871W','book') ON CONFLICT DO NOTHING`;
+ const book={Id:'b'.repeat(32),Type:'Book' as const,Name:'Linked file',Path:'/fixture/book.epub',Etag:'v1',ProviderIds:{OpenLibrary:'OL2468M'}};
+ const original=connectionModule.getJellyfin;let reads=0;
+ const adapter=new JellyfinAdapter(async()=>{reads++;return book;},users[0],'synthetic');
+ const accountSpy=spyOn(connectionModule,'getJellyfin').mockImplementation(async(user,id)=>({...await original(user,id),adapter}));
+ const lookup=spyOn(metadata,'readingWorkForEdition').mockRejectedValue(new Error('Metadata service offline'));
+ try{
+  const [account]=await sql`SELECT account_generation FROM provider_connections WHERE id=${connection}`;
+  await observeReadingFile({userId:users[0],connectionId:connection,instanceId:instance,generation:account.account_generation,workId:work,book,edition:sourceEdition(instance,book),reference:null});
+  const session=await prepareReading(users[0],work,{source:'jellyfin',connectionId:connection,externalId:book.Id});
+  expect(session.format).toBe('epub');expect(reads).toBe(1);expect(lookup).not.toHaveBeenCalled();
+  book.Etag='v2';
+  await expect(prepareReading(users[0],work,{source:'jellyfin',connectionId:connection,externalId:book.Id})).rejects.toThrow('Metadata service offline');
+  expect(lookup).toHaveBeenCalledTimes(1);
+  book.Etag='v1';book.ProviderIds.OpenLibrary='OL999872W';
+  await expect(prepareReading(users[0],work,{source:'jellyfin',connectionId:connection,externalId:book.Id})).rejects.toMatchObject({status:409});
+  expect(lookup).toHaveBeenCalledTimes(1);
+  expect((await sql`SELECT metadata->>'identityConflict' AS conflict FROM work_editions WHERE instance_id=${instance}`)[0].conflict).toBe('true');
+ }finally{accountSpy.mockRestore();lookup.mockRestore();await sql`DELETE FROM provider_instances WHERE id=${instance}`;}
+});
+
 run('Jellyfin readers revalidate own file access, versions and byte ranges before serving',async()=>{
  const connectionModule=await import('../src/lib/providers/jellyfin/connection.server');
  const transport=await import('../src/lib/server/security/provider-fetch');

@@ -12,7 +12,7 @@
 <svelte:head><title>Join Coast</title></svelte:head>
 <div class="auth-page"><div class="auth-card">
   <div class="row brand"><Brand /></div><h1>Join Coast.</h1><p>Create your account, then connect your services to import your progress.</p>
-  <form method="POST" class="stack" use:enhance={()=>{busy=true;return async({update})=>{try{await update();}finally{busy=false;}};}}>
+  <form method="POST" class="stack" use:enhance={()=>{busy=true;form=null;return async({update})=>{try{await update();}finally{busy=false;}};}}>
 
     {#if data.registrationMode==='invite'}<label class="field">Invite code<input name="code" bind:value={code} required maxlength="43" autocomplete="off" /></label>{:else if code}<input type="hidden" name="code" value={code} />{/if}
     <AccountFields />

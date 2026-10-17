@@ -303,7 +303,7 @@
 </section>
 
 {/if}
-{#if !adapter?.appendOnly && displayLayout === 'grid' && displayHasMore && (pagination?.kind === 'cursor'||sectionCandidate)}
+{#if !adapter?.appendOnly && displayLayout === 'grid' && displayHasMore && (pagination?.kind === 'cursor'||sectionCandidate||!adapter&&!!onend)}
 <div class="load-more" use:lazyContent={{load:()=>{if(!displayBusy)void displayOnend?.();},enabled:()=>!displayBusy&&!displayError,repeat:true}} aria-busy={displayBusy}>
  <Button emphasis="subtle" disabled={displayBusy} onclick={()=>displayOnend?.()}>{displayBusy?'Loading…':displayError?'Retry':'Load more'}</Button>
 </div>

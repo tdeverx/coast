@@ -12,14 +12,19 @@ import {musicCard} from './presentation';
 import type {MusicItem} from './model';
 
 export async function musicChildren(userId:string,id:string,url:URL,signal?:AbortSignal){
+ signal?.throwIfAborted();
  await requireFeature(userId,'music');const requested=v.parse(pageNumberSchema,Number(url.searchParams.get('page')??1));
  if(id==='source'){
   const connection=v.parse(v.pipe(v.string(),v.uuid()),url.searchParams.get('connectionId'));
   const {item}=await musicDetails(userId,connection,url.searchParams.get('externalId')??'',signal);
   if(item.kind==='track')return {items:[],total:0,page:1,pages:1};
-  const result=await musicLibrary(userId,connection,{kind:item.kind==='artist'?'album':'track',
-   ...(item.kind==='artist'?{artistId:item.id}:{albumId:item.id}),offset:(requested-1)*50},signal);
-  return {items:result.items.map(child=>musicCard(child,connection)),total:result.total,page:requested,pages:Math.max(1,Math.ceil(result.total/50))};
+  const options={kind:item.kind==='artist'?'album' as const:'track' as const,
+   ...(item.kind==='artist'?{artistId:item.id}:{albumId:item.id}),limit:PAGE_SIZE};
+  let result=await musicLibrary(userId,connection,{...options,offset:(requested-1)*PAGE_SIZE},signal);
+  const {page}=pagination(result.total,requested);
+  // A stale URL needs at most one corrected page read, never a whole-library scan.
+  if(page!==requested&&result.total){signal?.throwIfAborted();result=await musicLibrary(userId,connection,{...options,offset:(page-1)*PAGE_SIZE},signal);}
+  return {items:result.items.map(child=>musicCard(child,connection)),total:result.total,...pagination(result.total,page)};
  }
  v.parse(v.pipe(v.string(),v.uuid()),id);const db=getDb();
  const [album]=await db.select().from(musicWorks).where(eq(musicWorks.id,id));if(!album)throw new AppError(404,'Music not found.');
