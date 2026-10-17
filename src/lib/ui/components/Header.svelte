@@ -1,7 +1,7 @@
 <script lang="ts">
   import {userStatus,chooseStatus,sharePresence} from '$lib/social/status.svelte';
   import {activityStatus,preferenceLabels,statusPreferences,statusLabels,type StatusPreference} from '$lib/social/status';
-  import {useClient} from '$lib/ui/client-context';
+  import {useClient, reportFailure } from '$lib/ui/client-context';
   const {preview,api}=useClient();
   const previewId=$props.id();
   // Preview controls share the presentation, but never the signed-in account's state.
@@ -47,6 +47,7 @@
     { label: 'Discover', href: '/discover',icon:'discover' as const },
     { label: 'Search', href: '/search',icon:'search' as const },
   ] : publicBrowse ? [{label:'Discover',href:'/discover',icon:'discover' as const},{label:'Search',href:'/search',icon:'search' as const}] : []);
+  reportFailure(()=>status.error);
 </script>
 
 <header
@@ -90,7 +91,7 @@
               {#each statusPreferences as preference}<Button item selection="radio" checked={status.preference===preference} disabled={status.busy} onclick={()=>void selectStatus(preference)}><span class="status-choice"><span class="status-dot" data-status={preference==='automatic'?'online':preference==='invisible'?'offline':preference} aria-hidden="true"></span>{preferenceLabels[preference]}</span></Button>{/each}
               <div class="menu-divider" role="separator"></div>
               <Button item checked={status.sharePresence} disabled={status.busy} onclick={()=>void togglePresence()}>Share activity</Button>
-              {#if status.error}<p class="status-help error" role="alert">{status.error}</p>{/if}
+
             {/snippet}
           </Button>
           {/if}<div class="menu-divider" role="separator"></div>
@@ -114,7 +115,6 @@
 
 <style>
   .status-choice {display:inline-flex;align-items:center;gap:8px;}
-  .status-help {padding:8px 12px;margin:0;font-size:var(--text-sm);color:var(--muted);max-width:240px;}
   header {
     position: fixed;
     inset: 0 0 auto;

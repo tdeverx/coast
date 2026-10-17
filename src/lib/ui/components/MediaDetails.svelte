@@ -18,12 +18,12 @@
   ...(view.parents??[]).flatMap(parent=>[parent.backdrop,parent.poster]),view.item?.artwork?.thumb,view.item?.artwork?.banner].filter((url):url is string=>!!url))]);
 </script>
 <div class="detail-presentation" use:artworkColour={colours}>
-<MediaPage {...view} heroAlignment={view.heroAlignment??'left'} details heroActions={actions}>
+<MediaPage {...view} hero={selectedSection?false:view.hero??true} links={selectedSection?[]:view.links} heroAlignment={view.heroAlignment??'left'} details heroActions={actions}>
  {#snippet children()}
  {@render intro?.()}
  {@render hierarchy?.()}
  {#each before as row(row.key)}<Shelf {...row.shelf} />{/each}
- {#if model&&selectedSection!=='activity'}<MediaDetailRows {model} {section}/>{/if}
+ {#if model&&selectedSection!=='activity'}<MediaDetailRows {model} section={selectedSection}/>{/if}
  {#if activity&&page.data.user&&page.data.capabilities?.social!==false&&(!selectedSection||selectedSection==='activity')}
   <Shelf source={{type:'social',title:'Activity',...activity,relationship:workFriendFilters.find(value=>value===destination.searchParams.get('relationship'))??'all',relationshipKind:activity.category==='reading'&&view.item?.kind==='collection'?'comic':view.item?.kind,href:activityHref,layout:selectedSection?'grid':'row'}} availability={false} enrichSocial={false} hideEmpty={false}/>
  {/if}
@@ -33,5 +33,5 @@
 </MediaPage>
 </div>
 <style>
- .detail-presentation {--detail-background:color-mix(in srgb,var(--canvas) 82%,var(--artwork-colour,var(--canvas)));background:var(--detail-background);min-height:100%;}
+ .detail-presentation {--detail-background:color-mix(in srgb,var(--canvas) 82%,var(--artwork-colour,var(--canvas)));background:var(--detail-background);min-height:var(--detail-viewport-height,100%);}
 </style>

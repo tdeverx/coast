@@ -1,4 +1,6 @@
 <script lang="ts">
+  import {useClient} from '$lib/ui/client-context';
+  const delivery=useClient().feedback;
   import { providePreviewPlayback } from '$lib/playback/context.svelte';
   import MediaDetails from '$lib/ui/components/MediaDetails.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
@@ -6,7 +8,6 @@
   import Heading from '$lib/ui/components/Heading.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Field from '$lib/ui/components/Field.svelte';
-  import Rating from '$lib/ui/components/Rating.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import Icon from '$lib/ui/components/Icon.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
@@ -45,7 +46,7 @@
   const chosen = $derived(allCards[scenario] ?? movie);
   const shape = (kind: string): MediaCardShape => ['album', 'track', 'game'].includes(kind) ? 'square' : ['artist', 'person'].includes(kind) ? 'circle' : kind === 'episode' ? 'fanart' : 'poster';
   const rowItems = Object.values(allCards).slice(0, 8);
-  let query = $state(''), searched = $state(false), notice = $state(''), selected = $state(false), episodeWatched = $state(false), confirming = $state(false);
+  let query = $state(''), searched = $state(false), selected = $state(false), episodeWatched = $state(false), confirming = $state(false);
   const detailKind = $derived(scenario);
   const detailItem = $derived(allCards[scenario]??movie);
   const detailPanels = overviewPanels(movie.overview,[{label:'Released',value:'2026'},{label:'Duration',value:'1h 50m'}]);
@@ -59,8 +60,8 @@
       <Shelf title={`${chosen.kind} presentation`} items={[chosen]} shape={shape(chosen.kind)} hideEmpty={false} />
     {/if}
   {:else if name === 'catalogue.rows'}
-    <Shelf title="Related titles" href="/discover" items={scenario === 'loading' || scenario === 'empty' || scenario === 'error' ? [] : rowItems} busy={scenario === 'loading' || scenario === 'refresh'} hideEmpty={false} error={scenario === 'error' ? 'This preview source is temporarily unavailable.' : ''} retry={() => notice = 'Preview retry requested.'} />
-    {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
+    <Shelf title="Related titles" href="/discover" items={scenario === 'loading' || scenario === 'empty' || scenario === 'error' ? [] : rowItems} busy={scenario === 'loading' || scenario === 'refresh'} hideEmpty={false} error={scenario === 'error' ? 'This preview source is temporarily unavailable.' : ''} retry={() => delivery.notify('Preview retry requested.')} />
+
   {:else if name === 'catalogue.details'}
     <p class="small quiet">Composition reference using the production MediaDetails, presentation adapters and Shelf. Commands are preview-only.</p>
     {#if scenario === 'music'}<MusicDetails data={{item:{...music,workId:id},connectionId:id,children:{items:[],total:0,nextOffset:null},failure:'',page:1,pages:1}} />
@@ -69,23 +70,17 @@
     {:else if scenario==='game'}<GameDetails data={{item:{...game,category:'game',identities:[],steam:[],playthroughs:[],createdAt:new Date('2026-01-01'),updatedAt:new Date('2026-01-01')},playthrough:null,sources:[]}} />
     {:else if scenario==='game-remote'}<RemoteGameDetails data={{item:{...game,externalId:'123'},instanceId:id}} />
     {:else}<MediaDetails view={{item:detailItem}} model={{insights:{selection:'overview',tabs:[{value:'overview',label:'Overview',panels:detailPanels}]}}}>
-      {#snippet heroActions()}<Button size="hero" icon="play" onclick={()=>notice='Preview action acknowledged.'}>Play</Button>{/snippet}
-      {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
+      {#snippet heroActions()}<Button size="hero" icon="play" onclick={()=>delivery.notify('Preview action acknowledged.')}>Play</Button>{/snippet}
+
       {#if detailKind === 'show'}<Shelf title="Seasons" items={[season]} filterBy="watched" />
       {:else if detailKind === 'season'}<Shelf title="Episodes" items={[episode]} shape="fanart" artworkStyle="thumb" filterBy="watched">
-        {#snippet details(item)}
-          <div class="episode-details">
-            {#if item.overview}<details><summary>Episode overview</summary><p>{item.overview}</p></details>{/if}
-            <div class="episode-meta">
-              {#if item.runtimeMinutes}<small>{item.runtimeMinutes} min</small>{/if}
-              <Rating mediaId={item.id} value={item.rating} />
-              <button class="icon-button" class:selected={episodeWatched} aria-pressed={episodeWatched} aria-label={`${episodeWatched ? 'Mark unwatched' : 'Mark watched'}: ${item.title}`} onclick={() => episodeWatched = !episodeWatched}><Icon name="check" /></button>
-            </div>
-          </div>
+        {#snippet captionAction(item)}<Button size="icon" icon="check" iconSize={20} class={episodeWatched?'selected':''} pressed={episodeWatched} label={`${episodeWatched ? 'Mark unwatched' : 'Mark watched'}: ${item.title}`} onclick={() => episodeWatched = !episodeWatched} />{/snippet}
+        {#snippet body(item)}{#if item.overview}<p>{item.overview}</p>{/if}{/snippet}
+        {#snippet footer(item)}
+          {#if item.runtimeMinutes}<span>{item.runtimeMinutes} min</span>{/if}{#if item.releaseDate}<time datetime={item.releaseDate}>{new Date(item.releaseDate).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}</time>{/if}
         {/snippet}
       </Shelf>
       {:else if detailKind === 'collection'}<Shelf title="In this collection" items={[movie, show]} filterBy="type" />{/if}
-
 
     </MediaDetails>{/if}
   {:else if name === 'reading.launch'}
@@ -105,10 +100,10 @@
     {#if scenario === 'results' || searched}<Shelf title="Available" items={[{ ...movie, available: true }]} /><Shelf title="Unavailable" items={[readingCard(book), gameCard({ ...game, available: false })]} />
     {:else if scenario !== 'error'}<EmptyState title="Find your next story" description="Search movies, shows, music, games, books and comics in your library and beyond." icon="search" />{/if}
   {:else if name === 'catalogue.status'}
-    {#if scenario === 'edition'}<section class="row edition-details" aria-label="Selected edition"><div><h2>Original edition</h2><p class="small">Preview Jellyfin</p></div><Button icon="play" onclick={() => notice = 'Preview playback requested.'}>Play this edition</Button><Button emphasis="subtle" href="/media/preview">All details</Button></section>
+    {#if scenario === 'edition'}<section class="row edition-details" aria-label="Selected edition"><div><h2>Original edition</h2><p class="small">Preview Jellyfin</p></div><Button icon="play" onclick={() => delivery.notify('Preview playback requested.')}>Play this edition</Button><Button emphasis="subtle" href="/media/preview">All details</Button></section>
     {:else if scenario === 'missing-demand'}<section class="section"><Button emphasis="subtle" onclick={() => selected = !selected}>{selected ? 'Hide' : 'Show'} missing and uncertain items</Button>{#if selected}<ul><li><a href="/media/preview">Preview series · Season two</a> · No accessible source · Availability uncertain · Release date unknown</li></ul><Pagination page={1} pages={1} onchange={() => {}} label="Missing demand pages" />{/if}</section>
-    {:else}<Shelf title="Your requests" items={[movie]} layout="grid" availability={false}>{#snippet details()}<div class="request-details stack"><span class="badge" class:available={scenario === 'available'}>{scenario === 'available' ? 'Available' : 'Pending approval'}</span><p class="small">Preview Seerr · 4K · Seasons 1, 2</p><p class="small">Requested 1 October 2026</p>{#if scenario !== 'available'}<Button danger onclick={() => notice = 'Preview cancellation acknowledged.'}>Cancel request</Button>{/if}</div>{/snippet}</Shelf>{/if}
-    {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
+    {:else}<Shelf title="Your requests" items={[movie]} layout="grid" availability={false}>{#snippet details()}<div class="request-details stack"><span class="badge" class:available={scenario === 'available'}>{scenario === 'available' ? 'Available' : 'Pending approval'}</span><p class="small">Preview Seerr · 4K · Seasons 1, 2</p><p class="small">Requested 1 October 2026</p>{#if scenario !== 'available'}<Button danger onclick={() => delivery.notify('Preview cancellation acknowledged.')}>Cancel request</Button>{/if}</div>{/snippet}</Shelf>{/if}
+
   {:else if name === 'catalogue.history'}
     {#if scenario === 'game-table'}<GameDetails data={gameData} />
     {:else if scenario === 'selection'}<Heading title="Preview title · History" /><div class="stack"><p>Select the entries you want to remove.</p><div class="row"><Button emphasis="subtle" onclick={() => selected = true}>Select shown</Button><Button emphasis="subtle" onclick={() => selected = false}>Clear selection</Button><Button danger disabled={!selected} onclick={() => confirming = true}>Remove entry…</Button></div><Field label="Select preview watch"><input type="checkbox" bind:checked={selected} /></Field></div><Shelf title="1 October 2026" items={[episode]} shape="fanart" />
@@ -116,12 +111,12 @@
       {...readingCard(book),entryId:'reading-progress',captionActor:{username:'alex',avatar:artwork,status:'offline'},captionActivity:{id,occurredAt:'2026-10-01T18:00:00Z',dateKnown:true,kind:'reading-reading',action:'Reading',detail:'80 of 320 pages',myReaction:null},captionSubtitle:'Reading · 80 of 320 pages'},
       {...readingCard(book),entryId:'reading-planned',captionActor:{username:'alex',avatar:artwork,status:'offline'},captionActivity:{id:'00000000-0000-4000-8000-000000000081',occurredAt:'2026-09-30T12:00:00Z',dateKnown:true,kind:'reading-planned',action:'Saved',detail:'',myReaction:null},captionSubtitle:'Saved'},
     ]}/>{/if}
-    {#if notice}<p class="small quiet" role="status">{notice}</p>{/if}
+
     <Dialog bind:open={confirming} title="Remove from history?">
       <div class="stack">
         <p>Remove <strong>1 entry</strong> from <strong>{movie.title}</strong>?</p>
         <p>Your progress and stats will be recalculated from the history you keep. This cannot be undone. Matching Trakt history will be removed. Jellyfin’s watched status, play count and saved position will be updated to match the history you keep. Provider updates run as jobs; failures appear in Notifications.</p>
-        <div class="row"><Button danger disabled={!selected} onclick={() => { confirming = false; selected = false; notice = 'Preview removal acknowledged. No history or connected service is changed.'; }}>Remove from history</Button><Button emphasis="subtle" onclick={() => confirming = false}>Keep entries</Button></div>
+        <div class="row"><Button danger disabled={!selected} onclick={() => { confirming = false; selected = false; delivery.notify('Preview removal acknowledged. No history or connected service is changed.'); }}>Remove from history</Button><Button emphasis="subtle" onclick={() => confirming = false}>Keep entries</Button></div>
       </div>
     </Dialog>
   {/if}
@@ -130,11 +125,6 @@
 <style>
   .catalogue-examples { min-width: 0; }
   .edition-details { padding: 24px 0; }
-  .episode-details { display: grid; gap: 12px; margin-top: 8px; }
-  .episode-details p { font-size: var(--text-sm); line-height: var(--leading-relaxed); }
-  .episode-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
-  .episode-meta small { color: var(--muted); }
-  .episode-meta .icon-button { margin-left: auto; }
   .request-details { gap: 10px; margin-top: 14px; align-items: start; }
   .request-details p { overflow-wrap: anywhere; }
 

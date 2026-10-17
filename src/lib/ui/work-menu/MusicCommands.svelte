@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import Field from '$lib/ui/components/Field.svelte';
   import { useClient } from '../client-context';
   import { createMutation } from '../mutation.svelte';
@@ -21,10 +22,10 @@
       batch = ''; logOpen = false;
     }
   }
+  reportFailure(()=>mutation.error);
 </script>
 <Dialog bind:open={logOpen} title={album ? 'Log album' : 'Log listen'}>
   <form class="stack" onsubmit={event => { event.preventDefault(); void log(new Date(date).toISOString()); }}>
-    {#if mutation.error}<p role="alert" class="notice error">{mutation.error}</p>{/if}
     <Field label="Listened at"><input type="datetime-local" bind:value={date} required /></Field>
     <Button type="submit" disabled={mutation.busy}>Log {album ? 'album' : 'listen'}</Button>
   </form>

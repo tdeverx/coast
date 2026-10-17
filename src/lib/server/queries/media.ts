@@ -417,6 +417,7 @@ export async function mediaViews(
       artwork: Object.values(artwork).some(Boolean) ? artwork : undefined,
       artworkSources: Object.keys(artworkSources).length ? artworkSources : undefined,
       year: metadata.releaseDate ? Number(metadata.releaseDate.slice(0, 4)) : row.year,
+      releaseDate: metadata.releaseDate,
       runtimeMinutes: metadata.runtimeMinutes,
       genres: metadata.genres ?? [],
       certification: metadata.certificate,

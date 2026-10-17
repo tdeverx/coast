@@ -2,8 +2,8 @@ import {expect,test} from 'bun:test';
 const deferred=<T=unknown>()=>{let resolve!:(value:T)=>void,reject!:(cause:unknown)=>void;const promise=new Promise<T>((done,fail)=>{resolve=done;reject=fail;});return {promise,resolve,reject};};
 const settle=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
 const source=await Bun.file(new URL('../src/routes/share/+page.svelte',import.meta.url)).text();
-const script=source.slice(source.indexOf('<script lang="ts">')+18,source.indexOf('</script>')).replace(/^ import .*;$/gm,'');
-const compiled=new Bun.Transpiler({loader:'ts'}).transformSync(script);
+const script=source.slice(source.indexOf('<script lang="ts">')+18,source.indexOf('</script>')).replace(/^\s*import .*;$/gm,'');
+const compiled=new Bun.Transpiler({loader:'ts'}).transformSync('const reportFailure=()=>{};'+script);
 function route(options:{shared?:unknown;stop?:()=>Promise<void>;fetch?:(input:RequestInfo|URL,init?:RequestInit)=>Promise<Response>}={}){
  let mount!:()=>()=>void,tick!:()=>Promise<void>,authority=false,revision=0;
  const calls:{stops:string[];alignments:string[];plays:string[];signals:AbortSignal[];cleared:number}={stops:[],alignments:[],plays:[],signals:[],cleared:0};

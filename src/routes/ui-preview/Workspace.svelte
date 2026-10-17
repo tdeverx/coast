@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import type { Snippet } from 'svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Heading from '$lib/ui/components/Heading.svelte';
@@ -8,6 +9,7 @@
   let { title, canvas, inspector, browser, categories, canvasSettings, updateCanvas, setBackgroundImage, backgroundError }: WorkspaceParts & {
     categories:Snippet; canvasSettings: CanvasSettings; updateCanvas:(values:Partial<Pick<CanvasSettings,'background'|'color'>>)=>void; setBackgroundImage:(file?:File)=>void; backgroundError:string;
   } = $props();
+  reportFailure(()=>backgroundError);
 </script>
 
 <div class="workspace">
@@ -38,7 +40,7 @@
       <Field label="Preview background image"><input type="file" accept="image/*" onchange={event=>setBackgroundImage(event.currentTarget.files?.[0])} /></Field>
       {#if canvasSettings.image}<Button emphasis="subtle" onclick={()=>setBackgroundImage()}>Remove image</Button>{/if}
     {/if}
-    {#if backgroundError}<p class="small text-danger" role="alert">{backgroundError}</p>{/if}
+
     <p class="small quiet">Preview only. Images stay in this browser.</p>
   </section>
 {/snippet}

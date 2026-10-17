@@ -2,7 +2,7 @@ import {expect,test} from 'bun:test';
 import {shelfControls} from '../src/lib/ui/shelves/controls';
 import type {ShelfControl} from '../src/lib/ui/shelves/types';
 
-test('every shelf source partitions segments from secondary choices without invoking a load',()=>{
+test('every shelf source partitions segments and availability from secondary choices without invoking a load',()=>{
  let changes=0;
  const controls:ShelfControl[]=[
   {type:'availability',label:'Availability',value:'all',change:()=>changes++},
@@ -12,13 +12,13 @@ test('every shelf source partitions segments from secondary choices without invo
  ];
  const result=shelfControls(controls,(control,value)=>control.change(value));
  expect(result.segments.map(control=>control.label)).toEqual(['Medium']);
- expect(result.groups.map(group=>group.label)).toEqual(['Availability','Collection','Type']);
- expect(result.groups[0].options.map(option=>option.value)).toEqual(['all','available']);
- expect(result.groups[1].options.map(option=>option.value)).toEqual(['all','collection']);
- expect(result.groups[2].options.map(option=>option.value)).toContain('book');
- expect(result.groups[2].options.map(option=>option.value)).toContain('comic');
+ expect(result.availability).toEqual([controls[0]]);
+ expect(result.groups.map(group=>group.label)).toEqual(['Collection','Type']);
+ expect(result.groups[0].options.map(option=>option.value)).toEqual(['all','collection']);
+ expect(result.groups[1].options.map(option=>option.value)).toContain('book');
+ expect(result.groups[1].options.map(option=>option.value)).toContain('comic');
  expect(changes).toBe(0);
- result.groups[0].change('available');expect(changes).toBe(1);
+ result.availability[0].change('available');expect(changes).toBe(1);
  expect(controls.map(control=>control.type)).toEqual(['availability','segments','collection','media-type']);
 });
 
@@ -27,6 +27,7 @@ test('secondary menu choices retain source-specific values and dispatch only the
  const control:ShelfControl={type:'select',label:'Role',value:'director',options:[{value:'director',label:'Director'},{value:'actor',label:'Actor'}],change:value=>calls.push(value)};
  const result=shelfControls([control],(selected,value)=>{expect(selected).toBe(control);selected.change(value);});
  expect(result.segments).toHaveLength(0);
+ expect(result.availability).toHaveLength(0);
  expect(result.groups[0].value).toBe('director');
  expect(result.groups[0].options).toBe(control.options!);
  result.groups[0].change('actor');expect(calls).toEqual(['actor']);

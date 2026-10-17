@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
  import {createRawSnippet,untrack,type Component,type Snippet} from 'svelte';
  import Button from '$lib/ui/components/Button.svelte';
  import Avatar from '$lib/ui/components/Avatar.svelte';
@@ -54,6 +55,7 @@
  // Only structural choices remount; ordinary text, color and number edits stay reactive.
  const structure=$derived(JSON.stringify([name,resolvedProps.menu,resolvedProps.mode,resolvedProps.source??null]));
  const bindings=$derived(contracts[name].props.filter(prop=>prop.bindable).map(prop=>prop.name));
+  reportFailure(()=>failure);
 </script>
 
 {#snippet actionSlot()}{#if name==='FormActions'}<Button onclick={()=>onevent('slot.action',['Save'])}>Save</Button>{:else}<Button menu label="Preview actions"><Button item icon="heart" onclick={()=>onevent('slot.action',['Favourite'])}>Favourite</Button><Button item icon="bookmark" onclick={()=>onevent('slot.action',['Watchlist'])}>Watchlist</Button></Button>{/if}{/snippet}
@@ -74,7 +76,7 @@
 {/snippet}
 
 <div class="component-specimen" class:wide={['MediaHero','MediaPage','MediaDetails','Shelf','Header'].includes(name)} data-custom-component={name}>
- {#if failure}<p class="small text-danger" role="alert">{failure}</p>
+ {#if failure}<!-- Failure is delivered by the scoped toast. -->
  {:else if !Current}<p class="quiet" role="status">Loading component…</p>
  {:else}
   {#key structure}<svelte:boundary>

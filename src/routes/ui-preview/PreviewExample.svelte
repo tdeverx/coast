@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Component } from 'svelte';
   import { untrack } from 'svelte';
-  import { providePreviewClient } from '$lib/ui/client-context';
+  import { providePreviewClient, reportFailure } from '$lib/ui/client-context';
   import { providePreviewPlayback } from '$lib/playback/context.svelte';
   import NotificationToasts from '$lib/ui/components/NotificationToasts.svelte';
   import RowFilter from '$lib/ui/components/RowFilter.svelte';
@@ -43,6 +43,7 @@
     return () => { cancelled = true; };
   });
   function select(value: string) { localScenario = value; onchange?.(value); }
+  reportFailure(()=>failure);
 </script>
 
 {#if scenarioValue === undefined && scenarios(name).length > 1}
@@ -51,7 +52,7 @@
 {#key `${name}:${scenario}`}
   <div class="reference-example" data-reference={name} data-scenario={scenario} onclickcapture={event => { const link = (event.target as Element).closest('a'); if (link && !link.hasAttribute('data-preview-navigation')) event.preventDefault(); }} onsubmitcapture={event => event.preventDefault()}>
     {#if custom}<ComponentSpecimen {name} {custom} change={(key,value)=>onprop?.(key,value)} onevent={(name,args)=>onevent?.(name,args)} />
-    {:else if failure}<p role="alert">{failure}</p>
+    {:else if failure}<!-- Failure is delivered by the scoped toast. -->
     {:else if family}
       {#if Renderer}<Renderer name={composition?.family === 'admin' ? composition.example : name} {scenario} />{:else}<p role="status" class="quiet">Loading example…</p>{/if}
     {:else}<Demo {name} {scenario} {initialOpen} />{/if}

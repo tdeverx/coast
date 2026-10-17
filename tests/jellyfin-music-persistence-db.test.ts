@@ -11,7 +11,7 @@ import {logMusic} from '../src/lib/music/persistence.server';
 import {musicWorkCredits} from '../src/lib/music/credits.server';
 import {hydrateMusicItems} from '../src/lib/music/presentation.server';
 import {musicChildren} from '../src/lib/music/details.server';
-import {workAssessments} from '../src/lib/collection/query.server';
+import {workAssessments,workCards} from '../src/lib/collection/query.server';
 
 const enabled=process.env.COAST_DB_TEST==='1',run=enabled?test:test.skip;
 const tag=crypto.randomUUID(),workIds:string[]=[];
@@ -104,6 +104,11 @@ run('canonical credits retain roles and text while artist destinations use only 
   expect(own.albumArtists[0].href).toBe(`/music/${connection.id}/${artist.id}`);expect(own.artists).toEqual([]);
   const visitor=(await musicWorkCredits([saved.workId!],null)).get(saved.workId!)!;
   expect(visitor.albumArtists[0].name).toBe('Album artist');expect(visitor.albumArtists[0].href).toBeUndefined();
+  const [ownCard]=await workCards(userId,userId,[saved.workId!]);
+  expect(ownCard.captionCredits?.[0]).toMatchObject({name:'Album artist',href:`/music/${connection.id}/${artist.id}`});
+  const [guestCard]=await workCards(userId,null,[saved.workId!]);
+  expect(guestCard.captionCredits?.[0]).toMatchObject({name:'Album artist'});
+  expect(guestCard.captionCredits?.[0].href).toBeUndefined();
 });
 
 run('account generation changes during hydration never grant the old account access',async()=>{

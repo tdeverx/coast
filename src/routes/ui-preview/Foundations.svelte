@@ -1,4 +1,6 @@
 <script lang="ts">
+  import {useClient} from '$lib/ui/client-context';
+  const delivery=useClient().feedback;
   import { onMount, untrack, type Snippet } from 'svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Field from '$lib/ui/components/Field.svelte';
@@ -16,7 +18,6 @@
   let text = $state('The stories you love');
   let colorDraft = $state('');
   let showExport = $state(false);
-  let message = $state('');
   onMount(() => {
     const style = getComputedStyle(document.documentElement);
     values = Object.fromEntries([...sizes,...weights,...colors,'--font-sans'].map(token=>[token,style.getPropertyValue(token).trim()]));
@@ -31,11 +32,11 @@
   });
   const tokenValue = $derived(section==='colors' && colorDraft ? colorDraft : values[selected] ?? '');
   const configuration = $derived(JSON.stringify({token:selected,value:tokenValue,scope:'preview-only'},null,2));
-  function change(value:string) {selected=value;colorDraft='';message='';}
+  function change(value:string) {selected=value;colorDraft='';}
   async function copy() {
     showExport=true;
-    try {await navigator.clipboard.writeText(configuration);message='Token configuration copied.';}
-    catch {message='Select the configuration below to copy it.';}
+    try {await navigator.clipboard.writeText(configuration);delivery.notify('Token configuration copied.');}
+    catch {delivery.failure('Select the configuration below to copy it.');}
   }
 </script>
 
@@ -61,7 +62,7 @@
     <p class="small quiet">Source: <code>src/app.css</code></p>
     <p class="small quiet">These controls change this preview. App tokens stay unchanged.</p>
     <div class="row"><Button emphasis="subtle" onclick={()=>{text='The stories you love';colorDraft='';}}>Reset</Button><Button emphasis="subtle" onclick={copy}>Copy configuration</Button></div>
-    <p class="small quiet" role="status">{message}</p>
+
     {#if showExport}<Field label="Configuration"><textarea readonly rows="6" value={configuration}></textarea></Field>{/if}
   </div>
 {/snippet}

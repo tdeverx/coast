@@ -3,7 +3,7 @@
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
+  import { useClient, reportFailure } from '$lib/ui/client-context';
   import { createOperation } from '$lib/ui/operation.svelte';
 
   let { workId, title, partyAllowed = false, open = $bindable(false) }: {
@@ -38,6 +38,7 @@
       if(current===generation)open = false;
     });
   }
+  reportFailure(()=>friendsError || operation.error);
 </script>
 
 <Dialog bind:open title={`Plan · ${title}`}>
@@ -49,9 +50,9 @@
         <legend>Friends</legend>
         {#each friends as friend}<label class="check"><input type="checkbox" bind:group={selected} value={friend.userId} />{friend.username}</label>{/each}
       </fieldset>
-      {#if friendsError}<p class="notice error" role="alert">{friendsError}</p>{/if}
+
     {/if}
-    {#if operation.error}<p class="notice error" role="alert">{operation.error}</p>{/if}
+
     <Button type="submit" disabled={operation.busy}>Save</Button>
   </form>
 </Dialog>

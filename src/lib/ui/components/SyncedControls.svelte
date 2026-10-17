@@ -22,7 +22,6 @@
   const media=createResource<MediaCardPresentation|null>(null);
   // Rich party examples use PartyCard props; never borrow a live party for preview.
   const room=$derived(preview?null:syncedPlayer.room);
-  const notice=$derived(preview?'':syncedPlayer.notice);
   const unavailableMediaId=$derived(preview?null:syncedPlayer.unavailableMediaId);
   const busy=$derived(!preview&&syncedPlayer.busy);
   const members=$derived(room?.participants??[]);
@@ -37,12 +36,12 @@
   {#if room}
     {#snippet partyBody()}
       {#if unavailableMediaId}<Button disabled={busy} onclick={retry}>{room?.mediaType==='reading'?'Retry reading':'Retry playback'}</Button>{/if}
-      {#if notice}<p class="notice" role="status">{notice}</p>{/if}
+
     {/snippet}
     {#snippet partyFooter()}
       <PlaybackTimeline readingActive={room?.mediaType==='reading'} reading={room?.reading??null} mediaId={room?.mediaId??undefined} href={media.data?.href} audio={room?.mediaType==='audio'} title={media.data?.title??'Now playing'} detail={media.data?.captionSubtitle??''} artwork={media.data?playbackArtwork(media.data):undefined} current={mediaId&&room?timelinePosition(room,clock.now):0} duration={mediaId?room?.durationSeconds??0:0}/>
     {/snippet}
-    <PartyCard inParty {embedded} footer={mediaId?partyFooter:undefined} {members} children={unavailableMediaId||notice?partyBody:undefined} label="Current party" background={mediaId&&media.data?playbackBackground(media.data):null}>
+    <PartyCard inParty {embedded} footer={mediaId?partyFooter:undefined} {members} children={unavailableMediaId?partyBody:undefined} label="Current party" background={mediaId&&media.data?playbackBackground(media.data):null}>
 
       {#snippet memberActions(member)}<Button item icon="user" href={profilePath(member.username)}>Profile</Button>{#if !preview&&isSyncHost()&&member.userId!==room?.hostId}<Button item disabled={busy||!member.joined} keepOpen={false} onclick={()=>syncedCommand('promote',{userId:member.userId})}>Promote to owner</Button><div class="menu-divider" role="separator"></div><Button item danger disabled={busy} keepOpen={false} onclick={()=>syncedCommand('kick',{userId:member.userId})}>Kick</Button>{/if}{/snippet}
       {#snippet actions()}
@@ -51,6 +50,6 @@
         <PartyMenu/>
       {/snippet}
     </PartyCard>
-  {:else if notice}<p class="notice" role="status">{notice}</p>{/if}
+  {/if}
 {/snippet}
 {#if inline}{@render content()}{:else}<Dialog bind:open title="Party · Experimental">{@render content()}</Dialog>{/if}

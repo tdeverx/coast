@@ -9,12 +9,10 @@
   let {
     mediaId,
     value = null,
-    menu = false,
     onrated,
   }: {
     mediaId: string;
     value?: number | null;
-    menu?: boolean;
     onrated?: (value: number | null) => void;
   } = $props();
   let busy = $state(false);
@@ -56,8 +54,6 @@
 
   reportFailure(()=>error);
 </script>
-
-{#if menu}
   <div
     class="menu-rating"
     role="group"
@@ -106,20 +102,6 @@
       select, or Delete to clear. Selecting your current rating removes it.</span
     >
   </div>
-{:else}<div class="rating-control">
-    <Icon name="star" size={18} filled={value !== null} /><select
-      aria-label="Your rating"
-      value={value ?? ''}
-      onchange={(event) =>
-        rate(event.currentTarget.value ? Number(event.currentTarget.value) : null)}
-      disabled={busy}
-      ><option value="">Rate this title</option
-      >{#each [5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5] as score}<option value={score}
-          >{score} stars</option
-        >{/each}<option value="">Remove rating</option></select
-    >
-  </div>{/if}
-
 
 <style>
   .menu-rating {
@@ -174,24 +156,5 @@
   }
   .rating-star-removing .rating-star-fill {
     color: var(--danger);
-  }
-  .rating-control :global(svg) {
-    width: var(--icon-inline);
-    height: var(--icon-inline);
-  }
-  .rating-control {
-    font-size: var(--text-sm);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--rating);
-  }
-  .rating-control select {
-    width: auto;
-    background: transparent;
-    border: 0;
-    font-size: inherit;
-    padding-left: 0;
-    color: var(--ink);
   }
 </style>

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import {useClient,reportFailure} from '$lib/ui/client-context';
+  const delivery=useClient().feedback;
   import { onMount, type Snippet } from 'svelte';
   let { layout, picker }: { layout: Snippet<[{title:string;canvas:Snippet;inspector:Snippet;browser:Snippet<[{heading:Snippet}]>}]>; picker:Snippet<[{options:{value:string;label:string}[];value:string;change:(value:string)=>void;heading?:Snippet}]> } = $props();
   import Heading from '../components/Heading.svelte';
@@ -23,7 +25,8 @@
   const selected = $derived(experimental ? experiment : { materials: drafts["materials"][baseVariant], fallbacks: drafts["fallbacks"][baseVariant] });
   let layer = $state<'materials' | 'fallbacks'>('materials');
   let loaded = $state(false);
-  let message = $state('');
+  let failure = $state('');
+  reportFailure(()=>failure);
   let exported = $state(false);
   let radius = $state(24);
   const surface = $derived(selected[layer]);
@@ -35,7 +38,7 @@
     supportedBlends = blendOptions.filter(option => CSS.supports('mix-blend-mode', option.value)).map(option => option.value);
     supportedTintBlends = blendOptions.filter(option => CSS.supports('background-blend-mode', option.value)).map(option => option.value);
     try { const saved = localStorage.getItem(storageKey); if (saved) drafts = readMaterialDrafts(JSON.parse(saved)); }
-    catch { message = 'Saved drafts could not be loaded.'; }
+    catch { failure = 'Saved drafts could not be loaded.'; }
     try {
       const saved = localStorage.getItem(experimentKey);
       if (saved) {
@@ -44,25 +47,25 @@
         experiment = { materials: validated.materials.clear, fallbacks: validated.fallbacks.clear };
         effects = readExperimentalEffects(data.effects);
       }
-    } catch { message = 'Temporary experiment could not be loaded.'; }
+    } catch { failure = 'Temporary experiment could not be loaded.'; }
     loaded = true;
   });
   $effect(() => {
     const current = JSON.stringify(drafts);
-    if (loaded) try { localStorage.setItem(storageKey, current); } catch { message = 'Browser storage is unavailable. Export your draft to keep it.'; }
+    if (loaded) try { localStorage.setItem(storageKey, current); } catch { failure = 'Browser storage is unavailable. Export your draft to keep it.'; }
   });
   $effect(() => {
     const current = JSON.stringify({ ...experiment, effects });
-    if (loaded) try { localStorage.setItem(experimentKey, current); } catch { message = 'Browser storage is unavailable. Export your experiment to keep it.'; }
+    if (loaded) try { localStorage.setItem(experimentKey, current); } catch { failure = 'Browser storage is unavailable. Export your experiment to keep it.'; }
   });
   function tryTogether() {
     effects = { ...experimentalDefaults, sheenAmount: 16, vignetteAmount: 12, edgeAmount: 28, interactionAmount: 20 };
     experiment.materials.noiseOpacity = 4; experiment.fallbacks.noiseOpacity = 4;
-    message = 'Non-approved combination. Tune or disable each effect below.';
+    delivery.notify('Non-approved combination. Tune or disable each effect below.');
   }
   function setColor(value: string, change: (value: string) => void) {
-    if (CSS.supports('color', value)) { change(value); message = ''; }
-    else message = 'Enter a valid CSS color or theme token.';
+    if (CSS.supports('color', value)) { change(value); failure = ''; }
+    else failure = 'Enter a valid CSS color or theme token.';
   }
   function reset(all = false) {
     if (experimental) {
@@ -71,7 +74,7 @@
       else experiment[layer] = { ...defaultMaterialDrafts()[layer].clear };
     } else if (all) drafts = defaultMaterialDrafts();
     else drafts[layer][baseVariant] = defaultMaterialDrafts()[layer][baseVariant];
-    message = all ? 'All drafts reset.' : `${title} ${layer === 'materials' ? 'material' : 'fallback'} reset.`;
+    delivery.notify(all ? 'All drafts reset.' : `${title} ${layer === 'materials' ? 'material' : 'fallback'} reset.`);
   }
   function prepareExport() {
     const probe = document.createElement('span');
@@ -84,7 +87,7 @@
         return getComputedStyle(probe).color;
       }, experimental ? effects : undefined), null, 2);
     } catch (error) {
-      message = error instanceof Error ? error.message : 'The preset could not be exported.';
+      failure = error instanceof Error ? error.message : 'The preset could not be exported.';
       return false;
     } finally { probe.remove(); }
     exported = true;
@@ -92,14 +95,14 @@
   }
   async function copy() {
     if (!prepareExport()) return;
-    try { await navigator.clipboard.writeText(source); message = `Copied ${title} with its fallback${experimental ? ' and effects' : ''}. All colors are resolved.`; }
-    catch { message = 'Clipboard unavailable. Select the export below to copy it.'; }
+    try { await navigator.clipboard.writeText(source); delivery.notify(`Copied ${title} with its fallback${experimental ? ' and effects' : ''}. All colors are resolved.`); }
+    catch { failure = 'Clipboard unavailable. Select the export below to copy it.'; }
   }
   function download() {
     if (!prepareExport()) return;
     const url = URL.createObjectURL(new Blob([source], { type: 'application/json' }));
     const link = document.createElement('a'); link.href = url; link.download = `coast-material-${variant}.json`; link.click(); URL.revokeObjectURL(url);
-    message = `Downloaded ${title} with its fallback${experimental ? ' and effects' : ''}. All colors are resolved.`;
+    delivery.notify(`Downloaded ${title} with its fallback${experimental ? ' and effects' : ''}. All colors are resolved.`);
   }
 </script>
 
@@ -119,7 +122,6 @@
         </div>
       {/each}
     </div>
-    <p role="status" class="quiet">{message}</p>
   </div>
 {/snippet}
 {#snippet inspector()}

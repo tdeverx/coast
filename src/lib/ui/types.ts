@@ -8,8 +8,11 @@ export type MediaCardPresentation = Pick<
   | 'trackingProgress'
   | 'title'
   | 'captionTitle'
+  | 'captionTitleHref'
   | 'durationLabel'
   | 'captionSubtitle'
+  | 'captionSubtitleHref'
+  | 'captionCredits'
   | 'captionActor'
   | 'captionActivity'
   | 'year'
@@ -57,12 +60,16 @@ export interface MediaView {
   listContext?: { listId: string; entryId: string };
   sequence?: import('$lib/media/sequence').SequenceContext;
   captionTitle?: string;
+  captionTitleHref?: string;
   captionSubtitle?: string;
+  captionSubtitleHref?: string;
+  captionCredits?: {name:string;href?:string}[];
   captionActivity?: {id:string;occurredAt:string;dateKnown:boolean;kind:string;action?:string;detail?:string;myReaction?:string|null};
   captionActor?: {username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus;profileHref?:string|null};
   originalTitle?: string | null;
   overview?: string | null;
   year?: number | null;
+  releaseDate?: string | null;
   runtimeMinutes?: number | null;
   durationLabel?: string;
   poster?: string | null;

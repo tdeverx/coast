@@ -12,7 +12,7 @@ const compiled = compileModule(new Bun.Transpiler({loader:'ts'}).transformSync(`
  export function createPicker(transport){
   let avatar=$state(null),reading=$state(false),name='Preview',disabled=false;
   let choices=$state([{id:'first',provider:'jellyfin',name:'First'},{id:'second',provider:'trakt',name:'Second'}]);
-  const useClient=()=>({fetch:transport});const message=error=>error.message;
+  const reportFailure=()=>{};const useClient=()=>({fetch:transport});const message=error=>error.message;
   ${script}
   return {selectProvider,get avatar(){return avatar;},get reading(){return reading;},get error(){return error;},replace(){choices=[{id:'replacement',provider:'jellyfin',name:'Replacement'}];},remove(){cancelRead();avatar=null;}};
  }

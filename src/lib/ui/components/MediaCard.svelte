@@ -10,6 +10,7 @@
   import { artworkTypes } from '$lib/artwork';
   import { displayLabel } from '$lib/ui/labels';
   import { tick, getContext } from 'svelte';
+  import type { Snippet } from 'svelte';
   import type {
     MediaView,
     MediaCardPresentation,
@@ -25,10 +26,12 @@
   import {useClock} from '$lib/ui/clock.svelte';
   import {activityDateLabel,unknownActivityDate} from '$lib/social/model';
   import ReactionActions from './ReactionActions.svelte';
+  import TextLink from './TextLink.svelte';
   const { preview } = useClient();
   import Icon from './Icon.svelte';
   import ActivityHeader from './ActivityHeader.svelte';
   import SocialControls from './SocialControls.svelte';
+  import {detailHref} from '../pages/detail-rows';
   import WorkMenu from './WorkMenu.svelte';
   let {
     item,
@@ -45,6 +48,9 @@
     primaryMenu,
     activityTrailing,
     activityProgress,
+    captionAction,
+    body,
+    footer,
   }: {
     item: MediaView | MediaCardPresentation | MediaCardDisplay;
     shape?: MediaCardShape;
@@ -59,6 +65,9 @@
     primaryMenu?:import('svelte').Snippet;
     activityTrailing?:import('svelte').Snippet;
     activityProgress?:number|null;
+    captionAction?: Snippet;
+    body?: Snippet;
+    footer?: Snippet;
     social?:{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number};
   } = $props();
   const clock=useClock('minute',()=>showActivityContext&&!!item.captionActivity?.dateKnown);
@@ -66,6 +75,7 @@
   const readOnly = () => !page.data.user || contextReadOnly() || ('href' in item&&item.href===null);
   const trackedItem = $derived('href' in item ? undefined : item);
   const href = $derived('href' in item ? item.href??undefined : `/media/${item.id}`);
+  const activityHref=$derived(href ? detailHref(href,{section:'activity',relationship:'all'}) : undefined);
   let overlayIndex = $state(0);
   const overlayCandidates = $derived(overlayArtwork(item, overlay, artworkPriority));
   const overlayImage = $derived(overlayCandidates[overlayIndex]);
@@ -258,72 +268,80 @@
         {#if active && !('href' in item && item.href === null)}<WorkMenu bind:this={actions} {item} menuOnly />{/if}
       </div>
     {/if}{/if}
-    {#if !loading && ((!item.captionActor&&social?.total)||cardProgress!==null)}<div class="card-status">
-      {#if !item.captionActor&&social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} /></div>{/if}
-      {#if cardProgress!==null}<div class="card-progress"><ProgressBar progress={cardProgress} label={`${item.title}${item.captionActor?' playback':''} progress`} /></div>{/if}
+    {#if !loading && !item.captionActor && social?.total}<div class="card-friends"><SocialControls friends={social.friends} total={social.total} href={activityHref} label={`View activity for ${item.title}`} /></div>{/if}
+    {#if !loading && cardProgress!==null}<div class="card-status">
+      <div class="card-progress"><ProgressBar progress={cardProgress} label={`${item.title}${item.captionActor?' playback':''} progress`} /></div>
     </div>{/if}
   </div>
-  {#if showCaption}<div class="caption-row">
+  {#if showCaption || captionAction}<div class="caption-row">
+  {#if showCaption}
   {#if item.captionActor}
-    <div class="activity-attribution" class:wrap-activity={wrapActivity}>
-
-      <div class="activity-body">
-        <div class="activity-details">
-          <a class="activity-media" {href} onclick={select}>{item.captionTitle ?? item.title}</a>
-          {#if item.captionActivity?.action || item.captionSubtitle}<div class="activity-detail">{item.captionActivity?.action ?? item.captionSubtitle}{#if item.captionActivity?.detail}{' '}{item.captionActivity.detail}{/if}</div>{/if}
-        </div>
-        {#if showActivityContext && item.captionActivity}<div class="activity-reaction"><ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} /></div>{/if}
-      </div>
+    <div class="caption activity-attribution" class:wrap-activity={wrapActivity}>
+          <div class="title activity-media">{#if item.captionTitleHref ?? href}<TextLink href={(item.captionTitleHref ?? href)!} text={item.captionTitle ?? item.title} onclick={event=>{if(!item.captionTitleHref)select(event);}}/>{:else}{item.captionTitle ?? item.title}{/if}</div>
+          {#if item.captionActivity?.action || item.captionSubtitle}<div class="meta activity-detail">{item.captionActivity?.action ?? item.captionSubtitle}{#if item.captionActivity?.detail}{' '}{item.captionActivity.detail}{/if}</div>{/if}
     </div>
   {:else}
-    <a class="caption" {href} onclick={select}>
-    <div class="title">{item.captionTitle ?? item.title}</div>
+    <div class="caption">
+    <div class="title">{#if item.captionTitleHref ?? href}<TextLink href={(item.captionTitleHref ?? href)!} text={item.captionTitle ?? item.title} onclick={event=>{if(!item.captionTitleHref)select(event);}}/>{:else}{item.captionTitle ?? item.title}{/if}</div>
     {#if !item.captionActor&&(item.kind!=='person'||item.captionSubtitle)}<div class="meta">
-      {#if item.captionSubtitle}<span class="subtitle">{item.captionSubtitle}</span
-        >{:else if item.kind === 'season' && trackedItem?.seasonNumber !== undefined}{item.captionTitle
+      {#if item.captionSubtitle}<span class="subtitle">
+        {#if item.captionCredits?.length && item.captionCredits.map(credit=>credit.name).join(', ')===item.captionSubtitle}
+          {#each item.captionCredits as credit,index}{#if index}{', '}{/if}{#if credit.href}<TextLink href={credit.href} text={credit.name}/>{:else}{credit.name}{/if}{/each}
+        {:else if item.captionSubtitleHref}<TextLink href={item.captionSubtitleHref} text={item.captionSubtitle}/>
+        {:else}{item.captionSubtitle}{/if}
+      </span>{:else if item.kind === 'season' && trackedItem?.seasonNumber !== undefined}{item.captionTitle
           ? item.title
-          : (item.year ?? '')}{:else if trackedItem?.seasonNumber !== undefined}S{String(
-          trackedItem.seasonNumber
-        ).padStart(2, '0')}E{String(trackedItem.episodeNumber ?? 0).padStart(
-          2,
-          '0'
-        )}{:else}{item.year ?? ''}{#if item.year}<span>·</span>{/if}{displayLabel(item.kind)}{/if}{#if !item.captionActor && item.rating}<span>·</span><span class="rating"
+          : (item.year ?? '')}{:else if trackedItem?.seasonNumber !== undefined && href}<TextLink {href} text={`S${String(trackedItem.seasonNumber).padStart(2,'0')}E${String(trackedItem.episodeNumber??0).padStart(2,'0')}`} onclick={select}/>{:else}{item.year ?? ''}{#if item.year}<span>·</span>{/if}{displayLabel(item.kind)}{/if}{#if !item.captionActor && item.rating}<span>·</span><span class="rating"
           ><Icon name="star" size={14} filled /> {item.rating}</span
         >{/if}
     </div>{/if}
-  </a>
+  </div>
   {/if}
+  {/if}
+  {#if captionAction || (showCaption && showActivityContext && item.captionActor && item.captionActivity)}<div class="caption-action">
+    {#if captionAction}{@render captionAction()}{:else if item.captionActivity}<ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} />{/if}
   </div>{/if}
+  </div>{/if}
+  {#if body}<div class="card-body">{@render body()}</div>{/if}
+  {#if footer}<footer class="card-footer">{@render footer()}</footer>{/if}
   {#if 'attribution' in item && item.attribution}<div class="small quiet media-attribution"><a href={item.attribution.href} target="_blank" rel="noreferrer">{item.attribution.label}</a></div>{/if}
   {#if showActivityContext && item.captionActivity && !item.captionActor}
     <div class="activity-reactions small quiet">
       {#if !item.captionActor}{#if item.captionActivity.dateKnown}<time datetime={item.captionActivity.occurredAt} title={new Date(item.captionActivity.occurredAt).toLocaleString()}>{activityDateLabel(item.captionActivity.occurredAt,clock.now)}</time>{:else}<span>{unknownActivityDate(item.captionActivity.kind)}</span>{/if}{/if}
-      <ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} />
+      {#if !captionAction}<ReactionActions targetKind="activity" targetId={item.captionActivity.id} initialReaction={item.captionActivity.myReaction} />{/if}
     </div>
   {/if}
 </article>
 
 <style>
-  .media-attribution { margin-top: 6px; font-size: var(--text-sm); }
-  .activity-attribution{margin-top:12px;}
-  .activity-context{margin-bottom:8px;min-height:24px;}
-  .activity-body{display:flex;align-items:flex-start;gap:8px;margin-top:4px;}
-  .activity-details{min-width:0;flex:1;}
-  .activity-media{display:block;font-size:var(--text-md);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .activity-detail{font-size:var(--text-sm);color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .wrap-activity .activity-detail,.wrap-activity .activity-media{white-space:normal;overflow:visible;overflow-wrap:anywhere;}
-  .activity-reaction{flex-shrink:0;}
-  .activity-reactions{margin-top:6px;}
+  .caption-row { display:flex; align-items:center; gap:8px; }
+  .caption { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; -webkit-touch-callout:none; user-select:none; }
+  .caption-action { flex-shrink:0; }
+  .card-body { font-size:var(--text-sm); line-height:var(--leading-relaxed); overflow-wrap:anywhere; }
+  .card-body :global(p) { margin:0; }
+  .card-footer { display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:var(--text-sm); color:var(--muted); }
+  .card-body:empty, .card-footer:empty, .caption-action:empty { display:none; }
+  .caption-row:not(:has(> .caption, > .caption-action:not(:empty))) { display:none; }
+  .media-attribution { font-size:var(--text-sm); }
+  .activity-context { min-height:24px; }
+  .activity-media { font-size:var(--text-md); }
+  .caption .activity-detail { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .wrap-activity .activity-detail,.wrap-activity .activity-media { white-space:normal; overflow:visible; overflow-wrap:anywhere; }
+  .activity-reactions { display:flex; align-items:center; justify-content:space-between; gap:8px; }
   .card-status{position:absolute;bottom:8px;left:8px;right:8px;z-index:3;display:flex;align-items:flex-end;gap:8px;}
-  .card-friends{flex-shrink:0;max-width:65%;}
+  .card-friends{position:absolute;top:8px;left:8px;z-index:3;max-width:calc(100% - 52px);}
   .card-progress{flex:1;min-width:0;height:6px;pointer-events:none;}
 
   .media-card {
-    display: block;
-    min-width: 0;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-width:0;
   }
   .art {
     position: relative;
+    flex:none;
+    min-height:0;
     aspect-ratio: 2/3;
     border-radius: 12px;
     isolation: isolate;
@@ -346,7 +364,7 @@
   .art.banner {
     aspect-ratio: 5.4 / 1;
   }
-  .media-card:is(:hover, :focus-within) .art {
+  .art:is(:hover, :focus-within) {
     transform: scale(var(--media-surface-hover-scale));
   }
   .media-card.loading .art {background:transparent;transform:none;}
@@ -374,7 +392,7 @@
     filter: grayscale(1);
     transition: filter var(--fast) var(--ease);
   }
-  .media-card:is(:hover, :focus-within) .art.unavailable img {
+  .art:is(:hover, :focus-within).unavailable img {
     filter: grayscale(0);
   }
   .art-overlay {
@@ -403,7 +421,7 @@
     transition: opacity var(--fast);
     z-index: 1;
   }
-  .media-card:is(:hover, :focus-within) .art::before {
+  .art:is(:hover, :focus-within)::before {
     opacity: 0.4;
   }
   .art::after {
@@ -411,8 +429,8 @@
       border-width var(--fast),
       opacity var(--fast);
   }
-  .media-card:hover .art::after,
-  .media-card:focus-within .art::after {
+  .art:hover::after,
+  .art:focus-within::after {
     border-width: 3px;
     opacity: 1;
   }
@@ -428,7 +446,7 @@
     transition: opacity var(--fast);
   }
   @media (hover: hover) {
-    .media-card:hover .hover-stroke {
+    .art:hover .hover-stroke {
       opacity: 0.5;
     }
   }
@@ -462,16 +480,11 @@
       opacity var(--fast),
       transform var(--fast) var(--ease);
   }
-  .media-card:hover .play,
-  .media-card:hover .card-menu,
-  .media-card:focus-within .play,
-  .media-card:focus-within .card-menu {
+  .art:hover .play,
+  .art:hover .card-menu,
+  .art:focus-within .play,
+  .art:focus-within .card-menu {
     opacity: 1;
-  }
-  .caption {
-    -webkit-touch-callout: none;
-    user-select: none;
-    display: block;
   }
   @media (pointer: coarse) {
     .card-menu > button {
@@ -510,14 +523,12 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-top: 12px;
   }
   .meta {
     font-size: var(--text-sm);
     color: var(--muted);
     display: flex;
-    gap: 7px;
-    margin-top: 4px;
+    gap: 8px;
   }
   .subtitle {
     min-width: 0;
@@ -536,7 +547,7 @@
   .rating {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     color: var(--rating);
   }
   @media (prefers-reduced-motion: reduce) {

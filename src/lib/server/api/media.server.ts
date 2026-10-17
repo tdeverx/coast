@@ -16,6 +16,7 @@ import { refreshMedia } from '$lib/catalogue/service.server';
 import { getTrailer } from '$lib/playback/service.server';
 import { uuid, type ApiContext } from './context.server';
 import {mediaDetailData} from '$lib/application/work-details.server';
+import { showNext } from '$lib/server/queries/show-next';
 
 export async function handleMedia(context: ApiContext): Promise<Response | undefined> {
  const { user, uid, path, method, url, body } = context;
@@ -42,7 +43,9 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
         const [item] = await mediaViewsForIds(uid, [uuid(path[1])]);
         if (!item) throw new AppError(404, 'This title was not found.');
         result = { next: item.available ? await nextPlayable(uid, item) : null };
-      } else if (path[2] === 'actions' && method === 'GET')
+      } else if (path[2] === 'next' && path.length === 3 && method === 'GET')
+        result = await showNext(uid, uuid(path[1]), url.searchParams.has('page') ? Number(url.searchParams.get('page')) : undefined, url.searchParams.get('available') === 'true', url.searchParams.get('specials') === 'true');
+      else if (path[2] === 'actions' && method === 'GET')
         result = await mediaActionData(uid, uuid(path[1]));
       else if (path[2] === 'activity' && method === 'GET')
         result = await mediaActivity(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1));

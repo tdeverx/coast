@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import { displayLabel } from '$lib/ui/labels';
   import Heading from '$lib/ui/components/Heading.svelte';
   import { change, message } from '$lib/ui/client';
@@ -17,6 +18,7 @@
       request.item ? [{ ...request.item, entryId: request.id }] : []
     )
   );
+  reportFailure(()=>error);
 </script>
 
 <svelte:head><title>{data.requestId ? 'Request' : 'Requests'} · Coast</title></svelte:head>
@@ -35,9 +37,7 @@
         >{/if}
     {/snippet}
   </Heading>
-  {#if error}<div class="notice error" role="alert">
-      {error}
-    </div>{/if}{#if data.requests.length}<Shelf
+  {#if data.requests.length}<Shelf
       title={data.requestId ? 'Requested title' : 'Your requests'}
       {items}
       layout="grid"

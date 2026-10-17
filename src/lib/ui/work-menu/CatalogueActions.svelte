@@ -38,7 +38,7 @@
   let musicCommands = $state<MusicCommands>();
   let menu = $state<Button>(), gameCommands = $state<GameCommands>(), readingCommands = $state<ReadingCommands>(), readingLaunch = $state<ReadingLaunch>();
   let editOpen = $state(false);
-  let planningOpen = $state(false), sharingOpen = $state(false), playbackErrorOpen = $state(false), removeOpen = $state(false);
+  let planningOpen = $state(false), sharingOpen = $state(false), removeOpen = $state(false);
   let artistFavourite = $state<boolean | undefined>();
   let removal = $state<{ listId: string; entryId: string }>();
   const sourcePath = $derived(item.connectionId ? `providers/${item.connectionId}/music/${item.id}` : '');
@@ -72,7 +72,7 @@
   export async function start(continuing = false) {
     if (preview || busy || !music || page.data.capabilities?.playback===false) return;
     const targetId = workId, path = sourcePath;
-    const played = await playback.run(async () => {
+    await playback.run(async () => {
       // Playback owns this read independently of the transient menu.
       const resolved = !targetId && path ? await playIdentity.load(async signal =>
         (await api<{ item: MusicItem }>(path, undefined, 'GET', { signal })).item) : null;
@@ -81,7 +81,7 @@
       if (!id) throw new Error(playIdentity.error || 'This music is not available to play.');
       await playMusic(id, continuing);
     });
-    if (!played && alive) playbackErrorOpen = true;
+
   }
 
   export function gameAction(action: 'start' | 'progress' | 'log') { return gameCommands?.open(action); }
@@ -116,6 +116,7 @@
   async function changed() { await work.refresh(); onchanged?.(); }
 
   reportFailure(()=>error);
+  reportFailure(()=>playback.error);
 </script>
 
 {#if primary && music && page.data.capabilities?.playback!==false}<Button size="hero" icon="play" disabled={busy || preview} onclick={() => start()}>Play</Button>{:else if primary}<Button size="hero" icon="arrow" href={item.href}>View {item.kind}</Button>{/if}
@@ -189,7 +190,7 @@
 {#if workId && reading}<ReadingCommands bind:this={readingCommands} {workId} progress={progress} ensure={() => work.load()} {changed} /><ReadingLaunch bind:this={readingLaunch} {workId} title={item.title} hideTrigger />{/if}
 {#if workId && page.data.experiments?.planning}<PlanAction bind:open={planningOpen} {workId} title={item.title} partyAllowed={page.data.experimentalParties && item.kind === 'track'} />{/if}
 {#if workId && page.data.playbackSharing && item.kind === 'track'}<ShareAction bind:open={sharingOpen} {workId} title={item.title} />{/if}
-<Dialog bind:open={playbackErrorOpen} title="Playback unavailable"><p>{playback.error}</p></Dialog>
+
 <Dialog bind:open={removeOpen} title="Remove this entry?" message="Only this occurrence will be removed. Your history is kept.">
   {#snippet footer()}<Button danger disabled={busy} onclick={remove}>Remove</Button><Button onclick={() => removeOpen = false}>Cancel</Button>{/snippet}
 </Dialog>

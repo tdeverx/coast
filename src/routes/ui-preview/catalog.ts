@@ -18,7 +18,7 @@ export const elements = [
   'Avatar', 'ChoiceGroup', 'Field', 'FormActions', 'Brand', 'Button',
   'ActivityHeader', 'ProgressBar', 'IdentityCard', 'DetailCard', 'EmptyState', 'FactList', 'Heading', 'Icon',
   'MetricGrid', 'Toast', 'OperationProgress', 'SettingsRow',
-  'Pagination', 'PlaybackTimeline', 'Rating',
+  'Pagination', 'PlaybackTimeline', 'Rating', 'TextLink',
   'RowFilter', 'RowStyleMenu', 'SegmentedControl',
 ] as const satisfies readonly (typeof components[number])[];
 

@@ -29,7 +29,7 @@
 {:else if section === 'social' && page.data.capabilities?.social!==false}
   <RecommendAction {workId} {disabled} /><ReactionActions targetId={workId} {disabled} />
 {:else if section === 'rating'}
-  <Rating mediaId={workId} value={rating} menu {onrated} />
+  <Rating mediaId={workId} value={rating} {onrated} />
 {:else if section !== 'social' && section !== 'recommendations'}
   {#each controls as control}<Button {...control} />{/each}
 {/if}

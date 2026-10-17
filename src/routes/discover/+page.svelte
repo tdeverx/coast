@@ -37,9 +37,7 @@
     <Button href="/discover" emphasis="subtle" icon="left">Discover</Button>
     {#key `${section}:${data.selection.surface}:${data.selection.kind}:${data.selection.page}`}<Shelf availability={data.selection.surface!=='read'} source={discoverSource(data.selection.section,true)} />{/key}
   {:else}
-    {#if data.providerUnavailable}<div class="notice">
-        Discovery is temporarily unavailable. Your saved titles are still here.
-      </div>{/if}{#if !featured.length}<Heading variant="page"
+    {#if !featured.length}<Heading variant="page"
         title="Discover"
         description="Find your next story."
       >

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import { surfaceEnabled } from '$lib/experimental';
   import { setContext } from 'svelte';
   import { page } from '$app/state';
@@ -18,6 +19,9 @@
     if (data.view !== surface && surface !== 'watch') return 'all';
     return surface === 'listen' ? data.filters.kind : data.filters.tracking;
   }
+  let demandError=$state('');
+  $effect(()=>{const pending=data.missing;demandError='';let current=true;void pending?.catch(()=>{if(current)demandError='Missing demand could not be loaded.';});return()=>{current=false;};});
+  reportFailure(()=>missing ? demandError : '');
 </script>
 
 <svelte:head><title>{title} · Coast</title></svelte:head>
@@ -43,7 +47,7 @@
     {#if missing}{#await data.missing}<p class="notice">Loading missing items…</p>{:then demand}{#if demand?.total}
       <ul>{#each demand.items as item}<li><a href={item.href}>{item.neededTitle}</a> · {item.reason} · {item.availability === 'unknown' ? 'Availability uncertain' : 'Missing for you'}{item.dateUnknown ? ' · Release date unknown' : ''}</li>{/each}</ul>
       <Pagination page={demand.page} pages={demand.pages} pageUrl={missingPageUrl} label="Missing demand pages" />
-    {:else}<p class="notice">No missing or uncertain items.</p>{/if}{:catch}<p class="notice error" role="alert">Missing demand could not be loaded.</p>{/await}{/if}
+    {:else}<p class="notice">No missing or uncertain items.</p>{/if}{:catch}<!-- Failure is delivered by the scoped toast. -->{/await}{/if}
   </section>{/if}
 </div>
 <style>h1 { font-size: var(--text-xl); font-weight: var(--weight-bold); margin: 0; }</style>

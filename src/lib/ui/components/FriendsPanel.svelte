@@ -22,7 +22,7 @@
  import EmptyState from './EmptyState.svelte';
  import {createResource} from '$lib/ui/resource.svelte';
  import {message} from '$lib/ui/client';
- import {useClient} from '$lib/ui/client-context';
+ import {useClient, reportFailure } from '$lib/ui/client-context';
  const {api,change,preview}=useClient();
  const clock=useClock('second',()=>!preview&&open&&segment==='party');
  import type {FriendEntry} from '$lib/social/model';
@@ -31,7 +31,6 @@
  // Preview panels never observe the signed-in user's party or call its controller.
  const activeRoom=$derived(preview?null:syncedPlayer.room);
  const partyBusy=$derived(!preview&&syncedPlayer.busy);
- const partyNotice=$derived(preview?'':syncedPlayer.notice);
  const partyId=$derived(activeRoom?.id);
  async function inviteFriend(friendId:string){if(preview){failure='Party invitations are disabled in this panel example. Use the Party card examples to inspect their states.';return;}if(busy||syncedPlayer.busy)return;busy=true;failure='';try{if(!syncedPlayer.room)await startSynced();if(!syncedPlayer.room)throw new Error(syncedPlayer.notice||'Could not create a party.');await change(`synced/${syncedPlayer.room.id}/invite`,{friendId});segment='party';await loadParties();}catch(error){failure=message(error);}finally{busy=false;}}
  const parties=createResource<{id:string;createdAt:string;host:string;hostId:string;joined:boolean;mediaType:'audio'|'video'|'reading';reading?:RoomState['reading'];progress:number|null;durationSeconds:number;positionSeconds:number;paused:boolean;bufferingPaused:boolean;updatedAt:string;playingItem:MediaCardPresentation|null;backgroundArtwork?:string|null;nowPlaying:string|null;participants:{userId:string;username:string;avatar:string|null;joined:boolean}[];friend:FriendEntry|null}[]>([]);
@@ -49,13 +48,14 @@
   try{await change(path,body);if(path==='social/friends'){username='';segment='pending';number=1;}if(segment==='party')await loadParties();else await load();}
   catch(error){failure=message(error);}finally{busy=false;}
  }
+  reportFailure(()=>failure || (open ? segment==='party' ? parties.error : roster.error : ''), ()=>segment==='party'?loadParties():load());
 </script>
 {#snippet activeParty()}<SyncedControls inline embedded/>{/snippet}
 <Dialog bind:open title="Friends" popover={true} anchor={preview?undefined:"#friends-trigger"} {onclose} footer={activeRoom?activeParty:undefined}>
  {#snippet heading()}<Heading title="Friends">{#snippet heading()}<SegmentedControl label="Friends view" value={segment} options={[{value:'accepted',label:'Friends'},{value:'pending',label:page.data.friendRequestCount?`Requests (${page.data.friendRequestCount})`:'Requests'},...(page.data.experimentalParties?[{value:'party',label:'Parties'}]:[])]} onchange={value=>{segment=value;number=1;}}/>{/snippet}
   {#snippet actions()}<div class="header-actions"><Button menu label="Friend options"><Button item icon="refresh" text="Refresh" disabled={busy||roster.busy} keepOpen={false} onclick={()=>void (segment==='party'?loadParties():load())}/><Button item icon="settings" href="/settings/privacy">Privacy & social</Button></Button><Button size="icon" icon="close" label="Close friends" onclick={()=>{open=false;onclose?.();}}/></div>{/snippet}
  </Heading>{/snippet}
- {#if failure||roster.error}<p class="notice error" role="alert">{failure||roster.error}</p><Button emphasis="subtle" onclick={()=>void (segment==='party'?loadParties():load())}>Retry</Button>{/if}
+
  {#if segment==='party'}
   <div class="party-list">
 
@@ -69,7 +69,7 @@
     </PartyCard>
    {/each}
    {#if !activeRoom}<Button icon="party" disabled={preview||partyBusy} title={preview?'Creating a party is disabled in this preview':undefined} onclick={async()=>{if(preview)return;await startSynced();await loadParties();}}>Create party</Button>{/if}
-   {#if parties.error||(!activeRoom&&partyNotice)}<p class="notice" role="status">{parties.error||partyNotice}</p>{/if}
+
   </div>
  {:else}
  {#if segment==='pending'}<form class="request-form" onsubmit={event=>{event.preventDefault();void act('social/friends',{username});}}><label class="field">Add by username<input bind:value={username} required maxlength="100" autocomplete="off"/></label><Button type="submit" disabled={busy||!username.trim()}>Send request</Button></form>{/if}

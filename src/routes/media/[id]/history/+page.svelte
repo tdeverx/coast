@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import { untrack } from 'svelte';
   import { change, message } from '$lib/ui/client';
@@ -70,6 +71,7 @@
       busy = false;
     }
   }
+  reportFailure(()=>error);
 </script>
 
 <svelte:head><title>{data.item.title} · Manage history · Coast</title></svelte:head>
@@ -135,7 +137,6 @@
       position will be updated to match the history you keep. Provider updates run as jobs; failures
       appear in Notifications.
     </p>
-    {#if error}<p class="text-danger" role="alert">{error}</p>{/if}
     <div class="row">
       <Button danger disabled={busy || !count} onclick={remove}
         >Remove from history</Button

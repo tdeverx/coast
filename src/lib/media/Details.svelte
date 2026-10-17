@@ -9,12 +9,13 @@
   import MediaDetails from '$lib/ui/components/MediaDetails.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import { createEpisodeTracking } from '$lib/ui/shelves/episodes.svelte';
-  import Rating from '$lib/ui/components/Rating.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import {useClient,reportFailure} from '$lib/ui/client-context';
   import type {MediaView} from '$lib/ui/types';
   import {createResource} from '$lib/ui/resource.svelte';
+  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
+  import type {ComponentProps} from 'svelte';
   let { data,modal=false,editionName,detailHref }: {data:Awaited<ReturnType<typeof import('$lib/application/media-details.server').loadMediaDetails>>;modal?:boolean;editionName?:string;detailHref?:string} = $props();
   const detailUrl=$derived(modal?new URL(detailHref??`/media/${data.item.id}`,page.url):page.url);
   setContext('profile-read-only',()=>!page.data.user);
@@ -34,6 +35,8 @@
     return edition.cancel;
   });
   const section = $derived(detailUrl.searchParams.get('section'));
+  let progressView=$state(untrack(()=>!page.data.user||detailUrl.searchParams.get('view')==='seasons'?'seasons':'episodes'));
+  let showSpecials=$state(untrack(()=>detailUrl.searchParams.get('specials')==='true'));
   const rowHref = (name: string) => `/media/${view.item.id}?section=${name}`;
   const selectedEdition = $derived(modal?null:detailUrl.searchParams.get('edition'));
   const editionSources = $derived(
@@ -57,7 +60,22 @@
     episodesOpen = $state(false),
     seasonNumber = $state(1),
     episodeCount = $state(10);
+  reportFailure(()=>error || episodeTracking.error || (view.refreshUnavailable ? 'Metadata could not be refreshed. Showing the saved details.' : ''));
 </script>
+
+{#snippet episodeAction(episode: MediaView)}
+  {#if page.data.user}<Button size="icon" icon="check" iconSize={20} class={episode.watched?'selected':''} pressed={episode.watched} disabled={episodeTracking.busy} label={`${episode.watched ? 'Mark unwatched' : 'Mark watched'}: ${episode.title}`} onclick={() => episodeTracking.watch(episode.id, episode.watched)} />{/if}
+{/snippet}
+{#snippet episodeBody(episode: MediaView)}{#if episode.overview}<p>{episode.overview}</p>{/if}{/snippet}
+{#snippet episodeFooter(episode: MediaView)}
+  {#if episode.runtimeMinutes}<span>{episode.runtimeMinutes} min</span>{/if}{#if episode.releaseDate}<time datetime={episode.releaseDate}>{new Date(episode.releaseDate).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'})}</time>{/if}
+{/snippet}
+{#snippet progressSegments(style: Pick<ComponentProps<typeof SegmentedControl>,'material'|'presentation'>)}
+  <SegmentedControl {...style} label="Show progress" value={progressView} options={[{value:'episodes',label:'Episodes'},{value:'seasons',label:'Seasons'}]} onchange={value=>progressView=value}/>
+{/snippet}
+{#snippet episodeFilters()}
+  <Button item checked={showSpecials} onclick={()=>showSpecials=!showSpecials}>Show specials</Button>
+{/snippet}
 
 <svelte:head><title>{item.title} · Coast</title></svelte:head><MediaDetailRows detailHref={modal?detailUrl.href:undefined} {section} {item} cast={view.cast}
  seasons={view.seasons.flatMap(season=>season.item?[season.item]:[])}
@@ -84,17 +102,23 @@
             )}>Play this edition</Button
         >{/if}<Button emphasis="subtle" href={`/media/${view.item.id}`}>All details</Button>
     </section>{/if}
-  {#if view.refreshUnavailable}<div class="notice" style="margin-bottom:24px">
-      Metadata could not be refreshed. Showing the saved details.
-    </div>{/if}
-  {#if error}<div class="notice error" role="alert">{error}</div>{/if}
+
   {#snippet hierarchy()}
   <section class="episode-section">
-    {#if view.item.kind === 'show' && (!section || section === 'seasons')}
-      <Shelf url={detailUrl}
-        title="Seasons"
+    {#if view.item.kind === 'show' && (!section || section === 'progress')}
+      {#if page.data.user}
+        <Shelf url={detailUrl}
+          source={{type:'detail',title:'Progress',path:`media/${view.item.id}/next?specials=${showSpecials}`,href:rowHref('progress')+`&view=${progressView}&specials=${showSpecials}`,anchor:!section,availability:true,available:!!section&&detailUrl.searchParams.get('available')==='true',layout:section?'grid':'row',shape:progressView==='episodes'?'fanart':'poster',items:progressView==='seasons'?view.seasons.flatMap(season=>season.item?[season.item]:[]):undefined}}
+          artworkStyle={progressView==='episodes'?'thumb':'auto'} availability={false} hideEmpty={false} segments={progressSegments}
+          actions={progressView==='episodes'?episodeFilters:undefined}
+          captionAction={progressView==='episodes'?episodeAction:undefined} body={progressView==='episodes'?episodeBody:undefined} footer={progressView==='episodes'?episodeFooter:undefined}
+        >
+          {#snippet details(entry)}{#if entry.kind==='season'&&entry.totalEpisodes}<p class="small">{entry.totalEpisodes} episodes · {entry.completedEpisodes??0} watched</p>{/if}{/snippet}
+        </Shelf>
+      {:else}<Shelf url={detailUrl}
+        title={page.data.user?'Progress':'Seasons'}
         layout={section ? 'grid' : 'row'}
-        href={!section ? rowHref('seasons') : undefined}
+        href={!section ? rowHref('progress')+'&view=seasons' : undefined}
         filterBy="watched"
         items={view.seasons.flatMap((season) => (season.item ? [season.item] : []))}
       >
@@ -102,19 +126,20 @@
               {season.totalEpisodes} episodes · {season.completedEpisodes ?? 0} watched
             </p>{/if}{/snippet}
       </Shelf>
-      {#if !view.seasons.length}<EmptyState
+      {/if}
+      {#if progressView==='seasons'&&!view.seasons.length}<EmptyState
           title="No seasons yet"
           description={view.item.tmdbId
             ? 'The season guide will appear when details are available.'
             : 'Add a season to start tracking episodes.'}
         />{/if}
-      {#if !view.item.tmdbId}<Button
+      {#if progressView==='seasons'&&!view.item.tmdbId}<Button
           emphasis="subtle"
           icon="plus"
           onclick={() => (episodesOpen = true)}>Add a season</Button
         >{/if}
     {:else if view.item.kind === 'season' && (!section || section === 'episodes')}
-      {#if view.episodes.length}<Shelf url={detailUrl}
+      {#if view.episodes.length||section==='episodes'}<Shelf url={detailUrl}
           title="Episodes"
           layout={section ? 'grid' : 'row'}
           href={!section ? rowHref('episodes') : undefined}
@@ -122,23 +147,11 @@
           filterBy="watched"
           shape="fanart"
           artworkStyle="thumb"
+          captionAction={episodeAction} body={episodeBody} footer={episodeFooter}
         >
-          {#snippet details(episode)}
-            <div class="episode-details">
-              {#if episode.overview}<details>
-                  <summary>Episode overview</summary>
-                  <p>{episode.overview}</p>
-                </details>{/if}
-              <div class="episode-meta">
-                {#if episode.runtimeMinutes}<small>{episode.runtimeMinutes} min</small>{/if}
-                <Rating mediaId={episode.id} value={episode.rating} />
-                <Button size="icon" icon="check" iconSize={20} class={episode.watched?'selected':''} pressed={episode.watched} disabled={episodeTracking.busy} label={`${episode.watched ? 'Mark unwatched' : 'Mark watched'}: ${episode.title}`} onclick={() => episodeTracking.watch(episode.id, episode.watched)} />
-              </div>
-            </div>
-          {/snippet}
           {#snippet empty()}<p class="muted">No episodes in this season yet.</p>{/snippet}
         </Shelf>
-        {#if episodeTracking.error}<div class="notice error" role="alert">{episodeTracking.error}</div>{/if}
+
       {:else}<EmptyState
           title="No episodes yet"
           description="Episodes will appear when this season’s guide is available."
@@ -207,26 +220,5 @@
 <style>
   .edition-details {
     padding: 24px 0;
-  }
-  .episode-details {
-    display: grid;
-    gap: 12px;
-    margin-top: 8px;
-  }
-  .episode-details p {
-    font-size: var(--text-sm);
-    line-height: var(--leading-relaxed);
-  }
-  .episode-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .episode-meta small {
-    color: var(--muted);
-  }
-  .episode-meta :global(.icon-button) {
-    margin-left: auto;
   }
 </style>

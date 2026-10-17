@@ -12,7 +12,7 @@ const code=compileRunes(`
  import {sameReadingLocation} from ${JSON.stringify(import.meta.resolve('../src/lib/reading/model'))};
  export function create(createReader,control=true,previewMode=false,previewExample=undefined){
   const applicationReader=$state({session:{id:'first',url:'fixture.pdf',format:'pdf',location:null,workId:'work',edition:'edition'},file:null,visible:true,rendering:false,location:null,error:''});
-  const useClient=()=>({preview:previewMode}),calls=[];
+  const reportFailure=()=>{},useClient=()=>({preview:previewMode}),calls=[];
   const syncedPlayer={room:{mediaType:'reading',mediaId:'work',edition:'edition',readingFormat:'pdf',reading:{format:'pdf',page:1,total:2}}};
   const canControlPlayback=()=>control,fixtureHost={},message=error=>error.message;
   const api=async()=>{calls.push('api');},recordReading=async()=>{calls.push('record');return true;},publishReading=()=>{calls.push('publish');},setReadingNavigator=()=>{calls.push('navigator');},closeReading=async()=>{calls.push('close');},retryReadingSave=async()=>{calls.push('retry');};
@@ -72,7 +72,7 @@ const launchCode=compileRunes(`
  export function create(transport,opened){
   const onDestroy=()=>{};
   const reader=$state({session:{workId:'work'},visible:false});
-  const useClient=()=>({api:transport,preview:true}),createOperation=()=>({run:async task=>task(),error:'',busy:false});
+  const reportFailure=()=>{},useClient=()=>({api:transport,preview:true}),createOperation=()=>({run:async task=>task(),error:'',busy:false});
   let realOpenCalls=0;const openReading=async()=>{realOpenCalls++;};
   ${launchScript}
   return {show,choose,get open(){return open;},get liveVisible(){return reader.visible;},get realOpenCalls(){return realOpenCalls;}};
@@ -92,7 +92,7 @@ const connectedLaunchCode=compileRunes(`
  export function create(transport,openFile){
   const onDestroy=()=>{},opened=async()=>{};
   const reader=$state({session:null,visible:false});
-  const useClient=()=>({api:transport,preview:false}),createOperation=()=>({run:async task=>task(),error:'',busy:false});
+  const reportFailure=()=>{},useClient=()=>({api:transport,preview:false}),createOperation=()=>({run:async task=>task(),error:'',busy:false});
   const openReading=openFile;
   ${launchScript}
   return {show,close(){open=false;cancel();},get open(){return open;},get items(){return items;}};

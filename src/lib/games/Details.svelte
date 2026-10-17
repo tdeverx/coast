@@ -20,7 +20,7 @@
 
   import WorkMenu from '$lib/ui/components/WorkMenu.svelte';
   import { gameCard } from '$lib/games/presentation';
-  import {useClient} from '$lib/ui/client-context';
+  import {useClient, reportFailure } from '$lib/ui/client-context';
   let { data,modal=false,detailHref }: {modal?:boolean;detailHref?:string;data:{item:Awaited<ReturnType<typeof import('$lib/core/games/service.server').gameDetails>>;playthrough:Awaited<ReturnType<typeof import('$lib/core/games/service.server').playthroughSummary>>|null;sources:Awaited<ReturnType<typeof import('$lib/providers/instances.server').listProviders>>}} = $props();
   const detailUrl=$derived(modal?new URL(detailHref??`/games/${data.item.id}`,page.url):page.url);
   const {change,preview}=useClient();
@@ -68,6 +68,7 @@
     });
   }
   const model=$derived<DetailRowsModel>({insights:{selection:insight,select:value=>insight=value,tabs:[{value:'overview',label:'Overview',panels:overview},{value:'progress',label:'Your progress',content:progress}],href:`${rowHref('insights')}&insight=${insight}`}});
+  reportFailure(()=>failure);
 </script>
 {#snippet activityControls()}{#if identity&&data.sources.length>1}<select aria-label="Metadata refresh source" bind:value={refreshInstance}>{#each data.sources as source}<option value={source.id}>{source.name}</option>{/each}</select>{/if}{/snippet}
 {#snippet activitySelection()}<SegmentedControl material="clear" presentation="navigation" label="Playthrough" value={playthrough?.id??''}
@@ -102,7 +103,5 @@
         ongamecreated={id => preview?Promise.resolve():navigateMedia(selectedUrl(id), { invalidateAll: true })}
         refreshGame={identity && data.sources.length ? refresh : undefined} />
     {:else}<Button href="/login" size="hero">Sign in to track</Button>{/if}{/snippet}
-
-  {#if failure}<div class="notice error" role="alert">{failure}</div>{/if}
 
 </MediaDetails>
