@@ -23,13 +23,12 @@
   import { type ReadingCredit } from './model';
 
   let { data, modal=false,detailHref }: { data: ReadingDetailData;modal?:boolean;detailHref?:string } = $props();
-  const detailUrl=$derived(modal?new URL(detailHref??`/media/${data.item.id}`,page.url):page.url);
+  const detailUrl=$derived(modal?new URL(detailHref??readingHref(data.item,data.remote),page.url):page.url);
   const title = $derived(readingLabel(data.kind));
   const section=$derived(detailUrl.searchParams.get('section'));
   let insight=$state(untrack(()=>['overview','activity','community'].includes(detailUrl.searchParams.get('insight')??'')?detailUrl.searchParams.get('insight')!:'overview'));
   const baseHref=$derived(readingHref(data.item,data.remote));
   const rowHref=(name:string)=>`${baseHref}?section=${name}`;
-  const library = $derived(`/library?view=read&kind=${data.kind}&scope=all`);
   const overview = $derived(overviewPanels(data.item.overview, readingFacts(data.item)).map(panel=>panel.title==='Details'?{...panel,footerLink:{href:data.item.sourceUrl,label:`View on ${readingProviderLabel(data.item.provider)} ↗`,external:true}}:panel));
   const { change, api,preview } = useClient();
   const credits=createResource<ReadingCredit[]|null>(null);
@@ -107,9 +106,8 @@
 {/snippet}
 <svelte:head><title>{data.item.title} · {title} · Coast</title></svelte:head>
 <MediaDetails {detailHref} view={{hero:!section,item:readingHero(data.item,data.remote)}} {model} {section}>
-  {#if section&&!modal}<Button emphasis="subtle" href={`/media/${data.item.id}`} icon="left">{data.item.title}</Button>{/if}
+  {#if section&&!modal}<Button emphasis="subtle" href={baseHref} icon="left">{data.item.title}</Button>{/if}
   {#snippet heroActions()}
-    <Button emphasis="subtle" href={library} icon="left">Library</Button>
     {#if data.remote}<Button size="hero" icon="plus" disabled={busy} onclick={add}>Add {data.kind}</Button>
     {:else}
       {#if page.data.capabilities?.reader!==false}<ReadingLaunch workId={data.item.id} title={data.item.title} />{/if}

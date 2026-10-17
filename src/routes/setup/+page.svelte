@@ -22,9 +22,9 @@
       class="stack"
       use:enhance={() => {
         busy = true;
+        form = null;
         return async ({ update }) => {
-          await update();
-          busy = false;
+          try { await update(); } finally { busy = false; }
         };
       }}
     >

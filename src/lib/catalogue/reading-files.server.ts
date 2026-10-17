@@ -8,21 +8,31 @@ import {jellyfinItemKey} from '$lib/providers/jellyfin/paging';
 import {readingWorkForEdition} from '$lib/providers/reading.server';
 import type {ReadingIdentity} from '$lib/reading/model';
 /** Resolve exact references before opening a transaction; edition lookups use the shared provider cache. */
-export async function readingFileReference(book:JellyfinBook):Promise<ReadingIdentity|null>{
+export async function readingFileReference(book:JellyfinBook,resolveEdition=true):Promise<ReadingIdentity|null>{
  const ids=Object.fromEntries(Object.entries(book.ProviderIds).map(([key,value])=>[key.toLowerCase(),value]));
  const comic=jellyfinComicVineId(ids.comicvine);if(comic)return {provider:'comic-vine',externalId:comic};
  const library=jellyfinOpenLibraryId(ids.openlibrary);
  if(library?.endsWith('W'))return {provider:'openlibrary',externalId:library};
  const edition=library??ids.isbn?.replace(/[ -]/g,'').toUpperCase();
- if(!edition||!/^(?:OL[1-9][0-9]{0,19}M|[0-9]{9}[0-9X]|[0-9]{13})$/.test(edition))return null;
+ if(!resolveEdition||!edition||!/^(?:OL[1-9][0-9]{0,19}M|[0-9]{9}[0-9X]|[0-9]{13})$/.test(edition))return null;
  const externalId=await readingWorkForEdition(edition);return externalId?{provider:'openlibrary',externalId}:null;
 }
 /** Shared metadata is an exact file link; access observations always belong to an authenticated user. */
 export async function observeReadingFile(input:{userId:string;connectionId:string;instanceId:string;generation:string;workId:string;book:JellyfinBook;edition:string;scanId?:string;access?:boolean;expectedResetId?:string|null;reference?:ReadingIdentity|null}){
  const {userId,connectionId,instanceId,generation,workId,book,edition,scanId}=input,format=bookFormat(book);
  if(!format)return;
- const reference=input.reference===undefined?await readingFileReference(book):input.reference;
  const key=jellyfinItemKey(book.Id);
+ let reference=input.reference;
+ if(reference===undefined){
+  // An unchanged, verified file already has a durable work identity. Opening it
+  // still checks Jellyfin access and direct IDs, but needs no metadata service.
+  const [linked]=await getDb().select({id:workEditions.id}).from(workEditions).where(and(
+   eq(workEditions.instanceId,instanceId),eq(workEditions.workId,workId),
+   sql`replace(lower(${workEditions.externalId}),'-','')=${key}`,
+   sql`${workEditions.metadata}->>'version'=${edition} and coalesce(${workEditions.metadata}->>'identityConflict','false')<>'true'`
+  )).limit(1);
+  reference=await readingFileReference(book,!linked);
+ }
  const result=await getDb().transaction(async tx=>{
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`reading-file:${instanceId}:${key}`},0))`);
   const [account]=await tx.select({connection:providerConnections}).from(providerConnections).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId)).innerJoin(users,eq(users.id,providerConnections.userId)).where(and(eq(providerConnections.id,connectionId),eq(providerConnections.userId,userId),eq(providerConnections.instanceId,instanceId),eq(providerConnections.accountGeneration,generation),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true),eq(users.disabled,false))).for('update',{of:providerConnections});

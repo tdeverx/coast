@@ -94,7 +94,6 @@
 <MediaDetails {detailHref} view={{hero:!section,item:gameHero(data.item)}} {model} {section}>
   {#if section&&!modal}<Button emphasis="subtle" href={`/games/${data.item.id}`} icon="left">{data.item.title}</Button>{/if}
     {#snippet heroActions()}{#if page.data.user}
-      <Button emphasis="subtle" href="/games" icon="left">Games</Button>
       {#if loggingAllowed}<Button size="hero" icon="plus" disabled={busy||menu?.isBusy()} onclick={() => menu?.gameAction('log')}>Log a play session</Button>
       {:else if playthrough && playthrough.status !== 'completed'}<Button size="hero" icon="play" disabled={busy||menu?.isBusy()} onclick={() => menu?.updateGame('in-progress')}>Resume playthrough</Button>
       {:else}<Button size="hero" icon="plus" disabled={busy||menu?.isBusy()} onclick={() => menu?.gameAction('start')}>Start {playthrough ? 'replaying' : 'playthrough'}</Button>{/if}

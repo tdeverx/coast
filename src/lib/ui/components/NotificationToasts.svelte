@@ -14,12 +14,13 @@
     readAt: Date | string | null;
     createdAt: Date | string;
   };
-  let { notifications }: { notifications: InboxNotification[] } = $props();
+  let { notifications, initialFailure }: { notifications: InboxNotification[]; initialFailure?:string } = $props();
   let hidden = $state<string[]>([]),
     mounted = $state(false);
   const observed = new Set<string>();
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
   const feedback = $derived(delivery.activeHost === null ? delivery.current : null);
+  const serverFailure = $derived(!mounted ? initialFailure : undefined);
   onMount(() => {
     hidden = notifications
       .filter((n) => n.level === 'normal' && Date.now() - new Date(n.createdAt).getTime() > 30000)
@@ -51,8 +52,9 @@
   });
 </script>
 
-{#if visible.length || feedback}<div class="toasts" aria-live="polite">
+{#if visible.length || feedback || serverFailure}<div class="toasts" aria-live="polite">
     {#if feedback}<Toast text={feedback.text} kind={feedback.kind} error={feedback.error} busy={feedback.busy} actionLabel={feedback.undo ? 'Undo' : 'Retry'} onaction={feedback.undo || feedback.retry ? delivery.act : undefined} ondismiss={()=>delivery.clear()} dismissLabel="Dismiss action feedback" />{/if}
+    {#if serverFailure&&!feedback}<Toast text={serverFailure} kind="error" />{/if}
     {#each visible as n (n.id)}<Toast text={n.title} description={n.body} onopen={()=>{if(!preview)openNotifications();}} dismissLabel={`Dismiss notification: ${n.title}`} ondismiss={()=>{
       hidden=[...hidden,n.id];
       if(n.level==='persistent')void change(`notifications/${n.id}`,{action:'dismiss'}).catch(()=>{hidden=hidden.filter(id=>id!==n.id);});
