@@ -10,7 +10,8 @@ import { getConfig } from '$lib/server/config';
 import { enabledCategories, requireEnabledCategory } from '$lib/server/experimental';
 import type { ReadingMetadata } from './model';
 import { readingStates, readingReferenceSchema, readingProviderForId, type ReadingKind } from './model';
-import { readingCard } from './presentation';
+import { readingCard,type ReadingDetailData } from './presentation';
+import {readingProviderDetails} from '$lib/providers/reading.server';
 import { searchDocument, searchSql } from '$lib/server/queries/search-ranking';
 
 const uuid = v.pipe(v.string(), v.uuid());
@@ -145,4 +146,13 @@ export async function readingHistoryData(userId:string,id:string,requested=1){
  const [result]=await db.select({total:count()}).from(readingHistory).where(where);const paging=pagination(result.total,page);
  const items=await db.select({id:readingHistory.id,state:readingHistory.state,page:readingHistory.page,totalPages:readingHistory.totalPages,occurredAt:readingHistory.occurredAt}).from(readingHistory).where(where).orderBy(sql`${readingHistory.occurredAt} desc`,sql`${readingHistory.id} desc`).limit(PAGE_SIZE).offset((paging.page-1)*PAGE_SIZE);
  return {...paging,total:result.total,items};
+}
+
+export async function readingRemoteDetail(userId:string,kind:ReadingKind,id:string):Promise<ReadingDetailData>{
+ requireEnabledCategory(await getFeatureConfig(userId),'reading');
+ const storedId=await readingStoredWorkId(kind,id);
+ if(storedId){const detail=await readingDetails(userId,storedId);return {...detail,kind:detail.item.kind,remote:false};}
+ const item=await readingProviderDetails(kind,id);
+ requireEnabledCategory(await getFeatureConfig(userId),item.kind);
+ return {kind:item.kind,remote:true,item:{...item,id:item.externalId},progress:null,relationships:{favourite:false,watchlist:false,collected:false},rating:null};
 }

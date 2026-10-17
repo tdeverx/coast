@@ -1,16 +1,16 @@
 <script lang="ts">
   import {page} from '$app/state';
-  import { goto } from '$app/navigation';
+  import {navigateMedia} from '$lib/ui/media-navigation';
   import { message } from '$lib/ui/client';
   import {useClient} from '$lib/ui/client-context';
-  import MediaPage from '$lib/ui/components/MediaPage.svelte';
+  import MediaDetails from '$lib/ui/components/MediaDetails.svelte';
+  import type {DetailRowsModel} from '$lib/ui/pages/detail-rows';
   import { gameHero, gameFacts } from '$lib/games/presentation';
   import Button from '$lib/ui/components/Button.svelte';
   import { overviewPanels } from '$lib/ui/insights/overview';
-  import Shelf from '$lib/ui/components/Shelf.svelte';
-  let { data }: {data:{item:import('$lib/games/presentation').GameMetadata&{externalId:string};instanceId:string}} = $props();
+  let { data,detailHref }: {detailHref?:string;data:{item:import('$lib/games/presentation').GameMetadata&{externalId:string};instanceId:string}} = $props();
   const {change,preview}=useClient();
-  const section=$derived(page.url.searchParams.get('section'));
+  const section=$derived((detailHref?new URL(detailHref,page.url):page.url).searchParams.get('section'));
   const href=$derived(`/games/igdb/${data.instanceId}/${data.item.externalId}`);
   const overview = $derived(overviewPanels(data.item.overview,gameFacts(data.item)));
   let busy = $state(false),
@@ -23,23 +23,18 @@
         instanceId: data.instanceId,
         externalId: data.item.externalId,
       });
-      if(!preview)await goto(`/games/${game.id}`);
+      if(!preview)await navigateMedia(`/games/${game.id}`);
     } catch (cause) {
       failure = message(cause);
     } finally {
       busy = false;
     }
   }
+  const model=$derived<DetailRowsModel>({insights:{selection:'overview',tabs:[{value:'overview',label:'Overview',panels:overview}],href:`${href}?section=insights`}});
 </script>
 
 <svelte:head><title>{data.item.title} · Games · Coast</title></svelte:head>
-<MediaPage details hero={!section}
-  item={gameHero(
-    { ...data.item, id: data.item.externalId },
-    `/games/igdb/${data.instanceId}/${data.item.externalId}`,
-    false
-  )}
->
+<MediaDetails view={{hero:!section,item:gameHero({...data.item,id:data.item.externalId},href,false)}} {model} {section}>
   {#if section}<Button emphasis="subtle" href={href} icon="left">{data.item.title}</Button>{/if}
   {#snippet heroActions()}
     <Button emphasis="subtle" href={`/games?view=igdb&instance=${data.instanceId}`} icon="left"
@@ -52,5 +47,5 @@
 
 
   {#if failure}<div class="notice error" role="alert">{failure}</div>{/if}
-  {#if overview.length}<Shelf title="Insights" href={!section?`${href}?section=insights`:undefined} layout={section?'grid':'row'} size="panel" artworkOptions={false} panels={overview} />{/if}
-</MediaPage>
+
+</MediaDetails>

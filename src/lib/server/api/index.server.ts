@@ -16,7 +16,7 @@ import { isPublicReadPath } from '$lib/social/public.server';
 import { profileAvatarChoices, providerProfileAvatar } from '$lib/core/profile/avatars.server';
 import { avatarRequestLimit, streamGifAvatar } from '$lib/core/profile/gif-avatar.server';
 import * as social from '$lib/social/service.server';
-import { activityFeed, workSocial, reactionSummary } from '$lib/social/queries.server';
+import { activityFeed, workSocial,reactionSummary } from '$lib/social/queries.server';
 import { friendInsights, friendDiscovery } from '$lib/social/insights.server';
 import { requireVisible } from '$lib/social/privacy.server';
 import { previewProjection, approveProjection, reviewProjection } from '$lib/collection/projection.server';
@@ -158,7 +158,7 @@ export const handler: RequestHandler = async (event) => {
           return json({items:ranked.flatMap(row=>{const item=cards.find(card=>card.id===row.workId);return item?[{...item,captionSubtitle:`${row.friends} ${row.friends===1?'friend':'friends'}`}]:[];}),hasMore:false,next:null});
         }
         if(action==='reactions')return json(await reactionSummary(uid,v.parse(v.picklist(['work','activity']),url.searchParams.get('targetKind')),(url.searchParams.get('ids')??'').split(',').filter(Boolean)));
-        if(action==='works')return json(await workSocial(uid,(url.searchParams.get('ids')??'').split(',').filter(Boolean)));
+        if(action==='works'&&path.length===2)return json(await workSocial(uid,(url.searchParams.get('ids')??'').split(',').filter(Boolean)));
         if(action==='recommendations')return json(await social.recommendations(uid,page,url.searchParams.get('available')==='true'));
         if(action==='insights')return json(url.searchParams.has('friendId')?await friendInsights(uid,uuid(url.searchParams.get('friendId'))):await friendDiscovery(uid));
         if(action==='checkins'){

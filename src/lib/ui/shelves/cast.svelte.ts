@@ -8,13 +8,14 @@ type CastOptions = {
   busy?: boolean;
   href?: string;
   layout?: 'row' | 'grid';
+  url?:URL;
 };
 
 /** Credit selection supplies items and controls to the shared Shelf. */
 export function createCastSelection(getOptions: () => CastOptions) {
   const options = $derived(getOptions());
   let selection = $state(untrack(() =>
-    options.layout === 'grid' && page.url.searchParams.get('credits') === 'crew' ? 'crew' : 'cast'
+    options.layout === 'grid' && (options.url??page.url).searchParams.get('credits') === 'crew' ? 'crew' : 'cast'
   ));
   const people = $derived(selection === 'cast' ? options.people : (options.crew ?? []));
   return {

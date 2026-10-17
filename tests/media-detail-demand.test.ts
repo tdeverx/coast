@@ -7,14 +7,15 @@ const routeUrl=moduleUrl(compileRunes(`export const page=$state({data:{user:{id:
 const {page}=await import(routeUrl);
 const castUrl=moduleUrl(compileRunes((await Bun.file(new URL('../src/lib/ui/shelves/cast.svelte.ts',import.meta.url)).text())
   .replaceAll('$app/state',routeUrl).replaceAll("from 'svelte'",`from ${JSON.stringify(svelteUrl)}`)));
-let script=await componentScript('src/lib/ui/components/MediaDetailRows.svelte');
+let script=await componentScript('src/lib/media/DetailRows.svelte');
 const propsStart=script.indexOf('let {'),propsEnd=script.indexOf('} = $props();',propsStart);
-script=script.slice(0,propsStart)+'let {item,members=[],seasons=[],cast=[],section}=$derived(getOptions());'+script.slice(propsEnd+'} = $props();'.length);
+script=script.slice(0,propsStart)+'let {item,members=[],seasons=[],cast=[],section,detailHref}=$derived(getOptions());'+script.slice(propsEnd+'} = $props();'.length);
 const code=compileRunes(`import {untrack} from ${JSON.stringify(svelteUrl)};
  import {createResource,uniqueItems} from ${JSON.stringify(resourceUrl)};
  import {createCastSelection} from ${JSON.stringify(castUrl)};
  import {page} from ${JSON.stringify(routeUrl)};
  export function create(getOptions,transport){
+ const activity=()=>{},creditRoles=value=>({preview:value,remaining:0,voice:false}),mediaOverviewPanels=()=>[],communityPanels=()=>[];
  const callbacks=[],useClient=()=>({api:transport}),onDestroy=fn=>callbacks.push(fn);
  ${script}
  return {activate(row){if(row==='insights')insightsActive=true;else if(row==='reviews')reviewsActive=true;else creditsActive=true;},

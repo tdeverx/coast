@@ -1,5 +1,5 @@
 import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
-import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { readingSessions, readingProgress, readingWorks, providerConnections, providerInstances, workEditions, users } from '$lib/server/db/schema';
@@ -14,7 +14,7 @@ import { decryptCredential } from '$lib/server/security/credentials';
 import { secureProviderFetch } from '$lib/server/security/provider-fetch';
 import { observeReadingFile } from '$lib/catalogue/reading-files.server';
 import { updateReading } from '$lib/core/reading/service.server';
-import { readingFormats, readingLocationSchema, type ReadingFormat, type ReadingSessionView } from './model';
+import { readingFormats, readingFileLabel, readingLocationSchema, type ReadingFormat, type ReadingSessionView } from './model';
 const uuid=v.pipe(v.string(),v.uuid());
 const prepareSchema=v.variant('source',[
  v.strictObject({source:v.literal('local'),format:v.picklist(readingFormats),edition:v.pipe(v.string(),v.regex(/^[a-f0-9]{64}$/))}),
@@ -40,7 +40,7 @@ export async function linkedReadingSources(userId:string,workId:string) {
   .innerJoin(providerInstances,eq(providerInstances.id,workEditions.instanceId))
   .where(and(eq(workEditions.workId,workId),eq(providerConnections.status,'connected'),eq(providerInstances.enabled,true),
     eq(providerInstances.provider,'jellyfin'),sql`coalesce(${workEditions.metadata}->>'identityConflict','false')<>'true'`,
-    sql`${workEditions.format} in ('pdf','epub','cbz')`))
+    inArray(workEditions.format,readingFormats)))
   .orderBy(providerInstances.name,workEditions.id).limit(20);
 }
 export async function readingSources(userId:string,workId:string,connectionId:string,search:string,offset:number,signal?:AbortSignal) {
@@ -62,7 +62,7 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
   const {connection,instance,adapter}=await getJellyfin(userId,input.connectionId);
   const book=await adapter.readingItem(connection.externalUserId!,input.externalId,signal);
   signal?.throwIfAborted();
-  const supported=bookFormat(book);if(!supported)throw new AppError(409,'This file format is not supported. Choose PDF, EPUB or CBZ.');
+  const supported=bookFormat(book);if(!supported)throw new AppError(409,`This file format is not supported. Choose ${readingFileLabel}.`);
   format=supported;edition=sourceEdition(instance.serverIdentity??instance.id,book);connectionId=connection.id;accountGeneration=connection.accountGeneration;externalId=jellyfinItemKey(book.Id);
   await observeReadingFile({userId,workId,connectionId:connection.id,instanceId:instance.id,generation:connection.accountGeneration,book,edition});
  }

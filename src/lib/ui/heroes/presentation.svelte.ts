@@ -62,6 +62,9 @@ export function createHeroPresentation(get: () => HeroOptions) {
   const active = $derived(collection ? chosen : (items.length ? items[current % items.length] : item));
   const presentation = $derived(parents.find((parent) => parent.kind === 'show') ?? active);
   const titleLogo = $derived(active?.logo ?? presentation?.logo);
+  $effect(()=>{active?.backdrop;backdropFailed=false;});
+  $effect(()=>{active?.poster;posterFailed=false;});
+  $effect(()=>{titleLogo;logoFailed=false;});
   const hasTrailer = $derived(heroPlayer.id === active?.id && !!heroPlayer.url);
   const showingTrailer = $derived(
     hasTrailer && heroPlayer.playing && heroPlayer.ready && heroPlayer.visible
@@ -114,7 +117,8 @@ export function createHeroPresentation(get: () => HeroOptions) {
   }
   $effect(() => {
     const title = active;
-    const obscured = playbackVisible(player)||reader.visible||page.data.capabilities?.playback===false||page.data.capabilities?.screen===false;
+    // The native top-layer detail sheet covers the root-owned trailer surface.
+    const obscured = playbackVisible(player)||reader.visible||!!page.state.mediaDetailHref||page.data.capabilities?.playback===false||page.data.capabilities?.screen===false;
     if(obscured){if(heroPlayer.id===title?.id)heroPlayer.visible=false;return;}
     backdropFailed = false;
     posterFailed = false;

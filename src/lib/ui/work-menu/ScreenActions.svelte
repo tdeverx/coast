@@ -52,9 +52,9 @@
     requestable = false,
     hero = false,
     menuOnly = false,
-    showTrigger = false,
+    showTrigger = false,editionName,
   }: {
-    item: MediaView;
+    item: MediaView;editionName?:string;
     context?: 'discover' | 'details' | 'home';
     next?: MediaView | null;
     requestable?: boolean;
@@ -119,7 +119,7 @@
   const playable = $derived(data ? data.playable : isMediaGroup(item) ? next : item);
   const editions = $derived(data?.editions ?? []);
   const selectedEdition = $derived(
-    page.params.id === active.id
+    editionName===undefined&&page.params.id === active.id
       ? (page.url.searchParams.get('edition') ?? undefined)
       : undefined
   );
@@ -288,7 +288,7 @@
       if (!alive) return;
       if (!target?.available) throw new Error('The next item is not available to play.');
       await playMedia(target.id, {
-        edition,
+        edition,editionName:edition===undefined?editionName:undefined,
         fromStart,
         sequence: target.sequence,
         continuationId: isGroup ? active.id : target.showId,
@@ -665,7 +665,7 @@
     <Button item icon="clock" disabled={busy} onclick={() => openForm('log')}
       >Choose date…</Button>
   {:else if view === 'history'}
-    <Button item icon="clock" href={`/media/${active.id}/history`}>View history</Button>
+    <Button item icon="clock" href={`/media/${active.id}?section=activity&relationship=consumed`}>View activity</Button>
     <div class="menu-divider" role="separator"></div>
     <Button item
       icon="check"
@@ -697,7 +697,7 @@
       disabledReason="Nothing to reset"
       onclick={() => resetProgress(active)}>Reset playback position…</Button>
     <div class="menu-divider" role="separator"></div>
-    <Button item icon="close" danger href={`/media/${active.id}/history?remove=1`}
+    <Button item icon="close" danger href={`/media/${active.id}/history`}
       >Remove from history…</Button>
   {:else if view === 'rewatch'}
     <Button item icon="refresh" disabled={busy || loading} onclick={startRewatchNow}

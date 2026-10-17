@@ -55,3 +55,11 @@ export type FriendEntry = {
  activity?:{title:string;href:string;label:string;artwork?:string;progress?:number|null};
  backgroundWorkId?:string|null;backgroundArtwork?:string;
 };
+
+export const workFriendFilters=['all','consumed','progress','watchlist','lists','favourites'] as const;
+export type WorkFriendFilter=typeof workFriendFilters[number];
+/** The same relationship controls use labels appropriate to the work being viewed. */
+export function workFriendOptions(kind?:string){
+ const labels=kind==='book'||kind==='comic'?['Read','Reading','To read']:kind==='game'?['Played','Playing','Backlog']:['album','track','artist'].includes(kind??'')?['Listened','Listening','Saved for later']:['Watched','Watching','Watchlist'];
+ return workFriendFilters.map((value,index)=>({value,label:['All',...labels,'Lists','Favourites'][index]}));
+}

@@ -17,7 +17,7 @@ export async function getFeatureConfig(userId: string | null, database?: ReturnT
   if (userId && (!user || user.disabled)) for (const key of Object.keys(features) as Feature[]) features[key] = false;
   return {...config, features, experimentalMusic:features.music, experimentalGaming:features.game,
     experimentalBooks:features.book, experimentalComics:features.comic, experimentalParties:features.parties,
-    experimentalPlanning:features.planning, experimentalMediaModal:features.mediaModal,
+    experimentalPlanning:features.planning,
     allowPlaybackSharing:features.sharing, enableRequests:features.requests};
 }
 export async function requireFeature(userId: string, feature: Feature, database?: ReturnType<typeof getSql>) {

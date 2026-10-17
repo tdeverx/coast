@@ -5,7 +5,9 @@ import { useClient } from '$lib/ui/client-context';
 import { musicDuration, musicHero, musicHref } from '$lib/music/presentation';
 import type { MusicItem, MusicPage } from '$lib/music/model';
 import { overviewPanels } from '$lib/ui/insights/overview';
-import type { PageCommand, PageSection } from './types';
+import type {PageCommand} from './types';
+import type {DetailRow} from './detail';
+import type {DetailRowsModel} from './detail-rows';
 export type MusicPageData = { item: MusicItem; connectionId: string; children: MusicPage; failure: string; page: number; pages: number };
 
 /** Music supplies data and commands to the same hero/content/shelf page as other media. */
@@ -39,22 +41,22 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
     ] : []),
     { label: 'Music', emphasis: 'subtle', icon: 'left', href: `/music?connection=${get().connectionId}` },
   ] : []);
-  const sections = $derived.by((): PageSection[] => {
+  const rows = $derived.by((): DetailRow[] => {
     const data = get();
-    const result: PageSection[] = [];
-    if (overview.length && (!section || section === 'insights')) result.push({ key: 'insights', title: 'Insights', panels: overview, layout: section ? 'grid' : 'row', href: !section ? `${path}?section=insights` : undefined });
+    const result: DetailRow[] = [];
     const key = item.kind === 'artist' ? 'albums' : 'tracks';
     if (item.kind !== 'track' && (!section || section === key)) result.push({
-      key,title:item.kind==='artist'?'Albums':'Tracks',
+      key,shelf:{title:item.kind==='artist'?'Albums':'Tracks',
       source:{type:'detail',title:item.kind==='artist'?'Albums':'Tracks',
         path:data.connectionId?`music/source/children?${new URLSearchParams({connectionId:data.connectionId,externalId:item.id})}`:`music/${item.workId??item.id}/children`,
         href:`${path}?section=${key}`,shape:'square',mediaKind:'music',layout:section?'grid':'row',page:data.page},
-
+      }
     });
     return result;
   });
-  return { get page() { return {
-    details: true, hero: !section, item: musicHero(item, get().connectionId), commands, sections, error: failure,
+  const model=$derived<DetailRowsModel>({insights:{selection:'overview',tabs:[{value:'overview',label:'Overview',panels:overview}],href:`${path}?section=insights`}});
+  return {get rows(){return rows;},get model(){return model;},get page() { return {
+    hero: !section, item: musicHero(item, get().connectionId), commands, error: failure,
     back: section ? { href: path, label: item.title } : undefined,
     links: [...artists.flatMap(artist => artist.href || get().connectionId ? [{ href: artist.href ?? musicHref(get().connectionId, artist.id), label: artist.name }] : []),
       ...(item.albumId ? [{ href: musicHref(get().connectionId, item.albumId), label: item.album || 'Album' }] : [])],

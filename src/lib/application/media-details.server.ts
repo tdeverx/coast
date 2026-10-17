@@ -1,9 +1,12 @@
 import { detailsData } from '$lib/server/queries/media';
 import { requestOptions } from '$lib/providers/seerr/requests.server';
 import { ensureDetails } from '$lib/catalogue/service.server';
+import type {MediaView} from '$lib/ui/types';
+export type ScreenDetailView=Omit<Awaited<ReturnType<typeof detailsData>>,'item'>&{item:MediaView;requestable:boolean;refreshUnavailable:boolean};
+export type ScreenDetailData=ScreenDetailView&{enhancement:Promise<ScreenDetailView>};
 
 /** Saved details render first; page and overlay share the same optional enrichment. */
-export async function loadMediaDetails(userId: string, id: string) {
+export async function loadMediaDetails(userId: string, id: string):Promise<ScreenDetailData> {
   const initial = { ...(await detailsData(userId, id)), requestable: false, refreshUnavailable: false };
   const enhancement = (async () => {
     let refreshUnavailable = false;

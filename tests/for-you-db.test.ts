@@ -162,3 +162,114 @@ run('popular with friends ranks root works once per friend and respects privacy 
  const music=await friendDiscovery(viewer,'music');expect(music).toHaveLength(1);expect(music[0].workId).toBe(album);
 
 });
+
+run('item activity filters before pagination and retains reading detail, privacy and reactions',async()=>{
+ const db=getDb(),raw=getSql(),config=await getConfig(),reader=crypto.randomUUID(),visible=crypto.randomUUID(),hidden=crypto.randomUUID(),stranger=crypto.randomUUID(),book=crypto.randomUUID(),comic=crypto.randomUUID(),history=crypto.randomUUID();
+ await db.insert(s.systemSettings).values({key:'coast',value:{...config,experimentalBooks:true,experimentalComics:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...config,experimentalBooks:true,experimentalComics:true}}});
+ try{
+  await db.insert(s.users).values([{id:reader,username:`reader-${reader}`},{id:visible,username:`visible-${visible}`},{id:hidden,username:`hidden-${hidden}`,settings:{social:{sections:{activity:'private'}}}},{id:stranger,username:`stranger-${stranger}`}]);
+  for(const id of [visible,hidden])await db.insert(s.friendships).values({userA:[reader,id].sort()[0],userB:[reader,id].sort()[1],state:'accepted',requestedBy:reader});
+  await db.insert(s.works).values([{id:book,kind:'book',category:'book'},{id:comic,kind:'comic',category:'comic'}]);
+  await db.insert(s.readingWorks).values([{id:book,kind:'book',provider:'openlibrary',externalId:book,title:'Scoped book',sourceUrl:'https://openlibrary.org/'},{id:comic,kind:'comic',provider:'comic-vine',externalId:comic,title:'Other comic',sourceUrl:'https://comicvine.gamespot.com/'}]);
+  await db.insert(s.readingHistory).values({id:history,userId:reader,workId:book,state:'reading',page:80,totalPages:320});
+  const progress=crypto.randomUUID();
+  await db.insert(s.socialActivity).values({id:progress,userId:reader,workId:book,eventKind:'reading-reading',section:'activity',source:'coast',sourceKey:`reading:${history}`,occurredAt:new Date('2030-01-01')});
+  await db.insert(s.socialActivity).values(Array.from({length:61},(_,i)=>({userId:reader,workId:book,eventKind:'reading-reading',section:'activity',source:'coast',sourceKey:`scoped:${i}`,occurredAt:new Date(Date.UTC(2029,0,i+1))})));
+  for(const id of [visible,hidden,stranger])await db.insert(s.socialActivity).values({userId:id,workId:book,eventKind:'reading-completed',section:'activity',source:'coast',sourceKey:`scoped:${id}`});
+  await db.insert(s.socialActivity).values({userId:reader,workId:comic,eventKind:'reading-completed',section:'activity',source:'coast',sourceKey:'other-work'});
+  await db.insert(s.socialReactions).values({userId:reader,targetKind:'activity',targetId:progress,emoji:'❤️'});
+  const first=await activityFeed(reader,{workId:book,category:'reading'}),next=await activityFeed(reader,{workId:book,category:'reading',...first.next!});
+  expect(first.items).toHaveLength(60);expect(first.hasMore).toBe(true);expect(next.items).toHaveLength(3);expect(next.hasMore).toBe(false);
+  const items=[...first.items,...next.items];expect(new Set(items.map(item=>item.entryId)).size).toBe(63);expect(items.every(item=>item.id===book)).toBe(true);
+  expect(items.some(item=>item.captionActor?.username===`visible-${visible}`)).toBe(true);
+  expect(items.some(item=>[hidden,stranger].some(id=>item.captionActor?.username?.endsWith(id)))).toBe(false);
+  expect(first.items.find(item=>item.entryId===progress)?.captionActivity?.detail).toBe('80 of 320 pages');
+  expect(first.items.find(item=>item.entryId===progress)?.captionActivity?.id).toBe(progress);
+  expect(first.items.find(item=>item.entryId===progress)?.captionActivity?.myReaction).toBe('❤️');
+  await expect(activityFeed(reader,{workId:'invalid'})).rejects.toThrow();
+ }finally{await raw`update system_settings set value=${config}::jsonb where key='coast'`;}
+});
+
+run('item Activity includes verified episode and album membership without leaking unrelated titles',async()=>{
+ const db=getDb(),viewer=crypto.randomUUID(),series=crypto.randomUUID(),seasonA=crypto.randomUUID(),seasonB=crypto.randomUUID(),epA=crypto.randomUUID(),epB=crypto.randomUUID(),albumA=crypto.randomUUID(),albumB=crypto.randomUUID(),recording=crypto.randomUUID(),unrelated=crypto.randomUUID(),gameId=crypto.randomUUID();
+ await db.insert(s.users).values({id:viewer,username:`scope-${viewer}`});
+ await db.insert(s.media).values([{id:series,kind:'show',title:'Scoped show'},{id:seasonA,kind:'season',title:'One'},{id:seasonB,kind:'season',title:'Two'},{id:epA,kind:'episode',title:'A'},{id:epB,kind:'episode',title:'B'}]);
+ await db.insert(s.shows).values({mediaId:series});await db.insert(s.seasons).values([{mediaId:seasonA,showId:series,seasonNumber:1},{mediaId:seasonB,showId:series,seasonNumber:2}]);
+ await db.insert(s.episodes).values([{mediaId:epA,showId:series,seasonId:seasonA,seasonNumber:1,episodeNumber:1},{mediaId:epB,showId:series,seasonId:seasonB,seasonNumber:2,episodeNumber:1}]);
+ await db.insert(s.works).values([albumA,albumB,recording,unrelated].map(id=>({id,category:'music' as const,kind:[albumA,albumB].includes(id)?'album' as const:'track' as const})));
+ await db.insert(s.musicWorks).values([albumA,albumB,recording,unrelated].map(id=>({id,title:id,kind:[albumA,albumB].includes(id)?'album' as const:'track' as const})));
+ await db.insert(s.mediaRelationships).values([{parentId:albumA,childId:recording,kind:'contains',position:1},{parentId:albumB,childId:recording,kind:'contains',position:1},{parentId:albumA,childId:unrelated,kind:'contains',position:2}]);
+ await db.insert(s.games).values({id:gameId,title:'Scoped game'});
+ await db.insert(s.socialActivity).values([epA,epB,recording,unrelated,gameId].map(workId=>({userId:viewer,workId,eventKind:[epA,epB].includes(workId)?'watch':workId===gameId?'session':'listen',section:'activity',source:'coast',sourceKey:`container:${workId}`})));
+ const showFeed=await activityFeed(viewer,{workId:series});expect(showFeed.events).toHaveLength(1);expect(showFeed.events[0].count).toBe(2);
+ const seasonFeed=await activityFeed(viewer,{workId:seasonA});expect(seasonFeed.events.map(event=>event.workId)).toEqual([epA]);
+ const episodeFeed=await activityFeed(viewer,{workId:epB});expect(episodeFeed.events.map(event=>event.workId)).toEqual([epB]);
+ const albumFeed=await activityFeed(viewer,{workId:albumB});expect(albumFeed.events.map(event=>event.workId)).toEqual([recording]);expect(albumFeed.events[0].rootId).toBe(albumB);
+ const trackFeed=await activityFeed(viewer,{workId:recording});expect(trackFeed.events.map(event=>event.workId)).toEqual([recording]);
+ const gameFeed=await activityFeed(viewer,{workId:gameId});expect(gameFeed.events.map(event=>event.workId)).toEqual([gameId]);
+});
+run('artist and comic-volume Activity use verified credit and issue membership',async()=>{
+ const db=getDb(),raw=getSql(),config=await getConfig(),viewer=crypto.randomUUID(),artist=crypto.randomUUID(),recording=crypto.randomUUID(),other=crypto.randomUUID(),issue=crypto.randomUUID(),volume=crypto.randomUUID();
+ await db.insert(s.systemSettings).values({key:'coast',value:{...config,experimentalComics:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...config,experimentalComics:true}}});
+ try{
+  await db.insert(s.users).values({id:viewer,username:`membership-${viewer}`});
+  const [server]=await db.insert(s.providerInstances).values({provider:'jellyfin',name:'Activity credits fixture',baseUrl:'https://fixture.invalid'}).returning();
+  await db.insert(s.musicArtists).values({id:artist,instanceId:server.id,externalId:artist,name:'Scoped artist'});
+  await db.insert(s.works).values([{id:recording,category:'music',kind:'track'},{id:other,category:'music',kind:'track'},{id:issue,category:'comic',kind:'comic'}]);
+  await db.insert(s.musicWorks).values([{id:recording,kind:'track',title:'Artist recording'},{id:other,kind:'track',title:'Other recording'}]);
+  await db.insert(s.musicCredits).values({artistId:artist,workId:recording,role:'artist'});
+  await db.insert(s.readingWorks).values({id:issue,kind:'comic',provider:'comic-vine',externalId:issue,title:'Volume issue',sourceUrl:'https://comicvine.gamespot.com/'});
+  await db.insert(s.readingGroups).values({id:volume,kind:'comic',provider:'comic-vine',externalId:'4050-9000001',title:'Scoped volume'});
+  await db.insert(s.readingGroupMembers).values({groupId:volume,workId:issue,position:'1'});
+  await db.insert(s.socialActivity).values([recording,other,issue].map(workId=>({userId:viewer,workId,eventKind:workId===issue?'reading-completed':'listen',section:'activity',source:'coast',sourceKey:`membership:${workId}`})));
+  expect((await activityFeed(viewer,{artistId:artist})).events.map(event=>event.workId)).toEqual([recording]);
+  expect((await activityFeed(viewer,{readingGroupId:volume})).events.map(event=>event.workId)).toEqual([issue]);
+ }finally{await raw`update system_settings set value=${config}::jsonb where key='coast'`;}
+});
+run('merged item Activity preserves undated relationships, private fields and stable event/state pagination',async()=>{
+ const db=getDb(),raw=getSql(),viewer=crypto.randomUUID(),movie=crypto.randomUUID(),people=Array.from({length:69},()=>crypto.randomUUID());
+ await db.insert(s.users).values([{id:viewer,username:`merged-${viewer}`},...people.map((id,index)=>({id,username:`merged-peer-${index}-${id}`,disabled:index===65,settings:index===66?{features:{social:false}}:index===67?{social:{sections:{favourites:'private' as const,collection:'private' as const}}}:index===0?{profile:{avatar:'https://private.invalid'},social:{sections:{details:'private' as const,ratings:'private' as const}}}:{}}))]);
+ await db.insert(s.media).values({id:movie,kind:'movie',title:'Merged Activity'});
+ await db.insert(s.friendships).values(people.slice(0,-1).map(id=>({userA:[viewer,id].sort()[0],userB:[viewer,id].sort()[1],state:'accepted' as const,requestedBy:viewer})));
+ await db.insert(s.trackingState).values(people.map((userId,index)=>({userId,mediaId:movie,favourite:true,watched:index!==67})));
+ await db.insert(s.ratings).values({userId:people[0],mediaId:movie,value:4});
+ // Deliberately leave current state with no history: it must still be represented.
+ await raw`delete from social_activity where work_id=${movie}::uuid`;
+ const real=crypto.randomUUID();await db.insert(s.socialActivity).values({id:real,userId:viewer,workId:movie,eventKind:'watch',section:'activity',source:'coast',sourceKey:`merged:${real}`,dateKnown:false,occurredAt:new Date('1960-01-01')});
+ const first=await activityFeed(viewer,{workId:movie,relationship:'all'});
+ expect(first.items).toHaveLength(60);expect(first.items[0].captionActivity?.id).toBe(real);expect(first.next?.beforeRelationship).toBe('true');
+ const second=await activityFeed(viewer,{workId:movie,relationship:'all',...first.next!});
+ const cards=[...first.items,...second.items];expect(cards).toHaveLength(66);expect(new Set(cards.map(item=>item.entryId)).size).toBe(66);expect(second.hasMore).toBe(false);
+ const undated=cards.filter(item=>!item.captionActivity);expect(undated).toHaveLength(65);expect(undated.every(item=>item.captionSubtitle?.includes('Favourited'))).toBe(true);
+ const privateActor=cards.find(item=>item.captionActor?.username.endsWith(people[0]));expect(privateActor?.captionActor?.avatar).toBeNull();expect(privateActor?.captionSubtitle).not.toContain('/ 5');
+ for(const id of people.slice(65))expect(cards.some(item=>item.captionActor?.username.endsWith(id))).toBe(false);
+ const favourites=await activityFeed(viewer,{workId:movie,relationship:'favourites'});expect(favourites.items).toHaveLength(60);expect(favourites.items.every(item=>!item.captionActivity)).toBe(true);
+ const list=crypto.randomUUID();await db.insert(s.lists).values({id:list,userId:people[1],name:'Current list'});await db.insert(s.listItems).values({listId:list,mediaId:movie,position:0});
+ const listed=await activityFeed(viewer,{workId:movie,relationship:'lists'});expect(listed.items).toHaveLength(1);expect(listed.items[0].captionSubtitle).toBe('In a list');expect(listed.items[0].captionActivity).toBeUndefined();
+ await raw`update users set settings=${{social:{sections:{collection:'private'}}}}::jsonb where id=${people[1]}::uuid`;
+ expect((await activityFeed(viewer,{workId:movie,relationship:'lists'})).items).toEqual([]);
+ await expect(activityFeed(viewer,{relationship:'all'})).rejects.toThrow();
+});
+run('merged relationship segments cover reading, games, music and their verified containers',async()=>{
+ const db=getDb(),raw=getSql(),config=await getConfig(),viewer=crypto.randomUUID(),peer=crypto.randomUUID(),book=crypto.randomUUID(),comic=crypto.randomUUID(),game=crypto.randomUUID(),album=crypto.randomUUID(),track=crypto.randomUUID(),artist=crypto.randomUUID(),group=crypto.randomUUID();
+ await db.insert(s.systemSettings).values({key:'coast',value:{...config,experimentalBooks:true,experimentalComics:true}}).onConflictDoUpdate({target:s.systemSettings.key,set:{value:{...config,experimentalBooks:true,experimentalComics:true}}});
+ try{
+  await db.insert(s.users).values([{id:viewer,username:`relationship-viewer-${viewer}`},{id:peer,username:`relationship-peer-${peer}`}]);
+  await db.insert(s.friendships).values({userA:[viewer,peer].sort()[0],userB:[viewer,peer].sort()[1],state:'accepted',requestedBy:viewer});
+  await db.insert(s.works).values([{id:book,category:'book',kind:'book'},{id:comic,category:'comic',kind:'comic'},{id:album,category:'music',kind:'album'},{id:track,category:'music',kind:'track'}]);
+  await db.insert(s.readingWorks).values([{id:book,kind:'book',provider:'openlibrary',externalId:book,title:'Saved book',sourceUrl:'https://openlibrary.org/'},{id:comic,kind:'comic',provider:'comic-vine',externalId:comic,title:'Read issue',sourceUrl:'https://comicvine.gamespot.com/'}]);
+  await db.insert(s.readingProgress).values([{userId:peer,workId:book,state:'planned'},{userId:peer,workId:comic,state:'completed',page:24,totalPages:24,completedAt:new Date()}]);
+  await db.insert(s.readingGroups).values({id:group,kind:'comic',provider:'comic-vine',externalId:'4050-9000002',title:'Read volume'});await db.insert(s.readingGroupMembers).values({groupId:group,workId:comic,position:'1'});
+  await db.insert(s.games).values({id:game,title:'Playing game'});const [playthrough]=await db.insert(s.gamePlaythroughs).values({userId:peer,gameId:game,status:'in-progress'}).returning();
+  await db.insert(s.gameSessions).values({id:crypto.randomUUID(),playthroughId:playthrough.id,minutesPlayed:12,playedAt:new Date()});
+  await db.insert(s.musicWorks).values([{id:album,kind:'album',title:'Saved album'},{id:track,kind:'track',title:'Active track'}]);await db.insert(s.mediaRelationships).values({parentId:album,childId:track,kind:'contains',position:1});
+  await db.insert(s.musicProgress).values({userId:peer,trackId:track,positionSeconds:40,durationSeconds:200,playCount:1});
+  const [server]=await db.insert(s.providerInstances).values({provider:'jellyfin',name:'Merged Activity artist',baseUrl:'https://fixture.invalid'}).returning();await db.insert(s.musicArtists).values({id:artist,instanceId:server.id,externalId:artist,name:'Merged artist'});await db.insert(s.musicCredits).values([{workId:album,artistId:artist,role:'album-artist'},{workId:track,artistId:artist,role:'artist'}]);
+  await db.insert(s.trackingState).values([{userId:peer,mediaId:album,watchlist:true},{userId:peer,mediaId:episodes[0],watched:true}]);
+  for(const scope of [{workId:book,relationship:'watchlist'},{workId:comic,relationship:'consumed'},{readingGroupId:group,relationship:'consumed'},{workId:game,relationship:'progress'},{workId:game,relationship:'consumed'},{workId:track,relationship:'progress'},{workId:album,relationship:'consumed'},{artistId:artist,relationship:'watchlist'},{workId:show,relationship:'consumed'},{workId:season,relationship:'consumed'}]){
+   const result=await activityFeed(viewer,scope);expect(result.items.length).toBeGreaterThan(0);expect(result.items.every(item=>item.captionActor?.username===`relationship-peer-${peer}`)).toBe(true);
+  }
+  await raw`update users set settings=${{social:{sections:{progress:'private'}}}}::jsonb where id=${peer}::uuid`;
+  expect((await activityFeed(viewer,{workId:comic,relationship:'consumed'})).items).toEqual([]);expect((await activityFeed(viewer,{workId:game,relationship:'progress'})).items).toEqual([]);
+ }finally{await raw`update system_settings set value=${config}::jsonb where key='coast'`;}
+});

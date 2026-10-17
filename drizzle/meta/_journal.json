@@ -428,6 +428,20 @@
       "when": 1792236739889,
       "tag": "0060_reading_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1792245940650,
+      "tag": "0061_reading_archive_formats",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1792248844816,
+      "tag": "0062_reading_detail_candidates",
+      "breakpoints": true
     }
   ]
 }

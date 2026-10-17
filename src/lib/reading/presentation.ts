@@ -43,6 +43,7 @@ export function readingFacts(item: ReadingDisplay) {
   return [
     ...(item.authors.length ? [{ label: 'Authors', value: item.authors.join(', ') }] : []),
     ...(item.publishedYear ? [{ label: 'First published', value: String(item.publishedYear) }] : []),
+    ...(item.pageCount ? [{ label: 'Pages', value: item.pageCount.toLocaleString() }] : []),
     ...(item.seriesTitle ? [{ label: 'Series', value: item.seriesTitle }] : []),
     ...(item.issueNumber ? [{ label: 'Issue', value: item.issueNumber }] : []),
     ...(item.subjects.length ? [{ label: 'Subjects', value: item.subjects.join(', ') }] : []),

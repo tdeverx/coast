@@ -6,7 +6,7 @@ import {contentRevisionKey} from '$lib/ui/content-revision.svelte';
 import type {ShelfItem,ShelfSource} from './types';
 import type {MediaCardShape} from '$lib/ui/types';
 export type DetailSourceOptions={type:'detail';title:string;path:string;href?:string;layout?:'row'|'grid';shape?:MediaCardShape;mediaKind?:'music'|'reading';page?:number};
-type Content={items:ShelfItem[];page:number;pages:number;total:number};
+type Content={items:ShelfItem[];page:number;pages:number;total:number;title?:string;href?:string};
 /** Detail children use the same lazy activation, cancellation and ordered append as other shelves. */
 export function createDetailSource(get:()=>DetailSourceOptions):ShelfSource{
  const {api}=useClient(),resource=createResource<Content>({items:[],page:1,pages:1,total:0});
@@ -21,7 +21,7 @@ export function createDetailSource(get:()=>DetailSourceOptions):ShelfSource{
  $effect(()=>{const next=scope;untrack(()=>{if(previous===next)return;previous=next;const active=resource.activated;resource.replace({items:[],page:1,pages:1,total:0});if(active)void load();});});
  onDestroy(resource.dispose);
  return {
-  get title(){return get().title;},get href(){return get().layout==='grid'?undefined:get().href;},
+  get title(){return resource.data.title??get().title;},get href(){return get().layout==='grid'?undefined:get().href??resource.data.href;},
   get items(){return resource.data.items;},get busy(){return resource.busy;},get error(){return resource.error;},
   get ready(){return resource.ready;},get activated(){return resource.activated;},
   get shape(){return get().shape??'poster';},get mediaKind(){return get().mediaKind;},

@@ -19,7 +19,7 @@ export const load = (async ({ locals, depends,params,url }) => {
     experimentalBooks: config.experimentalBooks,
     experimentalComics: config.experimentalComics,
     experimentalParties: config.experimentalParties,
-    experiments:{planning:config.experimentalPlanning,mediaModal:config.experimentalMediaModal},
+    experiments:{planning:config.experimentalPlanning},
     playbackSharing:config.allowPlaybackSharing && !!locals.user && (locals.user.role==='admin'||locals.user.settings.allowPlaybackSharing===true),
     user: locals.user,
     contentRevision: revision,

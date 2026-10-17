@@ -5,7 +5,7 @@ import {categoryEnabled,mediumOptions} from '../src/lib/experimental';
 test('normal defaults preserve behavior and experiments retain independent admission',()=>{
  const values=featureValues(defaultConfig);
  for(const key of administratorFeatures)expect(values[key]).toBe(true);
- for(const key of ['music','game','book','comic','parties','planning','mediaModal','sharing'] as const)expect(values[key]).toBe(false);
+ for(const key of ['music','game','book','comic','parties','planning','sharing'] as const)expect(values[key]).toBe(false);
  expect(values.requests).toBe(true);
 });
 test('installation policy wins, opt-outs are remembered and dependent features cannot bypass it',()=>{
@@ -23,4 +23,9 @@ test('all media may be disabled without manufacturing a fallback medium',()=>{
  const features=featureValues(config,{screen:false,music:false,game:false,book:false,comic:false});
  expect(mediumOptions({...config,features})).toEqual([]);
  for(const category of ['screen','music','game','book','comic','reading'])expect(categoryEnabled({...config,features},category)).toBe(false);
+});
+
+test('detail panels are standard navigation rather than an experiment or personal feature',()=>{
+ expect(Object.keys(featureValues(defaultConfig))).not.toContain('mediaModal');
+ expect(featureValues(defaultConfig)).not.toHaveProperty('mediaModal');
 });

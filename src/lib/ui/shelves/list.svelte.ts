@@ -1,3 +1,4 @@
+import {useShelfLocation} from '$lib/ui/detail-section.svelte';
 
   import { onDestroy, untrack } from 'svelte';
   import { replaceState } from '$app/navigation';
@@ -5,9 +6,9 @@
   import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
   import { message } from '$lib/ui/client';
 import { useClient } from '$lib/ui/client-context';
-  import { createResource } from '$lib/ui/resource.svelte';
+  import { createResource,uniqueItems } from '$lib/ui/resource.svelte';
   type Content = {
-    selected?: { playlist: boolean } | null;
+    selected?: { playlist: boolean;name?:string } | null;
     items: (MediaView|MediaCardPresentation)[];
     page: number;
     pages: number;
@@ -22,12 +23,14 @@ export type ListSourceOptions = {
     view: string;
     title: string;
     custom?: boolean;
+    filters?:{kind:string;scope:string};
     layout?: 'row' | 'grid';
     initial?: Content;
     onitems?: (items: MediaView[], selection: string) => void;
     ondelete?: () => void;
   };
 export function createListSource(getOptions: () => ListSourceOptions): ShelfSource {
+ const location=useShelfLocation();
   const { api, change, preview } = useClient();
 
   let {
@@ -47,8 +50,8 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
   const busy = $derived(resource.busy);
   const error = $derived(resource.error);
   const ready = $derived(resource.ready);
-  let scope = $state(untrack(() => content.scope ?? 'all'));
-  let kind = $state(untrack(() => content.kind));
+  let scope = $state(untrack(() => getOptions().filters?.scope??content.scope??'all'));
+  let kind = $state(untrack(() => (getOptions().filters?.kind??content.kind) as Content['kind']));
   const filter = 'all';
   let arranging = $state(false);
   const selection = $derived(`${view}:${content.kind}:${content.filter}`);
@@ -57,10 +60,10 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
   $effect(() => {
     if (ready) onitems?.(content.items.filter((item):item is MediaView=>!('href' in item)), selection);
   });
-  async function load(number = 1) {
+  async function load(number = 1,append=false) {
     const path = `lists/content?${new URLSearchParams({ view, kind, filter, scope, page: String(number) })}`;
-    const result = await resource.load(signal => api<Content>(path, undefined, 'GET', { signal }));
-    if (result && !preview && layout === 'grid') replaceState(href(result.page), page.state);
+    const result = await resource.load(signal => api<Content>(path, undefined, 'GET', { signal }),{merge:(old,next)=>({...next,items:append?uniqueItems([...old.items,...next.items],item=>item.entryId??item.id):next.items})});
+    if (result && !location.embedded && !preview && layout === 'grid') replaceState(href(result.page), page.state);
   }
   async function edit(id: string, direction?: number) {
     try {
@@ -76,7 +79,7 @@ export function createListSource(getOptions: () => ListSourceOptions): ShelfSour
 
   return {
     get pagination() { return { kind: 'pages' as const, page: content.page, pages: content.pages, append: false, controls: layout === 'grid' ? 'both' as const : 'none' as const, url: href }; },
-    get title() { return title; }, get items() { return layout === 'row' ? content.items.slice(0,20) : content.items; },
+    get title() { return content.selected?.name??title; }, get items() { return layout === 'row' ? content.items.slice(0,20) : content.items; },
     get busy() { return busy; }, get ready() { return ready; }, get error() { return error; }, get activated() { return resource.activated; },
     get href() { return layout === 'row' ? href() : undefined; },
 

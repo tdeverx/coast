@@ -65,6 +65,10 @@ Run local benchmarks and compare results over time. Saved measurements help you 
 
 The optional [Jellyfin companion](docs/jellyfin-companion.md) provides server change hints, live activity and stream updates so Coast can target changed items. It also supports trailer crop analysis. Native polling remains available when the plugin is unavailable.
 
+### Explore without losing your place
+
+Media details open in a rounded panel that expands as you scroll. Follow seasons, issues, credits and related titles inside it, then go Back or close it to return to your original page. This is the standard signed-in interface, with no feature switch. Direct links still work as full pages.
+
 ## Experiments
 
 Administrators enable these separately in **Settings → Policies → Experimental features**. They default off; disabling one hides it without deleting saved data.
@@ -81,7 +85,7 @@ Discover games through IGDB, import Steam ownership, playtime and supported achi
 
 ### Books & comics
 
-Find books through Open Library and comic issues through Comic Vine, browse them through Search, Discover and Library, and track your reading by page in Continue and Next. These are independent experiments and work without Jellyfin. Read your own PDF, EPUB or CBZ files, resume bookmarks, connect accessible Jellyfin books and synchronize reading locations in parties. Comic Vine requires an administrator API key and permits non-commercial use only. See [reading experiments](docs/reading.md).
+Find books through Open Library and comic issues through Comic Vine, browse them through Search, Discover and Library, and track your reading by page in Continue and Next. These are independent experiments and work without Jellyfin. Read your own PDF, EPUB or CBZ/CBR/CB7/CBT comic files, resume bookmarks, connect accessible Jellyfin books and synchronize reading locations in parties. Comic Vine requires an administrator API key and permits non-commercial use only. See [reading experiments](docs/reading.md).
 
 ### Parties
 
@@ -90,10 +94,6 @@ Invite friends into a shared video or audio session with synced playback, partic
 ### Planning & calendar
 
 Schedule titles and reminders. Upcoming on For You shows known releases for watchlisted titles and tracked shows.
-
-### Media detail overlay
-
-Open the existing hero and details over the page you are browsing, with a full-page option. Its presentation is still under review.
 
 ## Still being refined
 

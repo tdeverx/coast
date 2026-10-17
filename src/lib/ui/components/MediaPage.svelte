@@ -1,8 +1,5 @@
 <script lang="ts">
   import { reportFailure } from '$lib/ui/client-context';
-  import {page as route} from '$app/state';
-  import { useClient } from '$lib/ui/client-context';
-  import Heading from './Heading.svelte';
   import type { Snippet } from 'svelte';
   import type { MediaView } from '$lib/ui/types';
   import type { HeroItem } from '$lib/ui/heroes/presentation.svelte';
@@ -13,12 +10,10 @@
   import Button from './Button.svelte';
   import EmptyState from './EmptyState.svelte';
 
-  const { api } = useClient();
-
   let {
     children, hero = true, item, items = [], collection, parents = [], context = 'details', next = null,
     requestable = false, heroActions, commands = [], links = [], sections = [], error = '', back,
-    details = false, page, class: className = '',
+    details = false, page, editionName,heroAlignment='left', class: className = '',
   }: {
     children?: Snippet;
     hero?: boolean;
@@ -35,21 +30,11 @@
     sections?: PageSection[];
     error?: string;
     back?: { href: string; label: string };
-    details?: boolean;
+    editionName?:string;heroAlignment?:'left'|'center'|'adaptive';details?: boolean;
     page?: boolean;
     class?: string;
   } = $props();
   const hasHero = $derived(hero && (collection ? heroTitleIds(collection.items).length > 0 : !!item || items.length > 0));
-  let friendDetails=$state<{userId:string;username:string;rating:number|null;watched:boolean;progress:number}[]>([]);
-  let friendTotal=$state(0);
-  const socialWork=$derived(item ? ('workId' in item ? item.workId??item.id : item.id) : '');
-  $effect(()=>{
-    const id=socialWork;friendDetails=[];friendTotal=0;if(!route.data.user||!/^[0-9a-f-]{36}$/.test(id))return;
-    const controller=new AbortController();
-    void api<Record<string,{friends:typeof friendDetails;total:number}>>(`social/works?ids=${id}`,undefined,'GET',{signal:controller.signal}).then(result=>{friendDetails=result[id]?.friends??[];friendTotal=result[id]?.total??0;}).catch(()=>{});
-    return ()=>controller.abort();
-  });
-
   reportFailure(()=>error);
 </script>
 
@@ -57,7 +42,7 @@
   {#each commands as command}<Button size={command.size} icon={command.icon} emphasis={command.emphasis} disabled={command.disabled} href={command.href} onclick={command.run}>{command.label}</Button>{/each}
   {@render heroActions?.()}
 {/snippet}
-{#if hasHero}<MediaHero {item} {items} {collection} {parents} {context} {next} {requestable} actions={commands.length || heroActions ? actionControls : undefined} />{/if}
+{#if hasHero}<MediaHero alignment={heroAlignment} {editionName} {item} {items} {collection} {parents} {context} {next} {requestable} actions={commands.length || heroActions ? actionControls : undefined} />{/if}
 <div class={`content ${className}`} class:details class:page={page ?? !hasHero} class:route-content={!hasHero && !details}>
   {#if back}<Button emphasis="subtle" href={back.href} icon="left">{back.label}</Button>{/if}
 
@@ -68,7 +53,6 @@
     pageNumber={section.page} pages={section.pages} pageUrl={section.pageUrl} error={section.error} retry={section.retry}>
     {#snippet empty()}{#if !section.error && section.empty}<EmptyState {...section.empty} icon="library" />{/if}{/snippet}
   </Shelf>{/each}
-  {#if friendDetails.length}<section class="section"><Heading title="Friends on this title" /><div class="row">{#each friendDetails as friend}<Button emphasis="subtle" href={`/profile/${encodeURIComponent(friend.username)}`}>{friend.username}{friend.rating!==null?` · ${friend.rating} stars`:''}{friend.watched?' · Completed':friend.progress?' · In progress':''}</Button>{/each}{#if friendTotal>friendDetails.length}<span class="small quiet">+{friendTotal-friendDetails.length} more friends</span>{/if}</div></section>{/if}
   {@render children?.()}
 </div>
 <style>

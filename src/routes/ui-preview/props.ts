@@ -3,7 +3,7 @@ import {serviceTasks} from '$lib/providers/tasks';
 import {providerSchedule} from '$lib/providers/schedule';
 import {defaultNotificationFilters} from '$lib/notifications/model';
 import {defaultPartySettings} from '$lib/playback/synced/model';
-import {id,today,movie,show,episode,items,facts,provider,job} from './demo/fixtures';
+import {id,today,movie,show,items,facts,provider,job} from './demo/fixtures';
 
 export type PropContract={name:string;type:string;optional:boolean;bindable:boolean;kind:'text'|'number'|'boolean'|'select'|'data'|'snippet'|'callback';nullable:boolean;choices?:Array<string|number>;defaultSource?:string;defaultValue?:unknown};
 export type SlotChoice={kind:'example'|'hidden'|'text'|'actions'|'avatar'|'field'|'timeline';text:string};
@@ -36,13 +36,13 @@ const examples:Record<string,Record<string,unknown>>={
   CollectionProjectionSettings:{connectionId:id,settings:{collectionProjection:{enabled:false,source:'collected'}},sources:[{id,name:'Preview library'}]},
   ConflictList:{conflicts:[{id,mediaId:id,title:movie.title,source:'Jellyfin',action:'watched',value:true,positionSeconds:null,durationSeconds:null,occurredAt:today,reason:'Different watch states',localValue:{value:false},remoteValue:{value:true}}]},
   ConnectionCard:{provider:{id,name:provider.name,provider:'jellyfin',configured:true,connection:{id,username:'preview',status:'connected',settings:{}}},sources:[{id,name:'Preview library'}],dynamicCollectionExports:[]},
-  DetailCard:{title:'Detail card',description:'Supporting information'},Dialog:{open:false,title:'Preview dialog',message:'An isolated dialog'},EmptyState:{title:'Nothing here yet',description:'Items appear here when you add them.',icon:'library'},
+  DetailOverlay:{open:false,editions:[{value:'theatrical',label:'Theatrical'},{value:'extended',label:'Extended Edition'}],editionName:'theatrical'},DetailCard:{title:'Detail card',description:'Supporting information'},Dialog:{open:false,title:'Preview dialog',message:'An isolated dialog'},EmptyState:{title:'Nothing here yet',description:'Items appear here when you add them.',icon:'library'},
   FactList:{items:facts},Field:{label:'Display name',hint:'Preview input'},FormActions:{},FriendRoster:{friends:[friend],userId:id,busy:false,inviteDisabled:false},FriendsPanel:{open:false,initialView:'accepted'},
   Header:{user:{username:'preview',role:'admin'},unread:2,friendRequests:1,publicBrowse:false},Heading:{title:'Stories to explore',description:'A little more to discover.',variant:'row',level:2},
   Icon:{name:'play',size:32,filled:true},IdentityCard:{label:'Identity preview',background:movie.backdrop,progress:.42,wrapActions:false},
   IntegrationSettings:{providers:[provider],experimentalGaming:true,experimentalComics:true},JobSchedule:{provider,task:serviceTasks('jellyfin')[0],jobs:[job],local:false,showSource:true},JobsSettings:{providers:[provider],actions:[job],tasteJob:null},
-  MediaActivity:{mediaId:id,period:'month'},MediaCard:{item:movie,shape:'fanart',artworkStyle:'auto',overlay:'none',showCaption:true,showPrimaryAction:true},MediaDetailRows:{item:show,members:[episode],seasons:[],cast:[]},
-  MediaHero:{item:movie,mode:'content',context:'details',requestable:false},MediaPage:{item:movie,details:true,hero:true,sections:[{key:'related',title:'Related titles',items}]},
+  MediaActivity:{mediaId:id,period:'month'},MediaCard:{item:movie,shape:'fanart',artworkStyle:'auto',overlay:'none',showCaption:true,showPrimaryAction:true},MediaDetailRows:{model:{insights:{selection:'overview',tabs:[{value:'overview',label:'Overview',panels:[{title:'About',content:{kind:'text',text:show.overview||'About this title'}}]}]}}},MediaDetails:{view:{item:movie},model:{insights:{selection:'overview',tabs:[{value:'overview',label:'Overview',panels:[{title:'About',content:{kind:'text',text:movie.overview||'About this title'}}]}]}}},
+  MediaHero:{item:movie,mode:'content',context:'details',alignment:'left',requestable:false},MediaPage:{item:movie,details:true,hero:true,sections:[{key:'related',title:'Related titles',items}]},
   MetadataEditor:{open:false,mediaId:id,admin:false},MetricGrid:{items:[{label:'Watches',value:12},{label:'Hours',value:34},{label:'Status',value:'Watching',text:true}]},
   NotificationInbox:{open:false,initialKind:'all',initialFilters:defaultNotificationFilters},NotificationToasts:{notifications:[{id,title:'Your title is ready',body:'Available from your connected library.',level:'persistent',readAt:null,createdAt:today+'T18:00:00Z'}]},
   OperationProgress:{label:'Importing history',processed:42,total:100},Pagination:{page:1,pages:5,label:'Preview pages',busy:false},PartyCard:{label:'Party preview',background:movie.backdrop,members,inParty:true,embedded:false},PartyMenu:{demoRoom:room,demoUserId:id},

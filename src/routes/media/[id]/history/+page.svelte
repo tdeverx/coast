@@ -17,7 +17,7 @@
     error = $state(''),
     confirming = $state(false),
     revision = $state(0);
-  const selectionKey = $derived(`${data.item.id}:${data.selecting}`);
+  const selectionKey = $derived(data.item.id);
   $effect(() => {
     selectionKey;
     untrack(() => {
@@ -72,21 +72,15 @@
   }
 </script>
 
-<svelte:head><title>{data.item.title} · History · Coast</title></svelte:head>
+<svelte:head><title>{data.item.title} · Manage history · Coast</title></svelte:head>
 <MediaPage>
   <section class="section">
-    <Heading title={`${data.item.title} · History`}>
+    <Heading title={`${data.item.title} · Manage history`}>
       {#snippet actions()}
-        {#if data.selecting}<Button href={`/media/${data.item.id}/history`} emphasis="subtle"
-            >Done</Button
-          >
-        {:else}<Button href={`/media/${data.item.id}/history?remove=1`} emphasis="subtle"
-            >Remove entries…</Button
-          >{/if}
+        <Button href={`/media/${data.item.id}?section=activity&relationship=consumed`} emphasis="subtle">Done</Button>
         <Button href={`/media/${data.item.id}`} emphasis="subtle" icon="left">View details</Button>
       {/snippet}
     </Heading>
-    {#if data.selecting}
       <div class="selection-tools stack">
         <p>
           Select the entries you want to remove. For a show, season or collection, this includes its
@@ -122,9 +116,8 @@
           >
         </div>
       </div>
-    {/if}
-    {#key `${data.item.id}:${data.selecting}:${revision}`}
-      <Shelf source={{ type: 'journal', layout: "grid", items: data.activity.items, page: data.activity.page, pages: data.activity.pages, today: data.today, endpoint: `media/${data.item.id}/activity`, filters: {}, onitems: (items) => (loaded = items), selection: data.selecting ? { checked, toggle, disabled: busy } : undefined }} />
+    {#key `${data.item.id}:${revision}`}
+      <Shelf source={{ type: 'journal', layout: "grid", items: data.activity.items, page: data.activity.page, pages: data.activity.pages, today: data.today, endpoint: `media/${data.item.id}/activity`, filters: {}, onitems: (items) => (loaded = items), selection: { checked, toggle, disabled: busy } }} />
     {/key}
   </section>
 </MediaPage>

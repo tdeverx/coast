@@ -10,14 +10,14 @@
     open = $bindable(false),
     title,
     children, message, actions, alert = false,
-    wide = false, edgeToEdge = false, popover = false, popoverWidth = 560, anchor, heading, footer,
-    onclose,
+    wide = false, edgeToEdge = false, expanding = false, popover = false, popoverWidth = 560, anchor, heading, footer, floating,
+    onclose,contentKey,
   }: {
     open: boolean;
     title: string;
     children?: Snippet; message?: string; alert?: boolean; actions?: ComponentProps<typeof Button>[];
-    wide?: boolean; edgeToEdge?: boolean; popover?: boolean; popoverWidth?:number; anchor?:string; heading?:Snippet; footer?:Snippet;
-    onclose?: () => void;
+    wide?: boolean; edgeToEdge?: boolean; expanding?:boolean; popover?: boolean; popoverWidth?:number; anchor?:string; heading?:Snippet; footer?:Snippet; floating?:Snippet;
+    onclose?: () => void;contentKey?:string;
   } = $props();
   const {feedback} = useClient();
   const hostId = $props.id();
@@ -25,12 +25,72 @@
   let dialog: HTMLElement;
   let destroyed = false;
   let placementFrame = 0;
+  let expansionFrame = 0;
+  const expansionDistance=160;
+  let expansion = 0;
+  let expanded=$state(false);
+  let expansionScroll=$state<HTMLDivElement>();
+  let detailScroll=$state<HTMLDivElement>();
+  $effect(()=>{
+    contentKey;
+    if(!open||!expanding||!detailScroll)return;
+    if(expansionFrame){cancelAnimationFrame(expansionFrame);expansionFrame=0;}
+    // Reset the page within the current presentation, not the presentation itself.
+    detailScroll.scrollTop=0;
+    if(expansionScroll)expansionScroll.scrollTop=expansion*expansionDistance;
+    const current=contentKey;
+    void tick().then(()=>{if(!destroyed&&open&&contentKey===current)dialog?.querySelector<HTMLElement>('button:not(:disabled),a[href]')?.focus({preventScroll:true});});
+  });
+  function expandSheet() {
+    if (expansionFrame || !expanding) return;
+    expansionFrame=requestAnimationFrame(()=>{
+      expansionFrame=0;
+      if (!destroyed && open && expansionScroll) {
+        const next=Math.min(1,Math.max(0,expansionScroll.scrollTop/expansionDistance));
+        expanded=next===1;
+        if(next!==expansion){
+          if((next===0)!==(expansion===0))dialog.style.setProperty('--detail-hero-text-align',next===0?'center':'left');
+          expansion=next;dialog.style.setProperty('--detail-expansion',String(next));
+        }
+      }
+    });
+  }
+  function scrollPage(){
+    // Keyboard focus may scroll an off-screen control before pointer scrolling expands the sheet.
+    if(!expanded&&detailScroll?.scrollTop&&expansionScroll){expansionScroll.scrollTop=expansionDistance;expandSheet();}
+  }
+  function handoffScroll(node:HTMLDivElement){
+    function wheel(event:WheelEvent){
+      const content=detailScroll;
+      // A wheel gesture can remain latched to the expansion track after it reaches its end.
+      // Forward its remaining vertical travel without requiring another pointer hit test.
+      if(!open||destroyed||!content||node.scrollTop<expansionDistance-0.5||event.defaultPrevented||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY)||!content.contains(event.target as Node))return;
+      const delta=event.deltaY*(event.deltaMode===1?20:event.deltaMode===2?content.clientHeight:1);
+      if(!delta)return;
+      for(let target=event.target as HTMLElement;target&&target!==content;target=target.parentElement!){
+        if(target.scrollHeight<=target.clientHeight)continue;
+        const style=window.getComputedStyle(target);
+        if(!/^(auto|scroll)$/.test(style.overflowY))continue;
+        if(style.overscrollBehaviorY==='contain'||style.overscrollBehaviorY==='none'||(delta>0?target.scrollTop<target.scrollHeight-target.clientHeight:target.scrollTop>0))return;
+      }
+      const next=Math.max(0,Math.min(content.scrollHeight-content.clientHeight,content.scrollTop+delta));
+      if(next===content.scrollTop)return;
+      // Later events in an already-latched gesture may be non-cancelable; the outer
+      // track is at its limit, so forwarding them cannot also advance that track.
+      if(event.cancelable)event.preventDefault();
+      content.scrollTop=next;
+    }
+    node.addEventListener('wheel',wheel,{passive:false});
+    return {destroy(){node.removeEventListener('wheel',wheel);}};
+  }
   let returnFocus:HTMLElement|null=null;
   function closed() {
+    // Native close events are queued: an older event must not close a reopened dialog.
+    if(!popover&&(dialog as HTMLDialogElement)?.open)return;
     if(dialog?.contains(document.activeElement)&&returnFocus?.isConnected)returnFocus.focus({preventScroll:true});
     returnFocus=null;open=false;onclose?.();
   }
-  onDestroy(() => {destroyed = true;if(placementFrame)cancelAnimationFrame(placementFrame);});
+  onDestroy(() => {destroyed = true;if(placementFrame)cancelAnimationFrame(placementFrame);if(expansionFrame)cancelAnimationFrame(expansionFrame);});
   function placePopover() {
     if (destroyed || !open || !dialog) return;
     const target = anchor ? document.querySelector(anchor) : null;
@@ -72,14 +132,16 @@
     if (open && !modal.open) {
       returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
       modal.showModal();
+      if(expanding){expansion=0;expanded=false;if(expansionScroll)expansionScroll.scrollTop=0;dialog.style.setProperty('--detail-expansion','0');dialog.style.setProperty('--detail-hero-text-align','center');if(detailScroll)detailScroll.scrollTop=0;}
     }
-    if (!open && modal.open) modal.close();
+    if (!open) {if(expansionFrame){cancelAnimationFrame(expansionFrame);expansionFrame=0;}if(modal.open)modal.close();}
   });
 </script>
 
 <svelte:element this={popover ? 'div' : 'dialog'}
   class="dialog"
   style:--popover-width={`${popoverWidth}px`}
+  style:--detail-expansion-distance={`${expansionDistance}px`}
   class:solid-surface={!popover}
   class:glass={popover}
   use:liquidGlass={{variant:'glassDark',enabled:popover,renderer:'css'}}
@@ -93,7 +155,8 @@
       closed();
     }
   }}
-  class:wide class:edge-to-edge={edgeToEdge} class:notification-popover={popover}
+  class:detail-expanded={expanded}
+  class:wide class:edge-to-edge={edgeToEdge} class:expanding class:notification-popover={popover}
   onclick={(e: MouseEvent) => {
     if (e.target === dialog) {
       const r = dialog.getBoundingClientRect();
@@ -118,6 +181,22 @@
     <div class="popover-heading">{@render dialogHeading()}</div>
     <div class="popover-content">{@render dialogContent()}</div>
     {#if footer}<div class="popover-footer">{@render footer()}</div>{/if}
+  {:else if expanding}
+    <div class="detail-sheet solid-surface media-surface-edge">
+      <div class="detail-expansion-scroll" bind:this={expansionScroll} onscroll={expandSheet} use:handoffScroll>
+        <div class="detail-expansion-track">
+          <div class="sheet-settle" aria-hidden="true"></div><div class="expanded-settle" aria-hidden="true"></div>
+          <div class="detail-stage">
+            <div class="detail-scroll" bind:this={detailScroll} onscroll={scrollPage}>
+              <div class="detail-body">
+                <div class="detail-heading">{@render dialogHeading()}</div>{@render dialogContent()}{@render footer?.()}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {@render floating?.()}
+    </div>
   {:else}{@render dialogHeading()}{@render dialogContent()}{@render footer?.()}{/if}
   {#if feedback.activeHost === hostId && feedback.current}
     <div class="dialog-feedback"><Toast text={feedback.current.text} kind={feedback.current.kind} error={feedback.current.error} busy={feedback.current.busy} actionLabel={feedback.current.undo?'Undo':'Retry'} onaction={feedback.current.undo || feedback.current.retry ? feedback.act : undefined} ondismiss={()=>feedback.clear()} /></div>
@@ -141,6 +220,20 @@
     width: min(864px, calc(100vw - 32px));
   }
   .dialog.edge-to-edge {padding:0;}
+  .dialog.expanding {--detail-expansion:0;--detail-inset:min(48px,6dvh);--detail-width:min(864px,calc(100vw - 32px));position:fixed;inset:0;width:calc(var(--detail-width) + (100vw - var(--detail-width)) * var(--detail-expansion));max-width:none;height:calc(100dvh - 2 * var(--detail-inset) * (1 - var(--detail-expansion)));max-height:none;margin:auto;padding:0;border:0;border-radius:calc(36px * (1 - var(--detail-expansion)));background:transparent;box-shadow:none;overflow:visible;}
+  .detail-expansion-scroll {height:100%;overflow-anchor:none;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;border-radius:inherit;scroll-snap-type:y proximity;}
+  .detail-expansion-track {position:relative;height:calc(100% + var(--detail-expansion-distance));border-radius:inherit;}
+  .detail-stage {position:sticky;top:0;height:calc(100% - var(--detail-expansion-distance));border-radius:inherit;}
+  .detail-scroll {height:100%;overflow-anchor:none;overflow-y:hidden;scrollbar-gutter:stable;border-radius:inherit;}
+  .detail-expanded .detail-scroll {overflow-y:auto;}
+  .detail-sheet {height:100%;border-radius:inherit;border:0;position:relative;isolation:isolate;}
+  .detail-sheet::after {z-index:12;border-width:2px;opacity:calc(var(--media-surface-edge-opacity) * (1 - var(--detail-expansion)));}
+  .detail-body {position:relative;min-height:100%;}
+  .detail-sheet :global(.content.details.page) {padding-top:72px;}
+  .sheet-settle,.expanded-settle {position:absolute;left:0;right:0;pointer-events:none;scroll-snap-align:start;}
+  .sheet-settle {top:0;height:1px;}
+  .expanded-settle {top:var(--detail-expansion-distance);height:1px;}
+  .detail-heading {position:sticky;top:0;z-index:10;}
   .edge-to-edge .heading {padding:16px 24px;margin-bottom:0;}
   .notification-popover {--popover-inset:16px;position:fixed;inset:auto;top:var(--popover-top,16px);left:var(--popover-left,16px);width:min(var(--popover-width),calc(100vw - 32px));max-height:min(640px,calc(100dvh - var(--popover-top,16px) - 16px));margin:0;border-radius:16px;padding:0;overflow:hidden;}
   .notification-popover:popover-open{display:flex;flex-direction:column;}

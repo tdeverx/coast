@@ -2,7 +2,7 @@ import {afterAll,beforeAll,expect,test} from 'bun:test';
 import {inArray} from 'drizzle-orm';
 import {getDb,getSql} from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
-import {workSocial} from '../src/lib/social/queries.server';
+import {workSocial,activityFeed} from '../src/lib/social/queries.server';
 import {publicDetails,publicMedia} from '../src/lib/social/public.server';
 import {profileData,profileActivity,profileInsightsData} from '../src/lib/server/queries/profile';
 import {sequenceEntries,nextSequenceEntry} from '../src/lib/core/lists/sequence.server';
@@ -66,6 +66,35 @@ run('social SQL bounds detail rows after privacy while retaining exact counts an
     const removed=await workSocial(viewer,[movie]);
     expect(removed[movie].total).toBe(5);expect(removed[movie].friends.map(friend=>friend.userId)).toEqual(peers.slice(2,5));
   }finally{await getSql()`update friendships set state='accepted' where (user_a=${viewer} or user_b=${viewer}) and (user_a=${peers[1]} or user_b=${peers[1]})`;}
+});
+
+run('item Activity replaces friend details while preserving privacy beyond the card head limit',async()=>{
+  const read=async(relationship:string)=>(await activityFeed(viewer,{workId:movie,relationship})).items.filter(item=>item.captionActor.username!==`${prefix}-viewer`);
+  const users=(items:Awaited<ReturnType<typeof read>>)=>new Set(items.map(item=>item.captionActor.username));
+  const all=await read('all');
+  expect(all).toHaveLength(6);expect(users(all)).toEqual(new Set(peers.slice(1,7).map((_,i)=>`${prefix}-${i+1}`)));
+  expect(await read('consumed')).toHaveLength(6);
+  expect(await read('lists')).toEqual([]);
+  expect((await activityFeed(viewer,{workId:movie,relationship:'all'})).hasMore).toBe(false);
+  const list=crypto.randomUUID(),hiddenList=crypto.randomUUID();
+  await getDb().insert(s.lists).values([{id:list,userId:peers[1],name:'Visible list'},{id:hiddenList,userId:peers[0],name:'Private list'}]);
+  await getDb().insert(s.listItems).values([{listId:list,mediaId:movie,position:0},{listId:hiddenList,mediaId:movie,position:0}]);
+  await getSql()`update users set settings=${{profile:{avatar:'https://private.invalid/avatar'},social:{audience:'friends',sections:{details:'private',ratings:'private'}}}}::jsonb where id=${peers[1]}`;
+  await getSql()`update tracking_state set watched=false,play_count=0,position_seconds=120 where user_id=${peers[2]} and media_id=${movie}`;
+  await getSql()`update tracking_state set watchlist=true where user_id=${peers[3]} and media_id=${movie}`;
+  try{
+    const listed=await read('lists');
+    expect(listed).toHaveLength(1);expect(listed[0].captionActor).toMatchObject({username:`${prefix}-1`,avatar:null});expect(listed[0].captionSubtitle).not.toContain('4 / 5');
+    expect(users(await read('progress'))).toEqual(new Set([`${prefix}-2`]));
+    expect(users(await read('watchlist'))).toEqual(new Set([`${prefix}-3`]));
+    expect(await read('consumed')).toHaveLength(5);
+    expect(await read('favourites')).toHaveLength(6);
+    await expect(read('invented')).rejects.toThrow();
+  }finally{
+    await getDb().delete(s.lists).where(inArray(s.lists.id,[list,hiddenList]));
+    await getSql()`update users set settings=${{social:{audience:'friends'}}}::jsonb where id=${peers[1]}`;
+    await getSql()`update tracking_state set watched=true,play_count=1,position_seconds=0,watchlist=false where user_id in (${peers[2]},${peers[3]}) and media_id=${movie}`;
+  }
 });
 
 run('guest detail membership exceeds 500 without losing seasons, episodes or public-safe state',async()=>{

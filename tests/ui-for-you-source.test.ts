@@ -14,6 +14,7 @@ const navigationUrl=moduleUrl('export const replaceState=()=>{};');
 const client=await import(clientUrl),{page}=await import(routeUrl),lifecycle=await import(lifecycleUrl);
 const {createForYouSource}:typeof import('../src/lib/ui/shelves/for-you.svelte')=await import(moduleUrl((await compile('../src/lib/ui/shelves/for-you.svelte.ts'))
  .replaceAll('from "svelte"',`from ${JSON.stringify(lifecycleUrl)}`)
+ .replaceAll('$lib/ui/detail-section.svelte',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
  .replaceAll('$app/state',routeUrl).replaceAll('$app/navigation',navigationUrl)
  .replaceAll('$lib/ui/client-context',clientUrl).replaceAll('$lib/ui/resource.svelte',resourceUrl)
  .replaceAll('$lib/ui/content-revision.svelte',revisionUrl).replaceAll('$lib/ui/client',clientUrl)

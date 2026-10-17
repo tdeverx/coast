@@ -47,13 +47,14 @@ test('empty bounded next selection does not activate card hydration',async()=>{
   expect(await select(owner,{kind:'collection',id:crypto.randomUUID()})).toBeNull();
 });
 
+const {relationshipEdges,relationshipReasons}=await import('../src/lib/social/relationships.server');
 const socialSource=await Bun.file(new URL('../src/lib/social/queries.server.ts',import.meta.url)).text();
 const socialFunction=socialSource.slice(socialSource.indexOf('export async function workSocial('),socialSource.indexOf('/** Batch reads'));
 test('social projection retains exact totals and resolves presence only for displayed identities',async()=>{
   const ids=Array.from({length:60},()=>crypto.randomUUID()),selected=Array.from({length:3},()=>crypto.randomUUID());
   const rows=ids.slice(0,-1).flatMap(workId=>selected.map((userId,i)=>({workId,userId,username:`friend-${i}`,avatar:null,rating:null,watched:false,progress:0,total:300})));
   const reaction={targetId:ids[0],emoji:'❤️',count:8};let statement=0,statusIds:string[]=[];
-  const workSocial=compile(socialFunction,{getFeatureConfig:async()=>({features:{social:true}}),v,uuid:v.pipe(v.string(),v.uuid()),sql,
+  const workSocial=compile(socialFunction,{relationshipEdges,relationshipReasons,getFeatureConfig:async()=>({features:{social:true}}),v,uuid:v.pipe(v.string(),v.uuid()),sql,
     getDb:()=>({execute:async()=>++statement===1?rows:[reaction]}),
     statusesForUsers:async(_viewer:string,ids:string[])=>{statusIds=ids;return {[selected[0]]:'online'};},
   },'workSocial');

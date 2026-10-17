@@ -1,4 +1,5 @@
 import { requireFeature } from '$lib/server/features';
+import {AppError} from '$lib/server/security/errors';
 import { creditRoles } from '$lib/media/credits';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { getDb } from '../server/db/index';
@@ -12,6 +13,12 @@ import type { MediaInsights, PersonDetails } from '$lib/media/details';
 import { error } from '@sveltejs/kit';
 const insightsCache = providerCache<MediaInsights>(100, 15 * 60_000, (value) => !value.incomplete);
 const peopleCache = providerCache<PersonDetails>();
+export async function personDetailData(userId:string,id:number){
+ if(!Number.isSafeInteger(id)||id<1)throw new AppError(404,'This person was not found.');
+ await requireFeature(userId,'screen');
+ const {credits,...person}=await personDetails(id);
+ return {person};
+}
 async function viewerRegion(userId: string) {
   const [user] = await getDb()
     .select({ settings: s.users.settings })
