@@ -1,5 +1,6 @@
 <script lang="ts" generics="T extends MediaView | MediaCardPresentation">
   import { shelfControls } from '$lib/ui/shelves/controls';
+  import {availabilityControl} from '$lib/ui/controls/actions';
   import {useDetailSection} from '$lib/ui/detail-section.svelte';
   import type {ComponentProps} from 'svelte';
   import { reportFailure } from '$lib/ui/client-context';
@@ -38,7 +39,7 @@
 
   let {
     title = '', items = [], source, panels, journal, href, children, heading, before, size = 'poster', overlay = 'none', artworkOptions = true, shape, layout = 'row', artworkStyle, artworkPriority,
-    mediaKind = 'screen', segments: customSegments, controls: customControls, filterGroups = [], actions, error = '', retry, empty, details,
+    mediaKind = 'screen', segments: customSegments, controls: customControls, filterGroups = [], actions, error = '', retry, empty, details, captionAction, body, footer,
     busy = false, hideEmpty = true, itemCount, preserveHeight, rows = 1, hasMore = false, onend, resetKey,
     url = page.url, pageNumber, pages, onpage, pageUrl, onsettled, onactivate, filterBy = 'none', enrichSocial = true, availability = true, availableOnly = $bindable(false),
   }: {
@@ -71,6 +72,9 @@
     retry?: () => void;
     empty?: Snippet;
     details?: Snippet<[T]>;
+    captionAction?: Snippet<[T]>;
+    body?: Snippet<[T]>;
+    footer?: Snippet<[T]>;
     busy?: boolean;
     hideEmpty?: boolean;
     itemCount?: number;
@@ -146,6 +150,7 @@
   const displayRows = $derived(adapter?.rows ?? rows);
   const pagination = $derived(adapter?.pagination);
   const displayHasMore = $derived(pagination?.kind === 'cursor' ? pagination.hasMore : pagination?.kind === 'pages' ? (pagination.append||sectionCandidate) && pagination.page < pagination.pages : hasMore);
+  const displayHasPrevious = $derived(pagination?.kind === 'pages' && (pagination.firstPage ?? 1) > 1 && !!adapter?.loadPrevious);
   const displayOnend = $derived(adapter ? () => {if(!adapter.busy) void adapter.load((pagination?.kind === 'pages' ? pagination.page : 1)+1,true);} : onend);
   const displayResetKey = $derived(adapter?.resetKey ?? resetKey ?? (filterMode !== 'none' ? selection.resetKey : undefined));
   const displayPageNumber = $derived(pagination?.kind === 'pages' ? pagination.page : pageNumber ?? 1);
@@ -159,6 +164,7 @@
     size: displaySize, artworkStyle: displayArtworkStyle, artworkPriority: displayArtworkPriority,
     overlay, layout: displayLayout, busy: displayBusy, preserveHeight: displayPreserveHeight,
     hasMore: displayHasMore, onend: displayOnend, resetKey: displayResetKey,
+    hasPrevious: displayHasPrevious, onstart: adapter?.loadPrevious, initialItemId: adapter?.initialItemId,
   }));
   function styleGesture(node: HTMLElement) {
     if (displaySize !== 'panel') return contextGesture(node, point => styleMenu?.openAt(point));
@@ -173,20 +179,28 @@
   {#each adapter?.actions ?? [] as action}<Button item text={action.label} onclick={action.run} />{/each}
   {@render actions?.()}
 {/snippet}
+{#snippet availabilityToggles()}
+ {#each headerControls.availability as control (control.label)}<Button {...availabilityControl(control.value==='available',value=>selectControl(control,value?'available':'all'),control.label)} />{/each}
+{/snippet}
 {#snippet sectionSegments()}
  {#each headerControls.segments as control (control.label)}<SegmentedControl material="clear" presentation="navigation" label={control.label} value={control.value} options={control.options??[]} onchange={value=>selectControl(control,value)} />{/each}
  {@render customSegments?.({material:'clear',presentation:'navigation'})}
 {/snippet}
 {#snippet sectionControls()}
+ {@render availabilityToggles()}
  {#if groups.length || adapter?.sequence || adapter?.actions?.length || actions}<RowFilter {groups} actions={adapter?.sequence || adapter?.actions?.length || actions ? menuActions : undefined} />{/if}
  {@render customControls?.()}
 {/snippet}
 <div use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
   {#snippet cards(style: MediaRowStyle)}
     {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
-    {#each entries as entry (entry.key)}{@const item = entry.item}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'}>
+    {#each entries as entry (entry.key)}{@const item = entry.item}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'} data-shelf-id={item.entryId ?? item.id}>
+      {#snippet cardAction()}{@render captionAction?.(item as T)}{/snippet}
+      {#snippet cardBody()}{@render body?.(item as T)}{/snippet}
+      {#snippet cardFooter()}{@render footer?.(item as T)}{/snippet}
       <MediaCard {item} {...style} wrapActivity={displayLayout === 'grid'} social={social['workId' in item?item.workId??item.id:item.id]}
-        shape={!journal && rail.overrideShape === null && shape === undefined && adapter?.shape === undefined && ['album', 'track', 'game'].includes(item.kind) ? 'square' : style.shape} />
+        shape={!journal && rail.overrideShape === null && shape === undefined && adapter?.shape === undefined && ['album', 'track', 'game'].includes(item.kind) ? 'square' : style.shape}
+        captionAction={captionAction ? cardAction : undefined} body={body ? cardBody : undefined} footer={footer ? cardFooter : undefined} />
       {#if entry.run}<details class="journal-run">
         <summary>Show {entry.run.length} episodes</summary>
         <div class="episode-list">{#each entry.run as episode}<a href={episode.href}><span>{episode.title}</span><small>{episode.note.time} · {episode.note.source}{episode.note.repeat ? ' · Rewatch' : ''}</small></a>{/each}</div>
@@ -225,10 +239,11 @@
       {#snippet segments()}
         {#each headerControls.segments as control (control.label)}<SegmentedControl label={control.label} value={control.value} options={control.options ?? []} onchange={value => selectControl(control, value)} />{/each}
         {@render customSegments?.({})}
+        {@render availabilityToggles()}
       {/snippet}
       {#snippet previous()}{#if hasNavigation}<Button size="icon"
         label={pagedNavigation ? `Previous ${displayTitle} page` : `Scroll ${displayTitle} left`}
-        disabled={pagedNavigation ? displayBusy || displayPageNumber <= 1 : emptyRow || !rail.previous}
+        disabled={pagedNavigation ? displayBusy || displayPageNumber <= 1 : emptyRow || !rail.previous && !displayHasPrevious}
         href={pagedNavigation ? displayPageUrl?.(displayPageNumber - 1) : undefined}
         onclick={pagedNavigation ? displayPageUrl ? undefined : () => displayOnpage?.(displayPageNumber - 1) : () => rail.scroll(-1)}
         icon="left" iconSize={20} />{/if}{/snippet}
@@ -264,6 +279,8 @@
     class:empty-row={emptyRow}
     class:two-rows={displayRows === 2 && displayLayout === 'row'}
     class:grid-layout={displayLayout === 'grid'}
+    class:anchored={displayLayout === 'row' && !!adapter?.initialItemId}
+    style:--shelf-card-count={entries.length}
     class:preserve={displayPreserveHeight}
     class:square={rail.size === 'square'||rail.size==='circle'}
     style:min-height={displayLayout === 'row' && displayPreserveHeight && rail.size === 'panel' && rail.savedHeight
@@ -274,10 +291,11 @@
     class:panel-row={rail.size === 'panel'}
     bind:this={rail.scroller}
     onscroll={() => { if(!emptyRow&&displayLayout==='row')rail.reachedEnd(); }}
+    onwheel={rail.wheel}
   >
     {#if loading || emptyRow}
     {#if loading}<span class="sr-only" role="status">Loading {displayTitle || 'titles'}…</span>{/if}
-    {#each Array.from({length:displayLayout === 'grid' ? 60 : 12},(_,i)=>i) as placeholder (placeholder)}<div class="shelf-skeleton" aria-hidden="true">{#if source?.type === 'social' && source.surface !== 'popular'}<div class="activity-placeholder"><div class="skeleton avatar-placeholder"></div><div class="skeleton name-placeholder"></div><div class="skeleton time-placeholder"></div></div>{/if}<div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div><div class="skeleton text-placeholder" style:width={`${65 + placeholder % 3 * 10}%`}></div><div class="placeholder-caption"><div class="placeholder-copy"><div class="skeleton text-placeholder short" style:width={`${35 + placeholder % 4 * 8}%`}></div></div>{#if source?.type === 'social' && source.surface !== 'popular'}<div class="skeleton reaction-placeholder"></div>{/if}</div></div>{/each}
+    {#each Array.from({length:displayLayout === 'grid' ? 60 : 12},(_,i)=>i) as placeholder (placeholder)}<div class="shelf-skeleton" aria-hidden="true">{#if source?.type === 'social' && source.surface !== 'popular'}<div class="activity-placeholder"><div class="skeleton avatar-placeholder"></div><div class="skeleton name-placeholder"></div><div class="skeleton time-placeholder"></div></div>{/if}<div class="skeleton artwork-placeholder" class:round={rail.size === 'circle'}></div><div class="placeholder-caption"><div class="placeholder-copy"><div class="placeholder-line"><div class="skeleton text-placeholder" style:width={`${65 + placeholder % 3 * 10}%`}></div></div><div class="placeholder-line short"><div class="skeleton text-placeholder" style:width={`${35 + placeholder % 4 * 8}%`}></div></div></div>{#if source?.type === 'social' && source.surface !== 'popular'}<div class="skeleton reaction-placeholder"></div>{/if}</div></div>{/each}
   {:else if children}{@render children(rail.style)}{:else}{@render cards(rail.style)}{/if}
   </div>
   {#if emptyRow}<div class="empty-label" role="status"><span class="glass empty-badge" use:liquidGlass={{variant:'glassDark',renderer:'css'}}>{selected || selection.filtered ? 'No matches' : 'Nothing here yet'}</span></div>{/if}
@@ -304,8 +322,10 @@
   .avatar-placeholder{width:20px;height:20px;border-radius:50%;flex-shrink:0;}
   .name-placeholder{height:12px;width:40%;border-radius:4px;}
   .time-placeholder{height:12px;width:20%;border-radius:4px;margin-left:auto;}
-  .placeholder-caption{display:flex;align-items:center;gap:8px;}
-  .placeholder-copy{flex:1;}
+  .placeholder-caption{display:flex;align-items:center;gap:8px;margin-top:8px;}
+  .placeholder-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
+  .placeholder-line{display:flex;align-items:center;height:calc(var(--text-md) * var(--leading-relaxed));}
+  .placeholder-line.short{height:calc(var(--text-sm) * var(--leading-relaxed));}
   .reaction-placeholder{width:28px;height:28px;border-radius:50%;}
   .content-row[hidden] { display:none; }
   .rail-shell {position:relative;}
@@ -316,8 +336,7 @@
   .artwork-placeholder { aspect-ratio:calc(1 / var(--row-art-ratio));border-radius:8px; }
   .artwork-placeholder.round { border-radius:50%; }
   .panel-row .artwork-placeholder { aspect-ratio:auto;height:260px; }
-  .text-placeholder { height:var(--text-sm);margin-top:10px;width:80%;border-radius:4px; }
-  .text-placeholder.short { width:55%; }
+  .text-placeholder { height:var(--text-sm);width:80%;border-radius:4px; }
   .journal { min-width:0; }
   .journal :global(.content-row:first-child) { margin-top:0; }
   .load-more { display:grid; justify-items:center; gap:10px; padding-block:18px; }
@@ -345,6 +364,8 @@
     min-width: 0;
     scroll-snap-align: start;
   }
+  .rail.anchored {grid-template-columns:repeat(var(--shelf-card-count),min(100%,var(--row-card-width))) max(0px,calc(var(--shelf-viewport-width) - min(100%,var(--row-card-width)) - 2 * var(--gutter) - var(--row-gap)));}
+  .rail.anchored::after {content:'';height:1px;scroll-snap-align:none;pointer-events:none;}
   .rail {
     --row-art-ratio: 1.5;
     --row-gap: 20px;

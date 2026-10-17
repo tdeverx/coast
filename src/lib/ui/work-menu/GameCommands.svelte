@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import Field from '$lib/ui/components/Field.svelte';
   import { onDestroy } from 'svelte';
   import { randomId } from '$lib/diagnostics';
@@ -56,10 +57,11 @@
       }
     }
   }
+  reportFailure(()=>mutation.error);
 </script>
 <Dialog open={form !== null} onclose={() => form = null} title={form === 'start' ? repeat ? 'Start replaying' : 'Start a playthrough' : form === 'log' ? 'Log a play session' : 'Update progress'}>
   <form class="stack" onsubmit={event => { event.preventDefault(); void submit(); }}>
-    {#if mutation.error}<div class="notice error" role="alert">{mutation.error}</div>{/if}
+
     {#if form === 'start'}
       <Field label="Platform"><input bind:value={platform} maxlength="250" list={`platforms-${workId}`} placeholder="Choose a platform" /></Field>
       <datalist id={`platforms-${workId}`}>{#each gameData?.platforms ?? [] as entry}<option value={entry}></option>{/each}</datalist>

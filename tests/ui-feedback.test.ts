@@ -30,6 +30,10 @@ test('a failure is announced once, releases its retry on destruction, and does n
  try {
   runtime.flush();const first=feedback.current;
   runtime.flush();expect(feedback.current).toBe(first);
+  feedback.clear();runtime.flush();expect(feedback.current).toBeNull();
+  // Dismissal survives unrelated renders; a new attempt can announce it again.
+  runtime.set(error,'');runtime.flush();runtime.set(error,'Unavailable');runtime.flush();
+  expect(feedback.current?.text).toBe('Unavailable');
   await feedback.act();expect(retries).toBe(1);expect(feedback.current).toBeNull();
   runtime.set(error,'Unavailable');runtime.flush();expect(feedback.current?.text).toBe('Unavailable');
   feedback.notify('Another operation succeeded.');

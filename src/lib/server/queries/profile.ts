@@ -275,6 +275,8 @@ export async function profileData(
         ? {
             ...item,
             captionTitle: item.showTitle ?? item.title,
+            captionTitleHref: item.showId?`/media/${item.showId}`:undefined,
+            captionSubtitleHref: `/media/${item.id}`,
             captionSubtitle: `S${String(item.seasonNumber ?? 0).padStart(2, '0')}E${String(item.episodeNumber ?? 0).padStart(2, '0')} · ${item.title}`,
           }
         : item;

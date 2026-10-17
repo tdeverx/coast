@@ -3,7 +3,7 @@ const local=new RegExp(`^/(media|games|music/work)/(${uuid})/?$`,'i');
 const group=new RegExp(`^/media/reading-collection/(${uuid})/?$`,'i');
 const game=new RegExp(`^/games/igdb/(${uuid})/([1-9][0-9]{0,14})/?$`,'i');
 const music=new RegExp(`^/music/(${uuid})/([a-f0-9]{32}|${uuid})/?$`,'i');
-const queries=new Set(['section','insight','source','period','page','playthrough','edition','relationship','credits','rowKind','rowProgress','rowAvailable','type','department','available']);
+const queries=new Set(['section','view','insight','source','period','page','playthrough','edition','relationship','credits','rowKind','rowProgress','rowAvailable','type','department','available','specials']);
 export type MediaDetailTarget={href:string;section:string|null;page:number;playthrough:string|null;edition:string|null}&(
  |{kind:'work';id:string}
  |{kind:'reading-group';id:string}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
  import OperationProgress from '$lib/ui/components/OperationProgress.svelte';
  import {enhance,deserialize} from '$app/forms';import {invalidate} from '$app/navigation';import {onMount,untrack} from 'svelte';
  import AvatarPicker from '$lib/ui/components/AvatarPicker.svelte';
@@ -13,6 +14,7 @@
    if(data.phase==='importing')await invalidate('coast:onboarding');
   }catch{deviceError='Connection interrupted. Try connecting again.';}finally{pending=false;}
  },2000);return()=>clearInterval(timer);});
+  reportFailure(()=>(form && 'error' in form ? form.error : '') || deviceError);
 </script>
 <svelte:head><title>Set up your account · Coast</title></svelte:head>
 <div class="auth-page"><div class="auth-card"><div class="row brand"><Brand /></div>
@@ -44,6 +46,6 @@
  {#each data.imports as item}<div class="stack"><p role="status">{item.label}: {item.state==='succeeded'?'Complete':item.state==='running'?item.stage:['failed','cancelled'].includes(item.state)?'Needs attention':item.processed?'Waiting to resume':'Queued'}{item.state==='running'||item.processed?item.total!==null?` · ${item.processed} of ${item.total} items`:item.processed?` · ${item.processed} items`:'':''}</p>{#if item.state==='running'}<OperationProgress processed={item.processed} total={item.total} label={`${item.label}: ${item.stage}`} />{/if}{#if item.error}<p class="notice error">{item.error}</p>{/if}</div>{/each}
  {#if data.imports.some(item=>['failed','cancelled'].includes(item.state))}<form method="POST" action="?/retry" use:enhance><Button type="submit">Retry import</Button></form>{/if}
  {/if}
- {#if form&&'error' in form&&form.error}<p class="notice error" role="alert">{form.error}</p>{/if}{#if deviceError}<p class="notice error">{deviceError}</p>{/if}
+
  <div class="auth-footer"><form method="POST" action="/logout"><Button type="submit" emphasis="subtle">Sign out</Button></form></div>
 </div></div>

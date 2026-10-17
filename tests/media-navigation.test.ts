@@ -1,6 +1,8 @@
 import {expect,test} from 'bun:test';
 import {mediaDetailTarget} from '../src/lib/media/detail-target';
 import {moduleUrl} from './fixtures/ui-script';
+import {readingHref} from '../src/lib/reading/presentation';
+import {detailHref} from '../src/lib/ui/pages/detail-rows';
 const id='00000000-0000-4000-8000-000000000001',other='00000000-0000-4000-8000-000000000002';
 const base=new URL('https://coast.invalid/for-you?friends=true');
 test('shared detail routing covers local media, source previews, reading groups, cast and row-section links',()=>{
@@ -8,8 +10,18 @@ test('shared detail routing covers local media, source previews, reading groups,
  for(const href of paths){const target=mediaDetailTarget(href,base);expect(target?.href).toBe(href);}
  expect(mediaDetailTarget(`/media/${id}?section=insights&insight=community&source=trakt&period=month`,base)).toMatchObject({kind:'work',id,section:'insights'});
  expect(mediaDetailTarget(`/games/${id}?playthrough=${other}&page=2&section=activity`,base)).toMatchObject({playthrough:other,page:2});
- for(const query of ['section=seasons&rowKind=all&rowProgress=unwatched&rowAvailable=true','section=credits&credits=crew','section=activity&relationship=lists','section=all&type=show&department=Acting&available=true'])expect(mediaDetailTarget(`/media/${id}?${query}`,base)).not.toBeNull();
+ for(const query of ['section=progress&view=episodes&available=true&specials=true','section=progress&view=seasons&available=false','section=seasons&rowKind=all&rowProgress=unwatched&rowAvailable=true','section=credits&credits=crew','section=activity&relationship=lists','section=all&type=show&department=Acting&available=true'])expect(mediaDetailTarget(`/media/${id}?${query}`,base)).not.toBeNull();
  expect(mediaDetailTarget(`/media/${id}?edition=Director%27s+Cut`,base)?.edition).toBe("Director's Cut");
+});
+test('reading section links retain provider identity until a canonical work exists',()=>{
+ for(const [provider,externalId] of [['openlibrary','OL123W'],['comic-vine','4000-123']] as const){
+  const item={id:'provider-placeholder',provider,externalId};
+  for(const section of ['credits','insights']){
+   const href=detailHref(readingHref(item,true),{section});
+   expect(mediaDetailTarget(href,base)).toMatchObject({kind:'reading-provider',provider,id:externalId,section});
+   expect(mediaDetailTarget(detailHref(readingHref({...item,id}),{section}),base)).toMatchObject({kind:'work',id,section});
+  }
+ }
 });
 test('detail routing leaves commands, history, core pages, fragments and external addresses alone',()=>{
  const invalid=['/for-you','/progress?view=watching','/search?q=movie',`/media/${id}/history`,`/media/${id}?action=progress`,`/media/${id}?section=credits&section=reviews`,`/media/${id}?page=0`,`/media/${id}?playthrough=bad`,`/media/${id}#credits`,`/media/${id}#`,`https://elsewhere.invalid/media/${id}`,'javascript:alert(1)','/media/comic-vine/OL123W','/media/openlibrary/4000-123','/people/nope'];

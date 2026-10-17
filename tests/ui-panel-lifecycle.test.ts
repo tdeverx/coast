@@ -8,7 +8,7 @@ const streamScript = (await componentScript('src/lib/ui/components/StreamsPanel.
 const streamCode = compileRunes(`import {untrack} from ${JSON.stringify(svelteUrl)};
  import {createResource} from ${JSON.stringify(resourceUrl)};
  export function create(transport){
- const callbacks=[],clocks=[],useClient=()=>({api:transport}),onDestroy=fn=>callbacks.push(fn),setContext=()=>{};
+ const callbacks=[],clocks=[],reportFailure=()=>{},useClient=()=>({api:transport,feedback:{notify:()=>{},failure:()=>{}}}),onDestroy=fn=>callbacks.push(fn),setContext=()=>{};
  const useClock=(precision,enabled)=>{clocks.push({precision,enabled});return {};};
  ${streamScript}
  return {refresh,clocks,close(){open=false;},history(){view='history';},get busy(){return resource.busy;},cleanup(){callbacks.forEach(fn=>fn());}};

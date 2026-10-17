@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
  import { onMount, untrack } from 'svelte';
  import { page } from '$app/state';
  import Heading from '$lib/ui/components/Heading.svelte';
@@ -39,9 +40,9 @@
   },2000);
   return ()=>{lifetime.abort();clearInterval(timer);void stopPlayback().finally(()=>releasePlaybackApi?.());};
  });
+  reportFailure(()=>error);
 </script>
 <svelte:head><title>Playback invitation — Coast</title><meta name="referrer" content="no-referrer" /></svelte:head>
 <Heading title={shared?.title??'Playback invitation'} />
 <p>{shared?.together?'Watch or listen together.':'Play this shared item. You control your own playback.'}</p>
 <Button onclick={open} disabled={busy}>{busy?'Preparing…':shared?'Play':'Open invitation'}</Button>
-{#if error}<p role="alert">{error}</p>{/if}

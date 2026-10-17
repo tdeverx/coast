@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import SettingsRow from '$lib/ui/components/SettingsRow.svelte';
   import { featureDefinitions, administratorFeatures, type PersonalFeature } from '$lib/features';
   import {apiScopes,apiScopeLabels,type ApiScope} from '$lib/public-api';
@@ -178,13 +179,14 @@
     }
   }
   const values = (form: HTMLFormElement) => Object.fromEntries(new FormData(form));
+  reportFailure(()=>error);
+  let demandError=$state('');
+  $effect(()=>{const pending=data.demand;demandError='';let current=true;void pending?.catch(()=>{if(current)demandError='Demand could not be loaded. Try again.';});return()=>{current=false;};});
+  reportFailure(()=>data.section==='admin' ? demandError : '');
 </script>
 
 {#snippet saveControls(label: string)}
   <div class="save-controls">
-    {#if error}<div class="notice error" role="alert">
-        {error} Your changes have not been saved.
-      </div>{/if}
     <div class="row">
       <Button type="submit" disabled={busy || !dirty}>{busy ? 'Saving…' : label}</Button>
       <Button emphasis="subtle" disabled={busy || !dirty} onclick={restoreDraft}
@@ -216,15 +218,8 @@
     <section class="settings-main" aria-label={titles[data.section]}>
       <Heading title={titles[data.section]} />
 
-
       <p class="section-description small">{descriptions[data.section]}</p>
-      {#if error && !fields.length && !['account', 'users'].includes(data.section) && !deleteId && !resetOpen}<div
-          class="notice error"
-          role="alert"
-          style="margin-bottom:20px"
-        >
-          {error}
-        </div>{/if}
+
       {#if data.section === 'features' || data.section === 'features-policy'}
         <form class="stack form-width" onsubmit={event=>{event.preventDefault();void saveDraft();}}>
           <fieldset class="panel stack" disabled={busy}>
@@ -409,9 +404,7 @@
                   }
                 }}
               >
-                {#if error && !resetOpen}<p class="notice error" role="alert">
-                    {error}
-                  </p>{/if}
+
                 <label class="field"
                   >Current password<input
                     type="password"
@@ -570,7 +563,7 @@
               {#each demand.users as person}{#each person.items as item}<tr><td><a href={`/library?collection=true&username=${encodeURIComponent(person.username)}`}>{person.username}</a></td><td><a href={item.href}>{item.neededTitle}</a>{#if item.dateUnknown}<small> · Release date unknown</small>{/if}</td><td>{item.reason}</td><td>{item.availability==='unknown'?'Uncertain':'Missing for this user'}</td><td>{item.sources.map((source:{name:string;fresh:boolean})=>`${source.name}: ${source.fresh?'current':'not current'}`).join(', ')||'No applicable sources'}</td><td>{item.requests.map((request:{state:string})=>request.state).join(', ')||'No request'}</td></tr>{/each}{#if person.pages>1}<tr><td colspan="6"><Pagination page={person.page} pages={person.pages} pageUrl={number=>`/settings/admin?userId=${person.userId}&itemsPage=${number}`} label={`${person.username} demand pages`} /></td></tr>{/if}{/each}
             </tbody></table></div>{:else}<p class="small">No missing demand on this page.</p>{/if}
             {#if demand}<Pagination page={demand.page} pages={demand.pages} pageUrl={number=>`/settings/admin?page=${number}`} label="Demand pages" />{/if}
-          {:catch}<p class="notice error" role="alert">Demand could not be loaded. Try again.</p>{/await}
+          {:catch}<!-- Failure is delivered by the scoped toast. -->{/await}
           <h3>Requests needing attention</h3>
           {#if data.requests.filter((r) => r.request.state === 'pending').length}<div
               class="overflow"
@@ -739,9 +732,7 @@
                   form.reset();
               }}
             >
-              {#if error && !deleteId}<p class="notice error" role="alert">
-                  {error}
-                </p>{/if}
+
               <label class="field"
                 >Username<input name="username" required minlength="3" maxlength="32" /></label
               ><label class="field"
@@ -974,7 +965,6 @@
     <p class="small">
       Your profile, tracking data, passwords and linked service accounts are preserved.
     </p>
-    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
     <div class="row">
       <Button
         disabled={busy}
@@ -999,7 +989,6 @@
 </Dialog>
 <Dialog onclose={() => (deleteId = '')} open={!!deleteId} title="Delete this Coast account?"
   ><div class="stack">
-    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
     <p>
       This removes the Coast account and its local tracking data. Linked service accounts will
       remain intact.
@@ -1042,7 +1031,7 @@
           editing = null;
       }}
     >
-      {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+
       <label class="field"
         >Email <small>Optional</small><input
           type="email"

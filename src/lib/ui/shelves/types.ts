@@ -21,7 +21,7 @@ export type ShelfGroup = {
 export type ShelfPagination =
   | { kind: 'local' }
   | { kind: 'cursor'; hasMore: boolean }
-  | { kind: 'pages'; page: number; pages: number; append: boolean; controls: 'none' | 'header' | 'footer' | 'both'; url?: (page: number) => string };
+  | { kind: 'pages'; page: number; pages: number; firstPage?: number; append: boolean; controls: 'none' | 'header' | 'footer' | 'both'; url?: (page: number) => string };
 export interface ShelfSource {
   readonly pagination: ShelfPagination;
   readonly groups?: ShelfGroup[];
@@ -43,6 +43,7 @@ export interface ShelfSource {
   readonly mediaKind?: 'screen' | 'music' | 'game' | 'reading';
   readonly rows?: 1 | 2;
   readonly resetKey?: string;
+  readonly initialItemId?: string;
   readonly empty?: string;
   readonly emptyHref?: string;
   readonly emptyLink?: string;
@@ -53,4 +54,5 @@ export interface ShelfSource {
   readonly actions?: ShelfAction[];
   details?: (item: ShelfItem) => ShelfItemDetails | undefined;
   load: (page?: number, append?: boolean) => Promise<unknown>;
+  loadPrevious?: () => Promise<unknown>;
 }

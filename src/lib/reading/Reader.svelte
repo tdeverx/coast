@@ -1,6 +1,6 @@
 <script lang="ts">
  import { reader as applicationReader, closeReading, recordReading, publishReading, setReadingNavigator, retryReadingSave } from './client.svelte';
- import { useClient } from '$lib/ui/client-context';
+ import { useClient, reportFailure } from '$lib/ui/client-context';
  import { untrack } from 'svelte';
  import type { ReadingLocation, ReadingSessionView } from './model';
  import { readingFraction, readingLocationLabel, sameReadingLocation } from './model';
@@ -65,12 +65,13 @@
   const ownsTurn=()=>readerOwner===owner&&engine===current&&reader.session?.id===sessionId&&reader.visible;
   try{await current[direction]();}catch(cause){if(ownsTurn())reader.error=message(cause);}finally{if(ownsTurn())busy=false;}
  }
+  reportFailure(()=>({text:reader.error,retry:reader.unsaved ? ()=>{if(preview){sample.error='';sample.unsaved=false;}else return retryReadingSave();} : undefined}));
 </script>
 {#if preview}<Button onclick={()=>sample.visible=true}>Open reader example</Button>{/if}
 <svelte:window onkeydown={event=>{if(!reader.visible||event.target instanceof HTMLInputElement)return;if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();void turn(event.key==='ArrowLeft'?'previous':'next');}}} />
 <Dialog bind:open={reader.visible} title={reader.session?.title??'Reader'} wide edgeToEdge onclose={()=>{if(minimizing){minimizing=false;return;}if(!reader.visible&&reader.session)close();}}>
  {#snippet heading()}<div class="reader-heading spread"><strong>{reader.session?.title}</strong><div class="row"><Button emphasis="subtle" onclick={()=>{minimizing=true;reader.visible=false;}}>Show UI</Button><Button size="icon" icon="close" label="Close reader" onclick={close} /></div></div>{/snippet}
- {#if reader.error}<div role="alert" class="notice error">{reader.error}{#if reader.unsaved}<Button emphasis="subtle" onclick={()=>{if(preview){sample.error='';sample.unsaved=false;}else void retryReadingSave();}}>Retry save</Button>{/if}</div>{/if}
+
  <div class="reading-view" bind:this={host} aria-busy={loading || preview && example?.state==='opening'}>{#if preview}<p>{example?.state==='opening'?'Opening preview…':'Preview document surface · no file or reader engine is loaded.'}</p>{/if}</div>
  <div class="reader-controls"><Button icon="left" label="Previous page" disabled={loading||busy||!controlled||preview&&(example?.state==='opening'||example?.state==='error')} onclick={()=>void turn('previous')} /><span aria-live="polite">{loading||preview&&example?.state==='opening'?'Opening…':readingLocationLabel(reader.location)}</span><Button icon="right" label="Next page" disabled={loading||busy||!controlled||preview&&(example?.state==='opening'||example?.state==='error')} onclick={()=>void turn('next')} /></div>
  <div class="reader-progress"><ProgressBar progress={readingFraction(reader.location)} label="Reading progress" /></div>

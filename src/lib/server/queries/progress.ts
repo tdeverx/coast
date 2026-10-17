@@ -86,6 +86,7 @@ async function readProgressData(
     const context = sequenceById.get(item.id);
     if (context && (options.view !== 'watching' || context.entry.progress > 0)) {
       item = items[index] = applySequenceEntry(item, context.entry, context.source);
+      item.captionSubtitleHref = context.source.kind==='collection'?`/media/${context.source.id}`:`/lists/${context.source.id}`;
       item.captionSubtitle = context.title + (item.rewatchStartedAt ? ' · Rewatching' : '');
       continue;
     }
@@ -95,6 +96,8 @@ async function readProgressData(
       continue;
     }
     item.captionTitle = title;
+    item.captionTitleHref = item.showId?`/media/${item.showId}`:undefined;
+    item.captionSubtitleHref = `/media/${item.id}`;
     item.captionSubtitle =
       item.kind === 'episode'
         ? `S${String(item.seasonNumber ?? 0).padStart(2, '0')}E${String(item.episodeNumber ?? 0).padStart(2, '0')} ${item.title}`

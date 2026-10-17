@@ -6,7 +6,7 @@
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import Pagination from '$lib/ui/components/Pagination.svelte';
   import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
+  import { useClient, reportFailure } from '$lib/ui/client-context';
   import { createResource } from '$lib/ui/resource.svelte';
   import type { listBenchmarks } from './service.server';
   const {api,preview}=useClient();
@@ -51,6 +51,7 @@
     },2000);
     return()=>{generation++;clearInterval(timer);resource.dispose();queueController?.abort();queueController=undefined;};
   });
+  reportFailure(()=>error);
 </script>
 <div class="stack">
   <section>
@@ -59,7 +60,6 @@
     </Heading>
     <p class="small">One run at a time. Queries are read only and make no provider requests. There is one warm-up followed by five measured rounds (ten for a database round trip). Each statement is limited to five seconds; the workload stops starting new probes after 30 seconds, allowing the current statement to finish.</p>
     <p class="small">Process CPU and memory observed during a run describe the whole Coast process, including other traffic. Observed peaks can miss short spikes. These checks do not measure browser rendering, playback or cold-cache performance. Comparisons require the same workload, runtime and hardware context, with no other background jobs observed; Collection comparisons also require matching account data and catalogue revision. The fixed journal and database round-trip checks can compare across catalogue changes. Changed hardware or limits start a new comparison group.</p>
-    {#if error}<p class="notice error" role="alert">{error}</p>{/if}
   </section>
   <section>
     <Heading title="Benchmark history" description={`${current.total} recorded ${current.total===1?'run':'runs'}`} />

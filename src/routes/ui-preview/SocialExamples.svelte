@@ -1,4 +1,6 @@
 <script lang="ts">
+  import {useClient} from '$lib/ui/client-context';
+  const delivery=useClient().feedback;
   import { untrack } from 'svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import ActivityHeader from '$lib/ui/components/ActivityHeader.svelte';
@@ -15,8 +17,7 @@
 
   let { name, scenario = 'default' }: { name: string; scenario: string } = $props();
   let open = $state(false);
-  let feedback = $state('');
-  let position = $state(945);
+    let position = $state(945);
   const {player} = usePlayback();
   const names = ['Alice', 'Sam', 'Taylor', 'Morgan', 'Jamie', 'Robin', 'Alex', 'Casey'];
   const reading = { format: 'cbz', page: 12, total: 32 } as const;
@@ -73,21 +74,21 @@
     const selected = name;
     scenario;
     let disposed = false;
-    untrack(() => { open = false; feedback = ''; position = 945; });
-    if (selected === 'FriendsPanel') void import('$lib/ui/components/FriendsPanel.svelte').then(module => { if (!disposed) FriendsPanel = module.default; }).catch(() => { if (!disposed) feedback = 'This example could not be loaded. Reopen it to retry.'; });
-    if (selected === 'NotificationInbox') void import('$lib/ui/components/NotificationInbox.svelte').then(module => { if (!disposed) NotificationInbox = module.default; }).catch(() => { if (!disposed) feedback = 'This example could not be loaded. Reopen it to retry.'; });
-    if (selected === 'StreamsPanel') void import('$lib/ui/components/StreamsPanel.svelte').then(module => { if (!disposed) StreamsPanel = module.default; }).catch(() => { if (!disposed) feedback = 'This example could not be loaded. Reopen it to retry.'; });
-    if (selected === 'NotificationToasts') void import('$lib/ui/components/NotificationToasts.svelte').then(module => { if (!disposed) NotificationToasts = module.default; }).catch(() => { if (!disposed) feedback = 'This example could not be loaded. Reopen it to retry.'; });
+    untrack(() => { open = false;  position = 945; });
+    if (selected === 'FriendsPanel') void import('$lib/ui/components/FriendsPanel.svelte').then(module => { if (!disposed) FriendsPanel = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
+    if (selected === 'NotificationInbox') void import('$lib/ui/components/NotificationInbox.svelte').then(module => { if (!disposed) NotificationInbox = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
+    if (selected === 'StreamsPanel') void import('$lib/ui/components/StreamsPanel.svelte').then(module => { if (!disposed) StreamsPanel = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
+    if (selected === 'NotificationToasts') void import('$lib/ui/components/NotificationToasts.svelte').then(module => { if (!disposed) NotificationToasts = module.default; }).catch(() => { if (!disposed) delivery.failure('This example could not be loaded. Reopen it to retry.'); });
     if (selected === 'PersistentPlayer' && scenario === 'controller') {
       untrack(()=>{
         player.session={id,mediaId:id,mediaType:'audio',title:'Preview track',detail:'Preview artist · Preview album',artwork:movie.poster,url:'',kind:'direct',startSeconds:0,durationSeconds:240,provider:'Preview',defaultSubtitleIndex:null,subtitlePrompt:false,subtitles:[],sources:[]};
         player.role='playback';player.paused=true;player.controlsVisible=true;
       });
-      void import('$lib/ui/components/PersistentPlayer.svelte').then(module=>{if(!disposed)PersistentPlayer=module.default;}).catch(()=>{if(!disposed)feedback='This example could not be loaded. Reopen it to retry.';});
+      void import('$lib/ui/components/PersistentPlayer.svelte').then(module=>{if(!disposed)PersistentPlayer=module.default;}).catch(()=>{if(!disposed)delivery.failure('This example could not be loaded. Reopen it to retry.');});
     }
     return () => { disposed = true; if(selected==='PersistentPlayer'){player.session=null;player.role='idle';} };
   });
-  function action(label: string) { feedback = `${label} · Preview only; nothing was saved.`; }
+  function action(label: string) { delivery.notify(`${label} · Preview only; nothing was saved.`); }
 </script>
 
 {#key `${name}:${scenario}`}
@@ -146,7 +147,6 @@
     {/if}
   {/if}
 {/key}
-{#if feedback}<p class="small quiet" role="status">{feedback}</p>{/if}
 
 <style>
   .controller-example {min-height:320px;}

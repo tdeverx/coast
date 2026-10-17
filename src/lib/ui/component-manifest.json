@@ -13,7 +13,8 @@
   "ActivityHeader": {
     "path": "src/lib/ui/components/ActivityHeader.svelte",
     "elements": [
-      "Avatar"
+      "Avatar",
+      "TextLink"
     ],
     "usedBy": [
       "src/lib/ui/components/FriendsPanel.svelte",
@@ -91,7 +92,6 @@
       "src/lib/ui/components/Header.svelte",
       "src/lib/ui/components/IntegrationSettings.svelte",
       "src/lib/ui/components/JobSchedule.svelte",
-      "src/lib/ui/components/MediaActivity.svelte",
       "src/lib/ui/components/MediaCard.svelte",
       "src/lib/ui/components/MediaDetailRows.svelte",
       "src/lib/ui/components/MediaHero.svelte",
@@ -428,6 +428,7 @@
       "src/lib/ui/components/PlaybackTimeline.svelte",
       "src/lib/ui/components/Rating.svelte",
       "src/lib/ui/components/ReactionActions.svelte",
+      "src/lib/ui/components/TextLink.svelte",
       "src/lib/ui/work-menu/ScreenActions.svelte",
       "src/routes/search/+page.svelte",
       "src/routes/settings/[[section]]/+page.svelte"
@@ -488,7 +489,6 @@
   "MediaActivity": {
     "path": "src/lib/ui/components/MediaActivity.svelte",
     "elements": [
-      "Button",
       "DetailCard"
     ],
     "usedBy": [
@@ -505,6 +505,7 @@
       "ProgressBar",
       "ReactionActions",
       "SocialControls",
+      "TextLink",
       "WorkMenu"
     ],
     "usedBy": [
@@ -779,7 +780,6 @@
       "Icon"
     ],
     "usedBy": [
-      "src/lib/media/Details.svelte",
       "src/lib/ui/components/WorkActions.svelte"
     ],
     "dynamicComposition": false
@@ -858,6 +858,7 @@
     "elements": [],
     "usedBy": [
       "src/lib/games/Details.svelte",
+      "src/lib/media/Details.svelte",
       "src/lib/ui/components/DetailOverlay.svelte",
       "src/lib/ui/components/FriendsPanel.svelte",
       "src/lib/ui/components/Heading.svelte",
@@ -930,7 +931,7 @@
     "usedBy": [
       "src/lib/ui/components/MediaCard.svelte"
     ],
-    "dynamicComposition": false
+    "dynamicComposition": true
   },
   "StreamsPanel": {
     "path": "src/lib/ui/components/StreamsPanel.svelte",
@@ -959,6 +960,17 @@
       "src/lib/ui/components/PersistentPlayer.svelte"
     ],
     "dynamicComposition": true
+  },
+  "TextLink": {
+    "path": "src/lib/ui/components/TextLink.svelte",
+    "elements": [
+      "Icon"
+    ],
+    "usedBy": [
+      "src/lib/ui/components/ActivityHeader.svelte",
+      "src/lib/ui/components/MediaCard.svelte"
+    ],
+    "dynamicComposition": false
   },
   "Toast": {
     "path": "src/lib/ui/components/Toast.svelte",

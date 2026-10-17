@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import Shelf from '$lib/ui/components/Shelf.svelte';
   import Heading from '$lib/ui/components/Heading.svelte';
   import { goto } from '$app/navigation';
@@ -40,11 +41,12 @@
       error = message(cause);
     }
   }
+  reportFailure(()=>error);
 </script>
 
 <svelte:head><title>{title} · Coast</title></svelte:head>
 <MediaPage hero={!!data.detail} collection={{items:heroItems,selection}} context="home">
-  {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+
   {#if data.detail}
     <Button href="/lists" emphasis="subtle" icon="left">Your lists</Button>
     {#if data.detail.selected?.description}<p class="description">
@@ -72,7 +74,6 @@
       void save();
     }}
   >
-    {#if error}<p role="alert">{error}</p>{/if}
     <label class="field"
       >Type<select bind:value={playlist}
         ><option value={false}>List</option><option value={true}>Playlist · ordered playback</option

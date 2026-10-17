@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import { setContext } from 'svelte';
   import { formatValue, type ChartModel } from './model';
   import { chartLinks } from './context';
@@ -15,6 +16,9 @@
   $effect(()=>{if(model.rows.length && selected>=model.rows.length)selected=0;});
   const selection = $derived(model.rows[selected]);
   function select(index:number) { selected=index; onselect?.(index); }
+  let loadError=$state('');
+  $effect(()=>{const pending=loaded;loadError='';let current=true;void pending.catch(()=>{if(current)loadError='The chart could not load. Reload this page to try again.';});return()=>{current=false;};});
+  reportFailure(()=>loadError);
 </script>
 
 <div class="chart-visual chart-renderer" class:compact>
@@ -24,8 +28,7 @@
     <p class="quiet" role="status">Loading chart…</p>
   {:then chart}
     <chart.default {model} {selected} onselect={select} {compact} />
-  {:catch}
-    <p role="alert">The chart could not load. Reload this page to try again.</p>
+  {:catch}<!-- Failure is delivered by the scoped toast. -->
   {/await}
   {#if compact}
     {#if model.subtitle}<p class="chart-caption">{model.subtitle}</p>{/if}

@@ -14,7 +14,7 @@
   import { observeVideoCrop } from '$lib/playback/observe-crop';
   import { message, capturePlaybackApi } from '$lib/ui/client';
   import { createPlaybackReports } from '$lib/playback/reports';
-  import { useClient } from '$lib/ui/client-context';
+  import { useClient, reportFailure } from '$lib/ui/client-context';
   import type { MediaView } from '$lib/ui/types';
   import { liquidGlass } from '$lib/ui/materials/glass';
   import Icon from './Icon.svelte';
@@ -54,7 +54,6 @@
   let keyboardInteraction = false;
   let scrubbing = $state(false);
   const partyRoom=$derived(preview?null:syncedPlayer.room);
-  const partyNotice=$derived(preview?'':syncedPlayer.notice);
   const partyBusy=$derived(!preview&&syncedPlayer.busy);
   const partyHost=$derived(!preview&&isSyncHost());
   const followingHost=$derived(!!partyRoom&&!canControlPlayback());
@@ -501,6 +500,8 @@
     if(preview)return;
     browserDiagnostic(event, { sessionId: player.session?.id, durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0, bufferedSeconds: media?.buffered.length ? Math.max(0, media.buffered.end(media.buffered.length - 1) - media.currentTime) : 0, positionSeconds: media?.currentTime, readyState: media?.readyState, networkState: media?.networkState, code: media?.error?.code });
   }
+  reportFailure(()=>error, ()=>switchEdition());
+  reportFailure(()=>trackingNotice);
 </script>
 {#if page.data.experimentalParties}<SyncedControls bind:this={syncControls} />{/if}
 
@@ -557,17 +558,6 @@
     class:browsing={player.browsing}
     inert={!player.controlsVisible && !player.paused}
   >
-    {#if partyNotice}<p class="small" role="status">{partyNotice}</p>{/if}
-    {#if trackingNotice}<p class="small" role="status">{trackingNotice}</p>{/if}
-    {#if error}<div class="play-error solid-surface" role="alert">
-        <p>{error}</p>
-        <div class="row">
-          <Button onclick={() => switchEdition()}>Try again</Button><Button
-
-            onclick={close}>Close</Button
-          >
-        </div>
-      </div>{/if}
     {#if player.role === 'postplay' && !error}<div class="postplay solid-surface">
         <Icon name="check" size={30} />
         <h2>{sharedMode?'Playback finished':'One more story, remembered.'}</h2>
@@ -847,7 +837,6 @@
     margin-inline: 4px;
     background: color-mix(in srgb, var(--white) 20%, transparent);
   }
-  .play-error,
   .postplay {
     position: absolute;
     top: 50%;

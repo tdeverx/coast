@@ -1,4 +1,6 @@
 <script lang="ts">
+  import {useClient} from '$lib/ui/client-context';
+  const delivery=useClient().feedback;
   import type { Snippet } from 'svelte';
   import { untrack } from 'svelte';
   import Button from '$lib/ui/components/Button.svelte';
@@ -22,14 +24,13 @@
   const canvasSettings = useCanvas();
   let width = $state(1100);
   let exported = $state(false);
-  let notice = $state('');
   let previousName = untrack(() => name);
   $effect(()=>{
     const selected=name;
     const requested=selectedScenario(selected,initialScenario);
     untrack(()=>{
       if(previousName!==selected){
-        previousName=selected;values=emptyCustomisation();scenario=requested;custom=!initialScenario && !!contracts[selected];exported=false;notice='';events=[];
+        previousName=selected;values=emptyCustomisation();scenario=requested;custom=!initialScenario && !!contracts[selected];exported=false;events=[];
       }else if(scenario!==requested){
         scenario=requested;custom=false;
       }
@@ -40,13 +41,13 @@
     const contract=contracts[name];
     return JSON.stringify({...(custom&&contract?{component:name,props:{...Object.fromEntries(contract.props.filter(prop=>prop.defaultValue!==undefined).map(prop=>[prop.name,prop.defaultValue])),...specimenDefaults(name),...values.props},slots:Object.fromEntries(contract.props.filter(prop=>prop.kind==='snippet').map(prop=>[prop.name,values.slots[prop.name]?.kind&&values.slots[prop.name].kind!=='example'?values.slots[prop.name]:defaultSlot(name,prop)])),handlers:Object.fromEntries(contract.props.filter(prop=>prop.kind==='callback').map(prop=>[prop.name,handlerMode(name,prop,values)]))}:{reference:name,scenario,sources:entry.sources}),preview:{background:canvasSettings.background,color:canvasSettings.color,hasImage:Boolean(canvasSettings.image),width}},null,2);
   });
-  function reset() {values=emptyCustomisation();custom=!!contracts[name];events=[];notice='';revision++;}
+  function reset() {values=emptyCustomisation();custom=!!contracts[name];events=[];revision++;}
   function setProp(key:string,value:unknown) {values={...values,props:{...values.props,[key]:value}};}
   function record(name:string,args:unknown[]) {events=[...events.slice(-7),{name,value:JSON.stringify(args,(_key,value)=>value instanceof Event?{type:value.type}:value)??''}];}
   async function copy() {
     exported = true;
-    try {await navigator.clipboard.writeText(configuration);notice = 'Configuration copied.';}
-    catch {notice = 'Select the configuration below to copy it.';}
+    try {await navigator.clipboard.writeText(configuration);delivery.notify('Configuration copied.');}
+    catch {delivery.notify('Select the configuration below to copy it.');}
   }
   function selectState(value:string) {scenario = value;custom = false;onscenario(value);}
 </script>
@@ -74,7 +75,7 @@
       <Field label={`Preview width · ${width}px`}><input type="range" min="320" max="1400" step="10" bind:value={width} /></Field>
     </div></details>
     <div class="row"><Button emphasis="subtle" onclick={reset}>Reset</Button><Button emphasis="subtle" onclick={copy}>Copy configuration</Button></div>
-    <p role="status" class="small quiet">{notice}</p>
+
     {#if exported}<Field label="Configuration"><textarea readonly rows="10" value={configuration}></textarea></Field>{/if}
     <details><summary>Source and usage</summary><div class="stack source-details">
       {#each entry.sources as source}<code>{source}</code>{/each}

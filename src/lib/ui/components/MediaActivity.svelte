@@ -7,7 +7,6 @@
   import { createResource } from '$lib/ui/resource.svelte';
   import { mediaActivityPanels } from '$lib/ui/insights/media';
   import DetailCard from './DetailCard.svelte';
-  import Button from './Button.svelte';
 
   const { api } = useClient();
 
@@ -30,11 +29,7 @@
   });
   onDestroy(resource.dispose);
 
-  reportFailure(()=>error);
+  reportFailure(()=>error,()=>load(mediaId,period));
 </script>
 
-{#if error}<DetailCard title="Activity unavailable"
-    >
-    <Button emphasis="subtle" onclick={() => load(mediaId, period)}>Try again</Button></DetailCard
-  >{/if}
 {#if data}{#each mediaActivityPanels(data,loadedPeriod) as panel}<DetailCard {...panel} />{/each}{/if}

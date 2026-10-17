@@ -44,6 +44,8 @@ beforeAll(async () => {
       externalId: `episode-${uid}`,
       kind: 'episode',
       title: 'Episode',
+      releaseDate: '2026-10-01',
+      runtimeMinutes: 45,
       seasonNumber: 1,
       episodeNumber: 1,
       cast: [{ id: 2, name: 'Episode guest', character: 'Guest' }],
@@ -83,6 +85,7 @@ run('show details return season posters without hydrating every episode', async 
 run('season and episode details retain hierarchy and specific credits', async () => {
   const seasonData = await detailsData(uid, season);
   expect(seasonData.episodes.map((e) => e.id)).toEqual([episode]);
+  expect(seasonData.episodes[0]).toMatchObject({releaseDate:'2026-10-01',runtimeMinutes:45});
   expect(seasonData.parents.map((p) => p.id)).toEqual([show]);
   const episodeData = await detailsData(uid, episode);
   expect(episodeData.parents.map((p) => p.id)).toEqual([show, season]);

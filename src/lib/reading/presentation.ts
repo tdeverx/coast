@@ -35,8 +35,11 @@ export function readingCard(item: ReadingCardMetadata, href = `/media/${item.id}
     attribution: item.provider === 'comic-vine' || (!item.provider && item.sourceUrl?.startsWith('https://comicvine.gamespot.com/')) ? { label: 'Comic Vine', href: item.sourceUrl ?? 'https://comicvine.gamespot.com' } : undefined,
   };
 }
+export function readingHref(item: Pick<ReadingDisplay,'id'|'provider'|'externalId'>, remote = false) {
+  return remote ? `/media/${item.provider}/${item.externalId}` : `/media/${item.id}`;
+}
 export function readingHero(item: ReadingDisplay, remote = false): MediaHeroPresentation {
-  const href = remote ? `/media/${item.provider}/${item.externalId}` : undefined;
+  const href = readingHref(item,remote);
   return { ...readingCard(item, href, undefined, !remote), id: `${item.kind}:${item.id}`, overview: item.overview, genres: item.subjects };
 }
 export function readingFacts(item: ReadingDisplay) {

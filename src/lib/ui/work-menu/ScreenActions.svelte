@@ -139,8 +139,7 @@
         : 'Play'
   );
   let planningOpen=$state(false),sharingOpen=$state(false);
-  let playbackErrorOpen = $state(false),
-    requestOpen = $state(false),
+  let requestOpen = $state(false),
     editOpen = $state(false),
     editAdmin = $state(false);
   let confirmOpen = $state(false),
@@ -294,7 +293,7 @@
         continuationId: isGroup ? active.id : target.showId,
       });
     } catch (cause) {
-      if (alive) { mutation.error = message(cause); playbackErrorOpen = true; }
+      if (alive) { mutation.error = message(cause); }
     }
   }
   async function startTarget() {
@@ -580,7 +579,6 @@
         snapshot.patch(data => data ? { ...data, item: { ...data.item, rating: value } } : data);
       }}
     />
-
     <div class="menu-divider" role="separator"></div>
     <Button item icon="list" disabled={busy || loading} onclick={toggleContinue}
       >{continuing ? 'Remove from Continue' : 'Add to Continue'}</Button>
@@ -831,9 +829,7 @@
         : undefined}
       bind:open={requestOpen}
     />{/if}
-  <Dialog bind:open={playbackErrorOpen} title="Playback unavailable"
-    ></Dialog
-  >
+
   {#if page.data.experiments?.planning}<PlanAction bind:open={planningOpen} workId={active.id} title={active.title} partyAllowed={page.data.experimentalParties&&['movie','episode','track'].includes(active.kind)}/>{/if}
   {#if page.data.playbackSharing}<ShareAction bind:open={sharingOpen} workId={active.id} title={active.title}/>{/if}
   <MetadataEditor mediaId={active.id} admin={editAdmin} bind:open={editOpen} />

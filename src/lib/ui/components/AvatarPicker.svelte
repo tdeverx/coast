@@ -4,7 +4,7 @@
  import Button from './Button.svelte';
  import RowFilter from './RowFilter.svelte';
  import {message} from '$lib/ui/client';
- import {useClient} from '$lib/ui/client-context';
+ import {useClient, reportFailure } from '$lib/ui/client-context';
  const {fetch:requestAvatar}=useClient();
  let {avatar=$bindable(null),reading=$bindable(false),name,disabled=false,choices}:{avatar?:string|null;reading?:boolean;name:string;disabled?:boolean;choices:{id:string;provider:string;name:string}[]}=$props();
  let error=$state(''),iconChoice=$state('');
@@ -84,8 +84,8 @@
       await prepareAvatar(image,version);
     }catch(cause){if(version===avatarVersion&&!controller.signal.aborted)error=message(cause);}finally{if(version===avatarVersion)reading=false;if(providerRequest===controller)providerRequest=undefined;}
   }
+  reportFailure(()=>error);
 </script>
-{#if error}<p class="notice error" role="alert">{error}</p>{/if}
     <div class="avatar-row">
       <Avatar name={name} src={avatar} label="Avatar preview" class="preview" size={80} />
       <div class="stack">

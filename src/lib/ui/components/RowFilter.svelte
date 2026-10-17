@@ -11,7 +11,7 @@
 </script>
 
 <div class="row-filter">
-  <Button menu {text} icon={triggerIcon} label={`${label} · ${description}`} title={label} triggerClass={triggerIcon?'icon-button':'row-filter-trigger'}>
+  <Button menu {text} icon={triggerIcon} label={description?`${label} · ${description}`:label} title={label} triggerClass={triggerIcon?'icon-button':'row-filter-trigger'}>
     {#each groups as group, index (group.label)}
       {#if submenus ?? groups.length > 1}
         <Button menu text={group.label} label={group.label}>

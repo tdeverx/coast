@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import { enhance } from '$app/forms';
   import Brand from '$lib/ui/components/Brand.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import AccountFields from '$lib/ui/components/AccountFields.svelte';
   let { form } = $props();
   let busy = $state(false);
+  reportFailure(()=>form?.error);
 </script>
 
 <svelte:head><title>Welcome to Coast</title></svelte:head>
@@ -26,7 +28,7 @@
         };
       }}
     >
-      {#if form?.error}<div class="notice error" role="alert">{form.error}</div>{/if}
+
       <AccountFields />
       <label class="field">Email <span class="quiet">Optional</span><input name="email" type="email" autocomplete="email" /></label>
       <Button type="submit" disabled={busy}

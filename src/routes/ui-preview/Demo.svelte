@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
  import AvatarPicker from '$lib/ui/components/AvatarPicker.svelte';
  import AccountFields from '$lib/ui/components/AccountFields.svelte';
  import { availabilityControl } from '$lib/ui/controls/actions';
@@ -37,6 +38,7 @@
   let JobsSettings = $state<typeof import('$lib/ui/components/JobsSettings.svelte').default>(null!);
   let WorkMenu = $state<typeof import('$lib/ui/components/WorkMenu.svelte').default>(null!);
   let MediaActivity = $state<typeof import('$lib/ui/components/MediaActivity.svelte').default>(null!);
+  let checked = $state(false);
   let MediaCard = $state<typeof import('$lib/ui/components/MediaCard.svelte').default>(null!);
   let MediaDetailRows = $state<typeof import('$lib/ui/components/MediaDetailRows.svelte').default>(null!);
   let MediaHero = $state<typeof import('$lib/ui/components/MediaHero.svelte').default>(null!);
@@ -60,6 +62,7 @@
   let ProfileRecap = $state<typeof import('$lib/ui/components/ProfileRecap.svelte').default>(null!);
   let ProviderAutomation = $state<typeof import('$lib/ui/components/ProviderAutomation.svelte').default>(null!);
   let QueueList = $state<typeof import('$lib/ui/components/QueueList.svelte').default>(null!);
+  let TextLink = $state<typeof import('$lib/ui/components/TextLink.svelte').default>(null!);
   let Rating = $state<typeof import('$lib/ui/components/Rating.svelte').default>(null!);
   let RequestDialog = $state<typeof import('$lib/ui/components/RequestDialog.svelte').default>(null!);
   let RowFilter = $state<typeof import('$lib/ui/components/RowFilter.svelte').default>(null!);
@@ -105,7 +108,7 @@
   function openStyleMenu() { styleMenu?.openAt({ x: 24, y: 84 }); }
   const options=[{value:'all',label:'All'},{value:'watching',label:'Watching'},{value:'completed',label:'Completed'}];
   const loaders = import.meta.glob<{default: any}>('/src/lib/ui/components/*.svelte');
-  const recipes: Record<string,string[]> = {"PersistentPlayer":[],"SyncedControls":[],"OperationProgress":["OperationProgress","Button"],"SettingsRow":["SettingsRow","Button"],"Toast":["Toast","Button"],"AvatarPicker": ["Avatar", "Button", "Field", "RowFilter"], "AccountFields": ["Field"], "PartyCard": ["PartyCard", "Button", "PlaybackTimeline"], "ActivityHeader": ["ActivityHeader"], "ProgressBar": ["ProgressBar"], "IdentityCard": ["Avatar", "Button", "IdentityCard"], "FriendsPanel": ["Button", "FriendsPanel"], "StreamsPanel": ["Button", "StreamsPanel"], "FriendRoster": ["Button", "FriendRoster"], "NotificationInbox": ["Button", "NotificationInbox"], "RecommendAction": ["Button", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "Brand": ["Brand", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["Button", "Heading", "RowFilter"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "WorkMenu": ["Button", "WorkMenu"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaDetails":["MediaDetails"],"DetailOverlay":["DetailOverlay","MediaDetails","Button"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileFeatureEditor": ["Button", "ProfileFeatureEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "Shelf": ["Button", "RowFilter", "Shelf"], "Avatar": ["Button", "Avatar"], "ChoiceGroup": ["Button", "ChoiceGroup"], "Field": ["Button", "Field"], "FormActions": ["Button", "FormActions"], "WorkActions": ["Button", "WorkActions"], "PartyMenu": ["Button", "PartyMenu"], "WorkListActions": ["Button", "WorkListActions"]};
+  const recipes: Record<string,string[]> = {"PersistentPlayer":[],"SyncedControls":[],"OperationProgress":["OperationProgress","Button"],"SettingsRow":["SettingsRow","Button"],"Toast":["Toast","Button"],"AvatarPicker": ["Avatar", "Button", "Field", "RowFilter"], "AccountFields": ["Field"], "PartyCard": ["PartyCard", "Button", "PlaybackTimeline"], "ActivityHeader": ["ActivityHeader"], "ProgressBar": ["ProgressBar"], "IdentityCard": ["Avatar", "Button", "IdentityCard"], "FriendsPanel": ["Button", "FriendsPanel"], "StreamsPanel": ["Button", "StreamsPanel"], "FriendRoster": ["Button", "FriendRoster"], "NotificationInbox": ["Button", "NotificationInbox"], "RecommendAction": ["Button", "RecommendAction"], "ReactionActions": ["Button", "ReactionActions"], "SocialControls": ["Button", "SocialControls"], "Brand": ["Brand", "Button"], "Button": ["Button"], "CollectionProjectionSettings": ["Button", "CollectionProjectionSettings"], "ConflictList": ["Button", "ConflictList"], "ConnectionCard": ["Button", "ConnectionCard"], "DetailCard": ["Button", "DetailCard", "Shelf"], "Dialog": ["Button", "Dialog"], "EmptyState": ["Button", "EmptyState"], "FactList": ["Button", "FactList"], "Heading": ["Button", "Heading", "RowFilter"], "Header": ["Button", "Header"], "Icon": ["Button", "Icon"], "IntegrationSettings": ["Button", "IntegrationSettings"], "JobSchedule": ["Button", "JobSchedule"], "JobsSettings": ["Button", "JobsSettings"], "WorkMenu": ["Button", "WorkMenu"], "MediaActivity": ["Button", "MediaActivity"], "MediaCard": ["Button", "MediaCard"], "MediaDetailRows": ["Button", "MediaDetailRows"], "MediaDetails":["MediaDetails"],"DetailOverlay":["DetailOverlay","MediaDetails","Button"], "MediaPage": ["Button", "MediaPage", "RowFilter"], "MediaHero": ["Button", "MediaHero"], "MetadataEditor": ["Button", "MetadataEditor"], "MetricGrid": ["Button", "MetricGrid"], "NotificationToasts": ["Button", "NotificationToasts"], "Pagination": ["Button", "Pagination"], "PlaybackTimeline": ["Button", "PlaybackTimeline"], "ProfileEditor": ["Button", "ProfileEditor"], "ProfileFeatureEditor": ["Button", "ProfileFeatureEditor"], "ProfileRecap": ["Button", "ProfileRecap"], "ProviderAutomation": ["Button", "ProviderAutomation"], "QueueList": ["Button", "QueueList"], "TextLink": ["TextLink"], "Rating": ["Button", "Rating"], "RequestDialog": ["Button", "RequestDialog"], "RowFilter": ["Button", "RowFilter"], "RowStyleMenu": ["Button", "RowStyleMenu"], "SegmentedControl": ["Button", "SegmentedControl"], "Shelf": ["Button", "RowFilter", "Shelf"], "Avatar": ["Button", "Avatar"], "ChoiceGroup": ["Button", "ChoiceGroup"], "Field": ["Button", "Field"], "FormActions": ["Button", "FormActions"], "WorkActions": ["Button", "WorkActions"], "PartyMenu": ["Button", "PartyMenu"], "WorkListActions": ["Button", "WorkListActions"]};
   $effect(() => {
     const selected = name;
     ready = false;
@@ -165,6 +168,7 @@
         case 'ProfileRecap': ProfileRecap = module.default; break;
         case 'ProviderAutomation': ProviderAutomation = module.default; break;
         case 'QueueList': QueueList = module.default; break;
+        case 'TextLink': TextLink = module.default; break;
         case 'Rating': Rating = module.default; break;
         case 'RequestDialog': RequestDialog = module.default; break;
         case 'RowFilter': RowFilter = module.default; break;
@@ -186,10 +190,10 @@
   $effect(() => {
     if (ready && name === 'RowStyleMenu' && initialOpen) void tick().then(openStyleMenu);
   });
+  reportFailure(()=>failure);
 </script>
 
 <div class="demo" onsubmitcapture={event => event.preventDefault()} onclickcapture={event => { const link = (event.target as Element).closest('a'); if(link && !link.hasAttribute('data-preview-navigation'))event.preventDefault(); }} class:header-demo={name==='Header'}>
-  {#if failure}<p role="alert">{failure}</p>{/if}
   {#if ready}
     {#if ['StreamsPanel','FriendsPanel','NotificationInbox','Dialog','MetadataEditor','ProfileEditor','ProfileFeatureEditor','RequestDialog'].includes(name)}
       <Button  onclick={() => open = true}>Open example</Button>
@@ -262,7 +266,11 @@
       <MediaActivity mediaId={id} period="month" />
     {:else if name==='MediaCard'}
 
-      <div class="card-examples">{#each ["poster","square","circle","fanart","banner"] as shape}<div><MediaCard item={movie} shape={shape as MediaCardShape} /><small>{shape}</small></div>{/each}<div><MediaCard item={{...movie,captionActor:{username:"preview"},captionSubtitle:"Watched 3 episodes",captionActivity:{id:movie.id,kind:"watch",dateKnown:true,occurredAt:new Date().toISOString(),action:"Watched",detail:"3 episodes"}}} shape="fanart" /><small>Friend activity · Non-approved</small></div></div>
+      <div class="card-examples">{#each ["poster","square","circle","fanart","banner"] as shape}<div><MediaCard item={movie} shape={shape as MediaCardShape} /><small>{shape}</small></div>{/each}<div><MediaCard item={{...movie,captionActor:{username:"preview"},captionSubtitle:"Watched 3 episodes",captionActivity:{id:movie.id,kind:"watch",dateKnown:true,occurredAt:new Date().toISOString(),action:"Watched",detail:"3 episodes"}}} shape="fanart" /><small>Friend activity · Non-approved</small></div><div><MediaCard item={episode} shape="fanart">
+        {#snippet captionAction()}<Button size="icon" icon="check" pressed={checked} label={checked?'Mark unwatched':'Mark watched'} onclick={()=>checked=!checked}/>{/snippet}
+        {#snippet body()}<p>{episode.overview}</p>{/snippet}
+        {#snippet footer()}<span>{episode.runtimeMinutes} min</span><time datetime={today}>1 Oct 2026</time>{/snippet}
+      </MediaCard><small>Episode · body and footer</small></div></div>
 
     {:else if name==='MediaDetailRows'}
       <MediaDetailRows model={{insights:{selection:choice,select:value=>choice=value, tabs:[{value:'all',label:'Overview',panels:mediaOverviewPanels(show,[episode])},{value:'activity',label:'Your activity',panels:overviewPanels('Your progress and history appear here.',facts)}]}}} />
@@ -316,8 +324,9 @@
       <ProviderAutomation instance={provider} />
     {:else if name==='QueueList'}
       <QueueList actions={[job]} />
+    {:else if name==='TextLink'}<TextLink href={`/media/${id}`} text="Preview title"/>
     {:else if name==='Rating'}
-      <Rating mediaId={id} value={4} menu />
+      <Rating mediaId={id} value={4} />
     {:else if name==='RequestDialog'}
       <RequestDialog bind:open item={scenario==='show'?show:movie} initial4k={scenario==='four-k'} options={scenario==='empty'?[]:[{id,name:'Preview request server',variants:{standard:{serverId:1,requestable:true,seasons:scenario==='show'?[{number:1,requested:false,mine:false,available:false},{number:2,requested:true,mine:false,available:false},{number:3,requested:false,mine:false,available:true}]:[]},fourK:{serverId:2,requestable:true,seasons:[]}}}]} />
     {:else if name==='RowFilter'}

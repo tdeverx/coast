@@ -46,6 +46,9 @@
     expansionFrame=requestAnimationFrame(()=>{
       expansionFrame=0;
       if (!destroyed && open && expansionScroll) {
+        // Reverse momentum can remain latched to this track. Content must reach
+        // its top before the outer track may change the sheet presentation.
+        if(detailScroll && detailScroll.scrollTop>0 && expansionScroll.scrollTop<expansionDistance)expansionScroll.scrollTop=expansionDistance;
         const next=Math.min(1,Math.max(0,expansionScroll.scrollTop/expansionDistance));
         expanded=next===1;
         if(next!==expansion){
@@ -64,19 +67,26 @@
       const content=detailScroll;
       // A wheel gesture can remain latched to the expansion track after it reaches its end.
       // Forward its remaining vertical travel without requiring another pointer hit test.
-      if(!open||destroyed||!content||node.scrollTop<expansionDistance-0.5||event.defaultPrevented||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY)||!content.contains(event.target as Node))return;
+      if(!open||destroyed||!content||event.defaultPrevented||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY)||!content.contains(event.target as Node))return;
       const delta=event.deltaY*(event.deltaMode===1?20:event.deltaMode===2?content.clientHeight:1);
       if(!delta)return;
+      if(delta>0&&node.scrollTop<expansionDistance-0.5&&content.scrollTop<=0)return;
       for(let target=event.target as HTMLElement;target&&target!==content;target=target.parentElement!){
         if(target.scrollHeight<=target.clientHeight)continue;
         const style=window.getComputedStyle(target);
         if(!/^(auto|scroll)$/.test(style.overflowY))continue;
         if(style.overscrollBehaviorY==='contain'||style.overscrollBehaviorY==='none'||(delta>0?target.scrollTop<target.scrollHeight-target.clientHeight:target.scrollTop>0))return;
       }
+      if(delta<0&&content.scrollTop<=0){
+        // A gesture latched to content also needs an explicit handoff at its top.
+        // Non-cancelable events retain their native travel to avoid applying it twice.
+        if(event.cancelable&&node.scrollTop>0){event.preventDefault();node.scrollTop=Math.max(0,node.scrollTop+delta);}
+        return;
+      }
       const next=Math.max(0,Math.min(content.scrollHeight-content.clientHeight,content.scrollTop+delta));
       if(next===content.scrollTop)return;
-      // Later events in an already-latched gesture may be non-cancelable; the outer
-      // track is at its limit, so forwarding them cannot also advance that track.
+      // Later events may be non-cancelable. expandSheet pins reverse outer travel
+      // while content still has upward scroll remaining.
       if(event.cancelable)event.preventDefault();
       content.scrollTop=next;
     }
@@ -220,7 +230,7 @@
     width: min(864px, calc(100vw - 32px));
   }
   .dialog.edge-to-edge {padding:0;}
-  .dialog.expanding {--detail-expansion:0;--detail-inset:min(48px,6dvh);--detail-width:min(864px,calc(100vw - 32px));position:fixed;inset:0;width:calc(var(--detail-width) + (100vw - var(--detail-width)) * var(--detail-expansion));max-width:none;height:calc(100dvh - 2 * var(--detail-inset) * (1 - var(--detail-expansion)));max-height:none;margin:auto;padding:0;border:0;border-radius:calc(36px * (1 - var(--detail-expansion)));background:transparent;box-shadow:none;overflow:visible;}
+  .dialog.expanding {--detail-expansion:0;--detail-inset:min(48px,6dvh);--detail-width:min(864px,calc(100vw - 32px));--detail-viewport-height:calc(100dvh - 2 * var(--detail-inset) * (1 - var(--detail-expansion)));position:fixed;inset:0;width:calc(var(--detail-width) + (100vw - var(--detail-width)) * var(--detail-expansion));max-width:none;height:var(--detail-viewport-height);max-height:none;margin:auto;padding:0;border:0;border-radius:calc(36px * (1 - var(--detail-expansion)));background:transparent;box-shadow:none;overflow:visible;}
   .detail-expansion-scroll {height:100%;overflow-anchor:none;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;border-radius:inherit;scroll-snap-type:y proximity;}
   .detail-expansion-track {position:relative;height:calc(100% + var(--detail-expansion-distance));border-radius:inherit;}
   .detail-stage {position:sticky;top:0;height:calc(100% - var(--detail-expansion-distance));border-radius:inherit;}

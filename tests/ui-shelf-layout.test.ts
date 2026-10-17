@@ -51,3 +51,38 @@ test('server-rendered shelves destroy safely without browser animation APIs', as
   expect(()=>lifecycle.callbacks.splice(0).forEach((cleanup:()=>void)=>cleanup())).not.toThrow();
  } finally {globalThis.cancelAnimationFrame=previous;}
 });
+
+test('anchored rails snap once, retain browsing on append, and preserve position when earlier pages arrive',async()=>{
+ const saved={raf:globalThis.requestAnimationFrame,cancel:globalThis.cancelAnimationFrame,resize:globalThis.ResizeObserver,mutation:globalThis.MutationObserver,style:globalThis.getComputedStyle};
+ const frames=new Map<number,FrameRequestCallback>();let frame=0,previousLoads=0,finishPrevious!:()=>void,widthWrites=0;
+ globalThis.requestAnimationFrame=fn=>{frames.set(++frame,fn);return frame;};globalThis.cancelAnimationFrame=id=>{frames.delete(id);};
+ globalThis.ResizeObserver=class{observe(){}disconnect(){}} as unknown as typeof ResizeObserver;
+ globalThis.MutationObserver=class{observe(){}disconnect(){}} as unknown as typeof MutationObserver;
+ globalThis.getComputedStyle=(()=>({scrollPaddingLeft:'20px'})) as unknown as typeof getComputedStyle;
+ const options=runtime.state({busy:false,key:'first',focus:undefined as string|undefined,hasPrevious:true});
+ const nodes=[{id:'earlier',offset:0},{id:'next',offset:400},{id:'later',offset:800}].map(item=>({...item,dataset:{shelfId:item.id},isConnected:true,getBoundingClientRect(){return {left:10+this.offset-scroller.scrollLeft,right:390+this.offset-scroller.scrollLeft};}}));
+ const scroller=new class {
+  scrollLeft=0;clientWidth=500;scrollWidth=2000;style={setProperty(){widthWrites++;}};lastElementChild=nodes.at(-1);
+  getBoundingClientRect(){return {left:10};}querySelector(){return nodes[0];}querySelectorAll(){return nodes;}scrollBy(){}
+ }() as unknown as HTMLDivElement;
+ let rail!:ReturnType<typeof createShelfLayout>;
+ const dispose=runtime.effect_root(()=>rail=createShelfLayout(()=>({size:'fanart',artworkStyle:'thumb',overlay:'none',layout:'row',preserveHeight:false,hasMore:false,busy:runtime.get(options).busy,resetKey:runtime.get(options).key,initialItemId:runtime.get(options).focus,hasPrevious:runtime.get(options).hasPrevious,onstart:()=>{previousLoads++;return new Promise<void>(resolve=>finishPrevious=resolve);}})));
+ const settle=async()=>{for(let i=0;i<8;i++){runtime.flush();await Promise.resolve();const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn(0));}};
+ try{
+  rail.scroller=scroller;await settle();expect(widthWrites).toBe(0);
+  runtime.set(options,{...runtime.get(options),focus:'next'});await settle();expect(scroller.scrollLeft).toBe(380);expect(widthWrites).toBe(1);
+  scroller.scrollLeft=600;rail.reachedEnd();await settle();expect(scroller.scrollLeft).toBe(600);
+  // An unchanged focus does not snap the user back after ordinary row changes.
+  runtime.set(options,{...runtime.get(options),busy:true});await settle();runtime.set(options,{...runtime.get(options),busy:false});await settle();expect(scroller.scrollLeft).toBe(600);
+  scroller.scrollLeft=0;rail.reachedEnd();await settle();expect(previousLoads).toBe(1);
+  rail.scroll(-1);expect(previousLoads).toBe(1);
+  nodes.forEach(node=>node.offset+=1200);finishPrevious();await settle();expect(scroller.scrollLeft).toBe(1200);
+  runtime.set(options,{...runtime.get(options),key:'tracking-refresh'});await settle();expect(scroller.scrollLeft).toBe(1580);
+  // A pending prepend cannot move a rail after ownership ends.
+  scroller.scrollLeft=0;rail.reachedEnd();await settle();expect(previousLoads).toBe(2);
+  lifecycle.callbacks.splice(0).forEach((fn:()=>void)=>fn());dispose();nodes.forEach(node=>node.offset+=1200);finishPrevious();await settle();expect(scroller.scrollLeft).toBe(0);
+ }finally{
+  lifecycle.callbacks.splice(0).forEach((fn:()=>void)=>fn());dispose();
+  globalThis.requestAnimationFrame=saved.raf;globalThis.cancelAnimationFrame=saved.cancel;globalThis.ResizeObserver=saved.resize;globalThis.MutationObserver=saved.mutation;globalThis.getComputedStyle=saved.style;
+ }
+});

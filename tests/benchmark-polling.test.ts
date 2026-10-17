@@ -18,7 +18,7 @@ const harness=compile(`import {untrack} from ${JSON.stringify(import.meta.resolv
  import {createResource} from ${JSON.stringify(moduleUrl(resource))};
  export function createBenchmarkSettings(initial,transport,inPreview=false){
  const mounts=[];const onMount=callback=>mounts.push(callback);const message=error=>error.message;
- const useClient=()=>({api:transport,preview:inPreview});const goto=()=>{throw new Error('Unexpected real navigation');};
+ const reportFailure=()=>{};const useClient=()=>({api:transport,preview:inPreview});const goto=()=>{throw new Error('Unexpected real navigation');};
  ${script}
  return {get current(){return current;},get busy(){return busy;},get error(){return error;},setHistory(next){history=next;},run,changePage,mount(){const cleanups=mounts.map(callback=>callback());return ()=>cleanups.forEach(cleanup=>cleanup?.());}};
  }`,'benchmark-settings.svelte.js');

@@ -1,6 +1,6 @@
 <script lang="ts">
  import { onDestroy, untrack } from 'svelte';
- import { useClient } from '$lib/ui/client-context';
+ import { useClient, reportFailure } from '$lib/ui/client-context';
  import { createOperation } from '$lib/ui/operation.svelte';
  import { createResource } from '$lib/ui/resource.svelte';
  import { openReading, reader } from './client.svelte';
@@ -41,14 +41,15 @@
   await operation.run(async()=>{if(!preview)await openReading(id,source,controller.signal);if(controller.signal.aborted||id!==workId)return;open=false;if(!preview)await onopened?.();});
   if(opening===controller)opening=undefined;
  }
+  reportFailure(()=>resource.error || operation.error);
 </script>
 {#if !hideTrigger}<Button size={compact?undefined:'hero'} {compact} icon="library" disabled={busy} onclick={show}>{!preview&&reader.session?.workId===workId?'Continue reading':'Read'}</Button>{/if}
 <Dialog bind:open title="Choose a reading edition" onclose={cancel}>
  <div class="stack">
-  {#if resource.error}<p class="notice error" role="alert">{resource.error}</p>{/if}
+
   {#if resource.busy}<p class="small quiet" role="status">Checking reading sources…</p>{/if}
   {#if resource.data.linked.length>1}{#each resource.data.linked as linked}<div class="spread"><span>{linked.name} · {linked.format?.toUpperCase()}</span><Button disabled={busy} onclick={()=>void choose(linked)}>Read</Button></div>{/each}{/if}
-  {#if operation.error}<p class="notice error" role="alert">{operation.error}</p>{/if}
+
   <label class="field">Open a file<input type="file" accept={readingFileAccept} disabled={busy} onchange={event=>{const file=event.currentTarget.files?.[0];event.currentTarget.value='';if(file)void choose({file});}} /></label>
   <p class="small quiet">{readingFileLabel}. Local files stay in this browser. Party members need the same edition and their own copy.</p>
   {#if connections.length}

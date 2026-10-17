@@ -16,10 +16,10 @@
   import WorkMenu from '$lib/ui/components/WorkMenu.svelte';
   import { overviewPanels } from '$lib/ui/insights/overview';
   import {createResource} from '$lib/ui/resource.svelte';
-  import { useClient } from '$lib/ui/client-context';
+  import { useClient, reportFailure } from '$lib/ui/client-context';
   import { createOperation } from '$lib/ui/operation.svelte';
   import { displayLabel } from '$lib/ui/labels';
-  import { readingHero, readingCard, readingFacts, readingLabel, readingProviderLabel, type ReadingDetailData } from './presentation';
+  import { readingHero, readingHref, readingCard, readingFacts, readingLabel, readingProviderLabel, type ReadingDetailData } from './presentation';
   import { type ReadingCredit } from './model';
 
   let { data, modal=false,detailHref }: { data: ReadingDetailData;modal?:boolean;detailHref?:string } = $props();
@@ -27,7 +27,8 @@
   const title = $derived(readingLabel(data.kind));
   const section=$derived(detailUrl.searchParams.get('section'));
   let insight=$state(untrack(()=>['overview','activity','community'].includes(detailUrl.searchParams.get('insight')??'')?detailUrl.searchParams.get('insight')!:'overview'));
-  const rowHref=(name:string)=>`/media/${data.item.id}?section=${name}`;
+  const baseHref=$derived(readingHref(data.item,data.remote));
+  const rowHref=(name:string)=>`${baseHref}?section=${name}`;
   const library = $derived(`/library?view=read&kind=${data.kind}&scope=all`);
   const overview = $derived(overviewPanels(data.item.overview, readingFacts(data.item)).map(panel=>panel.title==='Details'?{...panel,footerLink:{href:data.item.sourceUrl,label:`View on ${readingProviderLabel(data.item.provider)} ↗`,external:true}}:panel));
   const { change, api,preview } = useClient();
@@ -81,6 +82,7 @@
   });
   function creditCard(person:ReadingCredit){return {id:`credit:${person.name}:${person.role}`,kind:'person' as const,title:person.name,
     href:`/search?view=read&q=${encodeURIComponent(person.name)}`,captionSubtitle:displayLabel(person.role)};}
+  reportFailure(()=>failure);
 </script>
 
 {#snippet activity()}
@@ -117,7 +119,6 @@
   {#snippet hierarchy()}{#if !data.remote}
     {#if (!section||section==='issues')&&data.kind==='comic'}<Shelf source={{type:'detail',title:data.item.seriesTitle||'Issues',path:`reading/${data.item.id}/issues`,href:rowHref('issues'),layout:section?'grid':'row',mediaKind:'reading',page:Number(detailUrl.searchParams.get('page')??1)}} />{/if}
   {/if}{/snippet}
-  {#if failure}<div class="notice error" role="alert">{failure}</div>{/if}
 
   {#if !data.remote}
     {#if (!section||section==='editions')&&(data.item.provider==='openlibrary'||data.item.hasEditions)}<Shelf source={{type:'detail',title:'Editions',path:`reading/${data.item.id}/editions`,href:rowHref('editions'),layout:section?'grid':'row',mediaKind:'reading',page:Number(detailUrl.searchParams.get('page')??1)}} />{/if}

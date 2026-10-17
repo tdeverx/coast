@@ -18,7 +18,7 @@ export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, can
   let busy = $state(false);
   const item = $derived(get().item);
   const section = $derived(getUrl().searchParams.get('section'));
-  const path = $derived(musicHref(get().connectionId, item.id));
+  const path = $derived(item.workId?`/music/work/${item.workId}`:musicHref(get().connectionId, item.id));
   const artists = $derived(item.kind === 'album' ? item.albumArtists : item.artists);
   const facts = $derived([
     ...(item.kind === 'track' ? [{ label: 'Listens', value: String(item.playCount ?? 0) }, ...(item.positionSeconds ? [{ label: 'Progress', value: musicDuration(item.positionSeconds) }] : [])] : []),

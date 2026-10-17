@@ -62,6 +62,26 @@ test('detail navigation resets content within the retained sheet expansion and a
  }finally{f.destroy();}
 });
 
+test('detail sheet cannot contract while its content still has upward scroll remaining',()=>{
+ const f=fixture(undefined,true);
+ try{
+  f.controller.scroll(160);f.flush();
+  f.controller.scrollPage(400);
+  // The browser can keep reverse wheel momentum latched to the outer track.
+  for(const top of [140,80,0]){
+   f.controller.scroll(top);f.flush();
+   expect(f.expansionScroll.scrollTop).toBe(160);
+   expect(f.properties.get('--detail-expansion')).toBe('1');
+   expect(f.scroll.scrollTop).toBe(400);
+  }
+  f.controller.scrollPage(0);
+  f.controller.scroll(80);f.flush();
+  expect(f.properties.get('--detail-expansion')).toBe('0.5');
+  f.controller.scroll(0);f.flush();
+  expect(f.properties.get('--detail-expansion')).toBe('0');
+ }finally{f.destroy();}
+});
+
 
 test('expanded detail hands a latched wheel gesture to content and preserves nested scroll ownership',()=>{
  const f=fixture(undefined,true),listeners=new Map<string,Function>();
@@ -82,7 +102,12 @@ test('expanded detail hands a latched wheel gesture to content and preserves nes
   expect(send(-80)).toBe(true);expect(content.scrollTop).toBe(240);
   for(const options of [{ctrlKey:true},{deltaX:100},{defaultPrevented:true}])expect(send(80,options)).toBe(false);
   expect(content.scrollTop).toBe(240);
-  expect(send(80,{cancelable:false})).toBe(false);expect(content.scrollTop).toBe(320);content.scrollTop=240;
+  expect(send(80,{cancelable:false})).toBe(false);expect(content.scrollTop).toBe(320);
+  expect(send(-80,{cancelable:false})).toBe(false);expect(content.scrollTop).toBe(240);
+  f.controller.scroll(110);
+  expect(send(-80,{cancelable:false})).toBe(false);expect(content.scrollTop).toBe(160);
+  f.flush();expect(node.scrollTop).toBe(160);expect(f.properties.get('--detail-expansion')).toBe('1');
+  content.scrollTop=240;
   const nested={scrollHeight:600,clientHeight:100,scrollTop:0,parentElement:content,style:{overflowY:'auto',overscrollBehaviorY:'auto'}};
   expect(send(80,{target:nested})).toBe(false);expect(content.scrollTop).toBe(240);
   nested.scrollTop=500;
@@ -91,7 +116,10 @@ test('expanded detail hands a latched wheel gesture to content and preserves nes
   expect(send(2,{deltaMode:1})).toBe(true);expect(content.scrollTop).toBe(360);
   expect(send(1,{deltaMode:2})).toBe(true);expect(content.scrollTop).toBe(760);
   expect(send(999)).toBe(true);expect(content.scrollTop).toBe(1200);expect(send(80)).toBe(false);
-  expect(send(-9999)).toBe(true);expect(content.scrollTop).toBe(0);expect(send(-80)).toBe(false);
+  expect(send(-9999)).toBe(true);expect(content.scrollTop).toBe(0);
+  expect(send(-80)).toBe(true);expect(node.scrollTop).toBe(80);
+  expect(send(-100)).toBe(true);expect(node.scrollTop).toBe(0);
+  expect(send(-80)).toBe(false);
   f.controller.close();runtime.flush();expect(send(80)).toBe(false);
  }finally{action.destroy();expect(listeners.size).toBe(0);f.destroy();}
 });

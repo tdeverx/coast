@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import FormActions from '$lib/ui/components/FormActions.svelte';
   import Field from '$lib/ui/components/Field.svelte';
   import { onDestroy } from 'svelte';
@@ -36,10 +37,10 @@
     const id = target;
     if (await mutation.run(() => change(`reading/${id}/progress`, { state: readingState, page: currentPage, totalPages: totalPages ?? null }), 'Reading progress saved.')) open = false;
   }
+  reportFailure(()=>mutation.error);
 </script>
 <Dialog bind:open title="Update reading progress">
   <form class="stack" onsubmit={event => { event.preventDefault(); void save(); }}>
-    {#if mutation.error}<div class="notice error" role="alert">{mutation.error}</div>{/if}
     <Field label="Reading state"><select bind:value={readingState}>{#each readingStates as entry}<option value={entry}>{displayLabel(entry)}</option>{/each}</select></Field>
     <Field label="Current page"><input type="number" bind:value={currentPage} required min="0" max="1000000" step="1" /></Field>
     <Field label="Total pages (optional)"><input type="number" bind:value={totalPages} min="1" max="1000000" step="1" placeholder="Page count of your edition" /></Field>

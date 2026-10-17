@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import '../app.css';
   import { reader, closeReading } from '$lib/reading/client.svelte';
   let Reader=$state<typeof import('$lib/reading/Reader.svelte').default>();
@@ -113,6 +114,7 @@
 
     };
   });
+  reportFailure(()=>syncedPlayer.notice);
 </script>
 
 <svelte:head

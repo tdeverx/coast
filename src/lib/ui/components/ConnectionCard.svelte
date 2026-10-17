@@ -187,6 +187,7 @@
   };
 
   reportFailure(()=>error);
+  reportFailure(()=>scanError ? `Could not refresh scan progress: ${scanError}` : '');
 </script>
 
 <section class="panel stack">
@@ -305,9 +306,7 @@
           </p>{/if}
       </div>
     {/if}
-    {#if scanError}<p class="small text-danger" role="alert">
-        Could not refresh scan progress: {scanError}
-      </p>{/if}
+
     <div class="row">
       <Button
         emphasis="subtle"
@@ -358,7 +357,6 @@
 </section>
 <Dialog bind:open={disconnect} title="Disconnect this account?"
   ><div class="stack">
-
     <p>
       Your imported tracking data stays in Coast. Pending external actions for this connection will
       be cancelled.

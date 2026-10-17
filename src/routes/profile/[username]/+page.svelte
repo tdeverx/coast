@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import { homeShelves } from '$lib/ui/shelves/home';
   import Avatar from '$lib/ui/components/Avatar.svelte';
   import MetricGrid from '$lib/ui/components/MetricGrid.svelte';
@@ -219,6 +220,7 @@
     const index = group.findIndex((i) => i.id === id);
     return { previous: group[index - 1], next: group[index + 1], afterNext: group[index + 2] };
   }
+  reportFailure(()=>error);
 </script>
 
 <svelte:head
@@ -420,7 +422,7 @@
   context="home"
   class="profile"
 >
-  {#if error}<p class="notice error" role="alert">{error}</p>{/if}
+
   {#if expandedStats}<Button href={profileUrl} emphasis="subtle" icon="left">Profile</Button
     >{@render statisticsRow('grid')}
   {:else if data.view === 'overview'}

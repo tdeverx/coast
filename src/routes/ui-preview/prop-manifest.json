@@ -1894,6 +1894,30 @@
         "bindable": false,
         "kind": "number",
         "nullable": true
+      },
+      {
+        "name": "captionAction",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "body",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "footer",
+        "type": "Snippet",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
       }
     ]
   },
@@ -2959,16 +2983,6 @@
         "defaultValue": null
       },
       {
-        "name": "menu",
-        "type": "boolean",
-        "optional": true,
-        "bindable": false,
-        "kind": "boolean",
-        "nullable": false,
-        "defaultSource": "false",
-        "defaultValue": false
-      },
-      {
         "name": "onrated",
         "type": "(value: number | null) => void",
         "optional": true,
@@ -3692,6 +3706,30 @@
         "nullable": false
       },
       {
+        "name": "captionAction",
+        "type": "Snippet<[T]>",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "body",
+        "type": "Snippet<[T]>",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
+        "name": "footer",
+        "type": "Snippet<[T]>",
+        "optional": true,
+        "bindable": false,
+        "kind": "snippet",
+        "nullable": false
+      },
+      {
         "name": "busy",
         "type": "boolean",
         "optional": true,
@@ -3911,6 +3949,24 @@
         "nullable": false,
         "defaultSource": "32",
         "defaultValue": 32
+      },
+      {
+        "name": "href",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false,
+        "defaultSource": "'Friends with a relationship to this media'",
+        "defaultValue": "Friends with a relationship to this media"
       }
     ]
   },
@@ -3973,6 +4029,35 @@
         "nullable": false,
         "defaultSource": "false",
         "defaultValue": false
+      }
+    ]
+  },
+  "TextLink": {
+    "path": "src/lib/ui/components/TextLink.svelte",
+    "props": [
+      {
+        "name": "href",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "text",
+        "type": "string",
+        "optional": false,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
+      },
+      {
+        "name": "onclick",
+        "type": "(event:MouseEvent)=>void",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
       }
     ]
   },

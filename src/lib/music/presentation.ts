@@ -36,6 +36,7 @@ export function musicCard(item: MusicItem, connectionId: string): MediaCardPrese
     connectionId,
     backdrop: item.backdropUrl,
     available: item.kind !== 'artist' && (item.available ?? !!connectionId),
+    captionCredits: item.kind === 'album' ? item.albumArtists : item.artists,
     captionSubtitle:
       musicCredits(item) ||
       (item.kind === 'artist' ? 'Artist' : item.kind === 'album' ? 'Album' : 'Track'),

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { reportFailure } from '$lib/ui/client-context';
   import { rankSearch } from '$lib/search';
   import { page } from '$app/state';
   import Shelf from '$lib/ui/components/Shelf.svelte';
@@ -84,13 +85,13 @@
     });
   }
   onDestroy(() => clearTimeout(timer));
+  reportFailure(()=>[watchResults.providerUnavailable ? 'Global screen search is temporarily unavailable. Showing your local catalogue.' : '',failures].filter(Boolean).join(' '));
 </script>
 
 <svelte:head><title>Search · Coast</title></svelte:head>
 <div class="content page route-content" aria-busy={busy}>
   <Heading title="Search"
     >{#snippet heading()}<h1>Search</h1>{/snippet}
-
 
   </Heading>
   <form
@@ -125,9 +126,7 @@
       icon="search"
     />
   {:else}
-    {#if watchResults.providerUnavailable}<div class="notice">
-        Global screen search is temporarily unavailable. Showing your local catalogue.
-      </div>{/if}
+
     {#if noResults}<EmptyState
         title="No matching results"
         description={'Try another title, author, artist or game.'}
@@ -142,7 +141,7 @@
         <Shelf hideEmpty={false} availability={false} source={{
           type: 'search', bucket: 'unavailable', query: data.query, items: searchItems,
           kind: data.kind, busy, mediums: page.data.user ? page.data : {},
-          failure: failures, notice: readingResults.notice,
+          notice: readingResults.notice,
           truncated: watchResults.truncated || listen?.truncated || play?.truncated || readingResults.truncated,
         }} />
       {/key}

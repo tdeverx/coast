@@ -2,7 +2,7 @@
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
   import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
+  import { useClient, reportFailure } from '$lib/ui/client-context';
   const {api,preview}=useClient();
 
   let { workId, title, open = $bindable(false) }: {
@@ -60,6 +60,7 @@
     try {await navigator.clipboard.writeText(`${location.origin}/share/${created.token}`);if(scope===activeDialog&&!scope?.signal.aborted)copied=true;}
     catch {if(scope===activeDialog&&!scope?.signal.aborted)error='Select the link and copy it using your browser.';}
   }
+  reportFailure(()=>error);
 </script>
 
 <Dialog bind:open title={`Share · ${title}`}>
@@ -81,5 +82,5 @@
       <Button type="submit" disabled={busy || loading || !connectionId}>{busy ? 'Creating…' : 'Create'}</Button>
     </form>
   {/if}
-  {#if error}<p role="alert">{error}</p>{/if}
+
 </Dialog>
