@@ -347,7 +347,7 @@ export const providerItems = pgTable(
   },
   (t) => [
     uniqueIndex('provider_items_identity_unique').on(t.instanceId, t.externalId),
-    index('provider_items_music_guid_idx').on(t.instanceId,sql`replace(lower(${t.externalId}),'-','')`).where(sql`${t.kind} in ('album','track')`),
+    index('provider_items_instance_guid_idx').on(t.instanceId,sql`replace(lower(${t.externalId}),'-','')`),
     index('provider_items_media_idx').on(t.mediaId),
   ]
 );
