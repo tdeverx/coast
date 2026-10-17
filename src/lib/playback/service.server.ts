@@ -1,3 +1,4 @@
+import {namedEdition} from '$lib/media/editions';
 import { requireEnabledCategory } from '$lib/server/experimental';
 import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
 import { ProviderQueueBusyError, requestPriority } from '$lib/server/security/request-priority';
@@ -56,6 +57,7 @@ const playbackInput = v.object({
   sequence: v.optional(sequenceContextSchema),
   sourceId: v.optional(v.string()),
   edition: v.optional(v.string()),
+  editionName:v.optional(v.pipe(v.string(),v.minLength(1),v.maxLength(500))),
   expectedDuration: v.optional(v.pipe(v.number(),v.minValue(0.01),v.maxValue(604800))),
   fromStart: v.optional(v.boolean(), false),
   subtitleIndex: v.optional(v.number()),
@@ -187,7 +189,8 @@ async function preparePlayback(
       (!data.sourceId ||
         row.availability.id === data.sourceId ||
         row.availability.sourceId === data.sourceId) &&
-      (data.edition === undefined || (row.availability.edition ?? '') === data.edition)
+      (data.edition === undefined || (row.availability.edition ?? '') === data.edition) &&
+      (data.editionName===undefined||namedEdition(row.availability.edition,item.title)?.value===data.editionName)
   );
   if (!rows.length)
     throw new Error('This title is no longer available from your connected sources.');

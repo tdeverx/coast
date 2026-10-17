@@ -17,7 +17,8 @@ const routeUrl = moduleUrl(`export const page={data:{user:{id:'viewer'},contentR
 const navigationUrl = moduleUrl('export const replaceState=()=>{}; export const goto=async()=>{};');
 const code = (await compile('../src/lib/ui/shelves/discovery.svelte.ts'))
   .replaceAll('from "svelte"', `from ${JSON.stringify(lifecycleUrl)}`)
-  .replaceAll('$app/state', routeUrl).replaceAll('$app/navigation', navigationUrl)
+  .replaceAll('$lib/ui/detail-section.svelte',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
+ .replaceAll('$app/state', routeUrl).replaceAll('$app/navigation', navigationUrl)
   .replaceAll('$lib/ui/client-context', clientUrl).replaceAll('$lib/ui/resource.svelte', resourceUrl)
   .replaceAll('$lib/ui/content-revision.svelte', revisionUrl)
   .replaceAll('$lib/ui/filter-options', import.meta.resolve('../src/lib/ui/filter-options'))

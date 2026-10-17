@@ -1058,6 +1058,8 @@ export const readingWorks = pgTable('reading_works', {
   updatedAt: updatedAt(),
 }, (t) => [
   index('reading_works_kind_title_idx').on(t.kind, t.title, t.id),
+  index('reading_works_authors_idx').using('gin', t.authors),
+  index('reading_works_subjects_idx').using('gin', t.subjects),
   index('reading_works_search_document_idx').using('gin', sql`coast_search_document(${t.title},${t.seriesTitle},${t.authors})`),
   check('reading_works_provider_kind_check', sql`(${t.provider}='openlibrary' and ${t.kind} in ('book','comic')) or (${t.provider}='comic-vine' and ${t.kind}='comic')`),
   check('reading_works_page_count_check', sql`${t.pageCount} is null or ${t.pageCount} between 1 and 1000000`),
@@ -1110,7 +1112,7 @@ export const readingSessions = pgTable('reading_sessions', {
   createdAt: createdAt(), updatedAt: updatedAt(),
 }, t => [
   index('reading_sessions_resume_idx').on(t.userId,t.workId,t.edition,t.updatedAt),index('reading_sessions_expiry_idx').on(t.expiresAt),
-  check('reading_sessions_format_check',sql`${t.format} in ('pdf','epub','cbz')`),
+  check('reading_sessions_format_check',sql`${t.format} in ('pdf','epub','cbz','cbr','cb7','cbt')`),
   check('reading_sessions_edition_check',sql`length(${t.edition}) between 1 and 200`),
   check('reading_sessions_check',sql`(${t.connectionId} is null)=(${t.externalId} is null)`),
   check('reading_sessions_check1',sql`${t.connectionId} is null or ${t.accountGeneration} is not null`),
@@ -1284,7 +1286,7 @@ export const syncedRooms = pgTable('synced_rooms', {
   endedAt: timestamp('ended_at', { withTimezone: true }),
   updatedAt: updatedAt(),
   createdAt: createdAt(),
-}, t => [index('synced_rooms_host_idx').on(t.hostId), index('synced_rooms_expiry_idx').on(t.createdAt).where(sql`${t.endedAt} is null`), index('synced_rooms_retention_idx').on(t.endedAt).where(sql`${t.endedAt} is not null`)]);
+}, t => [index('synced_rooms_host_idx').on(t.hostId), index('synced_rooms_expiry_idx').on(t.createdAt).where(sql`${t.endedAt} is null`), index('synced_rooms_retention_idx').on(t.endedAt).where(sql`${t.endedAt} is not null`),check('synced_rooms_reading_format_check',sql`${t.readingFormat} in ('pdf','epub','cbz','cbr','cb7','cbt')`)]);
 export const syncedParticipants = pgTable('synced_participants', {
   roomId: uuid('room_id').notNull().references(() => syncedRooms.id, { onDelete: 'cascade' }),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),

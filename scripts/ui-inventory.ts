@@ -61,6 +61,7 @@ export const internalReferenceOwners: Record<string, InternalOwner> = {
 
 /** These thin routes delegate presentation to registered detail compositions. */
 export const delegatedReferenceRoutes: Record<string, readonly string[]> = {
+  'src/routes/people/[id]/+page.svelte':['src/lib/media/PersonDetails.svelte'],
   'src/routes/media/reading-collection/[id]/+page.svelte':['src/lib/reading/GroupDetails.svelte'],
   'src/routes/games/[id]/+page.svelte':['src/lib/games/Details.svelte'],
   'src/routes/games/igdb/[instance]/[id]/+page.svelte':['src/lib/games/RemoteDetails.svelte'],

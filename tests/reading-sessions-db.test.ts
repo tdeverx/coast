@@ -28,6 +28,23 @@ run('reading sessions are private, bounded and resume the same edition',async()=
  expect((await prepareReading(users[0],work,local('pdf','b'.repeat(64)))).location).toBeNull();
  await expect(matchingReading(users[1],work,'a'.repeat(64))).rejects.toMatchObject({status:409});
 });
+run('archive formats persist bookmarks and party locations without accepting another format',async()=>{
+ for(const format of ['cbr','cb7','cbt'] as const){
+  const edition=(format==='cbr'?'1':format==='cb7'?'2':'3').repeat(64);
+  const host=await prepareReading(users[0],work,local(format,edition));
+  await moveReading(users[0],host.id,{format,page:2,total:4});
+  await closeReading(users[0],host.id);
+  const resumed=await prepareReading(users[0],work,local(format,edition));
+  expect(resumed.location).toEqual({format,page:2,total:4});
+  const guest=await prepareReading(users[1],work,local(format,edition));
+  let room=await createRoom(users[0],{readingSessionId:resumed.id});await inviteParticipant(users[0],room.id,{friendId:users[1]});
+  room=await joinRoom(users[1],room.id,{readingSessionId:guest.id,revision:room.revision});
+  room=await commandRoom(users[0],room.id,{revision:room.revision,action:'location',location:{format,page:3,total:4}});
+  expect(room.readingFormat).toBe(format);expect(room.reading).toEqual({format,page:3,total:4});
+  await expect(commandRoom(users[0],room.id,{revision:room.revision,action:'location',location:{format:'cbz',page:3,total:4}})).rejects.toMatchObject({status:409});
+  await commandRoom(users[0],room.id,{revision:room.revision,action:'end'});
+ }
+});
 run('state changes journal once, page turns do not create feed spam or invent completion',async()=>{
  const before=(await getSql()`SELECT count(*)::int AS total FROM reading_history WHERE user_id=${users[0]} AND work_id=${work}`)[0].total;
  await updateReading(users[0],work,{state:'completed'});await updateReading(users[0],work,{state:'completed'});

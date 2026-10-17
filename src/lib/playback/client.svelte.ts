@@ -70,6 +70,7 @@ export async function playMedia(
     mediaType?: 'audio' | 'video';
     sourceId?: string;
     edition?: string;
+    editionName?:string;
     expectedDuration?: number;
     fromStart?: boolean;
     retry?: boolean;
@@ -95,6 +96,7 @@ export async function playMedia(
     !options.retry &&
     options.sourceId === undefined &&
     options.edition === undefined &&
+    options.editionName === undefined &&
     options.expectedDuration === undefined &&
     options.subtitleIndex === undefined &&
     options.maxBitrate === undefined

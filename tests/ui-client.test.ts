@@ -47,7 +47,7 @@ test('a preview rejection never falls through to live delivery or route refresh'
 test('open shallow overlays use a state-preserving refresh while ordinary pages remain scoped', async()=>{
   const {page}=await import(stateUrl),navigation=await import(navigationUrl);
   const before=navigation.refreshes;invalidations.length=0;
-  for(const state of [{mediaModalId:'work'},{friendsPopover:true},{notificationPopover:true}]){
+  for(const state of [{mediaDetailHref:'work'},{friendsPopover:true},{notificationPopover:true}]){
     page.state=state;await refreshRouteDependencies(['session']);
   }
   expect(navigation.refreshes).toBe(before+3);expect(invalidations).toEqual([]);

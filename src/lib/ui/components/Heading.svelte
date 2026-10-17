@@ -30,7 +30,7 @@
 
 {#snippet titleContent()}
   <svelte:element this={`h${variant === 'page' ? 1 : level}`} class:row-title={variant !== 'page'}>
-    {#if href}<a {href} aria-label={`View all ${title}`}><span>{title}</span><Icon name="right" /></a>
+    {#if href}<a {href} data-detail-section={variant!=='page'?'':undefined} aria-label={`View all ${title}`}><span>{title}</span><Icon name="right" /></a>
     {:else}{title}{/if}
   </svelte:element>
 {/snippet}

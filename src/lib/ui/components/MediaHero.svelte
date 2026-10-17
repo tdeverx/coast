@@ -20,9 +20,9 @@
     context = 'details',
     next = null,
     requestable = false,
-    actions,
+    actions,editionName,alignment='left',
   }: {
-    mode?: 'content' | 'player';
+    editionName?:string;alignment?:'left'|'center'|'adaptive';mode?: 'content' | 'player';
     item?: HeroItem;
     collection?: { items: HeroItem[]; selection: string; busy?: boolean };
     actions?: Snippet;
@@ -52,6 +52,7 @@
 
 {:else if hero && hero.active && hero.presentation}<section
   class="hero"
+  data-alignment={alignment}
   class:fading={hero.fading}
   bind:this={hero.host}
   data-hero-id={hero.active.id}
@@ -66,7 +67,7 @@
       hero.noteActivity();
     }
   }}
-  style:--hero-fade={blackFadeGradient('bottom')}
+  style:--hero-fade={blackFadeGradient('bottom','var(--detail-background, #000)')}
 >
   <div class="art" class:video-visible={hero.showingTrailer}>
     {#key hero.active.id}{#if hero.active.backdrop && !hero.backdropFailed}<img
@@ -114,6 +115,7 @@
       {#if actions}{@render actions()}
       {:else if screenItem(hero.active)}<WorkMenu
           item={hero.active}
+          {editionName}
           {context}
           {next}
           {requestable}
@@ -171,6 +173,15 @@
     isolation: isolate;
     background: transparent;
   }
+  .hero[data-alignment='center'],.hero[data-alignment='adaptive'] {--hero-center:1;--hero-copy-align:center;}
+  .hero[data-alignment='adaptive'] {--hero-center:calc(1 - var(--detail-expansion,1));--hero-copy-align:var(--detail-hero-text-align,left);}
+  .hero:not([data-alignment='left']) .hero-copy {width:100%;margin-inline-start:calc((100% - min(100%,768px)) * 0.5 * var(--hero-center));text-align:var(--hero-copy-align);}
+  .hero:not([data-alignment='left']) :is(h1:not(.sr-only),.title-artwork,.genres,.metadata,.overview,.hero-action-row) {position:relative;max-width:100%;left:calc(50% * var(--hero-center));transform:translateX(calc(-50% * var(--hero-center)));}
+  .hero:not([data-alignment='left']) :is(h1:not(.sr-only),.genres,.metadata,.hero-action-row) {width:fit-content;}
+  .hero:not([data-alignment='left']) .title-artwork {width:min(544px,100%);justify-content:var(--hero-copy-align);}
+  .hero:not([data-alignment='left']) .title-logo {object-position:calc(50% * var(--hero-center)) bottom;}
+  .hero:not([data-alignment='left']) .overview {width:min(672px,100%);}
+  .hero:not([data-alignment='left']) :is(.genres,.metadata,.hero-action-row) {justify-content:var(--hero-copy-align);}
   .art {
     position: absolute;
     inset: 0;

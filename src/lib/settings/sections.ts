@@ -70,7 +70,6 @@ export const experimentalPolicies = [
   ['experimentalComics', 'Comics', 'Find comic issues with Comic Vine and track reading progress in Coast. Requires a Comic Vine API key for non-commercial use.'],
   ['experimentalParties', 'Parties', 'Invite friends and keep video or music playback in sync. Music parties also require Music.'],
   ['experimentalPlanning', 'Planning & calendar', 'Plan what to watch, play or listen to, with reminders and upcoming releases.'],
-  ['experimentalMediaModal', 'Media detail overlay', 'Open the existing hero and media details over your current page.'],
 ] as const;
 
 export const policyFields = [
@@ -80,7 +79,7 @@ export const policyFields = [
   'registrationProvider',
   'experimentalMusic','experimentalGaming','experimentalParties',
   'experimentalBooks','experimentalComics',
-  'experimentalPlanning','experimentalMediaModal','allowPlaybackSharing',
+  'experimentalPlanning','allowPlaybackSharing',
   'sessionLifetimeDays',
   'playbackDelivery',
   'maxBitrateMbps',

@@ -75,6 +75,7 @@ function mapIssue(issue: v.InferOutput<typeof issueSchema>): ReadingMetadata {
     overview: summary || undefined,
     coverUrl: coverUrl(issue.image?.super_url) ?? coverUrl(issue.image?.medium_url) ?? coverUrl(issue.image?.small_url),
     ...(issue.store_date&&v.safeParse(v.pipe(v.string(),v.isoDate()),issue.store_date).success?{releaseDate:issue.store_date}:{}),
+    credits:(issue.person_credits??[]).slice(0,100).map(person=>({name:readingPlainText(person.name).slice(0,500),role:readingPlainText(person.role||'Contributor').slice(0,500)||'Contributor'})).filter(person=>person.name),
     authors, subjects: [], publishedYear: publishedYear && Number(publishedYear) > 0 ? Number(publishedYear) : undefined,
     seriesTitle: seriesTitle || undefined, issueNumber: issueNumber || undefined,
     ...(issue.volume&&seriesTitle?{group:{provider:'comic-vine' as const,externalId:`4050-${issue.volume.id}`,title:seriesTitle}}:{}),

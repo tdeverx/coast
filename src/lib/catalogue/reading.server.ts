@@ -18,6 +18,7 @@ export const readingMetadataSchema = v.pipe(v.strictObject({
   overview: optionalText,
   coverUrl: v.optional(v.pipe(v.string(), v.url(), v.maxLength(2000))),
   sourceUrl: v.pipe(v.string(), v.url(), v.maxLength(2000)),
+  credits:v.optional(v.pipe(v.array(v.strictObject({name:label,role:label})),v.maxLength(100))),
   authors: v.pipe(v.array(label), v.maxLength(50)),
   subjects: v.pipe(v.array(label), v.maxLength(100)),
   publishedYear: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(9999))),
@@ -36,7 +37,7 @@ export const readingMetadataSchema = v.pipe(v.strictObject({
 export async function importReading(metadata: ReadingMetadata) {
   const input = v.parse(readingMetadataSchema, metadata);
   requireEnabledCategory(await getConfig(), input.kind);
-  const { identities: aliases = [], group, ...metadataValues } = input;
+  const { identities: aliases = [], group, credits: _credits, ...metadataValues } = input;
   const identities = [...new Map([{ provider: input.provider, externalId: input.externalId }, ...aliases]
     .map(identity => [`${identity.provider}:${identity.externalId}`, identity])).values()]
     .sort((a, b) => `${a.provider}:${a.externalId}`.localeCompare(`${b.provider}:${b.externalId}`));

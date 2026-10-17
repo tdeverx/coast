@@ -1,5 +1,5 @@
 import { api, message, refreshAfterChange, isFeatureDisabled, ApiError } from '$lib/ui/client';
-import { readingFormat, sameReadingLocation, type ReadingLocation, type ReadingSessionView } from './model';
+import { readingFormat, readingFileLabel, sameReadingLocation, type ReadingLocation, type ReadingSessionView } from './model';
 export const reader = $state({session:null as ReadingSessionView|null,file:null as File|null,visible:false,loading:false,rendering:false,syncing:false,unsaved:false,error:'',location:null as ReadingLocation|null});
 let move:((location:ReadingLocation)=>Promise<void>)|null=null;
 let generation=0, opening:AbortController|null=null;
@@ -33,7 +33,7 @@ export async function openReading(workId:string,input:{file:File}|{connectionId:
  try{
   let body;
   if('file' in input){
-   const format=readingFormat(input.file.name);if(!format)throw new Error('Choose a PDF, EPUB or CBZ file.');
+   const format=readingFormat(input.file.name);if(!format)throw new Error(`Choose ${readingFileLabel}.`);
    if(input.file.size>128*1024**2)throw new Error('Local reading files must be smaller than 128 MB.');
    const {readingFileIdentity}=await import('./reader/file-identity');
    if(!current())return;

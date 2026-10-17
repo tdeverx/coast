@@ -3,15 +3,15 @@ import {expect,test} from 'bun:test';
 import * as runtime from 'svelte/internal/client';
 import {compileRunes,moduleUrl,svelteUrl} from './fixtures/ui-script';
 const lifecycleUrl=moduleUrl(`export {untrack} from ${JSON.stringify(svelteUrl)};export const onMount=()=>{};`);
-const stubUrl=moduleUrl(`
- export const page={data:{capabilities:{playback:true,screen:true}}};
+const stubUrl=moduleUrl(compileRunes(`
+ export const page=$state({data:{capabilities:{playback:true,screen:true}},state:{mediaDetailHref:null}});
  export const reader={visible:false},heroPlayer={id:null,url:null,visible:false},player={};
  export const requests=[],presentations=[];
  export const useClient=()=>({api:(path,body,method,options)=>new Promise(resolve=>requests.push({path,signal:options?.signal,resolve}))});
  export const usePlayback=()=>({heroPlayer,player,preview:false});
  export const playbackVisible=()=>false,presentTrailer=(...args)=>presentations.push(args);
  export const heroTitleIds=items=>items.map(item=>item.id),isHeroTitle=()=>true;
-`);
+`));
 const stub=await import(stubUrl);
 const source=(await Bun.file(new URL('../src/lib/ui/heroes/presentation.svelte.ts',import.meta.url)).text())
  .replaceAll(/from ['"]svelte['"]/g,`from ${JSON.stringify(lifecycleUrl)}`)
@@ -43,6 +43,9 @@ test('hero replacement and teardown abort optional trailer lookups and ignore la
   expect(stub.requests[0].signal.aborted).toBe(true);
   stub.requests[0].resolve({url:'stale-trailer'});await settle();expect(stub.presentations).toHaveLength(0);
   runTimers();await settle();expect(stub.requests).toHaveLength(2);expect(stub.requests[1].signal.aborted).toBe(false);
+  stub.page.state.mediaDetailHref='title-b';await settle();
+  expect(stub.requests[1].signal.aborted).toBe(true);runTimers();await settle();expect(stub.requests).toHaveLength(2);
+  stub.page.state.mediaDetailHref=null;await settle();
   dispose();expect(stub.requests[1].signal.aborted).toBe(true);expect(timers.size).toBe(0);
   stub.requests[1].resolve({url:'late-trailer'});await settle();expect(stub.presentations).toHaveLength(0);
  }finally{dispose();Object.assign(globalThis,previous);}

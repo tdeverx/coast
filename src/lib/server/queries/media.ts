@@ -17,6 +17,8 @@ import { PAGE_SIZE } from './pagination';
 import type { MediaView } from '../../ui/types';
 import { searchDocument, searchSql } from './search-ranking';
 import { rankSearch } from '$lib/search';
+import {namedEdition} from '$lib/media/editions';
+import {editionSnapshot} from '$lib/media/edition-metadata';
 
 const uuidSchema = v.pipe(v.string(), v.uuid());
 const viewOptionsSchema = v.object({
@@ -25,6 +27,7 @@ const viewOptionsSchema = v.object({
   limit: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(500))),
   kind: v.optional(v.picklist(['movie', 'show', 'season', 'episode', 'collection'])),
   availableFirst: v.optional(v.boolean(), false),
+  editionName: v.optional(v.pipe(v.string(),v.minLength(1),v.maxLength(500))),
 });
 type CollectionDescendant = {
   rootId: string;
@@ -105,6 +108,7 @@ export async function mediaViews(
     limit?: number;
     kind?: string;
     availableFirst?: boolean;
+    editionName?: string;
   } = {},
   viewerId: string | null = userId
 ): Promise<MediaView[]> {
@@ -266,13 +270,14 @@ export async function mediaViews(
       .select({
         mediaId: s.providerItems.mediaId,
         artwork: sql<ArtworkImages | null>`${s.providerItems.snapshot}->'artwork'`,
+        ...(options.editionName===undefined?{}:{snapshot:s.providerItems.snapshot,edition:s.availability.edition,durationSeconds:s.availability.durationSeconds,updatedAt:s.providerItems.lastSeenAt}),
       })
       .from(s.providerItems)
       .innerJoin(s.availability, eq(s.availability.providerItemId, s.providerItems.id))
       .innerJoin(s.providerConnections, eq(s.providerConnections.id, s.availability.connectionId))
       .innerJoin(s.providerInstances, eq(s.providerInstances.id, s.providerItems.instanceId))
       .where(and(inArray(s.providerItems.mediaId, artworkIds), permittedAvailability(viewerId)))
-      .orderBy(desc(s.providerItems.lastSeenAt), asc(s.providerItems.id)),
+      .orderBy(desc(s.providerItems.lastSeenAt), asc(s.providerItems.id),...(options.editionName===undefined?[]:[desc(s.availability.bitrate),asc(s.availability.sourceId)])),
     db
       .select({ mediaId: s.externalIds.mediaId, externalId: s.externalIds.externalId })
       .from(s.externalIds)
@@ -305,7 +310,14 @@ export async function mediaViews(
   );
   const descendantsByRoot = groupBy(descendants, (row) => row.rootId);
   const artworkById = new Map<string, ArtworkImages>();
+  const editionById = new Map<string,(typeof artworkRows)[number]>();
+  const editionTitles=options.editionName===undefined?undefined:new Map(rows.map(row=>[row.id,row.title]));
+  if(options.editionName!==undefined)for(const row of artworkRows){
+    const title=row.mediaId?editionTitles?.get(row.mediaId):undefined;
+    if(title&&namedEdition(row.edition,title).value===options.editionName&&!editionById.has(row.mediaId))editionById.set(row.mediaId,row);
+  }
   for (const row of artworkRows) {
+    if(row.mediaId&&editionTitles?.has(row.mediaId)&&row!==editionById.get(row.mediaId))continue;
     if (row.mediaId && row.artwork)
       artworkById.set(row.mediaId, {
         ...row.artwork,
@@ -314,9 +326,14 @@ export async function mediaViews(
   }
   const metadataById = new Map(artworkMedia.map((row) => [row.id, resolveArtworkMetadata(row)]));
   function resolveArtworkMetadata(row: typeof s.media.$inferSelect) {
+    const edition=editionById.get(row.id);
+    if(options.editionName!==undefined&&ids.includes(row.id)&&!edition)throw new AppError(404,'This edition is no longer available.');
     return resolveMetadata({
       fallback: row,
-      snapshots: snapshotById.get(row.id),
+      snapshots: edition?[
+        {...editionSnapshot(edition.snapshot??{},edition.durationSeconds),provider:'jellyfin',updatedAt:edition.updatedAt!,region:settings.region},
+        ...(snapshotById.get(row.id)??[]).filter(snapshot=>snapshot.provider!=='jellyfin'),
+      ]:snapshotById.get(row.id),
       override: overrideById.get(row.id),
       locks: lockById.get(row.id)?.map((lock) => lock.field),
       user: preferenceById.get(row.id),

@@ -1,17 +1,19 @@
 import { getFeatureConfig } from '$lib/server/features';
 import {statusesForUsers} from './status.server';
-import {activityAction} from './model';
+import {activityAction,workFriendFilters,workFriendOptions} from './model';
+import {activityRelationships,relationshipEdges,relationshipReasons,relationshipEventFilter} from './relationships.server';
 import {getDb} from '$lib/server/db';
 import {sql} from 'drizzle-orm';
 import * as v from 'valibot';
 import {workCards} from '$lib/collection/query.server';
 const uuid=v.pipe(v.string(),v.uuid());
-export const feedOptionsSchema=v.object({category:v.optional(v.picklist(['all','screen','music','game','reading']),'all'),kind:v.optional(v.pipe(v.string(),v.maxLength(40)),'all'),friendId:v.optional(uuid),beforeKnown:v.optional(v.picklist(['true','false'])),period:v.optional(v.picklist(['month','year','all']),'all'),before:v.optional(v.pipe(v.string(),v.isoTimestamp())),beforeId:v.optional(uuid)});
+export const feedOptionsSchema=v.object({category:v.optional(v.picklist(['all','screen','music','game','reading']),'all'),kind:v.optional(v.pipe(v.string(),v.maxLength(40)),'all'),friendId:v.optional(uuid),workId:v.optional(uuid),artistId:v.optional(uuid),readingGroupId:v.optional(uuid),relationship:v.optional(v.picklist(workFriendFilters)),beforeRelationship:v.optional(v.picklist(['true','false'])),beforeKnown:v.optional(v.picklist(['true','false'])),period:v.optional(v.picklist(['month','year','all']),'all'),before:v.optional(v.pipe(v.string(),v.isoTimestamp())),beforeId:v.optional(uuid)});
 export async function activityFeed(userId:string,raw:unknown={},activityIds?:string[]) {
  if(activityIds)v.parse(v.pipe(v.array(uuid),v.maxLength(60)),activityIds);
  const o=v.parse(feedOptionsSchema,raw);
- const rows=await getDb().execute<{id:string;userId:string;username:string;workId:string;eventKind:string;occurredAt:string;count:number;members:string[];dateKnown:boolean;displayWorkId:string;rootId:string;avatar:string|null;episodeCodes:string[];rating:number|null;minutes:number|null;rewatch:boolean;trackTitle:string|null;listenNumber:number;readingPage:number|null;readingTotal:number|null}>(sql`
- with visible_raw as (
+ if(o.relationship!==undefined)v.parse(v.literal(true),!!(o.workId||o.artistId||o.readingGroupId));
+ const rows=await getDb().execute<{id:string;userId:string;username:string;workId:string;eventKind:string;occurredAt:string;count:number;members:string[];dateKnown:boolean;displayWorkId:string;rootId:string;avatar:string|null;episodeCodes:string[];rating:number|null;minutes:number|null;rewatch:boolean;trackTitle:string|null;listenNumber:number;readingPage:number|null;readingTotal:number|null;isRelationship:boolean;relationships:string[]}>(sql`
+ with recursive ${activityRelationships(userId,o)} visible_raw as (
   select a.*,w.category,w.kind,u.username,coalesce(e.show_id,se.show_id,r.parent_id,a.work_id) as root_id,
    case when e.media_id is not null then 'S'||lpad(e.season_number::text,greatest(2,length(e.season_number::text)),'0')||'E'||lpad(e.episode_number::text,greatest(2,length(e.episode_number::text)),'0') end as episode_code,
    history.page as reading_page,history.total_pages as reading_total,rating.value as rating, session.minutes_played as minutes,coalesce(tracking.rewatch,false) as rewatch,music.title as track_title
@@ -23,12 +25,16 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
   left join tracking_events tracking on tracking.id=substring(a.source_key from '^tracking_events:([0-9a-f-]{36})$')::uuid
   left join episodes e on e.media_id=a.work_id
   left join seasons se on se.media_id=a.work_id
-  left join lateral(select parent_id from media_relationships where child_id=a.work_id and kind='contains' order by position limit 1) r on true
+  left join lateral(select parent_id from media_relationships where child_id=a.work_id and kind='contains' order by case when parent_id=${o.workId??null}::uuid then 0 else 1 end,position,parent_id limit 1) r on true
   where coast_category_enabled(${userId}::uuid,w.category) and (a.user_id=${userId}::uuid or coast_feature_enabled(a.user_id,'social') and coast_feature_enabled(${userId}::uuid,'social')) and (a.user_id=${userId}::uuid or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,a.user_id) and f.user_b=greatest(${userId}::uuid,a.user_id)))
    and social_visible(a.user_id,${userId}::uuid,a.section,w.category)
+   ${relationshipEventFilter(o.relationship)}
    and (${activityIds===undefined} or a.id in (${activityIds?.length?sql.join(activityIds.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))
    and (${o.category}='all' or w.category=${o.category} or ${o.category}='reading' and w.category in ('book','comic')) and (${o.kind}='all' or a.event_kind=${o.kind})
    and (${o.friendId??null}::uuid is null or a.user_id=${o.friendId??null}::uuid)
+   ${o.workId?sql`and (a.work_id=${o.workId}::uuid or e.show_id=${o.workId}::uuid or e.season_id=${o.workId}::uuid or se.show_id=${o.workId}::uuid or exists(select 1 from media_relationships member where member.parent_id=${o.workId}::uuid and member.child_id in (a.work_id,e.show_id,e.season_id,se.show_id) and member.kind='contains'))`:sql``}
+   ${o.artistId?sql`and exists(select 1 from music_credits credit where credit.work_id=a.work_id and credit.artist_id=${o.artistId}::uuid)`:sql``}
+   ${o.readingGroupId?sql`and exists(select 1 from reading_group_members member where member.group_id=${o.readingGroupId}::uuid and member.work_id=a.work_id)`:sql``}
    and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true'))
  ), deduplicated as (
  select *,row_number() over(partition by user_id,case when source='jellyfin' and event_kind='watch' and date_known then work_id::text||':'||occurred_at::text else id::text end order by created_at,id) as observation_rank from visible_raw
@@ -47,17 +53,37 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
  max(occurred_at) as occurred_at,
  max(reading_page) as reading_page,max(reading_total) as reading_total,max(track_title) as track_title,max(listen_number)::int as listen_number,max(rating) as rating,sum(minutes)::int as minutes,bool_or(rewatch) as rewatch,count(*)::int as count,array_agg(id order by occurred_at,id) as members,bool_and(date_known) as date_known
  from keyed group by user_id,username,display_kind,group_key
+ ), combined as (
+  select *,false as is_relationship,'{}'::text[] as relationships from grouped
+  ${o.relationship!==undefined?sql`union all
+  select md5('relationship:'||r.user_id::text||':'||r.work_id::text)::uuid as id,r.user_id,u.username,r.work_id,r.work_id as root_id,r.work_id as display_work_id,
+   '{}'::text[] as episode_codes,'relationship' as event_kind,'1970-01-01T00:00:00Z'::timestamptz as occurred_at,
+   case when social_visible(r.user_id,${userId}::uuid,'progress',w.category) then progress.page end as reading_page,
+   case when social_visible(r.user_id,${userId}::uuid,'progress',w.category) then progress.total_pages end as reading_total,
+   null::text as track_title,0::int as listen_number,
+   case when social_visible(r.user_id,${userId}::uuid,'ratings',w.category) then rating.value end as rating,
+   null::int as minutes,false as rewatch,1::int as count,'{}'::uuid[] as members,false as date_known,true as is_relationship,r.relationships
+  from relationship_states r join users u on u.id=r.user_id join works w on w.id=r.work_id
+  left join reading_progress progress on progress.user_id=r.user_id and progress.work_id=r.work_id
+  left join ratings rating on rating.user_id=r.user_id and rating.media_id=r.work_id
+  where not exists(select 1 from visible_raw a where a.user_id=r.user_id and a.work_id=any(r.work_ids))`:sql``}
  )
- select id,user_id as "userId",username,work_id as "workId",event_kind as "eventKind",occurred_at as "occurredAt",count,members,rating,minutes,rewatch,reading_page as "readingPage",reading_total as "readingTotal",track_title as "trackTitle",listen_number as "listenNumber",date_known as "dateKnown",display_work_id as "displayWorkId",root_id as "rootId",episode_codes as "episodeCodes",
- case when social_visible(user_id,${userId}::uuid,'details') then (select settings->'profile'->>'avatar' from users where users.id=grouped.user_id) end as avatar from grouped
- where (${o.period}='all' or occurred_at>=now()-case when ${o.period}='year' then interval '1 year' else interval '30 days' end) and (${o.before??null}::timestamptz is null or
- (date_known,occurred_at,id)<(coalesce(${o.beforeKnown??null}::boolean,true),${o.before??null}::timestamptz,coalesce(${o.beforeId??null}::uuid,'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid)))
- order by date_known desc,occurred_at desc,id desc limit 61`);
+ select is_relationship as "isRelationship",relationships,id,user_id as "userId",username,work_id as "workId",event_kind as "eventKind",occurred_at as "occurredAt",count,members,rating,minutes,rewatch,reading_page as "readingPage",reading_total as "readingTotal",track_title as "trackTitle",listen_number as "listenNumber",date_known as "dateKnown",display_work_id as "displayWorkId",root_id as "rootId",episode_codes as "episodeCodes",
+ case when social_visible(user_id,${userId}::uuid,'details') then (select settings->'profile'->>'avatar' from users where users.id=combined.user_id) end as avatar from combined
+ where (is_relationship or ${o.period}='all' or occurred_at>=now()-case when ${o.period}='year' then interval '1 year' else interval '30 days' end) and (${o.before??null}::timestamptz is null or
+ (not is_relationship,date_known,occurred_at,id)<(not coalesce(${o.beforeRelationship??null}::boolean,false),coalesce(${o.beforeKnown??null}::boolean,true),${o.before??null}::timestamptz,coalesce(${o.beforeId??null}::uuid,'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid)))
+ order by is_relationship,date_known desc,occurred_at desc,id desc limit 61`);
  const page=Array.from(rows).slice(0,60),cards=await workCards(userId,userId,[...new Set(page.flatMap(r=>[r.displayWorkId,r.rootId]))]);
- const [statuses,reactions]=await Promise.all([statusesForUsers(userId,page.map(event=>event.userId)),reactionSummary(userId,'activity',page.map(event=>event.id))]);
+ const [statuses,reactions]=await Promise.all([statusesForUsers(userId,page.map(event=>event.userId)),reactionSummary(userId,'activity',page.filter(event=>!event.isRelationship).map(event=>event.id))]);
  const items=page.flatMap(event=>{
    const item=cards.find(c=>('workId' in c?c.workId??c.id:c.id)===event.displayWorkId);
    if(!item)return [];
+   if(event.isRelationship){
+    const labels=workFriendOptions(item.kind);
+    const states=event.relationships.map((state:string)=>state==='favourites'?'Favourited':state==='lists'?'In a list':state==='collected'?'Collected':labels.find(option=>option.value===state)?.label??(event.rating!==null?'Rated':'Tracked'));
+    const detail=[...new Set(states),...(event.readingPage!==null?[`${event.readingPage}${event.readingTotal?' of '+event.readingTotal:''} pages`]:[]),...(event.rating!==null?[`${event.rating} / 5`]:[])].join(' · ');
+    return [{...item,entryId:`relationship:${event.id}`,captionActor:{username:event.username,avatar:event.avatar,status:statuses[event.userId]??'offline'},captionSubtitle:detail}];
+   }
    const extras=[event.readingPage!=null?`${event.readingPage}${event.readingTotal?' of '+event.readingTotal:''} pages`:null,event.eventKind==='listen'&&event.count===1?event.trackTitle:null,event.eventKind==='listen'&&event.count===1&&event.listenNumber>1?`Listen ${event.listenNumber}`:null,event.rating!=null?`${event.rating}/5`:null,event.minutes!=null?`${event.minutes} minutes`:null,event.rewatch?'Rewatch':null].filter(Boolean);
    const episodeCount=new Set(event.episodeCodes).size;
    const action=event.eventKind==='watch'&&episodeCount>0?`Watched ${episodeCount} ${episodeCount===1?'episode':'episodes'}`:activityAction(event.eventKind);
@@ -66,25 +92,14 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
    return [{...item,captionTitle:item.kind==='episode'?root?.title??item.title:item.title,entryId:event.id,captionActivity:{myReaction:reactions[event.id]?.find(reaction=>reaction.mine)?.emoji??null,id:event.id,occurredAt:new Date(event.occurredAt).toISOString(),dateKnown:event.dateKnown,kind:event.eventKind,action:activityAction(event.eventKind),detail},captionActor:{username:event.username,avatar:event.avatar,status:statuses[event.userId]??'offline'},captionSubtitle:`${action}${episodeCount===0&&event.count>1?` · ${event.count} ${event.eventKind==='listen'?'tracks':'items'}`:''}${extras.length?` · ${extras.join(' · ')}`:''}`}];
  });
  const last=page.at(-1);
- return {items,events:page,hasMore:rows.length>60,next:last?{before:new Date(last.occurredAt).toISOString(),beforeId:last.id,beforeKnown:String(last.dateKnown)}:null};
+ return {items,events:page.filter(event=>!event.isRelationship),hasMore:rows.length>60,next:last?{before:new Date(last.occurredAt).toISOString(),beforeId:last.id,beforeKnown:String(last.dateKnown),...(o.relationship!==undefined?{beforeRelationship:String(last.isRelationship)}:{})}:null};
 }
+/** Compact media-card heads only; item Activity owns the detailed relationship view. */
 export async function workSocial(userId:string,ids:string[]) {
  v.parse(v.pipe(v.array(uuid),v.maxLength(60)),ids);if(!ids.length||!(await getFeatureConfig(userId)).features.social)return {};
  const list=sql.join(ids.map(id=>sql`${id}::uuid`),sql`,`);
  const rows=await getDb().execute<{workId:string;userId:string;username:string;avatar:string|null;rating:number|null;watched:boolean;progress:number;total:number}>(sql`
- with recursive edges(parent_id,child_id) as (select parent_id,child_id from media_relationships union select show_id,media_id from episodes union select show_id,media_id from seasons), descendants(root,id) as(select id,id from works where id in (${list}) union select d.root,e.child_id from descendants d join edges e on e.parent_id=d.id), ancestors(root,id) as(select id,id from works where id in (${list}) union select a.root,e.parent_id from ancestors a join edges e on e.child_id=a.id), reasons as (
- select user_id,media_id as id,'collection' as section from tracking_state where collected or watchlist
- union select user_id,media_id,'favourites' from tracking_state where favourite
- union select user_id,media_id,'activity' from tracking_state where watched or play_count>0 or dropped
- union select user_id,media_id,'progress' from tracking_state where position_seconds>0
- union select user_id,media_id,'collection' from up_next
- union select l.user_id,i.media_id,'collection' from list_items i join lists l on l.id=i.list_id
- union select user_id,work_id,'progress' from reading_progress
- union select user_id,track_id,'progress' from music_progress where position_seconds>0 or play_count>0
- union select t.user_id,a.root,'collection' from tracking_state t join ancestors a on a.id=t.media_id where t.collected
- union select user_id,media_id,'ratings' from ratings
- union select user_id,track_id,'activity' from music_listens
- union select user_id,game_id,'activity' from game_playthroughs where status<>'planned' or progress_percent>0 or exists(select 1 from game_sessions s where s.playthrough_id=game_playthroughs.id)
+ with recursive edges(parent_id,child_id) as (${relationshipEdges}), descendants(root,id) as(select id,id from works where id in (${list}) union select d.root,e.child_id from descendants d join edges e on e.parent_id=d.id), ancestors(root,id) as(select id,id from works where id in (${list}) union select a.root,e.parent_id from ancestors a join edges e on e.child_id=a.id), reasons as (${relationshipReasons}
  ), visible_friends as (
  select distinct d.root as "workId",u.id as "userId",u.username,
  case when social_visible(u.id,${userId}::uuid,'details') then u.settings->'profile'->>'avatar' end as avatar,
@@ -96,12 +111,12 @@ export async function workSocial(userId:string,ids:string[]) {
  where (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true')) and exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,u.id) and f.user_b=greatest(${userId}::uuid,u.id)) and social_visible(u.id,${userId}::uuid,r.section,w.category)
  ), ranked_friends as (
  select *,count(*) over(partition by "workId")::int as total,
- row_number() over(partition by "workId" order by username) as ordinal from visible_friends
+ row_number() over(partition by "workId" order by username,"userId") as ordinal from visible_friends
  )
  select "workId","userId",username,avatar,rating,watched,progress,total
  from ranked_friends where ordinal<=3 order by "workId",ordinal`);
  const reactions=await getDb().execute<{targetId:string;emoji:string;count:number}>(sql`select r.target_id as "targetId",r.emoji,count(*)::int as count from social_reactions r join works w on w.id=r.target_id where r.target_kind='work' and r.target_id in (${list}) and social_visible(r.user_id,${userId}::uuid,'reactions',w.category) group by r.target_id,r.emoji`);
- // Counts and privacy precede ranking; only the displayed three friends need presence.
+ // Resolve only the three visible heads per work after privacy filtering.
  const socialFriends=Array.from(rows);
  const statuses=await statusesForUsers(userId,socialFriends.map(row=>row.userId));
  type WorkFriends={friends:(Omit<typeof socialFriends[number],'total'>&{status:import('./status').ActivityStatus})[];total:number};

@@ -1,3 +1,4 @@
+import {useShelfLocation} from '$lib/ui/detail-section.svelte';
 
   import { onDestroy, untrack } from 'svelte';
   import { page as route } from '$app/state';
@@ -33,6 +34,7 @@ export type LibrarySourceOptions = {
     initialAvailability?: string;
   };
 export function createLibrarySource(getOptions: () => LibrarySourceOptions): ShelfSource {
+ const location=useShelfLocation();
   const { api, preview: isolatedPreview } = useClient();
 
   let {
@@ -95,7 +97,7 @@ export function createLibrarySource(getOptions: () => LibrarySourceOptions): She
         item => item.entryId ?? ('href' in item ? item.href : item.id)
       ) }),
     });
-    if (result && !preview && !isolatedPreview && layout === 'grid') replaceState(href(result.page), route.state);
+    if (result && !location.embedded && !preview && !isolatedPreview && layout === 'grid') replaceState(href(result.page), route.state);
   }
   const ownerKey = $derived(JSON.stringify([route.data.user?.id ?? '', username, surface]));
   const refreshKey = $derived(JSON.stringify([

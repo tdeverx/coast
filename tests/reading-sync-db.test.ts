@@ -13,7 +13,7 @@ import {libraryContent} from '../src/lib/server/queries/library-content';
 import * as readingProviders from '../src/lib/providers/reading.server';
 import {AppError} from '../src/lib/server/security/errors';
 import {ProviderHttpError} from '../src/lib/server/security/provider-fetch';
-import {ownedReadingSession} from '../src/lib/reading/sessions.server';
+import {ownedReadingSession,linkedReadingSources} from '../src/lib/reading/sessions.server';
 const run=process.env.COAST_DB_TEST==='1'?test:test.skip;
 run('Jellyfin reading imports commit their cursor before yielding, including skipped files',async()=>{
  const db=getDb(),config=await getConfig(),tag=crypto.randomUUID();
@@ -27,7 +27,7 @@ run('Jellyfin reading imports commit their cursor before yielding, including ski
   await importReading({provider:'openlibrary',externalId,kind:'book',title:`Reading sync ${index}`,sourceUrl:`https://openlibrary.org/works/${externalId}`,authors:[],subjects:[]});
   books.push({Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Name:`Reading sync ${index}`,Path:`/books/${index}.pdf`,Etag:'v1',ProviderIds:{OpenLibrary:externalId}});
  }
- books.splice(2,0,{Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Name:'Not an issue identity',Path:'/books/ambiguous.pdf',Etag:'v1',ProviderIds:{ComicVine:'12345'}},{Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Name:'Unsupported archive',Path:'/books/archive.cbr',Etag:'v1',ProviderIds:{}});
+ books.splice(2,0,{Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Name:'Not an issue identity',Path:'/books/ambiguous.pdf',Etag:'v1',ProviderIds:{ComicVine:'12345'}},{Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Name:'Unsupported format',Path:'/books/archive.mobi',Etag:'v1',ProviderIds:{}});
  const offsets:number[]=[];
  const adapter=new JellyfinAdapter(async path=>{
   const url=new URL(path,'https://fixture.invalid');
@@ -62,21 +62,25 @@ run('Jellyfin comic permalinks populate Library without Collection and keep unsu
  const page:JellyfinBook[]=[
   {Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Path:'/comics/one.cbz',ProviderIds:{ComicVine:'fixture-comic/4000-987654321'}},
   {Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Path:'/comics/two.cbr',ProviderIds:{ComicVine:'https://comicvine.gamespot.com/fixture-comic/4000-987654322/'}},
+  {Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Path:'/comics/three.cb7',ProviderIds:{ComicVine:'4000-987654324'}},
+  {Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Path:'/comics/four.cbt',ProviderIds:{ComicVine:'4000-987654325'}},
+  {Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Path:'/comics/five.mobi',ProviderIds:{ComicVine:'4000-987654326'}},
   {Id:crypto.randomUUID().replaceAll('-',''),Type:'Book',Path:'/comics/volume.cbz',ProviderIds:{ComicVine:'fixture-comic/4050-987654323'}},
  ];
  const metadata=spyOn(readingProviders,'readingProviderDetails').mockImplementation(async(kind,externalId)=>({provider:'comic-vine',externalId,kind,title:`Fixture ${externalId}`,sourceUrl:`https://comicvine.gamespot.com/fixture-comic/${externalId}/`,authors:[],subjects:[]}));
  const checkpoints:number[]=[];
  try {
-  expect(await importJellyfinReading({adapter,connection,instance},page,{access:true,checkpoint:async processed=>{checkpoints.push(processed);}})).toBe(2);
-  expect(metadata.mock.calls.map(call=>call[1])).toEqual(['4000-987654321','4000-987654322']);
-  expect(checkpoints).toEqual([1,2,3]);
+  expect(await importJellyfinReading({adapter,connection,instance},page,{access:true,checkpoint:async processed=>{checkpoints.push(processed);}})).toBe(5);
+  expect(metadata.mock.calls.map(call=>call[1])).toEqual(['4000-987654321','4000-987654322','4000-987654324','4000-987654325','4000-987654326']);
+  expect(checkpoints).toEqual([1,2,3,4,5,6]);
   const all=await libraryContent(user.id,new URL('http://coast/library?surface=read&kind=comic&scope=all'));
-  expect(all.items.map(item=>item.title)).toEqual(['Fixture 4000-987654321','Fixture 4000-987654322']);
+  expect(all.items.map(item=>item.title)).toEqual(['Fixture 4000-987654321','Fixture 4000-987654322','Fixture 4000-987654324','Fixture 4000-987654325','Fixture 4000-987654326']);
   const available=await libraryContent(user.id,new URL('http://coast/library?surface=read&kind=comic&scope=available'));
-  expect(available.items.map(item=>item.title)).toEqual(['Fixture 4000-987654321']);
+  expect(available.items.map(item=>item.title)).toEqual(['Fixture 4000-987654321','Fixture 4000-987654322','Fixture 4000-987654324','Fixture 4000-987654325']);
+  for(const item of available.items)expect(await linkedReadingSources(user.id,item.id)).toHaveLength(1);
   expect(await db.select().from(s.trackingState).where(eq(s.trackingState.userId,user.id))).toHaveLength(0);
   expect(await db.select().from(s.readingProgress).where(eq(s.readingProgress.userId,user.id))).toHaveLength(0);
-  expect(await db.select().from(s.workEditions).where(eq(s.workEditions.instanceId,instance.id))).toHaveLength(1);
+  expect(await db.select().from(s.workEditions).where(eq(s.workEditions.instanceId,instance.id))).toHaveLength(4);
  } finally {metadata.mockRestore();}
 });
 

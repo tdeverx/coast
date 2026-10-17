@@ -1,3 +1,4 @@
+import {useShelfLocation} from '$lib/ui/detail-section.svelte';
 import { mediumOptions, categoryEnabled } from '$lib/experimental';
 
   import { onDestroy, untrack } from 'svelte';
@@ -12,7 +13,7 @@ import { mediumOptions, categoryEnabled } from '$lib/experimental';
   } from '$lib/progress';
   import { useClient } from '$lib/ui/client-context';
   import { ApiError } from '$lib/ui/client';
-  import { createResource } from '$lib/ui/resource.svelte';
+  import { createResource,uniqueItems } from '$lib/ui/resource.svelte';
   import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
   import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
   import type { ShelfSource, ShelfControl } from './types';
@@ -20,6 +21,7 @@ import { mediumOptions, categoryEnabled } from '$lib/experimental';
 
 export type ProgressSourceOptions = {
     initial?: ProgressContent;
+    filters?:ProgressOptions;
     mediums?: boolean;
     surface?: ProgressSurface;
     username?: string;
@@ -27,6 +29,7 @@ export type ProgressSourceOptions = {
     onitems?: (items: (MediaView | MediaCardPresentation)[], selection: string) => void;
   };
 export function createProgressSource(getOptions: () => ProgressSourceOptions): ShelfSource {
+ const location=useShelfLocation();
   const { api, preview } = useClient();
 
   let {
@@ -38,6 +41,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     mediums = false,
   } = $derived(getOptions());
 
+  const initialFilters=untrack(()=>getOptions().filters??initial);
   const title = $derived(progressTitles[surface]);
   const saved = $derived(surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites');
   const options = $derived(
@@ -61,13 +65,13 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     total: 0,
     items: [],
   });
-  let category = $state<ProgressOptions['category']>(untrack(() => initial?.category ?? 'screen'));
-  let tab = $state<string>(untrack(() => initial?.view ?? defaultView()));
+  let category = $state<ProgressOptions['category']>(untrack(() => initialFilters?.category ?? 'screen'));
+  let tab = $state<string>(untrack(() => initialFilters?.view ?? defaultView()));
   let preferences = $state<Record<string, Filters>>(
     Object.fromEntries([...progressTabs, {value:'next',label:'Next'}, {value:'recommendations',label:'Recommendations'}].map((option) => [option.value, defaults()]))
   );
   untrack(() => {
-    if (initial) preferences[initial.view] = { kind: initial.kind, scope: initial.scope };
+    if (initialFilters) preferences[initialFilters.view] = { kind: initialFilters.kind, scope: initialFilters.scope };
   });
   const current = $derived(preferences[tab]);
   const resource = createResource(untrack(() => initial ?? emptyContent()), !!untrack(() => initial));
@@ -121,7 +125,7 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   $effect(() => {
     onitems?.(content.items, [content.view, content.category, content.kind, content.scope].join(':'));
   });
-  async function select(number = 1) {
+  async function select(number = 1,append=false) {
     const features={...route.data,features:route.data.capabilities};
     if(!categoryEnabled(features,category)){
       const next=mediumOptions(features)[0]?.value;
@@ -139,8 +143,8 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
           resource.replace({ ...resource.data, items: [], total: 0, page: 1, pages: 1 }, cause.message);
         throw cause;
       }
-    });
-    if (result && !preview && layout === 'grid') replaceState(href(result.page), route.state);
+    },{merge:(old,next)=>({...next,items:append?uniqueItems([...old.items,...next.items],item=>item.entryId??item.id):next.items})});
+    if (result && !location.embedded && !preview && layout === 'grid') replaceState(href(result.page), route.state);
   }
   function update(patch: Partial<Filters>) {
     preferences[tab] = { ...current, ...patch };

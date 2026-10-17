@@ -85,6 +85,38 @@ reset();{
  expect(revoked).toHaveLength(2);expect(changes).toEqual([1]);
 }
 
+// Native archive work is terminated on cancellation; retry owns a fresh worker.
+const NativeWorker=globalThis.Worker;
+class ArchiveWorker {
+ onmessage:((event:{data:unknown})=>void)|null=null;onerror:((event:unknown)=>void)|null=null;
+ terminated=0;messages:{id:number;type:string;index?:number}[]=[];
+ constructor(){workers.push(this);}
+ postMessage(message:{id:number;type:string;index?:number}){this.messages.push(message);}
+ terminate(){this.terminated++;}
+ reply(data:object){this.onmessage?.({data:{id:this.messages.at(-1)!.id,...data}});}
+}
+const workers:ArchiveWorker[]=[];
+globalThis.Worker=ArchiveWorker as unknown as typeof Worker;
+const {openArchiveComic}=await import('../../src/lib/reading/reader/archive');
+const pageEntries=[{filename:'1.png',size:1,index:0},{filename:'2.png',size:1,index:1}];
+{
+ const controller=new AbortController(),opened=openArchiveComic(one,'cbr',controller.signal);await settle();
+ const worker=workers.at(-1)!;controller.abort();await expect(opened).rejects.toMatchObject({name:'AbortError'});expect(worker.terminated).toBe(1);
+}
+{
+ const controller=new AbortController(),opened=openArchiveComic(one,'cb7',controller.signal);await settle();
+ const first=workers.at(-1)!;first.reply({entries:pageEntries});const archive=await opened;
+ const pageOwner=new AbortController(),pending=archive.read(0,pageOwner.signal);await settle();pageOwner.abort();await expect(pending).rejects.toMatchObject({name:'AbortError'});expect(first.terminated).toBe(1);
+ const next=archive.read(1,new AbortController().signal);await settle();const second=workers.at(-1)!;expect(second).not.toBe(first);second.reply({entries:pageEntries});await settle();
+ first.reply({page:new ArrayBuffer(3)});second.reply({page:new ArrayBuffer(1)});expect((await next).size).toBe(1);
+ await archive.close();await archive.close();expect(second.terminated).toBe(1);
+}
+{
+ const controller=new AbortController(),opened=openArchiveComic(one,'cbt',controller.signal);await settle();
+ const worker=workers.at(-1)!;worker.reply({entries:pageEntries});controller.abort();await expect(opened).rejects.toMatchObject({name:'AbortError'});expect(worker.terminated).toBe(1);
+}
+globalThis.Worker=NativeWorker;
+
 let pageReads=0,renders=0,fail=false;
 const page={getViewport:({scale}:{scale:number})=>({width:100*scale,height:100*scale}),cleanup(){},render(){renders++;return {cancel(){},promise:fail?Promise.reject(Error('Raster failed')):Promise.resolve()};}};
 const pdf={numPages:2,getPage:async()=>{pageReads++;return page;}};
@@ -109,4 +141,4 @@ const pdfOptions={...options(one,new AbortController()),host:{clientWidth:300,cl
  fail=true;await expect(engine.resize!()).rejects.toThrow('Raster failed');fail=false;
  await engine.go({format:'pdf',page:1,total:2});expect({pageReads,renders}).toEqual({pageReads:5,renders:5});engine.destroy();
 }
-console.log(JSON.stringify({comicCases:6,pdfCases:3}));
+console.log(JSON.stringify({comicCases:6,archiveCases:3,pdfCases:3}));

@@ -29,7 +29,8 @@ const code=(await compile('../src/lib/ui/shelves/progress.svelte.ts'))
  .replaceAll('$lib/ui/client',clientUrl)
  .replaceAll('$lib/ui/resource.svelte',resourceUrl)
  .replaceAll('$lib/ui/content-revision.svelte',revisionUrl)
- .replaceAll('$app/navigation',navigationUrl).replaceAll('$app/state',routeUrl);
+ .replaceAll('$app/navigation',navigationUrl).replaceAll('$lib/ui/detail-section.svelte',moduleUrl(`import {page} from '${routeUrl}';export const useShelfLocation=()=>({embedded:false,get url(){return page.url;}});`))
+ .replaceAll('$app/state',routeUrl);
 const {createProgressSource}:typeof import('../src/lib/ui/shelves/progress.svelte')=await import(moduleUrl(code));
 const item={id:'work',title:'Visible profile card',kind:'movie'} as MediaView;
 const content:ProgressContent={view:'watching',kind:'all',category:'screen',scope:'all',page:1,pages:1,total:1,items:[item]};

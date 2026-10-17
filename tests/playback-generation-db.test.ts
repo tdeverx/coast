@@ -17,7 +17,7 @@ const browser={containers:['mp4','m4a'],videoCodecs:['h264'],audioCodecs:['aac']
 const deferred=()=>{let resolve!:()=>void;const promise=new Promise<void>(done=>resolve=done);return {promise,resolve};};
 let config:CoastConfig,credential:string,onInfo:(signal?:AbortSignal)=>Promise<void>=async()=>{},onPresentation:()=>Promise<void>=async()=>{};
 let onIdentity:(signal?:AbortSignal)=>Promise<void>=async()=>{};
-let infos=0,relays=0,scrobbles:string[]=[];
+let infos=0,relays=0,scrobbles:string[]=[],editionSources:PlaybackSource[]=[];
 let restore:()=>void=()=>{};
 beforeAll(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;
@@ -42,7 +42,7 @@ beforeAll(async()=>{
    infos++;await onInfo(options?.signal);
    const audio=itemId==='audio-item';
    const source:PlaybackSource={id:'source',name:'Original',container:audio?'m4a':'mp4',bitrate:1_000_000,durationSeconds:120,directPlay:true,directStream:true,transcoding:true,transcodingUrl:`/${audio?'Audio':'Videos'}/${itemId}/master.m3u8`,raw:{},streams:audio?[{type:'Audio',codec:'aac',index:0}]:[{type:'Video',codec:'h264',index:0,width:1280,height:720},{type:'Audio',codec:'aac',index:1}]};
-   return {sources:[source],playSessionId:crypto.randomUUID()};
+   return {sources:[source,...editionSources],playSessionId:crypto.randomUUID()};
   };
   context.adapter.scrobble=async()=>{scrobbles.push(context.connection.externalUserId!);};
   return context;
@@ -53,7 +53,7 @@ beforeAll(async()=>{
 });
 beforeEach(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;
- onIdentity=async()=>{};onInfo=async()=>{};onPresentation=async()=>{};infos=0;relays=0;scrobbles=[];
+ onIdentity=async()=>{};onInfo=async()=>{};onPresentation=async()=>{};infos=0;relays=0;scrobbles=[];editionSources=[];
  const db=getSql();
  await db`DELETE FROM synced_rooms WHERE host_id=${user}`;
  await db`DELETE FROM playback_sessions WHERE user_id=${user}`;
@@ -184,5 +184,47 @@ run('replaced personal video and music sessions cannot progress, relay, join par
   // Return to A for the second medium without granting old sessions its new generation.
   await getSql()`UPDATE provider_connections SET external_user_id='account-a' WHERE id=${connection}`;
   await getSql()`UPDATE availability SET state='available' WHERE connection_id=${connection}`;
+ }
+});
+
+run('named edition selection retains quality policy and stores the exact selected source for sync',async()=>{
+ const db=getSql();const [original]=await db`SELECT provider_item_id FROM availability WHERE user_id=${user} AND media_id=${movie}`;
+ const source=(id:string,width:number):PlaybackSource=>({id,name:`Director's Cut ${width===1920?'1080p':'720p'}`,container:'mp4',bitrate:width===1920?2_000_000:1_000_000,durationSeconds:120,directPlay:true,directStream:true,transcoding:true,raw:{},streams:[{type:'Video',codec:'h264',index:0,width,height:width===1920?1080:720},{type:'Audio',codec:'aac',index:1}]});
+ editionSources=[source('cut-low',1280),source('cut-high',1920)];
+ try{
+  await db`UPDATE availability SET edition='1080p' WHERE provider_item_id=${original.provider_item_id}`;
+  for(const source of editionSources)await db`INSERT INTO availability(user_id,connection_id,media_id,provider_item_id,source_id,edition,duration_seconds) VALUES(${user},${connection},${movie},${original.provider_item_id},${source.id},${source.name},120)`;
+  const session=await startPlayback(user,{mediaId:movie,browser,editionName:'directors cut'});
+  const [saved]=await db`SELECT source_id,edition FROM playback_sessions WHERE id=${session.id}`;
+  expect(saved.source_id).toBe('cut-high');expect(saved.edition).toBe("Director's Cut 1080p");expect(infos).toBe(1);
+  await expect(startPlayback(user,{mediaId:movie,browser,editionName:'extended edition'})).rejects.toThrow('no longer available');
+ }finally{
+  await db`DELETE FROM availability WHERE provider_item_id=${original.provider_item_id} AND source_id in ('cut-low','cut-high')`;
+  await db`UPDATE availability SET edition=null WHERE provider_item_id=${original.provider_item_id}`;
+ }
+});
+
+run('edition presentation uses only permitted Jellyfin items, source runtime and existing override precedence',async()=>{
+ const db=getSql(),extended=crypto.randomUUID();
+ const [original]=await db`SELECT id FROM provider_items WHERE instance_id=${instance} AND external_id='video-item'`;
+ await db`UPDATE provider_items SET snapshot=${{title:'Theatrical title',overview:'Original synopsis',artwork:{primary:'/theatrical.jpg'},posterPath:'/theatrical.jpg'}}::jsonb WHERE id=${original.id}`;
+ await db`INSERT INTO provider_items(id,instance_id,media_id,external_id,kind,snapshot) VALUES(${extended},${instance},${movie},${'extended-'+extended},'movie',${{title:'Extended title',overview:'Longer synopsis',backdropPath:'/extended.jpg',artwork:{backdrop:'/extended.jpg'},runtimeMinutes:120}}::jsonb)`;
+ await db`INSERT INTO availability(user_id,connection_id,media_id,provider_item_id,source_id,edition,duration_seconds) VALUES(${user},${connection},${movie},${extended},'extended','Extended Edition',12540)`;
+ try{
+  const [theatrical]=await queries.mediaViews(user,{ids:[movie],editionName:'theatrical'});
+  const [cut]=await queries.mediaViews(user,{ids:[movie],editionName:'extended edition'});
+  expect(theatrical).toMatchObject({title:'Theatrical title',overview:'Original synopsis',poster:'/theatrical.jpg',runtimeMinutes:2});
+  expect(cut).toMatchObject({title:'Extended title',overview:'Longer synopsis',backdrop:'/extended.jpg',runtimeMinutes:209});
+  await db`INSERT INTO user_metadata_preferences(user_id,media_id,title,backdrop_path) VALUES(${user},${movie},'My title','/personal.jpg')`;
+  await db`INSERT INTO metadata_overrides(media_id,overview) VALUES(${movie},'Curated synopsis')`;
+  const [personal]=await queries.mediaViews(user,{ids:[movie],editionName:'extended edition'});
+  expect(personal).toMatchObject({title:'My title',overview:'Curated synopsis',backdrop:'/personal.jpg',runtimeMinutes:209});
+  await db`UPDATE availability SET state='unavailable' WHERE provider_item_id=${extended}`;
+  await expect(queries.mediaViews(user,{ids:[movie],editionName:'extended edition'})).rejects.toThrow('This edition is no longer available.');
+ }finally{
+  await db`DELETE FROM user_metadata_preferences WHERE user_id=${user} AND media_id=${movie}`;
+  await db`DELETE FROM metadata_overrides WHERE media_id=${movie}`;
+  await db`DELETE FROM provider_items WHERE id=${extended}`;
+  await db`UPDATE provider_items SET snapshot='{}'::jsonb WHERE id=${original.id}`;
  }
 });

@@ -14,6 +14,9 @@
   --control-height: 36px;
   --control-compact-height: 32px;
   --control-hero-height: 44px;
+  --media-surface-hover-scale: 1.02;
+  --media-surface-edge-width: 1.5px;
+  --media-surface-edge-opacity: 0.5;
   --icon-inline: 16px;
   --icon-control: 20px;
   --icon-primary: 28px;
@@ -336,6 +339,7 @@ form.stack,
 .menu-label { padding: 6px var(--menu-item-inset); color: var(--muted); font-size: var(--text-sm); }
 .menu-divider { height: 1px; margin: 4px calc(-1 * var(--menu-inset)); background: color-mix(in srgb, var(--white) 9%, transparent); }
 .segmented-control { position: relative; isolation: isolate; display: inline-flex; border: 0; border-radius: 999px; padding: 4px; background: color-mix(in srgb, var(--white) 5%, transparent); }
+.media-surface-edge::after {content:'';position:absolute;inset:0;border:var(--media-surface-edge-width) solid var(--white);border-radius:inherit;pointer-events:none;mix-blend-mode:overlay;z-index:0;box-sizing:border-box;opacity:var(--media-surface-edge-opacity);}
 .segmented-control.glass { background: var(--coast-glass-fill); }
 .segmented-control > a, .segmented-control > button {
   position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center;
@@ -755,3 +759,6 @@ form.stack,
 
 .skip-link { position:fixed;top:-60px;left:20px;z-index:10000;padding:12px;border-radius:8px;background:var(--ink);color:var(--canvas); }
 .skip-link:focus { top:10px; }
+
+/* Native modal focus/click isolation also needs a document scroll lock. */
+html:has(dialog.expanding:modal) {overflow:hidden;}

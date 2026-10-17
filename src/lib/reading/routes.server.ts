@@ -1,10 +1,9 @@
 import { getFeatureConfig } from '$lib/server/features';
 import * as v from 'valibot';
 import { error, redirect, type ServerLoadEvent } from '@sveltejs/kit';
-import { readingDetails, readingStoredWorkId } from '$lib/reading/query.server';
+import { readingDetails, readingRemoteDetail } from '$lib/reading/query.server';
 import type { ReadingDetailData } from '$lib/reading/presentation';
 import type { ReadingKind } from '$lib/reading/model';
-import { readingProviderDetails } from '$lib/providers/reading.server';
 import { requireEnabledCategory } from '$lib/server/experimental';
 import { AppError } from '$lib/server/security/errors';
 import { ProviderHttpError } from '$lib/server/security/provider-fetch';
@@ -36,11 +35,9 @@ export function readingDetailLoad(kind: ReadingKind, remote = false) {
       const user = await requireReading(event, remote ? 'reading' : kind);
       const id = remote ? event.params.externalId ?? '' : event.params.id ?? '';
       if (remote) {
-        const storedId = await readingStoredWorkId(kind, id);
-        if (storedId) redirect(303, `/media/${storedId}`);
-        const item = await readingProviderDetails(kind, id);
-        requireEnabledCategory(await getFeatureConfig(user.id),item.kind);
-        return { kind: item.kind, remote, item: { ...item, id: item.externalId }, progress: null, relationships: { favourite: false, watchlist: false, collected: false }, rating: null };
+        const detail=await readingRemoteDetail(user.id,kind,id);
+        if(!detail.remote)redirect(303,`/media/${detail.item.id}`);
+        return detail;
       }
       const detail = await readingDetails(user.id, id);
       if (detail.item.kind !== kind) error(404, 'Reading work not found.');

@@ -10,6 +10,7 @@
 
 export type CreditsOptions = {
     layout?: 'row' | 'grid';
+    url?:URL;
     personId: number;
     title: string;
     scope?: 'all' | 'library' | 'known';
@@ -38,29 +39,29 @@ export function createCreditsSource(getOptions: () => CreditsOptions): ShelfSour
   const error = $derived(resource.error);
   const rolesById = $derived(new Map(result.items.map((item) => [item.id, item.creditRoles])));
   let type = $state(
-      untrack(() => (layout === 'grid' ? (route.url.searchParams.get('type') ?? 'all') : 'all'))
+      untrack(() => (layout === 'grid' ? ((getOptions().url??route.url).searchParams.get('type') ?? 'all') : 'all'))
     ),
     department = $state(
       untrack(() =>
-        layout === 'grid' ? (route.url.searchParams.get('department') ?? 'all') : 'all'
+        layout === 'grid' ? ((getOptions().url??route.url).searchParams.get('department') ?? 'all') : 'all'
       )
     ),
     available = $state(
       untrack(
         () =>
           scope === 'library' ||
-          (layout === 'grid' && route.url.searchParams.get('available') === 'true')
+          (layout === 'grid' && (getOptions().url??route.url).searchParams.get('available') === 'true')
       )
     );
   const cache = new Map<string, Content>();
-  async function request(page = 1, restore = false) {
+  async function request(page = 1, restore = false, append = false) {
     const key = `${personId}:${scope}:${type}:${department}:${available}:${page}`;
     const firstKey = `${personId}:${scope}:${type}:${department}:${available}:1`;
     const path = `people/${personId}/credits?${new URLSearchParams({ scope, type, department, available: String(available), page: String(page) })}`;
     const cached = restore ? cache.get(key) : undefined;
     const response = await resource.load(signal => cached ? Promise.resolve(cached)
       : api<Content>(path, undefined, 'GET', { signal }), {
-      merge: (previous, next) => !cached && page > 1 && layout === 'row'
+      merge: (previous, next) => !cached && page > 1 && (layout === 'row'||append)
         ? { ...next, items: uniqueItems([...previous.items, ...next.items], item => item.id) }
         : next,
     });
@@ -69,7 +70,7 @@ export function createCreditsSource(getOptions: () => CreditsOptions): ShelfSour
       if (cache.size > 8) cache.delete(cache.keys().next().value!);
     }
   }
-  function load(page = 1) { return request(page); }
+  function load(page = 1, append = false) { return request(page,false,append); }
   const ownerKey = $derived(JSON.stringify([route.data.user?.id ?? '', personId, scope]));
   const refreshKey = $derived(contentRevisionKey(route.data, ['tracking', 'social']));
   let previousOwner = untrack(() => ownerKey);

@@ -7,6 +7,7 @@
   import MetadataEditor from '../components/MetadataEditor.svelte';
   import ReadingLaunch from '$lib/reading/ReadingLaunch.svelte';
   import MusicCommands from './MusicCommands.svelte';
+  import {detailHref} from '../pages/detail-rows';
   import GameCommands from './GameCommands.svelte';
   import ReadingCommands from './ReadingCommands.svelte';
   import WorkActions from '../components/WorkActions.svelte';
@@ -44,6 +45,7 @@
   const identity = createMenuResource<MusicItem | null>(() => null, () => workMenuScope([item.id, item.workId, item.connectionId]),
     async signal => (await api<{ item: MusicItem }>(sourcePath, undefined, 'GET', { signal })).item);
   const workId = $derived(identity.data?.workId ?? item.workId);
+  const activityHref=$derived(detailHref(workId?`/media/${workId}`:item.href,{section:'activity',relationship:'consumed'}));
   const reading = $derived(item.kind === 'book' || item.kind === 'comic');
   const music = $derived(item.kind === 'track' || item.kind === 'album');
   const work = createWorkActions(() => workId, () => [item.kind, item.connectionId, item.listContext], () => selectedPlaythrough, () => mutation.busy);
@@ -142,7 +144,7 @@
           {#if game.playthrough.status !== 'dropped'}<Button item icon="close" onclick={() => updateGame('dropped')}>Drop playthrough</Button>{/if}
         {/if}
       </Button>
-      <Button item icon="clock" href={`${item.href}#play-history`}>View history</Button>
+      <Button item icon="clock" href={activityHref}>View activity</Button>
     {:else if reading}
       <Button menu label="Reading" icon="library" panel disabled={busy || work.busy}>
         <Button item icon="clock" onclick={editReading}>Update progress…</Button>
@@ -151,11 +153,11 @@
         {#if progress?.state === 'reading'}<Button item icon="pause" onclick={() => setReading('paused')}>Pause tracking</Button>{:else if progress && ['paused','dropped'].includes(progress.state)}<Button item icon="play" onclick={() => setReading('reading')}>Resume tracking</Button>{/if}
         {#if progress?.state !== 'dropped'}<Button item icon="close" onclick={() => setReading('dropped')}>Drop reading</Button>{/if}
       </Button>
-      <Button item icon="clock" href={`${item.href}#reading-history`}>View history</Button>
+      <Button item icon="clock" href={activityHref}>View activity</Button>
     {:else if music}<Button menu label={item.kind === 'album' ? 'Log album' : 'Log listen'} icon="clock" panel disabled={busy}>
       <Button item icon="check" onclick={() => musicCommands?.log()}>Right now</Button>
       <Button item icon="clock" onclick={() => musicCommands?.showDate()}>Choose date…</Button>
-    </Button><Button item icon="clock" onclick={() => musicCommands?.showHistory()}>View history</Button>{/if}
+    </Button><Button item icon="clock" href={activityHref}>View activity</Button>{/if}
     <WorkActions section="rating" {workId} rating={work.data.rating} onrated={value => work.rate(value)} />
     <div class="menu-divider" role="separator"></div>
     <WorkActions section="relationships" {workId} controls={relationshipControls([

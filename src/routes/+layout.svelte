@@ -14,7 +14,8 @@
   import { installBrowserDiagnostics } from '$lib/ui/diagnostics';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
-  import { onNavigate } from '$app/navigation';
+  import { onNavigate,replaceState } from '$app/navigation';
+  import {mediaDetailLinks} from '$lib/ui/media-navigation';
   import NotificationToasts from '$lib/ui/components/NotificationToasts.svelte';
   import Header from '$lib/ui/components/Header.svelte';
   import PersistentPlayer from '$lib/ui/components/PersistentPlayer.svelte';
@@ -32,9 +33,10 @@
   let StreamsPanel=$state<typeof import('$lib/ui/components/StreamsPanel.svelte').default>();
   let streamsLoading=false;
   $effect(()=>{if(streamsOpen&&!StreamsPanel&&!streamsLoading){streamsLoading=true;void import('$lib/ui/components/StreamsPanel.svelte').then(module=>StreamsPanel=module.default).finally(()=>streamsLoading=false);}});
-  let MediaModal=$state<typeof import('$lib/experiments/MediaModal.svelte').default>();
-  let mediaModalLoading=false;
-  $effect(()=>{if(data.user&&data.experiments.mediaModal&&page.state.mediaModalId&&!MediaModal&&!mediaModalLoading){mediaModalLoading=true;void import('$lib/experiments/MediaModal.svelte').then(module=>MediaModal=module.default).finally(()=>mediaModalLoading=false);}});
+  let MediaDetailPanel=$state<typeof import('$lib/media/DetailPanel.svelte').default>();
+  let mediaDetailLoading=false;
+  $effect(()=>{if(!data.user&&page.state.mediaDetailHref)replaceState(page.url,{...page.state,mediaDetailHref:undefined,mediaDetailDepth:undefined});});
+  $effect(()=>{if(data.user&&page.state.mediaDetailHref&&!MediaDetailPanel&&!mediaDetailLoading){mediaDetailLoading=true;void import('$lib/media/DetailPanel.svelte').then(module=>MediaDetailPanel=module.default).finally(()=>mediaDetailLoading=false);}});
   let notificationLoading=false,friendsLoading=false;
   $effect(()=>{if(notificationOpen&&!NotificationInbox&&!notificationLoading){notificationLoading=true;void import('$lib/ui/components/NotificationInbox.svelte').then(module=>NotificationInbox=module.default).finally(()=>notificationLoading=false);}});
   $effect(()=>{if(friendsOpen&&!FriendsPanel&&!friendsLoading){friendsLoading=true;void import('$lib/ui/components/FriendsPanel.svelte').then(module=>FriendsPanel=module.default).finally(()=>friendsLoading=false);}});
@@ -120,6 +122,7 @@
   /></svelte:head
 >
 <div
+  use:mediaDetailLinks
   data-coast-glass={data.user?.settings?.liquidGlass === false ? 'off' : 'on'}
   data-width={data.user?.settings?.fullWidth === false ? 'constrained' : 'full'}
   class:player-active={!!player.session}
@@ -127,7 +130,7 @@
   class:watching
 >
   {#if data.user&&Reader}<Reader />{/if}
-  {#if data.user&&data.experiments.mediaModal&&MediaModal}<MediaModal />{/if}<PersistentPlayer /><MediaHero mode="player" />
+  {#if data.user&&MediaDetailPanel}<MediaDetailPanel />{/if}<PersistentPlayer /><MediaHero mode="player" />
   {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
   {#if (data.user || data.publicRead || data.publicProfiles) && page.url.pathname !== '/onboarding' && page.url.pathname !== '/share'}<Header
       user={data.user}
