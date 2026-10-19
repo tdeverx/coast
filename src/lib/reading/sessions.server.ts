@@ -2,7 +2,7 @@ import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransac
 import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
-import { readingSessions, readingProgress, readingWorks, providerConnections, providerInstances, workEditions, users } from '$lib/server/db/schema';
+import { readingSessions, readingProgress, readingWorks, providerConnections, providerInstances, workEditions, users, availability, providerItems } from '$lib/server/db/schema';
 import { requireEnabledCategory } from '$lib/server/experimental';
 import { AppError } from '$lib/server/security/errors';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
@@ -11,7 +11,7 @@ import { jellyfinItemKey } from '$lib/providers/jellyfin/paging';
 import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
 import { instanceFetchConfig } from '$lib/providers/instances.server';
 import { decryptCredential } from '$lib/server/security/credentials';
-import { secureProviderFetch } from '$lib/server/security/provider-fetch';
+import { ProviderHttpError, secureProviderFetch } from '$lib/server/security/provider-fetch';
 import { observeReadingFile } from '$lib/catalogue/reading-files.server';
 import { updateReading } from '$lib/core/reading/service.server';
 import { readingFormats, readingFileLabel, readingLocationSchema, readingPrepareSchema, type ReadingFormat, type ReadingSessionView } from './model';
@@ -49,18 +49,51 @@ export function sourceEdition(instanceIdentity:string,book:Awaited<ReturnType<ty
  // Scope versions to the actual server and item. Titles, editions and page counts are not file identities.
  return new Bun.CryptoHasher('sha256').update(JSON.stringify([instanceIdentity,book.Id.replaceAll('-','').toLowerCase(),book.Etag,book.DateModified,book.Size,book.Path])).digest('hex');
 }
+/** A normal Read uses a known available link, preferring the last opened edition.
+ * Selection grants no access: preparation still verifies the live source. */
+async function defaultReadingSources(userId:string,workId:string) {
+ const sources=await getDb().select({connectionId:providerConnections.id,externalId:workEditions.externalId,availabilityId:availability.id,verifiedAt:availability.verifiedAt,generation:providerConnections.accountGeneration})
+  .from(workEditions).innerJoin(providerConnections,and(eq(providerConnections.instanceId,workEditions.instanceId),eq(providerConnections.userId,userId)))
+  .innerJoin(providerInstances,eq(providerInstances.id,workEditions.instanceId))
+  .innerJoin(providerItems,and(eq(providerItems.instanceId,workEditions.instanceId),eq(providerItems.mediaId,workId),sql`replace(lower(${providerItems.externalId}),'-','')=replace(lower(${workEditions.externalId}),'-','')`))
+  .innerJoin(availability,and(eq(availability.providerItemId,providerItems.id),eq(availability.connectionId,providerConnections.id),eq(availability.userId,userId),eq(availability.mediaId,workId),eq(availability.state,'available')))
+  .where(and(eq(workEditions.workId,workId),eq(providerConnections.status,'connected'),eq(providerInstances.provider,'jellyfin'),eq(providerInstances.enabled,true),
+   inArray(workEditions.format,readingFormats),sql`coalesce(${workEditions.metadata}->>'identityConflict','false')<>'true'`))
+  .orderBy(sql`(${workEditions.metadata}->>'version' = (select s.edition from reading_sessions s where s.user_id=${userId}::uuid and s.work_id=${workId}::uuid order by s.updated_at desc,s.id desc limit 1)) desc nulls last`,desc(availability.verifiedAt),providerInstances.name,workEditions.id).limit(20);
+ return sources;
+}
 export async function prepareReading(userId:string,workId:string,raw:unknown,signal?:AbortSignal):Promise<ReadingSessionView> {
  signal?.throwIfAborted();
- const item=await work(userId,workId),input=v.parse(readingPrepareSchema,raw),db=getDb();
- let format:ReadingFormat,edition:string,connectionId:string|null=null,accountGeneration:string|null=null,externalId:string|null=null;
+ const item=await work(userId,workId),parsed=v.parse(readingPrepareSchema,raw),db=getDb();
+ const input=parsed;
+ signal?.throwIfAborted();
+ let format!:ReadingFormat,edition!:string,connectionId:string|null=null,accountGeneration:string|null=null,externalId:string|null=null;
  if(input.source==='local'){format=input.format;edition=input.edition;}
  else {
-  const {connection,instance,adapter}=await getJellyfin(userId,input.connectionId);
-  const book=await adapter.readingItem(connection.externalUserId!,input.externalId,signal);
-  signal?.throwIfAborted();
-  const supported=bookFormat(book);if(!supported)throw new AppError(409,`This file format is not supported. Choose ${readingFileLabel}.`);
-  format=supported;edition=sourceEdition(instance.serverIdentity??instance.id,book);connectionId=connection.id;accountGeneration=connection.accountGeneration;externalId=jellyfinItemKey(book.Id);
-  await observeReadingFile({userId,workId,connectionId:connection.id,instanceId:instance.id,generation:connection.accountGeneration,book,edition});
+  const sources=input.source==='linked'?await defaultReadingSources(userId,workId):[input];
+  let selected=false;
+  for(const source of sources){
+   signal?.throwIfAborted();
+   const {connection,instance,adapter}=await getJellyfin(userId,source.connectionId);
+   let book;
+   try{book=await adapter.readingItem(connection.externalUserId!,source.externalId,signal);}
+   catch(cause){
+    signal?.throwIfAborted();
+    if(input.source!=='linked'||!(cause instanceof ProviderHttpError)||cause.status!==404)throw cause;
+    // An exact missing file must not keep advertising Read. Fence the negative
+    // observation against reconnects and newer positive observations.
+    if('availabilityId' in source)await db.update(availability).set({state:'unknown',verifiedAt:new Date()}).where(and(
+     eq(availability.id,source.availabilityId),eq(availability.userId,userId),eq(availability.verifiedAt,source.verifiedAt),
+     sql`exists(select 1 from provider_connections c where c.id=${source.connectionId}::uuid and c.user_id=${userId}::uuid and c.account_generation=${source.generation}::uuid and c.status='connected')`));
+    continue;
+   }
+   signal?.throwIfAborted();
+   const supported=bookFormat(book);if(!supported)throw new AppError(409,`This file format is not supported. Choose ${readingFileLabel}.`);
+   format=supported;edition=sourceEdition(instance.serverIdentity??instance.id,book);connectionId=connection.id;accountGeneration=connection.accountGeneration;externalId=jellyfinItemKey(book.Id);
+   await observeReadingFile({userId,workId,connectionId:connection.id,instanceId:instance.id,generation:connection.accountGeneration,book,edition});
+   selected=true;break;
+  }
+  if(!selected)throw new AppError(409,'No readable file is available. Refresh your library and try again.');
  }
  const session=await db.transaction(async tx=>{
   // Reread resets and bookmark copies share one user lock, after provider I/O has finished.
@@ -82,7 +115,7 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
   return prepared;
  });
  if(signal?.aborted){await db.update(readingSessions).set({closedAt:new Date()}).where(eq(readingSessions.id,session.id));signal.throwIfAborted();}
- return {id:session.id,workId,kind:item.kind,title:item.title,format,edition,location:session.location,source:input.source,url:input.source==='jellyfin'?`/api/v1/reading/sessions/${session.id}/file`:null};
+ return {id:session.id,workId,kind:item.kind,title:item.title,format,edition,location:session.location,source:input.source==='local'?'local':'jellyfin',url:input.source!=='local'?`/api/v1/reading/sessions/${session.id}/file`:null};
 }
 /** One fresh source context per operation; never retain an access decision between requests. */
 async function readingSessionContext(userId:string,id:string) {
@@ -124,12 +157,27 @@ export async function streamReading(userId:string,id:string,request:Request) {
  const credentials=v.parse(v.object({accessToken:v.string()}),JSON.parse(await decryptCredential(connection.credentials!)));
  const headers=new Headers({Authorization:jellyfinAuthorization(userId,credentials.accessToken)});
  const range=request.headers.get('range');if(range){if(!/^bytes=\d*-\d*$/.test(range))throw new AppError(400,'Choose one byte range.');headers.set('Range',range);}
- const response=await secureProviderFetch({...await instanceFetchConfig(instance),timeoutMs:20000},`/Items/${encodeURIComponent(session.externalId)}/Download`,{method:request.method==='HEAD'?'HEAD':'GET',headers,signal:request.signal},{stream:true,maxBytes:512*1024**2});
+ const config={...await instanceFetchConfig(instance),timeoutMs:20000},path=`/Items/${encodeURIComponent(session.externalId)}/Download`;
+ let response=await secureProviderFetch(config,path,{method:request.method==='HEAD'?'HEAD':'GET',headers,signal:request.signal},{stream:true,maxBytes:512*1024**2});
+ let headSize:string|null=null;
+ if(request.method==='HEAD'&&[405,501].includes(response.status)){
+  await response.body?.cancel();
+  // Jellyfin's download endpoint may expose GET only. Probe one byte, then
+  // cancel its body; do not turn a metadata request into a full file download.
+  if(!range)headers.set('Range','bytes=0-0');
+  response=await secureProviderFetch(config,path,{method:'GET',headers,signal:request.signal},{stream:true,maxBytes:512*1024**2});
+  if(!range&&response.status===206){
+   headSize=/^bytes 0-0\/(\d+)$/.exec(response.headers.get('content-range')??'')?.[1]??null;
+   if(!headSize){await response.body?.cancel();throw new AppError(502,'Reading file size unavailable.');}
+  }
+ }
  if(!response.ok&&response.status!==206){await response.body?.cancel();return new Response('Reading file unavailable.',{status:response.status===416?416:502});}
  const outgoing=new Headers({'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Type':session.format==='pdf'?'application/pdf':'application/octet-stream','Content-Security-Policy':"default-src 'none'; sandbox"});
  for(const key of ['content-length','content-range','accept-ranges','etag','last-modified']){const value=response.headers.get(key);if(value)outgoing.set(key,value);}
+ if(headSize){outgoing.set('content-length',headSize);outgoing.delete('content-range');}
+ if(request.method==='HEAD'&&!range&&response.status===200)outgoing.delete('content-range');
  if(request.method==='HEAD')await response.body?.cancel();
- return new Response(request.method==='HEAD'?null:response.body,{status:response.status,headers:outgoing});
+ return new Response(request.method==='HEAD'?null:response.body,{status:headSize?200:response.status,headers:outgoing});
 }
 /** Only previously linked files on the viewer's connected servers are considered; no title matching. */
 export async function matchingReading(userId:string,workId:string,edition:string) {

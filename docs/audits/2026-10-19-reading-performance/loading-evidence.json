@@ -1,0 +1,238 @@
+{
+  "baseline": "b90f4dd96ebcdd76f68e6c7ca770b71c824c07d3",
+  "boundary": "Later requested loading/preference/activity integration epoch; no delivery redesign or new performance claim. Earlier evidence.json remains historical.",
+  "normalDev": {
+    "origin": "Normal development LAN host, port 5173",
+    "status": "passed",
+    "checks": [
+      "preference default, false and true survive reload",
+      "actual byte progress visible on desktop and mobile",
+      "indicator removed at preparation; backdrop blurred",
+      "actual open reader appears in own user presence",
+      "actual open reader appears in admin stream snapshot",
+      "admin panel renders Reading and actual title",
+      "minimize/resume/close remove feedback and preserve progress/history"
+    ],
+    "downloadSample": {
+      "value": 97523,
+      "max": 73339323,
+      "text": "0.1 of 73.3 MB \u00b7 0%"
+    },
+    "knownArtworkCorsMessages": 2,
+    "controlledDownloadBytesPerSecond": 5000000,
+    "viewports": [
+      [
+        1280,
+        800
+      ],
+      [
+        390,
+        844
+      ]
+    ]
+  },
+  "nativeIntegration": {
+    "boundary": "Owned disposable restore of actual catalogue/admin/provider access. Controlled preference/state/party conditions; no fabricated users/media/provider replies. No worker or external notification delivery.",
+    "cases": [
+      {
+        "name": "preference rejects invalid type",
+        "status": "passed"
+      },
+      {
+        "name": "preference persists false and reset inherits enabled default",
+        "status": "passed"
+      },
+      {
+        "name": "actual reading session appears in own user presence",
+        "status": "passed"
+      },
+      {
+        "name": "actual reading session appears in bounded admin panel",
+        "status": "passed"
+      },
+      {
+        "name": "admin panel rejects anonymous viewer",
+        "status": "passed"
+      },
+      {
+        "name": "reading state appears in shared Activity and owner journal",
+        "status": "passed"
+      },
+      {
+        "name": "ordinary page movement does not add Activity history",
+        "status": "passed"
+      },
+      {
+        "name": "stale heartbeat leaves live admin panel",
+        "status": "passed"
+      },
+      {
+        "name": "stale party revision rejected",
+        "status": "passed"
+      },
+      {
+        "name": "reading party rejects playback time seek",
+        "status": "passed"
+      },
+      {
+        "name": "actual reading party host accepts canonical page location",
+        "status": "passed"
+      },
+      {
+        "name": "guest must supply their own reading session",
+        "status": "passed"
+      },
+      {
+        "name": "host session cannot grant guest file access",
+        "status": "passed"
+      },
+      {
+        "name": "follower page commands rejected",
+        "status": "passed"
+      },
+      {
+        "name": "actual independently authorized guest joins matching edition and leaves",
+        "status": "passed"
+      },
+      {
+        "name": "public playback sharing refuses comic sources",
+        "status": "passed"
+      },
+      {
+        "name": "admin reading cursor preserves sub-millisecond sessions without gaps or duplicates",
+        "status": "passed"
+      },
+      {
+        "name": "closed reader leaves Now and appears in History",
+        "status": "passed"
+      },
+      {
+        "name": "closed source withdraws party participation",
+        "status": "passed"
+      }
+    ],
+    "actualGuestCandidates": 1,
+    "status": "passed"
+  },
+  "actualRasterPolicies": [
+    {
+      "sanitizeOddPages": true,
+      "inputSha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+      "samples": [
+        {
+          "round": -1,
+          "variant": "current",
+          "faces": 24,
+          "outputSha256": "a28aac6ded79025245e3999898069e38b209a7680aafabccea6cb599fb88aeda"
+        },
+        {
+          "round": -1,
+          "variant": "baseline",
+          "faces": 24,
+          "outputSha256": "a28aac6ded79025245e3999898069e38b209a7680aafabccea6cb599fb88aeda"
+        },
+        {
+          "round": 0,
+          "variant": "baseline",
+          "faces": 24,
+          "outputSha256": "a28aac6ded79025245e3999898069e38b209a7680aafabccea6cb599fb88aeda"
+        },
+        {
+          "round": 0,
+          "variant": "current",
+          "faces": 24,
+          "outputSha256": "a28aac6ded79025245e3999898069e38b209a7680aafabccea6cb599fb88aeda"
+        }
+      ],
+      "assertion": "Full original pixels/locations match"
+    },
+    {
+      "sanitizeOddPages": false,
+      "inputSha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+      "samples": [
+        {
+          "round": -1,
+          "variant": "current",
+          "faces": 26,
+          "outputSha256": "be6305f0de63428153fe88b78f06d2cf1b5da7e8eefde8b51e673291f8b8a840"
+        },
+        {
+          "round": -1,
+          "variant": "baseline",
+          "faces": 24,
+          "outputSha256": "a28aac6ded79025245e3999898069e38b209a7680aafabccea6cb599fb88aeda"
+        },
+        {
+          "round": 0,
+          "variant": "baseline",
+          "faces": 24,
+          "outputSha256": "a28aac6ded79025245e3999898069e38b209a7680aafabccea6cb599fb88aeda"
+        },
+        {
+          "round": 0,
+          "variant": "current",
+          "faces": 26,
+          "outputSha256": "be6305f0de63428153fe88b78f06d2cf1b5da7e8eefde8b51e673291f8b8a840"
+        }
+      ],
+      "assertion": "Full old printed prefix, restored actual tail/back cover and truthful complete locations"
+    }
+  ],
+  "gates": {
+    "appPass": 862,
+    "guardedSkips": 717,
+    "failures": 0,
+    "labPass": 123,
+    "typeErrors": 0,
+    "typeWarnings": 0,
+    "styleModules": 35
+  },
+  "sourceSha256": {
+    "scripts/fixtures/reading-renderer.ts": "2ba88415867d7843dd09631c81a73b5b51b37244bf31a052d8fe55508f63f550",
+    "scripts/reading-integration-native.ts": "d0502655e19b7ad45d38e96b9d7cf9181c38571ecdc0d88929f49d0d4a478338",
+    "scripts/reading-performance-native.ts": "61710b6e00c8910d8bf8a7c78dbc3ba794cb44e3ee12a82cd6ccc49b72c16807",
+    "scripts/reading-performance.ts": "718b12df3d735e776ed0fd2fb564721c6c24785d0ef31c1b8982213730681c53",
+    "scripts/source-style.ts": "c3005c1175b39c3728aa4705828b74ee81ab495b69b2c949457328c8def596aa",
+    "src/lib/application/streams.server.ts": "b301b5f66e782cc08fd0bed62e124004901162b2702dc4033e9728125533a3ab",
+    "src/lib/reading/Details.svelte": "b7c1796b689ac530da8e3ee2fcaf2101a43cf3fefb9640ba8e649abfd9c11438",
+    "src/lib/reading/Reader.svelte": "63d9d4145bd0fec8622476556cf21193fe9677549bf4adc8b700c651dc5a649f",
+    "src/lib/reading/ReadingLaunch.svelte": "4cc92bd4ef9ef3ad3b003ae589cb0d94408aaa6b10927c5d74ee359d7994e0d5",
+    "src/lib/reading/client.svelte.ts": "019863cffca11bdae5b0b77252d725eb9d23237edf8f6275b99fd877aff8e570",
+    "src/lib/reading/model.ts": "b4cf9746b33290206a673442215c0721bf761d350777bf5dabd4da8f9d8c4683",
+    "src/lib/reading/reader/archive.ts": "f6874f378e9db8a5ae305214dcbb5d355fb8007319f4cac06ce27b12795bdec7",
+    "src/lib/reading/reader/comic-archive.ts": "39a8293c89a2ef32434a1d886e5a92a24f5cbcb0fbdc52020bca23005950d032",
+    "src/lib/reading/reader/comic-source.ts": "14d62322d7a0dd8cda4594340a3762ef25ef5b5d2374010cb779c58943dc9ca5",
+    "src/lib/reading/reader/engine.ts": "76da0b7fc4e46354243974a62788d3a7ba018046947bc95719422322b351df61",
+    "src/lib/reading/reader/epub.ts": "f71901da53b1f19b6b3c11fecb9bc1c661654534f1e647022a52c4f3b01a20e2",
+    "src/lib/reading/reader/load.ts": "ac6281828fdb4b2ce6968424489886a6c7927b0b37e888c958b3304013e2f91d",
+    "src/lib/reading/reader/physical-image.ts": "7d0cfb4ad3ff0c4b9bb81e0208431c90bebfafecc7622614e0ccef255894929a",
+    "src/lib/reading/reader/physical-pages.ts": "b31661b4c97a6a745207c3ee797db48e652a321e077116e7a69c6c1115513bef",
+    "src/lib/reading/reader/physical-pdf.ts": "710cff43a477d950c2b155d9fcce7baaf6b75b9f1ddbab4459c07dea163aa67a",
+    "src/lib/reading/reader/physical-reader.ts": "e78a3ad89395d9b3a4abd38e4f3c3e995b33f03b8b627ecb9363159ba10374ff",
+    "src/lib/reading/reader/physical/page-layout.ts": "4d426a87d6a13dec5b496ac1af9cb6a6134538b679ba1873c1e5eb235193dbb3",
+    "src/lib/reading/reader/physical/renderer.ts": "117c36d16e7852e42a1c9e014e5eb9d7236bb3f8a62929c8b662cbc13e5e7675",
+    "src/lib/reading/sessions.server.ts": "9e21de479f5278ac32a9fb7e556fb16a01ec8414126453b70f372d2f77095cc4",
+    "src/lib/reading/streams.server.ts": "dcf4587ea7d72710c38ffc0b9867be93821d464f390c40d4de20f96956ae32a9",
+    "src/lib/server/auth/index.ts": "12e5480e5165adccdc7c08c213037e8c3224b7f7eea7910bb002baad893b2c20",
+    "src/lib/server/db/schema.ts": "499505d3db306a79bf372633e197e2301b54558d52cc0c733d1475c03694dcd8",
+    "src/lib/settings/sections.ts": "f1b92a95ca2dadc93d84ce538f69ce473a29baabd569af0fa9cf8dc38a13ae12",
+    "src/lib/ui/component-manifest.json": "1219fbae2353f61e6dee4967aed63f8f8a47ce243403ee688e2ec1f2f357d815",
+    "src/lib/ui/components/OperationProgress.svelte": "bb3997e3ee56570b7d6b4f318fe605bd1cc1fdcaffc3a9e9be3e9928886cc63b",
+    "src/lib/ui/components/StreamsPanel.svelte": "4d318a05dfd73dad5020376c15ad1cfbd307189bd47983fbf5bf24bb2d8e8b2b",
+    "src/lib/ui/work-menu/CatalogueActions.svelte": "8064a146d2cf0c0d9ec3aa4f55b8ff5d735e5a1163632b30d7103a46403c15d5",
+    "src/routes/planning/+page.svelte": "ed8e2be683a15ea19b2641149a90e2ba09aca5e545b549875931e11d30d60907",
+    "src/routes/settings/[[section]]/+page.server.ts": "0f9fec78d10840452d42d72d9413c98a1d35c28d438aaffb7fb3daf1fd48a711",
+    "src/routes/settings/[[section]]/+page.svelte": "91c3b92877115d5a677f8570dcc21a72618d2e368a508f5f3597bc5b771b2435",
+    "src/routes/ui-preview/CatalogueExamples.svelte": "f4b3054c07462e2661bbe5105b053de44edff39b53c4b285e10297f3a061b88d",
+    "src/routes/ui-preview/prop-manifest.json": "e379e66651ea1938b0889e4b5451a2662f6202105a0bfba1cc824e15d2a8d533",
+    "src/routes/ui-preview/reference.ts": "c9511141e5b2784d89507b634eb001522e5047cf0c0f2aedfad607b2f59fd322",
+    "tests/fixtures/reader-lifecycle.ts": "89a459585e4030ee6e640fba38f59751ba3df29db22622cb5a5652c3ef5a47c5",
+    "tests/fixtures/reading-request-context.ts": "cc9d9b8e698c7ed58d1eaed87720264aea2207c6065745fc2e91f800b647ef2e",
+    "tests/media-lifecycle-client.test.ts": "9fbb7868f4300bb69904beefdcd7a1576ca8442b12ee9eed7f7492b862ebdcea",
+    "tests/reading-comic-source.test.ts": "b0dd0353406fe96c06790f21a81efc8c78803f978401b17455bce1a9d003910e",
+    "tests/reading-navigation-lifecycle.test.ts": "ed6c1079aec14980510fced1ac7dec7877a6556e9657239028b6603f28f403f6",
+    "tests/reading-physical.test.ts": "8d9bc6c4b68a7384fea36381f290edad2468056cc07bde3d54ecdeefed489948",
+    "tests/reading-request-context.test.ts": "eec49f7abe74e0ebf76edb3158f7d47716abb9cfdb353a6ac720b12d8f84f29c",
+    "tests/settings-db.test.ts": "2807c0e7468fd222ab690aeada6ebc577c2ae650366d3a001d03fd7691d69d3a"
+  }
+}

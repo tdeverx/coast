@@ -1,3 +1,8 @@
+export type ReaderProgress = {
+  phase: 'download' | 'prepare' | 'inspect' | 'render';
+  loaded?: number;
+  total?: number;
+};
 /** Stop awaiting uncancellable decoder work as soon as this reader is closed. */
 export async function readerLoad<T>(pending: Promise<T>, signal: AbortSignal): Promise<T> {
   let abort: () => void;

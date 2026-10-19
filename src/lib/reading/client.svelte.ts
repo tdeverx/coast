@@ -25,20 +25,20 @@ export function publishReading(roomId:string,location:ReadingLocation){
 }
 async function retireSession(session:ReadingSessionView){await api(`reading/sessions/${session.id}/close`,{}).catch(()=>{});}
 function install(session:ReadingSessionView,file:File|null){reader.session=session;reader.file=file;reader.location=session.location;reader.visible=true;reader.unsaved=false;reader.error='';}
-export async function openReading(workId:string,input:{file:File}|{connectionId:string;externalId:string},signal?:AbortSignal){
+export async function openReading(workId:string,input?:{file:File}|{connectionId:string;externalId:string},signal?:AbortSignal){
  cancelOpening();const epoch=generation,abort=new AbortController();opening=abort;reader.loading=true;if(!reader.unsaved)reader.error='';
  const current=()=>epoch===generation&&!abort.signal.aborted;
  const cancel=()=>abort.abort();signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)abort.abort();
  let prepared:ReadingSessionView|undefined,installed=false;
  try{
   let body:ReadingPrepareInput;
-  if('file' in input){
+  if(input&&'file' in input){
    const format=readingFormat(input.file.name);if(!format)throw new Error(`Choose ${readingFileLabel}.`);
    if(input.file.size>128*1024**2)throw new Error('Local reading files must be smaller than 128 MB.');
    const {readingFileIdentity}=await import('./reader/file-identity');
    if(!current())return;
    body={source:'local',format,edition:await readingFileIdentity(input.file,abort.signal)};
-  }else body={source:'jellyfin',connectionId:input.connectionId,externalId:input.externalId};
+  }else body=input?{source:'jellyfin',connectionId:input.connectionId,externalId:input.externalId}:{source:'linked'};
   if(!current())return;
   const session=prepared=await api<ReadingSessionView>(`reading/${workId}/session`,body,'POST',{signal:abort.signal});
   if(!current())return;
@@ -54,7 +54,7 @@ export async function openReading(workId:string,input:{file:File}|{connectionId:
   if(!current())return;
   if(reader.session)await closeReading(false);
   if(!current())return;
-  install(session,'file' in input?input.file:null);installed=true;
+  install(session,input&&'file' in input?input.file:null);installed=true;
  }catch(cause){if(current()){reader.error=message(cause);throw cause;}}
  finally{signal?.removeEventListener('abort',cancel);if(prepared&&!installed)await retireSession(prepared);if(epoch===generation&&opening===abort){opening=null;reader.loading=false;}}
 }

@@ -11,6 +11,7 @@
  import {useClock} from '$lib/ui/clock.svelte';
  import {activityDateLabel} from '$lib/social/model';
  import {playbackTime} from '$lib/playback/time';
+ import {readingLocationLabel} from '$lib/reading/model';
  import type {StreamsSnapshot} from '$lib/application/streams.server';
  let {open=$bindable(false),onclose,initialView='now'}:{open:boolean;onclose?:()=>void;initialView?:'now'|'history'}=$props();
  const {api,preview,feedback:delivery}=useClient();
@@ -37,12 +38,12 @@
 
   {#if !resource.data.streams.length&&resource.busy}<div class="skeleton loading" role="status" aria-label="Loading server streams"></div><div class="skeleton loading" aria-hidden="true"></div>{/if}
   {#each resource.data.streams as stream (stream.id)}
-   <MediaCard item={{...stream.card,captionTitle:stream.title,captionActor:stream.actor,captionActivity:undefined,captionSubtitle:[view==='history'?'Ended':stream.paused?'Paused':'Playing',stream.episode].filter(Boolean).join(' · ')}} shape="fanart" artworkStyle="thumb" wrapActivity showPrimaryAction={false} activityProgress={stream.progress}>
+   <MediaCard item={{...stream.card,captionTitle:stream.title,captionActor:stream.actor,captionActivity:undefined,captionSubtitle:[view==='history'?'Ended':stream.mediaType==='Book'?'Reading':stream.paused?'Paused':'Playing',stream.episode].filter(Boolean).join(' · ')}} shape="fanart" artworkStyle="thumb" wrapActivity showPrimaryAction={false} activityProgress={stream.progress}>
     {#snippet activityTrailing()}{#if view==='history'}<time datetime={stream.lastSeenAt} title={`Last observed ${new Date(stream.lastSeenAt).toLocaleString()}; first observed ${new Date(stream.firstSeenAt).toLocaleString()}`}>{activityDateLabel(stream.lastSeenAt,clock.now)}</time>{/if}{/snippet}
     {#snippet body()}<p>{[stream.server,stream.client,stream.device,stream.method].filter(Boolean).join(' · ')}</p>
       {#if stream.sharing}<p>{[`Shared by ${stream.sharing.creator}`,`${stream.sharing.estimated?'About ':''}${stream.sharing.viewers} ${stream.sharing.viewers===1?'viewer':'viewers'}`,stream.sharing.bitrateMbps?`${stream.sharing.bitrateMbps} Mbps target`:null].filter(Boolean).join(' · ')}</p>{/if}
     {/snippet}
-    {#snippet footer()}<span>{`${playbackTime(stream.position)}${stream.duration?` / ${playbackTime(stream.duration)}`:''}`}</span>{/snippet}
+    {#snippet footer()}<span>{stream.mediaType==='Book'?readingLocationLabel(stream.reading??null):`${playbackTime(stream.position)}${stream.duration?` / ${playbackTime(stream.duration)}`:''}`}</span>{/snippet}
    </MediaCard>
   {/each}
   {#if resource.ready&&!resource.busy&&!resource.data.streams.length&&!resource.data.issues.length}<div class="full"><EmptyState title={view==='history'?'No recorded sessions':'No active streams'} description={view==='history'?'Sessions appear here after a successful scan confirms they have ended.':'No playback was found in the last server scan.'} icon="play"/></div>{/if}

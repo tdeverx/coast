@@ -340,6 +340,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
         liquidGlass: v.boolean(),
         originalTitles: v.boolean(),
         monochromeMissing: v.boolean(),
+        sanitizeOddReadingPages: v.boolean(),
         region: v.pipe(v.string(), v.regex(/^[A-Z]{2}$/)),
         theme: v.optional(v.picklist(['dark', 'light', 'system'])),
         notificationLevel: v.optional(v.picklist(['silent', 'normal', 'persistent'])),
@@ -388,7 +389,7 @@ export async function updateUserSettings(actor: SessionUser | null, input: unkno
 
 export async function resetUserSettings(actor: SessionUser | null) {
   const user = requireUser(actor);
-  const preferences = ['syncConflictWinner','collection','listenThreshold','fullWidth','liquidGlass','originalTitles','monochromeMissing','region','theme','notificationLevel','notificationsSilenced','subtitleLanguages','subtitlesAlways','subtitlePrompt'];
+  const preferences = ['syncConflictWinner','collection','listenThreshold','fullWidth','liquidGlass','originalTitles','monochromeMissing','sanitizeOddReadingPages','region','theme','notificationLevel','notificationsSilenced','subtitleLanguages','subtitlesAlways','subtitlePrompt'];
   // Profile, privacy choices and administrator-owned limits/grants are not personal defaults.
   await getSql()`UPDATE users SET settings = settings - ${getSql().array(preferences,'TEXT')}::text[] WHERE id = ${user.id}`;
 }

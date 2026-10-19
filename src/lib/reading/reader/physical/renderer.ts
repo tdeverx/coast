@@ -53,6 +53,38 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   const [coverCanvas, lastCanvas, frontInsideCanvas, backInsideCanvas] = await Promise.all([0, count - 1, Math.min(1, count - 1), Math.max(0, count - 2)].map(getPage));
   // Validate GPU setup before allocating geometry, materials or textures.
   const webgl = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
+  const cleanups: (() => void)[] = [];
+  function dispose() {
+    if (disposed)
+      return;
+    disposed = true;
+    for (const cleanup of cleanups.reverse())
+      cleanup();
+    cleanups.length = 0;
+  }
+  // Register construction ownership before allocating the rest of the scene.
+  // The same lifetime handles a rejected factory and an ordinary close.
+  cleanups.push(() => webgl.forceContextLoss(), () => {
+    webgl.dispose();
+    webgl.domElement.remove();
+  }, () => {
+    clearTimeout(clickTimer);
+    cancelAnimationFrame(frame);
+  }, () => {
+    const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
+    scene.traverse(object => {
+      const mesh = object as THREE.Mesh;
+      if (mesh.geometry)
+        geometries.add(mesh.geometry);
+      if (mesh.material)
+        (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach(material => materials.add(material));
+    });
+    geometries.forEach(geometry => geometry.dispose());
+    materials.forEach(material => material.dispose());
+  });
+  const events = new AbortController();
+  cleanups.push(() => events.abort());
+  try {
   const height = 4.25, width = height * coverCanvas.width / coverCanvas.height;
   let modelKind: BindingKind = options.modelKind === 'book' ? 'book' : 'comic';
   let thicknessPercent = modelKind === 'comic' ? comicThicknessPercent(count) : (options.thickness ?? .6);
@@ -66,6 +98,11 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   const weightMultipliers = [...defaultWeightMultipliers];
   const cascade = new PageCascade(count);
   let cascadeFrame = 0, cascadeVersion = 0;
+  cleanups.push(() => {
+    ++cascadeVersion;
+    cancelAnimationFrame(cascadeFrame);
+    cascade.clear();
+  });
   let cascadeCamera: {
     from: CameraPose;
     start: number;
@@ -78,11 +115,11 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     canvas: HTMLCanvasElement;
     render(): void;
     resize(w: number, h: number): void;
-    dispose(): void;
   };
   let gesture: ReturnType<typeof dragTurns>;
   let automaticGrab: PageGrab | undefined;
   const textures = new Map<number, THREE.Texture>(), textureLoads = new Map<number, Promise<THREE.Texture>>();
+  cleanups.push(() => textures.forEach(texture => texture.dispose()));
   function texture(canvas: HTMLCanvasElement) {
     const t = new THREE.CanvasTexture(canvas);
     t.colorSpace = THREE.SRGBColorSpace;
@@ -90,6 +127,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     return t;
   }
   const emptyTexture = texture(paper);
+  cleanups.push(() => emptyTexture.dispose());
   async function pageTexture(i: number): Promise<THREE.Texture> {
     if (i < 0 || i >= count)
       return emptyTexture;
@@ -124,6 +162,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     edge.fillRect(0, y, 16, 1);
   }
   const edges = texture(edgeCanvas);
+  cleanups.push(() => edges.dispose());
   edges.wrapS = edges.wrapT = THREE.RepeatWrapping;
   const material = (map: THREE.Texture) => new THREE.MeshStandardMaterial({ map, roughness: paperFinish.roughness, metalness: 0, side: THREE.DoubleSide });
   const edgeMaterial = material(edges);
@@ -223,6 +262,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   sx.fillStyle = gradient;
   sx.fillRect(0, 0, 128, 128);
   const shadowTexture = new THREE.CanvasTexture(shadowCanvas);
+  cleanups.push(() => shadowTexture.dispose());
   const contact = new THREE.Mesh(new THREE.PlaneGeometry(width + 1.1, height + .9), new THREE.MeshBasicMaterial({ map: shadowTexture, transparent: true, depthWrite: false }));
   contact.position.set(.06, -.08, -.31);
   scene.add(contact);
@@ -248,6 +288,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   light.shadow.radius = 12;
   light.shadow.intensity = .75;
   scene.add(light);
+  cleanups.push(() => light.shadow.dispose());
   {
     const renderer = webgl;
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -257,10 +298,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     host.append(renderer.domElement);
-    surface = { prepare: (ts: THREE.Texture[]) => ts.forEach(t => renderer.initTexture(t)), canvas: renderer.domElement, render: () => renderer.render(scene, camera), resize: (w: number, h: number) => renderer.setSize(w, h), dispose: () => {
-        renderer.dispose();
-        renderer.domElement.remove();
-      } };
+    surface = { prepare: (ts: THREE.Texture[]) => ts.forEach(t => renderer.initTexture(t)), canvas: renderer.domElement, render: () => renderer.render(scene, camera), resize: (w: number, h: number) => renderer.setSize(w, h) };
   }
   surface.canvas.setAttribute('aria-label', options.title ?? 'Physical book reader');
   let rotX = -closedTilt * Math.PI / 180, rotY = -.28, rotZ = -.07;
@@ -400,6 +438,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     fit();
   }
   const observer = new ResizeObserver(resize);
+  cleanups.push(() => observer.disconnect());
   observer.observe(host);
   resize();
   function notify() {
@@ -449,6 +488,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       trim();
       redraw();
     } });
+  cleanups.push(() => preloader.stop());
   const warmNeighbors = () => {
     const work = preloader.warm(nearbyPages(cascade.busy ? cascade.reserved : index, count));
     trim();
@@ -1065,6 +1105,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
           void stepPage(direction);
       }
     } });
+  cleanups.push(() => gesture.dispose());
   const raycaster = new THREE.Raycaster();
   function hitGrab(hit: THREE.Intersection) {
     if (!hit?.uv)
@@ -1323,23 +1364,23 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     camera.updateProjectionMatrix();
     redraw();
   };
-  host.addEventListener('pointerdown', down);
-  host.addEventListener('pointermove', move);
-  host.addEventListener('pointerup', up);
-  host.addEventListener('pointercancel', cancel);
-  host.addEventListener('wheel', wheel, { passive: false });
-  host.addEventListener('dblclick', doubleClick);
+  host.addEventListener('pointerdown', down, { signal: events.signal });
+  host.addEventListener('pointermove', move, { signal: events.signal });
+  host.addEventListener('pointerup', up, { signal: events.signal });
+  host.addEventListener('pointercancel', cancel, { signal: events.signal });
+  host.addEventListener('wheel', wheel, { passive: false, signal: events.signal });
+  host.addEventListener('dblclick', doubleClick, { signal: events.signal });
   const lost = (e: Event) => {
     e.preventDefault();
     onError(new Error('The 3D context was lost. Reopen the reader to try again.'));
   };
-  surface.canvas.addEventListener('webglcontextlost', lost);
+  surface.canvas.addEventListener('webglcontextlost', lost, { signal: events.signal });
   const visibility = () => {
     preloader.pause(document.hidden);
     if (!document.hidden)
       redraw();
   };
-  document.addEventListener('visibilitychange', visibility);
+  document.addEventListener('visibilitychange', visibility, { signal: events.signal });
   visibility();
   notify();
   render();
@@ -1429,40 +1470,12 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       fill.intensity = .35 + v * .45;
       redraw();
     },
-    dispose() {
-      clearTimeout(clickTimer);
-      gesture.dispose();
-      preloader.stop();
-      disposed = true;
-      ++cascadeVersion;
-      cancelAnimationFrame(cascadeFrame);
-      cascade.clear();
-      observer.disconnect();
-      cancelAnimationFrame(frame);
-      host.removeEventListener('pointerdown', down);
-      host.removeEventListener('pointermove', move);
-      host.removeEventListener('pointerup', up);
-      host.removeEventListener('pointercancel', cancel);
-      host.removeEventListener('wheel', wheel);
-      host.removeEventListener('dblclick', doubleClick);
-      surface.canvas.removeEventListener('webglcontextlost', lost);
-      document.removeEventListener('visibilitychange', visibility);
-      const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
-      scene.traverse(object => {
-        const o = object as THREE.Mesh;
-        if (o.geometry)
-          geometries.add(o.geometry);
-        if (o.material)
-          (Array.isArray(o.material) ? o.material : [o.material]).forEach(m => materials.add(m));
-      });
-      geometries.forEach(g => g.dispose());
-      materials.forEach(m => m.dispose());
-      textures.forEach(t => t.dispose());
-      emptyTexture.dispose();
-      edges.dispose();
-      shadowTexture.dispose();
-      light.shadow.dispose();
-      surface.dispose();
-    },
+    dispose,
+
   };
+  }
+  catch (cause) {
+    dispose();
+    throw cause;
+  }
 }

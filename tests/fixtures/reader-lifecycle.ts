@@ -16,7 +16,7 @@ async function archive(pages: number) {
   return new File([await writer.close()], 'fixture.cbz');
 }
 function options(source: File, controller: AbortController): ReaderOptions {
-  return { source, host: {} as HTMLElement, signal: controller.signal, format: 'cbz', location: null, changed() {} };
+  return { source, host: {} as HTMLElement, signal: controller.signal, format: 'cbz', sanitizeOddPages: false, location: null, changed() {} };
 }
 const canvas = () => ({ width: 0, height: 0, getContext: () => ({ drawImage() {}, fillRect() {}, fillStyle: '' }) });
 globalThis.document = { createElement: canvas } as unknown as Document;
@@ -39,16 +39,18 @@ const one = await archive(1), four = await archive(4);
   await settle();
   expect(bitmapsClosed).toBe(1);
 }
-// Normalization preserves original page identities and completes a discarded tail.
+// Normalization preserves every original page and pads the binding without numbering blanks.
 {
   let read = 0;
   decode = async () => bitmap(++read === 2 ? 1200 : 600);
   const controller = new AbortController(), source = await physicalPages(options(four, controller));
-  expect(source.count).toBe(4);
+  expect(source.count).toBe(6);
   expect(source.location(1)).toEqual({ format: 'cbz', page: 2, total: 4 });
   expect(source.location(2)).toEqual({ format: 'cbz', page: 2, total: 4 });
-  expect(source.location(3)).toEqual({ format: 'cbz', page: 4, total: 4 });
-  expect(source.pageFor({ format: 'cbz', page: 4, total: 4 })).toBe(4);
+  expect(source.location(3)).toEqual({ format: 'cbz', page: 3, total: 4 });
+  expect(source.location(4)).toBeUndefined();
+  expect(source.location(5)).toEqual({ format: 'cbz', page: 4, total: 4 });
+  expect(source.pageFor({ format: 'cbz', page: 4, total: 4 })).toBe(6);
   await source.close();
 }
 // Too-large decoded scans are rejected and released.

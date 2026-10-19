@@ -15,7 +15,7 @@ const source={id:connectionId,userId,instanceId,status:'connected',externalUserI
 const instance={id:instanceId,provider:'jellyfin',enabled:true,baseUrl:'https://reading-context.invalid',serverIdentity:'controlled-server',settings:{approved:true}};
 const book={Id:externalId,Type:'Book' as const,Name:'Controlled file',Path:'/controlled/file.cbr',Etag:'v1',DateModified:'2026-01-01',Size:4,ProviderIds:{}};
 const session:{id:string;userId:string;workId:string;connectionId:string|null;externalId:string|null;accountGeneration:string;format:'cbr';edition:string}={id:sessionId,userId,workId,connectionId,externalId,accountGeneration:generation,format:'cbr',edition:''};
-const state={hasSession:true,enabledUser:true,hasWork:true,connected:true,enabledInstance:true,featureEnabled:true,metadataAllowed:true,wrongItem:false,version:'v1',downloadStatus:206};
+const state={hasSession:true,enabledUser:true,hasWork:true,connected:true,enabledInstance:true,featureEnabled:true,metadataAllowed:true,wrongItem:false,version:'v1',downloadStatus:206,headStatus:0,probe:false,malformedSize:false};
 let selects:Record<string,number>={},decryptions=0,metadata=0,downloads=0,cancelledBodies=0,featureChecks=0;
 const tables=new Map<unknown,string>([[users,'users'],[readingWorks,'reading_works'],[readingSessions,'reading_sessions'],[providerConnections,'provider_connections'],[providerInstances,'provider_instances']]);
 const db={select(){return {from(table:unknown){return {async where(){
@@ -44,9 +44,11 @@ mock.module('../../src/lib/server/security/provider-fetch',()=>({...providerFetc
  secureProviderFetch:async(_config:unknown,path:string,init?:RequestInit)=>{
   downloads++;expect(path).toBe(`/Items/${externalId}/Download`);
   expect(new Headers(init?.headers).get('authorization')).toContain('controlled-token');
-  expect(new Headers(init?.headers).get('range')).toBe('bytes=0-3');
+  const range=new Headers(init?.headers).get('range');
+  if(state.headStatus&&init?.method==='HEAD')return new Response(null,{status:state.headStatus});
+  expect(range).toBe(state.probe?'bytes=0-0':'bytes=0-3');
   init?.signal?.throwIfAborted();
-  return new Response(new ReadableStream({start(controller){controller.enqueue(new TextEncoder().encode('DATA'));},cancel(){cancelledBodies++;}}),{status:state.downloadStatus,headers:{'content-range':'bytes 0-3/10','content-length':'4','accept-ranges':'bytes',etag:'controlled-etag','last-modified':'controlled-date'}});
+  return new Response(new ReadableStream({start(controller){controller.enqueue(new TextEncoder().encode('DATA'));},cancel(){cancelledBodies++;}}),{status:state.downloadStatus,headers:{'content-range':state.malformedSize?'bytes 0-0/*':state.probe?'bytes 0-0/10':'bytes 0-3/10','content-length':state.downloadStatus===200?'10':state.probe?'1':'4','accept-ranges':'bytes',etag:'controlled-etag','last-modified':'controlled-date'}});
  }
 }));
 const modulePath=process.env.COAST_READING_CONTEXT_MODULE??'../../src/lib/reading/sessions.server';
@@ -68,6 +70,17 @@ for(const method of ['GET','HEAD']){
  expect(decryptions).toBe(expectedContexts+1);expect(metadata).toBe(1);expect(downloads).toBe(1);expect(featureChecks).toBe(1);
  cases.push({name:method,...metrics()});
 }
+for(const status of [405,501]){
+ reset();state.headStatus=status;state.probe=true;
+ try{const response=await streamReading(userId,sessionId,new Request('https://coast-reading-context.invalid/file',{method:'HEAD'}));expect(response.status).toBe(200);expect(response.body).toBeNull();expect(response.headers.get('content-length')).toBe('10');expect(response.headers.has('content-range')).toBe(false);expect(cancelledBodies).toBe(1);expect(downloads).toBe(2);expect(metadata).toBe(1);cases.push({name:`HEAD_${status}_one_byte_size_probe`,...metrics()});}
+ finally{state.headStatus=0;state.probe=false;}
+}
+reset();state.headStatus=405;
+try{const response=await streamReading(userId,sessionId,request('HEAD'));expect(response.status).toBe(206);expect(response.headers.get('content-range')).toBe('bytes 0-3/10');expect(response.headers.get('content-length')).toBe('4');expect(response.body).toBeNull();expect(cancelledBodies).toBe(1);cases.push({name:'HEAD_fallback_retains_requested_range',...metrics()});}finally{state.headStatus=0;}
+reset();state.headStatus=405;state.probe=true;state.downloadStatus=200;
+try{const response=await streamReading(userId,sessionId,new Request('https://coast-reading-context.invalid/file',{method:'HEAD'}));expect(response.status).toBe(200);expect(response.headers.get('content-length')).toBe('10');expect(response.headers.has('content-range')).toBe(false);expect(response.body).toBeNull();expect(cancelledBodies).toBe(1);cases.push({name:'HEAD_fallback_cancels_ignored_range',...metrics()});}finally{state.headStatus=0;state.probe=false;state.downloadStatus=206;}
+reset();state.headStatus=405;state.probe=true;state.malformedSize=true;
+try{await expect(streamReading(userId,sessionId,new Request('https://coast-reading-context.invalid/file',{method:'HEAD'}))).rejects.toMatchObject({status:502});expect(cancelledBodies).toBe(1);cases.push({name:'HEAD_fallback_rejects_unknown_total',...metrics()});}finally{state.headStatus=0;state.probe=false;state.malformedSize=false;}
 reset();const owned=await ownedReadingSession(userId,sessionId);expect(owned).toBe(session);expect(Object.keys(owned)).not.toContain('jellyfin');expect(selects.provider_connections).toBe(1);expect(selects.provider_instances).toBe(1);expect(decryptions).toBe(1);expect(metadata).toBe(0);expect(downloads).toBe(0);cases.push({name:'owned_row_contract',...metrics()});
 reset();session.connectionId=null;session.externalId=null;
 try{

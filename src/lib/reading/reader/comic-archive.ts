@@ -1,5 +1,6 @@
 import { ZipReader, BlobReader, type FileEntry } from '@zip.js/zip.js';
 import { readComicSource } from './comic-source';
+import type { ReaderProgress } from './load';
 import type { ComicFormat } from '../model';
 import { COMIC_EXPANDED_LIMIT, COMIC_PAGE_LIMIT, COMIC_ENTRY_LIMIT, orderComicEntries, comicEntryName, comicImage, type ComicEntry, type ComicArchive } from './comic-pages';
 export { COMIC_PAGE_LIMIT } from './comic-pages';
@@ -17,11 +18,11 @@ export async function zipComicPage(entry: Pick<FileEntry, 'getData'>, signal: Ab
   signal.throwIfAborted();
   return new Blob(chunks);
 }
-export async function openComicArchive(source: File | string, format: ComicFormat, signal: AbortSignal): Promise<ComicArchive> {
+export async function openComicArchive(source: File | string, format: ComicFormat, signal: AbortSignal, progress?: (value: ReaderProgress) => void): Promise<ComicArchive> {
   signal.throwIfAborted();
   if (format !== 'cbz')
-    return (await import('./archive')).openArchiveComic(source, format, signal);
-  const file = await readComicSource(source, signal);
+    return (await import('./archive')).openArchiveComic(source, format, signal, progress);
+  const file = await readComicSource(source, signal, progress);
   signal.throwIfAborted();
   const zip = new ZipReader(new BlobReader(file));
   const files: FileEntry[] = [], entries: ComicEntry[] = [], names = new Set<string>();

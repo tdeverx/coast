@@ -1,0 +1,137 @@
+diff --git a/src/lib/reading/reader/archive.ts b/src/lib/reading/reader/archive.ts
+index a3dd3d5..5b1f444 100644
+--- a/src/lib/reading/reader/archive.ts
++++ b/src/lib/reading/reader/archive.ts
+@@ -14,6 +14,7 @@ export async function openArchiveComic(source: File | string, format: Exclude<Co
+   const file = await readComicSource(source, signal);
+   signal.throwIfAborted();
+   let worker: Worker | undefined, ready = false, closed = false, serial = 0;
++  let pages: {id:number;index:number}[] = [], queued = false;
+   const waiting = new Map<number, {
+     resolve: (reply: Reply) => void;
+     reject: (reason: unknown) => void;
+@@ -22,6 +23,8 @@ export async function openArchiveComic(source: File | string, format: Exclude<Co
+     const current = worker;
+     worker = undefined;
+     ready = false;
++    pages = [];
++    queued = false;
+     current?.terminate();
+     for (const request of waiting.values())
+       request.reject(reason);
+@@ -64,7 +67,20 @@ export async function openArchiveComic(source: File | string, format: Exclude<Co
+     return new Promise<Reply>((resolve, reject) => {
+       waiting.set(id, { resolve, reject });
+       try {
+-        current.postMessage({ ...command, id });
++        if(command.type==='page'){
++          pages.push({id,index:command.index});
++          if(!queued){
++            queued=true;
++            queueMicrotask(()=>{
++              if(worker!==current)return;
++              const batch=pages.filter(page=>waiting.has(page.id));pages=[];queued=false;
++              try{
++                for(let offset=0;offset<batch.length&&worker===current;offset+=64)
++                  current.postMessage({type:'pages',id:0,pages:batch.slice(offset,offset+64)});
++              }catch(cause){stop(cause);}
++            });
++          }
++        }else current.postMessage({ ...command, id });
+       }
+       catch (cause) {
+         stop(cause);
+diff --git a/src/lib/reading/reader/archive.worker.ts b/src/lib/reading/reader/archive.worker.ts
+index 63f6f63..f5e4a99 100644
+--- a/src/lib/reading/reader/archive.worker.ts
++++ b/src/lib/reading/reader/archive.worker.ts
+@@ -1,9 +1,22 @@
+ import wasmUrl from 'libarchive-wasm/dist/libarchive.wasm?url';
+ import {ComicDecoder} from './archive-decoder';
+ import type {ComicFormat} from '../model';
+-export type ArchiveCommand={id:number;type:'open';file:Blob;format:Exclude<ComicFormat,'cbz'>}|{id:number;type:'page';index:number};
++export type ArchiveCommand={id:number;type:'open';file:Blob;format:Exclude<ComicFormat,'cbz'>}|{id:number;type:'page';index:number}|{id:number;type:'pages';pages:{id:number;index:number}[]};
+ let decoder:ComicDecoder|undefined;
+ self.onmessage=async({data}:MessageEvent<ArchiveCommand>)=>{
++ if(data.type==='pages'){
++  const pages=data.pages.sort((a,b)=>a.index-b.index);
++  for(let at=0;at<pages.length;){
++   const first=at,index=pages[at].index;
++   while(at<pages.length&&pages[at].index===index)at++;
++   try{
++    if(!decoder)throw new Error('Open a comic archive first.');
++    const bytes=decoder.read(index);
++    for(let item=first;item<at;item++){const page=item===at-1?bytes:bytes.slice(0);self.postMessage({id:pages[item].id,page},{transfer:[page]});}
++   }catch(cause){for(let item=first;item<at;item++)failed(pages[item].id,cause);}
++  }
++  return;
++ }
+  try{
+   if(data.type==='open'){
+    decoder?.close();decoder=await ComicDecoder.open(await data.file.arrayBuffer(),data.format,{locateFile:()=>wasmUrl});
+@@ -13,7 +26,10 @@ self.onmessage=async({data}:MessageEvent<ArchiveCommand>)=>{
+    const page=decoder.read(data.index);self.postMessage({id:data.id,page},{transfer:[page]});
+   }
+  }catch(cause){
+-  const message=cause instanceof Error?cause.message:'';
+-  self.postMessage({id:data.id,error:/^(This comic|This file|Comic archives|Encrypted comic|No readable)/.test(message)?message:'This comic archive is damaged or unsupported.'});
++  failed(data.id,cause);
+  }
+ };
++function failed(id:number,cause:unknown){
++ const message=cause instanceof Error?cause.message:'';
++ self.postMessage({id,error:/^(This comic|This file|Comic archives|Encrypted comic|No readable)/.test(message)?message:'This comic archive is damaged or unsupported.'});
++}
+diff --git a/tests/fixtures/reader-lifecycle.ts b/tests/fixtures/reader-lifecycle.ts
+index 4413583..96221ec 100644
+--- a/tests/fixtures/reader-lifecycle.ts
++++ b/tests/fixtures/reader-lifecycle.ts
+@@ -72,16 +72,28 @@ const one = await archive(1), four = await archive(4);
+ const NativeWorker=globalThis.Worker;
+ class ArchiveWorker {
+  onmessage:((event:{data:unknown})=>void)|null=null;onerror:((event:unknown)=>void)|null=null;
+- terminated=0;messages:{id:number;type:string;index?:number}[]=[];
++ terminated=0;messages:{id:number;type:string;index?:number;pages?:{id:number;index:number}[]}[]=[];
+  constructor(){workers.push(this);}
+- postMessage(message:{id:number;type:string;index?:number}){this.messages.push(message);}
++ postMessage(message:{id:number;type:string;index?:number;pages?:{id:number;index:number}[]}){this.messages.push(message);}
+  terminate(){this.terminated++;}
+- reply(data:object){this.onmessage?.({data:{id:this.messages.at(-1)!.id,...data}});}
++ reply(data:object){const last=this.messages.at(-1)!;this.onmessage?.({data:{id:last.pages?.at(-1)?.id??last.id,...data}});}
+ }
+ const workers:ArchiveWorker[]=[];
+ globalThis.Worker=ArchiveWorker as unknown as typeof Worker;
+ const {openArchiveComic}=await import('../../src/lib/reading/reader/archive');
+ const pageEntries=[{filename:'1.png',size:1,index:0},{filename:'2.png',size:1,index:1}];
++{
++ const controller=new AbortController(),opened=openArchiveComic(one,'cbr',controller.signal);await settle();
++ const worker=workers.at(-1)!;worker.reply({entries:pageEntries});const archive=await opened;
++ const left=archive.read(1,controller.signal),right=archive.read(0,controller.signal);await settle();
++ const packet=worker.messages.at(-1)!;expect(packet.type).toBe('pages');expect(packet.pages?.map(page=>page.index)).toEqual([1,0]);
++ const [a,b]=packet.pages!;worker.onmessage?.({data:{id:b.id,page:new Uint8Array([2]).buffer}});worker.onmessage?.({data:{id:a.id,page:new Uint8Array([1]).buffer}});
++ expect(Array.from(new Uint8Array(await(await left).arrayBuffer()))).toEqual([1]);expect(Array.from(new Uint8Array(await(await right).arrayBuffer()))).toEqual([2]);
++ const cancelled=new AbortController(),pendingA=archive.read(0,cancelled.signal),pendingB=archive.read(1,controller.signal);await settle();
++ const rejected=Promise.allSettled([pendingA,pendingB]);cancelled.abort();
++ const outcomes=await rejected;for(const outcome of outcomes){expect(outcome.status).toBe('rejected');if(outcome.status==='rejected')expect(outcome.reason).toMatchObject({name:'AbortError'});}
++ expect(worker.terminated).toBe(1);await archive.close();
++}
+ {
+  const controller=new AbortController(),opened=openArchiveComic(one,'cbr',controller.signal);await settle();
+  const worker=workers.at(-1)!;controller.abort();await expect(opened).rejects.toMatchObject({name:'AbortError'});expect(worker.terminated).toBe(1);
+@@ -155,4 +167,4 @@ const pdfOptions = (controller: AbortController): ReaderOptions => ({ ...options
+   await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+   expect(destroyed).toBe(4);
+ }
+-console.log(JSON.stringify({ comicCases: 4, archiveCases: 3, pdfCases: 4 }));
++console.log(JSON.stringify({ comicCases: 4, archiveCases: 4, pdfCases: 4 }));
+diff --git a/tests/reading-renderer-lifecycle.test.ts b/tests/reading-renderer-lifecycle.test.ts
+index 7d13867..52733f4 100644
+--- a/tests/reading-renderer-lifecycle.test.ts
++++ b/tests/reading-renderer-lifecycle.test.ts
+@@ -6,5 +6,5 @@ test('physical comic/PDF sources preserve pages, cancel pending resources and re
+  });
+  const [status,output,errors]=await Promise.all([child.exited,new Response(child.stdout).text(),new Response(child.stderr).text()]);
+  expect({status,errors}).toEqual({status:0,errors:''});
+- expect(JSON.parse(output)).toEqual({comicCases:4,archiveCases:3,pdfCases:4});
++ expect(JSON.parse(output)).toEqual({comicCases:4,archiveCases:4,pdfCases:4});
+ });

@@ -13,6 +13,8 @@ export const styleFiles = [
   'src/lib/reading/reader/engine.ts',
   'src/lib/reading/reader/physical-reader.ts',
   'src/lib/reading/reader/physical-pages.ts',
+  'src/lib/reading/reader/physical-image.ts',
+  'src/lib/reading/streams.server.ts',
   'src/lib/reading/reader/physical-pdf.ts',
   'src/lib/reading/reader/physical/book-model.ts',
   'src/lib/reading/reader/physical/lighting.ts',

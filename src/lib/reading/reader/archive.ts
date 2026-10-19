@@ -2,6 +2,7 @@ import type { ComicFormat } from '../model';
 import { type ComicArchive, type ComicEntry } from './comic-pages';
 import type { ArchiveCommand } from './archive.worker';
 import { readComicSource } from './comic-source';
+import type { ReaderProgress } from './load';
 type Reply = {
   id: number;
   error?: string;
@@ -10,8 +11,8 @@ type Reply = {
 };
 type Command = ArchiveCommand extends infer C ? C extends ArchiveCommand ? Omit<C, 'id'> : never : never;
 /** One worker per open archive. Cancellation terminates native decoding, not just its await. */
-export async function openArchiveComic(source: File | string, format: Exclude<ComicFormat, 'cbz'>, signal: AbortSignal): Promise<ComicArchive> {
-  const file = await readComicSource(source, signal);
+export async function openArchiveComic(source: File | string, format: Exclude<ComicFormat, 'cbz'>, signal: AbortSignal, progress?: (value: ReaderProgress) => void): Promise<ComicArchive> {
+  const file = await readComicSource(source, signal, progress);
   signal.throwIfAborted();
   let worker: Worker | undefined, ready = false, closed = false, serial = 0;
   const waiting = new Map<number, {

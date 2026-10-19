@@ -10,6 +10,7 @@ export const readingFormats = ['pdf', 'epub', ...comicFormats] as const;
 export type ReadingFormat = (typeof readingFormats)[number];
 export type ComicFormat = (typeof comicFormats)[number];
 export const readingPrepareSchema=v.variant('source',[
+  v.strictObject({source:v.literal('linked')}),
   v.strictObject({source:v.literal('local'),format:v.picklist(readingFormats),edition:v.pipe(v.string(),v.regex(/^[a-f0-9]{64}$/))}),
   v.strictObject({source:v.literal('jellyfin'),connectionId:v.pipe(v.string(),v.uuid()),externalId:v.pipe(v.string(),v.regex(/^[a-f0-9-]{32,36}$/i))}),
 ]);

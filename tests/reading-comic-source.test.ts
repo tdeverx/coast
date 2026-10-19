@@ -3,6 +3,7 @@ import { ZipWriter, BlobWriter, TextReader } from '@zip.js/zip.js';
 import { openComicArchive } from '../src/lib/reading/reader/comic-archive';
 import { readComicSource } from '../src/lib/reading/reader/comic-source';
 import { COMIC_INPUT_LIMIT } from '../src/lib/reading/reader/comic-pages';
+import type { ReaderProgress } from '../src/lib/reading/reader/load';
 // Custom transport is scoped to each test and always restored.
 async function transport<T>(respond: (...args: Parameters<typeof fetch>) => ReturnType<typeof fetch>, run: () => Promise<T>) {
   const original = globalThis.fetch;
@@ -79,4 +80,20 @@ test('local comics preserve their original bytes and closed owners never fetch',
   }), async () => {
     await expect(readComicSource('https://fixture.invalid/comic', owner.signal)).rejects.toMatchObject({ name: 'AbortError' });
   });
+});
+test('download progress reports actual bytes and leaves missing totals indeterminate', async () => {
+  for (const known of [true,false]) {
+    const progress:ReaderProgress[]=[];
+    await transport((async () => new Response(new ReadableStream({start(controller){
+      controller.enqueue(new Uint8Array([1,2]));
+      controller.enqueue(new Uint8Array([3,4,5]));
+      controller.close();
+    }}),{headers:known?{'content-length':'5'}:{}})),async()=>{
+      const file=await readComicSource('https://fixture.invalid/comic',new AbortController().signal,value=>progress.push(value));
+      expect([...new Uint8Array(await file.arrayBuffer())]).toEqual([1,2,3,4,5]);
+    });
+    expect(progress.filter(value=>value.phase==='download').map(value=>value.loaded)).toEqual([0,0,2,5]);
+    expect(progress.at(-2)?.total).toBe(known?5:undefined);
+    expect(progress.at(-1)).toEqual({phase:'prepare'});
+  }
 });

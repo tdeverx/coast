@@ -282,6 +282,7 @@
                 bind:checked={prefs.originalTitles}
               /></SettingsRow>
           <SettingsRow title="Black and white missing artwork" description="Show unavailable media in black and white."><input type="checkbox" aria-label="Black and white missing artwork" bind:checked={prefs.monochromeMissing}/></SettingsRow>
+          <SettingsRow title="Sanitize odd page counts" description="Remove an unmatched final comic face after splitting spreads. Turn off to keep every face and add unprinted binding pages. Applies the next time you open the reader."><input type="checkbox" aria-label="Sanitize odd page counts" bind:checked={prefs.sanitizeOddReadingPages}/></SettingsRow>
           </fieldset>
           <fieldset class="panel stack" disabled={busy}>
             <legend class="sr-only">Regional metadata</legend>

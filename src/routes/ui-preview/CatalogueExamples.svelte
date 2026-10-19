@@ -84,8 +84,8 @@
 
     </MediaDetails>{/if}
   {:else if name === 'reading.launch'}
-    <p class="small quiet">The production edition chooser uses synthetic connections and files. File selection never opens an engine or uploads a file in this reference.</p>
-    <ReadingLaunch workId={book.id} title={book.title} />
+    <p class="small quiet">Read opens an available linked file directly. This reference disables the action and never opens a file or session.</p>
+    <ReadingLaunch workId={book.id} />
   {:else if name === 'reading.reader'}
     <Reader example={{ title: book.title, state: (scenario === 'loading' ? 'opening' : ['opening','error','unsaved','follower'].includes(scenario) ? scenario : 'ready') as 'ready'|'opening'|'error'|'unsaved'|'follower' }} />
   {:else if name === 'people.intro'}
