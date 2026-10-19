@@ -141,8 +141,10 @@ try {
             return (original as any).apply(this, args);
         };
         const inspected = await cache.acquire('actual-progress', source);
-        inspected.listeners.add(() => { if (inspected.progress.phase === 'inspect')
-            values.push(inspected.progress.loaded ?? 0); });
+        inspected.listeners.add(() => {
+            if (inspected.progress.phase === 'inspect')
+                values.push(inspected.progress.loaded ?? 0);
+        });
         await inspected.job;
         if (inspected.error)
             throw inspected.error;
@@ -156,6 +158,39 @@ try {
     }
     report.controlledProgress = values;
     pass('actual image metadata with controlled latency advances every inspection notification');
+    cache = createReadingCache(join(working, 'reopen-admission'), extractor);
+    let resume!: () => void;
+    const pendingSource = new Promise<void>(resolve => { resume = resolve; });
+    const heldSource = (key: string) => ({ ...source, key, open: async (signal: AbortSignal) => {
+            await pendingSource;
+            signal.throwIfAborted();
+            return new Response(Bun.file(first.file));
+        } });
+    try {
+        const firstSource = heldSource('actual-reopen-a'), secondSource = heldSource('actual-reopen-b');
+        const firstEntry = await cache.acquire('actual-admin:first', firstSource);
+        const secondEntry = await cache.acquire('actual-admin:second', secondSource);
+        assert.equal(await cache.acquire('actual-guest:first', firstSource), firstEntry);
+        await cache.release('actual-admin:first');
+        assert.equal(await cache.acquire('actual-admin:reopened', firstSource), firstEntry);
+        resume();
+        await Promise.all([firstEntry.job, secondEntry.job]);
+        assert.equal(firstEntry.error, undefined);
+        assert.equal(secondEntry.error, undefined);
+        await cache.release('actual-admin:reopened');
+        await cache.release('actual-guest:first');
+        const reopened = await cache.acquire('actual-admin:reopened', firstSource);
+        await reopened.job;
+        assert.equal(reopened.error, undefined);
+        const delivered = await cache.page(reopened, 0, new AbortController().signal);
+        assert(delivered.bytes > 0);
+    }
+    finally {
+        resume();
+        await cache.stop();
+        cache = undefined;
+    }
+    pass('actual source admits two personal preparations and close/reopen while preserving another reader');
     const cancelled = join(working, 'cancelled');
     cache = createReadingCache(cancelled, extractor);
     const entry = await cache.acquire('actual-host', source);

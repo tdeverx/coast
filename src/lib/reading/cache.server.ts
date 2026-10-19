@@ -48,7 +48,7 @@ export type ReadingCacheEntry = {
     job: Promise<void>;
     changed: number;
 };
-const defaults = { bytes: 8 * 1024 ** 3, freeBytes: 512 * 1024 ** 2, preparations: 2, leases: 64, leaseMs: 180000, manifests: 64, manifestPages: 100000, manifestBytes: 16 * 1024 ** 2, metadataBytes: 32 * 1024 ** 2 };
+const defaults = { bytes: 8 * 1024 ** 3, freeBytes: 512 * 1024 ** 2, preparations: 2, leases: 64, accountLeases: 8, leaseMs: 180000, manifests: 64, manifestPages: 100000, manifestBytes: 16 * 1024 ** 2, metadataBytes: 32 * 1024 ** 2 };
 /** One process owns temporary encoded pages; every HTTP caller still authorizes its session. */
 export function createReadingCache(root: string, extractor: string, overrides: Partial<typeof defaults> = {}) {
     const limits = { ...defaults, ...overrides };
@@ -417,6 +417,10 @@ export function createReadingCache(root: string, extractor: string, overrides: P
     async function acquire(lease: string, source: ReadingCacheSource) {
         await initialize();
         await sweep();
+        // HTTP callers use readingLease's validated account:session identity.
+        const account = lease.split(':', 1)[0];
+        if (!leases.has(lease) && [...leases.keys()].filter(key => key.split(':', 1)[0] === account).length >= limits.accountLeases)
+            throw new AppError(503, 'Too many active readers for your account. Close another reader and try again.');
         let entry = entries.get(source.key);
         if (!entry) {
             if (preparing >= limits.preparations)

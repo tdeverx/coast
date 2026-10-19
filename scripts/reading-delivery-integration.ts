@@ -63,6 +63,32 @@ try {
     assert.equal(cache.snapshot().entries, 1);
     assert.equal(cache.snapshot().leases, 2);
     pass('independently authorized actual party readers share the same prepared edition');
+    const additional = [];
+    try {
+        // Eight admitted deliveries include the host; all use actual authorized sessions.
+        for (let index = 0; index < 8; index++) {
+            const session = await prepareReading(admin.id, input.id, { source: 'linked' });
+            additional.push(session);
+            if (index < 7)
+                await layout(admin.id, session.id);
+            else
+                await fails(503, () => readingManifest(admin.id, session.id, request()));
+        }
+        assert.equal(cache.snapshot().leases, 9);
+        await layout(admin.id, host.id);
+        const independent = await readingPage(guest.id, guestSession.id, '0', request());
+        await independent.arrayBuffer();
+        pass('eight actual account deliveries reject a ninth while renewal and independent guest pages work');
+        await closeReading(admin.id, additional[0].id);
+        await layout(admin.id, additional[7].id);
+        assert.equal(cache.snapshot().leases, 9);
+        pass('releasing an actual account delivery admits its previously rejected session');
+    }
+    finally {
+        for (const session of additional)
+            await closeReading(admin.id, session.id);
+    }
+    assert.equal(cache.snapshot().leases, 2);
     await fails(410, () => readingPage(guest.id, host.id, '0', request()));
     assert.equal(cache.snapshot().leases, 2);
     pass('guest cannot borrow host session or release its lease');

@@ -116,7 +116,13 @@ nativeTest('preparation admission and waiting-page cancellation do not queue unb
     const controller = new AbortController();
     try {
         const input = source(tarComic({ 'page.png': png }));
-        input.open = async () => new Response(new ReadableStream({ start(stream) { controller.signal.addEventListener('abort', () => stream.error(controller.signal.reason), { once: true }); } }));
+        input.open = async () => new Response(new ReadableStream({ start(stream) {
+                // The admission assertion can abort before the async job opens its body.
+                if (controller.signal.aborted)
+                    stream.error(controller.signal.reason);
+                else
+                    controller.signal.addEventListener('abort', () => stream.error(controller.signal.reason), { once: true });
+            } }));
         const first = await cache.acquire('first', input);
         await expect(cache.acquire('second', source(tarComic({ 'page.png': png })))).rejects.toThrow('busy');
         const waiting = cache.wait(first, first.changed, controller.signal);
@@ -197,8 +203,10 @@ nativeTest('slow real metadata completion advances inspect progress instead of r
     try {
         const files = Object.fromEntries(Array.from({ length: 20 }, (_, index) => [`page${index}.png`, png]));
         const entry = await cache.acquire('reader', source(tarComic(files)));
-        entry.listeners.add(() => { if (entry.progress.phase === 'inspect')
-            values.push(entry.progress.loaded ?? 0); });
+        entry.listeners.add(() => {
+            if (entry.progress.phase === 'inspect')
+                values.push(entry.progress.loaded ?? 0);
+        });
         await entry.job;
         expect(entry.error).toBeUndefined();
         expect(values.at(-1)).toBe(20);
@@ -206,6 +214,52 @@ nativeTest('slow real metadata completion advances inspect progress instead of r
     }
     finally {
         (sharp.prototype as any).metadata = original;
+        await cache.stop();
+    }
+});
+nativeTest('one account cannot consume the shared lease pool; renewal and independent readers remain admitted', async () => {
+    const cache = createReadingCache(join(root, crypto.randomUUID()), extractor);
+    try {
+        const input = source(tarComic({ 'page.png': png }));
+        const entry = await cache.acquire('account-a:0', input);
+        await entry.job;
+        for (let index = 1; index < 8; index++)
+            await cache.acquire(`account-a:${index}`, input);
+        await expect(cache.acquire('account-a:8', input)).rejects.toThrow('Too many active readers for your account');
+        expect(await cache.acquire('account-a:0', input)).toBe(entry);
+        expect(await cache.acquire('account-b:0', input)).toBe(entry);
+        expect(cache.snapshot().leases).toBe(9);
+        await cache.release('account-a:0');
+        expect(await cache.acquire('account-a:8', input)).toBe(entry);
+    }
+    finally {
+        await cache.stop();
+    }
+});
+nativeTest('reopening and independent account sessions use global capacity without a restrictive account preparation gate', async () => {
+    const cache = createReadingCache(join(root, crypto.randomUUID()), extractor);
+    let unlock!: () => void;
+    const gate = new Promise<void>(resolve => { unlock = resolve; });
+    try {
+        const input = source(tarComic({ 'page.png': png }));
+        input.open = async () => {
+            await gate;
+            return new Response(tarComic({ 'page.png': png }));
+        };
+        const first = await cache.acquire('account-a:0', input);
+        expect(await cache.acquire('account-a:2', input)).toBe(first);
+        const other = await cache.acquire('account-a:1', { ...input, key: 'another' });
+        expect(await cache.acquire('account-b:0', input)).toBe(first);
+        await cache.release('account-a:0');
+        expect(await cache.acquire('account-a:reopened', input)).toBe(first);
+        await expect(cache.acquire('account-a:third', { ...input, key: 'third' })).rejects.toThrow('busy');
+        unlock();
+        await Promise.all([first.job, other.job]);
+        expect(first.error).toBeUndefined();
+        expect(other.error).toBeUndefined();
+    }
+    finally {
+        unlock();
         await cache.stop();
     }
 });

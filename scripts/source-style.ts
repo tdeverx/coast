@@ -6,6 +6,7 @@ export const styleFiles = [
   'scripts/build-reading-extractor.ts',
   'scripts/reading-delivery-verification.ts',
   'scripts/reading-delivery-integration.ts',
+  'scripts/reading-staged-entry-verification.ts',
   'src/lib/reading/cache.server.ts',
   'src/lib/reading/delivery.server.ts',
   'src/lib/reading/delivery.ts',

@@ -7,23 +7,23 @@
     "bun.lock": "1e4b54e41340c8bdc578d25a96ae2d97696967828c6a62f486d6d426af878aff",
     "scripts/build-reading-extractor.ts": "9a7205a8c84e77ed27bf45bfccaee8394960a8419f2520975b2e9196c8550f99",
     "scripts/native/reading-extractor.cc": "eee8ae8e95169ebbe51a1d9d17ccc0afd8129d37cffb77bf04ee64bf43a65924",
-    "src/lib/reading/cache.server.ts": "a5b2c5eab0c144a2d499f1d61b71fb6663cca9aec0759e2c9e977f4ae7892fab",
+    "src/lib/reading/cache.server.ts": "7bffa495767feb245cb36a6f0f20f2c93566bb3322307fa5d7013027b58e519c",
     "src/lib/reading/delivery.server.ts": "6fc74521b0965160a89ee711a1a0aa8bc41fd2b2e6c8a45e1ac7ab65ad2be5f3",
     "src/lib/reading/delivery.ts": "f83e8795d6fa76a26e94def046cf444657d3fa719563908df5d6210765b6b7c6",
     "src/lib/reading/sessions.server.ts": "b6d5d34ece2fc2445d5113003e3b5e8b0ee6191f1520ff78a7fcb5df19666955",
-    "src/lib/reading/Reader.svelte": "ed7fa2cdac5a1bcb81bfa00ee41e55e217fda10e1034d53c124ad9d560dad867",
+    "src/lib/reading/Reader.svelte": "aaf4259fa336260b4249058857c415df1a8222cbadb8caa221083556cd3e095c",
     "src/lib/reading/model.ts": "8dce0d9d7cd0825e4a0847004d36e75768a8dd1ae7daf479106af1aad772ab84",
     "src/lib/reading/client.svelte.ts": "7bfb7adc0545d8d63edc26ca76ef0a190682542545d17fac39d1959e07155b69",
     "src/lib/reading/reader/remote-comic.ts": "562de540a5018d723b314ad7973e79ff27e0d78934f5d6caa43ba9955afddc74",
     "src/lib/reading/reader/physical-pages.ts": "b6968d49992b015209ae493664b14c71485e89dbd4c1080df42cdd1a65641104",
     "src/lib/reading/reader/physical-reader.ts": "c10f5b1f3a4dcb01375a92458a3287dbe7c92329021a2148e63a1ecb81cec7ac",
-    "src/lib/reading/reader/physical/renderer.ts": "db1178b843295aa0e2cae0d3d56c9ce2ce0d9795f22ffba8a598979618e7efb9",
+    "src/lib/reading/reader/physical/renderer.ts": "e21c83072fefe39d00ca6f3b5f91311b410a3c8baafff9bf84804b09a0a52bdd",
     "src/lib/reading/reader/engine.ts": "97327d737f1dab48f522fb622ff0a185228818aeed4261fe1f5c42e9a14a1a4d",
     "src/lib/server/startup.ts": "7aff39aab80e00e4ef6b4e33a0dc9a8243d4132560d02c4adc6801d98618229b",
     "src/lib/server/api/reading.server.ts": "ed3ca9b2223ecb9089ec61826307c99908483fa2eb13514f4c22479ede88e102",
     "src/lib/ui/components/Header.svelte": "eaab91cf97570315ca1628667e254d787c7eb34c7747f180bb7d02a0afce39fa"
   },
-  "runtimeFingerprint": "fa261c19847726baecbe3f9d7a14277304860a2a78fbb16f99ffc8253da9028f",
+  "runtimeFingerprint": "f69a77e4066c08e060b6236165000297fae7afdf083d32199fb296d2bca85021",
   "runtime": {
     "bun": "1.4.3",
     "sharp": "0.35.5",
@@ -32,7 +32,7 @@
   },
   "actualFiles": {
     "boundary": "Actual archived file replay on private temporary disk. No database/provider/browser timings or production admission claim for missing formats. Controlled leases/capacity/abort use exact original bytes.",
-    "source": "191ed7e92c70697d46c27ff1947832193ae852b6",
+    "source": "ab1a351c9fa5cfd15d401e7ba4b5b90d9644fe53",
     "cases": [
       {
         "name": "cbr: independent concurrent leases share one acquisition",
@@ -167,6 +167,10 @@
         "status": "passed"
       },
       {
+        "name": "actual source admits two personal preparations and close/reopen while preserving another reader",
+        "status": "passed"
+      },
+      {
         "name": "actual-source cancellation drains extraction and deletes partial files",
         "status": "passed"
       },
@@ -181,11 +185,11 @@
         "bytes": 73339323,
         "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
         "pages": 24,
-        "coldPreparationMs": 461.092708,
+        "coldPreparationMs": 476.47745900000007,
         "resources": {
-          "mainCpuMicros": 145873,
-          "beforeRss": 18989824,
-          "sampledPeakRss": 57099152,
+          "mainCpuMicros": 193754,
+          "beforeRss": 18793216,
+          "sampledPeakRss": 51250088,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -195,11 +199,11 @@
         "bytes": 39372234,
         "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
         "pages": 33,
-        "coldPreparationMs": 202.4920830000001,
+        "coldPreparationMs": 245.39504199999988,
         "resources": {
-          "mainCpuMicros": 51424,
-          "beforeRss": 123454712,
-          "sampledPeakRss": 125486328,
+          "mainCpuMicros": 88310,
+          "beforeRss": 137970912,
+          "sampledPeakRss": 153175264,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -209,11 +213,11 @@
         "bytes": 74500125,
         "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
         "pages": 24,
-        "coldPreparationMs": 371.613875,
+        "coldPreparationMs": 421.3286250000001,
         "resources": {
-          "mainCpuMicros": 79702,
-          "beforeRss": 89965792,
-          "sampledPeakRss": 89965792,
+          "mainCpuMicros": 122049,
+          "beforeRss": 99828936,
+          "sampledPeakRss": 100189384,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -223,11 +227,11 @@
         "bytes": 41725042,
         "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
         "pages": 30,
-        "coldPreparationMs": 207.26262499999984,
+        "coldPreparationMs": 232.8404999999998,
         "resources": {
-          "mainCpuMicros": 48392,
-          "beforeRss": 120718584,
-          "sampledPeakRss": 120718584,
+          "mainCpuMicros": 74523,
+          "beforeRss": 123831544,
+          "sampledPeakRss": 124716280,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -237,11 +241,11 @@
         "bytes": 82635611,
         "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
         "pages": 24,
-        "coldPreparationMs": 377.37808300000006,
+        "coldPreparationMs": 399.44725000000017,
         "resources": {
-          "mainCpuMicros": 85883,
-          "beforeRss": 86967520,
-          "sampledPeakRss": 170296544,
+          "mainCpuMicros": 95114,
+          "beforeRss": 90604768,
+          "sampledPeakRss": 90604768,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -251,18 +255,17 @@
         "bytes": 401719147,
         "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
         "pages": 265,
-        "coldPreparationMs": 355.0147500000003,
+        "coldPreparationMs": 366.60062500000004,
         "resources": {
-          "mainCpuMicros": 467136,
-          "beforeRss": 151897408,
-          "sampledPeakRss": 190039360,
+          "mainCpuMicros": 461209,
+          "beforeRss": 131728752,
+          "sampledPeakRss": 159040880,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
       }
     ],
     "controlledProgress": [
-      6,
       7,
       8,
       9,
@@ -302,6 +305,14 @@
         "status": "passed"
       },
       {
+        "name": "eight actual account deliveries reject a ninth while renewal and independent guest pages work",
+        "status": "passed"
+      },
+      {
+        "name": "releasing an actual account delivery admits its previously rejected session",
+        "status": "passed"
+      },
+      {
         "name": "guest cannot borrow host session or release its lease",
         "status": "passed"
       },
@@ -326,7 +337,7 @@
         "status": "passed"
       }
     ],
-    "coldAuthenticatedManifestMs": 6090.81775,
+    "coldAuthenticatedManifestMs": 23392.76525,
     "status": "passed"
   },
   "renderEquality": {
@@ -676,15 +687,11 @@
     "status": "passed"
   },
   "supplementalTests": {
-    "newBoundaryCases": 24,
+    "newBoundaryCases": 26,
     "meaning": "15 server-native fixtures, four client protocol/cancellation fixtures and five exit/navigation lifecycle cases. Authored tests supplement real-file acceptance."
   },
   "gates": {
-    "appTests": {
-      "pass": 885,
-      "guardedSkip": 718,
-      "fail": 0
-    },
+    "appTests": "887 passed / 718 guarded skips / 0 failed",
     "productionBuild": "passed locally; Linux native runtime actual-file check passed",
     "finalTypeStyleInventory": "Passed locally; PR CI checks the published head."
   },
@@ -729,6 +736,303 @@
         24,
         24
       ]
+    },
+    "accountAdmission": {
+      "limit": 8,
+      "actualCopyCases": 2,
+      "coldPreparationPolicy": "Global two-preparation budget; initial one-per-account gate removed after verified normal-dev/user reopen failures. Actual archive replay covers close/reopen and two personal preparations with guest ownership retained."
     }
+  },
+  "stagedEntry": {
+    "boundary": "Actual admin, canonical comic and original live Jellyfin pages. Controlled interior gate proves ordering, not latency. Sequential ungated renderer comparisons hold one actual authorized source lease so every sample shares fully prepared server bytes; they exclude manifest acquisition; no bookmark/history writes. Browser plugin not available; existing Playwright fallback.",
+    "cases": [
+      {
+        "variant": "unstaged",
+        "factory": {
+          "ready": false,
+          "calls": [
+            0,
+            23,
+            1,
+            22
+          ],
+          "canvases": 0
+        },
+        "calls": [
+          0,
+          23,
+          1,
+          22,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          21,
+          20,
+          19,
+          18,
+          17,
+          16
+        ],
+        "failures": []
+      },
+      {
+        "variant": "staged",
+        "factory": {
+          "ready": true,
+          "calls": [
+            0,
+            23
+          ],
+          "canvases": 1
+        },
+        "calls": [
+          0,
+          23,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          22,
+          21,
+          20,
+          19,
+          18,
+          17,
+          16
+        ],
+        "failures": []
+      }
+    ],
+    "samples": [
+      {
+        "round": 0,
+        "variant": "unstaged",
+        "coversMs": 462.10000002384186,
+        "readyMs": 3557.4000000953674,
+        "coverCalls": 5,
+        "callsAtReady": 10
+      },
+      {
+        "round": 0,
+        "variant": "staged",
+        "coversMs": 343.5,
+        "readyMs": 2402.899999976158,
+        "coverCalls": 2,
+        "callsAtReady": 5
+      },
+      {
+        "round": 1,
+        "variant": "staged",
+        "coversMs": 339.7000000476837,
+        "readyMs": 2392.600000023842,
+        "coverCalls": 2,
+        "callsAtReady": 5
+      },
+      {
+        "round": 1,
+        "variant": "unstaged",
+        "coversMs": 383.5,
+        "readyMs": 3370.100000023842,
+        "coverCalls": 5,
+        "callsAtReady": 10
+      },
+      {
+        "round": 2,
+        "variant": "unstaged",
+        "coversMs": 375.8000000715256,
+        "readyMs": 3288.2000000476837,
+        "coverCalls": 5,
+        "callsAtReady": 10
+      },
+      {
+        "round": 2,
+        "variant": "staged",
+        "coversMs": 355.2999999523163,
+        "readyMs": 3343.399999976158,
+        "coverCalls": 2,
+        "callsAtReady": 5
+      }
+    ],
+    "errors": [],
+    "status": "passed",
+    "baselineCommit": "ab1a351c9fa5cfd15d401e7ba4b5b90d9644fe53",
+    "note": "Factory and readiness timings start after physical manifest/layout creation. One actual source lease keeps original page files prepared for every comparison. Counters are physical-face getPage calls, not necessarily one HTTP request each. This is not cold-click latency. One paired readiness result is adverse.",
+    "comparisonMediansMs": {
+      "unstaged": {
+        "coversMs": 383.5,
+        "readyMs": 3370.100000023842
+      },
+      "staged": {
+        "coversMs": 343.5,
+        "readyMs": 2402.899999976158
+      }
+    }
+  },
+  "runtimeFingerprintMethod": "SHA256 of sorted path=sha256 lines, ending in newline",
+  "stagedEntryLifecycle": {
+    "boundary": "Actual admin, canonical comic and original live pages. Controlled interior gate proves scheduling, not latency; no bookmark/history writes. Browser plugin not available; existing Playwright fallback.",
+    "cases": [
+      {
+        "variant": "staged",
+        "factory": {
+          "ready": true,
+          "calls": [
+            0,
+            23
+          ],
+          "canvases": 1
+        },
+        "calls": [
+          0,
+          23,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          22,
+          21,
+          20,
+          19,
+          18,
+          17,
+          16
+        ],
+        "failures": []
+      },
+      {
+        "mode": "following",
+        "calls": [
+          0,
+          22,
+          1,
+          9,
+          10,
+          8,
+          7,
+          6,
+          5,
+          4,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "callbacks": 0,
+        "remainingCanvases": 0
+      },
+      {
+        "mode": "reduced",
+        "calls": [
+          0,
+          22,
+          1,
+          2,
+          3
+        ],
+        "callbacks": 0,
+        "remainingCanvases": 0
+      },
+      {
+        "mode": "cancel",
+        "calls": [
+          0,
+          22,
+          1
+        ],
+        "callbacks": 0,
+        "remainingCanvases": 0
+      }
+    ],
+    "errors": [],
+    "status": "passed"
+  },
+  "normalBrowserFollowup": {
+    "boundary": "Actual normal-dev admin and original comic, genuine HTTP, desktop/mobile Chromium. Ephemeral admin login; no page turns or setting mutations. Browser plugin not available; existing Playwright fallback.",
+    "status": "passed",
+    "checks": [
+      "signed-in actual media identity and meaningful content",
+      "desktop/mobile original Three.js reader renders without archive request or full-image scan",
+      "minimize/resume reacquires page delivery",
+      "dim and blur both fade in/out through intermediate opacity; reduced motion creates no backdrop animations",
+      "reverse exit persists mid-flight then tears down every WebGL context; reduced motion exits without animation",
+      "open/minimize/resume/close and reduced-motion reopen, unchanged progress/history, no framework overlay or app console errors"
+    ],
+    "backdrop": [
+      {
+        "kind": "reader-dim",
+        "duration": 250,
+        "from": "0",
+        "to": "1",
+        "midOpacity": 0.466492
+      },
+      {
+        "kind": "reader-blur",
+        "duration": 250,
+        "from": "0",
+        "to": "1",
+        "midOpacity": 0.333116
+      },
+      {
+        "kind": "reader-dim",
+        "duration": 250,
+        "from": "1",
+        "to": "0",
+        "midOpacity": 0.59982
+      },
+      {
+        "kind": "reader-blur",
+        "duration": 250,
+        "from": "1",
+        "to": "0",
+        "midOpacity": 0.59982
+      },
+      {
+        "kind": "reader-blur",
+        "duration": 250,
+        "from": "0",
+        "to": "1",
+        "midOpacity": 0
+      },
+      {
+        "kind": "reader-dim",
+        "duration": 250,
+        "from": "0",
+        "to": "1",
+        "midOpacity": 0.466668
+      },
+      {
+        "kind": "reader-blur",
+        "duration": 250,
+        "from": "0",
+        "to": "1",
+        "midOpacity": 0.466564
+      },
+      {
+        "kind": "reader-dim",
+        "duration": 250,
+        "from": "1",
+        "to": "0",
+        "midOpacity": 0.599756
+      },
+      {
+        "kind": "reader-blur",
+        "duration": 250,
+        "from": "1",
+        "to": "0",
+        "midOpacity": 0.599756
+      }
+    ],
+    "reducedExitMs": 600.6703330000018,
+    "transferCaveat": "CDP loadingFinished omits some streamed response bytes; no transfer-volume claim from these counters."
   }
 }
