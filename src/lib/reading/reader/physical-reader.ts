@@ -21,6 +21,7 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
   let navigation = Promise.resolve();
   let lastLocation = options.location;
   let closed = false;
+  let leaving: Promise<void> | undefined;
   const cache = new Map<number, Promise<HTMLCanvasElement>>();
   const waiters = new Set<{
     resolve(): void;
@@ -135,7 +136,23 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
     return {
       previous: () => turn(-1),
       next: () => turn(1),
-      canTurn: direction => !external && !fault && options.controlled?.() !== false && (!state?.busy || !!state.canCascade && state.cascadeDirection === (direction === 'next' ? 1 : -1)),
+      canTurn: direction => !leaving && !external && !fault && options.controlled?.() !== false && (!state?.busy || !!state.canCascade && state.cascadeDirection === (direction === 'next' ? 1 : -1)),
+      leave() {
+        if (!leaving) {
+          muted++;
+          revision++;
+          leaving = (async () => {
+            // Closing during a pending turn/load must still cancel immediately.
+            if (state?.busy || external || fault || document.hidden)
+              return;
+            await navigation.catch(() => { });
+            await idle();
+            signal.throwIfAborted();
+            await renderer!.leave();
+          })().finally(() => { muted--; });
+        }
+        return leaving;
+      },
       go,
       destroy,
     };
@@ -146,12 +163,14 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
   }
   async function turn(direction: number) {
     signal.throwIfAborted();
-    if (external || options.controlled?.() === false)
+    if (leaving || external || options.controlled?.() === false)
       return;
     await renderer!.turn(direction);
     await idle();
   }
   function go(location: ReadingLocation): Promise<void> {
+    if (leaving)
+      return Promise.resolve();
     const at = ++revision;
     external++;
     const pending = navigation.catch(() => {

@@ -1,5 +1,7 @@
 # Unlimited downloads and reading parties
 
+**Historical decision:** the later [shared server-delivery implementation](server-delivery.md) supersedes whole-archive browser download for remote comics. Preserve this record of the earlier accepted tradeoff.
+
 ## Accepted temporary behavior — 19 October 2026
 
 The user explicitly chose to retain automatic reading-party downloads without a compressed-file download cap: joining a party expresses their intent to view the host's selected item. Do not add a per-edition confirmation or restore the cap in this pass.

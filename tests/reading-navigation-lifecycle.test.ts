@@ -16,9 +16,9 @@ const code=compileRunes(`
   const page={data:{user:{settings:{}}}};
   const syncedPlayer={room:{mediaType:'reading',mediaId:'work',edition:'edition',readingFormat:'pdf',reading:{format:'pdf',page:1,total:2}}};
   const canControlPlayback=()=>control,fixtureHost={},message=error=>error.message;
-  const api=async()=>{calls.push('api');},recordReading=async()=>{calls.push('record');return true;},publishReading=()=>{calls.push('publish');},setReadingNavigator=()=>{calls.push('navigator');},closeReading=async()=>{calls.push('close');},retryReadingSave=async()=>{calls.push('retry');};
+  let exit=null,navigator=null;const api=async()=>{calls.push('api');},recordReading=async()=>{calls.push('record');return true;},publishReading=()=>{calls.push('publish');},setReadingNavigator=value=>{navigator=value;calls.push('navigator');},setReadingExit=value=>{exit=value},closeReading=async()=>{calls.push('close');},retryReadingSave=async()=>{calls.push('retry');};
   ${script}
-  return {turn,calls,openPreview(){sample.visible=true;},closePreview:close,get previewVisible(){return sample.visible;},get location(){return reader.location;},get live(){return applicationReader;},replace(){applicationReader.session={...applicationReader.session,id:'replacement'};},hide(){applicationReader.visible=false;},show(){applicationReader.visible=true;},get busy(){return busy;},get external(){return external;},get error(){return reader.error;},get loadProgress(){return loadProgress;},get loading(){return loading;}};
+  return {turn,calls,exit:()=>exit?.(),navigate:location=>navigator?.(location),openPreview(){sample.visible=true;},closePreview:close,get previewVisible(){return sample.visible;},get location(){return reader.location;},get live(){return applicationReader;},replace(){applicationReader.session={...applicationReader.session,id:'replacement'};},hide(){applicationReader.visible=false;},show(){applicationReader.visible=true;},get busy(){return busy;},get external(){return external;},get error(){return reader.error;},get loadProgress(){return loadProgress;},get loading(){return loading;}};
  }`);
 const {create}=await import(moduleUrl(code));
 const deferred=()=>{let resolve!:()=>void,reject!:(cause:unknown)=>void;const promise=new Promise<void>((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
@@ -155,4 +155,11 @@ test('external picker cancellation clears the current loading owner and retires 
  expect(owner.retired).toEqual(['obsolete-session']);
  const already=new AbortController();already.abort();await owner.openReading('work',{connectionId:'connection',externalId:'copy'},already.signal);
  expect(owner.reader.loading).toBe(false);
+});
+
+test('exit fences pending and new external navigation before animation can save another location',async()=>{
+ const motion=deferred(),targets:unknown[]=[];let owner:any;
+ const dispose=runtime.effect_root(()=>owner=create(async()=>({next:async()=>{},go:async(location:unknown)=>{targets.push(location);await motion.promise;},leave:async()=>{},destroy(){}})));
+ try{await settle();const pending=owner.navigate({format:'pdf',page:2,total:3});await owner.exit();motion.resolve();await pending;await owner.navigate({format:'pdf',page:3,total:3});expect(targets).toHaveLength(1);expect(owner.calls.filter((value:string)=>value==='record')).toEqual([]);expect(owner.location).toBeNull();}
+ finally{motion.resolve();dispose();}
 });

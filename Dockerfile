@@ -1,5 +1,10 @@
-FROM oven/bun:1.4.3-debian AS build
+FROM oven/bun:1.4.3-debian AS bun-runtime
+
+# Compile native code against the same distribution as the shipping runtime.
+FROM debian:bookworm-slim AS build
+COPY --from=bun-runtime /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends g++ libarchive-dev ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY package.json bun.lock ./
 COPY patches/ ./patches/
 RUN bun install --frozen-lockfile
@@ -14,9 +19,9 @@ RUN bun install --frozen-lockfile --production
 
 FROM debian:bookworm-slim AS runtime
 ARG COAST_BUILD_ID=unknown
-ENV NODE_ENV=production COAST_DATA_DIR=/data HOST=0.0.0.0 PORT=3000 IDLE_TIMEOUT=60 COAST_BUILD_ID=$COAST_BUILD_ID
+ENV NODE_ENV=production COAST_DATA_DIR=/data HOST=0.0.0.0 PORT=3000 IDLE_TIMEOUT=60 COAST_READING_EXTRACTOR=/app/build/reading-extractor COAST_BUILD_ID=$COAST_BUILD_ID
 RUN mkdir -p /etc/postgresql-common && printf 'create_main_cluster = false\n' > /etc/postgresql-common/createcluster.conf \
-    && apt-get update && apt-get install -y --no-install-recommends postgresql postgresql-client ca-certificates tini gosu \
+    && apt-get update && apt-get install -y --no-install-recommends postgresql postgresql-client ca-certificates tini gosu libarchive13 \
     && rm -rf /var/lib/apt/lists/* \
     && useradd --system --uid 10001 --user-group --create-home --home-dir /home/coast coast
 COPY --from=build /usr/local/bin/bun /usr/local/bin/bun

@@ -1,5 +1,5 @@
 <script lang="ts">
- import { reader as applicationReader, closeReading, recordReading, publishReading, setReadingNavigator, retryReadingSave } from './client.svelte';
+ import { reader as applicationReader, closeReading, recordReading, publishReading, setReadingNavigator, setReadingExit, retryReadingSave } from './client.svelte';
  import { useClient, reportFailure } from '$lib/ui/client-context';
  import { page } from '$app/state';
  import { untrack } from 'svelte';
@@ -38,6 +38,8 @@
   const initialLocation=untrack(()=>reader.location??session.location);
   const sanitizeOddPages=untrack(()=>page.data.user?.settings?.sanitizeOddReadingPages!==false);
   const controller=new AbortController(),owner=++readerOwner;let current:ReaderEngine|undefined,resize:ResizeObserver|undefined,navigation=0;loadProgress={phase:'prepare'};loading=true;reader.rendering=true;
+  let exiting=false;
+  setReadingExit(()=>{exiting=true;navigation++;return current?.leave?.()??Promise.resolve();});
   let heartbeatPending=false;
   const heartbeat=setInterval(()=>{
    if(document.hidden||!reader.visible||controller.signal.aborted||heartbeatPending)return;
@@ -46,8 +48,8 @@
     .catch(cause=>{if(!controller.signal.aborted&&(isFeatureDisabled(cause)||cause instanceof ApiError&&cause.status===410)&&reader.session?.id===session.id)void closeReading(true,false).catch(()=>{});})
     .finally(()=>{heartbeatPending=false;});
   },60000);
-  const ownsNavigation=(revision:number)=>!controller.signal.aborted&&revision===navigation&&reader.session?.id===session.id;
-  void import('./reader/engine').then(module=>module.createReader({host:surface,source:file??session.url!,format:session.format,kind:session.kind,location:initialLocation,signal:controller.signal,sanitizeOddPages,progress:value=>{if(!controller.signal.aborted&&reader.session?.id===session.id)loadProgress=value;},dismiss:()=>{if(!controller.signal.aborted)close();},controlled:()=>controlled,failed:cause=>{if(!controller.signal.aborted&&reader.session?.id===session.id)reader.error=message(cause);},changed:location=>{
+  const ownsNavigation=(revision:number)=>!exiting&&!controller.signal.aborted&&revision===navigation&&reader.session?.id===session.id;
+  void import('./reader/engine').then(module=>module.createReader({host:surface,source:file??session.url!,manifest:file?undefined:session.manifest,format:session.format,kind:session.kind,location:initialLocation,signal:controller.signal,sanitizeOddPages,progress:value=>{if(!controller.signal.aborted&&reader.session?.id===session.id)loadProgress=value;},dismiss:()=>{if(!controller.signal.aborted)close();},controlled:()=>controlled,failed:cause=>{if(!controller.signal.aborted&&reader.session?.id===session.id)reader.error=message(cause);},changed:location=>{
     if(controller.signal.aborted)return;
     const room=syncedPlayer.room;
     // EPUB links are navigation too: viewers follow the room's location.
@@ -68,6 +70,7 @@
      });resize.observe(surface);
     }
     const navigate=async(location:ReadingLocation)=>{
+     if(exiting)return;
      const revision=++navigation;external=true;
      try{await result.go(location);if(!ownsNavigation(revision))return;reader.location=location;void recordReading(location);}
      catch(cause){if(ownsNavigation(revision))throw cause;}
@@ -77,7 +80,7 @@
     const latest=reader.location;
     if(latest&&!sameReadingLocation(initialLocation,latest))await navigate(latest);
    }).catch(cause=>{if(!controller.signal.aborted)reader.error=message(cause);}).finally(()=>{if(!controller.signal.aborted){loading=false;reader.rendering=false;}});
-  return ()=>{clearInterval(heartbeat);resize?.disconnect();controller.abort();navigation++;if(readerOwner===owner){readerOwner++;busy=false;}external=false;current?.destroy();setReadingNavigator(null);engine=undefined;reader.rendering=false;};
+  return ()=>{clearInterval(heartbeat);resize?.disconnect();controller.abort();navigation++;if(readerOwner===owner){readerOwner++;busy=false;setReadingExit(null);}external=false;current?.destroy();setReadingNavigator(null);engine=undefined;reader.rendering=false;};
  });
  async function turn(direction:'previous'|'next'){
   if(preview){if(!controlled||example?.state==='opening'||example?.state==='error')return;const location=sample.location;if(location&&location.format!=='epub')sample.location={...location,page:Math.min(location.total,Math.max(1,location.page+(direction==='next'?1:-1)))};return;}

@@ -54,6 +54,10 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   // Validate GPU setup before allocating geometry, materials or textures.
   const webgl = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
   const cleanups: (() => void)[] = [];
+  const animations = new Set<(complete: boolean) => void>();
+  cleanups.push(() => {
+    for (const finish of [...animations]) finish(false);
+  });
   function dispose() {
     if (disposed)
       return;
@@ -453,25 +457,35 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       onState({ opened, index, busy, cascadeDirection: cascade.direction, canCascade: cascade.available, curlingPages: cascade.records.filter(record => record.start !== null).length, backCover: backClosed, focused: view !== 'inspect', focusedPage: isReading() && opened ? focusedSide : null, readingCover: isReading() && !opened });
   }
   async function animate(duration: number, step: (progress: number) => void) {
-    if (reduced || duration === 0) {
+    if (reduced || document.hidden || duration === 0) {
       step(1);
       render();
       return;
     }
     await new Promise<void>(resolve => {
       const start = performance.now();
+      let pending = 0, finished = false;
+      const finish = (complete: boolean) => {
+        if (finished) return;
+        finished = true;
+        cancelAnimationFrame(pending);
+        animations.delete(finish);
+        if (complete && !disposed) {
+          step(1);
+          render();
+        }
+        resolve();
+      };
+      animations.add(finish);
       function tick(now: number) {
-        if (disposed)
-          return resolve();
+        if (disposed) return finish(false);
         const t = Math.min(1, (now - start) / duration);
         step(ease(t));
         render();
-        if (t < 1)
-          requestAnimationFrame(tick);
-        else
-          resolve();
+        if (t < 1) pending = requestAnimationFrame(tick);
+        else finish(false);
       }
-      requestAnimationFrame(tick);
+      pending = requestAnimationFrame(tick);
     });
   }
   function trim() {
@@ -552,6 +566,23 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       notify();
       redraw();
     }
+  }
+  async function leave() {
+    if (disposed || entrancePending) return;
+    if (opened) await closeFront();
+    if (disposed) return;
+    if (view !== 'spread' || manualFraming || camera.zoom !== 1 || backClosed) await focusSpread();
+    if (disposed) return;
+    preloader.stop();
+    busy = true;
+    notify();
+    const travel = (2 * camera.position.z * Math.tan(camera.fov * Math.PI / 360) + height) / 2 + .5;
+    await animate(1400, t => {
+      const pose = bookEntrancePose(1 - t, travel, closedTilt);
+      book.position.y = pose.y;
+      [rotX, rotY, rotZ] = pose.rotation;
+    });
+    book.visible = false;
   }
   function closedSide(back: boolean) {
     if (back === backClosed)
@@ -1376,6 +1407,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   };
   surface.canvas.addEventListener('webglcontextlost', lost, { signal: events.signal });
   const visibility = () => {
+    if (document.hidden) for (const finish of [...animations]) finish(true);
     preloader.pause(document.hidden);
     if (!document.hidden)
       redraw();
@@ -1470,6 +1502,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       fill.intensity = .35 + v * .45;
       redraw();
     },
+    leave,
     dispose,
 
   };

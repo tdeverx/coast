@@ -9,8 +9,8 @@
     "bun": ">=1.4.3"
   },
   "scripts": {
-    "dev": "bun --bun vite dev --host 0.0.0.0",
-    "build": "bun run navigation:check && bun --bun vite build",
+    "dev": "bun run reading:native && bun --bun vite dev --host 0.0.0.0",
+    "build": "bun run navigation:check && bun --bun vite build && bun scripts/build-reading-extractor.ts build/reading-extractor",
     "start": "bun build/index.js",
     "check": "bun --bun svelte-kit sync && bun --bun svelte-check --tsconfig ./tsconfig.json",
     "test": "bun test ./tests",
@@ -22,7 +22,8 @@
     "test:recovery": "bun scripts/test-recovery.ts",
     "code:style": "bun scripts/source-style.ts",
     "code:inventory": "bun scripts/code-inventory.ts --check",
-    "navigation:check": "bun scripts/check-navigation-runtime.ts"
+    "navigation:check": "bun scripts/check-navigation-runtime.ts",
+    "reading:native": "bun scripts/build-reading-extractor.ts"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.5",
@@ -33,6 +34,7 @@
     "hls.js": "^1.6.0",
     "libarchive-wasm": "1.2.0",
     "pdfjs-dist": "^6.4.299",
+    "sharp": "0.35.5",
     "three": "0.186.1",
     "valibot": "^1.1.0"
   },

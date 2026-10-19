@@ -2,6 +2,9 @@ import { api, message, refreshAfterChange, isFeatureDisabled, ApiError } from '$
 import { readingFormat, readingFileLabel, sameReadingLocation, type ReadingLocation, type ReadingSessionView, type ReadingPrepareInput } from './model';
 export const reader = $state({session:null as ReadingSessionView|null,file:null as File|null,visible:false,loading:false,rendering:false,syncing:false,unsaved:false,error:'',location:null as ReadingLocation|null});
 let move:((location:ReadingLocation)=>Promise<void>)|null=null;
+let exit:(()=>Promise<void>)|null=null;
+export function setReadingExit(transition:typeof exit){exit=transition;}
+export async function hideReading(){const id=reader.session?.id;await exit?.().catch(()=>{});if(reader.session?.id===id)reader.visible=false;}
 let generation=0, opening:AbortController|null=null;
 function cancelOpening(){generation++;opening?.abort();opening=null;reader.loading=false;}
 export function setReadingNavigator(navigate:typeof move){move=navigate;}
@@ -76,8 +79,9 @@ export async function closeReading(cancelPendingOpening=true,save=true){
  const flushed=save?(reader.location?await recordReading(reader.location):await writing):true;
  if(!save)pending=null;
  if(flushed===false){reader.visible=true;throw new Error(reader.error);}
+ if(save&&reader.visible)await exit?.().catch(()=>{});
  if(reader.session?.id!==session.id)return;
- reader.visible=false;reader.session=null;reader.file=null;reader.location=null;reader.unsaved=false;move=null;
+ reader.visible=false;reader.session=null;reader.file=null;reader.location=null;reader.unsaved=false;move=null;exit=null;
  await retireSession(session);await refreshAfterChange('reading');
 }
 type BookmarkSnapshot={id:string;location:ReadingLocation};

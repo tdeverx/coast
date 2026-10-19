@@ -5,12 +5,14 @@ export type ReaderEngine = {
   next(): Promise<void>;
   go(location: ReadingLocation): Promise<void>;
   resize?(): Promise<void>;
+  leave?(): Promise<void>;
   canTurn?(direction: 'previous' | 'next'): boolean;
   destroy(): void;
 };
 export type ReaderOptions = {
   host: HTMLElement;
   source: File | string;
+  manifest?: string;
   format: ReadingFormat;
   kind?: ReadingKind;
   location: ReadingLocation | null;

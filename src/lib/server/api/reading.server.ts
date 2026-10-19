@@ -1,3 +1,4 @@
+import { readingManifest, readingPage } from '$lib/reading/delivery.server';
 import { json } from '@sveltejs/kit';
 import { addReading } from '$lib/application/reading.server';
 import { updateReading } from '$lib/core/reading/service.server';
@@ -11,8 +12,10 @@ import { touchReading, prepareReading, moveReading, closeReading, streamReading,
 export async function handleReading({ uid, path, method, body, url, request }: ApiContext): Promise<Response | undefined> {
   if (path[0] !== 'reading') return;
   if(path[1]==='collections'&&path.length===3&&method==='GET')return json(await readingGroupData(uid,uuid(path[2]),Number(url.searchParams.get('page')??1)));
+  if(path[1]==='sessions'&&path[3]==='pages'&&path.length===5&&method==='GET')return readingPage(uid,uuid(path[2]),path[4],request);
   if(path[1]==='sessions'&&path.length===4){
     const id=uuid(path[2]);
+    if(path[3]==='manifest'&&method==='GET')return readingManifest(uid,id,request);
     if(path[3]==='file'&&['GET','HEAD'].includes(method))return streamReading(uid,id,request);
     if(path[3]==='location'&&method==='POST')return json(await moveReading(uid,id,body));
     if(path[3]==='heartbeat'&&method==='POST')return json(await touchReading(uid,id));

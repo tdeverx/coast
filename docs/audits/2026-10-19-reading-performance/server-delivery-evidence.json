@@ -1,0 +1,667 @@
+{
+  "date": "2026-10-19",
+  "baselineRef": "463fa8ae992a59ca13c7dd80ef456f0cc9503aa9",
+  "runtimeFiles": {
+    "Dockerfile": "aff377143912eb0326c8a914d1ce8ac7b7664118c4fe165b324e2258ff5b0765",
+    "package.json": "79368f7a4d71b993d85aea6ab175f4e93d041bae95d634ef90c0aab974f308b8",
+    "bun.lock": "1e4b54e41340c8bdc578d25a96ae2d97696967828c6a62f486d6d426af878aff",
+    "scripts/build-reading-extractor.ts": "9a7205a8c84e77ed27bf45bfccaee8394960a8419f2520975b2e9196c8550f99",
+    "scripts/native/reading-extractor.cc": "eee8ae8e95169ebbe51a1d9d17ccc0afd8129d37cffb77bf04ee64bf43a65924",
+    "src/lib/reading/cache.server.ts": "1587f499b1c57ecb9e5a3b6d5e6710c7037658288221e0c8c03d43e43abee443",
+    "src/lib/reading/delivery.server.ts": "6fc74521b0965160a89ee711a1a0aa8bc41fd2b2e6c8a45e1ac7ab65ad2be5f3",
+    "src/lib/reading/delivery.ts": "f83e8795d6fa76a26e94def046cf444657d3fa719563908df5d6210765b6b7c6",
+    "src/lib/reading/sessions.server.ts": "b6d5d34ece2fc2445d5113003e3b5e8b0ee6191f1520ff78a7fcb5df19666955",
+    "src/lib/reading/Reader.svelte": "ed7fa2cdac5a1bcb81bfa00ee41e55e217fda10e1034d53c124ad9d560dad867",
+    "src/lib/reading/model.ts": "8dce0d9d7cd0825e4a0847004d36e75768a8dd1ae7daf479106af1aad772ab84",
+    "src/lib/reading/client.svelte.ts": "7bfb7adc0545d8d63edc26ca76ef0a190682542545d17fac39d1959e07155b69",
+    "src/lib/reading/reader/remote-comic.ts": "562de540a5018d723b314ad7973e79ff27e0d78934f5d6caa43ba9955afddc74",
+    "src/lib/reading/reader/physical-pages.ts": "b6968d49992b015209ae493664b14c71485e89dbd4c1080df42cdd1a65641104",
+    "src/lib/reading/reader/physical-reader.ts": "c10f5b1f3a4dcb01375a92458a3287dbe7c92329021a2148e63a1ecb81cec7ac",
+    "src/lib/reading/reader/physical/renderer.ts": "db1178b843295aa0e2cae0d3d56c9ce2ce0d9795f22ffba8a598979618e7efb9",
+    "src/lib/reading/reader/engine.ts": "97327d737f1dab48f522fb622ff0a185228818aeed4261fe1f5c42e9a14a1a4d",
+    "src/lib/server/startup.ts": "7aff39aab80e00e4ef6b4e33a0dc9a8243d4132560d02c4adc6801d98618229b",
+    "src/lib/server/api/reading.server.ts": "ed3ca9b2223ecb9089ec61826307c99908483fa2eb13514f4c22479ede88e102",
+    "src/lib/ui/components/Header.svelte": "eaab91cf97570315ca1628667e254d787c7eb34c7747f180bb7d02a0afce39fa"
+  },
+  "runtimeFingerprint": "8ce92524aa38270d721a1b464a945df551b38500c0f60cf94cc5af207ab7f4c0",
+  "runtime": {
+    "bun": "1.4.3",
+    "sharp": "0.35.5",
+    "macLibarchive": "3.8.10",
+    "production": "Debian bookworm arm64 native extraction + sharp actual-page metadata passed"
+  },
+  "actualFiles": {
+    "boundary": "Actual archived file replay on private temporary disk. No database/provider/browser timings or production admission claim for missing formats. Controlled leases/capacity/abort use exact original bytes.",
+    "source": "463fa8ae992a59ca13c7dd80ef456f0cc9503aa9",
+    "cases": [
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release removes temporary data and reservation",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: exact-version manifest supports verified page delivery during reacquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release removes temporary data and reservation",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: exact-version manifest supports verified page delivery during reacquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release removes temporary data and reservation",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: exact-version manifest supports verified page delivery during reacquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release removes temporary data and reservation",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: exact-version manifest supports verified page delivery during reacquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release removes temporary data and reservation",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: exact-version manifest supports verified page delivery during reacquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: last-reader release removes temporary data and reservation",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: exact-version manifest supports verified page delivery during reacquisition",
+        "status": "passed"
+      },
+      {
+        "name": "actual source rejects disk/metadata capacity pressure and returns both reservations",
+        "status": "passed"
+      },
+      {
+        "name": "actual-source cancellation drains extraction and deletes partial files",
+        "status": "passed"
+      },
+      {
+        "name": "startup orphan cleanup removes its symlink without following its target",
+        "status": "passed"
+      }
+    ],
+    "samples": [
+      {
+        "format": "cbr",
+        "bytes": 73339323,
+        "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+        "pages": 24,
+        "coldPreparationMs": 538.968667,
+        "resources": {
+          "mainCpuMicros": 209178,
+          "beforeRss": 18465560,
+          "sampledPeakRss": 51315624,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 39372234,
+        "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
+        "pages": 33,
+        "coldPreparationMs": 226.01287500000012,
+        "resources": {
+          "mainCpuMicros": 72035,
+          "beforeRss": 115918000,
+          "sampledPeakRss": 117425328,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 74500125,
+        "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
+        "pages": 24,
+        "coldPreparationMs": 420.59241599999996,
+        "resources": {
+          "mainCpuMicros": 107737,
+          "beforeRss": 84133040,
+          "sampledPeakRss": 84165808,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 41725042,
+        "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
+        "pages": 30,
+        "coldPreparationMs": 233.79525000000012,
+        "resources": {
+          "mainCpuMicros": 66590,
+          "beforeRss": 148030784,
+          "sampledPeakRss": 157320512,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 82635611,
+        "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
+        "pages": 24,
+        "coldPreparationMs": 419.5034999999998,
+        "resources": {
+          "mainCpuMicros": 104798,
+          "beforeRss": 103236880,
+          "sampledPeakRss": 190104848,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbz",
+        "bytes": 401719147,
+        "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
+        "pages": 265,
+        "coldPreparationMs": 442.4511249999996,
+        "resources": {
+          "mainCpuMicros": 582772,
+          "beforeRss": 170526112,
+          "sampledPeakRss": 189253024,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      }
+    ],
+    "status": "passed"
+  },
+  "authenticatedActualCopy": {
+    "boundary": "Owned disposable restore, actual admin/guest connections and genuine live Jellyfin file. Controlled friendship/session/generation mutations only on copy; no worker or normal mutations.",
+    "cases": [
+      {
+        "name": "actual host preparation publishes only bounded presentation metadata",
+        "status": "passed"
+      },
+      {
+        "name": "superseded request cleanup preserves the actual session renewed by a newer request",
+        "status": "passed"
+      },
+      {
+        "name": "independently authorized actual party readers share the same prepared edition",
+        "status": "passed"
+      },
+      {
+        "name": "guest cannot borrow host session or release its lease",
+        "status": "passed"
+      },
+      {
+        "name": "authenticated guest page preserves original bytes and private cache policy",
+        "status": "passed"
+      },
+      {
+        "name": "real reading party positions remain canonical and speculative page requests do not journal",
+        "status": "passed"
+      },
+      {
+        "name": "closing host preserves guest delivery while closed sessions lose access",
+        "status": "passed"
+      },
+      {
+        "name": "source generation withdrawal rejects cached pages and releases only the revoked reader",
+        "status": "passed"
+      },
+      {
+        "name": "changed edition cannot reuse the prior manifest or pages",
+        "status": "passed"
+      }
+    ],
+    "coldAuthenticatedManifestMs": 6090.81775,
+    "status": "passed"
+  },
+  "renderEquality": {
+    "boundary": "Immutable baseline physical-pages vs current shared layout with actual six-file replay; all complete face hashes and canonical location mappings match per same preference. Replay timings exclude provider/auth/Three.js entrance and are not acceptance startup gains. First four files used Playwright payload interception; remaining two use cookie-protected loopback streaming after target-closed failure.",
+    "status": "passed",
+    "cases": [
+      {
+        "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+        "format": "cbr",
+        "bytes": 73339323,
+        "sanitizeOddPages": true,
+        "faces": 24,
+        "faceHash": "a4699c8107475f6c5708fc8b277567f00e09bbfd433155e4560de12454079b10",
+        "baselinePreparationMs": 22303.300000071526,
+        "serverPreparationMs": 3.100000023841858,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+        "format": "cbr",
+        "bytes": 73339323,
+        "sanitizeOddPages": false,
+        "faces": 26,
+        "faceHash": "e79f4e55c19699cd598d0dc3f5cac93e6a79d23d239721a527b939835b4bd2ad",
+        "baselinePreparationMs": 18718.600000023842,
+        "serverPreparationMs": 18.699999928474426,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
+        "format": "cbr",
+        "bytes": 39372234,
+        "sanitizeOddPages": true,
+        "faces": 34,
+        "faceHash": "f13b7ab8163f06418eb5c24676e079c60f928307dcf227dd0084acecff5c620d",
+        "baselinePreparationMs": 6630.799999952316,
+        "serverPreparationMs": 1.4000000953674316,
+        "baselineInspectionDecodes": 33,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
+        "format": "cbr",
+        "bytes": 39372234,
+        "sanitizeOddPages": false,
+        "faces": 34,
+        "faceHash": "f13b7ab8163f06418eb5c24676e079c60f928307dcf227dd0084acecff5c620d",
+        "baselinePreparationMs": 6291,
+        "serverPreparationMs": 1.2000000476837158,
+        "baselineInspectionDecodes": 33,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
+        "format": "cbr",
+        "bytes": 74500125,
+        "sanitizeOddPages": true,
+        "faces": 24,
+        "faceHash": "ef20e82948d15ad92923b758af5c7e5ac3a4bf3d7bb61ffe39b2851dbbe07b04",
+        "baselinePreparationMs": 18969.899999976158,
+        "serverPreparationMs": 1.100000023841858,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
+        "format": "cbr",
+        "bytes": 74500125,
+        "sanitizeOddPages": false,
+        "faces": 26,
+        "faceHash": "aed836e2d8f5aeeba4e727eeb0b2cb12e52860163965b3b4b5a7a33a25aaa10a",
+        "baselinePreparationMs": 16547.399999976158,
+        "serverPreparationMs": 1.2000000476837158,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
+        "format": "cbr",
+        "bytes": 41725042,
+        "sanitizeOddPages": true,
+        "faces": 30,
+        "faceHash": "03f5e893ac2dd27553f20d7b364e6e4b7a61a4d130af7ba086480c80b2194d65",
+        "baselinePreparationMs": 5948.100000023842,
+        "serverPreparationMs": 1.7000000476837158,
+        "baselineInspectionDecodes": 30,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
+        "format": "cbr",
+        "bytes": 41725042,
+        "sanitizeOddPages": false,
+        "faces": 30,
+        "faceHash": "03f5e893ac2dd27553f20d7b364e6e4b7a61a4d130af7ba086480c80b2194d65",
+        "baselinePreparationMs": 5905.799999952316,
+        "serverPreparationMs": 1,
+        "baselineInspectionDecodes": 30,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
+        "format": "cbr",
+        "bytes": 82635611,
+        "sanitizeOddPages": true,
+        "faces": 24,
+        "faceHash": "26c965e0dbb98535de814be1d4e3a45cbdbce27bcb8563510dcd90c2dcf0757f",
+        "baselinePreparationMs": 1818.5999999046326,
+        "serverPreparationMs": 3.3000000715255737,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
+        "format": "cbr",
+        "bytes": 82635611,
+        "sanitizeOddPages": false,
+        "faces": 26,
+        "faceHash": "e5a8a1488b773762e6ae870136c738c3df8a1c6d6204b3b88629a9189bfad29c",
+        "baselinePreparationMs": 1968,
+        "serverPreparationMs": 2,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
+        "format": "cbz",
+        "bytes": 401719147,
+        "sanitizeOddPages": true,
+        "faces": 264,
+        "faceHash": "5b0942e05ee46c49a287fd4d7db844f767383861edfcb8515cc34d4253b2bba2",
+        "baselinePreparationMs": 9919.299999952316,
+        "serverPreparationMs": 3.100000023841858,
+        "baselineInspectionDecodes": 265,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
+        "format": "cbz",
+        "bytes": 401719147,
+        "sanitizeOddPages": false,
+        "faces": 266,
+        "faceHash": "517b51f3a3c2da93d1d1beeaf9a5aa1ef606422af6f2f6216bceeb96afe73353",
+        "baselinePreparationMs": 6928.099999904633,
+        "serverPreparationMs": 1.399999976158142,
+        "baselineInspectionDecodes": 265,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      }
+    ],
+    "printedAndBlankFacesCompared": 808,
+    "preservedFailure": {
+      "type": "TargetClosedError",
+      "completedCases": 8,
+      "cause": "Not established; no product-failure or OOM claim. Whole-file protocol copies removed from replay harness."
+    }
+  },
+  "readerEntry": {
+    "boundary": "Serial actual admin/live configured Jellyfin HTTP. Immutable main 463fa8ae physical-reader vs current server delivery, same Three.js host/cover entry. One warm-up pair plus three alternating timed pairs. Close releases last bytes; server retains exact-version manifest after first round. Excludes route hydration, includes session POST/download/index/render/entrance. Not whole-app production p95. No page turns.",
+    "samples": [
+      {
+        "round": 0,
+        "warmup": true,
+        "variant": "baseline",
+        "readyMs": 9992.100000023842,
+        "bytes": 73339323,
+        "requests": 1,
+        "decodes": 34,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 0,
+        "warmup": true,
+        "variant": "server",
+        "readyMs": 11337.200000047684,
+        "bytes": 30341055,
+        "requests": 10,
+        "decodes": 10,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 1,
+        "warmup": false,
+        "variant": "server",
+        "readyMs": 9287.599999904633,
+        "bytes": 30337214,
+        "requests": 10,
+        "decodes": 10,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 1,
+        "warmup": false,
+        "variant": "baseline",
+        "readyMs": 11751,
+        "bytes": 73339323,
+        "requests": 1,
+        "decodes": 34,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 2,
+        "warmup": false,
+        "variant": "baseline",
+        "readyMs": 10902.700000047684,
+        "bytes": 73339323,
+        "requests": 1,
+        "decodes": 34,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 2,
+        "warmup": false,
+        "variant": "server",
+        "readyMs": 14835,
+        "bytes": 30337214,
+        "requests": 10,
+        "decodes": 10,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 3,
+        "warmup": false,
+        "variant": "server",
+        "readyMs": 10951.699999928474,
+        "bytes": 30337214,
+        "requests": 10,
+        "decodes": 10,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 3,
+        "warmup": false,
+        "variant": "baseline",
+        "readyMs": 15523.299999952316,
+        "bytes": 73339323,
+        "requests": 1,
+        "decodes": 34,
+        "canTurn": true,
+        "canvas": true
+      }
+    ],
+    "errors": [],
+    "status": "passed"
+  },
+  "normalBrowser": {
+    "boundary": "Actual normal-dev admin and original comic, genuine HTTP, desktop/mobile Chromium. Ephemeral admin login; no page turns or setting mutations. Browser plugin not available; existing Playwright fallback.",
+    "status": "passed",
+    "checks": [
+      "signed-in actual media identity and meaningful content",
+      "desktop/mobile original Three.js reader renders without archive request or full-image scan",
+      "minimize/resume reacquires page delivery",
+      "reverse exit persists mid-flight then tears down every WebGL context; reduced motion exits without animation",
+      "three repeated open/close cycles, unchanged progress/history, no framework overlay or app console errors"
+    ],
+    "viewports": [
+      [
+        1280,
+        800
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "samples": [
+      {
+        "cycle": 0,
+        "readyMs": 4794.733667,
+        "pages": 24,
+        "decodedImages": 13,
+        "pageRequests": 12,
+        "taskSeconds": 4.2111350000000005,
+        "heapUsed": 52701204
+      },
+      {
+        "cycle": 1,
+        "readyMs": 3122.5884579999984,
+        "pages": 24,
+        "decodedImages": 13,
+        "pageRequests": 12,
+        "taskSeconds": 2.7839039999999997,
+        "heapUsed": 53444836
+      },
+      {
+        "cycle": 2,
+        "readyMs": 3168.3728329999976,
+        "pages": 24,
+        "decodedImages": 12,
+        "pageRequests": 11,
+        "taskSeconds": 2.579332000000001,
+        "heapUsed": 54581532
+      }
+    ],
+    "knownPreexistingError": "Comic Vine remote-artwork CORS plus its failed resource, observed before and after; no reader errors.",
+    "transferCaveat": "CDP loadingFinished bytes were incomplete for streamed responses; discarded as transfer evidence. Actual counted readerEntry bytes above are the transfer comparison."
+  },
+  "exitEngine": {
+    "boundary": "Actual admin/session/live file through shared engine in isolated host; location callbacks observed, never persisted. Controlled interruption/reduced-motion cases. No progress/history mutation.",
+    "cases": [
+      {
+        "mode": "opened",
+        "leaveMs": 2343.100000023842,
+        "raf": 35,
+        "callbacksUnchanged": true,
+        "canvases": 0,
+        "reduced": false
+      },
+      {
+        "mode": "interrupted",
+        "leaveMs": 305.8000000715256,
+        "raf": 3,
+        "callbacksUnchanged": true,
+        "canvases": 0,
+        "reduced": false
+      },
+      {
+        "mode": "reduced",
+        "leaveMs": 0.19999992847442627,
+        "raf": 0,
+        "callbacksUnchanged": true,
+        "canvases": 0,
+        "reduced": true
+      }
+    ],
+    "errors": [],
+    "status": "passed"
+  },
+  "supplementalTests": {
+    "newBoundaryCases": 22,
+    "meaning": "13 server-native fixtures, four client protocol/cancellation fixtures, four exit lifecycle fixtures and one external-navigation fence. Authored tests supplement real-file acceptance."
+  },
+  "gates": {
+    "appTests": {
+      "pass": 883,
+      "guardedSkip": 718,
+      "fail": 0
+    },
+    "productionBuild": "passed locally; Linux native runtime actual-file check passed",
+    "finalTypeStyleInventory": "Passed locally; PR CI checks the published head."
+  },
+  "limits": [
+    "Single-process exclusive cache root, not shared across instances.",
+    "Cold complete manifest still requires acquisition/indexing; CB7 is download-first.",
+    "Natural CB7/CBT/PDF/EPUB, solid-archive census, hardware mobile, sustained concurrent pressure and process-tree/GPU memory plateaus remain unverified.",
+    "Same-host direct private-address benchmark is not cross-host LAN wire speed. Normal application uses its configured approved Jellyfin address.",
+    "Measured three-pair median entry gain is descriptive, with adverse cold and individual paired samples."
+  ]
+}
