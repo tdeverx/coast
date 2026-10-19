@@ -2,6 +2,17 @@
 
 19 October 2026. **Research backlog: no delivery redesign is approved or implemented.** The current requested implementation is loading feedback, the default-on odd-face preference and reading integration fixes. Follow [performance.md](../../performance.md); retain the [audit baseline, failures and measurements](README.md).
 
+## Immediate next investigation
+
+- [ ] **RD-09 — Coast-server temporary disk cache and on-demand delivery (user-selected next item).** Download the exact authorized Jellyfin edition to temporary storage on the Coast server, index it and deliver requested original pages to browsers. A Jellyfin plugin is not required. This is the next investigation after this PR; do not implement it as part of the temporary download-cap removal.
+  - Stream acquisition to disk rather than buffering the full archive in server RAM. Verify a disk-backed extractor for supported comic archives; the current native WASM decoder copies the whole archive into memory and cannot establish bounded server memory merely by moving it server-side. Keep PDF's existing range delivery and assess EPUB chapter/resources separately.
+  - Build a version-bound manifest for Three.js page dimensions/order, spread splitting, both odd-face preferences and canonical saved locations. Fetch only the required raster neighborhood; preserve original image quality and existing presentation.
+  - Deduplicate acquisition for the same verified server/file/version while tracking active session leases. Every party member must retain independent live permission/account-generation checks before receiving bytes; possession of a cache key grants no access.
+  - Delete after the last active reader closes; cancel incomplete acquisition when unused. Define minimize/resume ownership, disconnect/revocation, expired leases, process restart and crash cleanup. Bound total disk usage, free-space admission, extraction work and concurrent readers without silently restoring the removed per-file download cap.
+  - Compare the current implementation against the candidate on actual files/admin/guest access: cold first usable page, warm/repeated open, near/far/back turns, simultaneous party readers, complete bytes/page/pixel/location equivalence, browser/server peak and settled memory, CPU, disk/temporary bytes, provider calls and cancellation/cleanup. Include solid RAR/7z behavior and adverse outcomes. Cold whole-file acquisition can still dominate startup; do not claim a speed improvement from browser-memory savings alone.
+
+The user accepts automatic full-file party downloads temporarily; see [the accepted-risk decision](party-download-decision.md). Keep that behavior until a later verified method is adopted. RD-02/RD-05 supply manifest/decoder evidence for RD-09; RD-06 remains an optional companion-side alternative, not a prerequisite.
+
 ## Candidates to benchmark
 
 - [ ] **RD-01 — session-owned compressed input reuse.** Compare current open/minimize/resume/close against bounded reuse of the exact authorized file. Measure first-open/resume latency, transferred bytes and peak/settled browser memory. Specify byte/expiry ownership, replacement, close, disconnect and capability withdrawal. Preserve current permissions and avoid retaining decoded pages/GPU resources just to save a download.
@@ -29,4 +40,4 @@ The initial audit has five actual CBRs and no usable natural PDF/EPUB/CB7/CBT or
 - [ ] Benchmark the smallest shared candidate first. Retain defaults when gains are mixed/absent; rejected methods return to the investigation backlog rather than triggering unbounded alternative searches.
 - [ ] Present options/results before adoption. Update current methods and source epochs without overwriting historical receipts.
 
-Prioritize RD-01 and the RD-02/RD-06 design comparison; RD-03 is the focused existing-library alternative. Leave the rejected native micro-batching method behind uninvestigated stages until new evidence justifies another trial.
+Prioritize the user-selected **RD-09** above, using RD-02/RD-05 where needed. RD-01/RD-03 and the RD-06 companion design remain later alternatives. Leave the rejected native micro-batching method behind uninvestigated stages until new evidence justifies another trial.
