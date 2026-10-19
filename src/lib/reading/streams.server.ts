@@ -34,13 +34,13 @@ export async function readingStreamRows(userId: string, view: 'now' | 'history',
   const order = view === 'now' ? sql`date_trunc('milliseconds',s.created_at)` : sql`date_trunc('milliseconds',s.updated_at)`;
   const rows = await sql<{id:string;work_id:string;format:string;location:ReadingLocation|null;created_at:Date;updated_at:Date;ended_at:Date|null;title:string;username:string;avatar:string|null;server:string}[]>`
     select s.id,s.work_id,s.format,s.location,s.created_at,s.updated_at,
-      coalesce(s.closed_at,case when s.expires_at<=now() then s.expires_at end) as ended_at,
+      case when coalesce((${active()}),false) then null else coalesce(s.closed_at,least(s.updated_at,s.expires_at)) end as ended_at,
       w.title,u.username,case when social_visible(u.id,${userId}::uuid,'details') then u.settings->'profile'->>'avatar' end as avatar,
       coalesce(i.name,'Local file') as server
     from reading_sessions s join users u on u.id=s.user_id join reading_works w on w.id=s.work_id
     left join provider_connections c on c.id=s.connection_id
     left join provider_instances i on i.id=c.instance_id
-    where ${eligible(userId)} and ${view === 'now' ? active() : sql`(s.closed_at is not null or s.expires_at<=now())`}
+    where ${eligible(userId)} and ${view === 'now' ? active() : sql`not coalesce((${active()}),false)`}
       ${beforeTime ? sql`and (${order},s.id)<(${beforeTime}::timestamptz,${beforeId}::uuid)` : sql``}
     order by ${order} desc,s.id desc limit 21`;
   const cards = new Map((await workCards(userId,userId,[...new Set(rows.map(row=>row.work_id))])).map(card=>['workId' in card?card.workId??card.id:card.id,card]));

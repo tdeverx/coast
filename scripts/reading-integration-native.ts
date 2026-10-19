@@ -44,7 +44,7 @@ try {
     assert((await presence(admin.id)).some(row => row.userId === admin.id && row.workId === input.id));
     pass('actual reading session appears in own user presence');
     const rows = await activeStreams(admin);
-    assert(rows.streams.some(row => row.id === session.id && row.mediaType === 'Book' && row.card.id === input.id));
+    assert(rows.streams.some(row => row.id === session.id && row.mediaType === 'Book' && row.card.id === input.id && row.endedAt === null));
     pass('actual reading session appears in bounded admin panel');
     await fails('admin panel rejects anonymous viewer', () => activeStreams(null), 401);
     const [previous] = await sql `select state from reading_progress where user_id=${admin.id} and work_id=${input.id}`;
@@ -62,8 +62,18 @@ try {
     pass('ordinary page movement does not add Activity history');
     await sql `update reading_sessions set updated_at=now()-interval '3 minutes' where id=${session.id}`;
     assert(!(await activeStreams(admin)).streams.some(row => row.id === session.id));
+    const staleHistory=(await activeStreams(admin,{view:'history'})).streams.find(row=>row.id===session.id);
+    assert(staleHistory);
+    assert.equal(staleHistory.endedAt,staleHistory.lastSeenAt);
     await sql `update reading_sessions set updated_at=now() where id=${session.id}`;
-    pass('stale heartbeat leaves live admin panel');
+    assert(!(await activeStreams(admin,{view:'history'})).streams.some(row=>row.id===session.id));
+    pass('stale heartbeat moves to History at last observation and a fresh heartbeat restores Now');
+    const [generation]=await sql `select account_generation from reading_sessions where id=${session.id}`;
+    await sql `update reading_sessions set account_generation=gen_random_uuid() where id=${session.id}`;
+    assert(!(await activeStreams(admin)).streams.some(row=>row.id===session.id));
+    assert((await activeStreams(admin,{view:'history'})).streams.some(row=>row.id===session.id));
+    await sql `update reading_sessions set account_generation=${generation.account_generation} where id=${session.id}`;
+    pass('withdrawn source generation moves reader into History');
     let room = await createRoom(admin.id, { readingSessionId: session.id });
     room = await commandRoom(admin.id, room.id, { revision: room.revision, action: 'location', location: { format: session.format, page: 4, total: input.totalPages } });
     assert.equal(room.reading?.page, 4);

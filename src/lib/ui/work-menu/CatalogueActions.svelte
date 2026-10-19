@@ -88,7 +88,7 @@
   export function gameAction(action: 'start' | 'progress' | 'log') { return gameCommands?.open(action); }
   export function updateGame(status: GameStatus) { return gameCommands?.update(status); }
   export function isBusy() { return busy; }
-  export function startReading() { return readingLaunch?.show(); }
+  export function startReading() { if (item.available && page.data.capabilities?.reader !== false) return readingLaunch?.show(); }
   export function editReading() { return readingCommands?.edit(); }
   export function setReading(state: ReadingState, restart = false) { return readingCommands?.setState(state, restart); }
   async function relationship(kind: Relationship) {

@@ -155,7 +155,7 @@
           canOpen: trackedItem.canOpen ?? trackedItem.available,
           canRequest: page.data.capabilities?.requests!==false && (trackedItem.requestable ?? ((trackedItem.category ?? 'screen') === 'screen' && !trackedItem.available)),
         })
-      : (item.kind === 'book' || item.kind === 'comic') && item.workId ? 'read' : canPlayMusicCard(item) ? 'play' : 'open'
+      : (item.kind === 'book' || item.kind === 'comic') && item.workId && item.available ? 'read' : canPlayMusicCard(item) ? 'play' : 'open'
   );
   const cardProgress=$derived(item.captionActor?activityProgress??null:completion!==null&&completion>0&&completion<(item.kind==='book'||item.kind==='comic'?1:0.9)?completion:null);
   const primaryLabel = $derived(
