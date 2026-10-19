@@ -7,7 +7,7 @@
   "sharedOwner": "src/lib/social/queries.server.ts:28",
   "sourcePins": {
     "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
-    "tests/activity-feed-fallback-db.test.ts": "55a1abf1a96ed61d05e5d987ec6fd66d5f3b9f1d7e9de6be0d50c23b4ee66fb8"
+    "tests/activity-feed-fallback-db.test.ts": "6f9dadc28873a93c62080c562f730d8cd6df254d0f0ffd7dde886887acdd0444"
   },
   "baselineSourceSha256": "6f292e1bdaf2b7de9c074019a48e7828c42c3b4d5fb080e143c16ce18204774d",
   "verifiedCandidateSourceSha256": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
@@ -156,6 +156,14 @@
         "src/lib/social/queries.server.ts"
       ],
       "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "tests/activity-feed-fallback-db.test.ts"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
     }
   ]
 }

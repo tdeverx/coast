@@ -595,7 +595,7 @@
     "src/lib/core/profile/avatar-storage.server.ts": "1acec14ca020942f20cdf0d7f97832fac08e8bcbf16280c0ff752addda633c3a"
   },
   "coverageSourcePins": {
-    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe"
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b"
   },
   "canonicalFindings": [
     "UIS-03",
@@ -1201,6 +1201,14 @@
         "docs/performance.md"
       ],
       "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
     }
   ]
 }

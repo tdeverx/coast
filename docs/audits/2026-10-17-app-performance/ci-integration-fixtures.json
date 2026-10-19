@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "classification": "supplementary-authored-fixture-integration-not-actual-data-performance-acceptance",
+  "cause": "Old route event fixtures omitted native SvelteKit Request; current media/Library owners require request.signal. Request and URL now match for all route builders in the two reading suites.",
+  "runtimeChanged": false,
+  "ownedEditedFiles": {
+    "tests/reading-db.test.ts": "b669f77ecddc54523b8ed90bab25f0da8f24a89c94996bd3feaf8f3e24ebd878",
+    "tests/reading-sessions-db.test.ts": "f1a91e89124e6bb433d117ddbc121fe05ff375c3348f597d4f3f773e0a0d53d5"
+  },
+  "harness": "scripts/test-database.ts",
+  "selectedFiles": [
+    "reading-db.test.ts",
+    "reading-sessions-db.test.ts",
+    "activity-feed-fallback-db.test.ts"
+  ],
+  "suiteResults": {
+    "activity-feed-fallback-db.test.ts": {
+      "passed": 1,
+      "assertions": 9
+    },
+    "reading-db.test.ts": {
+      "passed": 22,
+      "assertions": 212
+    },
+    "reading-sessions-db.test.ts": {
+      "passed": 15,
+      "assertions": 112
+    }
+  },
+  "totalPassed": 38,
+  "totalAssertions": 333,
+  "failed": 0,
+  "cleanup": {
+    "remainingFixtureDatabases": 0,
+    "allHarnessFixtureDatabasesAbsent": true,
+    "harnessUsesNoTemplate": true,
+    "actualAndNormalDatabaseNotTargeted": true
+  },
+  "privateLog": "/private/tmp/coast-pr41-reading-fixtures.log",
+  "logSha256": "71bb60b2c8ba32094763d65672dbd15ab75032ee4ba4b00a97c17eec9ce5506e",
+  "newDependencies": false,
+  "committedByAgent": false
+}

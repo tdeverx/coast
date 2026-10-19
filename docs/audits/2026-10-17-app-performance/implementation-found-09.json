@@ -18,7 +18,7 @@
     "tests/ui-menu-resource.test.ts": "46dd325cc00f94a600d359507486b0ce4bec06aa54c1df3acc6a04467bd62ea3",
     "tests/fixtures/video-crop-lifecycle.ts": "fa27ae70e9cdb25981e6570c2864f8d8aface115c31398533fedcfba05e3600f",
     "tests/video-crop-lifecycle.test.ts": "dd8db6da5454e498c0cfacada1a9b305ae71bafdd971d3c940b490d61a46386a",
-    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe"
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b"
   },
   "actualMenuCallbackComparisons": 52,
   "actualOwners": 4,
@@ -273,6 +273,14 @@
         "docs/performance.md"
       ],
       "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
     }
   ]
 }

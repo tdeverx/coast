@@ -20,7 +20,7 @@
   "normalDatabaseMigration": false,
   "commitPushPrDeploy": false,
   "sourcePins": {
-    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b",
     "docs/README.md": "0b0db4ab56c11651f79f676e3e6a2f07df9aaf8b1f784d5867178bb3aadef753",
     "docs/roadmap.md": "c17bb8fe13e6eb923dc0386e2a9a4380cba15f7a5521fe44b4f6ca78821ffb46",
     "docs/audits/2026-10-17-app-performance/README.md": "b8c62ed578f8d4c9766528327847a8a6ee64cb874426147cc3e36d9ad9faff2d",
@@ -76,6 +76,14 @@
         "docs/performance.md"
       ],
       "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
     }
   ]
 }

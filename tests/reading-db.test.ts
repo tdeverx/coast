@@ -40,8 +40,9 @@ suite('experimental reading identity, private state and bounded local reads', ()
   const book: ReadingMetadata = { provider: 'openlibrary', externalId: 'OL900000001W', kind: 'book', title: 'Reading identity fixture', sourceUrl: 'https://openlibrary.org/works/OL900000001W', authors: ['Author'], subjects: ['Fiction'], editionIds: ['OL900000001M'] };
   const comic: ReadingMetadata = { provider: 'comic-vine', externalId: '4000-900000001', kind: 'comic', title: 'A comic issue', sourceUrl: 'https://comicvine.gamespot.com/an-issue/4000-900000001/', authors: [], subjects: [], seriesTitle: 'A series', issueNumber: '1' };
   const saveConfig = async (value: typeof config) => getDb().insert(systemSettings).values({ key: 'coast', value }).onConflictDoUpdate({ target: systemSettings.key, set: { value } });
+  const requestContext = (href: string) => { const request = new Request(href); return { request, url: new URL(request.url) }; };
   const mediaEvent = (id: string, userId: string | null = owner, dependencies = new Set<string>()) => ({
-    locals: { user: userId ? { id: userId } : null }, params: { id }, url: new URL(`http://localhost/media/${id}`),
+    locals: { user: userId ? { id: userId } : null }, params: { id }, ...requestContext(`http://localhost/media/${id}`),
     depends: (...keys: string[]) => keys.forEach(key => dependencies.add(key)), setHeaders: () => {},
   }) as unknown as Parameters<typeof loadMediaPage>[0];
 
@@ -305,7 +306,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
     const waiting = new Promise<void>(resolve => { release = resolve; });
     const metadata = spyOn(readingProviders, 'searchReading').mockImplementation(async () => { await waiting; throw new Error('Provider unavailable'); });
     try {
-      const event = { locals: { user: { id: owner } }, url: new URL('http://coast/search?view=read&q=Metadata%20after%20completion'), depends: () => {} };
+      const event = { locals: { user: { id: owner } }, ...requestContext('http://coast/search?view=read&q=Metadata%20after%20completion'), depends: () => {} };
       const route = await loadSearchPage(event as Parameters<typeof loadSearchPage>[0]);
       expect(route!.readingInitial.items.map((item: { id: string }) => item.id)).toEqual([bookId]);
       expect(route!.readingInitial.items[0].trackingProgress).toEqual({ unit: 'pages', value: 0 });
@@ -331,7 +332,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
       return { items: kind === 'book' ? [remoteBook] : [remoteComic], total: 40, page, nextPage: page === 1 ? 2 : null };
     });
     const route = async (parameters: Record<string, string>) => {
-      const event = { locals: { user: { id: owner } }, url: new URL('http://coast/search?' + new URLSearchParams(parameters)), depends: () => {} };
+      const event = { locals: { user: { id: owner } }, ...requestContext('http://coast/search?' + new URLSearchParams(parameters)), depends: () => {} };
       const data = (await loadSearchPage(event as Parameters<typeof loadSearchPage>[0]))!;
       const responses = await Promise.all([data.read, data.watch, data.listen, data.play]);
       const result: ReadingSearchContent = responses[0];
@@ -366,7 +367,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
 
   test('saved provider previews redirect to canonical details without requiring a working source', async () => {
     const metadata = spyOn(readingProviders, 'readingProviderDetails').mockImplementation(async () => { throw new Error('Source unavailable'); });
-    const event = (externalId: string) => ({ locals: { user: { id: owner } }, params: { externalId }, depends: () => {}, setHeaders: () => {} }) as unknown as Parameters<ReturnType<typeof readingDetailLoad>>[0];
+    const event = (externalId: string) => ({ locals: { user: { id: owner } }, params: { externalId }, ...requestContext(`http://coast/media/${externalId.startsWith('OL') ? 'openlibrary' : 'comic-vine'}/${externalId}`), depends: () => {}, setHeaders: () => {} }) as unknown as Parameters<ReturnType<typeof readingDetailLoad>>[0];
     try {
       const bookLoad = readingDetailLoad('book', true), comicLoad = readingDetailLoad('comic', true);
       await expect(bookLoad(event(book.externalId) as Parameters<typeof bookLoad>[0])).rejects.toMatchObject({ status: 303, location: `/media/${bookId}` });
@@ -415,7 +416,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
   });
 
   test('shared reading routes enforce page and subtype gates and make discovery reachable without TMDB', async () => {
-    const event = (url: string) => ({ locals: { user: { id: owner } }, url: new URL(`http://coast${url}`), depends: () => {} });
+    const event = (url: string) => ({ locals: { user: { id: owner } }, ...requestContext(`http://coast${url}`), depends: () => {} });
     const readiness = spyOn(readingProviders, 'readingProviderConfigured').mockResolvedValue(true);
     const metadata = spyOn(readingProviders, 'searchReading').mockResolvedValue({items:[],total:0,page:1,nextPage:null});
     const discoverMetadata = spyOn(readingProviders, 'discoverReading').mockResolvedValue({items:[comic],total:1,page:1,nextPage:null});
@@ -447,7 +448,7 @@ suite('experimental reading identity, private state and bounded local reads', ()
   });
 
   test('shared Library and progress routes translate disabled reading and invalid filters into HTTP errors', async () => {
-    const event = (path: string) => ({ locals: { user: { id: owner, username: 'owner' } }, url: new URL(`http://coast${path}`), depends: () => {} });
+    const event = (path: string) => ({ locals: { user: { id: owner, username: 'owner' } }, ...requestContext(`http://coast${path}`), depends: () => {} });
     const rejectsHttp = async (task: unknown, status: number) => {
       const failure = await Promise.resolve(task).then(() => null, cause => cause);
       expect(isHttpError(failure, status)).toBe(true);

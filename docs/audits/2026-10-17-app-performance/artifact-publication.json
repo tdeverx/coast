@@ -271,6 +271,15 @@
         }
       ]
     },
+    "comic-lab-follow-up.md": {
+      "originalSha256": "270a08a5311faafc7df42abd5c4d1dca410b32bc2dc375133d85ad08c60daec4",
+      "publishedSha256": "457b7e1694409ae7f57ffa6dc2e03f02788cab8fa4635d87ca9e3afd570e1123",
+      "redactions": [
+        {
+          "kind": "unrelated-experiment-links-redirected-to-scope-record"
+        }
+      ]
+    },
     "candidates/admin-continue-undo/actual.json": {
       "originalSha256": "f8757f564d52c836e5494b61534b46ac65ea47b1eaced1ec60623e5688c79e35",
       "publishedSha256": "37408f9a3de3f45f3ab7a4c5ac2ef22777bb18685e206ae261d5ba1e961beb30",
@@ -726,15 +735,6 @@
           "orderedCanonicalSha256": "c8ea28318483c3873272142cd085a653dd7ac050bfa32efca4517994c13111b4",
           "rows": 1,
           "bytes": 165
-        }
-      ]
-    },
-    "comic-lab-follow-up.md": {
-      "originalSha256": "270a08a5311faafc7df42abd5c4d1dca410b32bc2dc375133d85ad08c60daec4",
-      "publishedSha256": "457b7e1694409ae7f57ffa6dc2e03f02788cab8fa4635d87ca9e3afd570e1123",
-      "redactions": [
-        {
-          "kind": "unrelated-experiment-links-redirected-to-scope-record"
         }
       ]
     }

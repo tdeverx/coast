@@ -37,7 +37,7 @@ An optimisation is complete only when it reduces evidenced work or fixes a demon
 | Concurrency and failure | Exercise relevant concurrent users/lanes, slow/failed/aborted requests, retries and permission/account changes. Check no duplicate delivery, stale publication, starvation, unbounded queues or pool/lock deadlock. |
 | Resources | Separate process CPU/heap/external memory from PostgreSQL, filesystem cache and container limits. Include idle and active observations. A lower wall time that causes disproportionate CPU, memory, network or write amplification is a tradeoff to report, not an automatic win. |
 | Integration | Fix the common owner so every consumer benefits. Keep feature adapters thin; do not add a private scheduler, cache, loader or alternate renderer to mask a shared problem. Preserve the approved UI. |
-| Verification | Reproduce the issue, verify the smallest fix against the same workload, run focused regressions and the relevant integration/build gates. Runtime behavior tests take precedence over source-string assertions. Report untested cases and synthetic/live boundaries. |
+| Verification | Reproduce the issue, verify the smallest fix against the same workload, run focused regressions and the relevant integration/build gates. Runtime behavior tests take precedence over source-string assertions. Route fixtures must supply genuine `Request` objects and signals; do not weaken runtime cancellation for an incomplete fixture. Raw database assertions must preserve the native driver value representation while independently verifying complete logical membership/order. Report untested cases and synthetic/live boundaries. |
 
 ### Measurement record
 

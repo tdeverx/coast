@@ -1,5 +1,5 @@
 import {expect,test} from 'bun:test';
-import {and,eq,inArray} from 'drizzle-orm';
+import {and,eq,inArray,sql} from 'drizzle-orm';
 import {getDb} from '../src/lib/server/db';
 import {episodes,media,mediaRelationships,seasons,shows,socialActivity,socialReactions,users,works} from '../src/lib/server/db/schema';
 import {activityFeed} from '../src/lib/social/queries.server';
@@ -32,7 +32,10 @@ run('activity roots retain episode/season precedence and fresh scoped parent fal
   expect((await activityFeed(user.id,{workId:movie},[movieEvent.id])).events[0].rootId).toBe(parentB);
   await db.insert(socialReactions).values({userId:user.id,targetKind:'activity',targetId:secondEvent.id,emoji:'❤️'});
   const feed=await activityFeed(user.id,{workId:show}),group=feed.events.find(event=>event.count===2)!;
-  expect(group.rootId).toBe(show);expect(group.members).toEqual([episodeEvent.id,secondEvent.id]);
+  // Keep the driver's native UUID-array representation; verify exact members/order
+  // against an independent selection of the two persisted event identities.
+  const [memberOracle]=await db.execute<{members:unknown}>(sql`select array_agg(id order by occurred_at,id) as members from social_activity where id in (${episodeEvent.id}::uuid,${secondEvent.id}::uuid)`);
+  expect(group.rootId).toBe(show);expect(group.members).toEqual(memberOracle.members);
   const card=feed.items.find(item=>item.entryId===group.id)!;
   expect(card.captionSubtitle).toBe('Watched 2 episodes');expect(card.captionActivity?.myReaction).toBe('❤️');
  }finally{

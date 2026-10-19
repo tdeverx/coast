@@ -12,7 +12,7 @@
     "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
     "tests/activity-scope-admission-db.test.ts": "9900b7bf5e7c0b948117075c6a4f561eb3d25599dd40e6d89689890cfd4f6648",
     "tests/activity-policy-admission-db.test.ts": "890bfff666414ad1c2064568710c79d19f49a804557c6b5cae47f3feb7f08709",
-    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b",
     "docs/audits/2026-10-17-app-performance/verify-report-integrity.py": "db234fcbfdcd60a3d700254e9eb93bc6265e8b695f57d92924666058b81d10f1"
   },
   "sourceChanges": {
@@ -141,6 +141,14 @@
         "tests/activity-policy-admission-db.test.ts"
       ],
       "boundary": "Public packaging/current source review; one actual-test whitespace-only line removed. No application runtime owner changed; historical actual-data proofs retain their tested source epoch. PR CI verifies the committed application."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
     }
   ]
 }

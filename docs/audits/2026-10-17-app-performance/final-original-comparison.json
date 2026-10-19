@@ -597,7 +597,7 @@
     "src/routes/ui-preview/workspace.ts": "80fb4f5b70e0c738a424a2529304512ce3934d47e27816d3bb2079407dbc7199",
     "tests/account-provenance-db.test.ts": "91a2fa09de2d806d649deda25374eda52c6b71be7edaab43423c90ac545d2cf5",
     "tests/active-streams.test.ts": "37c1eff015598f13267e683d0686772925d49f613898ae348971ecc943796bf5",
-    "tests/activity-feed-fallback-db.test.ts": "55a1abf1a96ed61d05e5d987ec6fd66d5f3b9f1d7e9de6be0d50c23b4ee66fb8",
+    "tests/activity-feed-fallback-db.test.ts": "6f9dadc28873a93c62080c562f730d8cd6df254d0f0ffd7dde886887acdd0444",
     "tests/activity-reasons-sql-db.test.ts": "1275dba8a1a1cb02cd0b79a47a2a891246027b930963e6fd2a3d8f76a0f5a6f4",
     "tests/activity-scope-admission-db.test.ts": "9900b7bf5e7c0b948117075c6a4f561eb3d25599dd40e6d89689890cfd4f6648",
     "tests/admin-health.test.ts": "a7642fa4b8dfb95ee63bcdbd0c813f436b42ef7421873fd56e215a1ad6ae28e9",
@@ -789,7 +789,7 @@
     "tests/readiness.test.ts": "14bb555f53f271b55608e1ca3a4a31149df9e3c3c473d290a8667a03b8589308",
     "tests/reading-archive.test.ts": "d8c70ec0845f6980486a97dc84810e6048b39ccb13343c4b7a6695337363e593",
     "tests/reading-comic-formats.test.ts": "e5bb3fda197adb25f95131e3c9ee9bcb9a78bfc8ede64b30b3146bbda8821081",
-    "tests/reading-db.test.ts": "4ad0560397e007b75cdbc08236223e76a66218ab7cb3caf138ac275fbfd52b9d",
+    "tests/reading-db.test.ts": "b669f77ecddc54523b8ed90bab25f0da8f24a89c94996bd3feaf8f3e24ebd878",
     "tests/reading-epub-resources.test.ts": "69402629cdbdaa2619952faf329ea120fd18df42362d09ef36eccf43676cf75e",
     "tests/reading-feature-binding.test.ts": "d921952ac491b0fac1929f0d1354c88b23e31e0b6481bed1622cfa7b011e3d98",
     "tests/reading-format-migration-db.test.ts": "2c267de50820e0c61717e2fce022bf0e33479307a94cfbeb55609285ac2beb05",
@@ -800,7 +800,7 @@
     "tests/reading-renderer-lifecycle.test.ts": "fc69f7fb565544f07167b62a2f292efef159b56b72fdf3a709fbf3265506b5a1",
     "tests/reading-request-cancellation.test.ts": "44be1cc695aaeb3f9da2f7e4bbf9328190e0b0cc6304eafe57a492114aaa0b46",
     "tests/reading-request-context.test.ts": "33f82d882ee584bd54a6f16566772a6166a90f1bc8ce8ea613b2589facae3ee1",
-    "tests/reading-sessions-db.test.ts": "2a3a8843f01d84bc002ba536dc272bf67d9bb014827fcb30b850cadb5b501088",
+    "tests/reading-sessions-db.test.ts": "f1a91e89124e6bb433d117ddbc121fe05ff375c3348f597d4f3f773e0a0d53d5",
     "tests/reading-sync-db.test.ts": "f1a633838d4fd2716ee0b1564cedbf8eaa69476dfe555acc434c3425272cd3be",
     "tests/reading.test.ts": "a7fd48cada69997a8ad54e50dba39c80e15c1277c64eb06caf944affe9786b91",
     "tests/recommendation-genre-score-db.test.ts": "c6805a221eb4a0bfcd5c654dddd9179632e3004bb037d52edb019da614dd333b",
@@ -1067,7 +1067,7 @@
     "svelte.config.js": "970aeff710838be6bbe6418049ba09f9e7fa1a920f314f8ff309dfd151524d84",
     "vite.config.ts": "d899bad30bf4c526affbead8adc71ad57467aaee6cc3750d70ad84a18744ea8f",
     "Dockerfile": "d5b02abc3106ebb38c8050af001394254ef0997e96d39a68790f3d1b39cf1d09",
-    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b",
     "docs/audits/2026-10-17-app-performance/verify-report-integrity.py": "db234fcbfdcd60a3d700254e9eb93bc6265e8b695f57d92924666058b81d10f1"
   },
   "allReadOutputsEqual": true,
@@ -3315,6 +3315,17 @@
         "docs/performance.md"
       ],
       "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "tests/activity-feed-fallback-db.test.ts",
+        "tests/reading-db.test.ts",
+        "tests/reading-sessions-db.test.ts",
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
     }
   ]
 }

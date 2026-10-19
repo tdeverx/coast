@@ -13,7 +13,7 @@
   "sourcePins": {
     "src/lib/music/persistence.server.ts": "049aca51bfd61c2c8fa973e7ce51572ecf1bf2c94a78fb652c58f8fb0d197977",
     "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
-    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b",
     "src/lib/server/api/queue.server.ts": "35f6f9424ff64793a5719ab8a187b6a9e9d1bdc6d3c86b83d7eaafdf505eacaa",
     "docs/audits/2026-10-17-app-performance/verify-report-integrity.py": "db234fcbfdcd60a3d700254e9eb93bc6265e8b695f57d92924666058b81d10f1",
     "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
@@ -200,6 +200,14 @@
         "docs/performance.md"
       ],
       "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
     }
   ],
   "laterArtifactLocationReviews": [

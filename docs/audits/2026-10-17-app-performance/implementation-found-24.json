@@ -21,7 +21,7 @@
     "src/lib/core/tracking/service.server.ts": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29",
     "src/lib/sync/jellyfin.server.ts": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
     "src/lib/ui/components/ConflictList.svelte": "5a36966f9b8e3f8384482315ffef694eeea0120fcb0302b8f66abdbc936bb6a3",
-    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b",
     "docs/audits/2026-10-17-app-performance/verify-report-integrity.py": "db234fcbfdcd60a3d700254e9eb93bc6265e8b695f57d92924666058b81d10f1",
     "src/lib/sync/jellyfin-progress.ts": "0903bc89327889133dc6deec820b4ebe2733059ae7b5a39e2a090d2d741d0a7e"
   },
@@ -222,6 +222,14 @@
         "docs/performance.md"
       ],
       "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
     }
   ]
 }
