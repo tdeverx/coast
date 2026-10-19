@@ -1,0 +1,1019 @@
+{
+  "baseline": "b90f4dd96ebcdd76f68e6c7ca770b71c824c07d3",
+  "scope": "Uncommitted focused reading changes, not a complete original/current application comparison. Private raw media, account DTOs, paths and credentials are omitted. All timing evidence is local development, with software GPU where relevant.",
+  "browser": "153.0.8010.12",
+  "inputs": [
+    {
+      "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+      "bytes": 73339323,
+      "format": "cbr",
+      "originalScans": 24,
+      "inspectionCampaign": {
+        "policy": "before the approved spare-face policy; full face equivalence passed; final gate failed on induced HMR diagnostic classification",
+        "samplesMs": {
+          "baseline": [
+            1094.0999999642372,
+            1061.300000011921,
+            1055.300000011921,
+            1098.300000011921
+          ],
+          "current": [
+            1039.199999988079,
+            1062.5,
+            1042.699999988079,
+            1062.6000000238419
+          ]
+        },
+        "baselineMedianMs": 1077.699999988079,
+        "currentMedianMs": 1052.5999999940395,
+        "medianChangePercent": -2.3290340534765863
+      },
+      "finalPolicyVerification": {
+        "samplesMs": {
+          "baseline": [
+            1096.699999988079
+          ],
+          "current": [
+            1045.4000000357628
+          ]
+        },
+        "baselineFaces": 24,
+        "currentFaces": 26,
+        "unprintedFaces": 1,
+        "inspectionBefore": {
+          "canvases": 24,
+          "draws": 24,
+          "decodes": 24,
+          "closed": 24
+        },
+        "inspectionAfter": {
+          "canvases": 0,
+          "draws": 0,
+          "decodes": 24,
+          "closed": 24
+        },
+        "completeOldPrintedPrefixMatches": true,
+        "actualOutsideBackVerified": true,
+        "allOriginalLocationsPresent": true
+      }
+    },
+    {
+      "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
+      "bytes": 39372234,
+      "format": "cbr",
+      "originalScans": 33,
+      "inspectionCampaign": {
+        "policy": "before the approved spare-face policy; full face equivalence passed; final gate failed on induced HMR diagnostic classification",
+        "samplesMs": {
+          "baseline": [
+            1762.6000000238419,
+            1581.8999999761581,
+            1527.3999999761581,
+            1542
+          ],
+          "current": [
+            1465.8999999761581,
+            1563.6000000238419,
+            1641,
+            1493.3999999761581
+          ]
+        },
+        "baselineMedianMs": 1561.949999988079,
+        "currentMedianMs": 1528.5,
+        "medianChangePercent": -2.1415538262002265
+      },
+      "finalPolicyVerification": {
+        "samplesMs": {
+          "baseline": [
+            1506.199999988079
+          ],
+          "current": [
+            1466.4000000357628
+          ]
+        },
+        "baselineFaces": 34,
+        "currentFaces": 34,
+        "unprintedFaces": 0,
+        "inspectionBefore": {
+          "canvases": 33,
+          "draws": 33,
+          "decodes": 33,
+          "closed": 33
+        },
+        "inspectionAfter": {
+          "canvases": 0,
+          "draws": 0,
+          "decodes": 33,
+          "closed": 33
+        },
+        "completeOldPrintedPrefixMatches": true,
+        "actualOutsideBackVerified": true,
+        "allOriginalLocationsPresent": true
+      }
+    },
+    {
+      "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
+      "bytes": 74500125,
+      "format": "cbr",
+      "originalScans": 24,
+      "inspectionCampaign": {
+        "policy": "before the approved spare-face policy; full face equivalence passed; final gate failed on induced HMR diagnostic classification",
+        "samplesMs": {
+          "baseline": [
+            1130.5,
+            1227.6000000238419,
+            1203.7999999523163,
+            1100
+          ],
+          "current": [
+            1101.8999999761581,
+            1073.0999999642372,
+            1077.3999999761581,
+            1085.5
+          ]
+        },
+        "baselineMedianMs": 1167.1499999761581,
+        "currentMedianMs": 1081.449999988079,
+        "medianChangePercent": -7.342672320595445
+      },
+      "finalPolicyVerification": {
+        "samplesMs": {
+          "baseline": [
+            1077.699999988079
+          ],
+          "current": [
+            1056.6000000238419
+          ]
+        },
+        "baselineFaces": 24,
+        "currentFaces": 26,
+        "unprintedFaces": 1,
+        "inspectionBefore": {
+          "canvases": 24,
+          "draws": 24,
+          "decodes": 24,
+          "closed": 24
+        },
+        "inspectionAfter": {
+          "canvases": 0,
+          "draws": 0,
+          "decodes": 24,
+          "closed": 24
+        },
+        "completeOldPrintedPrefixMatches": true,
+        "actualOutsideBackVerified": true,
+        "allOriginalLocationsPresent": true
+      }
+    },
+    {
+      "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
+      "bytes": 41725042,
+      "format": "cbr",
+      "originalScans": 30,
+      "inspectionCampaign": {
+        "policy": "before the approved spare-face policy; full face equivalence passed; final gate failed on induced HMR diagnostic classification",
+        "samplesMs": {
+          "baseline": [
+            1652.6000000238419,
+            2108.599999964237,
+            1827.5,
+            1654.800000011921
+          ],
+          "current": [
+            1607.3999999761581,
+            1633.4000000357628,
+            1629.7000000476837,
+            1736
+          ]
+        },
+        "baselineMedianMs": 1741.1500000059605,
+        "currentMedianMs": 1631.5500000417233,
+        "medianChangePercent": -6.294690288824167
+      },
+      "finalPolicyVerification": {
+        "samplesMs": {
+          "baseline": [
+            1584.1000000238419
+          ],
+          "current": [
+            1673.5999999642372
+          ]
+        },
+        "baselineFaces": 30,
+        "currentFaces": 30,
+        "unprintedFaces": 0,
+        "inspectionBefore": {
+          "canvases": 30,
+          "draws": 30,
+          "decodes": 30,
+          "closed": 30
+        },
+        "inspectionAfter": {
+          "canvases": 0,
+          "draws": 0,
+          "decodes": 30,
+          "closed": 30
+        },
+        "completeOldPrintedPrefixMatches": true,
+        "actualOutsideBackVerified": true,
+        "allOriginalLocationsPresent": true
+      }
+    },
+    {
+      "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
+      "bytes": 82635611,
+      "format": "cbr",
+      "originalScans": 24,
+      "inspectionCampaign": {
+        "policy": "before the approved spare-face policy; full face equivalence passed; final gate failed on induced HMR diagnostic classification",
+        "samplesMs": {
+          "baseline": [
+            1180.199999988079,
+            1161.5,
+            1180.8999999761581,
+            1176.9000000357628
+          ],
+          "current": [
+            1145.699999988079,
+            1150,
+            1188.800000011921,
+            1156.6000000238419
+          ]
+        },
+        "baselineMedianMs": 1178.550000011921,
+        "currentMedianMs": 1153.300000011921,
+        "medianChangePercent": -2.1424631962788654
+      },
+      "finalPolicyVerification": {
+        "samplesMs": {
+          "baseline": [
+            1262.800000011921
+          ],
+          "current": [
+            1214.199999988079
+          ]
+        },
+        "baselineFaces": 24,
+        "currentFaces": 26,
+        "unprintedFaces": 1,
+        "inspectionBefore": {
+          "canvases": 24,
+          "draws": 24,
+          "decodes": 24,
+          "closed": 24
+        },
+        "inspectionAfter": {
+          "canvases": 0,
+          "draws": 0,
+          "decodes": 24,
+          "closed": 24
+        },
+        "completeOldPrintedPrefixMatches": true,
+        "actualOutsideBackVerified": true,
+        "allOriginalLocationsPresent": true
+      }
+    }
+  ],
+  "native": {
+    "boundary": "Disposable copy of the refreshed actual catalogue, existing admin, actual Jellyfin responses. No invented user, catalogue or provider DTO.",
+    "status": "passed",
+    "liveFiles": 52,
+    "catalogueWorks": 17,
+    "cases": [
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 162.18724999999995,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 149.07795899999996,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 149.50937499999998,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 227.48733400000003,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 153.56349999999998,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 114.11520799999994,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 198.0413329999999,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 127.5915,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 127.91829099999995,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 126.63141699999983,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 129.5837079999999,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 201.7690419999999,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 123.98954200000026,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 122.88483399999996,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 205.282917,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 188.24866599999996,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "actual-default-open",
+        "kind": "comic",
+        "ms": 226.12758299999996,
+        "format": "cbr",
+        "status": "passed"
+      },
+      {
+        "name": "controlled-bookmark-on-natural-missing-source-falls-through-without-copy",
+        "status": "passed"
+      },
+      {
+        "name": "same-edition-bookmark-resume",
+        "status": "passed"
+      },
+      {
+        "name": "disabled-real-admin",
+        "status": "passed",
+        "statusCode": 401
+      },
+      {
+        "name": "reader-feature-disabled",
+        "status": "passed",
+        "statusCode": 403
+      },
+      {
+        "name": "pre-aborted-open-creates-no-session",
+        "status": "passed"
+      },
+      {
+        "name": "disconnected-owner-cannot-select-another-users-link",
+        "status": "passed",
+        "statusCode": 409
+      },
+      {
+        "name": "unavailable-detail-has-no-read-availability",
+        "status": "passed"
+      }
+    ]
+  },
+  "headDelivery": {
+    "actualFiles": 17,
+    "statusCounts": {
+      "200": 17
+    }
+  },
+  "sourceQuery": {
+    "boundary": "Exact production default-source query compiled in memory; normal actual catalogue; read-only EXPLAIN ANALYZE BUFFERS. Not full session/provider latency.",
+    "samples": [
+      {
+        "planningMs": 9.352,
+        "executionMs": 1.162,
+        "rows": 2,
+        "sharedHit": 31,
+        "sharedRead": 17,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.783,
+        "executionMs": 0.147,
+        "rows": 1,
+        "sharedHit": 21,
+        "sharedRead": 2,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.784,
+        "executionMs": 0.143,
+        "rows": 1,
+        "sharedHit": 19,
+        "sharedRead": 4,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.759,
+        "executionMs": 2.757,
+        "rows": 1,
+        "sharedHit": 29,
+        "sharedRead": 4,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.91,
+        "executionMs": 0.858,
+        "rows": 2,
+        "sharedHit": 30,
+        "sharedRead": 7,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.742,
+        "executionMs": 0.668,
+        "rows": 1,
+        "sharedHit": 20,
+        "sharedRead": 3,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.682,
+        "executionMs": 0.638,
+        "rows": 1,
+        "sharedHit": 28,
+        "sharedRead": 5,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.874,
+        "executionMs": 0.541,
+        "rows": 2,
+        "sharedHit": 31,
+        "sharedRead": 5,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 1.01,
+        "executionMs": 0.671,
+        "rows": 2,
+        "sharedHit": 33,
+        "sharedRead": 4,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.798,
+        "executionMs": 0.84,
+        "rows": 1,
+        "sharedHit": 20,
+        "sharedRead": 3,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.742,
+        "executionMs": 0.995,
+        "rows": 2,
+        "sharedHit": 33,
+        "sharedRead": 4,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.72,
+        "executionMs": 0.384,
+        "rows": 1,
+        "sharedHit": 30,
+        "sharedRead": 3,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.856,
+        "executionMs": 0.703,
+        "rows": 2,
+        "sharedHit": 33,
+        "sharedRead": 4,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.711,
+        "executionMs": 0.354,
+        "rows": 1,
+        "sharedHit": 21,
+        "sharedRead": 2,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.901,
+        "executionMs": 0.238,
+        "rows": 1,
+        "sharedHit": 27,
+        "sharedRead": 5,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 0.826,
+        "executionMs": 2.845,
+        "rows": 1,
+        "sharedHit": 30,
+        "sharedRead": 3,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      },
+      {
+        "planningMs": 1.461,
+        "executionMs": 0.93,
+        "rows": 1,
+        "sharedHit": 30,
+        "sharedRead": 3,
+        "temporaryRead": 0,
+        "temporaryWritten": 0
+      }
+    ],
+    "status": "passed",
+    "medianExecutionMs": 0.671
+  },
+  "renderer": {
+    "results": [
+      {
+        "version": "baseline",
+        "cycle": 0,
+        "observers": 0,
+        "listeners": 0,
+        "kind": "comic",
+        "initMs": 134.10000002384186,
+        "idleDraws": 0,
+        "disposeMs": 2.900000035762787,
+        "contextLost": false,
+        "canvasCount": 0,
+        "createdContexts": 3,
+        "liveContexts": 1
+      },
+      {
+        "version": "baseline",
+        "cycle": 1,
+        "observers": 0,
+        "listeners": 0,
+        "kind": "comic",
+        "initMs": 120.10000002384186,
+        "idleDraws": 0,
+        "disposeMs": 1.2000000476837158,
+        "contextLost": false,
+        "canvasCount": 0,
+        "createdContexts": 4,
+        "liveContexts": 1
+      },
+      {
+        "version": "baseline",
+        "cycle": 2,
+        "observers": 0,
+        "listeners": 0,
+        "kind": "book",
+        "initMs": 131.60000002384186,
+        "idleDraws": 0,
+        "disposeMs": 0.30000001192092896,
+        "contextLost": false,
+        "canvasCount": 0,
+        "createdContexts": 5,
+        "liveContexts": 1
+      },
+      {
+        "version": "current",
+        "cycle": 0,
+        "observers": 0,
+        "listeners": 0,
+        "kind": "comic",
+        "initMs": 126.80000001192093,
+        "idleDraws": 0,
+        "disposeMs": 12,
+        "contextLost": true,
+        "canvasCount": 0,
+        "createdContexts": 8,
+        "liveContexts": 0
+      },
+      {
+        "version": "current",
+        "cycle": 1,
+        "observers": 0,
+        "listeners": 0,
+        "kind": "comic",
+        "initMs": 135.10000002384186,
+        "idleDraws": 0,
+        "disposeMs": 9.699999988079071,
+        "contextLost": true,
+        "canvasCount": 0,
+        "createdContexts": 9,
+        "liveContexts": 0
+      },
+      {
+        "version": "current",
+        "cycle": 2,
+        "observers": 0,
+        "listeners": 0,
+        "kind": "book",
+        "initMs": 127.10000002384186,
+        "idleDraws": 0,
+        "disposeMs": 11.800000011920929,
+        "contextLost": true,
+        "canvasCount": 0,
+        "createdContexts": 10,
+        "liveContexts": 0
+      }
+    ],
+    "faults": [
+      {
+        "version": "baseline",
+        "fault": "append",
+        "rejected": true,
+        "liveContexts": 1,
+        "canvases": 0,
+        "observers": 0,
+        "listeners": 0
+      },
+      {
+        "version": "baseline",
+        "fault": "state",
+        "rejected": true,
+        "liveContexts": 1,
+        "canvases": 1,
+        "observers": 1,
+        "listeners": 11
+      },
+      {
+        "version": "current",
+        "fault": "append",
+        "rejected": true,
+        "liveContexts": 0,
+        "canvases": 0,
+        "observers": 0,
+        "listeners": 0
+      },
+      {
+        "version": "current",
+        "fault": "state",
+        "rejected": true,
+        "liveContexts": 0,
+        "canvases": 0,
+        "observers": 0,
+        "listeners": 0
+      }
+    ],
+    "inputSha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+    "faces": 24,
+    "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+  },
+  "turns": {
+    "results": [
+      {
+        "kind": "comic",
+        "following": false,
+        "entranceMs": 4569.700000047684,
+        "openMs": 1110.3999999761581,
+        "turnMs": 1242.1000000238419,
+        "changes": [
+          {
+            "format": "cbr",
+            "page": 10,
+            "total": 24
+          },
+          {
+            "format": "cbr",
+            "page": 8,
+            "total": 24
+          }
+        ],
+        "externalNavigationSilent": true
+      },
+      {
+        "kind": "book",
+        "following": false,
+        "entranceMs": 4543.699999988079,
+        "openMs": 1383.300000011921,
+        "turnMs": 1347.0999999642372,
+        "changes": [
+          {
+            "format": "cbr",
+            "page": 10,
+            "total": 24
+          },
+          {
+            "format": "cbr",
+            "page": 8,
+            "total": 24
+          }
+        ],
+        "externalNavigationSilent": true
+      },
+      {
+        "kind": "comic",
+        "following": true,
+        "entranceMs": 4916.200000047684,
+        "openMs": 0,
+        "turnMs": 0,
+        "changes": [],
+        "externalNavigationSilent": true
+      }
+    ],
+    "total": 24,
+    "boundary": "Actual CBR content; hardback is a presentation check over those same rasters, not native book/PDF/EPUB acceptance. Follower controls are local controlled state, not a live two-account party."
+  },
+  "controlledOddActualImages": {
+    "results": [
+      {
+        "version": "baseline",
+        "count": 2,
+        "locations": [
+          {
+            "format": "cbz",
+            "page": 1,
+            "total": 3
+          },
+          {
+            "format": "cbz",
+            "page": 3,
+            "total": 3
+          }
+        ],
+        "pixelHashes": [
+          "75445adc3e6a093fadcf61fff13b49f04f74344e21cee8a4802c722c90a844b9",
+          "9c33f3df168e7ed45dbd93da4c583e1e2f865d7f3a7302bc05c7b5f2fc79a21c"
+        ]
+      },
+      {
+        "version": "current",
+        "count": 4,
+        "locations": [
+          {
+            "format": "cbz",
+            "page": 1,
+            "total": 3
+          },
+          {
+            "format": "cbz",
+            "page": 2,
+            "total": 3
+          },
+          null,
+          {
+            "format": "cbz",
+            "page": 3,
+            "total": 3
+          }
+        ],
+        "pixelHashes": [
+          "75445adc3e6a093fadcf61fff13b49f04f74344e21cee8a4802c722c90a844b9",
+          "9c33f3df168e7ed45dbd93da4c583e1e2f865d7f3a7302bc05c7b5f2fc79a21c",
+          "040728abb61f3b390069fd87c4d1727d5641dffeea521bb352b14fd63e274443",
+          "d6c73159718894276e347ab054ba7c5ee3c2543640eaa8520dfeeabe9c08f293"
+        ]
+      }
+    ],
+    "thirdImageHash": "d6c73159718894276e347ab054ba7c5ee3c2543640eaa8520dfeeabe9c08f293",
+    "boundary": "Three untouched actual comic images repackaged into a controlled odd-count ZIP. No fake image, catalogue, user or provider response. This establishes actual-content tail preservation, not natural small-CBZ library acceptance."
+  },
+  "rejectedNativeBatching": {
+    "status": "reverted; patch retained as candidate only",
+    "packetsBefore": 7,
+    "packetsAfter": 1,
+    "results": [
+      {
+        "round": -1,
+        "version": "current",
+        "ms": 4088.800000011921
+      },
+      {
+        "round": -1,
+        "version": "baseline",
+        "ms": 3911.199999988079
+      },
+      {
+        "round": 0,
+        "version": "baseline",
+        "ms": 3868.699999988079
+      },
+      {
+        "round": 0,
+        "version": "current",
+        "ms": 3877
+      },
+      {
+        "round": 1,
+        "version": "current",
+        "ms": 4038
+      },
+      {
+        "round": 1,
+        "version": "baseline",
+        "ms": 3838.199999988079
+      },
+      {
+        "round": 2,
+        "version": "baseline",
+        "ms": 4004.199999988079
+      },
+      {
+        "round": 2,
+        "version": "current",
+        "ms": 3964.399999976158
+      },
+      {
+        "round": 3,
+        "version": "current",
+        "ms": 6148.099999964237
+      },
+      {
+        "round": 3,
+        "version": "baseline",
+        "ms": 3995.599999964237
+      }
+    ],
+    "boundary": "Actual file replay: archive open, inspection, required raster/texture work, GPU construction and the unchanged entrance animation. Excludes provider preparation/download; software GPU. Baseline context is explicitly lost after its normal destroy, outside the entry timer."
+  },
+  "normalDevUi": {
+    "status": "passed",
+    "checks": [
+      {
+        "name": "details-without-eager-three-or-file-download",
+        "status": "passed"
+      },
+      {
+        "name": "one-click-real-read-no-edition-or-file-picker",
+        "status": "passed"
+      },
+      {
+        "name": "minimize-releases-host-and-canvas",
+        "status": "passed"
+      },
+      {
+        "name": "mobile-resume-retains-navigation",
+        "status": "passed"
+      },
+      {
+        "name": "escape-closes-session-and-removes-host",
+        "status": "passed"
+      },
+      {
+        "name": "admin-progress-and-history-unchanged",
+        "status": "passed"
+      },
+      {
+        "name": "one-session-no-preflight-choice-requests",
+        "status": "passed"
+      }
+    ],
+    "firstOpenMs": 10791.358709,
+    "resumeMs": 10440.335584,
+    "readingRequests": [
+      {
+        "method": "GET",
+        "path": "/api/v1/reading/ID/issues"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/reading/ID/session"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/reading/ID/issues"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/reading/sessions/ID/file"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/reading/ID/issues"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/reading/sessions/ID/file"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/reading/ID/credits"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/reading/sessions/ID/location"
+      },
+      {
+        "method": "POST",
+        "path": "/api/v1/reading/sessions/ID/close"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/reading/ID/issues"
+      }
+    ],
+    "knownArtworkCorsCount": 2,
+    "screenshotSoftwareDriverDiagnostics": 4,
+    "unclassifiedErrors": 0
+  },
+  "build": {
+    "staticEntryClosureExcludesReaderModules": true,
+    "readerDynamicModuleCount": 6
+  },
+  "gates": {
+    "appTestsPassed": 859,
+    "guardedSkips": 716,
+    "appTestFailures": 0,
+    "labPassed": 123,
+    "labFailures": 0,
+    "typeErrors": 0,
+    "typeWarnings": 0,
+    "sourceStyleModules": 34,
+    "build": "passed",
+    "codeInventory": "passed",
+    "uiInventory": "passed"
+  },
+  "sourceSha256": {
+    "scripts/source-style.ts": "6b823152e80cac5bc62b8a3aa431dcbe678074c5d0aed810cdc30606e259f5f1",
+    "src/lib/reading/Details.svelte": "b7c1796b689ac530da8e3ee2fcaf2101a43cf3fefb9640ba8e649abfd9c11438",
+    "src/lib/reading/ReadingLaunch.svelte": "4cc92bd4ef9ef3ad3b003ae589cb0d94408aaa6b10927c5d74ee359d7994e0d5",
+    "src/lib/reading/client.svelte.ts": "019863cffca11bdae5b0b77252d725eb9d23237edf8f6275b99fd877aff8e570",
+    "src/lib/reading/model.ts": "b4cf9746b33290206a673442215c0721bf761d350777bf5dabd4da8f9d8c4683",
+    "src/lib/reading/reader/physical-pages.ts": "251e9410b66c99295058bd0157faa7852886353e05a4cda9aa120339911fffe7",
+    "src/lib/reading/reader/physical/page-layout.ts": "cfaafb4d6f014f50d8450b55c51ef1b581b939129b0978343b3c6e525959b4ce",
+    "src/lib/reading/reader/physical/renderer.ts": "117c36d16e7852e42a1c9e014e5eb9d7236bb3f8a62929c8b662cbc13e5e7675",
+    "src/lib/reading/sessions.server.ts": "9e21de479f5278ac32a9fb7e556fb16a01ec8414126453b70f372d2f77095cc4",
+    "src/lib/ui/component-manifest.json": "2265fa97d20f3572b3addb3bac008de513e5b37c6bce346d4f1af6df8263d76f",
+    "src/lib/ui/work-menu/CatalogueActions.svelte": "8064a146d2cf0c0d9ec3aa4f55b8ff5d735e5a1163632b30d7103a46403c15d5",
+    "src/routes/planning/+page.svelte": "ed8e2be683a15ea19b2641149a90e2ba09aca5e545b549875931e11d30d60907",
+    "src/routes/ui-preview/CatalogueExamples.svelte": "f4b3054c07462e2661bbe5105b053de44edff39b53c4b285e10297f3a061b88d",
+    "src/routes/ui-preview/reference.ts": "c9511141e5b2784d89507b634eb001522e5047cf0c0f2aedfad607b2f59fd322",
+    "tests/fixtures/reader-lifecycle.ts": "d704a38c95dfb77ed4b03628ccd9df4d2d05a8706e3708fc728d3f2a5266e7ca",
+    "tests/fixtures/reading-request-context.ts": "cc9d9b8e698c7ed58d1eaed87720264aea2207c6065745fc2e91f800b647ef2e",
+    "tests/reading-navigation-lifecycle.test.ts": "e35c8b274751eecd09ef4e5180b2c1d773d7c486fe86c6c75ccd323f6038d471",
+    "tests/reading-physical.test.ts": "8c1bf4f3c2747c036ac2091c3b5d787bc257fd48663cd2b97f82073998772ae2",
+    "tests/reading-request-context.test.ts": "eec49f7abe74e0ebf76edb3158f7d47716abb9cfdb353a6ac720b12d8f84f29c",
+    "src/lib/reading/reader/physical-image.ts": "7d0cfb4ad3ff0c4b9bb81e0208431c90bebfafecc7622614e0ccef255894929a",
+    "scripts/reading-performance.ts": "2ec1818d600d7da9d3ffb573dd6ffc7703b93964025957c796493c20bf557d60",
+    "scripts/reading-performance-native.ts": "61710b6e00c8910d8bf8a7c78dbc3ba794cb44e3ee12a82cd6ccc49b72c16807",
+    "scripts/fixtures/reading-renderer.ts": "74219ebb59257f22ea38a232509f909d70914470d0bc897da5258ea77b688b45"
+  }
+}

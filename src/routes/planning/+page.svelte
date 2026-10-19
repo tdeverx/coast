@@ -54,7 +54,7 @@
   <Shelf title="Your plans" items={data.items} layout="grid" availability={false} hideEmpty={false} pageNumber={data.page} pages={data.pages} {pageUrl}>
     {#snippet details(item)}
       <div class="row">
-        {#if item.kind==='book'||item.kind==='comic'}<ReadingLaunch compact workId={item.id} title={item.title} onopened={async()=>{start(item.entryId!,true);}} />
+        {#if (item.kind==='book'||item.kind==='comic')&&item.available&&page.data.capabilities?.reader!==false}<ReadingLaunch compact workId={item.id} onopened={async()=>{start(item.entryId!,true);}} />
         {:else if ['movie', 'episode', 'track'].includes(item.kind)}
           <Button compact disabled={operation.busy} onclick={() => start(item.entryId!)}>Start</Button>
         {:else}

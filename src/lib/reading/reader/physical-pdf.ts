@@ -4,12 +4,17 @@ import type { ReaderOptions } from './engine';
 import type { PhysicalPages } from './physical-pages';
 import { readerLoad } from './load';
 GlobalWorkerOptions.workerSrc = workerUrl;
-export async function physicalPdfPages({ source, signal }: ReaderOptions): Promise<PhysicalPages> {
+export async function physicalPdfPages({ source, signal, progress }: ReaderOptions): Promise<PhysicalPages> {
   const data = typeof source === 'string'
     ? { url: source, withCredentials: true }
     : { data: new Uint8Array(await readerLoad(source.arrayBuffer(), signal)) };
   signal.throwIfAborted();
   const loading = getDocument({ ...data, maxImageSize: 32 * 1024 ** 2, enableXfa: false });
+  let preparing = true;
+  loading.onProgress = ({ loaded, total }: { loaded: number; total?: number }) => {
+    if (preparing && !signal.aborted && typeof source === 'string')
+      progress?.({ phase: 'download', loaded, total: total !== undefined && Number.isFinite(total) && total > 0 ? total : undefined });
+  };
   let closed = false;
   const close = () => {
     if (closed)
@@ -21,6 +26,7 @@ export async function physicalPdfPages({ source, signal }: ReaderOptions): Promi
   signal.addEventListener('abort', close, { once: true });
   try {
     const document = await readerLoad(loading.promise, signal);
+    preparing = false;
     if (document.numPages > 100000)
       throw new Error('This PDF has too many pages.');
     const total = document.numPages;

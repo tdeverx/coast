@@ -1,4 +1,3 @@
-export const COMIC_INPUT_LIMIT=128*1024**2;
 export const COMIC_EXPANDED_LIMIT=512*1024**2;
 export const COMIC_PAGE_LIMIT=32*1024**2;
 export const COMIC_ENTRY_LIMIT=10000;

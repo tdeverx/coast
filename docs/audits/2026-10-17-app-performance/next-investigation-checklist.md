@@ -33,6 +33,8 @@ Each entry means the stated remaining scope, not a repeat of all work in that ar
 
 ## Later options and design decisions
 
+- [ ] **Reading delivery** — Follow the [focused investigation roadmap](../2026-10-19-reading-performance/investigation-roadmap.md) for actual-file manifest/range/page-delivery comparisons, source permissions, party locations and resource bounds. Keep researched options separate from adopted changes.
+
 - [ ] After unchecked work, revisit the [13 failed/mixed methods](failed-method-backlog.md) only where fresh evidence makes another attempt worthwhile. Preserve defaults and original failures.
 - [ ] Resume **PR-02 / PJ-15** only after a new explicit design decision: [durable recovery and bulk-task receipts](candidates/recovery-bulk-contracts/README.md).
 - [ ] Reconcile remaining partial/open records with the [full ledger](implementation-ledger.md) and [19 open alternatives](remaining-work-disposition.md); the headline counts are not a substitute for their exact acceptance.

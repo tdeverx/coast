@@ -4,6 +4,8 @@ Reviewed 16 October 2026 against the current checkout and implementation reports
 
 ## Performance and stability — deferred audit coverage
 
+Books/comics delivery has a separate [reading investigation roadmap](audits/2026-10-19-reading-performance/investigation-roadmap.md): session input reuse, versioned manifests, ZIP/TAR ranges, solid RAR/7z costs and companion-side page delivery. These are research/benchmark candidates, not implementation authorization. Loading feedback and the default-on odd-face sanitization preference do not adopt those delivery designs.
+
 The prescribed-method implementation pass and later authorized Activity investigation closed on **19 October 2026**. See the [current handoff](audits/2026-10-17-app-performance/implementation-handoff.md) for applied repairs and exact limits. Resume future work with the [investigation checklist](audits/2026-10-17-app-performance/next-investigation-checklist.md) and [area roadmap](audits/2026-10-17-app-performance/follow-up-roadmap.md): unchecked areas/new observations first, failed methods afterward. Wider acceptance and explicit design deferrals remain; this does not authorize automatic continuation or a new architecture.
 
 ## Highest priority — recovery, reliable backups and data ownership

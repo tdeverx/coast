@@ -88,7 +88,8 @@
       "refs": [
         "implementation-playback.md",
         "playback-readers.md",
-        "implementation-artwork.md"
+        "implementation-artwork.md",
+        "../2026-10-19-reading-performance/investigation-roadmap.md"
       ],
       "status": "pending"
     },

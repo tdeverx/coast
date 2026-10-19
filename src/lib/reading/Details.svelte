@@ -111,7 +111,7 @@
   {#snippet heroActions()}
     {#if data.remote}<Button size="hero" icon="plus" disabled={busy} onclick={add}>Add {data.kind}</Button>
     {:else}
-      {#if page.data.capabilities?.reader!==false}<ReadingLaunch workId={data.item.id} title={data.item.title} />{/if}
+      {#if data.item.available&&page.data.capabilities?.reader!==false}<ReadingLaunch workId={data.item.id} />{/if}
       <WorkMenu bind:this={menu} item={readingCard(data.item)} readingState={data.progress} showTrigger hero menuOnly />
     {/if}
   {/snippet}

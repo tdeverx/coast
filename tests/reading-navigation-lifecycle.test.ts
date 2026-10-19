@@ -1,7 +1,7 @@
 import {expect,test} from 'bun:test';
 // @ts-expect-error Svelte's internal rune test runtime has no public declarations.
 import * as runtime from 'svelte/internal/client';
-import {compileRunes,componentScript,moduleUrl,resourceUrl} from './fixtures/ui-script';
+import {compileRunes,componentScript,moduleUrl} from './fixtures/ui-script';
 
 const script=(await componentScript('src/lib/reading/Reader.svelte'))
  .replace('let host=$state<HTMLElement>();', 'let host=$state<HTMLElement>(fixtureHost);')
@@ -13,11 +13,12 @@ const code=compileRunes(`
  export function create(createReader,control=true,previewMode=false,previewExample=undefined){
   const applicationReader=$state({session:{id:'first',url:'fixture.pdf',format:'pdf',location:null,workId:'work',edition:'edition'},file:null,visible:true,rendering:false,location:null,error:''});
   const reportFailure=()=>{},useClient=()=>({preview:previewMode}),calls=[];
+  const page={data:{user:{settings:{}}}};
   const syncedPlayer={room:{mediaType:'reading',mediaId:'work',edition:'edition',readingFormat:'pdf',reading:{format:'pdf',page:1,total:2}}};
   const canControlPlayback=()=>control,fixtureHost={},message=error=>error.message;
   const api=async()=>{calls.push('api');},recordReading=async()=>{calls.push('record');return true;},publishReading=()=>{calls.push('publish');},setReadingNavigator=()=>{calls.push('navigator');},closeReading=async()=>{calls.push('close');},retryReadingSave=async()=>{calls.push('retry');};
   ${script}
-  return {turn,calls,openPreview(){sample.visible=true;},closePreview:close,get previewVisible(){return sample.visible;},get location(){return reader.location;},get live(){return applicationReader;},replace(){applicationReader.session={...applicationReader.session,id:'replacement'};},hide(){applicationReader.visible=false;},show(){applicationReader.visible=true;},get busy(){return busy;},get external(){return external;},get error(){return reader.error;}};
+  return {turn,calls,openPreview(){sample.visible=true;},closePreview:close,get previewVisible(){return sample.visible;},get location(){return reader.location;},get live(){return applicationReader;},replace(){applicationReader.session={...applicationReader.session,id:'replacement'};},hide(){applicationReader.visible=false;},show(){applicationReader.visible=true;},get busy(){return busy;},get external(){return external;},get error(){return reader.error;},get loadProgress(){return loadProgress;},get loading(){return loading;}};
  }`);
 const {create}=await import(moduleUrl(code));
 const deferred=()=>{let resolve!:()=>void,reject!:(cause:unknown)=>void;const promise=new Promise<void>((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
@@ -76,56 +77,60 @@ test('preview Reader shell never starts an engine or mutates live reader/bookmar
  }finally{dispose();}
  expect(owner.calls).toEqual([]);
 });
+test('loading progress belongs to the current reader and resets on resume',async()=>{
+ const pending=deferred(),options:any[]=[];let owner:any;
+ const dispose=runtime.effect_root(()=>owner=create(async(input:any)=>{options.push(input);await pending.promise;return {destroy(){}};}));
+ try{
+  await settle();expect(options[0].sanitizeOddPages).toBe(true);
+  options[0].progress({phase:'download',loaded:10,total:20});
+  expect(owner.loadProgress).toEqual({phase:'download',loaded:10,total:20});
+  owner.hide();await settle();owner.show();await settle();
+  expect(owner.loadProgress).toEqual({phase:'prepare'});
+  options[0].progress({phase:'download',loaded:20,total:20});
+  expect(owner.loadProgress).toEqual({phase:'prepare'});
+  options[1].progress({phase:'render'});expect(owner.loadProgress.phase).toBe('render');
+ }finally{pending.resolve();await settle();dispose();}
+});
 
-const launchScript=(await componentScript('src/lib/reading/ReadingLaunch.svelte')).replace('$props()', '({workId:"work",title:"Preview book",onopened:opened})').replace('export async function show', 'async function show').replace('export function isBusy','function isBusy');
+const operationUrl=moduleUrl(compileRunes((await Bun.file('src/lib/ui/operation.svelte.ts').text()).replace("import { message } from './client';",'const message=cause=>cause.message;')));
+const launchScript=(await componentScript('src/lib/reading/ReadingLaunch.svelte')).replace('$props()', '({get workId(){return props.id;},onopened:opened})').replace('const id=workId','const id=props.id').replace('export async function show', 'async function show').replace('export function isBusy','function isBusy');
 const launchCode=compileRunes(`
  import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
- import {createResource} from ${JSON.stringify(resourceUrl)};
- export function create(transport,opened){
-  const onDestroy=()=>{};
-  const reader=$state({session:{workId:'work'},visible:false});
-  const reportFailure=()=>{},useClient=()=>({api:transport,preview:true}),createOperation=()=>({run:async task=>task(),error:'',busy:false});
-  let realOpenCalls=0;const openReading=async()=>{realOpenCalls++;};
+ import {createOperation} from ${JSON.stringify(operationUrl)};
+ export function create(openFile,previewMode=false,session=null){
+  let dispose=()=>{},completed=0;
+  const props=$state({id:'work'}),onDestroy=callback=>{dispose=callback;},opened=async()=>{completed++;};
+  const reader=$state({session,visible:false});
+  const reportFailure=()=>{},useClient=()=>({preview:previewMode}),openReading=openFile;
   ${launchScript}
-  return {show,choose,get open(){return open;},get liveVisible(){return reader.visible;},get realOpenCalls(){return realOpenCalls;}};
+  return {show,isBusy,dispose:()=>dispose(),get completed(){return completed;},get visible(){return reader.visible;},replace(){props.id='replacement';}};
  }`);
 const {create:createLaunch}=await import(moduleUrl(launchCode));
-test('preview reading edition choice never resumes a live singleton or opens/uploads the chosen file',async()=>{
- const calls:string[]=[];let opened=0;
- let owner:any;const dispose=runtime.effect_root(()=>owner=createLaunch(async(path:string)=>{calls.push(path);return [{id:'preview-connection',name:'Preview Jellyfin'}];},async()=>{opened++;}));
- await owner.show();expect(owner.open).toBe(true);expect(owner.liveVisible).toBe(false);expect(calls).toEqual(['reading/work/connections']);
- await owner.choose({file:new File(['not decoded'],'preview.cbz')});
- expect(owner.open).toBe(false);expect(owner.realOpenCalls).toBe(0);expect(opened).toBe(0);expect(calls).toHaveLength(1);dispose();
+test('Read goes directly to shared preparation with no connection, search or edition-picker reads',async()=>{
+ const calls:any[]=[];let owner:any;
+ const dispose=runtime.effect_root(()=>owner=createLaunch(async(...args:any[])=>calls.push(args)));
+ try{await owner.show();expect(calls).toHaveLength(1);expect(calls[0][0]).toBe('work');expect(calls[0][1]).toBeUndefined();expect(calls[0][2]).toBeInstanceOf(AbortSignal);expect(owner.completed).toBe(1);}
+ finally{owner.dispose();dispose();}
 });
-
-const connectedLaunchCode=compileRunes(`
- import {untrack} from ${JSON.stringify(import.meta.resolve('svelte/internal/client'))};
- import {createResource} from ${JSON.stringify(resourceUrl)};
- export function create(transport,openFile){
-  const onDestroy=()=>{},opened=async()=>{};
-  const reader=$state({session:null,visible:false});
-  const reportFailure=()=>{},useClient=()=>({api:transport,preview:false}),createOperation=()=>({run:async task=>task(),error:'',busy:false});
-  const openReading=openFile;
-  ${launchScript}
-  return {show,close(){open=false;cancel();},get open(){return open;},get items(){return items;}};
- }`);
-const {create:createConnectedLaunch}=await import(moduleUrl(connectedLaunchCode));
-test('Read opens one verified linked copy automatically, but leaves absent or multiple copies for explicit choice',async()=>{
- for(const count of [0,1,2]){
-  const copies=Array.from({length:count},(_,index)=>({connectionId:'connection',externalId:String(index),name:'Edition',format:'epub'}));
-  const opened:any[]=[];let owner:any;
-  const dispose=runtime.effect_root(()=>owner=createConnectedLaunch(async(path:string)=>path.endsWith('/linked')?copies:[{id:'connection',name:'Library'}],async(...args:any[])=>opened.push(args)));
-  try{await owner.show();expect(opened).toHaveLength(count===1?1:0);expect(owner.open).toBe(count!==1);if(count===1)expect(opened[0].slice(0,2)).toEqual(['work',copies[0]]);}
-  finally{dispose();}
+test('preview Read does no file/session work and cannot resume the live reader',async()=>{
+ let calls=0,owner:any;
+ const dispose=runtime.effect_root(()=>owner=createLaunch(async()=>{calls++;},true,{workId:'work'}));
+ try{await owner.show();expect(calls).toBe(0);expect(owner.visible).toBe(false);expect(owner.completed).toBe(0);}
+ finally{owner.dispose();dispose();}
+});
+test('Read resumes its current session without preparing another edition',async()=>{
+ let calls=0,owner:any;
+ const dispose=runtime.effect_root(()=>owner=createLaunch(async()=>{calls++;},false,{workId:'work'}));
+ try{await owner.show();expect(calls).toBe(0);expect(owner.visible).toBe(true);expect(owner.completed).toBe(1);}
+ finally{owner.dispose();dispose();}
+});
+test('duplicate Read is coalesced; disposal or a changed target cancels the preparation owner',async()=>{
+ for(const transition of ['dispose','replace']as const){
+  const late=deferred();let signal:AbortSignal|undefined,starts=0,owner:any;
+  const dispose=runtime.effect_root(()=>owner=createLaunch(async(_id:string,_source:unknown,current:AbortSignal)=>{starts++;signal=current;await late.promise;}));
+  try{const pending=owner.show();await owner.show();expect(starts).toBe(1);expect(owner.isBusy()).toBe(true);owner[transition]();await settle();expect(signal?.aborted).toBe(true);late.resolve();await pending;expect(owner.completed).toBe(0);expect(owner.isBusy()).toBe(false);}
+  finally{late.resolve();owner.dispose();dispose();}
  }
-});
-test('closing the edition picker aborts its reads and prevents a late linked copy from opening',async()=>{
- const late=deferred();let signal:AbortSignal|undefined,opened=0,owner:any;
- const dispose=runtime.effect_root(()=>owner=createConnectedLaunch(async(path:string,_body:unknown,_method:string,options:{signal:AbortSignal})=>{
-  signal=options.signal;if(path.endsWith('/linked')){await late.promise;return [{connectionId:'connection',externalId:'copy',name:'Edition',format:'pdf'}];}return [];
- },async()=>{opened++;}));
- try{const pending=owner.show();owner.close();expect(signal?.aborted).toBe(true);late.resolve();await pending;expect(opened).toBe(0);expect(owner.open).toBe(false);}
- finally{late.resolve();dispose();}
 });
 
 const readingClient=await Bun.file(new URL('../src/lib/reading/client.svelte.ts',import.meta.url)).text();

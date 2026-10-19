@@ -55,6 +55,7 @@ export type UserSettings = {
   liquidGlass?: boolean;
   originalTitles?: boolean;
   monochromeMissing?: boolean;
+  sanitizeOddReadingPages?: boolean;
   region?: string;
   theme?: 'dark' | 'light' | 'system';
   subtitleLanguages?: string[];

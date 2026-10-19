@@ -1,5 +1,5 @@
 import {libarchiveWasm,type LibarchiveWasm} from 'libarchive-wasm';
-import {comicEntryName,comicImage,orderComicEntries,COMIC_INPUT_LIMIT,COMIC_EXPANDED_LIMIT,COMIC_PAGE_LIMIT,COMIC_ENTRY_LIMIT,type ComicEntry} from './comic-pages';
+import {comicEntryName,comicImage,orderComicEntries,COMIC_EXPANDED_LIMIT,COMIC_PAGE_LIMIT,COMIC_ENTRY_LIMIT,type ComicEntry} from './comic-pages';
 import type {ComicFormat} from '../model';
 
 /** Worker-owned compressed bytes and a single forward cursor; no extracted-page cache. */
@@ -9,7 +9,7 @@ export class ComicDecoder {
  private readonly byIndex=new Map<number,ComicEntry>();
  private constructor(private mod:LibarchiveWasm){}
  static async open(data:ArrayBuffer,format:Exclude<ComicFormat,'cbz'>,options:object={}){
-  if(!data.byteLength||data.byteLength>COMIC_INPUT_LIMIT)throw new Error('Comic archives must be smaller than 128 MB.');
+  if(!data.byteLength)throw new Error('This comic archive is empty.');
   const bytes=new Uint8Array(data);
   const rar=bytes[0]===0x52&&bytes[1]===0x61&&bytes[2]===0x72&&bytes[3]===0x21&&bytes[4]===0x1a&&bytes[5]===7;
   const seven=bytes[0]===0x37&&bytes[1]===0x7a&&bytes[2]===0xbc&&bytes[3]===0xaf&&bytes[4]===0x27&&bytes[5]===0x1c;

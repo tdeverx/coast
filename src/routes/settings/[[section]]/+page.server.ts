@@ -79,6 +79,7 @@ export const load = (async ({locals, params, depends, url}) => {
       liquidGlass: true,
       originalTitles: false,
       monochromeMissing: true,
+      sanitizeOddReadingPages: true,
       region: 'GB',
       subtitleLanguages: config.subtitleLanguages,
       subtitlesAlways: config.subtitleDefault === 'always',

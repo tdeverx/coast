@@ -1,0 +1,65 @@
+{
+  "date": "2026-10-19",
+  "scope": "User-requested download-cap removal; separate from earlier source epochs.",
+  "actualInput": {
+    "format": "cbz",
+    "bytes": 616088540,
+    "sha256": "816bd7c464e208ce651af9f1ede1918b0ac8bbc07abeee4b9251280f767c8d52",
+    "provenance": "Existing admin-authorized Jellyfin file; private provider/file identities omitted."
+  },
+  "acquisition": {
+    "status": "passed",
+    "configuredTransferCap": "none",
+    "bytes": 616088540
+  },
+  "nativeReplay": {
+    "status": "passed",
+    "localFileAdmission": true,
+    "knownLength": {
+      "bytes": 616088540,
+      "sha256Matches": true,
+      "progressBytesMatch": true
+    },
+    "unknownLength": {
+      "bytes": 616088540,
+      "sha256Matches": true,
+      "progressBytesMatch": true
+    }
+  },
+  "browserReplay": {
+    "status": "passed",
+    "boundary": "Actual admin-acquired Jellyfin CBZ, replayed through the current browser source loader; no fabricated bytes/provider response. Transfer only, not full physical rendering or memory acceptance.",
+    "size": 616088540,
+    "loaded": 616088540,
+    "total": 616088540,
+    "aboveOldBrowserCap": true,
+    "aboveOldProxyCap": true,
+    "errors": []
+  },
+  "limits": [
+    "Compressed bytes remain retained per open.",
+    "No full large-archive rendering/browser-memory-budget acceptance.",
+    "No natural EPUB for this follow-up.",
+    "Per-entry/page/pixel/expanded-output/decoder-time/cancellation/access protections remain."
+  ],
+  "sourceSha256": {
+    "src/lib/reading/client.svelte.ts": "edc1e7f8eac9fd1409d65f7a5498e30150a201d791699d7e4f47726b536d43e9",
+    "src/lib/reading/reader/comic-pages.ts": "658323628cd50c05b571278cdf4ebb8887aa41783b5f1d737bdedc9195a22e3b",
+    "src/lib/reading/reader/comic-source.ts": "8a8eca39c4d5005e553d3c207c1794eb17268206b56b0c2ac6c9bdb308440cc8",
+    "src/lib/reading/reader/archive-decoder.ts": "27545dcc12fbf02c1715ed6e386be1d63af4bade434dc46cded571b4dbfad892",
+    "src/lib/reading/reader/epub.ts": "57fec67e28c42ea3f7c43f2bdb6855defcf5128622c25ea18c3e31a80749dc65",
+    "src/lib/reading/reader/epub-archive.ts": "6b9ac551eae9b0577283c8360957e7773d7699aeb2f34075ae205b9d79cc5f85",
+    "src/lib/reading/sessions.server.ts": "4ae9845fef1878a89dbe18dde203d9a214b172c721e5cbc2107c436e781ada6f",
+    "tests/reading-comic-source.test.ts": "67bd3f6eab5bb00e4bdd462233ef01e5127b75e4ecc50665a0d1af322c997eca"
+  },
+  "gates": {
+    "appPass": 861,
+    "appGuardedSkip": 718,
+    "appFail": 0,
+    "largeActualFocusedPass": 5,
+    "typeErrors": 0,
+    "typeWarnings": 0,
+    "productionBuild": "passed",
+    "sourceStyle": "passed"
+  }
+}

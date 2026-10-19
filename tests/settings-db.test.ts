@@ -85,6 +85,13 @@ describe.skipIf(!enabled)('settings persistence', () => {
       (await getSql()`SELECT count(*)::int AS count FROM diagnostic_setting_audit`)[0].count
     ).toBe(1);
   });
+  test('odd reading page sanitization persists a false preference and rejects non-booleans', async () => {
+    await updateUserSettings(member, { sanitizeOddReadingPages: false });
+    expect((await getSql()`select settings from users where id=${member.id}`)[0].settings.sanitizeOddReadingPages).toBe(false);
+    await expect(updateUserSettings(member, { sanitizeOddReadingPages: 'off' })).rejects.toThrow();
+    await updateUserSettings(member, { sanitizeOddReadingPages: true });
+    expect((await getSql()`select settings from users where id=${member.id}`)[0].settings.sanitizeOddReadingPages).toBe(true);
+  });
 
   test('invalid and non-admin patches leave system policies untouched', async () => {
     const previous = await getConfig();

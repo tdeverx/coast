@@ -47,7 +47,7 @@ export const preferenceFields = {
   features: ['features'],
   collection: ['collection'],
   privacy:['social'],
-  appearance: ['shareDemand', 'fullWidth', 'liquidGlass', 'originalTitles', 'monochromeMissing', 'region', 'notificationsSilenced'],
+  appearance: ['shareDemand', 'fullWidth', 'liquidGlass', 'originalTitles', 'monochromeMissing', 'sanitizeOddReadingPages', 'region', 'notificationsSilenced'],
   playback: ['listenThreshold', 'subtitlesAlways', 'subtitleLanguages', 'subtitlePrompt'],
   connections: ['syncConflictWinner'],
 } as const;

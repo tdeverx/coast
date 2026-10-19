@@ -194,14 +194,33 @@ test('late renderer creation is disposed after cancellation', async () => {
   expect(disposed).toBe(1);
   expect(closed).toBe(1);
 });
-test('wide scans map both visual halves to the source page; a dropped odd tail maps to the last face', async () => {
+test('wide scans retain both halves and the final source page; spare faces have no source location', async () => {
   const dimensions = [[600, 900], [1200, 900], [600, 900], [600, 900], [600, 900], [600, 900]];
-  const pages = await normalizeComicPages({ count: 6, page: async (index: number) => ({ width: dimensions[index][0], height: dimensions[index][1] } as HTMLCanvasElement) }, new AbortController().signal);
-  expect(pages.count).toBe(6);
+  const pages = await normalizeComicPages({ count: 6, page: async (index: number) => ({ width: dimensions[index][0], height: dimensions[index][1] } as HTMLCanvasElement) }, new AbortController().signal,{sanitizeOddPages:false});
+  expect(pages.count).toBe(8);
   expect(pages.sourcePage(1)).toBe(1);
   expect(pages.sourcePage(2)).toBe(1);
   expect(pages.physicalPage(1)).toBe(1);
-  expect(pages.physicalPage(5)).toBe(5);
+  expect(pages.sourcePage(6)).toBeUndefined();
+  expect(pages.sourcePage(7)).toBe(5);
+  expect(pages.physicalPage(5)).toBe(7);
+});
+test('small and odd bindings retain every source page without inventing numbered blank pages',async()=>{
+ for(const count of [1,2,3,4,5]){
+  const pages=await normalizeComicPages({count,page:async()=>({width:600,height:900} as HTMLCanvasElement)},new AbortController().signal,{sanitizeOddPages:false});
+  const sources=Array.from({length:pages.count},(_,index)=>pages.sourcePage(index)).filter(index=>index!==undefined);
+  expect(sources).toEqual(Array.from({length:count},(_,index)=>index));
+  expect(pages.count).toBe(Math.max(4,count+count%2));
+  expect(pages.physicalPage(count-1)).toBe(count===1?0:pages.count-1);
+ }
+});
+test('odd-face sanitization is on by default and can be disabled without dropping the tail',async()=>{
+ for(const sanitizeOddPages of [undefined,true,false]){
+  const pages=await normalizeComicPages({count:5,dimensions:async()=>({width:600,height:900}),page:async()=>({width:600,height:900} as HTMLCanvasElement)},new AbortController().signal,{sanitizeOddPages});
+  expect(pages.count).toBe(sanitizeOddPages===false?6:4);
+  expect(pages.sourcePage(pages.count-1)).toBe(sanitizeOddPages===false?4:3);
+  expect(pages.physicalPage(4)).toBe(pages.count-1);
+ }
 });
 test('outside dismissal uses the Coast callback and cannot fire after disposal', async () => {
   const value = await fixture();

@@ -2486,6 +2486,14 @@
         "bindable": false,
         "kind": "number",
         "nullable": true
+      },
+      {
+        "name": "valueText",
+        "type": "string",
+        "optional": true,
+        "bindable": false,
+        "kind": "text",
+        "nullable": false
       }
     ]
   },

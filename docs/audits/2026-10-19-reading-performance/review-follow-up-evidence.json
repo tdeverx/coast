@@ -1,0 +1,100 @@
+{
+  "boundary": "Owned disposable restore of actual catalogue/admin/provider access. Controlled preference/state/party conditions; no fabricated users/media/provider replies. No worker or external notification delivery.",
+  "cases": [
+    {
+      "name": "preference rejects invalid type",
+      "status": "passed"
+    },
+    {
+      "name": "preference persists false and reset inherits enabled default",
+      "status": "passed"
+    },
+    {
+      "name": "actual reading session appears in own user presence",
+      "status": "passed"
+    },
+    {
+      "name": "actual reading session appears in bounded admin panel",
+      "status": "passed"
+    },
+    {
+      "name": "admin panel rejects anonymous viewer",
+      "status": "passed"
+    },
+    {
+      "name": "reading state appears in shared Activity and owner journal",
+      "status": "passed"
+    },
+    {
+      "name": "ordinary page movement does not add Activity history",
+      "status": "passed"
+    },
+    {
+      "name": "stale heartbeat moves to History at last observation and a fresh heartbeat restores Now",
+      "status": "passed"
+    },
+    {
+      "name": "withdrawn source generation moves reader into History",
+      "status": "passed"
+    },
+    {
+      "name": "stale party revision rejected",
+      "status": "passed"
+    },
+    {
+      "name": "reading party rejects playback time seek",
+      "status": "passed"
+    },
+    {
+      "name": "actual reading party host accepts canonical page location",
+      "status": "passed"
+    },
+    {
+      "name": "guest must supply their own reading session",
+      "status": "passed"
+    },
+    {
+      "name": "host session cannot grant guest file access",
+      "status": "passed"
+    },
+    {
+      "name": "follower page commands rejected",
+      "status": "passed"
+    },
+    {
+      "name": "actual independently authorized guest joins matching edition and leaves",
+      "status": "passed"
+    },
+    {
+      "name": "public playback sharing refuses comic sources",
+      "status": "passed"
+    },
+    {
+      "name": "admin reading cursor preserves sub-millisecond sessions without gaps or duplicates",
+      "status": "passed"
+    },
+    {
+      "name": "closed reader leaves Now and appears in History",
+      "status": "passed"
+    },
+    {
+      "name": "closed source withdraws party participation",
+      "status": "passed"
+    }
+  ],
+  "actualGuestCandidates": 1,
+  "status": "passed",
+  "date": "2026-10-19",
+  "actualBrowser": {
+    "status": "passed",
+    "host": "Normal development LAN host, port 5173",
+    "flow": "Existing unavailable reading Library card -> Open -> existing details overlay",
+    "readingPreparationRequests": 0
+  },
+  "sourceSha256": {
+    "src/lib/ui/components/MediaCard.svelte": "1f094a4c01a00bfc628df0459153c6a12c837dc75a521531045a09b1dfe0b2ec",
+    "src/lib/ui/work-menu/CatalogueActions.svelte": "b1890d73bec22675ea9f51ba84649b2e813ac6cb501ee227f9ab35bb0ad2e8e9",
+    "src/lib/reading/streams.server.ts": "8fd7abd87471f480aeb24f340305accd2df8e4c8d76f8bac337f936cf38db78b",
+    "scripts/reading-integration-native.ts": "b5c680d1fbffffbfd175f7937786fb11b6fb994ee838b842d69c1f29b6558a27"
+  }
+}

@@ -1,4 +1,5 @@
 import type { ReadingFormat, ReadingKind, ReadingLocation } from '../model';
+import type { ReaderProgress } from './load';
 export type ReaderEngine = {
   previous(): Promise<void>;
   next(): Promise<void>;
@@ -18,6 +19,8 @@ export type ReaderOptions = {
   controlled?: () => boolean;
   failed?: (cause: unknown) => void;
   dismiss?: () => void;
+  progress?: (progress: ReaderProgress) => void;
+  sanitizeOddPages?: boolean;
 };
 export async function createReader(options: ReaderOptions): Promise<ReaderEngine> {
   options.signal.throwIfAborted();

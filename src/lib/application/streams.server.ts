@@ -1,4 +1,6 @@
 import {sharedStreamRows,sharedStreamCount,excludingSharedDevice} from '$lib/sharing/streams.server';
+import {readingStreamRows,readingStreamCount} from '$lib/reading/streams.server';
+import type {ReadingLocation} from '$lib/reading/model';
 import {requireAdmin,type SessionUser} from '$lib/server/auth';
 import {getSql} from '$lib/server/db';
 import {providerSchedule} from '$lib/providers/schedule';
@@ -9,7 +11,7 @@ import {workCards} from '$lib/collection/query.server';
 import {profilePath} from '$lib/profile/url';
 import type {MediaView,MediaCardPresentation,MediaCardDisplay} from '$lib/ui/types';
 type Stream=NonNullable<ReturnType<typeof streamPresentation>>;
-export type StreamsSnapshot={streams:(Stream&{firstSeenAt:string;lastSeenAt:string;endedAt:string|null;server:string;connectionId:string|null;sharing?:{creator:string;viewers:number;estimated:boolean;bitrateMbps:number|null};card:MediaView|MediaCardPresentation|MediaCardDisplay;actor:{username:string;avatar:string|null;profileHref:string|null}})[];issues:{server:string;message:string}[];checkedAt:string|null;nextCursor:string|null;view:'now'|'history'};
+export type StreamsSnapshot={streams:(Stream&{firstSeenAt:string;lastSeenAt:string;endedAt:string|null;server:string;connectionId:string|null;reading?:ReadingLocation|null;sharing?:{creator:string;viewers:number;estimated:boolean;bitrateMbps:number|null};card:MediaView|MediaCardPresentation|MediaCardDisplay;actor:{username:string;avatar:string|null;profileHref:string|null}})[];issues:{server:string;message:string}[];checkedAt:string|null;nextCursor:string|null;view:'now'|'history'};
 /** Resolve a whole server's streams in bounded batches; never fetch artwork directly from private server URLs. */
 export async function streamCards<T extends Stream>(userId:string,instanceId:string,streams:T[]){
  if(!streams.length)return [];
@@ -37,9 +39,9 @@ async function streamSources(){return getSql()<Source[]>`select i.id,i.name,i.se
  where i.enabled and i.provider='jellyfin' order by i.name,i.id`;}
 function fresh(source:Source){return source.valid&&!source.last_error&&!!source.checked_at&&Date.now()-new Date(source.checked_at).getTime()<=Math.max(3,providerSchedule('jellyfin',source.settings.schedule).streamsIntervalMinutes*2)*60000;}
 export async function streamCount(actor:SessionUser|null){
- requireAdmin(actor);const sources=await streamSources();
+ const user=requireAdmin(actor);const sources=await streamSources();
  if(sources.some(source=>!fresh(source)))return {active:null};
- const shared=await sharedStreamCount();
+ const shared=await sharedStreamCount()+await readingStreamCount(user.id);
  const ids=sources.map(source=>source.id);if(!ids.length)return {active:shared};
  const [row]=await getSql()`select count(*)::int as count from server_stream_sessions where instance_id in ${getSql()(ids)} and ended_at is null and ${excludingSharedDevice(getSql())}`;
  return {active:(row.count as number)+shared};
@@ -48,6 +50,7 @@ const querySchema=v.object({view:v.optional(v.picklist(['now','history']),'now')
 export async function activeStreams(actor:SessionUser|null,input:unknown={}):Promise<StreamsSnapshot>{
  const user=requireAdmin(actor),query=v.parse(querySchema,input),sources=await streamSources(),sql=getSql();
  const snapshot:StreamsSnapshot={streams:[],issues:[],checkedAt:null,nextCursor:null,view:query.view};
+ snapshot.streams.push(...await readingStreamRows(user.id,query.view,query.before));
  for(const source of sources)if(!fresh(source))snapshot.issues.push({server:source.name,message:source.last_error??(!source.eligible?'Choose a connected Jellyfin administrator in the Server streams job schedule.':source.job_state==='failed'?'The server scan failed. Retry Server streams in Jobs.':!source.checked_at?(source.job_state==='running'?'Scanning server streams.':source.job_state==='pending'?'Server scan queued.':'No server scan has completed. Run Server streams in Jobs.'):'Waiting for the next server scan. Previous observations may be stale.')});
  const ids=sources.filter(source=>query.view==='history'||source.valid).map(source=>source.id);
  if(!sources.length)snapshot.issues.push({server:'Jellyfin',message:'Connect a Jellyfin administrator account to record server streams.'});

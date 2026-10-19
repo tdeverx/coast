@@ -80,7 +80,7 @@ async function readerEffect(c:any,t:any,go:(location:any)=>Promise<void>){
   .replace("import('./reader/engine')",'Promise.resolve({createReader:fixture.createReader})').replace('$props()', '({})');
  const intervals:{callback:()=>void;delay:number}[]=[],cleared:unknown[]=[];
  const fixture={...c,api:t.api,message:(cause:Error)=>cause.message,syncedPlayer:{room:null},canControlPlayback:()=>true,document:{hidden:false},host:{},createReader:async()=>({go,destroy(){}})};
- const declarations='const reportFailure=()=>{};const useClient=()=>({preview:false}),untrack=fn=>fn();const {reader:applicationReader,closeReading,recordReading,publishReading,setReadingNavigator,retryReadingSave,api,message,syncedPlayer,canControlPlayback,document}=fixture;const $state=value=>value,$derived=value=>value;let effect;const $effect=fn=>effect=fn;';
+ const declarations='const page={data:{user:{settings:{}}}};const reportFailure=()=>{};const useClient=()=>({preview:false}),untrack=fn=>fn();const {reader:applicationReader,closeReading,recordReading,publishReading,setReadingNavigator,retryReadingSave,api,message,syncedPlayer,canControlPlayback,document}=fixture;const $state=value=>value,$derived=value=>value;let effect;const $effect=fn=>effect=fn;';
  const compiled=new Bun.Transpiler({loader:'ts'}).transformSync(declarations+script+'\nreturn {start(){host=fixture.host;return effect();},external:()=>external};');
  const mounted=Function('fixture','setInterval','clearInterval',compiled)(fixture,(callback:()=>void,delay:number)=>{intervals.push({callback,delay});return intervals.length;},(id:unknown)=>cleared.push(id));
  const cleanup=mounted.start();await settle();return {cleanup,fixture,intervals,cleared,mounted};

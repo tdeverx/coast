@@ -10,6 +10,7 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
   const owner = new AbortController();
   const signal = AbortSignal.any([options.signal, owner.signal]);
   const pages = await physicalPages({ ...options, signal });
+  options.progress?.({ phase: 'render' });
   let renderer: Awaited<ReturnType<typeof createRenderer>> | undefined;
   let state: PhysicalState | undefined;
   let ready = false;

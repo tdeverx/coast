@@ -4,15 +4,19 @@ import { sanitizeReadingDocument } from './epub-document';
 import type { ReaderEngine,ReaderOptions } from './engine';
 import { readerLoad } from './load';
 import { ownEpubResources } from './epub-resources';
-export async function epubReader({host,source,location,signal,changed}:ReaderOptions):Promise<ReaderEngine>{
+export async function epubReader({host,source,location,signal,changed,progress}:ReaderOptions):Promise<ReaderEngine>{
  signal.throwIfAborted();
  let blob:Blob;
  if(typeof source==='string'){
-  const response=await fetch(source,{signal});if(!response.ok)throw new Error('This EPUB could not be opened.');
+  progress?.({phase:'download',loaded:0});
+  const response=await fetch(source,{signal});if(!response.ok){await response.body?.cancel();throw new Error('This EPUB could not be opened.');}
+  const declared=Number(response.headers.get('content-length')),total=Number.isSafeInteger(declared)&&declared>0?declared:undefined;
+  progress?.({phase:'download',loaded:0,total});
   const chunks:Uint8Array<ArrayBuffer>[]=[];let size=0;const stream=response.body!.getReader();
-  try{while(true){const part=await stream.read();if(part.done)break;size+=part.value.byteLength;if(size>128*1024**2){await stream.cancel();throw new Error('EPUB files must be smaller than 128 MB.');}chunks.push(part.value);}}finally{stream.releaseLock();}
+  try{while(true){const part=await readerLoad(stream.read(),signal);if(part.done)break;size+=part.value.byteLength;chunks.push(part.value);progress?.({phase:'download',loaded:size,total});}}finally{await stream.cancel().catch(()=>{});stream.releaseLock();}
   blob=new Blob(chunks);
  }else blob=source;
+ progress?.({phase:'prepare'});
  const data=await prepareEpubArchive(blob,signal,async readDocument=>{
   async function documentAt(path:string){
    const xml=await readDocument(path);
@@ -40,6 +44,7 @@ export async function epubReader({host,source,location,signal,changed}:ReaderOpt
  try {
  await display(book.open(data,'binary'));await display(book.ready);signal.throwIfAborted();
  const view=rendition=book.renderTo(host,{width:'100%',height:'100%',flow:'paginated',spread:'none',allowScriptedContent:false});
+ progress?.({phase:'render'});
  // EPUB.js emits displayError without rejecting display(). Close the reader and settle our caller.
  view.on('displayError',(cause:unknown)=>{rejectDisplay(cause instanceof Error?cause:new Error('This EPUB chapter could not be displayed.'));abort();});
  async function display<T>(pending:Promise<T>){try{return await readerLoad(Promise.race([pending,displayFailure]),signal);}catch(cause){abort();throw cause;}}
