@@ -21,3 +21,7 @@ output
 
 # Verification archives and unpacked audit evidence are not runtime inputs.
 docs/audits/
+
+# The isolated reader lab and checkpoints stay on the developer's machine.
+experiments/comic-lab/
+experiments/comic-lab-checkpoints/

@@ -4,7 +4,7 @@ import * as runtime from 'svelte/internal/client';
 import {compileRunes,componentScript,moduleUrl,resourceUrl} from './fixtures/ui-script';
 
 const script=(await componentScript('src/lib/reading/Reader.svelte'))
- .replace('let host:HTMLElement,engine:', 'let host:HTMLElement=fixtureHost,engine:')
+ .replace('let host=$state<HTMLElement>();', 'let host=$state<HTMLElement>(fixtureHost);')
  .replace("import('./reader/engine')",'Promise.resolve({createReader})')
  .replace('$props()', '({example:previewExample})');
 const code=compileRunes(`
@@ -37,6 +37,18 @@ test('replaced or minimized Reader turns cannot publish late failures or clear a
    next.resolve();await second;expect(owner.busy).toBe(false);
   }finally{old.resolve();next.resolve();dispose();}
  }
+});
+
+test('a location received during startup takes precedence over the captured bookmark',async()=>{
+ const opening=deferred(),targets:any[]=[];let owner:any,created=0;
+ const dispose=runtime.effect_root(()=>owner=create(async()=>{created++;await opening.promise;return {go:async(location:any)=>{targets.push(location);},destroy(){}};}));
+ try{
+  await settle();owner.live.location={format:'pdf',page:2,total:2};await settle();
+  expect(created).toBe(1);opening.resolve();await settle();
+  expect(targets).toEqual([{format:'pdf',page:2,total:2}]);
+  expect(owner.location).toEqual({format:'pdf',page:2,total:2});
+  expect(owner.external).toBe(false);
+ }finally{opening.resolve();dispose();}
 });
 
 test('late follower rollback completion cannot overwrite a replacement Reader navigation owner',async()=>{
