@@ -34,7 +34,6 @@ export async function openReading(workId:string,input?:{file:File}|{connectionId
   let body:ReadingPrepareInput;
   if(input&&'file' in input){
    const format=readingFormat(input.file.name);if(!format)throw new Error(`Choose ${readingFileLabel}.`);
-   if(input.file.size>128*1024**2)throw new Error('Local reading files must be smaller than 128 MB.');
    const {readingFileIdentity}=await import('./reader/file-identity');
    if(!current())return;
    body={source:'local',format,edition:await readingFileIdentity(input.file,abort.signal)};

@@ -19,7 +19,6 @@ export async function extractEpubEntry(entry:Pick<FileEntry,'getData'>,signal:Ab
 /** EPUB.js receives a stored archive built only from bounded, verified extraction output. */
 export async function prepareEpubArchive(blob:Blob,signal:AbortSignal,inspect:(readDocument:(path:string)=>Promise<string>)=>Promise<void>) {
   signal.throwIfAborted();
-  if(blob.size>128*MiB)throw new Error('EPUB files must be smaller than 128 MB.');
   const archive=new ZipReader(new BlobReader(blob));
   let writer:ZipWriter<Blob>|undefined;
   try {

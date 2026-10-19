@@ -9,11 +9,11 @@ export async function epubReader({host,source,location,signal,changed,progress}:
  let blob:Blob;
  if(typeof source==='string'){
   progress?.({phase:'download',loaded:0});
-  const response=await fetch(source,{signal});if(!response.ok)throw new Error('This EPUB could not be opened.');
+  const response=await fetch(source,{signal});if(!response.ok){await response.body?.cancel();throw new Error('This EPUB could not be opened.');}
   const declared=Number(response.headers.get('content-length')),total=Number.isSafeInteger(declared)&&declared>0?declared:undefined;
   progress?.({phase:'download',loaded:0,total});
   const chunks:Uint8Array<ArrayBuffer>[]=[];let size=0;const stream=response.body!.getReader();
-  try{while(true){const part=await stream.read();if(part.done)break;size+=part.value.byteLength;if(size>128*1024**2){await stream.cancel();throw new Error('EPUB files must be smaller than 128 MB.');}chunks.push(part.value);progress?.({phase:'download',loaded:size,total});}}finally{stream.releaseLock();}
+  try{while(true){const part=await readerLoad(stream.read(),signal);if(part.done)break;size+=part.value.byteLength;chunks.push(part.value);progress?.({phase:'download',loaded:size,total});}}finally{await stream.cancel().catch(()=>{});stream.releaseLock();}
   blob=new Blob(chunks);
  }else blob=source;
  progress?.({phase:'prepare'});

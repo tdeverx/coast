@@ -158,14 +158,15 @@ export async function streamReading(userId:string,id:string,request:Request) {
  const headers=new Headers({Authorization:jellyfinAuthorization(userId,credentials.accessToken)});
  const range=request.headers.get('range');if(range){if(!/^bytes=\d*-\d*$/.test(range))throw new AppError(400,'Choose one byte range.');headers.set('Range',range);}
  const config={...await instanceFetchConfig(instance),timeoutMs:20000},path=`/Items/${encodeURIComponent(session.externalId)}/Download`;
- let response=await secureProviderFetch(config,path,{method:request.method==='HEAD'?'HEAD':'GET',headers,signal:request.signal},{stream:true,maxBytes:512*1024**2});
+ // Reading transfers have no file-size cap; streaming idle/cancellation and access guards remain.
+ let response=await secureProviderFetch(config,path,{method:request.method==='HEAD'?'HEAD':'GET',headers,signal:request.signal},{stream:true,maxBytes:Infinity});
  let headSize:string|null=null;
  if(request.method==='HEAD'&&[405,501].includes(response.status)){
   await response.body?.cancel();
   // Jellyfin's download endpoint may expose GET only. Probe one byte, then
   // cancel its body; do not turn a metadata request into a full file download.
   if(!range)headers.set('Range','bytes=0-0');
-  response=await secureProviderFetch(config,path,{method:'GET',headers,signal:request.signal},{stream:true,maxBytes:512*1024**2});
+  response=await secureProviderFetch(config,path,{method:'GET',headers,signal:request.signal},{stream:true,maxBytes:Infinity});
   if(!range&&response.status===206){
    headSize=/^bytes 0-0\/(\d+)$/.exec(response.headers.get('content-range')??'')?.[1]??null;
    if(!headSize){await response.body?.cancel();throw new AppError(502,'Reading file size unavailable.');}

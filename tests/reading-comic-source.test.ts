@@ -2,7 +2,6 @@ import { expect, test } from 'bun:test';
 import { ZipWriter, BlobWriter, TextReader } from '@zip.js/zip.js';
 import { openComicArchive } from '../src/lib/reading/reader/comic-archive';
 import { readComicSource } from '../src/lib/reading/reader/comic-source';
-import { COMIC_INPUT_LIMIT } from '../src/lib/reading/reader/comic-pages';
 import type { ReaderProgress } from '../src/lib/reading/reader/load';
 // Custom transport is scoped to each test and always restored.
 async function transport<T>(respond: (...args: Parameters<typeof fetch>) => ReturnType<typeof fetch>, run: () => Promise<T>) {
@@ -39,23 +38,6 @@ test('a remote comic downloads once and backward/forward reads never refetch pag
       await archive.close();
     }
   });
-});
-test('comic input bounds reject declared and actual oversize downloads and cancel bodies', async () => {
-  let cancelled = 0;
-  await transport((async () => new Response(new ReadableStream({ cancel() {
-      cancelled++;
-    } }), { headers: { 'content-length': String(COMIC_INPUT_LIMIT + 1) } })), async () => {
-    await expect(readComicSource('https://fixture.invalid/comic', new AbortController().signal)).rejects.toThrow('128 MB');
-  });
-  expect(cancelled).toBe(1);
-  await transport((async () => new Response(new ReadableStream({ start(controller) {
-      controller.enqueue(new Uint8Array(COMIC_INPUT_LIMIT + 1));
-    }, cancel() {
-      cancelled++;
-    } }))), async () => {
-    await expect(readComicSource('https://fixture.invalid/comic', new AbortController().signal)).rejects.toThrow('128 MB');
-  });
-  expect(cancelled).toBe(2);
 });
 test('closing a pending comic download aborts its wait and cancels its stream', async () => {
   const owner = new AbortController();
@@ -97,3 +79,40 @@ test('download progress reports actual bytes and leaves missing totals indetermi
     expect(progress.at(-1)).toEqual({phase:'prepare'});
   }
 });
+
+// Opt-in regression over a privately acquired actual document; never generate large filler bytes.
+const actualManifest=process.env.COAST_READING_LARGE_MANIFEST;
+(actualManifest?test:test.skip)('actual comics above both former download caps preserve bytes with and without a declared size',async()=>{
+  const [input]=await Bun.file(actualManifest!).json();
+  const original=Bun.file(input.file);
+  expect(original.size).toBe(input.bytes);
+  expect(original.size).toBeGreaterThan(512*1024**2);
+  const hash=async(blob:Blob)=>{
+    const digest=new Bun.CryptoHasher('sha256');
+    const stream=blob.stream().getReader();
+    try {
+      while (true) {
+        const chunk = await stream.read();
+        if (chunk.done)
+          break;
+        digest.update(chunk.value);
+      }
+    }
+    finally {
+      stream.releaseLock();
+    }
+    return digest.digest('hex');
+  };
+  expect(await hash(original)).toBe(input.sha256);
+  const local=new File([original],'actual.cbz');
+  expect(await readComicSource(local,new AbortController().signal)).toBe(local);
+  for(const known of [true,false]){
+    let downloaded=0;
+    await transport((async()=>new Response(original.stream(),{headers:known?{'content-length':String(original.size)}:{}})),async()=>{
+      const loaded=await readComicSource('https://actual-replay.invalid/comic',new AbortController().signal,progress=>{if(progress.phase==='download')downloaded=progress.loaded??0;});
+      expect(loaded.size).toBe(original.size);
+      expect(downloaded).toBe(original.size);
+      expect(await hash(loaded)).toBe(input.sha256);
+    });
+  }
+},120000);

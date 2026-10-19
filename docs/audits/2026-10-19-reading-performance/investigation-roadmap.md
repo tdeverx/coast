@@ -17,7 +17,7 @@
 
 The actual configured server reported Jellyfin **12.2.0**. Both `/Items/{id}/Download` and `/Items/{id}/File` returned correct 1,024-byte prefix/suffix ranges (206, matching byte hashes) from an actual 82,635,611-byte CBR. This establishes range capability on that file, not archive-entry efficiency or a faster endpoint. Its live `/api-docs/openapi.json` returned **500**: complete installed-endpoint discovery remains unresolved. Standard provider GET download logging may occur even during capability checks.
 
-The initial audit has five actual CBRs and no usable natural PDF/EPUB/CB7/CBT or sampled within-cap CBZ acceptance. Five then-current CBZs were 402–635 MB and rejected by the existing 128 MiB cap. Keep those gaps explicit; do not replace them with generated catalogue records or claim current safety limits can simply be raised. Physical presentation on a narrow desktop viewport is not hardware mobile acceptance.
+The initial audit has five actual CBRs and no usable natural PDF/EPUB/CB7/CBT or sampled within-cap CBZ acceptance. Five then-current CBZs were 402–635 MB and rejected by the former 128 MiB cap. The later user-requested [download-cap removal](loading-and-integration.md#download-cap-removal) verifies transfer of one actual 616,088,540-byte CBZ, not full rendering or a browser-memory budget. Keep those gaps explicit; do not replace them with generated catalogue records. Physical presentation on a narrow desktop viewport is not hardware mobile acceptance.
 
 ## Acceptance and stopping rules
 
