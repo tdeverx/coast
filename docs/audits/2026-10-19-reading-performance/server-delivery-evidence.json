@@ -10,7 +10,7 @@
     "src/lib/reading/cache.server.ts": "71ac444e70e6c37951a553f357a814b0de3ce952a90b7def70c69595da731114",
     "src/lib/reading/delivery.server.ts": "bb35d955f13a61d6cc277b8a9481a303729b3744fd950034abf470e0d29a9343",
     "src/lib/reading/delivery.ts": "f83e8795d6fa76a26e94def046cf444657d3fa719563908df5d6210765b6b7c6",
-    "src/lib/reading/sessions.server.ts": "fbc0b2bc0c3b2a8550ee26126f88caf0141f35986b81301e73845c83a79c32aa",
+    "src/lib/reading/sessions.server.ts": "2d6b3fda15f7fa3cea127a37b76348d2faf7395a4a98a069015dbfc3cbf77671",
     "src/lib/reading/Reader.svelte": "aaf4259fa336260b4249058857c415df1a8222cbadb8caa221083556cd3e095c",
     "src/lib/reading/model.ts": "8dce0d9d7cd0825e4a0847004d36e75768a8dd1ae7daf479106af1aad772ab84",
     "src/lib/reading/client.svelte.ts": "7bfb7adc0545d8d63edc26ca76ef0a190682542545d17fac39d1959e07155b69",
@@ -27,7 +27,7 @@
     "src/lib/ui/components/IntegrationSettings.svelte": "d394ae092d5f96531cf68921bddfb27b5626d4a98e65bb80a295725eaa9e3db9",
     "src/lib/providers/jellyfin/adapter.server.ts": "d9714e2164c0778b8a91575f6b3cdb6ed203057843d7ed35abc0a240ad38249b"
   },
-  "runtimeFingerprint": "3127c344944e70f2d76e0fe7d552785c9246e17daecc6b57c508218896505620",
+  "runtimeFingerprint": "8d13e1cb7f3647561099cdf35a2aaac1de7abc98395ce77fff8a1d8af71d018e",
   "runtime": {
     "bun": "1.4.3",
     "sharp": "0.35.5",
@@ -364,9 +364,13 @@
       {
         "name": "actual download-disabled token-owned policies are denied; absent metadata-visible negative cohort is explicit",
         "status": "passed"
+      },
+      {
+        "name": "actual token/user identity mismatch releases the existing completed cache lease after denial",
+        "status": "passed"
       }
     ],
-    "coldAuthenticatedManifestMs": 520.069583,
+    "coldAuthenticatedManifestMs": 503.038709,
     "absentCohorts": [
       "No connected actual account combines visible comic metadata with disabled downloads; the two disabled accounts have zero visible books. Natural warm-cache exploit replay is unavailable."
     ],
@@ -719,8 +723,8 @@
     "status": "passed"
   },
   "supplementalTests": {
-    "newBoundaryCases": 32,
-    "meaning": "21 server-native reading fixtures, four client protocol/cancellation fixtures, five exit/navigation cases, and one public/LAN playback-alias confinement case. Authored boundaries supplement actual-data acceptance. One additional controlled metadata-visible/download-disabled source-authorization boundary."
+    "newBoundaryCases": 34,
+    "meaning": "21 server-native reading fixtures, four client protocol/cancellation fixtures, five exit/navigation cases, and one public/LAN playback-alias confinement case. Authored boundaries supplement actual-data acceptance. One additional controlled metadata-visible/download-disabled source-authorization boundary. Two controlled policy user/server-identity lease-cleanup boundaries."
   },
   "gates": {
     "appTests": "892 passed / 718 guarded skips / 0 failed",
@@ -1364,5 +1368,14 @@
       "1280x800",
       "390x844"
     ]
+  },
+  "policyIdentityLeaseCleanup": {
+    "baselineCommit": "9a90de382aba6155cf6d6ae472530dbcbca084e1",
+    "actualBoundary": "Owned actual-data restore; completed admin lease, existing real permitted guest external ID, genuine unchanged token and live provider responses. Account binding drift injected/restored with transaction-local replication role to isolate from account-switch triggers. No normal/provider account mutation.",
+    "baselineStatus": "expected failure",
+    "priorGroupsPassed": 14,
+    "failure": "AssertionError [ERR_ASSERTION]: Policy identity failure must release the completed lease\n\n1 !== 0\n",
+    "fixed": "ProviderActionError identity/permission withdrawals release the reader lease. Actual user mismatch removes the completed lease; two supplementary controlled user/server policy-identity cases also pass.",
+    "preservedSetupFailure": "Initial account-switch setup closed its SQL connection before the assertion; private receipts retained. The final test isolates one drift field on a fresh actual restore and restores it."
   }
 }

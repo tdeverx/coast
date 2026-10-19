@@ -5,6 +5,7 @@ import { getDb } from '$lib/server/db';
 import { readingSessions, readingProgress, readingWorks, providerConnections, providerInstances, workEditions, users, availability, providerItems } from '$lib/server/db/schema';
 import { requireEnabledCategory } from '$lib/server/experimental';
 import { AppError } from '$lib/server/security/errors';
+import { ProviderActionError } from '$lib/providers/contracts';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { bookFormat } from '$lib/providers/jellyfin/reading.server';
 import { jellyfinItemKey } from '$lib/providers/jellyfin/paging';
@@ -170,7 +171,8 @@ export async function readingDeliverySource(userId:string,id:string,signal:Abort
   return {key:JSON.stringify([instance.id,session.externalId,session.edition,session.format]),edition:session.edition,format:session.format as typeof comicFormats[number],bytes:typeof book.Size==='number'&&Number.isSafeInteger(book.Size)&&book.Size>0?book.Size:undefined,
    open:owner=>secureProviderFetch(config,`/Items/${encodeURIComponent(session.externalId!)}/Download`,{headers:{Authorization:jellyfinAuthorization(userId,credentials.accessToken)},signal:owner},{stream:true,maxBytes:Infinity})};
  } catch(cause) {
-  if((cause instanceof AppError||cause instanceof ProviderHttpError)&&[401,403,404,409,410].includes(cause.status))(await readingCache()).release(readingLease(userId,id));
+  if((cause instanceof ProviderActionError && ['identity','permission'].includes(cause.code)) ||
+     ((cause instanceof AppError||cause instanceof ProviderHttpError)&&[401,403,404,409,410].includes(cause.status)))(await readingCache()).release(readingLease(userId,id));
   throw cause;
  }
 }

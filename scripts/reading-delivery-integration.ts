@@ -8,6 +8,7 @@ import { secureProviderFetch } from '$lib/server/security/provider-fetch';
 import { instanceFetchConfig } from '$lib/providers/instances.server';
 import { decryptCredential } from '$lib/server/security/credentials';
 import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
+import { ProviderActionError } from '$lib/providers/contracts';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { ComicDecoder } from '$lib/reading/reader/archive-decoder';
 import { createRoom, joinRoom, commandRoom, leaveRoom } from '$lib/playback/synced/service.server';
@@ -231,6 +232,31 @@ try {
         report.absentCohorts = ['No connected actual account combines visible comic metadata with disabled downloads; the two disabled accounts have zero visible books. Natural warm-cache exploit replay is unavailable.'];
         pass('actual download-disabled token-owned policies are denied; absent metadata-visible negative cohort is explicit');
     }
+    await stopReadingCache();
+    await initializeReadingCache();
+    const identitySession = await prepareReading(admin.id, input.id, { source: 'linked' });
+    await layout(admin.id, identitySession.id);
+    const [identitySource] = await sql `select external_user_id from provider_connections where id=${row.connection_id}`;
+    const guestContext = await getJellyfin(guest.id, guest.connection_id);
+    assert.notEqual(identitySource.external_user_id, guestContext.connection.externalUserId);
+    try {
+        // Owned-restore drift, not an account-switch workflow: locally bypass
+        // switch triggers in this transaction only. Real IDs/tokens/responses remain intact.
+        await sql.begin(async (tx) => {
+            await tx `set local session_replication_role=replica`;
+            await tx `update provider_connections set external_user_id=${guestContext.connection.externalUserId} where id=${row.connection_id}`;
+        });
+        await assert.rejects(() => readingPage(admin.id, identitySession.id, '0', request()), cause => cause instanceof ProviderActionError && cause.code === 'identity');
+        assert.equal((await readingCache()).snapshot().leases, 0, 'Policy identity failure must release the completed lease');
+    }
+    finally {
+        await sql.begin(async (tx) => {
+            await tx `set local session_replication_role=replica`;
+            await tx `update provider_connections set external_user_id=${identitySource.external_user_id} where id=${row.connection_id}`;
+        });
+        await closeReading(admin.id, identitySession.id);
+    }
+    pass('actual token/user identity mismatch releases the existing completed cache lease after denial');
     report.status = 'passed';
 }
 catch (cause) {
