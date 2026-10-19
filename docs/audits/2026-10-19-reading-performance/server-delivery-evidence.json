@@ -7,8 +7,8 @@
     "bun.lock": "1e4b54e41340c8bdc578d25a96ae2d97696967828c6a62f486d6d426af878aff",
     "scripts/build-reading-extractor.ts": "9a7205a8c84e77ed27bf45bfccaee8394960a8419f2520975b2e9196c8550f99",
     "scripts/native/reading-extractor.cc": "eee8ae8e95169ebbe51a1d9d17ccc0afd8129d37cffb77bf04ee64bf43a65924",
-    "src/lib/reading/cache.server.ts": "71ac444e70e6c37951a553f357a814b0de3ce952a90b7def70c69595da731114",
-    "src/lib/reading/delivery.server.ts": "bb35d955f13a61d6cc277b8a9481a303729b3744fd950034abf470e0d29a9343",
+    "src/lib/reading/cache.server.ts": "42c429e842c725059a69ce93ab40969525fe1a6481b0f8636fea843a8ba740fc",
+    "src/lib/reading/delivery.server.ts": "f7c51a9c2d14bd3052ea048c8b298b01a8c3d3857ffb511d8eacedfb4612da0c",
     "src/lib/reading/delivery.ts": "f83e8795d6fa76a26e94def046cf444657d3fa719563908df5d6210765b6b7c6",
     "src/lib/reading/sessions.server.ts": "2d6b3fda15f7fa3cea127a37b76348d2faf7395a4a98a069015dbfc3cbf77671",
     "src/lib/reading/Reader.svelte": "aaf4259fa336260b4249058857c415df1a8222cbadb8caa221083556cd3e095c",
@@ -27,7 +27,7 @@
     "src/lib/ui/components/IntegrationSettings.svelte": "d394ae092d5f96531cf68921bddfb27b5626d4a98e65bb80a295725eaa9e3db9",
     "src/lib/providers/jellyfin/adapter.server.ts": "d9714e2164c0778b8a91575f6b3cdb6ed203057843d7ed35abc0a240ad38249b"
   },
-  "runtimeFingerprint": "8d13e1cb7f3647561099cdf35a2aaac1de7abc98395ce77fff8a1d8af71d018e",
+  "runtimeFingerprint": "38d790d5efbfe46870416f95f504737e0b2dc59f966389735ea61c1eeae42dc1",
   "runtime": {
     "bun": "1.4.3",
     "sharp": "0.35.5",
@@ -368,9 +368,17 @@
       {
         "name": "actual token/user identity mismatch releases the existing completed cache lease after denial",
         "status": "passed"
+      },
+      {
+        "name": "actual close after initial authorization rejects warm cached bytes and removes any recreated lease",
+        "status": "passed"
+      },
+      {
+        "name": "actual generation after initial authorization rejects warm cached bytes and removes any recreated lease",
+        "status": "passed"
       }
     ],
-    "coldAuthenticatedManifestMs": 503.038709,
+    "coldAuthenticatedManifestMs": 496.3465,
     "absentCohorts": [
       "No connected actual account combines visible comic metadata with disabled downloads; the two disabled accounts have zero visible books. Natural warm-cache exploit replay is unavailable."
     ],
@@ -1262,7 +1270,7 @@
     "baselineStatus": "expected failure",
     "priorCasesPassed": 11,
     "failure": "AssertionError [ERR_ASSERTION]: Waiting request must reauthorize before publishing original page bytes",
-    "fixed": "Both actual close and generation withdrawal during shared acquisition return 410; independent actual host still receives its page. Completed-entry fast path retains one live authorization."
+    "fixed": "Preparation waits reauthorize; the earlier completed-entry shortcut is superseded by unconditional final reauthorization for every page, including warm admission."
   },
   "normalCacheReopenAfterBuild": {
     "boundary": "Owned actual admin sessions on normal dev, actual named CBRs and live configured provider. First preparation then completed-page-cache reopen after last owned close. Session+manifest latency excludes physical entrance. Single pairs, not production percentiles. Filesystem identity probe is not used for these claims.",
@@ -1377,5 +1385,36 @@
     "failure": "AssertionError [ERR_ASSERTION]: Policy identity failure must release the completed lease\n\n1 !== 0\n",
     "fixed": "ProviderActionError identity/permission withdrawals release the reader lease. Actual user mismatch removes the completed lease; two supplementary controlled user/server policy-identity cases also pass.",
     "preservedSetupFailure": "Initial account-switch setup closed its SQL connection before the assertion; private receipts retained. The final test isolates one drift field on a fresh actual restore and restores it."
+  },
+  "warmAdmissionReauthorization": {
+    "baselineCommit": "4711c6e835f41a082bde7ff10d629f9b543f2047",
+    "boundary": "Genuine completed cache and real admin/guest sessions/provider responses; admission gated after initial authorization, then actual close or owned-copy generation withdrawal. Scheduling/state controlled, no fabricated source/policy/media.",
+    "baselineStatus": "expected failure",
+    "priorGroupsPassed": 15,
+    "failure": "AssertionError [ERR_ASSERTION]: Warm cache admission must reauthorize before publishing",
+    "fixed": "Both warm close and generation schedules return 410 and remove any recreated lease; authorized host remains readable. prepared-entry shortcut removed.",
+    "cost": "Every page performs two complete source verifications (each item metadata and token-owned download policy) before byte publication. No cross-request grant cache."
+  },
+  "normalBrowserFinalWarmReauthorization": {
+    "boundary": "Actual normal-dev admin and original comic, genuine HTTP, desktop/mobile Chromium. Ephemeral admin login; no page turns or setting mutations. Browser plugin not available; existing Playwright fallback.",
+    "status": "passed",
+    "checks": [
+      "signed-in actual media identity and meaningful content",
+      "desktop/mobile original Three.js reader renders without archive request or full-image scan",
+      "minimize/resume reacquires page delivery",
+      "dim and blur both have live 250ms fade keyframes in/out; observed dim/outro intermediate opacity; reduced motion creates no backdrop animations",
+      "reverse exit persists mid-flight then tears down every WebGL context; reduced motion exits without animation",
+      "cold loading indicator visible before prepared covers; completed shared cache survives close/reopen",
+      "open/minimize/resume/close and reduced-motion reopen, unchanged progress/history, no framework overlay or app console errors"
+    ],
+    "coldLoadingLabel": "Opening comic\u2026\n\nJourney To Love Part 6",
+    "knownArtworkErrors": [
+      "Access to image at 'https://comicvine.gamespot.com/a/uploads/scale_large/11131/111316219/8318384-01.jpg' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "viewports": [
+      "1280x800",
+      "390x844"
+    ]
   }
 }

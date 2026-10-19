@@ -550,11 +550,7 @@ export function createReadingCache(root: string, extractor: string, overrides: P
         await Promise.allSettled([...jobs, ...cleanup]);
         records.clear();
     }
-    const prepared = (key: string) => {
-        const entry = entries.get(key);
-        return entry?.finished && !entry.error ? entry : undefined;
-    };
-    return { acquire, release, claim, touch, wait, page, stop, initialize, prepared, snapshot: () => ({ entries: entries.size, leases: leases.size, preparing, reserved, metadataBytes, manifests: records.size }) };
+    return { acquire, release, claim, touch, wait, page, stop, initialize, snapshot: () => ({ entries: entries.size, leases: leases.size, preparing, reserved, metadataBytes, manifests: records.size }) };
 }
 type Cache = ReturnType<typeof createReadingCache>;
 const key = Symbol.for('coast.reading.delivery');

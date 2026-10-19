@@ -63,18 +63,17 @@ export async function readingPage(userId: string, id: string, index: string, req
     if (!/^(0|[1-9]\d{0,3})$/.test(index))
         throw new AppError(404, 'Reading page not found.');
     const source = await readingDeliverySource(userId, id, request.signal);
-    const cache = await readingCache(), ready = cache.prepared(source.key);
+    const cache = await readingCache();
     const lease = readingLease(userId, id), entry = await cache.acquire(lease, source);
     cache.claim(lease, entry);
     const signal = AbortSignal.any([request.signal, entry.controller.signal]);
     while (!entry.manifest && !entry.finished)
         await cache.wait(entry, entry.changed, signal);
     const page = await cache.page(entry, Number(index), signal);
-    // A shared preparation may outlive this reader’s session or account generation.
-    // Finished cache hits had no preparation wait and already passed the live check above.
-    if (entry !== ready)
-        await readingDeliverySource(userId, id, signal);
-    // The response can outlive preparation. Cancellation/last-lease release cancels its file reader too.
+    // Admission and page lookup yield even on warm hits. Reauthorize after both
+    // before publishing, so a close/reconnect cannot recreate an ended lease.
+    await readingDeliverySource(userId, id, signal);
+    // The response can outlive preparation. Request cancellation or cache eviction aborts its file reader.
     const body = Bun.file(page.path).stream().pipeThrough(new TransformStream<Uint8Array, Uint8Array>({ transform(chunk, controller) {
             signal.throwIfAborted();
             controller.enqueue(chunk);

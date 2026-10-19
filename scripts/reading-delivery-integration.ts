@@ -257,6 +257,48 @@ try {
         await closeReading(admin.id, identitySession.id);
     }
     pass('actual token/user identity mismatch releases the existing completed cache lease after denial');
+    for (const withdrawal of ['close', 'generation'] as const) {
+        const host = await prepareReading(admin.id, input.id, { source: 'linked' });
+        await layout(admin.id, host.id);
+        const reader = await prepareReading(guest.id, input.id, { source: 'jellyfin', connectionId: guest.connection_id, externalId: row.external_id });
+        const cache = await readingCache(), acquire = cache.acquire;
+        const lease = readingLease(guest.id, reader.id);
+        let allow!: () => void, entered!: () => void;
+        const gate = new Promise<void>(resolve => allow = resolve), admitted = new Promise<void>(resolve => entered = resolve);
+        cache.acquire = async (...args) => {
+            if (args[0] === lease) {
+                entered();
+                await gate;
+            }
+            return acquire(...args);
+        };
+        const waiting = readingPage(guest.id, reader.id, '0', request()).then(response => ({ response }), error => ({ error }));
+        const [generation] = await sql `select account_generation from provider_connections where id=${guest.connection_id}`;
+        try {
+            await admitted;
+            if (withdrawal === 'close')
+                await closeReading(guest.id, reader.id);
+            else
+                await sql `update provider_connections set account_generation=gen_random_uuid() where id=${guest.connection_id}`;
+            allow();
+            const result = await waiting;
+            if ('response' in result)
+                await result.response.body?.cancel();
+            assert('error' in result && result.error?.status === 410, 'Warm cache admission must reauthorize before publishing');
+            assert.equal(cache.snapshot().leases, 1, 'Ended warm reader cannot retain a recreated lease');
+            const page = await readingPage(admin.id, host.id, '0', request());
+            assert.equal(page.status, 200);
+            await page.body?.cancel();
+            pass(`actual ${withdrawal} after initial authorization rejects warm cached bytes and removes any recreated lease`);
+        }
+        finally {
+            allow();
+            cache.acquire = acquire;
+            await sql `update provider_connections set account_generation=${generation.account_generation} where id=${guest.connection_id}`;
+            await closeReading(guest.id, reader.id);
+            await closeReading(admin.id, host.id);
+        }
+    }
     report.status = 'passed';
 }
 catch (cause) {
