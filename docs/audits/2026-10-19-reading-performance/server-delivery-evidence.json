@@ -7,8 +7,8 @@
     "bun.lock": "1e4b54e41340c8bdc578d25a96ae2d97696967828c6a62f486d6d426af878aff",
     "scripts/build-reading-extractor.ts": "9a7205a8c84e77ed27bf45bfccaee8394960a8419f2520975b2e9196c8550f99",
     "scripts/native/reading-extractor.cc": "eee8ae8e95169ebbe51a1d9d17ccc0afd8129d37cffb77bf04ee64bf43a65924",
-    "src/lib/reading/cache.server.ts": "7bffa495767feb245cb36a6f0f20f2c93566bb3322307fa5d7013027b58e519c",
-    "src/lib/reading/delivery.server.ts": "6fc74521b0965160a89ee711a1a0aa8bc41fd2b2e6c8a45e1ac7ab65ad2be5f3",
+    "src/lib/reading/cache.server.ts": "71ac444e70e6c37951a553f357a814b0de3ce952a90b7def70c69595da731114",
+    "src/lib/reading/delivery.server.ts": "bb35d955f13a61d6cc277b8a9481a303729b3744fd950034abf470e0d29a9343",
     "src/lib/reading/delivery.ts": "f83e8795d6fa76a26e94def046cf444657d3fa719563908df5d6210765b6b7c6",
     "src/lib/reading/sessions.server.ts": "b6d5d34ece2fc2445d5113003e3b5e8b0ee6191f1520ff78a7fcb5df19666955",
     "src/lib/reading/Reader.svelte": "aaf4259fa336260b4249058857c415df1a8222cbadb8caa221083556cd3e095c",
@@ -16,14 +16,17 @@
     "src/lib/reading/client.svelte.ts": "7bfb7adc0545d8d63edc26ca76ef0a190682542545d17fac39d1959e07155b69",
     "src/lib/reading/reader/remote-comic.ts": "562de540a5018d723b314ad7973e79ff27e0d78934f5d6caa43ba9955afddc74",
     "src/lib/reading/reader/physical-pages.ts": "b6968d49992b015209ae493664b14c71485e89dbd4c1080df42cdd1a65641104",
-    "src/lib/reading/reader/physical-reader.ts": "c10f5b1f3a4dcb01375a92458a3287dbe7c92329021a2148e63a1ecb81cec7ac",
+    "src/lib/reading/reader/physical-reader.ts": "10d12bbf6508d0046b44c01ebb03cfe875e9069e63f48cc0812f0b18c88dcc08",
     "src/lib/reading/reader/physical/renderer.ts": "e21c83072fefe39d00ca6f3b5f91311b410a3c8baafff9bf84804b09a0a52bdd",
     "src/lib/reading/reader/engine.ts": "97327d737f1dab48f522fb622ff0a185228818aeed4261fe1f5c42e9a14a1a4d",
     "src/lib/server/startup.ts": "7aff39aab80e00e4ef6b4e33a0dc9a8243d4132560d02c4adc6801d98618229b",
     "src/lib/server/api/reading.server.ts": "ed3ca9b2223ecb9089ec61826307c99908483fa2eb13514f4c22479ede88e102",
-    "src/lib/ui/components/Header.svelte": "eaab91cf97570315ca1628667e254d787c7eb34c7747f180bb7d02a0afce39fa"
+    "src/lib/ui/components/Header.svelte": "eaab91cf97570315ca1628667e254d787c7eb34c7747f180bb7d02a0afce39fa",
+    "src/lib/providers/instances.server.ts": "b49e1ed5dba1b531fde924484842f51b7ad5735e07e7c917ae69d21bb0ccd61c",
+    "src/lib/playback/service.server.ts": "4aad199dbd10daf442c46babea9cb1ad8068098abee29f82bd5cb77466526208",
+    "src/lib/ui/components/IntegrationSettings.svelte": "d394ae092d5f96531cf68921bddfb27b5626d4a98e65bb80a295725eaa9e3db9"
   },
-  "runtimeFingerprint": "f69a77e4066c08e060b6236165000297fae7afdf083d32199fb296d2bca85021",
+  "runtimeFingerprint": "e40186d153abf7cb74e4da88dbc686ce2e07924a17b86010cecbec3dbda719e1",
   "runtime": {
     "bun": "1.4.3",
     "sharp": "0.35.5",
@@ -32,7 +35,7 @@
   },
   "actualFiles": {
     "boundary": "Actual archived file replay on private temporary disk. No database/provider/browser timings or production admission claim for missing formats. Controlled leases/capacity/abort use exact original bytes.",
-    "source": "ab1a351c9fa5cfd15d401e7ba4b5b90d9644fe53",
+    "source": "dde82ccb312a21c9efce3fc957164931676715b7",
     "cases": [
       {
         "name": "cbr: independent concurrent leases share one acquisition",
@@ -47,31 +50,11 @@
         "status": "passed"
       },
       {
-        "name": "cbr: last-reader release removes temporary data and reservation",
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
         "status": "passed"
       },
       {
-        "name": "cbr: exact-version manifest supports verified page delivery during reacquisition",
-        "status": "passed"
-      },
-      {
-        "name": "cbr: independent concurrent leases share one acquisition",
-        "status": "passed"
-      },
-      {
-        "name": "cbr: every naturally ordered original page matches baseline bytes",
-        "status": "passed"
-      },
-      {
-        "name": "cbr: closing one party reader preserves another's files",
-        "status": "passed"
-      },
-      {
-        "name": "cbr: last-reader release removes temporary data and reservation",
-        "status": "passed"
-      },
-      {
-        "name": "cbr: exact-version manifest supports verified page delivery during reacquisition",
+        "name": "cbr: shared completed pages reopen without another source download",
         "status": "passed"
       },
       {
@@ -87,31 +70,11 @@
         "status": "passed"
       },
       {
-        "name": "cbr: last-reader release removes temporary data and reservation",
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
         "status": "passed"
       },
       {
-        "name": "cbr: exact-version manifest supports verified page delivery during reacquisition",
-        "status": "passed"
-      },
-      {
-        "name": "cbr: independent concurrent leases share one acquisition",
-        "status": "passed"
-      },
-      {
-        "name": "cbr: every naturally ordered original page matches baseline bytes",
-        "status": "passed"
-      },
-      {
-        "name": "cbr: closing one party reader preserves another's files",
-        "status": "passed"
-      },
-      {
-        "name": "cbr: last-reader release removes temporary data and reservation",
-        "status": "passed"
-      },
-      {
-        "name": "cbr: exact-version manifest supports verified page delivery during reacquisition",
+        "name": "cbr: shared completed pages reopen without another source download",
         "status": "passed"
       },
       {
@@ -127,11 +90,51 @@
         "status": "passed"
       },
       {
-        "name": "cbr: last-reader release removes temporary data and reservation",
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
         "status": "passed"
       },
       {
-        "name": "cbr: exact-version manifest supports verified page delivery during reacquisition",
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
         "status": "passed"
       },
       {
@@ -147,11 +150,11 @@
         "status": "passed"
       },
       {
-        "name": "cbz: last-reader release removes temporary data and reservation",
+        "name": "cbz: last-reader release retains completed pages within the idle budget",
         "status": "passed"
       },
       {
-        "name": "cbz: exact-version manifest supports verified page delivery during reacquisition",
+        "name": "cbz: shared completed pages reopen without another source download",
         "status": "passed"
       },
       {
@@ -171,6 +174,18 @@
         "status": "passed"
       },
       {
+        "name": "actual completed pages expire after a controlled idle TTL and reacquire cleanly",
+        "status": "passed"
+      },
+      {
+        "name": "actual idle pages evict under disk or metadata pressure without exceeding either budget",
+        "status": "passed"
+      },
+      {
+        "name": "concurrent actual-source idle eviction cannot over-admit an account or start its rejected job",
+        "status": "passed"
+      },
+      {
         "name": "actual-source cancellation drains extraction and deletes partial files",
         "status": "passed"
       },
@@ -185,11 +200,11 @@
         "bytes": 73339323,
         "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
         "pages": 24,
-        "coldPreparationMs": 476.47745900000007,
+        "coldPreparationMs": 418.09229200000004,
         "resources": {
-          "mainCpuMicros": 193754,
-          "beforeRss": 18793216,
-          "sampledPeakRss": 51250088,
+          "mainCpuMicros": 133109,
+          "beforeRss": 18449104,
+          "sampledPeakRss": 43959184,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -199,11 +214,11 @@
         "bytes": 39372234,
         "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
         "pages": 33,
-        "coldPreparationMs": 245.39504199999988,
+        "coldPreparationMs": 217.56729100000007,
         "resources": {
-          "mainCpuMicros": 88310,
-          "beforeRss": 137970912,
-          "sampledPeakRss": 153175264,
+          "mainCpuMicros": 61672,
+          "beforeRss": 120718440,
+          "sampledPeakRss": 121537640,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -213,11 +228,11 @@
         "bytes": 74500125,
         "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
         "pages": 24,
-        "coldPreparationMs": 421.3286250000001,
+        "coldPreparationMs": 389.058542,
         "resources": {
-          "mainCpuMicros": 122049,
-          "beforeRss": 99828936,
-          "sampledPeakRss": 100189384,
+          "mainCpuMicros": 88522,
+          "beforeRss": 87458944,
+          "sampledPeakRss": 87458944,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -227,11 +242,11 @@
         "bytes": 41725042,
         "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
         "pages": 30,
-        "coldPreparationMs": 232.8404999999998,
+        "coldPreparationMs": 234.29595800000016,
         "resources": {
-          "mainCpuMicros": 74523,
-          "beforeRss": 123831544,
-          "sampledPeakRss": 124716280,
+          "mainCpuMicros": 73435,
+          "beforeRss": 115787000,
+          "sampledPeakRss": 115803384,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -241,11 +256,11 @@
         "bytes": 82635611,
         "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
         "pages": 24,
-        "coldPreparationMs": 399.44725000000017,
+        "coldPreparationMs": 458.9700419999999,
         "resources": {
-          "mainCpuMicros": 95114,
-          "beforeRss": 90604768,
-          "sampledPeakRss": 90604768,
+          "mainCpuMicros": 107296,
+          "beforeRss": 82691272,
+          "sampledPeakRss": 82691272,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -255,17 +270,18 @@
         "bytes": 401719147,
         "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
         "pages": 265,
-        "coldPreparationMs": 366.60062500000004,
+        "coldPreparationMs": 553.5600830000003,
         "resources": {
-          "mainCpuMicros": 461209,
-          "beforeRss": 131728752,
-          "sampledPeakRss": 159040880,
+          "mainCpuMicros": 532754,
+          "beforeRss": 151291272,
+          "sampledPeakRss": 184157576,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
       }
     ],
     "controlledProgress": [
+      6,
       7,
       8,
       9,
@@ -335,9 +351,17 @@
       {
         "name": "changed edition cannot reuse the prior manifest or pages",
         "status": "passed"
+      },
+      {
+        "name": "actual close withdrawal during shared preparation rejects waiting page while host remains authorized",
+        "status": "passed"
+      },
+      {
+        "name": "actual generation withdrawal during shared preparation rejects waiting page while host remains authorized",
+        "status": "passed"
       }
     ],
-    "coldAuthenticatedManifestMs": 23392.76525,
+    "coldAuthenticatedManifestMs": 543.452791,
     "status": "passed"
   },
   "renderEquality": {
@@ -687,11 +711,11 @@
     "status": "passed"
   },
   "supplementalTests": {
-    "newBoundaryCases": 26,
-    "meaning": "15 server-native fixtures, four client protocol/cancellation fixtures and five exit/navigation lifecycle cases. Authored tests supplement real-file acceptance."
+    "newBoundaryCases": 31,
+    "meaning": "21 server-native reading fixtures, four client protocol/cancellation fixtures, five exit/navigation cases, and one public/LAN playback-alias confinement case. Authored boundaries supplement actual-data acceptance."
   },
   "gates": {
-    "appTests": "887 passed / 718 guarded skips / 0 failed",
+    "appTests": "892 passed / 718 guarded skips / 0 failed",
     "productionBuild": "passed locally; Linux native runtime actual-file check passed",
     "finalTypeStyleInventory": "Passed locally; PR CI checks the published head."
   },
@@ -927,6 +951,10 @@
           14,
           15
         ],
+        "progress": [
+          "prepare",
+          "render"
+        ],
         "callbacks": 0,
         "remainingCanvases": 0
       },
@@ -939,6 +967,10 @@
           2,
           3
         ],
+        "progress": [
+          "prepare",
+          "render"
+        ],
         "callbacks": 0,
         "remainingCanvases": 0
       },
@@ -948,6 +980,10 @@
           0,
           22,
           1
+        ],
+        "progress": [
+          "prepare",
+          "render"
         ],
         "callbacks": 0,
         "remainingCanvases": 0
@@ -963,8 +999,9 @@
       "signed-in actual media identity and meaningful content",
       "desktop/mobile original Three.js reader renders without archive request or full-image scan",
       "minimize/resume reacquires page delivery",
-      "dim and blur both fade in/out through intermediate opacity; reduced motion creates no backdrop animations",
+      "dim and blur both have live 250ms fade keyframes in/out; observed dim/outro intermediate opacity; reduced motion creates no backdrop animations",
       "reverse exit persists mid-flight then tears down every WebGL context; reduced motion exits without animation",
+      "cold loading indicator visible before prepared covers; completed shared cache survives close/reopen",
       "open/minimize/resume/close and reduced-motion reopen, unchanged progress/history, no framework overlay or app console errors"
     ],
     "backdrop": [
@@ -973,66 +1010,283 @@
         "duration": 250,
         "from": "0",
         "to": "1",
-        "midOpacity": 0.466492
+        "intermediateKeyframes": true,
+        "midOpacity": 0.5334,
+        "sampleTime": 133.34999994112562
       },
       {
         "kind": "reader-blur",
         "duration": 250,
         "from": "0",
         "to": "1",
-        "midOpacity": 0.333116
+        "intermediateKeyframes": true,
+        "midOpacity": 1,
+        "sampleTime": null
       },
       {
         "kind": "reader-dim",
         "duration": 250,
         "from": "1",
         "to": "0",
-        "midOpacity": 0.59982
+        "intermediateKeyframes": true,
+        "midOpacity": 0.466624,
+        "sampleTime": 133.34399999779478
       },
       {
         "kind": "reader-blur",
         "duration": 250,
         "from": "1",
         "to": "0",
-        "midOpacity": 0.59982
+        "intermediateKeyframes": true,
+        "midOpacity": 0.466624,
+        "sampleTime": 133.34399999779478
       },
       {
         "kind": "reader-blur",
         "duration": 250,
         "from": "0",
         "to": "1",
-        "midOpacity": 0
+        "intermediateKeyframes": true,
+        "cancelledBeforeStart": true
       },
       {
         "kind": "reader-dim",
         "duration": 250,
         "from": "0",
         "to": "1",
-        "midOpacity": 0.466668
+        "intermediateKeyframes": true,
+        "midOpacity": 0.533448,
+        "sampleTime": 133.36200002171063
       },
       {
         "kind": "reader-blur",
         "duration": 250,
         "from": "0",
         "to": "1",
-        "midOpacity": 0.466564
+        "intermediateKeyframes": true,
+        "midOpacity": 0.933192,
+        "sampleTime": 233.29799998309397
       },
       {
         "kind": "reader-dim",
         "duration": 250,
         "from": "1",
         "to": "0",
-        "midOpacity": 0.599756
+        "intermediateKeyframes": true,
+        "midOpacity": 0.399968,
+        "sampleTime": 150.00799999973324
       },
       {
         "kind": "reader-blur",
         "duration": 250,
         "from": "1",
         "to": "0",
-        "midOpacity": 0.599756
+        "intermediateKeyframes": true,
+        "midOpacity": 0.399968,
+        "sampleTime": 150.00799999973324
       }
     ],
-    "reducedExitMs": 600.6703330000018,
-    "transferCaveat": "CDP loadingFinished omits some streamed response bytes; no transfer-volume claim from these counters."
+    "reducedExitMs": 176.27816699999676,
+    "coldLoadingLabel": "Opening comic\u2026\n\nJourney To Love Part 6",
+    "transferCaveat": "CDP loadingFinished omits some streamed response bytes; no transfer-volume claim from these counters.",
+    "animationCaveat": "Fixed-delay probes can overshoot intro during headless GPU work; live intermediate keyframes, observed opacity and reduced-motion suppression are asserted. Not a smooth-device-frame-budget claim."
+  },
+  "normalCacheReopen": {
+    "boundary": "Owned actual admin sessions on normal dev, actual named CBRs and live configured provider. First preparation then completed-page-cache reopen after last owned close. Session+manifest latency excludes physical entrance. Single pairs, not production percentiles. Filesystem identity probe is not used for these claims.",
+    "cases": [
+      {
+        "title": "Boss Bitches",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 57,
+        "manifestMs": 7885.704541,
+        "sourcePages": 24
+      },
+      {
+        "title": "Boss Bitches",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 269.56837500000074,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 57,
+        "manifestMs": 7717.759,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 306.60408299999835,
+        "sourcePages": 24
+      }
+    ],
+    "status": "passed"
+  },
+  "retentionContract": {
+    "completedIdleMs": 1800000,
+    "activeAndIdleEntries": 64,
+    "pressure": "Oldest idle entries evict for disk/free-space/metadata/count budgets; never active readers.",
+    "unusedIncomplete": "Abort/drain and remove.",
+    "restart": "Temporary cache and manifests clear on restart/server module replacement.",
+    "browserManifest": "Publish only once preparation has finished; retained metadata alone cannot suppress acquisition progress.",
+    "loadingHandoff": "Render phase begins only after outside cover rasters and renderer construction."
+  },
+  "retentionBaseline": {
+    "commit": "dde82ccb312a21c9efce3fc957164931676715b7",
+    "actualArchiveBytes": 73339323,
+    "status": "expected failure of the new 30-minute completed-page retention assertion; prior owner removes bytes on last close",
+    "current": "39 actual-file cases pass, including reuse, idle deadline, expiry/pressure and concurrent admission"
+  },
+  "jellyfinLan": {
+    "actualCopy": {
+      "boundary": "Actual admin, catalogue and live Jellyfin. No generated media. Owned restore for playback/settings-negative checks; explicit normal-dev LAN configuration only in configure-dev mode.",
+      "cases": [
+        {
+          "name": "same-server LAN identity verified while public URL, instance and account identity remain intact",
+          "status": "passed"
+        },
+        {
+          "name": "LAN address is exposed only in administrator integration settings",
+          "status": "passed"
+        },
+        {
+          "name": "live identity, library/sync, music, reading, sessions/admin streams, image and original-file range use the shared LAN transport",
+          "status": "passed"
+        },
+        {
+          "name": "actual high-bitrate video remains transcoded under browser/server/account/shared caps despite LAN upstream",
+          "status": "passed"
+        },
+        {
+          "name": "real remote-origin playback relay returns Coast-only HLS resource URLs at the stored 1Mbps ceiling",
+          "status": "passed"
+        },
+        {
+          "name": "actual playback independently enforces lower account and server ceilings with a 50Mbps-capable remote viewer",
+          "status": "passed"
+        },
+        {
+          "name": "configuration rejects unapproved private access, URL credentials and a different server identity",
+          "status": "passed"
+        }
+      ],
+      "mode": "verify",
+      "upstreamCalls": 11,
+      "allJellyfinCallsUsedLan": true,
+      "paths": [
+        "/System/Info/Public",
+        "/Items",
+        "/Sessions",
+        "/Users/<id>/Items/<id>",
+        "/Items/<id>/Download",
+        "/Items/<id>/Images/Primary",
+        "/Items/<id>/PlaybackInfo"
+      ],
+      "status": "passed"
+    },
+    "normalDev": {
+      "boundary": "Actual admin, catalogue and live Jellyfin. No generated media. Owned restore for playback/settings-negative checks; explicit normal-dev LAN configuration only in configure-dev mode.",
+      "cases": [
+        {
+          "name": "same-server LAN identity verified while public URL, instance and account identity remain intact",
+          "status": "passed"
+        },
+        {
+          "name": "LAN address is exposed only in administrator integration settings",
+          "status": "passed"
+        },
+        {
+          "name": "live identity, library/sync, music, reading, sessions/admin streams, image and original-file range use the shared LAN transport",
+          "status": "passed"
+        },
+        {
+          "name": "actual high-bitrate video remains transcoded under browser/server/account/shared caps despite LAN upstream",
+          "status": "passed"
+        }
+      ],
+      "mode": "configure-dev",
+      "upstreamCalls": 11,
+      "allJellyfinCallsUsedLan": true,
+      "paths": [
+        "/System/Info/Public",
+        "/Items",
+        "/Sessions",
+        "/Users/<id>/Items/<id>",
+        "/Items/<id>/Download",
+        "/Items/<id>/Images/Primary",
+        "/Items/<id>/PlaybackInfo"
+      ],
+      "status": "passed"
+    },
+    "viewerPolicy": "LAN is server transport only. No viewer-local classification or quality uplift; existing server/account/browser/shared caps apply. Remote-origin request is an in-process relay acceptance, not a real WAN benchmark.",
+    "browser": {
+      "boundary": "Normal dev actual admin, existing Jellyfin integration. Browser plugin not available; installed Playwright. Open/edit/save existing LAN value; no account or media progress changes.",
+      "checks": [
+        "correct page/title and meaningful content",
+        "existing public URL preserved/read-only",
+        "separate LAN URL persisted through actual Save integration",
+        "desktop/mobile field layout",
+        "no framework overlay or app console errors"
+      ],
+      "status": "passed",
+      "errors": [],
+      "viewports": [
+        "1280x800",
+        "390x844"
+      ],
+      "harnessCorrections": "Duplicate heading/menuitem locators and pre-hydration clicks were corrected; previous private harness failures retained. Final ordinary menu/edit/save passes, no product change needed."
+    }
+  },
+  "pageWaitReauthorization": {
+    "baselineCommit": "dde82ccb312a21c9efce3fc957164931676715b7",
+    "baselineStatus": "expected failure",
+    "priorCasesPassed": 11,
+    "failure": "AssertionError [ERR_ASSERTION]: Waiting request must reauthorize before publishing original page bytes",
+    "fixed": "Both actual close and generation withdrawal during shared acquisition return 410; independent actual host still receives its page. Completed-entry fast path retains one live authorization."
+  },
+  "normalCacheReopenAfterBuild": {
+    "boundary": "Owned actual admin sessions on normal dev, actual named CBRs and live configured provider. First preparation then completed-page-cache reopen after last owned close. Session+manifest latency excludes physical entrance. Single pairs, not production percentiles. Filesystem identity probe is not used for these claims.",
+    "status": "passed",
+    "cases": [
+      {
+        "title": "Boss Bitches",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 70,
+        "manifestMs": 11540.218333,
+        "sourcePages": 24
+      },
+      {
+        "title": "Boss Bitches",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 299.1556670000009,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 71,
+        "manifestMs": 11377.200792,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 227.77604200000133,
+        "sourcePages": 24
+      }
+    ]
   }
 }

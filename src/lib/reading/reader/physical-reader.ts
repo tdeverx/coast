@@ -10,7 +10,7 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
   const owner = new AbortController();
   const signal = AbortSignal.any([options.signal, owner.signal]);
   const pages = await physicalPages({ ...options, signal });
-  options.progress?.({ phase: 'render' });
+  options.progress?.({ phase: 'prepare' });
   let renderer: Awaited<ReturnType<typeof createRenderer>> | undefined;
   let state: PhysicalState | undefined;
   let ready = false;
@@ -125,6 +125,7 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
     });
     await readerLoad(pending, signal);
     signal.throwIfAborted();
+    options.progress?.({ phase: 'render' });
     renderer!.setLight(.5);
     await renderer!.enter(pages.pageFor(options.location));
     await idle();

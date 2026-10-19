@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { getSql, closeDb } from '$lib/server/db';
 import { prepareReading, closeReading, readingDeliverySource } from '$lib/reading/sessions.server';
 import { readingManifest, readingPage } from '$lib/reading/delivery.server';
-import { readingCache, readingLease, stopReadingCache } from '$lib/reading/cache.server';
+import { readingCache, readingLease, stopReadingCache, initializeReadingCache } from '$lib/reading/cache.server';
 import { ComicDecoder } from '$lib/reading/reader/archive-decoder';
 import { createRoom, joinRoom, commandRoom, leaveRoom } from '$lib/playback/synced/service.server';
 const manifest = process.env.COAST_READING_ACTUAL_MANIFEST, output = process.env.COAST_READING_AUDIT_OUTPUT;
@@ -136,6 +136,50 @@ try {
     assert.equal(cache.snapshot().leases, 0);
     pass('changed edition cannot reuse the prior manifest or pages');
     await closeReading(admin.id, changed.id);
+    // Controlled scheduling, genuine actual archive: another authorized reader keeps
+    // preparation alive after the waiting reader loses its session/account generation.
+    for (const withdrawal of ['close', 'generation'] as const) {
+        await stopReadingCache();
+        await initializeReadingCache();
+        const host = await prepareReading(admin.id, input.id, { source: 'linked' });
+        const guestSession = await prepareReading(guest.id, input.id, { source: 'jellyfin', connectionId: guest.connection_id, externalId: row.external_id });
+        const cache = await readingCache();
+        const source = await readingDeliverySource(admin.id, host.id, request().signal);
+        let allow!: () => void;
+        const gate = new Promise<void>(resolve => allow = resolve);
+        const entry = await cache.acquire(readingLease(admin.id, host.id), { ...source, open: async (signal) => {
+                await gate;
+                return source.open(signal);
+            } });
+        const waiting = readingPage(guest.id, guestSession.id, '0', request()).then(response => ({ response }), error => ({ error }));
+        const deadline = Date.now() + 10000;
+        while (cache.snapshot().leases !== 2 && Date.now() < deadline)
+            await Bun.sleep(10);
+        assert.equal(cache.snapshot().leases, 2, 'Actual guest request reached the shared preparation wait');
+        const [generation] = await sql `select account_generation from provider_connections where id=${guest.connection_id}`;
+        try {
+            if (withdrawal === 'close')
+                await closeReading(guest.id, guestSession.id);
+            else
+                await sql `update provider_connections set account_generation=gen_random_uuid() where id=${guest.connection_id}`;
+            allow();
+            const result = await waiting;
+            if ('response' in result)
+                await result.response.body?.cancel();
+            assert('error' in result && result.error?.status === 410, 'Waiting request must reauthorize before publishing original page bytes');
+            await entry.job;
+            const remaining = await readingPage(admin.id, host.id, '0', request());
+            assert.equal(remaining.status, 200);
+            assert((await remaining.arrayBuffer()).byteLength > 0);
+            pass(`actual ${withdrawal} withdrawal during shared preparation rejects waiting page while host remains authorized`);
+        }
+        finally {
+            allow();
+            await sql `update provider_connections set account_generation=${generation.account_generation} where id=${guest.connection_id}`;
+            await closeReading(guest.id, guestSession.id);
+            await closeReading(admin.id, host.id);
+        }
+    }
     report.status = 'passed';
 }
 catch (cause) {

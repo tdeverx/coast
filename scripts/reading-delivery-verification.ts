@@ -82,19 +82,22 @@ try {
         assert.equal(cache.snapshot().leases, 1);
         assert((await cache.page(guest, 0, new AbortController().signal)).bytes > 0);
         pass(`${input.format}: closing one party reader preserves another's files`);
+        const closedAt = Date.now();
         await cache.release('actual-guest');
-        assert.equal(cache.snapshot().reserved, 0);
-        assert.equal((await readdir(root)).length, 0);
-        pass(`${input.format}: last-reader release removes temporary data and reservation`);
+        assert((host.idleUntil ?? 0) >= closedAt + 30 * 60000);
+        assert(cache.snapshot().reserved > 0);
+        assert.equal(cache.snapshot().leases, 0);
+        assert.equal(cache.snapshot().entries, 1);
+        pass(`${input.format}: last-reader release retains completed pages within the idle budget`);
         const again = await cache.acquire('actual-host', source);
-        assert(again.manifest, 'Exact-version manifest is retained without retaining archive/page bytes');
+        assert.equal(again, host, 'Completed exact-version pages are shared across close/reopen');
         const first = await cache.page(again, 0, new AbortController().signal);
         assert(first.bytes > 0);
         await again.job;
         if (again.error)
             throw again.error;
-        assert.equal(downloads, 2);
-        pass(`${input.format}: exact-version manifest supports verified page delivery during reacquisition`);
+        assert.equal(downloads, 1);
+        pass(`${input.format}: shared completed pages reopen without another source download`);
         report.samples.push({ format: input.format, bytes: input.bytes, sha256: input.sha256, pages: host.manifest.pages.length, coldPreparationMs: coldMs, resources, actualPageByteEquivalence: true });
         await cache.stop();
         cache = undefined;
@@ -191,6 +194,75 @@ try {
         cache = undefined;
     }
     pass('actual source admits two personal preparations and close/reopen while preserving another reader');
+    let firstCharge = 0;
+    cache = createReadingCache(join(working, 'retention-expiry'), extractor, { idleMs: 1000 });
+    try {
+        const idle = await cache.acquire('actual-admin:idle', source);
+        await idle.job;
+        assert.equal(idle.error, undefined);
+        firstCharge = idle.metadataBytes;
+        await cache.release('actual-admin:idle');
+        idle.idleUntil = Date.now() - 1; // Controlled expiry; original file bytes remain genuine.
+        const fresh = await cache.acquire('actual-admin:next', source);
+        await fresh.job;
+        assert.equal(fresh.error, undefined);
+        assert.notEqual(fresh, idle);
+        assert.equal(idle.reserved, 0);
+        assert.equal(idle.controller.signal.aborted, true);
+    }
+    finally {
+        await cache.stop();
+        cache = undefined;
+    }
+    pass('actual completed pages expire after a controlled idle TTL and reacquire cleanly');
+    for (const limits of [{ bytes: first.bytes + 512 * 1024 ** 2 }, { metadataBytes: firstCharge }]) {
+        cache = createReadingCache(join(working, crypto.randomUUID()), extractor, limits);
+        try {
+            const idle = await cache.acquire('actual-admin:idle', source);
+            await idle.job;
+            assert.equal(idle.error, undefined);
+            await cache.release('actual-admin:idle');
+            const fresh = await cache.acquire('actual-guest:fresh', { ...source, key: source.key + '-controlled-budget' });
+            await fresh.job;
+            assert.equal(fresh.error, undefined);
+            assert.equal(idle.controller.signal.aborted, true);
+            assert.equal(idle.reserved, 0);
+        }
+        finally {
+            await cache.stop();
+            cache = undefined;
+        }
+    }
+    pass('actual idle pages evict under disk or metadata pressure without exceeding either budget');
+    cache = createReadingCache(join(working, 'concurrent-retention-admission'), extractor, { cacheEntries: 2, accountLeases: 1 });
+    try {
+        for (let index = 0; index < 2; index++) {
+            const entry = await cache.acquire(`actual-seed:${index}`, { ...source, key: source.key + '-seed-' + index });
+            await entry.job;
+            assert.equal(entry.error, undefined);
+            await cache.release(`actual-seed:${index}`);
+        }
+        let downloads = 0;
+        const contender = (key: string) => ({ ...source, key, open: async () => {
+                downloads++;
+                return new Response(Bun.file(first.file));
+            } });
+        const results = await Promise.allSettled([cache.acquire('actual-admin:first', contender(source.key + '-first')), cache.acquire('actual-admin:second', contender(source.key + '-second'))]);
+        assert.equal(results.filter(result => result.status === 'fulfilled').length, 1);
+        assert.equal(results.filter(result => result.status === 'rejected').length, 1);
+        assert.equal(cache.snapshot().leases, 1);
+        for (const result of results)
+            if (result.status === 'fulfilled') {
+                await result.value.job;
+                assert.equal(result.value.error, undefined);
+            }
+        assert.equal(downloads, 1);
+    }
+    finally {
+        await cache.stop();
+        cache = undefined;
+    }
+    pass('concurrent actual-source idle eviction cannot over-admit an account or start its rejected job');
     const cancelled = join(working, 'cancelled');
     cache = createReadingCache(cancelled, extractor);
     const entry = await cache.acquire('actual-host', source);

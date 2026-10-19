@@ -32,7 +32,7 @@ try {
             const response = await fetch(`/api/v1/reading/${id}/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ source: 'linked' }) });
             session = await response.json();
             const { physicalPages } = await import('/src/lib/reading/reader/physical-pages.ts');
-            const pages = await physicalPages({ host, source: session.url, manifest: session.manifest, format: session.format, signal: owner.signal, location: null, changed: () => {} });
+            const pages = await physicalPages({ host, source: session.url, manifest: session.manifest, format: session.format, signal: owner.signal, location: null, changed: () => { } });
             const { createRenderer } = await import('/src/lib/reading/reader/physical/renderer.ts');
             let coverDone = 0;
             let coversReady!: () => void;
@@ -93,7 +93,7 @@ try {
             await page.setViewportSize({ width: 390, height: 844 });
         await page.goto(origin + '/__reading-stage');
         const result = await page.evaluate(async ({ id, mode }) => {
-            const owner = new AbortController(), host = document.getElementById('host')!, changed: unknown[] = [], calls: number[] = [];
+            const owner = new AbortController(), host = document.getElementById('host')!, changed: unknown[] = [], calls: number[] = [], progress: string[] = [];
             let engine: any, session: any, failure: any;
             const original = window.fetch.bind(window);
             try {
@@ -111,6 +111,8 @@ try {
                     if (match) {
                         const index = Number(match[1]);
                         calls.push(index);
+                        if (calls.length <= 2 && progress.at(-1) === 'render')
+                            throw new Error('Loading feedback ended before the outside covers were ready.');
                         if (mode === 'cancel' && index === 1)
                             owner.abort(new DOMException('Controlled entry cancellation.', 'AbortError'));
                     }
@@ -121,7 +123,9 @@ try {
                 try {
                     engine = await createReader({ host, source: session.url, manifest: session.manifest, format: session.format, kind: session.kind, signal: owner.signal,
                         location: mode === 'following' ? { format: session.format, page: Math.min(10, document.pages.length), total: document.pages.length } : null,
-                        controlled: mode === 'following' ? () => false : undefined, changed: (location: unknown) => changed.push(location) });
+                        progress: (value: {
+                            phase: string;
+                        }) => progress.push(value.phase), controlled: mode === 'following' ? () => false : undefined, changed: (location: unknown) => changed.push(location) });
                 }
                 catch (cause) {
                     failure = cause;
@@ -137,10 +141,12 @@ try {
                         throw new Error('Reader did not render.');
                     if (mode === 'following' && !calls.includes(Math.min(10, document.pages.length) - 1))
                         throw new Error('Following reader did not request its saved canonical page.');
+                    if (!progress.includes('render'))
+                        throw new Error('Ready reader did not retire loading feedback.');
                     await engine.leave();
                 }
                 engine?.destroy();
-                return { mode, calls, callbacks: changed.length, remainingCanvases: host.querySelectorAll('canvas').length };
+                return { mode, calls, progress, callbacks: changed.length, remainingCanvases: host.querySelectorAll('canvas').length };
             }
             finally {
                 window.fetch = original;

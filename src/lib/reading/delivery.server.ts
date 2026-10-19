@@ -18,7 +18,7 @@ export async function readingManifest(userId: string, id: string, request: Reque
                 if (entry.error)
                     throw entry.error instanceof AppError ? entry.error : new AppError(422, 'This reading archive could not be prepared.');
                 cache.touch(lease);
-                if (entry.manifest) {
+                if (entry.manifest && entry.finished) {
                     // A long acquisition cannot publish after its reader/version was withdrawn.
                     await readingDeliverySource(userId, id, signal);
                     delivered = true;
@@ -63,12 +63,17 @@ export async function readingPage(userId: string, id: string, index: string, req
     if (!/^(0|[1-9]\d{0,3})$/.test(index))
         throw new AppError(404, 'Reading page not found.');
     const source = await readingDeliverySource(userId, id, request.signal);
-    const cache = await readingCache(), lease = readingLease(userId, id), entry = await cache.acquire(lease, source);
+    const cache = await readingCache(), ready = cache.prepared(source.key);
+    const lease = readingLease(userId, id), entry = await cache.acquire(lease, source);
     cache.claim(lease, entry);
     const signal = AbortSignal.any([request.signal, entry.controller.signal]);
     while (!entry.manifest && !entry.finished)
         await cache.wait(entry, entry.changed, signal);
     const page = await cache.page(entry, Number(index), signal);
+    // A shared preparation may outlive this reader’s session or account generation.
+    // Finished cache hits had no preparation wait and already passed the live check above.
+    if (entry !== ready)
+        await readingDeliverySource(userId, id, signal);
     // The response can outlive preparation. Cancellation/last-lease release cancels its file reader too.
     const body = Bun.file(page.path).stream().pipeThrough(new TransformStream<Uint8Array, Uint8Array>({ transform(chunk, controller) {
             signal.throwIfAborted();

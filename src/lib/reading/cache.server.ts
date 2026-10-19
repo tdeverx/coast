@@ -47,8 +47,9 @@ export type ReadingCacheEntry = {
     metadataBytes: number;
     job: Promise<void>;
     changed: number;
+    idleUntil?: number;
 };
-const defaults = { bytes: 8 * 1024 ** 3, freeBytes: 512 * 1024 ** 2, preparations: 2, leases: 64, accountLeases: 8, leaseMs: 180000, manifests: 64, manifestPages: 100000, manifestBytes: 16 * 1024 ** 2, metadataBytes: 32 * 1024 ** 2 };
+const defaults = { bytes: 8 * 1024 ** 3, freeBytes: 512 * 1024 ** 2, preparations: 2, leases: 64, accountLeases: 8, idleMs: 30 * 60000, cacheEntries: 64, leaseMs: 180000, manifests: 64, manifestPages: 100000, manifestBytes: 16 * 1024 ** 2, metadataBytes: 32 * 1024 ** 2 };
 /** One process owns temporary encoded pages; every HTTP caller still authorizes its session. */
 export function createReadingCache(root: string, extractor: string, overrides: Partial<typeof defaults> = {}) {
     const limits = { ...defaults, ...overrides };
@@ -58,7 +59,7 @@ export function createReadingCache(root: string, extractor: string, overrides: P
     const records = new Map<string, Record>();
     const cleanup = new Set<Promise<void>>();
     let initialized: Promise<void> | undefined, stopped = false, preparing = 0, reserved = 0, metadataBytes = 0;
-    const timer = setInterval(() => { void sweep(); }, 30000);
+    const timer = setInterval(() => { void sweep().catch(() => { }); }, 30000);
     timer.unref();
     function notify(entry: ReadingCacheEntry) {
         entry.changed++;
@@ -76,6 +77,32 @@ export function createReadingCache(root: string, extractor: string, overrides: P
         if (stopped)
             throw new AppError(503, 'Reading delivery is stopping.');
     }
+    function discard(entry: ReadingCacheEntry) {
+        // Remove admission synchronously; another request cannot reuse an evicting entry.
+        for (const [key, value] of entries)
+            if (value === entry)
+                entries.delete(key);
+        entry.controller.abort(new DOMException('No active readers remain.', 'AbortError'));
+        notify(entry);
+        const removal = entry.job.finally(async () => {
+            await rm(entry.directory, { recursive: true, force: true });
+            reserved -= entry.reserved;
+            entry.reserved = 0;
+            metadataBytes -= entry.metadataBytes;
+            entry.metadataBytes = 0;
+        });
+        cleanup.add(removal);
+        void removal.finally(() => cleanup.delete(removal)).catch(() => { });
+        return removal;
+    }
+    async function evictIdle() {
+        const idle = [...entries.values()].filter(entry => !entry.leases.size && entry.finished && !entry.error)
+            .sort((a, b) => (a.idleUntil ?? 0) - (b.idleUntil ?? 0))[0];
+        if (!idle)
+            return false;
+        await discard(idle);
+        return true;
+    }
     function release(lease: string) {
         const entry = leases.get(lease);
         if (!entry)
@@ -84,22 +111,13 @@ export function createReadingCache(root: string, extractor: string, overrides: P
         operations.delete(lease);
         entry.leases.delete(lease);
         if (!entry.leases.size) {
-            entry.controller.abort(new DOMException('No active readers remain.', 'AbortError'));
-            notify(entry);
-            // Removal follows the writer's finally, so late writes cannot recreate orphan files.
-            const removal = entry.job.finally(async () => {
-                await rm(entry.directory, { recursive: true, force: true });
-                reserved -= entry.reserved;
-                entry.reserved = 0;
-                metadataBytes -= entry.metadataBytes;
-                entry.metadataBytes = 0;
-            });
-            cleanup.add(removal);
-            void removal.finally(() => cleanup.delete(removal)).catch(() => { });
-            for (const [key, value] of entries)
-                if (value === entry)
-                    entries.delete(key);
-            return removal;
+            if (!stopped && entry.finished && !entry.error && limits.idleMs > 0) {
+                entry.idleUntil = Date.now() + limits.idleMs;
+                if (entry.expected)
+                    entry.expected.used = Date.now();
+                return Promise.resolve();
+            }
+            return discard(entry);
         }
         return Promise.resolve();
     }
@@ -111,7 +129,8 @@ export function createReadingCache(root: string, extractor: string, overrides: P
     /** A superseded HTTP request cannot cancel its session's newer delivery. */
     function claim(lease: string, entry: ReadingCacheEntry) {
         const owner = {};
-        if (leases.get(lease) !== entry) return () => Promise.resolve();
+        if (leases.get(lease) !== entry)
+            return () => Promise.resolve();
         operations.set(lease, owner);
         return () => operations.get(lease) === owner ? release(lease) : Promise.resolve();
     }
@@ -119,6 +138,9 @@ export function createReadingCache(root: string, extractor: string, overrides: P
         for (const [lease, entry] of leases)
             if ((entry.leases.get(lease) ?? 0) <= Date.now())
                 release(lease);
+        for (const entry of [...entries.values()])
+            if (!entry.leases.size && entry.idleUntil !== undefined && entry.idleUntil <= Date.now())
+                void discard(entry).catch(() => { });
         for (const [key, record] of records)
             if (record.used < Date.now() - 30 * 60000)
                 records.delete(key);
@@ -140,12 +162,17 @@ export function createReadingCache(root: string, extractor: string, overrides: P
         if (bytes <= entry.reserved)
             return;
         const added = bytes - entry.reserved;
-        if (!Number.isSafeInteger(bytes) || reserved + added > limits.bytes)
+        if (!Number.isSafeInteger(bytes))
+            throw new AppError(503, 'Reading temporary storage is full.');
+        while (reserved + added > limits.bytes && await evictIdle()) { }
+        if (reserved + added > limits.bytes)
             throw new AppError(503, 'Reading temporary storage is full. Close another reader and try again.');
         // Reserve synchronously before the filesystem await to fence concurrent preparations.
         reserved += added;
         entry.reserved = bytes;
-        const space = await statfs(root);
+        let space = await statfs(root);
+        while (space.bavail * space.bsize < reserved + limits.freeBytes && await evictIdle())
+            space = await statfs(root);
         // Count every reservation, including concurrent writers. Deliberately
         // conservative: materialized bytes are also already reflected by statfs.
         if (space.bavail * space.bsize < reserved + limits.freeBytes)
@@ -162,6 +189,7 @@ export function createReadingCache(root: string, extractor: string, overrides: P
         if (entry.pages.has(filename))
             throw new Error('Duplicate extracted page.');
         const charge = filename.length * 2 + 256;
+        while (metadataBytes + charge > limits.metadataBytes && await evictIdle()) { }
         if (metadataBytes + charge > limits.metadataBytes)
             throw new AppError(503, 'Reading manifest capacity is full. Close another reader and try again.');
         metadataBytes += charge;
@@ -414,19 +442,31 @@ export function createReadingCache(root: string, extractor: string, overrides: P
             preparing--;
         }
     }
-    async function acquire(lease: string, source: ReadingCacheSource) {
-        await initialize();
-        await sweep();
+    function checkAdmission(lease: string) {
         // HTTP callers use readingLease's validated account:session identity.
         const account = lease.split(':', 1)[0];
         if (!leases.has(lease) && [...leases.keys()].filter(key => key.split(':', 1)[0] === account).length >= limits.accountLeases)
             throw new AppError(503, 'Too many active readers for your account. Close another reader and try again.');
+        if (!leases.has(lease) && leases.size >= limits.leases)
+            throw new AppError(503, 'Too many active reading deliveries.');
+    }
+    async function acquire(lease: string, source: ReadingCacheSource) {
+        await initialize();
+        await sweep();
+        checkAdmission(lease);
         let entry = entries.get(source.key);
+        if (!entry && entries.size >= limits.cacheEntries) {
+            while (!entries.has(source.key) && entries.size >= limits.cacheEntries && await evictIdle())
+                checkAdmission(lease);
+            // Eviction yields: another request can consume the account's remaining slot.
+            checkAdmission(lease);
+            entry = entries.get(source.key);
+            if (!entry && entries.size >= limits.cacheEntries)
+                throw new AppError(503, 'Reading cache capacity is full. Try again shortly.');
+        }
         if (!entry) {
             if (preparing >= limits.preparations)
                 throw new AppError(503, 'Reading preparation is busy. Try again shortly.');
-            if (!leases.has(lease) && leases.size >= limits.leases)
-                throw new AppError(503, 'Too many active reading deliveries.');
             entry = { controller: new AbortController(), directory: join(root, `run-${crypto.randomUUID()}`), leases: new Map(), listeners: new Set(), pages: new Map(), progress: { phase: 'prepare' }, finished: false, reserved: 0, metadataBytes: 0, job: Promise.resolve(), changed: 0 };
             const prior = records.get(source.key);
             if (prior) {
@@ -444,8 +484,11 @@ export function createReadingCache(root: string, extractor: string, overrides: P
         const previous = leases.get(lease);
         if (previous && previous !== entry)
             release(lease);
-        if (!leases.has(lease) && leases.size >= limits.leases)
-            throw new AppError(503, 'Too many active reading deliveries.');
+        entry.idleUntil = undefined;
+        if (entry.expected) {
+            entry.expected.used = Date.now();
+            remember(source.key, entry.expected);
+        }
         leases.set(lease, entry);
         operations.set(lease, {});
         touch(lease);
@@ -502,10 +545,16 @@ export function createReadingCache(root: string, extractor: string, overrides: P
         const jobs = [...entries.values()].map(entry => entry.job);
         for (const lease of [...leases.keys()])
             release(lease);
+        for (const entry of [...entries.values()])
+            discard(entry);
         await Promise.allSettled([...jobs, ...cleanup]);
         records.clear();
     }
-    return { acquire, release, claim, touch, wait, page, stop, initialize, snapshot: () => ({ entries: entries.size, leases: leases.size, preparing, reserved, metadataBytes, manifests: records.size }) };
+    const prepared = (key: string) => {
+        const entry = entries.get(key);
+        return entry?.finished && !entry.error ? entry : undefined;
+    };
+    return { acquire, release, claim, touch, wait, page, stop, initialize, prepared, snapshot: () => ({ entries: entries.size, leases: leases.size, preparing, reserved, metadataBytes, manifests: records.size }) };
 }
 type Cache = ReturnType<typeof createReadingCache>;
 const key = Symbol.for('coast.reading.delivery');

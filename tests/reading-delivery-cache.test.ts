@@ -17,7 +17,7 @@ beforeAll(async () => {
 afterAll(async () => { await rm(root, { recursive: true, force: true }); });
 const source = (data: ArrayBuffer | Uint8Array, format: 'cbt' | 'cbr' | 'cbz' = 'cbt') => ({ key: crypto.randomUUID(), edition: 'a'.repeat(64), format, bytes: data.byteLength, open: async () => new Response(data as ArrayBuffer | Uint8Array<ArrayBuffer>) });
 async function fixture(data: ArrayBuffer | Uint8Array, format: 'cbt' | 'cbr' | 'cbz' = 'cbt', limits = {}) {
-    const directory = join(root, crypto.randomUUID()), cache = createReadingCache(directory, extractor, limits);
+    const directory = join(root, crypto.randomUUID()), cache = createReadingCache(directory, extractor, { idleMs: 0, ...limits });
     const entry = await cache.acquire('reader', source(data, format));
     await entry.job;
     return { cache, entry, directory };
@@ -94,7 +94,7 @@ nativeTest('global disk/metadata limits reject explicitly and release all reserv
     }
 });
 nativeTest('idle expiry releases only stale leases; retained manifests obey count budget', async () => {
-    const directory = join(root, crypto.randomUUID()), cache = createReadingCache(directory, extractor, { leaseMs: 5, manifests: 1 });
+    const directory = join(root, crypto.randomUUID()), cache = createReadingCache(directory, extractor, { leaseMs: 5, manifests: 1, idleMs: 0 });
     try {
         const original = source(tarComic({ 'page.png': png }));
         const first = await cache.acquire('first', original);
@@ -260,6 +260,100 @@ nativeTest('reopening and independent account sessions use global capacity witho
     }
     finally {
         unlock();
+        await cache.stop();
+    }
+});
+nativeTest('completed pages remain shared after the final lease closes, then expire without active eviction', async () => {
+    const cache = createReadingCache(join(root, crypto.randomUUID()), extractor, { idleMs: 1000 });
+    const input = source(tarComic({ 'page.png': png }));
+    let downloads = 0;
+    input.open = async () => {
+        downloads++;
+        return new Response(tarComic({ 'page.png': png }));
+    };
+    try {
+        const first = await cache.acquire('account-a:first', input);
+        await first.job;
+        await cache.release('account-a:first');
+        expect(cache.snapshot().leases).toBe(0);
+        expect(cache.snapshot().entries).toBe(1);
+        const guest = await cache.acquire('account-b:guest', input);
+        expect(guest).toBe(first);
+        expect(downloads).toBe(1);
+        first.idleUntil = Date.now() - 1;
+        expect(await cache.acquire('account-b:guest', input)).toBe(first);
+        await cache.release('account-b:guest');
+        first.idleUntil = Date.now() - 1;
+        const renewed = await cache.acquire('account-a:reopened', input);
+        expect(renewed).not.toBe(first);
+        await renewed.job;
+        expect(downloads).toBe(2);
+        expect(first.controller.signal.aborted).toBe(true);
+    }
+    finally {
+        await cache.stop();
+    }
+});
+nativeTest('cache entry pressure evicts idle pages while retaining an active reader', async () => {
+    const cache = createReadingCache(join(root, crypto.randomUUID()), extractor, { cacheEntries: 2 });
+    try {
+        const a = await cache.acquire('a:first', source(tarComic({ 'page.png': png })));
+        await a.job;
+        await cache.release('a:first');
+        const b = await cache.acquire('b:first', source(tarComic({ 'page.png': png })));
+        await b.job;
+        const c = await cache.acquire('c:first', source(tarComic({ 'page.png': png })));
+        await c.job;
+        expect(a.controller.signal.aborted).toBe(true);
+        expect(b.controller.signal.aborted).toBe(false);
+        expect(c.error).toBeUndefined();
+        expect(cache.snapshot().entries).toBe(2);
+    }
+    finally {
+        await cache.stop();
+    }
+});
+nativeTest('idle page eviction returns disk and metadata capacity before admitting new work', async () => {
+    for (const limits of [{ bytes: 512 * 1024 ** 2 + tarComic({ 'page.png': png }).byteLength }, { metadataBytes: 280 }]) {
+        const cache = createReadingCache(join(root, crypto.randomUUID()), extractor, limits);
+        try {
+            const first = await cache.acquire('a:one', source(tarComic({ 'page.png': png })));
+            await first.job;
+            expect(first.error).toBeUndefined();
+            await cache.release('a:one');
+            const second = await cache.acquire('b:two', source(tarComic({ 'page.png': png })));
+            await second.job;
+            expect(second.error).toBeUndefined();
+            expect(first.controller.signal.aborted).toBe(true);
+        }
+        finally {
+            await cache.stop();
+        }
+    }
+});
+nativeTest('concurrent idle eviction rechecks account admission before starting a job', async () => {
+    const cache = createReadingCache(join(root, crypto.randomUUID()), extractor, { cacheEntries: 2, accountLeases: 1 });
+    try {
+        for (let index = 0; index < 2; index++) {
+            const entry = await cache.acquire(`seed:${index}`, source(tarComic({ 'page.png': png })));
+            await entry.job;
+            await cache.release(`seed:${index}`);
+        }
+        let downloads = 0;
+        const contender = () => ({ ...source(tarComic({ 'page.png': png })), open: async () => {
+                downloads++;
+                return new Response(tarComic({ 'page.png': png }));
+            } });
+        const results = await Promise.allSettled([cache.acquire('account:first', contender()), cache.acquire('account:second', contender())]);
+        expect(results.filter(result => result.status === 'fulfilled')).toHaveLength(1);
+        expect(results.filter(result => result.status === 'rejected')).toHaveLength(1);
+        expect(cache.snapshot().leases).toBe(1);
+        for (const result of results)
+            if (result.status === 'fulfilled')
+                await result.value.job;
+        expect(downloads).toBe(1);
+    }
+    finally {
         await cache.stop();
     }
 });

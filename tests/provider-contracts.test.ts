@@ -344,6 +344,23 @@ describe('policy-aware playback', () => {
     ])
       expect(() => playbackResourcePath('https://jellyfin.example/jellyfin', 'abc', uri)).toThrow();
   });
+  test('LAN playback resources accept only the verified public alias and preserve item confinement', () => {
+    const lan = 'http://192.168.0.18:8096/internal', publicUrl = 'https://jellyfin.example/jellyfin';
+    for (const reference of [
+      'https://jellyfin.example/jellyfin/Videos/abc/master.m3u8?api_key=secret',
+      'http://192.168.0.18:8096/internal/Videos/abc/master.m3u8?api_key=secret',
+      '/jellyfin/Videos/abc/master.m3u8?api_key=secret',
+      '/internal/Videos/abc/master.m3u8?api_key=secret',
+    ]) expect(playbackResourcePath(lan, 'abc', reference, undefined, 'video', publicUrl)).toBe('/Videos/abc/master.m3u8');
+    for (const reference of [
+      'https://evil.example/jellyfin/Videos/abc/master.m3u8',
+      'https://jellyfin.example/elsewhere/Videos/abc/master.m3u8',
+      'https://jellyfin.example/jellyfin/Videos/other/master.m3u8',
+      'https://jellyfin.example/jellyfin/Videos/abc/master.m3u8#fragment',
+      'https://user:password@jellyfin.example/jellyfin/Videos/abc/master.m3u8',
+    ]) expect(() => playbackResourcePath(lan, 'abc', reference, undefined, 'video', publicUrl)).toThrow();
+    expect(playbackResourcePath(lan, 'abc', 'segment.ts', '/Videos/abc/hls/main.m3u8', 'video', publicUrl)).toBe('/Videos/abc/hls/segment.ts');
+  });
   test('accepts Jellyfin GUID formatting while keeping resources bound to the same item', () => {
     const compact = '0123456789abcdef0123456789abcdef';
     const hyphenated = '01234567-89ab-cdef-0123-456789abcdef';
