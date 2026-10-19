@@ -19,6 +19,7 @@
     provider: string;
     name: string;
     baseUrl: string;
+    lanUrl?: string | null;
     enabled: boolean;
     allowPrivateNetwork: boolean;
     linkedMediaInstanceId: string | null;
@@ -34,6 +35,7 @@
     provider = $state('tmdb'),
     name = $state(''),
     baseUrl = $state(''),
+    lanUrl = $state(''),
     linked = $state(''),
     privateNetwork = $state(false),
     busy = $state(false),
@@ -45,6 +47,7 @@
     provider = instance?.provider ?? 'tmdb';
     name = instance?.name ?? '';
     baseUrl = instance?.baseUrl ?? '';
+    lanUrl = instance?.lanUrl ?? '';
     linked = instance?.linkedMediaInstanceId ?? '';
     privateNetwork = instance?.allowPrivateNetwork ?? false;
     error = '';
@@ -65,6 +68,7 @@
         provider,
         name,
         baseUrl: ['jellyfin', 'seerr'].includes(provider) ? baseUrl : undefined,
+        lanUrl: provider === 'jellyfin' ? lanUrl : undefined,
         linkedMediaInstanceId: linked || undefined,
         allowPrivateNetwork: privateNetwork,
       });
@@ -226,6 +230,11 @@
           ><input bind:checked={privateNetwork} type="checkbox" />Allow this server’s private
           network address</label
         >{/if}
+      {#if provider === 'jellyfin'}<Field label="LAN URL (optional)"><input
+          bind:value={lanUrl}
+          type="url"
+          placeholder="http://192.168.0.18:8096"
+        /><small>Used by the Coast server for this Jellyfin instance. Keep the public URL above. Playback quality limits still apply to every viewer.</small></Field>{/if}
       {#if editing && provider !== 'jellyfin'}<p class="small">
           Leave credential fields empty to keep the current credentials.
         </p>{/if}

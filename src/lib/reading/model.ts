@@ -52,6 +52,7 @@ export type ReadingSessionView = {
   kind: ReadingKind;
   id: string; workId: string; title: string; format: ReadingFormat; edition: string;
   location: ReadingLocation | null; url: string | null; source: 'local' | 'jellyfin';
+  manifest?: string;
 };
 export const READING_PROVIDER_PAGE_LIMIT = 1000;
 export const openLibraryIdSchema = v.pipe(v.string(), v.regex(/^OL[1-9][0-9]{0,19}W$/));

@@ -13,6 +13,7 @@ import { users, providerInstances, providerConnections } from '$lib/server/db/sc
 import {
   createProviderTransport,
   type ProviderFetchConfig,
+  validateProviderUrl,
 } from '$lib/server/security/provider-fetch';
 import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
 import { requireExperimentalFeature } from '$lib/server/experimental';
@@ -29,6 +30,7 @@ const configureSchema = v.object({
   provider: providerSchema,
   name: v.pipe(v.string(), v.minLength(1), v.maxLength(100)),
   baseUrl: v.optional(v.pipe(v.string(), v.url())),
+  lanUrl: v.optional(v.union([v.literal(''), v.pipe(v.string(), v.url())])),
   linkedMediaInstanceId: v.optional(uuid),
   allowPrivateNetwork: v.optional(v.boolean(), false),
   apiKey: v.optional(v.string()),
@@ -61,6 +63,14 @@ export async function configureInstance(adminId: string, input: unknown) {
     ? await getDb().select().from(providerInstances).where(eq(providerInstances.id, data.id))
     : [];
   if (data.id && !previous) throw new Error('This integration does not exist.');
+  if (data.lanUrl && data.provider !== 'jellyfin')
+    throw new Error('A LAN URL is only available for Jellyfin.');
+  const lanInput = data.provider === 'jellyfin'
+    ? (data.lanUrl === undefined ? previous?.settings.lanUrl : data.lanUrl) : undefined;
+  if (lanInput != null && typeof lanInput !== 'string') throw new Error('Enter a valid LAN URL.');
+  const lanUrl = typeof lanInput === 'string' ? lanInput : undefined;
+  if (lanUrl && !data.allowPrivateNetwork)
+    throw new Error('Approve private network access to use the Jellyfin LAN URL.');
   if (previous) {
     if (previous.provider !== data.provider)
       throw new Error('A provider instance cannot change provider type.');
@@ -69,16 +79,16 @@ export async function configureInstance(adminId: string, input: unknown) {
         'Create a new instance when changing a service URL, then reconnect its accounts.'
       );
   }
-  if (
-    !['tmdb', 'trakt', 'igdb', 'steam', 'comic-vine'].includes(data.provider) &&
-    config.serverAllowlist.length &&
-    !config.serverAllowlist.some(
-      (entry) => entry === new URL(baseUrl).hostname || entry === baseUrl.replace(/\/$/, '')
-    )
-  )
-    throw new Error('This service is outside the administrator server allowlist.');
+  for (const url of [baseUrl, ...(lanUrl ? [lanUrl] : [])]) {
+    if (config.serverAllowlist.length && !['tmdb','trakt','igdb','steam','comic-vine'].includes(data.provider) &&
+      !config.serverAllowlist.some(entry => entry === new URL(url).hostname || entry === url.replace(/\/$/, '')))
+      throw new Error('This service is outside the administrator server allowlist.');
+    if (data.provider === 'jellyfin')
+      validateProviderUrl({baseUrl:url, approved:true, allowPrivateNetwork:data.allowPrivateNetwork, allowedPorts:config.allowedProviderPorts});
+  }
   const transport = createProviderTransport({
-    baseUrl,
+    // An existing pinned public identity can verify its LAN alias directly.
+    baseUrl: data.provider === 'jellyfin' && lanUrl && previous?.serverIdentity ? lanUrl : baseUrl,
     provider: data.provider,
     approved: true,
     allowPrivateNetwork: data.allowPrivateNetwork,
@@ -91,6 +101,11 @@ export async function configureInstance(adminId: string, input: unknown) {
         previous?.serverIdentity || undefined
       )
     ).id;
+  if (lanUrl && !previous?.serverIdentity)
+    await new JellyfinAdapter(createProviderTransport({
+      baseUrl:lanUrl, provider:'jellyfin', approved:true,
+      allowPrivateNetwork:data.allowPrivateNetwork, allowedPorts:config.allowedProviderPorts,
+    }), 'coast-verify').identity(serverIdentity);
   if (data.provider === 'seerr') {
     if (!data.linkedMediaInstanceId) throw new Error('Associate Seerr with its Jellyfin instance.');
     const [linked] = await getDb()
@@ -145,6 +160,7 @@ export async function configureInstance(adminId: string, input: unknown) {
     settings: {
       ...previous?.settings,
       approved: true,
+      ...(data.provider === 'jellyfin' ? {lanUrl:lanUrl ? lanUrl.replace(/\/$/, '') : null} : {}),
       allowPrivateNetwork: data.allowPrivateNetwork,
       allowedPorts: config.allowedProviderPorts,
     },
@@ -193,6 +209,7 @@ export async function listProviders(userId: string, includeDisabled = false) {
         provider: instance.provider,
         name: instance.name,
         baseUrl: instance.baseUrl,
+        ...(includeDisabled && instance.provider === 'jellyfin' ? {lanUrl:typeof instance.settings.lanUrl === 'string' ? instance.settings.lanUrl : null} : {}),
         enabled: instance.enabled,
         schedule: providerSchedule(instance.provider, instance.settings.schedule),
         allowPrivateNetwork: instance.settings.allowPrivateNetwork === true,
@@ -232,6 +249,12 @@ export async function getInstance(instanceId: string, provider?: string) {
   return instance;
 }
 
+/** Server transport only. Public provider identity and browser-facing URLs stay unchanged. */
+export function instanceServerUrl(instance: Pick<typeof providerInstances.$inferSelect, 'provider' | 'baseUrl' | 'settings'>) {
+  return instance.provider === 'jellyfin' && typeof instance.settings.lanUrl === 'string' && instance.settings.lanUrl
+    ? instance.settings.lanUrl : instance.baseUrl;
+}
+
 export async function instanceFetchConfig(
   instance: typeof providerInstances.$inferSelect
 ): Promise<ProviderFetchConfig> {
@@ -249,15 +272,17 @@ export async function instanceFetchConfig(
           : instance.provider === 'steam' ? STEAM_BASE_URL : 'https://api.trakt.tv')
   )
     throw new Error('This global provider URL is not allowed.');
-  const host = new URL(instance.baseUrl).hostname;
+  const baseUrl = instanceServerUrl(instance);
+  if (baseUrl !== instance.baseUrl && instance.settings.allowPrivateNetwork !== true)
+    throw new Error('Approve private network access to use the Jellyfin LAN URL.');
   if (
     !fixed &&
     config.serverAllowlist.length &&
-    !config.serverAllowlist.some((entry) => entry === host || entry === instance.baseUrl)
+    ![instance.baseUrl, baseUrl].every(url => config.serverAllowlist.some(entry => entry === new URL(url).hostname || entry === url))
   )
     throw new Error('This service is outside the administrator server allowlist.');
   return {
-    baseUrl: instance.baseUrl,
+    baseUrl,
     provider: instance.provider,
     approved: instance.settings.approved === true,
     allowPrivateNetwork: instance.settings.allowPrivateNetwork === true,

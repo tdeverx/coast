@@ -5,6 +5,7 @@ import { getDb } from '$lib/server/db';
 import { readingSessions, readingProgress, readingWorks, providerConnections, providerInstances, workEditions, users, availability, providerItems } from '$lib/server/db/schema';
 import { requireEnabledCategory } from '$lib/server/experimental';
 import { AppError } from '$lib/server/security/errors';
+import { ProviderActionError } from '$lib/providers/contracts';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { bookFormat } from '$lib/providers/jellyfin/reading.server';
 import { jellyfinItemKey } from '$lib/providers/jellyfin/paging';
@@ -14,7 +15,8 @@ import { decryptCredential } from '$lib/server/security/credentials';
 import { ProviderHttpError, secureProviderFetch } from '$lib/server/security/provider-fetch';
 import { observeReadingFile } from '$lib/catalogue/reading-files.server';
 import { updateReading } from '$lib/core/reading/service.server';
-import { readingFormats, readingFileLabel, readingLocationSchema, readingPrepareSchema, type ReadingFormat, type ReadingSessionView } from './model';
+import { readingCache, readingLease, type ReadingCacheSource } from './cache.server';
+import { comicFormats, readingFormats, readingFileLabel, readingLocationSchema, readingPrepareSchema, type ReadingFormat, type ReadingSessionView } from './model';
 const uuid=v.pipe(v.string(),v.uuid());
 async function work(userId:string,workId:string) {
  v.parse(uuid,userId);v.parse(uuid,workId);
@@ -115,7 +117,7 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
   return prepared;
  });
  if(signal?.aborted){await db.update(readingSessions).set({closedAt:new Date()}).where(eq(readingSessions.id,session.id));signal.throwIfAborted();}
- return {id:session.id,workId,kind:item.kind,title:item.title,format,edition,location:session.location,source:input.source==='local'?'local':'jellyfin',url:input.source!=='local'?`/api/v1/reading/sessions/${session.id}/file`:null};
+ return {id:session.id,workId,kind:item.kind,title:item.title,format,edition,location:session.location,source:input.source==='local'?'local':'jellyfin',url:input.source!=='local'?`/api/v1/reading/sessions/${session.id}/file`:null,...(input.source!=='local'&&comicFormats.includes(format as typeof comicFormats[number])?{manifest:`/api/v1/reading/sessions/${session.id}/manifest`}:{})};
 }
 /** One fresh source context per operation; never retain an access decision between requests. */
 async function readingSessionContext(userId:string,id:string) {
@@ -145,19 +147,41 @@ export async function moveReading(userId:string,id:string,raw:unknown) {
 }
 export async function closeReading(userId:string,id:string) {
  v.parse(uuid,id);
- await getDb().update(readingSessions).set({closedAt:new Date()}).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId)));return {closed:true};
+ await getDb().update(readingSessions).set({closedAt:new Date()}).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId)));
+ await (await readingCache()).release(readingLease(userId,id));return {closed:true};
 }
-export async function streamReading(userId:string,id:string,request:Request) {
- request.signal.throwIfAborted();
+async function remoteReadingContext(userId:string,id:string,signal:AbortSignal) {
+ signal.throwIfAborted();
  const {session,jellyfin}=await readingSessionContext(userId,id);
  if(!session.connectionId||!session.externalId||!jellyfin)throw new AppError(404,'Local reading files remain in your browser.');
  const {connection,instance,adapter}=jellyfin;
- const book=await adapter.readingItem(connection.externalUserId!,session.externalId,request.signal);
+ const book=await adapter.readingItem(connection.externalUserId!,session.externalId,signal);
  if(bookFormat(book)!==session.format||sourceEdition(instance.serverIdentity??instance.id,book)!==session.edition)throw new AppError(409,'This reading file changed. Open the new edition.');
+ return {session,connection,instance,book,adapter};
+}
+/** Cache reuse never replaces this operation's fresh per-reader source authorization. */
+export async function readingDeliverySource(userId:string,id:string,signal:AbortSignal):Promise<ReadingCacheSource> {
+ try {
+  const {session,connection,instance,book,adapter}=await remoteReadingContext(userId,id,signal);
+  if(!await adapter.downloadAllowed(connection.externalUserId!,instance.serverIdentity,signal))throw new AppError(403,'Jellyfin has disabled downloads for this account.');
+
+  if(!comicFormats.includes(session.format as typeof comicFormats[number]))throw new AppError(400,'This format uses its document reader.');
+  const credentials=v.parse(v.object({accessToken:v.string()}),JSON.parse(await decryptCredential(connection.credentials!)));
+  const config={...await instanceFetchConfig(instance),timeoutMs:20000};
+  return {key:JSON.stringify([instance.id,session.externalId,session.edition,session.format]),edition:session.edition,format:session.format as typeof comicFormats[number],bytes:typeof book.Size==='number'&&Number.isSafeInteger(book.Size)&&book.Size>0?book.Size:undefined,
+   open:owner=>secureProviderFetch(config,`/Items/${encodeURIComponent(session.externalId!)}/Download`,{headers:{Authorization:jellyfinAuthorization(userId,credentials.accessToken)},signal:owner},{stream:true,maxBytes:Infinity})};
+ } catch(cause) {
+  if((cause instanceof ProviderActionError && ['identity','permission'].includes(cause.code)) ||
+     ((cause instanceof AppError||cause instanceof ProviderHttpError)&&[401,403,404,409,410].includes(cause.status)))(await readingCache()).release(readingLease(userId,id));
+  throw cause;
+ }
+}
+export async function streamReading(userId:string,id:string,request:Request) {
+ const {session,connection,instance}=await remoteReadingContext(userId,id,request.signal);
  const credentials=v.parse(v.object({accessToken:v.string()}),JSON.parse(await decryptCredential(connection.credentials!)));
  const headers=new Headers({Authorization:jellyfinAuthorization(userId,credentials.accessToken)});
  const range=request.headers.get('range');if(range){if(!/^bytes=\d*-\d*$/.test(range))throw new AppError(400,'Choose one byte range.');headers.set('Range',range);}
- const config={...await instanceFetchConfig(instance),timeoutMs:20000},path=`/Items/${encodeURIComponent(session.externalId)}/Download`;
+ const config={...await instanceFetchConfig(instance),timeoutMs:20000},path=`/Items/${encodeURIComponent(session.externalId!)}/Download`;
  // Reading transfers have no file-size cap; streaming idle/cancellation and access guards remain.
  let response=await secureProviderFetch(config,path,{method:request.method==='HEAD'?'HEAD':'GET',headers,signal:request.signal},{stream:true,maxBytes:Infinity});
  let headSize:string|null=null;
@@ -191,4 +215,4 @@ export async function matchingReading(userId:string,workId:string,edition:string
  throw new AppError(409,'Open your own copy of the same edition, then join the reading party.');
 }
 
-export async function touchReading(userId:string,id:string){await ownedReadingSession(userId,id);await getDb().update(readingSessions).set({updatedAt:new Date()}).where(and(eq(readingSessions.id,id),isNull(readingSessions.closedAt)));return {active:true};}
+export async function touchReading(userId:string,id:string){await ownedReadingSession(userId,id);(await readingCache()).touch(readingLease(userId,id));await getDb().update(readingSessions).set({updatedAt:new Date()}).where(and(eq(readingSessions.id,id),isNull(readingSessions.closedAt)));return {active:true};}

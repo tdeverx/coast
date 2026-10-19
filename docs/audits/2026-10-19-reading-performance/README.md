@@ -1,6 +1,6 @@
 # Books, comics and physical reader audit
 
-Completed focused implementation and available real-data acceptance on 19 October 2026. Baseline: `b90f4dd96ebcdd76f68e6c7ca770b71c824c07d3` (physical reader integration). The later [loading/preference/activity adoption](loading-and-integration.md) records the current source epoch; the [delivery investigation roadmap](investigation-roadmap.md) remains future work. The remaining app-wide audit is separate.
+Completed focused implementation and available real-data acceptance on 19 October 2026. Baseline: `b90f4dd96ebcdd76f68e6c7ca770b71c824c07d3` (physical reader integration). The later [loading/preference/activity adoption](loading-and-integration.md) records the current source epoch; the later [shared server-delivery implementation](server-delivery.md) and [updated investigation roadmap](investigation-roadmap.md) distinguish adopted remote-comic delivery from remaining work. The remaining app-wide audit is separate.
 
 The normal flow now uses **Read → accessible linked file**, without an edition/file picker. Metadata-only titles retain details/tracking without Read. Shared inspection avoids a canvas/draw per scan, and Three.js construction failures and ordinary disposal share resource ownership. The preserve-all binding measurements below describe the initial audit epoch: the final user preference keeps **sanitization enabled by default**, with preserve-all/unprinted faces as its explicit opt-out. Loading feedback, background blur and admin reading sessions are documented in the later adoption record.
 

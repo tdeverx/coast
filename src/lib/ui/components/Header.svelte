@@ -34,7 +34,7 @@
   import Icon from './Icon.svelte';
   import Brand from './Brand.svelte';
 
-  import { reader } from '$lib/reading/client.svelte';
+  import { reader, hideReading } from '$lib/reading/client.svelte';
   import { usePlayback } from '$lib/playback/context.svelte';
   const { player } = usePlayback();
   import { slidingPill } from '$lib/ui/materials/sliding-pill';
@@ -73,7 +73,7 @@
     {/if}
     <div class="account">
       {#if user}
-      {#if !preview&&reader.session}<Button icon="library" size="icon" label={reader.visible?'Show app':'Resume reading'} onclick={()=>reader.visible=!reader.visible}/>{/if}
+      {#if !preview&&reader.session}<Button icon="library" size="icon" label={reader.visible?'Show app':'Resume reading'} onclick={()=>{if(reader.visible)void hideReading();else reader.visible=true;}}/>{/if}
       {#if user.role==='admin'}<Button size="icon" id={preview?`${previewId}-streams`:"streams-trigger"} class="notification" label={streamCount===null?'Active streams':`Active streams, ${streamCount} active`} onclick={()=>{if(!preview)openStreams();}}><Icon name="server" size={21}/>{#if streamCount!==null&&streamCount>0}<span class="friend-count">{streamCount>99?'99+':streamCount}</span>{/if}</Button>{/if}
       {#if page.data.capabilities?.social!==false}<Button size="icon" id={preview?`${previewId}-friends`:"friends-trigger"} class="notification" label={friendRequests?`Friends, ${friendRequests} incoming requests`:"Friends"} onclick={()=>{if(!preview)openFriends();}}><Icon name="friends" size={21}/>{#if friendRequests}<span class="friend-count">{friendRequests>99?'99+':friendRequests}</span>{/if}</Button>{/if}
       <Button size="icon"

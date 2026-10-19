@@ -28,7 +28,7 @@ import {
   providerInstances,
 } from '$lib/server/db/schema';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { instanceFetchConfig } from '$lib/providers/instances.server';
+import { instanceFetchConfig, instanceServerUrl } from '$lib/providers/instances.server';
 import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
 import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
 import { secureProviderFetch } from '$lib/server/security/provider-fetch';
@@ -97,12 +97,27 @@ export function playbackResourcePath(
   itemId: string,
   reference: string,
   parentPath?: string,
-  mediaType: 'audio' | 'video' = 'video'
+  mediaType: 'audio' | 'video' = 'video',
+  publicBaseUrl?: string
 ) {
   const base = new URL(baseUrl);
   const prefix = base.pathname.replace(/\/$/, '');
   const parent = new URL(`${base.origin}${prefix}/${(parentPath || '').replace(/^\//, '')}`);
-  const url = new URL(reference, parent);
+  let url = new URL(reference, parent);
+  if (url.username || url.password || url.hash)
+    throw new Error('Jellyfin returned an unsafe playback resource.');
+  // Only the two administrator-verified addresses may name this upstream. Rebase
+  // absolute/public-prefix resources onto the server route before item validation.
+  if (publicBaseUrl && (/^(?:https?:)?\/\//i.test(reference) || reference.startsWith('/'))) {
+    const roots = [base, new URL(publicBaseUrl)].sort((a,b) => b.pathname.length-a.pathname.length);
+    const rooted = reference.startsWith('/') && !reference.startsWith('//');
+    const root = roots.find(root => (url.origin === root.origin || rooted) &&
+      url.pathname.startsWith(`${root.pathname.replace(/\/$/, '')}/`));
+    if (root) {
+      const relative = url.pathname.slice(root.pathname.replace(/\/$/, '').length);
+      url = new URL(`${base.origin}${prefix}${relative}${url.search}${url.hash}`);
+    }
+  }
   if (url.origin !== base.origin || url.username || url.password || url.hash)
     throw new Error('Jellyfin returned an unsafe playback resource.');
   let path = url.pathname;
@@ -277,16 +292,19 @@ async function preparePlayback(
       ? source.transcodingUrl!
       : `/${mediaType==='audio'?'Audio':'Videos'}/${best.row.providerItem.externalId}/stream?${query}`;
   // PlaybackInfo paths can be absolute from the server's own origin or rooted below its reverse-proxy prefix.
-  const serverPath = new URL(best.instance.baseUrl).pathname;
+  const serverUrl = instanceServerUrl(best.instance);
+  const serverPath = new URL(serverUrl).pathname;
+  const publicPrefix = new URL(best.instance.baseUrl).pathname.replace(/\/$/, '');
   const reference =
-    upstream.startsWith('/') && serverPath !== '/' && !upstream.startsWith(serverPath)
+    upstream.startsWith('/') && serverPath !== '/' && !upstream.startsWith(serverPath) &&
+      !(publicPrefix && upstream.startsWith(`${publicPrefix}/`))
       ? `${serverPath.replace(/\/$/, '')}${upstream}`
       : upstream;
   let streamPath = playbackResourcePath(
-    best.instance.baseUrl,
+    serverUrl,
     best.row.providerItem.externalId,
     reference,
-    undefined,mediaType
+    undefined,mediaType,best.instance.baseUrl
   );
   if(share) {
     streamPath=sharedResourcePath(streamPath,{providerSessionId:best.playSessionId??crypto.randomUUID(),providerDeviceId,maxBitrate:maximum,mediaType});
@@ -653,8 +671,9 @@ export async function streamPlayback(
       return new Response('Invalid playback resource.', { status: 403 });
     path = payload.path;
   }
-  const prefix = new URL(instance.baseUrl).pathname.replace(/\/$/, '');
-  path = playbackResourcePath(instance.baseUrl, item.externalId, `${prefix}${path}`,undefined,session.mediaType);
+  const serverUrl = instanceServerUrl(instance);
+  const prefix = new URL(serverUrl).pathname.replace(/\/$/, '');
+  path = playbackResourcePath(serverUrl, item.externalId, `${prefix}${path}`,undefined,session.mediaType,instance.baseUrl);
   if(shareId && session.providerDeviceId && session.providerSessionId && session.maxBitrate)path=sharedResourcePath(path,session as typeof session & {providerSessionId:string;providerDeviceId:string;maxBitrate:number});
   if(shareId && request.method!=='HEAD' && /\.(?:ts|m4s)(?:\?|$)/i.test(path)) {
     const ticks=Number(new URL(path,'http://resource.invalid').searchParams.get('runtimeTicks'));
@@ -713,7 +732,7 @@ export async function streamPlayback(
     const body = await response.text();
     if (body.length > 2 * 1024 * 1024) throw new Error('The HLS manifest is too large.');
     const rewritten = await rewriteHlsManifest(body, async (reference) => {
-      const child = playbackResourcePath(instance.baseUrl, item.externalId, reference, path,session.mediaType);
+      const child = playbackResourcePath(serverUrl, item.externalId, reference, path,session.mediaType,instance.baseUrl);
       const url=await resourceUrl(session.id, child, session.expiresAt);
       return resources ? resources.url(child,url) : url;
     });

@@ -10,7 +10,7 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
   const owner = new AbortController();
   const signal = AbortSignal.any([options.signal, owner.signal]);
   const pages = await physicalPages({ ...options, signal });
-  options.progress?.({ phase: 'render' });
+  options.progress?.({ phase: 'prepare' });
   let renderer: Awaited<ReturnType<typeof createRenderer>> | undefined;
   let state: PhysicalState | undefined;
   let ready = false;
@@ -21,6 +21,7 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
   let navigation = Promise.resolve();
   let lastLocation = options.location;
   let closed = false;
+  let leaving: Promise<void> | undefined;
   const cache = new Map<number, Promise<HTMLCanvasElement>>();
   const waiters = new Set<{
     resolve(): void;
@@ -124,6 +125,7 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
     });
     await readerLoad(pending, signal);
     signal.throwIfAborted();
+    options.progress?.({ phase: 'render' });
     renderer!.setLight(.5);
     await renderer!.enter(pages.pageFor(options.location));
     await idle();
@@ -135,7 +137,23 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
     return {
       previous: () => turn(-1),
       next: () => turn(1),
-      canTurn: direction => !external && !fault && options.controlled?.() !== false && (!state?.busy || !!state.canCascade && state.cascadeDirection === (direction === 'next' ? 1 : -1)),
+      canTurn: direction => !leaving && !external && !fault && options.controlled?.() !== false && (!state?.busy || !!state.canCascade && state.cascadeDirection === (direction === 'next' ? 1 : -1)),
+      leave() {
+        if (!leaving) {
+          muted++;
+          revision++;
+          leaving = (async () => {
+            // Closing during a pending turn/load must still cancel immediately.
+            if (state?.busy || external || fault || document.hidden)
+              return;
+            await navigation.catch(() => { });
+            await idle();
+            signal.throwIfAborted();
+            await renderer!.leave();
+          })().finally(() => { muted--; });
+        }
+        return leaving;
+      },
       go,
       destroy,
     };
@@ -146,12 +164,14 @@ export async function physicalReader(options: ReaderOptions): Promise<ReaderEngi
   }
   async function turn(direction: number) {
     signal.throwIfAborted();
-    if (external || options.controlled?.() === false)
+    if (leaving || external || options.controlled?.() === false)
       return;
     await renderer!.turn(direction);
     await idle();
   }
   function go(location: ReadingLocation): Promise<void> {
+    if (leaving)
+      return Promise.resolve();
     const at = ++revision;
     external++;
     const pending = navigation.catch(() => {

@@ -15,7 +15,8 @@ const source={id:connectionId,userId,instanceId,status:'connected',externalUserI
 const instance={id:instanceId,provider:'jellyfin',enabled:true,baseUrl:'https://reading-context.invalid',serverIdentity:'controlled-server',settings:{approved:true}};
 const book={Id:externalId,Type:'Book' as const,Name:'Controlled file',Path:'/controlled/file.cbr',Etag:'v1',DateModified:'2026-01-01',Size:4,ProviderIds:{}};
 const session:{id:string;userId:string;workId:string;connectionId:string|null;externalId:string|null;accountGeneration:string;format:'cbr';edition:string}={id:sessionId,userId,workId,connectionId,externalId,accountGeneration:generation,format:'cbr',edition:''};
-const state={hasSession:true,enabledUser:true,hasWork:true,connected:true,enabledInstance:true,featureEnabled:true,metadataAllowed:true,wrongItem:false,version:'v1',downloadStatus:206,headStatus:0,probe:false,malformedSize:false};
+const state={hasSession:true,enabledUser:true,hasWork:true,connected:true,enabledInstance:true,featureEnabled:true,metadataAllowed:true,wrongItem:false,version:'v1',downloadStatus:206,headStatus:0,probe:false,malformedSize:false,downloadAllowed:true,wrongPolicyUser:false,wrongPolicyServer:false};
+let policies=0,releasedLeases=0;
 let selects:Record<string,number>={},decryptions=0,metadata=0,downloads=0,cancelledBodies=0,featureChecks=0;
 const tables=new Map<unknown,string>([[users,'users'],[readingWorks,'reading_works'],[readingSessions,'reading_sessions'],[providerConnections,'provider_connections'],[providerInstances,'provider_instances']]);
 const db={select(){return {from(table:unknown){return {async where(){
@@ -27,6 +28,7 @@ const db={select(){return {from(table:unknown){return {async where(){
  if(table===providerInstances)return state.enabledInstance?[instance]:[];
  throw Error('Unexpected context read');
  }};}};},transaction(){throw Error('File read attempted a transaction mutation');}};
+mock.module('../../src/lib/reading/cache.server',()=>({readingCache:async()=>({release:async()=>{releasedLeases++;}}),readingLease:(user:string,id:string)=>`${user}:${id}`}));
 mock.module('../../src/lib/server/db',()=>({getDb:()=>db,getSql:()=>{throw Error('Unexpected raw database access');}}));
 mock.module('../../src/lib/server/config',()=>({...configModule,getConfig:async()=>({serverAllowlist:[],allowedProviderPorts:[443]})}));
 mock.module('../../src/lib/server/features',()=>({...featuresModule,lockFeaturePolicyInTransaction:async()=>{},requireFeature:async()=>{featureChecks++;if(!state.featureEnabled)throw new AppError(403,'This feature is disabled.');return {};},requireFeatureInTransaction:async()=>{throw Error('File read attempted a transaction feature check');}}));
@@ -36,6 +38,7 @@ mock.module('../../src/lib/catalogue/reading-files.server',()=>({observeReadingF
 mock.module('../../src/lib/core/reading/service.server',()=>({updateReading:async()=>{throw Error('File read attempted progress mutation');}}));
 mock.module('../../src/lib/server/security/provider-fetch',()=>({...providerFetch,
  createProviderTransport:()=>async(path:string,init?:RequestInit)=>{
+  if(path==='/Users/Me'){policies++;return {Id:state.wrongPolicyUser?'different-user':source.externalUserId,ServerId:state.wrongPolicyServer?'different-server':instance.serverIdentity,Policy:{IsDisabled:false,EnableContentDownloading:state.downloadAllowed}};}
   metadata++;expect(path).toContain(`/Users/${source.externalUserId}/Items/${externalId}?`);
   expect(new Headers(init?.headers).get('authorization')).toContain('controlled-token');
   if(!state.metadataAllowed)throw new AppError(403,'File access denied.');
@@ -52,7 +55,7 @@ mock.module('../../src/lib/server/security/provider-fetch',()=>({...providerFetc
  }
 }));
 const modulePath=process.env.COAST_READING_CONTEXT_MODULE??'../../src/lib/reading/sessions.server';
-const {ownedReadingSession,sourceEdition,streamReading}=await import(modulePath);
+const {ownedReadingSession,sourceEdition,streamReading,readingDeliverySource}=await import(modulePath);
 session.edition=sourceEdition(instance.serverIdentity,book);
 const reset=()=>{selects={};decryptions=metadata=downloads=cancelledBodies=featureChecks=0;};
 const request=(method='GET')=>new Request('https://coast-reading-context.invalid/file',{method,headers:{Range:'bytes=0-3'}});
@@ -107,4 +110,10 @@ for(const status of [416,500]){
  reset();state.downloadStatus=status;try{const response=await streamReading(userId,sessionId,request());expect(response.status).toBe(status===416?416:502);expect(cancelledBodies).toBe(1);expect(await response.text()).toBe('Reading file unavailable.');cases.push({name:`download_${status}`,...metrics()});}finally{state.downloadStatus=206;}
 }
 reset();const abort=new AbortController();abort.abort();await expect(streamReading(userId,sessionId,new Request('https://coast-reading-context.invalid/file',{signal:abort.signal}))).rejects.toMatchObject({name:'AbortError'});expect(selects).toEqual({});expect(metadata).toBe(0);expect(downloads).toBe(0);cases.push({name:'already_aborted',...metrics()});
+reset();state.downloadAllowed=false;
+try{await expect(readingDeliverySource(userId,sessionId,new AbortController().signal)).rejects.toMatchObject({status:403});expect(policies).toBe(1);expect(releasedLeases).toBe(1);expect(metadata).toBe(1);expect(downloads).toBe(0);cases.push({name:'metadata_visible_download_disabled_cache_source',...metrics(),policies,releasedLeases});}finally{state.downloadAllowed=true;}
+for(const flag of ['wrongPolicyUser','wrongPolicyServer'] as const){
+ reset();policies=releasedLeases=0;state[flag]=true;
+ try{await expect(readingDeliverySource(userId,sessionId,new AbortController().signal)).rejects.toMatchObject({code:'identity'});expect(policies).toBe(1);expect(releasedLeases).toBe(1);expect(downloads).toBe(0);cases.push({name:flag,...metrics(),policies,releasedLeases});}finally{state[flag]=false;}
+}
 console.log(JSON.stringify({boundary:'Controlled supplementary correctness and local owner call-count probe; no actual database, credential, file or provider was used.',expectedContexts,cases}));

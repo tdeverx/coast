@@ -50,10 +50,14 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   book.visible = !entrancePending;
   scene.add(book);
   const paper = blank();
-  const [coverCanvas, lastCanvas, frontInsideCanvas, backInsideCanvas] = await Promise.all([0, count - 1, Math.min(1, count - 1), Math.max(0, count - 2)].map(getPage));
+  const [coverCanvas, lastCanvas] = await Promise.all([0, count - 1].map(getPage));
   // Validate GPU setup before allocating geometry, materials or textures.
   const webgl = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
   const cleanups: (() => void)[] = [];
+  const animations = new Set<(complete: boolean) => void>();
+  cleanups.push(() => {
+    for (const finish of [...animations]) finish(false);
+  });
   function dispose() {
     if (disposed)
       return;
@@ -145,7 +149,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       })().finally(() => textureLoads.delete(i)));
     return textureLoads.get(i)!;
   }
-  for (const [page, canvas] of [[0, coverCanvas], [count - 1, lastCanvas], [Math.min(1, count - 1), frontInsideCanvas], [Math.max(0, count - 2), backInsideCanvas]] as const) {
+  for (const [page, canvas] of [[0, coverCanvas], [count - 1, lastCanvas]] as const) {
     if (!textures.has(page))
       textures.set(page, texture(canvas));
   }
@@ -191,8 +195,15 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     m.onBeforeCompile = softenShadows;
     return m;
   };
-  const frontInside = insideMaterial(textures.get(Math.min(1, count - 1))!);
-  const backInside = insideMaterial(textures.get(Math.max(0, count - 2))!);
+  const frontInside = insideMaterial(emptyTexture);
+  const backInside = insideMaterial(emptyTexture);
+  async function insideCover(back: boolean) {
+    const material = back ? backInside : frontInside;
+    const map = await pageTexture(back ? Math.max(0, count - 2) : Math.min(1, count - 1));
+    if (disposed) return;
+    material.map = map;
+    material.needsUpdate = true;
+  }
   const stapleMaterial = new THREE.MeshStandardMaterial({ color: '#adb0ac', metalness: .65, roughness: .45 });
   const boardEdge = new THREE.MeshStandardMaterial({ color: '#c5bda9', roughness: .8 });
   const underMaterial = (layer: number) => {
@@ -453,25 +464,35 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       onState({ opened, index, busy, cascadeDirection: cascade.direction, canCascade: cascade.available, curlingPages: cascade.records.filter(record => record.start !== null).length, backCover: backClosed, focused: view !== 'inspect', focusedPage: isReading() && opened ? focusedSide : null, readingCover: isReading() && !opened });
   }
   async function animate(duration: number, step: (progress: number) => void) {
-    if (reduced || duration === 0) {
+    if (reduced || document.hidden || duration === 0) {
       step(1);
       render();
       return;
     }
     await new Promise<void>(resolve => {
       const start = performance.now();
+      let pending = 0, finished = false;
+      const finish = (complete: boolean) => {
+        if (finished) return;
+        finished = true;
+        cancelAnimationFrame(pending);
+        animations.delete(finish);
+        if (complete && !disposed) {
+          step(1);
+          render();
+        }
+        resolve();
+      };
+      animations.add(finish);
       function tick(now: number) {
-        if (disposed)
-          return resolve();
+        if (disposed) return finish(false);
         const t = Math.min(1, (now - start) / duration);
         step(ease(t));
         render();
-        if (t < 1)
-          requestAnimationFrame(tick);
-        else
-          resolve();
+        if (t < 1) pending = requestAnimationFrame(tick);
+        else finish(false);
       }
-      requestAnimationFrame(tick);
+      pending = requestAnimationFrame(tick);
     });
   }
   function trim() {
@@ -490,6 +511,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     } });
   cleanups.push(() => preloader.stop());
   const warmNeighbors = () => {
+    if (entrancePending || disposed) return;
     const work = preloader.warm(nearbyPages(cascade.busy ? cascade.reserved : index, count));
     trim();
     return work;
@@ -498,8 +520,8 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   function previewTextures(atIndex: number) {
     return Promise.all(spreadSheetPages(atIndex, count).map(pageTexture));
   }
-  async function spread() {
-    const [a, b] = await Promise.all([insideTexture(index), insideTexture(index + 1), previewTextures(index)]);
+  async function spread(previews = true) {
+    const [a, b] = await Promise.all([insideTexture(index), insideTexture(index + 1), previews ? previewTextures(index) : undefined]);
     if (disposed)
       return;
     left.material.map = a;
@@ -517,9 +539,6 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     try {
       index = spreadForPage(page, count);
       resumeIndex = index;
-      await spread();
-      if (disposed)
-        return;
       focusedSide = Number(page) - 1 === index ? -1 : 1;
       camera.position.copy(spreadPosition());
       const travel = (2 * camera.position.z * Math.tan(camera.fov * Math.PI / 360) + height) / 2 + .5;
@@ -531,7 +550,9 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       draw(0);
       book.visible = true;
       render();
-      await animate(1400, draw);
+      // The closed outside covers are sufficient for the entrance. Required
+      // opening faces load alongside its motion; speculation starts afterwards.
+      await Promise.all([animate(1400, draw), insideCover(false), spread(false)]);
     }
     catch (error) {
       opened = false;
@@ -552,6 +573,23 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       notify();
       redraw();
     }
+  }
+  async function leave() {
+    if (disposed || entrancePending) return;
+    if (opened) await closeFront();
+    if (disposed) return;
+    if (view !== 'spread' || manualFraming || camera.zoom !== 1 || backClosed) await focusSpread();
+    if (disposed) return;
+    preloader.stop();
+    busy = true;
+    notify();
+    const travel = (2 * camera.position.z * Math.tan(camera.fov * Math.PI / 360) + height) / 2 + .5;
+    await animate(1400, t => {
+      const pose = bookEntrancePose(1 - t, travel, closedTilt);
+      book.position.y = pose.y;
+      [rotX, rotY, rotZ] = pose.rotation;
+    });
+    book.visible = false;
   }
   function closedSide(back: boolean) {
     if (back === backClosed)
@@ -585,7 +623,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     notify();
     try {
       index = page === undefined ? (back ? finalSpreadIndex(count) : 1) : spreadForPage(page, count);
-      await spread();
+      await Promise.all([insideCover(back), spread()]);
       if (disposed)
         return;
       const from = [wrapAngle(rotX), wrapAngle(rotY), wrapAngle(rotZ)];
@@ -1376,6 +1414,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   };
   surface.canvas.addEventListener('webglcontextlost', lost, { signal: events.signal });
   const visibility = () => {
+    if (document.hidden) for (const finish of [...animations]) finish(true);
     preloader.pause(document.hidden);
     if (!document.hidden)
       redraw();
@@ -1470,6 +1509,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       fill.intensity = .35 + v * .45;
       redraw();
     },
+    leave,
     dispose,
 
   };

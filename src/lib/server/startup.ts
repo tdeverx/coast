@@ -1,3 +1,4 @@
+import { initializeReadingCache, stopReadingCache } from '$lib/reading/cache.server';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { dataDirectory, initializeCredentialKey } from './security/credentials';
@@ -17,6 +18,7 @@ export function platformStopping() { return shutdown.started; }
 export function stopPlatform(): Promise<void> {
   shutdown.started=true;
   return shutdown.closing ??= Promise.resolve().then(() => processState[runtimeKey]?.stop()).catch(() => {})
+    .then(() => stopReadingCache()).catch(() => {})
     .then(() => closeDb({timeout:2})).catch(() => {});
 }
 const onShutdown = () => { void stopPlatform(); };
@@ -29,6 +31,7 @@ export function initializePlatform(registerHandlers?: () => void): Promise<void>
   current?.stop();
   const stop=()=>{
     stopQueueWorker();stopProviderMaintenance();
+    void stopReadingCache().catch(() => {});
     runtimeEvidence.stop();
     process.off('SIGTERM',onShutdown);process.off('SIGINT',onShutdown);
     process.off('sveltekit:shutdown',onShutdown);
@@ -39,6 +42,7 @@ export function initializePlatform(registerHandlers?: () => void): Promise<void>
     for (const directory of ['artwork', 'runtime'])
       await mkdir(join(dataDirectory(), directory), { recursive: true, mode: 0o700 });
     await initializeCredentialKey();
+    await initializeReadingCache();
     if(processState[runtimeKey]!==runtime)return;
     registerHandlers?.();
     runtimeEvidence.start();

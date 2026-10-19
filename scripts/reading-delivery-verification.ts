@@ -1,0 +1,300 @@
+// Actual-file regression and resource ownership receipt. No invented media or provider replies.
+import { createReadingCache } from '$lib/reading/cache.server';
+import { ComicDecoder } from '$lib/reading/reader/archive-decoder';
+import { ZipReader, BlobReader, Uint8ArrayWriter } from '@zip.js/zip.js';
+import { readdir, mkdir, writeFile, symlink, readFile, rm, statfs } from 'node:fs/promises';
+import { join, dirname, resolve } from 'node:path';
+import assert from 'node:assert/strict';
+const manifest = process.env.COAST_READING_ACTUAL_MANIFEST, output = process.env.COAST_READING_AUDIT_OUTPUT;
+assert(manifest && output, 'Supply private actual document manifest and output paths.');
+const documents = await Bun.file(manifest).json();
+const working = join(dirname(resolve(output)), `delivery-${crypto.randomUUID()}`);
+const extractor = process.env.COAST_READING_EXTRACTOR ?? resolve('.data/bin/reading-extractor');
+const report: any = { boundary: 'Actual archived file replay on private temporary disk. No database/provider/browser timings or production admission claim for missing formats. Controlled leases/capacity/abort use exact original bytes.', source: Bun.spawnSync(['git', 'rev-parse', 'HEAD']).stdout.toString().trim(), cases: [], samples: [] };
+const pass = (name: string) => report.cases.push({ name, status: 'passed' });
+const hash = async (path: string) => {
+    const digest = new Bun.CryptoHasher('sha256');
+    for await (const bytes of Bun.file(path).stream())
+        digest.update(bytes);
+    return digest.digest('hex');
+};
+let cache: ReturnType<typeof createReadingCache> | undefined;
+let sampling: ReturnType<typeof setInterval> | undefined;
+try {
+    await mkdir(working, { recursive: true, mode: 0o700 });
+    for (const input of documents) {
+        assert(['cbr', 'cbz', 'cb7', 'cbt'].includes(input.format));
+        assert.equal(Bun.file(input.file).size, input.bytes);
+        assert.equal(await hash(input.file), input.sha256);
+        let downloads = 0;
+        const source = { key: input.sha256, edition: input.sha256, format: input.format, bytes: input.bytes, open: async () => {
+                downloads++;
+                return new Response(Bun.file(input.file));
+            } };
+        const root = join(working, input.sha256);
+        cache = createReadingCache(root, extractor);
+        Bun.gc(true);
+        const cpu = process.cpuUsage(), beforeRss = process.memoryUsage().rss;
+        let peakRss = beforeRss;
+        sampling = setInterval(() => { peakRss = Math.max(peakRss, process.memoryUsage().rss); }, 10);
+        const start = performance.now();
+        const [host, guest] = await Promise.all([cache.acquire('actual-host', source), cache.acquire('actual-guest', source)]);
+        assert.equal(host, guest);
+        try {
+            await host.job;
+        }
+        finally {
+            clearInterval(sampling);
+        }
+        if (host.error)
+            throw host.error;
+        const coldMs = performance.now() - start;
+        const cpuUsed = process.cpuUsage(cpu);
+        const resources = { mainCpuMicros: cpuUsed.user + cpuUsed.system, beforeRss, sampledPeakRss: Math.max(peakRss, process.memoryUsage().rss), boundary: 'Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound.' };
+        assert(host.manifest);
+        assert.equal(downloads, 1);
+        pass(`${input.format}: independent concurrent leases share one acquisition`);
+        let baseline: any, zip: ZipReader<any> | undefined;
+        if (input.format === 'cbz') {
+            zip = new ZipReader(new BlobReader(Bun.file(input.file)));
+            baseline = (await zip.getEntries()).filter((entry: any) => !entry.directory && /\.(png|jpe?g|webp|gif)$/i.test(entry.filename));
+            baseline.sort((a: any, b: any) => new Intl.Collator('en', { numeric: true }).compare(a.filename, b.filename) || (a.filename < b.filename ? -1 : a.filename > b.filename ? 1 : 0));
+        }
+        else
+            baseline = await ComicDecoder.open(await Bun.file(input.file).arrayBuffer(), input.format);
+        try {
+            const count = input.format === 'cbz' ? baseline.length : baseline.entries.length;
+            assert.equal(host.manifest.pages.length, count);
+            for (let index = 0; index < count; index++) {
+                const page = await cache.page(host, index, new AbortController().signal);
+                const actual = await hash(page.path);
+                const original = input.format === 'cbz' ? await baseline[index].getData(new Uint8ArrayWriter(), { useWebWorkers: false, checkSignature: true }) : baseline.read(baseline.entries[index].index);
+                assert.equal(actual, new Bun.CryptoHasher('sha256').update(original).digest('hex'));
+            }
+            pass(`${input.format}: every naturally ordered original page matches baseline bytes`);
+        }
+        finally {
+            await zip?.close();
+            if (input.format !== 'cbz')
+                baseline.close();
+        }
+        await cache.release('actual-host');
+        assert.equal(cache.snapshot().leases, 1);
+        assert((await cache.page(guest, 0, new AbortController().signal)).bytes > 0);
+        pass(`${input.format}: closing one party reader preserves another's files`);
+        const closedAt = Date.now();
+        await cache.release('actual-guest');
+        assert((host.idleUntil ?? 0) >= closedAt + 30 * 60000);
+        assert(cache.snapshot().reserved > 0);
+        assert.equal(cache.snapshot().leases, 0);
+        assert.equal(cache.snapshot().entries, 1);
+        pass(`${input.format}: last-reader release retains completed pages within the idle budget`);
+        const again = await cache.acquire('actual-host', source);
+        assert.equal(again, host, 'Completed exact-version pages are shared across close/reopen');
+        const first = await cache.page(again, 0, new AbortController().signal);
+        assert(first.bytes > 0);
+        await again.job;
+        if (again.error)
+            throw again.error;
+        assert.equal(downloads, 1);
+        pass(`${input.format}: shared completed pages reopen without another source download`);
+        report.samples.push({ format: input.format, bytes: input.bytes, sha256: input.sha256, pages: host.manifest.pages.length, coldPreparationMs: coldMs, resources, actualPageByteEquivalence: true });
+        await cache.stop();
+        cache = undefined;
+    }
+    const first = documents[0], source = { key: first.sha256, edition: first.sha256, format: first.format, bytes: first.bytes, open: async () => new Response(Bun.file(first.file)) };
+    for (const limits of [{ bytes: first.bytes }, { metadataBytes: 1 }]) {
+        cache = createReadingCache(join(working, crypto.randomUUID()), extractor, limits);
+        const rejected = await cache.acquire('actual-capacity', source);
+        await rejected.job;
+        assert(rejected.error, 'Actual archive must fail the selected resource admission.');
+        await cache.stop();
+        assert.equal(cache.snapshot().reserved, 0);
+        assert.equal(cache.snapshot().metadataBytes, 0);
+        cache = undefined;
+    }
+    pass('actual source rejects disk/metadata capacity pressure and returns both reservations');
+    const space = await statfs(working), available = space.bavail * space.bsize, reservation = first.bytes + 512 * 1024 ** 2;
+    assert(available > reservation * 2, 'Concurrent admission probe needs free working capacity.');
+    cache = createReadingCache(join(working, 'concurrent-floor'), extractor, { freeBytes: available - Math.floor(reservation * 1.5) });
+    let unlock!: () => void, opened = 0, bothOpened!: () => void;
+    const gate = new Promise<void>(resolve => { unlock = resolve; }), admitted = new Promise<void>(resolve => { bothOpened = resolve; });
+    const gated = (key: string) => ({ ...source, key, open: async (signal: AbortSignal) => {
+            if (++opened === 2)
+                bothOpened();
+            await gate;
+            signal.throwIfAborted();
+            return new Response(Bun.file(first.file));
+        } });
+    const [a, b] = await Promise.all([cache.acquire('actual-a', gated('controlled-a')), cache.acquire('actual-b', gated('controlled-b'))]);
+    await Promise.race([a.job, b.job, admitted]);
+    unlock();
+    await Promise.all([a.job, b.job]);
+    assert(a.error || b.error, 'Combined reservations must not both pass a floor that only admits one.');
+    await cache.stop();
+    assert.equal(cache.snapshot().reserved, 0);
+    cache = undefined;
+    pass('actual source concurrent preparations reject combined free-space overcommit');
+    const { default: sharp } = await import('sharp'), original = sharp.prototype.metadata;
+    const values: number[] = [];
+    cache = createReadingCache(join(working, 'inspect-progress'), extractor);
+    try {
+        (sharp.prototype as any).metadata = async function (...args: unknown[]) {
+            await Bun.sleep(50); // Controlled scheduling delay; metadata and page bytes stay genuine.
+            return (original as any).apply(this, args);
+        };
+        const inspected = await cache.acquire('actual-progress', source);
+        inspected.listeners.add(() => {
+            if (inspected.progress.phase === 'inspect')
+                values.push(inspected.progress.loaded ?? 0);
+        });
+        await inspected.job;
+        if (inspected.error)
+            throw inspected.error;
+        assert.equal(values.at(-1), inspected.manifest!.pages.length);
+        assert(new Set(values).size > 1, 'Progress must advance while actual metadata trails acquisition.');
+    }
+    finally {
+        (sharp.prototype as any).metadata = original;
+        await cache.stop();
+        cache = undefined;
+    }
+    report.controlledProgress = values;
+    pass('actual image metadata with controlled latency advances every inspection notification');
+    cache = createReadingCache(join(working, 'reopen-admission'), extractor);
+    let resume!: () => void;
+    const pendingSource = new Promise<void>(resolve => { resume = resolve; });
+    const heldSource = (key: string) => ({ ...source, key, open: async (signal: AbortSignal) => {
+            await pendingSource;
+            signal.throwIfAborted();
+            return new Response(Bun.file(first.file));
+        } });
+    try {
+        const firstSource = heldSource('actual-reopen-a'), secondSource = heldSource('actual-reopen-b');
+        const firstEntry = await cache.acquire('actual-admin:first', firstSource);
+        const secondEntry = await cache.acquire('actual-admin:second', secondSource);
+        assert.equal(await cache.acquire('actual-guest:first', firstSource), firstEntry);
+        await cache.release('actual-admin:first');
+        assert.equal(await cache.acquire('actual-admin:reopened', firstSource), firstEntry);
+        resume();
+        await Promise.all([firstEntry.job, secondEntry.job]);
+        assert.equal(firstEntry.error, undefined);
+        assert.equal(secondEntry.error, undefined);
+        await cache.release('actual-admin:reopened');
+        await cache.release('actual-guest:first');
+        const reopened = await cache.acquire('actual-admin:reopened', firstSource);
+        await reopened.job;
+        assert.equal(reopened.error, undefined);
+        const delivered = await cache.page(reopened, 0, new AbortController().signal);
+        assert(delivered.bytes > 0);
+    }
+    finally {
+        resume();
+        await cache.stop();
+        cache = undefined;
+    }
+    pass('actual source admits two personal preparations and close/reopen while preserving another reader');
+    let firstCharge = 0;
+    cache = createReadingCache(join(working, 'retention-expiry'), extractor, { idleMs: 1000 });
+    try {
+        const idle = await cache.acquire('actual-admin:idle', source);
+        await idle.job;
+        assert.equal(idle.error, undefined);
+        firstCharge = idle.metadataBytes;
+        await cache.release('actual-admin:idle');
+        idle.idleUntil = Date.now() - 1; // Controlled expiry; original file bytes remain genuine.
+        const fresh = await cache.acquire('actual-admin:next', source);
+        await fresh.job;
+        assert.equal(fresh.error, undefined);
+        assert.notEqual(fresh, idle);
+        assert.equal(idle.reserved, 0);
+        assert.equal(idle.controller.signal.aborted, true);
+    }
+    finally {
+        await cache.stop();
+        cache = undefined;
+    }
+    pass('actual completed pages expire after a controlled idle TTL and reacquire cleanly');
+    for (const limits of [{ bytes: first.bytes + 512 * 1024 ** 2 }, { metadataBytes: firstCharge }]) {
+        cache = createReadingCache(join(working, crypto.randomUUID()), extractor, limits);
+        try {
+            const idle = await cache.acquire('actual-admin:idle', source);
+            await idle.job;
+            assert.equal(idle.error, undefined);
+            await cache.release('actual-admin:idle');
+            const fresh = await cache.acquire('actual-guest:fresh', { ...source, key: source.key + '-controlled-budget' });
+            await fresh.job;
+            assert.equal(fresh.error, undefined);
+            assert.equal(idle.controller.signal.aborted, true);
+            assert.equal(idle.reserved, 0);
+        }
+        finally {
+            await cache.stop();
+            cache = undefined;
+        }
+    }
+    pass('actual idle pages evict under disk or metadata pressure without exceeding either budget');
+    cache = createReadingCache(join(working, 'concurrent-retention-admission'), extractor, { cacheEntries: 2, accountLeases: 1 });
+    try {
+        for (let index = 0; index < 2; index++) {
+            const entry = await cache.acquire(`actual-seed:${index}`, { ...source, key: source.key + '-seed-' + index });
+            await entry.job;
+            assert.equal(entry.error, undefined);
+            await cache.release(`actual-seed:${index}`);
+        }
+        let downloads = 0;
+        const contender = (key: string) => ({ ...source, key, open: async () => {
+                downloads++;
+                return new Response(Bun.file(first.file));
+            } });
+        const results = await Promise.allSettled([cache.acquire('actual-admin:first', contender(source.key + '-first')), cache.acquire('actual-admin:second', contender(source.key + '-second'))]);
+        assert.equal(results.filter(result => result.status === 'fulfilled').length, 1);
+        assert.equal(results.filter(result => result.status === 'rejected').length, 1);
+        assert.equal(cache.snapshot().leases, 1);
+        for (const result of results)
+            if (result.status === 'fulfilled') {
+                await result.value.job;
+                assert.equal(result.value.error, undefined);
+            }
+        assert.equal(downloads, 1);
+    }
+    finally {
+        await cache.stop();
+        cache = undefined;
+    }
+    pass('concurrent actual-source idle eviction cannot over-admit an account or start its rejected job');
+    const cancelled = join(working, 'cancelled');
+    cache = createReadingCache(cancelled, extractor);
+    const entry = await cache.acquire('actual-host', source);
+    await cache.release('actual-host');
+    await entry.job;
+    assert.equal(cache.snapshot().reserved, 0);
+    assert.equal((await readdir(cancelled)).length, 0);
+    pass('actual-source cancellation drains extraction and deletes partial files');
+    await cache.stop();
+    cache = undefined;
+    const orphan = join(working, 'orphans'), outside = join(working, 'retained-outside');
+    await mkdir(orphan);
+    await writeFile(outside, 'owned cleanup sentinel');
+    await symlink(outside, join(orphan, `run-${crypto.randomUUID()}`));
+    cache = createReadingCache(orphan, extractor);
+    await cache.initialize();
+    assert.equal(await readFile(outside, 'utf8'), 'owned cleanup sentinel');
+    assert.equal((await readdir(orphan)).length, 0);
+    pass('startup orphan cleanup removes its symlink without following its target');
+    await cache.stop();
+    cache = undefined;
+    report.status = 'passed';
+}
+catch (cause) {
+    report.status = 'failed';
+    report.failure = String(cause);
+    throw cause;
+}
+finally {
+    clearInterval(sampling);
+    await cache?.stop();
+    await rm(working, { recursive: true, force: true });
+    await Bun.write(output!, JSON.stringify(report, null, 2));
+    console.log(JSON.stringify(report));
+}

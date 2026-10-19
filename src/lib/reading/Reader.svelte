@@ -1,8 +1,9 @@
 <script lang="ts">
- import { reader as applicationReader, closeReading, recordReading, publishReading, setReadingNavigator, retryReadingSave } from './client.svelte';
+ import { reader as applicationReader, closeReading, recordReading, publishReading, setReadingNavigator, setReadingExit, retryReadingSave } from './client.svelte';
  import { useClient, reportFailure } from '$lib/ui/client-context';
  import { page } from '$app/state';
  import { untrack } from 'svelte';
+ import { fade } from 'svelte/transition';
  import type { ReadingLocation, ReadingSessionView } from './model';
  import { readingFraction, readingLocationLabel, sameReadingLocation } from './model';
  import { syncedPlayer, canControlPlayback } from '$lib/playback/synced/client.svelte';
@@ -30,6 +31,7 @@
  const following=$derived(!preview&&syncedPlayer.room?.mediaType==='reading'&&!!reader.session&&syncedPlayer.room.mediaId===reader.session.workId&&syncedPlayer.room.edition===reader.session.edition&&syncedPlayer.room.readingFormat===reader.session.format);
  const controlled=$derived(preview ? example?.state!=='follower' : !following||canControlPlayback());
  let external=false,minimizing=false,readerOwner=0;
+ function backdropDuration(){return typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion: reduce)').matches?0:250;}
  function close(){if(preview){sample.visible=false;return;}void closeReading().catch(()=>{/* Keep the unsaved bookmark and its retry notice visible. */});}
  $effect(()=>{
   if(preview)return;
@@ -38,6 +40,8 @@
   const initialLocation=untrack(()=>reader.location??session.location);
   const sanitizeOddPages=untrack(()=>page.data.user?.settings?.sanitizeOddReadingPages!==false);
   const controller=new AbortController(),owner=++readerOwner;let current:ReaderEngine|undefined,resize:ResizeObserver|undefined,navigation=0;loadProgress={phase:'prepare'};loading=true;reader.rendering=true;
+  let exiting=false;
+  setReadingExit(()=>{exiting=true;navigation++;return current?.leave?.()??Promise.resolve();});
   let heartbeatPending=false;
   const heartbeat=setInterval(()=>{
    if(document.hidden||!reader.visible||controller.signal.aborted||heartbeatPending)return;
@@ -46,8 +50,8 @@
     .catch(cause=>{if(!controller.signal.aborted&&(isFeatureDisabled(cause)||cause instanceof ApiError&&cause.status===410)&&reader.session?.id===session.id)void closeReading(true,false).catch(()=>{});})
     .finally(()=>{heartbeatPending=false;});
   },60000);
-  const ownsNavigation=(revision:number)=>!controller.signal.aborted&&revision===navigation&&reader.session?.id===session.id;
-  void import('./reader/engine').then(module=>module.createReader({host:surface,source:file??session.url!,format:session.format,kind:session.kind,location:initialLocation,signal:controller.signal,sanitizeOddPages,progress:value=>{if(!controller.signal.aborted&&reader.session?.id===session.id)loadProgress=value;},dismiss:()=>{if(!controller.signal.aborted)close();},controlled:()=>controlled,failed:cause=>{if(!controller.signal.aborted&&reader.session?.id===session.id)reader.error=message(cause);},changed:location=>{
+  const ownsNavigation=(revision:number)=>!exiting&&!controller.signal.aborted&&revision===navigation&&reader.session?.id===session.id;
+  void import('./reader/engine').then(module=>module.createReader({host:surface,source:file??session.url!,manifest:file?undefined:session.manifest,format:session.format,kind:session.kind,location:initialLocation,signal:controller.signal,sanitizeOddPages,progress:value=>{if(!controller.signal.aborted&&reader.session?.id===session.id)loadProgress=value;},dismiss:()=>{if(!controller.signal.aborted)close();},controlled:()=>controlled,failed:cause=>{if(!controller.signal.aborted&&reader.session?.id===session.id)reader.error=message(cause);},changed:location=>{
     if(controller.signal.aborted)return;
     const room=syncedPlayer.room;
     // EPUB links are navigation too: viewers follow the room's location.
@@ -68,6 +72,7 @@
      });resize.observe(surface);
     }
     const navigate=async(location:ReadingLocation)=>{
+     if(exiting)return;
      const revision=++navigation;external=true;
      try{await result.go(location);if(!ownsNavigation(revision))return;reader.location=location;void recordReading(location);}
      catch(cause){if(ownsNavigation(revision))throw cause;}
@@ -77,7 +82,7 @@
     const latest=reader.location;
     if(latest&&!sameReadingLocation(initialLocation,latest))await navigate(latest);
    }).catch(cause=>{if(!controller.signal.aborted)reader.error=message(cause);}).finally(()=>{if(!controller.signal.aborted){loading=false;reader.rendering=false;}});
-  return ()=>{clearInterval(heartbeat);resize?.disconnect();controller.abort();navigation++;if(readerOwner===owner){readerOwner++;busy=false;}external=false;current?.destroy();setReadingNavigator(null);engine=undefined;reader.rendering=false;};
+  return ()=>{clearInterval(heartbeat);resize?.disconnect();controller.abort();navigation++;if(readerOwner===owner){readerOwner++;busy=false;setReadingExit(null);}external=false;current?.destroy();setReadingNavigator(null);engine=undefined;reader.rendering=false;};
  });
  async function turn(direction:'previous'|'next'){
   if(preview){if(!controlled||example?.state==='opening'||example?.state==='error')return;const location=sample.location;if(location&&location.format!=='epub')sample.location={...location,page:Math.min(location.total,Math.max(1,location.page+(direction==='next'?1:-1)))};return;}
@@ -115,15 +120,20 @@
 </Dialog>
 {:else if reader.visible}
  <!-- svelte-ignore a11y_no_noninteractive_tabindex (The physical canvas is a keyboard-controlled reading surface.) -->
- <div class="physical-reader" class:prepared={loadProgress.phase==='render'} bind:this={host} onpointerup={event=>{if(event.target===host&&!host?.querySelector('canvas'))close();}} role="application" aria-roledescription="book reader" tabindex="0" aria-label={reader.session?.title??'Book reader'} aria-describedby="physical-reader-help" aria-busy={loading}></div>
+ <div class="physical-reader" bind:this={host} onpointerup={event=>{if(event.target===host&&!host?.querySelector('canvas'))close();}} role="application" aria-roledescription="book reader" tabindex="0" aria-label={reader.session?.title??'Book reader'} aria-describedby="physical-reader-help" aria-busy={loading}>
+  <div class="reader-dim" aria-hidden="true" transition:fade|global={{duration:backdropDuration()}}></div>
+  {#if loadProgress.phase==='render'}<div class="reader-blur" aria-hidden="true" transition:fade|global={{duration:backdropDuration()}}></div>{/if}
+ </div>
  <span id="physical-reader-help" class="sr-only">Click to focus. Click or drag a page to turn it. Double click to read a single page. Drag outside the book to rotate, or click outside to dismiss. Use left and right arrow keys to turn pages, Escape to close, or the reading button in navigation to show the app.</span>
  <span class="sr-only" role="status">{loading?'Opening…':readingLocationLabel(reader.location)}</span>
  {@render loadingNotice()}
 {/if}
 <style>
- .physical-reader{position:fixed;inset:0;z-index:70;overflow:hidden;touch-action:none;outline:none;background:color-mix(in srgb,var(--canvas) 75%,transparent);}
+ .physical-reader{position:fixed;inset:0;z-index:70;overflow:hidden;touch-action:none;outline:none;}
  .physical-reader :global(canvas){display:block;width:100%;height:100%;}
- .physical-reader.prepared{backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+ .reader-dim,.reader-blur{position:absolute;inset:0;pointer-events:none;}
+ .reader-dim{z-index:-1;background:color-mix(in srgb,var(--canvas) 75%,transparent);}
+ .reader-blur{z-index:-2;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
  .reader-loading{position:fixed;inset:0;z-index:71;display:flex;flex-direction:column;justify-content:center;gap:12px;width:min(320px,calc(100% - 48px));margin:auto;pointer-events:none;text-align:center;color:var(--ink);}
  .reader-loading p{margin:0;font-weight:var(--weight-semibold);}.reader-loading span{font-size:var(--text-sm);overflow-wrap:anywhere;}
  .reader-surface{position:relative;}.reader-surface .reader-loading{position:absolute;z-index:1;}

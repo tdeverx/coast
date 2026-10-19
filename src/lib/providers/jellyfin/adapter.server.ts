@@ -297,10 +297,17 @@ export class JellyfinAdapter {
     };
   }
   /** Token-owned policy: a caller-supplied ID never determines which account is proved. */
-  async accessIdentity(userId: string) {
-    const user=v.parse(v.object({Id:v.string(),ServerId:v.string(),Policy:v.record(v.string(),v.unknown())}),await this.call('/Users/Me'));
+  async accessIdentity(userId: string, signal?: AbortSignal) {
+    const user=v.parse(v.object({Id:v.string(),ServerId:v.string(),Policy:v.record(v.string(),v.unknown())}),await this.call('/Users/Me', {signal}));
     if(jellyfinItemKey(user.Id)!==jellyfinItemKey(userId))throw new ProviderActionError('Jellyfin returned an unexpected user identity.','identity');
     return user;
+  }
+  /** Reading cache reuse must prove the token owner's separate download policy. */
+  async downloadAllowed(userId: string, serverId: string | null, signal?: AbortSignal) {
+    const user = await this.accessIdentity(userId, signal);
+    if (!serverId || user.ServerId !== serverId)
+      throw new ProviderActionError('Jellyfin server identity changed. Administrator review is required.', 'identity');
+    return user.Policy.IsDisabled === false && user.Policy.EnableContentDownloading === true;
   }
   /** Real visible CollectionFolder IDs, before optional custom view grouping. */
   async screenLibraries(userId: string) {

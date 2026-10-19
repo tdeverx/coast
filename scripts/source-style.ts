@@ -3,6 +3,17 @@ import ts from 'typescript';
 // Adopt modules as they are edited; legacy code is deliberately not reformatted in bulk.
 export const styleFiles = [
   'scripts/source-style.ts',
+  'scripts/build-reading-extractor.ts',
+  'scripts/reading-delivery-verification.ts',
+  'scripts/reading-delivery-integration.ts',
+  'scripts/jellyfin-lan-verification.ts',
+  'scripts/reading-staged-entry-verification.ts',
+  'src/lib/reading/cache.server.ts',
+  'src/lib/reading/delivery.server.ts',
+  'src/lib/reading/delivery.ts',
+  'src/lib/reading/reader/remote-comic.ts',
+  'tests/reading-delivery-cache.test.ts',
+  'tests/reading-delivery-client.test.ts',
   'src/lib/core/lists/sequence.server.ts',
   'src/lib/core/tracking/service.server.ts',
   'src/lib/reading/reader/load.ts',

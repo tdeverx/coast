@@ -2,7 +2,9 @@
 
 19 October 2026. This is the later source/acceptance epoch after the [initial focused audit](README.md). The user requested loading feedback, a default-on odd-face preference, reading activity/party/sharing checks, and a PR/merge after green checks. The [delivery investigation roadmap](investigation-roadmap.md) remains future research; no range/page-service/cache redesign was adopted.
 
-## Current behavior
+The later [shared server-delivery implementation](server-delivery.md) supersedes the browser-only remote comic transport described at this historical epoch.
+
+## Behavior at this epoch
 
 - The shared Reader shows download bytes and known-total percentage, then actual checked-page counts over the existing fade. Unknown totals/preparation are indeterminate; no invented whole-operation percentage is shown. `OperationProgress` remains the shared bar, with optional accessible value text for units other than items.
 - At the render/preparation phase, text and bar disappear and the physical reader's app backdrop blurs. The book and higher-layer navigation stay sharp. Close/minimize/failure remove feedback; late progress cannot update a replacement reader. PDF/EPUB use the same progress contract without changing their file/party owners.

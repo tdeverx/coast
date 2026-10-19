@@ -230,7 +230,7 @@ Create scoped, expiring tokens in **Settings → API access** for catalogue, Col
 
 ## Develop Coast
 
-Development requires **Bun 1.4.3** and PostgreSQL. Create a development database, then run:
+Development requires **Bun 1.4.3**, PostgreSQL, a C++17 compiler and libarchive headers (`g++ libarchive-dev` on Debian; libarchive with Homebrew on macOS). Create a development database, then run:
 
 ```sh
 bun install --frozen-lockfile

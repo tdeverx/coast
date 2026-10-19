@@ -1,0 +1,1420 @@
+{
+  "date": "2026-10-19",
+  "baselineRef": "463fa8ae992a59ca13c7dd80ef456f0cc9503aa9",
+  "runtimeFiles": {
+    "Dockerfile": "aff377143912eb0326c8a914d1ce8ac7b7664118c4fe165b324e2258ff5b0765",
+    "package.json": "79368f7a4d71b993d85aea6ab175f4e93d041bae95d634ef90c0aab974f308b8",
+    "bun.lock": "1e4b54e41340c8bdc578d25a96ae2d97696967828c6a62f486d6d426af878aff",
+    "scripts/build-reading-extractor.ts": "9a7205a8c84e77ed27bf45bfccaee8394960a8419f2520975b2e9196c8550f99",
+    "scripts/native/reading-extractor.cc": "eee8ae8e95169ebbe51a1d9d17ccc0afd8129d37cffb77bf04ee64bf43a65924",
+    "src/lib/reading/cache.server.ts": "42c429e842c725059a69ce93ab40969525fe1a6481b0f8636fea843a8ba740fc",
+    "src/lib/reading/delivery.server.ts": "f7c51a9c2d14bd3052ea048c8b298b01a8c3d3857ffb511d8eacedfb4612da0c",
+    "src/lib/reading/delivery.ts": "f83e8795d6fa76a26e94def046cf444657d3fa719563908df5d6210765b6b7c6",
+    "src/lib/reading/sessions.server.ts": "2d6b3fda15f7fa3cea127a37b76348d2faf7395a4a98a069015dbfc3cbf77671",
+    "src/lib/reading/Reader.svelte": "aaf4259fa336260b4249058857c415df1a8222cbadb8caa221083556cd3e095c",
+    "src/lib/reading/model.ts": "8dce0d9d7cd0825e4a0847004d36e75768a8dd1ae7daf479106af1aad772ab84",
+    "src/lib/reading/client.svelte.ts": "7bfb7adc0545d8d63edc26ca76ef0a190682542545d17fac39d1959e07155b69",
+    "src/lib/reading/reader/remote-comic.ts": "562de540a5018d723b314ad7973e79ff27e0d78934f5d6caa43ba9955afddc74",
+    "src/lib/reading/reader/physical-pages.ts": "b6968d49992b015209ae493664b14c71485e89dbd4c1080df42cdd1a65641104",
+    "src/lib/reading/reader/physical-reader.ts": "10d12bbf6508d0046b44c01ebb03cfe875e9069e63f48cc0812f0b18c88dcc08",
+    "src/lib/reading/reader/physical/renderer.ts": "e21c83072fefe39d00ca6f3b5f91311b410a3c8baafff9bf84804b09a0a52bdd",
+    "src/lib/reading/reader/engine.ts": "97327d737f1dab48f522fb622ff0a185228818aeed4261fe1f5c42e9a14a1a4d",
+    "src/lib/server/startup.ts": "7aff39aab80e00e4ef6b4e33a0dc9a8243d4132560d02c4adc6801d98618229b",
+    "src/lib/server/api/reading.server.ts": "ed3ca9b2223ecb9089ec61826307c99908483fa2eb13514f4c22479ede88e102",
+    "src/lib/ui/components/Header.svelte": "eaab91cf97570315ca1628667e254d787c7eb34c7747f180bb7d02a0afce39fa",
+    "src/lib/providers/instances.server.ts": "10300fb8cfe778965ee09928cd54bb96b76f177d41ba8c5e3a438611b3f3282c",
+    "src/lib/playback/service.server.ts": "4aad199dbd10daf442c46babea9cb1ad8068098abee29f82bd5cb77466526208",
+    "src/lib/ui/components/IntegrationSettings.svelte": "d394ae092d5f96531cf68921bddfb27b5626d4a98e65bb80a295725eaa9e3db9",
+    "src/lib/providers/jellyfin/adapter.server.ts": "d9714e2164c0778b8a91575f6b3cdb6ed203057843d7ed35abc0a240ad38249b"
+  },
+  "runtimeFingerprint": "4cc74d53d95834ab18438b2e6ac0a4ed3b8b65ee29fdd2c4425e662cbad777c5",
+  "runtime": {
+    "bun": "1.4.3",
+    "sharp": "0.35.5",
+    "macLibarchive": "3.8.10",
+    "production": "Debian bookworm arm64 native extraction + sharp actual-page metadata passed"
+  },
+  "actualFiles": {
+    "boundary": "Actual archived file replay on private temporary disk. No database/provider/browser timings or production admission claim for missing formats. Controlled leases/capacity/abort use exact original bytes.",
+    "source": "dde82ccb312a21c9efce3fc957164931676715b7",
+    "cases": [
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "actual source rejects disk/metadata capacity pressure and returns both reservations",
+        "status": "passed"
+      },
+      {
+        "name": "actual source concurrent preparations reject combined free-space overcommit",
+        "status": "passed"
+      },
+      {
+        "name": "actual image metadata with controlled latency advances every inspection notification",
+        "status": "passed"
+      },
+      {
+        "name": "actual source admits two personal preparations and close/reopen while preserving another reader",
+        "status": "passed"
+      },
+      {
+        "name": "actual completed pages expire after a controlled idle TTL and reacquire cleanly",
+        "status": "passed"
+      },
+      {
+        "name": "actual idle pages evict under disk or metadata pressure without exceeding either budget",
+        "status": "passed"
+      },
+      {
+        "name": "concurrent actual-source idle eviction cannot over-admit an account or start its rejected job",
+        "status": "passed"
+      },
+      {
+        "name": "actual-source cancellation drains extraction and deletes partial files",
+        "status": "passed"
+      },
+      {
+        "name": "startup orphan cleanup removes its symlink without following its target",
+        "status": "passed"
+      }
+    ],
+    "samples": [
+      {
+        "format": "cbr",
+        "bytes": 73339323,
+        "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+        "pages": 24,
+        "coldPreparationMs": 418.09229200000004,
+        "resources": {
+          "mainCpuMicros": 133109,
+          "beforeRss": 18449104,
+          "sampledPeakRss": 43959184,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 39372234,
+        "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
+        "pages": 33,
+        "coldPreparationMs": 217.56729100000007,
+        "resources": {
+          "mainCpuMicros": 61672,
+          "beforeRss": 120718440,
+          "sampledPeakRss": 121537640,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 74500125,
+        "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
+        "pages": 24,
+        "coldPreparationMs": 389.058542,
+        "resources": {
+          "mainCpuMicros": 88522,
+          "beforeRss": 87458944,
+          "sampledPeakRss": 87458944,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 41725042,
+        "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
+        "pages": 30,
+        "coldPreparationMs": 234.29595800000016,
+        "resources": {
+          "mainCpuMicros": 73435,
+          "beforeRss": 115787000,
+          "sampledPeakRss": 115803384,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 82635611,
+        "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
+        "pages": 24,
+        "coldPreparationMs": 458.9700419999999,
+        "resources": {
+          "mainCpuMicros": 107296,
+          "beforeRss": 82691272,
+          "sampledPeakRss": 82691272,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbz",
+        "bytes": 401719147,
+        "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
+        "pages": 265,
+        "coldPreparationMs": 553.5600830000003,
+        "resources": {
+          "mainCpuMicros": 532754,
+          "beforeRss": 151291272,
+          "sampledPeakRss": 184157576,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      }
+    ],
+    "controlledProgress": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      24,
+      24
+    ],
+    "status": "passed"
+  },
+  "authenticatedActualCopy": {
+    "boundary": "Owned disposable restore, actual admin/guest connections and genuine live Jellyfin file. Controlled friendship/session/generation mutations only on copy; no worker or normal mutations.",
+    "cases": [
+      {
+        "name": "actual host preparation publishes only bounded presentation metadata",
+        "status": "passed"
+      },
+      {
+        "name": "superseded request cleanup preserves the actual session renewed by a newer request",
+        "status": "passed"
+      },
+      {
+        "name": "independently authorized actual party readers share the same prepared edition",
+        "status": "passed"
+      },
+      {
+        "name": "eight actual account deliveries reject a ninth while renewal and independent guest pages work",
+        "status": "passed"
+      },
+      {
+        "name": "releasing an actual account delivery admits its previously rejected session",
+        "status": "passed"
+      },
+      {
+        "name": "guest cannot borrow host session or release its lease",
+        "status": "passed"
+      },
+      {
+        "name": "authenticated guest page preserves original bytes and private cache policy",
+        "status": "passed"
+      },
+      {
+        "name": "real reading party positions remain canonical and speculative page requests do not journal",
+        "status": "passed"
+      },
+      {
+        "name": "closing host preserves guest delivery while closed sessions lose access",
+        "status": "passed"
+      },
+      {
+        "name": "source generation withdrawal rejects cached pages and releases only the revoked reader",
+        "status": "passed"
+      },
+      {
+        "name": "changed edition cannot reuse the prior manifest or pages",
+        "status": "passed"
+      },
+      {
+        "name": "actual close withdrawal during shared preparation rejects waiting page while host remains authorized",
+        "status": "passed"
+      },
+      {
+        "name": "actual generation withdrawal during shared preparation rejects waiting page while host remains authorized",
+        "status": "passed"
+      },
+      {
+        "name": "actual download-disabled token-owned policies are denied; absent metadata-visible negative cohort is explicit",
+        "status": "passed"
+      },
+      {
+        "name": "actual token/user identity mismatch releases the existing completed cache lease after denial",
+        "status": "passed"
+      },
+      {
+        "name": "actual close after initial authorization rejects warm cached bytes and removes any recreated lease",
+        "status": "passed"
+      },
+      {
+        "name": "actual generation after initial authorization rejects warm cached bytes and removes any recreated lease",
+        "status": "passed"
+      }
+    ],
+    "coldAuthenticatedManifestMs": 496.3465,
+    "absentCohorts": [
+      "No connected actual account combines visible comic metadata with disabled downloads; the two disabled accounts have zero visible books. Natural warm-cache exploit replay is unavailable."
+    ],
+    "status": "passed"
+  },
+  "renderEquality": {
+    "boundary": "Immutable baseline physical-pages vs current shared layout with actual six-file replay; all complete face hashes and canonical location mappings match per same preference. Replay timings exclude provider/auth/Three.js entrance and are not acceptance startup gains. First four files used Playwright payload interception; remaining two use cookie-protected loopback streaming after target-closed failure.",
+    "status": "passed",
+    "cases": [
+      {
+        "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+        "format": "cbr",
+        "bytes": 73339323,
+        "sanitizeOddPages": true,
+        "faces": 24,
+        "faceHash": "a4699c8107475f6c5708fc8b277567f00e09bbfd433155e4560de12454079b10",
+        "baselinePreparationMs": 22303.300000071526,
+        "serverPreparationMs": 3.100000023841858,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+        "format": "cbr",
+        "bytes": 73339323,
+        "sanitizeOddPages": false,
+        "faces": 26,
+        "faceHash": "e79f4e55c19699cd598d0dc3f5cac93e6a79d23d239721a527b939835b4bd2ad",
+        "baselinePreparationMs": 18718.600000023842,
+        "serverPreparationMs": 18.699999928474426,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
+        "format": "cbr",
+        "bytes": 39372234,
+        "sanitizeOddPages": true,
+        "faces": 34,
+        "faceHash": "f13b7ab8163f06418eb5c24676e079c60f928307dcf227dd0084acecff5c620d",
+        "baselinePreparationMs": 6630.799999952316,
+        "serverPreparationMs": 1.4000000953674316,
+        "baselineInspectionDecodes": 33,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
+        "format": "cbr",
+        "bytes": 39372234,
+        "sanitizeOddPages": false,
+        "faces": 34,
+        "faceHash": "f13b7ab8163f06418eb5c24676e079c60f928307dcf227dd0084acecff5c620d",
+        "baselinePreparationMs": 6291,
+        "serverPreparationMs": 1.2000000476837158,
+        "baselineInspectionDecodes": 33,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
+        "format": "cbr",
+        "bytes": 74500125,
+        "sanitizeOddPages": true,
+        "faces": 24,
+        "faceHash": "ef20e82948d15ad92923b758af5c7e5ac3a4bf3d7bb61ffe39b2851dbbe07b04",
+        "baselinePreparationMs": 18969.899999976158,
+        "serverPreparationMs": 1.100000023841858,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
+        "format": "cbr",
+        "bytes": 74500125,
+        "sanitizeOddPages": false,
+        "faces": 26,
+        "faceHash": "aed836e2d8f5aeeba4e727eeb0b2cb12e52860163965b3b4b5a7a33a25aaa10a",
+        "baselinePreparationMs": 16547.399999976158,
+        "serverPreparationMs": 1.2000000476837158,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
+        "format": "cbr",
+        "bytes": 41725042,
+        "sanitizeOddPages": true,
+        "faces": 30,
+        "faceHash": "03f5e893ac2dd27553f20d7b364e6e4b7a61a4d130af7ba086480c80b2194d65",
+        "baselinePreparationMs": 5948.100000023842,
+        "serverPreparationMs": 1.7000000476837158,
+        "baselineInspectionDecodes": 30,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
+        "format": "cbr",
+        "bytes": 41725042,
+        "sanitizeOddPages": false,
+        "faces": 30,
+        "faceHash": "03f5e893ac2dd27553f20d7b364e6e4b7a61a4d130af7ba086480c80b2194d65",
+        "baselinePreparationMs": 5905.799999952316,
+        "serverPreparationMs": 1,
+        "baselineInspectionDecodes": 30,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
+        "format": "cbr",
+        "bytes": 82635611,
+        "sanitizeOddPages": true,
+        "faces": 24,
+        "faceHash": "26c965e0dbb98535de814be1d4e3a45cbdbce27bcb8563510dcd90c2dcf0757f",
+        "baselinePreparationMs": 1818.5999999046326,
+        "serverPreparationMs": 3.3000000715255737,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
+        "format": "cbr",
+        "bytes": 82635611,
+        "sanitizeOddPages": false,
+        "faces": 26,
+        "faceHash": "e5a8a1488b773762e6ae870136c738c3df8a1c6d6204b3b88629a9189bfad29c",
+        "baselinePreparationMs": 1968,
+        "serverPreparationMs": 2,
+        "baselineInspectionDecodes": 24,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
+        "format": "cbz",
+        "bytes": 401719147,
+        "sanitizeOddPages": true,
+        "faces": 264,
+        "faceHash": "5b0942e05ee46c49a287fd4d7db844f767383861edfcb8515cc34d4253b2bba2",
+        "baselinePreparationMs": 9919.299999952316,
+        "serverPreparationMs": 3.100000023841858,
+        "baselineInspectionDecodes": 265,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      },
+      {
+        "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
+        "format": "cbz",
+        "bytes": 401719147,
+        "sanitizeOddPages": false,
+        "faces": 266,
+        "faceHash": "517b51f3a3c2da93d1d1beeaf9a5aa1ef606422af6f2f6216bceeb96afe73353",
+        "baselinePreparationMs": 6928.099999904633,
+        "serverPreparationMs": 1.399999976158142,
+        "baselineInspectionDecodes": 265,
+        "serverInspectionDecodes": 0,
+        "completePixelsLocationsAndOrderMatch": true
+      }
+    ],
+    "printedAndBlankFacesCompared": 808,
+    "preservedFailure": {
+      "type": "TargetClosedError",
+      "completedCases": 8,
+      "cause": "Not established; no product-failure or OOM claim. Whole-file protocol copies removed from replay harness."
+    }
+  },
+  "readerEntry": {
+    "boundary": "Serial actual admin/live configured Jellyfin HTTP. Immutable main 463fa8ae physical-reader vs current server delivery, same Three.js host/cover entry. One warm-up pair plus three alternating timed pairs. Close releases last bytes; server retains exact-version manifest after first round. Excludes route hydration, includes session POST/download/index/render/entrance. Not whole-app production p95. No page turns.",
+    "samples": [
+      {
+        "round": 0,
+        "warmup": true,
+        "variant": "baseline",
+        "readyMs": 9992.100000023842,
+        "bytes": 73339323,
+        "requests": 1,
+        "decodes": 34,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 0,
+        "warmup": true,
+        "variant": "server",
+        "readyMs": 11337.200000047684,
+        "bytes": 30341055,
+        "requests": 10,
+        "decodes": 10,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 1,
+        "warmup": false,
+        "variant": "server",
+        "readyMs": 9287.599999904633,
+        "bytes": 30337214,
+        "requests": 10,
+        "decodes": 10,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 1,
+        "warmup": false,
+        "variant": "baseline",
+        "readyMs": 11751,
+        "bytes": 73339323,
+        "requests": 1,
+        "decodes": 34,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 2,
+        "warmup": false,
+        "variant": "baseline",
+        "readyMs": 10902.700000047684,
+        "bytes": 73339323,
+        "requests": 1,
+        "decodes": 34,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 2,
+        "warmup": false,
+        "variant": "server",
+        "readyMs": 14835,
+        "bytes": 30337214,
+        "requests": 10,
+        "decodes": 10,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 3,
+        "warmup": false,
+        "variant": "server",
+        "readyMs": 10951.699999928474,
+        "bytes": 30337214,
+        "requests": 10,
+        "decodes": 10,
+        "canTurn": true,
+        "canvas": true
+      },
+      {
+        "round": 3,
+        "warmup": false,
+        "variant": "baseline",
+        "readyMs": 15523.299999952316,
+        "bytes": 73339323,
+        "requests": 1,
+        "decodes": 34,
+        "canTurn": true,
+        "canvas": true
+      }
+    ],
+    "errors": [],
+    "status": "passed"
+  },
+  "normalBrowser": {
+    "boundary": "Actual normal-dev admin and original comic, genuine HTTP, desktop/mobile Chromium. Ephemeral admin login; no page turns or setting mutations. Browser plugin not available; existing Playwright fallback.",
+    "status": "passed",
+    "checks": [
+      "signed-in actual media identity and meaningful content",
+      "desktop/mobile original Three.js reader renders without archive request or full-image scan",
+      "minimize/resume reacquires page delivery",
+      "reverse exit persists mid-flight then tears down every WebGL context; reduced motion exits without animation",
+      "three repeated open/close cycles, unchanged progress/history, no framework overlay or app console errors"
+    ],
+    "viewports": [
+      [
+        1280,
+        800
+      ],
+      [
+        390,
+        844
+      ]
+    ],
+    "samples": [
+      {
+        "cycle": 0,
+        "readyMs": 4794.733667,
+        "pages": 24,
+        "decodedImages": 13,
+        "pageRequests": 12,
+        "taskSeconds": 4.2111350000000005,
+        "heapUsed": 52701204
+      },
+      {
+        "cycle": 1,
+        "readyMs": 3122.5884579999984,
+        "pages": 24,
+        "decodedImages": 13,
+        "pageRequests": 12,
+        "taskSeconds": 2.7839039999999997,
+        "heapUsed": 53444836
+      },
+      {
+        "cycle": 2,
+        "readyMs": 3168.3728329999976,
+        "pages": 24,
+        "decodedImages": 12,
+        "pageRequests": 11,
+        "taskSeconds": 2.579332000000001,
+        "heapUsed": 54581532
+      }
+    ],
+    "knownPreexistingError": "Comic Vine remote-artwork CORS plus its failed resource, observed before and after; no reader errors.",
+    "transferCaveat": "CDP loadingFinished bytes were incomplete for streamed responses; discarded as transfer evidence. Actual counted readerEntry bytes above are the transfer comparison."
+  },
+  "exitEngine": {
+    "boundary": "Actual admin/session/live file through shared engine in isolated host; location callbacks observed, never persisted. Controlled interruption/reduced-motion cases. No progress/history mutation.",
+    "cases": [
+      {
+        "mode": "opened",
+        "leaveMs": 2343.100000023842,
+        "raf": 35,
+        "callbacksUnchanged": true,
+        "canvases": 0,
+        "reduced": false
+      },
+      {
+        "mode": "interrupted",
+        "leaveMs": 305.8000000715256,
+        "raf": 3,
+        "callbacksUnchanged": true,
+        "canvases": 0,
+        "reduced": false
+      },
+      {
+        "mode": "reduced",
+        "leaveMs": 0.19999992847442627,
+        "raf": 0,
+        "callbacksUnchanged": true,
+        "canvases": 0,
+        "reduced": true
+      }
+    ],
+    "errors": [],
+    "status": "passed"
+  },
+  "supplementalTests": {
+    "newBoundaryCases": 34,
+    "meaning": "21 server-native reading fixtures, four client protocol/cancellation fixtures, five exit/navigation cases, and one public/LAN playback-alias confinement case. Authored boundaries supplement actual-data acceptance. One additional controlled metadata-visible/download-disabled source-authorization boundary. Two controlled policy user/server-identity lease-cleanup boundaries."
+  },
+  "gates": {
+    "appTests": "892 passed / 718 guarded skips / 0 failed",
+    "productionBuild": "passed locally; Linux native runtime actual-file check passed",
+    "finalTypeStyleInventory": "Passed locally; PR CI checks the published head."
+  },
+  "limits": [
+    "Single-process exclusive cache root, not shared across instances.",
+    "Cold complete manifest still requires acquisition/indexing; CB7 is download-first.",
+    "Natural CB7/CBT/PDF/EPUB, solid-archive census, hardware mobile, sustained concurrent pressure and process-tree/GPU memory plateaus remain unverified.",
+    "Same-host direct private-address benchmark is not cross-host LAN wire speed. Normal application uses its configured approved Jellyfin address.",
+    "Measured three-pair median entry gain is descriptive, with adverse cold and individual paired samples."
+  ],
+  "reviewRegressions": {
+    "baselineCommit": "191ed7e92c70697d46c27ff1947832193ae852b6",
+    "actualSource": "First recorded CBR, original bytes/hash unchanged",
+    "floor": {
+      "before": "FAILED: both concurrent preparations pass a controlled real-filesystem free-space floor admitting only one reservation.",
+      "after": "PASSED: combined reservations reject at least one preparation; cleanup returns reservations to zero.",
+      "tradeoff": "Conservative check counts all reservations, including bytes already reflected in statfs; it can reject earlier under low disk space."
+    },
+    "inspection": {
+      "control": "Actual sharp metadata/original bytes with 50ms scheduling delay per page; no fabricated provider or image metadata.",
+      "before": "FAILED: final inspect count remains 6, expected 24.",
+      "after": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        24,
+        24
+      ]
+    },
+    "accountAdmission": {
+      "limit": 8,
+      "actualCopyCases": 2,
+      "coldPreparationPolicy": "Global two-preparation budget; initial one-per-account gate removed after verified normal-dev/user reopen failures. Actual archive replay covers close/reopen and two personal preparations with guest ownership retained."
+    }
+  },
+  "stagedEntry": {
+    "boundary": "Actual admin, canonical comic and original live Jellyfin pages. Controlled interior gate proves ordering, not latency. Sequential ungated renderer comparisons hold one actual authorized source lease so every sample shares fully prepared server bytes; they exclude manifest acquisition; no bookmark/history writes. Browser plugin not available; existing Playwright fallback.",
+    "cases": [
+      {
+        "variant": "unstaged",
+        "factory": {
+          "ready": false,
+          "calls": [
+            0,
+            23,
+            1,
+            22
+          ],
+          "canvases": 0
+        },
+        "calls": [
+          0,
+          23,
+          1,
+          22,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          21,
+          20,
+          19,
+          18,
+          17,
+          16
+        ],
+        "failures": []
+      },
+      {
+        "variant": "staged",
+        "factory": {
+          "ready": true,
+          "calls": [
+            0,
+            23
+          ],
+          "canvases": 1
+        },
+        "calls": [
+          0,
+          23,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          22,
+          21,
+          20,
+          19,
+          18,
+          17,
+          16
+        ],
+        "failures": []
+      }
+    ],
+    "samples": [
+      {
+        "round": 0,
+        "variant": "unstaged",
+        "coversMs": 462.10000002384186,
+        "readyMs": 3557.4000000953674,
+        "coverCalls": 5,
+        "callsAtReady": 10
+      },
+      {
+        "round": 0,
+        "variant": "staged",
+        "coversMs": 343.5,
+        "readyMs": 2402.899999976158,
+        "coverCalls": 2,
+        "callsAtReady": 5
+      },
+      {
+        "round": 1,
+        "variant": "staged",
+        "coversMs": 339.7000000476837,
+        "readyMs": 2392.600000023842,
+        "coverCalls": 2,
+        "callsAtReady": 5
+      },
+      {
+        "round": 1,
+        "variant": "unstaged",
+        "coversMs": 383.5,
+        "readyMs": 3370.100000023842,
+        "coverCalls": 5,
+        "callsAtReady": 10
+      },
+      {
+        "round": 2,
+        "variant": "unstaged",
+        "coversMs": 375.8000000715256,
+        "readyMs": 3288.2000000476837,
+        "coverCalls": 5,
+        "callsAtReady": 10
+      },
+      {
+        "round": 2,
+        "variant": "staged",
+        "coversMs": 355.2999999523163,
+        "readyMs": 3343.399999976158,
+        "coverCalls": 2,
+        "callsAtReady": 5
+      }
+    ],
+    "errors": [],
+    "status": "passed",
+    "baselineCommit": "ab1a351c9fa5cfd15d401e7ba4b5b90d9644fe53",
+    "note": "Factory and readiness timings start after physical manifest/layout creation. One actual source lease keeps original page files prepared for every comparison. Counters are physical-face getPage calls, not necessarily one HTTP request each. This is not cold-click latency. One paired readiness result is adverse.",
+    "comparisonMediansMs": {
+      "unstaged": {
+        "coversMs": 383.5,
+        "readyMs": 3370.100000023842
+      },
+      "staged": {
+        "coversMs": 343.5,
+        "readyMs": 2402.899999976158
+      }
+    }
+  },
+  "runtimeFingerprintMethod": "SHA256 of sorted path=sha256 lines, ending in newline",
+  "stagedEntryLifecycle": {
+    "boundary": "Actual admin, canonical comic and original live pages. Controlled interior gate proves scheduling, not latency; no bookmark/history writes. Browser plugin not available; existing Playwright fallback.",
+    "cases": [
+      {
+        "variant": "staged",
+        "factory": {
+          "ready": true,
+          "calls": [
+            0,
+            23
+          ],
+          "canvases": 1
+        },
+        "calls": [
+          0,
+          23,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          22,
+          21,
+          20,
+          19,
+          18,
+          17,
+          16
+        ],
+        "failures": []
+      },
+      {
+        "mode": "following",
+        "calls": [
+          0,
+          22,
+          1,
+          9,
+          10,
+          8,
+          7,
+          6,
+          5,
+          4,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "progress": [
+          "prepare",
+          "render"
+        ],
+        "callbacks": 0,
+        "remainingCanvases": 0
+      },
+      {
+        "mode": "reduced",
+        "calls": [
+          0,
+          22,
+          1,
+          2,
+          3
+        ],
+        "progress": [
+          "prepare",
+          "render"
+        ],
+        "callbacks": 0,
+        "remainingCanvases": 0
+      },
+      {
+        "mode": "cancel",
+        "calls": [
+          0,
+          22,
+          1
+        ],
+        "progress": [
+          "prepare",
+          "render"
+        ],
+        "callbacks": 0,
+        "remainingCanvases": 0
+      }
+    ],
+    "errors": [],
+    "status": "passed"
+  },
+  "normalBrowserFollowup": {
+    "boundary": "Actual normal-dev admin and original comic, genuine HTTP, desktop/mobile Chromium. Ephemeral admin login; no page turns or setting mutations. Browser plugin not available; existing Playwright fallback.",
+    "status": "passed",
+    "checks": [
+      "signed-in actual media identity and meaningful content",
+      "desktop/mobile original Three.js reader renders without archive request or full-image scan",
+      "minimize/resume reacquires page delivery",
+      "dim and blur both have live 250ms fade keyframes in/out; observed dim/outro intermediate opacity; reduced motion creates no backdrop animations",
+      "reverse exit persists mid-flight then tears down every WebGL context; reduced motion exits without animation",
+      "cold loading indicator visible before prepared covers; completed shared cache survives close/reopen",
+      "open/minimize/resume/close and reduced-motion reopen, unchanged progress/history, no framework overlay or app console errors"
+    ],
+    "backdrop": [
+      {
+        "kind": "reader-dim",
+        "duration": 250,
+        "from": "0",
+        "to": "1",
+        "intermediateKeyframes": true,
+        "midOpacity": 0.5334,
+        "sampleTime": 133.34999994112562
+      },
+      {
+        "kind": "reader-blur",
+        "duration": 250,
+        "from": "0",
+        "to": "1",
+        "intermediateKeyframes": true,
+        "midOpacity": 1,
+        "sampleTime": null
+      },
+      {
+        "kind": "reader-dim",
+        "duration": 250,
+        "from": "1",
+        "to": "0",
+        "intermediateKeyframes": true,
+        "midOpacity": 0.466624,
+        "sampleTime": 133.34399999779478
+      },
+      {
+        "kind": "reader-blur",
+        "duration": 250,
+        "from": "1",
+        "to": "0",
+        "intermediateKeyframes": true,
+        "midOpacity": 0.466624,
+        "sampleTime": 133.34399999779478
+      },
+      {
+        "kind": "reader-blur",
+        "duration": 250,
+        "from": "0",
+        "to": "1",
+        "intermediateKeyframes": true,
+        "cancelledBeforeStart": true
+      },
+      {
+        "kind": "reader-dim",
+        "duration": 250,
+        "from": "0",
+        "to": "1",
+        "intermediateKeyframes": true,
+        "midOpacity": 0.533448,
+        "sampleTime": 133.36200002171063
+      },
+      {
+        "kind": "reader-blur",
+        "duration": 250,
+        "from": "0",
+        "to": "1",
+        "intermediateKeyframes": true,
+        "midOpacity": 0.933192,
+        "sampleTime": 233.29799998309397
+      },
+      {
+        "kind": "reader-dim",
+        "duration": 250,
+        "from": "1",
+        "to": "0",
+        "intermediateKeyframes": true,
+        "midOpacity": 0.399968,
+        "sampleTime": 150.00799999973324
+      },
+      {
+        "kind": "reader-blur",
+        "duration": 250,
+        "from": "1",
+        "to": "0",
+        "intermediateKeyframes": true,
+        "midOpacity": 0.399968,
+        "sampleTime": 150.00799999973324
+      }
+    ],
+    "reducedExitMs": 176.27816699999676,
+    "coldLoadingLabel": "Opening comic\u2026\n\nJourney To Love Part 6",
+    "transferCaveat": "CDP loadingFinished omits some streamed response bytes; no transfer-volume claim from these counters.",
+    "animationCaveat": "Fixed-delay probes can overshoot intro during headless GPU work; live intermediate keyframes, observed opacity and reduced-motion suppression are asserted. Not a smooth-device-frame-budget claim."
+  },
+  "normalCacheReopen": {
+    "boundary": "Owned actual admin sessions on normal dev, actual named CBRs and live configured provider. First preparation then completed-page-cache reopen after last owned close. Session+manifest latency excludes physical entrance. Single pairs, not production percentiles. Filesystem identity probe is not used for these claims.",
+    "cases": [
+      {
+        "title": "Boss Bitches",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 57,
+        "manifestMs": 7885.704541,
+        "sourcePages": 24
+      },
+      {
+        "title": "Boss Bitches",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 269.56837500000074,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 57,
+        "manifestMs": 7717.759,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 306.60408299999835,
+        "sourcePages": 24
+      }
+    ],
+    "status": "passed"
+  },
+  "retentionContract": {
+    "completedIdleMs": 1800000,
+    "activeAndIdleEntries": 64,
+    "pressure": "Oldest idle entries evict for disk/free-space/metadata/count budgets; never active readers.",
+    "unusedIncomplete": "Abort/drain and remove.",
+    "restart": "Temporary cache and manifests clear on restart/server module replacement.",
+    "browserManifest": "Publish only once preparation has finished; retained metadata alone cannot suppress acquisition progress.",
+    "loadingHandoff": "Render phase begins only after outside cover rasters and renderer construction."
+  },
+  "retentionBaseline": {
+    "commit": "dde82ccb312a21c9efce3fc957164931676715b7",
+    "actualArchiveBytes": 73339323,
+    "status": "expected failure of the new 30-minute completed-page retention assertion; prior owner removes bytes on last close",
+    "current": "39 actual-file cases pass, including reuse, idle deadline, expiry/pressure and concurrent admission"
+  },
+  "jellyfinLan": {
+    "actualCopy": {
+      "boundary": "Actual admin, catalogue and live Jellyfin. No generated media. Owned restore for playback/settings-negative checks; explicit normal-dev LAN configuration only in configure-dev mode.",
+      "cases": [
+        {
+          "name": "existing pinned identity verifies LAN directly; public URL, instance and account identity remain intact",
+          "status": "passed"
+        },
+        {
+          "name": "LAN address is exposed only in administrator integration settings",
+          "status": "passed"
+        },
+        {
+          "name": "live identity, library/sync, music, reading, sessions/admin streams, image and original-file range use the shared LAN transport",
+          "status": "passed"
+        },
+        {
+          "name": "actual high-bitrate video remains transcoded under browser/server/account/shared caps despite LAN upstream",
+          "status": "passed"
+        },
+        {
+          "name": "real remote-origin playback relay returns Coast-only HLS resource URLs at the stored 1Mbps ceiling",
+          "status": "passed"
+        },
+        {
+          "name": "actual playback independently enforces lower account and server ceilings with a 50Mbps-capable remote viewer",
+          "status": "passed"
+        },
+        {
+          "name": "configuration rejects unapproved private access, URL credentials and a different server identity",
+          "status": "passed"
+        }
+      ],
+      "mode": "verify",
+      "upstreamCalls": 13,
+      "allJellyfinCallsUsedLan": true,
+      "paths": [
+        "/System/Info/Public",
+        "/Items",
+        "/Sessions",
+        "/Users/<id>/Items/<id>",
+        "/Users/Me",
+        "/Items/<id>/Download",
+        "/Items/<id>/Images/Primary",
+        "/Items/<id>/PlaybackInfo"
+      ],
+      "status": "passed"
+    },
+    "normalDev": {
+      "boundary": "Actual admin, catalogue and live Jellyfin. No generated media. Owned restore for playback/settings-negative checks; explicit normal-dev LAN configuration only in configure-dev mode.",
+      "cases": [
+        {
+          "name": "same-server LAN identity verified while public URL, instance and account identity remain intact",
+          "status": "passed"
+        },
+        {
+          "name": "LAN address is exposed only in administrator integration settings",
+          "status": "passed"
+        },
+        {
+          "name": "live identity, library/sync, music, reading, sessions/admin streams, image and original-file range use the shared LAN transport",
+          "status": "passed"
+        },
+        {
+          "name": "actual high-bitrate video remains transcoded under browser/server/account/shared caps despite LAN upstream",
+          "status": "passed"
+        }
+      ],
+      "mode": "configure-dev",
+      "upstreamCalls": 11,
+      "allJellyfinCallsUsedLan": true,
+      "paths": [
+        "/System/Info/Public",
+        "/Items",
+        "/Sessions",
+        "/Users/<id>/Items/<id>",
+        "/Items/<id>/Download",
+        "/Items/<id>/Images/Primary",
+        "/Items/<id>/PlaybackInfo"
+      ],
+      "status": "passed"
+    },
+    "viewerPolicy": "LAN is server transport only. No viewer-local classification or quality uplift; existing server/account/browser/shared caps apply. Remote-origin request is an in-process relay acceptance, not a real WAN benchmark.",
+    "browser": {
+      "boundary": "Normal dev actual admin, existing Jellyfin integration. Browser plugin not available; installed Playwright. Open/edit/save existing LAN value; no account or media progress changes.",
+      "checks": [
+        "correct page/title and meaningful content",
+        "existing public URL preserved/read-only",
+        "separate LAN URL persisted through actual Save integration",
+        "desktop/mobile field layout",
+        "no framework overlay or app console errors"
+      ],
+      "status": "passed",
+      "errors": [],
+      "viewports": [
+        "1280x800",
+        "390x844"
+      ]
+    },
+    "configuration": "Existing pinned instances verify LAN directly; public route retained without reachability dependency. New instances verify public identity plus LAN alias. URL validation changes scoped to Jellyfin only."
+  },
+  "pageWaitReauthorization": {
+    "baselineCommit": "dde82ccb312a21c9efce3fc957164931676715b7",
+    "baselineStatus": "expected failure",
+    "priorCasesPassed": 11,
+    "failure": "AssertionError [ERR_ASSERTION]: Waiting request must reauthorize before publishing original page bytes",
+    "fixed": "Preparation waits reauthorize; the earlier completed-entry shortcut is superseded by unconditional final reauthorization for every page, including warm admission."
+  },
+  "normalCacheReopenAfterBuild": {
+    "boundary": "Owned actual admin sessions on normal dev, actual named CBRs and live configured provider. First preparation then completed-page-cache reopen after last owned close. Session+manifest latency excludes physical entrance. Single pairs, not production percentiles. Filesystem identity probe is not used for these claims.",
+    "status": "passed",
+    "cases": [
+      {
+        "title": "Boss Bitches",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 70,
+        "manifestMs": 11540.218333,
+        "sourcePages": 24
+      },
+      {
+        "title": "Boss Bitches",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 299.1556670000009,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 71,
+        "manifestMs": 11377.200792,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 227.77604200000133,
+        "sourcePages": 24
+      }
+    ]
+  },
+  "downloadEntitlement": {
+    "owner": "readingDeliverySource via token-owned /Users/Me with matching pinned server identity, disabled=false and EnableContentDownloading=true",
+    "cost": "One additional fresh policy request per source verification; no cross-request authorization cache. Long manifest/page waits recheck this too. Raw document downloads retain their actual provider Download authorization.",
+    "actualAcceptance": "Actual admin and permitted independent guest still pass the 13 delivery/party/admission/withdrawal cases. Two real connected download-disabled policies return false. Both disabled accounts have zero visible books.",
+    "absentCohort": "No real metadata-visible/download-disabled comic reader; natural warm-cache exploit replay cannot be claimed.",
+    "supplementalRegression": "Controlled metadata-visible/cache-source case rejects 403 and releases its lease before download/cache admission. Frozen 7e03dab sessions source resolves and fails this regression; current source passes. This is explicitly supplemental controlled evidence."
+  },
+  "normalLanEntitlementReopen": {
+    "boundary": "Actual normal-dev admin sessions, actual Boss Bitches/Journey To Love and final source with LAN transport plus fresh per-reader download policy. Single cold/reopen pairs; session+manifest excludes Three.js entrance, not a production percentile or matched WAN comparison. Unreliable CDP/file identity data omitted.",
+    "status": "passed",
+    "cases": [
+      {
+        "title": "Boss Bitches",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 30,
+        "manifestMs": 704.640958,
+        "sourcePages": 24
+      },
+      {
+        "title": "Boss Bitches",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 65.97883300000012,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 29,
+        "manifestMs": 604.5530000000001,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 73.53933299999994,
+        "sourcePages": 24
+      }
+    ]
+  },
+  "normalBrowserFinalEntitlement": {
+    "boundary": "Actual normal-dev admin and original comic, genuine HTTP, desktop/mobile Chromium. Ephemeral admin login; no page turns or setting mutations. Browser plugin not available; existing Playwright fallback.",
+    "status": "passed",
+    "checks": [
+      "signed-in actual media identity and meaningful content",
+      "desktop/mobile original Three.js reader renders without archive request or full-image scan",
+      "minimize/resume reacquires page delivery",
+      "dim and blur both have live 250ms fade keyframes in/out; observed dim/outro intermediate opacity; reduced motion creates no backdrop animations",
+      "reverse exit persists mid-flight then tears down every WebGL context; reduced motion exits without animation",
+      "cold loading indicator visible before prepared covers; completed shared cache survives close/reopen",
+      "open/minimize/resume/close and reduced-motion reopen, unchanged progress/history, no framework overlay or app console errors"
+    ],
+    "coldLoadingLabel": "Opening comic\u2026\n\nJourney To Love Part 6",
+    "knownArtworkErrors": [
+      "Access to image at 'https://comicvine.gamespot.com/a/uploads/scale_large/11131/111316219/8318384-01.jpg' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "viewports": [
+      "1280x800",
+      "390x844"
+    ]
+  },
+  "policyIdentityLeaseCleanup": {
+    "baselineCommit": "9a90de382aba6155cf6d6ae472530dbcbca084e1",
+    "actualBoundary": "Owned actual-data restore; completed admin lease, existing real permitted guest external ID, genuine unchanged token and live provider responses. Account binding drift injected/restored with transaction-local replication role to isolate from account-switch triggers. No normal/provider account mutation.",
+    "baselineStatus": "expected failure",
+    "priorGroupsPassed": 14,
+    "failure": "AssertionError [ERR_ASSERTION]: Policy identity failure must release the completed lease\n\n1 !== 0\n",
+    "fixed": "ProviderActionError identity/permission withdrawals release the reader lease. Actual user mismatch removes the completed lease; two supplementary controlled user/server policy-identity cases also pass.",
+    "preservedSetupFailure": "Initial account-switch setup closed its SQL connection before the assertion; private receipts retained. The final test isolates one drift field on a fresh actual restore and restores it."
+  },
+  "warmAdmissionReauthorization": {
+    "baselineCommit": "4711c6e835f41a082bde7ff10d629f9b543f2047",
+    "boundary": "Genuine completed cache and real admin/guest sessions/provider responses; admission gated after initial authorization, then actual close or owned-copy generation withdrawal. Scheduling/state controlled, no fabricated source/policy/media.",
+    "baselineStatus": "expected failure",
+    "priorGroupsPassed": 15,
+    "failure": "AssertionError [ERR_ASSERTION]: Warm cache admission must reauthorize before publishing",
+    "fixed": "Both warm close and generation schedules return 410 and remove any recreated lease; authorized host remains readable. prepared-entry shortcut removed.",
+    "cost": "Every page performs two complete source verifications (each item metadata and token-owned download policy) before byte publication. No cross-request grant cache."
+  },
+  "normalBrowserFinalWarmReauthorization": {
+    "boundary": "Actual normal-dev admin and original comic, genuine HTTP, desktop/mobile Chromium. Ephemeral admin login; no page turns or setting mutations. Browser plugin not available; existing Playwright fallback.",
+    "status": "passed",
+    "checks": [
+      "signed-in actual media identity and meaningful content",
+      "desktop/mobile original Three.js reader renders without archive request or full-image scan",
+      "minimize/resume reacquires page delivery",
+      "dim and blur both have live 250ms fade keyframes in/out; observed dim/outro intermediate opacity; reduced motion creates no backdrop animations",
+      "reverse exit persists mid-flight then tears down every WebGL context; reduced motion exits without animation",
+      "cold loading indicator visible before prepared covers; completed shared cache survives close/reopen",
+      "open/minimize/resume/close and reduced-motion reopen, unchanged progress/history, no framework overlay or app console errors"
+    ],
+    "coldLoadingLabel": "Opening comic\u2026\n\nJourney To Love Part 6",
+    "knownArtworkErrors": [
+      "Access to image at 'https://comicvine.gamespot.com/a/uploads/scale_large/11131/111316219/8318384-01.jpg' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "viewports": [
+      "1280x800",
+      "390x844"
+    ]
+  }
+}

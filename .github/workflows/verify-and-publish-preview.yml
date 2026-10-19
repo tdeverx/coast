@@ -20,6 +20,8 @@ jobs:
         with:
           bun-version: 1.4.3
       - run: bun install --frozen-lockfile
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++ libarchive-dev
+      - run: bun run reading:native
       - run: bun run code:inventory
       - run: bun run code:style
       - run: bun run ui:inventory:check
