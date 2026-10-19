@@ -1,0 +1,174 @@
+{
+  "at": "2026-10-19T02:13:13.432509+00:00",
+  "status": "four-query-prototypes-rejected-actual-full-input-candidate-score-equivalence-verified",
+  "canonicalId": "PLAN-03",
+  "runtimeSourceChanged": false,
+  "sourcePins": {
+    "src/lib/social/taste-cache.server.ts": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "src/lib/social/work-features.server.ts": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63",
+    "src/lib/social/taste-profile.ts": "7fef66e2f4fb58ccf3e017ec799d7cc216fb5301ae2db570c8e76b6b0dd04227",
+    "src/lib/recommendations/interests.server.ts": "ebc4a4050d98eb00c884dc40db2b46aa57d73a6666130f04f54b4d712d51e79e",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8"
+  },
+  "variantCount": 4,
+  "actualOwners": 4,
+  "ownerComparisons": 16,
+  "independentPopulations": 1,
+  "summaryRef": "candidates/taste-query-options/summary.json",
+  "existingGin": {
+    "name": "work_features_lookup_idx",
+    "definition": "CREATE INDEX work_features_lookup_idx ON public.work_features USING gin (features)",
+    "valid": true,
+    "ready": true,
+    "bytes": "12935168"
+  },
+  "newCommonGateRerun": false,
+  "unchangedRuntimeGatesRef": "evidence/implementation-found-17-gates.json",
+  "remaining": [
+    "Four actual enabled owners preserve complete inputs/profiles/ordered candidates/pure scores in first and adopted-source proofs. Both improve all four warm medians; adopted plans have3lower/1equal root read-buffer totals and no observed temp spill. First individual adverse plan/timings retained.",
+    "Staleness split remains rejected. Broader media/metadata scans, full worker publication/lease/restart/concurrent revisions, absent natural policies/book/provider/growth cohorts and CPU/heap/pooled/whole-worker tails remain unresolved.",
+    "Batch18: four further query shapes preserve all actual inputs/ordered candidates/pure scores but every family regresses warm medians. Grouped arrays lower buffers slightly; early distinct, lateral fence and coarse bound filter increase work, with lateral spills. Live GIN exists/valid/ready; no tested candidate uses it. Keep batch17; all four prototypes remain unapplied."
+  ],
+  "artifactPins": {
+    "candidates/taste-query-options/summary.json": "3971b02cfde2b90bf4c72ba9af5ece408aacf0a34021cf5559d4f960f63021b7",
+    "candidates/taste-query-options/implementation-ledger.json.before.snapshot": "3949ceef35e613ca61de2a5379571f6a04d6e50604e9de3e9de0d4fbff0441ec",
+    "candidates/taste-query-options/verify-report-integrity.py.before.snapshot": "5ec4009a48133d1ea6e90cce3555f0f033ef64c8e19f29eac24c853f1a55b405",
+    "candidates/taste-query-options/performance.md.before.snapshot": "4b78322ffaed6d71d0ab235b3c0f0896e295df6deedd3c65f491e2416eec15a1",
+    "candidates/taste-grouped-probes/source-manifest.json": "4fd787dd939120db9595c4330fb5b3b016a95a2e6fcf3834b7ef2617b1126a3e",
+    "candidates/taste-grouped-probes/taste.before.ts.txt": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "candidates/taste-grouped-probes/candidate.patch": "bac7a54e736e00943f1b32b6157056c24c851a3cf17c886d702dcb7fb03acc4a",
+    "candidates/taste-grouped-probes/actual.json": "61092da800e7e080e05952ba4a1ed9ab38fda355b5e4acd06657e121dea75ce5",
+    "candidates/taste-grouped-probes/probe.executed.snapshot": "d9a3b40c0a071cda51502e636345341e1b770c135ee3ac0449cf1a8cdefa08bb",
+    "candidates/taste-grouped-probes/taste.candidate.ts.txt": "6352951992d206e23ed3619c838e218480df43dcee0addac7fdc306c3aa4127a",
+    "candidates/taste-feature-hits/source-manifest.json": "d6f0a9bb77b2e3dabada76433961385d80a2c9dcb17338b4255ab6884d081b18",
+    "candidates/taste-feature-hits/taste.before.ts.txt": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "candidates/taste-feature-hits/candidate.patch": "c854dbcb6fa091ddcdc91fa45ea350ec01ef211338e35a832160e6f4f7474c16",
+    "candidates/taste-feature-hits/actual.json": "99954c74c7c9e068c096cc3081a5b5ceb8de7b769da8f0bffff5fd0f99264ef3",
+    "candidates/taste-feature-hits/probe.executed.snapshot": "816266e5c63895fc62c0e3637b7efa578f510948b52ca35a47e562667a5d41f1",
+    "candidates/taste-feature-hits/taste.candidate.ts.txt": "6c6ceb3ba03b3490c703863e4a302ababb193e202fc297eb783a6a9cbb1114db",
+    "candidates/taste-indexed-feature-probes/source-manifest.json": "c62ef712cf597dc6773acc511b58e0dd51638bbf4d086c83c3e02374deb3cb1a",
+    "candidates/taste-indexed-feature-probes/taste.before.ts.txt": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "candidates/taste-indexed-feature-probes/candidate.patch": "048aaf78ee7610eaf614a5cb09dd17e63107e0383e15409b619f760c7f5dcf5f",
+    "candidates/taste-indexed-feature-probes/actual.json": "9085992ff6c782a56773adfccc8dec48d2530ebf365b69644a5dfa4df1f87936",
+    "candidates/taste-indexed-feature-probes/probe.executed.snapshot": "437499e4efa9182d028ddce487d025842b6da9321ca4f0d5859d3d164b7b361d",
+    "candidates/taste-indexed-feature-probes/taste.candidate.ts.txt": "941bb6f5f3232b5f29b88a724806a692082eef5fb92e24ec38b91e7270d851d0",
+    "candidates/taste-bound-feature-filter/source-manifest.json": "af3b74d9ce794948e5468961b17a940e47b817c9bd8afebe5dbf5801f870524a",
+    "candidates/taste-bound-feature-filter/taste.before.ts.txt": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "candidates/taste-bound-feature-filter/candidate.patch": "f5549ce71f8c2c0fa55f9ced2423f9b15655d61254dafba501555192d2aa1a93",
+    "candidates/taste-bound-feature-filter/actual.json": "457b793246dd363892c164a33ce272b2fb4faaed822934ea9fc3d3c0ae0a19d2",
+    "candidates/taste-bound-feature-filter/probe.executed.snapshot": "bfcc41dcd910e7b71881aa9d7354eab7d1bb4991a35d9652a4d3724b3ac3f7cd",
+    "candidates/taste-bound-feature-filter/taste.candidate.ts.txt": "5348a1b7ff4d6f9fcf867df251f7a07601592b1fc5ea5f7e873d387193e8fe98",
+    "probes/taste-grouped-probes-real.ts": "d9a3b40c0a071cda51502e636345341e1b770c135ee3ac0449cf1a8cdefa08bb",
+    "probes/taste-feature-hits-real.ts": "816266e5c63895fc62c0e3637b7efa578f510948b52ca35a47e562667a5d41f1",
+    "probes/taste-indexed-feature-probes-real.ts": "437499e4efa9182d028ddce487d025842b6da9321ca4f0d5859d3d164b7b361d",
+    "probes/taste-bound-feature-filter-real.ts": "bfcc41dcd910e7b71881aa9d7354eab7d1bb4991a35d9652a4d3724b3ac3f7cd"
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T02:17:00.035023+00:00",
+      "reportRef": "implementation-found-19.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Guide/checker bookkeeping; runtime unchanged, no old acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T02:53:01.778274+00:00",
+      "reportRef": "implementation-found-21.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact planned DATA-07 command guards plus guide/checker bookkeeping. Historical source/evidence epochs retained; no older acceptance upgraded."
+    },
+    {
+      "at": "2026-10-19T02:55:26.686530+00:00",
+      "reportRef": "failed-method-backlog.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "User clarified execution-only stopping rule and future investigation order; runtime and prior evidence unchanged."
+    },
+    {
+      "at": "2026-10-19T03:11:12.006201+00:00",
+      "reportRef": "admin-real-data-policy.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Corrected interpretation of authorized real-data/admin test states; runtime and historical results unchanged."
+    },
+    {
+      "at": "2026-10-19T03:22:06.569202+00:00",
+      "reportRef": "implementation-found-22.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Admin actual-data acceptance, measurement/stopping guidance and checker bookkeeping; runtime unchanged, old evidence not promoted beyond named new acceptance."
+    },
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T03:58:03.995927+00:00",
+      "reportRef": "implementation-found-24.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared conflict summaries native actual-admin adoption; sequence named acceptance; phased finalization not adopted. Historical evidence retains source/acceptance boundaries, no whole-audit completion."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    }
+  ]
+}

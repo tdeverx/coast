@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import ReadingLaunch from '$lib/reading/ReadingLaunch.svelte';
   import { goto } from '$app/navigation';
@@ -13,7 +14,7 @@
   import { playMedia } from '$lib/playback/client.svelte';
   import { startSynced, syncedPlayer } from '$lib/playback/synced/client.svelte';
   let { data } = $props();
-  const operation = createOperation();
+  const operation = createOperation(useRetention());
 
   async function start(id: string,reading=false) {
     const plan = data.plans.find(plan => plan.id === id);

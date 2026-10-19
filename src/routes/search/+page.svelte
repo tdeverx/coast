@@ -3,13 +3,14 @@
   import { rankSearch } from '$lib/search';
   import { page } from '$app/state';
   import Shelf from '$lib/ui/components/Shelf.svelte';
-  import { untrack, onDestroy } from 'svelte';
-  import { goto } from '$app/navigation';
+  import { untrack, onDestroy, onMount } from 'svelte';
+  import { beforeNavigate, goto } from '$app/navigation';
   import Heading from '$lib/ui/components/Heading.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Icon from '$lib/ui/components/Icon.svelte';
   import EmptyState from '$lib/ui/components/EmptyState.svelte';
   import type { ShelfItem } from '$lib/ui/shelves/types';
+  import { searchSelectionUrl, type SearchBucket, type SearchRowSelection } from '$lib/search-selection';
   let { data } = $props();
   let watch = $state<Awaited<typeof data.watch> | null>(null),
     listen = $state<Awaited<typeof data.listen> | null>(null),
@@ -22,7 +23,13 @@
   const playItems = $derived(play ? [...play.items, ...play.discover] : []);
   const searchItems = $derived<ShelfItem[]>(rankSearch([...watchResults.items, ...(listen?.items ?? []), ...playItems, ...readingResults.items], data.query));
   const failures = $derived([listen?.failure, play?.failure, read?.failure].filter(Boolean).join(' '));
-  const busy = $derived(!!data.query && (!watch || !listen || !play || !read));
+  function rowBusy(row: SearchRowSelection) {
+    return !!data.query && ((row.view === 'all' || row.view === 'watch') && data.demand.watch && !watch ||
+      (row.view === 'all' || row.view === 'listen') && data.demand.listen && !listen ||
+      (row.view === 'all' || row.view === 'play') && data.demand.play && !play ||
+      (row.view === 'all' || row.view === 'read') && data.demand.read && !read);
+  }
+  const busy = $derived(rowBusy(data.rows.available) || rowBusy(data.rows.unavailable));
   const noResults = $derived(
     !busy &&
       !watchResults.items.length &&
@@ -70,21 +77,56 @@
     });
   });
   let timer: ReturnType<typeof setTimeout>;
-  function submit() {
+  let intent: URL | undefined, intentRevision = 0;
+  const pendingTargets = new Map<number, string>();
+  function clearIntent() {
+    intentRevision++;
+    intent = undefined;
+    pendingTargets.clear();
+    clearTimeout(timer);
+  }
+  beforeNavigate(navigation => {
+    // Native history owns this boundary even while Kit skips navigation hooks.
+    if (navigation.type === 'popstate') return;
+    if (navigation.type === 'goto' && navigation.to && [...pendingTargets.values()].includes(navigation.to.url.href)) return;
+    clearIntent();
+  });
+  onMount(() => {
+    const historyTarget = () => {
+      clearIntent();
+      const target = new URL(window.location.href);
+      if (target.origin !== page.url.origin || target.pathname !== page.url.pathname) return;
+      intent = target;
+      // Back restores the submitted query; an unsent user draft stays editable.
+      if (query.trim() === submitted) {
+        query = target.searchParams.get('q') ?? '';
+        submitted = query.trim();
+      }
+    };
+    window.addEventListener('popstate', historyTarget);
+    return () => window.removeEventListener('popstate', historyTarget);
+  });
+  function submit(row?: { bucket: SearchBucket; kind: string }) {
     clearTimeout(timer);
     submitted = query.trim();
-    // Row filters use shallow routing; preserve the currently displayed URL.
-    const parameters = new URLSearchParams(window.location.search);
-    parameters.set('q', submitted);
-    parameters.delete('page');
-    parameters.delete('scope');
-    void goto('/search?' + parameters, {
+    const target = new URL(searchSelectionUrl(intent ?? page.url, submitted, row), page.url);
+    const revision = ++intentRevision;
+    intent = target;
+    pendingTargets.set(revision, target.href);
+    const settled = (failed = false) => {
+      pendingTargets.delete(revision);
+      if (revision === intentRevision) {
+        const address = failed ? new URL(window.location.href) : undefined;
+        intent = address?.origin === page.url.origin && address.pathname === page.url.pathname ? address : undefined;
+      }
+    };
+    void goto(target.href, {
       keepFocus: true,
       noScroll: true,
-      replaceState: true,
-    });
+      replaceState: !row,
+    }).then(() => settled(), () => settled(true));
   }
-  onDestroy(() => clearTimeout(timer));
+  onDestroy(clearIntent);
   reportFailure(()=>[watchResults.providerUnavailable ? 'Global screen search is temporarily unavailable. Showing your local catalogue.' : '',failures].filter(Boolean).join(' '));
 </script>
 
@@ -127,20 +169,22 @@
     />
   {:else}
 
-    {#if noResults}<EmptyState
+    {#if noResults && !data.filtered}<EmptyState
         title="No matching results"
         description={'Try another title, author, artist or game.'}
         icon="search"
       />{/if}
-    {#if !noResults}
-      {#key `${data.query}:${data.kind}`}
+    {#if !noResults || data.filtered}
+      {#key data.query}
         <Shelf hideEmpty={false} availability={false} source={{
           type: 'search', bucket: 'available', query: data.query, items: searchItems,
-          kind: data.kind, busy, mediums: page.data.user ? page.data : {},
+          ...data.rows.available, busy: rowBusy(data.rows.available), mediums: page.data.user ? page.data : {},
+          onKindChange: kind => submit({ bucket: 'available', kind }),
         }} />
         <Shelf hideEmpty={false} availability={false} source={{
           type: 'search', bucket: 'unavailable', query: data.query, items: searchItems,
-          kind: data.kind, busy, mediums: page.data.user ? page.data : {},
+          ...data.rows.unavailable, busy: rowBusy(data.rows.unavailable), mediums: page.data.user ? page.data : {},
+          onKindChange: kind => submit({ bucket: 'unavailable', kind }),
           notice: readingResults.notice,
           truncated: watchResults.truncated || listen?.truncated || play?.truncated || readingResults.truncated,
         }} />

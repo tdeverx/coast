@@ -1,8 +1,9 @@
 import { notifyAction } from './action-feedback.svelte';
 import { createOperation } from './operation.svelte';
+import type { Retain } from './retention';
 /** Acknowledged writes succeed even when the optional local refresh fails. */
-export function createMutation(refresh: () => Promise<unknown>, notify = notifyAction) {
-  const operation = createOperation();
+export function createMutation(refresh: () => Promise<unknown>, notify = notifyAction, retain?: Retain) {
+  const operation = createOperation(retain);
   return {
     get busy() { return operation.busy; },
     get error() { return operation.error; },

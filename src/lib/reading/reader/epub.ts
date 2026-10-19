@@ -3,6 +3,7 @@ import { prepareEpubArchive } from './epub-archive';
 import { sanitizeReadingDocument } from './epub-document';
 import type { ReaderEngine,ReaderOptions } from './engine';
 import { readerLoad } from './load';
+import { ownEpubResources } from './epub-resources';
 export async function epubReader({host,source,location,signal,changed}:ReaderOptions):Promise<ReaderEngine>{
  signal.throwIfAborted();
  let blob:Blob;
@@ -31,9 +32,10 @@ export async function epubReader({host,source,location,signal,changed}:ReaderOpt
  const displayFailure=new Promise<never>((_,reject)=>{rejectDisplay=reject;});
  void displayFailure.catch(()=>{});
  const book=ePub();
+ const resources=ownEpubResources(book);
  book.spine.hooks.content.register((doc:Document,section:{unload():void})=>sanitizeReadingDocument(doc,section).catch(cause=>{rejectDisplay(cause);throw cause;}));
  let rendition:ReturnType<typeof book.renderTo>|undefined,closed=false;
- const abort=()=>{if(closed)return;closed=true;rendition?.destroy();book.destroy();};
+ const abort=()=>{if(closed)return;closed=true;resources.destroy();try{rendition?.destroy();}finally{book.destroy();}};
  signal.addEventListener('abort',abort,{once:true});
  try {
  await display(book.open(data,'binary'));await display(book.ready);signal.throwIfAborted();

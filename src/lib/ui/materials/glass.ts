@@ -129,6 +129,7 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
   const nativeSupported = supported();
   const filterId = `coast-liquid-glass-${Date.now()}-${++filterSequence}`;
   let definition: SVGSVGElement | null = null;
+  let definitionKey: string | undefined;
   const settings = () => {
     const options = typeof requested === 'boolean' ? { enabled: requested } : requested;
     const preset = { ...glassPresets.materials[options.variant ?? 'clear'], ...options.surface };
@@ -212,6 +213,15 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     node.style.setProperty('backdrop-filter', filter);
     definition?.remove();
     definition = null;
+    definitionKey = undefined;
+  }
+  function applyNativeSurface(options: ReturnType<typeof settings>) {
+    const value = `url("#${filterId}") saturate(${options.saturation}) brightness(${options.brightness})`;
+    node.style.setProperty('-webkit-backdrop-filter', value);
+    node.style.setProperty('backdrop-filter', value);
+    applySurface(true);
+    node.classList.add('liquid-glass-active');
+    node.dataset.coastGlassRenderer = 'original-svg-backdrop';
   }
   function render() {
     const options = settings();
@@ -228,7 +238,13 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     }
     const width = Math.round(node.offsetWidth),
       height = Math.round(node.offsetHeight);
-    if (!width || !height) return;
+    if (!width || !height) {
+      // Retained panels can stay mounted while hidden. Their resize owner will
+      // rebuild on return; no native filter or encoded map is needed meanwhile.
+      mapCache = undefined;
+      clearNative('hidden');
+      return;
+    }
     const scale = -(options.depth * 2 * options.refraction);
     const dispersion = options.depth * options.dispersion;
     const padding = Math.ceil((Math.abs(scale) + dispersion) / 2) + 8;
@@ -244,6 +260,11 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     const mapUrl = mapCache.url;
     if (!mapUrl) {
       clearNative('css');
+      return;
+    }
+    const nextDefinitionKey = `${mapKey}:${scale}:${dispersion}:${options.radius}`;
+    if (definition?.isConnected && definitionKey === nextDefinitionKey) {
+      applyNativeSurface(options);
       return;
     }
     definition?.remove();
@@ -309,12 +330,8 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
     svg.append(filter);
     document.body.append(svg);
     definition = svg;
-    const value = `url("#${filterId}") saturate(${options.saturation}) brightness(${options.brightness})`;
-    node.style.setProperty('-webkit-backdrop-filter', value);
-    node.style.setProperty('backdrop-filter', value);
-    applySurface(true);
-    node.classList.add('liquid-glass-active');
-    node.dataset.coastGlassRenderer = 'original-svg-backdrop';
+    definitionKey = nextDefinitionKey;
+    applyNativeSurface(options);
   }
   const schedule = () => scheduleSurface(render);
   const resize = new ResizeObserver(schedule);
@@ -341,6 +358,7 @@ export function liquidGlass(node: HTMLElement, requested: boolean | LiquidGlassO
       for (const property of materialProperties) node.style.removeProperty(property);
       const stale = definition;
       definition = null;
+      definitionKey = undefined;
       setTimeout(() => requestAnimationFrame(() => stale?.remove()), 500);
     },
   };

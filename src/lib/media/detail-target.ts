@@ -30,3 +30,8 @@ export function mediaDetailTarget(href:string,base:URL):MediaDetailTarget|null{
  match=url.pathname.match(/^\/people\/([1-9][0-9]{0,14})\/?$/);if(match&&Number.isSafeInteger(Number(match[1])))return {...common,kind:'person',id:match[1]};
  return null;
 }
+
+/** Only these isolated sections omit child rows; overview and unknown scopes stay complete. */
+export function screenDetailChildren(section?:string|null){
+ return section!=='reviews'&&section!=='credits'&&section!=='activity';
+}

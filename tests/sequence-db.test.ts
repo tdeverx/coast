@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test';
-import { eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { getDb } from '../src/lib/server/db';
 import * as s from '../src/lib/server/db/schema';
 import {
@@ -12,9 +12,10 @@ import {
 import {
   nextSequenceEntry,
   restartPlaylist,
+  sequenceEntry,
   sequenceEntries,
 } from '../src/lib/core/lists/sequence.server';
-import { track } from '../src/lib/core/tracking/service.server';
+import { track, trackInTransaction } from '../src/lib/core/tracking/service.server';
 import { deleteListWithExports } from '../src/lib/sync/trakt-lists.server';
 import { bulkTrack } from '../src/lib/core/tracking/service.server';
 import { setRewatch } from '../src/lib/core/tracking/rewatch.server';
@@ -129,6 +130,9 @@ run(
     let entries = await sequenceEntries(other, source);
     expect(entries.map((entry) => entry.mediaId)).toEqual([movie, ep1, ep2, movie]);
     expect(new Set(entries.map((entry) => entry.entryId)).size).toBe(4);
+    for (const entry of entries)
+      expect(await sequenceEntry(other, {...source,entryId:entry.entryId},entry.mediaId)).toEqual(entry);
+    await expect(sequenceEntry(owner,{...source,entryId:entries[0].entryId},movie)).rejects.toMatchObject({status:404});
     const first = entries[0],
       repeated = entries[3];
     await track(other, {
@@ -194,6 +198,33 @@ run(
     await expect(getList(other, list.id)).rejects.toThrow();
   }
 );
+
+run('exact sequence reads preserve canonical paths, special rules and malformed cursor errors',async()=>{
+  const source={kind:'collection' as const,id:collection};
+  const entries=await sequenceEntries(owner,source);
+  for(const entry of entries)
+    expect(await sequenceEntry(owner,{...source,entryId:entry.entryId},entry.mediaId)).toEqual(entry);
+  for(const entryId of ['not-a-uuid',`${collection}/%`,`${collection}/${movie}/ignored`,
+    `${collection}/${season}/${special}`,`${collection}/${nested}/${collection}/${movie}`]){
+    expect(await sequenceEntry(owner,{...source,entryId},movie)).toBeNull();
+    await expect(track(owner,{mediaId:movie,action:'watch',acknowledged:true,sequence:{...source,entryId}}))
+      .rejects.toMatchObject({message:'This sequence entry no longer exists.',status:400});
+  }
+  expect(await sequenceEntry(owner,{...source,entryId:`${collection}/${season}/${special}`},special)).toBeNull();
+  const movieEntry=entries.find(entry=>entry.mediaId===movie)!;
+  expect(await sequenceEntry(owner,{...source,entryId:movieEntry.entryId},ep1)).toBeNull();
+  // A destructive catalogue write is a negative control, not a fabricated load benchmark.
+  // Its rollback proves a previous census cannot authorize a now-removed occurrence.
+  const rollback=new Error('Rollback occurrence removal');
+  await expect(getDb().transaction(async tx=>{
+    await tx.delete(s.mediaRelationships).where(and(eq(s.mediaRelationships.parentId,collection),eq(s.mediaRelationships.childId,movie),eq(s.mediaRelationships.kind,'collection')));
+    expect(await sequenceEntry(owner,{...source,entryId:movieEntry.entryId},movie,tx)).toBeNull();
+    await expect(trackInTransaction(tx,owner,{mediaId:movie,action:'watch',acknowledged:true,sequence:{...source,entryId:movieEntry.entryId}}))
+      .rejects.toMatchObject({message:'This sequence entry no longer exists.',status:400});
+    throw rollback;
+  })).rejects.toBe(rollback);
+  expect(await sequenceEntry(owner,{...source,entryId:movieEntry.entryId},movie)).toEqual(movieEntry);
+});
 
 run('batched sequence summaries and next entries preserve the explicit sequence semantics', async () => {
   const { sequenceSummaries, nextSequenceEntries } = await import('../src/lib/core/lists/sequence.server');

@@ -1,0 +1,406 @@
+{
+  "id": "DATA-07",
+  "status": "partially_implemented",
+  "scope": "Adopted exact catalogue work-feature parameter reuse slice of DATA-07; required timestamp/revision/write semantics remain. Other writer/no-op opportunities are not closed.",
+  "sourcePins": {
+    "src/lib/catalogue/service.server.ts": "c84a162bcf380326f8c02a3ed5fa76f135716fcc5581804a04eb814934986e7a",
+    "src/lib/providers/contracts.ts": "da9ed858c4fbbd96ed0c4cc9aca0e84b21c393c542d74f4af82a767e3c391eb3",
+    "src/lib/providers/tmdb/adapter.server.ts": "8258fd241769f8c5354ee31ba1e15af99aa09900a55ca55f7984f30abb62c672",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/db/jsonb.ts": "de3327d4ffa147b122667c9fcde34fde89fb33f62daa8a8068f0aee1d97a590b",
+    "src/lib/social/taste-profile.ts": "7fef66e2f4fb58ccf3e017ec799d7cc216fb5301ae2db570c8e76b6b0dd04227",
+    "src/lib/social/work-features.server.ts": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63",
+    "drizzle/0039_performance_benchmarks.sql": "46c40ee9cd4c53adecd1a68a1df1c11afc2055bd888c4281d1a840750eef7cc2",
+    "drizzle/0042_superb_major_mapleleaf.sql": "2c7508cb420f92f66fb0a9ac4db7f5a83714fa7a716810f35540e91e5e3996c0",
+    "tests/catalogue-feature-binding.test.ts": "d8e67b36e0d0a7ba56326578ca3a830f825a87a69062634f1828f074f503170b"
+  },
+  "candidatePins": {
+    "before": "a15422b9a9cd1312c2d68a40fc30e3e0df4e4efd792fb7159ff629636d7c3366",
+    "candidate": "c84a162bcf380326f8c02a3ed5fa76f135716fcc5581804a04eb814934986e7a"
+  },
+  "artifactPins": {
+    "probes/catalogue-feature-input-census.ts": "36ee6d669bfabacb7eaf824af250ffa879ec3df13b408d9b1058dc112df185fc",
+    "evidence/catalogue-feature-input-census.json": "001ab51445a8c89ed1fde280cf9c541bf83c7ce4b40d5971cd476a31adbc3186",
+    "candidates/catalogue-feature-parameter/service.before.ts.txt": "a15422b9a9cd1312c2d68a40fc30e3e0df4e4efd792fb7159ff629636d7c3366",
+    "candidates/catalogue-feature-parameter/service.candidate.ts.txt": "c84a162bcf380326f8c02a3ed5fa76f135716fcc5581804a04eb814934986e7a",
+    "probes/catalogue-feature-parameter-candidate-actual.ts": "527e60d8eb855fbe00eb6f01a93db59f62e468cb2412885c2cf9d57b4a852897",
+    "evidence/catalogue-feature-parameter-actual.json": "1cdc57a3c4cfa4744a2a438641cf44205a13044cd1f61991f6d103e4f5b4d1df",
+    "probes/catalogue-feature-parameter-real.ts": "ad8c0de48e5a898db5f694a9f1f54ceddc0061413102ed0fa02bd22200c90a5c",
+    "evidence/catalogue-feature-parameter-tests.txt": "e56a76b6893745a6ee110a4144678294339a17f4e76fd38d06ad5d9e1636d863"
+  },
+  "actualCensus": {
+    "status": "passed",
+    "settings": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s"
+    },
+    "counts": {
+      "snapshots": 180850,
+      "raw_objects": 180850,
+      "taste_features_key_present": 4823,
+      "taste_features_object": 4823,
+      "taste_features_empty_object": 0,
+      "taste_features_explicit_null": 0,
+      "taste_features_other_type": 0,
+      "work_feature_rows": 5993
+    },
+    "cohorts": [
+      {
+        "provider": "tmdb",
+        "kind": "movie",
+        "object_feature_snapshots": 3347,
+        "empty_feature_objects": 0,
+        "current_feature_rows": 3347,
+        "current_features_equal": 3347,
+        "current_features_different": 0,
+        "retained_identity_header_valid": 3347
+      },
+      {
+        "provider": "tmdb",
+        "kind": "show",
+        "object_feature_snapshots": 1476,
+        "empty_feature_objects": 0,
+        "current_feature_rows": 1476,
+        "current_features_equal": 1476,
+        "current_features_different": 0,
+        "retained_identity_header_valid": 1476
+      }
+    ],
+    "validatedSample": {
+      "selected": 100,
+      "fullMetadataShapeValid": 100,
+      "definedTasteFeaturesValid": 100,
+      "currentFeaturesEqual": 100,
+      "languageRegionEqual": 100,
+      "snapshotTitleEqual": 100,
+      "emptyFeatureObjects": 0,
+      "nonemptyFeatureDimensions": 350,
+      "featureOccurrences": 2854,
+      "rawUtf8Bytes": 741081,
+      "featureUtf8Bytes": 129940,
+      "withRetainedOwnerMarkers": 100
+    },
+    "poolClosed": true,
+    "rolledBack": true,
+    "externalAttempts": 0
+  },
+  "candidate": {
+    "owner": "src/lib/catalogue/service.server.ts:223",
+    "replacement": {
+      "before": "set:{features:metadata.tasteFeatures,updatedAt:new Date()}",
+      "after": "set:{features:sql`excluded.features`,updatedAt:new Date()}"
+    },
+    "preservedContracts": [
+      "Defined tasteFeatures guard, including omitted input doing no feature upsert.",
+      "Independent conflict updatedAt new Date() observation and existing insert column-default timestamp.",
+      "Provider freshness and per-dimension updated_at precedence; no unchanged-value early return.",
+      "Metadata identity locks, snapshot merge, source scope, transaction and returned media fields.",
+      "All actual provider inputs are exact retained raw objects with no synthetic enrichment."
+    ]
+  },
+  "proposedProof": {
+    "requiresParentScopeBeforeExecution": false,
+    "target": "Existing designated private actual-data clone only; no normal/deployed target, providers, secret reads or fixtures.",
+    "actualInput": "The same bounded first100 matching retained raw objects, used unmodified. Revalidate full Metadata shape, same-work/provider feature equality, source language/region and title before use. Both movie and show coverage must be counted; expand selection from the existing corpus only if needed.",
+    "execution": "Run full baseline and exact candidate ingestMetadata owners under same-clock observations and real transaction/savepoint behavior inside a guarded outer rollback. Use matching savepoints within one outer transaction so PostgreSQL transaction timestamps also match. Assert all pending revision triggers at the comparison boundary.",
+    "equality": [
+      "Complete returned media objects and all affected table values after each full corpus variant.",
+      "Full work_features rows including updated_at, metadata snapshots/raw, identities and downstream content revisions.",
+      "Current workTasteFeatures outputs for admitted actual works, preserving provider precedence.",
+      "DML/returned-row and transaction admission, then whole-database logical/sequence restoration after rollback."
+    ],
+    "metrics": "Instrument native work_features upsert parameters to confirm exact feature object count2\u21921. JSON.stringify UTF8 sizes are representation proxies only; preserve write/statement/roundtrip counts and do not infer driver CPU, heap, wire traffic, WAL or latency.",
+    "supplementaryControls": "Compile/admit the real statement with defined nonempty and empty feature objects, and verify the unchanged omitted-input guard; no fabricated database feature row or actual empty-object acceptance claim.",
+    "status": "executed_passed_exact_candidate_then_adopted"
+  },
+  "limits": [
+    "All-count SQL compares retained feature objects to the current same-work/provider row; full Metadata shape validation is limited to the first100 exact-match retained snapshots ordered by internal snapshot identity, not a complete validation of every snapshot.",
+    "The validated objects are used exactly as retained, with optional ingestion-owned detail markers permitted; no fields are projected, enriched or synthesized from other rows. Shape validation is supplementary admission for a future replay, not provider wire/schema freshness certification.",
+    "Language/region and snapshot-title comparisons are counted independently so any replay option must retain the actual stored scope. No private IDs, names, titles, feature payloads or source URLs are retained.",
+    "All4,823 feature objects have exact SQL equality/header coverage; complete Metadata shape validation covers only100. All100 retain preexisting ingestion-owned detail markers, so these are retained normalized ingestion snapshots, not captured fresh provider wire responses.",
+    "The observed corpus has no empty/null/other-type feature payload and no non-TMDB positive input cohort; those remain explicit gaps.",
+    "Exact100 retained normalized ingestion snapshots, including existing ingestion detail markers, are used unmodified; these are not captured fresh provider wire responses. No catalogue, feature, account or preference cohort is fabricated.",
+    "Only module new Date() observations are fixed for equality. Full owners execute through real nested savepoints inside one outer rollback; locks persist until outer rollback and ordinary per-item commit/release/concurrent freshness schedules are not established.",
+    "Canonical workTasteFeatures executes its unchanged SQL over the same transaction connection through its request-local getSql owner, rather than opening a second pool connection.",
+    "Metrics count Drizzle execute operations; direct raw capture/feature-reader statements are outside owner metrics. Native objects are JSON.stringify-accounted size proxies, not Bun encoder CPU/heap, wire bytes, HTTP traffic or measured latency.",
+    "Writes, timestamps, content revisions, tuples, DML/transaction counts and account/source semantics are intentionally preserved; parameter reuse does not prove fewer physical writes, WAL or roundtrips.",
+    "Whole-table logical/sequence restoration after rollback does not imply zero physical WAL/dead tuples. No normal/deployed database, provider transport, credential decryption or migration is invoked.",
+    "No actual empty/omitted/changed feature or non-TMDB positive input cohort is manufactured. Independent source/driver controls remain necessary for defined-vs-omitted contract coverage."
+  ],
+  "approvalBoundary": "Exact one-expression production adoption approved by parent after complete actual rollback proof and independent source/evidence review. No schema/dependency/freshness/no-op policy change.",
+  "actualProof": {
+    "status": "passed",
+    "scope": "Privately staged one-expression catalogue work-feature binding candidate; same100 exact retained normalized Metadata raw inputs, full before/candidate ingestMetadata owner executions within rollback. No enriched/fabricated provider payload, normal database mutation, provider transport or credential decryption.",
+    "cases": [
+      {
+        "kind": "same100_retained_full_catalogue_owner",
+        "completeReturnsEqual": true,
+        "allTablePostValuesEqual": true,
+        "canonicalFeaturePrecedenceEqual": true,
+        "tupleAndDmlAdmissionEqual": true,
+        "returnItems": 100,
+        "completeReturnsDigest": "7879fd4f88ed9737dbfd4242641f77502b4a7ce70a284df80b164e25d52c7bad",
+        "postValuesDigest": "40cb8b34a0512b0663e5138519c48e24f0ada3d00c3fccbf6454f9fa4acf15e0",
+        "featurePrecedenceDigest": "af1275c685be22d9111ac41cb708e775112ca93e653a61a402837dd4a6fdcad5",
+        "before": {
+          "variant": "before",
+          "ormStatements": 1193,
+          "boundParameters": 4408,
+          "parameterArrayJsonBytes": 1106702,
+          "featureUpserts": 100,
+          "featureParameters": 200,
+          "featurePayloadBytes": 129940,
+          "featureBoundUtf8ProxyBytes": 259880,
+          "featureUpsertParameters": 500,
+          "logicalOwnerTransactions": 100,
+          "dml": {
+            "work_features": {
+              "statements": 100,
+              "affectedOrReturnedRows": 100
+            },
+            "external_ids": {
+              "statements": 231,
+              "affectedOrReturnedRows": 0
+            },
+            "metadata_snapshots": {
+              "statements": 100,
+              "affectedOrReturnedRows": 100
+            }
+          }
+        },
+        "candidate": {
+          "variant": "candidate",
+          "ormStatements": 1193,
+          "boundParameters": 4308,
+          "parameterArrayJsonBytes": 976662,
+          "featureUpserts": 100,
+          "featureParameters": 100,
+          "featurePayloadBytes": 129940,
+          "featureBoundUtf8ProxyBytes": 129940,
+          "featureUpsertParameters": 400,
+          "logicalOwnerTransactions": 100,
+          "dml": {
+            "work_features": {
+              "statements": 100,
+              "affectedOrReturnedRows": 100
+            },
+            "external_ids": {
+              "statements": 231,
+              "affectedOrReturnedRows": 0
+            },
+            "metadata_snapshots": {
+              "statements": 100,
+              "affectedOrReturnedRows": 100
+            }
+          }
+        },
+        "tupleChanges": {
+          "content_revisions": {
+            "beforeRows": 10,
+            "afterRows": 10,
+            "inserted": 0,
+            "deleted": 0,
+            "changed": 2
+          },
+          "external_ids": {
+            "beforeRows": 316,
+            "afterRows": 316,
+            "inserted": 0,
+            "deleted": 0,
+            "changed": 0
+          },
+          "media": {
+            "beforeRows": 100,
+            "afterRows": 100,
+            "inserted": 0,
+            "deleted": 0,
+            "changed": 0
+          },
+          "metadata_snapshots": {
+            "beforeRows": 160,
+            "afterRows": 160,
+            "inserted": 0,
+            "deleted": 0,
+            "changed": 100
+          },
+          "work_features": {
+            "beforeRows": 100,
+            "afterRows": 100,
+            "inserted": 0,
+            "deleted": 0,
+            "changed": 100
+          }
+        }
+      }
+    ],
+    "normalDatabaseTouched": false,
+    "sourceBefore": {
+      "src/lib/catalogue/service.server.ts": "a15422b9a9cd1312c2d68a40fc30e3e0df4e4efd792fb7159ff629636d7c3366",
+      "src/lib/providers/contracts.ts": "da9ed858c4fbbd96ed0c4cc9aca0e84b21c393c542d74f4af82a767e3c391eb3",
+      "src/lib/providers/tmdb/adapter.server.ts": "8258fd241769f8c5354ee31ba1e15af99aa09900a55ca55f7984f30abb62c672",
+      "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+      "src/lib/server/db/jsonb.ts": "de3327d4ffa147b122667c9fcde34fde89fb33f62daa8a8068f0aee1d97a590b",
+      "src/lib/social/taste-profile.ts": "7fef66e2f4fb58ccf3e017ec799d7cc216fb5301ae2db570c8e76b6b0dd04227",
+      "src/lib/social/work-features.server.ts": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63",
+      "drizzle/0039_performance_benchmarks.sql": "46c40ee9cd4c53adecd1a68a1df1c11afc2055bd888c4281d1a840750eef7cc2",
+      "drizzle/0042_superb_major_mapleleaf.sql": "2c7508cb420f92f66fb0a9ac4db7f5a83714fa7a716810f35540e91e5e3996c0"
+    },
+    "modulePins": {
+      "before": "a15422b9a9cd1312c2d68a40fc30e3e0df4e4efd792fb7159ff629636d7c3366",
+      "candidate": "c84a162bcf380326f8c02a3ed5fa76f135716fcc5581804a04eb814934986e7a"
+    },
+    "metadataSettings": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "5s"
+    },
+    "corpus": {
+      "retainedItems": 100,
+      "kinds": {
+        "movie": 68,
+        "show": 32
+      },
+      "providers": [
+        "tmdb"
+      ],
+      "rawUtf8ProxyBytes": 741081,
+      "featureUtf8ProxyBytes": 129940,
+      "emptyFeatureObjects": 0,
+      "withRetainedDetailMarkers": 100,
+      "multipleProviderFeatureWorks": 0
+    },
+    "workFeatureTriggers": [
+      {
+        "name": "work_features_content_delete",
+        "eventBits": 8,
+        "enabled": "O",
+        "functionName": "coast_content_revision_trigger",
+        "functionBodySha256": "69601269d71d64893ca5436714f090e78ba5e977d7379d45d15241bb544f854e"
+      },
+      {
+        "name": "work_features_content_insert",
+        "eventBits": 4,
+        "enabled": "O",
+        "functionName": "coast_content_revision_trigger",
+        "functionBodySha256": "69601269d71d64893ca5436714f090e78ba5e977d7379d45d15241bb544f854e"
+      },
+      {
+        "name": "work_features_content_update",
+        "eventBits": 16,
+        "enabled": "O",
+        "functionName": "coast_content_revision_trigger",
+        "functionBodySha256": "69601269d71d64893ca5436714f090e78ba5e977d7379d45d15241bb544f854e"
+      }
+    ],
+    "clock": {
+      "moduleObservationsFixed": true,
+      "sameOuterPostgresTransaction": true,
+      "scope": "Only new Date() expressions in privately loaded catalogue module are fixed equally; both corpus variants run as rollback savepoints within the same outer transaction. Existing dependency clocks are unchanged."
+    },
+    "rollbackSettings": {
+      "read_only": "off",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "5s"
+    },
+    "restoration": {
+      "allTableLogicalMultisetsEqual": true,
+      "sequencesEqual": true,
+      "tables": 102,
+      "rows": 1864145,
+      "beforeDigest": "8abe50d3bedf11e0b634c8b9af7a4346a1f728fc539ffddfb813c63bee122468",
+      "afterDigest": "8abe50d3bedf11e0b634c8b9af7a4346a1f728fc539ffddfb813c63bee122468"
+    },
+    "sourceAfter": {
+      "src/lib/catalogue/service.server.ts": "a15422b9a9cd1312c2d68a40fc30e3e0df4e4efd792fb7159ff629636d7c3366",
+      "src/lib/providers/contracts.ts": "da9ed858c4fbbd96ed0c4cc9aca0e84b21c393c542d74f4af82a767e3c391eb3",
+      "src/lib/providers/tmdb/adapter.server.ts": "8258fd241769f8c5354ee31ba1e15af99aa09900a55ca55f7984f30abb62c672",
+      "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+      "src/lib/server/db/jsonb.ts": "de3327d4ffa147b122667c9fcde34fde89fb33f62daa8a8068f0aee1d97a590b",
+      "src/lib/social/taste-profile.ts": "7fef66e2f4fb58ccf3e017ec799d7cc216fb5301ae2db570c8e76b6b0dd04227",
+      "src/lib/social/work-features.server.ts": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63",
+      "drizzle/0039_performance_benchmarks.sql": "46c40ee9cd4c53adecd1a68a1df1c11afc2055bd888c4281d1a840750eef7cc2",
+      "drizzle/0042_superb_major_mapleleaf.sql": "2c7508cb420f92f66fb0a9ac4db7f5a83714fa7a716810f35540e91e5e3996c0"
+    },
+    "productionStillBaseline": true,
+    "externalAttempts": 0,
+    "limits": [
+      "Exact100 retained normalized ingestion snapshots, including existing ingestion detail markers, are used unmodified; these are not captured fresh provider wire responses. No catalogue, feature, account or preference cohort is fabricated.",
+      "Only module new Date() observations are fixed for equality. Full owners execute through real nested savepoints inside one outer rollback; locks persist until outer rollback and ordinary per-item commit/release/concurrent freshness schedules are not established.",
+      "Canonical workTasteFeatures executes its unchanged SQL over the same transaction connection through its request-local getSql owner, rather than opening a second pool connection.",
+      "Metrics count Drizzle execute operations; direct raw capture/feature-reader statements are outside owner metrics. Native objects are JSON.stringify-accounted size proxies, not Bun encoder CPU/heap, wire bytes, HTTP traffic or measured latency.",
+      "Writes, timestamps, content revisions, tuples, DML/transaction counts and account/source semantics are intentionally preserved; parameter reuse does not prove fewer physical writes, WAL or roundtrips.",
+      "Whole-table logical/sequence restoration after rollback does not imply zero physical WAL/dead tuples. No normal/deployed database, provider transport, credential decryption or migration is invoked.",
+      "No actual empty/omitted/changed feature or non-TMDB positive input cohort is manufactured. Independent source/driver controls remain necessary for defined-vs-omitted contract coverage."
+    ],
+    "poolClosed": true
+  },
+  "independentReview": {
+    "status": "approved_scoped_candidate",
+    "reviewer": "playback_readers_audit",
+    "scope": "Read-only exact before/candidate source, full-owner proof and aggregate receipt; no tests, database access or edits.",
+    "calibration": "Native defined value/EXCLUDED and timestamp guard preserved; required writes and proxy-only metrics retained; empty/omitted/changed and multiple-provider positive cohorts remain gaps."
+  },
+  "adoption": {
+    "status": "applied_after_parent_approval",
+    "source": "src/lib/catalogue/service.server.ts",
+    "sourceAfter": "c84a162bcf380326f8c02a3ed5fa76f135716fcc5581804a04eb814934986e7a",
+    "byteIdenticalToExecutedCandidate": true,
+    "scope": "Only the reviewed single conflict features assignment; every unrelated current owner change preserved.",
+    "actualReceiptBoundary": "Exact original private proof retained unchanged. Its productionStillBaseline/sourceBefore/sourceAfter fields describe the pre-adoption run, not current production. No new DB run needed or claimed."
+  },
+  "verification": {
+    "focused": {
+      "command": ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/catalogue-feature-binding.test.ts",
+      "passed": 2,
+      "failed": 0,
+      "assertions": 16,
+      "scope": "Supplementary authored installed-Drizzle/native-codec contracts: nonempty/empty defined features, one native binding, insert DEFAULT plus separately observed conflict timestamp, omitted/undefined input causes no insert or Date observation. No database/provider/cohort fabricated."
+    },
+    "diffCheck": "passed",
+    "maintainedReplay": {
+      "source": "probes/catalogue-feature-parameter-real.ts",
+      "status": "syntax_checked_not_reexecuted",
+      "requires": "COAST_AUDIT_CATALOGUE_ROLLBACK=1 and guarded designated private-clone connection; saved baseline/current adopted source hashes and same retained-input guards must match."
+    },
+    "commonGates": "Parent-owned; no full tests/check/build/inventory run by this owner."
+  },
+  "rootCombinedAcceptance": {
+    "commonPassed": true,
+    "unit": {
+      "passed": 791,
+      "guardedSkip": 710,
+      "failed": 0,
+      "assertions": 33722,
+      "tests": 1501,
+      "files": 279
+    },
+    "check": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "buildInventoriesStyle": "passed",
+    "receipt": "evidence/implementation-20261018-ancestor-material-gates.json",
+    "normalTrial": {
+      "receipt": "evidence/implementation-ancestor-material-normal.json",
+      "passedFunctional": true,
+      "sourceUnchanged": true,
+      "boundary": "Functional current-source signed-in normal5173 actual-data trial. No job/plan/request/status/profile/friend/reading/tracking/settings/schema command submitted; ordinary session/presence/freshness/enrichment side effects not claimed absent. No live provider ingestion, helper write, touch/compact, browser CPU/heap/GPU/network timing or long retained-browse proof."
+    },
+    "goalComplete": false
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  }
+}

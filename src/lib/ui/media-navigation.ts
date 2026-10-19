@@ -1,8 +1,9 @@
 import {page} from '$app/state';
-import {goto,pushState} from '$app/navigation';
+import {goto,pushState,replaceState} from '$app/navigation';
 import {mediaDetailTarget} from '$lib/media/detail-target';
 import {sectionTarget} from '$lib/ui/section-target';
 import {player} from '$lib/playback/client.svelte';
+import {captureShelfPosition} from './shelf-position';
 
 function overlayTarget(href:string,section=false){
  return page.data.user&&!page.url.pathname.startsWith('/ui-preview')?(mediaDetailTarget(href,page.url)??((section||page.state.mediaDetailHref)?sectionTarget(href,page.url):null)):null;
@@ -11,7 +12,19 @@ export function openMediaDetails(href:string,section=false){
  const target=overlayTarget(href,section);if(!target)return false;
  // Detail inspection returns to browsing without pausing a personal or party stream.
  if(player.session)player.browsing=true;
- if(page.state.mediaDetailHref!==target.href)pushState(page.url,{...page.state,mediaDetailHref:target.href,mediaDetailDepth:page.state.mediaDetailHref?(page.state.mediaDetailDepth??1)+1:1});
+ if(page.state.mediaDetailHref!==target.href){
+  let parent=page.state;
+  if(parent.mediaDetailHref){
+   const rail=[...document.querySelectorAll<HTMLElement>('.detail-scroll [data-shelf-location]')].find(node=>node.closest('dialog')?.hasAttribute('open'));
+   const href=rail?.dataset.shelfLocation;
+   const position=rail?captureShelfPosition(rail,'grid'):undefined;
+   if(href&&position&&sectionTarget(href,page.url)){
+    parent={...parent,mediaDetailHref:href,mediaDetailShelf:{href,position}};
+    replaceState(page.url,parent);
+   }
+  }
+  pushState(page.url,{...parent,mediaDetailShelf:undefined,mediaDetailHref:target.href,mediaDetailDepth:parent.mediaDetailHref?(parent.mediaDetailDepth??1)+1:1});
+ }
  return true;
 }
 export async function navigateMedia(href:string,options?:Parameters<typeof goto>[1]){if(!openMediaDetails(href))await goto(href,options);}

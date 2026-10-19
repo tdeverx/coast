@@ -1,3 +1,4 @@
+import { pruneUnusedAvatars, stopAvatarSweep } from '$lib/core/profile/avatar-storage.server';
 import { pruneTransientRecords } from '$lib/server/storage/retention.server';
 import {expireSharedViewers} from '$lib/sharing/leases.server';
 import { serviceTasks, maintenanceKinds } from './tasks';
@@ -94,6 +95,7 @@ export function stopProviderMaintenance() {
     clearInterval(maintenanceTimer);
     maintenanceTimer = undefined;
   }
+  void stopAvatarSweep();
   process.off('SIGTERM',stopProviderMaintenance);
   process.off('SIGINT',stopProviderMaintenance);
 }
@@ -276,11 +278,24 @@ export async function scheduleProviderMaintenance(
 let retentionDue = 0;
 let maintenancePass: Promise<void> | null = null;
 let sharedCleanup: Promise<void> | null = null;
+let avatarCleanup: Promise<void> | null = null;
+let avatarRetentionDue = 0;
+function runAvatarCleanup() {
+  if (avatarCleanup || Date.now() < avatarRetentionDue) return;
+  avatarCleanup = Promise.resolve().then(() => pruneUnusedAvatars()).then(result => {
+    avatarRetentionDue = Date.now() + (result.more ? 60_000 : 3600_000);
+    if (result.removed) void logDiagnostic('info', 'job.complete', {stage:'retention',count:result.removed});
+  }, () => {
+    avatarRetentionDue = Date.now() + 60_000;
+    void logDiagnostic('error', 'job.failed', {stage:'retention',failure:'unexpected'});
+  }).finally(() => {avatarCleanup=null;});
+}
 async function maintenanceTick() {
   if (!sharedCleanup) sharedCleanup = Promise.resolve().then(()=>expireSharedViewers()).then(()=>{},()=>{
     void logDiagnostic('error','job.failed',{failure:'unexpected'});
   }).finally(()=>{sharedCleanup=null;});
   if((await getConfig()).developerMode)return;
+  runAvatarCleanup();
   await scheduleProviderMaintenance();
   if (Date.now() < retentionDue) return;
   const result = await pruneTransientRecords();

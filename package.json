@@ -10,10 +10,10 @@
   },
   "scripts": {
     "dev": "bun --bun vite dev --host 0.0.0.0",
-    "build": "bun --bun vite build",
+    "build": "bun run navigation:check && bun --bun vite build",
     "start": "bun build/index.js",
     "check": "bun --bun svelte-kit sync && bun --bun svelte-check --tsconfig ./tsconfig.json",
-    "test": "bun test tests",
+    "test": "bun test ./tests",
     "ui:inventory": "bun scripts/ui-inventory.ts",
     "ui:inventory:check": "bun scripts/ui-inventory.ts --check",
     "test:db": "bun scripts/test-database.ts",
@@ -21,7 +21,8 @@
     "db:migrate": "bun scripts/migrate.ts",
     "test:recovery": "bun scripts/test-recovery.ts",
     "code:style": "bun scripts/source-style.ts",
-    "code:inventory": "bun scripts/code-inventory.ts --check"
+    "code:inventory": "bun scripts/code-inventory.ts --check",
+    "navigation:check": "bun scripts/check-navigation-runtime.ts"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.5",
@@ -35,7 +36,7 @@
     "valibot": "^1.1.0"
   },
   "devDependencies": {
-    "@sveltejs/kit": "^2.70.3",
+    "@sveltejs/kit": "2.70.3",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/bun": "^1.4.0",
@@ -47,5 +48,8 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "vite": "^8.2.2"
+  },
+  "patchedDependencies": {
+    "@sveltejs/kit@2.70.3": "patches/sveltejs-kit-2.70.3.patch"
   }
 }

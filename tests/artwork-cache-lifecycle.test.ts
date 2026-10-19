@@ -4,6 +4,8 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 const key=(n:number)=>n.toString(16).padStart(64,'0')+'.image';
 const compile=(source:string)=>`data:text/javascript;base64,${Buffer.from(new Bun.Transpiler({loader:'ts'}).transformSync(source)).toString('base64')}`;
+const artworkFlightsPath=new URL('../src/lib/providers/artwork-flight.server.ts',import.meta.url).pathname;
+const withArtworkFlights=(source:string)=>source.replace(/from ['"]\.\.?\/artwork-flight\.server['"]/,`from ${JSON.stringify(artworkFlightsPath)}`);
 const diskBoundary=Symbol.for('coast.test.cache-write');
 const globals=globalThis as typeof globalThis & {[diskBoundary]?:typeof writeFile};
 const cacheSource=(await Bun.file(new URL('../src/lib/server/storage/image-cache.server.ts',import.meta.url)).text())
@@ -55,7 +57,7 @@ const artworkGlobals=globalThis as typeof globalThis & {[artworkBoundary]?:Artwo
 let specimen=0;
 async function tmdb(fixture:ArtworkFixture){
  artworkGlobals[artworkBoundary]=fixture;
- const source=(await Bun.file(new URL('../src/lib/providers/tmdb/artwork.server.ts',import.meta.url)).text())
+ const source=withArtworkFlights(await Bun.file(new URL('../src/lib/providers/tmdb/artwork.server.ts',import.meta.url)).text())
  .replace("import { createImageCache } from '$lib/server/storage/image-cache.server';",`const createImageCache=()=>globalThis[Symbol.for('coast.test.tmdb-lifecycle')];`)
  .replace("import { getConfig } from '$lib/server/config';",'const getConfig=async()=>({cacheTmdbArtwork:true});')
  .replace("import { dataDirectory } from '$lib/server/security/credentials';",'const dataDirectory=()=>"/synthetic";')
@@ -82,13 +84,13 @@ test('TMDB skips cancelled cache work and still delivers when optional persisten
 });
 
 test('server artwork also delivers its authorised image when shared cache persistence declines',async()=>{
- const source=(await Bun.file(new URL('../src/lib/providers/server-artwork.server.ts',import.meta.url)).text())
+ const source=withArtworkFlights(await Bun.file(new URL('../src/lib/providers/server-artwork.server.ts',import.meta.url)).text())
  .replace("import { createImageCache } from '$lib/server/storage/image-cache.server';",'const createImageCache=()=>({get:async()=>null,put:async()=>false});')
  .replace("import { getConfig } from '$lib/server/config';",'const getConfig=async()=>({cacheServerArtwork:true});')
  .replace("import { dataDirectory } from '$lib/server/security/credentials';",'const dataDirectory=()=>"/synthetic";');
  const {serverArtwork}:typeof import('../src/lib/providers/server-artwork.server')=await import(compile(source));
  const bytes=new Uint8Array([82,73,70,70,0,0,0,0,87,69,66,80]);
- const response=await serverArtwork(['authorised','fixture'],async()=>new Response(bytes,{headers:{'content-type':'image/webp'}}));
+ const response=await serverArtwork(['authorised','fixture'],async()=>new Response(bytes,{headers:{'content-type':'image/webp'}}),new AbortController().signal);
  expect(response.status).toBe(200);expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);
 });
 

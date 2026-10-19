@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import Field from '$lib/ui/components/Field.svelte';
   import { onDestroy } from 'svelte';
@@ -13,7 +14,7 @@
   let { workId, gameData, ensure, changed, created }: { workId: string; gameData?: GameActionState | null;
     ensure: () => Promise<unknown>; changed: () => Promise<unknown>; created?: (id: string) => Promise<void> } = $props();
   const { change } = useClient();
-  const mutation = createMutation(() => changed(), useClient().feedback.notify);
+  const mutation = createMutation(() => changed(), useClient().feedback.notify, useRetention());
   export function failure() { return mutation.error; }
   export function isBusy() { return mutation.busy; }
   let alive = true;

@@ -1,4 +1,4 @@
-import { requireFeatureInTransaction } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction, requireFeatureInTransaction } from '$lib/server/features';
 import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '$lib/server/db';
@@ -36,6 +36,7 @@ async function writeReading(userId:string,id:string,input:v.InferOutput<typeof r
 }
 async function writeReadingInTransaction(tx:Transaction,userId:string,id:string,input:v.InferOutput<typeof readingProgressInputSchema>,initializeOnly=false){
     v.parse(uuid, userId); v.parse(uuid, id);
+    await lockFeaturePolicyInTransaction(tx,userId);
     const config = await getConfig(tx);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const [user] = await tx.select({ id: users.id }).from(users).where(and(eq(users.id, userId), eq(users.disabled, false)));

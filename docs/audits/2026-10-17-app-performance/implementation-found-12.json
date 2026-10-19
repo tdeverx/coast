@@ -1,0 +1,259 @@
+{
+  "at": "2026-10-19T01:52:49.356026+00:00",
+  "status": "normal-source-and-database-adopted-actual-and-native-verified-with-explicit-acceptance-gaps",
+  "normalDatabaseApplied": true,
+  "avatarRuntimeApplied": true,
+  "sourcePins": {
+    "drizzle/0064_user_delete_cleanup.sql": "ac229ee5736e1981ebe9b3c531defe772aad0f8ffa476695dbf57c773a68c171",
+    "drizzle/meta/0064_snapshot.json": "03eb9d47ec0681b0e31cadeaf94fc8c0804e3e7d1e6e726b27f6d83dfd1cfb21",
+    "drizzle/meta/_journal.json": "806f751a10b70a4d0d2fbbf03faa8dca1597d62fda5911496b2223850db03995",
+    "src/lib/server/auth/index.ts": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d",
+    "drizzle/0020_stormy_slapstick.sql": "f3e1c074c8627b94893dc3e140a806ef06e9d978960be078fb44a4f90839fed6",
+    "drizzle/0023_swift_the_captain.sql": "0ca188350bcbc819f7d528f8c657043711aeeb7412a25411f0145fa2a3a5ea78",
+    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "docs/audits/2026-10-17-app-performance/verify-report-integrity.py": "db234fcbfdcd60a3d700254e9eb93bc6265e8b695f57d92924666058b81d10f1"
+  },
+  "actualRef": "candidates/account-deletion/final-lifecycle-actual.json",
+  "coupledAvatarRef": "candidates/avatar-storage/full-lifecycle-commits-actual.json",
+  "gatesRef": "candidates/account-deletion/gates.json",
+  "artifactPins": {
+    "candidates/account-deletion/copy-driver.snapshot": "ed34964515f1d9b353d260fe4cde5a019e75c4a93bfabdbcbca03ba8e854a672",
+    "candidates/account-deletion/delete-lifecycle-before-projection-guard.sql.snapshot": "190354821d0da1dc6f477e23287a450512937d14462292157f1d343ac17be636",
+    "candidates/account-deletion/delete-lifecycle.sql.candidate": "ac229ee5736e1981ebe9b3c531defe772aad0f8ffa476695dbf57c773a68c171",
+    "candidates/account-deletion/failed-guard-timeout-normalization.json": "4bc7bd52a4c4f00d92fb20451d1949cda4b325248d2e3c41ccb92fd8edb5cfff",
+    "candidates/account-deletion/failed-guard-timeout-probe.snapshot": "4835c85d615c306065134f57c2e4d491821bb1d96e6dc8426f861a9970c35c90",
+    "candidates/account-deletion/failed-ordinary-array-probe.snapshot": "7affd9b0cb12729f7caf1ae98efaa5eeabe420373e971f4d98b1b0355a2f6da4",
+    "candidates/account-deletion/failed-ordinary-uuid-array-binding.json": "b7aa6ca47cc907e388f0037cf5ef48fbede73e1d3eaaf71716dac63792c635a9",
+    "candidates/account-deletion/final-lifecycle-actual.json": "5c18f2792a82af2e540e6930892dbb37d0ba0afb7025e5e33275924aa74ceaa9",
+    "candidates/account-deletion/final-lifecycle-probe.snapshot": "e714420829eab64f4764020f5efd596e845ccf4036be885ae91a8b8f2484b45d",
+    "candidates/account-deletion/gates.json": "b8b262254d60fac3b7043aacfcc70ab7af667a1b580ae125d784227b7c179e81",
+    "candidates/account-deletion/generated-0064_snapshot.json": "03eb9d47ec0681b0e31cadeaf94fc8c0804e3e7d1e6e726b27f6d83dfd1cfb21",
+    "candidates/account-deletion/generated-0064_user_delete_cleanup.sql": "ac229ee5736e1981ebe9b3c531defe772aad0f8ffa476695dbf57c773a68c171",
+    "candidates/account-deletion/generated-_journal.json": "806f751a10b70a4d0d2fbbf03faa8dca1597d62fda5911496b2223850db03995",
+    "candidates/account-deletion/generated-_journal.json.before.snapshot": "0be13c8ea88483ba780318b212c6ff73dd33c83d1bca437dbe2383ffa1904241",
+    "candidates/account-deletion/generated-migration-manifest.json": "11904abc7d8157271d33f4557c21c817d8a8dbff5cb7bd4c4f0c830f55411f8a",
+    "candidates/account-deletion/guarded-2s-cancelled-actual.json": "77e367f0ef883e190b59043aad3e6d2e44a26c7ee8d86f49c80262cac5c68a1c",
+    "candidates/account-deletion/guarded-2s-probe.snapshot": "7d558bf439438772b7e432cc8a61d0e04a1f6212adb34fd59a327815d671745c",
+    "candidates/account-deletion/guarded-set-based-5s-cancelled-actual.json": "f268cb7e79badbe99473fd0f78162a9073279d48563b9cb499f0c4a7d75cfc2b",
+    "candidates/account-deletion/guarded-set-based-5s-probe.snapshot": "d50af0fef02462b03e158c1419fd85adaf15b9958ebab5c38dc3dac92c67e3ef",
+    "candidates/account-deletion/initial-census-actual.json": "39d6674db4b6b51b05e77745470a02d1ffd1b83d8e1fe6d25f7e3705252cf784",
+    "candidates/account-deletion/initial-census-probe.snapshot": "7ef0c3c152e0a8df901f12a193118519464e085c9a28c7f11e509b1119946107",
+    "candidates/account-deletion/lifecycle-completed-actual.json": "86aa6b18957f2af98e84230fb6946fda14bd99eb9cce0c0bebd5363d44afddfc",
+    "candidates/account-deletion/lifecycle-completed-probe.snapshot": "d50af0fef02462b03e158c1419fd85adaf15b9958ebab5c38dc3dac92c67e3ef",
+    "candidates/account-deletion/migration-source-manifest.json": "0422cd5180b1a1bcba00da4ccba4b71a0b4db8d2c3f0be6ad96b7a327e30f2d9",
+    "candidates/account-deletion/migration-source.invalid-no-eof-marker.patch.snapshot": "281051233f72e455459e7c4837579cfd6721cbc4756c143dfd774c18a120d0c8",
+    "candidates/account-deletion/migration-source.patch": "94a95cf827e3cd481e1d23677b671ad3802906bda08d604d713d05366a9dee6c",
+    "candidates/account-deletion/original-social-project-activity.sql.snapshot": "426a766384f404f9e5dff38a7986527a77d148a6a2c9a5e042fe0a0f2ae1b091",
+    "candidates/account-deletion/skip-deleted-owner.sql.candidate": "f52ff6886a32521928c594aa5e58e4eee5458e91c7f8d597f4f2cef583e73a2e",
+    "candidates/account-deletion/source-unit.log": "59a5f113cc799cb17a10bfc46f7e6f2585f322429a6a06d2cd10d2c1d87a7d15",
+    "candidates/account-deletion/trace-200ms-actual.json": "6245b5e427f7231eeaab44405af4e6025f33096a1d7b682d3cfd58fb95455b2c",
+    "candidates/account-deletion/trace-200ms-probe.snapshot": "2f9d71bf467050bb928d2f9f960093d81ad59119a52be770a350bab852aa42f1",
+    "candidates/account-deletion/trace-500ms-actual.json": "d576152560bdfc46da4617553a17e584e8693bc702b213c8642c6b2ea24ea7f1",
+    "candidates/account-deletion/trace-500ms-probe.snapshot": "671627e598b088740f1b6d6fb0f20fa2403d3c24f766dfbfce6e368a2e374fc7",
+    "candidates/account-deletion/trace-50ms-actual.json": "f2e954779aaecae8fbbd29441bddd54618dc563145c43eb251b29433a17d9108",
+    "candidates/account-deletion/trace-50ms-probe.snapshot": "9d67daad456cc67129436da88e8819f42ce20300974734c7427c9b2061d3b7a9",
+    "candidates/account-deletion/transitive-census-actual.json": "47f7dd819037b1782ec2d2f482a7e38253da02f7aab576e953060e4facc1906b",
+    "candidates/account-deletion/uuid-array-admission-actual.json": "b72239b3f3c93c9a949c7022eadf61483dd26934aba2e75cd41c5cc72ad67306",
+    "probes/account-delete-bounded-trace-real.ts": "e714420829eab64f4764020f5efd596e845ccf4036be885ae91a8b8f2484b45d",
+    "candidates/account-deletion/performance.md.before.snapshot": "6cef728fce74239b718845edcf0d8e2b6582c48b58d80501c694a6fd7c105e14",
+    "candidates/account-deletion/integrity-before-epoch-composition.json": "b46d4e1b545e4b469bafa4b4778639198c1c6cf3109f4a0bdbf3c8c3e17eb12a",
+    "candidates/account-deletion/integrity-verifier.before.snapshot": "47d083bb86d818f3ee5ff696889d17811d163e61db33a36bfb863032a1d22db9"
+  },
+  "remaining": [
+    "Normal checkpointed forward rollout using a new authorized normal connection purpose; no destructive normal account acceptance.",
+    "Avatar maintenance/representation decision and exact normal adoption/acceptance remain separate.",
+    "No numerical killed-backend peak comparison, production tail or all-cohort/per-provider acceptance claimed.",
+    "Normal positive reaction/archive/reconnect and broader concurrency cohorts remain unverified."
+  ],
+  "normalRolloutDecision": "pending",
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:32:19.107523+00:00",
+      "path": "docs/performance.md",
+      "beforeSha256": "0809f3bbe9c20967f7bddc32bdc4e7de5077bf00b1d0b0e6bf22d96f0173dd37",
+      "afterSha256": "338a2c8cbeb326f3f9b80bf7880db5a037746a6caf85d25b1a6e9fc059c03792",
+      "beforeRef": "candidates/found-implementation-13/performance.md.before.snapshot",
+      "reviewRef": "implementation-found-13.md",
+      "boundary": "Only internal Profile activity projection narrows; other functions and contracts are byte-identical. Current identity review does not re-run or upgrade old evidence. Guide append records current proof and rejected Taste alternative."
+    },
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/auth/index.ts",
+          "before": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf",
+          "after": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d"
+        },
+        {
+          "owner": "docs/performance.md",
+          "before": "338a2c8cbeb326f3f9b80bf7880db5a037746a6caf85d25b1a6e9fc059c03792",
+          "after": "079a6996da4fa71bbd536d18eeea3ee39d71d42d530cf90110c3a6b8d7d033ab"
+        },
+        {
+          "owner": "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+          "before": "7848b391c795d26cbd88ce7e838e87794d2ef15ceac7b5085328c23f7f2dec71",
+          "after": "d58c346374d146b79ddca362d24c315c0e1bc703a1a53a9f3745a4c61cc90be6"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T01:54:19.079836+00:00",
+      "reportRef": "implementation-found-16.md",
+      "boundary": "Add exact ten-file avatar adoption/removed-owner/patch/normal-receipt drift checks and clarify guide prose; no runtime change or historical acceptance upgrade."
+    },
+    {
+      "at": "2026-10-19T02:01:28.135299+00:00",
+      "reportRef": "implementation-found-17.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Current reviewed owner/prose/checker identity only; archived native query epochs and every previous acceptance receipt remain unchanged."
+    },
+    {
+      "at": "2026-10-19T02:13:13.432509+00:00",
+      "reportRef": "implementation-found-18.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Performance-guide and current-checker bookkeeping only; runtime unchanged and no prior acceptance or timing upgraded."
+    },
+    {
+      "at": "2026-10-19T02:17:00.035023+00:00",
+      "reportRef": "implementation-found-19.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Guide/checker bookkeeping; runtime unchanged, no old acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T02:53:01.778274+00:00",
+      "reportRef": "implementation-found-21.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Exact planned DATA-07 command guards plus guide/checker bookkeeping. Historical source/evidence epochs retained; no older acceptance upgraded."
+    },
+    {
+      "at": "2026-10-19T02:55:26.686530+00:00",
+      "reportRef": "failed-method-backlog.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "User clarified execution-only stopping rule and future investigation order; runtime and prior evidence unchanged."
+    },
+    {
+      "at": "2026-10-19T03:11:12.006201+00:00",
+      "reportRef": "admin-real-data-policy.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Corrected interpretation of authorized real-data/admin test states; runtime and historical results unchanged."
+    },
+    {
+      "at": "2026-10-19T03:22:06.569202+00:00",
+      "reportRef": "implementation-found-22.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Admin actual-data acceptance, measurement/stopping guidance and checker bookkeeping; runtime unchanged, old evidence not promoted beyond named new acceptance."
+    },
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T03:58:03.995927+00:00",
+      "reportRef": "implementation-found-24.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Shared conflict summaries native actual-admin adoption; sequence named acceptance; phased finalization not adopted. Historical evidence retains source/acceptance boundaries, no whole-audit completion."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    }
+  ],
+  "laterBookkeepingEpochs": [
+    {
+      "beforeSha256": "7cdc06f4131f8d64566c183fc1a51fb99ace814ea3bdae4ce53caeda8619adfb",
+      "afterSha256": "7848b391c795d26cbd88ce7e838e87794d2ef15ceac7b5085328c23f7f2dec71",
+      "boundary": "Append only current reports13andTaste to the checked report inventory; immutable adoption/composition checks unchanged."
+    }
+  ],
+  "normalApplicationSourceApplied": true,
+  "normalRolloutRef": "evidence/implementation-approved-avatar-0064-normal.json",
+  "normalAcceptanceRef": "evidence/implementation-approved-avatar-normal-ui.json",
+  "currentGatesRef": "evidence/implementation-approved-avatar-final-gates.json",
+  "remainingAcceptance": [
+    "Whole-page cold/repeated network and CPU/heap/tail budgets are unmeasured; no browser network capture capability.",
+    "Actual saved PNG/JPEG and broader archive/reaction/reconnect/provider/concurrent cohorts remain absent."
+  ]
+}

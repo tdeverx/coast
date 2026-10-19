@@ -46,7 +46,7 @@
  let number=$state(1);
  const saved=createMenuResource<{items:{id:string;title:string;availability:string}[];page:number;pages:number}>(()=>({items:[],page:1,pages:1}),
   ()=>workMenuScope([room?.id,number]),signal=>preview?Promise.resolve({items:[],page:1,pages:1}):api(`music/queue/picker?page=${number}`,undefined,'GET',{signal}));
- $effect(()=>{const key=workMenuScope([room?.id,number]);untrack(()=>{key;saved.sync();if(saved.active)void saved.load();});});
+ $effect(()=>{const key=workMenuScope([room?.id,number]);untrack(()=>{key;saved.sync(key);if(saved.active)void saved.load();});});
  onDestroy(saved.dispose);
  async function editQueue(index:number,action:'up'|'down'|'remove'){
   if(!room)return;const queue=[...room.queue];let queueIndex=room.queueIndex;

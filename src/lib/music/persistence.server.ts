@@ -49,7 +49,7 @@ export async function persistMusic(instanceId: string, item: MusicItem): Promise
     if(verified) await tx.insert(workIdentifiers).values({workId:id,provider,externalId:verified,kind}).onConflictDoNothing();
     const snapshot=musicMetadataSnapshot(item);
     const externalId=mapping?.externalId??item.id;
-    const [saved]=await tx.insert(providerItems).values({instanceId,externalId,mediaId:id,kind,snapshot,lastSeenAt:new Date()}).onConflictDoUpdate({target:[providerItems.instanceId,providerItems.externalId],set:{snapshot,lastSeenAt:new Date()}}).returning();
+    const [saved]=await tx.insert(providerItems).values({instanceId,externalId,mediaId:id,kind,snapshot,lastSeenAt:new Date()}).onConflictDoUpdate({target:[providerItems.instanceId,providerItems.externalId],set:{snapshot:sql`excluded.snapshot`,lastSeenAt:new Date()}}).returning();
     const metadata={externalIds:item.externalIds,albumExternalId:item.albumId??null,position:(item.discNumber??1)*10000+(item.trackNumber??0),discNumber:item.discNumber??null,trackNumber:item.trackNumber??null};
     const [knownEdition]=await tx.select().from(workEditions).where(and(eq(workEditions.instanceId,instanceId),sql`replace(lower(${workEditions.externalId}),'-','')=${item.id}`)).orderBy(workEditions.id).limit(1);
     const [edition]=knownEdition
@@ -168,6 +168,25 @@ export async function recordMusicListen(tx: Transaction,userId: string,trackId:s
   if(event) await tx.insert(musicProgress).values({userId,trackId,playCount:1}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{playCount:sql`${musicProgress.playCount}+1`,positionSeconds:0,updatedAt:new Date()}});
   if(event)await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'music.listened',{workId:trackId,listenId:event.id,occurredAt:occurredAt?.toISOString()??event.occurredAt?.toISOString()??null,occurredAtKnown:known});
   return event;
+}
+/** Insert exact imported occurrences in batches of at most 100 rows.
+ * Every batch remains in the caller's atomic reconciliation transaction. */
+export async function recordImportedMusicListens(tx: Transaction,userId:string,trackId:string,accountId:string,start:number,end:number){
+  let added=0;
+  for(let offset=start;offset<end;offset+=100){
+    const rows=Array.from({length:Math.min(100,end-offset)},(_,index)=>({userId,trackId,batchId:importedListenBatch(accountId,trackId,offset+index),source:'jellyfin',occurredAtKnown:false}));
+    const events=await tx.insert(musicListens).values(rows).onConflictDoNothing().returning();
+    if(!events.length)continue;
+    added+=events.length;
+    await tx.insert(musicProgress).values({userId,trackId,playCount:events.length}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{playCount:sql`${musicProgress.playCount}+${events.length}`,positionSeconds:0,updatedAt:new Date()}});
+    const {emitWebhook}=await import('$lib/server/public-api/webhooks.server');
+    const byBatch=new Map(events.map(event=>[event.batchId,event]));
+    for(const row of rows){
+      const event=byBatch.get(row.batchId);
+      if(event)await emitWebhook(tx,userId,'music.listened',{workId:trackId,listenId:event.id,occurredAt:event.occurredAt?.toISOString()??null,occurredAtKnown:false});
+    }
+  }
+  return added;
 }
 export async function logMusic(userId:string,workId:string,input:unknown,transaction?:Transaction){
   const data=v.parse(v.strictObject({batchId:v.pipe(v.string(),v.uuid()),occurredAt:v.optional(v.pipe(v.string(),v.isoTimestamp(),v.check(value=>Number.isFinite(Date.parse(value))&&Date.parse(value)<=Date.now(),'Listens must have a valid date in the past.')))}),input);

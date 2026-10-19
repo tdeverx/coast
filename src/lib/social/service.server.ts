@@ -1,4 +1,4 @@
-import { requireFeature } from '$lib/server/features';
+import { requireFeature,lockFeaturePolicyInTransaction } from '$lib/server/features';
 import * as v from 'valibot';
 import {and,eq,sql} from 'drizzle-orm';
 import {collectionCTE,collectionRead} from '$lib/collection/query.server';
@@ -45,11 +45,15 @@ export async function requestFriend(userId:string,raw:unknown) {
 export async function changeFriend(userId:string,id:string,raw:unknown) {
  const {action}=v.parse(v.object({action:v.picklist(['accept','decline','cancel','remove'])}),raw);
  return getSql().begin(async db=>{
+  const [identity]=action==='accept'?await db`select user_a,user_b from friendships where id=${id} and (${userId}::uuid=user_a or ${userId}::uuid=user_b)`:[];
+  const participants=identity?[identity.user_a,identity.user_b].sort():[];
+  for(const subject of participants)await lockFeaturePolicyInTransaction(db,subject);
   const [f]=await db`select * from friendships where id=${id} and (${userId}::uuid=user_a or ${userId}::uuid=user_b) for update`;
   if(!f)throw new AppError(404,'Friend request not found.');
   const target=action==='accept'?'accepted':action==='decline'?'declined':action==='cancel'?'cancelled':'removed';
   if(f.state===target)return {state:target};
   if(action==='remove'?f.state!=='accepted':f.state!=='pending'||(action==='cancel'?f.requested_by!==userId:f.requested_by===userId))throw new AppError(409,'This action is no longer available.');
+  if(action==='accept'&&(!identity||f.user_a!==identity.user_a||f.user_b!==identity.user_b||!participants.includes(f.requested_by)))throw new AppError(409,'This action is no longer available.');
   await db`update friendships set state=${target},updated_at=now() where id=${id}`;
   const recipient=f.requested_by===f.user_a?f.user_b:f.user_a;
   await resolveNotification(recipient,'friend-request:'+id,db);
@@ -58,9 +62,19 @@ export async function changeFriend(userId:string,id:string,raw:unknown) {
   return {state:target};
  });
 }
+/** Validate one bounded caller list in its input order on the supplied fresh read owner. */
+export async function requireFriends(userId:string,otherIds:string[],database?:ReturnType<typeof getSql>) {
+ if(!otherIds.length)return;
+ const db=database??getSql();
+ const [missing]=await db`select target.ordinal from unnest(${db.array(otherIds,'UUID')}::uuid[]) with ordinality target(id,ordinal)
+ where not exists(select 1 from friendships f join users u on u.id=target.id
+  where f.user_a=least(${userId}::uuid,target.id) and f.user_b=greatest(${userId}::uuid,target.id) and f.state='accepted' and not u.disabled
+   and coast_feature_enabled(${userId}::uuid,'social') and coast_feature_enabled(target.id,'social'))
+ order by target.ordinal limit 1`;
+ if(missing)throw new AppError(403,'This action is available between friends.');
+}
 export async function requireFriend(userId:string,otherId:string) {
- const [f]=await getSql()`select f.id from friendships f join users u on u.id=${otherId}::uuid where f.user_a=least(${userId}::uuid,${otherId}::uuid) and f.user_b=greatest(${userId}::uuid,${otherId}::uuid) and f.state='accepted' and not u.disabled and coast_feature_enabled(${userId}::uuid,'social') and coast_feature_enabled(${otherId}::uuid,'social')`;
- if(!f)throw new AppError(403,'This action is available between friends.');
+ await requireFriends(userId,[otherId]);
 }
 export async function react(userId:string,raw:unknown) {
  const input=v.parse(v.object({targetKind:v.picklist(['work','activity']),targetId:uuid,emoji:v.nullable(v.picklist(emojis))}),raw);

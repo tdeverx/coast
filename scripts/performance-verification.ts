@@ -131,8 +131,8 @@ else {
  const admin=new Bun.SQL(target,{max:1});let created=false;
  try {
   const git=Bun.spawn(['git','show',ref+':src/lib/collection/query.server.ts'],{cwd:root,stdout:'pipe',stderr:'pipe'});
-  const baseline=await new Response(git.stdout).text();
-  if(await git.exited)throw new Error('The immutable baseline source was not found.');
+  const [baseline,,gitStatus]=await Promise.all([new Response(git.stdout).text(),new Response(git.stderr).text(),git.exited]);
+  if(gitStatus)throw new Error('The immutable baseline source was not found.');
   const baselinePath=join(modules,'collection-baseline.ts');await writeFile(baselinePath,baseline);
   await admin.unsafe('create database '+name);created=true;
   const url=new URL(target);url.pathname='/'+name;

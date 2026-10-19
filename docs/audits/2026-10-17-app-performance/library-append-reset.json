@@ -1,0 +1,355 @@
+{
+  "schemaVersion": 1,
+  "id": "LIBRARY-APPEND-OBS-09",
+  "canonicalBaselineFinding": false,
+  "baselineCanonicalFindingCount": 94,
+  "overlap": [
+    "UIS-03"
+  ],
+  "priority": "P2",
+  "title": "Actual appended Watch cards lose their retained range during same-owner revision refresh",
+  "status": "actual_new_trace_confirms_revision_replacement_original_incident_uninstrumented_repair_open",
+  "implementationApplied": false,
+  "productionSourceChange": false,
+  "productionSchemaChange": false,
+  "confidence": {
+    "actualCardReduction": "observed",
+    "sourceReplacementPath": "source_confirmed",
+    "incidentCausality": "original300to180_unverified",
+    "newInstrumentedCausality": "observed_owner_revision_request_commit_sequence"
+  },
+  "sharedOwner": "Canonical Shelf/paged-source refresh, append and retained-range lifecycle; Library source is the concrete observed consumer",
+  "consumers": [
+    "Watch/Listen/Play/Read createLibrarySource",
+    "collection/self/profile variants",
+    "Library rows and full/embedded grids",
+    "shared Shelf automatic sentinel/resource lifetime"
+  ],
+  "sourcePins": {
+    "src/lib/ui/shelves/library.svelte.ts": "0e7b4f024bf38df12188c6b27de6d4da26e859131ea1fd3d335d38267da35024",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+    "src/lib/ui/pages/SectionDetails.svelte": "3677798a0e0a2f1c950f47d8f0f89f67070b7315bbc41e40bc10051acd78481a",
+    "src/lib/ui/section-target.ts": "3920829e19358f68a08c08737729b48b057630f1f918f98ddd4be22f99f25d05",
+    "src/lib/media/DetailPanel.svelte": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55",
+    "src/lib/ui/detail-section.svelte.ts": "dd2156aa5d90546a7c74cd413cda961dc6cd507108501f522a3d2dcd8a4adf0d",
+    "src/lib/ui/content-revision.svelte.ts": "a020f2a02ab30655fe9d1203fe3c90200625e874c2e63714a499f5c8b1661fd3",
+    "src/lib/ui/client.ts": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7",
+    "src/routes/+layout.svelte": "fa2da910bdfa5d467592bb1496fab1afb8eca1ce5dc6849bd1e437b6e20d4baa",
+    "src/routes/+layout.server.ts": "4e2fe9e9fb784a3c674e2fea1b8b265caa263b8e0861466451e98d884262a187",
+    "src/lib/server/content-revision.server.ts": "d2ac47a240a40816f16393af3ca772b2bf0c6d728cda89128c8e94404a4f18bc",
+    "src/lib/collection/freshness.server.ts": "770bdbb426a6ce15e4c14e0dbeeece64690f710636b47d5df0b7f33a38d513c8",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/library.ts": "cd629858c8518e8f94bdf7520d6c835235078a3cdba736555821ec5d6945da91",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "sourcePinCount": 16,
+  "sourceManifest": "evidence/implementation-20261018-section-demand-source-inventory.json",
+  "sourceManifestSha256": "f1d690357c4937c340fa1a007ec0656192efc27a71d091152063b4670b2f1e1c",
+  "sourcePinsMatchObservedManifest": true,
+  "sourceCheck": {
+    "source": "Parent confirmed post-trial inventory check unchanged at approximately03:50UTC; current16ownerpins independently match that retained manifest.",
+    "databaseOrBrowserByDiagnosingAgent": false
+  },
+  "actual": {
+    "receiptStartedAt": "2026-10-18T03:45:52.788Z",
+    "receiptFinishedAt": "2026-10-18T03:49:55.287Z",
+    "sampleCardCounts": [
+      60,
+      120,
+      180,
+      300
+    ],
+    "observedReducedCards": 180,
+    "observedPriorCards": 300,
+    "unique300": true,
+    "prefixAt180And300": true,
+    "prefixAfterReduction": false,
+    "no240Sample": true,
+    "transportCountPerClickEstablished": false,
+    "afterClose": {
+      "allDocumentCards": 110,
+      "allDocumentNodes": 3155,
+      "at": "2026-10-18T03:49:08.538Z",
+      "dialogs": 0,
+      "openWatchDialogs": 0
+    },
+    "final": {
+      "alerts": 0,
+      "automaticJobsPaused": true,
+      "dialogs": 0,
+      "popovers": 0,
+      "taskRows": 30
+    },
+    "newWarnErrorCount": 0,
+    "noMutationCommandsSubmitted": true,
+    "twentyPageProofComplete": false
+  },
+  "receiptCorrection": {
+    "original": "evidence/library-append-reset-normal-original.json",
+    "corrected": "evidence/library-append-reset-normal.json",
+    "fieldsModified": [
+      "stopReason"
+    ],
+    "reason": "Original detached/offscreen characterization conflated a separate section Back event. Actual this-trial failures are Loading selector wait deadline and next Load more click deadline. All original fields otherwise preserved.",
+    "originalPrivateFileUnchanged": true
+  },
+  "screenshotBoundary": "Historical coast-append-five-pages.png filename is retained for the300-card state before the unsuccessful next action; it is not five isolated request acceptance.",
+  "sourceMechanism": {
+    "poll": "Root layout111\u2013121 visible signed-in60s session refresh \u2192 client109\u2013114 overlay-preserving refreshAll \u2192 layout server revisions",
+    "replacement": "Library103\u2013105 tracking/social key change \u2192130 load(content.page), default append=false at76 \u219295\u201398 entire result.items replaces accumulated data",
+    "embedded": "Embedded branch100 suppresses URL replacement only, not item replacement",
+    "automaticAppend": "Shelf306\u2013308 repeated lazy sentinel invokes154 load(page+1,true), lazyContent13\u201315 intersection/rootMargin300px; can admit later pages without click",
+    "causalStatus": "New instrumented normal180\u219260\u2192120 and120\u219260\u2192120 captured; original300\u2192180 remains uninstrumented."
+  },
+  "otherPathsAndHealthy": [
+    "Unique pure append preserves existing distinct keys; no virtualized card window removes DOM in this grid.",
+    "Library owner change and explicit filter calls reset; neither recorded in this trial.",
+    "SSR initial-payload replacement exists for full grids; embedded SectionDetails supplies no initial payload.",
+    "Same href/kind keyed SectionDetails and once-created Shelf adapter are retained; equivalent target objects/session objects alone do not reset primitive keys.",
+    "Latest-controller guard cancels superseded reads and prevents stale publication; authorized replacement can still discard prefix without error.",
+    "Observed close removes all dialog card DOM; no JS/GPU heap leak/plateau inferred."
+  ],
+  "options": [
+    {
+      "id": "A",
+      "title": "Minimal consistent reset",
+      "sharedOwner": "Existing shared Shelf/paged-source refresh and containing scroll anchor",
+      "behavior": "Atomic first-page replacement plus pagination/range/scroll/focus settlement; keep owner/filter resets distinct.",
+      "cost": "One current page read; deliberately drops admitted history and can interrupt browsing.",
+      "choiceRequired": "Reset/anchor user experience; not automatically selected."
+    },
+    {
+      "id": "B",
+      "title": "Preserve and refresh admitted range",
+      "sharedOwner": "Existing paged source resource generation and ordered occurrence range",
+      "behavior": "Track all admitted page boundaries, re-read admitted range, atomic publication and occurrence anchor restoration.",
+      "cost": "Reads/work grow with retained range; a five-page range can require five page requests. Same-snapshot, reorder/deletion, partial-failure/privacy contracts require review.",
+      "choiceRequired": "Consistency/read-work/partial-failure behavior; no fan-out/deadline selected."
+    },
+    {
+      "id": "C",
+      "title": "Bounded shared retained window",
+      "sharedOwner": "Canonical Shelf/source pagination and card owner lifecycle across relevant adapters",
+      "behavior": "Decided retained window with before/after rehydration and stable occurrence anchors; virtualization only after measurements.",
+      "cost": "Substantial shared work and visible backward-loading policy.",
+      "choiceRequired": "Page/card/byte resource/UX budget; no numeric bound selected."
+    }
+  ],
+  "acceptanceNotExecuted": [
+    "Source-derived pending append vs revision and stale-publication controls",
+    "Unchanged session/equivalent target causes no reset",
+    "Decided background-reset vs retained-range anchor/pagination consistency",
+    "Filter/viewer isolation,403/failure/retry, automatic sentinel/manual button,close/reopen",
+    "Actual cross-surface collection/profile cohorts; long-range/DOM/decoded-resource measurements if choosing window"
+  ],
+  "limits": [
+    "Functional observedcard/DOMcensusonly;notCPU/heap/GPU/processmemorybenchmark",
+    "No network/refreshcommittrace;causalityfor300\u2192180notestablished",
+    "Automaticlazyend canstartloadasviewportmoves;buttonclick+scrollisnotisolatedtransportcount",
+    "20pageproofnotcompleted",
+    "Ordinarysession/presence/freshness/enrichmentmaywrite;nojob/status/preference/media/listcommandwasissued",
+    "No CPU/heap/GPU/network timing or20page/retention plateau acceptance.",
+    "Source diagnosis is independent read-only review, not a causal incident reproduction.",
+    "No UX/resource budget chosen and no app source implementation authorized by publication."
+  ],
+  "evidenceRefs": [
+    "evidence/library-append-reset-normal.json",
+    "evidence/library-append-reset-normal-original.json",
+    "proof/coast-append-five-pages.png",
+    "proof/coast-append-reset-observed.png",
+    "proof/coast-append-final-tasks.png",
+    "evidence/implementation-20261018-section-demand-source-inventory.json",
+    "ui-second-pass.md#uis-03",
+    "library-append-trace.md",
+    "library-append-trace.json"
+  ],
+  "artifactPins": {
+    "evidence/library-append-reset-normal-original.json": "455a25731b11781be331ebd15d5ef776f9d9a67515fb4aa626324b93e6910591",
+    "proof/coast-append-five-pages.png": "e0a150f65b1f944a8bf1fa0b1bf9e4308b6fa1e62092d38ef4cffef69243609e",
+    "proof/coast-append-reset-observed.png": "6e51fb9bd546c8587afceb229a7ba6e8506cd4495d65d79cf1868f183a9ad1b8",
+    "proof/coast-append-final-tasks.png": "e58059d6aaa789c266b88108af7a24e94bb358322bc8e4e4a14961149cb2167e",
+    "evidence/library-append-reset-normal.json": "9619a56189397d7a7e5f6899ebf6d699afcaea658aac99f11e2020b0203dea64",
+    "library-append-reset.md": "0fd31594d87cb2655f4380cee830661c6a28a3ad67fea52ab0caa79bcd25d2ba",
+    "evidence/library-append-current-source-review.md": "579cab4dc2bb24795efaa8ee83386686c994d8f342c8dd6a2fe838f0ede28255",
+    "evidence/library-append-current-source-review.json": "94b8f6d8a6c364cf6931ee8393b0609b13fed012ace5f4f5a298636db8b6209d",
+    "library-append-trace.md": "89a4d2a470fa2f6f65cc3e0e92f12aed53dd8dda2e7026edfc0243a5f7183580",
+    "library-append-trace.json": "0aacaccbc26ce42f5b48f0048754ec6bd6592b34ff7a6ea61f2ad08a9f61f4b4"
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/routes/+layout.svelte": {
+        "before": "484247b5dd94e7bdd57daa87cc158afb86281d6f8a419a1f063cad4628e62c73",
+        "after": "fa2da910bdfa5d467592bb1496fab1afb8eca1ce5dc6849bd1e437b6e20d4baa"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "additionalInventorySourcePins": {
+    "src/routes/library/+page.svelte": "4889dfcefe263dcc75ae07e36117e5acc3e35598f259b7c2450ff639264901c5",
+    "src/routes/library/+page.server.ts": "7b0f0465ee6cbbbf08a9af39ec9971fe7caf40af7104b4565810405656f753d0",
+    "src/lib/ui/shelves/library.svelte.ts": "0e7b4f024bf38df12188c6b27de6d4da26e859131ea1fd3d335d38267da35024",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+    "src/lib/ui/pages/SectionDetails.svelte": "3677798a0e0a2f1c950f47d8f0f89f67070b7315bbc41e40bc10051acd78481a",
+    "src/lib/media/DetailPanel.svelte": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55",
+    "src/lib/ui/detail-section.svelte.ts": "dd2156aa5d90546a7c74cd413cda961dc6cd507108501f522a3d2dcd8a4adf0d",
+    "src/lib/ui/content-revision.svelte.ts": "a020f2a02ab30655fe9d1203fe3c90200625e874c2e63714a499f5c8b1661fd3",
+    "src/lib/ui/client.ts": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7",
+    "src/routes/+layout.svelte": "fa2da910bdfa5d467592bb1496fab1afb8eca1ce5dc6849bd1e437b6e20d4baa",
+    "src/routes/+layout.server.ts": "4e2fe9e9fb784a3c674e2fea1b8b265caa263b8e0861466451e98d884262a187",
+    "src/lib/server/content-revision.server.ts": "d2ac47a240a40816f16393af3ca772b2bf0c6d728cda89128c8e94404a4f18bc",
+    "src/lib/ui/shelves/layout.svelte.ts": "85d6fc90d52176f4a49c3aeb98c64d3ed9b4b83aff321462a7d24be1e6b4f84f",
+    "src/lib/ui/shelves/local.svelte.ts": "79772309b9f4b2946149a0abbc93875bf13929e06c48b0d3d29c93b97acbaac4",
+    "src/lib/ui/shelves/types.ts": "9f17724b57b6c072f70bb09ff565c19b198078b1c4fba41b85ef4a965fe2b54a",
+    "src/lib/ui/shelves/index.ts": "6e5055dfe6308433a718bbb0405de541011a934efb582db76becaa1834f7afc5",
+    "src/lib/library.ts": "cd629858c8518e8f94bdf7520d6c835235078a3cdba736555821ec5d6945da91",
+    "src/lib/ui/shelves/progress.svelte.ts": "2d6bdc1f28373132abb542a6b3ce79fb4555d0fac690814f382d794b0bf74111",
+    "src/lib/ui/shelves/credits.svelte.ts": "5f749b9cdbfdd7865f161b705bb2b5f99127db57097ecbbbc3defee86a9e9987",
+    "src/lib/ui/shelves/detail.svelte.ts": "00be76aa839f4eeded9634eb6451960efa8497d0b24ed7450eba496521c94d24",
+    "src/lib/ui/shelves/discovery.svelte.ts": "0eea654859d9848e3457b9863ac11b71ce3de8f468fdd8f9be30df33503406a5",
+    "src/lib/ui/shelves/for-you.svelte.ts": "82bfd382e8d045ca3ef2c56b5ae6de68f8e901ea47fd3ab7bba38f76325b7d9a",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/shelves/list.svelte.ts": "eed96a076485e546ef405bb9230d0a5a0f3f6993b07191cc1cecda3ff3534c22",
+    "src/lib/ui/components/NotificationToasts.svelte": "e02bef528dc595cb4c2ba0c9d956e2fa561f0ec22f9b23d10b397a2ed6a9b11f",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "laterCurrentSourceReview": {
+    "report": "evidence/library-append-current-source-review.md",
+    "machine": "evidence/library-append-current-source-review.json",
+    "actualIncidentReexecuted": false,
+    "productionImplementationApplied": false,
+    "boundary": "Source confirms revision load(currentPage,false) can replace the retained range; exact historical incident trigger/order remains unproved. Preferred preserving-UX range option and generic consumers are mapped, not implemented."
+  },
+  "laterActualTrace": {
+    "report": "library-append-trace.md",
+    "machine": "library-append-trace.json",
+    "receipt": "evidence/library-append-trace-normal.json",
+    "originalIncidentReexecutedExactly": false,
+    "newCausalSequenceEstablished": true,
+    "temporaryPatchesRestored": true,
+    "freshNormalAcceptance": true,
+    "productionRepairAdopted": false
+  },
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T10:21:52.057608+00:00",
+      "changes": {
+        "src/lib/media/DetailPanel.svelte": {
+          "before": "59c9dc9f338be06b0c6eb680cd65ec31a8eeeb40cd2fe5fbea312f2a5a3a57bb",
+          "after": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55"
+        }
+      },
+      "evidence": "evidence/implementation-detail-close-applied.json",
+      "boundary": "Current identity after separate three-line shared close adoption. Historical receipts/manifests remain unchanged; their measurements were not rerun on this source."
+    }
+  ],
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/shelves/library.svelte.ts": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+      "src/lib/ui/components/Shelf.svelte": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4",
+      "src/lib/ui/section-target.ts": "e325668b0e3ae9b5eee6e65bf6b959551560fb1d90916a96f056f367c02a8cf8",
+      "src/lib/library.ts": "1b94f5839453943c83a32ef51f8581923a40cedbe41beaa3f66daf2d94dc5c58",
+      "src/routes/library/+page.server.ts": "47ad54551a78f8810bb1053d6eada88f81c116da5ab1bca65346bb3ca8c904e6",
+      "src/lib/ui/shelves/layout.svelte.ts": "fd449adc5c7878f6b1170dcffa9ba39c200dbb7369bc30d2f646c07c3ba37fd4",
+      "src/lib/ui/shelves/types.ts": "10e7b93e83e7944eb998ef54ccd6abbaeaa86ad4cf663cf58ce9c044b936af37"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "finalBoundedWindowSourceFollowThrough": {
+    "at": "2026-10-18T17:42:06.448267+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/shelves/library.svelte.ts": "991fae02c2c35e174b41f867411b83fe75fcc777390b9fbd814d0cee49823053"
+    },
+    "boundary": "Later scope-ledger/SSR engagement and Music error admission corrections have separate exact/current source controls. Historical receipts stay immutable; this map is current identity, not transferred runtime/resource acceptance."
+  }
+}

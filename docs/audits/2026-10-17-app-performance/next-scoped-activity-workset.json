@@ -1,0 +1,2309 @@
+{
+  "optionId": "SCOPED-ACTIVITY-ADMISSION-V2",
+  "relatedFindings": [
+    "PLAN-02"
+  ],
+  "title": "Early exact nonrecursive work-ID Activity admission",
+  "state": "historical_full_verification_exact_candidate_now_adopted",
+  "productionSourceEdited": true,
+  "normalDatabaseTouched": false,
+  "schemaChanges": false,
+  "providerCalls": 0,
+  "sharedOwner": "src/lib/social/queries.server.ts:activityFeed",
+  "consumers": [
+    "First-party social/feed including title Activity from MediaDetails/socialShelf",
+    "Notification inbox explicit activityIds hydration; no workSocial change"
+  ],
+  "atExecutionPins": {
+    "src/lib/social/queries.server.ts": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "src/lib/social/relationships.server.ts": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+    "node_modules/drizzle-orm/bun-sql/migrator.js": "b7f6bf40b94d906ea3b53276d3dd80fc8144f64c3b03ae3cbf91f34cbaaf94df",
+    "node_modules/drizzle-orm/pg-core/dialect.js": "a7d7921c939b228a3f1295be5f024a8c264169e368f591c2d29072ffe079b14e",
+    "node_modules/drizzle-orm/migrator.js": "8c5e22b76a6a239e426b659ba999f69b4b312a052e74f533758f876795f6377c"
+  },
+  "atClosurePins": {
+    "src/lib/social/queries.server.ts": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "src/lib/social/relationships.server.ts": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+    "node_modules/drizzle-orm/bun-sql/migrator.js": "b7f6bf40b94d906ea3b53276d3dd80fc8144f64c3b03ae3cbf91f34cbaaf94df",
+    "node_modules/drizzle-orm/pg-core/dialect.js": "a7d7921c939b228a3f1295be5f024a8c264169e368f591c2d29072ffe079b14e",
+    "node_modules/drizzle-orm/migrator.js": "8c5e22b76a6a239e426b659ba999f69b4b312a052e74f533758f876795f6377c"
+  },
+  "executionPinsBoundary": "Immutable historical17explicitfiles, not a claim that every transitive module was separately pinned or that later normal toast source/schema adoption was part of this proof.",
+  "currentSourcePinsAtPublication": {
+    "src/lib/social/queries.server.ts": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54"
+  },
+  "laterToastRolloutChange": {
+    "normalToastRollout": "evidence/implementation-approved-normal-rollout.json",
+    "schemaAtHistoricalFullProof": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "schemaNow": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "boundary": "Later change adds only the approved toastHiddenAt declaration. Historical full proof and17execution/closurepins remain immutable; no re-execution or normal Activity acceptance inferred. Shared social owner remains baseline pending adoption."
+  },
+  "exactSources": {
+    "baselineSha256": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "candidateSha256": "29f1f31c79d67c75dc94127054d195a3810221480269fa0cb6737ce0095c4fb3",
+    "patchSha256": "2cc61236fc3883a3cc4d22bd1105a525d0a7da200ef335d046f8389cf2c69f9a",
+    "executedFullProbeSha256": "41dccab4ab0c3b12fc1ee99131f044cfa4431e31fbbc40a79a908f8f50818689",
+    "reviewedFullPlanSha256": "3876ae52dbdf4930d3e029b3e819a2961312106c1abbd5e8ca6a4d131db5a938",
+    "executedPilotProbeSha256": "43d5b33b3af481824c6ce31422e63b1ba52e4634800fe81c853a5412574946c4",
+    "reviewedPilotPlanSha256": "3c6dc444a091846c3dcc1bb3df419c78036d7a5c958f97d9ced5b7a29e6fe7d7"
+  },
+  "contract": {
+    "roots": "R0=requested workUUID UNION its DIRECT contains child IDs, without a works/kind/privacy/existence join.",
+    "allowedWorkIds": "R0 UNION episode media IDs whose own show_id IN ORIGINALR0 UNION episode media IDs whose own season_id IN ORIGINALR0 UNION season media IDs whose own show_id IN ORIGINALR0. UNION dedup+event.work_id IN semijoin prevents event multiplication.",
+    "admission": "Conditional same-statement MATERIALIZED admitted_activity applies the exact structural work-ID set and unchanged explicitID/artist/group AND before policy/enrichment. visible_raw reads admitted rows directly and retains its original work/artist/group/ID predicates.",
+    "unscoped": "Original path; all34actualcompleteunscopedcases had byte-identical primary SQL and parameters.",
+    "preserved": [
+      "Original direct-work/show/season/season-show/direct-contains OR, not recursive descendants or displayroot_id",
+      "Multiple event scopes AND while relationship target roots remain UNION",
+      "Undefined/empty/duplicate explicitIDs and grouping mode",
+      "Visibility/features/friend/category/kind gates and one-statement scope observation",
+      "Complete history dedupe/listen/run grouping and final period/cursor/order/limit",
+      "Final visible_raw-based relationship fallback, reactions, captions, occurrence/member identities and complete DTO"
+    ],
+    "notIncluded": [
+      "No source adoption or UI/framework/cache change",
+      "No global planner change/index/schema",
+      "No relationshipReasons or edge rewrite",
+      "No early raw-event LIMIT or historical activity cap"
+    ]
+  },
+  "actualVerification": {
+    "status": "passed",
+    "historicalCases": 42,
+    "additionalScopedAttributionCases": 16,
+    "additionalActualRequestShapes": 6,
+    "uniqueCompleteDtoAndOrderedPrimaryRowPairs": 64,
+    "coverageLabels": 64,
+    "sameExpected64Labels": true,
+    "sameExpectedAggregateCensus": true,
+    "unscopedCompiledSqlAndParameterIdentities": 34,
+    "sourceShapedPlanPairs": 8,
+    "sourceShapedPlans": 16,
+    "alternatingFullOwnerTimingPairs": 4,
+    "additionalCompleteTimingComparisons": 4,
+    "census": {
+      "owners": 4,
+      "normalMoviePresent": true,
+      "largestSeasonEpisodes": 829,
+      "largestCollectionMembers": 23,
+      "activeShowRawEvents": 3424,
+      "normalViewerOwnerMappingEstablished": false,
+      "unknownDateCursorPresent": true,
+      "actualReactionTargets": 3,
+      "activityShapes": {
+        "total_listens": 3,
+        "unknown_events": 1152,
+        "dated_multitrack_listen_batches": 0,
+        "repeated_dated_work_listens": 0
+      },
+      "actualActivityArtistPresent": true,
+      "actualActivityReadingGroupPresent": true
+    },
+    "extraShapes": [
+      {
+        "label": {
+          "kind": "actual-id-empty-array"
+        },
+        "items": 0,
+        "events": 0,
+        "reactions": 0
+      },
+      {
+        "label": {
+          "kind": "actual-id-duplicates",
+          "identities": 2
+        },
+        "items": 1,
+        "events": 1,
+        "reactions": 1
+      },
+      {
+        "label": {
+          "kind": "actual-artist-scope"
+        },
+        "items": 3,
+        "events": 3,
+        "reactions": 0
+      },
+      {
+        "label": {
+          "kind": "actual-artist-work-and-scope"
+        },
+        "items": 3,
+        "events": 3,
+        "reactions": 0
+      },
+      {
+        "label": {
+          "kind": "actual-reading-group-scope"
+        },
+        "items": 1,
+        "events": 1,
+        "reactions": 0
+      },
+      {
+        "label": {
+          "kind": "actual-reading-group-work-and-scope"
+        },
+        "items": 1,
+        "events": 1,
+        "reactions": 0
+      }
+    ],
+    "strictMissingCohortGuard": "Exact expectedlabels and census are hash-pinned from V1 actual receipt. Missing artist/group/reaction/oldcontext fails; there is no reduced-matrix fallback. Baseline/candidate rows execute afresh, not replayed saved outputs.",
+    "all17PinsUnchanged": true,
+    "sameBackend": true,
+    "externalAttempts": 0,
+    "rolledBack": true,
+    "poolClosed": true,
+    "fixtureRows": false,
+    "databaseWrites": false,
+    "normalDatabaseTouched": false,
+    "receipt": "evidence/scoped-activity-admission-v2-full.json"
+  },
+  "session": {
+    "read_only": "on",
+    "isolation": "repeatable read",
+    "statement_timeout": "30s",
+    "lock_timeout": "1s",
+    "jit": "off",
+    "work_mem": "4MB"
+  },
+  "exclusivePreflight": {
+    "other_clone_client_backends": 0,
+    "active_other_clients": 0,
+    "idle_other_clients": 0,
+    "idle_transaction_other_clients": 0
+  },
+  "guards": "Exact designatedprivateclonefile/loopback environment, explicit rootphaselease, one reserved max1 backend, RRREADONLY30s/1s/jitoff/work_mem4MBverified, exactsource/runtime/patch/label/census files, fetchdenied, read-intentORM+READONLYenforcement, durable progress, samebackend, rollback and poolclose. Otherclient0 is preflight only.",
+  "v2Pilot": {
+    "status": "passed",
+    "actualCompleteScopePairs": 2,
+    "actualViewerCount": 1,
+    "plans": 4,
+    "sourceDerivedUnscopedCompilationControls": 2,
+    "compilationBoundary": "Intercepts actual primary before SQL execution/owner completion; not a third actual unscoped DTO case. Full V2 later separately executed all34unscopedcases.",
+    "receipt": "evidence/scoped-activity-admission-v2-pilot.json",
+    "receiptSha256": "89530ea94d671ae415e66b58aca828e8f90ca834d1f674f96c31c08b2262013d"
+  },
+  "v1Boundary": {
+    "report": "next-scoped-activity-admission.md",
+    "fullReceipt": "evidence/scoped-activity-admission-v1-full.json",
+    "fullReceiptSha256": "11488b98761f2f3ef3ab0d3452eb7712dcf5ef73e7dc515da6664994d033e275",
+    "firstPilotReceipt": "evidence/scoped-activity-admission-v1-pilot.json",
+    "firstPilotSha256": "efa54fa5509d853f9a2d17c3b0d04b41b33c18c14fc79be2238fbb194cb231e4",
+    "meaning": "V1 full-row episode/season join is independently verified and remains immutable/unadopted. It added656tempread/writtenblocks on every measured workscope. V2 full independently passes all64cases and restores baseline tempcounters on all8measured planpairs. These are separate runs, not a controlled V1vsV2elapsed trial."
+  },
+  "fullPlanTradeoffs": [
+    {
+      "context": "reaction-activity-ids",
+      "beforePlanMs": 3.279,
+      "candidatePlanMs": 3.4,
+      "beforeRootSharedHits": 223,
+      "candidateRootSharedHits": 233,
+      "beforeRootSharedReads": 10,
+      "candidateRootSharedReads": 0,
+      "beforeRootTempReads": 0,
+      "candidateRootTempReads": 0,
+      "beforeRootTempWrites": 0,
+      "candidateRootTempWrites": 0
+    },
+    {
+      "context": "0:observed-normal-movie",
+      "beforePlanMs": 6631.563,
+      "candidatePlanMs": 1317.768,
+      "beforeRootSharedHits": 1341647,
+      "candidateRootSharedHits": 525474,
+      "beforeRootSharedReads": 3320,
+      "candidateRootSharedReads": 3,
+      "beforeRootTempReads": 2696,
+      "candidateRootTempReads": 2696,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 4412
+    },
+    {
+      "context": "0:largest-season",
+      "beforePlanMs": 6410.772,
+      "candidatePlanMs": 1351.615,
+      "beforeRootSharedHits": 1341916,
+      "candidateRootSharedHits": 525446,
+      "beforeRootSharedReads": 3051,
+      "candidateRootSharedReads": 67,
+      "beforeRootTempReads": 5488,
+      "candidateRootTempReads": 5488,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 4412
+    },
+    {
+      "context": "0:largest-collection",
+      "beforePlanMs": 6482.256,
+      "candidatePlanMs": 1294.876,
+      "beforeRootSharedHits": 1361011,
+      "candidateRootSharedHits": 525253,
+      "beforeRootSharedReads": 4196,
+      "candidateRootSharedReads": 225,
+      "beforeRootTempReads": 2696,
+      "candidateRootTempReads": 2696,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 4412
+    },
+    {
+      "context": "0:retained-active-show",
+      "beforePlanMs": 7419.365,
+      "candidatePlanMs": 2696.584,
+      "beforeRootSharedHits": 1336462,
+      "candidateRootSharedHits": 743891,
+      "beforeRootSharedReads": 4246,
+      "candidateRootSharedReads": 166,
+      "beforeRootTempReads": 4092,
+      "candidateRootTempReads": 4092,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 4412
+    },
+    {
+      "context": "1:observed-normal-movie",
+      "beforePlanMs": 5674.92,
+      "candidatePlanMs": 1450.368,
+      "beforeRootSharedHits": 946935,
+      "candidateRootSharedHits": 523975,
+      "beforeRootSharedReads": 2969,
+      "candidateRootSharedReads": 1501,
+      "beforeRootTempReads": 2696,
+      "candidateRootTempReads": 2696,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 4412
+    },
+    {
+      "context": "2:observed-normal-movie",
+      "beforePlanMs": 2224.051,
+      "candidatePlanMs": 1621.989,
+      "beforeRootSharedHits": 728601,
+      "candidateRootSharedHits": 525470,
+      "beforeRootSharedReads": 3056,
+      "candidateRootSharedReads": 7,
+      "beforeRootTempReads": 2696,
+      "candidateRootTempReads": 2696,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 4412
+    },
+    {
+      "context": "3:observed-normal-movie",
+      "beforePlanMs": 6466.082,
+      "candidatePlanMs": 1456.864,
+      "beforeRootSharedHits": 1179480,
+      "candidateRootSharedHits": 524973,
+      "beforeRootSharedReads": 1122,
+      "candidateRootSharedReads": 500,
+      "beforeRootTempReads": 2696,
+      "candidateRootTempReads": 2696,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 4412
+    }
+  ],
+  "fullOwnerTimingSamples": [
+    {
+      "context": "0:observed-normal-movie",
+      "alternatingPairs": 2,
+      "beforeFullOwnerMedianMs": 6562.419645499991,
+      "candidateFullOwnerMedianMs": 1401.758437499986,
+      "beforePrimaryMedianMs": 6561.665062499989,
+      "candidatePrimaryMedianMs": 1401.3320414999907,
+      "allCompleteOutputsEqual": true
+    },
+    {
+      "context": "0:retained-active-show",
+      "alternatingPairs": 2,
+      "beforeFullOwnerMedianMs": 7016.431354,
+      "candidateFullOwnerMedianMs": 2856.0590209999937,
+      "beforePrimaryMedianMs": 6834.947500000009,
+      "candidatePrimaryMedianMs": 2698.51462500004,
+      "allCompleteOutputsEqual": true
+    }
+  ],
+  "admissionNodeAttribution": [
+    {
+      "context": "reaction-activity-ids",
+      "ctes": [
+        {
+          "root": {
+            "Node Type": "Bitmap Heap Scan",
+            "Relation Name": "social_activity",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_activity",
+            "Actual Rows": 3,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.013,
+            "Actual Total Time": 0.017,
+            "Plan Rows": 3,
+            "Shared Hit Blocks": 9,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "social_activity",
+              "Parent Relationship": "InitPlan",
+              "Subplan Name": "CTE admitted_activity",
+              "Actual Rows": 3,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.013,
+              "Actual Total Time": 0.017,
+              "Plan Rows": 3,
+              "Shared Hit Blocks": 9,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "social_activity_pkey",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 3,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.009,
+              "Actual Total Time": 0.009,
+              "Plan Rows": 3,
+              "Shared Hit Blocks": 6,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "context": "0:observed-normal-movie",
+      "ctes": [
+        {
+          "root": {
+            "Node Type": "Unique",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_roots",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.023,
+            "Actual Total Time": 0.029,
+            "Plan Rows": 5,
+            "Shared Hit Blocks": 2,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "Member",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.016,
+              "Actual Total Time": 0.017,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Aggregate",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_ids",
+            "Strategy": "Hashed",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.102,
+            "Actual Total Time": 0.108,
+            "Plan Rows": 646,
+            "Shared Hit Blocks": 6,
+            "Shared Read Blocks": 3,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Peak Memory Usage": 49
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.03,
+              "Actual Total Time": 0.03,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 1,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.026,
+              "Actual Total Time": 0.026,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 1,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.024,
+              "Actual Total Time": 0.025,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 1,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_season_idx",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.023,
+              "Actual Total Time": 0.023,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 1,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.013,
+              "Actual Total Time": 0.013,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 1,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "seasons_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.012,
+              "Actual Total Time": 0.012,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 1,
+              "Shared Read Blocks": 1,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Hash Join",
+            "Join Type": "Inner",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_activity",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 2.449,
+            "Actual Total Time": 2.451,
+            "Plan Rows": 1125,
+            "Shared Hit Blocks": 391,
+            "Shared Read Blocks": 3,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "social_activity",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 13902,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.012,
+              "Actual Total Time": 0.99,
+              "Plan Rows": 14544,
+              "Shared Hit Blocks": 385,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Nested Loop",
+            "Join Type": "Left",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE visible_raw",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 2.452,
+            "Actual Total Time": 2.464,
+            "Plan Rows": 5,
+            "Shared Hit Blocks": 391,
+            "Shared Read Blocks": 3,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Scan",
+              "Relation Name": "episodes",
+              "Index Name": "episodes_pkey",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 5547,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "SubPlan",
+              "Subplan Name": "SubPlan 10",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "media_relationships",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Rows Removed by Filter": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "context": "0:largest-season",
+      "ctes": [
+        {
+          "root": {
+            "Node Type": "Unique",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_roots",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.011,
+            "Actual Total Time": 0.012,
+            "Plan Rows": 2,
+            "Shared Hit Blocks": 2,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "Member",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.006,
+              "Actual Total Time": 0.006,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Aggregate",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_ids",
+            "Strategy": "Hashed",
+            "Actual Rows": 830,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.31,
+            "Actual Total Time": 0.355,
+            "Plan Rows": 258,
+            "Shared Hit Blocks": 38,
+            "Shared Read Blocks": 7,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Peak Memory Usage": 105
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.027,
+              "Actual Total Time": 0.028,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 3,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.025,
+              "Actual Total Time": 0.025,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 3,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 829,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.033,
+              "Actual Total Time": 0.096,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 36,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_season_idx",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 829,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.028,
+              "Actual Total Time": 0.028,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.016,
+              "Actual Total Time": 0.016,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "seasons_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.015,
+              "Actual Total Time": 0.015,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Hash Join",
+            "Join Type": "Inner",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_activity",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 2.386,
+            "Actual Total Time": 2.387,
+            "Plan Rows": 449,
+            "Shared Hit Blocks": 363,
+            "Shared Read Blocks": 67,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "social_activity",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 13902,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.009,
+              "Actual Total Time": 0.771,
+              "Plan Rows": 14544,
+              "Shared Hit Blocks": 325,
+              "Shared Read Blocks": 60,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Nested Loop",
+            "Join Type": "Left",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE visible_raw",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 2.388,
+            "Actual Total Time": 2.393,
+            "Plan Rows": 2,
+            "Shared Hit Blocks": 363,
+            "Shared Read Blocks": 67,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Scan",
+              "Relation Name": "episodes",
+              "Index Name": "episodes_pkey",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Index Scan",
+              "Relation Name": "seasons",
+              "Index Name": "seasons_pkey",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "SubPlan",
+              "Subplan Name": "SubPlan 10",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "media_relationships",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Rows Removed by Filter": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "context": "0:largest-collection",
+      "ctes": [
+        {
+          "root": {
+            "Node Type": "Aggregate",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_roots",
+            "Strategy": "Hashed",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.012,
+            "Actual Total Time": 0.013,
+            "Plan Rows": 6,
+            "Shared Hit Blocks": 3,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Peak Memory Usage": 24
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "Member",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.009,
+              "Actual Total Time": 0.009,
+              "Plan Rows": 5,
+              "Shared Hit Blocks": 3,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Aggregate",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_ids",
+            "Strategy": "Hashed",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.064,
+            "Actual Total Time": 0.07,
+            "Plan Rows": 774,
+            "Shared Hit Blocks": 3,
+            "Shared Read Blocks": 7,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Peak Memory Usage": 49
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.018,
+              "Actual Total Time": 0.019,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 3,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.017,
+              "Actual Total Time": 0.017,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 3,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.013,
+              "Actual Total Time": 0.014,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_season_idx",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.013,
+              "Actual Total Time": 0.013,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.013,
+              "Actual Total Time": 0.013,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "seasons_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.012,
+              "Actual Total Time": 0.012,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Hash Join",
+            "Join Type": "Inner",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_activity",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 1.699,
+            "Actual Total Time": 1.7,
+            "Plan Rows": 1348,
+            "Shared Hit Blocks": 170,
+            "Shared Read Blocks": 225,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "social_activity",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 13902,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.007,
+              "Actual Total Time": 0.843,
+              "Plan Rows": 14544,
+              "Shared Hit Blocks": 167,
+              "Shared Read Blocks": 218,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Nested Loop",
+            "Join Type": "Left",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE visible_raw",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 1.701,
+            "Actual Total Time": 1.707,
+            "Plan Rows": 6,
+            "Shared Hit Blocks": 170,
+            "Shared Read Blocks": 225,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Scan",
+              "Relation Name": "episodes",
+              "Index Name": "episodes_pkey",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 5547,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "SubPlan",
+              "Subplan Name": "SubPlan 10",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "media_relationships",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Rows Removed by Filter": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "context": "0:retained-active-show",
+      "ctes": [
+        {
+          "root": {
+            "Node Type": "Unique",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_roots",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.013,
+            "Actual Total Time": 0.015,
+            "Plan Rows": 2,
+            "Shared Hit Blocks": 2,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "Member",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.007,
+              "Actual Total Time": 0.007,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Aggregate",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_ids",
+            "Strategy": "Hashed",
+            "Actual Rows": 148,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.224,
+            "Actual Total Time": 0.237,
+            "Plan Rows": 258,
+            "Shared Hit Blocks": 56,
+            "Shared Read Blocks": 8,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Peak Memory Usage": 37
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 138,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.066,
+              "Actual Total Time": 0.11,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 49,
+              "Shared Read Blocks": 4,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 138,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.061,
+              "Actual Total Time": 0.061,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 4,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.028,
+              "Actual Total Time": 0.028,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_season_idx",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.027,
+              "Actual Total Time": 0.028,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 9,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.028,
+              "Actual Total Time": 0.032,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 5,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "seasons_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 9,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.026,
+              "Actual Total Time": 0.026,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Hash Join",
+            "Join Type": "Inner",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_activity",
+            "Actual Rows": 3424,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.309,
+            "Actual Total Time": 3.856,
+            "Plan Rows": 449,
+            "Shared Hit Blocks": 337,
+            "Shared Read Blocks": 112,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "social_activity",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 13902,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.015,
+              "Actual Total Time": 1.735,
+              "Plan Rows": 14544,
+              "Shared Hit Blocks": 281,
+              "Shared Read Blocks": 104,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Nested Loop",
+            "Join Type": "Left",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE visible_raw",
+            "Actual Rows": 3424,
+            "Actual Loops": 1,
+            "Actual Startup Time": 1.616,
+            "Actual Total Time": 1343.04,
+            "Plan Rows": 2,
+            "Shared Hit Blocks": 216209,
+            "Shared Read Blocks": 166,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Scan",
+              "Relation Name": "episodes",
+              "Index Name": "episodes_pkey",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 1,
+              "Actual Loops": 3424,
+              "Actual Startup Time": 0.001,
+              "Actual Total Time": 0.001,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 13696,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Index Scan",
+              "Relation Name": "seasons",
+              "Index Name": "seasons_pkey",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 3424,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 6834,
+              "Shared Read Blocks": 14,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "SubPlan",
+              "Subplan Name": "SubPlan 10",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "media_relationships",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Rows Removed by Filter": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "context": "1:observed-normal-movie",
+      "ctes": [
+        {
+          "root": {
+            "Node Type": "Unique",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_roots",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.022,
+            "Actual Total Time": 0.025,
+            "Plan Rows": 5,
+            "Shared Hit Blocks": 2,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "Member",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.011,
+              "Actual Total Time": 0.011,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Aggregate",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_ids",
+            "Strategy": "Hashed",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.076,
+            "Actual Total Time": 0.089,
+            "Plan Rows": 646,
+            "Shared Hit Blocks": 2,
+            "Shared Read Blocks": 7,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Peak Memory Usage": 49
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.02,
+              "Actual Total Time": 0.023,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 3,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.018,
+              "Actual Total Time": 0.018,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 3,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.015,
+              "Actual Total Time": 0.015,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_season_idx",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.014,
+              "Actual Total Time": 0.014,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.01,
+              "Actual Total Time": 0.011,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "seasons_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.01,
+              "Actual Total Time": 0.01,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Hash Join",
+            "Join Type": "Inner",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_activity",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 2.19,
+            "Actual Total Time": 2.192,
+            "Plan Rows": 1125,
+            "Shared Hit Blocks": 176,
+            "Shared Read Blocks": 218,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "social_activity",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 13902,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.011,
+              "Actual Total Time": 1.277,
+              "Plan Rows": 14544,
+              "Shared Hit Blocks": 174,
+              "Shared Read Blocks": 211,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Nested Loop",
+            "Join Type": "Left",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE visible_raw",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 2.193,
+            "Actual Total Time": 2.218,
+            "Plan Rows": 74,
+            "Shared Hit Blocks": 176,
+            "Shared Read Blocks": 218,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Scan",
+              "Relation Name": "episodes",
+              "Index Name": "episodes_pkey",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 5547,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "SubPlan",
+              "Subplan Name": "SubPlan 10",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "media_relationships",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Rows Removed by Filter": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "context": "2:observed-normal-movie",
+      "ctes": [
+        {
+          "root": {
+            "Node Type": "Unique",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_roots",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.016,
+            "Actual Total Time": 0.023,
+            "Plan Rows": 5,
+            "Shared Hit Blocks": 2,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "Member",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.008,
+              "Actual Total Time": 0.008,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Aggregate",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_ids",
+            "Strategy": "Hashed",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.837,
+            "Actual Total Time": 0.878,
+            "Plan Rows": 646,
+            "Shared Hit Blocks": 2,
+            "Shared Read Blocks": 7,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Peak Memory Usage": 49
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.343,
+              "Actual Total Time": 0.343,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 3,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.34,
+              "Actual Total Time": 0.34,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 3,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.078,
+              "Actual Total Time": 0.081,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_season_idx",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.077,
+              "Actual Total Time": 0.079,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.389,
+              "Actual Total Time": 0.395,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "seasons_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.388,
+              "Actual Total Time": 0.392,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 2,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Hash Join",
+            "Join Type": "Inner",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_activity",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 2.662,
+            "Actual Total Time": 2.667,
+            "Plan Rows": 1125,
+            "Shared Hit Blocks": 387,
+            "Shared Read Blocks": 7,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "social_activity",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 13902,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.003,
+              "Actual Total Time": 0.574,
+              "Plan Rows": 14544,
+              "Shared Hit Blocks": 385,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Nested Loop",
+            "Join Type": "Left",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE visible_raw",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 2.664,
+            "Actual Total Time": 2.689,
+            "Plan Rows": 8,
+            "Shared Hit Blocks": 387,
+            "Shared Read Blocks": 7,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Scan",
+              "Relation Name": "episodes",
+              "Index Name": "episodes_pkey",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 5547,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "SubPlan",
+              "Subplan Name": "SubPlan 10",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "media_relationships",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Rows Removed by Filter": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "context": "3:observed-normal-movie",
+      "ctes": [
+        {
+          "root": {
+            "Node Type": "Unique",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_roots",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.016,
+            "Actual Total Time": 0.019,
+            "Plan Rows": 5,
+            "Shared Hit Blocks": 2,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "Member",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.009,
+              "Actual Total Time": 0.009,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Aggregate",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_work_ids",
+            "Strategy": "Hashed",
+            "Actual Rows": 1,
+            "Actual Loops": 1,
+            "Actual Startup Time": 0.065,
+            "Actual Total Time": 0.072,
+            "Plan Rows": 646,
+            "Shared Hit Blocks": 9,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0,
+            "Peak Memory Usage": 49
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.018,
+              "Actual Total Time": 0.018,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 3,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.015,
+              "Actual Total Time": 0.015,
+              "Plan Rows": 97,
+              "Shared Hit Blocks": 3,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "episodes",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.012,
+              "Actual Total Time": 0.012,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "episodes_season_idx",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.011,
+              "Actual Total Time": 0.011,
+              "Plan Rows": 28,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Heap Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.01,
+              "Actual Total Time": 0.01,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Bitmap Index Scan",
+              "Index Name": "seasons_show_number_unique",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.009,
+              "Actual Total Time": 0.009,
+              "Plan Rows": 4,
+              "Shared Hit Blocks": 2,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Hash Join",
+            "Join Type": "Inner",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE admitted_activity",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 1.928,
+            "Actual Total Time": 1.929,
+            "Plan Rows": 1125,
+            "Shared Hit Blocks": 394,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "social_activity",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 13902,
+              "Actual Loops": 1,
+              "Actual Startup Time": 0.005,
+              "Actual Total Time": 0.728,
+              "Plan Rows": 14544,
+              "Shared Hit Blocks": 385,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            }
+          ]
+        },
+        {
+          "root": {
+            "Node Type": "Nested Loop",
+            "Join Type": "Left",
+            "Parent Relationship": "InitPlan",
+            "Subplan Name": "CTE visible_raw",
+            "Actual Rows": 0,
+            "Actual Loops": 1,
+            "Actual Startup Time": 1.93,
+            "Actual Total Time": 1.942,
+            "Plan Rows": 10,
+            "Shared Hit Blocks": 394,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          "relationOrBitmapIndexNodes": [
+            {
+              "Node Type": "Index Scan",
+              "Relation Name": "episodes",
+              "Index Name": "episodes_pkey",
+              "Parent Relationship": "Inner",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "seasons",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 5547,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Index Only Scan",
+              "Relation Name": "media_relationships",
+              "Index Name": "media_relationships_parent_id_child_id_kind_pk",
+              "Parent Relationship": "SubPlan",
+              "Subplan Name": "SubPlan 10",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0
+            },
+            {
+              "Node Type": "Seq Scan",
+              "Relation Name": "media_relationships",
+              "Parent Relationship": "Outer",
+              "Actual Rows": 0,
+              "Actual Loops": 0,
+              "Actual Startup Time": 0,
+              "Actual Total Time": 0,
+              "Plan Rows": 1,
+              "Shared Hit Blocks": 0,
+              "Shared Read Blocks": 0,
+              "Temp Read Blocks": 0,
+              "Temp Written Blocks": 0,
+              "Rows Removed by Filter": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "resourceInterpretation": {
+    "workScopedContexts": 7,
+    "sharedRootAccessReductionInAllWorkScopedContexts": true,
+    "tempReadWriteExactlyBaselineAll8Pairs": true,
+    "explanation": "The allowedworkIDset uses directroot and subtype lookups rather than hashing all134289episode rows at admission. Pilot movie roots1/allowed1 and show roots1/allowed148 produce no admission temp. Full per-node attribution retains each actual case including829season/23member collection. social_activity still scans13902rawrows in pilot, so this is not bounded event history or a new work-ID index. Existing relationship/recursive plan temporary work remains.",
+    "explicitIds": "Both full plans have233combined shared hits+reads and no temporary blocks; hit/read split shifts. No benefit claimed for this already selective case.",
+    "remainingCost": "Emptymovie full-owner samplemedian remainsabout1.4s; populatedshowabout2.9s. Relationshipreason/privacy/card work remain, and no total Activity completion or SLA claim is made."
+  },
+  "independentSourceReview": {
+    "reviewers": [
+      "parent root",
+      "providers_jobs_audit",
+      "data_api_audit"
+    ],
+    "scope": "Exact29f1f31c/2cc61236 algebra, ownsubtype fields+originalroots, UNION/semijoin cardinality, unchanged original visible_raw gates/fallback/windows/cursors; pilot source/capture protocol independently read.",
+    "boundary": "No delegated DB/test rerun implied; actual executions owned by data_api_audit under distinct rootleases."
+  },
+  "nextAcceptance": [
+    "Parent reviews final evidence and chooses adoption; candidate29remains private pending that decision and normal toast acceptance.",
+    "If adopted, protect shared scope-admission SQL invariants with proportionate maintained source-derived controls and existing guarded fallback regression; authored controls are separate from actual64caseproof.",
+    "Normal signed-in selected Activity empty/positive, Back/panel and scoped inbox acceptance; live policy withdrawal/abort and retaineddata gaps remain explicit.",
+    "Do not rewrite historical proof or weaken oldguard files after normal toast schema changes; any future executable replay requires reviewed currentdependency/path/pin rebinding."
+  ],
+  "limits": [
+    "Only existing approved private-clone credentials were used in memory; no normal key, normal database, provider transport, HTTPauth/session hooks, browser or naturalrequesttiming acceptance in this proof. Actual clone and normal viewers/settings/time/cache differ.",
+    "Only specified64requestcontexts, not every filtercrossproduct or concurrentprivacy/featurewithdrawal schedule.",
+    "Actual3listens/1152unknownevents,0datedmultitrackbatches and0repeateddatedworklistens; sourcealgebra and futurecontrolledtests supplement absentcohorts, not inventedactualperformance.",
+    "Actual multiply-parented/nestedcollection or missing/contradictorysubtype positive cases may be absent; nonrecursive algebra review does not manufacturethosecohorts.",
+    "Filter/cursor/empty/duplicateID arguments are explicit verification inputs over retained actualrows, not captured naturalbrowsertraffic.",
+    "Two alternating timingpairs per sampledcontext only; local full-owner excludesJSONserialization/HTTP/browser and is not a universal latency effect.",
+    "Primary is partof fullowner. ORMcounts exclude rawconfig/session reads; no RSS/CPU/WAL or largeconcurrent-load measurement.",
+    "Rootbuffers onlywholeplan totals, no parent/childsum; SharedRead/temporaryblocks do not prove physicaldisktraffic.",
+    "Expectedlabels/census files contain only sanitizedverificationcase metadata and counts. Completeoutputs/SQLparams/realIDs stayRAM.",
+    "Currentowner source remains06aunadopted at publication; atExecution/atClosure17pins are historical and must stay exact despite later normaltoast changes.",
+    "No commongate, ledger/README/verifier or production/testsource change by publication.",
+    "Materialized root/allowed-ID/admitted-event sets can grow with the scope. Eight measured plan pairs do not establish a universal memory or concurrent-load bound."
+  ],
+  "artifactPins": {
+    "candidates/scoped-activity-admission-v2/pilot-syntax-only.json": "adaab5a06dd9dfe808d451a1ceb855b03d9a6f5f52f87ae5f5d80ba4194626d6",
+    "candidates/scoped-activity-admission-v2/full-reviewed-plan.json": "3876ae52dbdf4930d3e029b3e819a2961312106c1abbd5e8ca6a4d131db5a938",
+    "candidates/scoped-activity-admission-v2/full-executed-probe.ts.txt": "41dccab4ab0c3b12fc1ee99131f044cfa4431e31fbbc40a79a908f8f50818689",
+    "candidates/scoped-activity-admission-v2/source-pins-at-execution.json": "e8b39ddab0a329bb9704d4fc6d8a0349390636a38ab0042cf5036bbd58a3e491",
+    "candidates/scoped-activity-admission-v2/pilot-executed-probe.ts.txt": "43d5b33b3af481824c6ce31422e63b1ba52e4634800fe81c853a5412574946c4",
+    "candidates/scoped-activity-admission-v2/expected-full-coverage-labels.json": "c12fef059d0e1e0b5a39712ab647ba74801aa443a9df5467d39e92a5e9f22b2b",
+    "candidates/scoped-activity-admission-v2/original-candidate-manifest.json": "5efb56ff8d44dd03b984ec487738635385d24a72db58b700213c3c517580691f",
+    "candidates/scoped-activity-admission-v2/queries.before.ts.txt": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "candidates/scoped-activity-admission-v2/workset-admission.patch": "2cc61236fc3883a3cc4d22bd1105a525d0a7da200ef335d046f8389cf2c69f9a",
+    "candidates/scoped-activity-admission-v2/expected-full-census.json": "0bef97163b167a6ea4d4f8b67ea5ef2e94f931a87e23d50497cbd22ac40adcd3",
+    "candidates/scoped-activity-admission-v2/queries.candidate.ts.txt": "29f1f31c79d67c75dc94127054d195a3810221480269fa0cb6737ce0095c4fb3",
+    "candidates/scoped-activity-admission-v2/pilot-reviewed-plan.json": "3c6dc444a091846c3dcc1bb3df419c78036d7a5c958f97d9ced5b7a29e6fe7d7",
+    "candidates/scoped-activity-admission-v2/full-syntax-only.json": "d5bb93872d36956e22c9b034d1455146d2810cb5fb643b06ea58abd88787c126",
+    "candidates/scoped-activity-admission-v2/original-proposal.md": "3e031cf1178e02c302c2955eca85a9a733142649003891e21b61919017fead64",
+    "evidence/scoped-activity-admission-v2-pilot.json": "89530ea94d671ae415e66b58aca828e8f90ca834d1f674f96c31c08b2262013d",
+    "evidence/scoped-activity-admission-v2-pilot-summary.json": "3bb7b7ef439a57f8ec05ef4ae13c62db7e8cf771fc91c29c3cf74222ab70d383",
+    "evidence/scoped-activity-admission-v2-full.json": "1d965db1ffc1775c34f11a67a1ea135641d452d3ce7dede32bdab7b5d1412b3a"
+  },
+  "sourcePins": {
+    "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
+    "src/lib/social/relationships.server.ts": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+    "node_modules/drizzle-orm/bun-sql/migrator.js": "b7f6bf40b94d906ea3b53276d3dd80fc8144f64c3b03ae3cbf91f34cbaaf94df",
+    "node_modules/drizzle-orm/pg-core/dialect.js": "a7d7921c939b228a3f1295be5f024a8c264169e368f591c2d29072ffe079b14e",
+    "node_modules/drizzle-orm/migrator.js": "8c5e22b76a6a239e426b659ba999f69b4b312a052e74f533758f876795f6377c",
+    "tests/activity-scope-admission-db.test.ts": "9900b7bf5e7c0b948117075c6a4f561eb3d25599dd40e6d89689890cfd4f6648"
+  },
+  "currentAdoption": {
+    "report": "implementation-scoped-activity-workset.json",
+    "full64ProofReexecutedAfterToast": false,
+    "maintainedCurrentActualAdmissionPairs": 16,
+    "normalQueryAcceptance": true,
+    "normalFullBackAcceptance": false,
+    "boundary": "Original17execution/closurepins and64-pair receipt remain immutable; new18currentpins/16admission controls and normal trial are distinct."
+  },
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T06:24:24.888971+00:00",
+      "path": "src/lib/social/relationships.server.ts",
+      "before": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+      "after": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+      "evidence": "evidence/implementation-activity-reasons-selective-applied.json",
+      "boundary": "Current source identity refreshed after separate selective-helper adoption. Immutable original execution receipts/manifests are unchanged; this does not rerun their measurements or transfer missing acceptance."
+    }
+  ],
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "src/lib/social/queries.server.ts",
+        "tests/activity-scope-admission-db.test.ts"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    }
+  ]
+}

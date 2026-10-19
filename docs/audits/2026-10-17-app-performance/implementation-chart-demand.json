@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "reportRef": "implementation-chart-demand.md",
+  "committed": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "databaseMutations": false,
+  "changes": [
+    {
+      "findingId": "UIS-05",
+      "state": "implemented_client_and_ssr_regression_verified_actual_empty_chart_acceptance_pending",
+      "sharedOwner": "ChartView lazy renderer/error ownership",
+      "files": ["src/lib/ui/charts/ChartView.svelte"],
+      "sourceSha256": "6fe91873da7be529bafb7d19ad0238708055b034e2cb72067c9aaf7604ccdb50",
+      "consumers": ["DetailCard insight charts", "Game progress", "Reading progress", "ChartGallery"],
+      "behavior": ["Client compact-empty branch clears feedback without reading renderer derived", "Current populated failures retain existing message", "Stale/disposed failures cannot publish", "Noncompact empty renderer demand preserved", "Standard/extended Promise reuse retained"],
+      "serverCalibration": "Installed compiler/runtime are lazy; compact-empty SSR was already healthy",
+      "verification": {"passed":5,"failed":0,"assertions":37,"files":2,"runtime":"Bun1.4.3","testFiles":["tests/chart-view-demand.test.ts","tests/chart-presentation.test.ts"],"evidenceRef":"evidence/implementation-chart-demand-tests.txt"},
+      "gaps": ["No separate actual signed-in compact-empty import/network trial", "No latency/heap measurement", "Started dynamic import is not cancellable and browser module cache retention remains normal"]
+    }
+  ]
+}

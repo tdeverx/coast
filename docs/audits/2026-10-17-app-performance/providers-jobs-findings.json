@@ -1,0 +1,502 @@
+{
+  "head": "eb0673873462b71118d1c11678d128958a05ff07",
+  "count": 15,
+  "findings": [
+    {
+      "id": "PJ-01",
+      "priority": "P2",
+      "title": "private artwork cancellation is owned by the first caller",
+      "confidence": "high",
+      "state": "controlled actual-owner behavior reproduced; live impact unknown",
+      "sharedOwner": "Common artwork-flight lifetime, transport and disk cache",
+      "consumers": [
+        "Private screen/music/reading relay",
+        "public TMDB cache",
+        "concurrent viewers"
+      ],
+      "evidenceRefs": [
+        "src/lib/providers/server-artwork.server.ts:18-30",
+        "src/lib/providers/artwork.server.ts:61-69",
+        "tmdb/artwork.server.ts:12-29",
+        "providers-jobs.md#pj-01"
+      ],
+      "smallestOption": "Extract narrow existing TMDB per-waiter/last-consumer ownership and use both adapters",
+      "alternatives": [
+        "No copied cancellation algorithms"
+      ],
+      "acceptance": [
+        "Leader abort leaves follower alive",
+        "final consumer aborts upstream",
+        "stale completion preserves replacement",
+        "optional persistence decline delivers"
+      ],
+      "gaps": [
+        "Actual browser incidence and saved fallback calls unknown"
+      ]
+    },
+    {
+      "id": "PJ-02",
+      "priority": "P2",
+      "title": "crop cache does not provide true single-flight",
+      "confidence": "high",
+      "state": "controlled actual-owner behavior reproduced; live impact unknown",
+      "sharedOwner": "Plugin crop work/results owner with thin controller",
+      "consumers": [
+        "Every authenticated crop caller",
+        "same-item simultaneous viewers"
+      ],
+      "evidenceRefs": [
+        "providers-jobs.md#pj-02"
+      ],
+      "smallestOption": "Select winning Lazy<Task> owner before process creation",
+      "alternatives": [
+        "Explicit shared process owner with exact-entry failure eviction"
+      ],
+      "acceptance": [
+        "2/8/32 contenders start one process",
+        "failure retryable",
+        "stale failure cannot evict replacement"
+      ],
+      "gaps": [
+        "Real deployed plugin frequency and CPU unknown"
+      ]
+    },
+    {
+      "id": "PJ-03",
+      "priority": "P2",
+      "title": "crop processes and retained results lack aggregate bounds",
+      "confidence": "high",
+      "state": "controlled actual-owner behavior reproduced; live impact unknown",
+      "sharedOwner": "Plugin crop admission/results/process lifetime",
+      "consumers": [
+        "All distinct crop requests",
+        "joined viewers",
+        "plugin stop/config",
+        "Coast fallback"
+      ],
+      "evidenceRefs": [
+        "providers-jobs.md#pj-03"
+      ],
+      "smallestOption": "Bound shared active/pending/cache resources; per-waiter cancellation; capped diagnostic parser; process drain",
+      "alternatives": [
+        "Explicit approved crop fallback/opt-out"
+      ],
+      "acceptance": [
+        "Aggregate process/queue/cache caps",
+        "cancelled-before-start zero work",
+        "shutdown drain",
+        "fault/null policy",
+        "content invalidation"
+      ],
+      "gaps": [
+        "Caps require real FFmpeg RSS/CPU evidence; no production OOM claim"
+      ]
+    },
+    {
+      "id": "PJ-04",
+      "priority": "P2",
+      "title": "Comic Vine search waits on optional enrichment",
+      "confidence": "high",
+      "state": "production-body call counts verified; live latency unmeasured",
+      "sharedOwner": "Reading-provider service/cache demand contract and common origin lane",
+      "consumers": [
+        "Comic first/later search",
+        "series enrichment",
+        "verify",
+        "metadata/group/discovery",
+        "book shared contracts"
+      ],
+      "evidenceRefs": [
+        "src/lib/providers/comic-vine/adapter.server.ts:105-143",
+        "server/security/provider-fetch.ts:335-336",
+        "providers/reading.server.ts:63-69",
+        "providers-jobs.md#pj-04"
+      ],
+      "smallestOption": "Define successful issue-result/enrichment demand contract and remove unnecessary serial optional demand where approved",
+      "alternatives": [
+        "Bounded query-volume reuse; retain semantics and communicate long work"
+      ],
+      "acceptance": [
+        "Exact items/order/total/fallback",
+        "no unrelated volumes",
+        "cooldown/concurrent callers",
+        "cold/warm actual trace"
+      ],
+      "gaps": [
+        "2/3 calls verified; spacing arithmetic is not measured end-to-end; product decision required"
+      ]
+    },
+    {
+      "id": "PJ-05",
+      "priority": "P2",
+      "title": "one Trakt value can require a full account walk",
+      "confidence": "high",
+      "state": "production-body call counts verified; live latency unmeasured",
+      "sharedOwner": "Canonical Trakt complete traversal/staging/current-value owner",
+      "consumers": [
+        "Scalar export",
+        "progress/history clearing",
+        "Collection projection/preview/cleanup/review",
+        "lists"
+      ],
+      "evidenceRefs": [
+        "providers-jobs.md#pj-05"
+      ],
+      "smallestOption": "Exact supported lookup or shared durable authoritative census/resumable traversal",
+      "alternatives": [
+        "Scoped complete-read single-flight with explicit freshness/activity fences"
+      ],
+      "acceptance": [
+        "First/middle/last/absent",
+        "exact terminal page",
+        "no partial absence",
+        "reconnect/lease/activity change",
+        "safe yields"
+      ],
+      "gaps": [
+        "No live Trakt history or provider latency measured"
+      ]
+    },
+    {
+      "id": "PJ-06",
+      "priority": "P2",
+      "title": "Trakt list delivery still rebuilds full identities and rewrites converged lists",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Canonical Trakt batched identity and list/traversal delivery",
+      "consumers": [
+        "List export preflight/write/reorder",
+        "Collection/source preview",
+        "scalar consumers retain validation"
+      ],
+      "evidenceRefs": [
+        "sync/trakt-identity.server.ts:26-45",
+        "providers-jobs.md#pj-06"
+      ],
+      "smallestOption": "Batch exact identity reads at common owner and no-op truly converged complete snapshots",
+      "alternatives": [
+        "Bounded write phases only if large-list evidence justifies"
+      ],
+      "acceptance": [
+        "Rename/add/remove/reorder/no-op",
+        "aliases/unsupported media",
+        "concurrent local edit",
+        "uncertain create",
+        "exact remote result"
+      ],
+      "gaps": [
+        "Actual captures have zero local lists; no large-list latency"
+      ]
+    },
+    {
+      "id": "PJ-07",
+      "priority": "P2",
+      "title": "Jellyfin final reconciliation escapes page/transaction budgets",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Existing Jellyfin scan progress plus queue checkpoints/intents",
+      "consumers": [
+        "Bootstrap",
+        "user/personal/full sync",
+        "screen/music reconciliation",
+        "companion backfill"
+      ],
+      "evidenceRefs": [
+        "src/lib/sync/jellyfin.server.ts:841-857",
+        "src/lib/sync/changes.server.ts:72-116",
+        "providers-jobs.md#pj-07"
+      ],
+      "smallestOption": "Set-based bounded intent seed and keyset enqueue phases with commit-coupled cursors/fences",
+      "alternatives": [
+        "Small shared finalization helper only if multiple importers need it"
+      ],
+      "acceptance": [
+        "Five-page/10-second safe yields",
+        "exact versions",
+        "crash/resume",
+        "concurrent edits/reset/feature change",
+        "complete publication"
+      ],
+      "gaps": [
+        "8919 actual pending reconciliation jobs alone do not establish cause; enabled scope and lock spans pending"
+      ]
+    },
+    {
+      "id": "PJ-08",
+      "priority": "P2",
+      "title": "a single music track can materialize 10,000 listens in one transaction",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Shared imported-listen persistence and existing import checkpoint owner",
+      "consumers": [
+        "Full/personal/delta music",
+        "manual track/album listens",
+        "progress",
+        "per-listen webhooks"
+      ],
+      "evidenceRefs": [
+        "src/lib/sync/jellyfin.server.ts:465-479",
+        "src/lib/music/persistence.server.ts:166",
+        "providers-jobs.md#pj-08"
+      ],
+      "smallestOption": "Bound idempotent imported-listen batches with replay-safe continuation and equivalent events",
+      "alternatives": [
+        "Cumulative history model only with explicit approval/migration"
+      ],
+      "acceptance": [
+        "Delta0/1/100/10000",
+        "unchanged no growth",
+        "concurrent listening",
+        "retry",
+        "unknown dates",
+        "duplicate editions",
+        "webhook equivalence"
+      ],
+      "gaps": [
+        "No actual10000-delta execution or WAL/statement measurement"
+      ]
+    },
+    {
+      "id": "PJ-09",
+      "priority": "P2",
+      "title": "final shared-library membership update rewrites matching parents and correlates child counts",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Canonical membership-evidence projection",
+      "consumers": [
+        "Full/recent shared library",
+        "targeted imports",
+        "show/season consumers",
+        "Collection derivation"
+      ],
+      "evidenceRefs": [
+        "src/lib/sync/jellyfin.server.ts:830-840",
+        "providers-jobs.md#pj-09"
+      ],
+      "smallestOption": "Value-difference guard for identical membership with same evidence scope",
+      "alternatives": [
+        "Aggregate touched child counts once only if plan supports"
+      ],
+      "acceptance": [
+        "Exact complete parent flags/Collection",
+        "distinct child identity",
+        "partial scan never complete",
+        "unchanged tuple/revision/WAL counts"
+      ],
+      "gaps": [
+        "Actual update/read-equivalent plan and touched parent subset unknown"
+      ]
+    },
+    {
+      "id": "PJ-10",
+      "priority": "P2",
+      "title": "Jobs terminal representatives scan and spill permanent history",
+      "confidence": "high",
+      "state": "actual-dataset query cost/scan/spill verified",
+      "sharedOwner": "Shared queue task evidence/read model and scheduler index contracts",
+      "consumers": [
+        "Jobs cards/counts/controls",
+        "timings",
+        "history",
+        "one-off/current/null/obsolete generations",
+        "Dynamic local/event-driven kinds absent from serviceTasks",
+        "Null instance/deleted-connection scopes"
+      ],
+      "evidenceRefs": [
+        "src/lib/server/queue/index.ts:563-591",
+        "storage/retention.server.ts:4",
+        "job-timing.server.ts:27-35",
+        "evidence/deployed-real-sql.json",
+        "evidence/development-real-sql.json",
+        "providers-jobs.md#pj-10",
+        "src/lib/server/queue/index.ts:593-597",
+        "src/lib/ui/components/JobsSettings.svelte:66-72"
+      ],
+      "smallestOption": "Finite task scopes and bounded indexed latest-record seeks",
+      "alternatives": [
+        "Durable shared latest-task evidence snapshot maintained with terminal transitions, with approval/rebuild contract"
+      ],
+      "acceptance": [
+        "Exact IDs/counts/outcomes/old one-off",
+        "ties/deleted scopes",
+        "same actual-data before/after plan",
+        "keep permanent history",
+        "Complete dynamic-kind/null-scope representative set; 400-day-old webhook retained",
+        "Exact current/null/obsolete generation eligibility; bounded dynamic-key discovery"
+      ],
+      "gaps": [
+        "134.122ms deployed/36.744ms dev medians are one query, not route/tail latency or controlled scaling",
+        "Closed serviceTasks enumeration alone does not preserve existing fallback representatives"
+      ]
+    },
+    {
+      "id": "PJ-11",
+      "priority": "P2",
+      "title": "Steam rewrites growing immutable snapshot content when only its cursor changes",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Immutable provider snapshot plus shared outbox checkpoint",
+      "consumers": [
+        "Steam initial/unchanged/resumed ownership",
+        "terminal/reset cleanup",
+        "other snapshot users"
+      ],
+      "evidenceRefs": [
+        "src/lib/providers/steam/sync.server.ts:47-78",
+        "providers-jobs.md#pj-11"
+      ],
+      "smallestOption": "Keep immutable array unchanged and atomically checkpoint small next/added cursor",
+      "alternatives": [
+        "Snapshot representation rework only after actual TOAST/WAL evidence"
+      ],
+      "acceptance": [
+        "Crash each commit boundary",
+        "complete negative ownership",
+        "private/incomplete/empty",
+        "counters",
+        "optional metadata",
+        "cleanup"
+      ],
+      "gaps": [
+        "LogicalJSON model is not PostgreSQL bytes/WAL; active snapshot size unknown"
+      ]
+    },
+    {
+      "id": "PJ-12",
+      "priority": "P2",
+      "title": "list conflicts have no page bound and hydrate complete local membership per conflict",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Shared conflict projection and bounded summary/detail requests",
+      "consumers": [
+        "Settings/reviews",
+        "scalar/list conflicts",
+        "supported/unsupported media"
+      ],
+      "evidenceRefs": [
+        "src/lib/sync/conflicts.server.ts:55-78",
+        "sync/list-values.server.ts:47-65",
+        "providers-jobs.md#pj-12"
+      ],
+      "smallestOption": "Bound summary pages; demand-load complete selected-list diff; batch scalar state",
+      "alternatives": [
+        "Shared selected-conflict domain projection"
+      ],
+      "acceptance": [
+        "Over100 conflicts",
+        "huge exact selected list",
+        "local edits/privacy",
+        "unsupported items preserved"
+      ],
+      "gaps": [
+        "Captured actual datasets have zero lists; actual route timing unknown"
+      ]
+    },
+    {
+      "id": "PJ-13",
+      "priority": "P3",
+      "title": "review pagination refetches invariant TMDB detail and credits",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Shared catalogue insights/cache",
+      "consumers": [
+        "Movie/show review pages",
+        "season/episode paths",
+        "detail rows",
+        "provider-specific Trakt contract"
+      ],
+      "evidenceRefs": [
+        "src/lib/catalogue/details.server.ts:67",
+        "providers-jobs.md#pj-13"
+      ],
+      "smallestOption": "Split bounded base/review demand only if actual use warrants",
+      "alternatives": [
+        "Retain current simple cache if rare"
+      ],
+      "acceptance": [
+        "Region/language/identity",
+        "incomplete review retry",
+        "exact result",
+        "finite bytes"
+      ],
+      "gaps": [
+        "No actual review navigation/provider trace"
+      ]
+    },
+    {
+      "id": "PJ-14",
+      "priority": "policy",
+      "title": "queued provider time has no caller deadline",
+      "confidence": "high",
+      "state": "explicit behavior policy choice, admission already bounded",
+      "sharedOwner": "Common request priority/transport/deadline/shared waiter owner",
+      "consumers": [
+        "Every provider family",
+        "interactive/job calls",
+        "webhooks",
+        "streams separate lifetime"
+      ],
+      "evidenceRefs": [
+        "server/security/request-priority.ts:75-124",
+        "providers/reading.server.ts:63-110",
+        "providers-jobs.md#pj-14"
+      ],
+      "smallestOption": "Define caller-aware overall deadline and cancellation with distinct local expiry semantics",
+      "alternatives": [
+        "Retain durable waits with progress and no policy change until selected"
+      ],
+      "acceptance": [
+        "Expired queue caller sends zero HTTP",
+        "durable continuation",
+        "priorities/fairness/reservations",
+        "Retry-After",
+        "live follower"
+      ],
+      "gaps": [
+        "Wait distributions unknown; generic15s import timeout violates contract"
+      ]
+    },
+    {
+      "id": "PJ-15",
+      "priority": "P2",
+      "title": "bulk task controls select all matching jobs and execute serial transactions",
+      "confidence": "high for source shape; actual command cost unmeasured",
+      "state": "source-scale candidate grounded by actual backlog; no live mutation",
+      "sharedOwner": "Existing queue task-control admission/selection/progress with canonical cancel/retry/promote policies",
+      "consumers": [
+        "All provider/media/experiment task controls",
+        "Dynamic local/event-driven and null-scope tasks",
+        "Jobs and integration JobSchedule cards",
+        "API task-control callers",
+        "Individual-job command policies"
+      ],
+      "evidenceRefs": [
+        "src/lib/server/queue/index.ts:602-620",
+        "src/lib/server/queue/index.ts:623-661",
+        "src/lib/ui/components/JobSchedule.svelte:57-63",
+        "src/lib/ui/components/JobSchedule.svelte:148-154",
+        "evidence/deployed-real-sql.json",
+        "providers-jobs.md#pj-15"
+      ],
+      "smallestOption": "Bounded keyset chunks and command work budget with validated continuation, target/generation fence and exact updated/skipped/failed progress",
+      "alternatives": [
+        "Existing durable job/checkpoint infrastructure if completion must survive navigation/restart; no second queue",
+        "Set-based shared writer only if every policy and side effect is preserved"
+      ],
+      "acceptance": [
+        "Read-only actual eligible count; mutate only isolated actual-data clone",
+        "Bounded selection/chunk SQL/lock spans and retained IDs",
+        "Notification resolution, retry credit/service gates and duplicate-active conflict skips",
+        "Manual priorities, cancel-waiting preserves running work",
+        "Dynamic/null scopes, generation/auth withdrawal and concurrent transitions",
+        "Lost acknowledgement/restart continuation and no newly created work swept in",
+        "Busy/navigation release with honest partial outcomes; actual latency/WAL before speedup claim"
+      ],
+      "gaps": [
+        "Actual installation has 8919 pending reconcile and 2867 pending delta jobs; per-control eligible counts unknown",
+        "No task control mutation, latency, lock-wait, WAL or browser-hang reproduction",
+        "JobSchedule source prevents different-path navigation while the whole command remains busy"
+      ]
+    }
+  ]
+}

@@ -48,7 +48,7 @@ function genreRows(history: ReturnType<typeof watches>) {
   return sql`select distinct h.media_id, genre from (select distinct media_id from (${history}) events) h
     left join episodes ep on ep.media_id=h.media_id join media m on m.id=coalesce(ep.show_id,h.media_id)
     left join metadata_overrides o on o.media_id=m.id
-    left join lateral (select genres from metadata_snapshots where media_id=m.id and cardinality(genres)>0 order by updated_at desc limit 1) snapshot on true
+    left join lateral (select genres from metadata_snapshots where o.genres is null and nullif(m.genres,'{}') is null and media_id=m.id and cardinality(genres)>0 order by updated_at desc limit 1) snapshot on true
     cross join lateral unnest(coalesce(o.genres,nullif(m.genres,'{}'),snapshot.genres,'{}'::text[])) genre`;
 }
 function periodHistory(userId: string, period: ProfilePeriod, now = new Date()) {
@@ -59,7 +59,8 @@ async function profileSummary(
   userId: string,
   input: unknown = {},
   now = new Date(),
-  viewerId: string | null = userId
+  viewerId: string | null = userId,
+  includeHistoryPage = false
 ) {
   const options = v.parse(profileOptionsSchema, input);
   const db = getDb();
@@ -76,7 +77,12 @@ async function profileSummary(
     throw new AppError(404,'Profile section not found.');
   const visibleWork=(section:string)=>sql`${enabledCategories(sql`${s.works.category}`,config)} and social_visible(${userId}::uuid,${viewerId}::uuid,${section},${s.works.category})`;
   const periodEvents = sql`select * from (${periodHistory(userId, options.period, now)}) h where ${visibility.activity}`;
-  const genreMatches = genreRows(periodEvents);
+  // Genre selection uses the same dated history for ranking and membership.
+  // Materialize it only when selected; ordinary profiles retain their direct plan.
+  const genreMatches = sql`select * from profile_genres`;
+  const historyPrefix = options.genre ? sql`with profile_period_events as materialized (${periodEvents}),
+    profile_genres as materialized (${genreRows(sql`select * from profile_period_events`)}) ` : sql``;
+  const periodEventSource = options.genre ? sql`select * from profile_period_events` : periodEvents;
   const genreFilter = !options.genre
     ? sql`true`
     : options.genre === '__other__'
@@ -86,7 +92,7 @@ async function profileSummary(
   const matching = options.query
     ? sql`media_id in (select m.id from media m left join episodes ep on ep.media_id=m.id left join media series on series.id=ep.show_id where m.title ilike ${`%${query}%`} or series.title ilike ${`%${query}%`})`
     : sql`true`;
-  const history = sql`select * from (${periodEvents}) p where ${genreFilter} and ${matching} and ${options.activityKind === 'all' ? sql`true` : sql`kind=${options.activityKind}`} and ${options.repeats ? sql`rewatched` : sql`true`}`;
+  const history = sql`${historyPrefix}select * from (${periodEventSource}) p where ${genreFilter} and ${matching} and ${options.activityKind === 'all' ? sql`true` : sql`kind=${options.activityKind}`} and ${options.repeats ? sql`rewatched` : sql`true`}`;
   const kindFilter=options.kind==='all'?undefined:options.kind==='show'
     ?sql`${s.works.kind} in ('show','season','episode')`:eq(s.works.kind,options.kind);
   const ratingFilter = and(
@@ -111,11 +117,13 @@ async function profileSummary(
       ? viewerId ? hasPermittedWorkSource(viewerId) : sql`false` : undefined,
     kindFilter
   );
-  const [[counts], [rated], historyCounts, [favouriteCount]] = await Promise.all([
+  const shareFavouriteCount=options.kind==='all'&&options.scope==='all';
+  const [[counts], [rated], {historyCounts,historyEvents}, favouriteRows] = await Promise.all([
     db
       .select({
         favourites: sql<number>`count(*) filter (where social_visible(${userId}::uuid,${viewerId}::uuid,'insights',${s.works.category}))::int`,
         categories:sql<string[]>`coalesce(array_agg(distinct ${s.works.category}),'{}'::text[])`,
+        ...(shareFavouriteCount?{total:sql<number>`count(*)::int`}:{}),
       })
       .from(s.trackingState)
       .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
@@ -125,23 +133,63 @@ async function profileSummary(
       .from(s.ratings)
       .innerJoin(s.works,eq(s.works.id,s.ratings.mediaId))
       .where(ratingFilter),
-    db.execute<{
-      total: number;
-      unique: number;
-      movies: number;
-      episodes: number;
-      filtered: number;
-    }>(
-      sql`select count(*)::int as total, count(distinct media_id)::int as unique, count(distinct media_id) filter(where kind='movie')::int as movies, count(distinct media_id) filter(where kind='episode')::int as episodes, count(*) filter(where ${dates})::int as filtered from (${history}) h`
-    ),
-    db
+    profileHistorySummary(db,history,dates,includeHistoryPage&&options.view==='history'?options.page:undefined),
+    shareFavouriteCount?Promise.resolve([]):db
       .select({ count: sql<number>`count(*)::int` })
       .from(s.trackingState)
       .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
       .leftJoin(s.media, eq(s.media.id, s.works.id))
       .where(favouriteFilter),
   ]);
-  return { options, db, config, visibility, counts, rated, historyCounts, favouriteCount, history, dates, favouriteMembership, favouriteFilter, ratingFilter, visibleWork };
+  const favouriteCount=shareFavouriteCount?{count:counts.total!}:favouriteRows[0];
+  return { options, db, config, visibility, counts, rated, historyCounts, historyEvents, favouriteCount, history, dates, favouriteMembership, favouriteFilter, ratingFilter, visibleWork };
+}
+type ProfileHistoryCounts = {
+  total: number;
+  unique: number;
+  movies: number;
+  episodes: number;
+  filtered: number;
+};
+type ProfileHistoryEvent = {
+  eventId: string;
+  id: string;
+  watchedAt: Date;
+  source: string;
+  rewatched: boolean;
+  dateKnown: boolean;
+  editionId: string | null;
+};
+/** History pages share the recorded-watch relation with their exact totals. */
+async function profileHistorySummary(
+  db: ReturnType<typeof getDb>,
+  history: ReturnType<typeof watches>,
+  dates: ReturnType<typeof watches>,
+  requestedPage?: number
+): Promise<{historyCounts: ProfileHistoryCounts[];historyEvents: ProfileHistoryEvent[]}> {
+  if(requestedPage===undefined)return {
+    historyCounts:(await db.execute(sql`select count(*)::int as total, count(distinct media_id)::int as unique, count(distinct media_id) filter(where kind='movie')::int as movies, count(distinct media_id) filter(where kind='episode')::int as episodes, count(*) filter(where ${dates})::int as filtered from (${history}) h`)) as ProfileHistoryCounts[],
+    historyEvents:[],
+  };
+  const rows=(await db.execute(sql`
+    with history as materialized (
+      select event_id,media_id,kind,occurred_at,occurred_at_known,source,rewatched,edition_id from (${history}) h
+    ), counts as (
+      select count(*)::int as total, count(distinct media_id)::int as unique, count(distinct media_id) filter(where kind='movie')::int as movies, count(distinct media_id) filter(where kind='episode')::int as episodes, count(*) filter(where ${dates})::int as filtered from history h
+    )
+    select counts.*, page.* from counts left join lateral (
+      select event_id as "eventId", media_id as id, occurred_at as "watchedAt", source, rewatched, occurred_at_known as "dateKnown", edition_id as "editionId"
+      from history h where ${dates} order by occurred_at_known desc, occurred_at desc, event_id desc limit ${PAGE_SIZE}
+      offset (least(${requestedPage},greatest(1,ceil(counts.filtered::numeric/${PAGE_SIZE})::int))-1)*${PAGE_SIZE}
+    ) page on true order by page."dateKnown" desc, page."watchedAt" desc, page."eventId" desc
+  `)) as (ProfileHistoryCounts & {[K in keyof ProfileHistoryEvent]:ProfileHistoryEvent[K]|null})[];
+  const counts=rows[0];
+  return {
+    historyCounts:[{total:counts.total,unique:counts.unique,movies:counts.movies,episodes:counts.episodes,filtered:counts.filtered}],
+    historyEvents:rows.flatMap(row=>row.eventId===null?[]:[{
+      eventId:row.eventId,id:row.id!,watchedAt:row.watchedAt!,source:row.source!,rewatched:row.rewatched!,dateKnown:row.dateKnown!,editionId:row.editionId,
+    }]),
+  };
 }
 function profileTotals({visibility,counts,rated,historyCounts}: Awaited<ReturnType<typeof profileSummary>>) {
   return {
@@ -160,18 +208,21 @@ export async function profileInsightsData(userId: string, input: unknown = {}, n
   return {totals:profileTotals(summary),activity:await profileActivity(userId,now,summary.options.period,viewerId)};
 }
 
-export async function profileData(
+async function readProfile(
   userId: string,
   input: unknown = {},
   now = new Date(),
-  viewerId: string | null = userId
+  viewerId: string | null = userId,
+  presentation = true
 ) {
-  const summary=await profileSummary(userId,input,now,viewerId);
-  const {options,db,config,visibility,counts,rated,historyCounts,favouriteCount,history,dates,favouriteMembership,favouriteFilter,ratingFilter,visibleWork}=summary;
-  const [user] = await db
-    .select({ settings: s.users.settings })
+  const summary=await profileSummary(userId,input,now,viewerId,true);
+  const {options,db,config,visibility,counts,rated,historyCounts,historyEvents:events,favouriteCount,favouriteMembership,favouriteFilter,ratingFilter,visibleWork}=summary;
+  const [user] = presentation || options.view === 'favourites' && visibility.details ? await db
+    .select({ settings: presentation ? s.users.settings : sql<(typeof s.users.$inferSelect)['settings']>`jsonb_build_object('profile', jsonb_build_object(
+      'favouriteOrder', ${s.users.settings}->'profile'->'favouriteOrder',
+      'pinnedFavourites', ${s.users.settings}->'profile'->'pinnedFavourites'))` })
     .from(s.users)
-    .where(eq(s.users.id, userId));
+    .where(eq(s.users.id, userId)) : [];
   const profile = visibility.details ? { ...user?.settings.profile } : {};
   if(visibility.details)profile.backgroundMode??=profile.backgroundMediaId?'fixed':'activity';
   if (!visibility.favourites) {
@@ -185,7 +236,6 @@ export async function profileData(
         ? favouriteCount.count
         : historyCounts[0].filtered;
   const { page, pages } = pagination(total, options.page);
-  const limit = PAGE_SIZE;
   const offset = options.view === 'overview' ? 0 : (page - 1) * PAGE_SIZE;
   const ordered = (ids: string[]) =>
     ids.length
@@ -194,21 +244,9 @@ export async function profileData(
           sql`, `
         )}]`
       : sql`array[]::uuid[]`;
-  const [events, favourites] = await Promise.all([
-    options.view !== 'history'
+  const favourites = ['history', 'ratings'].includes(options.view)
       ? []
-      : db.execute<{
-          eventId: string;
-          id: string;
-          watchedAt: Date;
-          source: string;
-          rewatched: boolean;
-        }>(
-          sql`select event_id as "eventId", media_id as id, occurred_at as "watchedAt", source, rewatched, occurred_at_known as "dateKnown", edition_id as "editionId" from (${history}) h where ${dates} order by occurred_at_known desc, occurred_at desc, event_id desc limit ${limit} offset ${offset}`
-        ),
-    ['history', 'ratings'].includes(options.view)
-      ? []
-      : db
+      : await db
           .select({ id: s.trackingState.mediaId })
           .from(s.trackingState)
           .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId))
@@ -221,8 +259,7 @@ export async function profileData(
             s.trackingState.mediaId
           )
           .limit(options.view === 'overview' ? 20 : PAGE_SIZE)
-          .offset(options.view === 'favourites' ? offset : 0),
-  ]);
+          .offset(options.view === 'favourites' ? offset : 0);
   const ratedItems =
     options.view === 'ratings'
       ? await db
@@ -234,7 +271,7 @@ export async function profileData(
           .limit(PAGE_SIZE)
           .offset(offset)
       : [];
-  const [featuredState] = profile.featuredMediaId
+  const [featuredState] = presentation && profile.featuredMediaId
     ? await db
         .select({ id: s.trackingState.mediaId })
         .from(s.trackingState)
@@ -256,7 +293,7 @@ export async function profileData(
     if(profile.pinnedFavourites)profile.pinnedFavourites=profile.pinnedFavourites.filter(id=>permitted.has(id));
     if(profile.favouriteOrder)profile.favouriteOrder=profile.favouriteOrder.filter(id=>permitted.has(id));
   }
-  const [backgroundState]=profile.backgroundMediaId?await db.select({id:s.works.id}).from(s.works)
+  const [backgroundState]=presentation&&profile.backgroundMediaId?await db.select({id:s.works.id}).from(s.works)
     .where(and(eq(s.works.id,profile.backgroundMediaId),visibleWork('details'))):[];
   if(!backgroundState)delete profile.backgroundMediaId;
   const sharedIds = [
@@ -283,7 +320,7 @@ export async function profileData(
   const byId=new Map(cards.map(item=>[('workId' in item?item.workId:undefined)??item.id,'href' in item?item:episodeCaption(item)]));
   const historyById=new Map(historyViews.map(item=>[item.id,episodeCaption(item)]));
   let activityBackground = null;
-  if(profile.backgroundMode==='activity'){
+  if(presentation&&profile.backgroundMode==='activity'){
     const latest=await db.execute<{workId:string}>(sql`select a.work_id as "workId" from social_activity a join works w on w.id=a.work_id
       where a.user_id=${userId}::uuid and a.date_known and a.event_kind in ('watch','listen','play','played','session','reading-reading','reading-completed') and a.occurred_at<=${now.toISOString()}::timestamptz
       and social_visible(a.user_id,${viewerId}::uuid,a.section,w.category)
@@ -346,6 +383,19 @@ export async function profileData(
     today: new Date().toISOString().slice(0, 10),
   };
 }
+/** Full page presentation retains its existing settings, featured and background reads. */
+export function profileData(userId: string, input: unknown = {}, now = new Date(), viewerId: string | null = userId) {
+  return readProfile(userId,input,now,viewerId);
+}
+
+/** Section refreshes share visibility/order/counts without preparing page-only presentation. */
+export async function profileSectionData(userId: string, input: unknown, now = new Date(), viewerId: string | null = userId) {
+  const options=v.parse(profileOptionsSchema,input);
+  if(options.view!=='history'&&options.view!=='favourites')throw new AppError(400,'Choose a profile section.');
+  const data=await readProfile(userId,options,now,viewerId,false);
+  const paging={page:data.page,pages:data.pages,total:data.total};
+  return options.view==='history'?{items:data.history,...paging}:{favourites:data.favourites,...paging};
+}
 export async function profileActivity(
   userId: string,
   now = new Date(),
@@ -355,17 +405,27 @@ export async function profileActivity(
   await requireVisible(userId,viewerId,'insights','screen');
   const visibility=await profileVisibility(userId,viewerId);
   const config=await getFeatureConfig(viewerId);
-  const history = sql`select * from (${periodHistory(userId, period, now)}) h where ${visibility.activity}`;
+  const history = sql`select media_id,kind,occurred_at,occurred_at_known from (${periodHistory(userId, period, now)}) h where ${visibility.activity}`;
   const previousNow =
     period === 'all' ? undefined : new Date(Date.parse(periodStart(period, now)!) - 1);
-  const previousHistory = previousNow ? sql`select * from (${periodHistory(userId,period,previousNow)}) h where ${visibility.activity}` : null;
-  const [days, genres, ratings, seasonRows, previousRows] = await Promise.all([
-    getDb().execute(
-      sql`select to_char(occurred_at at time zone 'UTC','YYYY-MM-DD') as date, count(*) filter(where kind='movie')::int as movies,count(*) filter(where kind='episode')::int as episodes from (${history}) h where occurred_at_known group by 1 order by 1`
-    ),
-    getDb().execute(
-      sql`select genre as name,count(*)::int as count from (${genreRows(history)}) g group by genre order by count desc,genre`
-    ),
+  const sharedHistory=previousNow?sql`select media_id,kind,occurred_at,occurred_at_known from (${periodHistory(userId,'all',now)}) h
+    where ${visibility.activity} and occurred_at_known and occurred_at>=(${periodStart(period,previousNow)}::date::timestamp at time zone 'UTC')`:null;
+  const currentHistory=sharedHistory?sql`select * from profile_activity_history where occurred_at>=(${periodStart(period,now)}::date::timestamp at time zone 'UTC')`:history;
+  const [[activity], ratings, seasonRows] = await Promise.all([
+    getDb().execute(sql`
+      with ${sharedHistory?sql`profile_activity_history as materialized (${sharedHistory}), `:sql``}profile_activity_events as materialized (${currentHistory}),
+      activity_days as (
+        select to_char(occurred_at at time zone 'UTC','YYYY-MM-DD') as date,
+          count(*) filter(where kind='movie')::int as movies,count(*) filter(where kind='episode')::int as episodes
+        from profile_activity_events where occurred_at_known group by 1
+      ), activity_genres as (
+        select genre as name,count(*)::int as count
+        from (${genreRows(sql`select * from profile_activity_events`)}) g group by genre
+      )
+      select coalesce((select jsonb_agg(d order by date) from activity_days d),'[]'::jsonb) as days,
+        coalesce((select jsonb_agg(g order by count desc,name) from activity_genres g),'[]'::jsonb) as genres${previousNow?sql`,
+        (select count(*)::int from profile_activity_history where occurred_at_known and occurred_at<=${previousNow.toISOString()}::timestamptz) as previous_count`:sql``}
+    `),
     getDb()
       .select({ value: s.ratings.value, count: sql<number>`count(*)::int` })
       .from(s.ratings)
@@ -390,12 +450,8 @@ export async function profileActivity(
       group by ep.season_id having bool_and(t.watched) and bool_and(t.last_watched_at is not null)
       and count(*)=(select count(*) from episodes all_ep where all_ep.season_id=ep.season_id and not all_ep.is_special)
     ) seasons where ${visibility.activity} and completed_at<=${now.toISOString()}::timestamptz and ${period === 'all' ? sql`true` : sql`completed_at>=(${periodStart(period, now)}::date::timestamp at time zone 'UTC')`}`),
-    previousHistory
-      ? getDb().execute(
-          sql`select count(*)::int as count from (${previousHistory}) p where occurred_at_known`
-        )
-      : Promise.resolve([{ count: 0 }]),
   ]);
+  const {days,genres,previous_count}=activity as {days:{date:string;movies:number;episodes:number}[];genres:{name:string;count:number}[];previous_count?:number};
   const ranked = Array.from(genres, (row) => ({
     name: String(row.name),
     count: Number(row.count),
@@ -417,7 +473,7 @@ export async function profileActivity(
     today: now.toISOString().slice(0, 10),
     genres: displayed,
     completedSeasons: Number(seasonRows[0].count),
-    previousCount: period === 'all' ? null : Number(previousRows[0].count),
+    previousCount: period === 'all' ? null : Number(previous_count),
     ratings,
   };
 }

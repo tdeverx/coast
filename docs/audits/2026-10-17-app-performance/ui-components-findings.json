@@ -1,0 +1,143 @@
+{
+  "head": "eb0673873462b71118d1c11678d128958a05ff07",
+  "count": 4,
+  "findings": [
+    {
+      "id": "UIC-01",
+      "priority": "P3",
+      "title": "Menu identity repeatedly serializes complete unrelated user settings",
+      "confidence": "high source shape; actual CPU/heap unmeasured",
+      "state": "source-confirmed avoidable key work",
+      "sharedOwner": "workMenuScope primitive effective-policy/target identity",
+      "consumers": [
+        "ScreenActions",
+        "CatalogueActions/createWorkActions",
+        "WorkListActions",
+        "PartyMenu queue picker"
+      ],
+      "evidenceRefs": [
+        "src/lib/ui/controls/work.svelte.ts:10",
+        "evidence/development-real-sql.json",
+        "evidence/deployed-real-sql.json"
+      ],
+      "smallestOption": "Replace full settings serialization with exact relevant primitive signature in shared owner; preserve authoritative server checks",
+      "alternatives": [
+        "Share stable viewer/policy signature once per browser state revision without cross-request auth caching"
+      ],
+      "acceptance": [
+        "Actual long browse key evaluations/serialized bytes",
+        "Unrelated avatar/bio changes do not refetch",
+        "Role/capability/settings/tracking/occurrence changes invalidate correctly everywhere"
+      ],
+      "gaps": [
+        "No browser allocation/timing measurement"
+      ],
+      "relatedFindingIds": [
+        "DATA-09",
+        "UIS-03",
+        "UIS-04"
+      ]
+    },
+    {
+      "id": "UIC-02",
+      "priority": "P2",
+      "title": "Request dialog abandons option reads without aborting them",
+      "confidence": "high source lifetime; actual incidence unmeasured",
+      "state": "source-confirmed cancellation omission",
+      "sharedOwner": "existing abortable request-option/resource lifecycle and provider signal chain",
+      "consumers": [
+        "Direct RequestDialog",
+        "createRequestControls menu options",
+        "show/season/episode targets and quality choices"
+      ],
+      "evidenceRefs": [
+        "src/lib/ui/components/RequestDialog.svelte:58",
+        "src/lib/ui/controls/requests.svelte.ts:15"
+      ],
+      "smallestOption": "Route both option consumers through one existing abortable resource owner; extend shared upstream signal chain",
+      "alternatives": [
+        "Narrow extension of current request controls rather than a new dialog-local algorithm"
+      ],
+      "acceptance": [
+        "Close/retry/context-replace/feature-off cancels old option read",
+        "Queued cancellation sends zero provider calls",
+        "Late result cannot affect new dialog; submitted writes retain acknowledgement"
+      ],
+      "gaps": [
+        "No slow actual request-option trace"
+      ],
+      "relatedFindingIds": [
+        "PR-04",
+        "PJ-14"
+      ]
+    },
+    {
+      "id": "UIC-03",
+      "priority": "P2",
+      "title": "Grouped recommendation responses refresh once per recommendation ID",
+      "confidence": "high source request/refresh shape; actual grouped latency unmeasured",
+      "state": "source-confirmed multi-target refresh amplification",
+      "sharedOwner": "common API mutation acknowledgement and logical completion refresh",
+      "consumers": [
+        "WorkActions grouped Save/Dismiss",
+        "screen/music/game/reading recommendation cards",
+        "other multi-target client loops"
+      ],
+      "evidenceRefs": [
+        "src/lib/ui/components/WorkActions.svelte:17",
+        "src/lib/ui/client.ts:75",
+        "src/lib/ui/client.ts:85"
+      ],
+      "smallestOption": "Acknowledge per-ID writes with one coalesced refresh after logical completion, preserving partial success",
+      "alternatives": [
+        "Bounded server batch endpoint reusing same domain writer with explicit outcomes"
+      ],
+      "acceptance": [
+        "Actual one/multiple-ID Save/Dismiss",
+        "One refresh per logical completion/recovery",
+        "Partial failure and refresh failure preserve acknowledged mutations and exact IDs"
+      ],
+      "gaps": [
+        "Actual multi-sender card operation not observed"
+      ],
+      "relatedFindingIds": [
+        "DATA-06",
+        "PR-02"
+      ]
+    },
+    {
+      "id": "UIC-04",
+      "priority": "P2",
+      "title": "Collection export preview returns full entries and mounts unbounded review panels",
+      "confidence": "high source cardinality/projection; actual cost unmeasured",
+      "state": "source-confirmed large-preview opportunity",
+      "sharedOwner": "durable projection preview read DTO and shared bounded-review composition",
+      "consumers": [
+        "CollectionProjectionSettings summary and review",
+        "generic conflict-review policy"
+      ],
+      "evidenceRefs": [
+        "src/lib/collection/projection.server.ts:17",
+        "src/lib/collection/projection.server.ts:78",
+        "src/lib/ui/components/CollectionProjectionSettings.svelte:35"
+      ],
+      "smallestOption": "Return narrow browser preview DTO; retain complete durable server evidence; deduplicate review IDs once with Set/Map",
+      "alternatives": [
+        "Stable paged review source using existing resource/pagination pattern"
+      ],
+      "acceptance": [
+        "Actual-data clone preview byte/DOM/retained state comparison",
+        "Complete ID/count/decision equivalence and every review accessible",
+        "Approval/version/account/remote-change rejection unchanged"
+      ],
+      "gaps": [
+        "No large actual projection preview generated",
+        "One retained preview is not per-close accumulation"
+      ],
+      "relatedFindingIds": [
+        "PJ-12",
+        "UIS-03"
+      ]
+    }
+  ]
+}

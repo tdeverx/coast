@@ -1,0 +1,664 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "applicationFiles": [
+    {
+      "path": "src/lib/server/public-api/mutations.server.ts",
+      "sha256": "b35768d9908e1960727b2013a8c35cfb4ddf2b6ab5e236b98ccc539d401476ee"
+    },
+    {
+      "path": "src/lib/server/auth/index.ts",
+      "sha256": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf"
+    },
+    {
+      "path": "src/lib/core/tracking/service.server.ts",
+      "sha256": "56c92cfeb728cb5942241801db4a9020d7f29b9dcec6b6392ecf7ff243290012"
+    },
+    {
+      "path": "src/lib/core/lists/sequence.server.ts",
+      "sha256": "57f6f05eda50129707fffce767da1ae1749ca97bd02fb056c518c9b4237ad018"
+    },
+    {
+      "path": "tests/data-owner-concurrency-db.test.ts",
+      "sha256": "34826ca8775c5e5baedf9299cb231deb92183d96801df918b0e8c38a9b5fef0e"
+    },
+    {
+      "path": "src/lib/collection/query.server.ts",
+      "sha256": "65c64495e6057b4af63c01cef0120e4563e134855c3783f494095601fe59e043"
+    },
+    {
+      "path": "src/lib/core/tracking/rewatch.server.ts",
+      "sha256": "9d9dbba3ef75f32eb45d5f932011ea52506f1b0102a5f8899f1e9f012e513e1c"
+    },
+    {
+      "path": "tests/sequence-db.test.ts",
+      "sha256": "7f324f14ce7d78f3addac204ed1e389a0178c2deb5756732bafeb9cea3afe35d"
+    }
+  ],
+  "implementedFindings": [
+    {
+      "id": "DATA-01",
+      "status": "implemented; actual full-function baseline40P01/currentracepasses; broaderHTTPschedulesremain",
+      "sharedOwner": "publicMutation policy/account/token admission",
+      "consumers": [
+        "tracking",
+        "bulk tracking",
+        "relationships",
+        "ratings",
+        "music listens",
+        "game activity",
+        "reading progress",
+        "webhooks"
+      ],
+      "evidence": "evidence/implementation-data-public-race.json",
+      "actualResult": [
+        {
+          "implementation": "before",
+          "publicCompletedBeforeOrdinaryAdvance": false,
+          "outcomes": [
+            {
+              "status": "fulfilled"
+            },
+            {
+              "status": "rejected",
+              "code": "40P01",
+              "type": "DrizzleQueryError"
+            }
+          ]
+        },
+        {
+          "implementation": "after",
+          "publicCompletedBeforeOrdinaryAdvance": true,
+          "outcomes": [
+            {
+              "status": "fulfilled"
+            },
+            {
+              "status": "fulfilled"
+            }
+          ]
+        }
+      ],
+      "freshFenceResults": {
+        "publicReplay": true,
+        "revokedTokenRejected": true,
+        "disabledPublicRejected": true,
+        "withdrawnApiRejected": true
+      }
+    },
+    {
+      "id": "DATA-02",
+      "status": "implemented; final6completebulk+3normaltracking+3full/narrowread actual comparisons pass; actualno-opclearaccountlockproofpasses",
+      "sharedOwner": "Canonical sequenceRows/sequenceEntry live occurrence read for normal and bulk tracking; census plans targets only; policy/account order for rewatch clear and playlist restart",
+      "consumers": [
+        "normal/browser/public sequence tracking",
+        "show/season/collection bulk actions",
+        "scoped collection/playlist commands",
+        "rewatch set/clear",
+        "playlist restart"
+      ],
+      "evidence": "evidence/implementation-sequence-canonical-actual.json",
+      "comparisonScope": {
+        "trackingRows": "All tracking_state logical columns, excluding physical updated_at",
+        "queue": "Complete remaining up_next rows",
+        "events": "Every tracking_events row inserted by the current transaction, all logical columns excluding generated id and created_at",
+        "result": "Complete logical result including event work/action identities; generated event IDs normalized; single physical state updatedAt excluded",
+        "dataRetention": "Comparison rows discarded in memory; aggregate booleans/counts only"
+      },
+      "pairs": [
+        {
+          "leaves": 2,
+          "explicitSequence": false,
+          "equivalent": true,
+          "beforeExpansions": 3,
+          "afterExpansions": 1,
+          "afterNarrowReads": 2,
+          "beforeOrm": 38,
+          "afterOrm": 38
+        },
+        {
+          "leaves": 2,
+          "explicitSequence": true,
+          "equivalent": true,
+          "beforeExpansions": 4,
+          "afterExpansions": 1,
+          "afterNarrowReads": 2,
+          "beforeOrm": 36,
+          "afterOrm": 34
+        },
+        {
+          "leaves": 8,
+          "explicitSequence": false,
+          "equivalent": true,
+          "beforeExpansions": 9,
+          "afterExpansions": 1,
+          "afterNarrowReads": 8,
+          "beforeOrm": 92,
+          "afterOrm": 92
+        },
+        {
+          "leaves": 8,
+          "explicitSequence": true,
+          "equivalent": true,
+          "beforeExpansions": 10,
+          "afterExpansions": 1,
+          "afterNarrowReads": 8,
+          "beforeOrm": 84,
+          "afterOrm": 82
+        },
+        {
+          "leaves": 23,
+          "explicitSequence": false,
+          "equivalent": true,
+          "beforeExpansions": 23,
+          "afterExpansions": 1,
+          "afterNarrowReads": 22,
+          "beforeOrm": 223,
+          "afterOrm": 223
+        },
+        {
+          "leaves": 23,
+          "explicitSequence": true,
+          "equivalent": true,
+          "beforeExpansions": 25,
+          "afterExpansions": 1,
+          "afterNarrowReads": 23,
+          "beforeOrm": 204,
+          "afterOrm": 202
+        }
+      ],
+      "measurementBoundary": "Final whole-tree expansion work reduced; implicit ORM counts unchanged, explicit save2statements. Mutation counts include SETLOCAL+2captureSELECTs. Single observations include comparison/rollback and vary both directions; no latency/p95 claim. Missing actual states remain explicit gaps.",
+      "historicalIntermediateImplementation": {
+        "evidence": "evidence/implementation-data-bulk-complete.json",
+        "pairs": [
+          {
+            "leaves": 2,
+            "explicitSequence": false,
+            "equivalent": true,
+            "beforeExpansions": 3,
+            "afterExpansions": 1,
+            "beforeOrm": 38,
+            "afterOrm": 34
+          },
+          {
+            "leaves": 2,
+            "explicitSequence": true,
+            "equivalent": true,
+            "beforeExpansions": 4,
+            "afterExpansions": 1,
+            "beforeOrm": 36,
+            "afterOrm": 30
+          },
+          {
+            "leaves": 8,
+            "explicitSequence": false,
+            "equivalent": true,
+            "beforeExpansions": 9,
+            "afterExpansions": 1,
+            "beforeOrm": 92,
+            "afterOrm": 76
+          },
+          {
+            "leaves": 8,
+            "explicitSequence": true,
+            "equivalent": true,
+            "beforeExpansions": 10,
+            "afterExpansions": 1,
+            "beforeOrm": 84,
+            "afterOrm": 66
+          },
+          {
+            "leaves": 23,
+            "explicitSequence": false,
+            "equivalent": true,
+            "beforeExpansions": 23,
+            "afterExpansions": 1,
+            "beforeOrm": 223,
+            "afterOrm": 179
+          },
+          {
+            "leaves": 23,
+            "explicitSequence": true,
+            "equivalent": true,
+            "beforeExpansions": 25,
+            "afterExpansions": 1,
+            "beforeOrm": 204,
+            "afterOrm": 156
+          }
+        ],
+        "status": "Superseded trusted-census implementation; per-leaf statement savings do not describe final live-validation source"
+      },
+      "boundaryEvidence": "evidence/implementation-sequence-boundary-lock-actual.json",
+      "censusEvidence": "evidence/implementation-sequence-actual-census.json",
+      "normalTrackingPairs": [
+        {
+          "sourceLeaves": 2,
+          "initiallyCompleted": false,
+          "equivalent": true,
+          "before": {
+            "elapsedMs": 196.9347499999999,
+            "ormStatements": 24,
+            "wholeTreeExpansions": 1,
+            "narrowEntryReads": 0
+          },
+          "after": {
+            "elapsedMs": 212.3549169999999,
+            "ormStatements": 24,
+            "wholeTreeExpansions": 0,
+            "narrowEntryReads": 1
+          },
+          "rolledBack": true
+        },
+        {
+          "sourceLeaves": 8,
+          "initiallyCompleted": false,
+          "equivalent": true,
+          "before": {
+            "elapsedMs": 163.34479200000033,
+            "ormStatements": 24,
+            "wholeTreeExpansions": 1,
+            "narrowEntryReads": 0
+          },
+          "after": {
+            "elapsedMs": 162.53520900000012,
+            "ormStatements": 24,
+            "wholeTreeExpansions": 0,
+            "narrowEntryReads": 1
+          },
+          "rolledBack": true
+        },
+        {
+          "sourceLeaves": 23,
+          "initiallyCompleted": true,
+          "equivalent": true,
+          "before": {
+            "elapsedMs": 231.0064999999995,
+            "ormStatements": 14,
+            "wholeTreeExpansions": 1,
+            "narrowEntryReads": 0
+          },
+          "after": {
+            "elapsedMs": 190.9395830000003,
+            "ormStatements": 14,
+            "wholeTreeExpansions": 0,
+            "narrowEntryReads": 1
+          },
+          "rolledBack": true
+        }
+      ],
+      "normalOccurrenceReadPairs": [
+        {
+          "sourceLeaves": 2,
+          "equivalent": true,
+          "before": {
+            "elapsedMs": 13.914250000000038,
+            "ormStatements": 2,
+            "wholeTreeExpansions": 1,
+            "narrowEntryReads": 0
+          },
+          "after": {
+            "elapsedMs": 2.51949999999988,
+            "ormStatements": 2,
+            "wholeTreeExpansions": 0,
+            "narrowEntryReads": 1
+          }
+        },
+        {
+          "sourceLeaves": 8,
+          "equivalent": true,
+          "before": {
+            "elapsedMs": 6.202334000000064,
+            "ormStatements": 2,
+            "wholeTreeExpansions": 1,
+            "narrowEntryReads": 0
+          },
+          "after": {
+            "elapsedMs": 2.7876249999999345,
+            "ormStatements": 2,
+            "wholeTreeExpansions": 0,
+            "narrowEntryReads": 1
+          }
+        },
+        {
+          "sourceLeaves": 23,
+          "equivalent": true,
+          "before": {
+            "elapsedMs": 9.75012500000048,
+            "ormStatements": 2,
+            "wholeTreeExpansions": 1,
+            "narrowEntryReads": 0
+          },
+          "after": {
+            "elapsedMs": 4.026417000000038,
+            "ormStatements": 2,
+            "wholeTreeExpansions": 0,
+            "narrowEntryReads": 1
+          }
+        }
+      ],
+      "actualBoundaryContention": [
+        {
+          "implementation": "baseline",
+          "completedWhileAccountLocked": true,
+          "accountLockAttempts": 0,
+          "observedAccountLockWaiters": 0,
+          "completedAfterRelease": true,
+          "remainedNoOp": true
+        },
+        {
+          "implementation": "current",
+          "completedWhileAccountLocked": false,
+          "accountLockAttempts": 1,
+          "observedAccountLockWaiters": 1,
+          "completedAfterRelease": true,
+          "remainedNoOp": true
+        }
+      ],
+      "actualCensus": {
+        "enabled_screen_owners": 4,
+        "rewatch_boundaries": 0,
+        "collection_rewatch_boundaries": 0,
+        "playlists": 0,
+        "started_playlists": 0,
+        "completed_tracking_rows": 20316,
+        "collections": 413,
+        "repeated_direct_collection_edges": 0,
+        "total_collection_leaf_occurrences": 1348,
+        "repeated_collection_leaf_identities": 0,
+        "collections_with_repeated_leaf_paths": 0,
+        "completed_collection_leaf_owner_occurrences": 532
+      },
+      "sourceHashes": {
+        "src/lib/core/tracking/service.server.ts": "56c92cfeb728cb5942241801db4a9020d7f29b9dcec6b6392ecf7ff243290012",
+        "src/lib/core/lists/sequence.server.ts": "57f6f05eda50129707fffce767da1ae1749ca97bd02fb056c518c9b4237ad018",
+        "src/lib/core/tracking/rewatch.server.ts": "9d9dbba3ef75f32eb45d5f932011ea52506f1b0102a5f8899f1e9f012e513e1c"
+      },
+      "sourceUnchangedDuringProbe": true,
+      "sourceAuthorityBoundary": "Every Coast-source normal/bulk sequence mutation obtains current canonical path/boundary observation at a statement snapshot; census plans only. Nonthrowing UUID-segment validation enables indexed UUID equality without trusting client path membership; exact entryId equality preserves identity. Account-ordered boundary writers serialize. No transaction-wide immutable catalogue snapshot claim.",
+      "actualGaps": [
+        "No saved rewatches",
+        "No saved playlists",
+        "No repeated collection leaf paths",
+        "No actual-clone graph removal/restore control executed"
+      ],
+      "exactEntryPlan": {
+        "evidence": "evidence/implementation-sequence-entry-plan-actual.json",
+        "sourceSha256": "4545e05ebe3dec10a17b779b2143a7bcf2b0f4cf3dea94a2aa1ecdce28608efd",
+        "sourceUnchanged": true,
+        "directUuidChildPredicate": true,
+        "childIdIndexConditions": 1,
+        "childIdTextCastConditions": 0,
+        "executionMsSingleObservation": 1.209,
+        "settingsBoundary": "normalgetSqljitsetting; norecursive_worktable_factoroverride;30sstatementtimeoutonly",
+        "notLatencyBenchmark": true
+      },
+      "finalSourceReverification": {
+        "evidence": "evidence/implementation-sequence-canonical-actual.json",
+        "typeOnlyCorrection": "Explicit SequenceEntry assertion corrected static row inference; canonical SQL unchanged. Six bulk, three normal and three full/narrow actual-data comparisons rerun against these final hashes.",
+        "sourceUnchanged": true
+      }
+    },
+    {
+      "id": "DATA-10",
+      "status": "implemented; actual held-row/rotation/revocation tests pass",
+      "sharedOwner": "authenticateSession fresh joined ordinary read and locked rotation reread",
+      "consumers": [
+        "browser routes",
+        "browser API",
+        "cookie-authenticated artwork",
+        "all authenticateSession callers"
+      ],
+      "evidence": "evidence/implementation-data-actual.json",
+      "actualResult": {
+        "before": {
+          "completedWhileRowLocked": false,
+          "userMatches": true,
+          "tokenRotated": false
+        },
+        "after": {
+          "completedWhileRowLocked": true,
+          "userMatches": true,
+          "tokenRotated": false
+        },
+        "rotation": {
+          "callers": 8,
+          "authenticated": 8,
+          "replacementTokens": 1,
+          "oldTokenGraceAccepted": true,
+          "expiredGraceRejected": true,
+          "loggedOutRejected": true
+        },
+        "pendingRotation": {
+          "waitedForDeletion": true,
+          "revokedAfterWait": true
+        },
+        "disabledAccountRejected": true
+      },
+      "measurementBoundary": "Deliberately held row proves mutex removal; not ordinary latency or production load benchmark"
+    },
+    {
+      "id": "DATA-11",
+      "status": "implemented;180 complete actual-data output comparisons and3 validation controls pass; source unchanged during final probe",
+      "sharedOwner": "workCardPage canonical work-category admission in existing workCards batching/order owner",
+      "consumers": [
+        "Collection",
+        "Library",
+        "Progress/Continue",
+        "lists",
+        "profiles",
+        "social activity",
+        "notifications",
+        "Planning",
+        "requests/streams",
+        "public API"
+      ],
+      "sourceChangeBoundary": "works schema import and workCardPage helper only; coordinator assessment SQL unchanged",
+      "evidence": "evidence/implementation-card-categories-actual.json",
+      "detailedReport": "implementation-card-categories.md",
+      "actualComparisons": {
+        "comparisons": 180,
+        "equivalent": 180,
+        "allEquivalent": true
+      },
+      "validationControls": [
+        {
+          "case": "invalid-owner",
+          "equivalent": true,
+          "results": [
+            {
+              "outcome": "rejected",
+              "type": "ValiError",
+              "code": null
+            },
+            {
+              "outcome": "rejected",
+              "type": "ValiError",
+              "code": null
+            }
+          ]
+        },
+        {
+          "case": "invalid-id",
+          "equivalent": true,
+          "results": [
+            {
+              "outcome": "rejected",
+              "type": "ValiError",
+              "code": null
+            },
+            {
+              "outcome": "rejected",
+              "type": "ValiError",
+              "code": null
+            }
+          ]
+        },
+        {
+          "case": "empty-with-invalid-owner",
+          "equivalent": true,
+          "results": [
+            {
+              "outcome": "returned",
+              "cards": 0
+            },
+            {
+              "outcome": "returned",
+              "cards": 0
+            }
+          ]
+        }
+      ],
+      "actualOwners": 4,
+      "measurementBoundary": "Read-only full-output comparison on actual persisted private clone; no catalogue/user/provider/credential setup, no providers. Baseline workCards from audited HEAD with current shared dependencies; current assessment SQL is not invoked by this probe. Full card objects compared in memory and discarded. ORM root/transaction counts exclude direct Bun SQL.",
+      "samples": {
+        "comic": {
+          "before": {
+            "medianMs": 6.488499999999476,
+            "ormStatements": [
+              7
+            ]
+          },
+          "after": {
+            "medianMs": 9.250792000002548,
+            "ormStatements": [
+              5
+            ]
+          }
+        },
+        "game": {
+          "before": {
+            "medianMs": 5.030291999999463,
+            "ormStatements": [
+              6
+            ]
+          },
+          "after": {
+            "medianMs": 5.015917000000627,
+            "ormStatements": [
+              4
+            ]
+          }
+        },
+        "missing-only": {
+          "before": {
+            "medianMs": 6.219375000000582,
+            "ormStatements": [
+              4
+            ]
+          },
+          "after": {
+            "medianMs": 2.9310420000037993,
+            "ormStatements": [
+              1
+            ]
+          }
+        },
+        "mixed": {
+          "before": {
+            "medianMs": 109.27958299999955,
+            "ormStatements": [
+              29
+            ]
+          },
+          "after": {
+            "medianMs": 114.78895900000134,
+            "ormStatements": [
+              30
+            ]
+          }
+        },
+        "multi-page-duplicates": {
+          "before": {
+            "medianMs": 325.58612500000163,
+            "ormStatements": [
+              44
+            ]
+          },
+          "after": {
+            "medianMs": 324.56616700000086,
+            "ormStatements": [
+              40
+            ]
+          }
+        },
+        "music": {
+          "before": {
+            "medianMs": 6.316750000001775,
+            "ormStatements": [
+              7
+            ]
+          },
+          "after": {
+            "medianMs": 6.965125000002445,
+            "ormStatements": [
+              5
+            ]
+          }
+        },
+        "screen": {
+          "before": {
+            "medianMs": 212.6319590000021,
+            "ormStatements": [
+              22
+            ]
+          },
+          "after": {
+            "medianMs": 212.9809580000001,
+            "ormStatements": [
+              20
+            ]
+          }
+        }
+      },
+      "tradeoff": "Single-medium pages save2ORM statements; mixedallmedium page adds1canonical lookup; no general latency improvement established by3samples",
+      "gaps": [
+        {
+          "category": "book",
+          "reason": "No actual saved works; no catalogue fabricated"
+        }
+      ],
+      "productionDependenciesOrSchemaOrUiChanged": false
+    }
+  ],
+  "verification": {
+    "focusedUnitSuites": [
+      "domain.test.ts",
+      "public-api-response.test.ts",
+      "tracking-language.test.ts",
+      "ui-sequence-controls.test.ts"
+    ],
+    "passed": 16,
+    "failed": 0,
+    "assertions": 74,
+    "newGuardedDbRegressions": 9,
+    "guardedDbExecution": "Pending coordinator isolated fixture run; no skip counted as pass",
+    "typeCorrection": "Canonical SequenceContext annotation in new regression test",
+    "fullCheckAndBuild": "Coordinator-owned"
+  },
+  "cleanup": {
+    "bulk": "Every mutation rolled back",
+    "public": "Actual existing relationship value, normal temporary scoped API credential; no providers/export workers",
+    "temporaryAuth": "Temporary session/API rows deleted in finally; token deletion cascades its replay rows; all probe exits0",
+    "policy": "Temporary disabled flag/API policy restored in finally",
+    "newCatalogueOrUserOrProviderRows": false,
+    "credentials": "Approved private-clone credential runner in memory only; no exported token/cookie/credential/personal row values",
+    "finalSequence": "All bulk/single tracking transactions rolled back; actual absent-boundary clear remained a no-op; read-only census; no graph mutation or fixture data inserted"
+  },
+  "reproduction": {
+    "baselineExtractor": "probes/data-implementation-baseline.py",
+    "actualProbe": "probes/data-implementation-real.ts",
+    "guard": "COAST_AUDIT_REAL_DATA_CLONE=1 and database name coast_audit_fix_actual_*; private clone only",
+    "baselineBoundary": "Immutable audited owner source with imports rewritten; current shared dependencies. Final canonical sequence evidence supersedes the intermediate trusted-census results and earlier narrower first comparison.",
+    "finalSequenceExtractor": "probes/sequence-baseline.py",
+    "finalSequenceCensus": "probes/sequence-actual-census.ts",
+    "finalSequenceLockProbe": "probes/sequence-boundary-lock-real.ts",
+    "finalSequenceEquivalence": "probes/sequence-canonical-real.ts",
+    "finalSequenceExplain": "probes/sequence-entry-plan-real.ts"
+  },
+  "remainingAcceptance": [
+    "Actual saved lists/repeated collection leaves/backdated occurrence histories where available",
+    "Broader public HTTP endpoint schedules, account password/role races",
+    "Fresh normal signed-in app verification and full gates by coordinator"
+  ],
+  "noCommitOrDeployment": true
+}

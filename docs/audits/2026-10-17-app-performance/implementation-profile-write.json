@@ -1,0 +1,133 @@
+{
+  "id": "DATA-07",
+  "status": "partial_profile_settings_noop_actual_rollback_verified",
+  "report": "implementation-profile-write.md",
+  "scope": "Only final profile users.settings UPDATE; all other DATA-07 owners remain open.",
+  "sharedOwner": "src/lib/core/profile/service.server.ts:updateProfile",
+  "change": "Parameterize the computed full settings once in application code and guard the existing final SQL UPDATE with JSONB IS DISTINCT FROM. Keep validation, locked user snapshot, returned profile and GIF store/prune lifecycle.",
+  "consumers": [
+    "Profile edit and avatar save",
+    "Period/favourite-kind preferences",
+    "Background mode/selection/position",
+    "Featured item/note",
+    "Favourite pin/reorder commands"
+  ],
+  "sourceBefore": {
+    "src/lib/core/profile/service.server.ts": "c302edb7c21be0ed1583f0792fa34004652f791180446b85bdff8f31c1f4520d",
+    "tests/profile-db.test.ts": "9b8eba66e78e4d9d52295f847c17d41ab4d353feb54ca8f1b44da2842ed2b817"
+  },
+  "sourceAfter": {
+    "src/lib/core/profile/service.server.ts": "5f4cd96495347811e7c11e9126417a8b8c0a41d5046414e92e3fd114384be904",
+    "tests/profile-db.test.ts": "75fc24acaccd915a34d7832fee1f21516692de56f9b1dd59a176b600c40cc471"
+  },
+  "actual": {
+    "status": "passed",
+    "equivalence": {
+      "comparisons": 12,
+      "semanticNoOpComparisons": 9,
+      "genuineChanges": 3,
+      "editPruneComparisons": 4,
+      "allEqual": true
+    },
+    "restoration": {
+      "allTableLogicalMultisetsEqual": true,
+      "tables": 102,
+      "rows": 1864145,
+      "beforeDigest": "9428397f6ad5bb35ab00dc685720984797592bea078e3e13300acf5dab9a07c7",
+      "afterDigest": "9428397f6ad5bb35ab00dc685720984797592bea078e3e13300acf5dab9a07c7",
+      "normalDatabaseTouched": false
+    },
+    "usersUpdateTriggers": {
+      "custom": [
+        {
+          "name": "users_content_update",
+          "function": "coast_content_revision_trigger",
+          "type": 16,
+          "enabled": "O",
+          "language": "plpgsql",
+          "volatile": "v",
+          "securityDefiner": false,
+          "configuration": null,
+          "bodySha256": "69601269d71d64893ca5436714f090e78ba5e977d7379d45d15241bb544f854e"
+        }
+      ],
+      "internalCount": 52,
+      "internalFunctions": [
+        "RI_FKey_noaction_upd"
+      ],
+      "actualBodyMatchesCurrentReviewedSource": true,
+      "noRequiredUnconditionalSideEffect": "Content revision function uses EXCEPT to exclude identical OLD/NEW row values; internal RI functions enforce unchanged keys. Predicate still executes UPDATE statement trigger with empty transition sets."
+    },
+    "sourceUnchanged": true,
+    "observedNoopActions": {
+      "saved-preferences": 2,
+      "saved-background-mode": 1,
+      "saved-position": 2,
+      "saved-edit": 4
+    },
+    "trueChangeControls": "Three existing owners receive a mode value already persisted by another actual owner; all calls roll back. This is controlled correctness coverage, not an observed normal action workload.",
+    "budgets": "Actual metadata/hash sessions READ ONLY; each mutation callback explicitly sets and verifies 30s statement /5s lock timeout and JIT off.",
+    "physicalResult": "Nine baseline no-ops replace one tuple each; current predicate affects zero rows and retains ctid. Three true controls replace one tuple in both versions.",
+    "statementResult": "Same two ORM statements for ordinary profile calls; three for actual edit calls because pruning retains its locked reread. Update statement count stays one."
+  },
+  "tests": {
+    "command": ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/profile-db.test.ts",
+    "runtime": "Bun 1.4.3",
+    "pass": 0,
+    "guardedSkip": 22,
+    "fail": 0,
+    "newGuardedRegression": "equivalent profile preferences retain the tuple while a changed preference writes normally",
+    "executionBoundary": "Module parse and guarded discovery only. COAST_DB_TEST fixtures were not run against the actual clone. The production-function rollback probe independently executes saved no-op and genuine-change cases.",
+    "sourceSha256": "75fc24acaccd915a34d7832fee1f21516692de56f9b1dd59a176b600c40cc471"
+  },
+  "review": {
+    "status": "independent_read_only_approved_no_material_issue",
+    "reviewer": "providers_jobs_audit",
+    "sourcePins": {
+      "src/lib/core/profile/service.server.ts": "5f4cd96495347811e7c11e9126417a8b8c0a41d5046414e92e3fd114384be904",
+      "tests/profile-db.test.ts": "75fc24acaccd915a34d7832fee1f21516692de56f9b1dd59a176b600c40cc471"
+    },
+    "boundary": "Source review performed no DB/test rerun; actual guarded bind/trigger proof is separately retained. Root owns common gates and normal-dev acceptance."
+  },
+  "tradeoffs": [
+    "JSONB comparison and a second bound settings representation add work; this is not a statement-count or network-payload reduction.",
+    "SELECT FOR UPDATE, update statement admission, validation and GIF cleanup remain.",
+    "Identical users rows already avoid content revision bumps through value-difference triggers. This fix does not claim fewer revisions.",
+    "No WAL, heap/RSS, CPU, production latency or natural no-op frequency measurement. Per-case single-pair timings are descriptive only."
+  ],
+  "knownLimits": [
+    "No actual GIF data-URL store replay: saved edit calls retain pruning, while original GIF storage code is unchanged and source-reviewed. Private runtime directory has no normal avatar files.",
+    "Application transaction callbacks are injected into the outer rollback transaction; post-write pruning runs under that same held row fence for isolation. This proves values/admission/lifecycle call equivalence, not normal two-transaction concurrency schedules.",
+    "No-op user rows already avoid content revision increments through the value-difference trigger; no revision-reduction gain is claimed. SQL UPDATE statement count and SELECT FOR UPDATE admission remain unchanged.",
+    "ctid demonstrates logical tuple replacement admission, not WAL bytes, dead-tuple compaction, lock duration, heap/RSS or production latency. Failed/rolled-back UPDATEs can still produce physical work.",
+    "True-change controls borrow a different valid background mode already persisted on another real owner, then roll back; this is controlled correctness coverage, not a new observed normal workload or fabricated performance cohort.",
+    "Only the profile owner slice of DATA-07 is repaired. Metadata/game/list/queue no-op opportunities and feature-source precedence remain open.",
+    "No positive same-value feature, pin/reorder, or fixed-background selection action appears in the selected actual replay matrix; their unchanged preparation code is source-reviewed and existing guarded correctness coverage remains.",
+    "The new guarded regression was not executed with fabricated setup on the actual clone. A separate correctness database may execute it under COAST_DB_TEST=1."
+  ],
+  "relatedFindingIds": [
+    "DATA-09",
+    "HELPER-01",
+    "UIC-01"
+  ],
+  "futureDriftAcceptance": [
+    "Keep one final value-difference predicate across every profile action; do not skip validation, locking or cleanup on a guessed early no-op.",
+    "Revalidate actual bound users UPDATE trigger metadata when adding trigger-based behavior; preserve any new meaningful side effect explicitly.",
+    "Run the guarded DB regression in its isolated correctness database and replay naturally saved profile cohorts in a private actual clone.",
+    "Do not generalize this guard to work_features without resolving timestamp-based provider precedence."
+  ],
+  "verificationArtifacts": [
+    "probes/profile-write-actual.ts",
+    "evidence/implementation-profile-write-actual.json",
+    "candidates/profile-write/service.before.ts.txt",
+    "evidence/implementation-profile-write-tests.json"
+  ],
+  "artifactSha256": {
+    "probes/profile-write-actual.ts": "1990f8c8a6e444c7ba96a606a15f46c6d5894d3fe37a42612827259f7f901d21",
+    "evidence/implementation-profile-write-actual.json": "f960024b60c70f00bc83a5e4036c2172f37ea7c8a856cbcdd77c98ae17d33d14",
+    "candidates/profile-write/service.before.ts.txt": "c302edb7c21be0ed1583f0792fa34004652f791180446b85bdff8f31c1f4520d",
+    "evidence/implementation-profile-write-tests.json": "e2933602a125ad618b3eb1a6f1dadf0937bc56f5ed40a9aa686a67d443355e4d"
+  },
+  "normalDatabaseTouched": false,
+  "newDependenciesOrSchema": false
+}

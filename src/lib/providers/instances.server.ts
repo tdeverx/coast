@@ -265,7 +265,13 @@ export async function instanceFetchConfig(
   };
 }
 
-export function instanceTransport(instance: typeof providerInstances.$inferSelect) {
-  return async (path: string, init?: RequestInit) =>
-    createProviderTransport(await instanceFetchConfig(instance))(path, init);
+export function instanceTransport(instance: typeof providerInstances.$inferSelect, signal?: AbortSignal) {
+  return async (path: string, init?: RequestInit) => {
+    signal?.throwIfAborted();
+    const config = await instanceFetchConfig(instance);
+    signal?.throwIfAborted();
+    return createProviderTransport(config)(path, signal
+      ? {...init,signal:init?.signal?AbortSignal.any([signal,init.signal]):signal}
+      : init);
+  };
 }

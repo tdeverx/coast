@@ -1,0 +1,160 @@
+{
+  "id": "HELPER-04",
+  "status": "implemented_actual_labels_verified_no_observed_active_snapshot_scan_gain",
+  "report": "implementation-request-scope.md",
+  "sharedOwner": "src/lib/media/requests.ts:requestScopeFormatter; component-derived snapshot formatter in createRequestControls",
+  "change": "Destination multiplicity calculated once per accessed request snapshot; all three ScreenActions labels use the derived formatter. No global cache/compatibility shim.",
+  "consumers": [
+    {
+      "consumer": "ScreenActions request submenu accessible Button label",
+      "newOwner": "requests.scopeLabel(request)"
+    },
+    {
+      "consumer": "ScreenActions visible submenu trigger label",
+      "newOwner": "requests.scopeLabel(request)"
+    },
+    {
+      "consumer": "ScreenActions cancel/approve/decline confirmation text",
+      "newOwner": "requests.scopeLabel(request); derives from current data snapshot as before"
+    },
+    {
+      "consumer": "/requests page grid",
+      "change": "None; existing intentionallydifferent inline wording retained."
+    }
+  ],
+  "sourceBefore": {
+    "src/lib/media/requests.ts": {
+      "sha256": "133c9c682ca90a773a30ddf4e774fa88df94f814603c6e115c31500ea0e0d8ea",
+      "privatePath": "/private/tmp/coast-request-scope-before-requests.ts"
+    },
+    "src/lib/ui/controls/requests.svelte.ts": {
+      "sha256": "700304fdcfeffeaa0cea75bc7de267205a7e3ccc922205f81e8a0cdb65b12bb6",
+      "privatePath": "/private/tmp/coast-request-scope-before-requests.svelte.ts"
+    },
+    "src/lib/ui/work-menu/ScreenActions.svelte": {
+      "sha256": "a0820eb7da5b0603293a787e2ac4cbd52e821f1aa5cc0ef1efda654cd0675046",
+      "privatePath": "/private/tmp/coast-request-scope-before-ScreenActions.svelte"
+    },
+    "tests/ui-request-controls.test.ts": {
+      "sha256": "f75abdae2393f90515a26750e7324c1931404060f660788f43c1e0fc77be9af8",
+      "privatePath": "/private/tmp/coast-request-scope-before-ui-request-controls.test.ts"
+    }
+  },
+  "sourceAfter": {
+    "src/lib/media/requests.ts": "8c7bb66032db4fa0f83ecd2f105678a137c76eb8beaf38e23ff6ee689191871e",
+    "src/lib/ui/controls/requests.svelte.ts": "b25006887084e24e4e9b2b31205057a1552dd98c884962ac22b498fcf0cc4451",
+    "src/lib/ui/work-menu/ScreenActions.svelte": "2e45c54dd52b47279fd6729e6ea7e7e3dcf7a4efedb572ab4f9eafb8c1693c3b",
+    "tests/ui-request-controls.test.ts": "cb89b9959ccf144792a829456ac144897b4da1aa9783e266c338ba59dbd0883e",
+    "tests/request-scope.test.ts": "17898cb3e8700b5d78ef7f33485a2f920554587f2234905fe25028873c931b77"
+  },
+  "focusedTests": {
+    "status": "passed",
+    "command": ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/request-scope.test.ts tests/ui-request-controls.test.ts",
+    "runtime": "Bun1.4.3",
+    "testsPassed": 4,
+    "testsFailed": 0,
+    "assertions": 30,
+    "databaseRequired": false,
+    "boundary": "Authored in-memory wording/reactive refresh and existing cancellation/retry tests; controlled4K/multiple destinations are not fabricated database/performance cohorts.",
+    "testHashes": {
+      "tests/ui-request-controls.test.ts": "cb89b9959ccf144792a829456ac144897b4da1aa9783e266c338ba59dbd0883e",
+      "tests/request-scope.test.ts": "17898cb3e8700b5d78ef7f33485a2f920554587f2234905fe25028873c931b77"
+    }
+  },
+  "actual": {
+    "status": "passed",
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "5s"
+    },
+    "census": {
+      "savedRows": 39,
+      "fourK": 0,
+      "nonemptySeasons": 3,
+      "owners": 3,
+      "states": {
+        "approved": 8,
+        "available": 28,
+        "cancelled": 1,
+        "pending": 2
+      }
+    },
+    "allSaved": {
+      "snapshots": 38,
+      "labelsCompared": 39,
+      "multipleDestinationSnapshots": 0,
+      "maximumSnapshotRequests": 2,
+      "baselinePeerDestinationReads": 41,
+      "currentPeerDestinationReads": 39,
+      "baselineLabelDigest": "1e0f024be25b0daa35928e5841b277821be26292a87d02ecbf944a457fb9c418",
+      "currentLabelDigest": "1e0f024be25b0daa35928e5841b277821be26292a87d02ecbf944a457fb9c418"
+    },
+    "activeMenuState": {
+      "snapshots": 38,
+      "labelsCompared": 38,
+      "multipleDestinationSnapshots": 0,
+      "maximumSnapshotRequests": 1,
+      "baselinePeerDestinationReads": 38,
+      "currentPeerDestinationReads": 38,
+      "baselineLabelDigest": "6e41bd3d070631f1a6f1889bf8bc351005274004638101b86947b71c41b52261",
+      "currentLabelDigest": "6e41bd3d070631f1a6f1889bf8bc351005274004638101b86947b71c41b52261"
+    },
+    "allLabelsEqual": true,
+    "sourceUnchanged": true,
+    "rolledBack": true,
+    "databaseWrites": false,
+    "normalDatabaseTouched": false,
+    "fabricatedRows": false,
+    "interpretation": "39 unique saved requests compared;38 active-state request labels additionally checked. Active groupsmax1:38\u219238peerreads, so no observed current active-menu gain. Historical max2 groups41\u219239peerreads are not a visible-menu improvement."
+  },
+  "algorithmicBound": {
+    "forNRequestLabelsBefore": "N\u00d7N peer destination reads, plus any requested label suffix reads",
+    "after": "N peer destination reads once per accessed snapshot, plus any requested label suffix reads",
+    "tradeoff": "One derived formatter closure per accessed snapshot. A single-request first use has no peer-scan reduction; repeated label uses reuse it.",
+    "performanceClaim": "Supplementary exact operation counts on actual values; no latency/CPU/RSS or large-menu benchmark."
+  },
+  "gaps": [
+    "No saved4K request; controlled pure-label tests cover4K wording separately.",
+    "No actual active menu snapshot with multiple destinations; controlled tests and reactive replacement cover multiplicity suffix separately.",
+    "Peer scan getter counts are supplementary operation counts on actual request values, not latency/CPU/RSS benchmarks.",
+    "Active-state grouping matches menu request-target/state membership, not a separate visibility or rendered-browser acceptance claim.",
+    "Requests grid has different existing inline wording and is untouched; this helper serves the three ScreenActions menu/confirmation uses."
+  ],
+  "probeAttemptHistory": "First read-only attempt used wrongrawSQLcolumn spellingis4k; corrected tois_4k after schema review. Failed receipt retained; no app changes/data writes and no product defect attributed to probe error.",
+  "review": {
+    "status": "root_independent_read_only_approved_no_blocker",
+    "scope": "Exact wording/multiplicity/current confirmation snapshot, component-derived factory, no cancellation/resource changes.",
+    "sourceHashes": {
+      "src/lib/media/requests.ts": "8c7bb66032db4fa0f83ecd2f105678a137c76eb8beaf38e23ff6ee689191871e",
+      "src/lib/ui/controls/requests.svelte.ts": "b25006887084e24e4e9b2b31205057a1552dd98c884962ac22b498fcf0cc4451",
+      "src/lib/ui/work-menu/ScreenActions.svelte": "2e45c54dd52b47279fd6729e6ea7e7e3dcf7a4efedb572ab4f9eafb8c1693c3b"
+    }
+  },
+  "futureDriftAcceptance": [
+    "Preserve all three call sites through shared derived formatter; no per-row full-snapshot destination scans.",
+    "Keep snapshot replacement test covering one\u2192multiple\u2192empty and stable formatter identity within snapshot.",
+    "Re-run actual all-saved and active-state comparisons when naturally occurring4K or multiple-destination menus become available; do not seed them for performance claims."
+  ],
+  "sourceWriteStatus": "frozen",
+  "navigationToastPackageSchemaChanged": false,
+  "verificationArtifacts": [
+    "evidence/implementation-request-scope-actual.json",
+    "evidence/implementation-request-scope-first-attempt.json",
+    "evidence/implementation-request-scope-tests.json",
+    "probes/request-scope-actual.ts",
+    "candidates/request-scope/requests.before.ts.txt"
+  ],
+  "artifactSha256": {
+    "evidence/implementation-request-scope-actual.json": "6b95339cef224125905c8a2c1bdca3fadf7b5e9f992112a0c4f4e98f58cc5ad9",
+    "evidence/implementation-request-scope-first-attempt.json": "00a4370c0b98287ccbc4b65ed4088c6d8e7f0b897598e8607892be99c08a7249",
+    "evidence/implementation-request-scope-tests.json": "652111750adf843a2f3edfed7c4448376da5a0ec655ccb2ca7ef679870022292",
+    "probes/request-scope-actual.ts": "b42c9064f672ea5369556b148952f357c15e924b26badf9ef68e9c9f0c9231d9",
+    "candidates/request-scope/requests.before.ts.txt": "133c9c682ca90a773a30ddf4e774fa88df94f814603c6e115c31500ea0e0d8ea"
+  },
+  "currentBatchLiveAcceptance": {
+    "receipt": "evidence/implementation-owner-batch-normal.json",
+    "boundary": "Signed-in functional rendering and menu/panel open/close only; no real filter/preference writes, pending device authorization, fault injection or benchmark."
+  }
+}

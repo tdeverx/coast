@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "status": "private_trials_completed_combined_candidate_positive_no_production_adoption",
+  "finding": "PJ-10",
+  "sourcePins": {
+    "src/lib/server/auth/index.ts": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "src/lib/providers/job-timing.server.ts": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+    "tests/job-task-summary-db.test.ts": "312154f05b572ddf4b815a65339c742aacecb9fcf83cb5e1f7bc0820e0977085",
+    "drizzle/0015_maintenance_indexes.sql": "c58c2a8f79d2b2a8e522e206c04495d5ed29ed45c7b74d0c8a4b4165989dea27",
+    "drizzle/0055_bounded_read_indexes.sql": "e716c1c956be6833b7272f5622a080ed8383bdc3d478a5318ab6bc96a4fef936"
+  },
+  "exactSchema": {
+    "table": "outbox_actions",
+    "id": "UUID NOT NULL PK",
+    "kind": "TEXT NOT NULL",
+    "updatedAt": "TIMESTAMPTZ NOT NULL",
+    "connectionId": "nullable UUID FK provider_connections.id ON DELETE SET NULL",
+    "accountGeneration": "nullable UUID",
+    "providerInstanceId": "provider_connections.instance_id NOT NULL",
+    "existingIndexes": [
+      "outbox_actions_pkey(id)",
+      "outbox_pending_idx(state,next_attempt_at)",
+      "outbox_connection_order_idx(user_id,connection_id,created_at)",
+      "outbox_maintenance_idx(connection_id,kind,state,updated_at)",
+      "outbox_success_generation_idx(connection_id,kind,account_generation,updated_at DESC NULLS LAST) WHERE succeeded",
+      "outbox_state_created_idx(state,created_at)",
+      "outbox_taste_one_active_idx(kind) WHERE taste.refresh and pending/running/failed"
+    ]
+  },
+  "proposedQuery": {
+    "name": "Q1 connection-partitioned streaming terminal representatives",
+    "sha256": "d58597211e21f76c90bf3e1c5aca0ee0a0fb52bcb0ae5bd446bce896eb392e28",
+    "file": "candidates/task-history-next/query.sql",
+    "mechanism": "One ordered DISTINCT-ON kind pass per actual connection, separate null/missing-connection scope projection, then final exact kind/scope representative merge. No all-history lane discovery followed by per-lane latest rereads.",
+    "stillUnbounded": "Every relevant history index slice may still be scanned; generation filtering and fallback/orphan admission can remain proportional to history. Not a durable read model or guaranteed bounded-task scan.",
+    "state": "original Q1 rejected on existing indexes; retained SQL immutable"
+  },
+  "proposedIndex": {
+    "name": "I1 terminal ordering and fixed-width generation coverage",
+    "sha256": "92e1c1446df2efd5b6f9639640df68911afb8b8a53c75d4e5990ce1cbffcba46",
+    "file": "candidates/task-history-next/index.sql",
+    "mechanism": "Remove state between kind and timestamp, add UUID tie key, cover generation filter without payload. Existing predicate covers all terminal states together; index-only admission is a hypothesis to verify via plans/heap fetches.",
+    "state": "single private rollback experiment complete; no retained/production index"
+  },
+  "optionalDeferred": {
+    "name": "I2 accountless local-scope expression index",
+    "file": "candidates/task-history-next/local-scope-index.sql",
+    "state": "not first trial; not approved for adoption",
+    "reason": "Raw payload-derived scope has no SQL width constraint. B-tree key limits, malformed/non-UUID scope and payload update/HOT effects require a separate writer/width decision; do not silently cap/cast/normalize scope or include entire payload."
+  },
+  "trialMatrix": [
+    "Q0/I0 exact canonical on current indexes",
+    "Q1b/I0 refined FK-valid query on current indexes",
+    "Q0/I1 unchanged canonical with transaction-local I1",
+    "Q1b/I1 refined query with transaction-local I1"
+  ],
+  "preservation": [
+    "No date/retention filter or recent-N cap; unknown/dynamic kinds retained",
+    "All provider_connections, no enabled/connected/user-status filter",
+    "Existing connection scope is instance_id::text; null/missing connection scope uses exact canonical four-kind CASE and raw payload text, including NULL/empty/non-UUID strings",
+    "Null/current generation eligible for existing connection, obsolete rejected; missing connection accepts any generation exactly as helper Q1b admits only verified immediate-FK valid states; deleted references become null and non-null orphans are unsupported, with drift fail-closed.",
+    "All succeeded/failed/cancelled compete in one total order updated_at DESC/id DESC",
+    "Final DISTINCT-ON kind/scope ordered kind ASC/scope ASC NULLS LAST; timestamp/id NOT NULL constraints retained",
+    "Active pending/running/failed window counts and pending eligibility/priority/running-lockedAt/failed ordering untouched",
+    "Failed active and terminal reps may differ on timestamp ties; preserve union/map counts and actionDetails DTO/order exactly"
+  ],
+  "rejectedNotRetried": {
+    "groupedMaximum": "Same all-history sort, additional hash/join; hits669\u21921338 despite similar medians. Do not rerun exact candidate.",
+    "oldStateLaneSeek": "Whole-history lane discovery then49state-lane seeks caused bitmap heap rereads; hits670\u21924068+214reads and45.469ms vs29.008. Do not repeat unchanged SQL/index."
+  },
+  "actualEvidenceBoundary": "Fresh private matrix retains25891 terminal/23representatives/4nullscopes; zero active/pending/running/failed/dangling/obsolete positives. Complete canonical DTO/ordered tuples equal for all4cells. Index only exists within rolled-back write-capable transaction;102tables1864145rows+sequences/catalog/existingindices restore, poolclosed. No normal/deployed change. Historical105079-row spill not replayed.",
+  "nextProof": {
+    "safety": "Completed private matrix uses explicit verified30s/1s and onebackend; no domainDML/providers/normalDDL. Any further DB work requires new exclusive lease; future write/HOT may use secondary clones. No automatic production index/application.",
+    "equality": "Complete ordered terminal ID/scope tuples, unchanged active ID/count/scope tuples and complete listTaskActions hydrated DTO/taskCount/order in RAM. No sorting/field stripping to hide differences. Existing real actor; no invented corpus or provider/network calls.",
+    "metrics": "Four sanitized plans, index buildbytes/time and3I1-phase alternating querypairs (outlierretained) are in matrix report. No I0/I1 latency distribution, CPU/RSS, naturalwritefrequency or deployedscale claim. Remaining: write/HOT cost, other consumers and larger visibility/retained-history cohorts.",
+    "controls": "Separate authored functional tableless/fixture contracts for deleted\u2192null/orphan/obsolete/current/null generation, unknown/local kinds, raw missing/empty scope, timestamp+UUID ties, and differing failed active/terminal reps. They are correctness supplements, not actual performance cohorts.",
+    "writes": "Not executed. Source explains extra terminal/retry/delete/rekey index obligations; existing indexes remain. Separate existing-row controlled schedules need trigger/policy review and honest physical/WAL/HOT boundaries; no provider/job execution."
+  },
+  "writeTradeoffs": [
+    "Adds another permanent-history B-tree; grows with retained terminal actions, no retention change",
+    "Adds maintenance on transition into terminal, terminal updated_at changes, retry out of failed, and connection deletion SET NULL/rekey; existing indexes remain",
+    "No full payload INCLUDE; fixed UUID generation coverage avoids copying checkpoint/result JSON, but index-only scans depend on actual visibility/plan",
+    "Do not drop maintenance or success-generation indexes: they still serve active/busy/scheduling queries",
+    "Q1 adds small lateral passes per existing connection and skinny orphan admission; empty connections/orphan scan and null fallback can outweigh sort savings"
+  ],
+  "primaryConsumers": [
+    "Settings Jobs listTaskActions loader",
+    "GET queue/tasks and post-control task refresh through same owner",
+    "jobTimings terminal lastRuns is a secondary index-sharing acceptance family; succeeded-only scheduling evidence keeps its separate existing generation index"
+  ],
+  "noAdoption": "Positive private Q1b+I1 combination only. Queryalone is known4.8x buffer regression and indexalone does not help Q0 here; no production SQL/index/migration/source adoption.",
+  "retainedBoundary": "All original failed receipts/query/indexSQL/timings immutable. Current method/result is linked to task-history-index-matrix.md/.json. Write/HOT/timings-family/storage-scale/busy-cohort/normalmigration-provenance acceptance remains open; this publication changes no app/test/build bytes.",
+  "trialStatus": {
+    "Q1I0": "rejected; root visits670\u21923861",
+    "Q1bI0": "rejected; root visits670\u21923191",
+    "Q0I1": "index not admitted; root visits670 unchanged",
+    "Q1bI1": "private positive only; root visits544,93HeapFetches,newindex2433024B",
+    "report": "task-history-index-matrix.md",
+    "receipt": "evidence/task-history-index-matrix-actual.json",
+    "implementationApplied": false
+  },
+  "refinedQuery": {
+    "name": "Q1b FK-admitted omission of only impossible orphan CTE/UNION",
+    "file": "candidates/task-history-next/query-q1b.sql",
+    "sha256": "42b380f6fed774d8d935da9ec42bad4f9e56408e95655f3c919cd17cecfb69e2",
+    "state": "rejected alone, positive private combined with I1 only",
+    "report": "task-history-q1b-current-index.md"
+  },
+  "originalPlannedTrialMatrix": [
+    "Q0/I0 exact current unfiltered query, source-pinned baseline",
+    "Q1/I0 genuinely new partitioned query on unchanged indexes; READ ONLY first",
+    "Q0/I1 exact current unfiltered query with private candidate index, to isolate index-only impact",
+    "Q1/I1 partitioned query plus targeted terminal-order index"
+  ],
+  "methodRevision": {
+    "original": "fresh generated secondary clone",
+    "executed": "exact designated private clone; one write-capable repeatable-read transaction, one ordinary CREATE INDEX, deliberate rollback; same4cell snapshot/time",
+    "rationale": "Root-reviewed smaller lifecycle avoids extra copy/drop; verifies complete logical/catalog restoration. Physical WAL/page/cache/statistics effects are not reversed.",
+    "future": "matched secondary clones remain an option for separately reviewed write/HOT controls."
+  },
+  "sourcePinCount": 8
+}

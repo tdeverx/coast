@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 1,
+  "id": "DATA-05",
+  "status": "partially_implemented",
+  "recordedAt": "2026-10-18T02:33:34.690317+00:00",
+  "title": "Reject unused Continue states before effective replay projection",
+  "scope": "One necessary-condition filter in existing screenProgressPlan; no cache, new index, descendant rewrite or planner setting.",
+  "sharedOwner": "src/lib/server/queries/progress.ts:153",
+  "sourcePins": {
+    "src/lib/server/queries/progress.ts": "c6dc479be1ea09bdd477d0eb21780361cf3eb0edc56d07e8a5e3a65e9cd9d7c7",
+    "src/lib/server/queries/continuations.ts": "a136f3bc8d4722419b7865219041851f4f87005264b461c919e515ea06491916",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/server/queries/home.ts": "4fd157072d3f343b49cc3f88a012450743199e43e7f22a15d78f46b245886b24",
+    "src/lib/core/tracking/rewatch.server.ts": "9d9dbba3ef75f32eb45d5f932011ea52506f1b0102a5f8899f1e9f012e513e1c",
+    "src/lib/core/lists/sequence.server.ts": "57f6f05eda50129707fffce767da1ae1749ca97bd02fb056c518c9b4237ad018",
+    "tests/progress-state-admission-db.test.ts": "3b28bc93772cfd1ba1345f69e5ac62bddd1f880f2eda10cb6e8b83d958fbf193"
+  },
+  "baselineSourceSha256": "988f3c3239523534fb2538d63bea30fbdb32d119710a2312ac53ed9a150fcd33",
+  "verifiedCandidateSourceSha256": "c6dc479be1ea09bdd477d0eb21780361cf3eb0edc56d07e8a5e3a65e9cd9d7c7",
+  "consumers": [
+    "Authenticated progress API and screen Continue/Next/Up Next rows",
+    "Full progress route and allowed cross-profile progress",
+    "Initial home hero through continueHeroId",
+    "Public token progress adapter through the same owner; no token HTTP trial in this batch"
+  ],
+  "contract": {
+    "predicate": "not dropped AND (stored watched OR stored positive position OR canonical replay boundary exists)",
+    "proof": [
+      "Both consumers reject dropped rows.",
+      "Effective watched implies stored watched.",
+      "Without a boundary, effective positive progress implies stored positive position. Every direct or inherited boundary is conservatively retained because event progress may differ from stored position.",
+      "Own replay implies a non-null direct boundary under existing started_at NOT NULL schema.",
+      "Preserve relative order of every used state. Queue/saved/descendant/parent-drop/sequence/availability/privacy and paging owners stay unchanged."
+    ],
+    "notApplied": "A stored-position-only filter would incorrectly exclude inherited replay progress and was not used."
+  },
+  "actualVerification": {
+    "evidence": "evidence/progress-state-admission-candidate-actual.json",
+    "comparisons": 184,
+    "plannerComparisons": 144,
+    "completeProgressComparisons": 24,
+    "heroComparisons": 4,
+    "crossProfileComparisons": 12,
+    "completeEqual": true,
+    "orderedSequenceMapCompared": true,
+    "actualOwners": 4,
+    "screenStates": 89830,
+    "unusedStatesRejected": 69503,
+    "perOwnerStateRows": [
+      {
+        "ordinal": 0,
+        "before": 23793,
+        "after": 61
+      },
+      {
+        "ordinal": 1,
+        "before": 24437,
+        "after": 7194
+      },
+      {
+        "ordinal": 2,
+        "before": 16636,
+        "after": 1424
+      },
+      {
+        "ordinal": 3,
+        "before": 24964,
+        "after": 11648
+      }
+    ],
+    "settings": {
+      "default_read_only": "on",
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "5s",
+      "recursive_worktable_factor": "10"
+    },
+    "databaseWrites": false,
+    "externalFetches": 0,
+    "normalDatabaseTouched": false,
+    "runtimeModulesRemoved": true,
+    "scope": "Quiescent actual clone on one reserved READ ONLY repeatable-read connection; preserve owner transaction boundaries. Separate operations do not share one outer snapshot."
+  },
+  "observedWork": {
+    "representativeCompleteWatching": [
+      {
+        "ordinal": 0,
+        "before": {
+          "statements": 23,
+          "rows": 24935,
+          "mappedBytes": 3772857,
+          "stateRows": 23793,
+          "elapsedMs": 426.3833339999983
+        },
+        "after": {
+          "statements": 23,
+          "rows": 1203,
+          "mappedBytes": 384196,
+          "stateRows": 61,
+          "elapsedMs": 481.7248749999999
+        }
+      },
+      {
+        "ordinal": 1,
+        "before": {
+          "statements": 25,
+          "rows": 34886,
+          "mappedBytes": 6402766,
+          "stateRows": 24437,
+          "elapsedMs": 470.34991699999955
+        },
+        "after": {
+          "statements": 25,
+          "rows": 17643,
+          "mappedBytes": 3941149,
+          "stateRows": 7194,
+          "elapsedMs": 398.6203749999986
+        }
+      },
+      {
+        "ordinal": 2,
+        "before": {
+          "statements": 23,
+          "rows": 19929,
+          "mappedBytes": 3312737,
+          "stateRows": 16636,
+          "elapsedMs": 363.3172909999994
+        },
+        "after": {
+          "statements": 23,
+          "rows": 4717,
+          "mappedBytes": 1138512,
+          "stateRows": 1424,
+          "elapsedMs": 379.4085420000047
+        }
+      },
+      {
+        "ordinal": 3,
+        "before": {
+          "statements": 27,
+          "rows": 43200,
+          "mappedBytes": 8728462,
+          "stateRows": 24964,
+          "elapsedMs": 676.2177090000041
+        },
+        "after": {
+          "statements": 27,
+          "rows": 29884,
+          "mappedBytes": 6827951,
+          "stateRows": 11648,
+          "elapsedMs": 504.75095899999724
+        }
+      }
+    ],
+    "planOwnerOrdinal": 3,
+    "singleInitialStatePlan": {
+      "before": {
+        "rows": 24964,
+        "executionMs": 84.411,
+        "sharedHits": 198204,
+        "sharedReads": 1561
+      },
+      "candidate": {
+        "rows": 11648,
+        "executionMs": 57.305,
+        "sharedHits": 76067,
+        "sharedReads": 3865
+      }
+    },
+    "alternatingFullOwnerPairs": 4,
+    "medianFullWatchingMs": {
+      "before": 587.3920210000069,
+      "candidate": 548.5867704999837
+    },
+    "timingBoundary": "Largest-state actual owner, four alternating full progressData(watching) pairs with mapped-row/JSON-byte instrumentation disabled. Warm local descriptive samples, not production tails; pair0 candidate was slower. Initial instrumented comparisons are work counters, not clean timing samples.",
+    "resourceBoundary": "Mapped JSON byte counts are serialization-size proxies, not PostgreSQL wire bytes, browser heap or retained RSS. Statement counts remain unchanged. Shared read blocks increased1561\u21923865 in the single captured plan; no universal I/O or CPU/heap claim."
+  },
+  "supplementalControls": {
+    "evidence": "evidence/progress-state-admission-controls.json",
+    "test": "tests/progress-state-admission-db.test.ts",
+    "cases": 17,
+    "passed": 1,
+    "assertions": 8,
+    "boundary": "Authored tableless correctness states shadow tables in READ ONLY SQL. Canonical replay helper and actual source initial projection plus both consumers are compiled. No fixture catalogue or actual positive replay cohort is claimed.",
+    "covers": [
+      "plain unused/negative/dropped states",
+      "direct movie replay with/without event progress",
+      "show and season inherited episode replay",
+      "child season boundary on show and show boundary on season",
+      "boundary-only conservative admission",
+      "old watched reset",
+      "latest watch event clears earlier replay progress"
+    ]
+  },
+  "independentReview": {
+    "providers_jobs_audit": "Predicate, query/consumer extraction, all17cases/order/expected13admitted10started6active reviewed; no material issue. Test transpiler repair was harness-only afterward."
+  },
+  "calibration": [
+    "First supplemental control harness failed before SQL comparison because new Function interpreted the source sql<boolean> generic as JavaScript. Transpiling the exact source projection repaired the harness; failed receipt retained. Application predicate did not change.",
+    "Earlier dropped-only probe remains unexecuted and has no actual dropped cohort; it is not this broader necessary-condition proof."
+  ],
+  "gaps": [
+    "Actual saved rewatches, started playlists and dropped screen states are all zero. Tableless controls supplement but do not replace missing actual runtime cohorts.",
+    "Descendant scans, recursive continuation selection, full card hydration and repeated plan invocations still execute; no retained plan cache or durable projection was added.",
+    "No real token HTTP, browser network timing, CPU/heap/long-play or concurrent membership/replay-boundary mutation proof.",
+    "No guaranteed latency or universal buffer I/O gain. Four local samples have visible variation."
+  ],
+  "remainingOptions": [
+    "Measure descendant cardinality by actual started-show/sequence owners before attempting an exact bounded expansion.",
+    "Consider request-local plan reuse only when one actual request needs the same exact plan twice; preserve viewer/options/snapshot and no retained authority cache.",
+    "Larger SQL or durable continuation projection needs explicit semantics for show seasons, specials, ordered occurrences, replay and concurrent membership; not adopted."
+  ],
+  "reproduction": {
+    "exactExecutedCandidate": "probes/progress-state-admission-candidate-actual.ts",
+    "maintainedPostAdoption": "probes/progress-state-admission-real.ts",
+    "maintainedProbeExecuted": false,
+    "maintainedBoundary": "Only baseline/current source admission changed; syntax checked without another full DB run. Executed candidate is byte-identical to adopted production source.",
+    "control": "probes/progress-state-admission-controls.ts"
+  },
+  "artifacts": {
+    "candidates/continue/progress.before.ts.txt": "988f3c3239523534fb2538d63bea30fbdb32d119710a2312ac53ed9a150fcd33",
+    "probes/continuation-state-census.ts": "ee7f3aab47596fc46dabbdfdd289df40d8f1df6cc3224e778d2371af48e54dd0",
+    "probes/progress-state-admission-candidate-actual.ts": "a4ca23e4a38fd9b95085026c28d70fa54d3154fd213b8fb2c96830681aa0f138",
+    "probes/progress-state-admission-controls.ts": "2bb06eded3729527bf586ab16b7bbec6328a504697e9e9f8874fcc65bf36ead8",
+    "probes/progress-state-admission-real.ts": "76b4e56b06263240305360fa21ccdf77acac0bb3c1705d7b5e82fa337775d42d",
+    "evidence/continuation-state-census.json": "8130fa2eb5a8e6158e251f178779f25216ed9d66653c4f8e17276b70a04a4d6e",
+    "evidence/progress-state-admission-candidate-actual.json": "e1d12a229af47356b769912af9942a3855a1e42f8e2bfbce3439e617e73439da",
+    "evidence/progress-state-admission-controls-setup-failed.json": "609cea8b81737c1d453f4d6084aeb489573a2c3f3fb9c82ef6dfc9de6e4d2afa",
+    "evidence/progress-state-admission-controls.json": "58f4d0c1fc1b666a5c4480f911723de96dba79b92bfb537d6abd68b53d668109"
+  },
+  "rootCombinedAcceptance": {
+    "common": "787pass/708guardedskip/0fail/33642assertions/1495tests276files/check0/0/build/inventories",
+    "normalDevReceipt": "evidence/implementation-shared-admission-normal.json",
+    "signedIn": true,
+    "sourceUnchangedDuringTrial": true,
+    "scope": "Continue34links/Next36;3friends and actual taste/overlap35links;Library120media links/28completedimages;Listen102musiclinks\u21921989detail41\u2192settledBack102;Admin115rows;finalTasks30paused/0dialogs/0popovers/0newwarnerror. Functional actual-data acceptance, no live provider job/page, admitted plan creation or browser resource/timing claim."
+  },
+  "laterSectionDemandChange": {
+    "ref": "next-detail-section-demand.json",
+    "priorSourcePins": {
+      "src/lib/server/queries/media.ts": "f66f0f80a7b78288efd48994379510915d4e21a4894a5aaa377e9b8e79856bda"
+    },
+    "scope": "Exact8file presentation-demand patch; media query module prefix before detailsData is byte-identical. Complete default/full12signedin+3guest outputpairs pluscompact12signedin+3guest pairs verified in actual30readonlyproof. Prior score/Continue/work-summary/oldbrowser receipts remain historical and were not rerun by a fingerprint refresh.",
+    "ordinaryApiAndDefaultFullUnchanged": true,
+    "currentCommonAndNormalAcceptance": {
+      "commonGateReceipt": "evidence/implementation-20261018-section-demand-gates.json",
+      "normalReceipt": "evidence/implementation-section-demand-normal.json",
+      "boundary": "Current combined gates and selected-section functional acceptance passed. The report\u2019s older owner-specific runtime measurements remain historical and were not rerun."
+    },
+    "sourceIdentityIsNotRuntimeAcceptance": true
+  }
+}

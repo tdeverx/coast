@@ -89,7 +89,9 @@ export async function refreshTasteCaches(){
    select distinct unnest(s.items) as id from recommendation_sets s join provider_instances i on i.id=s.instance_id and i.enabled left join provider_connections c on c.id=s.connection_id and c.status='connected' and c.account_generation=s.account_generation
    where s.connection_id is null and s.seed_id=any(${sql.array(seedIds,'UUID')}::uuid[]) or c.user_id=${user.id} and ${config.enableTrakt}
   ), feature_ids as (
-   select distinct f.work_id as id from jsonb_to_recordset(${JSON.stringify(probes)}::text::jsonb) p(medium text,features jsonb) join work_features f on f.features @> p.features join works w on w.id=f.work_id and case when w.category='music' then 'music' else w.kind end=p.medium
+   select distinct f.work_id as id from work_features f join works w on w.id=f.work_id
+   where exists(select 1 from jsonb_to_recordset(${JSON.stringify(probes)}::text::jsonb) p(medium text,features jsonb)
+    where f.features @> p.features and case when w.category='music' then 'music' else w.kind end=p.medium)
   ), ranked as (
    select w.id,case when w.category='music' then 'music' else w.kind end as medium,
     row_number() over(partition by case when w.category='music' then 'music' else w.kind end order by (p.id is not null) desc,(fi.id is not null) desc,coalesce(m.release_date,g.release_date,a.release_date) desc nulls last,w.id) as rank

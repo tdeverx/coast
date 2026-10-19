@@ -1,0 +1,73 @@
+# Numbered page and history attribution
+
+The actual-data run completed **20 unchanged-owner calls and 20 exact SELECT plans**. Four families had real deep pages: Watch Library 45, public observed-access Library 650, Profile History 180, and one screen audit-history scope 542. All six families preserved their complete last-page/far-clamped DTOs, selected order and canonical count/clamp behavior. No candidate, source/index change or production adoption was made; PLAN-09 / PR-14 remediation remains open.
+
+The [actual receipt](evidence/numbered-page-attribution-actual.json) is source-pinned to the [exact executed probe](probes/numbered-pages-actual.ts). The immutable [prepared plan](candidates/numbered-page-attribution/plan.md), [machine plan](candidates/numbered-page-attribution/plan.json), [source manifest](evidence/numbered-page-attribution-source-pins.json), [parse-only receipt](evidence/numbered-page-attribution-syntax.json), [execution output](evidence/numbered-page-attribution-execution.txt) and [source coverage](evidence/numbered-page-attribution-source-coverage.json) are retained. “Prepared/not executed” in the preparation artifacts describes their state when prepared; the current run result is passed.
+
+## What ran and stayed unchanged
+
+One designated actual clone, one physical connection, an explicitly verified READ ONLY REPEATABLE READ transaction: census 10s statement /1s lock, measurement 30s/1s, JIT off and work_mem 4MB. The exact DATABASE_URL pathname matched the private designated-clone file. The probe verified the same backend before, during and after expected rollback without retaining its PID. Pool closed; transaction insert/update/delete counters were zero; zero external fetches; all 30 measured-owner/admission/dependency source pins matched before and after. No normal/deployed database, token-handler quota, provider transport, key owner, schema/index or application source was touched.
+
+The installed ORM executed and mapped its own statements. Instrumentation retained only query-template hashes, bind counts, mapped row/JSON byte counts and descriptive local timings. Exact admitted count/page SQL and bound parameters were replayed with EXPLAIN ANALYZE/BUFFERS; parameters, SQL predicates, identities, titles, dates, actual private payloads and private URLs were not retained. ORM SQL/result/complete-DTO secret-key guards passed without stripping product fields. Raw config/feature SQL was the unchanged source-reviewed request-policy read; ORM metrics do not count it, and the guard is not a claim to classify arbitrary metadata strings.
+
+The complete deep/far DTO comparisons were in memory, including the canonical public next/previous links. JavaScript-clamped owners used identical compiled SQL/all bindings. Public Library clamps inside SQL, so its complete DTO/template/non-page bindings matched while exactly one requested-page parameter changed from 650 to 10,000. First/middle/deep selected windows were disjoint; all 20 outputs had zero missing hydrated cards/occurrences.
+
+## Natural cohorts and result contracts
+
+| Current read owner | Exact total | Pages sampled | Far request → result | Actual rows on last page |
+| --- | ---: | --- | --- | ---: |
+| Watch Library | 2,680 | 1 /23 /45 | 1,000,000 →45 | 40 |
+| Public observed-access Library | 38,952 | 1 /325 /650 | 10,000 →650 | 12 |
+| Profile recorded History | 10,779 | 1 /90 /180 | 1,000,000 →180 | 39 |
+| Screen group audit History | 32,482 | 1 /271 /542 | 1,000,000 →542 | 22 |
+| Largest natural per-track music journal | 3 | 1 only | 1,000,000 →1 | 3 |
+| Natural reading-work journal | 1 | 1 only | 1,000,000 →1 | 1 |
+
+The Library owner was chosen by the largest permitted movie/show title count; all four actual screen owners had 2,680, so the canonical ID-ordered first owner was used. The public Library uses that positive owner, without claiming it is the largest public-access owner. Profile chose the largest exact recorded-watch owner. Audit scope selection ranked actual show ancestry and then let the unchanged recursive historyScope define the authoritative membership/count; it does not claim to find the largest arbitrary nested-collection history.
+
+[Library](../../../src/lib/server/queries/library.ts#L48) orders metadata updated_at DESC/id ASC. [Public Library](../../../src/lib/server/public-api/library.server.ts#L15) retains recursive observed access and UUID order. [Profile section](../../../src/lib/server/queries/profile.ts#L210) preserves known-date DESC/time DESC/event_id DESC. [Audit history](../../../src/lib/server/queries/media-actions.ts#L191) retains time DESC/event_id DESC, actions/applied flags and deduplicated [recursive scope](../../../src/lib/core/tracking/history-scope.server.ts). [Music](../../../src/lib/music/history.server.ts#L12) and [reading](../../../src/lib/reading/query.server.ts#L142) retain their owned journal totals/time/id ordering. Canonical [publicPage](../../../src/lib/server/public-api/response.ts#L14) supplies page size/count/filter-preserving next/previous links.
+
+There were genuine primary time-key ties: Profile selected windows contained 13 /8 /1 duplicate known-date/time keys at first/middle/deep, respectively; its far-clamped window repeated the same one. The three-row music journal had one duplicate time key. Every selected event ID remained unique. These counts were computed by PostgreSQL at native timestamp precision; no JavaScript Date sorting collapsed microseconds. Ties make the existing ID tie breaker a required invariant, not an optional cosmetic order. Other sampled windows had zero primary-key duplicates; public UUID keys are unique.
+
+## Attribution: page-independent work and late-page work
+
+The following are **root plan counters**, one descriptive EXPLAIN per exact distinct count/page binding. Shared accesses mean root shared-hit plus root shared-read blocks; descendant inclusive buffers are never summed into them. These are block accesses, not distinct pages, wire bytes, heap/RSS, per-user production cost or repeated latency estimates. Temp values remain PostgreSQL block counters; no assumed block-size conversion is used.
+
+| Family | Separate count: root shared accesses | Selector first /middle /deep: root shared accesses | Selector temp read/write blocks |
+| --- | ---: | --- | --- |
+| Watch Library | 319,059 | 319,059 /319,059 /319,059 | 0/0 throughout |
+| Public observed-access Library | Combined count+page | 176,615 /176,615 /176,615 | 4,897/7,733 throughout; same for far-clamped |
+| Profile recorded History | 9,282 | 9,282 /9,282 /9,282 | 0/0 throughout |
+| Screen group audit History | 28,576 | 4,783 /4,783 /4,783 | First 0/0; middle 317/363; deep 362/363 |
+
+**Watch Library:** the exact count and each selector build the permitted-source relation before obtaining 2,680 movie/show IDs. Its plan admits 39,237 availability observations, performs 39,237 episode-key probes, deduplicates 38,706 related identities and probes media 38,706 times before the movie/show filter. These are node-level row/loop observations, not additional root-buffer totals. First page has a 31KiB top-N sort; middle/deep use a 285KiB sort whose reported output grows to 1,380 /2,680 rows before LIMIT/OFFSET. The common membership/count work already exists on page one. The full owner used 18 ORM statements on every sampled page, including card hydration.
+
+**Public observed-access Library:** the combined selector counts all 38,952 accessible identities before the page. The recursive access plan rebuilds the global edge union over two recursive iterations: its edge aggregate reports 250,822 rows with two loops, followed by an external merge sort reporting 10,336KiB **disk sort space**. The root temp counters remain 4,897 reads/7,733 writes for first, middle, last and far-clamped. Final page-sort consumption grows 60 →19,500 →38,952 rows, but its root common access/edge work is present at page one. An explicit edge-reuse hypothesis is worth a separate private exact-result/plan test; this run does not establish a winning rewrite.
+
+**Profile History:** canonical [recordedWatches](../../../src/lib/core/tracking/recorded-watches.server.ts#L4) applies per-media lag/prior-watch windows to 18,019 admitted observations before retaining 10,779 watches. Both the count and the page rebuild this work. Final page-sort output grows 60 →5,400 →10,779; its reported sort space grows 38KiB →1,816KiB, without temp spill in these plans. Twenty-two ORM statements include metadata/privacy/summary reads as well as page hydration. The full 20-call workload is not a before/after fix benchmark.
+
+**Screen audit History:** canonical scope had 139 deduplicated identities and 32,482 audit events. The separate count uses tracking_history_idx within that scope. The page plan scans the owner's allowed action observations and sorts matching events; middle/deep change from top-N to an external merge with 2,896KiB reported disk sort space and the temp counters above. OFFSET has an observed late-sort cost here, while recursive scope/count/event membership remain independent obligations. The full mediaActivity owner still performs 34 ORM statements for each sample, including cards/show captions.
+
+Music's tiny natural journal page used ten root shared accesses and reading's one, without a deep scale cohort. Their fast single-page plans do not justify claims about future long histories or a new retention/index policy. Local timing details remain in the receipt as single descriptive measurements; metadata hydration/private guard instrumentation and cache state prevent interpreting them as HTTP or production latency guarantees.
+
+## Next options, all unimplemented
+
+1. **Shared access membership first.** Inspect [permittedMediaSources/hasPermittedMediaSource](../../../src/lib/server/queries/media.ts#L78) and the Library count/page composition. A narrow private experiment could share one exact eligible/count/page SQL relation or make admission kind-aware at its canonical owner. Preserve descendant-derived show/season access, all categories/source ownership, feature freshness and missing-card behavior. Do not put a global movie/show restriction in a helper also used by mixed work shelves. Cross-consumer acceptance must include Library, card availability, profile progress, progress/Continue and catalogue detail resolution. A single-statement composition also changes count/page observation timing and must say so.
+2. **Reuse the identical public edge relation.** Explicit MATERIALIZED on the existing edge CTE is a small hypothesis for the repeated global edge sort; retain each UNION, ancestor direction, cycles/access deduplication and feature/category/source checks. Compare complete actual first/middle/deep/clamped public DTOs, counts/ties/links and root resource counters before any adoption. More materialization can add its own cost; this is not a measured fix.
+3. **Canonical recorded-watch reuse/access.** Evaluate exact count/page sharing or event access paths through the existing window owner. Do not push date/action filters through lag/prior-watch windows without verifying no-op/rewatch/unwatch/backdated/unknown-date/edition semantics. Existing real timestamp ties require all sort keys. Any index alternative also needs write/storage/HOT review.
+4. **Audit ordered event access.** Compare a user/time/id ordered access path or shared exact scope/count/page statement against the current scope-first count and scan/sort selector. Keep existing user/media/time counting needs; do not remove indexes or suppress applied/unapplied audit records. An index experiment requires complete actual results, first-page controls, writer/storage obligations and rollback restoration. No index or DDL was tested here.
+5. **Keep page contracts explicit.** Numbered URLs, arbitrary page jumps, exact totals and public next/previous links currently work at the measured depth. Cursors or retention/deletion are separate product/API decisions. OFFSET alone is not evidence that replacing that contract will solve the common membership/recursive/window work.
+
+## Measured boundaries and remaining coverage
+
+The 47-file [coverage inventory](evidence/numbered-page-attribution-source-coverage.json) distinguishes 30 pinned owner/admission/dependency files from 17 additional **source-only, unmeasured** files. The prepared plan inventories Collection/list occurrence pages, global public catalogue, current progress, episode focus, queue choices/album editions, game catalogue/session journal, related reading, seeded recommendations, planning, friend overlap, demand/admin views, requests, webhook subscriptions and 20-row benchmark history. Those are not silently counted as executed. Provider browsing/sync pages are transport workloads; notifications/social activity use cursor contracts and are distinct from numbered OFFSET pages.
+
+Fresh actual census: 959 music works but only five listens in all; maximum selected track journal three; twelve comics/zero books and one reading-history event; zero custom lists/list items. No richer provider payload, selected album cohort, book/EPUB, nested collection, private event or fabricated list row was created. This run's all/default filters and owner=viewer reads do not establish cross-profile/guest privacy, every genre/tracking/source combination, live count/page races or malformed-token/page behavior. Full token authentication/quota HTTP was deliberately excluded.
+
+Database late-page correctness is also distinct from retained browser card lifetimes. Root's separate [normal Library append observation](library-append-reset.md) reached 60→120→180→300 then 180 with prefix loss; it is not a twenty-page pass or a causal event trace. No browser/DOM/focus/Back/scroll/provider acceptance is claimed by this probe.
+
+All application/test/schema sources stayed frozen. No common suite, ledger, README or consolidation artifact was edited for this measurement-only report.
+
+Independent offline review of the exact final probe and actual receipt found no material outcome/privacy/ownership blocker. It confirmed the four natural deep families, six full deep/clamped comparisons, PostgreSQL tie counts and single-root buffer accounting. The reviewed final prepared plan already allows four public combined plans, including the SQL-clamped far request. No reviewer rerun, additional DB use or candidate adoption is implied.
+
+Subsequent [guarded-seed application](implementation-public-seed.md) has its own142actual pairs,54resource trials and imported-main acceptance. Current source identity advances to that exact query; the original measurements and candidate dispositions in this report remain historical.

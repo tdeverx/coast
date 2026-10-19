@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "reportRef": "implementation-recovery-lifetimes.md",
+  "committed": false,
+  "productionDependenciesAdded": false,
+  "productionSchemaChanged": false,
+  "normalOrDeployedDatabaseMutated": false,
+  "changes": [
+    {
+      "findingId": "UPP-04",
+      "state": "implemented_concurrent_collection_actual_data_restore_verified",
+      "sharedOwner": "Existing recovery child helper and historical offline source collector; same concurrent pattern as container fixtures",
+      "files": [
+        "scripts/test-recovery.ts",
+        "scripts/performance-verification.ts"
+      ],
+      "consumers": [
+        "Recovery migration subprocess",
+        "Recovery encryption/decryption subprocesses",
+        "Recovery pg_dump and pg_restore",
+        "Recovery container dump cleanup",
+        "Historical performance-verification git source read"
+      ],
+      "behavior": [
+        "Start stdout, stderr and exit collection concurrently",
+        "Preserve exact stdout and existing nonzero error/redaction",
+        "Query actual server version for drill success label",
+        "Keep already concurrent container fixture collectors unchanged"
+      ],
+      "actualDataVerification": {
+        "status": "passed",
+        "serverVersion": "17.11",
+        "tablesIncludingLedger": 102,
+        "rows": 1864145,
+        "logicalRowMultisetsExact": true,
+        "sequenceStatesExact": true,
+        "checkedSchemaExact": true,
+        "sourceUnchanged": true,
+        "freshRestoreTargetDropped": true,
+        "privateDumpRemoved": true,
+        "pgDumpExit": 0,
+        "pgRestoreExit": 0,
+        "pgDumpStderrBytes": 19389,
+        "pgRestoreStderrBytes": 135855
+      },
+      "calibration": "Real2MiB stderr-first probe completed on both audited and current Bun1.4.3 code; no OS-pipe/natural deadlock reproduced. Coupled-stream contract confirms only concurrent reader admission difference.",
+      "remaining": [
+        "General captured-byte budget and process/descendant deadline policy remain unchanged",
+        "No actual key-copy/decryption or restored-app/provider acceptance",
+        "No production throughput, CPU/RSS or latency gain claim",
+        "Schema projections are not exhaustive ACL/ownership proof"
+      ],
+      "evidenceRefs": [
+        "evidence/implementation-recovery-actual.json",
+        "evidence/implementation-recovery-actual-runner.json",
+        "evidence/implementation-recovery-controlled.json",
+        "evidence/implementation-recovery-tests.json"
+      ]
+    },
+    {
+      "findingId": "MIN-05",
+      "state": "partially_implemented_ping_timing_corrected_history_aggregate_unchanged",
+      "sharedOwner": "systemHealth administrator read model",
+      "files": [
+        "src/lib/server/notifications/index.ts"
+      ],
+      "consumers": [
+        "Settings Admin route loader and health display",
+        "GET admin/health API"
+      ],
+      "behavior": [
+        "Capture database latency immediately after SELECT1",
+        "Preserve administrator authorization, sequential aggregate reads, status, output and failure semantics"
+      ],
+      "actualDataVerification": {
+        "status": "passed_read_only_restored_actual_corpus",
+        "actualExistingAdministrator": true,
+        "queryOrder": [
+          "clock",
+          "ping",
+          "clock",
+          "actions",
+          "connections"
+        ],
+        "aggregateValuesExact": true,
+        "statementTimeout": "30s",
+        "lockTimeout": "5s"
+      },
+      "remaining": [
+        "Full-history outbox state aggregation and provider count work remain unchanged",
+        "No durable health/count snapshots or changed readiness semantics",
+        "Current signed-in Admin health rendering passed; staged-toast health rebase and fifteen actual rollback contracts also pass, without normal schema adoption"
+      ],
+      "evidenceRefs": [
+        "evidence/implementation-recovery-actual.json",
+        "evidence/implementation-recovery-tests.json"
+      ]
+    }
+  ],
+  "verification": {
+    "runtime": "Bun1.4.3",
+    "passed": 7,
+    "failed": 0,
+    "assertions": 20,
+    "testFiles": [
+      "tests/recovery-command.test.ts",
+      "tests/admin-health.test.ts"
+    ],
+    "controlledTestsAreActualPerformanceEvidence": false
+  },
+  "sourcePins": {
+    "scripts/test-recovery.ts": "1d43989dcb302ae2ec18d12367b1caaba3c7d5e925adfb8bf8445e807c8eedee",
+    "scripts/performance-verification.ts": "07c2136497cd22b27623eda70daaf31c6f10baf02920bfc71b3fbe667bffb6b4",
+    "src/lib/server/notifications/index.ts": "a8f88fbf9ed03536869e2c601bd2c5569cf663e53000a07912275448db4382e9",
+    "tests/recovery-command.test.ts": "59e0b8bb8721128662e1ba62f644a668bdbdb2db7b8bdea5b0bd705d34126fe8",
+    "tests/admin-health.test.ts": "a7642fa4b8dfb95ee63bcdbd0c813f436b42ef7421873fd56e215a1ad6ae28e9"
+  },
+  "artifacts": {
+    "probes/recovery-actual.ts": "0bbb43f939c6e22f9b224d4f01433d2b7e21ffa0f43b7f629e8f8c2cd601ff52",
+    "probes/recovery-actual-run.py": "94cfeaade5d3a23152d9a82353ec0da0b05f173431b75edf8a6404f9dec983bc",
+    "probes/recovery-pipes.ts": "31ffebf7591d1356b36f8b11dc44cb851d869a3d884829dda89a6cef0bf3e0e4",
+    "evidence/implementation-recovery-actual.json": "bb7b5bd5c069df999b5d411449fe9055ffd1b74f3fa0a061c28706a2ca00aacd",
+    "evidence/implementation-recovery-actual-runner.json": "035784723697eac7923cfd1901f1fca63fd3c17aa7b0b0268ac87f56dc59704e",
+    "evidence/implementation-recovery-controlled.json": "e914946ebd3f01d8cb4283f6f0b7733d1b8a49f924eb9ceb61e1ded74fe3d724",
+    "evidence/implementation-recovery-tests.json": "e3b4a63875c16a68c767567b23a04a31a0ae9e1112b2af6b52fb308edbf32c02"
+  },
+  "currentBatchLiveAcceptance": {
+    "receipt": "evidence/implementation-owner-batch-normal.json",
+    "boundary": "Signed-in functional rendering and menu/panel open/close only; no real filter/preference writes, pending device authorization, fault injection or benchmark."
+  }
+}

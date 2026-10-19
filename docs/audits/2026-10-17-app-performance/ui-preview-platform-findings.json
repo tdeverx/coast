@@ -1,0 +1,156 @@
+{
+  "head": "eb0673873462b71118d1c11678d128958a05ff07",
+  "count": 4,
+  "findings": [
+    {
+      "id": "UPP-01",
+      "priority": "P2",
+      "title": "shared chart model lacks family work and generated-mark budgets",
+      "confidence": "high for source bounds; actual impact unmeasured",
+      "state": "acceptance gap before expanded live adoption",
+      "sharedOwner": "ChartModel/adapters and shared chart geometry admission contract",
+      "consumers": [
+        "ChartView",
+        "StandardChart",
+        "ExtendedChart",
+        "ChartMark",
+        "preview chart normalizer/gallery",
+        "ui/insights/media",
+        "ui/insights/profile",
+        "ui/insights/community",
+        "DetailCard",
+        "games/Details",
+        "reading/Details",
+        "all future media/experiment chart adapters"
+      ],
+      "evidenceRefs": [
+        "src/lib/ui/charts/extended-geometry.ts:90-114",
+        "src/lib/ui/charts/extended-geometry.ts:121-170",
+        "src/lib/ui/charts/insights.ts:7",
+        "ui-preview-platform.md#upp-01"
+      ],
+      "smallestOption": "Declare and validate semantic/work/mark budgets at the shared model boundary; truthful aggregation with complete paged data",
+      "alternatives": [
+        "Existing linear bubble arrangement for large actual cohorts",
+        "Spatial indexing or cancellable geometry only after measured demand"
+      ],
+      "acceptance": [
+        "Actual datasets across all enabled media",
+        "Exact totals/order/selection and complete table",
+        "Geometry/marks/long tasks/heap",
+        "Invalid DAG/numeric/unit inputs controlled"
+      ],
+      "gaps": [
+        "Current live adapters use bars/donut/target, not packed/isotype/flow",
+        "No actual oversized chart stall verified"
+      ]
+    },
+    {
+      "id": "UPP-02",
+      "priority": "P3",
+      "title": "custom preview JSON and image imports bypass finite fixture bounds",
+      "confidence": "high for source boundary; cost unknown",
+      "state": "optional admin workbench admission improvement",
+      "sharedOwner": "Preview data admission and shared local-image/decode ownership from UIS-07",
+      "consumers": [
+        "PropEditor",
+        "ComponentPlayground",
+        "ComponentSpecimen",
+        "PreviewExample families",
+        "canvas background import",
+        "avatar/local image pickers via common decoder"
+      ],
+      "evidenceRefs": [
+        "src/routes/ui-preview/props.ts:85-91",
+        "src/routes/ui-preview/ComponentPlayground.svelte:40-46",
+        "src/routes/ui-preview/+page.svelte:20-26",
+        "ui-preview-platform.md#upp-02"
+      ],
+      "smallestOption": "Explicit accepted JSON policy, bounded event formatting and shared decoded-image ownership",
+      "alternatives": [
+        "Explicit large-data inspection mode",
+        "Off-thread parsing only if actual need"
+      ],
+      "acceptance": [
+        "Accepted configuration lossless",
+        "Object URL/decode release on replace/close/error",
+        "Actual user configurations/images"
+      ],
+      "gaps": [
+        "No measured ordinary preview leak",
+        "No new fictional large-input experiment"
+      ]
+    },
+    {
+      "id": "UPP-03",
+      "priority": "P3",
+      "title": "bounded diagnostic store repeats filesystem and full-tail parsing work",
+      "confidence": "high for source operations; runtime benefit unknown",
+      "state": "measurement-gated shared efficiency opportunity",
+      "sharedOwner": "DiagnosticStore for normal and runtime sample persistence",
+      "consumers": [
+        "hooks/API",
+        "provider fetch",
+        "queue/maintenance",
+        "music sync/queries",
+        "Collection",
+        "playback/sharing",
+        "public API",
+        "diagnostics viewer",
+        "runtime samples"
+      ],
+      "evidenceRefs": [
+        "src/lib/server/diagnostics/index.ts:85-107",
+        "src/lib/server/diagnostics/index.ts:115-148",
+        "ui-preview-platform.md#upp-03"
+      ],
+      "smallestOption": "After real trace, initialize permissions once and track segment bytes with error/external-change recovery",
+      "alternatives": [
+        "Bounded append batch with explicit crash-tail durability tradeoff",
+        "Revision/seek finite-tail API if real viewer reads dominate"
+      ],
+      "acceptance": [
+        "Actual normal/trace sessions I/O/CPU/pending/drops",
+        "Permissions/error/rotation/retention preserved",
+        "Safe fields and runtime-history isolation"
+      ],
+      "gaps": [
+        "Four MiB and 128 pending already bound storage",
+        "No actual disk or event-rate bottleneck established"
+      ]
+    },
+    {
+      "id": "UPP-04",
+      "priority": "P3",
+      "title": "recovery drill captures stdout and stderr sequentially",
+      "confidence": "high for source; blocking scenario not reproduced",
+      "state": "tooling deadlock candidate under sufficiently noisy child",
+      "sharedOwner": "Narrow offline child-command collection contract",
+      "consumers": [
+        "test-recovery child collector",
+        "container-runtime command collector",
+        "historical performance-verification git stderr if maintained",
+        "future two-pipe capturing scripts"
+      ],
+      "evidenceRefs": [
+        "scripts/test-recovery.ts:15",
+        "scripts/fixtures/container-runtime.ts:28-30",
+        "scripts/performance-verification.ts:134",
+        "ui-preview-platform.md#upp-04"
+      ],
+      "smallestOption": "Concurrent stream/exit drain with finite captured bytes and owned-child deadline/cleanup",
+      "alternatives": [
+        "Inherit stderr when redacted capture unnecessary"
+      ],
+      "acceptance": [
+        "Deterministic dual-pipe contract check",
+        "Actual guarded backup/restore",
+        "Exit/redaction/timeout/disposable cleanup"
+      ],
+      "gaps": [
+        "No noisy-child hang reproduced",
+        "Do not replace production streaming supervisor with whole-output capture"
+      ]
+    }
+  ]
+}

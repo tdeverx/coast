@@ -20,15 +20,17 @@
     durationSeconds: number | null;
     occurredAt: Date | string;
     reason: string | null;
+    localItemCount?: number;
+    remoteItemCount?: number;
     localValue?: Record<string, unknown>;
     remoteValue?: Record<string, unknown>;
   };
-  function describe(value: Record<string, unknown>) {
+  function describe(value: Record<string, unknown>, itemCount?:number) {
     if (value.deleted) return 'Deleted';
     if ('positionSeconds' in value)
       return `${Math.floor(Number(value.positionSeconds) / 60)}m ${Math.floor(Number(value.positionSeconds) % 60)}s`;
-    if ('items' in value)
-      return `${value.name} · ${Array.isArray(value.items) ? value.items.length : 0} titles${value.description ? ` · ${value.description}` : ''}`;
+    if ('items' in value || itemCount!==undefined)
+      return `${value.name} · ${itemCount ?? (Array.isArray(value.items) ? value.items.length : 0)} titles${value.description ? ` · ${value.description}` : ''}`;
     return value.value === true
       ? 'Yes'
       : value.value === false
@@ -74,8 +76,8 @@
       <p>{conflict.reason ?? 'This imported change conflicts with your Coast tracking.'}</p>
       {#if conflict.localValue && conflict.remoteValue}
         <p class="small">
-          Coast: {describe(conflict.localValue)}<br />{displayLabel(conflict.source)}: {describe(
-            conflict.remoteValue
+          Coast: {describe(conflict.localValue,conflict.localItemCount)}<br />{displayLabel(conflict.source)}: {describe(
+            conflict.remoteValue,conflict.remoteItemCount
           )}
         </p>
       {/if}

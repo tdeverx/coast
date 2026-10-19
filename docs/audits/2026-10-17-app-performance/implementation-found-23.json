@@ -1,0 +1,229 @@
+{
+  "at": "2026-10-19T03:36:26.980220+00:00",
+  "status": "partial-shared-import-batching-adopted-other-methods-deferred",
+  "canonicalIds": [
+    "PJ-08",
+    "MIN-04",
+    "PR-08",
+    "PJ-15",
+    "UIC-04"
+  ],
+  "runtimeSourceChanged": true,
+  "candidateAdopted": true,
+  "sourcePins": {
+    "src/lib/music/persistence.server.ts": "049aca51bfd61c2c8fa973e7ce51572ecf1bf2c94a78fb652c58f8fb0d197977",
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "src/lib/server/api/queue.server.ts": "35f6f9424ff64793a5719ab8a187b6a9e9d1bdc6d3c86b83d7eaafdf505eacaa",
+    "docs/audits/2026-10-17-app-performance/verify-report-integrity.py": "db234fcbfdcd60a3d700254e9eb93bc6265e8b695f57d92924666058b81d10f1",
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "src/lib/collection/source-changes.server.ts": "2a948f416248eeee77a4481ff6dbc72b8bbbf917d8b9fef5892ed5e75c5d5741",
+    "src/lib/sync/jellyfin.server.ts": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
+    "src/lib/collection/projection.server.ts": "77632c37e3ac6a793efadfe07c76d5be0cf1dd24927fa0a11973f264d1dc8736",
+    "src/lib/playback/synced/service.server.ts": "bf228ef304b2610d04e1d066d4db754c82ae5885a010a3d638265e7e9d2f4ce6"
+  },
+  "sourceChanges": {
+    "src/lib/music/persistence.server.ts": {
+      "before": "78c409fd3261227a39aa196a855a16dbcb9b26a0dba68cf572a6487d327cfe3f",
+      "after": "049aca51bfd61c2c8fa973e7ce51572ecf1bf2c94a78fb652c58f8fb0d197977"
+    },
+    "src/lib/sync/jellyfin.server.ts": {
+      "before": "3ab6f5c69014adad7a61ef422c330f0d0007e1cef26226fccf60799245d73370",
+      "after": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11"
+    }
+  },
+  "outcomes": {
+    "PJ-08": "partial-statement-batching-adopted-full-checkpoint-contract-deferred",
+    "MIN-04": "tested-rejected-investigation-backlog",
+    "PR-08": "tested-rejected-investigation-backlog",
+    "PJ-15": "contract-gate-no-runtime-gain-claim",
+    "UIC-04": "prepared-provider-acceptance-deferred"
+  },
+  "canonicalCounts": {
+    "canonical": 94,
+    "sourceApplied": 70,
+    "implemented": 32,
+    "partial": 36,
+    "open": 21,
+    "other": 5
+  },
+  "additionalObservations": 14,
+  "restorationRef": "evidence/implementation-found-23-restoration.json",
+  "commonGatesRef": "evidence/implementation-found-23-gates.json",
+  "wholeGoalComplete": false,
+  "artifactPins": {
+    "candidates/admin-execution-batch23/src__lib__server__notifications__index.ts.before.snapshot": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "candidates/admin-execution-batch23/src__lib__music__persistence.server.ts.before.snapshot": "78c409fd3261227a39aa196a855a16dbcb9b26a0dba68cf572a6487d327cfe3f",
+    "candidates/admin-execution-batch23/src__lib__server__queue__index.ts.before.snapshot": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "candidates/admin-execution-batch23/src__lib__collection__projection.server.ts.before.snapshot": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0",
+    "candidates/admin-execution-batch23/docs__performance.md.before.snapshot": "12e37022da15be80a708fb88eee8ea9abdfa646430ee9fe33a5f9794e2e0ab22",
+    "candidates/admin-execution-batch23/docs__audits__2026-10-17-app-performance__verify-report-integrity.py.before.snapshot": "0be77a30d16f19a9cb15e41801d6c39a8bca07cb96a5aa1ced7eb4c2e9b2c54b",
+    "candidates/admin-execution-batch23/source-before.json": "e25c86feb21ccc530942fd42d580caf05254dd45c4ad71dc3032daa6de5ba9f5",
+    "candidates/admin-execution-batch23/report-body.md": "f7d7948102eec0be5c3a6a8f63556ca77f2884e6debe21ca84b93dcee696f2b8",
+    "candidates/admin-execution-batch23/src__lib__server__api__queue.server.ts.before.snapshot": "35f6f9424ff64793a5719ab8a187b6a9e9d1bdc6d3c86b83d7eaafdf505eacaa",
+    "candidates/admin-execution-batch23/src__lib__sync__jellyfin.server.ts.before.snapshot": "3ab6f5c69014adad7a61ef422c330f0d0007e1cef26226fccf60799245d73370",
+    "candidates/admin-execution-batch23/src__lib__collection__source-changes.server.ts.before.snapshot": "2a948f416248eeee77a4481ff6dbc72b8bbbf917d8b9fef5892ed5e75c5d5741",
+    "candidates/admin-execution-batch23/adoption.json": "3517ee32ea005141c490c0fc13c440b20a61ed3ebc189d4cf80062c5cf300873",
+    "candidates/admin-listen-batches/run-effects.py": "5699f1d11e6bf663209d9027c819e4286270aa658bb607b4be894fa0c072a506",
+    "candidates/admin-listen-batches/FINAL-MEASUREMENT.md": "388876e05b6497652c139a55bb1f4469d6df17cfc8f6afe69259f0b6bbaca7e7",
+    "candidates/admin-listen-batches/jellyfin.before.ts.txt": "3ab6f5c69014adad7a61ef422c330f0d0007e1cef26226fccf60799245d73370",
+    "candidates/admin-listen-batches/run.py": "43eb8141edac73a6546c7b2c9b13d87eba132e9fa192181b91902584c7c38567",
+    "candidates/admin-listen-batches/persistence.candidate.ts.txt": "f4fea97fc8dd5efc1a34ac9a12e4fd164f35c49c4f28e7258032c8e39ac6ec40",
+    "candidates/admin-listen-batches/wrapper-final-measurement.ts": "97ef3c197232798743c9f5a19f302b9843cbafaf7ee08c6f25a7b3db9b03b5b2",
+    "candidates/admin-listen-batches/RESULT.md": "ed7f6e264865afb1d09c8ead5a303ffef46b8722c3fe7fa52c5cbd0fdfc0fc1e",
+    "candidates/admin-listen-batches/candidate.patch": "f953005888e3966d34f85312d0771648fef6f6df42ea27698bb13abb782cd164",
+    "candidates/admin-listen-batches/actual-final-measurement.json": "31ff48b8ce6239515eec3ec5d33f33fbf04d1a9b834d06d8e299d7df5a19be8d",
+    "candidates/admin-listen-batches/probe-effects.ts": "b71b7ed0672cf46ebfdadd0406d6646bc8493b84b5dfc621d9b0bb38eabdc514",
+    "candidates/admin-listen-batches/persistence.final-candidate.ts.txt": "049aca51bfd61c2c8fa973e7ce51572ecf1bf2c94a78fb652c58f8fb0d197977",
+    "candidates/admin-listen-batches/jellyfin.candidate.ts.txt": "95d383a342bbc0fe90c2b4345c269799fab1ada07dd9a9f4760705242a80ab05",
+    "candidates/admin-listen-batches/probe-effects.attempt-1.ts.txt": "0d9b109ca080e07f7e1e000475a4b1af0e8fddb5c6286d8cb51a9a3e041086d6",
+    "candidates/admin-listen-batches/probe.ts": "6e04d9d0fb1bc01688bec1e8619aff187a9102a2c8ab75cb6a9f901c209dd313",
+    "candidates/admin-listen-batches/actual-effects.json": "46f0e795faa6c60953dd0fd25e936dfcd93a20107207636f695990caf1242473",
+    "candidates/admin-listen-batches/wrapper-effects.ts": "1ba2620e81c42294160e5749c0341d323e71e0413c3ae64dc7de20a9ae350741",
+    "candidates/admin-listen-batches/actual.json": "d027dc19a7eb67495e6d16e7720451c2cc4aae231ad99a5d7ff76a00fc334ea3",
+    "candidates/admin-listen-batches/run-final-measurement.py": "a5aaf17cb4e42937702a8f05027150c4cfe158f8e498189dcb5852ce75352d9c",
+    "candidates/admin-listen-batches/probe.attempt-1.ts.txt": "a7d1c616bb2030a77771d1404fa3699c70f1715db2450150e2d3a2a3c5e57eb4",
+    "candidates/admin-listen-batches/persistence.before.ts.txt": "78c409fd3261227a39aa196a855a16dbcb9b26a0dba68cf572a6487d327cfe3f",
+    "candidates/admin-listen-batches/probe-final-measurement.ts": "9adc5cf9fb59a1f73422f51b898d1610bf337c188826d4862520cf6b82add429",
+    "candidates/admin-listen-batches/effects-harness-attempt-1.json": "085eafa9c9b8af62d7383706ea65488a7f3b2404671f8aaba4e2e43c9184999f",
+    "candidates/admin-listen-batches/manifest.json": "12fc9599b886de969e919890bf6d0fbdebf8129340a618f6e2e6ec0592e3f835",
+    "candidates/admin-listen-batches/harness-attempt-1.json": "0740c0d990d74e50d00159e45bf6a26eacae8aecd9cf13abfae17f85451f8979",
+    "candidates/admin-listen-batches/effects-manifest.json": "7495ae9a7cd6fd9e8ca7232b0533a4f6c8c1666283de87ab2ae016bb27f1bb0a",
+    "candidates/admin-listen-batches/EFFECTS-RESULT.md": "965cdf0918d36171b44fe8a8b1cb8ac8820c0fc1920a7fb3e5b7bb84dc05813f",
+    "candidates/admin-listen-batches/jellyfin.final-candidate.ts.txt": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
+    "candidates/admin-listen-batches/final-measurement-manifest.json": "d6f3722f7e7dc307a63bee6072f40af7f1266ceef99263e86b41d273e34c16c7",
+    "candidates/admin-listen-batches/wrapper.ts": "e55e14bd30d991ae8a436a7c0a92f8ed43e7cb7ffa0f2a0e85aa7e922f2efed8",
+    "candidates/admin-listen-batches/final-candidate.patch": "5d11bd42b0ed29493b4c4ba05d777891154eb90ee7a984c18110a9bf148568a8",
+    "candidates/admin-listen-batches/effects-trigger-inventory.sql.txt": "ee2e8718a99f37839ae58a8a698c14af05297fc817e6ec146828b301265c2f44",
+    "candidates/admin-notification-batch/candidate.patch": "114dd3ca97f26b107214f14bfa3dffb97c0e85e0abca33347515d3cf43146edc",
+    "candidates/admin-notification-batch/source-pins.json": "5d44eb59641ce504a49ffa559bf230504bb4bf5151f4d9d3925eb864997a49c8",
+    "candidates/admin-notification-batch/probe.ts": "f0524813a975819ecdd2ebbad1bb3e9d9c7bf2e39ac7df4d98a15ee358ec7776",
+    "candidates/admin-notification-batch/actual.json": "48618354749c3e595f2af56c2ac33db9a4c0174639bb66280c8b2f6b58b319bb",
+    "candidates/admin-notification-batch/artifact-manifest.json": "427028f9e51bf93f0fb57df4df5b1ded69d46dd28570e3d02799ba71288f50d5",
+    "candidates/admin-notification-batch/source.candidate.ts.txt": "04c9e0d2a00461d4aa93cd386dd4298d1b5794c55570c3410a4e25688be56ebf",
+    "candidates/admin-notification-batch/actual.schema-failed.json": "3bf6ce2894f7d63cf4e0f663d48123fbc57e75d6bbaff60b191338a951fb33bb",
+    "candidates/admin-notification-batch/outcome.md": "2b02e1dc8d380b42f496c0e731738d0a9d06ccc8f0904957fca049ffc3fc1dc1",
+    "candidates/admin-notification-batch/source.before.ts.txt": "2a948f416248eeee77a4481ff6dbc72b8bbbf917d8b9fef5892ed5e75c5d5741",
+    "candidates/admin-notification-batch/actual.first-failed.json": "eacaa3514be84f78f916e4d7e07f6c06715707326a4a7f388d3fe22a567a6f83",
+    "candidates/admin-task-controls/README.md": "cf758574bb9c6571778dbe832ed545af1d82fdb395c89b41acb1b33b4010d007",
+    "candidates/admin-task-controls/selection.sql": "092363f807acf67c9009c61fcdea569fa35a30e512474090c26fa2328dceaf66",
+    "candidates/admin-projection-preview/projection.server.ts.candidate.txt": "77632c37e3ac6a793efadfe07c76d5be0cf1dd24927fa0a11973f264d1dc8736",
+    "candidates/admin-projection-preview/candidate.patch": "cca3f1badb75477e493ea16ab624cd02a50631014fc536d375ddee834059a1ac",
+    "candidates/admin-projection-preview/source-pins.json": "9217be6bf8f84f27703359fa6254c6458183eb4a28648d35593e75a38733e7e6",
+    "candidates/admin-projection-preview/CollectionProjectionSettings.svelte.candidate.txt": "d984109c757899b09a16300d5f2cb6587d9c2e3f55fdad968d557825e0c96115",
+    "candidates/admin-projection-preview/projection.server.ts.before.txt": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0",
+    "candidates/admin-projection-preview/CollectionProjectionSettings.svelte.before.txt": "f3c4a63b930f30a728bc764b631baf804c0dae5b8147e061a48d0038ec8a7b12",
+    "candidates/admin-party-liveness/second-attempt-admin-only.json": "0feb0321b72f4c02e89ea03e6ff1056383d684d55565ac974c1b67a149d47503",
+    "candidates/admin-party-liveness/run.py": "b05f5b4b62c3f5515f041799814bc046a47d5858024f5c981a532bfe6906a71f",
+    "candidates/admin-party-liveness/first-attempt-gate.json": "58edf9ce1285fd222360286ffde9f9f4a48e5c04a0abc8556f5a709a56253c83",
+    "candidates/admin-party-liveness/candidate.patch": "fdd332a91969fb8042b9bb5d8ee40724a0859998f90fc8ff4346da6ae85a4950",
+    "candidates/admin-party-liveness/probe.ts": "8b07fe56cd1595c42510271318e10e32cd074354957f941348d2ed2d548500df",
+    "candidates/admin-party-liveness/candidate.server.ts.txt": "701a048743a63499b7b95c02490d946b2a12f4d535dfaa505c363d9d5854e152",
+    "candidates/admin-party-liveness/actual.json": "133bd126b5a009484f53e985b7817d6a6cd161a3a03d69ebf241de8ef7c1225f",
+    "candidates/admin-party-liveness/README.md": "92f6645584afee26cc0d846e22b0d8b48dea9c20c2388fad667008e97204eca8",
+    "candidates/admin-party-liveness/wrapper.ts": "2b08831c8e761b0a56049cee6499d16e029c38f5d9348ae466e285b11010e67f",
+    "evidence/implementation-found-23-restoration.json": "d888f8fc4db43a9b9dc91c30d1cb8801bba537d2680e3e02200ae783ff993e9f",
+    "evidence/implementation-found-23-gates.json": "c5db9ba582f9ddb390c26a0d605adf20079c1f4984fd4abe48a02bdc81a5137a",
+    "candidates/admin-projection-preview/source-proof.batch23.json": "11bcc903ae9348391e45b1c4fcf2fd1272462762d4ce4c8d8325f634c42c8dfb",
+    "candidates/admin-projection-preview/outcome.batch23.md": "2dff4f633abd89ccf2203a26ad97f6d036738fda766b0cf1d6fbacab1b0ca520",
+    "candidates/admin-projection-preview/artifact-manifest.batch23.json": "dbb396c18dc77f0fbbd27b7134c272aadd2fb2cc538dc7eed5a0201565b91d19"
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T03:58:03.995927+00:00",
+      "reportRef": "implementation-found-24.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Shared conflict summaries native actual-admin adoption; sequence named acceptance; phased finalization not adopted. Historical evidence retains source/acceptance boundaries, no whole-audit completion."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "src/lib/collection/projection.server.ts"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    }
+  ],
+  "laterArtifactLocationReviews": [
+    {
+      "reportRef": "implementation-found-25.md",
+      "recoveryRef": "candidates/admin-projection-preview/batch23-recovery.json",
+      "boundary": "Exact batch23 bytes retained at epoch-specific paths; new independently accepted artifacts occupy current paths. No native receipt or candidate bytes reinterpreted.",
+      "moves": [
+        {
+          "priorPath": "candidates/admin-projection-preview/source-proof.json",
+          "historicalPath": "candidates/admin-projection-preview/source-proof.batch23.json",
+          "sha256": "11bcc903ae9348391e45b1c4fcf2fd1272462762d4ce4c8d8325f634c42c8dfb"
+        },
+        {
+          "priorPath": "candidates/admin-projection-preview/outcome.md",
+          "historicalPath": "candidates/admin-projection-preview/outcome.batch23.md",
+          "sha256": "2dff4f633abd89ccf2203a26ad97f6d036738fda766b0cf1d6fbacab1b0ca520"
+        },
+        {
+          "priorPath": "candidates/admin-projection-preview/artifact-manifest.json",
+          "historicalPath": "candidates/admin-projection-preview/artifact-manifest.batch23.json",
+          "sha256": "dbb396c18dc77f0fbbd27b7134c272aadd2fb2cc538dc7eed5a0201565b91d19"
+        }
+      ]
+    }
+  ]
+}

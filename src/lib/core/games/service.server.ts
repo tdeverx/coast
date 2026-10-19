@@ -7,11 +7,13 @@ import { rankSearch } from '../../search';
 import { ownedGameAvailable } from '../../games/availability.server';
 import { getDb, type Database } from '../../server/db';
 import { games, gameExternalIds, gamePlaythroughs, gameSessions, gameVariants, workFeatures } from '../../server/db/schema';
-import { PAGE_SIZE, pageNumberSchema, pagination } from '../../server/queries/pagination';
+import { PAGE_SIZE, pageNumberSchema, pagination, requestedPageInterval } from '../../server/queries/pagination';
 import { DomainError } from '../errors';
 import { trackInTransaction } from '../tracking/service.server';
 import { enqueueCollectionProjectionInTransaction } from '../../sync/changes.server';
 import { gameInputSchema, playthroughInputSchema, playthroughUpdateSchema, gameSessionInputSchema } from '../../games/model';
+
+import { pageInterval } from '$lib/page-window';
 
 const uuid = (value: string) => v.parse(v.pipe(v.string(), v.uuid()), value);
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -39,9 +41,13 @@ export async function createGame(raw: unknown) {
   });
 }
 
-export async function listGames(search = '', requestedPage = 1, tracking?: { userId: string; status?: import('../../games/model').GameStatus; personal?:boolean; availableOnly?:boolean }) {
-  v.parse(pageNumberSchema, requestedPage);
+/** A smaller projection hydrates only the head of the first unsearched 60-item page. */
+export async function listGames(search = '', requestedPage = 1, tracking?: { userId: string; status?: import('../../games/model').GameStatus; personal?:boolean; availableOnly?:boolean }, projectionLimit = PAGE_SIZE, firstPage?: number) {
+  const interval = requestedPageInterval(requestedPage, firstPage);
   const query = v.parse(v.pipe(v.string(), v.trim(), v.maxLength(250)), search);
+  const limit = v.parse(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(PAGE_SIZE)), projectionLimit);
+  if (limit < PAGE_SIZE && (requestedPage !== 1 || query || interval))
+    throw new DomainError('Reduced game projections require the first unsearched page.', 400, 'invalid_projection');
   if(tracking)await requireFeature(tracking.userId,'game');
   if (tracking) {
     uuid(tracking.userId);
@@ -59,10 +65,18 @@ export async function listGames(search = '', requestedPage = 1, tracking?: { use
   let [totals] = await db.select({ total: count() }).from(games).where(where);
   if (!totals.total && searchQuery) { where = buildWhere(true); [totals] = await db.select({ total: count() }).from(games).where(where); }
   const { page, pages } = pagination(totals.total, requestedPage);
+  const bounds = pageInterval(pages, page, interval?.firstPage);
   const items = await db.select({...getTableColumns(games),available:tracking?ownedGameAvailable(tracking.userId):sql<boolean>`false`}).from(games).where(where).orderBy(...(searchQuery ? [desc(sql`greatest(${searchQuery.rank},${aliases.rank})`)] : []), asc(games.title), asc(games.id))
-    .limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE);
-  const presentation=await gamePresentationMetadata(items.map(item=>item.id),items,tracking?.userId ?? null);
-  return { items: rankSearch(items.map((item) => ({ ...item,...presentation.get(item.id),category: 'game' as const })), query), total: totals.total, page, pages };
+    .limit(interval ? (page - bounds.firstPage + 1) * PAGE_SIZE : limit).offset((bounds.firstPage - 1) * PAGE_SIZE);
+  // Ranking and preference hydration retain each native page's original semantics.
+  const presented = [], counts: number[] = [];
+  for (let number = bounds.firstPage; number <= page; number++) {
+    const selected = items.slice((number - bounds.firstPage) * PAGE_SIZE, (number - bounds.firstPage + 1) * PAGE_SIZE);
+    const presentation = await gamePresentationMetadata(selected.map(item=>item.id),selected,tracking?.userId ?? null);
+    const cards = rankSearch(selected.map(item=>({...item,...presentation.get(item.id),category:'game' as const})),query);
+    presented.push(...cards); counts.push(cards.length);
+  }
+  return { items: presented, total: totals.total, page, pages, ...(interval ? { range: { ...bounds, counts } } : {}) };
 }
 
 export async function gameDetails(userId: string | null, gameId: string) {
@@ -123,10 +137,14 @@ export async function updatePlaythrough(userId: string, id: string, raw: unknown
     const current = await ownedPlaythrough(tx, userId, id);
     const status = input.status ?? current.status;
     const now = new Date();
+    const startedAt = status === 'in-progress' ? current.startedAt ?? now : current.startedAt;
+    const completedAt = status === 'completed' ? current.completedAt ?? now : null;
+    if (status === current.status && (input.progressPercent ?? current.progressPercent) === current.progressPercent &&
+      startedAt === current.startedAt && completedAt === current.completedAt) return current;
     const [row] = await tx.update(gamePlaythroughs).set({
       ...input,
-      startedAt: status === 'in-progress' ? current.startedAt ?? now : current.startedAt,
-      completedAt: status === 'completed' ? current.completedAt ?? now : null,
+      startedAt,
+      completedAt,
       updatedAt: now,
     }).where(eq(gamePlaythroughs.id, id)).returning();
     await enqueueCollectionProjectionInTransaction(tx,userId);
@@ -208,7 +226,7 @@ export async function importIgdbMetadata(metadata: import('../../providers/igdb/
       if(saved.gameId!==game.id)throw new DomainError('This game identity changed. Retry the import.',409,'identity_conflict');
     }
     await tx.insert(workFeatures).values({workId:game.id,provider,features:tasteFeatures}).onConflictDoUpdate({target:[workFeatures.workId,workFeatures.provider],set:{features:tasteFeatures,updatedAt:new Date()}});
-    if(parentGame&&parentGame.id!==game.id)await tx.insert(gameVariants).values({gameId:game.id,parentId:parentGame.id,provider}).onConflictDoUpdate({target:gameVariants.gameId,set:{parentId:parentGame.id,provider,updatedAt:new Date()}});
+    if(parentGame&&parentGame.id!==game.id)await tx.insert(gameVariants).values({gameId:game.id,parentId:parentGame.id,provider}).onConflictDoUpdate({target:gameVariants.gameId,set:{parentId:parentGame.id,provider,updatedAt:new Date()},setWhere:sql`(${gameVariants.parentId},${gameVariants.provider}) is distinct from (excluded.parent_id,excluded.provider)`});
     else if(parentKnown)await tx.delete(gameVariants).where(and(eq(gameVariants.gameId,game.id),eq(gameVariants.provider,provider)));
     return { ...game, category, identities };
   });

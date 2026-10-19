@@ -1,0 +1,21 @@
+{
+  "source": "src/lib/ui/client.ts",
+  "sourceSha256": "12169ff02c3deec67ccbdc3f4d669568d0eadb9ba6d8d034b74cd0a0707bf0d8",
+  "classification": "source-confirmed shared lifetime correction; controlled regression fault proof",
+  "tests": {
+    "pass": 10,
+    "fail": 0,
+    "assertions": 38
+  },
+  "actualDataPerformanceClaim": false,
+  "remaining": [
+    "Natural actual two-viewer late401schedule and malformed-response incidents unobserved; controlled protocol faults are supplementary.",
+    "Unknown committed write outcomes remain an endpoint idempotency concern."
+  ],
+  "commonVerification": "evidence/implementation-verification.json",
+  "additionalContracts": [
+    "MalformedsuccesscannotreturnerrorobjectasTorsignalacknowledgedrefresh",
+    "Invalid/nullHTTPerrorbodyretainsstatus",
+    "ValidJSONnullretainscontract"
+  ]
+}

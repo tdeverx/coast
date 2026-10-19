@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-10-17",
+  "commit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "scope": "reading-live",
+  "readOnlyAudit": true,
+  "evidenceBoundary": "LIVE-02 actual linked-command error and direct source mismatch remain confirmed. LIVE-03 was reclassified after console-only lifecycle trace/Vite reconnect and successful stable warm actual-CBR lifecycle; not a confirmed production closure defect. Temporary logging removed; source baseline restored.",
+  "count": 2,
+  "findings": [
+    {
+      "id": "LIVE-02",
+      "priority": "P1",
+      "title": "Linked reading candidate metadata is spread into a strict session command and blocks Read",
+      "confidence": "high_actual_ui_error_and_direct_source_contract_mismatch",
+      "state": "runtime_reproduced_source_confirmed",
+      "sharedOwner": "Existing openReading source-to-prepare-command serializer and strict shared reading command contract",
+      "consumers": [
+        "Reading detail hero, full route and overlay (src/lib/reading/Details.svelte:113)",
+        "Book/comic catalogue/work-menu Read (src/lib/ui/work-menu/CatalogueActions.svelte:90,126,190)",
+        "Planning Read (src/routes/planning/+page.svelte:56)",
+        "Single-linked automatic and multiple-linked explicit choice (src/lib/reading/ReadingLaunch.svelte:32,51)",
+        "Search result selection, connection/pagination and local-file/Continue paths (src/lib/reading/ReadingLaunch.svelte:23,34,53,61)",
+        "Preview isolation (src/routes/ui-preview/CatalogueExamples.svelte:88)",
+        "All supported Jellyfin reading formats and personal/party handover"
+      ],
+      "evidenceRefs": [
+        "evidence/reading-real-launch.json",
+        "src/lib/reading/ReadingLaunch.svelte:32",
+        "src/lib/reading/ReadingLaunch.svelte:39",
+        "src/lib/reading/ReadingLaunch.svelte:51",
+        "src/lib/reading/client.svelte.ts:41",
+        "src/lib/reading/sessions.server.ts:19",
+        "src/lib/reading/sessions.server.ts:35",
+        "src/lib/reading/sessions.server.ts:58",
+        "src/lib/server/api/reading.server.ts:33",
+        "tests/reading-navigation-lifecycle.test.ts:101"
+      ],
+      "smallestOption": "Project exact source/connectionId/externalId fields at the existing openReading Jellyfin command boundary; retain strict authoritative server validation and provider-derived format/edition.",
+      "alternatives": [
+        "Separate candidate-read and prepare-command types/schema plus a common projector within the existing reading model; larger organization change, no new dependency."
+      ],
+      "acceptance": [
+        "Actual single-linked Read yields exact three-key command and reaches visible Reader without unknown-key error",
+        "Zero/one/multiple linked copies, manual search, server change and pagination through every actual consumer",
+        "Real serializer plus strict schema contract test drops display-only DTO fields while server rejects unknown command fields",
+        "Local-file/Continue/preview isolation and provider/account/feature/format/edition protections preserved",
+        "Actual available-format page render/turn/bookmark/minimize/reopen/close; picker dismissal alone is not success",
+        "Existing cancellation/late-session/personal-party/bookmark lifecycle contracts remain correct"
+      ],
+      "gaps": [
+        "Actual POST payload/status not captured; source directly constructs invalid command and visible error matches",
+        "Linked failure reproduced on library-origin and direct actual reading route; other linked consumers/formats need post-fix acceptance",
+        "Manual Search bypass passed one actual CBR visible lifecycle on stable warm retry; automatic linked command remains broken",
+        "26 passing existing tests/144 assertions mock opener/transport rather than connect serializer to strict schema",
+        "No command fix or after-fix verification"
+      ],
+      "relatedFindingIds": [],
+      "reportRef": "reading-live.md",
+      "reportSection": "LIVE-02"
+    },
+    {
+      "id": "LIVE-03",
+      "priority": "P3",
+      "title": "Development reload activity confounded initial Reader lifecycle measurement",
+      "confidence": "high_warm_actual_cbr_success_and_reload_confound_exact_reload_trigger_unconfirmed",
+      "state": "development_measurement_confound_not_confirmed_application_defect",
+      "sharedOwner": "W12 stable profiling/development environment, document reload detection and existing Vite dependency optimizer policy",
+      "consumers": [
+        "Actual cold/warm reading runs and dynamically loaded reader/archive formats",
+        "Shared benchmark harness for optional readers/players/charts and other late-loaded features",
+        "Normal development HMR/reload versus production-build profiling"
+      ],
+      "evidenceRefs": [
+        "evidence/reading-real-termination.json",
+        "evidence/reading-real-launch.json",
+        "src/routes/+layout.svelte:5",
+        "src/lib/reading/reader/engine.ts:6",
+        "src/lib/reading/reader/comic-archive.ts:13",
+        "src/lib/reading/reader/archive-decoder.ts:1",
+        "src/lib/reading/reader/archive.worker.ts:1",
+        "vite.config.ts:5",
+        "https://vite.dev/guide/dep-pre-bundling.html"
+      ],
+      "smallestOption": "Finish edits before measurement, warm needed feature paths and record document reload/HMR signals; invalidate confounded trials and label cold/warm/development/production evidence separately.",
+      "alternatives": [
+        "If a controlled cold run proves recurring late dependency discovery, narrowly configure existing Vite optimizer entries and verify first-use behavior; no blanket eager production imports",
+        "If a future stable run reproduces unintended closure, reopen causal diagnosis with canonical lifecycle/API reason correlation; current evidence does not justify a reader state-machine refactor"
+      ],
+      "acceptance": [
+        "Warm actual CBR passed image render1988x3057, enabled controls, Next page2of23, ShowUI/Resume restoringpage2 and intentional Close with zero attached images/dialogs",
+        "Cold/warm profiling detects and rejects document reload/HMR-confounded trials",
+        "Exact cold development reload trigger identified before any optimizer change",
+        "Other actual formats/connections/party arrangements and resource plateaus remain separately measured"
+      ],
+      "gaps": [
+        "Exact trigger of earlier Vite reconnect is not proven; dependency optimization/HMR are observed environment confounds",
+        "Warm12-second observation wait is not measured opening latency",
+        "One actual23-page CBR visible lifecycle is not all-format, worker/URL/RSS plateau or raw bookmark API certification",
+        "LIVE-02 saved-linked command still fails; manual Search success is a bypass, not its fix",
+        "No production Reader termination defect or implementation fix established"
+      ],
+      "relatedFindingIds": [
+        "LIVE-02"
+      ],
+      "reportRef": "reading-live.md",
+      "reportSection": "LIVE-03",
+      "workstream": "W12"
+    }
+  ]
+}

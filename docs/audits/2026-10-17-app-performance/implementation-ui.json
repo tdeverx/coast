@@ -1,0 +1,109 @@
+{
+  "baseline": "eb0673873462b71118d1c11678d128958a05ff07",
+  "date": "2026-10-17",
+  "state": "source fixes implemented; original normal-dev journeys verified; broader consumer/device matrix open",
+  "findings": [
+    {
+      "id": "LIVE-01",
+      "owner": "DetailPanel resolved snapshot/keyed item lifetime",
+      "consumers": [
+        "SectionDetails",
+        "screen/edition",
+        "reading",
+        "game",
+        "music",
+        "reading-group",
+        "remote-game",
+        "person",
+        "outgoing Shelf/section-host presentation"
+      ],
+      "change": "Atomic href/detail/enhancement snapshot; outgoing props capture keyed item; same-target refresh retained",
+      "fixtureTests": {
+        "passed": 3,
+        "failed": 0,
+        "assertions": 19
+      },
+      "actualAcceptance": "coordinator original signed-in normal-dev journey passed; broader matrix open",
+      "evidenceRefs": [
+        "evidence/implementation-normal-dev.json"
+      ]
+    },
+    {
+      "id": "PANEL-01",
+      "owner": "Dialog expanding scroll handoff action",
+      "consumers": [
+        "all DetailOverlay bodies",
+        "Back/section navigation",
+        "preview DetailOverlay wrappers"
+      ],
+      "change": "Suspend snap while owned reverse deltas accumulate; direction-end settlement after 120ms inactivity; restore/cancel on handoff exit/reset/teardown",
+      "scriptTests": {
+        "passed": 8,
+        "failed": 0,
+        "assertions": 128
+      },
+      "actualAcceptance": "coordinator original signed-in normal-dev journey passed; broader matrix open",
+      "evidenceRefs": [
+        "evidence/implementation-normal-dev.json"
+      ]
+    }
+  ],
+  "commands": [
+    ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/dialog-geometry.test.ts",
+    "COAST_TEST_BROWSER=1 .tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/detail-panel-lifetime.test.ts"
+  ],
+  "files": [
+    {
+      "path": "src/lib/media/DetailPanel.svelte",
+      "sha256": "ece36c1f13727ab9cb125e8072b687a7a8101c415b28a4f7d772b5cb58e7c5af"
+    },
+    {
+      "path": "src/lib/ui/components/Dialog.svelte",
+      "sha256": "8e97aaaac3d87948a7e86da12970d3b7ea7230906c8f5e41b6fde18b7a22e283"
+    },
+    {
+      "path": "tests/detail-panel-lifetime.test.ts",
+      "sha256": "339edd823600fa28ba01a23e75b1689d0a66a3e386fb89c6b36a14637ec6b851"
+    },
+    {
+      "path": "tests/dialog-geometry.test.ts",
+      "sha256": "be287367adc2d9afa31fbab8392d59586860a6918238a6684c39114e2c20c826"
+    }
+  ],
+  "limits": [
+    "Isolated compiled-template fixture is not actual-data performance evidence",
+    "Script geometry model does not execute CSS/native default scroll",
+    "No whole-app checks by this owner",
+    "Coordinator verified original normal-dev journeys; broader consumer/device matrix remains open"
+  ],
+  "dependenciesAdded": false,
+  "schemaChanged": false,
+  "liveMutations": false,
+  "baselineRegression": {
+    "source": "read-only HEAD DetailPanel copied to /private/tmp",
+    "result": "expected failure: outgoing source undefined during section-host handoff",
+    "fixedResult": "3 pass, 0 fail, 19 assertions",
+    "boundary": "compiled production template with inert controlled presenters; not actual-data performance"
+  },
+  "actualNormalDev": {
+    "libraryListenItems": 50,
+    "musicDetailOpened": true,
+    "backRestoredSection": true,
+    "consoleErrors": 0,
+    "nativeSmallReverse": {
+      "inputPages": -0.02,
+      "outerBefore": 160,
+      "innerBefore": 0,
+      "outerAfter": 0,
+      "innerAfter": 0
+    },
+    "contentFirst": {
+      "outer": 160,
+      "innerBefore": 477,
+      "innerAfterSmallReverse": 458,
+      "largerReverseReachedInnerTop": true,
+      "nextSmallReverseCollapsed": true
+    },
+    "boundary": "Coordinator native CUA input on signed-in normal dev; other media/device/long-soak cases remain open"
+  }
+}

@@ -1,0 +1,388 @@
+{
+  "schemaVersion": 1,
+  "finding": "PJ-10",
+  "status": "private_combined_candidate_positive_no_production_adoption",
+  "implementationApplied": false,
+  "productionSourceChange": false,
+  "productionSchemaChange": false,
+  "privateDdlExperiment": true,
+  "title": "Q1b plus terminal-order index reduces task-history read work; index alone does not help current Q0",
+  "sourcePins": {
+    "src/lib/server/auth/index.ts": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/providers/job-timing.server.ts": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+    "tests/job-task-summary-db.test.ts": "312154f05b572ddf4b815a65339c742aacecb9fcf83cb5e1f7bc0820e0977085",
+    "drizzle/0015_maintenance_indexes.sql": "c58c2a8f79d2b2a8e522e206c04495d5ed29ed45c7b74d0c8a4b4165989dea27",
+    "drizzle/0055_bounded_read_indexes.sql": "e716c1c956be6833b7272f5622a080ed8383bdc3d478a5318ab6bc96a4fef936"
+  },
+  "sourcePinCount": 8,
+  "sourcePinBoundary": "Eight explicitly pinned execution owners/dependencies/index sources; this is not a claim that every transitive module or the entire app was performance-verified.",
+  "artifactPins": {
+    "probes/task-history-index-matrix.ts": "8edc360603ca47b4c7431c60360ab0fca11577e15cffd1dd35ccf66415d3137a",
+    "evidence/task-history-index-matrix-actual.json": "51fb19b4f0d39c51c80e827cd86ba52d0c9ffc757482f678d74d2f37663a1731",
+    "task-history-index-matrix.md": "9ed5a186ac8e7e61481afc9bb175aa85182795fca87d80fec421fe016fc2ba6e",
+    "candidates/task-history-next/query.sql": "d58597211e21f76c90bf3e1c5aca0ee0a0fb52bcb0ae5bd446bce896eb392e28",
+    "candidates/task-history-next/query-q1b.sql": "42b380f6fed774d8d935da9ec42bad4f9e56408e95655f3c919cd17cecfb69e2",
+    "candidates/task-history-next/index.sql": "92e1c1446df2efd5b6f9639640df68911afb8b8a53c75d4e5990ce1cbffcba46"
+  },
+  "immutableNegativePins": {
+    "docs/audits/2026-10-17-app-performance/evidence/task-history-q1-current-index-actual.json": "fca1ac5b93cc44fedab970f8c4c63128ac506b3bc53132e2662cc0d12b063504",
+    "docs/audits/2026-10-17-app-performance/evidence/task-history-q1b-current-index-actual.json": "fbd5d3d46df213762320a4ecc7fa68d1c09534e80f2257c1bd0a49ad211ca555"
+  },
+  "evidenceRefs": [
+    "evidence/task-history-index-matrix-actual.json",
+    "probes/task-history-index-matrix.ts",
+    "task-history-q1-current-index.md",
+    "task-history-q1b-current-index.md",
+    "next-task-history-plan.md",
+    "candidates/task-history-next/index.sql",
+    "migration-provenance.md"
+  ],
+  "matrix": [
+    {
+      "query": "Q0",
+      "index": "I0",
+      "fullDtoRows": 23,
+      "completeCanonicalDtoEqual": true,
+      "completeOrderedActiveTuplesEqual": true,
+      "completeOrderedTerminalIdScopeTuplesEqual": true,
+      "activeRepresentatives": 0,
+      "activeTaskCount": 0,
+      "terminalRepresentatives": 23,
+      "terminalNullScopes": 4,
+      "planExecutionMs": 29.047,
+      "totals": {
+        "sharedHitBlocks": 670,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 25891,
+        "largestReportedSortKiB": 3023,
+        "sortSpaceKiBLoopProductNotPeak": 3023,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 25891,
+        "indexI1Admitted": false
+      }
+    },
+    {
+      "query": "Q1b",
+      "index": "I0",
+      "fullDtoRows": 23,
+      "completeCanonicalDtoEqual": true,
+      "completeOrderedActiveTuplesEqual": true,
+      "completeOrderedTerminalIdScopeTuplesEqual": true,
+      "activeRepresentatives": 0,
+      "activeTaskCount": 0,
+      "terminalRepresentatives": 23,
+      "terminalNullScopes": 4,
+      "planExecutionMs": 18.498,
+      "totals": {
+        "sharedHitBlocks": 3191,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 25928,
+        "largestReportedSortKiB": 635,
+        "sortSpaceKiBLoopProductNotPeak": 6031,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 25895,
+        "indexI1Admitted": false
+      }
+    },
+    {
+      "query": "Q0",
+      "index": "I1",
+      "fullDtoRows": 23,
+      "completeCanonicalDtoEqual": true,
+      "completeOrderedActiveTuplesEqual": true,
+      "completeOrderedTerminalIdScopeTuplesEqual": true,
+      "activeRepresentatives": 0,
+      "activeTaskCount": 0,
+      "terminalRepresentatives": 23,
+      "terminalNullScopes": 4,
+      "planExecutionMs": 28.321,
+      "totals": {
+        "sharedHitBlocks": 670,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 25891,
+        "largestReportedSortKiB": 3023,
+        "sortSpaceKiBLoopProductNotPeak": 3023,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 25891,
+        "indexI1Admitted": false
+      }
+    },
+    {
+      "query": "Q1b",
+      "index": "I1",
+      "fullDtoRows": 23,
+      "completeCanonicalDtoEqual": true,
+      "completeOrderedActiveTuplesEqual": true,
+      "completeOrderedTerminalIdScopeTuplesEqual": true,
+      "activeRepresentatives": 0,
+      "activeTaskCount": 0,
+      "terminalRepresentatives": 23,
+      "terminalNullScopes": 4,
+      "planExecutionMs": 4.487,
+      "totals": {
+        "sharedHitBlocks": 544,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 2087,
+        "largestReportedSortKiB": 288,
+        "sortSpaceKiBLoopProductNotPeak": 316,
+        "heapFetchesSum": 93,
+        "historyScanReturnedRowsApprox": 25895,
+        "indexI1Admitted": true
+      }
+    }
+  ],
+  "actualCensus": {
+    "actions": 25891,
+    "terminal": 25891,
+    "active": 0,
+    "pending": 0,
+    "running": 0,
+    "failed": 0,
+    "null_connection": 2054,
+    "null_generation": 2054,
+    "dangling_connection": 0,
+    "obsolete_generation": 0
+  },
+  "fullOutcomeBoundary": "All4cells match actual exported canonical listTaskActions complete ordered DTO/taskCount; active/count tuples empty, terminal23/four null scopes. Actual identities/payloads stay only in memory.",
+  "decision": {
+    "candidateOnly": true,
+    "combinedRequired": true,
+    "queryAloneRejected": true,
+    "indexAloneNoObservedQ0Benefit": true,
+    "rootVisitsBaseline": 670,
+    "rootVisitsCombined": 544,
+    "visitReductionPercent": 18.80597014925373,
+    "noProductionAdoption": true
+  },
+  "indexBuild": {
+    "sourceSha256": "92e1c1446df2efd5b6f9639640df68911afb8b8a53c75d4e5990ce1cbffcba46",
+    "executedDdlSha256": "9d23ce8e448c4a35ee031e746b97b17c7d2cbfa5d8b585760e6f9f173f0b00c4",
+    "createdOnlyInsideRollbackTransaction": true,
+    "clientObservedBuildMs": 23.66962500000045,
+    "index_bytes": "2433024",
+    "outbox_heap_bytes": "5480448",
+    "all_outbox_index_bytes": "10305536",
+    "indisvalid": true,
+    "indisready": true,
+    "indislive": true,
+    "definition": "CREATE INDEX coast_audit_outbox_terminal_order_idx ON public.outbox_actions USING btree (connection_id, kind, updated_at DESC, id DESC) INCLUDE (account_generation) WHERE (state = ANY (ARRAY['succeeded'::text, 'failed'::text, 'cancelled'::text]))"
+  },
+  "storageBefore": {
+    "outbox_heap_bytes": "5480448",
+    "all_outbox_index_bytes": "7872512"
+  },
+  "timingAdmission": {
+    "Q0I1": false,
+    "Q1bI1": true,
+    "rule": "Strictly lower root shared-hit+read visits and no extra temporary read/write blocks versus Q0/I0, with I1 actually admitted. Gate controls I1-phase timing repeats only."
+  },
+  "samples": [
+    {
+      "round": 0,
+      "query": "Q0",
+      "index": "I1",
+      "clientFullListTaskActionsMs": 31.41845900000044,
+      "rows": 23
+    },
+    {
+      "round": 0,
+      "query": "Q1b",
+      "index": "I1",
+      "clientFullListTaskActionsMs": 7.409084000000803,
+      "rows": 23
+    },
+    {
+      "round": 1,
+      "query": "Q1b",
+      "index": "I1",
+      "clientFullListTaskActionsMs": 6.696250000000873,
+      "rows": 23
+    },
+    {
+      "round": 1,
+      "query": "Q0",
+      "index": "I1",
+      "clientFullListTaskActionsMs": 34.40508399999999,
+      "rows": 23
+    },
+    {
+      "round": 2,
+      "query": "Q0",
+      "index": "I1",
+      "clientFullListTaskActionsMs": 208.65004099999896,
+      "rows": 23
+    },
+    {
+      "round": 2,
+      "query": "Q1b",
+      "index": "I1",
+      "clientFullListTaskActionsMs": 16.25537500000064,
+      "rows": 23
+    }
+  ],
+  "descriptiveI1PhaseMediansMs": {
+    "Q0": 34.40508399999999,
+    "Q1b": 7.409084000000803
+  },
+  "timingBoundary": "Alternating Q0/Q1b full task reads only after I1 exists. No alternating I0/I1 or causal index-latency distribution: index creation/warm caches phase order remains. Plans, buffers and rows determine resource admission. Q0 round2 outlier208.650ms retained, cause uninstrumented; no CPU/RSS/natural-load claim.",
+  "methodRevision": {
+    "original": "Fresh disposable secondary-clone index trial. Retained SQL/header preserved.",
+    "executed": "Exact designated private audit clone, one write-capable repeatable-read transaction, one non-concurrent CREATE, four cells+I1-phase repeats, deliberate rollback, full restoration.",
+    "why": "One snapshot/time, avoids another database-copy/drop lifecycle; root explicitly reviewed the change.",
+    "futureSecondaryClone": "Still preferred if wider write/HOT controls need matched physical starting points."
+  },
+  "safety": {
+    "matrixSettings": {
+      "read_only": "off",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB",
+      "server_version_num": "170011"
+    },
+    "fkPreflight": {
+      "passed": true,
+      "constraint": {
+        "conname": "outbox_actions_connection_id_provider_connections_id_fk",
+        "contype": "f",
+        "convalidated": true,
+        "condeferrable": false,
+        "condeferred": false,
+        "confdeltype": "n",
+        "confupdtype": "a",
+        "confmatchtype": "s",
+        "source_table": "outbox_actions",
+        "referenced_table": "provider_connections",
+        "source_columns": [
+          "connection_id"
+        ],
+        "referenced_columns": [
+          "id"
+        ]
+      },
+      "triggers": [
+        {
+          "relation": "outbox_actions",
+          "tgisinternal": true,
+          "tgenabled": "O",
+          "tgdeferrable": false,
+          "tginitdeferred": false,
+          "function": "RI_FKey_check_ins"
+        },
+        {
+          "relation": "outbox_actions",
+          "tgisinternal": true,
+          "tgenabled": "O",
+          "tgdeferrable": false,
+          "tginitdeferred": false,
+          "function": "RI_FKey_check_upd"
+        },
+        {
+          "relation": "provider_connections",
+          "tgisinternal": true,
+          "tgenabled": "O",
+          "tgdeferrable": false,
+          "tginitdeferred": false,
+          "function": "RI_FKey_noaction_upd"
+        },
+        {
+          "relation": "provider_connections",
+          "tgisinternal": true,
+          "tgenabled": "O",
+          "tgdeferrable": false,
+          "tginitdeferred": false,
+          "function": "RI_FKey_setnull_del"
+        }
+      ],
+      "sessionReplicationRole": "origin",
+      "scope": "New candidate is admitted only after these actual same-transaction enforcement checks. Current source loader and GET callers cannot self-author a transient invalid-FK transaction."
+    },
+    "expectedRollbackObserved": true,
+    "restoration": {
+      "allTableLogicalMultisetsEqual": true,
+      "sequencesEqual": true,
+      "catalogAndExistingIndexDefinitionsEqual": true,
+      "auditIndexAbsent": true,
+      "tables": 102,
+      "rows": 1864145,
+      "beforeDigest": "e8402386d9d8db39b2041d80936f579eb4a882fe01c35f62aef24ca2883fe890",
+      "afterDigest": "e8402386d9d8db39b2041d80936f579eb4a882fe01c35f62aef24ca2883fe890",
+      "samePhysicalBackend": true
+    },
+    "poolClosed": true,
+    "networkCalls": 0,
+    "normalDatabaseAccess": false,
+    "domainDml": false,
+    "fixtures": false,
+    "oldIndexesDropped": false,
+    "analyzeOrVacuum": false
+  },
+  "physicalEffectsNotClaimedRestored": [
+    "WAL",
+    "page pruning/dead tuples",
+    "cache state",
+    "cumulative statistics",
+    "I/O history"
+  ],
+  "metricsInterpretation": [
+    "Root buffers include descendants; do not add them again.",
+    "History/sort rows\u00d7loops approximate per-loop rounded values; all relevant history is still scanned.",
+    "Largest per-sort space is observed; loop-weighted space is not peak/cumulative allocation.",
+    "93HeapFetches is from actually admitted Index Only Scan; zero elsewhere means no index-only node, not zero heap access.",
+    "Build elapsed is client-observed; index byte count measured inside transaction; no natural frequency or storage-scale forecast."
+  ],
+  "remaining": [
+    "Actual write-maintenance/WAL/HOT controls and physical-starting-point tradeoffs.",
+    "Secondary jobTimings terminal family plus succeeded-only/active scheduling readers.",
+    "Positive busy pending/running/failed counts and differing failed representative/tie schedules; obsolete/raw malformed-scope/unknown-kind positives.",
+    "Larger history/null-scope distribution, visibility-map and deployed spill cohort.",
+    "Coordinated query/index application rollback; normal migration/provenance/operational acceptance.",
+    "No retention/budget/read-model/model-quality change."
+  ],
+  "publicEvidenceSanitization": "No private identity/scope/payload rows or plan expression/filter/output/index-condition/sort-key text; retain only output hashes, fixed query source, static catalog definitions and whitelisted structural/numeric plan fields.",
+  "independentReview": {
+    "scope": "Read-only exact executed probe8edc3606\u2026 and receipt51fb19b4\u2026",
+    "result": "No material guard/restoration or calibrated-claim blocker. No reviewer test/DB/edit."
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/auth/index.ts",
+          "before": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf",
+          "after": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    }
+  ]
+}

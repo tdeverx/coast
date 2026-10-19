@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "baselineCommit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "reportRef": "implementation-ui-lifetimes.md",
+  "committed": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "normalOrDeployedDatabaseMutations": false,
+  "changes": [
+    {
+      "findingId": "HELPER-02",
+      "state": "implemented_focused_lifecycle_verified",
+      "sharedOwner": "createMenuController open interval",
+      "consumers": [
+        "Button menus and all ordinary/nested/work/queue/profile consumers"
+      ],
+      "files": [
+        "src/lib/ui/controls/menu.svelte.ts"
+      ],
+      "behavior": [
+        "Breakpoint listener exists only while open",
+        "Closed compact getter reads current media query before hover admission",
+        "Open resize, focus and compact drill-down behavior retained"
+      ],
+      "verification": {
+        "runtime": "Bun 1.4.3",
+        "files": 2,
+        "passed": 12,
+        "failed": 0,
+        "assertions": 37,
+        "testFiles": [
+          "tests/menu-lifecycle.test.ts",
+          "tests/ui-menu-resource.test.ts"
+        ],
+        "fixture": "tests/fixtures/menu-lifecycle.ts",
+        "evidenceRef": "evidence/implementation-menu-focused-tests.txt"
+      },
+      "gaps": [
+        "Real-browser responsive menu acceptance remains with parent run",
+        "No measured CPU/heap saving claim",
+        "Closed controller still retains a MediaQueryList object"
+      ]
+    },
+    {
+      "findingId": "UIS-01",
+      "state": "staged_private_candidate_verified_rollout_blocked_by_normal_migration_drift",
+      "sharedOwner": "Notification delivery/suppression owner across toast feeds",
+      "files": [
+        "src/lib/ui/components/NotificationToasts.svelte",
+        "src/lib/server/notifications/index.ts"
+      ],
+      "options": [
+        {
+          "id": "durable-notification-field",
+          "selected": true,
+          "stateBound": "Current DTO plus at most200queued/in-flight IDs; one write and one coalesced refresh lane",
+          "changedBehavior": "Acknowledged normal toast suppression survives windows/reloads; persistent404 is terminal unavailable reconciliation",
+          "retention": "Nullable timestamp removed with its notification; source-key update preserves it"
+        }
+      ],
+      "acceptance": [
+        "Replay actual sanitized DTO transitions",
+        "Verify late arrival/removal/return and viewer scope",
+        "No timers for departed IDs",
+        "Persistent failure rolls back",
+        "Do not mark inbox read just to hide normal toast",
+        "Bound state by selected policy"
+      ],
+      "gaps": [
+        "Strict normal preflight remains failed. Reviewed narrow forward option requires explicit human acceptance of exact0039provenance/data-effect gap plus0062indexes+0063schema and operational guards; no normal execution/adoption.",
+        "Normal-dev migration scope approval; staged source not loaded by ordinary Vite.",
+        "Actual snapshot lacks recent normal/persistent notices; their cases are authored tests only.",
+        "No staged browser or production build acceptance yet; root owns those gates.",
+        "Optional refresh has no new deadline; one active refresh and one coalesced follow-up per host, independent from write admission.",
+        "General inbox age retention is unchanged; storage remains proportional to retained notifications.",
+        "Unsent/failed hides are not durable across a hard reload; acknowledged state is."
+      ],
+      "actualCensus": {
+        "evidenceRef": "evidence/implementation-notification-census.json",
+        "windows": 4,
+        "rowsByWindow": [
+          2,
+          2,
+          12,
+          3
+        ],
+        "oldNormal": 12,
+        "oldNormalUnread": 7,
+        "oldSilentRead": 7,
+        "recentNormal": 0,
+        "persistent": 0
+      },
+      "reportRef": "implementation-toast.md",
+      "policySelected": "durable suppression retained with its notification; no TTL/read conflation",
+      "candidatePatch": "/private/tmp/coast-toast-stage-20261018/candidate/durable-toast.patch",
+      "candidatePatchSha256": "6e025e3237cc89e598e254c3bf63072d885234bea03d32360008ac7937c8132f",
+      "normalApplicationSourceApplied": false,
+      "normalOrDeployedDatabaseMutations": false,
+      "verification": {
+        "unit": {
+          "pass": 13,
+          "fail": 0,
+          "assertions": 103,
+          "kind": "authored functional clocks/transports and compiled component script"
+        },
+        "check": {
+          "errors": 0,
+          "warnings": 0
+        },
+        "migrationCheck": "passed",
+        "patchApplyCheck": "passed",
+        "actual": {
+          "status": "passed",
+          "contracts": 15,
+          "totalActualNotifications": 518,
+          "actualOwnersWithNotices": 4,
+          "selectedWindow": 2,
+          "originalRowsExactAfterRollback": true,
+          "candidateColumnAbsentAfterRollback": true,
+          "stageAliasAndTsconfigBinding": true,
+          "noRepeatedTupleRewrite": true,
+          "evidence": "evidence/implementation-toast-actual.json",
+          "idempotentRepeatAcknowledgesOwned": true,
+          "existingDismissRepeatUnavailable404": true
+        }
+      },
+      "baselineVerified": [
+        "Hidden/observed historical IDs are retained for mounted lifetime",
+        "Timers clean up on disposal",
+        "Server response defaults to 50 and caps at 200",
+        "Initial-only normal age gate is 30 seconds",
+        "Persistent dismissal has server acknowledgment and local rollback"
+      ],
+      "verified": [
+        "Isolated14-file candidate and actual rollback proof; no normal source/schema application",
+        "13focused tests103assertions; staged check0errors0warnings",
+        "Actual normal preflight fails closed; migration remains blocked"
+      ],
+      "migrationProvenanceRef": "migration-provenance.md"
+    }
+  ]
+}

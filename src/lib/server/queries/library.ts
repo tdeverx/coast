@@ -1,11 +1,13 @@
 import { getFeatureConfig } from '$lib/server/features';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../db';
 import * as s from '../db/schema';
 import { mediaViews, hasPermittedMediaSource } from './media';
-import { pageNumberSchema, PAGE_SIZE, pagination } from './pagination';
+import { pageNumberSchema, PAGE_SIZE, pagination, requestedPageInterval } from './pagination';
+
+import { pageInterval } from '$lib/page-window';
 
 const uuidSchema = v.pipe(v.string(), v.uuid());
 
@@ -40,14 +42,19 @@ export function libraryTrackingCondition(
       : tracking === 'dropped'
         ? eq(s.trackingState.dropped, true)
         : tracking === 'progress'
-          ? sql`((${started}) or ${rewatchBoundary(userId, sql`${s.media.id}`)} is not null) and not (${complete}) and not coalesce(${s.trackingState.dropped},false)`
+          ? sql`case
+              when coalesce(${s.trackingState.dropped},false) then false
+              when ((${started}) or ${rewatchBoundary(userId, sql`${s.media.id}`)} is not null) then not (${complete})
+              else false end`
           : undefined;
 }
 
-/** Filter and count the catalogue before paging, then resolve metadata for at most 60 titles. */
-export async function libraryData(userId: string, rawOptions: unknown = {}) {
+/** Share eligibility/count across a bounded range; preserve native 60-title hydration pages. */
+export async function libraryData(userId: string, rawOptions: unknown = {}, firstPage?: number, signal?: AbortSignal) {
+  signal?.throwIfAborted();
   v.parse(uuidSchema, userId);
   const input = v.parse(libraryOptionsSchema, rawOptions);
+  const interval = requestedPageInterval(input.page, firstPage);
   const pageSize = PAGE_SIZE;
   const permittedSource = hasPermittedMediaSource(userId, input.source);
   const tracking = libraryTrackingCondition(userId, input.tracking);
@@ -69,29 +76,33 @@ export async function libraryData(userId: string, rawOptions: unknown = {}) {
   );
   const join = and(eq(s.trackingState.mediaId, s.media.id), eq(s.trackingState.userId, userId));
   const db = getDb();
-  const [count] = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(s.media)
-    .leftJoin(s.trackingState, join)
-    .where(where);
-  const total = count.total;
+  // Share membership and count/page snapshot; hydrate only the selected titles.
+  const [result] = (await db.execute(sql`
+    with eligible as materialized (
+      select ${s.media.id} as id, ${s.media.updatedAt} as updated_at
+      from ${s.media} left join ${s.trackingState} on ${join} where ${where}
+    ), total as (select count(*)::int as total from eligible)
+    select total, coalesce((select jsonb_agg(id order by updated_at desc, id)
+      from (select id, updated_at from eligible order by updated_at desc, id limit ${interval ? sql`(least(${interval.lastPage}, greatest(1, ceil(total::numeric / ${pageSize})::int))
+          - least(${interval.firstPage}, greatest(1, ceil(total::numeric / ${pageSize})::int)) + 1) * ${pageSize}` : sql`${pageSize}`}
+        offset (least(${interval?.firstPage ?? input.page}, greatest(1, ceil(total::numeric / ${pageSize})::int)) - 1) * ${pageSize}) page),
+      '[]'::jsonb) as ids from total
+  `)) as { total: number; ids: string[] }[];
+  const total = result.total;
   const { page, pages } = pagination(total, input.page);
-  const selected = await db
-    .select({ id: s.media.id })
-    .from(s.media)
-    .leftJoin(s.trackingState, join)
-    .where(where)
-    .orderBy(desc(s.media.updatedAt), asc(s.media.id))
-    .limit(pageSize)
-    .offset((page - 1) * pageSize);
-  const views = new Map(
-    (await mediaViews(userId, { ids: selected.map((row) => row.id), limit: pageSize })).map(
-      (item) => [item.id, item]
-    )
-  );
-  const items = selected.flatMap((row) => (views.get(row.id) ? [views.get(row.id)!] : []));
+  const bounds = pageInterval(pages, page, interval?.firstPage);
+  const items: Awaited<ReturnType<typeof mediaViews>> = [], counts: number[] = [];
+  for (let number = bounds.firstPage; number <= page; number++) {
+    signal?.throwIfAborted();
+    const ids = result.ids.slice((number - bounds.firstPage) * pageSize, (number - bounds.firstPage + 1) * pageSize);
+    const views = new Map((await mediaViews(userId, { ids, limit: pageSize })).map(item => [item.id, item]));
+    signal?.throwIfAborted();
+    const selected = ids.flatMap(id => views.has(id) ? [views.get(id)!] : []);
+    items.push(...selected); counts.push(selected.length);
+  }
   return {
     items,
+    ...(interval ? { range: { ...bounds, counts } } : {}),
     total,
     page,
     pages,

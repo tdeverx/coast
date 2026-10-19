@@ -1,0 +1,230 @@
+{
+  "id": "MIGRATION-DRIFT-OBS-04",
+  "status": "approved_normal_exact0062_0063_applied_postchecks_passed_common_authenticated_inbox_verified",
+  "report": "migration-provenance.md",
+  "sharedOwner": "Migration history integrity and forward rollout; existing Drizzle/Bun migration owner",
+  "consumers": [
+    "Every installed database migration",
+    "Reading Related cards candidate filtering via0062",
+    "Durable notification toast state via staged0063"
+  ],
+  "normalDatabaseMutated": true,
+  "normalCredentialRead": true,
+  "strictDefaultPreflightRelaxed": false,
+  "historicalMigrationReplayed": false,
+  "historicalSqlOrLedgerRewritten": false,
+  "normalPreflight": {
+    "appliedCount": 62,
+    "pendingNames": [
+      "0062_reading_detail_candidates",
+      "0063_notification_toast_suppression"
+    ],
+    "soleHashMismatch": "0039_performance_benchmarks",
+    "applied0039Sha256": "66f067bdf6014c26e11d305157889ca3a1712fead2d105dbd63b696511b4438e",
+    "source0039Sha256": "46c40ee9cd4c53adecd1a68a1df1c11afc2055bd888c4281d1a840750eef7cc2",
+    "originalAppliedSqlRecovered": false,
+    "evidence": "evidence/migration-provenance-normal.json"
+  },
+  "sourceHistory": {
+    "0039": {
+      "soleReachableFileHistoryCommit": "d6bb435d473968435eb9d09b7ccd36f5eb61af06",
+      "currentBytesMatchIntroduction": true,
+      "topLevelCurrentSql": "DDL only; DML occurs inside newly defined functions, not a backfill. This does not establish contents or effects of unknown applied bytes."
+    },
+    "0062": {
+      "introducedCommit": "57fb2c4f66eab432d69662456e9e19869b911ab8",
+      "mergedCommit": "77257604834621dce157e8a7068babc25d864885",
+      "sha256": "ef8d92d43de2c8d1b14d1d18f3ead93f516ab8ca3a87b38ce7a7627c4740a77b",
+      "schemaDelta": "Two nonconcurrent GIN indexes, authors and subjects on reading_works; pre-existing source migration, not toast work."
+    }
+  },
+  "boundedCurrent0039Compatibility": {
+    "functionBodyCount": 3,
+    "functionBodiesExact": true,
+    "functionAttributeMismatches": 0,
+    "originalTriggerCount": 118,
+    "laterAppliedTriggerCount": 18,
+    "triggerMetadataMismatches": [],
+    "laterTriggerSources": [
+      "0042_superb_major_mapleleaf",
+      "0047_reading_experiments",
+      "0060_reading_groups"
+    ],
+    "sourceTableColumnsManuallyReviewed": 17,
+    "sourceConstraintsManuallyReviewed": 7,
+    "benchmarkIndexesValidReady": 4,
+    "boundary": "Current public schema compatibility, not original-byte provenance, historical data effects, or exhaustive ACL/ownership/cost/dependency equivalence."
+  },
+  "ordinaryMigrator": {
+    "historicalHashComparison": false,
+    "migrationSelection": "Only latest applied timestamp; apply every source migration with a newer journal timestamp.",
+    "pendingMigrationsInOneTransaction": true,
+    "metadataDdlBeforeTransaction": [
+      "CREATE SCHEMA IF NOT EXISTS",
+      "CREATE TABLE IF NOT EXISTS"
+    ],
+    "runtimeAuditFingerprintIsEnforcement": false
+  },
+  "privateActualRehearsal": {
+    "status": "passed",
+    "tablesCompared": 101,
+    "existingRowsCompared": 1864083,
+    "readingRows": 12,
+    "notifications": 518,
+    "allExistingRowValueMultisetsMatch": true,
+    "ledgerBefore": 62,
+    "ledgerAfter": 64,
+    "priorLedgerRowsExact": true,
+    "addedLedgerNames": [
+      "0062_reading_detail_candidates",
+      "0063_notification_toast_suppression"
+    ],
+    "historical0039HashPreserved": true,
+    "exactForwardDdlCount": 4,
+    "newIndexesValidReady": 2,
+    "newNullableColumns": 1,
+    "rerunNoOp": true,
+    "samePhysicalBackendVerified": true,
+    "statementTimeout": "30s",
+    "lockTimeout": "5s",
+    "disposableCloneDropped": true,
+    "normalOrBaseCloneMigrationTarget": false,
+    "performanceGainClaim": false,
+    "evidence": [
+      "evidence/migration-forward-actual.json",
+      "evidence/migration-forward-actual-runner.json"
+    ]
+  },
+  "options": [
+    {
+      "id": "recover_original_bytes",
+      "description": "Recover original applied0039 artifact from an existing old build or backup and compare before any normal adoption. No such artifact was recovered from reachable Git history.",
+      "normalDdlAuthorized": false
+    },
+    {
+      "id": "explicit_reviewed_forward_0062_0063",
+      "description": "Explicitly accept the target-specific unknown historical0039 bytes, preserve old source/ledger, and approve exact0062 indexes plus0063 nullablecolumn/comment. Recheck exact target/source/ledger/schema immediately before bounded rollout; strict default preflight stays closed.",
+      "normalDdlAuthorized": false,
+      "preferredIfUserAcceptsHistoricalGap": true
+    },
+    {
+      "id": "defer_toast_adoption",
+      "description": "Keep candidate staged if historical provenance gap or0062 index scope is not accepted; no stamping/reordering pending history.",
+      "normalDdlAuthorized": false
+    }
+  ],
+  "prohibitedShortcuts": [
+    "Rewrite0039 hash or source to manufacture an exact prefix",
+    "Replay0039 DDL",
+    "Mark0062 applied without its indexes",
+    "Stamp0063 first and let timestamp ordering skip0062",
+    "Run broad migrator under one-column-only approval",
+    "Relax strict default integrity preflight or add generic compatibility bypass"
+  ],
+  "normalRolloutAcceptancePending": [
+    "Normal successful toast write, recent/persistent actual cohorts and cross-window delivery remain unobserved; no fake cohort manufactured.",
+    "Original0039 bytes/historical data effects remain unknown, explicitly accepted; current-object equivalence is not provenance.",
+    "Checkpoint extraction verified; actual restore rehearsal of that specific normal archive was not exercised."
+  ],
+  "review": {
+    "procedure": "Independent providers/jobs read-only review; exact SQL/journal pins, loopback target and same-session guard tightened before private actual execution.",
+    "resultReview": "independent_read_only_approved_no_material_blocker",
+    "executorSha256": "7753f23d74aaa08436d0665b29b65c66e05dfc53fcc42770282d3d370dd54675",
+    "planSha256": "2e7572e8df4de57b378a08003e4982c905e893d1576d4aa344bfac5fba4c5c83",
+    "normalApprovalGranted": true,
+    "boundaries": [
+      "Normal executor verifies ledger/schema/new nulls, not the full normal-data multiset; that belongs only to retained private actual rehearsal.",
+      "Nine-statement comparison is postexecution attestation, not a precommit SQL firewall. Admission relies on exact source/runtime pins plus frozen-stage and coordinated-single-migrator prerequisites.",
+      "Original0039 historical bytes/data effects remain unknown; explicit human acceptance still required."
+    ]
+  },
+  "artifacts": {
+    "evidence/migration-provenance-normal.json": "682c46284551df18c85a178828eac3693a51a3527ce9222b40ad0452ab439594",
+    "evidence/migration-forward-actual.json": "c56f052b0e7afa06577f4ea2a66c9f505bd39e4fabccef633483c5e2a7a82ea6",
+    "evidence/migration-forward-actual-runner.json": "b56b829d6eeac615fe56125bd54e46011a36780aa7701299ac4dfb0c9bc8faa7",
+    "probes/migration-provenance.py": "1b1b4d74fe9b0341b9e635ec859610cc954f2e275504cae6d7d106353b4f2900",
+    "probes/migration-forward-actual.ts": "c7de7f0e5a1a96bfd7502fc24515eb900ff1af7dfe2120b61c9a6a3edcfb8558",
+    "probes/migration-forward-run.py": "8a0d7cfd0b2b983bb08448e94eac8b48a8917efea8a35d1aa417550e01bb132a",
+    "probes/migration-rollout-0062-0063.ts": "7753f23d74aaa08436d0665b29b65c66e05dfc53fcc42770282d3d370dd54675",
+    "candidates/migration/rollout-plan.json": "2e7572e8df4de57b378a08003e4982c905e893d1576d4aa344bfac5fba4c5c83",
+    "evidence/migration-rollout-plan-verification.json": "efd7c44e31d829afb68ca953d41af1b972f07c9c2eec1319afb657eada7261ba",
+    "evidence/migration-rollout-no-approval.json": "8705110dce5be7e23a96d0f1fbb3ee82912acf1adeb15311e54c6193fb134cc7"
+  },
+  "sourcePins": {
+    "drizzle/0039_performance_benchmarks.sql": "46c40ee9cd4c53adecd1a68a1df1c11afc2055bd888c4281d1a840750eef7cc2",
+    "drizzle/0062_reading_detail_candidates.sql": "ef8d92d43de2c8d1b14d1d18f3ead93f516ab8ca3a87b38ce7a7627c4740a77b",
+    "src/lib/reading/detail.server.ts": "105b871ef2751c1eabf26fa1efc6291f6aec1b77c110da66c8ce3bd055a0d90d",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "scripts/migrate.ts": "c0b0267822552f6ce4441eef8d5e9ba4f88eaf8b7e0572babbd39ddfdc9e3cd6",
+    "scripts/runtime-audit.ts": "a486522a8ab93caeff57dae2b0ee9b2443c634e58c49a32e0d8bf3816bed1dd0",
+    "node_modules/drizzle-orm/pg-core/dialect.js": "a7d7921c939b228a3f1295be5f024a8c264169e368f591c2d29072ffe079b14e",
+    "node_modules/drizzle-orm/migrator.js": "8c5e22b76a6a239e426b659ba999f69b4b312a052e74f533758f876795f6377c"
+  },
+  "preparedNormalExecutor": {
+    "source": "probes/migration-rollout-0062-0063.ts",
+    "plan": "candidates/migration/rollout-plan.json",
+    "sourceOnlyVerification": "evidence/migration-rollout-plan-verification.json",
+    "sourceOnlyVerificationStatus": "source_plan_verified_no_database_connection",
+    "normalApplyBranchExecuted": true,
+    "credentialsDiscovered": false,
+    "usesExistingMigrator": true,
+    "requiresHumanApprovalCheckpointAndCoordination": true,
+    "scope": "Target-specific reviewed one-shot artifact, not an altered default preflight or production compatibility shim.",
+    "noApprovalNegativeControl": {
+      "evidence": "evidence/migration-rollout-no-approval.json",
+      "expectedFailure": "explicit_human_scope_approval_required",
+      "databaseConnectionCreated": false,
+      "migrationBranchEntered": false
+    },
+    "executionReceipt": "evidence/implementation-approved-normal-rollout.json"
+  },
+  "writeStatus": "frozen_after_final_independent_review",
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "normalCredentialBoundary": "Existing normal launcher container setting was explicitly approved and used in memory only, never displayed or persisted; running process environment was not read.",
+  "normalExecution": {
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "ledgerBefore": 62,
+    "ledgerAfter": 64,
+    "historical0039HashPreserved": true,
+    "validReadyGinIndexes": 2,
+    "nullableTimestampWithComment": true,
+    "allNewValuesNullBeforeAppRestart": true,
+    "samePhysicalBackend": true,
+    "statementTimeout": "30s",
+    "lockTimeout": "5s",
+    "observedStatements": 9,
+    "forwardDdlStatements": 4,
+    "normalArchiveBytes": 182419613,
+    "archiveFullyReadByPgRestore": true,
+    "actualArchiveRestoreExercised": false,
+    "normalFullTableCensusCompared": false,
+    "normalApplicationGatesPassed": true,
+    "normalAuthenticatedInboxReloadPassed": true,
+    "normalSuccessfulToastWriteObserved": false,
+    "boundary": "Full101-table logical comparison belongs only to private actual rehearsal. Normal executor checked exact ledger/schema/new nulls. Post-app readonly notice checks preserve518rows; no eligible toast in current signed-in account."
+  },
+  "artifactPins": {
+    "evidence/migration-provenance-normal.json": "682c46284551df18c85a178828eac3693a51a3527ce9222b40ad0452ab439594",
+    "evidence/migration-forward-actual.json": "c56f052b0e7afa06577f4ea2a66c9f505bd39e4fabccef633483c5e2a7a82ea6",
+    "evidence/migration-forward-actual-runner.json": "b56b829d6eeac615fe56125bd54e46011a36780aa7701299ac4dfb0c9bc8faa7",
+    "probes/migration-provenance.py": "1b1b4d74fe9b0341b9e635ec859610cc954f2e275504cae6d7d106353b4f2900",
+    "probes/migration-forward-actual.ts": "c7de7f0e5a1a96bfd7502fc24515eb900ff1af7dfe2120b61c9a6a3edcfb8558",
+    "probes/migration-forward-run.py": "8a0d7cfd0b2b983bb08448e94eac8b48a8917efea8a35d1aa417550e01bb132a",
+    "probes/migration-rollout-0062-0063.ts": "7753f23d74aaa08436d0665b29b65c66e05dfc53fcc42770282d3d370dd54675",
+    "candidates/migration/rollout-plan.json": "2e7572e8df4de57b378a08003e4982c905e893d1576d4aa344bfac5fba4c5c83",
+    "evidence/migration-rollout-plan-verification.json": "efd7c44e31d829afb68ca953d41af1b972f07c9c2eec1319afb657eada7261ba",
+    "evidence/migration-rollout-no-approval.json": "8705110dce5be7e23a96d0f1fbb3ee82912acf1adeb15311e54c6193fb134cc7",
+    "evidence/implementation-approved-normal-rollout.json": "a42bdc2a3373e9a5db4daf588eb2d399def2b2ed733b68aa634ab04c22bf26fe",
+    "evidence/implementation-toast-normal.json": "94ce2487b02e8689f0598234682ae42e8dbe555cdb41a0df33115ffcfb0e5a5f"
+  }
+}

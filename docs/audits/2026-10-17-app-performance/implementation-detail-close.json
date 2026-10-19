@@ -1,0 +1,292 @@
+{
+  "schemaVersion": 1,
+  "status": "applied_actual_and_supplementary_common_and_signed_in_normal_functional_passed_remaining_gaps_open",
+  "implementationApplied": true,
+  "sourcePins": {
+    "src/lib/ui/media-navigation.ts": "9b0535e07a54c78ae4a550bf1a8b3a954fbc07d6b89b32028be6e47e40ce6af7",
+    "src/lib/media/DetailPanel.svelte": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55",
+    "src/lib/ui/components/DetailOverlay.svelte": "dee4a3b5edb0bc89c63eb7e6f0f6b3eab5c3aba80d5001842392387a87be1118",
+    "src/lib/ui/components/Dialog.svelte": "af712feba97efe636b88ae94cb21814bfa7c4166e8007ba0a90f7bdaab9fa555",
+    "src/lib/ui/components/Button.svelte": "94aa6493576191d136b8da0286401527a69104a57bddd5416cbb06721dd7e496",
+    "src/lib/media/Details.svelte": "8621b46f560de97442dcdb9490df245dd5de7bed985ef45865e784c5400b50cd",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/detail-section.svelte.ts": "dd2156aa5d90546a7c74cd413cda961dc6cd507108501f522a3d2dcd8a4adf0d",
+    "src/lib/media/detail-target.ts": "8beb2d610cd3c480d0c268a9a0f49c908043ca30333575f7be982091fe45fdab",
+    "src/lib/ui/section-target.ts": "3920829e19358f68a08c08737729b48b057630f1f918f98ddd4be22f99f25d05",
+    "src/lib/ui/client.ts": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7",
+    "src/routes/+layout.svelte": "fa2da910bdfa5d467592bb1496fab1afb8eca1ce5dc6849bd1e437b6e20d4baa",
+    "src/lib/ui/content-revision.svelte.ts": "a020f2a02ab30655fe9d1203fe3c90200625e874c2e63714a499f5c8b1661fd3",
+    "node_modules/@sveltejs/kit/src/runtime/client/client.js": "8cfd583bd4d9c9aff69d74a8f3440f7b744d731baaeb5133c8e4605a93663141",
+    "patches/sveltejs-kit-2.70.3.patch": "94c566a791131b766fe29e8e53ef9107f0ac49de92f9ab7441c629b1077bb78f",
+    "tests/media-navigation.test.ts": "c65ae28c29c487e603cc445fcf70d07da57d2dbadf61381368f93046f2311ad3",
+    "tests/detail-panel-lifetime.test.ts": "8f67f23fd17a972b0479b3430bd5da344b2ac5c1024ef8f752a8bcd175be301d",
+    "tests/route-refresh.test.ts": "9830ec8a912dc835054010920d1f72522404e72c214c378361919d67dad0cf44",
+    "tests/dialog-geometry.test.ts": "a5f0db4e7f30c41918bbcba4e9deec2a7b41c75011eb09a50b22ff61285157e6",
+    "src/lib/ui/client-context.ts": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205",
+    "node_modules/svelte/src/internal/client/dom/elements/events.js": "21e9cf6139ed152cd4c4071cc4f75e0a3dda61128175b488f177be6a76c38713",
+    "node_modules/svelte/src/internal/client/dom/elements/attributes.js": "de87c650c48ef1e72e9a6828bf15e0d867fdebf9c33b16dd58d0ef380f52cb28",
+    "node_modules/svelte/src/internal/client/reactivity/effects.js": "e5fe83a0b7580836ecee8f9cd985ef8de920a711fd1ced77579bc854101d07b6",
+    "node_modules/svelte/src/internal/client/runtime.js": "9105167919723d5c5d5b21dcd09bf1030251e0771516f25c0e1841e00a06b3c7",
+    "node_modules/svelte/src/utils.js": "1dfabb5beaa255fb949653afa14016085d0e99d04a194655fd0e192dbb967d6d",
+    "node_modules/svelte/src/compiler/phases/3-transform/client/visitors/SvelteElement.js": "0fa6039d0c41f993ed752cea2b2f21483e8b999528c71ac4987d09d4e71da32a",
+    "node_modules/svelte/src/compiler/phases/3-transform/client/visitors/shared/events.js": "d2b12086a4043cb05982315de5d385e994f49fad46cccbc19133e467bf0d7bc7",
+    "tests/detail-panel-close-owner.test.ts": "9e6cbad01d16f7c804fbf022da39eb6213ef66c86726e626ff0c4af6cf1844f0",
+    "tests/fixtures/ui-script.ts": "7713e8d085c354f26716036de12d0d783d4147fbe25b9af5a95e8eec45ed8812",
+    "tests/ui-script.test.ts": "e4d29f504d3d12550963797134fd8e251c515128b3188f7514b30e36a57c5315",
+    "tests/chart-view-demand.test.ts": "3b4bb24cf7ff9aa803bd94a4a525357299694ae10c6f8a09e69cd4314e13f91f",
+    "tests/lazy-import-lifetimes.test.ts": "545fcf6d820a7b29370a58bb25b513b5b7ca81cd48bdf8a700f0a7840ffacf2a",
+    "node_modules/typescript/lib/typescript.js": "3ae902c92cc44dace175c0e69e13a4b0899f6983c6121d76b9ab8dd5795e7675",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "sourcePinCount": 35,
+  "artifactPins": {
+    "candidates/detail-close-hidden-recovery/v3-verified-inputs.json": "661bda39e75e84d1c0d80ff583838317f1a6797885f7cc2a26d644de1413d1fb",
+    "candidates/detail-close-hidden-recovery/serve.v3-verified.ts.before": "27f0ef391470409a2af287ee1113b6da7a84a02a5a1c2a58ebfad2a827cf651e",
+    "candidates/detail-close-hidden-recovery/DetailPanel.svelte.candidate": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55",
+    "candidates/detail-close-hidden-recovery/tests__detail-panel-close-owner.test.ts.current.txt": "9e6cbad01d16f7c804fbf022da39eb6213ef66c86726e626ff0c4af6cf1844f0",
+    "candidates/detail-close-hidden-recovery/v3-to-v4-fixture.patch": "dffb3c1fe84fc10d273f2b79ca457591892951e3e57fc27683297b0729800334",
+    "candidates/detail-close-hidden-recovery/Dialog.svelte.candidate": "cecb013bb41e725f3c4de65c75757ce64c218143368d471f9542230c25b69f0a",
+    "candidates/detail-close-hidden-recovery/single-authority.patch": "0b0ce1db133f14f131ab67957bfc90877c17f43d681c802c7bf46628647f4c9e",
+    "candidates/detail-close-hidden-recovery/tests__fixtures__ui-script.ts.current.txt": "42e7c30df43864f8e565caa28ba66249cbd6d099cf0a5432e8957e60fdf1da39",
+    "candidates/detail-close-hidden-recovery/verify-preparation.ts": "284ea12c13e7080517f9283ded39f11b86f06f02aee9cc5b52d8eaffcfe84098",
+    "candidates/detail-close-hidden-recovery/source-pins.json": "e7ba353de98e598bcfa281be249155599b0c7a5589447f574dc68a37280d5b9d",
+    "candidates/detail-close-hidden-recovery/tests__ui-script.test.ts.current.txt": "e4d29f504d3d12550963797134fd8e251c515128b3188f7514b30e36a57c5315",
+    "candidates/detail-close-hidden-recovery/DetailPanel.svelte.v3-verified": "c1cc3b70c0a5309eaaa681ebe203abf103beb56b43352a919ffc25487f688ba7",
+    "candidates/detail-close-hidden-recovery/api-error-classification.source.ts": "962e8095a06408f58e461007fa4ce963a08b18032375409070ea0c1cb658959d",
+    "candidates/detail-close-hidden-recovery/Dialog.svelte.before": "1e4df07f144e6fd5bf1f5429283849f6e72b1c7d99a4f114b4ad770ae1c3ffbf",
+    "candidates/detail-close-hidden-recovery/DetailPanel.svelte.before": "59c9dc9f338be06b0c6eb680cd65ec31a8eeeb40cd2fe5fbea312f2a5a3a57bb",
+    "candidates/detail-close-hidden-recovery/v3-manual-cleanup-only.patch": "9939d5d83487255c8023526b82e60c3d41e043d470e530b7a97d7bab955d653e",
+    "candidates/detail-close-hidden-recovery/dialog-geometry.test.ts.before": "be287367adc2d9afa31fbab8392d59586860a6918238a6684c39114e2c20c826",
+    "candidates/detail-close-hidden-recovery/preparation-checks.json": "9ef90c750306ef13136cbccbcc20e59b12d5d408e1815e8be3fa84b9bcf250b8",
+    "candidates/detail-close-hidden-recovery/startup.log": "9fb08e9d8a0e7cbb6e9de8b3d48a2443a3201dbe299ff62b830532b4630dc128",
+    "candidates/detail-close-hidden-recovery/maintained-tests.patch": "ba13e437d5e38efb6d02b6156d8e1e12b8e8c6e2103302c5f5b5fac05ae4b2a5",
+    "candidates/detail-close-hidden-recovery/detail-panel-close-owner.test.ts.v3-before": "f0be166ac772ec7abac4e098ef14200ff20db58ea7b64b0a949e0dfb9e2b5218",
+    "candidates/detail-close-hidden-recovery/artifact-manifest.json": "a29bdbf436291c861fc297d86306ffd1d4b8980d22d10a44615dc52fe56bacd4",
+    "candidates/detail-close-hidden-recovery/serve.ts": "22bad0a25c06d4c42cf9423ed8208baba40eeb27f53ba88d0c4f305d5d118406",
+    "candidates/detail-close-hidden-recovery/dialog-geometry.test.ts.proposed": "a5f0db4e7f30c41918bbcba4e9deec2a7b41c75011eb09a50b22ff61285157e6",
+    "candidates/detail-close-hidden-recovery/ui-script.before.ts.txt": "bffed076c4862b09651002a557ef6fa0fb41792e05687b1a6daa6d0e8195b913",
+    "candidates/detail-close-hidden-recovery/verification-plan.json": "611a6dff63a0a425644c4ae35074f70d937fe0a0d0087e9237777cf69c25519d",
+    "candidates/detail-close-hidden-recovery/candidate-manifest.json": "1dfcc7a3b18a2e218ad63429c7620b90de51470006db3b56fb44113809051a61",
+    "candidates/detail-close-hidden-recovery/detail-panel-close-owner.test.ts.proposed": "ce252a66e3f11bac80a5bc4e0367d89316fc2f28f3b90153953fbbf1cbc9a64c",
+    "candidates/detail-close-hidden-recovery/tests__chart-view-demand.test.ts.current.txt": "3b4bb24cf7ff9aa803bd94a4a525357299694ae10c6f8a09e69cd4314e13f91f",
+    "candidates/detail-close-hidden-recovery/tests__lazy-import-lifetimes.test.ts.current.txt": "545fcf6d820a7b29370a58bb25b513b5b7ca81cd48bdf8a700f0a7840ffacf2a",
+    "candidates/detail-close-hidden-recovery/v3-to-v4-maintained-controls.patch": "2fdb053b5196e0f22083929fb94d8bd17e6cd316f84122e0c7b6279987c3770c",
+    "candidates/detail-close-hidden-recovery/root-run-cleanup.json": "a3daa7f61e34e18cf38ba8beaa0bef3eef890c5e818e23774f285435bffea093",
+    "implementation-detail-close.md": "6ff9de2af06e9f93b3037cfa9655894ca33a9afdf075f6af6d1d0b733053928e",
+    "evidence/implementation-detail-close-v4-cua.json": "587afdfafa0812d425f9283d3f5e2302e2ea58e4d2ca99294d18cf1818d49cf7",
+    "proof/detail-close-v4-back.png": "f43fe826d98e2b7f40a7231d813434e30a6536b6b50595062ac51d29c5ca9897",
+    "evidence/implementation-detail-close-applied.json": "eb1fb8d40409395f336197e98d7d90f5c358ecd9da0a62453bbc5430ada2a031",
+    "evidence/implementation-rune-fixture-correction.json": "ad521ef9f7b632001055a01a01a2c34157c22219e3f57eda6c02e6d932286f52",
+    "evidence/implementation-close-reasons-freeze.json": "61576a1f66ab9360b3d670d18fae6d41c5565156c893f50fcabe0afa98473ea0",
+    "evidence/implementation-20261018-close-reasons-source-inventory.json": "cac7cbb1c525e9fec458bfebb72b200b4182b8c88435fb2cd671f8555fe02ff3",
+    "evidence/implementation-20261018-close-reasons-focused.log": "bdd17c05ef3badb1a0469591b9442ddec1a90af63ae40fc95799a7302d042652",
+    "evidence/implementation-20261018-close-reasons-focused-v2.log": "5e00616f55a549b208a313436d485566d96a2999a3c2382f2f41014a784e51fe",
+    "evidence/implementation-20261018-close-reasons-focused-v3.log": "47561e30a51cdb22beac26089e0d8003d7352d29bf4e451480298553a89e2942",
+    "evidence/implementation-20261018-close-reasons-focused-v4.log": "92445908fde2a05b2a60910c5cbde06f0b2b6ca88e5967aafd4a63f7126054ac",
+    "evidence/implementation-20261018-close-reasons-focused-v5.log": "37d8f0e27263b30a69a4e59e28b2c771598943ee443687e09a456479a73cc3b0",
+    "evidence/implementation-20261018-close-reasons-gates.json": "87b01121e2f4f614026001477ca7939f6efc00260924e1c939b592d0cb1f9810",
+    "evidence/implementation-20261018-close-reasons-unit.log": "5e1495aceafcfddf758f5942c3c8a26e611a42d222ea4eeaa341670099647cde",
+    "evidence/implementation-20261018-close-reasons-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "evidence/implementation-20261018-close-reasons-build.log": "b25f2e77107ef3df53b4f246cd2557cf19b66668a3bc34c95817640118a0fb54",
+    "evidence/implementation-20261018-close-reasons-code-inventory.log": "8ba45ace4a12d8a1c2e58eacee3c725a558d0ad5bc7958f8a807598d8cf1e89e",
+    "evidence/implementation-20261018-close-reasons-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "evidence/implementation-20261018-close-reasons-code-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "evidence/implementation-20261018-close-reasons-v2-gates.json": "d4fab6e9f74b49eb454bb1868cedcda9bdf674af17e87eba1906f5c83a89c2f0",
+    "evidence/implementation-20261018-close-reasons-v2-unit.log": "857cec4ab33792ef012d49b49701e11486f42fb12d0f8b008840d04e60add1ef",
+    "evidence/implementation-20261018-close-reasons-v2-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "evidence/implementation-20261018-close-reasons-v2-build.log": "2558beb4996f120a04e5133643a45bc39db1ff42beeb9e761b6e15207e992d40",
+    "evidence/implementation-20261018-close-reasons-v2-code-inventory.log": "8ba45ace4a12d8a1c2e58eacee3c725a558d0ad5bc7958f8a807598d8cf1e89e",
+    "evidence/implementation-20261018-close-reasons-v2-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "evidence/implementation-20261018-close-reasons-v2-code-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "evidence/implementation-close-reasons-normal.json": "7e67d62ea54777ca9e4f22f7c6316fbfbbb9641489b66c282db8ab65eabb70c6",
+    "evidence/implementation-close-reasons-normal-source-check.json": "c4fb03afebea4ead2901ef8ec4fcf6e36188714230c0c64dc0e9c8d949e0be33",
+    "evidence/implementation-close-reasons-normal-overview.png": "18389412143cee42399febc19a5a50f72c94e03e71796614b72f0c2274f1dbeb",
+    "evidence/implementation-close-reasons-normal-watching.png": "66e42b149102fbfffc69dcc813c2468b5268e171372328d54e6800f00265df38",
+    "evidence/implementation-close-reasons-normal-back.png": "20cc15c4062aca57323a3835ac35c8b72edd97e149727d69d631b66c3b51603f",
+    "evidence/implementation-close-reasons-normal-friends.png": "0910baaca39fe33dc6015edd2f6acadbb0e4af8ab5223cdacdf13af38ea21528",
+    "evidence/implementation-close-reasons-normal-tasks.png": "eecdae12965f1c53252f114dcac7c6060d7163eb05451a85ccb2bc3ef73655ff"
+  },
+  "nativeControls": 23,
+  "focusedTests": 32,
+  "focusedAssertions": 338,
+  "commonPassed": 825,
+  "commonGuardedSkips": 715,
+  "commonFailed": 0,
+  "normalAcceptance": true,
+  "actualNaturalHiddenErrorObserved": false,
+  "historicalFilteredBackCauseEstablished": false,
+  "testCompilerCorrection": {
+    "at": "2026-10-18T10:21:52.057608+00:00",
+    "productionCandidateUnchangedSince23NativeControls": true,
+    "failedFocusedRuns": [
+      {
+        "log": "implementation-20261018-close-reasons-focused.log",
+        "pass": 9,
+        "fail": 1,
+        "errors": 1,
+        "cause": "Bun TypeScript conversion changed import quote spelling; fixture single-quote matcher found no presenters."
+      },
+      {
+        "log": "implementation-20261018-close-reasons-focused-v2.log",
+        "pass": 13,
+        "fail": 4,
+        "cause": "Bun TypeScript conversion removed bare refreshKey read before Svelte compiled it; no refresh request occurred in authored fixture."
+      },
+      {
+        "log": "implementation-20261018-close-reasons-focused-v3.log",
+        "pass": 9,
+        "fail": 1,
+        "errors": 1,
+        "cause": "Raw source also contained type-only presenter imports; types must be erased without folding before counting runtime imports."
+      }
+    ],
+    "finalFocused": {
+      "log": "implementation-20261018-close-reasons-focused-v5.log",
+      "pass": 32,
+      "fail": 0,
+      "assertions": 338,
+      "files": 5
+    },
+    "sharedRepair": "Existing TypeScript dev dependency erases types without dropping expression reads; compileRunes and all identified Svelte component preprocessing callers reuse it. Plain non-rune function/class transpilation is unchanged.",
+    "currentSourcePins": {
+      "tests/detail-panel-close-owner.test.ts": "9e6cbad01d16f7c804fbf022da39eb6213ef66c86726e626ff0c4af6cf1844f0",
+      "tests/fixtures/ui-script.ts": "42e7c30df43864f8e565caa28ba66249cbd6d099cf0a5432e8957e60fdf1da39",
+      "tests/ui-script.test.ts": "e4d29f504d3d12550963797134fd8e251c515128b3188f7514b30e36a57c5315",
+      "tests/chart-view-demand.test.ts": "3b4bb24cf7ff9aa803bd94a4a525357299694ae10c6f8a09e69cd4314e13f91f",
+      "tests/lazy-import-lifetimes.test.ts": "545fcf6d820a7b29370a58bb25b513b5b7ca81cd48bdf8a700f0a7840ffacf2a"
+    },
+    "noNewDependency": true
+  },
+  "noNewDependencyOrSchema": true,
+  "normalFunctionalAcceptance": {
+    "receipt": "evidence/implementation-close-reasons-normal.json",
+    "postTrialSourceCheck": "evidence/implementation-close-reasons-normal-source-check.json",
+    "signedInNormalDev": "http://localhost:5173",
+    "startedAt": "2026-10-18T10:16:25.209Z",
+    "completedAt": "2026-10-18T10:22:17.580Z",
+    "functionalPassed": true,
+    "actualMovie": "Yossi & Jagger",
+    "expandedAtContentTopReverseWheel": {
+      "outerBefore": 160,
+      "innerBefore": 0,
+      "outerAfter": 0,
+      "innerAfter": 0
+    },
+    "activityPositiveEmptyPositiveFilters": true,
+    "filteredBackReturnedMovie": true,
+    "ordinaryCloseReturnedFocus": "Learn more",
+    "persistedInboxMediaLinks": 24,
+    "inboxArticleCountIsNoticeCount": false,
+    "jobsAndSchedulesCards": 30,
+    "automaticJobsPaused": true,
+    "friendsAtBothEndpoints": 3,
+    "friendsEndpointIntervalMs": 135308,
+    "exactPollCountOrUninterruptedVisibilityInstrumented": false,
+    "newWarningsErrors": 0,
+    "all577AppSourcesUnchanged": true,
+    "all10FreezePinsUnchanged": true,
+    "finalDialogs": 0,
+    "finalPopovers": 0,
+    "naturalHiddenErrorObserved": false,
+    "historicalFilteredBackCauseEstablished": false,
+    "noPlaybackTrackingSettingsJobOrRequestCommandSubmitted": true,
+    "performanceBenchmark": false
+  },
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/media-navigation.ts": "e9703a6145b81b05a534ccae140d98239a216ae5c130ab140f00414be31dfbaa",
+      "src/lib/ui/components/Dialog.svelte": "cecb013bb41e725f3c4de65c75757ce64c218143368d471f9542230c25b69f0a",
+      "src/lib/ui/components/Shelf.svelte": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4",
+      "src/lib/ui/section-target.ts": "e325668b0e3ae9b5eee6e65bf6b959551560fb1d90916a96f056f367c02a8cf8",
+      "tests/media-navigation.test.ts": "e3f4a22521c8a207019b09fa1bc2e646347622979b4b0c9c491596b3310e092f",
+      "tests/fixtures/ui-script.ts": "42e7c30df43864f8e565caa28ba66249cbd6d099cf0a5432e8957e60fdf1da39"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  }
+}

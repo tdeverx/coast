@@ -2,63 +2,46 @@
   import {openNotifications} from '$lib/ui/panels/notifications.svelte';
   import { onMount } from 'svelte';
   import { useClient } from '$lib/ui/client-context';
+  import { ApiError, refreshAfterChange } from '$lib/ui/client';
+  import { createNotificationToasts, type ToastNotification } from '$lib/ui/controls/notification-toasts';
   import Toast from './Toast.svelte';
 
-  const { preview, change, feedback:delivery } = useClient();
+  const { preview, api, feedback:delivery } = useClient();
 
-  type InboxNotification = {
-    id: string;
-    title: string;
-    body: string | null;
-    level: 'silent' | 'normal' | 'persistent';
-    readAt: Date | string | null;
-    createdAt: Date | string;
-  };
-  let { notifications, initialFailure }: { notifications: InboxNotification[]; initialFailure?:string } = $props();
-  let hidden = $state<string[]>([]),
-    mounted = $state(false);
-  const observed = new Set<string>();
-  const timers = new Map<string, ReturnType<typeof setTimeout>>();
+  let { notifications, initialFailure }: { notifications: ToastNotification[]; initialFailure?:string } = $props();
+  let mounted = $state(false), visible = $state.raw<ToastNotification[]>([]);
+  const owner = Symbol('notification toast persistence');
+  const toasts = createNotificationToasts({
+    preview,
+    hide: (ids,signal) => api('notifications/toast-hidden', {ids}, 'POST', {signal}),
+    dismiss: async (id,signal) => {
+      try { await api(`notifications/${id}`, {action:'dismiss'}, 'POST', {signal}); }
+      catch (cause) {
+        // A lost acknowledgement can leave the notice dismissed, deleted or no longer visible.
+        // The existing API's 404 is terminal unavailability, not proof of a new successful write.
+        if (!(cause instanceof ApiError && cause.status === 404)) throw cause;
+      }
+    },
+    refresh: () => refreshAfterChange('notifications'),
+    refreshFailure: () => delivery.notify('The page could not refresh; reload to see the latest data.'),
+    changed: () => { visible = toasts.visible; },
+    failure: (text,retry) => delivery.failure(text,retry,owner),
+    recovered: () => delivery.clear(owner),
+  });
   const feedback = $derived(delivery.activeHost === null ? delivery.current : null);
   const serverFailure = $derived(!mounted ? initialFailure : undefined);
   onMount(() => {
-    hidden = notifications
-      .filter((n) => n.level === 'normal' && Date.now() - new Date(n.createdAt).getTime() > 30000)
-      .map((n) => n.id);
+    toasts.mount(notifications);
     mounted = true;
-    return () => {
-      for (const timer of timers.values()) clearTimeout(timer);
-      timers.clear();
-      delivery.clear();
-    };
+    return () => { toasts.dispose(); delivery.clear(); };
   });
-  const visible = $derived(
-    mounted
-      ? notifications
-          .filter((n) => !n.readAt && !hidden.includes(n.id) && n.level !== 'silent')
-          .slice(0, 3)
-      : []
-  );
-  $effect(() => {
-    for (const n of visible) {
-      if (n.level === 'normal' && !observed.has(n.id)) {
-        observed.add(n.id);
-        timers.set(n.id,setTimeout(() => {
-          timers.delete(n.id);
-          hidden = [...hidden, n.id];
-        }, 7000));
-      }
-    }
-  });
+  $effect(() => { toasts.update(notifications); });
 </script>
 
 {#if visible.length || feedback || serverFailure}<div class="toasts" aria-live="polite">
-    {#if feedback}<Toast text={feedback.text} kind={feedback.kind} error={feedback.error} busy={feedback.busy} actionLabel={feedback.undo ? 'Undo' : 'Retry'} onaction={feedback.undo || feedback.retry ? delivery.act : undefined} ondismiss={()=>delivery.clear()} dismissLabel="Dismiss action feedback" />{/if}
+    {#if feedback}<Toast text={feedback.text} kind={feedback.kind} error={feedback.error} busy={feedback.busy} actionLabel={feedback.undo ? 'Undo' : feedback.actionLabel ?? 'Retry'} onaction={feedback.undo || feedback.retry ? delivery.act : undefined} ondismiss={()=>delivery.clear()} dismissLabel="Dismiss action feedback" />{/if}
     {#if serverFailure&&!feedback}<Toast text={serverFailure} kind="error" />{/if}
-    {#each visible as n (n.id)}<Toast text={n.title} description={n.body} onopen={()=>{if(!preview)openNotifications();}} dismissLabel={`Dismiss notification: ${n.title}`} ondismiss={()=>{
-      hidden=[...hidden,n.id];
-      if(n.level==='persistent')void change(`notifications/${n.id}`,{action:'dismiss'}).catch(()=>{hidden=hidden.filter(id=>id!==n.id);});
-    }} />{/each}
+    {#each visible as n (n.id)}<Toast text={n.title} description={n.body} onopen={()=>{if(!preview)openNotifications();}} dismissLabel={`Dismiss notification: ${n.title}`} ondismiss={()=>toasts.dismiss(n)} />{/each}
   </div>{/if}
 
 <style>

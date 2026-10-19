@@ -8,11 +8,13 @@ test('stalled shared cleanup never delays ordinary maintenance and timer ticks c
 import {mock} from 'bun:test';
 const root=${JSON.stringify(root)},lib=root+'src/lib/';
 const deferred=()=>{let resolve;const promise=new Promise(done=>resolve=done);return {promise,resolve};};
-const cleanupGate=deferred(),scheduleGate=deferred();
+const cleanupGate=deferred(),scheduleGate=deferred(),avatarGate=deferred();
+let avatars=0,avatarStopped=false;
 let cleanup=0,schedules=0,retention=0,developerMode=false,timer,cleared=false,logs=[];
 let cleanupResult=()=>cleanupGate.promise;
 const check=(condition,detail)=>{if(!condition)throw new Error(detail+' '+JSON.stringify({cleanup,schedules,retention}));};
 const settle=async()=>{for(let i=0;i<60;i++)await Promise.resolve();};
+mock.module(lib+'core/profile/avatar-storage.server.ts',()=>({pruneUnusedAvatars:()=>{avatars++;return avatarGate.promise;},stopAvatarSweep:async()=>{avatarStopped=true;avatarGate.resolve({scanned:0,removed:0,skipped:0,more:false});}}));
 mock.module(lib+'sharing/leases.server.ts',()=>({expireSharedViewers:()=>{cleanup++;return cleanupResult();}}));
 mock.module(lib+'server/storage/retention.server.ts',()=>({pruneTransientRecords:async()=>{retention++;return {busy:false,removed:0,expired:0,more:false};}}));
 mock.module(lib+'server/config.ts',()=>({getConfig:async()=>({developerMode})}));
@@ -43,6 +45,7 @@ try{
  check(cleanup===5&&schedules===6,'failed cleanup did not release its retry slot');
 }finally{maintenance.stopProviderMaintenance();}
 check(cleared,'maintenance timer was not stopped');
+check(avatars===1&&avatarStopped,'avatar cleanup overlapped or failed to release its owner');
 console.log(JSON.stringify({cleanup,schedules,retention,cleared}));
 `;
  const child=Bun.spawn([process.execPath,'run','-'],{cwd:root,stdin:'pipe',stdout:'pipe',stderr:'pipe',env:{...process.env,COAST_DB_TEST:'0',COAST_PROVIDER_HTTP_TEST:'0'}});

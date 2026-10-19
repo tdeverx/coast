@@ -9,7 +9,7 @@ export async function handleRequests(context: ApiContext): Promise<Response | un
  let result: unknown;
  if (path[0] === 'requests') {
       if (path[1] === 'options' && method === 'GET') {
-        const options = await requestOptions(uid, uuid(url.searchParams.get('mediaId')));
+        const options = await requestOptions(uid, uuid(url.searchParams.get('mediaId')), context.request.signal);
         result = {
           destinations: options.map((d) => ({
             id: d.instanceId,

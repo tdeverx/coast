@@ -51,19 +51,29 @@ export function browserDiagnostic(event: DiagnosticEvent, fields: Record<string,
   }
 }
 export function installBrowserDiagnostics() {
+  let stopped = false, pending = false;
+  const controller = new AbortController();
   const onError = () => browserDiagnostic('browser.error', { failure: 'unexpected' });
   const onRejection = () => browserDiagnostic('browser.rejection', { failure: 'unexpected' });
   window.addEventListener('error', onError, true);
   window.addEventListener('unhandledrejection', onRejection);
   const refresh = () => {
-    void fetch('/api/v1/diagnostics', { headers: diagnosticHeaders() })
-      .then(receiveDiagnosticLevel)
-      .catch(() => {});
+    if (stopped || document.hidden || pending) return;
+    pending = true;
+    void fetch('/api/v1/diagnostics', { headers: diagnosticHeaders(), signal: controller.signal })
+      .then(response => { if (!stopped) receiveDiagnosticLevel(response); })
+      .catch(() => {})
+      .finally(() => { pending = false; });
   };
+  const visible = () => { if (!document.hidden) refresh(); };
+  document.addEventListener('visibilitychange', visible);
   refresh();
   const timer = setInterval(refresh, 30_000);
   return () => {
+    stopped = true;
+    controller.abort();
     clearInterval(timer);
+    document.removeEventListener('visibilitychange', visible);
     window.removeEventListener('error', onError, true);
     window.removeEventListener('unhandledrejection', onRejection);
   };

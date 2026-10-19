@@ -1,0 +1,62 @@
+{
+  "status": "partial-actual-data-verified",
+  "implementationApplied": true,
+  "findingIds": [
+    "MIN-04"
+  ],
+  "sourcePins": {
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "tests/notification-preferences.test.ts": "284bd2adb856229a4e8b0b94b1a3b654cb115b711d97412c8429946f4d8a29ce",
+    "tests/notification-batching.test.ts": "b9c971075c2849f9fc0ca8c1548afbced944dc59546a3c2a9fe06f7ea2224d0b",
+    "docs/audits/2026-10-17-app-performance/probes/notification-preferences-real.ts": "df950cddfece4f31706e086d208141bf67a63f7517ded3f0208dca090d27d073"
+  },
+  "change": "Read only notificationsSilenced, notificationLevel and social.notifications through one shared SQL projection in notifyMany and broadcast. All delivery policy, fresh config reads, per-recipient invocation, batching, partial-commit/error order, visibility SQL and upsert behavior retained.",
+  "actualEvidence": "evidence/implementation-notification-preferences-actual.json",
+  "actualResult": {
+    "accounts": 4,
+    "savedNotices": 518,
+    "policyComparisons": 518,
+    "compiledInsertStatementsIdentical": 6,
+    "executedInserts": 0,
+    "beforeMappedJsonBytes": 45330,
+    "afterMappedJsonBytes": 583
+  },
+  "supplementary": {
+    "tests": 2,
+    "assertions": 9,
+    "jsonPolicyCases": 48,
+    "independentSourceReview": "providers_jobs_audit approved d004d879a1194caef408f783fadb838198adf8b0d3dbb26bc60b0fb2badd57cc"
+  },
+  "limits": [
+    "Current actual account preferences contain no silenced or level-overridden users; authored JSON edge cases separately cover those branches.",
+    "No real source disconnect/disable/delete or broadcast command was invoked. Per-recipient query amplification and failure/partial-commit policy remain open.",
+    "Projection reduces selected settings transfer, but adds JSONB construction/extraction; retained local plans and alternating samples are not universal speed or resource guarantees.",
+    "READ ONLY and intercepted INSERTs prove no writes were executed. This is not full delivery/upsert mutation acceptance.",
+    "EXPLAIN projection execution includes JSON extraction and detoasting; selecting raw settings can defer detoasting to output serialization. Plan buffer/CPU differences cannot be compared as total end-to-end work.",
+    "First two saved failed receipts reflect pre-encoded fixture JSON being treated as a JSON string; actual518 comparisons already passed. Corrected authored literal fixture construction passes48cases. A third transient driver-boolean binding attempt was not retained separately; no source regression was inferred."
+  ],
+  "updatedAt": "2026-10-18T01:17:23.225506+00:00",
+  "independentReportReview": "providers_jobs_audit read-only coherence review passed after actual receipt and full gates.",
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/notifications/index.ts": {
+        "before": "d004d879a1194caef408f783fadb838198adf8b0d3dbb26bc60b0fb2badd57cc",
+        "after": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "src/lib/server/notifications/index.ts": {
+        "before": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+        "after": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  }
+}

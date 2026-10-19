@@ -1,0 +1,660 @@
+{
+  "schemaVersion": 1,
+  "finding": "PJ-10",
+  "title": "Actual complete timing readers match; terminal lastRuns reduces work with I1 while local branch adds 28 hits",
+  "status": "private_other_reader_candidate_positive_no_production_adoption",
+  "implementationApplied": false,
+  "productionSourceChange": false,
+  "productionSchemaChange": false,
+  "privateDdlExperiment": true,
+  "sourcePins": {
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/auth/index.ts": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d",
+    "src/lib/providers/job-timing.server.ts": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+    "src/lib/providers/tasks.ts": "0f0c3adf6584398d2d5a28fd9d2c418c5077edda694bcb5c54131f9f318a85f8",
+    "src/lib/providers/task-timing.ts": "41ffc963a7a1bda8642e3fe56c6b0bb28f0b6eb16dd9dc0f7cf12386aada36b9",
+    "src/lib/providers/schedule.ts": "26b7776a5db5b4a10df04d1b38def92d785bf401a6658a1e5128c7c69f7d8164",
+    "src/lib/providers/job-policy.ts": "58810bbdea1217109d0ffce9384c62bd770270afcba8fcdc5e7251773492ad66",
+    "src/lib/providers/jellyfin/companion.ts": "18e4854d9044543725c8a49d60edee1223c1689952fc1c269860ff74a5e6ea99",
+    "src/lib/social/taste-cache.server.ts": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "drizzle/0015_maintenance_indexes.sql": "c58c2a8f79d2b2a8e522e206c04495d5ed29ed45c7b74d0c8a4b4165989dea27",
+    "drizzle/0055_bounded_read_indexes.sql": "e716c1c956be6833b7272f5622a080ed8383bdc3d478a5318ab6bc96a4fef936",
+    "drizzle/0058_feature_controls.sql": "3da7e76b2d95d3cb3624d6760ffac3c2554f9c9323aea2b4d1e9fb0169e1567e"
+  },
+  "sourcePinCount": 15,
+  "sourcePinBoundary": "Fifteen explicit read-owner/dependency/schema/migration pins, not every transitive module or whole-app performance verification.",
+  "coverageSourcePins": {
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "src/lib/server/notifications/inbox.ts": "c8d44c3f7bc05ca7331a333bbdbcfff5d7f8dc1bd1178bf8eac957e7e6c48fdf",
+    "src/lib/providers/job-timing.server.ts": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+    "src/lib/providers/seerr/requests.server.ts": "b7c80ac2400e66f245bd4ab134188f0eaed018bdf7ea23e95dbeff625c140685",
+    "src/lib/providers/connections.server.ts": "4ea7ef7b06a8dc16e3800a34b0c58f7ca7446861a3d17cb5b3ecfe6a8830efc1",
+    "src/lib/catalogue/maintenance.server.ts": "48bc05752d52e3e0813996a34b0e399af2ecd38cc9a879b553f81f9afaf05dd8",
+    "src/lib/providers/steam/sync.server.ts": "da87cd5ba1336c3ddaaa953f6fdd9397ddc79c0640b38979202eb274fe6ba4c1",
+    "src/lib/experiments/planning.server.ts": "aef16dae069ac1f18484e4666887da1cc6572d95d803e8e43c5ea8ba5ed850a9",
+    "src/lib/providers/maintenance.server.ts": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b",
+    "src/lib/providers/jellyfin/updates.server.ts": "568108807e944df42b0d0203fd0040a7b49d70a20f710a75b0472804c39ba50f",
+    "src/lib/providers/jellyfin/stream-history.server.ts": "243f20cee43e4d31116169355379072931ed8170cad4ef44f590608e6fb32453",
+    "src/lib/sync/jellyfin.server.ts": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
+    "src/lib/sync/jellyfin-playback.server.ts": "7eed2b4b624f01ead9425a456fdee2a8b656aa59c586fdd68034d0d6f336ff4d",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/queue/execution.ts": "ea415b763273144b794cdc759954fb9a1397a97d2b32708689c6ebb855f64ec2",
+    "src/lib/server/storage/retention.server.ts": "50b898518a5ac21573ed69ae514c90b9e27062acd1aeb35a78b2affde3e04ad1",
+    "src/lib/server/public-api/webhooks.server.ts": "70c4d1ea244d7e3c723bb6fda6cb05c51300046c511bc6803667daf27d69aefb",
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "src/lib/sync/changes.server.ts": "5b781dfbf935afa83d7fa54b8446fc9d4830d7f375d26f6c3658ba00191868af",
+    "src/lib/application/feature-transition.server.ts": "62c2509fb4edb4cd95a36547a85990d2d400977a489400c4fdfe4152c9941b5c",
+    "src/lib/application/streams.server.ts": "55f29d818b5076b5eb3c90dc541d675be3ddf402a4720486f83e859ea0e2d334",
+    "src/lib/application/provider-sources.server.ts": "5dc4f1ab35e1a47e4fb1728d45a367106015f787297f18714d425a3cc56f9f2c",
+    "src/lib/sync/trakt-staging.server.ts": "3ff5497378a116f97b1073a0ea871f000ab7c08abd086cc23c21cb16d93f5413",
+    "src/lib/server/auth/onboarding.ts": "ece68e11f072f86d1aeb5ac26cdbf4b4d2024ab8c5d0508de0f6613b142f227b",
+    "src/lib/sync/values.server.ts": "46363d9edcbd1692a6492c14624a5d80bb68546579a7ef54826aaa0c035641c4",
+    "src/lib/sync/trakt-lists.server.ts": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb",
+    "src/lib/sync/history-removal.server.ts": "10f62835a0d8c9178c608b3f65cff66331f42fe7f2df8e4b8e9a18b21491017e",
+    "src/lib/benchmarks/service.server.ts": "2b20918bb628053f96a9a703faedc5b795f06bb75b06d2a55a4810661e82f835",
+    "src/lib/recommendations/providers.server.ts": "0a607de5b0e22c7bb30e755c52c44623a4acaac472d4eea3ff21af81babee703",
+    "src/lib/social/taste-cache.server.ts": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "src/lib/social/presence.server.ts": "64c185536df3632ed3da595d55cfb399afcc4e1fbfb933f3f8bba1537d71fcc3"
+  },
+  "coverageSourceFileCount": 31,
+  "writerSourcePins": {
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "src/lib/server/queue/execution.ts": "ea415b763273144b794cdc759954fb9a1397a97d2b32708689c6ebb855f64ec2",
+    "src/lib/providers/connections.server.ts": "4ea7ef7b06a8dc16e3800a34b0c58f7ca7446861a3d17cb5b3ecfe6a8830efc1",
+    "src/lib/application/feature-transition.server.ts": "62c2509fb4edb4cd95a36547a85990d2d400977a489400c4fdfe4152c9941b5c",
+    "src/lib/application/provider-sources.server.ts": "5dc4f1ab35e1a47e4fb1728d45a367106015f787297f18714d425a3cc56f9f2c",
+    "src/lib/sync/changes.server.ts": "5b781dfbf935afa83d7fa54b8446fc9d4830d7f375d26f6c3658ba00191868af",
+    "src/lib/sync/history-removal.server.ts": "10f62835a0d8c9178c608b3f65cff66331f42fe7f2df8e4b8e9a18b21491017e",
+    "src/lib/sync/trakt-lists.server.ts": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb",
+    "src/lib/providers/seerr/requests.server.ts": "b7c80ac2400e66f245bd4ab134188f0eaed018bdf7ea23e95dbeff625c140685",
+    "drizzle/0016_collection_and_music.sql": "911f5a3f1f726e7496edd369e6741eb4ef46755ac151960bd7023141ec26863b",
+    "drizzle/0045_trakt_import_staging.sql": "e6d6793b83f6add894a424c1e8a266014764214104090e8d092e52b3b03f02fe",
+    "drizzle/0046_provider_job_snapshots.sql": "ef2bb871b060687b19a769d6aa02e213306208bc4a3c2694ce8c5d9941533768"
+  },
+  "evidenceRefs": [
+    "probes/task-timing-index-consumers.ts",
+    "evidence/task-timing-index-consumers-actual.json",
+    "evidence/task-timing-index-consumers-source-coverage.json",
+    "evidence/task-timing-index-consumers-syntax.json",
+    "candidates/task-timing-index-consumers/plan.json",
+    "candidates/task-timing-index-consumers/plan.md",
+    "task-history-index-matrix.md",
+    "task-history-q1-current-index.md",
+    "task-history-q1b-current-index.md",
+    "candidates/task-history-next/index.sql",
+    "migration-provenance.md"
+  ],
+  "artifactPins": {
+    "probes/task-timing-index-consumers.ts": "ff3cfab51f879489f5fd00df329fe3fd4d93b031b6d799743dd96d17521476cd",
+    "evidence/task-timing-index-consumers-actual.json": "7dc4ed72090bab4635028cc5a175519ea36d9fbbbd4c011cd91999b45063c85b",
+    "evidence/task-timing-index-consumers-source-coverage.json": "35a87ec56edb995e9db65f8f62c47d67a070e12e6f8561c3030e97936a318bc3",
+    "evidence/task-timing-index-consumers-syntax.json": "b39a4b7b67edd0c173ad00045d1db8d1deb49977ebfad0b9b76074404cf99f19",
+    "candidates/task-timing-index-consumers/plan.json": "1c6222f5ea49dedc02024c3a75900a159aeae02543b461f2794c9b6c44bd3643",
+    "candidates/task-timing-index-consumers/plan.md": "446306e53d0e931be9c73b8243480de5773df5015e90b661f1ff32d9ad045c4c",
+    "task-timing-index-consumers.md": "1e39c95a527dde71b435aec27a47b2c88d68617ec0a5abc5efb313b763105cc1"
+  },
+  "immutablePreviousPins": {
+    "docs/audits/2026-10-17-app-performance/evidence/task-history-index-matrix-actual.json": "51fb19b4f0d39c51c80e827cd86ba52d0c9ffc757482f678d74d2f37663a1731",
+    "docs/audits/2026-10-17-app-performance/evidence/task-history-q1-current-index-actual.json": "fca1ac5b93cc44fedab970f8c4c63128ac506b3bc53132e2662cc0d12b063504",
+    "docs/audits/2026-10-17-app-performance/evidence/task-history-q1b-current-index-actual.json": "fbd5d3d46df213762320a4ecc7fa68d1c09534e80f2257c1bd0a49ad211ca555"
+  },
+  "execution": {
+    "probeSha256": "ff3cfab51f879489f5fd00df329fe3fd4d93b031b6d799743dd96d17521476cd",
+    "parseOnly": "passed before DB; no probe import in syntax check",
+    "actual": "passed",
+    "queriesPerPhase": 11,
+    "fivePlansPerPhase": 5,
+    "ownerInvocationsPerPhase": 2,
+    "tasksMatrixRerun": false,
+    "repeatedTimings": false,
+    "settings": {
+      "read_only": "off",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB",
+      "server_version_num": "170011"
+    },
+    "DateNow": {
+      "privateDateNowFixed": true,
+      "realDateConstructorsPreserved": true,
+      "sqlTransactionTimeShared": true,
+      "scope": "Only this private process; full existing exported read owners are invoked unchanged. Normal route clock, HTTP request configuration sharing and live scheduling are not reproduced."
+    }
+  },
+  "completeOutcomes": {
+    "orderedJobTimingRows": 37,
+    "completeTasteResponse": true,
+    "displayedLastRuns": 18,
+    "positiveCompletionRows": 12,
+    "completeOrderedJobTimingsAndTasteJob": true,
+    "completeOrderedLastRuns": true,
+    "completeAllQueryResultMultisets": true,
+    "queriesPerPhase": 11,
+    "plansPerPhase": 5
+  },
+  "readPlans": [
+    {
+      "family": "jobTimings:evidence",
+      "I0": {
+        "onePlanExecutionMs": 19.113,
+        "sharedHitBlocks": 5482,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 73,
+        "largestReportedSortKiB": 25,
+        "sortSpaceKiBLoopProductNotPeak": 1825,
+        "heapFetchesSum": 92,
+        "historyScanReturnedRowsApprox": 47058,
+        "indexI1Admitted": false
+      },
+      "I1": {
+        "onePlanExecutionMs": 20.087,
+        "sharedHitBlocks": 5482,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 73,
+        "largestReportedSortKiB": 25,
+        "sortSpaceKiBLoopProductNotPeak": 1825,
+        "heapFetchesSum": 92,
+        "historyScanReturnedRowsApprox": 47058,
+        "indexI1Admitted": false
+      },
+      "wholeFamilyRootVisitsIncreased": false
+    },
+    {
+      "family": "jobTimings:lastRuns",
+      "I0": {
+        "onePlanExecutionMs": 8.935,
+        "sharedHitBlocks": 5323,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 33,
+        "largestReportedSortKiB": 28,
+        "sortSpaceKiBLoopProductNotPeak": 8603,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 25326,
+        "indexI1Admitted": false
+      },
+      "I1": {
+        "onePlanExecutionMs": 2.322,
+        "sharedHitBlocks": 2496,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 33,
+        "largestReportedSortKiB": 28,
+        "sortSpaceKiBLoopProductNotPeak": 728,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 2016,
+        "indexI1Admitted": true
+      },
+      "wholeFamilyRootVisitsIncreased": false
+    },
+    {
+      "family": "tasteJob:completed",
+      "I0": {
+        "onePlanExecutionMs": 1.066,
+        "sharedHitBlocks": 669,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 1,
+        "largestReportedSortKiB": 25,
+        "sortSpaceKiBLoopProductNotPeak": 25,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 24,
+        "indexI1Admitted": false
+      },
+      "I1": {
+        "onePlanExecutionMs": 1.134,
+        "sharedHitBlocks": 669,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 1,
+        "largestReportedSortKiB": 25,
+        "sortSpaceKiBLoopProductNotPeak": 25,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 24,
+        "indexI1Admitted": false
+      },
+      "wholeFamilyRootVisitsIncreased": false
+    },
+    {
+      "family": "tasteJob:lastRun",
+      "I0": {
+        "onePlanExecutionMs": 0.981,
+        "sharedHitBlocks": 669,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 1,
+        "largestReportedSortKiB": 25,
+        "sortSpaceKiBLoopProductNotPeak": 25,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 24,
+        "indexI1Admitted": false
+      },
+      "I1": {
+        "onePlanExecutionMs": 1.041,
+        "sharedHitBlocks": 669,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 1,
+        "largestReportedSortKiB": 25,
+        "sortSpaceKiBLoopProductNotPeak": 25,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 24,
+        "indexI1Admitted": false
+      },
+      "wholeFamilyRootVisitsIncreased": false
+    },
+    {
+      "family": "tasteJob:active",
+      "I0": {
+        "onePlanExecutionMs": 0.008,
+        "sharedHitBlocks": 1,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 0,
+        "largestReportedSortKiB": 0,
+        "sortSpaceKiBLoopProductNotPeak": 0,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 0,
+        "indexI1Admitted": false
+      },
+      "I1": {
+        "onePlanExecutionMs": 0.008,
+        "sharedHitBlocks": 1,
+        "sharedReadBlocks": 0,
+        "tempReadBlocks": 0,
+        "tempWrittenBlocks": 0,
+        "sortOutputRowsApprox": 0,
+        "largestReportedSortKiB": 0,
+        "sortSpaceKiBLoopProductNotPeak": 0,
+        "heapFetchesSum": 0,
+        "historyScanReturnedRowsApprox": 0,
+        "indexI1Admitted": false
+      },
+      "wholeFamilyRootVisitsIncreased": false
+    }
+  ],
+  "lastRunsBranchTradeoff": {
+    "connectedRootSharedHits": {
+      "I0": 3831,
+      "I1": 976
+    },
+    "localRootSharedHits": {
+      "I0": 1492,
+      "I1": 1520,
+      "increase": 28
+    },
+    "localBitmapIndexSharedHits": {
+      "I0": 168,
+      "I1": 196
+    },
+    "explanation": "Connected repeated bitmap/sort becomes ordered normal IndexScan; local bitmap heap/sort retains residual filtering and admits I1 at slightly higher index work. No automatic index-only or zero heap claim."
+  },
+  "metricsLimits": [
+    "Query-root buffers are not added from child nodes. All measured read/temp blocks are zero; visits here are shared hits.",
+    "Returned-row and sort-row loop products use rounded EXPLAIN averages, not exact visits/CPU/allocation. Sort space loop product is not peak memory.",
+    "Heap Fetches only reports index-only-node counter; a zero for normal IndexScan/BitmapHeapScan does not mean no heap work.",
+    "One descriptive EXPLAIN per family/phase, no causal before/after index latency or statistical regression/throughput. MetadataDue outcome reads are not attributed I1 improvement."
+  ],
+  "census": {
+    "actions": 25891,
+    "terminal": 25891,
+    "active": 0,
+    "pending": 0,
+    "running": 0,
+    "failed": 0,
+    "null_connection": 2054,
+    "null_generation": 2054,
+    "dangling_connection": 0,
+    "obsolete_generation": 0
+  },
+  "topSuccessTimestampTies": {
+    "taste": {
+      "top_success_rows": 1,
+      "distinct_outcomes": 1
+    },
+    "connectedCompletionScopes": {
+      "scopes": 35,
+      "with_success": 22,
+      "tied_top_scopes": 0,
+      "differing_outcome_top_scopes": 0
+    },
+    "localInstanceCompletionScopes": {
+      "scopes": 3,
+      "with_success": 2,
+      "tied_top_scopes": 0,
+      "differing_outcome_top_scopes": 0
+    },
+    "missingAndJsonNullOutcomesCoalescedByArray": true,
+    "scope": "Exact current succeeded completion admission scopes; no row IDs, timestamps or payload values retained. Connected/local jobTimings completion reads consume only the tied timestamp. The local completion scope intentionally does not require NULL connection_id because current SQL does not.",
+    "underspecifiedTasteSelection": "tasteJob and scheduleTasteRefresh choose latest succeeded updated_at without an ID tiebreak and consume outcome. Different outcomes at the maximum timestamp can change the selected interval when planner choices change. This probe does not rewrite SQL or call the scheduler.",
+    "naturalDifferingTasteTopOutcome": false,
+    "limit": "A zero differing-tie census only bounds this saved snapshot; it is not a deterministic future selection contract. No tied cohort is fabricated."
+  },
+  "instanceReadiness": [
+    {
+      "provider": "comic-vine",
+      "instances": 1,
+      "enabled": 1,
+      "configured": 1
+    },
+    {
+      "provider": "igdb",
+      "instances": 1,
+      "enabled": 1,
+      "configured": 1
+    },
+    {
+      "provider": "jellyfin",
+      "instances": 1,
+      "enabled": 1,
+      "configured": 0
+    },
+    {
+      "provider": "seerr",
+      "instances": 1,
+      "enabled": 1,
+      "configured": 1
+    },
+    {
+      "provider": "steam",
+      "instances": 1,
+      "enabled": 1,
+      "configured": 1
+    },
+    {
+      "provider": "tmdb",
+      "instances": 1,
+      "enabled": 1,
+      "configured": 1
+    },
+    {
+      "provider": "trakt",
+      "instances": 1,
+      "enabled": 1,
+      "configured": 1
+    }
+  ],
+  "indexBuild": {
+    "sourceSha256": "92e1c1446df2efd5b6f9639640df68911afb8b8a53c75d4e5990ce1cbffcba46",
+    "executedDdlSha256": "9d23ce8e448c4a35ee031e746b97b17c7d2cbfa5d8b585760e6f9f173f0b00c4",
+    "insideRollbackTransaction": true,
+    "clientObservedBuildMs": 23.753208000000086,
+    "index_bytes": "2433024",
+    "indisvalid": true,
+    "indisready": true,
+    "indislive": true,
+    "definition": "CREATE INDEX coast_audit_outbox_terminal_order_idx ON public.outbox_actions USING btree (connection_id, kind, updated_at DESC, id DESC) INCLUDE (account_generation) WHERE (state = ANY (ARRAY['succeeded'::text, 'failed'::text, 'cancelled'::text]))"
+  },
+  "restoration": {
+    "allTableLogicalMultisetsEqual": true,
+    "sequencesEqual": true,
+    "catalogAndExistingIndexDefinitionsEqual": true,
+    "auditIndexAbsent": true,
+    "tables": 102,
+    "rows": 1864145,
+    "beforeDigest": "e8402386d9d8db39b2041d80936f579eb4a882fe01c35f62aef24ca2883fe890",
+    "afterDigest": "e8402386d9d8db39b2041d80936f579eb4a882fe01c35f62aef24ca2883fe890",
+    "samePhysicalBackend": true
+  },
+  "poolClosed": true,
+  "networkCalls": 0,
+  "readinessGaps": [
+    "No natural active/failed timing outcomes, pending/running transition writer, stale-account generation or dangling-FK cohort",
+    "No normal route/browser/job execution, scheduler work, scheduling cadence, private provider response or concurrency throughput",
+    "I1 omits state/payload/last_error; terminal lastRuns requires heap fields and succeeded-only readers can require state heap checks. Existing succeeded-generation partial index stays and may be better.",
+    "Only these two complete owners and five plans measured; 31-file potential-reader inventory is source coverage, not universal regression acceptance."
+  ],
+  "consumerSemantics": [
+    {
+      "path": "src/lib/providers/job-timing.server.ts",
+      "line": 15,
+      "export": "jobTimings",
+      "caller": "src/routes/settings/[[section]]/+page.server.ts:92 (Jobs section only; do not invoke loader, scheduler or queue)",
+      "reads": [
+        "actual getConfig",
+        "provider instances",
+        "connected non-disabled-user accounts, live/evidence/conflict subqueries",
+        "maintenance evidence: connected succeeded/latest-any-state/active plus local TMDB/IGDB succeeded/active",
+        "metadataDue full retained TMDB snapshot/feature query",
+        "terminal lastRuns"
+      ],
+      "lastRunsContract": "Every retained connection \u00d7 distinct service-task kinds, terminal succeeded/failed/cancelled, NULL or current account generation, newest updated_at then id; UNION ALL null-connection instance-payload lanes for exactly tmdb.refresh/tmdb.recommendations/igdb.recommendations/igdb.steam-metadata matching provider; DISTINCT ON(instance_id,kind), newest at/id. All connection statuses/users remain admitted as current SQL states. State/outcome/error are real projected fields.",
+      "preserve": "All complete ordered JobTiming rows, reason/nextAt/lastAt/completed/fresh/reviews/eligibility/lastRun fields, configuration/feature/companion/account/source/schedule/developer-mode policy. Unscoped task behavior and stale generation filtering unchanged."
+    },
+    {
+      "path": "src/lib/social/taste-cache.server.ts",
+      "line": 22,
+      "export": "tasteJob",
+      "caller": "src/routes/settings/[[section]]/+page.server.ts:91 (Jobs section only)",
+      "reads": [
+        "actual getConfig",
+        "saved taste-refresh schedule",
+        "succeeded completion timestamp/outcome ordered updated_at DESC",
+        "terminal lastRun ordered updated_at DESC,id DESC",
+        "pending/running/failed active existence"
+      ],
+      "preserve": "Complete schedule and timing DTO, personalisation/developer-mode/enabled/active gates, default schema and 1-minute deferred-or-checked>=10 interval. Never invoke updateTasteSchedule/scheduleTasteRefresh/runTasteRefresh/refreshTasteCaches."
+    }
+  ],
+  "otherReaderScope": {
+    "coverageFile": "/private/tmp/coast-job-timing-index-coverage.json",
+    "files": 31,
+    "nextSafeFamilyIfNeeded": [
+      "maintenance generation-split succeeded last timestamps (extract read statement only, never scheduleMaintenance)",
+      "recommendation scheduling succeeded maxima (extract read statement only, never scheduling owner)",
+      "queue bootstrap succeeded existence (read-only query only, never claim or worker)",
+      "Jellyfin outstanding completed/failed existence (read-only query only, never companion apply/poll)"
+    ],
+    "predicateLimits": "Succeeded and explicit failed/subset predicates can logically imply I1 terminal predicate, subject to planner parameterization. All-state latest, state<>running, pending/running-only and mixed active subsets do not imply the entire partial-index predicate. Do not assert universal non-admission of composite queries containing eligible subqueries."
+  },
+  "writerObligations": [
+    {
+      "refs": [
+        "src/lib/server/queue/index.ts:140",
+        "src/lib/server/queue/index.ts:146"
+      ],
+      "family": "enqueue/compaction",
+      "effect": "New pending row is outside I1. Replaced pending\u2192cancelled with updated_at inserts terminal entry; account generation BEFORE INSERT trigger remains authoritative."
+    },
+    {
+      "refs": [
+        "src/lib/server/queue/index.ts:248",
+        "src/lib/server/queue/index.ts:250",
+        "src/lib/server/queue/index.ts:252",
+        "src/lib/server/queue/index.ts:315",
+        "src/lib/server/queue/execution.ts:61"
+      ],
+      "family": "claim/heartbeat/checkpoint",
+      "effect": "Pending/running changes mostly outside I1; failed\u2192cancelled inserts/rekeys. Heartbeat locked_at-only and payload-only promotions do not add I1 columns, but real checkpoint also changes already-indexed updated_at. Current corpus has no eligible running writer."
+    },
+    {
+      "refs": [
+        "src/lib/server/queue/index.ts:339",
+        "src/lib/server/queue/index.ts:368",
+        "src/lib/server/queue/index.ts:405",
+        "src/lib/server/queue/index.ts:627",
+        "src/lib/server/queue/index.ts:660"
+      ],
+      "family": "completion/failure/yield/cancel/retry",
+      "effect": "Running\u2192succeeded or failed creates terminal entry; failed\u2192pending removes one; pending\u2192cancelled creates one, failed\u2192cancelled/recent terminal timestamp changes rekey it. Preserve fenced retries, notification resolution and cleanup triggers; never execute these owners in index-read proof."
+    },
+    {
+      "refs": [
+        "src/lib/providers/connections.server.ts",
+        "src/lib/application/provider-sources.server.ts",
+        "src/lib/application/feature-transition.server.ts",
+        "drizzle/0016_collection_and_music.sql:252"
+      ],
+      "family": "account/source/feature controls",
+      "effect": "Cancellation cascades can change active\u2192terminal rows. Connection deletion FK SET NULL moves I1 leading key; user deletion removes rows. Full domain effects make destructive owner experiments wider than a safe microcontrol."
+    },
+    {
+      "refs": [
+        "drizzle/0016_collection_and_music.sql:234",
+        "drizzle/0045_trakt_import_staging.sql:35",
+        "drizzle/0046_provider_job_snapshots.sql:11"
+      ],
+      "family": "implicit SQL edges",
+      "effect": "Generation pin is BEFORE INSERT. AFTER UPDATE OF state triggers prune Trakt staging and provider snapshots on succeeded/cancelled; connection generation/status triggers prune corresponding staging/snapshots. Actual trigger/function/RLS metadata must be checked before any future row-write controls."
+    }
+  ],
+  "futureWriteOptions": [
+    {
+      "id": "W0",
+      "status": "proposed_future_bounded_control_not_in_current_probe",
+      "option": "One or a few existing terminal actual rows, exact ordinary recency-only UPDATE under savepoints for I0 and I1; preserve existing user/connection/generation/state/payload. Any derived changed timestamp is an explicit controlled metadata schedule, not a natural provider workload. Obtain review for exact expression before execution.",
+      "proves": "Complete RETURNING/postvalues/side-effects equality and descriptive indexed timestamp maintenance/BUFFERS/WAL for that actual row. Logical full-table/sequence/catalog restoration after outer rollback.",
+      "doesNotProve": "Natural completion/claim/retry/heartbeat throughput, successful-writer HOT rate, physical restoration or whole app write cost. Updated_at is already indexed, so it cannot establish additional HOT eligibility loss."
+    },
+    {
+      "id": "W1",
+      "status": "proposed_future_matched_secondary_clones_not_created",
+      "option": "For causal physical writer/index overhead use two fresh matched disposable actual-data clones, I0 vs I1, source/target guards and per-clone schema/data equality. Apply reviewed controlled metadata writes to existing rows in corresponding order, record EXPLAIN BUFFERS/WAL and xact update/HOT counters only if verified; drop only generated targets.",
+      "proves": "A cleaner bounded physical maintenance comparison than sequential rollback phases with warming/dead tuples; current indexes remain in both.",
+      "doesNotProve": "No naturally missing active/failed state cohort is invented; no worker/provider work. Clone copy/free-space/cache differences still limit throughput/HOT extrapolation; full production migrations/provenance and storage-scale remain separate."
+    },
+    {
+      "id": "W2",
+      "status": "deferred_for_positive_natural_cohort",
+      "option": "Use a genuinely retained running/failed writer cohort if one becomes available; invoke only a reviewed bounded owner with provider calls forbidden and full rollback/equality. Do not convert terminal rows into fictitious running jobs to satisfy a test.",
+      "proves": "Potentially meaningful current heartbeat/checkpoint/transition contract with real stored state; unavailable now."
+    }
+  ],
+  "hotCalibration": "I1 uses columns already present in existing indexes/predicates (connection_id,kind,state,updated_at and account_generation). This source overlap is not a measured HOT guarantee. Locked_at-only or payload-only writes may be HOT-eligible depending on all actual indexes/page space; normal checkpoint/completion also touch indexed columns. Do not claim an extra HOT loss or zero write overhead without a positive actual control. Extra B-tree predicate evaluation and terminal entry maintenance still cost resources; retained active/generation indexes remain unchanged.",
+  "remaining": [
+    "No production index/query/schema adoption or migration. Previous Q1b I0 work penalty and Q0 I1 non-admission immutable.",
+    "Other succeeded/failed scheduling/queue/companion/notification reader families remain source-only; no universal regression acceptance.",
+    "No positive active/failed/obsolete-generation/different-top-outcome cohort. Taste future timestamp-only outcome choice remains underspecified.",
+    "No normal route/HTTP configuration-sharing/job/provider/concurrency/CPU/RSS or deployment-scale proof.",
+    "Storage scale, terminal writer/FK/cleanup effects, HOT/WAL costs and normal migration provenance remain open.",
+    "Logical/catalog restoration does not erase physical index construction/WAL/cache/statistics effects."
+  ],
+  "independentReview": {
+    "mode": "read_only_source_draft",
+    "executedProbeSha256": "ff3cfab51f879489f5fd00df329fe3fd4d93b031b6d799743dd96d17521476cd",
+    "result": "No material capture/ownership/rollback blocker; reviewer identified latest-success payload tie obligation, now retained with actual aggregate census and future-semantic gap. No reviewer tests or DB work."
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      },
+      "src/lib/server/notifications/index.ts": {
+        "before": "d004d879a1194caef408f783fadb838198adf8b0d3dbb26bc60b0fb2badd57cc",
+        "after": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "src/lib/server/notifications/index.ts": {
+        "before": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+        "after": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/auth/index.ts",
+          "before": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf",
+          "after": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d"
+        },
+        {
+          "owner": "src/lib/providers/maintenance.server.ts",
+          "before": "dcc93147ba085a07562271c9acc54aa5aec49e7356be01d89ba749fb1dd2ee13",
+          "after": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T02:01:28.135299+00:00",
+      "reportRef": "implementation-found-17.md",
+      "paths": [
+        "src/lib/social/taste-cache.server.ts",
+        "src/lib/social/taste-cache.server.ts"
+      ],
+      "boundary": "Current reviewed owner/prose/checker identity only; archived native query epochs and every previous acceptance receipt remain unchanged."
+    },
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "src/lib/sync/jellyfin.server.ts"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "src/lib/providers/steam/sync.server.ts"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    }
+  ]
+}

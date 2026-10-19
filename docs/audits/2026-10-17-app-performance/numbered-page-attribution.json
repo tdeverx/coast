@@ -1,0 +1,1101 @@
+{
+  "schemaVersion": 1,
+  "status": "actual_read_attribution_passed_no_candidate_or_adoption",
+  "canonicalFindings": [
+    "PLAN-09",
+    "PR-14"
+  ],
+  "normalDatabaseTouched": false,
+  "sourceChanges": false,
+  "schemaOrIndexChanges": false,
+  "providerCalls": 0,
+  "httpTokenHandlerAcceptance": false,
+  "verification": {
+    "actualOwnerCalls": 20,
+    "exactExplainPlans": 20,
+    "families": 6,
+    "naturalDeepFamilies": 4,
+    "completeDeepAndClampedDtoComparisons": 6,
+    "allEqual": true,
+    "hydrationOmissions": 0,
+    "sourceUnchanged": true,
+    "expectedReadOnlyRollback": true,
+    "sameBackendBeforeDuringAfterRollback": true,
+    "backendNumericIdRetained": false,
+    "poolClosed": true,
+    "dmlCounters": {
+      "inserted": "0",
+      "updated": "0",
+      "deleted": "0"
+    },
+    "censusSession": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB"
+    },
+    "measurementSession": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB"
+    },
+    "afterRollbackSession": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB"
+    },
+    "secretProjectionGuard": {
+      "allAdmittedOrmSqlAndMappedRowsChecked": true,
+      "completeOwnerResultsChecked": true,
+      "sourceOwnerDependencyReview": true,
+      "noProductDtoFieldsRemoved": true,
+      "boundary": "Fails before executing ORM queries mentioning secret identifiers/decryption functions and rejects sensitive result field names. Config/feature raw SQL is the unchanged source-reviewed request policy read; no provider/token/key owner is invoked. This is not an assertion that arbitrary metadata strings have been content-classified."
+    },
+    "boundary": "Unchanged exported read owners on the designated actual clone. One explicitly verified READ ONLY REPEATABLE READ transaction, no token authentication, provider transport, catalogue fabrication, query/index/source change or normal database. Actual complete DTOs/SQL parameters stay in memory; only aggregate metrics/digests/safe plans are retained.",
+    "measurementBoundary": "Descriptive first/middle/last/clamped plans, not a fix comparison or a production latency/heap/RSS claim. ORM counts omit raw config/feature reads; complete unchanged-owner DTO digests include their effects. PostgreSQL node loops/output counts are not unique rows or process memory."
+  },
+  "actualCensus": {
+    "comics": 12,
+    "books": 0,
+    "music_works": 959,
+    "music_listens": 5,
+    "reading_history": 1,
+    "lists": 0,
+    "list_items": 0
+  },
+  "families": [
+    {
+      "family": "ui-watch-library",
+      "ownerOrdinal": 0,
+      "publicMaximumRequestedPage": 1000000,
+      "order": "media.updated_at DESC, media.id ASC",
+      "total": 2680,
+      "pages": 45,
+      "measuredLastReachablePage": 45,
+      "farRequestWasClamped": true,
+      "naturalDeepCohort": true,
+      "distinctEffectivePages": 3,
+      "completeDeepAndClampedDtoEqual": true,
+      "deepAndClampedAdmittedSelect": "identical_template_and_all_bindings",
+      "countScopeSameAcrossPages": true,
+      "selectedDistinctWindowsDisjoint": true,
+      "requests": [
+        {
+          "label": "first",
+          "requestedPage": 1,
+          "page": 1,
+          "selectedRows": 60,
+          "returnedItems": 60,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 0,
+          "ormStatements": 18,
+          "outputJsonBytes": 138709
+        },
+        {
+          "label": "middle",
+          "requestedPage": 23,
+          "page": 23,
+          "selectedRows": 60,
+          "returnedItems": 60,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 0,
+          "ormStatements": 18,
+          "outputJsonBytes": 139708
+        },
+        {
+          "label": "deep",
+          "requestedPage": 45,
+          "page": 45,
+          "selectedRows": 40,
+          "returnedItems": 40,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 0,
+          "ormStatements": 18,
+          "outputJsonBytes": 108260
+        },
+        {
+          "label": "far-clamped",
+          "requestedPage": 1000000,
+          "page": 45,
+          "selectedRows": 40,
+          "returnedItems": 40,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 0,
+          "ormStatements": 18,
+          "outputJsonBytes": 108260
+        }
+      ],
+      "rootPlanMetrics": [
+        {
+          "label": "first",
+          "role": "count",
+          "rootSharedHitBlocks": 304522,
+          "rootSharedReadBlocks": 14537,
+          "rootSharedBufferAccesses": 319059,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 144.569,
+          "largestReportedSortKiB": 0
+        },
+        {
+          "label": "first",
+          "role": "page",
+          "rootSharedHitBlocks": 304451,
+          "rootSharedReadBlocks": 14608,
+          "rootSharedBufferAccesses": 319059,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 164.678,
+          "largestReportedSortKiB": 31
+        },
+        {
+          "label": "middle",
+          "role": "page",
+          "rootSharedHitBlocks": 304519,
+          "rootSharedReadBlocks": 14540,
+          "rootSharedBufferAccesses": 319059,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 134.192,
+          "largestReportedSortKiB": 285
+        },
+        {
+          "label": "deep",
+          "role": "page",
+          "rootSharedHitBlocks": 304504,
+          "rootSharedReadBlocks": 14555,
+          "rootSharedBufferAccesses": 319059,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 135.825,
+          "largestReportedSortKiB": 285
+        }
+      ]
+    },
+    {
+      "family": "public-observed-library",
+      "ownerOrdinal": 0,
+      "publicMaximumRequestedPage": 10000,
+      "order": "works.id ASC",
+      "total": 38952,
+      "pages": 650,
+      "measuredLastReachablePage": 650,
+      "farRequestWasClamped": true,
+      "naturalDeepCohort": true,
+      "distinctEffectivePages": 3,
+      "completeDeepAndClampedDtoEqual": true,
+      "deepAndClampedAdmittedSelect": "identical_combined_template_and_non_page_bindings",
+      "countScopeSameAcrossPages": "identical_combined_template_and_non_page_bindings",
+      "selectedDistinctWindowsDisjoint": true,
+      "requests": [
+        {
+          "label": "first",
+          "requestedPage": 1,
+          "page": 1,
+          "selectedRows": 60,
+          "returnedItems": 60,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": null,
+          "ormStatements": 10,
+          "outputJsonBytes": 6470
+        },
+        {
+          "label": "middle",
+          "requestedPage": 325,
+          "page": 325,
+          "selectedRows": 60,
+          "returnedItems": 60,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": null,
+          "ormStatements": 10,
+          "outputJsonBytes": 6364
+        },
+        {
+          "label": "deep",
+          "requestedPage": 650,
+          "page": 650,
+          "selectedRows": 12,
+          "returnedItems": 12,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": null,
+          "ormStatements": 8,
+          "outputJsonBytes": 1426
+        },
+        {
+          "label": "far-clamped",
+          "requestedPage": 10000,
+          "page": 650,
+          "selectedRows": 12,
+          "returnedItems": 12,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": null,
+          "ormStatements": 8,
+          "outputJsonBytes": 1426
+        }
+      ],
+      "rootPlanMetrics": [
+        {
+          "label": "first",
+          "role": "count-and-page",
+          "rootSharedHitBlocks": 161943,
+          "rootSharedReadBlocks": 14672,
+          "rootSharedBufferAccesses": 176615,
+          "rootTempReadBlocks": 4897,
+          "rootTempWrittenBlocks": 7733,
+          "singleExplainExecutionTimeMs": 400.156,
+          "largestReportedSortKiB": 10336
+        },
+        {
+          "label": "middle",
+          "role": "count-and-page",
+          "rootSharedHitBlocks": 161943,
+          "rootSharedReadBlocks": 14672,
+          "rootSharedBufferAccesses": 176615,
+          "rootTempReadBlocks": 4897,
+          "rootTempWrittenBlocks": 7733,
+          "singleExplainExecutionTimeMs": 398.217,
+          "largestReportedSortKiB": 10336
+        },
+        {
+          "label": "deep",
+          "role": "count-and-page",
+          "rootSharedHitBlocks": 161942,
+          "rootSharedReadBlocks": 14673,
+          "rootSharedBufferAccesses": 176615,
+          "rootTempReadBlocks": 4897,
+          "rootTempWrittenBlocks": 7733,
+          "singleExplainExecutionTimeMs": 434.675,
+          "largestReportedSortKiB": 10336
+        },
+        {
+          "label": "far-clamped",
+          "role": "count-and-page",
+          "rootSharedHitBlocks": 161942,
+          "rootSharedReadBlocks": 14673,
+          "rootSharedBufferAccesses": 176615,
+          "rootTempReadBlocks": 4897,
+          "rootTempWrittenBlocks": 7733,
+          "singleExplainExecutionTimeMs": 401.896,
+          "largestReportedSortKiB": 10336
+        }
+      ]
+    },
+    {
+      "family": "profile-recorded-history",
+      "ownerOrdinal": 3,
+      "publicMaximumRequestedPage": 1000000,
+      "order": "occurred_at_known DESC, occurred_at DESC, event_id DESC",
+      "total": 10779,
+      "pages": 180,
+      "measuredLastReachablePage": 180,
+      "farRequestWasClamped": true,
+      "naturalDeepCohort": true,
+      "distinctEffectivePages": 3,
+      "completeDeepAndClampedDtoEqual": true,
+      "deepAndClampedAdmittedSelect": "identical_template_and_all_bindings",
+      "countScopeSameAcrossPages": true,
+      "selectedDistinctWindowsDisjoint": true,
+      "requests": [
+        {
+          "label": "first",
+          "requestedPage": 1,
+          "page": 1,
+          "selectedRows": 60,
+          "returnedItems": 60,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 13,
+          "ormStatements": 22,
+          "outputJsonBytes": 228566
+        },
+        {
+          "label": "middle",
+          "requestedPage": 90,
+          "page": 90,
+          "selectedRows": 60,
+          "returnedItems": 60,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 8,
+          "ormStatements": 22,
+          "outputJsonBytes": 237038
+        },
+        {
+          "label": "deep",
+          "requestedPage": 180,
+          "page": 180,
+          "selectedRows": 39,
+          "returnedItems": 39,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 1,
+          "ormStatements": 22,
+          "outputJsonBytes": 137880
+        },
+        {
+          "label": "far-clamped",
+          "requestedPage": 1000000,
+          "page": 180,
+          "selectedRows": 39,
+          "returnedItems": 39,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 1,
+          "ormStatements": 22,
+          "outputJsonBytes": 137880
+        }
+      ],
+      "rootPlanMetrics": [
+        {
+          "label": "first",
+          "role": "count",
+          "rootSharedHitBlocks": 294,
+          "rootSharedReadBlocks": 8988,
+          "rootSharedBufferAccesses": 9282,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 27.319,
+          "largestReportedSortKiB": 715
+        },
+        {
+          "label": "first",
+          "role": "page",
+          "rootSharedHitBlocks": 3551,
+          "rootSharedReadBlocks": 5731,
+          "rootSharedBufferAccesses": 9282,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 30.135,
+          "largestReportedSortKiB": 775
+        },
+        {
+          "label": "middle",
+          "role": "page",
+          "rootSharedHitBlocks": 3483,
+          "rootSharedReadBlocks": 5799,
+          "rootSharedBufferAccesses": 9282,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 32.678,
+          "largestReportedSortKiB": 1816
+        },
+        {
+          "label": "deep",
+          "role": "page",
+          "rootSharedHitBlocks": 3434,
+          "rootSharedReadBlocks": 5848,
+          "rootSharedBufferAccesses": 9282,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 39.245,
+          "largestReportedSortKiB": 1816
+        }
+      ]
+    },
+    {
+      "family": "screen-group-audit-history",
+      "ownerOrdinal": 0,
+      "publicMaximumRequestedPage": 1000000,
+      "order": "occurred_at DESC, event_id DESC",
+      "total": 32482,
+      "pages": 542,
+      "measuredLastReachablePage": 542,
+      "farRequestWasClamped": true,
+      "naturalDeepCohort": true,
+      "distinctEffectivePages": 3,
+      "completeDeepAndClampedDtoEqual": true,
+      "deepAndClampedAdmittedSelect": "identical_template_and_all_bindings",
+      "countScopeSameAcrossPages": true,
+      "selectedDistinctWindowsDisjoint": true,
+      "requests": [
+        {
+          "label": "first",
+          "requestedPage": 1,
+          "page": 1,
+          "selectedRows": 60,
+          "returnedItems": 60,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 0,
+          "ormStatements": 34,
+          "outputJsonBytes": 236926
+        },
+        {
+          "label": "middle",
+          "requestedPage": 271,
+          "page": 271,
+          "selectedRows": 60,
+          "returnedItems": 60,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 0,
+          "ormStatements": 34,
+          "outputJsonBytes": 236928
+        },
+        {
+          "label": "deep",
+          "requestedPage": 542,
+          "page": 542,
+          "selectedRows": 22,
+          "returnedItems": 22,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 0,
+          "ormStatements": 34,
+          "outputJsonBytes": 86882
+        },
+        {
+          "label": "far-clamped",
+          "requestedPage": 1000000,
+          "page": 542,
+          "selectedRows": 22,
+          "returnedItems": 22,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 0,
+          "ormStatements": 34,
+          "outputJsonBytes": 86882
+        }
+      ],
+      "rootPlanMetrics": [
+        {
+          "label": "first",
+          "role": "count",
+          "rootSharedHitBlocks": 27753,
+          "rootSharedReadBlocks": 823,
+          "rootSharedBufferAccesses": 28576,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 9.991,
+          "largestReportedSortKiB": 0
+        },
+        {
+          "label": "first",
+          "role": "page",
+          "rootSharedHitBlocks": 3020,
+          "rootSharedReadBlocks": 1763,
+          "rootSharedBufferAccesses": 4783,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 21.265,
+          "largestReportedSortKiB": 41
+        },
+        {
+          "label": "middle",
+          "role": "page",
+          "rootSharedHitBlocks": 3034,
+          "rootSharedReadBlocks": 1749,
+          "rootSharedBufferAccesses": 4783,
+          "rootTempReadBlocks": 317,
+          "rootTempWrittenBlocks": 363,
+          "singleExplainExecutionTimeMs": 25.383,
+          "largestReportedSortKiB": 2896
+        },
+        {
+          "label": "deep",
+          "role": "page",
+          "rootSharedHitBlocks": 2477,
+          "rootSharedReadBlocks": 2306,
+          "rootSharedBufferAccesses": 4783,
+          "rootTempReadBlocks": 362,
+          "rootTempWrittenBlocks": 363,
+          "singleExplainExecutionTimeMs": 28.113,
+          "largestReportedSortKiB": 2896
+        }
+      ]
+    },
+    {
+      "family": "music-track-history",
+      "ownerOrdinal": 0,
+      "publicMaximumRequestedPage": 1000000,
+      "order": "occurred_at DESC, event_id DESC",
+      "total": 3,
+      "pages": 1,
+      "measuredLastReachablePage": 1,
+      "farRequestWasClamped": true,
+      "naturalDeepCohort": false,
+      "distinctEffectivePages": 1,
+      "completeDeepAndClampedDtoEqual": true,
+      "deepAndClampedAdmittedSelect": "identical_template_and_all_bindings",
+      "countScopeSameAcrossPages": true,
+      "selectedDistinctWindowsDisjoint": true,
+      "requests": [
+        {
+          "label": "first",
+          "requestedPage": 1,
+          "page": 1,
+          "selectedRows": 3,
+          "returnedItems": 3,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 1,
+          "ormStatements": 4,
+          "outputJsonBytes": 595
+        },
+        {
+          "label": "far-clamped",
+          "requestedPage": 1000000,
+          "page": 1,
+          "selectedRows": 3,
+          "returnedItems": 3,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 1,
+          "ormStatements": 4,
+          "outputJsonBytes": 595
+        }
+      ],
+      "rootPlanMetrics": [
+        {
+          "label": "first",
+          "role": "count",
+          "rootSharedHitBlocks": 1,
+          "rootSharedReadBlocks": 0,
+          "rootSharedBufferAccesses": 1,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 0.006,
+          "largestReportedSortKiB": 0
+        },
+        {
+          "label": "first",
+          "role": "page",
+          "rootSharedHitBlocks": 10,
+          "rootSharedReadBlocks": 0,
+          "rootSharedBufferAccesses": 10,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 0.023,
+          "largestReportedSortKiB": 25
+        }
+      ]
+    },
+    {
+      "family": "reading-work-history",
+      "ownerOrdinal": 0,
+      "publicMaximumRequestedPage": 1000000,
+      "order": "occurred_at DESC, event_id DESC",
+      "total": 1,
+      "pages": 1,
+      "measuredLastReachablePage": 1,
+      "farRequestWasClamped": true,
+      "naturalDeepCohort": false,
+      "distinctEffectivePages": 1,
+      "completeDeepAndClampedDtoEqual": true,
+      "deepAndClampedAdmittedSelect": "identical_template_and_all_bindings",
+      "countScopeSameAcrossPages": true,
+      "selectedDistinctWindowsDisjoint": true,
+      "requests": [
+        {
+          "label": "first",
+          "requestedPage": 1,
+          "page": 1,
+          "selectedRows": 1,
+          "returnedItems": 1,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 0,
+          "ormStatements": 3,
+          "outputJsonBytes": 169
+        },
+        {
+          "label": "far-clamped",
+          "requestedPage": 1000000,
+          "page": 1,
+          "selectedRows": 1,
+          "returnedItems": 1,
+          "hydrationOmissions": 0,
+          "primaryTimestampKeyDuplicatesInWindow": 0,
+          "ormStatements": 3,
+          "outputJsonBytes": 169
+        }
+      ],
+      "rootPlanMetrics": [
+        {
+          "label": "first",
+          "role": "count",
+          "rootSharedHitBlocks": 1,
+          "rootSharedReadBlocks": 0,
+          "rootSharedBufferAccesses": 1,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 0.005,
+          "largestReportedSortKiB": 0
+        },
+        {
+          "label": "first",
+          "role": "page",
+          "rootSharedHitBlocks": 1,
+          "rootSharedReadBlocks": 0,
+          "rootSharedBufferAccesses": 1,
+          "rootTempReadBlocks": 0,
+          "rootTempWrittenBlocks": 0,
+          "singleExplainExecutionTimeMs": 0.01,
+          "largestReportedSortKiB": 25
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "id": "N1",
+      "owner": "src/lib/server/queries/media.ts:78\u201399 and src/lib/server/queries/library.ts:48\u2013100",
+      "title": "Reduce repeated permitted-source membership work while retaining all kind/source semantics",
+      "state": "source_and_actual_plan_lead_only_no_candidate",
+      "smallestExperiment": "First inspect an exact single-statement count-and-page composition using the existing complete predicates; eligible IDs/count can share one request-local SQL evaluation. Alternatively test a kind-aware admission plan at the same canonical permitted-source owner, without globally dropping episode/season access or materializing all IDs into JS.",
+      "consumers": [
+        "Library Watch",
+        "mediaViews availability/card hydration",
+        "profile progress",
+        "progress/continuations",
+        "catalogue detail resolution",
+        "hasPermittedWorkSource mixed work shelves"
+      ],
+      "acceptance": [
+        "Compare full actual first/middle/deep/clamped owner DTOs, exact totals/order/filter/source parameters and identity ties.",
+        "Positive tracking/genre/source/disabled-feature/missing metadata variants across every reached shared consumer; preserve descendant-derived access.",
+        "Keep cross-request config/source policy freshness; state any count/page snapshot-composition change.",
+        "Root buffer work must improve at first and deep pages without hidden new unbounded materialization or worse controls."
+      ]
+    },
+    {
+      "id": "N2",
+      "owner": "src/lib/server/public-api/library.server.ts:15\u201330",
+      "title": "Test reuse of the identical global edge relation across recursive access iterations",
+      "state": "source_and_actual_plan_lead_only_no_candidate",
+      "smallestExperiment": "An explicit MATERIALIZED edge CTE is a narrow SQL hypothesis, not an adopted improvement. Retain each UNION, ancestor direction, cycle deduplication, availability/source ownership and terminal feature filters. Compare it privately before any source decision.",
+      "consumers": [
+        "public observed-access Library all/category/kind/source reads"
+      ],
+      "acceptance": [
+        "Complete public work DTO/order/count/next/previous links equal for real first/middle/deep/clamped pages.",
+        "Actual positive child/ancestor access and current source filters; controlled absent nested/cycle/missing-edge branches explicitly separate.",
+        "Root buffer/temp/sort work and alternating unchanged-owner measurements, including first-page controls; no write/index/dependency changes required for the experiment.",
+        "Token/quota HTTP remains separate because this probe intentionally did not invoke it."
+      ]
+    },
+    {
+      "id": "N3",
+      "owner": "src/lib/core/tracking/recorded-watches.server.ts:4\u201311 and src/lib/server/queries/profile.ts:132\u2013139,210",
+      "title": "Reduce repeated recorded-watch count/window work before redesigning pagination",
+      "state": "source_and_actual_plan_lead_only_no_candidate",
+      "smallestExperiment": "Inspect canonical count+page sharing and existing event access paths. Do not push filters through the lag/prior-watch windows or replace the known-date/time/event-ID order without proving no-op/rewatch/unwatch/edition semantics.",
+      "consumers": [
+        "Profile History",
+        "Profile summary/insights",
+        "Any recordedWatches caller"
+      ],
+      "acceptance": [
+        "Full count/history/edition/repeat/date/source outputs at first/middle/deep/clamped, with actual timestamp ties preserved.",
+        "Controlled watch/unwatch/no-op/explicit rewatch/backdated/unknown-date schedules remain supplemental where actual data lacks them.",
+        "Retain exact totals and page links; any new index needs writer/storage/HOT review and private complete-result plus plan proof."
+      ]
+    },
+    {
+      "id": "N4",
+      "owner": "src/lib/server/queries/media-actions.ts:191\u2013239 and core/tracking/history-scope.server.ts",
+      "title": "Inspect audit-history ordered event access and exact count/scope reuse",
+      "state": "source_and_actual_plan_lead_only_no_candidate",
+      "smallestExperiment": "Evaluate a canonical ordered user/time/id event access path or one shared eligible scope/count/page statement. The existing user/media/time index serves scope counts and must not be removed casually. Preserve all watch/unwatch/progress, applied flags and deduplicated recursive membership.",
+      "consumers": [
+        "Screen work/group audit activity and mediaActivity card presentation"
+      ],
+      "acceptance": [
+        "Complete actual scope DTOs at 542-page scale, including first-page control and ties; repeat memberships/cycles stay deduplicated.",
+        "Candidate-index experiment must include update/insert/HOT/WAL/storage obligations and rollback restoration; no index is proposed for normal adoption here.",
+        "Do not call deleting old observations or dropping exact counts a semantics-preserving optimization."
+      ]
+    },
+    {
+      "id": "N5",
+      "owner": "src/lib/server/queries/pagination.ts and public-api/response.ts",
+      "title": "Retain numbered URL/count/tie contracts; consider cursors only as a separate product/API decision",
+      "state": "not_implemented_contract_option",
+      "smallestExperiment": "No replacement is justified by the presence of OFFSET alone. The measured work is dominated by shared membership/count/window work at page one as well as late sort consumption.",
+      "acceptance": [
+        "Any future cursor option must retain or deliberately redefine arbitrary page jumps, exact counts, public filter links, Back navigation, ties and occurrence identity.",
+        "Database page attribution is not browser append/retention acceptance; OBS-09 remains separate."
+      ]
+    }
+  ],
+  "gaps": [
+    "music-track-history: saved cohort has fewer than three pages; no genuine middle/deep scale claim.",
+    "reading-work-history: saved cohort has fewer than three pages; no genuine middle/deep scale claim.",
+    "No actual saved custom lists: list-occurrence late pages are not fabricated. Built-in watchlist/favourite rows are separate future scopes.",
+    "No token-authenticated HTTP request, quota admission, SSR/back/focus/scroll, client append-retention or provider-backed browsing acceptance. Canonical pure read owners and publicPage DTO links only.",
+    "Default all filters only. Genre/tracking/privacy/source variants, future writes between count/page, malformed input and timestamp-tie product changes remain separate contracts; actual within-page tie counts do not prove a hypothetical rewrite.",
+    "Public global catalogue SELECTs remain inline in the authenticated handler; this workload measures the distinct exported observed-access Library, without invoking token admission writes or extracting tokens.",
+    "Music history uses a natural existing track cohort only, not a fabricated selected-edition album or richer provider page. Reading history never invents books, EPUBs or page-turn journal rows."
+  ],
+  "sourcePins": {
+    "src/lib/server/queries/pagination.ts": "06421c9a2324fca85c513f98d7fd0bd8db4233af422335b46bb6955d9743bd14",
+    "src/lib/server/queries/library.ts": "4cb615fc401570cf8da95776915005e7ae4a84108b3d5f986a82f2d4dd67b96d",
+    "src/lib/server/queries/library-content.ts": "b678862173375262bf42ad9d092aa1551780305a2242eac49c55cb6e16c3652a",
+    "src/lib/server/queries/profile.ts": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e",
+    "src/lib/server/queries/media-actions.ts": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/core/tracking/recorded-watches.server.ts": "8a42f9bca18f5f49799922aa27f3dcf55ccd7d540c8609d6d42a91a0c8c22f01",
+    "src/lib/core/tracking/history-scope.server.ts": "430188553b789f726ec7c16fe560c9ddbcee34648d92b6691ca9d1cdd1fcb689",
+    "src/lib/server/public-api/library.server.ts": "0e8b3f3431c6d790fcf36d1096b93d359d3ed8ab19e037bab4f62a90ba9e9dcb",
+    "src/lib/server/public-api/response.ts": "ca5f7eeb3326f2b7b088239014b045a0ad40dfee659c6ae049662e41868c1981",
+    "src/lib/server/public-api/handler.server.ts": "1c4dc5119aa0dfe898babf35cfd8c903e3792e929937eb3cce26d6edb7d51044",
+    "src/lib/server/api/profile.server.ts": "b0523f2a7a0d31c6838823dc563b321ef914b3e501f3d3b68ed2b4ec925170ec",
+    "src/lib/server/api/media.server.ts": "494d5e177de0d62c4b3d500f4de46b36c603b8ed78f2b13af3773995317b8d49",
+    "src/lib/server/api/reading.server.ts": "f6c9ceed6606cabc2b5500e33a0c3d49a01f6cb44bd972a943599a92fcb17ebc",
+    "src/lib/reading/query.server.ts": "6315a5cd137e89a9b39b85e8c61af6567a8cb4aedc51afc97a38d64df7cef526",
+    "src/lib/music/history.server.ts": "a24895287829b56a9b684160b44878ccbf968b8c581748fd8f2d777dcc4db9ad",
+    "src/lib/music/editions.server.ts": "fd3a5b49c589de17f0eec88b5265f5c5725cb382eefde6f9aaf91720c2ed208d",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/catalogue/overrides/presentation.server.ts": "a2b35f3c4fe5467f2338c582d9a6ecc74a238c94dd66f25a62b1b2d5d5461447",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/social/privacy.server.ts": "ccb9b58e23eafee8c531a19d419dfe65c73adbad89e51b9e9c61b8602b788857",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/library.ts": "cd629858c8518e8f94bdf7520d6c835235078a3cdba736555821ec5d6945da91",
+    "src/lib/ui/section-target.ts": "3920829e19358f68a08c08737729b48b057630f1f918f98ddd4be22f99f25d05",
+    "src/lib/ui/shelves/library.svelte.ts": "0e7b4f024bf38df12188c6b27de6d4da26e859131ea1fd3d335d38267da35024",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/ui/components/Pagination.svelte": "60339601773c7eaf9286f23882c37d223a7f43f5480707d850cb1d6f6bc04a27",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "additionalInventorySourcePins": {
+    "src/lib/core/games/service.server.ts": "034e72426d23d1f4d9d194fe55c36942aea729bf5b28e50fedd55bc528b6d3f4",
+    "src/lib/benchmarks/service.server.ts": "2b20918bb628053f96a9a703faedc5b795f06bb75b06d2a55a4810661e82f835",
+    "src/lib/reading/detail.server.ts": "105b871ef2751c1eabf26fa1efc6291f6aec1b77c110da66c8ce3bd055a0d90d",
+    "src/lib/reading/groups.server.ts": "7c28ade2625f573c5d5d40b2ba9b0cf2036ada56f80ae9dbf2b6f3008bbf37fd",
+    "src/lib/recommendations/query.server.ts": "aa1a7457c830733bf44c1d363e714beb420034261848a913e87c51dfe0a33c59",
+    "src/lib/social/insights.server.ts": "5b7d718009227bdd32a9bd9a9f86544350c14da95582b0a1f5e139ec1a21f238",
+    "src/lib/collection/demand.server.ts": "d4184856a41af3d287c0af8ab1f467f44e31cfef84ab195043034603b5615c1b",
+    "src/lib/experiments/planning.server.ts": "aef16dae069ac1f18484e4666887da1cc6572d95d803e8e43c5ea8ba5ed850a9",
+    "src/lib/server/public-api/webhooks.server.ts": "70c4d1ea244d7e3c723bb6fda6cb05c51300046c511bc6803667daf27d69aefb",
+    "src/lib/server/notifications/inbox.ts": "c8d44c3f7bc05ca7331a333bbdbcfff5d7f8dc1bd1178bf8eac957e7e6c48fdf",
+    "src/lib/server/queries/lists.ts": "0942e66e26f5ada3baf2668a8bc551728f57f8e2dd23e37b4990a0b202d87f8c",
+    "src/lib/server/queries/show-next.ts": "9da07185ba0cfda304262c087683581562caa59ccd741f8f00a4b970b2005a26",
+    "src/lib/server/queries/progress.ts": "c6dc479be1ea09bdd477d0eb21780361cf3eb0edc56d07e8a5e3a65e9cd9d7c7",
+    "src/lib/server/queries/requests.ts": "10f42871eb9f1bb9b938b4366400eca208b3173d552a1cf391d75b2094eab09c",
+    "src/lib/social/service.server.ts": "71872325c753fe705047bf201186d0c5073750c07c93979b75d259e5ebc90d26",
+    "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
+    "src/lib/music/queue.server.ts": "46975b7dfe3bd446e3b8bc4f180518edf9e54e1782dcfc0bbe6fe255c49fe862"
+  },
+  "sourceFiles": 47,
+  "artifacts": [
+    {
+      "path": "probes/numbered-pages-actual.ts",
+      "sha256": "6d895b84f8b6167c9f6774e7d1c35e40782eacb716c3107d0511fb9beed1b7eb",
+      "bytes": 27309,
+      "retention": "Exact prepared/executed artifact; source pins are not silently updated."
+    },
+    {
+      "path": "evidence/numbered-page-attribution-actual.json",
+      "sha256": "266af4008d232fd21885414e803f170c1efefa84b51a67e7146fc8e323f37e22",
+      "bytes": 476701,
+      "retention": "Exact prepared/executed artifact; source pins are not silently updated."
+    },
+    {
+      "path": "evidence/numbered-page-attribution-source-pins.json",
+      "sha256": "8f7fc1db735d47f69222d2438665a3b9939c363f67c2aeffc64f6c1e3d69cbf7",
+      "bytes": 3263,
+      "retention": "Exact prepared/executed artifact; source pins are not silently updated."
+    },
+    {
+      "path": "evidence/numbered-page-attribution-syntax.json",
+      "sha256": "c67dd2a8adf1ac52bbacda16d67cf22b5257c64c65e16eea44528a14cdb6e18b",
+      "bytes": 292,
+      "retention": "Exact prepared/executed artifact; source pins are not silently updated."
+    },
+    {
+      "path": "candidates/numbered-page-attribution/plan.md",
+      "sha256": "867601959d6c26b5a7bf3158935cb560906a9db0330fe24b88557af69f6b8dbf",
+      "bytes": 15105,
+      "retention": "Exact prepared/executed artifact; source pins are not silently updated."
+    },
+    {
+      "path": "candidates/numbered-page-attribution/plan.json",
+      "sha256": "65d7eb68fa546425f46b3eec48d0d2ce07f04f104ae42b1dc67d7c253df3699f",
+      "bytes": 6374,
+      "retention": "Exact prepared/executed artifact; source pins are not silently updated."
+    },
+    {
+      "path": "evidence/numbered-page-attribution-runner.py.txt",
+      "sha256": "3d527a67ece961a9701d7f1f6ae25f69404c9c6945b574eef98c09397e0693c8",
+      "bytes": 1468,
+      "retention": "Exact prepared/executed artifact; source pins are not silently updated."
+    },
+    {
+      "path": "evidence/numbered-page-attribution-execution.txt",
+      "sha256": "c710f3ac03c8932e91425cd6c98140b008d95e63055e221bbe0eeda3c780830c",
+      "bytes": 78,
+      "retention": "Aggregate-only native probe stdout; runner exit was zero."
+    },
+    {
+      "path": "evidence/numbered-page-attribution-source-coverage.json",
+      "sha256": "b071cacb2181744660184cbfba34e26103e5795866824143db7c8cd17fb02b4d",
+      "bytes": 16263
+    },
+    {
+      "path": "evidence/numbered-page-attribution-independent-review.json",
+      "sha256": "d1df77a9bfb82e3144bafe3764a3a936ff1d0509d8aabdbcf36262d46150ab0e",
+      "bytes": 916
+    }
+  ],
+  "immutableExecutedProbeSha256": "6d895b84f8b6167c9f6774e7d1c35e40782eacb716c3107d0511fb9beed1b7eb",
+  "actualReceiptSha256": "266af4008d232fd21885414e803f170c1efefa84b51a67e7146fc8e323f37e22",
+  "retentionNote": "Preparation artifacts remain byte-exact historical snapshots and may say prepared/not executed; this maintained report records the completed actual run. Future source drift requires a new reviewed probe pin and separate receipt, never reassigning these proof hashes.",
+  "independentReview": {
+    "path": "evidence/numbered-page-attribution-independent-review.json",
+    "outcome": "no_material_blocker",
+    "scope": "Exact source/receipt read-only review; no extra execution."
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterScopedActivityAdoptionChange": {
+    "at": "2026-10-18T05:19:07.473156+00:00",
+    "source": "src/lib/social/queries.server.ts",
+    "before": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "after": "29f1f31c79d67c75dc94127054d195a3810221480269fa0cb6737ce0095c4fb3",
+    "updatedCurrentMaps": [
+      "additionalInventorySourcePins"
+    ],
+    "report": "implementation-scoped-activity-workset.json",
+    "boundary": "Only current identity advances for exact shared scope-admission repair. Historical measurements/manifests stay immutable and are not implied rerun."
+  },
+  "laterPublicSeedAdoptionChange": {
+    "at": "2026-10-18T12:13:28.378232+00:00",
+    "source": "src/lib/server/public-api/library.server.ts",
+    "before": "d977a9a4e628a1dbbb9f69a69b30da7d38e2fb687b9323bdbf8d76a749e513ee",
+    "after": "0e8b3f3431c6d790fcf36d1096b93d359d3ed8ab19e037bab4f62a90ba9e9dcb",
+    "updatedCurrentMaps": [
+      "sourcePins"
+    ],
+    "report": "implementation-public-seed.json",
+    "boundary": "Current source identity advances for the separately verified generic seed-gate application. All earlier raw inputs/receipts/results and rejected candidates remain historical; no earlier experiment is implied rerun on current source."
+  },
+  "laterLibraryMembershipAdoptionChange": {
+    "at": "2026-10-18T13:02:16.881554+00:00",
+    "path": "src/lib/server/queries/library.ts",
+    "beforeSha256": "ceae8d87a2e6f1ab70fc7db812e9bf028b63c6141f1ba3cbd50ec6decfa6e9df",
+    "initialExecutedCandidateSha256": "cc54bac25c54d55bc70c71d12f359a8b700137411b29423e1d500ab4099493fb",
+    "afterSha256": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+    "report": "implementation-library-membership.md",
+    "boundary": "Current identity only advances after separately verified one-page adoption and exact type-erasure transfer. Earlier source-frozen executions remain at their archived then-current hashes."
+  },
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/server/queries/pagination.ts": "8d13fbda75755cb40c53f1db2d4c8a16b127010791f5fd35eacff116e4c56f9f",
+      "src/lib/server/queries/library.ts": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3",
+      "src/lib/server/queries/library-content.ts": "08e6fb735feeb7a805672ca27cc7cc83005a046632f1e3b1d9e75f125b07b54c",
+      "src/lib/reading/query.server.ts": "2f4550c48c06258dfd52890cec466e5abe0c91a0f5118c433cf1b1a9c1613ca9",
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+      "src/lib/library.ts": "1b94f5839453943c83a32ef51f8581923a40cedbe41beaa3f66daf2d94dc5c58",
+      "src/lib/ui/section-target.ts": "e325668b0e3ae9b5eee6e65bf6b959551560fb1d90916a96f056f367c02a8cf8",
+      "src/lib/ui/shelves/library.svelte.ts": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+      "src/lib/ui/components/Shelf.svelte": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4",
+      "src/lib/core/games/service.server.ts": "e6e01eac392126a5c06fdaf246fc139b7cfa57e7d01e59845d502386894bf52d"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "finalBoundedWindowSourceFollowThrough": {
+    "at": "2026-10-18T17:42:06.448267+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/shelves/library.svelte.ts": "991fae02c2c35e174b41f867411b83fe75fcc777390b9fbd814d0cee49823053"
+    },
+    "boundary": "Later scope-ledger/SSR engagement and Music error admission corrections have separate exact/current source controls. Historical receipts stay immutable; this map is current identity, not transferred runtime/resource acceptance."
+  },
+  "laterFound07IdentityAdvance": {
+    "at": "2026-10-18T22:39:47.956698+00:00",
+    "ref": "implementation-found-07.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5",
+        "after": "b105d63777dd22496674950d457d81e889eb26da17cfc0a21c6a90411e3ec318"
+      }
+    },
+    "boundary": "Current reviewed identity only; original historical actual receipts remain immutable. Profile candidate has its own108complete actual comparisons and final common/normal checks. No Collection candidate adopted."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  },
+  "laterFound10IdentityAdvance": {
+    "at": "2026-10-18T23:35:57.455314+00:00",
+    "ref": "implementation-found-10.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "b105d63777dd22496674950d457d81e889eb26da17cfc0a21c6a90411e3ec318",
+        "after": "1a49d5e2b59ccf222233a18e896952d21941255b938b114c31a3aa617f7acd12"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical receipts/limits remain immutable; new Profile query has36actual complete outcomes, current UI acceptance and supplementary pending controls. Other owners not retested."
+  },
+  "laterFound11IdentityAdvance": {
+    "at": "2026-10-18T23:42:10.655439+00:00",
+    "ref": "implementation-found-11.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "1a49d5e2b59ccf222233a18e896952d21941255b938b114c31a3aa617f7acd12",
+        "after": "7b22e7ed057544924720f0a7ff1386b0061ece42757303c6bb4f473a85b7a22b"
+      }
+    },
+    "boundary": "Reviewed identity only. Historical source/proofs stay immutable. Guarded count reuse has192actual section comparisons and final gates/native panel; prior activity owner body is unchanged, its receipt not newly rerun."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:32:19.107523+00:00",
+      "path": "src/lib/server/queries/profile.ts",
+      "beforeSha256": "7b22e7ed057544924720f0a7ff1386b0061ece42757303c6bb4f473a85b7a22b",
+      "afterSha256": "21149729c90b373f5f59e922e303031d4bec45eb4d6625a96f82789ac16cd03a",
+      "beforeRef": "candidates/found-implementation-13/profile.before.ts.txt",
+      "reviewRef": "implementation-found-13.md",
+      "boundary": "Only internal Profile activity projection narrows; other functions and contracts are byte-identical. Current identity review does not re-run or upgrade old evidence. Guide append records current proof and rejected Taste alternative."
+    },
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/queries/profile.ts",
+          "before": "21149729c90b373f5f59e922e303031d4bec45eb4d6625a96f82789ac16cd03a",
+          "after": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T02:53:01.778274+00:00",
+      "reportRef": "implementation-found-21.md",
+      "paths": [
+        "src/lib/core/games/service.server.ts"
+      ],
+      "boundary": "Exact planned DATA-07 command guards plus guide/checker bookkeeping. Historical source/evidence epochs retained; no older acceptance upgraded."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "src/lib/music/queue.server.ts",
+        "src/lib/core/games/service.server.ts"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "src/lib/social/service.server.ts"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "src/lib/social/queries.server.ts"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    }
+  ]
+}

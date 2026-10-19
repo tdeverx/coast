@@ -1,0 +1,66 @@
+{
+  "at": "2026-10-19T02:56:41.940100+00:00",
+  "scope": "Recent existing-plan agent execution batch only, not all94findings or a whole-pass completion claim.",
+  "summary": {
+    "appliedAndAgentVerified": 2,
+    "rejectedAfterComparison": 1,
+    "alreadyAppliedReusedEvidence": 1,
+    "notApplicableOrNotRunnable": 3
+  },
+  "items": [
+    {
+      "findingId": "DATA-07",
+      "method": "game-command-noop",
+      "outcome": "applied-actual-default-comparison-passed",
+      "evidenceRef": "candidates/game-playthrough-noop/README.md",
+      "gain": "Saved equivalent commands6\u21923statements;1\u21920tuple updates; projection/webhook invocation skipped."
+    },
+    {
+      "findingId": "DATA-07",
+      "method": "up-next-membership-noop",
+      "outcome": "applied-actual-default-comparison-passed",
+      "evidenceRef": "candidates/up-next-noop/README.md",
+      "gain": "Thirty outcomes82\u219266statements and24\u21928projection eligibility reads."
+    },
+    {
+      "findingId": "PJ-09",
+      "method": "membership-value-guard",
+      "outcome": "tested-rejected-investigation-backlog",
+      "evidenceRef": "candidates/provider-membership-guard/README.md",
+      "gain": null,
+      "reason": "Exact scopes empty; broader real-parent diagnostic materially worse."
+    },
+    {
+      "findingId": "DATA-04",
+      "method": "union-parent-card-hydration",
+      "outcome": "already-applied-current-source-matches-existing-proof",
+      "evidenceRef": "implementation-detail-hydration.md",
+      "gain": "Existing12actual fullDTOcomparisons retained; no duplicate implementation or repeat test."
+    },
+    {
+      "findingId": "DATA-07",
+      "method": "screen-observation-write-suppression",
+      "outcome": "not-applicable-contract-admission-failed",
+      "evidenceRef": "DATA07screen-noop/decision.md",
+      "gain": null,
+      "reason": "Ignoring advancing timestamps changes precedence/provenance/freshness; retaining required timestamps admits writes. No candidate or database comparison claimed."
+    },
+    {
+      "findingId": "PR-02",
+      "method": "bounded-report-and-independent-stop-release",
+      "outcome": "not-runnable-missing-design-and-actual-media-acceptance",
+      "evidenceRef": "evidence/candidates/pr02-report-stop-20261019/README.md",
+      "gain": null,
+      "reason": "Final-stop recovery/ambiguous-ack contract and isolated actual-media decoder/HLS acceptance are absent. No candidate or runtime comparison claimed."
+    },
+    {
+      "findingId": "PJ-08",
+      "method": "batched-imported-listens",
+      "outcome": "not-runnable-actual-positive-cohort-absent",
+      "evidenceRef": "candidates/pj08-actual-admission/result.md",
+      "gain": null,
+      "reason": "Read-only current-generation1594actual observations allmatchbaseline; zeropositive/1/100/10000deltas, sourcecountmax3,5listens. No fixture, candidate or batch-gain claim."
+    }
+  ],
+  "overallPassComplete": false
+}

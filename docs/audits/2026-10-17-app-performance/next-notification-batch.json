@@ -1,0 +1,277 @@
+{
+  "id": "MIN-04",
+  "status": "read_only_bounded_candidate_no_implementation",
+  "recordedAt": "2026-10-18T01:01:39.798111+00:00",
+  "repoWrites": "Documentation, exact successful probe source and aggregate receipts only; application/test implementation unchanged.",
+  "databaseWrites": false,
+  "providerCalls": false,
+  "sourcePins": {
+    "src/lib/collection/source-changes.server.ts": "2a948f416248eeee77a4481ff6dbc72b8bbbf917d8b9fef5892ed5e75c5d5741",
+    "src/lib/server/notifications/index.ts": "a8f88fbf9ed03536869e2c601bd2c5569cf663e53000a07912275448db4382e9",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/application/provider-sources.server.ts": "5dc4f1ab35e1a47e4fb1728d45a367106015f787297f18714d425a3cc56f9f2c",
+    "tests/notification-batching.test.ts": "e97e536f4f7dacd11ad3c98b6135aee697f4c86ff58d8c078d4f4cf428c697e0",
+    "tests/notifications-db.test.ts": "b5b85d0328a491a6aa2562264abffec70fe66ecdec30fc5e44808d11cd3e6cb9"
+  },
+  "actualCensus": {
+    "status": "passed",
+    "boundary": "Approved actual clone, bounded read-only aggregate census of existing notifications and source-account recipient groups; no row identifiers, message payloads, settings payloads, provider URLs or credentials retained. No notification/domain function is invoked.",
+    "normalDatabaseTouched": false,
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s"
+    },
+    "notifications": {
+      "total": 518,
+      "owners": 4,
+      "sync": 1,
+      "source_reviews": 0,
+      "exact_source_review_keys": 0,
+      "dismissed": 3,
+      "read": 18
+    },
+    "levels": [
+      {
+        "level": "normal",
+        "count": 507
+      },
+      {
+        "level": "silent",
+        "count": 11
+      }
+    ],
+    "accountGroups": [
+      {
+        "accountOrdinal": 0,
+        "notices": 292,
+        "sync": 1,
+        "exact_source_reviews": 0
+      },
+      {
+        "accountOrdinal": 1,
+        "notices": 3,
+        "sync": 0,
+        "exact_source_reviews": 0
+      },
+      {
+        "accountOrdinal": 2,
+        "notices": 111,
+        "sync": 0,
+        "exact_source_reviews": 0
+      },
+      {
+        "accountOrdinal": 3,
+        "notices": 112,
+        "sync": 0,
+        "exact_source_reviews": 0
+      }
+    ],
+    "jellyfinSourceRecipientGroups": [
+      {
+        "sourceOrdinal": 0,
+        "enabled": true,
+        "connections": 4,
+        "unique_users": 4,
+        "connected_users": 4,
+        "disabled_users": 0,
+        "users_with_existing_source_review": 0,
+        "existingRecipientSqlBound": {
+          "beforeConfigReads": 4,
+          "beforeSettingsReads": 4,
+          "beforeMaximumWrites": 4,
+          "batchedConfigReads": 1,
+          "batchedSettingsReads": 1,
+          "batchedMaximumWrites": 1
+        }
+      }
+    ],
+    "allSourceUnion": {
+      "connections": 4,
+      "unique_users": 4
+    },
+    "sourceReviewStates": [],
+    "preferenceCensus": {
+      "users": 4,
+      "enabled": 4,
+      "silenced": 0,
+      "silent": 0,
+      "normal": 0,
+      "persistent": 0
+    },
+    "gaps": [
+      "The518stored-notice corpus is not a518-recipient source event. Recipient groups are derived from actual current Jellyfin bindings, not newly executed disconnect/disable/delete operations.",
+      "No domain writes, notification replay, failure injection or runtime SQL timing was executed. Structural SQL bounds are supplementary, not measured latency.",
+      "A source-review upsert cohort is reported independently; zero saved source-key matches must remain a gap.",
+      "User-level preference aggregates and stored notice levels describe different times; existing silent history does not prove current silenced-recipient behavior."
+    ],
+    "rolledBack": true
+  },
+  "remainingWork": {
+    "owner": "notifySourceChangeUsers -> notify -> notifyMany([one], explicit default database)",
+    "whyPriorFixesDoNotRemoveIt": "notifyMany batches inputs internally, but source changes pass one input per call. getConfig(database) deliberately bypasses HTTP request memoization. Each call separately reads policy and full recipient settings, then writes one notice.",
+    "NExistingRecipients": "At most3N SQL calls with one admitted write each; missing users or suppression can reduce writes. Source ID lookup in notifySourceChange adds one existing ORM SELECT independently.",
+    "actualSourceGroup": "One enabled Jellyfin instance has4connected bindings /4unique existing enabled users. Under stable admitted inputs, source-only bound is4config+4settings+4write calls, not a measured call trace.",
+    "notAnInboxHydrationFix": "The518 stored rows do not drive source-change recipient count; this change does not speed inbox summary, detail/card hydration or historical scans.",
+    "settingsPayloadBoundary": "The same distinct users still contribute their full settings once each in either option; query batching alone does not establish fewer aggregate settings bytes, inbox hydration work or historical scans."
+  },
+  "minimalOptions": [
+    {
+      "name": "shared_preparation_individual_statement_writes",
+      "recommendation": "Conservative default if current ordered prefix-delivery behavior must remain.",
+      "implementation": "Keep prepared config/settings batching in the canonical notification owner but allow explicit individual-statement emission through a narrow shared entry point or one internal write-policy flag. Source-change caller deduplicates ordered recipients and uses it. Existing notifyMany/broadcast defaults remain batched. No caller-side snapshot cache or duplicate level logic.",
+      "actualFourRecipientBound": "1config+1settings+4INSERT=6SQLcalls;4individualcommit boundaries remain when given the pool.",
+      "preserves": "Input order, per-user source keys/wording, missing-user handling, current preference calculation/SQL visibility, void return, empty-input no DB work, and statement-level partial prefix on a later write error.",
+      "boundary": "Config and recipient settings become one bounded preparation snapshot, as supported by existing notifyMany. That snapshot contract must be explicit; individual writes preserve statement failure boundaries, not per-recipient settings reread timing. A failed shared preparation query occurs before any notices are written; baseline later-recipient config/settings read failures could follow earlier committed notices. Full failure equivalence therefore needs explicit read-failure semantics as well as individual write boundaries.",
+      "size": "Small shared-owner extension; no schema, production dependency, scheduler, global cache or UI change."
+    },
+    {
+      "name": "existing_notifyMany_multirow_writes",
+      "recommendation": "Simplest code only if chunk-level notification write atomicity is deliberately accepted.",
+      "implementation": "Deduplicate ordered userIds; preserve empty guard; map exact existing messages; await existing notifyMany once and retain void return.",
+      "actualFourRecipientBound": "1config+1settings+1INSERT=3SQLcalls. Writes/users are bounded100 per existing batch.",
+      "semanticDifference": "One recipient SQL/constraint error rolls back the whole multi-row chunk. Baseline earlier recipients are already committed. Later100-item chunks still permit earlier chunks committed. Source mutation already commits before notifications and a deleted instance cannot simply be retried.",
+      "size": "Likely one caller import/body change, but not an unqualified semantic-equivalence fix."
+    }
+  ],
+  "testPlan": {
+    "actualReadOnlyAlreadyDone": [
+      "Explicit READ ONLY repeatable-read census,10sstatement/1slock budgets; all pools closed and transaction rolled back.",
+      "Positive4-recipient current source binding group exists;0saved collection-source-review keys.",
+      "518existing rows across4owners;1sync notice;507normal/11silent;18read/3dismissed. Current4users have no explicit notification-level override/silencing."
+    ],
+    "actualNextOnlyAfterWriteAuthorization": [
+      "On the private clone, baseline/current source notification functions use actual bindings/recipient IDs with full original notification/user/settings/revision state retained privately. No disconnect/disable/delete or provider call.",
+      "Use one fixed transaction timestamp/savepoints for exact payload comparison. For genuinely new rows compare generation semantics and keyed identity rather than falsely claiming literal random UUID equality. For any naturally existing source key, preserve id/created_at/read_at/dismissed_at; current dataset has none.",
+      "Compare complete notice fields and source-key/user mapping; all518prior rows and whole-table logical values must restore after rollback. Capture all raw SQL config/settings/write calls, not just ORM statements.",
+      "Replay duplicate recipient IDs drawn from the same actual4bindings and empty input; do not fabricate accounts or catalogue to claim batching scale.",
+      "If a source-key upsert is exercised only by a second call within rollback, label it controlled event replay rather than an originally saved source-review cohort."
+    ],
+    "controlledCorrectnessSeparately": [
+      "Fault before first write, after an acknowledged first recipient and later recipient SQL failure; exact committed prefix per selected mode must be asserted. Do not inject failures or new fixtures into the actual clone under this read-only task.",
+      "Missing recipient, silence/locked levels, optional social preferences, duplicate source keys and100-boundary chunk handling use existing notification tests or an isolated correctness database; these authored states are not actual-data performance proof.",
+      "Current per-row SQL visibility remains, no new disabled/social filter is introduced for sync notices, and current callers retain void/error propagation.",
+      "Config/settings changes between preparation and writes must follow the explicitly selected snapshot contract; independent transactions and explicit database arguments never acquire a second pool connection.",
+      "Inject configuration/settings preparation read failures separately from write failures. Shared preparation moves those failures before the first write; do not claim complete original failure equivalence from individual INSERTs alone."
+    ]
+  },
+  "gaps": [
+    "No source-change mutation or notification function was executed. No latency, WAL, provider, browser or actual failure schedule claim.",
+    "No stored collection-source-review notices, persistent notices or current recipient preference overrides. Their positive contracts remain controlled/actual-future gaps.",
+    "The first census draft incorrectly referenced seen_at, which is absent from the current schema; that READ ONLY attempt failed and was retained in the published failed receipt. Corrected census uses actual read_at/dismissed_at fields. This was a probe error, not an application defect."
+  ],
+  "artifacts": {
+    "probe": "probes/notification-source-census.ts",
+    "passedCensus": "evidence/next-notification-batch-census.json",
+    "failedFirstCensus": "evidence/next-notification-batch-census-first-attempt.json"
+  },
+  "implementationApprovalRequired": "No new human approval is intrinsically required for the routine shared-owner correction. Parent should select/preserve the concrete failure and snapshot contract before authorizing the next implementation batch; no added dependency or unavoidable architecture is proposed.",
+  "schemaVersion": 1,
+  "report": "next-notification-batch.md",
+  "publishedAt": "2026-10-18T01:04:48.648397+00:00",
+  "canonicalStatusChanged": false,
+  "applicationImplementationApplied": false,
+  "semanticsSelectedOrAdopted": false,
+  "databaseExecutionAtPublication": false,
+  "actualCensusExecutedPreviously": true,
+  "sourcePinsVerifiedAtPublication": true,
+  "sourceReferences": [
+    {
+      "path": "src/lib/collection/source-changes.server.ts",
+      "line": 52,
+      "meaning": "Optional source-ID to recipient lookup."
+    },
+    {
+      "path": "src/lib/collection/source-changes.server.ts",
+      "line": 57,
+      "meaning": "Deduplicated sequential single-notice loop."
+    },
+    {
+      "path": "src/lib/server/notifications/index.ts",
+      "line": 30,
+      "meaning": "Shared preference and requested-level calculation."
+    },
+    {
+      "path": "src/lib/server/notifications/index.ts",
+      "line": 43,
+      "meaning": "Bounded writes, per-row visibility and sequential duplicate-key handling."
+    },
+    {
+      "path": "src/lib/server/notifications/index.ts",
+      "line": 69,
+      "meaning": "Config once per call; full user settings once per input batch of at most100."
+    },
+    {
+      "path": "src/lib/server/notifications/index.ts",
+      "line": 81,
+      "meaning": "Single notify delegates with one input and explicit database."
+    },
+    {
+      "path": "src/lib/server/config.ts",
+      "line": 109,
+      "meaning": "Explicit database bypasses request memoization."
+    },
+    {
+      "path": "src/lib/application/provider-sources.server.ts",
+      "line": 10,
+      "meaning": "Disconnect sends source notice after domain transaction."
+    },
+    {
+      "path": "src/lib/application/provider-sources.server.ts",
+      "line": 38,
+      "meaning": "Instance disable sends source notices after domain transaction."
+    },
+    {
+      "path": "src/lib/application/provider-sources.server.ts",
+      "line": 55,
+      "meaning": "Instance delete captures recipients before deletion, sends after transaction."
+    }
+  ],
+  "consumers": [
+    {
+      "owner": "disconnectProvider",
+      "noticeOwner": "notifySourceChange -> notifySourceChangeUsers",
+      "contract": "Domain source transaction completes before notification delivery."
+    },
+    {
+      "owner": "setInstanceEnabled (Jellyfin disable)",
+      "noticeOwner": "notifySourceChange -> notifySourceChangeUsers",
+      "contract": "Domain source transaction completes before notification delivery."
+    },
+    {
+      "owner": "deleteInstance (Jellyfin)",
+      "noticeOwner": "notifySourceChangeUsers",
+      "contract": "Recipient IDs survive source deletion; delivery occurs after delete transaction."
+    },
+    {
+      "owner": "Existing notify/notifyMany/broadcast consumers",
+      "noticeOwner": "Shared notification preparation/write implementation",
+      "contract": "Conservative extension must leave their current default batching behavior unchanged."
+    }
+  ],
+  "publicationBoundary": "Next-batch design only: no failure atomicity or settings-snapshot behavior is selected, approved or adopted by this publication.",
+  "existingRawReceiptCalibration": {
+    "structuralFields": "existingRecipientSqlBound fields in the passed census are source-derived bounds, not captured statement counts. batchedMaximumWrites describes direct notifyMany, not the separate individual-write option.",
+    "firstAttempt": "The first READ ONLY draft referenced seen_at, absent from current schema. The saved failure receipt has only private_diagnostic_only, without a SQLSTATE or raw error text; no exact error code is claimed. Corrected probe uses read_at and dismissed_at. This is a probe correction, not an application defect.",
+    "executionSource": "Published probe is an exact byte copy of the successful executed probe. The failed draft source was not retained; only its aggregate failed receipt is published."
+  },
+  "artifactSha256": {
+    "probes/notification-source-census.ts": "d70979cb29a9c4caa119fd8dcee3edd881e93b0d2a2a5e5ce4ae638dce33b018",
+    "evidence/next-notification-batch-census.json": "7bc9b93e2822e0a850b2dcf0a3a0fd8ec348bebeb7f8a2886123358adc0a071e",
+    "evidence/next-notification-batch-census-first-attempt.json": "c7734d230cdb4c5f210626503339e4ab24fe0dc0718de4927d8c371b40638f37"
+  },
+  "relatedReports": [
+    "data-api.md",
+    "data-api-findings.json",
+    "remaining-work-disposition.md",
+    "remaining-work-disposition.json"
+  ],
+  "ledgerSnapshot": {
+    "sha256": "0a5d6a214b05fb1c5797e905d56c60b5274f9b9b8ae782ceb9b2452bd0e89fca",
+    "ref": "implementation-ledger.json",
+    "capturedBy": "remaining-work-disposition.json",
+    "status": "historical_snapshot_not_refreshed",
+    "boundary": "Retains the earlier captured ledger hash; root has not authorized a final hash refresh. Current authoritative ledger may differ. No canonical status or ledger file was edited."
+  }
+}

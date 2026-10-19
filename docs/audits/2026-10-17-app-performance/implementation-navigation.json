@@ -1,0 +1,448 @@
+{
+  "id": "ROUTE-NAV-OBS-02",
+  "relatedObservationIds": [
+    "SETTINGS-NAV-OBS-01"
+  ],
+  "status": "adopted_install_regression_and_normal_functional_verified_historical_incident_cause_unproven",
+  "approvalReason": "The human explicitly approved adopting the reviewed repair and verifying it. Exact Kit pin, maintained patch, build admission and packaging checks are now adopted.",
+  "proposal": "implementation-navigation.md",
+  "sharedOwner": "Installed SvelteKit client navigation and invalidation token/commit/callback owner",
+  "consumers": [
+    "All client-routed screen/music/games/books/comics/library/discovery/search/profile/settings/social/planning/list pages",
+    "Signed-in and guest routes",
+    "UI preview/demo routes where client routing is active; initial client-only entry remains an acceptance boundary",
+    "Existing shallow overlays retain their current non-onNavigate version2 path"
+  ],
+  "normalDevEvidence": {
+    "exception": "TypeError reading length in outgoing Discover data.trending",
+    "timestampUtc": "2026-10-17T23:14:34.294Z",
+    "reportedJourney": [
+      "/discover",
+      "/settings/admin",
+      "/for-you"
+    ],
+    "causality": "Observed real exception; exact transport/constructor/data commit trace not captured. Installed-source token gap independently reproduced; same class documented upstream, exact occurrence causality remains a candidate.",
+    "nativeAB": "One native original-wait trial and one no-wait trial both no exception; callbacks about600ms apart, intended overlap not established, inconclusive. All three temporary source hashes restored."
+  },
+  "package": "@sveltejs/kit",
+  "version": "2.70.3",
+  "sourceBeforeSha256": "a2e26ea4f6b2668c396af9b44bbda2047640c2c9cbb81d3660ec4b1e3310a2c3",
+  "sourceCandidateSha256": "8cfd583bd4d9c9aff69d74a8f3440f7b744d731baaeb5133c8e4605a93663141",
+  "patchSha256": "94c566a791131b766fe29e8e53ef9107f0ac49de92f9ab7441c629b1077bb78f",
+  "upstream": {
+    "url": "https://github.com/sveltejs/kit/pull/17302",
+    "headSha": "a83ab3a1c1bf7ef7124da07800468dba0a285a57",
+    "state": "open",
+    "merged": false,
+    "patchSha256": "8d8e282b04e3c3c60e35fdea94a573196c02d55e45d36eeedd2d6b7154055184"
+  },
+  "candidateChanges": [
+    "own returned callbacks by registration identity",
+    "retain this navigation registration through render settle",
+    "recheck ownership before current/render commit; discard taken preload fork",
+    "remove callbacks on render-settle supersession",
+    "remove older registrations before the current successful navigation dispatches",
+    "additional fence after preload fork resolves, before any current/render commit",
+    "resolve fork before current mutation rather than after it",
+    "unregister obsolete navigation callbacks and release only a superseded internal navigation synchronously at invalidation ownership"
+  ],
+  "disclosedAdditionalScope": [
+    "Validated pending preload-fork await ownership fence before current mutation; optional forkPreloads currentlyfalse",
+    "Synchronous invalidation token ownership expires old returned callbacks and resets only real internal navigation flags before notifying store subscribers"
+  ],
+  "controlledProof": {
+    "applicationRowsUsed": false,
+    "databaseUsed": false,
+    "performanceClaim": false,
+    "entireInstalledFunctions": [
+      "navigate",
+      "_before_navigate",
+      "_invalidate",
+      "_goto",
+      "create_navigation"
+    ],
+    "actualRuntimePrimitives": [
+      "Svelte writable",
+      "Svelte client tick",
+      "Svelte client settled",
+      "real navigation.complete Promise from installed create_navigation"
+    ],
+    "commitCallbackCases": 8,
+    "invalidationOwnerCases": 13,
+    "candidateAllScopedCasesPass": true,
+    "baselineCommitCallbackFailures": 5,
+    "commitOnlyInvalidationPasses": 3,
+    "boundary": "Browser/root/load/render boundaries use diagnostic metadata only. Not DOM or actual rendered acceptance. Source-existing flag residue confirmed after baseline1realsettled+2realticks; final candidate tested under controlled errors/redirect/cancel/newowner/store reentrancy.",
+    "baselineFragmentDiagnosticCases": 4,
+    "baselineFragmentDiagnosticBoundary": "Separate baseline-only proof; not additional patched candidate acceptance cases.",
+    "installedSchedules": {
+      "commitCallbackFork": 8,
+      "invalidation": 13,
+      "allPassed": true,
+      "focusedTests": 9,
+      "assertions": 64,
+      "driftFaults": 6,
+      "evidence": "evidence/navigation-adoption-focused-tests.txt",
+      "notDomOrActualData": true
+    }
+  },
+  "review": {
+    "status": "independent_read_only_review_passed",
+    "candidateSha256": "8cfd583bd4d9c9aff69d74a8f3440f7b744d731baaeb5133c8e4605a93663141",
+    "scope": "Token fences, callback wrapper identity, fork order, synchronous invalidation registration/flag cleanup, newer subscriber owner safety; no new blocker identified.",
+    "remainingBoundaries": [
+      "Initial client-only entry",
+      "Full browser unload",
+      "Actual normal-dev/built rendered route acceptance",
+      "Callbacks or forks rejecting or never settling are not universally repaired",
+      "Exact observed Discover exception causal trace pending"
+    ]
+  },
+  "adoption": {
+    "approved": true,
+    "mechanism": "Exact Bun patchedDependencies registration and lockfile for @sveltejs/kit@2.70.3; byte-exact reviewed patch applied after Bun unlinked preparation. No generated diff substitutes for the reviewed patch.",
+    "newProductionDependency": false,
+    "appAnimationChanges": false,
+    "proposedDriftGate": [
+      "Exact installed package version",
+      "Patched installed client SHA-256",
+      "Patch SHA-256 and manifest entry",
+      "Frozen-lockfile disposable reinstall",
+      "Ownership regression against installed source"
+    ],
+    "removalCondition": "Maintained release with equivalent ownership/callback/fork behavior passes same schedules and actual browser acceptance; remove patch and exact-version constraint, reinstall and verify.",
+    "installed": true,
+    "maintainedGate": "scripts/check-navigation-runtime.ts",
+    "buildAdmission": "bun run navigation:check before Vite build",
+    "postinstallAdded": false,
+    "productionOmissionShim": false,
+    "adoptionReceipt": "evidence/navigation-adoption.json",
+    "sourcePins": {
+      "package.json": "faacde885a670752c385f25f114b3ff80e0182769d72a82706ce5d804a509139",
+      "bun.lock": "53d8feaa37aefa6ada339d3cd2da73a9985cba24a1cf96e4da64cfa24b2c065d",
+      "Dockerfile": "d5b02abc3106ebb38c8050af001394254ef0997e96d39a68790f3d1b39cf1d09",
+      "patches/sveltejs-kit-2.70.3.patch": "94c566a791131b766fe29e8e53ef9107f0ac49de92f9ab7441c629b1077bb78f",
+      "scripts/check-navigation-runtime.ts": "0417490eec63bb4bc409972c0221d8c04f0cbe60b4863f22b62a22fae3ab2922",
+      "tests/fixtures/navigation-runtime.ts": "1929b44f7745cb7f24f7069109705c2e5dee487752226e0cbd5999c53accd82b",
+      "tests/navigation-runtime.test.ts": "62c6a68093d8867a089b3b422a457bed299bfc862b2d7a288d905e1fa8490de6",
+      "tests/route-refresh.test.ts": "9830ec8a912dc835054010920d1f72522404e72c214c378361919d67dad0cf44",
+      "node_modules/@sveltejs/kit/src/runtime/client/client.js": "8cfd583bd4d9c9aff69d74a8f3440f7b744d731baaeb5133c8e4605a93663141"
+    },
+    "frozenOfflineFullInstallPassed": true,
+    "frozenOfflineProductionInstallPassed": true,
+    "lockedResolutionRecordsUnchanged": 265,
+    "signedInActualAcceptance": {
+      "receipt": "evidence/implementation-navigation-normal.json",
+      "sourceUnchanged": true,
+      "friendsRetainedSeconds": 47.017,
+      "actualFriends": 3,
+      "finalTasks": 30,
+      "reverseWheelAtTop": "160/0 -> 0/0",
+      "newConsoleWarnOrError": 0,
+      "boundary": "Functional signed-in normal journey, not a forced race, causal historical incident reproduction, native resource or provider benchmark. Direct served-JS navigation was blocked; no bypass."
+    },
+    "commonGates": {
+      "receipt": "evidence/implementation-20261018-navigation-adoption-gates.json",
+      "unit": {
+        "pass": 801,
+        "skip": 713,
+        "fail": 0,
+        "assertions": 33846,
+        "tests": 1514,
+        "files": 281
+      },
+      "checkErrors": 0,
+      "checkWarnings": 0,
+      "buildInventoryStylePassed": true,
+      "boundary": "Frozen navigation source before the later two-owner API repair. These gates are not represented as verification of that later source."
+    }
+  },
+  "actualAcceptancePlan": {
+    "status": "approved_pending_root_normal_dev_verification",
+    "interactionOwner": "Temporary application-owned diagnostic with an explicit visible control, operated solely through CUA; browser evaluation remains read-only. Restore exact touched source hashes.",
+    "prohibited": "No browser prototype wrappers, synthetic clicks dispatched from evaluation or hidden app API calls.",
+    "journeys": [
+      "Discover\u2192Admin\u2192ForYou",
+      "Discover\u2192Admin\u2192Discover same-route return",
+      "Rapid route\u2192Back",
+      "Search independent filters\u2192Back\u2192nextfilter",
+      "Dirty guard cancel",
+      "Invalidation/redirect/error/newer navigation",
+      "Reduced motion and direct hero exclusions",
+      "Ordinary successful navigation"
+    ],
+    "assertions": [
+      "Newest URL/constructor/required-data-shape coherence",
+      "No stale page mount/resource admission",
+      "No obsolete fade-in callback",
+      "Final usable opacity/focus",
+      "Existing actual cards and privacy remain"
+    ]
+  },
+  "evidence": [
+    "evidence/implementation-navigation-owner.json",
+    "evidence/implementation-navigation-invalidation.json",
+    "evidence/implementation-navigation-invalidation-before.json",
+    "evidence/implementation-navigation-upstream.json",
+    "evidence/implementation-navigation-patch-apply.json",
+    "evidence/implementation-navigation-token-gap.json",
+    "evidence/navigation-adoption.json",
+    "evidence/navigation-adoption-installs.json",
+    "evidence/navigation-adoption-focused-tests.txt",
+    "evidence/navigation-adoption-review.json"
+  ],
+  "probes": [
+    "probes/navigation-owner.ts",
+    "probes/navigation-invalidation-owner.ts",
+    "probes/navigation-token-gap.ts",
+    "probes/navigation-install-proof.py"
+  ],
+  "artifacts": [
+    "candidates/navigation/sveltejs-kit-2.70.3-navigation.patch",
+    "candidates/navigation/client.candidate.js.txt",
+    "candidates/navigation/client.before.js.txt",
+    "candidates/navigation/client.upstream-equivalent.js.txt",
+    "candidates/navigation/client.commit-only.js.txt",
+    "candidates/navigation/upstream-17302-client.patch",
+    "candidates/navigation/LICENSE.sveltekit.txt"
+  ],
+  "installedSourceSha256": "8cfd583bd4d9c9aff69d74a8f3440f7b744d731baaeb5133c8e4605a93663141",
+  "historicalProposal": [
+    "evidence/navigation-adoption-proposal-md.txt",
+    "evidence/navigation-adoption-proposal-json.txt"
+  ],
+  "actualAdoptionBoundary": "Adopted with clean full/production installs, installed-owner schedules, combined frozen gates and signed-in normal functional acceptance. The historical natural exception causal trace and residual refresh races remain unproved/open.",
+  "sourcePins": {
+    "package.json": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2",
+    "bun.lock": "53d8feaa37aefa6ada339d3cd2da73a9985cba24a1cf96e4da64cfa24b2c065d",
+    "Dockerfile": "d5b02abc3106ebb38c8050af001394254ef0997e96d39a68790f3d1b39cf1d09",
+    "patches/sveltejs-kit-2.70.3.patch": "94c566a791131b766fe29e8e53ef9107f0ac49de92f9ab7441c629b1077bb78f",
+    "scripts/check-navigation-runtime.ts": "0417490eec63bb4bc409972c0221d8c04f0cbe60b4863f22b62a22fae3ab2922",
+    "tests/fixtures/navigation-runtime.ts": "1929b44f7745cb7f24f7069109705c2e5dee487752226e0cbd5999c53accd82b",
+    "tests/navigation-runtime.test.ts": "62c6a68093d8867a089b3b422a457bed299bfc862b2d7a288d905e1fa8490de6",
+    "tests/route-refresh.test.ts": "9830ec8a912dc835054010920d1f72522404e72c214c378361919d67dad0cf44",
+    "node_modules/@sveltejs/kit/src/runtime/client/client.js": "8cfd583bd4d9c9aff69d74a8f3440f7b744d731baaeb5133c8e4605a93663141"
+  },
+  "artifactPins": {
+    "evidence/navigation-adoption-Dockerfile-before.txt": "e5e4cd12c53946c1fcbe8ae38673604f709da45046453f23f1626eebb829a6ff",
+    "evidence/navigation-adoption-bun-lock-before.txt": "018c3dd3f694dc71339222df0db13f567239b9cbf8231e2bc866348ba06ba4ef",
+    "evidence/navigation-adoption-focused-tests.txt": "0a9b46fc1fb4b37a5265d34c185d7a03a49872e8d9e7b8fe0383a91188ff4033",
+    "evidence/navigation-adoption-install-first-gate.txt": "cfe70487e67f3e51827194e363343a08aecb435b4c763d99007c18a6aa706a59",
+    "evidence/navigation-adoption-install-first.json": "ba7425b90b8f9088f519fb4ef23e8912a2efe3cf9ec69751de334a9906d6672b",
+    "evidence/navigation-adoption-install-first.py.txt": "10da2bb13efa91f7daa69eac29809dbe53ded397774da99446dad709d9d0dead",
+    "evidence/navigation-adoption-install-full-gate.txt": "f303ad9bc575e039c591f8c1dba75f6c14a196496b000ea1484200a711855232",
+    "evidence/navigation-adoption-install-full.txt": "8d693494eccc61c877818f7b484df5474c7497277af2c673b10d636fca4b6b86",
+    "evidence/navigation-adoption-install-production.txt": "14916f7b5c52b1ad2048095fa96bcb24cadc2a5cd4399bc8a377c4b1cc1fe3f4",
+    "evidence/navigation-adoption-installs.json": "4511d6c26d796833b83c114d9ddee16da6c75f4bb0c71bf6b3cd7991d7572ecc",
+    "evidence/navigation-adoption-lock-delta.json": "45fcd0275d5b8755ff8b842cfa5282eb2f7f4ed88b723de6e57b13b79394bb42",
+    "evidence/navigation-adoption-package-json-before.txt": "5332ad246ab50372addc71a9848163717954b562d89b416d88f494ed64aad157",
+    "evidence/navigation-adoption-patch-commit-failure.json": "db223dc35b3c496eeca27dbe5cd33c7aab7ed1ffb3a37f5b296432a7410460c3",
+    "evidence/navigation-adoption-proposal-json.txt": "9414a38b0fc5b4243a505f6c9cc533aaa28b99bff7d71689363ace5e1deff346",
+    "evidence/navigation-adoption-proposal-md.txt": "569ac774c02aad2ca3c3bd289b84ea592e8821e46b650f388550f45f8571974a",
+    "evidence/navigation-adoption-review.json": "f8ab475c72e8b45dca074f3cb08e8cf467d8d1e99b735bd3a4cf356de4dfbea7",
+    "evidence/navigation-adoption-route-refresh-before.ts.txt": "187e951b4b11360f2766545196cfed726b73bd6cd3a1ceee7e8b5c460b3dbb96",
+    "evidence/navigation-adoption-types-first.txt": "4911305e08fc02c18553ab4653b6eb81275378300f87646d1e319a683eb9d938",
+    "evidence/navigation-adoption-types.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "probes/navigation-install-proof.py": "7d393dadc4bd7107e3e114f6d6c928862ba9bef4beee959709d444e027265e30",
+    "evidence/navigation-adoption.json": "2bae7b27d436b35822a09e929a39717bd6f43b069f5d6a4c1a4c84707e5e205d",
+    "evidence/implementation-navigation-owner.json": "b71815b05c3fd376864f3aa1cec82747011fa0ad921559cbea9415a84bc13717",
+    "evidence/implementation-navigation-invalidation.json": "ffda9e812ce938e94fb7159210282aad628b09b88420bb063469841841a1d56c",
+    "evidence/implementation-navigation-invalidation-before.json": "1197e63a1e6a44577b9db17df0b095bfa46700a03edb5b51cb56aa00ea21e5cd",
+    "evidence/implementation-navigation-upstream.json": "3eba4ce3b7b39b8877e7f9cde2c39cba4880e1ea706ea5618170e7afa4405f0c",
+    "evidence/implementation-navigation-patch-apply.json": "323ecb156a9a71dd9f8f46bb24628e2ef209f68c656fb19664d00f2e6ea41635",
+    "evidence/implementation-navigation-token-gap.json": "166b83b25fcc7da747ffb84c80fdf7851860e6965aa9ee7b6edb225f516b25fe",
+    "probes/navigation-owner.ts": "6cd5e29210090eb597307e30c6b2c6ffe5c761146d7812532a3d55ac0edb5785",
+    "probes/navigation-invalidation-owner.ts": "7931b2077c5dd1799ac6425906f352f78babde620601beca3127f56e1be68e63",
+    "probes/navigation-token-gap.ts": "803690032f2e14c42d338b9808ad95f64c99bd3370a5024caf1f514d56ac09e8",
+    "candidates/navigation/sveltejs-kit-2.70.3-navigation.patch": "94c566a791131b766fe29e8e53ef9107f0ac49de92f9ab7441c629b1077bb78f",
+    "candidates/navigation/client.candidate.js.txt": "8cfd583bd4d9c9aff69d74a8f3440f7b744d731baaeb5133c8e4605a93663141",
+    "candidates/navigation/client.before.js.txt": "a2e26ea4f6b2668c396af9b44bbda2047640c2c9cbb81d3660ec4b1e3310a2c3",
+    "candidates/navigation/client.upstream-equivalent.js.txt": "67533e512c156f92d322109944ff9bfdf1d26cfd20d530b8ce25f1f599871e66",
+    "candidates/navigation/client.commit-only.js.txt": "9b5921003cd4c226e519a76a5f214343a43cf7929ffd51e6b0ca0231fbf65c32",
+    "candidates/navigation/upstream-17302-client.patch": "d8845c7a3f91ee3453e0554d66aa315b7f568207ab46b1c507e87c23f37f27ec",
+    "candidates/navigation/LICENSE.sveltekit.txt": "ac6ecdc526c9e6aec1db76f0e8dfe344d792380e974686476e7c512152ae2636",
+    "evidence/implementation-navigation-normal.json": "e2e42d444f25849428f22e0ffcf2c6ad2b9e8730808b5750899a88e1d3b72cff",
+    "evidence/implementation-navigation-normal-refresh.json": "2adc138868f83753752393c26d4572ce6fee5824bf1d2ae4706411ad85e73dba",
+    "evidence/implementation-navigation-normal-video-teardown.json": "cde35cf1a08011da9ba01910c79fe1061dc558e0e432fe236af7eaec3a716856",
+    "evidence/implementation-20261018-navigation-adoption-gates.json": "d8bea87ffdc8032e3cc675c44eec1c10466a55f33d8324576a18f59272076797",
+    "evidence/implementation-20261018-navigation-adoption-source-inventory.json": "c0f59598a3d2da16d50085c096234fe4a4668eb8927a5c6248848af44622865f",
+    "evidence/implementation-navigation-normal-friends.png": "de08307c4aecb0202269c4935a614a01ccf8022adc9ebd2fe54315f8c8163229",
+    "evidence/implementation-navigation-normal-panel.png": "2d2bd24064f8468e8797f997243c2f1e6762d995d7d8b9a97c13773f9e564617",
+    "evidence/implementation-navigation-normal-tasks.png": "d4f175f0f736fe874fcc3a840402a67cfcb9a48499c4d6be5ee7b211b8ea6cc0",
+    "evidence/implementation-20261018-navigation-adoption-unit.log": "aa62234587c761adbe1632a45e2ab99fb3d81b08655172d47980ac1174707ea0",
+    "evidence/implementation-20261018-navigation-adoption-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "evidence/implementation-20261018-navigation-adoption-build.log": "ebd9096f699c0bf7668f32701012eab20e182f722dc21f8ffb9d7e8f007ceba3",
+    "evidence/implementation-20261018-navigation-adoption-code-inventory.log": "c3cecdd87cada72421cbb61844240292b0d2103daa0a85051bf24d01da57730e",
+    "evidence/implementation-20261018-navigation-adoption-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "evidence/implementation-20261018-navigation-adoption-code-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "evidence/detail-back-source-review.md": "32c8fca55c5cd50b362a29a3074eb332145fcf3184aec1c043d2268f03108c67",
+    "evidence/detail-back-source-review.json": "b91519a8bd5aa96f78625828f856a6f04da7c2a4afb7ef64b0b155e2708b7be7",
+    "evidence/implementation-activity-workset-normal.json": "762a3ae63196d48f7ed9650ca47b665c0a97aba8abf2a32592919b63e9290936",
+    "evidence/implementation-activity-workset-normal-back-unexpected.png": "ef140c4af94a0a829add702fc2e9350fd967ea59db69cb4ae23122c04f8b0c8a"
+  },
+  "additionalInventorySourcePins": {
+    "src/lib/ui/media-navigation.ts": "9b0535e07a54c78ae4a550bf1a8b3a954fbc07d6b89b32028be6e47e40ce6af7",
+    "src/lib/media/DetailPanel.svelte": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55",
+    "src/lib/ui/components/DetailOverlay.svelte": "dee4a3b5edb0bc89c63eb7e6f0f6b3eab5c3aba80d5001842392387a87be1118",
+    "src/lib/ui/components/Dialog.svelte": "af712feba97efe636b88ae94cb21814bfa7c4166e8007ba0a90f7bdaab9fa555",
+    "src/lib/ui/components/Button.svelte": "94aa6493576191d136b8da0286401527a69104a57bddd5416cbb06721dd7e496",
+    "src/lib/media/Details.svelte": "8621b46f560de97442dcdb9490df245dd5de7bed985ef45865e784c5400b50cd",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/detail-section.svelte.ts": "dd2156aa5d90546a7c74cd413cda961dc6cd507108501f522a3d2dcd8a4adf0d",
+    "src/lib/media/detail-target.ts": "8beb2d610cd3c480d0c268a9a0f49c908043ca30333575f7be982091fe45fdab",
+    "src/lib/ui/section-target.ts": "3920829e19358f68a08c08737729b48b057630f1f918f98ddd4be22f99f25d05",
+    "src/lib/ui/client.ts": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7",
+    "src/routes/+layout.svelte": "fa2da910bdfa5d467592bb1496fab1afb8eca1ce5dc6849bd1e437b6e20d4baa",
+    "src/lib/ui/content-revision.svelte.ts": "a020f2a02ab30655fe9d1203fe3c90200625e874c2e63714a499f5c8b1661fd3",
+    "node_modules/@sveltejs/kit/src/runtime/client/client.js": "8cfd583bd4d9c9aff69d74a8f3440f7b744d731baaeb5133c8e4605a93663141",
+    "patches/sveltejs-kit-2.70.3.patch": "94c566a791131b766fe29e8e53ef9107f0ac49de92f9ab7441c629b1077bb78f",
+    "tests/media-navigation.test.ts": "c65ae28c29c487e603cc445fcf70d07da57d2dbadf61381368f93046f2311ad3",
+    "tests/detail-panel-lifetime.test.ts": "8f67f23fd17a972b0479b3430bd5da344b2ac5c1024ef8f752a8bcd175be301d",
+    "tests/route-refresh.test.ts": "9830ec8a912dc835054010920d1f72522404e72c214c378361919d67dad0cf44",
+    "tests/dialog-geometry.test.ts": "a5f0db4e7f30c41918bbcba4e9deec2a7b41c75011eb09a50b22ff61285157e6",
+    "src/lib/ui/client-context.ts": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "laterNormalBackObservation": {
+    "receipt": "evidence/implementation-activity-workset-normal.json",
+    "sourceReview": "evidence/detail-back-source-review.md",
+    "fullBackAcceptance": false,
+    "boundary": "Filtered sequence closed to Library; unfiltered repeat eventually restored movie. Source exposes a potential terminal manual/native duplicate close, but no auth/status/close trace establishes it occurred. Existing21router schedules do not cover this native close integration."
+  },
+  "laterNativeCloseBaseline": {
+    "report": "detail-close-baseline.md",
+    "machine": "detail-close-baseline.json",
+    "receipt": "evidence/detail-close-baseline-cua.json",
+    "supplementaryAuthoredControls": 7,
+    "productionRepairApplied": false,
+    "actualFilteredBackCauseEstablished": false
+  },
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T10:21:52.057608+00:00",
+      "changes": {
+        "src/lib/media/DetailPanel.svelte": {
+          "before": "59c9dc9f338be06b0c6eb680cd65ec31a8eeeb40cd2fe5fbea312f2a5a3a57bb",
+          "after": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55"
+        },
+        "src/lib/ui/components/Dialog.svelte": {
+          "before": "1e4df07f144e6fd5bf1f5429283849f6e72b1c7d99a4f114b4ad770ae1c3ffbf",
+          "after": "cecb013bb41e725f3c4de65c75757ce64c218143368d471f9542230c25b69f0a"
+        },
+        "tests/dialog-geometry.test.ts": {
+          "before": "be287367adc2d9afa31fbab8392d59586860a6918238a6684c39114e2c20c826",
+          "after": "a5f0db4e7f30c41918bbcba4e9deec2a7b41c75011eb09a50b22ff61285157e6"
+        }
+      },
+      "evidence": "evidence/implementation-detail-close-applied.json",
+      "boundary": "Current identity after separate three-line shared close adoption. Historical receipts/manifests remain unchanged; their measurements were not rerun on this source."
+    }
+  ],
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/media-navigation.ts": "e9703a6145b81b05a534ccae140d98239a216ae5c130ab140f00414be31dfbaa",
+      "src/lib/ui/components/Dialog.svelte": "cecb013bb41e725f3c4de65c75757ce64c218143368d471f9542230c25b69f0a",
+      "src/lib/ui/components/Shelf.svelte": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4",
+      "src/lib/ui/section-target.ts": "e325668b0e3ae9b5eee6e65bf6b959551560fb1d90916a96f056f367c02a8cf8",
+      "tests/media-navigation.test.ts": "e3f4a22521c8a207019b09fa1bc2e646347622979b4b0c9c491596b3310e092f"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "package.json": {
+        "before": "faacde885a670752c385f25f114b3ff80e0182769d72a82706ce5d804a509139",
+        "after": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  }
+}

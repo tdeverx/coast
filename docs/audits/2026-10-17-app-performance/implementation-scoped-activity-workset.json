@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "id": "PLAN-02",
+  "relatedFindings": [
+    "PLAN-02"
+  ],
+  "implementationId": "SCOPED-ACTIVITY-WORKSET-ADOPTION",
+  "status": "implemented_actual_common_and_normal_queries_verified_navigation_acceptance_partial",
+  "title": "Adopt exact early scoped Activity work-ID admission at the shared feed owner",
+  "sourcePins": {
+    "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
+    "src/lib/social/relationships.server.ts": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+    "node_modules/drizzle-orm/bun-sql/migrator.js": "b7f6bf40b94d906ea3b53276d3dd80fc8144f64c3b03ae3cbf91f34cbaaf94df",
+    "node_modules/drizzle-orm/pg-core/dialect.js": "a7d7921c939b228a3f1295be5f024a8c264169e368f591c2d29072ffe079b14e",
+    "node_modules/drizzle-orm/migrator.js": "8c5e22b76a6a239e426b659ba999f69b4b312a052e74f533758f876795f6377c",
+    "tests/activity-scope-admission-db.test.ts": "9900b7bf5e7c0b948117075c6a4f561eb3d25599dd40e6d89689890cfd4f6648"
+  },
+  "sourceBefore": {
+    "src/lib/social/queries.server.ts": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54"
+  },
+  "sourceAfter": {
+    "src/lib/social/queries.server.ts": "29f1f31c79d67c75dc94127054d195a3810221480269fa0cb6737ce0095c4fb3",
+    "tests/activity-scope-admission-db.test.ts": "44965244435cd78df69a0b2b2b40f4bfc684e19039ab9be91d635cab1ed90d04"
+  },
+  "patchSha256": "2cc61236fc3883a3cc4d22bd1105a525d0a7da200ef335d046f8389cf2c69f9a",
+  "sharedOwner": "src/lib/social/queries.server.ts:11 activityFeed; admission15-42",
+  "consumers": [
+    {
+      "consumer": "First-party social/feed including title Activity",
+      "path": "src/lib/server/api/index.server.ts; src/lib/ui/shelves/social.svelte.ts; src/lib/ui/components/MediaDetails.svelte",
+      "benefit": "Scoped work/artist/reading-group events are admitted before expensive policy/enrichment within one statement."
+    },
+    {
+      "consumer": "Notification inbox explicit activityIds hydration",
+      "path": "src/lib/server/queries/notifications.ts",
+      "benefit": "Same canonical explicit-ID admission, including undefined/empty/duplicate semantics; already selective plan showed no extra gain."
+    }
+  ],
+  "contract": {
+    "roots": "R0=requested workUUID UNION its DIRECT contains child IDs, without a works/kind/privacy/existence join.",
+    "allowedWorkIds": "R0 UNION episode media IDs whose own show_id IN ORIGINALR0 UNION episode media IDs whose own season_id IN ORIGINALR0 UNION season media IDs whose own show_id IN ORIGINALR0. UNION dedup+event.work_id IN semijoin prevents event multiplication.",
+    "admission": "Conditional same-statement MATERIALIZED admitted_activity applies the exact structural work-ID set and unchanged explicitID/artist/group AND before policy/enrichment. visible_raw reads admitted rows directly and retains its original work/artist/group/ID predicates.",
+    "unscoped": "Original path; all34actualcompleteunscopedcases had byte-identical primary SQL and parameters.",
+    "preserved": [
+      "Original direct-work/show/season/season-show/direct-contains OR, not recursive descendants or displayroot_id",
+      "Multiple event scopes AND while relationship target roots remain UNION",
+      "Undefined/empty/duplicate explicitIDs and grouping mode",
+      "Visibility/features/friend/category/kind gates and one-statement scope observation",
+      "Complete history dedupe/listen/run grouping and final period/cursor/order/limit",
+      "Final visible_raw-based relationship fallback, reactions, captions, occurrence/member identities and complete DTO"
+    ],
+    "notIncluded": [
+      "No UI/framework/cache change",
+      "No global planner change/index/schema",
+      "No relationshipReasons or edge rewrite",
+      "No early raw-event LIMIT or historical activity cap"
+    ]
+  },
+  "scopeChanges": {
+    "productionDependencies": false,
+    "uiChanges": false,
+    "schemaChangesForThisRepair": false,
+    "providerCalls": 0,
+    "normalDatabaseMutationsForThisRepair": false,
+    "workSocialChanged": false,
+    "privateCacheOrNewFramework": false
+  },
+  "historicalFullProof": {
+    "report": "next-scoped-activity-workset.json",
+    "evidence": "evidence/scoped-activity-admission-v2-full.json",
+    "evidenceSha256": "1d965db1ffc1775c34f11a67a1ea135641d452d3ce7dede32bdab7b5d1412b3a",
+    "candidateSha256": "29f1f31c79d67c75dc94127054d195a3810221480269fa0cb6737ce0095c4fb3",
+    "baselineSha256": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "completeDtoAndOrderedPrimaryPairs": 64,
+    "unscopedSqlAndParamsIdentities": 34,
+    "plans": 16,
+    "alternatingTimingPairs": 4,
+    "sameActualCensus": true,
+    "atExecutionPins": {
+      "src/lib/social/queries.server.ts": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+      "src/lib/social/relationships.server.ts": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+      "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+      "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+      "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+      "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+      "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+      "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+      "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+      "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+      "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+      "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+      "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+      "node_modules/drizzle-orm/bun-sql/migrator.js": "b7f6bf40b94d906ea3b53276d3dd80fc8144f64c3b03ae3cbf91f34cbaaf94df",
+      "node_modules/drizzle-orm/pg-core/dialect.js": "a7d7921c939b228a3f1295be5f024a8c264169e368f591c2d29072ffe079b14e",
+      "node_modules/drizzle-orm/migrator.js": "8c5e22b76a6a239e426b659ba999f69b4b312a052e74f533758f876795f6377c"
+    },
+    "atClosurePins": {
+      "src/lib/social/queries.server.ts": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+      "src/lib/social/relationships.server.ts": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+      "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+      "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+      "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+      "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+      "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+      "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+      "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+      "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+      "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+      "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+      "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+      "node_modules/drizzle-orm/bun-sql/migrator.js": "b7f6bf40b94d906ea3b53276d3dd80fc8144f64c3b03ae3cbf91f34cbaaf94df",
+      "node_modules/drizzle-orm/pg-core/dialect.js": "a7d7921c939b228a3f1295be5f024a8c264169e368f591c2d29072ffe079b14e",
+      "node_modules/drizzle-orm/migrator.js": "8c5e22b76a6a239e426b659ba999f69b4b312a052e74f533758f876795f6377c"
+    },
+    "postToastFullProofRerun": false,
+    "boundary": "Historical17explicit source/runtime pins and exact pre-toast actual full-owner proof remain immutable. This adoption report does not repin that execution as current."
+  },
+  "toastSourceBoundary": {
+    "schemaBefore": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "schemaNow": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "exactAddedLine": "    toastHiddenAt: timestamp('toast_hidden_at', { withTimezone: true }),",
+    "removingSingleExactLineReconstructsOldHash": true,
+    "meaning": "Source-only review: Activity admission does not reference notifications. It is not a rerun of the historical64 full outputs after toast.",
+    "boundary": "Compare shared dependencies after accounting for adopting the byte-exact executed candidate29f in place of baseline06a; then only the separate toast declaration differs among the17 historical source/runtime entries.",
+    "additionalChangedDependenciesBeyondExactCandidateAdoption": 1,
+    "matchingDependenciesAfterAccountingForExactCandidateAdoption": 16
+  },
+  "currentActualRegression": {
+    "status": "passed",
+    "test": "tests/activity-scope-admission-db.test.ts",
+    "testSha256": "44965244435cd78df69a0b2b2b40f4bfc684e19039ab9be91d635cab1ed90d04",
+    "wrapper": "candidates/scoped-activity-workset-adoption/final-executed-targeted-wrapper.ts.txt",
+    "wrapperSha256": "3a457f10d4d901c00754ebb9d77633f33963525e6e484841e4e72dde8d4d39d6",
+    "evidence": "evidence/implementation-scoped-activity-workset-actual-regression-v2.json",
+    "evidenceSha256": "dca491246830158ab531d234c162edceb6ad9fd6c4db093f7146029fd3a3b98f",
+    "completeAdmissionPairs": 16,
+    "allEqual": true,
+    "cases": [
+      {
+        "label": "unscoped-undefined",
+        "rows": 13902,
+        "equal": true
+      },
+      {
+        "label": "unscoped-empty",
+        "rows": 0,
+        "equal": true
+      },
+      {
+        "label": "direct-work",
+        "rows": 3387,
+        "equal": true
+      },
+      {
+        "label": "work-empty",
+        "rows": 0,
+        "equal": true
+      },
+      {
+        "label": "work-one",
+        "rows": 1,
+        "equal": true
+      },
+      {
+        "label": "work-duplicate-id",
+        "rows": 1,
+        "equal": true
+      },
+      {
+        "label": "distinct-events-same-work",
+        "rows": 2,
+        "equal": true
+      },
+      {
+        "label": "outside-event-and-work",
+        "rows": 1,
+        "equal": true
+      },
+      {
+        "label": "active-show",
+        "rows": 3424,
+        "equal": true
+      },
+      {
+        "label": "active-season",
+        "rows": 3389,
+        "equal": true
+      },
+      {
+        "label": "artist",
+        "rows": 3,
+        "equal": true
+      },
+      {
+        "label": "artist-and-work",
+        "rows": 3,
+        "equal": true
+      },
+      {
+        "label": "reading-group",
+        "rows": 1,
+        "equal": true
+      },
+      {
+        "label": "reading-group-and-work",
+        "rows": 1,
+        "equal": true
+      },
+      {
+        "label": "artist-and-reading-group",
+        "rows": 0,
+        "equal": true
+      },
+      {
+        "label": "artist-and-reading-group-and-work",
+        "rows": 0,
+        "equal": true
+      }
+    ],
+    "naturalGaps": [
+      "collection-with-retained-direct-member-events",
+      "positive-artist-reading-group-overlap"
+    ],
+    "oracle": "Independent original direct-work/episode-own-show/episode-own-season/season-own-show OR direct-contains predicate, original LEFT JOINs; unchanged explicit-ID/artist/group AND. Not the new allowed-work algorithm.",
+    "actualQuery": "Compile canonical current SQL with real installed Drizzle/Valibot/pure builders; intercept before owner SQL/hydration/config/provider. Execute exact current admission prefix and actual event source only, with dense used-placeholder rebinding.",
+    "comparison": "Complete ordered actual event-ID arrays and unique cardinality in private process memory; only labels/counts/equality/gaps retained.",
+    "scope": "Admission only, not additional full privacy/card/grouping/cursor or timing verification. Verification request shapes are explicit over real rows, not captured natural traffic.",
+    "sourcePinsVerifiedBeforeAndAfter": true,
+    "rolledBack": true,
+    "poolClosed": true,
+    "exitCode": 0,
+    "newSQLBenchmark": false,
+    "sqlSafety": "One reserved explicit RR READ ONLY transaction,10s statement/1s lock/jit off/4MB verified, same backend, coordinated exclusive clone lease and zero-other-client preflight observation; no DML/schema/provider/normal-key/normal-DB."
+  },
+  "maintainedRegressionPolicy": {
+    "ordinaryUnitSuite": "Skipped without COAST_DB_TEST=1 and COAST_AUDIT_REAL_DATA_CLONE=1. A skip does not count as executed regression.",
+    "ordinaryAuthoredDBFixtureSuite": "Skipped on non-actual fixture databases; do not run all existing DB fixture tests against real clone.",
+    "targetedExecution": "Existing credential-memory runner executes hash-pinned wrapper which spawns ONLY bun test tests/activity-scope-admission-db.test.ts. Exact designated clone URL/name and explicit lease checked in wrapper and callback.",
+    "transport": "Both fetch and preconnect denied; original fetch restored in finally. No app DB module imported, no global module mocks.",
+    "cleanup": "Rollback recorded; reserved-client release and own-pool close attempted independently, aggregate emitted, then generic cleanup error if either failed.",
+    "logs": "No event IDs/usernames/titles/payloads or raw child driver/source output retained; child output digests only."
+  },
+  "failuresAndCorrections": [
+    {
+      "kind": "cleanup_hardening",
+      "beforeTestSha256": "8aa5c8f47d3cdc7dfcbea2ef60c6f8b0933d59eb41b9a453d2f5454288103500",
+      "afterTestSha256": "bd7ad468094c22a009caafacd14398f007e4922d4b1710192c229564a990f5a3",
+      "delta": "candidates/scoped-activity-workset-adoption/regression-cleanup-only.patch",
+      "meaning": "Independent release and pool close attempts; exact before6snapshots retained; no SQL change."
+    },
+    {
+      "kind": "first_actual_regression",
+      "status": "passed",
+      "testSha256": "bd7ad468094c22a009caafacd14398f007e4922d4b1710192c229564a990f5a3",
+      "wrapperSha256": "ed8863a457541ebf9aaefda20e2b1557acf06eadf8e5804a1ed9d17d34c76a13",
+      "evidence": "evidence/implementation-scoped-activity-workset-actual-regression.json",
+      "evidenceSha256": "35b19946f16651bda1ab84c9699b8bd7934a14d626e7ed6e22dca940e7155546",
+      "completeAdmissionPairs": 16,
+      "meaning": "Historical pre-transport-typefix execution; not relabelled as final test."
+    },
+    {
+      "kind": "strict_typecheck_first",
+      "status": "failed",
+      "evidence": "evidence/implementation-scoped-activity-workset-typecheck-first.txt",
+      "evidenceSha256": "5c0bf701ce672cb11208a2f42890886480c11939486ddb0167aa0d840e5faea3",
+      "diagnostics": 1,
+      "message": "TS2352: plain denied fetch cast lacked Bun fetch.preconnect; main first common check retained same failure.",
+      "rootFirstGateReceipt": "evidence/implementation-20261018-activity-workset-adoption-gates.json"
+    },
+    {
+      "kind": "type_and_transport_correction",
+      "delta": "candidates/scoped-activity-workset-adoption/transport-typefix-only.patch",
+      "deltaSha256": "195ef3f01624ce636d29c1b9d2a0382d51e0e44ee3bb653cafe3ae0157619555",
+      "testSha256": "44965244435cd78df69a0b2b2b40f4bfc684e19039ab9be91d635cab1ed90d04",
+      "meaning": "Typed Object.assign callable denies fetch AND preconnect. No SQL/oracle/cohort/guard/cleanup change.8before-snapshots and first type failure/actual receipt retained."
+    },
+    {
+      "kind": "strict_typecheck_final",
+      "status": "passed",
+      "receipt": "candidates/scoped-activity-workset-adoption/strict-private-typecheck-receipt.json",
+      "evidence": "evidence/implementation-scoped-activity-workset-typecheck-final.txt",
+      "diagnostics": 0,
+      "meaning": "Only unmodified private final test copy included, reachable existing pure imports; no test execution. Parent common check separately passed applied test."
+    }
+  ],
+  "historicalPerformance": {
+    "report": "next-scoped-activity-workset.md",
+    "rootPlanPairs": 8,
+    "measuredWorkScopesWithLowerSharedAccesses": 7,
+    "explicitIdPlanPair": "233 combined Shared Hit/Read Blocks before and after; no gain claimed.",
+    "temporaryCounters": "All8plan pairs exactly baseline; no V1 extra656temporary read/write blocks.",
+    "sampleFullOwnerMedianMs": {
+      "emptyMovie": {
+        "before": 6562.42,
+        "after": 1401.76,
+        "pairs": 2
+      },
+      "activeShow": {
+        "before": 7016.43,
+        "after": 2856.06,
+        "pairs": 2
+      }
+    },
+    "limits": "Historical local clone only, not normal-browser/HTTP latency, physical disk I/O, CPU/RSS/WAL or universal/concurrent bound. All13902events can still be scanned and existing relationship history work/temporary spooling remains."
+  },
+  "rootCommonEvidence": {
+    "firstGateReceipt": "evidence/implementation-20261018-activity-workset-adoption-gates.json",
+    "firstCheckFailed": true,
+    "finalGateReceipt": "evidence/implementation-20261018-activity-workset-adoption-v2-gates.json",
+    "passed": true,
+    "unit": {
+      "pass": 815,
+      "guardedSkip": 714,
+      "fail": 0,
+      "expectCalls": 34010,
+      "testFiles": 285
+    },
+    "check": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "build": true,
+    "codeInventory": true,
+    "uiInventory": true,
+    "codeStyle": true,
+    "boundary": "Existing parent-run receipts read, not checks rerun by this agent."
+  },
+  "rootAdoptionReceipt": "evidence/implementation-scoped-activity-workset-adoption.json",
+  "normalAcceptance": {
+    "receipt": "evidence/implementation-activity-workset-normal.json",
+    "queryResultsPassed": true,
+    "actualWatchingRelationshipCard": true,
+    "actualWatchedEmpty": true,
+    "watchingReturned": true,
+    "inboxCards": 12,
+    "sourceUnchanged": true,
+    "newConsoleWarnOrError": 0,
+    "finalPausedTasks": 30,
+    "fullBackAcceptance": false,
+    "boundary": "Filtered sequence unexpectedly settled Library; separate unfiltered repeat eventually restored movie. No causal network/popstate/refresh trace or normal latency SLO; existing Watching progress may reflect earlier separately documented short playback."
+  },
+  "remaining": [
+    "No raw-event/history bound: full-history grouping/reasons/privacy costs remain.",
+    "Missing natural collection with retained direct-member events and positive artist/group overlap in current targeted regression. Historical full collection comparisons include actual empty outcomes.",
+    "Missing/contradictory subtype and multiple matching-parent/path positive cohorts remain source algebra boundaries, not manufactured acceptance.",
+    "Actual revocation races, large concurrent scopes, all filter crossproducts, CPU/RSS/WAL and active-party/private-provider traffic remain unmeasured.",
+    "No dated multitrack batches or repeated dated listens in historical actual corpus; source/window semantics unchanged, not newly proved with invented data.",
+    "Normal scoped filters/inbox pass, but full Back acceptance remains partial: first filtered sequence closed to Library; unfiltered repeat eventually restored movie. Navigation ownership requires a separate causal trace."
+  ],
+  "artifactsManifest": "candidates/scoped-activity-workset-adoption/artifact-manifest.json",
+  "replay": "Review current source/runtime/test pins and exact clone lease before any future targeted execution. Archived wrapper intentionally fails drift and requires rebound review after dependency changes; no blind rerun or full DB suite on actual clone.",
+  "artifactPins": {
+    "candidates/scoped-activity-workset-adoption/activity-scope-admission-db.test.ts.before-cleanup": "8aa5c8f47d3cdc7dfcbea2ef60c6f8b0933d59eb41b9a453d2f5454288103500",
+    "candidates/scoped-activity-workset-adoption/activity-scope-admission-db.test.ts.before-transport-typefix": "bd7ad468094c22a009caafacd14398f007e4922d4b1710192c229564a990f5a3",
+    "candidates/scoped-activity-workset-adoption/actual-only-regression-proposal.json": "2a10f8058eb8579d60e8936bd14f6ada876fffbb2380fed117b0f3b597ee4e41",
+    "candidates/scoped-activity-workset-adoption/actual-only-regression-proposal.md": "5fe3002c7886c3e71ad779805ec9b3d7dc0ab42554cdbc3df79244257d45f225",
+    "candidates/scoped-activity-workset-adoption/adoption-final-source-pins.json.before-transport-typefix": "9abb420ff061556f78767187bafefecdfff0338ece74eb44822d140c255d69e4",
+    "candidates/scoped-activity-workset-adoption/adoption-preparation-syntax-only.json.before-cleanup": "e54b681913f7a45a68e5e275fb6bfa108e302d9de9602d826f52e868aa11ae03",
+    "candidates/scoped-activity-workset-adoption/adoption-preparation-syntax-only.json.before-transport-typefix": "724b232c92a09ddf08e4ded439ae0b78044522e2d8a38d1dcabaf9b52f0a8708",
+    "candidates/scoped-activity-workset-adoption/adoption-readiness-plan.json.before-cleanup": "fdfa9d53e4731ca959c0bc584f3d9596cb5f8138639a773a469fb2a2d1064ecd",
+    "candidates/scoped-activity-workset-adoption/adoption-readiness-plan.json.before-transport-typefix": "f7d5c66708cf0df15ace367bc235dff619c9e4e5e3c79ad53a61c9c6a590142b",
+    "candidates/scoped-activity-workset-adoption/adoption-readiness-plan.md.before-cleanup": "c154bb89cc2dea1c8f7ff7f61ff719bf488eb9df0828f120f1337062e8be6144",
+    "candidates/scoped-activity-workset-adoption/adoption-readiness-plan.md.before-transport-typefix": "8e80c12adfbf3b30d8cfb10137d571babbdd2334448cecc28e94f5ddd0ec5fd3",
+    "candidates/scoped-activity-workset-adoption/artifact-manifest-initial.json": "4145f211d2783c7910c5adf4b1815f472c6bb29201730883de0b2ec3db1efffb",
+    "candidates/scoped-activity-workset-adoption/cleanup-before-manifest.json": "4ab30e7c94c91ec014f00f66d46fd149e42ed3ca7ca948fac640e20c504bb211",
+    "candidates/scoped-activity-workset-adoption/current-adoption-source-pins.json.before-cleanup": "8649d42a0d3e1505b12ecfe0edaf37e17331fb7d5f62f45f990c325517c938c3",
+    "candidates/scoped-activity-workset-adoption/current-pre-adoption-source-pins.json": "8649d42a0d3e1505b12ecfe0edaf37e17331fb7d5f62f45f990c325517c938c3",
+    "candidates/scoped-activity-workset-adoption/executed-maintained-test.ts.txt": "bd7ad468094c22a009caafacd14398f007e4922d4b1710192c229564a990f5a3",
+    "candidates/scoped-activity-workset-adoption/executed-targeted-wrapper.ts.txt": "ed8863a457541ebf9aaefda20e2b1557acf06eadf8e5804a1ed9d17d34c76a13",
+    "candidates/scoped-activity-workset-adoption/final-executed-maintained-test.ts.txt": "44965244435cd78df69a0b2b2b40f4bfc684e19039ab9be91d635cab1ed90d04",
+    "candidates/scoped-activity-workset-adoption/final-executed-targeted-wrapper.ts.txt": "3a457f10d4d901c00754ebb9d77633f33963525e6e484841e4e72dde8d4d39d6",
+    "candidates/scoped-activity-workset-adoption/final-prepared-source-pins.json": "63d52e35782712fe389635ccd870cddf316f4ede35ad860ba7adb59571c06324",
+    "candidates/scoped-activity-workset-adoption/final-prepared-syntax-only.json": "7dfa6f2060dbc74c769bf04c37f35cbdb43a0aa7eda3b6557918f0d904cf3eae",
+    "candidates/scoped-activity-workset-adoption/final-reviewed-adoption-plan.json": "d918b757367ee032eba8d258a40e7694b8d159bb6f1ff714753f84b37e78a445",
+    "candidates/scoped-activity-workset-adoption/final-reviewed-adoption-plan.md": "adcb6b6848a20d26f7e9a41c5316e75ff92ddf02b90b7357f6ddfbcdfbca7375",
+    "candidates/scoped-activity-workset-adoption/maintained-regression-actual.json.before-transport-typefix": "35b19946f16651bda1ab84c9699b8bd7934a14d626e7ed6e22dca940e7155546",
+    "candidates/scoped-activity-workset-adoption/maintained-regression-typecheck.txt.before-transport-typefix": "5c0bf701ce672cb11208a2f42890886480c11939486ddb0167aa0d840e5faea3",
+    "candidates/scoped-activity-workset-adoption/prepared-final-source-pins.json": "9abb420ff061556f78767187bafefecdfff0338ece74eb44822d140c255d69e4",
+    "candidates/scoped-activity-workset-adoption/prepared-syntax-only.json": "724b232c92a09ddf08e4ded439ae0b78044522e2d8a38d1dcabaf9b52f0a8708",
+    "candidates/scoped-activity-workset-adoption/regression-cleanup-only.patch": "fb8db18a57c95ca1c49b4b874c2d4412661c0b26720db58da1ce32291bae4a66",
+    "candidates/scoped-activity-workset-adoption/reviewed-adoption-plan.json": "f7d5c66708cf0df15ace367bc235dff619c9e4e5e3c79ad53a61c9c6a590142b",
+    "candidates/scoped-activity-workset-adoption/reviewed-adoption-plan.md": "8e80c12adfbf3b30d8cfb10137d571babbdd2334448cecc28e94f5ddd0ec5fd3",
+    "candidates/scoped-activity-workset-adoption/run-maintained-regression.ts.before-cleanup": "65870eb1af5b74427205b32935fbeb3911cff7ccc32e6316378fd8cc0c633307",
+    "candidates/scoped-activity-workset-adoption/run-maintained-regression.ts.before-transport-typefix": "ed8863a457541ebf9aaefda20e2b1557acf06eadf8e5804a1ed9d17d34c76a13",
+    "candidates/scoped-activity-workset-adoption/strict-private-typecheck-config.json": "076a2791354519520618f7b537ebeec0045056383d4ef4491ccd54c83b4d178e",
+    "candidates/scoped-activity-workset-adoption/strict-private-typecheck-receipt.json": "dcb20e8d2d19ed9a815a1beeb78d07cb7c01d19987cf0c8be61fb1ad18b00046",
+    "candidates/scoped-activity-workset-adoption/targeted-typecheck-config.json": "d8e3499210aa566ec078b6df870605682ec1cc8af28133c1a1931549ba6f635f",
+    "candidates/scoped-activity-workset-adoption/transport-typefix-before-manifest.json": "b7ee69195b7be790aa4aad886346827193030d92cf33e98e338c8bd78e15750c",
+    "candidates/scoped-activity-workset-adoption/transport-typefix-only.patch": "195ef3f01624ce636d29c1b9d2a0382d51e0e44ee3bb653cafe3ae0157619555",
+    "candidates/scoped-activity-workset-adoption/artifact-manifest.json": "1d85707e7df8f89cfe23fb790bcc03f3f0897955959221285857d90dda3ebf56",
+    "evidence/implementation-activity-workset-normal.json": "762a3ae63196d48f7ed9650ca47b665c0a97aba8abf2a32592919b63e9290936",
+    "evidence/implementation-20261018-activity-workset-adoption-gates.json": "b9201781ea1b0b66ba77077523d8c671495e176517fb3b101f3d246c7e097b7b",
+    "evidence/implementation-20261018-activity-workset-adoption-unit.log": "90098b1489cd7dbdacd57706704054566a6aaeb09d88cca89a344fb389c5dc51",
+    "evidence/implementation-20261018-activity-workset-adoption-check.log": "26f88fd4f7712fdbd9cfe813948dc10676458ec6a03898b4e124ac7d3253923f",
+    "evidence/implementation-20261018-activity-workset-adoption-v2-gates.json": "ec2c2b06d9c55d86db30e0e087cfdb55e309be581d289a33b3ad76e977fa7d3a",
+    "evidence/implementation-20261018-activity-workset-source-inventory.json": "588fcdf66418346a9246f0ca96048fe7d29c0cfd352fad75c32e6ce0fb213de8",
+    "evidence/implementation-20261018-activity-workset-adoption-v2-unit.log": "035974c0c8035193e707b1e9715de4c9327d268fecbc05e8d91d2d072f0b6c5d",
+    "evidence/implementation-20261018-activity-workset-adoption-v2-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "evidence/implementation-20261018-activity-workset-adoption-v2-build.log": "9c5b65623c88305d7124c15c8699ea8b501aa59e24889c2975b86c77e5490a94",
+    "evidence/implementation-20261018-activity-workset-adoption-v2-code-inventory.log": "8ba45ace4a12d8a1c2e58eacee3c725a558d0ad5bc7958f8a807598d8cf1e89e",
+    "evidence/implementation-20261018-activity-workset-adoption-v2-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "evidence/implementation-20261018-activity-workset-adoption-v2-code-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "evidence/implementation-activity-workset-normal-watching.png": "211f570aefa15c945203f4cfb69b2225741f4761e58e0ed8497f406b5a2529b7",
+    "evidence/implementation-activity-workset-normal-empty.png": "95092ccfe66c945829f67f77d1100b4fafe6648fa6c7cfdf93272d6063b77f8c",
+    "evidence/implementation-activity-workset-normal-back-unexpected.png": "ef140c4af94a0a829add702fc2e9350fd967ea59db69cb4ae23122c04f8b0c8a",
+    "evidence/implementation-activity-workset-normal-tasks.png": "8df07f24d29c85977cc2f100f387ed380b5822b14375dff3b859af071373715c",
+    "implementation-scoped-activity-workset.md": "31f2f2d6891aaf88671531674aae131c7dd5000be81cad34d6a45187ad46229a"
+  },
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T06:24:24.888971+00:00",
+      "path": "src/lib/social/relationships.server.ts",
+      "before": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+      "after": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+      "evidence": "evidence/implementation-activity-reasons-selective-applied.json",
+      "boundary": "Current source identity refreshed after separate selective-helper adoption. Immutable original execution receipts/manifests are unchanged; this does not rerun their measurements or transfer missing acceptance."
+    }
+  ],
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "src/lib/social/queries.server.ts",
+        "tests/activity-scope-admission-db.test.ts"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    }
+  ]
+}

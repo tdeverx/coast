@@ -1,0 +1,123 @@
+--- a/src/runtime/client/client.js
++++ b/src/runtime/client/client.js
+@@ -264,6 +264,28 @@
+ /** @type {Set<(navigation: import('@sveltejs/kit').AfterNavigate) => void>} */
+ const after_navigate_callbacks = new Set();
+ 
++/** @type {Set<Array<(navigation: import('@sveltejs/kit').AfterNavigate) => void>>} */
++const on_navigate_registrations = new Set();
++
++/** @param {Array<() => void>} returned */
++function register_after_navigate(returned) {
++	if (returned.length === 0) return [];
++	/** @type {Array<(navigation: import('@sveltejs/kit').AfterNavigate) => void>} */
++	const entries = returned.map(
++		(fn) => (navigation) => /** @type {(navigation: import('@sveltejs/kit').AfterNavigate) => void} */ (fn)(navigation)
++	);
++	entries.push(() => unregister_after_navigate(entries));
++	entries.forEach((entry) => after_navigate_callbacks.add(entry));
++	on_navigate_registrations.add(entries);
++	return entries;
++}
++
++/** @param {Array<(navigation: import('@sveltejs/kit').AfterNavigate) => void>} entries */
++function unregister_after_navigate(entries) {
++	entries.forEach((entry) => after_navigate_callbacks.delete(entry));
++	on_navigate_registrations.delete(entries);
++}
++
+ /** @type {import('./types.js').NavigationState & { nav: import('@sveltejs/kit').NavigationEvent }} */
+ let current = {
+ 	branch: [],
+@@ -423,6 +445,14 @@
+ 	pending_invalidate = null;
+ 
+ 	const nav_token = (token = {});
++	// This new token supersedes every pending navigation registration.
++	for (const entries of on_navigate_registrations) unregister_after_navigate(entries);
++	// Invalidation owns this token now; an interrupted internal navigation cannot finish it.
++	if (navigating.current !== null) {
++		is_navigating = false;
++		updating = false;
++		stores.navigating.set((navigating.current = null));
++	}
+ 	const intent = await get_navigation_intent(current.url, true);
+ 
+ 	// Clear preload, it might be affected by the invalidation.
+@@ -1904,8 +1934,10 @@
+ 	 * @type {Promise<void> | undefined}
+ 	 */
+ 	let commit_promise;
++	/** @type {Array<(navigation: import('@sveltejs/kit').AfterNavigate) => void>} */
++	let after_navigate = [];
+ 	if (started) {
+-		const after_navigate = (
++		const returned = (
+ 			await Promise.all(
+ 				// eslint-disable-next-line @typescript-eslint/await-thenable -- we need to await because they can be asynchronous
+ 				Array.from(on_navigate_callbacks, (fn) =>
+@@ -1914,22 +1946,23 @@
+ 			)
+ 		).filter(/** @returns {value is () => void} */ (value) => typeof value === 'function');
+ 
+-		if (after_navigate.length > 0) {
+-			function cleanup() {
+-				after_navigate.forEach((fn) => {
+-					after_navigate_callbacks.delete(fn);
+-				});
+-			}
+-
+-			after_navigate.push(cleanup);
+-
+-			after_navigate.forEach((fn) => {
+-				after_navigate_callbacks.add(fn);
+-			});
+-		}
++		// A newer navigation or invalidation may have started while callbacks were pending.
++		if (token !== nav_token) {
++			void load_cache_fork?.then((f) => f?.discard());
++			nav.reject(new Error('navigation aborted'));
++			return;
++		}
++		after_navigate = register_after_navigate(returned);
+ 
+ 		// Type-casts are save because we know this resolved a proper SvelteKit route
+ 		const target = /** @type {import('@sveltejs/kit').NavigationTarget} */ (nav.navigation.to);
++		const fork = load_cache_fork && (await load_cache_fork);
++		if (token !== nav_token) {
++			fork?.discard();
++			unregister_after_navigate(after_navigate);
++			nav.reject(new Error('navigation aborted'));
++			return;
++		}
+ 		current = {
+ 			...navigation_result.state,
+ 			nav: {
+@@ -1954,8 +1987,6 @@
+ 			document.activeElement.blur();
+ 		}
+ 
+-		const fork = load_cache_fork && (await load_cache_fork);
+-
+ 		if (fork) {
+ 			commit_promise = fork.commit();
+ 		} else {
+@@ -1987,6 +2018,7 @@
+ 
+ 	if (token !== nav_token) {
+ 		// a new navigation happened while we were waiting for the DOM to update, so abort
++		unregister_after_navigate(after_navigate);
+ 		nav.reject(new Error('navigation aborted'));
+ 		return;
+ 	}
+@@ -2039,6 +2071,10 @@
+ 		nav.navigation.to.scroll = scroll_state();
+ 	}
+ 
++	// A newer navigation can finish before a superseded navigation's render settles.
++	for (const entries of on_navigate_registrations) {
++		if (entries !== after_navigate) unregister_after_navigate(entries);
++	}
+ 	after_navigate_callbacks.forEach((fn) =>
+ 		fn(/** @type {import('@sveltejs/kit').AfterNavigate} */ (nav.navigation))
+ 	);

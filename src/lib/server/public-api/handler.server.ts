@@ -15,7 +15,7 @@ import { logDiagnostic,classifyFailure } from '$lib/server/diagnostics';
 import { authenticateApiToken } from './tokens.server';
 import { publicProgress } from './progress.server';
 import { publicWork,publicPage } from './response';
-import { collectionData,collectionParameters,workCards } from '$lib/collection/query.server';
+import { collectionSummaries,collectionParameters,workSummaries } from '$lib/collection/query.server';
 import { publicLibrary } from './library.server';
 import { progressData } from '$lib/server/queries/progress';
 import { progressParameters } from '$lib/progress';
@@ -59,7 +59,7 @@ const publicApiResponse:RequestHandler=async event=>{
   if(path[0]==='catalogue') {
    if(path[1]) {
     const id=v.parse(v.pipe(v.string(),v.uuid()),path[1]);
-    const item=(await workCards(user.id,user.id,[id]))[0];
+    const item=(await workSummaries(user.id,user.id,[id]))[0];
     if(!item)throw new AppError(404,'Work not found.','not_found');
     if(!categoryEnabled(await getFeatureConfig(user.id),item.kind==='game'?'game':item.kind==='book'||item.kind==='comic'?item.kind:['album','track'].includes(item.kind)?'music':'screen'))throw new AppError(404,'Work not found.','not_found');
     return json(publicWork(item),{headers});
@@ -71,11 +71,11 @@ const publicApiResponse:RequestHandler=async event=>{
    const [count]=await getDb().execute<{total:number}>(sql`select count(*)::int as total from works where ${where}`);
    const paging=pagination(count.total,page);
    const rows=await getDb().execute<{id:string}>(sql`select id from works where ${where} order by id limit ${PAGE_SIZE} offset ${(paging.page-1)*PAGE_SIZE}`);
-   const cards=await workCards(user.id,user.id,Array.from(rows).map(row=>row.id));
+   const cards=await workSummaries(user.id,user.id,Array.from(rows).map(row=>row.id));
    return json(publicPage(cards.map(item=>publicWork(item)),{...paging,total:count.total},url),{headers});
   }
   if(path[0]==='collection') {
-   const result=await collectionData(user.id,collectionParameters(url));
+   const result=await collectionSummaries(user.id,collectionParameters(url));
    const assessments=new Map(result.assessments.map(item=>[item.id,item]));
    return json(publicPage(result.items.map(item=>{const dto=publicWork(item);const assessment=assessments.get(dto.id);return {...dto,availability:assessment?.availability??'unknown',stale:assessment?.stale??true,reasons:assessment?.reasons??[]};}),result,url),{headers});
   }

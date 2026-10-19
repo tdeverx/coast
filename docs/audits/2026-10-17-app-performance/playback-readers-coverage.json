@@ -1,0 +1,1559 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-10-17",
+  "commit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "runtime": "Bun1.4.3",
+  "scope": "playback,music,synced parties,sharing,streams,reading,PDF/EPUB/CBZ/CBR/CB7/CBT,local identity and remote file delivery",
+  "readOnlyImplementation": true,
+  "evidenceBoundary": {
+    "actualData": "Root audit actual DB/browser evidence; no actual media files in checkout; no provider contacted by this subaudit",
+    "supplementary": [
+      "real installed library URL cleanup defect",
+      "authored adverse archive traversal complexity",
+      "production queue and exact Reader callback deferred-transport failure proofs",
+      "production EPUB preflight work counts"
+    ],
+    "notCertified": [
+      "actual private media decoding cost",
+      "native codec/HLS long-play",
+      "browser retained heap/RSS",
+      "live provider latency",
+      "party DB lock contention",
+      "before/after implementation gains"
+    ],
+    "actualDataSources": [
+      "evidence/development-real-sql.json",
+      "evidence/deployed-real-sql.json",
+      "evidence/development-table-stats.json",
+      "evidence/deployed-table-stats.json"
+    ],
+    "actualDataSummary": {
+      "development": {
+        "readingWorks": 12,
+        "musicWorks": 959,
+        "providerItems": 41455,
+        "users": 4,
+        "retainedPartyRooms": 39,
+        "lists": 0,
+        "listItems": 0
+      },
+      "deployed": {
+        "readingWorks": 12,
+        "musicWorks": 1009,
+        "providerItems": 41554,
+        "users": 6,
+        "retainedPartyRooms": 0,
+        "lists": 0,
+        "listItems": 0
+      },
+      "warnings": [
+        "Recorded rooms do not imply active sessions",
+        "No actual EPUB/PDF/archive supplied; native decoder/private media cost remains untested",
+        "Current catalogue snapshot stored sizes are modest; no large memory claim"
+      ],
+      "snapshotStoredBytes": {
+        "developmentEpisodeMedian": 852,
+        "developmentEpisodeMax": 2399,
+        "developmentMovieMedian": 1428,
+        "developmentMovieMax": 1912,
+        "developmentTrackMedian": 1080,
+        "developmentTrackMax": 1204,
+        "albumMax": 5157
+      }
+    }
+  },
+  "findings": [
+    {
+      "id": "PR-01",
+      "priority": "P1",
+      "status": "confirmed_defect",
+      "confidence": "high",
+      "title": "EPUB asset object URL cleanup failure",
+      "refs": [
+        "src/lib/reading/reader/epub.ts:33",
+        "node_modules/epubjs/src/archive.js:245",
+        "node_modules/epubjs/src/resources.js:306"
+      ],
+      "evidence": [
+        "evidence/playback-epub-url-probe.json"
+      ]
+    },
+    {
+      "id": "PR-02",
+      "priority": "P2",
+      "status": "failure_proof",
+      "confidence": "high_mechanism_unmeasured_incidence",
+      "title": "Hung control report blocks Stop and queues lifecycle events",
+      "refs": [
+        "src/lib/playback/reports.ts:4",
+        "src/lib/ui/components/PersistentPlayer.svelte:202",
+        "src/lib/ui/client.ts:44"
+      ],
+      "evidence": [
+        "evidence/playback-resource-probes.json"
+      ]
+    },
+    {
+      "id": "PR-03",
+      "priority": "P2",
+      "status": "failure_proof",
+      "confidence": "high",
+      "title": "Reader heartbeat overlap and no teardown abort",
+      "refs": [
+        "src/lib/reading/Reader.svelte:29"
+      ],
+      "evidence": [
+        "evidence/playback-resource-probes.json"
+      ]
+    },
+    {
+      "id": "PR-04",
+      "priority": "P2",
+      "status": "source_confirmed",
+      "confidence": "high",
+      "title": "Missing cancellation at music/trailer request boundaries",
+      "refs": [
+        "src/lib/server/api/providers.server.ts:50",
+        "src/lib/music/artwork.server.ts:21",
+        "src/lib/server/queries/music.ts:12",
+        "src/lib/playback/service.server.ts:727"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "PR-05",
+      "priority": "P2",
+      "status": "measurement_gated",
+      "confidence": "high_work_shape_unmeasured_cost",
+      "title": "Serial rich music persistence and per-source page growth",
+      "refs": [
+        "src/lib/music/persistence.server.ts:103",
+        "src/lib/server/queries/music.ts:35"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "PR-06",
+      "priority": "P2",
+      "status": "work_proof",
+      "confidence": "high_work_shape_unmeasured_actual_impact",
+      "title": "EPUB preflight and assets scale with full expanded archive",
+      "refs": [
+        "src/lib/reading/reader/epub-archive.ts:20",
+        "src/lib/reading/reader/epub.ts:15"
+      ],
+      "evidence": [
+        "evidence/playback-resource-probes.json"
+      ]
+    },
+    {
+      "id": "PR-07",
+      "priority": "P2",
+      "status": "complexity_proof",
+      "confidence": "high_mechanism_unknown_actual_incidence",
+      "title": "Native comic forward display depends on storage order",
+      "refs": [
+        "src/lib/reading/reader/archive-decoder.ts:43"
+      ],
+      "evidence": [
+        "evidence/playback-resource-probes.json"
+      ]
+    },
+    {
+      "id": "PR-08",
+      "priority": "P2",
+      "status": "measurement_gated",
+      "confidence": "high_work_shape_unmeasured_contention",
+      "title": "Room wide reconciliation per participant heartbeat",
+      "refs": [
+        "src/lib/playback/synced/service.server.ts:118",
+        "src/routes/+layout.svelte:86"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "PR-09",
+      "priority": "P3",
+      "status": "measurement_gated",
+      "confidence": "high_work_shape_correctness_tradeoff",
+      "title": "Reading range/HEAD metadata authorization amplification",
+      "refs": [
+        "src/lib/reading/sessions.server.ts:117"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "PR-10",
+      "priority": "P3",
+      "status": "source_confirmed_opportunity",
+      "confidence": "high_projection_unmeasured_gain",
+      "title": "Full provider snapshot hydration per playback relay request",
+      "refs": [
+        "src/lib/playback/service.server.ts:634"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "PR-11",
+      "priority": "P2",
+      "status": "source_confirmed_boundary",
+      "confidence": "high_unmeasured_actual_population",
+      "title": "Queue materialization silent cap and whole sequence validation",
+      "refs": [
+        "src/lib/music/queue.server.ts:35",
+        "src/lib/playback/service.server.ts:169"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "PR-12",
+      "priority": "P3",
+      "status": "policy_acceptance_gap",
+      "confidence": "high_finite_retention_unmeasured_bytes",
+      "title": "One hidden hero source/crop sampler retained",
+      "refs": [
+        "src/lib/ui/heroes/playback.svelte.ts:26",
+        "src/lib/ui/heroes/presentation.svelte.ts:121"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "PR-13",
+      "priority": "P3",
+      "status": "acceptance_gap",
+      "confidence": "high_guard_placement_unknown_actual_failure",
+      "title": "Post-decode comic dimension guard cannot bound peak allocation",
+      "refs": [
+        "src/lib/reading/reader/comic.ts:50"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "PR-14",
+      "priority": "P3",
+      "status": "measurement_gated",
+      "confidence": "high_policy_unknown_future_cost",
+      "title": "Evidence/session growth and history late page plans",
+      "refs": [
+        "src/lib/server/storage/retention.server.ts:4",
+        "src/lib/music/history.server.ts:14"
+      ],
+      "evidence": []
+    }
+  ],
+  "endpointFamilies": [
+    {
+      "name": "personal playback",
+      "routes": [
+        "POST playback",
+        "POST playback/:id/progress",
+        "POST playback/:id/error",
+        "GET playback/:id/stream",
+        "GET media/:id/trailer",
+        "GET trailer/:id"
+      ],
+      "owners": [
+        "src/lib/playback/service.server.ts",
+        "src/lib/server/api/playback.server.ts",
+        "src/lib/ui/components/PersistentPlayer.svelte"
+      ],
+      "bounds": [
+        "one preparation controller",
+        "one ordered control writer with consecutive progress coalescing",
+        "20s stream headers",
+        "2MiB manifest",
+        "128GiB streamed media max",
+        "2GiB streamed trailer max"
+      ]
+    },
+    {
+      "name": "music",
+      "routes": [
+        "GET providers/:connection/music",
+        "GET providers/:connection/music/:id",
+        "GET providers/:connection/music/:id/artwork",
+        "POST providers/:connection/music/:id/favourite",
+        "GET music/:id/children",
+        "GET music/source/children",
+        "GET music/:id/history",
+        "GET music/:id/queue",
+        "GET music/queue",
+        "GET music/queue/picker",
+        "POST music/:id/log"
+      ],
+      "owners": [
+        "src/lib/music",
+        "src/lib/providers/jellyfin/music.server.ts",
+        "src/lib/server/queries/music.ts"
+      ],
+      "bounds": [
+        "provider browse max100/default50",
+        "all sources50 each/max4 simultaneous",
+        "children60 and at most3 correction reads",
+        "history60",
+        "music queue10000 silent cap",
+        "picker60"
+      ]
+    },
+    {
+      "name": "reading",
+      "routes": [
+        "POST reading/import",
+        "GET reading/:id",
+        "POST reading/:id/progress",
+        "GET reading/:id/history",
+        "GET reading/:id/credits",
+        "GET reading/:id/community",
+        "GET reading/:id/related",
+        "GET reading/:id/editions",
+        "GET reading/:id/issues",
+        "GET reading/collections/:id",
+        "GET reading/:id/connections",
+        "GET reading/:id/linked",
+        "GET reading/:id/sources",
+        "POST reading/:id/session",
+        "POST reading/:id/matching",
+        "GET reading/sessions/:id/file",
+        "HEAD reading/sessions/:id/file",
+        "POST reading/sessions/:id/location",
+        "POST reading/sessions/:id/heartbeat",
+        "POST reading/sessions/:id/close"
+      ],
+      "owners": [
+        "src/lib/reading",
+        "src/lib/server/api/reading.server.ts",
+        "src/lib/providers/reading.server.ts"
+      ],
+      "bounds": [
+        "catalogue/related/history60",
+        "source search60",
+        "connection/linked/matching20",
+        "provider issue10/edition20",
+        "provider pages1000",
+        "24h session",
+        "512MiB proxy stream cap",
+        "128MiB local input",
+        "EPUB expanded256MiB",
+        "comic expanded512MiB",
+        "entry32MiB",
+        "archive entries10000"
+      ]
+    },
+    {
+      "name": "parties",
+      "routes": [
+        "GET synced",
+        "POST synced",
+        "GET synced/:id",
+        "GET synced/:id/media",
+        "POST synced/:id/heartbeat",
+        "POST synced/:id/join",
+        "POST synced/:id/invite",
+        "POST synced/:id/command",
+        "POST synced/:id/decline",
+        "POST synced/:id/leave"
+      ],
+      "owners": [
+        "src/lib/playback/synced",
+        "src/lib/server/api/index.server.ts"
+      ],
+      "bounds": [
+        "rooms page60",
+        "participants16",
+        "queue200",
+        "heartbeat2s single-flight",
+        "item/location conflict retries3",
+        "session24h",
+        "offline15s/disconnect grace60s"
+      ]
+    },
+    {
+      "name": "sharing",
+      "routes": [
+        "GET sharing",
+        "POST sharing",
+        "DELETE sharing/:id",
+        "GET sharing/:id/sources",
+        "GET share/:token",
+        "HEAD share/:token",
+        "GET api/share/state",
+        "POST api/share/claim",
+        "POST api/share/playback",
+        "GET api/share/playback/:id/stream",
+        "HEAD api/share/playback/:id/stream",
+        "POST api/share/playback/:id/progress",
+        "POST api/share/playback/:id/error",
+        "GET api/share/external/:id/stream",
+        "HEAD api/share/external/:id/stream"
+      ],
+      "owners": [
+        "src/lib/sharing",
+        "src/routes/api/share/[...path]/+server.ts",
+        "src/routes/share"
+      ],
+      "bounds": [
+        "active links20/owner",
+        "viewer sessions64/share",
+        "capacity20 max subject bitrate",
+        "dispatch leases8/viewer",
+        "25s admission headers deadline",
+        "35s crash lease",
+        "250ms max wait backoff",
+        "cleanup20/page"
+      ]
+    },
+    {
+      "name": "streams",
+      "routes": [
+        "GET providers/streams",
+        "GET providers/streams/count",
+        "POST providers/streams/refresh"
+      ],
+      "owners": [
+        "src/lib/application/streams.server.ts",
+        "src/lib/providers/jellyfin/stream-history.server.ts",
+        "src/lib/ui/components/StreamsPanel.svelte"
+      ],
+      "bounds": [
+        "20+1 keyset lookahead",
+        "visible panel15s first-page refresh",
+        "no provider I/O on ordinary read",
+        "scheduled server observation uses durable job/account lease"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "node_modules/epubjs/lib/archive.js",
+      "group": "dependency",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 6455,
+      "lines": 275,
+      "sha256": "26b5e97b11a57a8ee6c47eebea9d3ef8d6b47b929e8b166ab08d14beeee86cad",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "node_modules/epubjs/lib/resources.js",
+      "group": "dependency",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 8105,
+      "lines": 320,
+      "sha256": "51b158ffa793ea18ac46065f2fff3dbe7ee1fa74957f90459a9b6d2d6eb86f7b",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "node_modules/epubjs/package.json",
+      "group": "dependency",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 2448,
+      "lines": 68,
+      "sha256": "00018967670a35f19505d594cf1c94e5067774e0bf434415d63d64ce99009da3",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "node_modules/epubjs/src/archive.js",
+      "group": "dependency",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 5573,
+      "lines": 255,
+      "sha256": "620e5e4ad4f634c789aceec9eab563c3e353e598d6c0abb6167220e51e7ff630",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "node_modules/epubjs/src/book.js",
+      "group": "dependency",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 18771,
+      "lines": 768,
+      "sha256": "ca156a3bd878e1ea3edb021d648151d1f0d3401d8121141ebe850e99fffdf7a9",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "node_modules/epubjs/src/resources.js",
+      "group": "dependency",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 7240,
+      "lines": 320,
+      "sha256": "49ec81cb6dbc9907dce02bc163e88b8c2a9daf9a147ea8fb5e525a4c43919663",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "node_modules/pdfjs-dist/build/pdf.mjs",
+      "group": "dependency",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 860818,
+      "lines": 28211,
+      "sha256": "dd13af821c9c3e1778653340d6539a1ba07bc56cba40073a4c727864cf0c232a",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/application/reading.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 1080,
+      "lines": 20,
+      "sha256": "c5046afc47a358cf254e441a9b2cb402c1e8de1ffeecaf17863928f7b54bb8d5",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/application/streams.server.ts",
+      "group": "streams",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 10553,
+      "lines": 83,
+      "sha256": "55f29d818b5076b5eb3c90dc541d675be3ddf402a4720486f83e859ea0e2d334",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/catalogue/reading-files.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 7169,
+      "lines": 67,
+      "sha256": "0c50840291643676a9aa356361a74545393d82b70f71c1e2fdd9616789e3d2fc",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/catalogue/reading.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 8394,
+      "lines": 112,
+      "sha256": "72d42f74144f850310c5ffcc27309d7a707a28b77f8178ea773350990f33146e",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/core/lists/sequence.server.ts",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 10893,
+      "lines": 166,
+      "sha256": "9b5968880b044be87701ff77f78e044c392e15b5a114727bea3b6f899feab212",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/core/reading/service.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 4863,
+      "lines": 70,
+      "sha256": "671f2a63517c4009b09bde0b4347d35ce48795f334024b7892081fe8176a6e8f",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/Details.svelte",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1208,
+      "lines": 18,
+      "sha256": "73eef887610e9813cda90661bd5a74c38bd7b193e7106b7689641c2a7fe8226b",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/artwork.server.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1690,
+      "lines": 36,
+      "sha256": "faab90d0790407c4f4d8a58d1d0e51490b0d11ce578aa506558dbda853d7034e",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/credits.server.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1629,
+      "lines": 23,
+      "sha256": "cc7574b65b96cbd8abf16b5bd995f033b2e51e62fe1b43230a1f027089687a77",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/detail.server.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2382,
+      "lines": 29,
+      "sha256": "9742facc42419f7190eae266fcf96a22f0bc76adf8012c9f90b28d1ea54ad0b1",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/details.server.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 3244,
+      "lines": 48,
+      "sha256": "908bfc298d408b8192765bcfb72f69c7d94da404561e4e0f6941a3c1a664ccdf",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/editions.server.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2010,
+      "lines": 28,
+      "sha256": "fd3a5b49c589de17f0eec88b5265f5c5725cb382eefde6f9aaf91720c2ed208d",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/history.server.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2138,
+      "lines": 31,
+      "sha256": "a24895287829b56a9b684160b44878ccbf968b8c581748fd8f2d777dcc4db9ad",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/model.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1061,
+      "lines": 42,
+      "sha256": "1ac3d485122fe62de7670298aac01eeeba839c76c3eec689806366ddab04ea3e",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/persistence.server.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 18988,
+      "lines": 197,
+      "sha256": "e56488be60bfb07c6ce4bfcfddc44bfbda924de1dc9661e7d75e0d5943cc2da6",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/presentation.server.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2438,
+      "lines": 38,
+      "sha256": "7ac1c5dff8e91bbaf7cdb132488beebb449eabe3b9397a6d36e72505bf2d8fb8",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/presentation.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2669,
+      "lines": 59,
+      "sha256": "5e1cfb96633007c7879e58753615b89a3dea25ade307cd36be3bf2bba313c09f",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/queue.server.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 4981,
+      "lines": 61,
+      "sha256": "b447ce0d30bf9ae46c2e2ae1bb9a3019d57caa4b5e978808765ad56fdc85636d",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/music/service.server.ts",
+      "group": "music",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 4260,
+      "lines": 62,
+      "sha256": "4246046b5e6092d2ebf765b67216434a3dbc1a239fa260b28b51d5c406df9bff",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/client.svelte.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 9066,
+      "lines": 203,
+      "sha256": "eb7ab1c65d2bef1810e94206478d8e8eef883759b3973277c18d5133467c07ba",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/context.svelte.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 966,
+      "lines": 12,
+      "sha256": "e53073d485bf26ea92917913a7dd00d02b55171e4536fe4918a5ad38d8b4329e",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/crop.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 3824,
+      "lines": 97,
+      "sha256": "a40b5f6b39653206cf541d4bcd40141ed4a1662b10d9ff87f239f58399f57e42",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/failures.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1285,
+      "lines": 14,
+      "sha256": "a132446519fc71da49c5c8be9705b79392d20feaac6818fc91dfcddc45892dba",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/listening.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 969,
+      "lines": 10,
+      "sha256": "6163c4303a16615878ccf1a9e51125bbbcd9fa03f3808353339a5d430ecd1231",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/observe-crop.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1621,
+      "lines": 41,
+      "sha256": "b06d2727b78b7c67d54f5b761a31bf819706751ddf6bbbc80c9cbc99d3d23eaa",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/planning.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2461,
+      "lines": 61,
+      "sha256": "aa75231e2ec0a77a1c69119a64e7ef171a69ae7283eb32b42dfaa45c96b668d0",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/reports.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1118,
+      "lines": 28,
+      "sha256": "785206512a7b1459381c005cc9d4c9511a36d0eb814e39f3cd8c7b36d139bea9",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/service.server.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 41291,
+      "lines": 888,
+      "sha256": "b162de8b5332c28b7ae076599119f2400e88f19ded3c3105dccd95de887db454",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/synced/client.svelte.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 12813,
+      "lines": 137,
+      "sha256": "d8cc59549115718f33a52efd6b37df6ab2b7d43f6a7d5050713c1ccbf0dcd365",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/synced/model.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2252,
+      "lines": 24,
+      "sha256": "fac57ccb529084bf15244ae024a405b646c191caf4a220adf3ffa9ef515c0fe0",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/synced/service.server.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 32448,
+      "lines": 285,
+      "sha256": "bf228ef304b2610d04e1d066d4db754c82ae5885a010a3d638265e7e9d2f4ce6",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/time.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 374,
+      "lines": 6,
+      "sha256": "214954d0ad3efd7e8ddb81b114ebc6af76cd35cfafe7cc33ba34505830e57340",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/playback/visibility.ts",
+      "group": "playback",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 557,
+      "lines": 8,
+      "sha256": "cc02f0ed15a398d696400103eba672ac769aff5311efbb85653b1f81119e34f2",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/providers/comic-vine/adapter.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 12160,
+      "lines": 176,
+      "sha256": "c57a10d2bb65c99c3a46e19366cc5cdd6bb09a0a858cd39bb594fff40d8f359a",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/providers/jellyfin/adapter.server.ts",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 23381,
+      "lines": 558,
+      "sha256": "8eb4ee167cdbe3067986d9262980c427f04d898a42f89cc6cd83c35a1eca0cfa",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/providers/jellyfin/connection.server.ts",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 3074,
+      "lines": 79,
+      "sha256": "625eeb87200dfe91ff1fcf7a8485eb8c6051037360f8573d4b8a33b5c947f04b",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/providers/jellyfin/music.server.ts",
+      "group": "music",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 8859,
+      "lines": 197,
+      "sha256": "c94faaac3df4679b6a4a47cb95a8e01111fc8c5d1fd04c24c7077d0a1a9b607a",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/providers/jellyfin/reading.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 3886,
+      "lines": 59,
+      "sha256": "401b39e1d9c2953ad349afd60eef6796847027417629de6acaa8573dbd99399e",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/providers/jellyfin/stream-history.server.ts",
+      "group": "streams",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 4972,
+      "lines": 53,
+      "sha256": "243f20cee43e4d31116169355379072931ed8170cad4ef44f590608e6fb32453",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/providers/jellyfin/streams.ts",
+      "group": "streams",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 1555,
+      "lines": 17,
+      "sha256": "ec12d23d792b35c81af12308071b746f58d9410f8eebedb0c8cf4b74e022ef95",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/providers/openlibrary/adapter.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 11869,
+      "lines": 171,
+      "sha256": "d42af5d23311808e2c9157c8ce856e995a8cf9e4d2d80ce9782605d28740dfbb",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/providers/reading.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 7014,
+      "lines": 111,
+      "sha256": "7b8e7344d59090b73ee674a16fcbc7708c67857f7df47f69cf8568444c85c94f",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/Details.svelte",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 9640,
+      "lines": 125,
+      "sha256": "a9c8a53a701a0c257ffc6e050239f07453e8a8b6a6da50dede3285ad557388bf",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/GroupDetails.svelte",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1780,
+      "lines": 18,
+      "sha256": "497c4f2687df2868b003804e686a6de055f7fe075fe0bc87714f8a6d872bcd21",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/Reader.svelte",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 8712,
+      "lines": 85,
+      "sha256": "30b0eb4d53eb2d5d13468ba09c10e3a24c5e02fa80164c0fd4dfde36b8aa3e59",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/ReadingLaunch.svelte",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 5662,
+      "lines": 66,
+      "sha256": "d6711516fa0b2f1d2ac7f05477dbf45d4ec14a7448138e925a00a83888566700",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/client.svelte.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 7163,
+      "lines": 106,
+      "sha256": "f53bd5fc0cb2861426a1d1067251fc4beae2d8945ddcca1409feda9f275386ef",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/detail.server.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 4048,
+      "lines": 46,
+      "sha256": "105b871ef2751c1eabf26fa1efc6291f6aec1b77c110da66c8ce3bd055a0d90d",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/groups.server.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 5669,
+      "lines": 79,
+      "sha256": "7c28ade2625f573c5d5d40b2ba9b0cf2036ada56f80ae9dbf2b6f3008bbf37fd",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/model.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 6953,
+      "lines": 124,
+      "sha256": "87e5ff0e4fc09d68826e6140e3d0e58a59329182c389bfcd4cdd571e435d0a73",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/presentation.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 3814,
+      "lines": 55,
+      "sha256": "df4a3a9fe7973930ad4ab73ff18c4b541efa0d72182725be35d614425476c0eb",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/query.server.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 12201,
+      "lines": 158,
+      "sha256": "2f4550c48c06258dfd52890cec466e5abe0c91a0f5118c433cf1b1a9c1613ca9",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/archive-decoder.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 4708,
+      "lines": 70,
+      "sha256": "c6917f97e2809b798a944ae419edc210a12bad676737519be9b5f557aa742cf3",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/archive.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 3944,
+      "lines": 41,
+      "sha256": "d3ce23deab916d72577515c4aa74f80ffe4baec8b6d488bbdf1a2fd7b10b5ead",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/archive.worker.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1025,
+      "lines": 19,
+      "sha256": "b0d0118f1df75d731fbfb14c578db0ec6fcb6d872ab2e152588a347dd54844a9",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/comic-archive.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2519,
+      "lines": 28,
+      "sha256": "e8e1d7d5e086723a0c9ed0e109ec698428092b64799782df3f9ead133b910137",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/comic-pages.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1085,
+      "lines": 14,
+      "sha256": "34f7c26c0e785909ac36281d683bcdc072aa19dab3b663d365ae4fc5f161fb9c",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/comic.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 3822,
+      "lines": 67,
+      "sha256": "156d2f9fa9b5c1d0ad9d0a041907b51744074e338bb5b543a89aa10cbd4ae10e",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/engine.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 738,
+      "lines": 9,
+      "sha256": "cb99f3876cbeb7e2690fa674e18c9f83b3a23c57785557eee1a6409c569e83a2",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/epub-archive.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2899,
+      "lines": 57,
+      "sha256": "26f6826a94ffb10fc2d1d25dd6fa84d17fed80ed101495d2a7518d54882ffb7c",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/epub-document.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 1597,
+      "lines": 23,
+      "sha256": "b0436287d06aab315733d2f4239f17ba4059ee9760e5a9c3628f21b8167c17a6",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/epub.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 4709,
+      "lines": 58,
+      "sha256": "a4fb9cbd63bd818dcba0cbf3646b682900537e2d10f519ec655d1189f5e7992f",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/file-identity.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 759,
+      "lines": 8,
+      "sha256": "682ede10ae0df8efbb8cdb7dd92b95d00fa8e11cf3b41c2c5016fca0caae8376",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/hash.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2538,
+      "lines": 42,
+      "sha256": "0ec9da1d6b3ab27bdcdda451c294f4b3a30b7cb192fee3850449a0ca0c15dd8e",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/hash.worker.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 412,
+      "lines": 5,
+      "sha256": "cc0b3352bbfc7368ddbe8404d067d3a606dd89347e96c290aa2d82b15e6cc49c",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/load.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 526,
+      "lines": 14,
+      "sha256": "44603dfe77b89db261579f6b491d59eee71d950f6c5b5b32d69135449875a9aa",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/reader/pdf.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2906,
+      "lines": 33,
+      "sha256": "b64770f9853154c213873890fb386c63ff5541e64c3137c6cfcbff3a8c2c144f",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/routes.server.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2323,
+      "lines": 47,
+      "sha256": "880fdb75230826f241855419b6a1bb54e2eae131951b1a1cf8c8744f5b330b92",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/reading/sessions.server.ts",
+      "group": "reading",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 13838,
+      "lines": 145,
+      "sha256": "2531bff81d0a275cac6013690b69ee41a3edbec35d060c662b9bb8af017e35b9",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/server/api/index.server.ts",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 22858,
+      "lines": 295,
+      "sha256": "48c64621fd3460defdb54c2d86bbfd8e5013b4b4e2bf76df824656db8e049d01",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/server/api/media.server.ts",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 5208,
+      "lines": 86,
+      "sha256": "2e44ca1f21d8e41dc0e1ed5d878439e99b1ef08bc2e770440ee8dbf1604524b3",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/server/api/playback.server.ts",
+      "group": "playback",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 955,
+      "lines": 18,
+      "sha256": "454e4a68aaea3f7eaceb943235996d236a49e01a4d30b8a3b2ba4e6f5e30a026",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/server/api/providers.server.ts",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 6050,
+      "lines": 87,
+      "sha256": "0177e48d36f571428ea140cfdd6de130280997292da3acce24afc9df072e001e",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/server/api/reading.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 3291,
+      "lines": 44,
+      "sha256": "f6c9ceed6606cabc2b5500e33a0c3d49a01f6cb44bd972a943599a92fcb17ebc",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/server/db/schema.ts",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 75070,
+      "lines": 1462,
+      "sha256": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/server/queries/music.ts",
+      "group": "music",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 3419,
+      "lines": 77,
+      "sha256": "babcbdd7a9de66ff560cf462bc506e37dc0b092e0599c9d5eccd841b4773c96a",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/server/security/provider-fetch.ts",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 13775,
+      "lines": 356,
+      "sha256": "412271ebd72de3e4530a95830954dc1657265a67cae2f637a4d37fe82bea2d7d",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/server/storage/retention.server.ts",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 3870,
+      "lines": 25,
+      "sha256": "50b898518a5ac21573ed69ae514c90b9e27062acd1aeb35a78b2affde3e04ad1",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/sharing/ShareAction.svelte",
+      "group": "sharing",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 3891,
+      "lines": 86,
+      "sha256": "cd1c6043522d39e649fa700b0b5f594f12ffe24b9e71300d5a83d34160376638",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/sharing/external.server.ts",
+      "group": "sharing",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 4575,
+      "lines": 58,
+      "sha256": "4bb4db25a02a5124f2bc6af87ddecbd998e9bd216c79640436be3209d98de1d2",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/sharing/leases.server.ts",
+      "group": "sharing",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 10672,
+      "lines": 122,
+      "sha256": "607843c44d27334d459561a29000620ec87c8ffa61bcbb46f30cc9d41363c873",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/sharing/policy.ts",
+      "group": "sharing",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 2653,
+      "lines": 41,
+      "sha256": "5538cfca138f3087b572a032c496cb58e18448bc8141f9127e1512a65e59d47f",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/sharing/request-leases.server.ts",
+      "group": "sharing",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 3677,
+      "lines": 68,
+      "sha256": "14c8519654798b5a198605bed4aa16bf9d035e906e7e6af9b9dcf895892fd603",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/sharing/service.server.ts",
+      "group": "sharing",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 14500,
+      "lines": 145,
+      "sha256": "489ee903c17bc1d3bf97510ab68d4b5b00d5e0f74ac9933fa6cdece766fac504",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/sharing/streams.server.ts",
+      "group": "sharing",
+      "review": "owner implementation: lifecycle, requests, queries, bounds, disposal",
+      "bytes": 3947,
+      "lines": 29,
+      "sha256": "620dbc33b224713f0983392af0eb70e0692179b6d11a5538f4f0570abfba33c7",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/sync/jellyfin-playback.server.ts",
+      "group": "playback",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 10052,
+      "lines": 168,
+      "sha256": "7eed2b4b624f01ead9425a456fdee2a8b656aa59c586fdd68034d0d6f336ff4d",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/sync/jellyfin-reading.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 3552,
+      "lines": 48,
+      "sha256": "9c13545fb04e2d755e9ba960c7fa2e09cc567036194a658fe0bf9269ca149f2d",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/client.ts",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 5335,
+      "lines": 106,
+      "sha256": "af61ef7082bf81470584fcbd9912f91f3e0b880b05485101a45b38ce1bc9af53",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/components/MediaHero.svelte",
+      "group": "playback",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 12581,
+      "lines": 371,
+      "sha256": "f8ad70c4381400015b295acb417978d25a294a3b2adfe690befc7181b270f3ea",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/components/PartyCard.svelte",
+      "group": "parties",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 4238,
+      "lines": 43,
+      "sha256": "e1103f971fa324a1c61072f7c945c37df6c0ef916889951e1c14a23b67cef2d4",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/components/PartyMenu.svelte",
+      "group": "parties",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 11979,
+      "lines": 136,
+      "sha256": "b98ebb4a117e5702dcf3a4c4cb1cce64fd9c9f878231c5cce796fc2a32bab31a",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/components/PersistentPlayer.svelte",
+      "group": "playback",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 36895,
+      "lines": 908,
+      "sha256": "c586c957730247a79835d3ff817ec9836dac9a99d1f5a93fc6c3abf51fd4a2ca",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/components/PlaybackTimeline.svelte",
+      "group": "playback",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 5342,
+      "lines": 82,
+      "sha256": "58f0ed9b62cf51d3a0cf3c1bc484769e9de682adb7e59f8a2f49a1b8b0d316ef",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/components/StreamsPanel.svelte",
+      "group": "streams",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 5771,
+      "lines": 52,
+      "sha256": "6b89fa07280b2742701f4ecfb1eef61fe1b00050abc1e0e3d25fe289580fdf9b",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/components/SyncedControls.svelte",
+      "group": "parties",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 3979,
+      "lines": 55,
+      "sha256": "0d71c2efddede1062ba55273e31c072e7c38d67d01f83b0ec734dd01e6ed9969",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/heroes/playback.svelte.ts",
+      "group": "playback",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 2821,
+      "lines": 72,
+      "sha256": "edd01eb653f34a47737612a134186c11a27cc142793f59be7e160c3d7c182e01",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/heroes/presentation.svelte.ts",
+      "group": "playback",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 9500,
+      "lines": 229,
+      "sha256": "bfebb4ffc44c07bc1f3a504c122b38aa8749c6f372c46d49efa73b54798a85fb",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/pages/music.svelte.ts",
+      "group": "music",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 4404,
+      "lines": 63,
+      "sha256": "88aa749b7746b045130245d3f768c1c990dd3adece13178d8ab2af885272be91",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/lib/ui/panels/streams.svelte.ts",
+      "group": "streams",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 593,
+      "lines": 11,
+      "sha256": "772f06ab81226ed6bb96ce7cd797b29840e7f80df9eb15ee60f00f3e93d07597",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/+layout.svelte",
+      "group": "shared-seams",
+      "review": "targeted ownership and API/query sections",
+      "bytes": 10480,
+      "lines": 221,
+      "sha256": "1e5c8a3b4091290295eb05df4e517467a2210c40f7a38cf9860f0c4aacc516f8",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/api/share/[...path]/+server.ts",
+      "group": "sharing",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 2727,
+      "lines": 39,
+      "sha256": "e4320e6a5e354cfef26374e2f36814cc41c98d5bf3dad386b3df6ca69e520687",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/media/comic-vine/[externalId]/+page.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 118,
+      "lines": 2,
+      "sha256": "d7ea9c51848cc82192bdb1a25ebcc14cd233226677d908fd143a890bab63973f",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/media/comic-vine/[externalId]/+page.svelte",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 128,
+      "lines": 5,
+      "sha256": "23178f99eedd8f94f9552b44eef39fedcb10f8d4f75e61ab8911e1fd5ca06ce3",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/media/reading-collection/[id]/+page.server.ts",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 657,
+      "lines": 11,
+      "sha256": "793f28be6f7eff612b564cc8fb758c52e12736cf4655681fdb639fe95d5b0979",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/media/reading-collection/[id]/+page.svelte",
+      "group": "reading",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 137,
+      "lines": 5,
+      "sha256": "07e6885a2eea693560dc0f22d29002d82099555e09d6abe9a67ce7bdc2186f0a",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/music/+page.server.ts",
+      "group": "music",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 360,
+      "lines": 9,
+      "sha256": "5575d0b1a848e731a0fa15a10d05b767208c36bdefa6d6a9fd7356634b52ace0",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/music/+page.svelte",
+      "group": "music",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 3578,
+      "lines": 78,
+      "sha256": "cd3db701cec7e4ef0a41bd2b9b3865acd23529604224bb39e4ce15ed5b2a7953",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/music/[connection]/[id]/+page.server.ts",
+      "group": "music",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 1325,
+      "lines": 30,
+      "sha256": "1f3fdb77863635258e5bd32bdec140dacabf7b778ea7616a0ff289c1ec844ccb",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/music/[connection]/[id]/+page.svelte",
+      "group": "music",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 130,
+      "lines": 5,
+      "sha256": "41767dbfba613340c8ce56969ab3c718eecb8a64ff24984019bd7853fa5a5b10",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/music/work/[id]/+page.server.ts",
+      "group": "music",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 601,
+      "lines": 10,
+      "sha256": "04a7ddc0c5f7806e3234cb44b632e3cc5766be1c0362ecaf70c4fa0c9586546e",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/music/work/[id]/+page.svelte",
+      "group": "music",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 130,
+      "lines": 5,
+      "sha256": "41767dbfba613340c8ce56969ab3c718eecb8a64ff24984019bd7853fa5a5b10",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/share/+page.server.ts",
+      "group": "sharing",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 393,
+      "lines": 6,
+      "sha256": "855205840233907df08fd6ea3b4b4a22d420b6e59c124b1e405fd6691b53a226",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/share/+page.svelte",
+      "group": "sharing",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 3376,
+      "lines": 48,
+      "sha256": "3cfb771a94fb986888b246609c9cc00f50d37c908d9f440df62896a6c4e01906",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/share/[token]/+server.ts",
+      "group": "sharing",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 620,
+      "lines": 9,
+      "sha256": "a6e9de0524e3f09827e75ebb65eb5edf8c92e5434ff8b4853523624e878dd15c",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/synced/[id]/+page.server.ts",
+      "group": "parties",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 277,
+      "lines": 4,
+      "sha256": "0e17b7f0b3782fbb8f854ca3e0d472e6b0160e83ff050cff65977baee200a64f",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    },
+    {
+      "path": "src/routes/synced/[id]/+page.svelte",
+      "group": "parties",
+      "review": "consumer/adapter activation and bounded data flow",
+      "bytes": 1080,
+      "lines": 15,
+      "sha256": "44d9f4d9ce378118f78967e2bc45b8ef54bd627a62cbfd86a11e5692d515042b",
+      "runtimeCoverage": "not individually certified; see actual-data boundary and root regression ledger"
+    }
+  ],
+  "fileCount": 123,
+  "lineCount": 42029,
+  "report": "playback-readers.md",
+  "crossReportLinks": [
+    {
+      "finding": "PR-11",
+      "other": "DATA-02",
+      "reason": "same sequence projection owner; preparation linear materialization vs bulk repeated expansion; music overflow separate"
+    },
+    {
+      "finding": "PR-04",
+      "other": "PJ-14",
+      "reason": "common deadline/cancellation ownership; concrete missing signal vs queue-residence policy distinct"
+    },
+    {
+      "finding": "PR-05",
+      "other": "DATA-07",
+      "reason": "semantic no-op/physical update work; same methodology, different canonical persistence owners"
+    },
+    {
+      "finding": "PR-14",
+      "other": "PJ-10",
+      "reason": "permanent evidence policy and query input growth; shared retention contract, distinct histories"
+    }
+  ]
+}

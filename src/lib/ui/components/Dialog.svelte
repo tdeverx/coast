@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import {useRetention} from '$lib/ui/retention';
   import {onDestroy,tick} from 'svelte';
   import Button from './Button.svelte';
   import Toast from './Toast.svelte';
@@ -20,6 +21,8 @@
     onclose?: () => void;contentKey?:string;
   } = $props();
   const {feedback} = useClient();
+  const retain=useRetention();
+  $effect(()=>{if(open)return retain();});
   const hostId = $props.id();
   $effect(()=>{if(open)return feedback.host(hostId);});
   let dialog: HTMLElement;
@@ -31,9 +34,11 @@
   let expanded=$state(false);
   let expansionScroll=$state<HTMLDivElement>();
   let detailScroll=$state<HTMLDivElement>();
+  let cancelHandoff=()=>{};
   $effect(()=>{
     contentKey;
     if(!open||!expanding||!detailScroll)return;
+    cancelHandoff();
     if(expansionFrame){cancelAnimationFrame(expansionFrame);expansionFrame=0;}
     // Reset the page within the current presentation, not the presentation itself.
     detailScroll.scrollTop=0;
@@ -48,7 +53,7 @@
       if (!destroyed && open && expansionScroll) {
         // Reverse momentum can remain latched to this track. Content must reach
         // its top before the outer track may change the sheet presentation.
-        if(detailScroll && detailScroll.scrollTop>0 && expansionScroll.scrollTop<expansionDistance)expansionScroll.scrollTop=expansionDistance;
+        if(detailScroll && detailScroll.scrollTop>0.5 && expansionScroll.scrollTop<expansionDistance)expansionScroll.scrollTop=expansionDistance;
         const next=Math.min(1,Math.max(0,expansionScroll.scrollTop/expansionDistance));
         expanded=next===1;
         if(next!==expansion){
@@ -63,26 +68,61 @@
     if(!expanded&&detailScroll?.scrollTop&&expansionScroll){expansionScroll.scrollTop=expansionDistance;expandSheet();}
   }
   function handoffScroll(node:HTMLDivElement){
+    let position:number|undefined;
+    let direction=0;
+    let settle:ReturnType<typeof setTimeout>|undefined;
+    const snap=node.style.scrollSnapType;
+    function cancel(){
+      if(settle!==undefined)clearTimeout(settle);
+      settle=undefined;
+      position=undefined;
+      node.style.scrollSnapType=snap;
+    }
+    cancelHandoff=cancel;
+    function move(delta:number){
+      if(settle!==undefined)clearTimeout(settle);
+      position=Math.max(0,Math.min(expansionDistance,(position??node.scrollTop)+delta));
+      direction=Math.sign(delta);
+      // A snapped scrollTop assignment can immediately return to the same end.
+      // Keep one gesture's travel until it settles, then restore native snapping.
+      node.style.scrollSnapType='none';
+      node.scrollTop=position;
+      expandSheet();
+      const pending=setTimeout(()=>{
+        if(settle!==pending)return;
+        if(!destroyed&&open&&position!==undefined){
+          node.scrollTop=direction<0?0:expansionDistance;
+          expandSheet();
+        }
+        cancel();
+      },120);
+      settle=pending;
+    }
     function wheel(event:WheelEvent){
       const content=detailScroll;
       // A wheel gesture can remain latched to the expansion track after it reaches its end.
       // Forward its remaining vertical travel without requiring another pointer hit test.
-      if(!open||destroyed||!content||event.defaultPrevented||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY)||!content.contains(event.target as Node))return;
+      if(!open||destroyed||!content||event.defaultPrevented||event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY)||!content.contains(event.target as Node)){cancel();return;}
       const delta=event.deltaY*(event.deltaMode===1?20:event.deltaMode===2?content.clientHeight:1);
       if(!delta)return;
-      if(delta>0&&node.scrollTop<expansionDistance-0.5&&content.scrollTop<=0)return;
       for(let target=event.target as HTMLElement;target&&target!==content;target=target.parentElement!){
         if(target.scrollHeight<=target.clientHeight)continue;
         const style=window.getComputedStyle(target);
         if(!/^(auto|scroll)$/.test(style.overflowY))continue;
-        if(style.overscrollBehaviorY==='contain'||style.overscrollBehaviorY==='none'||(delta>0?target.scrollTop<target.scrollHeight-target.clientHeight:target.scrollTop>0))return;
+        if(style.overscrollBehaviorY==='contain'||style.overscrollBehaviorY==='none'||(delta>0?target.scrollTop<target.scrollHeight-target.clientHeight:target.scrollTop>0)){cancel();return;}
       }
-      if(delta<0&&content.scrollTop<=0){
-        // A gesture latched to content also needs an explicit handoff at its top.
-        // Non-cancelable events retain their native travel to avoid applying it twice.
-        if(event.cancelable&&node.scrollTop>0){event.preventDefault();node.scrollTop=Math.max(0,node.scrollTop+delta);}
+      if(position!==undefined&&!event.cancelable){cancel();return;}
+      if(delta>0&&node.scrollTop<expansionDistance-0.5&&content.scrollTop<=0.5){
+        if(position!==undefined&&event.cancelable){event.preventDefault();move(delta);}
         return;
       }
+      if(delta<0&&content.scrollTop<=0.5){
+        // A gesture latched to content also needs an explicit handoff at its top.
+        // Non-cancelable events retain their native travel to avoid applying it twice.
+        if(event.cancelable&&node.scrollTop>0){event.preventDefault();content.scrollTop=0;move(delta);}
+        return;
+      }
+      cancel();
       const next=Math.max(0,Math.min(content.scrollHeight-content.clientHeight,content.scrollTop+delta));
       if(next===content.scrollTop)return;
       // Later events may be non-cancelable. expandSheet pins reverse outer travel
@@ -91,16 +131,17 @@
       content.scrollTop=next;
     }
     node.addEventListener('wheel',wheel,{passive:false});
-    return {destroy(){node.removeEventListener('wheel',wheel);}};
+    return {destroy(){cancel();if(cancelHandoff===cancel)cancelHandoff=()=>{};node.removeEventListener('wheel',wheel);}};
   }
   let returnFocus:HTMLElement|null=null;
   function closed() {
+    if(destroyed)return;
     // Native close events are queued: an older event must not close a reopened dialog.
     if(!popover&&(dialog as HTMLDialogElement)?.open)return;
     if(dialog?.contains(document.activeElement)&&returnFocus?.isConnected)returnFocus.focus({preventScroll:true});
     returnFocus=null;open=false;onclose?.();
   }
-  onDestroy(() => {destroyed = true;if(placementFrame)cancelAnimationFrame(placementFrame);if(expansionFrame)cancelAnimationFrame(expansionFrame);});
+  onDestroy(() => {destroyed = true;cancelHandoff();if(placementFrame)cancelAnimationFrame(placementFrame);if(expansionFrame)cancelAnimationFrame(expansionFrame);});
   function placePopover() {
     if (destroyed || !open || !dialog) return;
     const target = anchor ? document.querySelector(anchor) : null;
@@ -144,7 +185,7 @@
       modal.showModal();
       if(expanding){expansion=0;expanded=false;if(expansionScroll)expansionScroll.scrollTop=0;dialog.style.setProperty('--detail-expansion','0');dialog.style.setProperty('--detail-hero-text-align','center');if(detailScroll)detailScroll.scrollTop=0;}
     }
-    if (!open) {if(expansionFrame){cancelAnimationFrame(expansionFrame);expansionFrame=0;}if(modal.open)modal.close();}
+    if (!open) {cancelHandoff();if(expansionFrame){cancelAnimationFrame(expansionFrame);expansionFrame=0;}if(modal.open)modal.close();}
   });
 </script>
 
@@ -197,7 +238,7 @@
         <div class="detail-expansion-track">
           <div class="sheet-settle" aria-hidden="true"></div><div class="expanded-settle" aria-hidden="true"></div>
           <div class="detail-stage">
-            <div class="detail-scroll" bind:this={detailScroll} onscroll={scrollPage}>
+            <div class="detail-scroll" data-shelf-scroll bind:this={detailScroll} onscroll={scrollPage}>
               <div class="detail-body">
                 <div class="detail-heading">{@render dialogHeading()}</div>{@render dialogContent()}{@render footer?.()}
               </div>
@@ -209,7 +250,7 @@
     </div>
   {:else}{@render dialogHeading()}{@render dialogContent()}{@render footer?.()}{/if}
   {#if feedback.activeHost === hostId && feedback.current}
-    <div class="dialog-feedback"><Toast text={feedback.current.text} kind={feedback.current.kind} error={feedback.current.error} busy={feedback.current.busy} actionLabel={feedback.current.undo?'Undo':'Retry'} onaction={feedback.current.undo || feedback.current.retry ? feedback.act : undefined} ondismiss={()=>feedback.clear()} /></div>
+    <div class="dialog-feedback"><Toast text={feedback.current.text} kind={feedback.current.kind} error={feedback.current.error} busy={feedback.current.busy} actionLabel={feedback.current.undo?'Undo':feedback.current.actionLabel??'Retry'} onaction={feedback.current.undo || feedback.current.retry ? feedback.act : undefined} ondismiss={()=>feedback.clear()} /></div>
   {/if}
 </svelte:element>
 

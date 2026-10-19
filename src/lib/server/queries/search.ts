@@ -106,8 +106,10 @@ export async function searchPresentations(
   userId: string,
   surface: string,
   query: string,
-  kind: string
+  kind: string,
+  signal?:AbortSignal
 ): Promise<SearchPresentations> {
+  signal?.throwIfAborted();
   if (!query || surface === 'watch')
     return { items: [], discover: [], failure: '', truncated: false };
   if (surface === 'listen') {
@@ -117,10 +119,10 @@ export async function searchPresentations(
     const [cards,assessments]=await Promise.all([workCards(userId,userId,ids),workAssessments(userId,userId,ids)]);
     const availability=new Map(assessments.map(row=>[row.id,row.availability]));
     const personal=cards.map(item=>({...item,available:['available','partial'].includes(availability.get(('workId' in item?item.workId:undefined)??item.id)??'unknown')}));
-    let result = await musicRow(userId, query, kind as 'all' | 'album' | 'artist' | 'track', 100);
+    let result = await musicRow(userId, query, kind as 'all' | 'album' | 'artist' | 'track', 100,false,signal);
     const fallback = searchFallback(query);
     if (!result.items.length && !result.failure && fallback) {
-      const broader = await musicRow(userId, fallback, kind as 'all' | 'album' | 'artist' | 'track', 100);
+      const broader = await musicRow(userId, fallback, kind as 'all' | 'album' | 'artist' | 'track', 100,false,signal);
       result = { ...broader, items: broader.items.filter(item => searchScore(query, item) >= 550) };
     }
     return { ...result, items: rankSearch([...new Map([...personal,...result.items].map(item=>[('workId' in item?item.workId:undefined)??item.id,item])).values()] as MediaCardPresentation[], query), discover: [], truncated: rows.length >= 60 || result.items.length >= 100 };

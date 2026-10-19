@@ -1,0 +1,326 @@
+{
+  "at": "2026-10-19T01:52:49.356026+00:00",
+  "status": "normal-source-and-database-adopted-actual-and-native-verified-with-explicit-acceptance-gaps",
+  "normalApplicationSourceApplied": true,
+  "canonicalId": "DATA-09",
+  "sourcePins": {
+    "src/lib/core/profile/service.server.ts": "12539188d3e3595ad64c7babf704e4cf0db7a789221b4e1ff3d1b696d481d1d5",
+    "src/lib/server/api/index.server.ts": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623",
+    "src/lib/server/auth/index.ts": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d",
+    "src/lib/providers/maintenance.server.ts": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b",
+    "tests/profile-db.test.ts": "20600900d089f0ac5df11d0cec5c3049dad2049dbc6a38d1b544b9de95188a4e",
+    "tests/maintenance-lifecycle.test.ts": "468aa3cd06ce165bd522d6d778d34d35321f65796f3a5e3975f90f2a919c9b86",
+    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "src/lib/core/profile/avatar-storage.server.ts": "1acec14ca020942f20cdf0d7f97832fac08e8bcbf16280c0ff752addda633c3a"
+  },
+  "sourceFreeze": {
+    "files": 585,
+    "mismatches": []
+  },
+  "actualRollbackRef": "candidates/avatar-storage/direct-rollback-actual.json",
+  "actualCommitRef": "candidates/avatar-storage/full-lifecycle-commits-actual.json",
+  "failedAccountDeletionRef": "candidates/avatar-storage/failed-account-delete-backend-killed.json",
+  "accountDeletionCensusRef": "candidates/account-deletion/transitive-census-actual.json",
+  "gatesRef": "candidates/account-deletion/gates.json",
+  "blockers": [],
+  "artifactPins": {
+    "candidates/avatar-storage/adoption-manifest.json": "b81bf80b59cde94f83f53d28d83c7f77f954ba6fc0eb232fca85941a0cc05432",
+    "candidates/avatar-storage/adoption.patch": "759dcea7fb8e371e2ff3bcb73e47eb3fbf905453535efebf6de7665c6eaa0c1d",
+    "candidates/avatar-storage/api-index.server.ts.candidate": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623",
+    "candidates/avatar-storage/auth-index.ts.candidate": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d",
+    "candidates/avatar-storage/avatar-storage.server.ts.candidate": "1acec14ca020942f20cdf0d7f97832fac08e8bcbf16280c0ff752addda633c3a",
+    "candidates/avatar-storage/avatar-storage.server.ts.candidate.first.snapshot": "8829332e2428f8747611a8eddde0a77beb37c0edf20581240e4eeaf4b27568a7",
+    "candidates/avatar-storage/avatar-storage.test.ts.candidate": "d566624a8146b2ac3a3bd9655f97a386f4e10ea2d4ad1611f6b6fab501cc5b32",
+    "candidates/avatar-storage/before-direct-cleanup/api-index.server.ts.candidate": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623",
+    "candidates/avatar-storage/before-direct-cleanup/auth-index.ts.candidate": "58388d50b0fb9e1a7df3bf16855a7fd0958d4802bf8fb9e24487a14bf6f8f13a",
+    "candidates/avatar-storage/before-direct-cleanup/avatar-storage-candidate.json": "e9cc46cb1ed0b5433d6b5b93020d146ec2de353de73b7b3041ba59f1b7f3356a",
+    "candidates/avatar-storage/before-direct-cleanup/avatar-storage-candidate.md": "14d5785a44fe9c4e7936e8d9718ff23fc70fe77c10c305032b6d385afe711a4e",
+    "candidates/avatar-storage/before-direct-cleanup/avatar-storage-commit-lifecycle-real.ts.snapshot": "03b602b895c7f831f0297196361d109f08e55dd7ed84c880928b1f96ae82b3c3",
+    "candidates/avatar-storage/before-direct-cleanup/avatar-storage-real.ts.snapshot": "91062d1816ee2d531e07b5272ebf72573781ef34ead7fa040c63161c62f3d076",
+    "candidates/avatar-storage/before-direct-cleanup/avatar-storage.server.ts.candidate": "6a2f2be3bbf5f17fb1f6d7632b88b677a081e7c4dca436081bf45001943a12b0",
+    "candidates/avatar-storage/before-direct-cleanup/avatar-storage.test.ts.candidate": "d566624a8146b2ac3a3bd9655f97a386f4e10ea2d4ad1611f6b6fab501cc5b32",
+    "candidates/avatar-storage/before-direct-cleanup/final-gates.json": "7e208877ea6ddd586dc75696f7552034665df4e3d6fe53343db496ea4c2d255d",
+    "candidates/avatar-storage/before-direct-cleanup/final-rollback-actual.json": "448f59b0fb4ea2dc2de4bc70cf82065fdc51a6df2c1b7407c48d73f18326de68",
+    "candidates/avatar-storage/before-direct-cleanup/lifecycle-commits-actual.json": "ba621ca1a913583a8fff3d276f9ce0acb458500927aff3eedcece056aad6e5d4",
+    "candidates/avatar-storage/before-direct-cleanup/maintenance-lifecycle.test.ts.candidate": "468aa3cd06ce165bd522d6d778d34d35321f65796f3a5e3975f90f2a919c9b86",
+    "candidates/avatar-storage/before-direct-cleanup/maintenance.server.ts.candidate": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b",
+    "candidates/avatar-storage/before-direct-cleanup/migrate-profile-avatars.ts.candidate": "60c132051c0218dcae9508c88a0677a3db82b5052c49a009784e6eb0c936192f",
+    "candidates/avatar-storage/before-direct-cleanup/profile-db.test.ts.candidate": "20600900d089f0ac5df11d0cec5c3049dad2049dbc6a38d1b544b9de95188a4e",
+    "candidates/avatar-storage/before-direct-cleanup/service.server.ts.candidate": "e1ae75f548a0dd58c5adc82cf4b67d454654932a9f3a574c55c5af92133d395c",
+    "candidates/avatar-storage/copy-driver.snapshot": "02b69dfd9f40276582fadafc1729e4e92ad386006c987932217d03f5a37d062e",
+    "candidates/avatar-storage/copy-wrapper-before-reconnect-repair.snapshot": "c277ca4f1c65fbd3b610016eb357d67590a73a2acec640aa3acd59c0a3d4726f",
+    "candidates/avatar-storage/credential-runner.snapshot": "9ab3adfa30db26225c439638ff981f9cd11d6738f86343b3a60c649a1d589331",
+    "candidates/avatar-storage/direct-build.log": "16f605a171978e4dbc7c255c145a79db323c704eac873241dfc02a9eae2f8e61",
+    "candidates/avatar-storage/direct-check.log": "d1f094bd3f6e4aa44db0c9c650f91c16e2d34a5c030ec9268dc14b3fe13da2df",
+    "candidates/avatar-storage/direct-code-inventory.log": "cac510d1bfc2b50e195f173b1d4f4af7d1775614da864cd91bb13dfa61a3bb10",
+    "candidates/avatar-storage/direct-rollback-actual.json": "d32ae27aea34e0fd4a89f539ddd234b38b41b7cefbee5efc9a4686fb4bec1851",
+    "candidates/avatar-storage/direct-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "candidates/avatar-storage/direct-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "candidates/avatar-storage/direct-unit.log": "6f92745b218135cb45a7f2a61975fcfd94eafed77afc1996fa5baf2b45f1c8e6",
+    "candidates/avatar-storage/failed-account-delete-backend-killed.json": "a29cc6bc2bbd5b002855818fdcfe7bec07b77f54bf5bd4f5697f72da6bc234d2",
+    "candidates/avatar-storage/failed-attached-maintenance-unit.log": "e3ad70c5bf2f96ff279f6cffe9dc30720898559001f813176521beccd6869aa2",
+    "candidates/avatar-storage/failed-backend-probe.snapshot": "4b58eca84cb840f802c8392263ac9e0373f8dc4251c0202e5c7452068727cc4a",
+    "candidates/avatar-storage/failed-cleanup-probe-declaration.snapshot": "367afd2bc94774a742f10290f5b2b4cfe9e86805e1600e50f4dcf0605678ff9d",
+    "candidates/avatar-storage/failed-cleanup-probe.json": "47e0eefc208c12069f99cc483cd80d4d010dcc8ec9639e851a55e7a7c45b2a61",
+    "candidates/avatar-storage/final-build.log": "67e9bdb9ec53b5de15c9fe0af6e83cc6d4554b5967db383b9c9e111c0ad934ee",
+    "candidates/avatar-storage/final-check.log": "d1f094bd3f6e4aa44db0c9c650f91c16e2d34a5c030ec9268dc14b3fe13da2df",
+    "candidates/avatar-storage/final-code-inventory.log": "cac510d1bfc2b50e195f173b1d4f4af7d1775614da864cd91bb13dfa61a3bb10",
+    "candidates/avatar-storage/final-gates.json": "7e208877ea6ddd586dc75696f7552034665df4e3d6fe53343db496ea4c2d255d",
+    "candidates/avatar-storage/final-rollback-actual.json": "448f59b0fb4ea2dc2de4bc70cf82065fdc51a6df2c1b7407c48d73f18326de68",
+    "candidates/avatar-storage/final-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "candidates/avatar-storage/final-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "candidates/avatar-storage/final-unit.log": "793fbb1ba9ecdff16c91bb50a880df203eeaacea5b8bd474af1e644864e7861c",
+    "candidates/avatar-storage/first-commits-actual.json": "bed652acfd73508943b84edc3c79adae0c1db96bba2f028fe53cae93f1936633",
+    "candidates/avatar-storage/first-commits-probe.snapshot": "4974854dcd9bd5d3859c61d53572bf93c55f49fdbe1a5d37c7f49c1200c83000",
+    "candidates/avatar-storage/first-rollback-actual.json": "9d2d619c654d25bef917858681d4210d88c3ae26554ef33204ff6b396ee75f3e",
+    "candidates/avatar-storage/focused-maintenance-unit.log": "eba07459bbd7322eb118e8f011cfaaf0b01cc15631c57bece970ec9c5c2da35d",
+    "candidates/avatar-storage/full-lifecycle-commits-actual.json": "1276ef21796c092417794676869c79a41d01ee664b9d7181db3833b824bfec81",
+    "candidates/avatar-storage/full-lifecycle-copy-driver.snapshot": "efb1a141b4a9269aea04a6c448311e7c84d96ab0e7e2d9f24dd77d3750e6223a",
+    "candidates/avatar-storage/interrupted-copy-recovery.json": "d3ec1dbd620f2b1507b974501faedbbbb33e4b87a2ec2bcba54198c4290a3e77",
+    "candidates/avatar-storage/lifecycle-commits-actual.json": "ba621ca1a913583a8fff3d276f9ce0acb458500927aff3eedcece056aad6e5d4",
+    "candidates/avatar-storage/maintenance-before-detached-avatar.snapshot": "3b888a64351b745ac89c875047e5c69f48b97055a03aa6cabb9da66fc4cc41db",
+    "candidates/avatar-storage/maintenance-lifecycle.test.ts.candidate": "468aa3cd06ce165bd522d6d778d34d35321f65796f3a5e3975f90f2a919c9b86",
+    "candidates/avatar-storage/maintenance.server.ts.candidate": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b",
+    "candidates/avatar-storage/migrate-profile-avatars.ts.candidate": "328dc7e385130092ac142ca5ccab681fcf68a39775a2779e3b4aa22817612088",
+    "candidates/avatar-storage/migrate-profile-avatars.ts.candidate.first.snapshot": "9e925749e7d0fc920560003dd3c456bd5739bd60d6c8b71259896b41f728dc52",
+    "candidates/avatar-storage/performance.md.before.snapshot": "c5a9ad8af1e8e07dd31f08434002dccee5042a6de7f529e4946bfd187b363102",
+    "candidates/avatar-storage/profile-db.test.ts.candidate": "20600900d089f0ac5df11d0cec5c3049dad2049dbc6a38d1b544b9de95188a4e",
+    "candidates/avatar-storage/service.server.ts.candidate": "12539188d3e3595ad64c7babf704e4cf0db7a789221b4e1ff3d1b696d481d1d5",
+    "candidates/avatar-storage/service.server.ts.candidate.first.snapshot": "e1ae75f548a0dd58c5adc82cf4b67d454654932a9f3a574c55c5af92133d395c",
+    "candidates/avatar-storage/src__lib__core__profile__gif-avatar.server.ts.before.snapshot": "5c91fa12ac03dac622826280de60afd26574ee39f04fa75db8457561b155f617",
+    "candidates/avatar-storage/src__lib__core__profile__service.server.ts.before.snapshot": "5f4cd96495347811e7c11e9126417a8b8c0a41d5046414e92e3fd114384be904",
+    "candidates/avatar-storage/src__lib__providers__maintenance.server.ts.before.snapshot": "dcc93147ba085a07562271c9acc54aa5aec49e7356be01d89ba749fb1dd2ee13",
+    "candidates/avatar-storage/src__lib__server__api__index.server.ts.before.snapshot": "1d631186ce2546acfc1e9f8aa1458932c2bed4f1568e491d1c8679da33afe5f2",
+    "candidates/avatar-storage/src__lib__server__auth__index.ts.before.snapshot": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf",
+    "candidates/avatar-storage/tests__maintenance-lifecycle.test.ts.before.snapshot": "24524b09e21358486706664274b76c6159d97b1fee26bdad59b74b076610cbef",
+    "candidates/avatar-storage/tests__profile-db.test.ts.before.snapshot": "75fc24acaccd915a34d7832fee1f21516692de56f9b1dd59a176b600c40cc471",
+    "probes/avatar-storage-real.ts": "3934bf22fb79527b786d863db5c7e1b9dac9efc7213337a11215b405aed6bb53",
+    "probes/avatar-storage-commit-lifecycle-real.ts": "d7863cf547f721fbb06372d1c552e50415956521c8a662a8a081b90d9847ab79",
+    "probes/avatar-storage-full-lifecycle-real.ts": "1a5de680a0330e40064874cd2dd150eca7b140732e108b5c59649e21df3b5cee",
+    "candidates/avatar-storage/normal-before.json": "b854f02b58fad84a0db17dd88c30d28509fa55666456c3e35fab7b167b7a75a9",
+    "candidates/avatar-storage/normal-before.png": "761e377c37b886aada9c2b5f29022f63c1d5b0cbfb71cbc5e66ae8fd31de019e"
+  },
+  "evidenceEpochs": {
+    "previousFullDirectory": {
+      "report": "candidates/avatar-storage/before-direct-cleanup/avatar-storage-candidate.json",
+      "candidateDirectory": "candidates/avatar-storage/before-direct-cleanup"
+    },
+    "finalDirectCleanup": {
+      "manifest": "candidates/avatar-storage/adoption-manifest.json",
+      "proof": "candidates/avatar-storage/full-lifecycle-commits-actual.json"
+    }
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:04:47.832262+00:00",
+      "path": "docs/performance.md",
+      "beforeSha256": "6cef728fce74239b718845edcf0d8e2b6582c48b58d80501c694a6fd7c105e14",
+      "afterSha256": "0809f3bbe9c20967f7bddc32bdc4e7de5077bf00b1d0b0e6bf22d96f0173dd37",
+      "beforeRef": "candidates/account-deletion/performance.md.before.snapshot",
+      "reviewRef": "implementation-found-12.md",
+      "boundary": "Reviewed guide update or forward0064journal append only; no normal database/avatar rollout and no upgrade of prior runtime evidence."
+    },
+    {
+      "at": "2026-10-19T01:32:19.107523+00:00",
+      "path": "docs/performance.md",
+      "beforeSha256": "0809f3bbe9c20967f7bddc32bdc4e7de5077bf00b1d0b0e6bf22d96f0173dd37",
+      "afterSha256": "338a2c8cbeb326f3f9b80bf7880db5a037746a6caf85d25b1a6e9fc059c03792",
+      "beforeRef": "candidates/found-implementation-13/performance.md.before.snapshot",
+      "reviewRef": "implementation-found-13.md",
+      "boundary": "Only internal Profile activity projection narrows; other functions and contracts are byte-identical. Current identity review does not re-run or upgrade old evidence. Guide append records current proof and rejected Taste alternative."
+    },
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/core/profile/gif-avatar.server.ts",
+          "before": "5c91fa12ac03dac622826280de60afd26574ee39f04fa75db8457561b155f617",
+          "after": null
+        },
+        {
+          "owner": "src/lib/core/profile/service.server.ts",
+          "before": "5f4cd96495347811e7c11e9126417a8b8c0a41d5046414e92e3fd114384be904",
+          "after": "12539188d3e3595ad64c7babf704e4cf0db7a789221b4e1ff3d1b696d481d1d5"
+        },
+        {
+          "owner": "src/lib/server/api/index.server.ts",
+          "before": "1d631186ce2546acfc1e9f8aa1458932c2bed4f1568e491d1c8679da33afe5f2",
+          "after": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623"
+        },
+        {
+          "owner": "src/lib/server/auth/index.ts",
+          "before": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf",
+          "after": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d"
+        },
+        {
+          "owner": "src/lib/providers/maintenance.server.ts",
+          "before": "dcc93147ba085a07562271c9acc54aa5aec49e7356be01d89ba749fb1dd2ee13",
+          "after": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b"
+        },
+        {
+          "owner": "tests/profile-db.test.ts",
+          "before": "75fc24acaccd915a34d7832fee1f21516692de56f9b1dd59a176b600c40cc471",
+          "after": "20600900d089f0ac5df11d0cec5c3049dad2049dbc6a38d1b544b9de95188a4e"
+        },
+        {
+          "owner": "tests/maintenance-lifecycle.test.ts",
+          "before": "24524b09e21358486706664274b76c6159d97b1fee26bdad59b74b076610cbef",
+          "after": "468aa3cd06ce165bd522d6d778d34d35321f65796f3a5e3975f90f2a919c9b86"
+        },
+        {
+          "owner": "docs/performance.md",
+          "before": "338a2c8cbeb326f3f9b80bf7880db5a037746a6caf85d25b1a6e9fc059c03792",
+          "after": "079a6996da4fa71bbd536d18eeea3ee39d71d42d530cf90110c3a6b8d7d033ab"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T01:54:19.079510+00:00",
+      "reportRef": "implementation-found-16.md",
+      "boundary": "Add exact ten-file avatar adoption/removed-owner/patch/normal-receipt drift checks and clarify guide prose; no runtime change or historical acceptance upgrade."
+    },
+    {
+      "at": "2026-10-19T02:01:28.135299+00:00",
+      "reportRef": "implementation-found-17.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Current reviewed owner/prose/checker identity only; archived native query epochs and every previous acceptance receipt remain unchanged."
+    },
+    {
+      "at": "2026-10-19T02:13:13.432509+00:00",
+      "reportRef": "implementation-found-18.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Performance-guide and current-checker bookkeeping only; runtime unchanged and no prior acceptance or timing upgraded."
+    },
+    {
+      "at": "2026-10-19T02:17:00.035023+00:00",
+      "reportRef": "implementation-found-19.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Guide/checker bookkeeping; runtime unchanged, no old acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T02:53:01.778274+00:00",
+      "reportRef": "implementation-found-21.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact planned DATA-07 command guards plus guide/checker bookkeeping. Historical source/evidence epochs retained; no older acceptance upgraded."
+    },
+    {
+      "at": "2026-10-19T02:55:26.686530+00:00",
+      "reportRef": "failed-method-backlog.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "User clarified execution-only stopping rule and future investigation order; runtime and prior evidence unchanged."
+    },
+    {
+      "at": "2026-10-19T03:11:12.006201+00:00",
+      "reportRef": "admin-real-data-policy.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Corrected interpretation of authorized real-data/admin test states; runtime and historical results unchanged."
+    },
+    {
+      "at": "2026-10-19T03:22:06.569202+00:00",
+      "reportRef": "implementation-found-22.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Admin actual-data acceptance, measurement/stopping guidance and checker bookkeeping; runtime unchanged, old evidence not promoted beyond named new acceptance."
+    },
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T03:58:03.995927+00:00",
+      "reportRef": "implementation-found-24.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared conflict summaries native actual-admin adoption; sequence named acceptance; phased finalization not adopted. Historical evidence retains source/acceptance boundaries, no whole-audit completion."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    }
+  ],
+  "normalBaselineRef": "candidates/avatar-storage/normal-before.json",
+  "normalBaselineScreenshot": "candidates/avatar-storage/normal-before.png",
+  "normalRolloutDecision": {
+    "userApproved": true,
+    "applied": true,
+    "normalConversion": "3 then 0",
+    "reportRef": "implementation-found-16.md"
+  },
+  "normalDatabaseApplied": true,
+  "avatarRuntimeApplied": true,
+  "normalRolloutRef": "evidence/implementation-approved-avatar-0064-normal.json",
+  "normalAcceptanceRef": "evidence/implementation-approved-avatar-normal-ui.json",
+  "currentGatesRef": "evidence/implementation-approved-avatar-final-gates.json",
+  "remainingAcceptance": [
+    "Whole-page cold/repeated network and CPU/heap/tail budgets are unmeasured; no browser network capture capability.",
+    "Actual saved PNG/JPEG and broader archive/reaction/reconnect/provider/concurrent cohorts remain absent."
+  ]
+}

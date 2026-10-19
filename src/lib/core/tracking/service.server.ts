@@ -2,7 +2,7 @@ import { requireWorkFeature } from '$lib/server/features';
 import { effectiveReleaseDate } from '$lib/catalogue/metadata/release-date.server';
 import { getConfig } from '$lib/server/config';
 import { sequenceContextSchema } from '../../media/sequence';
-import { sequenceEntries } from '../lists/sequence.server';
+import { sequenceEntries, sequenceEntry, type SequenceEntry } from '../lists/sequence.server';
 import { rewatchBoundary } from './rewatch.server';
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -69,6 +69,21 @@ export interface TrackingResult {
 }
 function trackingKey(userId: string, mediaId: string) {
   return and(eq(trackingState.userId, userId), eq(trackingState.mediaId, mediaId));
+}
+/** Exact queue consumption membership shared by tracking and Continue Undo snapshots. */
+export function consumedQueueCondition(userId: string, mediaId: string) {
+  return and(
+    eq(upNext.userId, userId),
+    sql`${upNext.mediaId} in (
+      with recursive parents(id) as (
+        select ${mediaId}::uuid
+        union select r.parent_id from media_relationships r join parents p on r.child_id = p.id
+      )
+      select id from parents
+      union select show_id from episodes where media_id = ${mediaId}
+      union select season_id from episodes where media_id = ${mediaId}
+    )`
+  );
 }
 async function ensureProjection(tx: Transaction, userId: string, mediaId: string) {
   await tx.insert(trackingState).values({ userId, mediaId }).onConflictDoNothing();
@@ -175,9 +190,7 @@ async function applyChange(
       };
   }
   if (input.sequence && input.source === 'coast') {
-    const entry = (await sequenceEntries(userId, input.sequence, tx)).find(
-      (entry) => entry.entryId === input.sequence!.entryId && entry.mediaId === input.mediaId
-    );
+    const entry = await sequenceEntry(userId, input.sequence, input.mediaId, tx);
     if (!entry) throw new DomainError('This sequence entry no longer exists.');
     if (input.action === 'watch' && state.watched && !entry.watched) input.rewatch = true;
   }
@@ -274,20 +287,7 @@ async function applyChange(
   ) {
     const removed = await tx
       .delete(upNext)
-      .where(
-        and(
-          eq(upNext.userId, userId),
-          sql`${upNext.mediaId} in (
-      with recursive parents(id) as (
-        select ${input.mediaId}::uuid
-        union select r.parent_id from media_relationships r join parents p on r.child_id = p.id
-      )
-      select id from parents
-      union select show_id from episodes where media_id = ${input.mediaId}
-      union select season_id from episodes where media_id = ${input.mediaId}
-    )`
-        )
-      )
+      .where(consumedQueueCondition(userId, input.mediaId))
       .returning({ mediaId: upNext.mediaId });
     removedQueueIds = removed.map((row) => row.mediaId);
   }
@@ -339,11 +339,12 @@ async function refreshAncestors(
   }
   for (const [parentId, kind] of orderedParents) {
     const existing = await ensureProjection(tx, userId, parentId);
-    const children = await tx
+    const [children] = await tx
       .select({
-        watched: trackingState.watched,
-        playCount: trackingState.playCount,
-        lastWatchedAt: trackingState.lastWatchedAt,
+        total: sql<number>`count(*)::int`,
+        completed: sql<number>`count(*) filter(where ${trackingState.watched})::int`,
+        minimumPlayCount: sql<number>`coalesce(min(coalesce(${trackingState.playCount},0)),0)::int`,
+        lastWatchedAt: sql<Date | null>`max(${trackingState.lastWatchedAt})`.mapWith(trackingState.lastWatchedAt),
       })
       .from(episodes)
       .leftJoin(
@@ -356,15 +357,10 @@ async function refreshAncestors(
           eq(episodes.isSpecial, false)
         )
       );
-    const total = children.length;
-    const completed = children.filter((child) => child.watched).length;
+    const total = children.total;
+    const completed = children.completed;
     const watched = total > 0 && completed === total;
-    const lastWatchedAt =
-      children
-        .map((c) => c.lastWatchedAt)
-        .filter((d): d is Date => d !== null)
-        .sort((a, b) => b.getTime() - a.getTime())[0] ??
-      (rebuilding ? null : existing.lastWatchedAt);
+    const lastWatchedAt = children.lastWatchedAt ?? (rebuilding ? null : existing.lastWatchedAt);
     await tx
       .update(trackingState)
       .set({
@@ -373,9 +369,7 @@ async function refreshAncestors(
         watched,
         dropped: rebuilding ? existing.dropped : false,
         playCount: rebuilding
-          ? children.length
-            ? Math.min(...children.map((child) => child.playCount ?? 0))
-            : 0
+          ? children.minimumPlayCount
           : !existing.watched && watched
             ? existing.playCount + 1
             : existing.playCount,
@@ -428,11 +422,12 @@ async function refreshCollections(
     for (const relationship of relationships)
       if (ancestors.has(relationship.childId)) await update(relationship.childId);
     const children = relationships.length
-      ? await tx
+      ? (await tx
           .select({
-            watched: trackingState.watched,
-            playCount: trackingState.playCount,
-            lastWatchedAt: trackingState.lastWatchedAt,
+            total: sql<number>`count(*)::int`,
+            completed: sql<number>`count(*) filter(where ${trackingState.watched})::int`,
+            minimumPlayCount: sql<number>`coalesce(min(coalesce(${trackingState.playCount},0)),0)::int`,
+            lastWatchedAt: sql<Date | null>`max(${trackingState.lastWatchedAt})`.mapWith(trackingState.lastWatchedAt),
           })
           .from(trackingState)
           .where(
@@ -443,28 +438,21 @@ async function refreshCollections(
                 relationships.map((relationship) => relationship.childId)
               )
             )
-          )
-      : [];
+          ))[0]
+      : {total:0,completed:0,minimumPlayCount:0,lastWatchedAt:null};
     const existing = await ensureProjection(tx, userId, id);
     const watched =
       relationships.length > 0 &&
-      children.length === new Set(relationships.map((relationship) => relationship.childId)).size &&
-      children.every((child) => child.watched);
-    const lastWatchedAt =
-      children
-        .map((child) => child.lastWatchedAt)
-        .filter((date): date is Date => date !== null)
-        .sort((a, b) => b.getTime() - a.getTime())[0] ??
-      (rebuilding ? null : existing.lastWatchedAt);
+      children.total === new Set(relationships.map((relationship) => relationship.childId)).size &&
+      children.completed === children.total;
+    const lastWatchedAt = children.lastWatchedAt ?? (rebuilding ? null : existing.lastWatchedAt);
     await tx
       .update(trackingState)
       .set({
         watched,
         dropped: rebuilding ? existing.dropped : false,
         playCount: rebuilding
-          ? children.length
-            ? Math.min(...children.map((child) => child.playCount ?? 0))
-            : 0
+          ? children.minimumPlayCount
           : !existing.watched && watched
             ? existing.playCount + 1
             : existing.playCount,
@@ -554,7 +542,8 @@ export async function bulkTrackInTransaction(
   const [parent] = await tx.select().from(media).where(eq(media.id, input.mediaId));
   if (!parent || !['show', 'season', 'collection'].includes(parent.kind))
     throw new DomainError('Choose a show, season or collection for bulk tracking.');
-  let scopedEntries = input.sequence ? await sequenceEntries(userId, input.sequence, tx) : [];
+  const sequenceCensus = input.sequence ? await sequenceEntries(userId, input.sequence, tx) : [];
+  let scopedEntries = sequenceCensus;
   if (input.sequence) {
     const prefix = input.sequence.entryId;
     if (input.sequence.kind === 'playlist') v.parse(uuidSchema, prefix.split('/')[0]);
@@ -608,14 +597,17 @@ export async function bulkTrackInTransaction(
       `Mark ${ids.length} ${parent.kind === 'collection' ? 'titles and episodes' : 'episodes'} unwatched? Your viewing history will be preserved.`
     );
   const collectionEntries =
-    parent.kind === 'collection' && input.action === 'watch'
+    !input.sequence && parent.kind === 'collection' && input.action === 'watch'
       ? await sequenceEntries(userId, { kind: 'collection', id: parent.id }, tx)
       : [];
+  const firstUnwatched = new Map<string, SequenceEntry>();
+  for (const entry of collectionEntries)
+    if (!entry.watched && !firstUnwatched.has(entry.mediaId)) firstUnwatched.set(entry.mediaId, entry);
   const targets = input.sequence
     ? scopedEntries.map((entry) => ({ mediaId: entry.mediaId, entry }))
     : ids.map((mediaId) => ({
         mediaId,
-        entry: collectionEntries.find((entry) => entry.mediaId === mediaId && !entry.watched),
+        entry: firstUnwatched.get(mediaId),
       }));
   const results: TrackingResult[] = [];
   for (const { mediaId, entry } of targets) {

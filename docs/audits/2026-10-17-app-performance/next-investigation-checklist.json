@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-19T07:14:05.392883+00:00",
+  "state": "future-work-not-started",
+  "automaticContinuation": false,
+  "scope": "Resume uninvestigated issues/areas first; rejected methods later. Checkpoints are scoped real-data evidence, not whole-app certification.",
+  "counts": {
+    "canonical": 94,
+    "sourceApplied": 74,
+    "implemented": 33,
+    "partial": 39,
+    "open": 19,
+    "other": 3
+  },
+  "preflight": [
+    "Inspect current diff/source and database object epochs; reconcile old evidence to the current shared owner.",
+    "Select one issue/area, actual cohort, expected behavior/resource question and stopping condition.",
+    "Use actual admin/catalogue data. Controlled private-copy state is allowed; label it and restore it. No fabricated catalogue/events/provider responses.",
+    "Document stateful GET/provider effects and required existing authorizations; do independent preparation before any new approval need."
+  ],
+  "newIssues": [
+    {
+      "id": "JELLYFIN-FINALIZATION-DEADLOCK-OBS-15",
+      "task": "Trace the reproduced finalization/manual-enqueue lock cycle at native owners; retain original/candidate failure evidence, propose smallest lock-order fix, then verify concurrent schedule and ordinary effects on an actual-data copy.",
+      "refs": [
+        "implementation-found-24.md"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "CONTINUE-UNDO-RACE-OBS-14",
+      "task": "Establish intended post-snapshot enqueue/Undo recovery behavior and reproduce at native owners on retained actual data; optimize only after the correctness contract is explicit.",
+      "refs": [
+        "implementation-found-22.md"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "INTEREST-ORDER-01",
+      "task": "Define the full feed ordering contract, then verify the reverted deterministic-input candidate through actual feed/provider callers and include extra sorting cost.",
+      "refs": [
+        "implementation-found-20.md"
+      ],
+      "status": "pending"
+    }
+  ],
+  "areas": [
+    {
+      "id": "FUP-01",
+      "task": "Use the131-family source checklist to map each real route/selector to existing evidence, then run missing actual cases in bounded batches. Distinguish stateful GETs and provider calls before execution.",
+      "acceptance": "Exact applicable response/status/order/privacy contract plus per-owner actual SQL/resource evidence, explicit missing cohorts and source fingerprints.",
+      "refs": [
+        "candidates/implementation-handoff/api-source-checklist/checklist.json",
+        "evidence/runtime-breadth-api-finished.json",
+        "data-api.md"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "FUP-02",
+      "task": "Refresh actual eligibility/active-job census; observe existing authorized jobs and compare claim/lease/retry/cancel semantics in a finite workload. Controlled real-admin state on a disposable actual copy is permitted when it exercises genuine native contracts; never fabricate provider replies or launch external imports merely for coverage.",
+      "acceptance": "Actual active-job lifecycle/ordering/checkpoint/lease/output correctness and resource measurements, with named side effects and independent cleanup.",
+      "refs": [
+        "candidates/implementation-handoff/tasks-active-coverage.md",
+        "task-writer-cost-actual.md",
+        "task-history-index-matrix.md",
+        "implementation-found-27.md"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "FUP-03",
+      "task": "Capture a finite genuine connected-source paging trace at current source owners; separate legitimate partial/failure behavior and source order from the already adopted metadata/range binding.",
+      "acceptance": "Exact connection-scoped identity/order/total/page/failure behavior; no skipped intervals; preserve generation fences and account for committed observation writes.",
+      "refs": [
+        "candidates/implementation-handoff/listen-runtime-coverage.md",
+        "candidates/implementation-handoff/listen-metadata-candidate/adoption-notes.md",
+        "implementation-music-snapshot-binding.md",
+        "implementation-found-04.md",
+        "implementation-found-13.md"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "FUP-04",
+      "task": "Select actual saved files and existing permitted sources; profile open/minimize/resume/close and genuine failure/recovery without changing tracking or account settings merely to create a case.",
+      "acceptance": "Correct content/progress/lifecycle plus independently observed process/decoder/object-URL/CPU/RSS/heap/GPU release to the relevant platform scope.",
+      "refs": [
+        "implementation-playback.md",
+        "playback-readers.md",
+        "implementation-artwork.md"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "FUP-05",
+      "task": "Define bounded representative actual-data journeys and capture attributable browser/server/native profiles before changing budgets or architecture.",
+      "acceptance": "Repeatable source/environment/workload records with warm/cold and peak/retained distinctions, adverse samples and maintenance thresholds justified by observations.",
+      "refs": [
+        "README.md",
+        "maintenance.md",
+        "implementation-public-seed.md",
+        "implementation-library-membership.md"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "FUP-06",
+      "task": "Verify untested source/cursor/complete-array, multi-source and policy/provider races against the adopted bounded owner. Measure sustained heap/decoded memory and focus/Back under real contention; do not reimplement the superseded client or server-range prototypes.",
+      "acceptance": "Complete actual composed DTOs/ordering/admission and atomic current-owner publication, source-specific page semantics, bounded measured costs and signed-in acceptance.",
+      "refs": [
+        "library-server-range.md",
+        "library-range-candidate.md",
+        "library-append-trace.md",
+        "implementation-found-04.md",
+        "implementation-found-04.json"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "FUP-07",
+      "task": "Collect a fresh actual current-owner profile for one remaining cost or lock cycle, with exact epoch and complete outputs. Prioritize the newly observed Jellyfin finalization deadlock; treat Tasks query/index work as a coordinated read/write decision, not an adopted regression.",
+      "acceptance": "Winning complete-contract/resource candidate, preserved lock/snapshot/ordering semantics and no hidden regression; source-only preparation is not acceptance.",
+      "refs": [
+        "implementation-library-membership.md",
+        "numbered-page-attribution.md",
+        "remaining-work-disposition.md",
+        "mutation-locks.md",
+        "implementation-found-03.md",
+        "implementation-found-07.md",
+        "implementation-found-14.md",
+        "implementation-found-24.md",
+        "implementation-found-26.md",
+        "implementation-found-27.md"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "FUP-08",
+      "task": "Reconcile the exact ledger gap against existing evidence, then use actual natural inputs or clearly labeled controlled state over actual admin/catalogue identities in a disposable copy. Do not repeat already accepted named cohorts.",
+      "acceptance": "Complete identities/order/privacy/effects and restoration for the chosen case; distinguish controlled actual state from naturally observed production/provider behavior. No missing format/provider evidence is manufactured.",
+      "refs": [
+        "remaining-work-disposition.md",
+        "implementation-toast-commit.md",
+        "candidates/implementation-handoff/discovered-fix-disposition.md",
+        "admin-real-data-policy.md",
+        "implementation-found-22.md",
+        "implementation-found-27.md"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "FUP-09",
+      "task": "Select finite actual workloads at existing owners. Preserve approved appearance; review any input/mark/image/process budget or retention-policy change before implementation. Comic Lab remains read-only unless separately authorized.",
+      "acceptance": "Actual render/input/lifecycle and measured CPU/heap/native/GPU behavior with truthful model bounds and no silent truncation or unsupported platform claim.",
+      "refs": [
+        "ui-preview-platform.md",
+        "ui-second-pass.md",
+        "implementation-plugin-crop.md",
+        "comic-lab-follow-up.md",
+        "implementation-found-26.md"
+      ],
+      "status": "pending"
+    }
+  ],
+  "deferredDesigns": [
+    {
+      "id": "PR-02",
+      "status": "user-deferred",
+      "ref": "candidates/recovery-bulk-contracts/PR02.md"
+    },
+    {
+      "id": "PJ-15",
+      "status": "user-deferred",
+      "ref": "candidates/recovery-bulk-contracts/PJ15.md"
+    }
+  ],
+  "failedMethodsRef": "failed-method-backlog.json",
+  "perFindingAcceptanceRef": "implementation-ledger.json",
+  "openAlternativesRef": "remaining-work-disposition.json",
+  "completionTemplate": [
+    "Record immutable baseline/current source, actual input provenance, environment/object epoch and all samples/errors.",
+    "Compare complete identities/order/counts/privacy/effects, native owner integration and relevant cancellation/retry/concurrency.",
+    "Measure repeatable resource work as well as latency; preserve adverse cases and separate CPU/RSS/heap/buffers/WAL/temp scopes.",
+    "Adopt at the existing shared root only when evidence supports it; otherwise retain default and record outcome.",
+    "Run proportionate focused plus required integration gates; restore/drop owned test state and verify cleanup.",
+    "Update docs/performance.md, ledger, exact remaining checklist and source/artifact integrity; do not promote missing acceptance."
+  ]
+}

@@ -1,6 +1,6 @@
 import { getSql } from '$lib/server/db';
 import { featureValues, type FeatureConfiguration } from '$lib/features';
-import { jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
+import { assertJobLease, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
 import type { OutboxAction } from '$lib/server/queue';
 
 /** Durable, bounded local withdrawal; no provider I/O in the settings transaction. */
@@ -31,6 +31,7 @@ export async function reconcileFeatures(action: OutboxAction) {
       let more:boolean;do{
       more=await db.begin(async tx=>{
         await tx`select pg_advisory_xact_lock(hashtextextended(${user.id},0))`;
+        await assertJobLease(tx,true);
         let checkinChanges=0;
         if(!features.presence){
           await tx`delete from user_presence where user_id=${user.id}`;

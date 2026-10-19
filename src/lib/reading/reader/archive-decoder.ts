@@ -6,6 +6,7 @@ import type {ComicFormat} from '../model';
 export class ComicDecoder {
  private archive=0;private pointer=0;private length=0;private cursor=-1;
  readonly entries:ComicEntry[]=[];
+ private readonly byIndex=new Map<number,ComicEntry>();
  private constructor(private mod:LibarchiveWasm){}
  static async open(data:ArrayBuffer,format:Exclude<ComicFormat,'cbz'>,options:object={}){
   if(!data.byteLength||data.byteLength>COMIC_INPUT_LIMIT)throw new Error('Comic archives must be smaller than 128 MB.');
@@ -27,7 +28,7 @@ export class ComicDecoder {
     if(decoder.mod.entry_filetype(entry)===0o100000&&!decoder.mod.entry_hardlink(entry)){
      const filename=comicEntryName(decoder.mod.entry_pathname(entry));
      if(names.has(filename))throw new Error('This comic contains duplicate page paths.');names.add(filename);
-     if(comicImage(filename))decoder.entries.push({filename,size,index});
+     if(comicImage(filename)){const page={filename,size,index};decoder.entries.push(page);decoder.byIndex.set(index,page);}
     }
     decoder.mod.read_data_skip(decoder.archive);index++;
    }
@@ -45,7 +46,7 @@ export class ComicDecoder {
   this.archive=this.mod.read_new_memory(this.pointer,this.length);
  }
  read(index:number):ArrayBuffer{
-  const selected=this.entries.find(entry=>entry.index===index);
+  const selected=this.byIndex.get(index);
   if(!selected)throw new Error('This comic page was not found.');
   if(selected.size>COMIC_PAGE_LIMIT)throw new Error('This comic page is too large.');
   if(this.cursor>=index)this.reset();
@@ -60,7 +61,7 @@ export class ComicDecoder {
    const data=new Uint8Array(used);let offset=0;for(const chunk of chunks){data.set(chunk,offset);offset+=chunk.length;}return data.buffer;
   }finally{this.mod.module._free(ptr);}
  }
- close(){try{if(this.archive)this.mod.read_free(this.archive);}finally{this.archive=0;if(this.pointer)this.mod.module._free(this.pointer);this.pointer=0;this.length=0;}}
+ close(){try{if(this.archive)this.mod.read_free(this.archive);}finally{this.archive=0;if(this.pointer)this.mod.module._free(this.pointer);this.pointer=0;this.length=0;this.byIndex.clear();}}
 }
 function tarHeader(bytes:Uint8Array){
  if(bytes.length<512)return false;let checksum=0;

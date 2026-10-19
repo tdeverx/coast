@@ -20,6 +20,7 @@
   import { useClient } from '$lib/ui/client-context';
   import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
   import { createSocialEnrichment, type SocialEnrichment } from '$lib/ui/social-enrichment';
+  import { observeVisibility } from '$lib/ui/visibility';
 
   import RowFilter from './RowFilter.svelte';
   import SegmentedControl from './SegmentedControl.svelte';
@@ -95,6 +96,24 @@
   let selected = $state(false);
   let socialActive=$state(false);
   let social=$state<SocialEnrichment>({});
+  let visibleSocialKeys=$state.raw(new Set<string>());
+  let disposed=false;
+  function observeSocialCard(node: HTMLElement, input: {key:string;enabled:boolean}) {
+    let current:typeof input|undefined, stop=()=>{};
+    const mark=(key:string,visible:boolean)=>{
+      if(disposed||visibleSocialKeys.has(key)===visible)return;
+      const keys=new Set(visibleSocialKeys);if(visible)keys.add(key);else keys.delete(key);
+      visibleSocialKeys=keys;
+    };
+    function update(next:typeof input) {
+      if(current?.key===next.key&&current.enabled===next.enabled)return;
+      stop();if(current)mark(current.key,false);current=next;
+      stop=next.enabled?observeVisibility(node,visible=>mark(next.key,visible)):()=>{};
+    }
+    update(input);
+    return {update,destroy(){stop();if(current)mark(current.key,false);}};
+  }
+
   const adapter = untrack(() => source ? createShelfSource(() => source!) : undefined);
   $effect(() => { if(adapter && (adapter.ready || adapter.error))untrack(()=>onsettled?.()); });
   const filterMode = $derived(adapter?.filterBy ?? filterBy);
@@ -122,12 +141,12 @@
     value => { social = value; },
   );
   $effect(() => {
-    const ids = [...new Set(displayItems.filter(item => !item.captionActor).map(item => 'workId' in item ? item.workId ?? item.id : item.id).filter(id => /^[0-9a-f-]{36}$/.test(id)))];
+    const ids = [...new Set(entries.filter(entry=>visibleSocialKeys.has(entry.key)&&!entry.item.captionActor).map(({item}) => 'workId' in item ? item.workId ?? item.id : item.id).filter(id => /^[0-9a-f-]{36}$/.test(id)))];
     const scope = JSON.stringify([socialRevision, displayResetKey, selection.resetKey, adapter?.filters.map(control => [control.label, control.value]), adapter?.controls.map(control => [control.label, control.value])]);
     const active = enrichSocial && socialActive && !!page.data.user && page.data.capabilities?.social!==false;
     untrack(() => enrichment.update({ ids, scope, active }));
   });
-  onDestroy(enrichment.cancel);
+  onDestroy(()=>{disposed=true;enrichment.cancel();});
 
   const entries = $derived<{ key: string; item: T | JournalCard['item']; activity?: JournalCard['activity']; note?: JournalCard['note']; run?: JournalCard['run'] }[]>(
     journal ? journalCards(journal.runs, !!journal.selection).map(entry => entry) : displayItems.map(item => ({ key: key(item), item }))
@@ -160,17 +179,20 @@
   const pagedNavigation = $derived(displayLayout === 'grid' || !adapter && !!onpage);
   const hasNavigation = $derived(!sectionCandidate&&(displayLayout === 'row' || !!displayOnpage || !!displayPageUrl));
   let styleMenu = $state<RowStyleMenu>();
+  const layoutItems=$derived(entries.map(entry=>entry.key));
   const rail = createShelfLayout(() => ({
     size: displaySize, artworkStyle: displayArtworkStyle, artworkPriority: displayArtworkPriority,
     overlay, layout: displayLayout, busy: displayBusy, preserveHeight: displayPreserveHeight,
     hasMore: displayHasMore, onend: displayOnend, resetKey: displayResetKey,
-    hasPrevious: displayHasPrevious, onstart: adapter?.loadPrevious, initialItemId: adapter?.initialItemId,
+    hasPrevious: displayHasPrevious, onstart: adapter?.loadPrevious, initialItemId: adapter?.initialItemId, items:layoutItems,
+    restoration:page.state.mediaDetailShelf?.href===adapter?.location?page.state.mediaDetailShelf?.position:undefined,
+    autoLoad:sectionCandidate||pagination?.kind==='cursor'||!adapter&&!!onend,error:displayError,
   }));
   function styleGesture(node: HTMLElement) {
     if (displaySize !== 'panel') return contextGesture(node, point => styleMenu?.openAt(point));
   }
 
-  reportFailure(()=>({text:displayError,retry:adapter ? () => adapter.load(pagination?.kind === 'pages' ? pagination.page : 1) : retry}));
+  reportFailure(()=>({text:displayError,retry:adapter ? () => adapter.retry?.()??adapter.load(pagination?.kind === 'pages' ? pagination.page : 1) : retry}));
 </script>
 
 {#if adapter?.sequence}<Dialog bind:open={sequence.open} title={sequence.title} message={sequence.message} alert={!!sequence.error} actions={sequence.actions} />{/if}
@@ -194,11 +216,11 @@
 <div use:lazyContent={{load: () => {socialActive=true;onactivate?.();if(adapter&&!adapter.appendOnly&&!adapter.ready&&!adapter.activated)void adapter.load();}, enabled: () => !socialActive || !!adapter && !adapter.appendOnly && !adapter.ready && !adapter.activated}}>
   {#snippet cards(style: MediaRowStyle)}
     {#if panels}{#each panels as panel}<DetailCard {...panel} />{/each}{:else}
-    {#each entries as entry (entry.key)}{@const item = entry.item}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'} data-shelf-id={item.entryId ?? item.id}>
+    {#each entries as entry (entry.key)}{@const item = entry.item}{@const extra = adapter?.details?.(item)}<div class={entry.activity ? entry.run ? 'episode-run' : 'entry' : 'shelf-item'} data-shelf-id={item.entryId ?? item.id} data-shelf-key={entry.key} data-shelf-visible={visibleSocialKeys.has(entry.key) ? '' : undefined} use:observeSocialCard={{key:entry.key,enabled:enrichSocial&&!!page.data.user&&page.data.capabilities?.social!==false}}>
       {#snippet cardAction()}{@render captionAction?.(item as T)}{/snippet}
       {#snippet cardBody()}{@render body?.(item as T)}{/snippet}
       {#snippet cardFooter()}{@render footer?.(item as T)}{/snippet}
-      <MediaCard {item} {...style} wrapActivity={displayLayout === 'grid'} social={social['workId' in item?item.workId??item.id:item.id]}
+      <MediaCard {item} {...style} retain={()=>adapter?.retain?.(entry.key)??(()=>{})} wrapActivity={displayLayout === 'grid'} social={social['workId' in item?item.workId??item.id:item.id]}
         shape={!journal && rail.overrideShape === null && shape === undefined && adapter?.shape === undefined && ['album', 'track', 'game'].includes(item.kind) ? 'square' : style.shape}
         captionAction={captionAction ? cardAction : undefined} body={body ? cardBody : undefined} footer={footer ? cardFooter : undefined} />
       {#if entry.run}<details class="journal-run">
@@ -273,9 +295,11 @@
 
   {#if adapter?.notice}<p class="small muted">{adapter.notice}</p>{/if}
   {@render before?.()}
+  {#if displayLayout==='grid' && displayHasPrevious}<div class="load-more"><Button emphasis="subtle" disabled={displayBusy} onclick={()=>rail.loadPrevious()}>Load previous titles</Button></div>{/if}
   <div class="rail-shell">
   <div
     class="rail"
+    data-shelf-location={adapter?.location}
     class:empty-row={emptyRow}
     class:two-rows={displayRows === 2 && displayLayout === 'row'}
     class:grid-layout={displayLayout === 'grid'}

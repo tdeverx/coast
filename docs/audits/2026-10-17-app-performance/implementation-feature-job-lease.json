@@ -1,0 +1,214 @@
+{
+  "schemaVersion": 1,
+  "baseline": "eb0673873462b71118d1c11678d128958a05ff07",
+  "date": "2026-10-18",
+  "items": [
+    {
+      "id": "FEATURE-JOB-LEASE-OBS-06",
+      "title": "Fence each feature-withdrawal transaction with its existing job lease",
+      "status": "implemented; controlled schedules verified on actual persisted corpus",
+      "implementationApplied": true,
+      "sharedOwner": "src/lib/server/queue/execution.ts:assertJobLease",
+      "consumers": [
+        "src/lib/application/feature-transition.server.ts:reconcileFeatures (new raw-SQL consumer)",
+        "src/lib/catalogue/reading-files.server.ts",
+        "src/lib/music/persistence.server.ts",
+        "src/lib/providers/jellyfin/access-proof.server.ts",
+        "src/lib/providers/jellyfin/updates.server.ts",
+        "src/lib/providers/seerr/connection.server.ts",
+        "src/lib/recommendations/providers.server.ts",
+        "src/lib/social/taste-cache.server.ts",
+        "src/lib/sync/jellyfin-playback.server.ts",
+        "src/lib/sync/jellyfin.server.ts",
+        "src/lib/sync/list-values.server.ts",
+        "src/lib/sync/values.server.ts"
+      ],
+      "evidenceRefs": [
+        "implementation-feature-job-lease.md",
+        "evidence/implementation-feature-job-lease-actual.json",
+        "evidence/implementation-feature-job-lease-tests.json",
+        "probes/feature-job-lease-actual.ts"
+      ],
+      "acceptance": {
+        "cancelledAttemptBeforeDomainStatements": true,
+        "replacedAttemptBeforeDomainStatements": true,
+        "existingDrizzleBranchByteUnchanged": true,
+        "actualFeatureReconcilePolicyExplicitlyAllowed": true,
+        "validRetainedCheckpointOutcomeAndStateEqual": true,
+        "directOutcomeAndStateEqual": true,
+        "allOriginalRowsRestored": true,
+        "externalCalls": 0
+      },
+      "remaining": [
+        "Actual cleanup statements matched zero rows; positive cleanup side effects remain unverified on retained data.",
+        "Valid existing checkpoint had already traversed all users; active valid chunk/repeated chunk behavior is covered by controlled tests, not a positive actual-data schedule.",
+        "No real worker heartbeat/cancellation concurrency or natural stale-worker incident reproduced.",
+        "Jellyfin membership/progress/completion publication and full reconciliation budgets are separate open scope."
+      ]
+    },
+    {
+      "id": "PJ-09",
+      "title": "Membership value guard remains an option with no eligible actual retained cohort",
+      "status": "open; read-only census retained, no app change",
+      "implementationApplied": false,
+      "evidenceRefs": [
+        "evidence/implementation-provider-membership-census.json",
+        "probes/provider-membership-census.ts"
+      ],
+      "remaining": [
+        "3618 actual show/season parents;26 declared expected member counts;0 current membershipEvidence records.",
+        "Do not fabricate provenance or alter observedAt/lastSeenAt freshness semantics to create a gain claim.",
+        "Value-only guard must preserve current account evidence, changed-child admission and downstream revision behavior; plan/performance acceptance still needs eligible actual data."
+      ]
+    },
+    {
+      "id": "PJ-10",
+      "title": "Retain original task-history query after an unconvincing grouped-query trial",
+      "status": "open; candidate rejected, no app/query/index/retention change",
+      "implementationApplied": false,
+      "evidenceRefs": [
+        "evidence/implementation-task-history-options.json",
+        "probes/task-history-query-options.ts"
+      ],
+      "actualComparison": {
+        "terminalRows": 25891,
+        "representatives": 23,
+        "nullScopes": 4,
+        "completeOutputEqual": true,
+        "baselineMedianMs": 25.943374999999975,
+        "candidateMedianMs": 24.345041999999978,
+        "baselineSharedHitBlocks": 669,
+        "candidateSharedHitBlocks": 1338,
+        "baselineSortKiB": 3023,
+        "candidateLargeSortKiB": 2942,
+        "candidateHashAggregateKiB": 217
+      },
+      "remaining": [
+        "Candidate still sorts all25891 retained rows, adds aggregate/join work and doubles shared hits; isolated elapsed samples do not justify adoption.",
+        "Keep dynamic/null scopes, deleted connections, current generation, updatedAt/UUID tie order and permanent history.",
+        "No obsolete-generation rows or positive timestamp-tie alternative were introduced into the actual corpus.",
+        "A bounded current task read model/index needs a separate concrete schema and write-maintenance decision."
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "src/lib/server/queue/execution.ts",
+      "sha256": "ea415b763273144b794cdc759954fb9a1397a97d2b32708689c6ebb855f64ec2"
+    },
+    {
+      "path": "src/lib/application/feature-transition.server.ts",
+      "sha256": "62c2509fb4edb4cd95a36547a85990d2d400977a489400c4fdfe4152c9941b5c"
+    },
+    {
+      "path": "tests/job-lease.test.ts",
+      "sha256": "25558f4c8dba5d580a867a450b9cb1a15384939808aabc7e5a41bb2a9e7ced24"
+    }
+  ],
+  "existingDrizzleConsumers": [
+    {
+      "path": "src/lib/catalogue/reading-files.server.ts",
+      "line": 41,
+      "calls": 1
+    },
+    {
+      "path": "src/lib/music/persistence.server.ts",
+      "line": 99,
+      "calls": 1
+    },
+    {
+      "path": "src/lib/providers/jellyfin/access-proof.server.ts",
+      "line": 68,
+      "calls": 1
+    },
+    {
+      "path": "src/lib/providers/jellyfin/updates.server.ts",
+      "line": 27,
+      "calls": 1
+    },
+    {
+      "path": "src/lib/providers/seerr/connection.server.ts",
+      "line": 29,
+      "calls": 1
+    },
+    {
+      "path": "src/lib/recommendations/providers.server.ts",
+      "line": 86,
+      "calls": 1
+    },
+    {
+      "path": "src/lib/social/taste-cache.server.ts",
+      "line": 109,
+      "calls": 1
+    },
+    {
+      "path": "src/lib/sync/jellyfin-playback.server.ts",
+      "line": 27,
+      "additionalLine": 86,
+      "calls": 2
+    },
+    {
+      "path": "src/lib/sync/jellyfin.server.ts",
+      "line": 287,
+      "calls": 1
+    },
+    {
+      "path": "src/lib/sync/list-values.server.ts",
+      "line": 140,
+      "additionalLine": 251,
+      "calls": 2
+    },
+    {
+      "path": "src/lib/sync/values.server.ts",
+      "line": 169,
+      "calls": 1
+    }
+  ],
+  "newConsumer": {
+    "path": "src/lib/application/feature-transition.server.ts",
+    "line": 34,
+    "calls": 1,
+    "lockOrder": "existing account advisory lock -> existing feature job policy predicate -> current outbox lease FOR UPDATE -> existing domain cleanup"
+  },
+  "actualCorpus": {
+    "existingFeatureJob": true,
+    "existingActor": true,
+    "existingPayloadUnmodified": true,
+    "retainedCheckpoint": true,
+    "allTables": 102,
+    "allRows": 1864145
+  },
+  "actualRestoration": {
+    "allTableRowValuesExact": true,
+    "aggregateSha256": "9428397f6ad5bb35ab00dc685720984797592bea078e3e13300acf5dab9a07c7",
+    "tables": 102,
+    "rows": 1864145
+  },
+  "schemaChanged": false,
+  "dependenciesAdded": false,
+  "normalDatabaseMutated": false,
+  "providerCalls": 0,
+  "verificationBoundary": "Actual-data clone and unchanged actual job payload; only controlled lease state/attempt setup plus real cleanup execution inside outer rollback. No invented catalogue, owned-state or membership evidence; no natural incident/performance claim.",
+  "controlledTests": {
+    "command": ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/job-lease.test.ts",
+    "runtime": "Bun 1.4.3",
+    "status": "passed",
+    "tests": 6,
+    "failed": 0,
+    "assertions": 20,
+    "sourcePins": {
+      "src/lib/server/queue/execution.ts": "ea415b763273144b794cdc759954fb9a1397a97d2b32708689c6ebb855f64ec2",
+      "src/lib/application/feature-transition.server.ts": "62c2509fb4edb4cd95a36547a85990d2d400977a489400c4fdfe4152c9941b5c",
+      "tests/job-lease.test.ts": "25558f4c8dba5d580a867a450b9cb1a15384939808aabc7e5a41bb2a9e7ced24"
+    },
+    "boundary": "Controlled source-contract regression tests; not actual media or production performance evidence."
+  },
+  "rootCommonGatesReported": {
+    "tests": 753,
+    "failed": 0,
+    "checkErrors": 0,
+    "checkWarnings": 0,
+    "build": "passed",
+    "owner": "root; not rerun by this report owner"
+  }
+}

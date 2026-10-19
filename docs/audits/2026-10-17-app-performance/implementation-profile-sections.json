@@ -1,0 +1,447 @@
+{
+  "id": "DATA-13",
+  "status": "implemented_actual_equivalence_verified_missing_positive_guest_featured_and_pinned_cohorts",
+  "report": "implementation-profile-sections.md",
+  "sharedOwner": "src/lib/server/queries/profile.ts:readProfile/profileSectionData",
+  "change": "Keep shared visibility, counts, favourite ordering and required-card projection; skip full-page-only preference/background/featured preparation for section refreshes. History skips its direct settings read; favourites project only order/pin JSON.",
+  "consumers": [
+    {
+      "consumer": "Signed-in profile activity and favourites section GET handlers",
+      "owner": "src/lib/server/api/profile.server.ts:14/38",
+      "contract": "Existing items or favourites plus page/pages/total; existing query/filter/viewer contract."
+    },
+    {
+      "consumer": "Guest profile activity and favourites GET branch",
+      "owner": "src/lib/server/api/index.server.ts:98",
+      "contract": "Same narrow owner, unchanged site-access/profile-user/visibility gates. Actual saved policies deny guests; no positive public payload proof."
+    },
+    {
+      "consumer": "Full profile route and existing profileData callers",
+      "owner": "src/lib/server/queries/profile.ts:353",
+      "contract": "Four-argument full presentation wrapper unchanged; complete actual self/other/guest outcome comparisons passed."
+    },
+    {
+      "consumer": "Profile insight period/section readers",
+      "owner": "src/lib/server/queries/profile.ts:158",
+      "contract": "Existing profileInsightsData path unchanged; signed-in HTTP outputs compared."
+    }
+  ],
+  "sourceBefore": {
+    "src/lib/server/queries/profile.ts": "dc4e51103c9a2efa0c3fa1d762a74b82b8acae31c1634ffbde314db6c1fa073e",
+    "src/lib/server/api/profile.server.ts": "5592dc2e26766a22827743b1483e69aa00cc722e610714bea4de8f2b076069e6",
+    "src/lib/server/api/index.server.ts": "ab3b5fd75fe4c4bb7fd0be66798a8265de2feae4536259fda7a14c100235f3bc",
+    "tests/read-projections.test.ts": "b0d2326465b362e582650e43ffc750c3c706116ac9496e6ad223fc91598a408b"
+  },
+  "sourceAfter": {
+    "src/lib/server/queries/profile.ts": "cc48016583bb73514f5024a6f96bb5a97b9fcb4cba277eaaab932b0d7782b5c2",
+    "src/lib/server/api/profile.server.ts": "b0523f2a7a0d31c6838823dc563b321ef914b3e501f3d3b68ed2b4ec925170ec",
+    "src/lib/server/api/index.server.ts": "d2954296497e69c6cf13549072e903fb13e816fdae36cbff5bfbdf538908b0d8",
+    "tests/read-projections.test.ts": "2009e6d6304e094c4d9d93fda2fb6ceaf09a77fd3adc4aa86a85db78744e31a8"
+  },
+  "actual": {
+    "status": "passed",
+    "main": {
+      "sectionDtosOrErrors": 40,
+      "sectionSuccess": 28,
+      "sectionDenied": 12,
+      "nonemptySectionChecks": 25,
+      "fullPageDtosOrErrors": 16,
+      "fullPageSuccess": 16,
+      "filteredSectionDtosOrErrors": 112,
+      "signedInHttpDtosOrErrors": 12,
+      "allEqual": true
+    },
+    "fullAudienceSupplement": {
+      "fullPageDtosOrErrors": 32,
+      "success": 20,
+      "denials": 12,
+      "allEqual": true
+    },
+    "fullPageCombined": {
+      "comparisons": 48,
+      "successfulDtos": 36,
+      "equalDenials": 12
+    },
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "5s",
+      "jit": "off"
+    },
+    "census": {
+      "status": "passed",
+      "normalDatabaseTouched": false,
+      "boundary": "Approved actual clone, read-only aggregate profile cohort census; no identifiers, names, preference values or avatar payloads retained.",
+      "session": {
+        "read_only": "on",
+        "statement_timeout": "10s",
+        "lock_timeout": "1s"
+      },
+      "users": [
+        {
+          "ownerOrdinal": 0,
+          "backgroundMode": "fixed",
+          "fixedBackgroundConfigured": true,
+          "featuredConfigured": false,
+          "orderedFavourites": 3,
+          "pinnedFavourites": 0,
+          "favourites": 3,
+          "ratings": 1,
+          "activityBackgroundCandidate": true
+        },
+        {
+          "ownerOrdinal": 1,
+          "backgroundMode": "activity",
+          "fixedBackgroundConfigured": false,
+          "featuredConfigured": false,
+          "orderedFavourites": 0,
+          "pinnedFavourites": 0,
+          "favourites": 0,
+          "ratings": 0,
+          "activityBackgroundCandidate": true
+        },
+        {
+          "ownerOrdinal": 2,
+          "backgroundMode": "activity",
+          "fixedBackgroundConfigured": false,
+          "featuredConfigured": false,
+          "orderedFavourites": 0,
+          "pinnedFavourites": 0,
+          "favourites": 1,
+          "ratings": 0,
+          "activityBackgroundCandidate": true
+        },
+        {
+          "ownerOrdinal": 3,
+          "backgroundMode": "fixed",
+          "fixedBackgroundConfigured": true,
+          "featuredConfigured": false,
+          "orderedFavourites": 0,
+          "pinnedFavourites": 0,
+          "favourites": 1,
+          "ratings": 0,
+          "activityBackgroundCandidate": true
+        }
+      ],
+      "privacyPairs": {
+        "enabled_pairs": 16,
+        "details_visible": 14,
+        "activity_visible": 14,
+        "favourites_visible": 14
+      },
+      "guest": {
+        "owners": 4,
+        "details_visible": 0,
+        "activity_visible": 0,
+        "favourites_visible": 0
+      },
+      "acceptedFriendPairs": 5,
+      "rolledBack": true
+    },
+    "sourceUnchanged": true,
+    "rolledBack": true,
+    "normalDatabaseTouched": false,
+    "fabricatedData": false,
+    "threeAlternatingPairsPerSelfSection": [
+      {
+        "ownerOrdinal": 0,
+        "backgroundMode": "fixed",
+        "view": "history",
+        "samplePairs": 3,
+        "before": {
+          "ormStatements": 42,
+          "ormReturnedRows": 698,
+          "ormReturnedBytes": 352517,
+          "settingsStatements": 3,
+          "settingsResultBytes": 48597,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 1,
+          "cardIds": 1,
+          "medianElapsedMs": 194.31337500000518
+        },
+        "after": {
+          "ormStatements": 22,
+          "ormReturnedRows": 682,
+          "ormReturnedBytes": 313924,
+          "settingsStatements": 1,
+          "settingsResultBytes": 16199,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 0,
+          "cardIds": 0,
+          "medianElapsedMs": 126.72495899999922
+        }
+      },
+      {
+        "ownerOrdinal": 0,
+        "backgroundMode": "fixed",
+        "view": "favourites",
+        "samplePairs": 3,
+        "before": {
+          "ormStatements": 26,
+          "ormReturnedRows": 67,
+          "ormReturnedBytes": 62200,
+          "settingsStatements": 2,
+          "settingsResultBytes": 32398,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 1,
+          "cardIds": 4,
+          "medianElapsedMs": 111.59124999999767
+        },
+        "after": {
+          "ormStatements": 25,
+          "ormReturnedRows": 56,
+          "ormReturnedBytes": 40154,
+          "settingsStatements": 2,
+          "settingsResultBytes": 16385,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 1,
+          "cardIds": 3,
+          "medianElapsedMs": 111.3640000000014
+        }
+      },
+      {
+        "ownerOrdinal": 1,
+        "backgroundMode": "activity",
+        "view": "history",
+        "samplePairs": 3,
+        "before": {
+          "ormStatements": 24,
+          "ormReturnedRows": 740,
+          "ormReturnedBytes": 305333,
+          "settingsStatements": 2,
+          "settingsResultBytes": 27698,
+          "backgroundActivityStatements": 1,
+          "cardCalls": 0,
+          "cardIds": 0,
+          "medianElapsedMs": 144.77179199999955
+        },
+        "after": {
+          "ormStatements": 22,
+          "ormReturnedRows": 738,
+          "ormReturnedBytes": 291433,
+          "settingsStatements": 1,
+          "settingsResultBytes": 13849,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 0,
+          "cardIds": 0,
+          "medianElapsedMs": 140.63812500000495
+        }
+      },
+      {
+        "ownerOrdinal": 1,
+        "backgroundMode": "activity",
+        "view": "favourites",
+        "samplePairs": 3,
+        "before": {
+          "ormStatements": 25,
+          "ormReturnedRows": 30,
+          "ormReturnedBytes": 38537,
+          "settingsStatements": 2,
+          "settingsResultBytes": 27698,
+          "backgroundActivityStatements": 1,
+          "cardCalls": 1,
+          "cardIds": 1,
+          "medianElapsedMs": 107.90837499999907
+        },
+        "after": {
+          "ormStatements": 7,
+          "ormReturnedRows": 6,
+          "ormReturnedBytes": 280,
+          "settingsStatements": 1,
+          "settingsResultBytes": 74,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 0,
+          "cardIds": 0,
+          "medianElapsedMs": 36.83625000000029
+        }
+      },
+      {
+        "ownerOrdinal": 2,
+        "backgroundMode": "activity",
+        "view": "history",
+        "samplePairs": 3,
+        "before": {
+          "ormStatements": 24,
+          "ormReturnedRows": 683,
+          "ormReturnedBytes": 356404,
+          "settingsStatements": 2,
+          "settingsResultBytes": 29162,
+          "backgroundActivityStatements": 1,
+          "cardCalls": 0,
+          "cardIds": 0,
+          "medianElapsedMs": 130.50470900000073
+        },
+        "after": {
+          "ormStatements": 22,
+          "ormReturnedRows": 681,
+          "ormReturnedBytes": 341772,
+          "settingsStatements": 1,
+          "settingsResultBytes": 14581,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 0,
+          "cardIds": 0,
+          "medianElapsedMs": 126.7277499999982
+        }
+      },
+      {
+        "ownerOrdinal": 2,
+        "backgroundMode": "activity",
+        "view": "favourites",
+        "samplePairs": 3,
+        "before": {
+          "ormStatements": 42,
+          "ormReturnedRows": 42,
+          "ormReturnedBytes": 62154,
+          "settingsStatements": 3,
+          "settingsResultBytes": 43743,
+          "backgroundActivityStatements": 1,
+          "cardCalls": 2,
+          "cardIds": 2,
+          "medianElapsedMs": 156.09970800000156
+        },
+        "after": {
+          "ormStatements": 24,
+          "ormReturnedRows": 18,
+          "ormReturnedBytes": 20803,
+          "settingsStatements": 2,
+          "settingsResultBytes": 14655,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 1,
+          "cardIds": 1,
+          "medianElapsedMs": 105.24241600000096
+        }
+      },
+      {
+        "ownerOrdinal": 3,
+        "backgroundMode": "fixed",
+        "view": "history",
+        "samplePairs": 3,
+        "before": {
+          "ormStatements": 41,
+          "ormReturnedRows": 754,
+          "ormReturnedBytes": 303038,
+          "settingsStatements": 3,
+          "settingsResultBytes": 1584,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 1,
+          "cardIds": 1,
+          "medianElapsedMs": 217.41345900000306
+        },
+        "after": {
+          "ormStatements": 22,
+          "ormReturnedRows": 741,
+          "ormReturnedBytes": 296603,
+          "settingsStatements": 1,
+          "settingsResultBytes": 528,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 0,
+          "cardIds": 0,
+          "medianElapsedMs": 151.75379100000282
+        }
+      },
+      {
+        "ownerOrdinal": 3,
+        "backgroundMode": "fixed",
+        "view": "favourites",
+        "samplePairs": 3,
+        "before": {
+          "ormStatements": 25,
+          "ormReturnedRows": 19,
+          "ormReturnedBytes": 6698,
+          "settingsStatements": 2,
+          "settingsResultBytes": 1056,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 1,
+          "cardIds": 1,
+          "medianElapsedMs": 114.6160000000018
+        },
+        "after": {
+          "ormStatements": 24,
+          "ormReturnedRows": 18,
+          "ormReturnedBytes": 6197,
+          "settingsStatements": 2,
+          "settingsResultBytes": 602,
+          "backgroundActivityStatements": 0,
+          "cardCalls": 1,
+          "cardIds": 1,
+          "medianElapsedMs": 112.31212499999674
+        }
+      }
+    ],
+    "metricsBoundary": "Prepared-query instrumentation counts Drizzle execute results only. Raw BunSQL/config reads, PostgreSQL internal rows, process memory and browser work are excluded. Direct workCards admission counts only this shared profile owner."
+  },
+  "focusedTests": {
+    "status": "passed",
+    "command": ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/read-projections.test.ts",
+    "runtime": "Bun 1.4.3",
+    "testsPassed": 8,
+    "assertions": 53,
+    "testsFailed": 0,
+    "databaseRequired": false,
+    "sourceSha256": "2009e6d6304e094c4d9d93fda2fb6ceaf09a77fd3adc4aa86a85db78744e31a8",
+    "boundary": "Focused executed run after final source; controlled contract tests are separate from actual-data performance verification."
+  },
+  "knownLimits": [
+    "No guest-visible actual owner: guest comparisons prove equal denial only, not positive public-section payloads.",
+    "Actual saved owners have no featuredMediaId or pinnedFavourites; positive featured omission and pinned ordering are controlled unit contracts, not actual-data observations.",
+    "Filter comparisons cover actual persisted cohorts and equal empty results; no synthetic histories/favourites/settings are inserted.",
+    "Prepared-query instrumentation counts Drizzle execute results only. Raw BunSQL/config reads, PostgreSQL internal rows, process memory and browser work are excluded. Direct workCards admission counts only this shared profile owner.",
+    "Both modules share current dependencies; the exact pre-change profile and API source bytes are retained/pinned, not an entire historical application deployment.",
+    "Per-statement30s/lock5s transaction budgets are explicitly set and checked; elapsed samples are local warm-clone observations, not production latency promises.",
+    "The shared summary still computes its existing counts and visibility families; this change removes only page-presentation work from section refreshes.",
+    "Guest full HTTP dispatch was source-reviewed; actual guest checks compare the shared owner and full-page denial, because no public-visible owner exists. No positive guest response or site-access policy mutation is claimed.",
+    "The four full-page self views and nonself overview/favourites checks compare domain DTOs, not the complete Svelte route object, mediaRows or browser rendering.",
+    "No profile UI, style, navigation, toast, package, schema or settings mutations were made.",
+    "Serialized ORM result bytes are measured after driver mapping in JavaScript, not database wire bytes."
+  ],
+  "relatedOpenFinding": {
+    "id": "MIN-03",
+    "status": "reviewed_deferred",
+    "reason": "A narrow public summary needs shared medium presentation semantics. Current full card owners preserve screen overrides, music credits/identity, game private title preferences/variant metadata, reading edition/attribution and privacy. A plain works-table shortcut is not an equivalence-preserving small change.",
+    "options": [
+      "Extract an explicit public identity projection from existing medium presentation owners, with complete actual catalogue/library DTO comparisons across all admitted kinds and metadata preferences.",
+      "Retain existing cards until that projection has enough actual preference/edition/attribution coverage; no unverified per-endpoint bypass."
+    ]
+  },
+  "futureDriftAcceptance": [
+    "Keep narrow section and full presentation ownership together; new page-only presentation fields must remain behind the internal flag.",
+    "Require complete section and full-page output/error equality across real owner/viewer/policy cohorts before changing query admission.",
+    "Add positive guest, featured and pinned actual cohorts to the same read-only probe when naturally available; retain gaps until then.",
+    "Retain canonical ordering, pin membership validation, counts, page clamping and media privacy; do not introduce endpoint-private caches or duplicated SQL."
+  ],
+  "review": {
+    "status": "independent_read_only_approved_no_material_issue",
+    "reviewer": "providers_jobs_audit",
+    "scope": "Current shared profile owner and signed-in/guest profile handler changes. Full presentation default, visibility, favourite pin/order inputs, filters, counts and paging preserved. Reviewer performed no DB or test rerun.",
+    "sourcePins": {
+      "src/lib/server/queries/profile.ts": "cc48016583bb73514f5024a6f96bb5a97b9fcb4cba277eaaab932b0d7782b5c2",
+      "src/lib/server/api/profile.server.ts": "b0523f2a7a0d31c6838823dc563b321ef914b3e501f3d3b68ed2b4ec925170ec",
+      "src/lib/server/api/index.server.ts": "d2954296497e69c6cf13549072e903fb13e816fdae36cbff5bfbdf538908b0d8"
+    },
+    "commonGates": "Root owns coordinated full unit/check/build and normal-dev acceptance; no new pass claim here."
+  },
+  "verificationArtifacts": [
+    "probes/profile-section-actual.ts",
+    "probes/profile-full-audience-actual.ts",
+    "probes/profile-section-census.ts",
+    "evidence/implementation-profile-sections-actual.json",
+    "evidence/implementation-profile-sections-full-audience.json",
+    "evidence/implementation-profile-sections-census.json",
+    "candidates/profile-sections/profile.before.ts.txt",
+    "candidates/profile-sections/api-profile.before.ts.txt",
+    "evidence/implementation-profile-sections-tests.json"
+  ],
+  "artifactSha256": {
+    "probes/profile-section-actual.ts": "ef7efa1c35a2280e0dbe0b797b88a835cf045aa2d9c815ac9a9892f11d33c14c",
+    "probes/profile-full-audience-actual.ts": "055bc3498d4afd7e520ee7f51430ee2d37471609d9bdd430f9b639cf866b08d1",
+    "probes/profile-section-census.ts": "06c9f351e711df2338e37c44fcac1d12e7fc9fcc6a75dd981719784ab940407e",
+    "evidence/implementation-profile-sections-actual.json": "835a2e37ca6838987efdcabbf5637550c4358bcb3923d5b81f16425c443ee61d",
+    "evidence/implementation-profile-sections-full-audience.json": "7eac2962e7662c0726f0103cc3e23d6cc623692e602aba285aa111f7a58dd368",
+    "evidence/implementation-profile-sections-census.json": "5aa77e23e1c607b860722968ca90c2471f971f3cc3eb573725825520e0576195",
+    "candidates/profile-sections/profile.before.ts.txt": "dc4e51103c9a2efa0c3fa1d762a74b82b8acae31c1634ffbde314db6c1fa073e",
+    "candidates/profile-sections/api-profile.before.ts.txt": "5592dc2e26766a22827743b1483e69aa00cc722e610714bea4de8f2b076069e6",
+    "evidence/implementation-profile-sections-tests.json": "caf1ecf9386c01c2d7684d155e14b7390f67b23a363378fbc78302fa1976c7fd"
+  },
+  "executionBoundary": "Exact executed local probe paths are retained. Restage the two saved original modules at the documented private filenames, or make a reviewed path-only adaptation for another checkout. Baseline/current owners share current source-pinned dependencies, not a historical whole-app deployment."
+}

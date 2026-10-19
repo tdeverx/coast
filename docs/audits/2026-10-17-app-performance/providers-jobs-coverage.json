@@ -1,0 +1,2828 @@
+{
+  "date": "2026-10-17",
+  "head": "eb0673873462b71118d1c11678d128958a05ff07",
+  "pluginHead": "6bb31f18048951bf27656d0486119b7ebee2d00c",
+  "scope": "provider/integration/sync/queue/startup/cache/storage owner review;not a claim every runtime path executed",
+  "fileCount": 82,
+  "sourceLines": 12899,
+  "families": [
+    {
+      "provider": "jellyfin",
+      "owners": [
+        "adapter.server.ts",
+        "music.server.ts",
+        "reading.server.ts",
+        "updates.server.ts",
+        "access-proof.server.ts"
+      ],
+      "families": [
+        "public server identity/authentication",
+        "administrator user provisioning/policy/password/folders",
+        "token-owned user policy and visible libraries",
+        "screen library 100-item pages/ID batches/item detail",
+        "music 100-item pages/ID batches/item/favourites",
+        "reading 60-item pages/file access",
+        "sessions/streams/companion200-hint pages",
+        "playback info, active-encoding stop, user-state and session reporting",
+        "private image relay and fallback"
+      ],
+      "bounds": "100 screen/music;60 reading;200 companion changes;JSON default8MiB;private image10MiB;playback streams32GiB with30s read inactivity",
+      "findings": [
+        "PJ-01",
+        "PJ-07",
+        "PJ-08",
+        "PJ-09"
+      ]
+    },
+    {
+      "provider": "trakt",
+      "owners": [
+        "adapter.server.ts",
+        "connection.server.ts",
+        "sync/trakt-*.ts"
+      ],
+      "families": [
+        "device authorization/token refresh/profile",
+        "recommendations",
+        "category100-record pages,last activity fence,10-show collection pages",
+        "lists/list-items full aggregate and page methods",
+        "list create/update/write/remove/reorder/delete",
+        "community lookup/stats/comments",
+        "watching/checkin/scrobble",
+        "progress/history clearing and recent-history walks"
+      ],
+      "bounds": "common250ms lane;100/page;10000-page full readers;durable20-record apply;refresh-token txn serializes rotation",
+      "findings": [
+        "PJ-05",
+        "PJ-06"
+      ]
+    },
+    {
+      "provider": "tmdb",
+      "owners": [
+        "adapter.server.ts",
+        "details.server.ts",
+        "artwork.server.ts",
+        "fallback.server.ts"
+      ],
+      "families": [
+        "search/trending/recent/recommendations",
+        "movie/show detail with appended metadata",
+        "collection atmost1000 parts",
+        "season/episode children",
+        "insights base+review page",
+        "person+combined credits",
+        "publicCDN cached image/fallback"
+      ],
+      "bounds": "250ms API lane;four image downloads;20MiB image;people100 cache entries;insights100;fallback lineage max3",
+      "findings": [
+        "PJ-13"
+      ]
+    },
+    {
+      "provider": "seerr",
+      "owners": [
+        "adapter.server.ts",
+        "connection.server.ts",
+        "requests.server.ts"
+      ],
+      "families": [
+        "search/trending",
+        "linkedJellyfin identity/auth-me",
+        "destination service configuration/title+season checks",
+        "100-item request pages/detail",
+        "request create/manage",
+        "durable scan/missing/conflict phases"
+      ],
+      "bounds": "100/page;1001 list pages;constant-size cursor;one100-record durable page;404-only cancellation;authoritative account/linkedgeneration/lease guards",
+      "findings": []
+    },
+    {
+      "provider": "steam",
+      "owners": [
+        "adapter.server.ts",
+        "connection.server.ts",
+        "sync.server.ts"
+      ],
+      "families": [
+        "openid assertion/verification",
+        "profile/current game",
+        "complete owned-game response",
+        "achievement progress/schema",
+        "100-game ownership commit;20-title achievements;50-AppID IGDB matching"
+      ],
+      "bounds": "250ms lane;8MiB transport;100-title transactions;100-row achievement writes;500 pending metadata ids",
+      "findings": [
+        "PJ-11"
+      ]
+    },
+    {
+      "provider": "igdb/twitch",
+      "owners": [
+        "adapter.server.ts",
+        "service.server.ts"
+      ],
+      "families": [
+        "client-credentials token",
+        "game search/detail",
+        "trending popularity+games",
+        "recent games",
+        "exactSteam identifiers",
+        "similar game recommendations"
+      ],
+      "bounds": "260ms API lane;32cached adapters;single-flight token peradapter;one401 refresh retry;20similar ids;bounded resultpages",
+      "findings": []
+    },
+    {
+      "provider": "openlibrary",
+      "owners": [
+        "adapter.server.ts",
+        "reading.server.ts"
+      ],
+      "families": [
+        "search+optional fallback",
+        "trending/recent",
+        "workdetail+exact indexed lookup",
+        "edition/ISBNtowork",
+        "20-edition pages"
+      ],
+      "bounds": "1100ms commonlane;2MiB response;finite page bounds;100search/200detail caches;prior authorization checks",
+      "findings": [
+        "PJ-14"
+      ]
+    },
+    {
+      "provider": "comic-vine",
+      "owners": [
+        "adapter.server.ts",
+        "reading.server.ts"
+      ],
+      "families": [
+        "issue search",
+        "volume search+fallback",
+        "series issue enrichment",
+        "recent discovery",
+        "issue detail",
+        "group issue page",
+        "verification via search"
+      ],
+      "bounds": "18100ms commonoriginlane;2MiB response;10results/page;up to4serialsearch calls;60/100/200cache entries",
+      "findings": [
+        "PJ-04",
+        "PJ-14"
+      ]
+    },
+    {
+      "provider": "webhooks",
+      "owners": [
+        "server/public-api/webhooks.server.ts",
+        "server/security/provider-fetch.ts"
+      ],
+      "families": [
+        "authenticated subscription",
+        "durable independent delivery",
+        "bounded reply"
+      ],
+      "bounds": "10active subscriptions/user;64KiB reply;10s timeout;eightdelivery attempts;sharedadmission",
+      "findings": [
+        "PJ-14"
+      ],
+      "coverage": "boundary referenced;coordinator owns fullpublicAPI review"
+    }
+  ],
+  "files": [
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/actions.server.ts",
+      "sha256": "4bfcada696896b834002aafa57f6b1a2ec22cdd5288d4a335354640ec6a29269",
+      "lines": 191,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 19,
+          "source": "export function registerProviderActions(options: { maintenance?: boolean } = {}) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/artwork.server.ts",
+      "sha256": "b46db8ca1015b5056e5583c6a32ddf62dbd341860bbb7ec96abf6c5ac29251cd",
+      "lines": 75,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 14,
+          "source": "export async function streamArtwork("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/capabilities.ts",
+      "sha256": "02f9ba8525401545e6be969676310c3d013444cdece030305f8fbf12c81ab8b0",
+      "lines": 53,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 45,
+          "source": "export function supportsProviderField("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/comic-vine/adapter.server.ts",
+      "sha256": "c57a10d2bb65c99c3a46e19366cc5cdd6bb09a0a858cd39bb594fff40d8f359a",
+      "lines": 176,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "controlled probe",
+      "providerCallSites": [
+        {
+          "line": 98,
+          "source": "const raw = await this.request(`${path}?${params}`, { headers: { accept: 'application/json', 'User-Agent': this.userAgent } });"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 105,
+          "source": "async search(query: string, page = 1): Promise<ReadingPage> {"
+        },
+        {
+          "line": 146,
+          "source": "async discover(section: 'trending' | 'recent', page = 1): Promise<ReadingPage> {"
+        },
+        {
+          "line": 157,
+          "source": "async details(id: string): Promise<ReadingMetadata> {"
+        },
+        {
+          "line": 165,
+          "source": "async groupIssues(externalId:string,page=1):Promise<ReadingPage>{"
+        },
+        {
+          "line": 175,
+          "source": "async verify() { await this.search('comics', 1); }"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/connections.server.ts",
+      "sha256": "4ea7ef7b06a8dc16e3800a34b0c58f7ca7446861a3d17cb5b3ecfe6a8830efc1",
+      "lines": 101,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 17,
+          "source": "export async function connectionFor(userId: string, connectionId: string, provider?: string) {"
+        },
+        {
+          "line": 32,
+          "source": "export async function saveConnection("
+        },
+        {
+          "line": 94,
+          "source": "export async function updateLiveRead(userId:string,connectionId:string,input:unknown){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/contracts.ts",
+      "sha256": "da9ed858c4fbbd96ed0c4cc9aca0e84b21c393c542d74f4af82a767e3c391eb3",
+      "lines": 163,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/igdb/adapter.server.ts",
+      "sha256": "008889a4aea49fd2be4ccf1b295e2d63d29542b2a92f074edd73abd39a40bf29",
+      "lines": 180,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 97,
+          "source": "const response = v.parse(tokenSchema, await this.oauth('/oauth2/token', {"
+        },
+        {
+          "line": 124,
+          "source": "try {return v.parse(v.pipe(v.array(remoteGame), v.maxLength(IGDB_PAGE_SIZE)),await this.requestQuery(body,'games')).map(mapIgdbGame);} catch(error){providerError(error);}"
+        },
+        {
+          "line": 128,
+          "source": "const parsed=v.safeParse(v.pipe(v.array(v.object({game_id:v.pipe(v.number(),v.integer(),v.minValue(1))})),v.maxLength(IGDB_PAGE_SIZE)),await this.requestQuery(`fields game_id; where popularity_type = 1; sort value desc; limit ${IGDB_PAGE_SIZE};`,'popularity_primitives'));"
+        },
+        {
+          "line": 143,
+          "source": "const raw=await this.requestQuery(`fields id,uid,game,external_game_source; where external_game_source = 1 & uid = (${selected.map(id=>JSON.stringify(id)).join(',')}); sort id asc; limit 500;`,'external_games');"
+        },
+        {
+          "line": 174,
+          "source": "const [seed]=v.parse(v.array(v.object({similar_games:v.optional(v.array(v.pipe(v.number(),v.integer(),v.minValue(1),v.maxValue(Number.MAX_SAFE_INTEGER))),[])})),await this.requestQuery(`fields similar_games; where id = ${id}; limit 1;`,'games'));"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 69,
+          "source": "export function mapIgdbGame(raw:unknown){"
+        },
+        {
+          "line": 126,
+          "source": "async discover(section: 'trending' | 'recent') {"
+        },
+        {
+          "line": 137,
+          "source": "async steamMatches(ids:string[]) {"
+        },
+        {
+          "line": 157,
+          "source": "async verify() {"
+        },
+        {
+          "line": 160,
+          "source": "async search(query: string, page = 1) {"
+        },
+        {
+          "line": 166,
+          "source": "async details(id: string) {"
+        },
+        {
+          "line": 172,
+          "source": "async recommendations(id:string){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/igdb/service.server.ts",
+      "sha256": "89cbcf14b09cb7d2cefde99eecc8e6c66d218bab12799411c311a57a9aab693f",
+      "lines": 55,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 34,
+          "source": "export async function searchIgdb(instanceId: string, query: string, page = 1) {"
+        },
+        {
+          "line": 37,
+          "source": "export async function igdbDetails(instanceId: string, externalId: string) {"
+        },
+        {
+          "line": 40,
+          "source": "export async function importIgdbGame(raw: unknown) {"
+        },
+        {
+          "line": 46,
+          "source": "export async function igdbSteamMatches(instanceId:string,ids:string[]) {"
+        },
+        {
+          "line": 50,
+          "source": "export async function discoverIgdb(instanceId:string,section:'trending'|'recent') {"
+        },
+        {
+          "line": 53,
+          "source": "export async function igdbRecommendations(instanceId:string,id:string){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/instances.server.ts",
+      "sha256": "3165d0a872ccfa7686231a2dbfdadb4a5ece9c29f1bb9318ada7af8df46aa6b7",
+      "lines": 271,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 40,
+          "source": "export async function requireProviderAdmin(userId: string) {"
+        },
+        {
+          "line": 45,
+          "source": "export async function configureInstance(adminId: string, input: unknown) {"
+        },
+        {
+          "line": 166,
+          "source": "export async function listProviders(userId: string, includeDisabled = false) {"
+        },
+        {
+          "line": 225,
+          "source": "export async function getInstance(instanceId: string, provider?: string) {"
+        },
+        {
+          "line": 235,
+          "source": "export async function instanceFetchConfig("
+        },
+        {
+          "line": 268,
+          "source": "export function instanceTransport(instance: typeof providerInstances.$inferSelect) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/access-proof.server.ts",
+      "sha256": "122554fecab3c1718f5e26649de0a980247fd4dc81d3ce5676d131a80595485a",
+      "lines": 164,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 17,
+          "source": "export function screenCensusMaxAgeMs(savedSchedule?:unknown) {"
+        },
+        {
+          "line": 29,
+          "source": "export function unrestrictedScreenPolicy(policy:Record<string,unknown>):string|null {"
+        },
+        {
+          "line": 37,
+          "source": "export async function captureScreenAccessProof(context:JellyfinAccessContext):Promise<ScreenAccessProof|null> {"
+        },
+        {
+          "line": 57,
+          "source": "export function sameScreenAccessProof(a:ScreenAccessProof,b:ScreenAccessProof|null):boolean {"
+        },
+        {
+          "line": 79,
+          "source": "export async function observeScreenLibraryPage(context:JellyfinAccessContext,proof:ScreenAccessProof,libraryId:string,scanId:string,items:AvailableItem[],offset:number) {"
+        },
+        {
+          "line": 103,
+          "source": "export async function publishScreenLibraryCensus(context:JellyfinAccessContext,initial:ScreenAccessProof,libraryId:string,scanId:string,total:number):Promise<boolean> {"
+        },
+        {
+          "line": 121,
+          "source": "export async function tryReuseScreenAccess(context:JellyfinAccessContext):Promise<number|null> {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/adapter.server.ts",
+      "sha256": "8eb4ee167cdbe3067986d9262980c427f04d898a42f89cc6cd83c35a1eca0cfa",
+      "lines": 558,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 209,
+          "source": "return v.parse(companionPageSchema,await this.call(`/Coast/Changes?${query}`));"
+        },
+        {
+          "line": 211,
+          "source": "async createUser(name:string,password:string){return v.parse(v.object({Id:v.string()}),await this.call('/Users/New',{method:'POST',body:JSON.stringify({Name:name,Password:password})}));}"
+        },
+        {
+          "line": 212,
+          "source": "async userForProvisioning(id:string){const user=v.parse(v.object({Id:v.string(),Name:v.string(),Policy:v.record(v.string(),v.unknown())}),await this.call(`/Users/${encodeURIComponent(id)}`));if(user.Id!==id)throw new ProviderActionError('Jellyfin returned an unexpected user.','identity');return user;}"
+        },
+        {
+          "line": 213,
+          "source": "async setProvisionPolicy(id:string,policy:Record<string,unknown>){await this.call(`/Users/${encodeURIComponent(id)}/Policy`,{method:'POST',body:JSON.stringify(policy)});}"
+        },
+        {
+          "line": 214,
+          "source": "async setProvisionPassword(id:string,password:string){await this.call(`/Users/Password?userId=${encodeURIComponent(id)}`,{method:'POST',body:JSON.stringify({NewPw:password,ResetPassword:false})});}"
+        },
+        {
+          "line": 215,
+          "source": "async virtualFolders(){return v.parse(v.array(v.object({ItemId:v.string(),Name:v.optional(v.string())})),await this.call('/Library/VirtualFolders'));}"
+        },
+        {
+          "line": 217,
+          "source": "const sessions=v.parse(v.array(v.object({UserId:v.optional(v.string()),NowPlayingItem:v.optional(v.nullable(v.object({Id:v.string(),Type:v.optional(v.string())}))),PlayState:v.optional(v.nullable(v.object({IsPaused:v.optional(v.boolean(),false)})))})),await this.call('/Sessions?ActiveWithinSeconds=120'));"
+        },
+        {
+          "line": 222,
+          "source": "const sessions=v.parse(activeSessionsSchema,await this.call('/Sessions?ActiveWithinSeconds=120'));"
+        },
+        {
+          "line": 227,
+          "source": "const info = v.parse(identitySchema, await this.call('/System/Info/Public', {signal}));"
+        },
+        {
+          "line": 245,
+          "source": "await this.call('/Users/AuthenticateByName', {"
+        },
+        {
+          "line": 288,
+          "source": "await this.call(`/Items?${query}`)"
+        },
+        {
+          "line": 301,
+          "source": "const user=v.parse(v.object({Id:v.string(),ServerId:v.string(),Policy:v.record(v.string(),v.unknown())}),await this.call('/Users/Me'));"
+        },
+        {
+          "line": 307,
+          "source": "const folders=v.parse(v.array(v.object({Id:v.string(),Name:v.optional(v.string())})),await this.call(`/UserViews/GroupingOptions?userId=${encodeURIComponent(userId)}`));"
+        },
+        {
+          "line": 319,
+          "source": "await this.call(`/Users/${encodeURIComponent(userId)}`)"
+        },
+        {
+          "line": 328,
+          "source": "await this.call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(id)}`)"
+        },
+        {
+          "line": 352,
+          "source": "const page = v.parse(v.object({Items: v.array(itemSchema), TotalRecordCount: v.number(), StartIndex: v.optional(v.number())}), await this.call(`/Items?${query}`));"
+        },
+        {
+          "line": 376,
+          "source": "await this.call("
+        },
+        {
+          "line": 387,
+          "source": "await this.call("
+        },
+        {
+          "line": 453,
+          "source": "await this.call(`/Items/${encodeURIComponent(itemId)}/PlaybackInfo`, {"
+        },
+        {
+          "line": 476,
+          "source": "await this.call(`/Videos/ActiveEncodings?${new URLSearchParams({DeviceId:deviceId,PlaySessionId:playSessionId})}`, {method:'DELETE'});"
+        },
+        {
+          "line": 486,
+          "source": "await this.call("
+        },
+        {
+          "line": 503,
+          "source": "await this.call("
+        },
+        {
+          "line": 517,
+          "source": "await this.call("
+        },
+        {
+          "line": 526,
+          "source": "await this.call(`/UserItems/${encodeURIComponent(itemId)}/UserData?userId=${encodeURIComponent(userId)}`,{"
+        },
+        {
+          "line": 541,
+          "source": "await this.call("
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 92,
+          "source": "export function jellyfinAuthorization(deviceId: string, token?: string) {"
+        },
+        {
+          "line": 207,
+          "source": "async companionChanges(epoch?:string,cursor=0){"
+        },
+        {
+          "line": 211,
+          "source": "async createUser(name:string,password:string){return v.parse(v.object({Id:v.string()}),await this.call('/Users/New',{method:'POST',body:JSON.stringify({Name:name,Password:password})}));}"
+        },
+        {
+          "line": 212,
+          "source": "async userForProvisioning(id:string){const user=v.parse(v.object({Id:v.string(),Name:v.string(),Policy:v.record(v.string(),v.unknown())}),await this.call(`/Users/${encodeURIComponent(id)}`));if(user.Id!==id)throw new ProviderActionError('Jellyfin returned an unexpected user.','identity');return user;}"
+        },
+        {
+          "line": 213,
+          "source": "async setProvisionPolicy(id:string,policy:Record<string,unknown>){await this.call(`/Users/${encodeURIComponent(id)}/Policy`,{method:'POST',body:JSON.stringify(policy)});}"
+        },
+        {
+          "line": 214,
+          "source": "async setProvisionPassword(id:string,password:string){await this.call(`/Users/Password?userId=${encodeURIComponent(id)}`,{method:'POST',body:JSON.stringify({NewPw:password,ResetPassword:false})});}"
+        },
+        {
+          "line": 215,
+          "source": "async virtualFolders(){return v.parse(v.array(v.object({ItemId:v.string(),Name:v.optional(v.string())})),await this.call('/Library/VirtualFolders'));}"
+        },
+        {
+          "line": 216,
+          "source": "async sessions(userId:string) {"
+        },
+        {
+          "line": 221,
+          "source": "async activeStreams(){"
+        },
+        {
+          "line": 225,
+          "source": "async identity(expectedId?: string, signal?: AbortSignal) {"
+        },
+        {
+          "line": 237,
+          "source": "async authenticate(username: string, password: string, expectedId?: string) {"
+        },
+        {
+          "line": 262,
+          "source": "async library(userId: string, offset = 0, since?: string, scope: 'library' | 'user' = 'library', filter?: 'IsPlayed' | 'IsResumable' | 'IsFavorite', parentId?: string): Promise<LibraryPage> {"
+        },
+        {
+          "line": 300,
+          "source": "async accessIdentity(userId: string) {"
+        },
+        {
+          "line": 306,
+          "source": "async screenLibraries(userId: string) {"
+        },
+        {
+          "line": 312,
+          "source": "async userPolicy(userId: string) {"
+        },
+        {
+          "line": 325,
+          "source": "async item(userId: string, id: string) {"
+        },
+        {
+          "line": 334,
+          "source": "async itemIfAvailable(userId: string, id: string) {"
+        },
+        {
+          "line": 342,
+          "source": "async items(userId: string, ids: string[]): Promise<AvailableItem[]> {"
+        },
+        {
+          "line": 361,
+          "source": "async readingItem(userId: string, id: string, signal?:AbortSignal) { return jellyfinBook((path,init)=>this.call(path,init),userId,id,signal); }"
+        },
+        {
+          "line": 362,
+          "source": "async readingPage(userId:string,offset=0){return jellyfinBookPage((path,init)=>this.call(path,init),userId,'',offset);}"
+        },
+        {
+          "line": 363,
+          "source": "async readingLibrary(userId: string, search: string, offset=0, signal?:AbortSignal) { return jellyfinBooks((path,init)=>this.call(path,{...init,signal}),userId,search,offset); }"
+        },
+        {
+          "line": 364,
+          "source": "async musicLibrary(userId: string, options: MusicBrowseOptions = {}, scan?: MusicScanOptions,signal?:AbortSignal) {"
+        },
+        {
+          "line": 367,
+          "source": "async musicItems(userId: string, ids: string[]) {"
+        },
+        {
+          "line": 370,
+          "source": "async musicItem(userId: string, id: string,signal?:AbortSignal) {"
+        },
+        {
+          "line": 373,
+          "source": "async setMusicFavourite(userId: string, id: string, value: boolean) {"
+        },
+        {
+          "line": 383,
+          "source": "async localTrailers(userId: string, itemId: string) {"
+        },
+        {
+          "line": 393,
+          "source": "async playbackInfo("
+        },
+        {
+          "line": 475,
+          "source": "async stopEncoding(deviceId:string, playSessionId:string) {"
+        },
+        {
+          "line": 478,
+          "source": "async setUserState("
+        },
+        {
+          "line": 493,
+          "source": "async setViewingSummary("
+        },
+        {
+          "line": 516,
+          "source": "async setProgress(userId: string, itemId: string, positionSeconds: number) {"
+        },
+        {
+          "line": 525,
+          "source": "async setListeningSummary(userId:string,itemId:string,playCount:number){"
+        },
+        {
+          "line": 530,
+          "source": "async scrobble("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/companion.ts",
+      "sha256": "18e4854d9044543725c8a49d60edee1223c1689952fc1c269860ff74a5e6ea99",
+      "lines": 43,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 15,
+          "source": "export function validateCompanionPage(page:CompanionPage,previous:Pick<CompanionState,'epoch'|'cursor'>,serverId:string){"
+        },
+        {
+          "line": 23,
+          "source": "export function companionHealthy(saved:unknown,now:number,intervalMinutes:number){"
+        },
+        {
+          "line": 31,
+          "source": "export function companionPlan(page:CompanionPage){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/connection.server.ts",
+      "sha256": "625eeb87200dfe91ff1fcf7a8485eb8c6051037360f8573d4b8a33b5c947f04b",
+      "lines": 79,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 13,
+          "source": "export async function connectJellyfin("
+        },
+        {
+          "line": 36,
+          "source": "export async function getJellyfin(userId: string, connectionId: string) {"
+        },
+        {
+          "line": 54,
+          "source": "export async function updateJellyfinPlaybackImport("
+        },
+        {
+          "line": 73,
+          "source": "export async function updateJellyfinReconciliation(userId:string,connectionId:string,input:unknown){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/music.server.ts",
+      "sha256": "c94faaac3df4679b6a4a47cb95a8e01111fc8c5d1fd04c24c7077d0a1a9b607a",
+      "lines": 197,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 149,
+          "source": "await call(`${endpoint}?${query}`)"
+        },
+        {
+          "line": 171,
+          "source": "await call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(id)}`)"
+        },
+        {
+          "line": 187,
+          "source": "const page = v.parse(v.object({Items: v.array(itemSchema), TotalRecordCount: count, StartIndex: v.optional(count)}), await call(`/Items?${query}`));"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 102,
+          "source": "export async function browseMusic("
+        },
+        {
+          "line": 163,
+          "source": "export async function musicItem("
+        },
+        {
+          "line": 178,
+          "source": "export async function musicItems(call: ProviderTransport, userId: string, ids: string[]): Promise<MusicItem[]> {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/paging.ts",
+      "sha256": "88acf781617f8e3894167bd35e0d223fb3a3e20b5958ac417223a11e68387085",
+      "lines": 31,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 2,
+          "source": "export function jellyfinItemKey(id: string) {"
+        },
+        {
+          "line": 7,
+          "source": "export function validateJellyfinPage("
+        },
+        {
+          "line": 26,
+          "source": "export function validateJellyfinItems(items: { Id: string }[], requested: string[]) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/provisioning.server.ts",
+      "sha256": "04529a746b5d8635b922949350c2c4df789780720f76c9dcf68bdeb1a8a3ee9d",
+      "lines": 62,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 11,
+          "source": "export function provisionPolicy(policy:Record<string,unknown>,folders:string[]){"
+        },
+        {
+          "line": 17,
+          "source": "export async function provisioningAuthority(userId:string,connectionId:string,generation?:string){"
+        },
+        {
+          "line": 25,
+          "source": "export async function provisioningOffer(userId:string){"
+        },
+        {
+          "line": 29,
+          "source": "export async function provisionOnboarding(userId:string,input:unknown){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/reading.server.ts",
+      "sha256": "401b39e1d9c2953ad349afd60eef6796847027417629de6acaa8573dbd99399e",
+      "lines": 59,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 44,
+          "source": "const item = v.parse(bookSchema,await call(`/Users/${encodeURIComponent(userId)}/Items/${encodeURIComponent(externalId)}?Fields=Path,ProviderIds,DateModified,Size`,{signal}));"
+        },
+        {
+          "line": 51,
+          "source": "const page=v.parse(v.object({Items:v.array(bookSchema),TotalRecordCount:v.number(),StartIndex:v.optional(v.number())}),await call(`/Items?${query}`));"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 12,
+          "source": "export function jellyfinOpenLibraryId(value: string | undefined): string | null {"
+        },
+        {
+          "line": 28,
+          "source": "export function jellyfinComicVineId(value: string | undefined): string | null {"
+        },
+        {
+          "line": 41,
+          "source": "export async function jellyfinBook(call: ProviderTransport, userId: string, externalId: string, signal?:AbortSignal) {"
+        },
+        {
+          "line": 48,
+          "source": "export async function jellyfinBookPage(call: ProviderTransport, userId: string, search: string, offset = 0) {"
+        },
+        {
+          "line": 55,
+          "source": "export function bookFormat(book:JellyfinBook) {"
+        },
+        {
+          "line": 59,
+          "source": "export async function jellyfinBooks(call:ProviderTransport,userId:string,search:string,offset=0){const page=await jellyfinBookPage(call,userId,search,offset);return {...page,items:page.items.map(book=>({id:book.Id,title:book.Name||'Untitled',format:bookFormat(book)}))};}"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/stream-history.server.ts",
+      "sha256": "243f20cee43e4d31116169355379072931ed8170cad4ef44f590608e6fb32453",
+      "lines": 53,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 10,
+          "source": "export async function recordServerStreams(source:Capture,streams:ServerStream[]|null,error:string|null=null){"
+        },
+        {
+          "line": 28,
+          "source": "export async function scanServerStreams(action:OutboxAction){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/streams.ts",
+      "sha256": "ec12d23d792b35c81af12308071b746f58d9410f8eebedb0c8cf4b74e022ef95",
+      "lines": 17,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 10,
+          "source": "export function streamPresentation(session:v.InferOutput<typeof activeSessionsSchema>[number]){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/jellyfin/updates.server.ts",
+      "sha256": "568108807e944df42b0d0203fd0040a7b49d70a20f710a75b0472804c39ba50f",
+      "lines": 188,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 74,
+          "source": "if(schedule.libraryEnabled&&librarySource)baselineIds.push(await request(librarySource,'jellyfin.library',{full:true},'jellyfin.library'));"
+        },
+        {
+          "line": 79,
+          "source": "baselineIds.push(await request(connection,'jellyfin.sync',{},'jellyfin.sync'));"
+        },
+        {
+          "line": 90,
+          "source": "await request(librarySource,'jellyfin.delta',{scope:'library',video:plan.video,music:config.experimentalMusic?plan.music:[],reading:config.experimentalBooks||config.experimentalComics?plan.reading:[]},`companion:${page.epoch}:${page.cursor}:library`);"
+        },
+        {
+          "line": 98,
+          "source": "if(schedule.userSyncEnabled)baselineIds.push(await request(connection,'jellyfin.sync',{},'jellyfin.sync',true));"
+        },
+        {
+          "line": 105,
+          "source": "if(video.length||music.length||reading.length)await request(connection,'jellyfin.delta',{scope:'user',video,music,reading},`companion:${page.epoch}:${page.cursor}:user`);"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 36,
+          "source": "export async function applyCompanionPage(action:OutboxAction,context:Context,page:CompanionPage,checkedAt=new Date()){"
+        },
+        {
+          "line": 137,
+          "source": "export async function pollCompanion(action:OutboxAction){"
+        },
+        {
+          "line": 163,
+          "source": "export async function applyCompanionDelta(action:OutboxAction){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/job-policy.ts",
+      "sha256": "58810bbdea1217109d0ffce9384c62bd770270afcba8fcdc5e7251773492ad66",
+      "lines": 23,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 7,
+          "source": "export function jobIdentityScope(kind: string): 'account' | 'instance' {"
+        },
+        {
+          "line": 12,
+          "source": "export function purposePriority(purpose: JobPurpose): RequestPriority {"
+        },
+        {
+          "line": 17,
+          "source": "export function readJobPurpose(payload: Record<string, unknown>, fallback: JobPurpose): JobPurpose {"
+        },
+        {
+          "line": 21,
+          "source": "export function promotedPurpose(current: JobPurpose, requested: JobPurpose): JobPurpose {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/job-timing.server.ts",
+      "sha256": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+      "lines": 119,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 15,
+          "source": "export async function jobTimings(): Promise<JobTiming[]> {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/maintenance.server.ts",
+      "sha256": "dcc93147ba085a07562271c9acc54aa5aec49e7356be01d89ba749fb1dd2ee13",
+      "lines": 309,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 23,
+          "source": "export async function updateProviderSchedule(adminId: string, instanceId: string, input: unknown) {"
+        },
+        {
+          "line": 71,
+          "source": "export async function runProviderJob("
+        },
+        {
+          "line": 92,
+          "source": "export function stopProviderMaintenance() {"
+        },
+        {
+          "line": 103,
+          "source": "export async function scheduleProviderMaintenance("
+        },
+        {
+          "line": 296,
+          "source": "export function startProviderMaintenance() {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/openlibrary/adapter.server.ts",
+      "sha256": "d42af5d23311808e2c9157c8ce856e995a8cf9e4d2d80ce9782605d28740dfbb",
+      "lines": 171,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 76,
+          "source": "return v.parse(searchSchema, await this.request(`/search.json?${params}`, {"
+        },
+        {
+          "line": 112,
+          "source": "const result=v.parse(v.object({key:editionKey,works:v.optional(v.pipe(v.array(v.object({key:workKey})),v.maxLength(10)),[])}),await this.request(`${identifier.startsWith('OL')?'/books/':'/isbn/'}${identifier}.json`,{headers:{accept:'application/json','User-Agent':this.userAgent}}));"
+        },
+        {
+          "line": 120,
+          "source": "const work = v.parse(workSchema, await this.request(`/works/${id}.json`, {"
+        },
+        {
+          "line": 160,
+          "source": "const result=v.parse(v.object({size:total,entries:v.pipe(v.array(entry),v.maxLength(size))}),await this.request(`/works/${id}/editions.json?limit=${size}&offset=${(page-1)*size}`,{headers:{accept:'application/json','User-Agent':this.userAgent}}));"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 80,
+          "source": "async search(query: string, page = 1): Promise<ReadingPage> {"
+        },
+        {
+          "line": 98,
+          "source": "async discover(section: 'trending' | 'recent', page = 1): Promise<ReadingPage> {"
+        },
+        {
+          "line": 109,
+          "source": "async workForEdition(id:string):Promise<string|null> {"
+        },
+        {
+          "line": 117,
+          "source": "async details(id: string): Promise<ReadingMetadata> {"
+        },
+        {
+          "line": 153,
+          "source": "async editions(id:string,page=1):Promise<{items:ReadingEdition[];total:number;page:number;pages:number}>{"
+        },
+        {
+          "line": 170,
+          "source": "async verify() { await this.search('books', 1); }"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/reading.server.ts",
+      "sha256": "7b8e7344d59090b73ee674a16fcbc7708c67857f7df47f69cf8568444c85c94f",
+      "lines": 111,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 28,
+          "source": "export async function readingProviderConfigured(kind: ReadingKind) {"
+        },
+        {
+          "line": 63,
+          "source": "export async function searchReading(kind: ReadingKind, query: string, page = 1) {"
+        },
+        {
+          "line": 73,
+          "source": "export async function discoverReading(kind: ReadingKind, section: 'trending' | 'recent', page = 1) {"
+        },
+        {
+          "line": 82,
+          "source": "export async function readingProviderDetails(kind: ReadingKind, externalId: string) {"
+        },
+        {
+          "line": 93,
+          "source": "export async function readingWorkForEdition(identifier:string){"
+        },
+        {
+          "line": 100,
+          "source": "export async function readingGroupIssues(externalId:string,page=1){"
+        },
+        {
+          "line": 108,
+          "source": "export async function readingEditions(externalId:string,page=1){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/schedule.ts",
+      "sha256": "26b7776a5db5b4a10df04d1b38def92d785bf401a6658a1e5128c7c69f7d8164",
+      "lines": 54,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 33,
+          "source": "export function providerSchedule(provider: string, saved?: unknown): ProviderSchedule {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/seerr/adapter.server.ts",
+      "sha256": "b6ecf59409c69ed473c50a255c3ca89cc92a9ec13a6dd04cd4414e2964836adf",
+      "lines": 343,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 175,
+          "source": "await this.call("
+        },
+        {
+          "line": 181,
+          "source": "return this.catalogue(await this.call(`/discover/trending?page=${page}&language=en`));"
+        },
+        {
+          "line": 184,
+          "source": "return v.parse(userSchema, await this.call('/auth/me'));"
+        },
+        {
+          "line": 187,
+          "source": "return v.parse(userSchema, await this.call(`/user/jellyfin/${encodeURIComponent(jellyfinId)}`));"
+        },
+        {
+          "line": 192,
+          "source": "await this.call(`/service/${kind === 'movie' ? 'radarr' : 'sonarr'}`)"
+        },
+        {
+          "line": 211,
+          "source": "await this.call("
+        },
+        {
+          "line": 246,
+          "source": "await this.call(`/${kind === 'show' ? 'tv' : 'movie'}/${tmdbId}`)"
+        },
+        {
+          "line": 300,
+          "source": "await this.call('/request', {"
+        },
+        {
+          "line": 313,
+          "source": "return v.parse(requestSchema, await this.call(`/request/${requestId}`));"
+        },
+        {
+          "line": 319,
+          "source": "request = v.parse(requestSchema, await this.call(`/request/${requestId}`));"
+        },
+        {
+          "line": 339,
+          "source": "await this.call(`/request/${requestId}${action === 'cancel' ? '' : `/${action}`}`, {"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 23,
+          "source": "export function seerrAllows(permissions: number, permission: number) {"
+        },
+        {
+          "line": 26,
+          "source": "export function canRequest(permissions: number, kind: DiscoverKind, is4k = false) {"
+        },
+        {
+          "line": 92,
+          "source": "export function groupDestination("
+        },
+        {
+          "line": 112,
+          "source": "export function remainingSeasons("
+        },
+        {
+          "line": 173,
+          "source": "async search(query: string, page = 1) {"
+        },
+        {
+          "line": 180,
+          "source": "async trending(page = 1) {"
+        },
+        {
+          "line": 183,
+          "source": "async user() {"
+        },
+        {
+          "line": 186,
+          "source": "async jellyfinUser(jellyfinId: string) {"
+        },
+        {
+          "line": 189,
+          "source": "async servers(kind: DiscoverKind) {"
+        },
+        {
+          "line": 195,
+          "source": "async requests(offset = 0, all = false, verifiedAccount?:SeerrUser) {"
+        },
+        {
+          "line": 220,
+          "source": "async details(kind: DiscoverKind, tmdbId: number) {"
+        },
+        {
+          "line": 249,
+          "source": "async create(scope: RequestScope) {"
+        },
+        {
+          "line": 312,
+          "source": "async requestDetails(requestId: number) {"
+        },
+        {
+          "line": 315,
+          "source": "async manage(requestId: number, action: 'cancel' | 'approve' | 'decline') {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/seerr/connection.server.ts",
+      "sha256": "e916794e05d800289843c7c6ef8b6d1b4e400abeeaabf5f4b249e31352e8b89c",
+      "lines": 109,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 17,
+          "source": "export async function assertSeerrAccount(tx:Tx,scope:SeerrAccountScope) {"
+        },
+        {
+          "line": 33,
+          "source": "export async function getSeerr(userId: string, instanceId: string,expected?:{connectionId:string;accountGeneration:string}) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/seerr/requests.server.ts",
+      "sha256": "38305c2968417127918489c05f4d2997501aca0a6c33212d937541beea77d414",
+      "lines": 644,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 61,
+          "source": "export async function requestOptions(userId: string, mediaId: string) {"
+        },
+        {
+          "line": 231,
+          "source": "export async function requestMedia(userId: string, input: unknown) {"
+        },
+        {
+          "line": 374,
+          "source": "export async function refreshRequests(userId:string,instanceId:string,expected?:{connectionId:string;accountGeneration:string}) {"
+        },
+        {
+          "line": 503,
+          "source": "export async function manageRequest("
+        },
+        {
+          "line": 578,
+          "source": "export async function executeSeerrRequest(action: OutboxAction, resolveAccount: typeof getSeerr = getSeerr) {"
+        },
+        {
+          "line": 600,
+          "source": "export async function executeSeerrManagement(action: OutboxAction, resolveAccount: typeof getSeerr = getSeerr) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/server-artwork.server.ts",
+      "sha256": "5a48ee098bbf7d8938b613297ed8fac3446e1eca54a57656b3f8e448b50338de",
+      "lines": 36,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "controlled probe",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 10,
+          "source": "export async function serverArtwork(scope:string[],download:()=>Promise<Response>):Promise<Response>{"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/steam/adapter.server.ts",
+      "sha256": "7ec88f6b40895ca4214716ebc077a9359e0673b3084d39a55065ba1e53201fae",
+      "lines": 59,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 23,
+          "source": "const result = v.parse(v.object({response:v.object({players:v.array(v.object({steamid:steamIdSchema,personaname:v.string(),gameid:v.optional(v.string())}))})}),await this.get('/ISteamUser/GetPlayerSummaries/v2/',{steamids:steamId}));"
+        },
+        {
+          "line": 30,
+          "source": "const response=v.parse(v.object({response:v.object({game_count:v.optional(count),games:v.optional(v.array(steamOwnedGameSchema))})}),await this.get('/IPlayerService/GetOwnedGames/v1/',{steamid:steamId,include_appinfo:'true',include_played_free_games:'true',include_free_sub:'true'})).response;"
+        },
+        {
+          "line": 42,
+          "source": "response=await this.get('/ISteamUserStats/GetPlayerAchievements/v1/',{steamid:steamId,appid:String(id),l:'english'});"
+        },
+        {
+          "line": 56,
+          "source": "const result=v.parse(v.object({game:v.object({availableGameStats:v.optional(v.object({achievements:v.optional(v.array(v.object({name:v.string(),displayName:v.string(),description:v.optional(v.string(),''),hidden:v.optional(v.picklist([0,1]),0),icon:v.optional(v.string()),icongray:v.optional(v.string())}))) }))})}),await this.get('/ISteamUserStats/GetSchemaForGame/v2/',{appid:String(id),l:'english'}));"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 21,
+          "source": "async profile(steamId: string) {"
+        },
+        {
+          "line": 28,
+          "source": "async ownedGames(steamId:string) {"
+        },
+        {
+          "line": 38,
+          "source": "async achievements(steamId:string,id:number) {"
+        },
+        {
+          "line": 54,
+          "source": "async achievementSchema(id:number) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/steam/connection.server.ts",
+      "sha256": "7b6f98d93ff85fd1c6f0c94184233abca6f1fadf8ebe9dc4f6c2da9d19f8e932",
+      "lines": 93,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 72,
+          "source": "const response=await secureProviderFetch({baseUrl:'https://steamcommunity.com',provider:'steam',approved:true,allowedPorts:[443],maxResponseBytes:4096},'/openid/login',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body:verification.toString()});"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 16,
+          "source": "export async function steamAdapter(instanceId:string) {"
+        },
+        {
+          "line": 22,
+          "source": "export async function getSteam(userId:string,connectionId:string) {"
+        },
+        {
+          "line": 27,
+          "source": "export function steamLoginUrl(returnTo:string) {"
+        },
+        {
+          "line": 32,
+          "source": "export function steamAssertion(parameters:URLSearchParams,returnTo:string,now=Date.now()) {"
+        },
+        {
+          "line": 51,
+          "source": "export async function startSteam(userId:string,instanceId:string,origin:string) {"
+        },
+        {
+          "line": 64,
+          "source": "export async function finishSteam(userId:string,url:URL) {"
+        },
+        {
+          "line": 87,
+          "source": "export async function updateSteamImports(userId:string,connectionId:string,raw:unknown) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/steam/sync.server.ts",
+      "sha256": "ff0d9b59892c2781a00e72486f3d76c523fba7897aa1434b2bb7848383a5e3c6",
+      "lines": 194,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 41,
+          "source": "export async function syncSteam(action:OutboxAction) {"
+        },
+        {
+          "line": 97,
+          "source": "export async function syncSteamMetadata(action:OutboxAction){"
+        },
+        {
+          "line": 127,
+          "source": "export async function syncSteamAchievements(action:OutboxAction) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/task-timing.ts",
+      "sha256": "41ffc963a7a1bda8642e3fe56c6b0bb28f0b6eb16dd9dc0f7cf12386aada36b9",
+      "lines": 81,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 21,
+          "source": "export function taskSchedulingEnabled(provider: string, enabled: boolean, task: ServiceTask, schedule: ProviderSchedule, features: TaskFeatures, force = false) {"
+        },
+        {
+          "line": 27,
+          "source": "export function eligibleTaskAccounts<T extends TaskAccount>(kind: string, accounts: T[], schedule: ProviderSchedule, settings: TaskSettings, hasTmdb: boolean): T[] {"
+        },
+        {
+          "line": 52,
+          "source": "export function taskCompletedAt(kind: string, account: TaskAccount, evidence: TaskEvidence): number {"
+        },
+        {
+          "line": 57,
+          "source": "export function taskIntervalMs(task: ServiceTask, schedule: ProviderSchedule, account: TaskAccount): number {"
+        },
+        {
+          "line": 63,
+          "source": "export function taskDue(task: ServiceTask, schedule: ProviderSchedule, settings: TaskSettings, account: TaskAccount, evidence: TaskEvidence, now: number, force = false): { at: number | null; completed: number; interval: number; full?: boolean } {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/tasks.ts",
+      "sha256": "0f0c3adf6584398d2d5a28fd9d2c418c5077edda694bcb5c54131f9f318a85f8",
+      "lines": 166,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 151,
+          "source": "export function serviceTasks(provider: string): ServiceTask[] {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/tmdb/adapter.server.ts",
+      "sha256": "8258fd241769f8c5354ee31ba1e15af99aa09900a55ca55f7984f30abb62c672",
+      "lines": 322,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 132,
+          "source": "await this.request(this.path('/3/search/multi', { query, page, include_adult: 'false' }))"
+        },
+        {
+          "line": 139,
+          "source": "const data = v.parse(result, await this.request(this.path('/3/trending/all/week', { page })));"
+        },
+        {
+          "line": 147,
+          "source": "await this.request("
+        },
+        {
+          "line": 159,
+          "source": "await this.request("
+        },
+        {
+          "line": 170,
+          "source": "await this.request("
+        },
+        {
+          "line": 244,
+          "source": "await this.request(this.path(`/3/collection/${encodeURIComponent(id)}`))"
+        },
+        {
+          "line": 258,
+          "source": "await this.request("
+        },
+        {
+          "line": 290,
+          "source": "await this.request("
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 129,
+          "source": "async search(query: string, page = 1) {"
+        },
+        {
+          "line": 138,
+          "source": "async trending(page = 1) {"
+        },
+        {
+          "line": 144,
+          "source": "async recent(kind: DiscoverKind, page = 1) {"
+        },
+        {
+          "line": 156,
+          "source": "async recommendations(kind: DiscoverKind, id: string) {"
+        },
+        {
+          "line": 167,
+          "source": "async details(kind: DiscoverKind, id: string, includeRecommendations = true): Promise<Metadata> {"
+        },
+        {
+          "line": 241,
+          "source": "async collection(id: string): Promise<Metadata> {"
+        },
+        {
+          "line": 255,
+          "source": "async season(showId: string, seasonNumber: number): Promise<Metadata> {"
+        },
+        {
+          "line": 287,
+          "source": "async episode(showId: string, seasonNumber: number, episodeNumber: number): Promise<Metadata> {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/tmdb/artwork.server.ts",
+      "sha256": "74a89d420db3caee4bf4d175887375788a62a6c5d1e2fc145cc2b00b525c99db",
+      "lines": 106,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 89,
+          "source": "const upstream = await secureProviderFetch({ baseUrl: origin, approved: true }, `/t/p${path}`, {signal: entry.controller.signal}, { maxBytes: 20 * 1024 * 1024 });"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 34,
+          "source": "export function tmdbArtworkUrl(url: string | null | undefined, cache: boolean) {"
+        },
+        {
+          "line": 49,
+          "source": "export async function streamTmdbArtwork(size: string, filename: string, request: Request) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/tmdb/artwork.ts",
+      "sha256": "eafe9d4f113653b6d91de2526a5a21be36de2a95a290477774506c08da98857f",
+      "lines": 8,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 1,
+          "source": "export function tmdbArtwork("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/tmdb/details.server.ts",
+      "sha256": "862050a2bf078b192cab4445064c68ba8228ef1a003208f69c93046488feda10",
+      "lines": 215,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 45,
+          "source": "await request(`/3/${path}?${query}`)"
+        },
+        {
+          "line": 101,
+          "source": "await request(`/3/${path}/reviews?${new URLSearchParams({ language, page: String(page) })}`)"
+        },
+        {
+          "line": 175,
+          "source": "await request("
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 15,
+          "source": "export async function tmdbInsights("
+        },
+        {
+          "line": 143,
+          "source": "export async function tmdbPerson("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/tmdb/fallback.server.ts",
+      "sha256": "bd3056e3c5e9c968eeddab2e8413e4edbc28c23012f2e9396522a2124faaa3f7",
+      "lines": 115,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 82,
+          "source": "export async function fallbackArtwork(id: string, type: string) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/trakt/adapter.server.ts",
+      "sha256": "162366fa67ed520ca6b99d704ff5900dabf153fa1669136869b18d60b49ad5a9",
+      "lines": 400,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 84,
+          "source": "await this.call(`${path}${path.includes('?') ? '&' : '?'}page=${page}&limit=100`)"
+        },
+        {
+          "line": 100,
+          "source": "await this.call('/oauth/device/code', {"
+        },
+        {
+          "line": 109,
+          "source": "await this.call('/oauth/device/token', {"
+        },
+        {
+          "line": 118,
+          "source": "await this.call('/oauth/token', {"
+        },
+        {
+          "line": 133,
+          "source": "await this.call('/users/settings')"
+        },
+        {
+          "line": 138,
+          "source": "return v.parse(v.array(title),await this.call(`/recommendations/${kind==='movie'?'movies':'shows'}?limit=40`));"
+        },
+        {
+          "line": 152,
+          "source": "await this.call(`${path}?page=${page}&limit=100&extended=full`)"
+        },
+        {
+          "line": 157,
+          "source": "return v.parse(v.object({ all: v.string() }), await this.call('/sync/last_activities')).all;"
+        },
+        {
+          "line": 163,
+          "source": "const records=v.parse(v.array(traktRecordSchema),await this.call(`/sync/collection/shows?extended=full&page=${page}&limit=10`));"
+        },
+        {
+          "line": 168,
+          "source": "return v.parse(v.array(v.object({name:v.string(),description:v.nullish(v.string()),ids:v.object({trakt:v.number(),slug:v.string()})})),await this.call(`/users/me/lists?page=${page}&limit=100`));"
+        },
+        {
+          "line": 171,
+          "source": "return v.parse(v.array(traktRecordSchema),await this.call(`/users/me/lists/${encodeURIComponent(listId)}/items/movie,show,season,episode?extended=full&page=${page}&limit=100`));"
+        },
+        {
+          "line": 194,
+          "source": "await this.call(`/users/me/lists/${encodeURIComponent(id)}`, {"
+        },
+        {
+          "line": 202,
+          "source": "await this.call('/users/me/lists', {"
+        },
+        {
+          "line": 305,
+          "source": "await this.call(`/search/${provider}/${externalId}?type=${kind}`)"
+        },
+        {
+          "line": 313,
+          "source": "await this.call("
+        },
+        {
+          "line": 323,
+          "source": "await this.call(`/sync/${category}${remove ? '/remove' : ''}`, {"
+        },
+        {
+          "line": 330,
+          "source": "await this.call(`/users/me/lists/${encodeURIComponent(listId)}`, { method: 'DELETE' });"
+        },
+        {
+          "line": 336,
+          "source": "await this.call(`/users/me/lists/${encodeURIComponent(listId)}/items/reorder`, {"
+        },
+        {
+          "line": 342,
+          "source": "await this.call("
+        },
+        {
+          "line": 369,
+          "source": "await this.call(`/sync/playback/${record.id}`, { method: 'DELETE' });"
+        },
+        {
+          "line": 377,
+          "source": "const raw=await this.call('/users/me/watching?extended=full');"
+        },
+        {
+          "line": 381,
+          "source": "return v.parse(v.object({id:v.number(),watched_at:v.pipe(v.string(),v.isoTimestamp()),movie:v.nullish(title),show:v.nullish(title),episode:v.nullish(episode)}),await this.call('/checkin',{method:'POST',body:JSON.stringify({[kind]:{ids:traktIds},sharing:{twitter:false,tumblr:false,mastodon:false},app_version:'0.1.0'})}));"
+        },
+        {
+          "line": 383,
+          "source": "async cancelCheckin(){await this.call('/checkin',{method:'DELETE'});}"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 91,
+          "source": "async startDevice() {"
+        },
+        {
+          "line": 106,
+          "source": "async finishDevice(code: string) {"
+        },
+        {
+          "line": 115,
+          "source": "async refresh(refreshToken: string) {"
+        },
+        {
+          "line": 130,
+          "source": "async profile() {"
+        },
+        {
+          "line": 137,
+          "source": "async recommendations(kind:'movie'|'show'){"
+        },
+        {
+          "line": 140,
+          "source": "async read("
+        },
+        {
+          "line": 156,
+          "source": "async lastActivity(): Promise<string> {"
+        },
+        {
+          "line": 159,
+          "source": "async collectionShows(): Promise<TraktRecord[]> {"
+        },
+        {
+          "line": 162,
+          "source": "async collectionShowsPage(page=1):Promise<TraktRecord[]> {"
+        },
+        {
+          "line": 167,
+          "source": "async listsPage(page=1) {"
+        },
+        {
+          "line": 170,
+          "source": "async listItemsPage(listId:string,page=1):Promise<TraktRecord[]> {"
+        },
+        {
+          "line": 173,
+          "source": "async lists() {"
+        },
+        {
+          "line": 187,
+          "source": "async listItems(listId: string) {"
+        },
+        {
+          "line": 193,
+          "source": "async updateList(id: string, name: string, description: string) {"
+        },
+        {
+          "line": 199,
+          "source": "async createList(name: string, description?: string) {"
+        },
+        {
+          "line": 214,
+          "source": "async community(path: string, page = 1): Promise<import('$lib/media/details').MediaInsights> {"
+        },
+        {
+          "line": 298,
+          "source": "async lookupIds("
+        },
+        {
+          "line": 309,
+          "source": "async historyFor(kind: 'movie' | 'episode', traktId: number, at: string) {"
+        },
+        {
+          "line": 318,
+          "source": "async write("
+        },
+        {
+          "line": 328,
+          "source": "async deleteList(listId: string) {"
+        },
+        {
+          "line": 335,
+          "source": "async reorderList(listId: string, rank: number[]) {"
+        },
+        {
+          "line": 341,
+          "source": "async writeList(listId: string, payload: Record<string, unknown>, remove = false) {"
+        },
+        {
+          "line": 347,
+          "source": "async clearProgress("
+        },
+        {
+          "line": 376,
+          "source": "async watching() {"
+        },
+        {
+          "line": 380,
+          "source": "async checkin(kind:'movie'|'episode',traktIds:Record<string,string|number>) {"
+        },
+        {
+          "line": 383,
+          "source": "async cancelCheckin(){await this.call('/checkin',{method:'DELETE'});}"
+        },
+        {
+          "line": 384,
+          "source": "async recentHistory(since:string) {"
+        },
+        {
+          "line": 387,
+          "source": "async scrobble("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/providers/trakt/connection.server.ts",
+      "sha256": "4a023788bba52b580aa98378d102bbb4e211297fcc59524ae1e08fbff13dd33c",
+      "lines": 276,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 17,
+          "source": "export async function verifyTraktIdentity(connection:typeof providerConnections.$inferSelect,profile:{id:string;slug?:string}){"
+        },
+        {
+          "line": 48,
+          "source": "export async function getTraktCommunity() {"
+        },
+        {
+          "line": 64,
+          "source": "export async function startTraktDevice(userId: string, instanceId: string) {"
+        },
+        {
+          "line": 113,
+          "source": "export async function finishTraktDevice(userId: string, instanceId: string) {"
+        },
+        {
+          "line": 178,
+          "source": "export async function getTrakt(userId: string, connectionId: string) {"
+        },
+        {
+          "line": 250,
+          "source": "export async function updateSyncPreferences("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/server/queue/execution.ts",
+      "sha256": "d009837af44f027fa992d1dc2d0fe1638120817e1c7efb45950f583e8507e069",
+      "lines": 71,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 17,
+          "source": "export async function assertJobLease(store:Pick<Database,'select'>, lock=false) {"
+        },
+        {
+          "line": 33,
+          "source": "export async function jobCheckpoint() {"
+        },
+        {
+          "line": 46,
+          "source": "export async function saveJobCheckpoint(data: Record<string, unknown>, store?: Pick<Database,'execute'>) {"
+        },
+        {
+          "line": 58,
+          "source": "export async function readJobCheckpoint(): Promise<Record<string, unknown> | null> {"
+        },
+        {
+          "line": 67,
+          "source": "export async function assertJobFeaturePolicy() {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/server/queue/index.ts",
+      "sha256": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+      "lines": 663,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 92,
+          "source": "export function registerActionHandler(kind: string, handler: ActionHandler) {"
+        },
+        {
+          "line": 95,
+          "source": "export async function enqueueAction(input: {"
+        },
+        {
+          "line": 153,
+          "source": "export function jobFailureMessage(error: unknown, permanent: boolean) {"
+        },
+        {
+          "line": 170,
+          "source": "export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure {"
+        },
+        {
+          "line": 186,
+          "source": "export function retryDelayMs(attempt: number): number {"
+        },
+        {
+          "line": 191,
+          "source": "export function validationDiagnostic(error: unknown) {"
+        },
+        {
+          "line": 209,
+          "source": "export function safeDiagnosticErrorCode(error: unknown) {"
+        },
+        {
+          "line": 225,
+          "source": "export function tagDiagnosticStage(error: unknown, stage: string) {"
+        },
+        {
+          "line": 238,
+          "source": "export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | null> {"
+        },
+        {
+          "line": 281,
+          "source": "export async function runQueueOnce(urgentOnly=false): Promise<boolean> {"
+        },
+        {
+          "line": 455,
+          "source": "export function startQueueWorker() {"
+        },
+        {
+          "line": 479,
+          "source": "export function stopQueueWorker() {"
+        },
+        {
+          "line": 485,
+          "source": "export async function listActions(actor: SessionUser | null) {"
+        },
+        {
+          "line": 563,
+          "source": "export async function listTaskActions(actor: SessionUser | null) {"
+        },
+        {
+          "line": 602,
+          "source": "export async function updateTaskActions(actor: SessionUser | null, kind: string, instanceId: string | null, action:'retry'|'cancel'|'promote') {"
+        },
+        {
+          "line": 623,
+          "source": "export async function cancelAction(actor: SessionUser | null, id: string) {"
+        },
+        {
+          "line": 637,
+          "source": "export async function promoteAction(actor: SessionUser | null, id: string) {"
+        },
+        {
+          "line": 648,
+          "source": "export async function retryAction(actor: SessionUser | null, id: string) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/server/security/provider-fetch.ts",
+      "sha256": "412271ebd72de3e4530a95830954dc1657265a67cae2f637a4d37fe82bea2d7d",
+      "lines": 356,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [
+        {
+          "line": 235,
+          "source": "const response = await fetch(pinned, fetchOptions as RequestInit);"
+        },
+        {
+          "line": 284,
+          "source": "const response = await secureProviderFetch(config, path, init);"
+        },
+        {
+          "line": 326,
+          "source": "const response = await providerFetch(config, path, init, options);"
+        }
+      ],
+      "exportedOperations": [
+        {
+          "line": 39,
+          "source": "export function isAllowedAddress(address: string, allowPrivate = false): boolean {"
+        },
+        {
+          "line": 83,
+          "source": "export function validateProviderUrl(config: ProviderFetchConfig, path = ''): URL {"
+        },
+        {
+          "line": 282,
+          "source": "export function createProviderTransport(config: ProviderFetchConfig) {"
+        },
+        {
+          "line": 311,
+          "source": "export async function secureProviderFetch("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/server/security/request-priority.ts",
+      "sha256": "fafb402e4b583d7b247611cbadc708c3497caaae09a4d475f25fe56afdd4662c",
+      "lines": 134,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 22,
+          "source": "export function registerJobRequestPriority(id: string, priority: RequestPriority) { jobPriorities.set(id, priority); }"
+        },
+        {
+          "line": 23,
+          "source": "export function updateJobRequestPriority(id: string, priority: RequestPriority) {"
+        },
+        {
+          "line": 27,
+          "source": "export function releaseJobRequestPriority(id: string) {"
+        },
+        {
+          "line": 32,
+          "source": "export function currentRequestPriority(): RequestPriority {"
+        },
+        {
+          "line": 36,
+          "source": "export function registerResourcePriority(key: string) { resourcePriorities.set(key,currentRequestPriority()); }"
+        },
+        {
+          "line": 37,
+          "source": "export function promoteResourcePriority(key: string) {"
+        },
+        {
+          "line": 40,
+          "source": "export function releaseResourcePriority(key: string) { resourcePriorities.delete(key); }"
+        },
+        {
+          "line": 45,
+          "source": "export function providerRequestMetrics() {"
+        },
+        {
+          "line": 73,
+          "source": "export function queueProviderRequest<T>(origin: string, interval: number, operation: () => Promise<T>, signal?: AbortSignal): Promise<T> {"
+        },
+        {
+          "line": 126,
+          "source": "export function deferProviderRequests(origin:string,delay:number){"
+        },
+        {
+          "line": 130,
+          "source": "export function retryAfterSeconds(value:string|null):number|null{"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/server/startup.ts",
+      "sha256": "434b9926070dda44603c74f72c509d70808b5954365761c7e9952f619d7c6cdb",
+      "lines": 50,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 15,
+          "source": "export function platformStopping() { return shutdown.started; }"
+        },
+        {
+          "line": 17,
+          "source": "export function stopPlatform(): Promise<void> {"
+        },
+        {
+          "line": 24,
+          "source": "export function initializePlatform(registerHandlers?: () => void): Promise<void> {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/server/storage/image-cache.server.ts",
+      "sha256": "d080a944961ba9e58a0461c726038448140c97e842e07c6671ca97ac80a46e5f",
+      "lines": 87,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 6,
+          "source": "export function createImageCache(directory: string, limits: ImageCacheLimits = { bytes: 1024 ** 3, files: 10_000, freeBytes: 128 * 1024 ** 2 }) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/server/storage/retention.server.ts",
+      "sha256": "50b898518a5ac21573ed69ae514c90b9e27062acd1aeb35a78b2affde3e04ad1",
+      "lines": 25,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 5,
+          "source": "export async function pruneTransientRecords() {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/server/utils/provider-cache.ts",
+      "sha256": "f1befbc9b71a8570abe3846057dd33592ae44a323ab688fdf3a283fd58327770",
+      "lines": 29,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 2,
+          "source": "export function providerCache<T>("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/server/utils/provider-single-flight.ts",
+      "sha256": "9bf65c34f3b7a2e69d481f906ae7cd4d04f2e6c1826f28b85b0964bc6bea48b8",
+      "lines": 17,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 4,
+          "source": "export function providerSingleFlight<T>(namespace:string) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/changes.server.ts",
+      "sha256": "5b781dfbf935afa83d7fa54b8446fc9d4830d7f375d26f6c3658ba00191868af",
+      "lines": 462,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 72,
+          "source": "export async function enqueueInTransaction("
+        },
+        {
+          "line": 118,
+          "source": "export async function enqueueTraktListChangeInTransaction(tx: Transaction, userId: string, listId: string) {"
+        },
+        {
+          "line": 135,
+          "source": "export async function enqueueCollectionProjectionInTransaction(tx:Transaction,userId:string){"
+        },
+        {
+          "line": 143,
+          "source": "export async function enqueueTraktChangeInTransaction("
+        },
+        {
+          "line": 257,
+          "source": "export async function enqueueSyncValueInTransaction("
+        },
+        {
+          "line": 316,
+          "source": "export async function trackWithExports(userId: string, input: TrackingInput, transaction?: Transaction) {"
+        },
+        {
+          "line": 353,
+          "source": "export async function bulkTrackWithExports("
+        },
+        {
+          "line": 380,
+          "source": "export async function rateWithExports("
+        },
+        {
+          "line": 401,
+          "source": "export async function enqueuePlaybackActionsInTransaction("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/conflicts.server.ts",
+      "sha256": "b4957d6160e08a8fa127be242b915fa9e92c617860b14174a74e5616f428cd36",
+      "lines": 308,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 24,
+          "source": "export async function getPendingConflicts(userId: string) {"
+        },
+        {
+          "line": 134,
+          "source": "export async function refreshConflictStatus(userId:string) {"
+        },
+        {
+          "line": 163,
+          "source": "export async function repairImportedOrderReviews(userId:string) {"
+        },
+        {
+          "line": 174,
+          "source": "export async function resolveConflict("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/history-removal.server.ts",
+      "sha256": "10f62835a0d8c9178c608b3f65cff66331f42fe7f2df8e4b8e9a18b21491017e",
+      "lines": 355,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 27,
+          "source": "export async function removeHistory(userId: string, mediaId: string, raw: unknown) {"
+        },
+        {
+          "line": 198,
+          "source": "export async function removeTraktHistory("
+        },
+        {
+          "line": 242,
+          "source": "export async function executeHistoryRemoval("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/jellyfin-playback.server.ts",
+      "sha256": "7eed2b4b624f01ead9425a456fdee2a8b656aa59c586fdd68034d0d6f336ff4d",
+      "lines": 168,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 15,
+          "source": "export async function unchangedJellyfinPlayback(userId: string, connectionId: string, accountGeneration: string,"
+        },
+        {
+          "line": 66,
+          "source": "export async function seedEmptyJellyfinPlayback("
+        },
+        {
+          "line": 112,
+          "source": "export async function importJellyfinPlayback("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/jellyfin-progress.ts",
+      "sha256": "0903bc89327889133dc6deec820b4ebe2733059ae7b5a39e2a090d2d741d0a7e",
+      "lines": 37,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 23,
+          "source": "export function jellyfinImportStage(phase: JellyfinScanProgress['phase']) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/jellyfin-reading.server.ts",
+      "sha256": "9c13545fb04e2d755e9ba960c7fa2e09cc567036194a658fe0bf9269ca149f2d",
+      "lines": 48,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 17,
+          "source": "export async function importJellyfinReading(context:Context,books:JellyfinBook[],options:{access:boolean;scanId?:string;expectedResetId?:string|null;checkpoint?:(processed:number)=>Promise<void>}){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/jellyfin.server.ts",
+      "sha256": "3ab6f5c69014adad7a61ef422c330f0d0007e1cef26226fccf60799245d73370",
+      "lines": 1027,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 52,
+          "source": "export async function libraryScanProgress(userId: string, connectionId: string, since?:Date, personal = false) {"
+        },
+        {
+          "line": 99,
+          "source": "export async function scanJellyfinLibrary("
+        },
+        {
+          "line": 109,
+          "source": "export async function syncJellyfinUser("
+        },
+        {
+          "line": 119,
+          "source": "export async function bootstrapJellyfinUser(userId: string, connectionId: string,"
+        },
+        {
+          "line": 140,
+          "source": "export async function syncJellyfinChanges(userId:string,connectionId:string,scope:'library'|'user',"
+        },
+        {
+          "line": 900,
+          "source": "export async function executeJellyfinUserState("
+        },
+        {
+          "line": 986,
+          "source": "export async function executeJellyfinScrobble("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/list-values.server.ts",
+      "sha256": "2352d763f297de83636f406d1d070f5fd78901c1beef63fb5ab44afc2671ff7a",
+      "lines": 261,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 20,
+          "source": "export function projectProviderList(value: ListValue, supported: ReadonlySet<string>): ListValue {"
+        },
+        {
+          "line": 26,
+          "source": "export function mergeProviderListItems(current: string[], remote: string[], supported: ReadonlySet<string>) {"
+        },
+        {
+          "line": 43,
+          "source": "export async function projectProviderListInTransaction(tx: Transaction, value: ListValue) {"
+        },
+        {
+          "line": 47,
+          "source": "export async function localListValue("
+        },
+        {
+          "line": 125,
+          "source": "export async function reconcileProviderList("
+        },
+        {
+          "line": 194,
+          "source": "export async function resolveListConflict("
+        },
+        {
+          "line": 238,
+          "source": "export async function acknowledgeProviderList("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/preference.server.ts",
+      "sha256": "4e3b217fe77d7bcf505189ad887a4af9b14526fc89323a6e5da26287acdce957",
+      "lines": 34,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 14,
+          "source": "export async function conflictPreference(tx: Transaction, userId: string, connectionId: string) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/trakt-export.server.ts",
+      "sha256": "a74c753043d10f2a3290d53e77639dee5b0529f9729b2ebdd733f3b02665cf31",
+      "lines": 343,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "controlled probe",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 29,
+          "source": "export async function readTraktValue(adapter: TraktAdapter, mediaId: string, category: ValueCategory) {"
+        },
+        {
+          "line": 91,
+          "source": "export async function executeTraktExport("
+        },
+        {
+          "line": 128,
+          "source": "export async function exportTraktToAdapter("
+        },
+        {
+          "line": 223,
+          "source": "export async function executeLiveScrobble("
+        },
+        {
+          "line": 230,
+          "source": "export async function executeLiveScrobbleToAdapter(userId:string,connectionId:string,input:Record<string,unknown>,{adapter,sync,connection}:Awaited<ReturnType<typeof getTrakt>>) {"
+        },
+        {
+          "line": 278,
+          "source": "export async function executeProgressExport("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/trakt-history.ts",
+      "sha256": "7fa3cc28958929a436c193312ff1b147557aa4a98d7cbbcb9bdf9fa0a6a9b830",
+      "lines": 33,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 7,
+          "source": "export function compactTraktHistory(record: TraktRecord, titles: TraktHistoryTitles): TraktRecord {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/trakt-identity.server.ts",
+      "sha256": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+      "lines": 47,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 7,
+          "source": "export function traktEntry(record: TraktRecord) {"
+        },
+        {
+          "line": 26,
+          "source": "export async function exportIdentity(mediaId: string, kind: TraktKind): Promise<TraktIds> {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/trakt-import.server.ts",
+      "sha256": "b60035dea2ea16c13da5376fdb0aac2196dfbb68df1c779488d2d08348d046b5",
+      "lines": 351,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 24,
+          "source": "export async function importTrakt("
+        },
+        {
+          "line": 47,
+          "source": "export async function importTraktFromAdapter("
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/trakt-list-matching.ts",
+      "sha256": "e1439103b08b7caaa83f7df548c88ce7094107e2218ee8f42f74ab55ad87cdae",
+      "lines": 21,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 7,
+          "source": "export function matchTraktList<T extends Identity>(desired: readonly Identity[], remote: readonly T[]) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/trakt-lists.server.ts",
+      "sha256": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+      "lines": 248,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 29,
+          "source": "export async function executeTraktListExport("
+        },
+        {
+          "line": 83,
+          "source": "export async function exportTraktListToAdapter("
+        },
+        {
+          "line": 189,
+          "source": "export async function deleteListWithExports(userId: string, listId: string) {"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/trakt-staging.server.ts",
+      "sha256": "3ff5497378a116f97b1073a0ea871f000ab7c08abd086cc23c21cb16d93f5413",
+      "lines": 212,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 36,
+          "source": "export async function stagedTraktCategory(options: {"
+        },
+        {
+          "line": 179,
+          "source": "export async function stagedTraktLists(userId:string,connectionId:string,adapter:TraktAdapter){"
+        }
+      ]
+    },
+    {
+      "repository": "coast-new",
+      "file": "src/lib/sync/values.server.ts",
+      "sha256": "e344eb41440b9796d473cc00535ccfca708a538e15fe34d59c76ed7939377316",
+      "lines": 339,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": [
+        {
+          "line": 35,
+          "source": "export function sameValue(a: JsonObject | null | undefined, b: JsonObject) {"
+        },
+        {
+          "line": 46,
+          "source": "export async function localSyncValue("
+        },
+        {
+          "line": 81,
+          "source": "export async function applySyncValue("
+        },
+        {
+          "line": 124,
+          "source": "export function decideSync("
+        },
+        {
+          "line": 145,
+          "source": "export async function reconcileProviderValue("
+        },
+        {
+          "line": 320,
+          "source": "export async function acknowledgeProviderValue("
+        }
+      ]
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/Api/ChangesController.cs",
+      "sha256": "a89a04572113b94b094b4804b142b7c575693e60cb46358f9a1874e2adbe3fc6",
+      "lines": 59,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/Api/TrailerCropController.cs",
+      "sha256": "a131f78506d3b9a78a270ef4675a74a3c9b1ed759a8e971eb55bead1549b1cec",
+      "lines": 149,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "controlled probe",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/Configuration/PluginConfiguration.cs",
+      "sha256": "4c3a09adeb96d218a7f99d680f96acd868b73c45b40b857035a9d188bfb65198",
+      "lines": 24,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/Plugin.cs",
+      "sha256": "ca8267b8efa234c98f066b0b0dd845b31f53190b40b9fe0152c189f9c4498838",
+      "lines": 48,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/PluginServiceRegistrator.cs",
+      "sha256": "52ae16932f40446ae29fba3aae99152eeb198adf69bd23231e40a0ac04306904",
+      "lines": 17,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/Updates/ChangeJournal.cs",
+      "sha256": "f8e9ce6cce594d5e2a00007b86a1b84d12f04bdb2587aea7d6e4faa1603908db",
+      "lines": 55,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "controlled probe",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/Updates/ChangeMonitor.cs",
+      "sha256": "53d25e33e12639c64803358e8cf112dd511363bdf67acf29fbf29d788e1f83ac",
+      "lines": 51,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/obj/Debug/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+      "sha256": "f79c1ad9a9fc76110b3655f5bfb5ff4e3168e9addceff05b937c0796f0ec34eb",
+      "lines": 4,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/obj/Debug/net10.0/Jellyfin.Plugin.Coast.AssemblyInfo.cs",
+      "sha256": "62ab69ecc88658d285b4e860b30ba04c0c0938c347917131510d35a8816da571",
+      "lines": 23,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/obj/Debug/net10.0/Jellyfin.Plugin.Coast.GlobalUsings.g.cs",
+      "sha256": "8f86a2cbf00ff3eee0bda2bc0eb5e1fc19c8544d5dc650c53d0132325956b592",
+      "lines": 8,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/obj/Release/net10.0/.NETCoreApp,Version=v10.0.AssemblyAttributes.cs",
+      "sha256": "f79c1ad9a9fc76110b3655f5bfb5ff4e3168e9addceff05b937c0796f0ec34eb",
+      "lines": 4,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/obj/Release/net10.0/Jellyfin.Plugin.Coast.AssemblyInfo.cs",
+      "sha256": "cf5d2f0161b775fa7721e71477653084b29fa5d5ad9b25166d69f72bfe82f07d",
+      "lines": 23,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Coast/obj/Release/net10.0/Jellyfin.Plugin.Coast.GlobalUsings.g.cs",
+      "sha256": "8f86a2cbf00ff3eee0bda2bc0eb5e1fc19c8544d5dc650c53d0132325956b592",
+      "lines": 8,
+      "review": "structural call/loop/boundary inventory; representative consumers reviewed",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    },
+    {
+      "repository": "coast-plugin",
+      "file": "Tests/Program.cs",
+      "sha256": "eda8d26be766bb077075f5bfdf82c23aba9c369be41699ac2049017a19acf037",
+      "lines": 30,
+      "review": "deep owner/call-family and bounds review",
+      "runtimeVerification": "coordinator suite or source-only; see report and root evidence",
+      "providerCallSites": [],
+      "exportedOperations": []
+    }
+  ],
+  "verification": {
+    "controlledBun": {
+      "pass": 4,
+      "fail": 0,
+      "assertions": 14,
+      "artifact": "evidence/providers-probe.json"
+    },
+    "controlledPlugin": {
+      "boundary": "actual linked TrailerCropController.cs; fake media encoder/config and harmless 200ms local shell subprocess; no Jellyfin/FFmpeg/provider traffic",
+      "runtime": "10.0.11",
+      "sdk": "10.0.400",
+      "sameItemCallers": 8,
+      "sameItemProcesses": 8,
+      "alreadyCancelledCallerProcesses": 1,
+      "concurrentUniqueCallers": 12,
+      "uniqueProcessesStartedWithin70ms": 12,
+      "retainedCompletedEntries": 14,
+      "retainedAfter300msIdle": 14,
+      "allSucceeded": true,
+      "journalChecks": 11,
+      "productionLoadMeasured": false
+    },
+    "actualData": {
+      "artifacts": [
+        "evidence/deployed-real-sql.json",
+        "evidence/development-real-sql.json",
+        "evidence/deployed-table-stats.json",
+        "evidence/development-table-stats.json"
+      ],
+      "terminalTaskQuery": {
+        "deployed": {
+          "outboxRows": 105079,
+          "terminalRowsScanned": 93270,
+          "nonterminalRowsFiltered": 11809,
+          "returnedIds": 20,
+          "sort": "external merge",
+          "diskSortKiB": 7992,
+          "tempWrittenBlocks": 1002,
+          "samplesMs": [
+            132.046,
+            134.122,
+            134.626
+          ]
+        },
+        "development": {
+          "outboxRows": 25884,
+          "returnedIds": 23,
+          "sort": "quicksort",
+          "memorySortKiB": 3022,
+          "samplesMs": [
+            33.959,
+            36.744,
+            37.4
+          ]
+        }
+      },
+      "pendingDeployedJobs": {
+        "jellyfin.reconcile": 8919,
+        "jellyfin.delta": 2867
+      },
+      "boundary": "Existing installation read-only SQL; no seeding; one query execution time is not whole route or production tail latency"
+    }
+  }
+}

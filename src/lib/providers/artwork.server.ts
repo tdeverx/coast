@@ -18,6 +18,7 @@ export async function streamArtwork(
   type: string,
   request: Request
 ) {
+  request.signal.throwIfAborted();
   if (!isArtworkType(type) || !/^[-\w]{1,100}$/.test(itemId))
     return new Response('Image not found.', { status: 404 });
   const [record] = await getDb()
@@ -58,15 +59,15 @@ export async function streamArtwork(
       : new Response('Image unavailable.', { status: 404 });
   let response: Response;
   try {
-    response = await serverArtwork([instance.id,instance.serverIdentity??'',instance.baseUrl,connection.id,String(connection.accountGeneration),itemId,type,index,query.toString(),tag || String(Math.floor(Date.now()/3600000))],async()=>secureProviderFetch(
+    response = await serverArtwork([instance.id,instance.serverIdentity??'',instance.baseUrl,connection.id,String(connection.accountGeneration),itemId,type,index,query.toString(),tag || String(Math.floor(Date.now()/3600000))],async signal=>secureProviderFetch(
       await instanceFetchConfig(instance),
       `/Items/${encodeURIComponent(itemId)}/Images/${artworkTypes[type].jellyfin}/${Number(index)}?${query}`,
       {
         headers: { Authorization: jellyfinAuthorization(userId, credentials.accessToken) },
-        signal: request.signal,
+        signal,
       },
       { maxBytes: 10 * 1024 * 1024 }
-    ));
+    ),request.signal);
   } catch (error) {
     if (request.signal.aborted) throw error;
     return unavailable();

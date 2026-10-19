@@ -1,4 +1,4 @@
-import { requireWorkFeature } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction, requireWorkFeature } from '$lib/server/features';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';
@@ -36,6 +36,7 @@ export async function createList(userId: string, raw: v.InferInput<typeof create
   v.parse(uuidSchema, userId);
   const { mediaId, ...input } = v.parse(createListInputSchema, raw);
   return getDb().transaction(async (tx) => {
+    if (mediaId) await lockFeaturePolicyInTransaction(tx,userId);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     if (mediaId) {
       await requireWorkFeature(tx,userId,mediaId);
@@ -65,6 +66,8 @@ export async function updateList(
     const existing = await ownedList(tx, userId, listId);
     if (input.playlist !== undefined && input.playlist !== existing.playlist)
       throw new DomainError('Create a new playlist to change list type.');
+    if (input.name === existing.name &&
+      (input.description === undefined || input.description === existing.description)) return existing;
     const [list] = await tx
       .update(lists)
       .set({ ...input, updatedAt: new Date() })
@@ -101,7 +104,8 @@ export async function getLists(userId: string) {
     .groupBy(lists.id)
     .orderBy(asc(lists.name));
 }
-export async function getList(userId: string, listId: string) {
+/** Ownership-checked header for commands that do not consume list membership. */
+export async function getListHeader(userId: string, listId: string) {
   v.parse(uuidSchema, userId);
   v.parse(uuidSchema, listId);
   const [list] = await getDb()
@@ -109,6 +113,10 @@ export async function getList(userId: string, listId: string) {
     .from(lists)
     .where(and(eq(lists.id, listId), eq(lists.userId, userId)));
   if (!list) throw new DomainError('This list was not found.', 404, 'not_found');
+  return list;
+}
+export async function getList(userId: string, listId: string) {
+  const list = await getListHeader(userId, listId);
   const items = await getDb()
     .select({
       entryId: listItems.id,
@@ -138,6 +146,7 @@ export async function addListItem(
   if (restorePosition !== undefined)
     v.parse(v.pipe(v.number(), v.integer(), v.minValue(0)), restorePosition);
   return getDb().transaction(async (tx) => {
+    await lockFeaturePolicyInTransaction(tx,userId);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const list = await ownedList(tx, userId, listId);
     await requireWorkFeature(tx,userId,mediaId);
@@ -180,17 +189,17 @@ export async function removeListItem(userId: string, listId: string, entryId: st
   return getDb().transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     await ownedList(tx, userId, listId);
-    await tx.delete(listItems).where(and(eq(listItems.listId, listId), eq(listItems.id, entryId)));
-    const items = await tx
-      .select()
-      .from(listItems)
-      .where(eq(listItems.listId, listId))
-      .orderBy(asc(listItems.position));
-    for (const [position, item] of items.entries())
-      await tx
-        .update(listItems)
-        .set({ position })
-        .where(and(eq(listItems.listId, listId), eq(listItems.id, item.id)));
+    const removed = await tx.delete(listItems)
+      .where(and(eq(listItems.listId, listId), eq(listItems.id, entryId)))
+      .returning({ id: listItems.id });
+    if (!removed.length) return;
+    // Preserve the canonical position order and compact gaps in one statement.
+    await tx.execute(sql`with positions as (
+      select id, (row_number() over (order by position) - 1)::int as position
+      from ${listItems} where list_id=${listId}::uuid
+    ) update ${listItems} as target set position=positions.position from positions
+      where target.list_id=${listId}::uuid and target.id=positions.id
+        and target.position is distinct from positions.position`);
     await tx.update(lists).set({ updatedAt: new Date() }).where(eq(lists.id, listId));
     await enqueueCollectionProjectionInTransaction(tx,userId);
     await enqueueTraktListChangeInTransaction(tx,userId,listId);
@@ -211,7 +220,7 @@ export async function reorderList(userId: string, listId: string, raw: string[])
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     await ownedList(tx, userId, listId);
     const existing = await tx
-      .select({ id: listItems.id })
+      .select({ id: listItems.id, position: listItems.position })
       .from(listItems)
       .where(eq(listItems.listId, listId));
     if (
@@ -225,11 +234,14 @@ export async function reorderList(userId: string, listId: string, raw: string[])
         409,
         'list_changed'
       );
-    for (const [position, entryId] of entryIds.entries())
-      await tx
-        .update(listItems)
-        .set({ position })
-        .where(and(eq(listItems.listId, listId), eq(listItems.id, entryId)));
+    const positions = new Map(existing.map((item) => [item.id, item.position]));
+    if (entryIds.every((id, position) => positions.get(id) === position)) return;
+    // The validated input remains bounded at 10,000 entries; only changed rows write.
+    await tx.execute(sql`update ${listItems} as target set position=(proposed.ordinal - 1)::int
+      from unnest(array[${sql.join(entryIds.map((id) => sql`${id}::uuid`), sql`, `)}]::uuid[])
+        with ordinality as proposed(id, ordinal)
+      where target.list_id=${listId}::uuid and target.id=proposed.id
+        and target.position is distinct from (proposed.ordinal - 1)::int`);
     await tx.update(lists).set({ updatedAt: new Date() }).where(eq(lists.id, listId));
     await enqueueTraktListChangeInTransaction(tx,userId,listId);
   });

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import Field from '$lib/ui/components/Field.svelte';
   import { useClient } from '../client-context';
@@ -7,7 +8,7 @@
   import Button from '../components/Button.svelte';
   let { workId, album = false, changed }: { workId: string; album?: boolean; changed: () => Promise<unknown> } = $props();
   const { change } = useClient();
-  const mutation = createMutation(() => changed(), useClient().feedback.notify);
+  const mutation = createMutation(() => changed(), useClient().feedback.notify, useRetention());
   let logOpen = $state(false), date = $state(''), batch = $state('');
   export function failure() { return mutation.error; }
   export function isBusy() { return mutation.busy; }

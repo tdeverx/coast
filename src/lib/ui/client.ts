@@ -1,5 +1,5 @@
 import { diagnosticHeaders, receiveDiagnosticLevel } from './diagnostics';
-import { invalidate, refreshAll } from '$app/navigation';
+import { invalidate, invalidateAll, refreshAll } from '$app/navigation';
 import { page } from '$app/state';
 import { invalidateContentRevision, type ContentDomain } from './content-revision.svelte';
 import { notifyAction } from './action-feedback.svelte';
@@ -42,6 +42,7 @@ export async function api<T = unknown>(
   return requestApi<T>(fetch, path, body, method, options);
 }
 async function requestApi<T>(transport: ApiTransport, path: string, body: unknown, method: string, options: Pick<RequestInit, 'signal'>, playbackBase = playbackApi): Promise<T> {
+  options.signal?.throwIfAborted();
   const sharedPlayback = playbackBase === '/api/share/' && (path === 'playback' || path.startsWith('playback/'));
   const response = await transport(`${sharedPlayback ? '/api/share/' : '/api/v1/'}${path}`, {
     ...options,
@@ -49,14 +50,21 @@ async function requestApi<T>(transport: ApiTransport, path: string, body: unknow
     headers: { ...diagnosticHeaders(), ...(body === undefined ? {} : { 'content-type': 'application/json' }) },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+  options.signal?.throwIfAborted();
   receiveDiagnosticLevel(response);
   const payload = await response
     .json()
-    .catch(() => ({ error: 'The server could not complete this request.' }));
+    .catch((cause) => {
+      if (cause?.name === 'AbortError') throw cause;
+      options.signal?.throwIfAborted();
+      if (response.ok) throw new ApiError('The server returned an invalid response. Please try again.', 502);
+      return { error: 'The server could not complete this request.' };
+    });
+  options.signal?.throwIfAborted();
   if (!response.ok) {
     if (response.status === 401 && !sharedPlayback) window.dispatchEvent(new CustomEvent('coast:auth-expired'));
     throw new ApiError(
-      payload.error ?? 'Something went wrong. Please try again.',
+      payload?.error ?? 'Something went wrong. Please try again.',
       response.status,
       payload
     );
@@ -70,12 +78,38 @@ export function createApiClient(transport: ApiTransport, afterChange: (path: str
     await acknowledgeRefresh(() => afterChange(path));
     return result;
   };
-  return { api, change };
+  const changeMany = <T = unknown>(paths: readonly string[], body?: unknown, method = 'POST') => orderedChanges<T>(api, afterChange, paths, body, method);
+  return { api, change, changeMany };
 }
 export async function change<T = unknown>(path: string, body?: unknown, method = 'POST') {
   const result = await api<T>(path, body, method);
   await acknowledgeRefresh(() => refreshAfterChange(path));
   return result;
+}
+/** Keep each command acknowledgement, with one completion refresh for a same-domain action. */
+export function changeMany<T = unknown>(paths: readonly string[], body?: unknown, method = 'POST') {
+  return orderedChanges<T>(api, refreshAfterChange, paths, body, method);
+}
+async function orderedChanges<T>(
+  deliver: typeof api,
+  afterChange: (path: string) => Promise<void>,
+  paths: readonly string[],
+  body: unknown,
+  method: string
+): Promise<T[]> {
+  const commands = [...paths];
+  if (!commands.length) return [];
+  const domain = commands[0].split('/')[0];
+  if (commands.some(path => path.split('/')[0] !== domain))
+    throw new Error('A grouped action must use one command domain.');
+  const results: T[] = [];
+  try {
+    for (const path of commands) results.push(await deliver<T>(path, body, method));
+    return results;
+  } finally {
+    // A failed later command still leaves acknowledged earlier commands visible.
+    if (results.length) await acknowledgeRefresh(() => afterChange(commands[0]));
+  }
 }
 /** A failed page refresh cannot turn an acknowledged command into a failed write. */
 async function acknowledgeRefresh(refresh: () => Promise<void>) {
@@ -98,9 +132,10 @@ export const message = (error: unknown) =>
 
 /** Kit invalidate resets shallow page state. Use its state-preserving refresh while
  * an overlay is open, so a write/session refresh cannot close the user's panel. */
-export async function refreshRouteDependencies(dependencies: readonly string[]) {
-  if (!dependencies.length) return;
+export async function refreshRouteDependencies(dependencies: readonly string[] | 'all') {
+  if (dependencies !== 'all' && !dependencies.length) return;
   if (page.state.mediaDetailHref || page.state.friendsPopover || page.state.notificationPopover || page.state.streamsPopover)
     await refreshAll();
+  else if (dependencies === 'all') await invalidateAll();
   else await Promise.all(dependencies.map(key => invalidate(`coast:${key}`)));
 }

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "findingId": "PJ-02",
+  "state": "implemented_companion_controlled_regression_verified_actual_trailer_acceptance_open",
+  "implementationApplied": true,
+  "reportRef": "implementation-plugin-crop.md",
+  "baselinePluginHead": "6bb31f18048951bf27656d0486119b7ebee2d00c",
+  "pluginWorktreeCleanBefore": true,
+  "sharedOwner": "TrailerCropController static crop-flight admission and conditional failure eviction",
+  "consumers": [
+    "Authenticated POST /Coast/TrailerCrop callers; none found in current main app source"
+  ],
+  "files": [
+    "Coast/Api/TrailerCropController.cs",
+    "Tests/Coast.Journal.Tests.csproj",
+    "Tests/Program.cs",
+    "Tests/TrailerCropChecks.cs",
+    "Tests/TrailerCropStubs.cs"
+  ],
+  "sourceHashes": {
+    "Coast/Api/TrailerCropController.cs": "2f689280858d5f4f64cd1bf945b788bfb348ba70c28e4f992b45853ad91b6d71",
+    "Tests/Coast.Journal.Tests.csproj": "1989f13676a17bc933ad24482f2aaa70f853f9dc8e7a5f8714f9ef28beed793d",
+    "Tests/Program.cs": "f88f86eac4b776fe3384acd36eefb8e0c5e9523d6a364e5146dce0aed4118368",
+    "Tests/TrailerCropChecks.cs": "13671a17507f95e2a8383b32a4c4beb84409384a768bf23d68b087bafe8e9521",
+    "Tests/TrailerCropStubs.cs": "d30bbe3628e81411c904b96de26fe12fc61cf3e7ec8b93e60ff029a751805fe7"
+  },
+  "productionChanges": [
+    "Inert Lazy<Task<CropResult?>> values selected before analysis/process creation",
+    "ExecutionAndPublication evaluates only selected flight",
+    "Failure evicts exact key/Lazy pair; old failed waiters retain replacement"
+  ],
+  "preserved": [
+    "Item normalization/validation and item-only key",
+    "Winning authorization/source; successful and null memoization",
+    "Last cropdetect match and exact AnalyzeAsync body",
+    "FFmpeg arguments, 20-second timeout, per-waiter logging and 502",
+    "Changes/Journal hints and main app trailer ordering/direct-play/browser crop"
+  ],
+  "analyzeAsyncAndFollowingSourceByteIdentical": true,
+  "verification": {
+    "releaseBuild": {
+      "command": "dotnet build Coast/Jellyfin.Plugin.Coast.csproj --no-restore --configuration Release",
+      "exitCode": 0,
+      "warnings": 0,
+      "errors": 0,
+      "existingPinnedDependenciesOnly": true
+    },
+    "focused": {
+      "journalChecks": 11,
+      "cropChecks": 20,
+      "fail": 0,
+      "actualProductionControllerLinked": true,
+      "framework": "Installed Microsoft.AspNetCore.App; no NuGet packages",
+      "evidenceRef": "evidence/implementation-plugin-crop-controlled.json"
+    },
+    "negativeControls": {
+      "baselineAdmissions": 8,
+      "currentAdmissions": 1,
+      "requests": 8,
+      "baselineRejected": true,
+      "keyOnlyRemovalRejected": true
+    },
+    "actualMediaAcceptance": false,
+    "providerCalls": 0,
+    "mediaDownloads": 0,
+    "databaseAccess": false
+  },
+  "probeRef": "probes/plugin-crop-admission.py",
+  "probeSha256": "af9f8bfbdcaff6ca40405649ab41bfd35b04d95cfa320a6d5b8a29f25d9eaa2d",
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "deployed": false,
+  "committed": false,
+  "gaps": [
+    "No retained authorized actual trailer, actual FFmpeg run or natural concurrency trace; controlled child is not media/performance evidence.",
+    "Current main app has no TrailerCrop endpoint consumer, so no current UI latency gain is claimed.",
+    "Rotating retained diagnostics keyword census has zero matches but is not complete historical traffic evidence.",
+    "Aggregate distinct-item concurrency, retained cache bounds/key policy and cancellation are unchanged (PJ-03 remains separate).",
+    "Actual Jellyfin host middleware/auth and timeout-kill behavior were not newly integration-tested; existing production body is byte-identical."
+  ]
+}

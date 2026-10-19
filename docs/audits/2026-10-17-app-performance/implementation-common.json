@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "reportRef": "implementation-common.md",
+  "changes": [
+    {
+      "id": "DATA-14",
+      "status": "partial-actual-data-verified",
+      "implementationApplied": true,
+      "owner": "collectionCTE shared active-show/album evidence",
+      "change": "Deduplicate eligible observed parents before checking remaining child eligibility once per parent",
+      "evidenceRefs": [
+        "evidence/implementation-collection-real.json"
+      ],
+      "actualComparisons": 22,
+      "allEquivalent": true,
+      "timings": {
+        "collection:screen:first": {
+          "before": {
+            "samplesMs": [
+              2586.49,
+              4388.33,
+              4791.37,
+              4726.99,
+              3442.08
+            ],
+            "medianMs": 4388.33
+          },
+          "after": {
+            "samplesMs": [
+              1472.28,
+              3229.03,
+              1988.14,
+              1978.57,
+              1562.81
+            ],
+            "medianMs": 1978.57
+          }
+        },
+        "item-assessments:mixed": {
+          "before": {
+            "samplesMs": [
+              1853.99,
+              1935.8,
+              1859.11,
+              1765.21,
+              1625.55
+            ],
+            "medianMs": 1853.99
+          },
+          "after": {
+            "samplesMs": [
+              454.12,
+              510.88,
+              572.87,
+              638.13,
+              447.21
+            ],
+            "medianMs": 510.88
+          }
+        }
+      },
+      "remaining": [
+        "Broader owner evidence and global edges still materialize for a one-item assessment",
+        "Actual empty reading Collection cohorts do not certify large book/comic personal histories",
+        "Inbox/function-level and production tail-latency measurements after this change remain separate"
+      ]
+    },
+    {
+      "id": "FRT-02",
+      "status": "implemented-live-verified",
+      "implementationApplied": true,
+      "owner": "DetailRows viewer capability admission",
+      "change": "Optional private insight/review/credit/activity work is not admitted for anonymous viewers; preview transport remains enabled",
+      "evidenceRefs": [
+        "evidence/implementation-anonymous-normal-dev.json",
+        "evidence/implementation-unit.log"
+      ],
+      "remaining": [
+        "Actual public normal-dev page produced zero API calls across five document loads; genuine-expiry UI and broader public media/device combinations remain unverified."
+      ]
+    },
+    {
+      "id": "UIS-02",
+      "status": "implemented-regression-verified",
+      "implementationApplied": true,
+      "owner": "browser diagnostics poll lifetime",
+      "change": "One in-flight request; skip document-hidden work; refresh on visible; abort and fence late publication on teardown",
+      "evidenceRefs": [
+        "evidence/implementation-unit.log"
+      ],
+      "remaining": [
+        "Actual hidden/resume request trace and longer soak"
+      ]
+    },
+    {
+      "id": "HELPER-03",
+      "status": "implemented-regression-verified",
+      "implementationApplied": true,
+      "owner": "shared presence heartbeat response publication",
+      "change": "Recheck stopped/aborted owner immediately after await before publishing status or refreshing friends",
+      "evidenceRefs": [
+        "evidence/implementation-unit.log"
+      ],
+      "remaining": [
+        "Actual two-account presence replacement/hidden/resume trace"
+      ]
+    },
+    {
+      "id": "FRT-05",
+      "status": "implemented-live-verified",
+      "implementationApplied": true,
+      "sharedOwner": "publicDetails structural parent query",
+      "change": "Exclude non-hierarchy recommendation edges from public ancestry, retaining actual structural edges and episode-show links.",
+      "evidenceRefs": [
+        "implementation-common.md",
+        "evidence/public-hierarchy-before.json",
+        "evidence/implementation-public-hierarchy.json"
+      ],
+      "remaining": [
+        "Eight actual-data cohorts and the original normal-dev wrong-title case passed; broader public format/device and season/episode hierarchy composition remain separate."
+      ]
+    }
+  ],
+  "checks": {
+    "unit": {
+      "passed": 678,
+      "skipped": 701,
+      "failed": 0,
+      "assertions": 32805,
+      "files": 248,
+      "log": "evidence/implementation-unit.log"
+    },
+    "svelte": {
+      "errors": 0,
+      "warnings": 0,
+      "log": "evidence/implementation-check.log"
+    },
+    "build": {
+      "exit": 0,
+      "log": "evidence/implementation-build.log"
+    },
+    "codeInventory": {
+      "exit": 0,
+      "log": "evidence/implementation-code-inventory.log"
+    },
+    "uiInventory": {
+      "exit": 0,
+      "log": "evidence/implementation-ui-inventory.log"
+    },
+    "sourceStyle": {
+      "exit": 0,
+      "log": "evidence/implementation-code-style.log"
+    },
+    "boundary": "Passing gates cover the earlier source snapshot. Subsequent sequence-boundary/revalidation edits require refreshed gates before acceptance."
+  },
+  "boundary": "Actual Collection comparison uses original module with current shared dependencies. UI regression faults are supplementary correctness checks, not actual-data performance verification. No new dependency/schema, commit or deployment.",
+  "latestVerification": {
+    "evidence": "evidence/implementation-verification.json",
+    "boundary": "Current applied batch:714pass/702guardedskips/0fail/33009assertions, typecheck0errors0warnings, productionbuild and source/code/UI inventories pass. Latest normal-dev Tasks/Library/14private-images trial0newconsolewarn/errors. Earlier route exceptions remain; staged toast/navigation candidates are excluded."
+  }
+}

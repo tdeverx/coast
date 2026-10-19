@@ -1,0 +1,4 @@
+# Patch context includes upstream indentation and blank context lines.
+patches/*.patch -whitespace
+# Machine audit ledgers/receipts have readable Markdown counterparts.
+docs/audits/2026-10-17-app-performance/*.json linguist-generated=true

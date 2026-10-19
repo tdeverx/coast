@@ -1,0 +1,146 @@
+{
+  "at": "2026-10-19T07:02:20.557208+00:00",
+  "status": "shared-activity-policy-keys-adopted-actual-data-and-signed-in-acceptance-passed",
+  "canonicalIds": [
+    "PLAN-02"
+  ],
+  "runtimeSourceChanged": true,
+  "runtimePaths": [
+    "src/lib/social/queries.server.ts"
+  ],
+  "sourcePins": {
+    "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
+    "tests/activity-scope-admission-db.test.ts": "9900b7bf5e7c0b948117075c6a4f561eb3d25599dd40e6d89689890cfd4f6648",
+    "tests/activity-policy-admission-db.test.ts": "890bfff666414ad1c2064568710c79d19f49a804557c6b5cae47f3feb7f08709",
+    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "docs/audits/2026-10-17-app-performance/verify-report-integrity.py": "db234fcbfdcd60a3d700254e9eb93bc6265e8b695f57d92924666058b81d10f1"
+  },
+  "sourceChanges": {
+    "src/lib/social/queries.server.ts": {
+      "before": "29f1f31c79d67c75dc94127054d195a3810221480269fa0cb6737ce0095c4fb3",
+      "after": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a"
+    },
+    "tests/activity-scope-admission-db.test.ts": {
+      "before": "44965244435cd78df69a0b2b2b40f4bfc684e19039ab9be91d635cab1ed90d04",
+      "after": "9900b7bf5e7c0b948117075c6a4f561eb3d25599dd40e6d89689890cfd4f6648"
+    },
+    "tests/activity-policy-admission-db.test.ts": {
+      "before": null,
+      "after": "bd9f07d5e023af2d9ea5f2a4a5500eb12f488ed8fa9777735748ee52d2f5dbea"
+    },
+    "docs/performance.md": {
+      "before": "11ee42caee62446b156ef28a0acb71be3d1447e3d8e2d687544be03393a6a41f",
+      "after": "45d7156796fb85d9a213ce8770726dc0d9b9da88da034a290b7bbcdc4e9ee38b"
+    },
+    "docs/audits/2026-10-17-app-performance/verify-report-integrity.py": {
+      "before": "08eb384f4398609bc96f36879be50bde6df369b72721fd0e2113928d90272bb1",
+      "after": "1e8835a50e1f5520606362900b1e04325c2ecd923089b9982a59f8104c5d329a"
+    }
+  },
+  "canonicalCounts": {
+    "canonical": 94,
+    "sourceApplied": 74,
+    "implemented": 33,
+    "partial": 39,
+    "open": 19,
+    "other": 3
+  },
+  "additionalObservations": 15,
+  "methodOutcomes": {
+    "PLAN-02": "statement-local-authoritative-policy-keys-adopted-broader-acceptance-remains",
+    "PJ-10": "unchanged-source-and-sql-no-reproduced-adverse-ratio-no-adoption"
+  },
+  "benchmarkRef": "evidence/activity-policy-keys/benchmark-summary.json",
+  "nativeBenchmarkCases": 7,
+  "nativeBenchmarkExecutions": 56,
+  "fullOutputBenchmarkPairs": 28,
+  "completeNativeSemanticPairs": 22,
+  "acceptanceRef": "evidence/activity-policy-keys/acceptance-summary.json",
+  "maintainedActualTests": {
+    "passed": 2,
+    "failed": 0,
+    "assertions": 47,
+    "logRef": "evidence/activity-policy-keys/maintained-actual-tests.log"
+  },
+  "commonGatesRef": "evidence/activity-policy-keys/gates.json",
+  "browserAcceptanceRef": "evidence/activity-policy-keys/browser-acceptance.json",
+  "restorationRef": "evidence/activity-policy-keys/restoration.json",
+  "ownedCopyDroppedAndAbsenceConfirmed": true,
+  "normalDatabaseMigration": false,
+  "productionDependencyAdded": false,
+  "normalDataBoundary": "Signed-in normal dev browser functional reads; ordinary metadata/presence effects may occur. Controlled permissions only on disposable actual copy, all rolled back. No normal account deletion/playback/settings or migration invoked.",
+  "tradeoffs": [
+    "Added exact distinct-key activity/works scan, 24kB aggregate, 4997kB works hash in two batches, 422 root temporary blocks read and written.",
+    "Empty relationship median +16.36ms in four pairs; populated item scopes mostly flat or modest gains.",
+    "Finite native local samples; not production p95, PostgreSQL CPU, HTTP latency, browser heap/frame budget, exhaustive media/filter/concurrency or whole-app certification."
+  ],
+  "currentExecutionPassComplete": true,
+  "authorizedActivityFollowUpComplete": true,
+  "wholeAuditComplete": false,
+  "findingStatusPromoted": false,
+  "artifactPins": {
+    "evidence/activity-policy-keys/benchmark-samples.json": "b51c6793a3dc75353d7ba5f1b46ec8ec4fcb2f0521a5f5eb1ad6abd60d942a8b",
+    "evidence/activity-policy-keys/gate-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "evidence/activity-policy-keys/coast-activity-six-plans.ts": "08bc13169e55abc167667d7c30514c15d6f85075164365401d010a43d917ac78",
+    "evidence/activity-policy-keys/gate-build.log": "c606bd9425cca96780433beba3b1c162eb808f44684770fe0668681aa16f2d7c",
+    "evidence/activity-policy-keys/benchmark-summary.json": "b3543b97ae6a1014e6c04359fe5886b1aa94b18c2b8f99643d03c1ff7254d372",
+    "evidence/activity-policy-keys/tasks-attribution-source.json": "9644db7fb073a6a082e77e14a13d76e8f579cf7972feb2cec07c3b53b4c7d556",
+    "evidence/activity-policy-keys/restoration.json": "af4920bf982fe3474a4daa1fd27592968d1906a92806b4c55ee09a286d89862a",
+    "evidence/activity-policy-keys/gate-code-inventory.log": "cac510d1bfc2b50e195f173b1d4f4af7d1775614da864cd91bb13dfa61a3bb10",
+    "evidence/activity-policy-keys/browser-acceptance.json": "b35c437ac71a1d304a15fc40de41f162eabb70fc20f098d9e062c913dd0c1436",
+    "evidence/activity-policy-keys/gate-check.log": "9f3a9319f9d87527de82012d78b2b5718d2e50c263ff1a0ef5d10c63f98e111b",
+    "evidence/activity-policy-keys/coast-activity-policy-benchmark.ts": "add47421a97f470603275700f7bd662b07dbaa9d8d49a8a45e224d79048669fd",
+    "evidence/activity-policy-keys/gate-unit.log": "27008217649f22c885f0582699ab6185da94381676a9837f643bee138b3e01b9",
+    "evidence/activity-policy-keys/gate-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "evidence/activity-policy-keys/coast-activity-policy-acceptance-compare.py": "6b76fd65f4d03298fcfe36a8b90fdcf27b43fd60fe840dfd90c8518022b93612",
+    "evidence/activity-policy-keys/original-current-attribution.json": "6567b1f26b609d678b5c16b877b4b2c2f87fdd2c776d6382a3e6c18ace89fc65",
+    "evidence/activity-policy-keys/six-plans.json": "f22d9d5e23fde6bcf08ccdf08be423be822853b80b321a0e8ab8988336d3c733",
+    "evidence/activity-policy-keys/acceptance-summary.json": "81515ef4ca325705788cc39644ef5388615178c2cb716dd0806d4d9e6177e33c",
+    "evidence/activity-policy-keys/maintained-actual-tests.log": "1bb8888f946674d867e97fda9b99feb66717d438c506e432d7f7f97e3238bcbd",
+    "evidence/activity-policy-keys/tasks-attribution-summary.json": "6ecd5e436ac3c90319fcdb44a11fe52c5a83261ac52402d6e29698fbae1e3f7f",
+    "evidence/activity-policy-keys/coast-activity-item-benchmark.ts": "b8280ac523046a78fb4a07511a3ed6e53f8a83bfd7d73cff00f78eb68029ca1d",
+    "evidence/activity-policy-keys/maintained-preflight-attempt1.log": "e85a21f0ec4ea1befc1225382c429fe6c8964ca1d687a62954180f892796720c",
+    "evidence/activity-policy-keys/gates.json": "97d4492cf7a93c36d500e9f69b43188edb23a5bdaad991e3608e58b0438ce640",
+    "evidence/activity-policy-keys/coast-tasks-attribution-probe.ts": "ed6961f85c5c718a16a44527a0cb5e905e68d5707b967e2138966b272c39f6f9",
+    "evidence/activity-policy-keys/coast-activity-group-benchmark.ts": "f498e42feb072cd4911333ff457ca4bdbabbb3ff67478944ec4804532843c9af",
+    "evidence/activity-policy-keys/coast-activity-policy-acceptance.ts": "c3f91cc3f26edb271370cb3653de33d3f005f63ec5edb1cbae311158c27f6a29",
+    "candidates/activity-policy-keys/queries.candidate.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
+    "candidates/activity-policy-keys/preparation.json": "c6a6e8c04908b5c84a1b1f1a860a617c7c85f4383dbf31001a0babbf131f5ae2",
+    "candidates/activity-policy-keys/INDEPENDENT-REVIEW.md": "27317720b32adaff79836e11855ecccb9c4078b4c423785e54edb60b7968c204",
+    "candidates/activity-policy-keys/candidate.patch": "a2c489cdcbcf0bf6cb6e59c306eb864c50e5d05ae04277700295326873aa4854",
+    "candidates/activity-policy-keys/source-before.json": "6f1b997ec7b83ada1c3f722d165ce1fdecf9d61a5e39de668fa60533e0e5576a",
+    "candidates/activity-policy-keys/activity-policy-admission-db.test.ts": "bd9f07d5e023af2d9ea5f2a4a5500eb12f488ed8fa9777735748ee52d2f5dbea",
+    "candidates/activity-policy-keys/queries.before.ts.txt": "29f1f31c79d67c75dc94127054d195a3810221480269fa0cb6737ce0095c4fb3",
+    "candidates/activity-policy-keys/adoption.json": "778509679ee4d32ce3e76782d488b32d3f8ed26f72a057de0d4399fd2de10648",
+    "candidates/activity-policy-keys/REVIEW.md": "085dfa8c30b3c0865fc7f4fe549a5371745203adc28fa939b374a548395de2b9",
+    "candidates/activity-policy-keys/activity-scope-admission-db.test.ts": "9900b7bf5e7c0b948117075c6a4f561eb3d25599dd40e6d89689890cfd4f6648"
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T07:57:28.689402+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "tests/activity-policy-admission-db.test.ts"
+      ],
+      "boundary": "Public packaging/current source review; one actual-test whitespace-only line removed. No application runtime owner changed; historical actual-data proofs retain their tested source epoch. PR CI verifies the committed application."
+    }
+  ]
+}

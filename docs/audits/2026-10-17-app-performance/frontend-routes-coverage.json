@@ -1,0 +1,841 @@
+{
+  "commit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "boundary": "Coordinator route/detail source inspection plus exhaustive AST/call-site/consumer inventory. Structural pass is not a claim of full line-by-line or runtime branch coverage. Independent manifests retain their own review depths.",
+  "files": [
+    {
+      "file": "src/app.css",
+      "sha256": "4349610c5783064e210c53018a4ed0cc63a6dc2d48074f12e352e0bccc63a5b8",
+      "lines": 765,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/app.d.ts",
+      "sha256": "0142b0f306ebf9dbc3e684dfeb69e3b8b97c6a68510536abcdf6856e4c261b89",
+      "lines": 5,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/app.html",
+      "sha256": "5a7200a0b0871c10ea24635d1779cc2b1a9ab3fbf2a19b6ea8c42e37683a05f6",
+      "lines": 14,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/artwork.ts",
+      "sha256": "615867ddeea8cd5e736ff587393affe9eaac2fce1bc22c4fa5957293dd10fd34",
+      "lines": 23,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/diagnostics.ts",
+      "sha256": "3a216cc827207627336cc5ce5a4fcd6e2c8a88a06903b8f575ca7ed2634c8130",
+      "lines": 195,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/discovery.ts",
+      "sha256": "7369b8b9e4b1371b0760f3989f3982b12f228847ba5f7d1f2e4d8f42b1cf840d",
+      "lines": 7,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/experiments/PlanAction.svelte",
+      "sha256": "02563d731e94ff9ec1baa725956ecb7f1893b2a562a4f76020b7548c678236f6",
+      "lines": 59,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 4,
+      "components": [
+        {
+          "component": "Dialog",
+          "line": 44
+        }
+      ]
+    },
+    {
+      "file": "src/lib/games/Details.svelte",
+      "sha256": "1dca870cb1cd8a15f52d08834dcb39c4bf2698dfe38e2a8963188b1baaeec7b8",
+      "lines": 107,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 1,
+      "components": [
+        {
+          "component": "DetailCard",
+          "line": 78
+        },
+        {
+          "component": "DetailCard",
+          "line": 80
+        },
+        {
+          "component": "ChartView",
+          "line": 81
+        },
+        {
+          "component": "DetailCard",
+          "line": 83
+        }
+      ]
+    },
+    {
+      "file": "src/lib/games/RemoteDetails.svelte",
+      "sha256": "30862dc10df350001d5edf8f1457278579324b7e736622f5929e10bdfba0f828",
+      "lines": 47,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 1,
+      "components": []
+    },
+    {
+      "file": "src/lib/media/DetailPanel.svelte",
+      "sha256": "0c009c71685ac9c48823e927addb7fa3dc558fe8f6af7abe43386473f8dceb70",
+      "lines": 83,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 4,
+      "components": []
+    },
+    {
+      "file": "src/lib/media/DetailRows.svelte",
+      "sha256": "bc9bb2ccffd5e8f2d879f72772f73c916b579246a67cdb4fd9b2c85c10bfa80f",
+      "lines": 144,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 4,
+      "components": []
+    },
+    {
+      "file": "src/lib/media/Details.svelte",
+      "sha256": "8621b46f560de97442dcdb9490df245dd5de7bed985ef45865e784c5400b50cd",
+      "lines": 225,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 1,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 110
+        },
+        {
+          "component": "Shelf",
+          "line": 118
+        },
+        {
+          "component": "Shelf",
+          "line": 142
+        },
+        {
+          "component": "Shelf",
+          "line": 163
+        },
+        {
+          "component": "Shelf",
+          "line": 173
+        },
+        {
+          "component": "Dialog",
+          "line": 185
+        },
+        {
+          "component": "Dialog",
+          "line": 193
+        }
+      ]
+    },
+    {
+      "file": "src/lib/media/PersonDetails.svelte",
+      "sha256": "0d65fb71fc8040567d36b6aff19d14041c40d81bf3a69cd7562ab0e1494b2163",
+      "lines": 130,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 62
+        },
+        {
+          "component": "Shelf",
+          "line": 67
+        },
+        {
+          "component": "Shelf",
+          "line": 67
+        },
+        {
+          "component": "Shelf",
+          "line": 67
+        }
+      ]
+    },
+    {
+      "file": "src/lib/recommendations/DynamicFeed.svelte",
+      "sha256": "8f48c11610fd2b992e2bcef0824d38c47599fe0f8bcb4321ea865e7820972013",
+      "lines": 76,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 1,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 50
+        },
+        {
+          "component": "Shelf",
+          "line": 52
+        },
+        {
+          "component": "Shelf",
+          "line": 54
+        },
+        {
+          "component": "Shelf",
+          "line": 56
+        }
+      ]
+    },
+    {
+      "file": "src/lib/server/build-identity.ts",
+      "sha256": "d708f078a5bf22098624016575d614c660f8e014ba22d07d224ee1477c1b7108",
+      "lines": 26,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/server/readiness.ts",
+      "sha256": "0233ee4af1195c8b9b0d23dda3f01b1c95b904ddbd6d5329ded2e079c9093f81",
+      "lines": 26,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 3,
+      "components": []
+    },
+    {
+      "file": "src/lib/server/security/credentials.ts",
+      "sha256": "237630e6a4b83529458c8479afbbd4024be850e5d3fbb74c4fe00e84981326ac",
+      "lines": 62,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/server/security/csrf.ts",
+      "sha256": "959a271df8c24e5d80711f9f9a9d63fadc1728a3dac7f724059df9839578d6b4",
+      "lines": 15,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/server/security/errors.ts",
+      "sha256": "aa2d00bf5ada08637ed2689972de0623528eb03991454d02544bfdcd94181881",
+      "lines": 11,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/server/security/provider-api-error.ts",
+      "sha256": "75d1f1852ed02b22ab44875d22f5434535b14a05afc0add6db36dbb3da8cf354",
+      "lines": 16,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/server/security/request-body.ts",
+      "sha256": "83c49eeb5210d96c5c6c429f4287cb1f0631ce1bb086041ffc1a0d341f356762",
+      "lines": 36,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/server/utils/async.ts",
+      "sha256": "5a5f655cb2405c42e6173bb5acd87ddf75917f17357ef1e8f919983a4ec18c66",
+      "lines": 44,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 1,
+      "components": []
+    },
+    {
+      "file": "src/lib/settings/sections.ts",
+      "sha256": "3cb9bd4ac4683d23d95bb6d4a08de04dccbf1f13fabdda8f9ccb1fe590944fec",
+      "lines": 103,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/artwork-colour.ts",
+      "sha256": "4ad26e1d403613a663f9864ca164b8836fc8d2a60d201d21df6ca6129d59641b",
+      "lines": 58,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 3,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/filter-options.ts",
+      "sha256": "d065ff9a9209632f3811d9edbbe3cb460c36cba80ae5d66e0ebdb17e5ef446f8",
+      "lines": 19,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/headings.ts",
+      "sha256": "616a9c034ab8db209d92ce0218036cee3dc527733e30fb55242922606fd3e2ad",
+      "lines": 22,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/insights/community.ts",
+      "sha256": "9cfc64115c882cae5134fc8d804a0e87f7f46ee19ed52897e4873ad96d1dcf19",
+      "lines": 21,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/insights/media.ts",
+      "sha256": "829d3d56533074169429f5ed69d21b6bede2bfc4114179dce3a6caff09bc2bd7",
+      "lines": 103,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/insights/overview.ts",
+      "sha256": "d2f6f120f811ac004665c1ec460db0dc47704368f6e7f63d7b7c3ef937f786dd",
+      "lines": 9,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/insights/profile.ts",
+      "sha256": "999c39004a5f622152ad83629f501ee264c05dfe5126e006110b13648f33e7c9",
+      "lines": 31,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/insights/types.ts",
+      "sha256": "1dcd0106fc471724c026bf6e2384e95c5e3301c42474e58777c8300cfc539d20",
+      "lines": 17,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/labels.ts",
+      "sha256": "7277e639d5e12eae14e1283655f1f90fdda3c7c35112e8f7db8ee1bd4007899d",
+      "lines": 71,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/materials/MaterialTweaker.svelte",
+      "sha256": "5969305c1b8adfd1ec7b4db9dee21891e36fc0a283ad78e0e08b62cb9294e0c7",
+      "lines": 233,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 3,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/materials/black-fade.ts",
+      "sha256": "b4b4d7a52a9f8cbbb46ad09c719eb7394c8171176985d4685bae28dfd2bb18cf",
+      "lines": 12,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/materials/export.ts",
+      "sha256": "dd04601ec4bbdadda7297aaff5e6176f4faa49bfcb4f46fc995a25391e9b4c85",
+      "lines": 28,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/materials/presets.ts",
+      "sha256": "9520e2f59a21b66fbd0841f8bda5f169c5d45496e7edfbf7a83b0bd1ba5ee71b",
+      "lines": 137,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/materials/tuning.ts",
+      "sha256": "e9dba23c40393c4b60c0579be6abcc21b1b6f3ebaa01c443358a104628cf8596",
+      "lines": 91,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/media-navigation.ts",
+      "sha256": "e9703a6145b81b05a534ccae140d98239a216ae5c130ab140f00414be31dfbaa",
+      "lines": 45,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 6,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/pages/SectionDetails.svelte",
+      "sha256": "3677798a0e0a2f1c950f47d8f0f89f67070b7315bbc41e40bc10051acd78481a",
+      "lines": 50,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 1,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 34
+        },
+        {
+          "component": "Shelf",
+          "line": 35
+        },
+        {
+          "component": "Shelf",
+          "line": 38
+        },
+        {
+          "component": "DetailCard",
+          "line": 41
+        },
+        {
+          "component": "DetailCard",
+          "line": 45
+        }
+      ]
+    },
+    {
+      "file": "src/lib/ui/pages/detail-rows.ts",
+      "sha256": "706262606196547e6bae52d955416c5bda75c16b703a7d23700aedf7d6a0bb1e",
+      "lines": 16,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/pages/detail.ts",
+      "sha256": "f23ca28ad1a3432a1e9ebbf28131022046cf8295f6ec997443df4cbb468ae9ab",
+      "lines": 19,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/pages/types.ts",
+      "sha256": "b972071a3fcc20b307390edea6622e23ba96d8d81ee9a57df89ee21bf05a32a9",
+      "lines": 24,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/panels/friends.svelte.ts",
+      "sha256": "e6825c8c3dbc7e94bd2ae392bc090d71d4f6aebf9c7115aea24229375dc8ce9c",
+      "lines": 15,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/lib/ui/panels/notifications.svelte.ts",
+      "sha256": "f0c507daeb4c93b310ab0874dfb3cd414fbcd433d38d2f3f03fafdd41e296fd9",
+      "lines": 15,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/routes/+error.svelte",
+      "sha256": "47e79cd2918e9ed7d0b3b3b320b8f88bde28dc2bea01e5782c061354f7109bd0",
+      "lines": 17,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/routes/discover/+page.svelte",
+      "sha256": "b666607167f5efa54892666c398d5f38ae55d8f8317b06d0234edfc2bf4a2d60",
+      "lines": 64,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 0,
+      "components": [
+        {
+          "component": "MediaHero",
+          "line": 30
+        },
+        {
+          "component": "Shelf",
+          "line": 38
+        },
+        {
+          "component": "Shelf",
+          "line": 56
+        },
+        {
+          "component": "Shelf",
+          "line": 56
+        }
+      ]
+    },
+    {
+      "file": "src/routes/for-you/+page.svelte",
+      "sha256": "70878f1dd9588c3e405720ba03d4123adbc1f6232d8c072c39d30ece017e2849",
+      "lines": 53,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 0,
+      "components": [
+        {
+          "component": "MediaHero",
+          "line": 17
+        },
+        {
+          "component": "Shelf",
+          "line": 22
+        },
+        {
+          "component": "Shelf",
+          "line": 24
+        },
+        {
+          "component": "Shelf",
+          "line": 26
+        },
+        {
+          "component": "Shelf",
+          "line": 28
+        },
+        {
+          "component": "Shelf",
+          "line": 30
+        },
+        {
+          "component": "Shelf",
+          "line": 44
+        },
+        {
+          "component": "Shelf",
+          "line": 45
+        },
+        {
+          "component": "Shelf",
+          "line": 46
+        },
+        {
+          "component": "Shelf",
+          "line": 47
+        },
+        {
+          "component": "Shelf",
+          "line": 48
+        },
+        {
+          "component": "Shelf",
+          "line": 49
+        }
+      ]
+    },
+    {
+      "file": "src/routes/games/+page.svelte",
+      "sha256": "f297a931a4d5cd97d0160af27453adaaca3ec0a78911574e114c81ed23ca2e03",
+      "lines": 98,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 27
+        }
+      ]
+    },
+    {
+      "file": "src/routes/games/[id]/+page.svelte",
+      "sha256": "b5a5e9d3e50037face00c5fdf01a0ea603741a0273788ba7b65f30584a34826d",
+      "lines": 6,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/routes/games/igdb/[instance]/[id]/+page.svelte",
+      "sha256": "1c827b0d07a80050f3ea6ee020d37583b3973d2ae7640f95ab6c2488f67036da",
+      "lines": 6,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/routes/library/+page.svelte",
+      "sha256": "4889dfcefe263dcc75ae07e36117e5acc3e35598f259b7c2450ff639264901c5",
+      "lines": 54,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 0,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 35
+        }
+      ]
+    },
+    {
+      "file": "src/routes/lists/+page.svelte",
+      "sha256": "eba86ddb4551469b9592293fc22d7c63b68074b2c2b603a7436d7bc4d18aadc1",
+      "lines": 126,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 1,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 55
+        },
+        {
+          "component": "Shelf",
+          "line": 65
+        },
+        {
+          "component": "Dialog",
+          "line": 69
+        },
+        {
+          "component": "Dialog",
+          "line": 97
+        }
+      ]
+    },
+    {
+      "file": "src/routes/login/+page.svelte",
+      "sha256": "d1671f7c6e99867dea33cbc5276c7860dd55b6998bc7f83a4ac52c63a61ad9fb",
+      "lines": 19,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/routes/media/[id]/+page.svelte",
+      "sha256": "bce8e7c4c1b9d70ec530daf5c6f2311dfd233aa85e229ea83fbe7e85ad8f4340",
+      "lines": 8,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/routes/media/[id]/history/+page.svelte",
+      "sha256": "6c9856635d1644ea8fa1df06ccb80669ab71dc4dfabfc5d6c531114b8598f825",
+      "lines": 158,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 1,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 122
+        },
+        {
+          "component": "Dialog",
+          "line": 126
+        }
+      ]
+    },
+    {
+      "file": "src/routes/media/openlibrary/[externalId]/+page.svelte",
+      "sha256": "23178f99eedd8f94f9552b44eef39fedcb10f8d4f75e61ab8911e1fd5ca06ce3",
+      "lines": 6,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/routes/onboarding/+page.svelte",
+      "sha256": "097dc278bf00942aadb8af20902cd8f9875b68a4aae015e0781da5388d586e28",
+      "lines": 52,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 3,
+      "components": []
+    },
+    {
+      "file": "src/routes/people/[id]/+page.svelte",
+      "sha256": "76d5f6d0adf8df2592186c6bdd4c194bb7fa77cb80971ac554da250dc86ed6f4",
+      "lines": 6,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/routes/planning/+page.svelte",
+      "sha256": "f2b26056b2b2db2615cd7aab126f04bb0e61a63615869f34685507379e856711",
+      "lines": 69,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 4,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 53
+        }
+      ]
+    },
+    {
+      "file": "src/routes/profile/[username]/+page.svelte",
+      "sha256": "e079dd2f4b9beec0846308d2757e6c850495ce701b10d597c51f9b45e470d2cd",
+      "lines": 726,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 5,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 279
+        },
+        {
+          "component": "Shelf",
+          "line": 352
+        },
+        {
+          "component": "Shelf",
+          "line": 373
+        },
+        {
+          "component": "DetailCard",
+          "line": 393
+        },
+        {
+          "component": "DetailCard",
+          "line": 413
+        },
+        {
+          "component": "DetailCard",
+          "line": 414
+        },
+        {
+          "component": "MediaCard",
+          "line": 491
+        },
+        {
+          "component": "Shelf",
+          "line": 512
+        },
+        {
+          "component": "Shelf",
+          "line": 513
+        },
+        {
+          "component": "Shelf",
+          "line": 514
+        },
+        {
+          "component": "Shelf",
+          "line": 526
+        }
+      ]
+    },
+    {
+      "file": "src/routes/progress/+page.svelte",
+      "sha256": "d9102241d8fde0659037a565928a94df58d8c89b4460288e7ce58ae9ee79020d",
+      "lines": 27,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 20
+        }
+      ]
+    },
+    {
+      "file": "src/routes/register/+page.svelte",
+      "sha256": "b16ba74873c21e15f756d72b1ca0e52f009c66f10a4ab89b379064e2873fa161",
+      "lines": 22,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/routes/requests/+page.svelte",
+      "sha256": "570a1dadf9537b4a9eca5fb45126138f7a2828bfb3abce5295ceddcf8f065990",
+      "lines": 114,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 1,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 40
+        },
+        {
+          "component": "Dialog",
+          "line": 76
+        }
+      ]
+    },
+    {
+      "file": "src/routes/search/+page.svelte",
+      "sha256": "175c51b34667730c28ee27de1bd9ae706329964902b4b62a28cdeafb1e30d31f",
+      "lines": 179,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 2,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 137
+        },
+        {
+          "component": "Shelf",
+          "line": 141
+        }
+      ]
+    },
+    {
+      "file": "src/routes/settings/[[section]]/+page.svelte",
+      "sha256": "27011540ac2c8856c06a3b05a60e2f5a610b59b16c79b09bd37ece762344a888",
+      "lines": 1164,
+      "reviewDepth": "focused route/detail owner review",
+      "sites": 4,
+      "components": [
+        {
+          "component": "Dialog",
+          "line": 959
+        },
+        {
+          "component": "Dialog",
+          "line": 990
+        },
+        {
+          "component": "Dialog",
+          "line": 1010
+        }
+      ]
+    },
+    {
+      "file": "src/routes/setup/+page.svelte",
+      "sha256": "531f136bafa846ce02f68c6f4164a609a404d33a355265ff03de7321d2bdfc26",
+      "lines": 41,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": []
+    },
+    {
+      "file": "src/routes/taste/[friendId]/+page.svelte",
+      "sha256": "1bb32920615c57b01ec09a0b3b0f420a5346aac4ca9e795429fd888b1519533b",
+      "lines": 23,
+      "reviewDepth": "structural static call-site and composition review",
+      "sites": 0,
+      "components": [
+        {
+          "component": "Shelf",
+          "line": 17
+        }
+      ]
+    }
+  ]
+}

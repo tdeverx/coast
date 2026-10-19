@@ -1,0 +1,94 @@
+{
+  "id": "PJ-01",
+  "implementationApplied": true,
+  "status": "implemented-actual-private-and-public-byte-lifecycle-cache-replay-verified",
+  "sharedOwner": "src/lib/providers/artwork-flight.server.ts",
+  "consumers": [
+    "src/lib/providers/server-artwork.server.ts",
+    "src/lib/providers/tmdb/artwork.server.ts",
+    "src/lib/providers/artwork.server.ts:private screen/reading relay",
+    "src/lib/music/artwork.server.ts:private music relay",
+    "src/lib/server/api/index.server.ts:guest/authenticated TMDB and private artwork routes",
+    "src/lib/server/api/providers.server.ts:music artwork route"
+  ],
+  "behavior": [
+    "Independent caller waits and flight-owned upstream controller",
+    "Final cancellation removes exact abandoned entry while active slot remains until producer settles",
+    "Old completion cannot remove replacement",
+    "Abort checks before join/response/persistence admission",
+    "Authorization/generation/byte/fallback contracts preserved",
+    "Private cache-disabled requests remain independent",
+    "Existing TMDB four-slot/CDN fallback policy retained"
+  ],
+  "focusedTests": {
+    "command": "bun test tests/private-artwork-lifetime.test.ts tests/artwork-cache-lifecycle.test.ts tests/provider-read-cancellation.test.ts",
+    "passed": 12,
+    "assertions": 69,
+    "boundary": "Controlled correctness fixtures, not actual-data performance measurements"
+  },
+  "actualData": {
+    "evidence": "evidence/implementation-artwork-real-cache-final.json",
+    "probe": "probes/real-artwork-flight.ts",
+    "checks": 29,
+    "filesystemHit": true,
+    "controlledActualPublicBytesReplay": true,
+    "externalProviderCalls": 0,
+    "databaseWrites": 0,
+    "normalDevCredentialExtraction": false,
+    "actualPublicImageBytes": 242684,
+    "actualPrivateImageBytes": 58904,
+    "actualPrivateImageSha256": "e7f2f5b8525dbe447bde5721a1915bbbc75e7c6a52432538ab15fd43567be58f",
+    "controlledActualPrivateBytesReplay": true,
+    "productionPrivateScopeBoundInMemory": true,
+    "productionSourcePins": 6,
+    "auditedPrivateLeaderCancellationFailureReproduced": true,
+    "privateBrowserDisplayBoundary": "Root observed the same authorized source img complete with naturalWidth780 and captured its response through browser downloadMedia; this is separate from controlled concurrency replay",
+    "rawPrivateSourceIdsRetained": false,
+    "priorEvidence": "evidence/implementation-artwork-real-cache-prior.json",
+    "originalPriorEvidence": "evidence/implementation-artwork-real-cache.json",
+    "finalSourceReplay": true,
+    "finalSourceReplayChecks": 29,
+    "finalSourcePins": {
+      "src/lib/providers/artwork-flight.server.ts": "2a3e9fb4fc068f5eccd4841f16e0a66986e9d04d1224f9de7556916b5542ad7d",
+      "src/lib/providers/server-artwork.server.ts": "c0dbd0fbf64aeb45cc451af6d9a35f067f38818789005386bf0be5563f4d8980",
+      "src/lib/providers/tmdb/artwork.server.ts": "fde791f7e4d2af9bca70e205b3d1bca12abb6d3bf4609e3752261957a211aabd",
+      "src/lib/providers/artwork.server.ts": "b77857de4e7a8c8f0981a3e6decc0eb215e7a432f787f3788f895cef9925d667",
+      "src/lib/music/artwork.server.ts": "1997460b6b38b0e90ae7beb03b762f75b56588ff174547088490af43599c22a1",
+      "src/lib/server/storage/image-cache.server.ts": "c1b0856ed8e770673b299e1ed31899c6b72e2022ad4240626b07d10a96fa7416"
+    },
+    "priorReceiptSha256": "ac3ea916594895728886669ea2abe7b3073bdaaa0b6620618d4a3fdea66ab991",
+    "finalReceiptSha256": "0e51c2c22dad3adc257744e5e408b1366f2e693b94457c29a91b5f447bf61534",
+    "deadlineEvidence": "This probe does not verify a universal per-query/connection statement timeout; runner PGOPTIONS alone is not such evidence."
+  },
+  "remaining": [
+    "Actual signed-in normal-dev DOM/navigation concurrency acceptance is separate root-browser evidence",
+    "No natural provider latency or universal saved-request count claimed",
+    "Already-admitted disk writes cannot be retracted on subsequent cancellation",
+    "Private aggregate resource limits and crop budgets remain separate policy decisions",
+    "Natural concurrent live-provider requests, cancellation frequency and authorization/account replacement schedules remain separate acceptance; actual-byte replay does not claim them"
+  ],
+  "evidenceRefs": [
+    "implementation-artwork.md",
+    "tests/private-artwork-lifetime.test.ts",
+    "tests/artwork-cache-lifecycle.test.ts",
+    "tests/provider-read-cancellation.test.ts",
+    "evidence/implementation-artwork-real-cache-prior.json",
+    "evidence/implementation-artwork-real-cache-final.json",
+    "implementation-artwork-cache-recovery.md"
+  ],
+  "separateObservations": [
+    {
+      "title": "Malformed cached-image recovery can retain an invalid entry",
+      "state": "implemented in separate shared-owner recovery change; controlled actual-byte fault proof verified; no natural incident found",
+      "sharedOwner": "src/lib/server/storage/image-cache.server.ts and adapter validation boundaries",
+      "behavior": "Private invalid disk bytes can trigger repeated downloads because put skips an existing key; public TMDB returns502 for unsupported cached bytes",
+      "remaining": "Existing magic-header detection only; no full image decode/corruption guarantee or natural incidence claim",
+      "evidenceRefs": [
+        "implementation-artwork-cache-recovery.md",
+        "implementation-artwork-cache-recovery.json",
+        "evidence/implementation-artwork-cache-recovery-actual.json"
+      ],
+      "id": "ARTWORK-CACHE-OBS-03"
+    }
+  ]
+}

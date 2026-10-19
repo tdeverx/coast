@@ -1,0 +1,294 @@
+{
+  "at": "2026-10-19T07:57:30.563314+00:00",
+  "canonicalRecords": 94,
+  "ledgerRecords": 94,
+  "idsUnique": true,
+  "idsMatch": true,
+  "additionalObservations": 15,
+  "remainingOpenRecords": 19,
+  "remainingDispositionIdsMatch": true,
+  "goalComplete": false,
+  "jsonParseErrors": [],
+  "currentOpenLedgerHashMatches": true,
+  "localReportLinksChecked": 2490,
+  "missingLocalReportLinks": [],
+  "dispositionSourcePinsChecked": 47,
+  "currentSourcePinsChecked": 5369,
+  "sourcePinMismatches": [],
+  "publicProjectionArtifactsChecked": [
+    {
+      "report": "implementation-found-22.json:artifactPins",
+      "path": "candidates/admin-continue-undo/actual.json"
+    },
+    {
+      "report": "implementation-found-23.json:artifactPins",
+      "path": "candidates/admin-party-liveness/second-attempt-admin-only.json"
+    },
+    {
+      "report": "implementation-found-23.json:artifactPins",
+      "path": "candidates/admin-party-liveness/actual.json"
+    }
+  ],
+  "declaredPrivateArtifactsNotByteVerified": [
+    {
+      "report": "next-detail-section-demand.json:artifactPins",
+      "path": "evidence/implementation-section-demand-reviews.png"
+    },
+    {
+      "report": "next-detail-section-demand.json:artifactPins",
+      "path": "evidence/implementation-section-demand-credits.png"
+    },
+    {
+      "report": "next-detail-section-demand.json:artifactPins",
+      "path": "evidence/implementation-section-demand-direct-credits.png"
+    },
+    {
+      "report": "next-detail-section-demand.json:artifactPins",
+      "path": "evidence/implementation-section-demand-default-full.png"
+    },
+    {
+      "report": "next-detail-section-demand.json:artifactPins",
+      "path": "evidence/implementation-section-demand-final-tasks.png"
+    },
+    {
+      "report": "library-append-reset.json:artifactPins",
+      "path": "proof/coast-append-five-pages.png"
+    },
+    {
+      "report": "library-append-reset.json:artifactPins",
+      "path": "proof/coast-append-reset-observed.png"
+    },
+    {
+      "report": "library-append-reset.json:artifactPins",
+      "path": "proof/coast-append-final-tasks.png"
+    },
+    {
+      "report": "collection-insights-admission.json:artifactPins",
+      "path": "evidence/implementation-collection-admission-normal-collection.png"
+    },
+    {
+      "report": "collection-insights-admission.json:artifactPins",
+      "path": "evidence/implementation-collection-admission-normal-tasks.png"
+    },
+    {
+      "report": "implementation-navigation.json:artifactPins",
+      "path": "evidence/implementation-navigation-normal-friends.png"
+    },
+    {
+      "report": "implementation-navigation.json:artifactPins",
+      "path": "evidence/implementation-navigation-normal-panel.png"
+    },
+    {
+      "report": "implementation-navigation.json:artifactPins",
+      "path": "evidence/implementation-navigation-normal-tasks.png"
+    },
+    {
+      "report": "implementation-navigation.json:artifactPins",
+      "path": "evidence/implementation-activity-workset-normal-back-unexpected.png"
+    },
+    {
+      "report": "implementation-api-http-errors.json:artifactPins",
+      "path": "evidence/implementation-api-http-errors-normal-response.png"
+    },
+    {
+      "report": "implementation-api-http-errors.json:artifactPins",
+      "path": "evidence/implementation-api-http-errors-normal-tasks.png"
+    },
+    {
+      "report": "implementation-toast.json:artifactPins",
+      "path": "evidence/implementation-toast-normal-inbox.png"
+    },
+    {
+      "report": "implementation-toast.json:artifactPins",
+      "path": "evidence/implementation-toast-normal-tasks.png"
+    },
+    {
+      "report": "implementation-scoped-activity-workset.json:artifactPins",
+      "path": "evidence/implementation-activity-workset-normal-watching.png"
+    },
+    {
+      "report": "implementation-scoped-activity-workset.json:artifactPins",
+      "path": "evidence/implementation-activity-workset-normal-empty.png"
+    },
+    {
+      "report": "implementation-scoped-activity-workset.json:artifactPins",
+      "path": "evidence/implementation-activity-workset-normal-back-unexpected.png"
+    },
+    {
+      "report": "implementation-scoped-activity-workset.json:artifactPins",
+      "path": "evidence/implementation-activity-workset-normal-tasks.png"
+    },
+    {
+      "report": "library-append-trace.json:artifactPins",
+      "path": "proof/library-append-trace-reset.png"
+    },
+    {
+      "report": "library-append-trace.json:artifactPins",
+      "path": "proof/library-append-trace-restored-tasks.png"
+    },
+    {
+      "report": "detail-close-baseline.json:artifactPins",
+      "path": "proof/detail-close-baseline-duplicate.png"
+    },
+    {
+      "report": "detail-close-baseline.json:artifactPins",
+      "path": "proof/detail-close-baseline-back.png"
+    },
+    {
+      "report": "activity-reasons-selective.json:artifactPins",
+      "path": "evidence/implementation-close-reasons-normal-overview.png"
+    },
+    {
+      "report": "activity-reasons-selective.json:artifactPins",
+      "path": "evidence/implementation-close-reasons-normal-watching.png"
+    },
+    {
+      "report": "activity-reasons-selective.json:artifactPins",
+      "path": "evidence/implementation-close-reasons-normal-back.png"
+    },
+    {
+      "report": "activity-reasons-selective.json:artifactPins",
+      "path": "evidence/implementation-close-reasons-normal-friends.png"
+    },
+    {
+      "report": "activity-reasons-selective.json:artifactPins",
+      "path": "evidence/implementation-close-reasons-normal-tasks.png"
+    },
+    {
+      "report": "detail-close-candidate.json:artifactPins",
+      "path": "proof/detail-close-candidate-first-failure.png"
+    },
+    {
+      "report": "detail-close-candidate.json:artifactPins",
+      "path": "proof/detail-close-candidate-delivery-failure.png"
+    },
+    {
+      "report": "detail-close-candidate.json:artifactPins",
+      "path": "proof/detail-close-candidate-operation-back.png"
+    },
+    {
+      "report": "implementation-detail-close.json:artifactPins",
+      "path": "proof/detail-close-v4-back.png"
+    },
+    {
+      "report": "implementation-detail-close.json:artifactPins",
+      "path": "evidence/implementation-close-reasons-normal-overview.png"
+    },
+    {
+      "report": "implementation-detail-close.json:artifactPins",
+      "path": "evidence/implementation-close-reasons-normal-watching.png"
+    },
+    {
+      "report": "implementation-detail-close.json:artifactPins",
+      "path": "evidence/implementation-close-reasons-normal-back.png"
+    },
+    {
+      "report": "implementation-detail-close.json:artifactPins",
+      "path": "evidence/implementation-close-reasons-normal-friends.png"
+    },
+    {
+      "report": "implementation-detail-close.json:artifactPins",
+      "path": "evidence/implementation-close-reasons-normal-tasks.png"
+    },
+    {
+      "report": "implementation-public-seed.json:artifactPins",
+      "path": "evidence/implementation-public-seed-normal-library.png"
+    },
+    {
+      "report": "implementation-library-membership.json:artifactPins",
+      "path": "evidence/implementation-library-membership-normal-progress.png"
+    },
+    {
+      "report": "implementation-found-03.json:artifactPins",
+      "path": "evidence/implementation-found-social-normal.png"
+    },
+    {
+      "report": "implementation-found-04.json:artifactPins",
+      "path": "evidence/implementation-found-window-normal.png"
+    },
+    {
+      "report": "implementation-found-04.json:artifactPins",
+      "path": "evidence/implementation-found-window-ssr-normal.png"
+    },
+    {
+      "report": "implementation-found-06.json:artifactPins",
+      "path": "evidence/implementation-found-06-search-final.png"
+    },
+    {
+      "report": "implementation-found-07.json:artifactPins",
+      "path": "evidence/implementation-found-07-profile-normal.png"
+    },
+    {
+      "report": "implementation-found-09.json:artifactPins",
+      "path": "candidates/found-implementation-09/normal-for-you.png"
+    },
+    {
+      "report": "implementation-found-09.json:artifactPins",
+      "path": "candidates/found-implementation-09/normal-menu.png"
+    },
+    {
+      "report": "implementation-found-09.json:artifactPins",
+      "path": "candidates/found-implementation-09/normal-final.png"
+    },
+    {
+      "report": "implementation-found-10.json:artifactPins",
+      "path": "candidates/found-implementation-10/normal-visitor.png"
+    },
+    {
+      "report": "implementation-found-10.json:artifactPins",
+      "path": "candidates/found-implementation-10/normal-profile.png"
+    },
+    {
+      "report": "implementation-found-11.json:artifactPins",
+      "path": "candidates/found-implementation-11/normal-favourites.png"
+    },
+    {
+      "report": "avatar-storage-candidate.json:artifactPins",
+      "path": "candidates/avatar-storage/normal-before.png"
+    },
+    {
+      "report": "implementation-found-13.json:artifactPins",
+      "path": "candidates/found-implementation-13/normal-insights.png"
+    },
+    {
+      "report": "implementation-found-16.json:artifactPins",
+      "path": "candidates/approved-avatar-normal/normal-insights.png"
+    },
+    {
+      "report": "implementation-found-16.json:artifactPins",
+      "path": "candidates/approved-avatar-normal/normal-after.png"
+    }
+  ],
+  "currentArtifactPinsChecked": 2681,
+  "artifactPinMismatches": [],
+  "remainingMarkdownMatches": true,
+  "ledgerMarkdownStatusesMatch": true,
+  "candidatePatchSha256": "933bf86339c8756a9fa8c0341af47445d3816c2a0f9e4d34def33483ae4f6af6",
+  "candidatePatchHashMatches": true,
+  "toastSourceState": "adopted",
+  "candidatePatchApplyCheck": false,
+  "toastAdoptionManifestHashMatches": true,
+  "toastAdoptedFilesChecked": 14,
+  "toastLaterOwnerRepairChecks": {
+    "src/lib/server/notifications/index.ts": true,
+    "drizzle/meta/_journal.json": true
+  },
+  "toastAdoptedFileMismatches": [],
+  "toastAdoptedPatchReverseCheck": false,
+  "toastAdoptionEpochFilesMatch": true,
+  "toastAdoptionEpochPatchReverseCheck": true,
+  "toastRolloutReceiptMatches": true,
+  "avatarAdoptionManifestHashMatches": true,
+  "avatarAdoptedFilesChecked": 10,
+  "avatarAdoptedFileMismatches": [],
+  "avatarPatchHashMatches": true,
+  "avatarPatchReverseCheck": true,
+  "avatarNormalRolloutReceiptMatches": true,
+  "housekeepingCountsMatch": true,
+  "housekeepingMethodBoundaryMatches": true,
+  "futureChecklistIdsUnique": true,
+  "futureDesignDeferralsPreserved": true,
+  "currentSummaryCountsMatch": true,
+  "publicationArchiveHashMatches": true,
+  "passed": true
+}

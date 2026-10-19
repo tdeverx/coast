@@ -2,7 +2,7 @@ import {expect,test} from 'bun:test';
 import * as v from 'valibot';
 import {and,desc,eq,inArray,sql} from 'drizzle-orm';
 import * as s from '../src/lib/server/db/schema';
-import {profileOptionsSchema} from '../src/lib/server/queries/profile';
+import {profileOptionsSchema,profileSectionData} from '../src/lib/server/queries/profile';
 import {periodStart} from '../src/lib/profile/period';
 import {pagination,PAGE_SIZE} from '../src/lib/server/queries/pagination';
 import {nextSequenceEntry} from '../src/lib/core/lists/sequence.server';
@@ -116,17 +116,46 @@ test('insight projection reuses identical totals without activating profile card
   expect(guest.activity).toEqual({period:'month',viewerId:null});expect(hydrated).toBe(20);expect(userReads).toBe(1);
 });
 
-test('profile section handler activates the insight reader only for insights',async()=>{
+test('profile section handlers select the narrow requested reader',async()=>{
   const source=await Bun.file(new URL('../src/lib/server/api/profile.server.ts',import.meta.url)).text();
-  const fullReads:unknown[]=[],insightReads:unknown[]=[];
+  const sectionReads:unknown[]=[],insightReads:unknown[]=[];
   const handleProfile=compile(source.slice(source.indexOf('export async function handleProfile(')),{v,json:(value:unknown)=>value,
-    profileData:async(...args:unknown[])=>{fullReads.push(args);return {favourites:['favourite'],history:['event'],page:1,pages:1,total:1};},
+    profileSectionData:async(...args:unknown[])=>{sectionReads.push(args);return {...((args[1] as {view:string}).view==='history'?{items:['event']}:{favourites:['favourite']}),page:1,pages:1,total:1};},
+    profileData:()=>{throw Error('Unexpected full-profile read');},
     profileInsightsData:async(...args:unknown[])=>{insightReads.push(args);return {totals:{watches:4},activity:{days:[]}};},updateProfile:async()=>{},
   },'handleProfile');
   const context={uid:owner,subjectId:owner,method:'GET',body:{}};
   expect(await handleProfile({...context,path:['profile','section'],url:new URL('https://fixture.invalid/api/v1/profile/section?section=insights&period=month')})).toEqual({totals:{watches:4},activity:{days:[]}});
-  expect(fullReads).toHaveLength(0);expect(insightReads).toHaveLength(1);
+  expect(sectionReads).toHaveLength(0);expect(insightReads).toHaveLength(1);
   expect(await handleProfile({...context,path:['profile','section'],url:new URL('https://fixture.invalid/api/v1/profile/section?section=favourites')})).toEqual({favourites:['favourite'],page:1,pages:1,total:1});
   expect(await handleProfile({...context,path:['profile','activity'],url:new URL('https://fixture.invalid/api/v1/profile/activity')})).toEqual({items:['event'],page:1,pages:1,total:1});
-  expect(fullReads).toHaveLength(2);expect(insightReads).toHaveLength(1);
+  expect(sectionReads).toHaveLength(2);expect(insightReads).toHaveLength(1);
+});
+
+test('section projections preserve favourite order/pins without page-only cards',async()=>{
+  const favourite=crypto.randomUUID(),featured=crypto.randomUUID(),background=crypto.randomUUID();
+  let userReads=0;const hydrated:string[][]=[];
+  const db={execute:async()=>[],select:(projection:Record<string,unknown>)=>{
+    let table:unknown;const query:any={from:(value:unknown)=>{table=value;return query;},where:()=>query,innerJoin:()=>query,leftJoin:()=>query,orderBy:()=>query,limit:()=>query,offset:()=>query,
+      then:(resolve:(value:unknown)=>unknown)=>{
+        if(table===s.users){userReads++;return Promise.resolve([{settings:{profile:{backgroundMode:'fixed',backgroundMediaId:background,featuredMediaId:featured,pinnedFavourites:[favourite],favouriteOrder:[favourite]}}}]).then(resolve);}
+        if(table===s.works)throw Error('Unexpected page-only background validation');
+        expect(projection).toHaveProperty('id');return Promise.resolve([{id:favourite}]).then(resolve);
+      }};return query;
+  }};
+  const reader=profileSource.slice(profileSource.indexOf('async function readProfile('),profileSource.indexOf('export async function profileActivity('));
+  const {profileSectionData:section}=compile(reader,{v,profileOptionsSchema,AppError,sql,and,desc,eq,inArray,s,pagination,PAGE_SIZE,
+    profileSummary:async(_user:string,input:unknown)=>({options:v.parse(profileOptionsSchema,input),db,config:{},visibility:{details:true,favourites:true},counts:{categories:[]},rated:{count:0,categories:[]},historyEvents:[],historyCounts:[{filtered:0,total:0}],favouriteCount:{count:1},history:sql`history`,dates:sql`true`,favouriteMembership:sql`true`,favouriteFilter:sql`true`,ratingFilter:sql`true`,visibleWork:()=>sql`true`}),
+    profileTotals:()=>({}),mediaViews:async()=>[],workCards:async(_owner:string,_viewer:string|null,ids:string[])=>{hydrated.push(ids);return ids.map(id=>({id,title:'Favourite',kind:'movie'}));},
+  },'{profileSectionData}');
+  expect(await section(owner,{view:'history'})).toEqual({items:[],page:1,pages:1,total:0});
+  expect(userReads).toBe(0);expect(hydrated).toEqual([]);
+  const favourites=await section(owner,{view:'favourites'});
+  expect(favourites.favourites).toEqual([{id:favourite,title:'Favourite',kind:'movie',favourite:true,pinned:true}]);
+  expect(userReads).toBe(1);expect(hydrated).toEqual([[favourite]]);
+});
+
+test('section reader rejects a full-page view before reading data',async()=>{
+  await expect(profileSectionData(owner,{view:'overview'})).rejects.toMatchObject({status:400});
+  await expect(profileSectionData(owner,{view:'ratings'})).rejects.toMatchObject({status:400});
 });

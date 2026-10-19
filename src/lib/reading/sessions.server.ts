@@ -1,4 +1,4 @@
-import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '$lib/server/features';
 import { and, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
@@ -14,12 +14,8 @@ import { decryptCredential } from '$lib/server/security/credentials';
 import { secureProviderFetch } from '$lib/server/security/provider-fetch';
 import { observeReadingFile } from '$lib/catalogue/reading-files.server';
 import { updateReading } from '$lib/core/reading/service.server';
-import { readingFormats, readingFileLabel, readingLocationSchema, type ReadingFormat, type ReadingSessionView } from './model';
+import { readingFormats, readingFileLabel, readingLocationSchema, readingPrepareSchema, type ReadingFormat, type ReadingSessionView } from './model';
 const uuid=v.pipe(v.string(),v.uuid());
-const prepareSchema=v.variant('source',[
- v.strictObject({source:v.literal('local'),format:v.picklist(readingFormats),edition:v.pipe(v.string(),v.regex(/^[a-f0-9]{64}$/))}),
- v.strictObject({source:v.literal('jellyfin'),connectionId:uuid,externalId:v.pipe(v.string(),v.regex(/^[a-f0-9-]{32,36}$/i))}),
-]);
 async function work(userId:string,workId:string) {
  v.parse(uuid,userId);v.parse(uuid,workId);
  const [user]=await getDb().select({id:users.id}).from(users).where(and(eq(users.id,userId),eq(users.disabled,false)));if(!user)throw new AppError(401,'Sign in to read.');
@@ -55,7 +51,7 @@ export function sourceEdition(instanceIdentity:string,book:Awaited<ReturnType<ty
 }
 export async function prepareReading(userId:string,workId:string,raw:unknown,signal?:AbortSignal):Promise<ReadingSessionView> {
  signal?.throwIfAborted();
- const item=await work(userId,workId),input=v.parse(prepareSchema,raw),db=getDb();
+ const item=await work(userId,workId),input=v.parse(readingPrepareSchema,raw),db=getDb();
  let format:ReadingFormat,edition:string,connectionId:string|null=null,accountGeneration:string|null=null,externalId:string|null=null;
  if(input.source==='local'){format=input.format;edition=input.edition;}
  else {
@@ -68,6 +64,7 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
  }
  const session=await db.transaction(async tx=>{
   // Reread resets and bookmark copies share one user lock, after provider I/O has finished.
+  await lockFeaturePolicyInTransaction(tx,userId);
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
   signal?.throwIfAborted();
   const [user]=await tx.select({id:users.id}).from(users).where(and(eq(users.id,userId),eq(users.disabled,false)));
@@ -87,14 +84,17 @@ export async function prepareReading(userId:string,workId:string,raw:unknown,sig
  if(signal?.aborted){await db.update(readingSessions).set({closedAt:new Date()}).where(eq(readingSessions.id,session.id));signal.throwIfAborted();}
  return {id:session.id,workId,kind:item.kind,title:item.title,format,edition,location:session.location,source:input.source,url:input.source==='jellyfin'?`/api/v1/reading/sessions/${session.id}/file`:null};
 }
-export async function ownedReadingSession(userId:string,id:string) {
+/** One fresh source context per operation; never retain an access decision between requests. */
+async function readingSessionContext(userId:string,id:string) {
  v.parse(uuid,id);
  const [session]=await getDb().select().from(readingSessions).where(and(eq(readingSessions.id,id),eq(readingSessions.userId,userId),isNull(readingSessions.closedAt),gt(readingSessions.expiresAt,new Date()),sql`not exists(select 1 from work_editions e join provider_connections c on c.instance_id=e.instance_id where c.id=${readingSessions.connectionId} and replace(lower(e.external_id),'-','')=replace(lower(${readingSessions.externalId}),'-','') and e.metadata->>'identityConflict'='true')`));
  if(!session)throw new AppError(410,'This reading session has ended.');
  await work(userId,session.workId);
- if(session.connectionId){const {connection}=await getJellyfin(userId,session.connectionId);if(connection.accountGeneration!==session.accountGeneration)throw new AppError(410,'Reconnect this reading source.');}
- return session;
+ const jellyfin=session.connectionId?await getJellyfin(userId,session.connectionId):null;
+ if(jellyfin&&jellyfin.connection.accountGeneration!==session.accountGeneration)throw new AppError(410,'Reconnect this reading source.');
+ return {session,jellyfin};
 }
+export async function ownedReadingSession(userId:string,id:string) {return (await readingSessionContext(userId,id)).session;}
 export async function moveReading(userId:string,id:string,raw:unknown) {
  const session=await ownedReadingSession(userId,id),location=v.parse(readingLocationSchema,raw);
  if(location.format!==session.format||location.format!=='epub'&&location.page>location.total)throw new AppError(400,'Choose a location inside this edition.');
@@ -116,9 +116,9 @@ export async function closeReading(userId:string,id:string) {
 }
 export async function streamReading(userId:string,id:string,request:Request) {
  request.signal.throwIfAborted();
- const session=await ownedReadingSession(userId,id);
- if(!session.connectionId||!session.externalId)throw new AppError(404,'Local reading files remain in your browser.');
- const {connection,instance,adapter}=await getJellyfin(userId,session.connectionId);
+ const {session,jellyfin}=await readingSessionContext(userId,id);
+ if(!session.connectionId||!session.externalId||!jellyfin)throw new AppError(404,'Local reading files remain in your browser.');
+ const {connection,instance,adapter}=jellyfin;
  const book=await adapter.readingItem(connection.externalUserId!,session.externalId,request.signal);
  if(bookFormat(book)!==session.format||sourceEdition(instance.serverIdentity??instance.id,book)!==session.edition)throw new AppError(409,'This reading file changed. Open the new edition.');
  const credentials=v.parse(v.object({accessToken:v.string()}),JSON.parse(await decryptCredential(connection.credentials!)));

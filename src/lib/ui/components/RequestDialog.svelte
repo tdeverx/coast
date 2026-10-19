@@ -1,17 +1,20 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import Field from './Field.svelte';
   import { createOperation } from '$lib/ui/operation.svelte';
-  import { untrack } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import type { MediaView } from '$lib/ui/types';
-  import { message } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
   import type { RequestDestination } from '$lib/media/requests';
+  import { createRequestOptions } from '$lib/ui/controls/request-options.svelte';
 
   const { api, change } = useClient();
-  const operation = createOperation();
+  const operation = createOperation(useRetention());
+  const read = createRequestOptions(api);
+  onDestroy(read.dispose);
   const busy = $derived(operation.busy);
 
   let {
@@ -29,13 +32,16 @@
     options?: RequestDestination[];
     onsent?: () => void;
   } = $props();
-  let destinations = $state<RequestDestination[]>([]),
-    destination = $state(''),
+  let destination = $state(''),
     is4k = $state(false),
     watchlist = $state(true),
     selected = $state<number[]>([]),
-    error = $state(''),
-    loaded = $state(false);
+    error = $state('');
+  const destinations = $derived(initial4k
+    ? (read.value ?? []).filter(entry => entry.variants.fourK?.requestable)
+    : read.value ?? []);
+  const loaded = $derived(read.value !== undefined);
+  const failure = $derived(error || read.error);
   const active = $derived(destinations.find((d) => d.id === destination));
   const variant = $derived(is4k ? active?.variants.fourK : active?.variants.standard);
   function chooseDestination() {
@@ -55,32 +61,10 @@
         ? [seasonNumber]
         : [];
   }
-  let generation = 0;
-  async function load() {
-    const token = ++generation;
-    loaded = false;
+  function load() {
     error = '';
-    destinations = [];
     selected = [];
-    try {
-      const result = options
-        ? { destinations: options }
-        : await api<{ destinations: RequestDestination[] }>(
-            `requests/options?mediaId=${item.id}`,
-            undefined,
-            'GET'
-          );
-      if (token !== generation) return;
-      destinations = initial4k
-        ? result.destinations.filter((entry) => entry.variants.fourK?.requestable)
-        : result.destinations;
-      destination = destinations[0]?.id ?? '';
-      chooseDestination();
-    } catch (cause) {
-      if (token === generation) error = message(cause);
-    } finally {
-      if (token === generation) loaded = true;
-    }
+    return read.load(item.id, options);
   }
   $effect(() => {
     if (open) {
@@ -90,9 +74,15 @@
       initial4k;
       untrack(() => void load());
     }
-    return () => {
-      generation++;
-    };
+    return read.cancel;
+  });
+  $effect(() => {
+    const values = read.value;
+    initial4k; seasonNumber;
+    if (open && values !== undefined) untrack(() => {
+      destination = destinations[0]?.id ?? '';
+      chooseDestination();
+    });
   });
   async function submit() {
     if (busy) return;
@@ -112,7 +102,7 @@
     if (!completed) error = operation.error;
   }
 
-  reportFailure(()=>error);
+  reportFailure(()=>failure);
 </script>
 
 <Dialog bind:open title={`Request ${item.title}`}>
@@ -126,7 +116,7 @@
     <p class="small">
       Choose where you’d like to watch. Your request stays here while the server prepares it.
     </p>
-    {#if error}
+    {#if failure}
       <Button emphasis="subtle" onclick={load}>Retry</Button>{/if}
     {#if destinations.length}
       <Field label="Destination server"><select bind:value={destination} onchange={chooseDestination}
@@ -173,6 +163,6 @@
         disabled={busy || !variant?.requestable || (item.kind === 'show' && !selected.length)}
         >{busy ? 'Sending request…' : 'Request'}</Button
       >
-    {:else if loaded && !error}<p>No request destinations are available for your account.</p>{/if}
+    {:else if loaded && !failure}<p>No request destinations are available for your account.</p>{/if}
   </form>
 </Dialog>

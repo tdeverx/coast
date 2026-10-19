@@ -6,59 +6,41 @@ import * as v from 'valibot';
 import { searchMedia } from '$lib/catalogue/service.server';
 import { mediaViews } from '$lib/server/queries/media';
 import { readingSearch, readingSearchInitial, searchPresentations, type ReadingSearchContent } from '$lib/server/queries/search';
-import { READING_PROVIDER_PAGE_LIMIT } from '$lib/reading/model';
-import { pageNumberSchema } from '$lib/server/queries/pagination';
+import { searchSelection, searchDemand, type SearchSelection, type SearchRowSelection } from '$lib/search-selection';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({locals, url, depends}) => {
+export const load: PageServerLoad = async ({locals, url, depends,request}) => {
   depends('coast:tracking');
   depends('coast:reading');
   depends('coast:providers');
-  const query = (url.searchParams.get('q') ?? '').trim().slice(0, 200);
-  const view = v.safeParse(
-    v.picklist(['all', 'watch', 'listen', 'play', 'read']),
-    url.searchParams.get('view') ?? 'all'
-  );
-  if (!view.success) error(400, 'Choose a valid search view.');
-  const type = v.safeParse(v.picklist(['all', 'movie', 'show', 'album', 'artist', 'track', 'game', 'book', 'comic']),
-    url.searchParams.get('type') ?? (view.output === 'read' ? url.searchParams.get('kind') ?? 'all' : 'all'));
-  if (!type.success) error(400, 'Choose a valid media type.');
-  const selectedView = type.output === 'all' ? view.output : ['movie', 'show'].includes(type.output) ? 'watch' : ['album', 'artist', 'track'].includes(type.output) ? 'listen' : type.output === 'game' ? 'play' : 'read';
-  const readingFilters = v.safeParse(v.object({
-    kind: v.picklist(['all', 'book', 'comic']),
-    page: pageNumberSchema,
-  }), {
-    kind: ['book', 'comic'].includes(type.output) ? type.output : 'all',
-    page: view.output === 'read' ? Number(url.searchParams.get('page') ?? '1') : 1,
-  });
-  if (!readingFilters.success) error(400, 'Choose valid reading search filters.');
-  const readingEmpty: ReadingSearchContent = { items: [], failure: '', notice: '', truncated: false, page: readingFilters.output.page, pages: 1, total: 0 };
+  let selection: SearchSelection;
+  try { selection = searchSelection(url.searchParams); }
+  catch (cause) { if (cause instanceof v.ValiError) error(400, 'Choose valid search filters.'); throw cause; }
+  const { query, view: selectedView, kind, readingFilters } = selection;
+  const signal = request?.signal;
+  signal?.throwIfAborted();
+  const readingEmpty: ReadingSearchContent = { items: [], failure: '', notice: '', truncated: false, page: readingFilters.page, pages: 1, total: 0 };
   if (!locals.user) {
     if ((await getFeatureConfig(null)).siteAccess !== 'public-read-only') error(401, 'Sign in to search.');
     const items = query ? await publicSearch(query) : [];
     const initial = {items:items.slice(0,100),providerUnavailable:false,truncated:items.length>100};
     const empty = {items:[],discover:[],failure:'',truncated:false};
-    return {query,kind:['movie','show'].includes(type.output)?type.output:'all',view:'watch',initial,readingInitial:readingEmpty,watch:Promise.resolve(initial),listen:Promise.resolve(empty),play:Promise.resolve(empty),read:Promise.resolve(readingEmpty),readingFilters:readingFilters.output};
+    const publicRow = (row: SearchRowSelection) => ({ kind: row.kind === 'movie' || row.kind === 'show' ? row.kind : 'all' as const, view: 'watch' as const });
+    return {query,kind:kind==='movie'||kind==='show'?kind:'all',view:'watch',rows:{available:publicRow(selection.rows.available),unavailable:publicRow(selection.rows.unavailable)},filtered:selection.filtered,demand:{watch:true,listen:false,play:false,read:false},initial,readingInitial:readingEmpty,watch:Promise.resolve(initial),listen:Promise.resolve(empty),play:Promise.resolve(empty),read:Promise.resolve(readingEmpty),readingFilters};
   }
 
   const config = await getFeatureConfig(locals.user?.id??null);
-  if (selectedView !== 'all' && !surfaceEnabled(config,selectedView))
-    error(404, 'This search view is unavailable.');
-  if (selectedView === 'read') {
-    if (readingFilters.output.kind !== 'all' && !categoryEnabled(config, readingFilters.output.kind)) error(404, 'This reading type is unavailable.');
+  for (const row of Object.values(selection.rows)) {
+    if (row.view !== 'all' && !surfaceEnabled(config,row.view)) error(404, 'This search view is unavailable.');
+    if ((row.kind === 'book' || row.kind === 'comic') && !categoryEnabled(config,row.kind)) error(404, 'This reading type is unavailable.');
   }
-  if (readingFilters.output.page > READING_PROVIDER_PAGE_LIMIT) error(400, 'Choose a valid reading search page.');
-  const readingEnabled = config.experimentalBooks || config.experimentalComics;
-  // Explicit reading searches have server-side filters. Unified search keeps all
-  // reading types available to its existing local row segments.
-  const readingInput = { query, ...(
-    view.output === 'read' ? readingFilters.output : { kind: 'all' as const, page: 1 }
-  ) };
+  const demand = searchDemand(selection, config);
+  const readingInput = { query, ...selection.readingInput };
   const [items, readingInitial] = await Promise.all([
-    query
+    query && demand.watch
       ? mediaViews(locals.user.id, { query, availableFirst: true, limit: 101 })
       : [],
-    readingEnabled ? readingSearchInitial(locals.user.id, readingInput) : readingEmpty,
+    query && demand.read ? readingSearchInitial(locals.user.id, readingInput) : readingEmpty,
   ]);
   const initial = {
     items: items.slice(0, 100),
@@ -69,34 +51,37 @@ export const load: PageServerLoad = async ({locals, url, depends}) => {
   return {
     query,
     view: selectedView,
-    kind: type.output,
+    kind,
+    rows: selection.rows,
+    filtered: selection.filtered,
+    demand,
     initial,
     readingInitial,
-    readingFilters: readingFilters.output,
+    readingFilters,
     watch:
-      query
+      query && demand.watch && !signal?.aborted
         ? searchMedia(locals.user.id, query).catch(() => ({
             ...initial,
-            providerUnavailable: true,
+            providerUnavailable: !signal?.aborted,
           }))
         : Promise.resolve(initial),
     listen:
-      config.experimentalMusic
-        ? searchPresentations(locals.user.id, 'listen', query, 'all').catch(() => ({
+      query && demand.listen && !signal?.aborted
+        ? searchPresentations(locals.user.id, 'listen', query, 'all',signal).catch(() => ({
             ...empty,
-            failure: 'Music search could not be loaded. Please try again.',
+            failure: signal?.aborted ? '' : 'Music search could not be loaded. Please try again.',
           }))
         : Promise.resolve(empty),
     play:
-      config.experimentalGaming
-        ? searchPresentations(locals.user.id, 'play', query, 'all').catch(() => ({
+      query && demand.play && !signal?.aborted
+        ? searchPresentations(locals.user.id, 'play', query, 'all',signal).catch(() => ({
             ...empty,
-            failure: 'Game search could not be loaded. Please try again.',
+            failure: signal?.aborted ? '' : 'Game search could not be loaded. Please try again.',
           }))
         : Promise.resolve(empty),
     read:
-      readingEnabled
-        ? readingSearch(locals.user.id, readingInput, readingInitial).catch(() => ({ ...readingInitial, failure: 'Reading search could not be loaded. Please try again.' }))
+      query && demand.read && !signal?.aborted
+        ? readingSearch(locals.user.id, readingInput, readingInitial).catch(() => ({ ...readingInitial, failure: signal?.aborted ? '' : 'Reading search could not be loaded. Please try again.' }))
         : Promise.resolve(readingEmpty),
   };
 };

@@ -55,9 +55,9 @@ export async function handleProviders(context: ApiContext): Promise<Response | u
           search: url.searchParams.get('search') ?? undefined,
           artistId: url.searchParams.get('artistId') ?? undefined,
           albumId: url.searchParams.get('albumId') ?? undefined,
-        });
+        },request.signal);
       else if (path[2] === 'music' && path.length === 4 && method === 'GET')
-        result = await musicDetails(uid, uuid(path[1]), path[3]);
+        result = await musicDetails(uid, uuid(path[1]), path[3],request.signal);
       else if (path[2] === 'music' && path.length === 5 && path[4] === 'favourite' && method === 'POST')
         result = await setMusicFavourite(uid, uuid(path[1]), path[3], body);
       else if (path[2] === 'disconnect' && method === 'POST')

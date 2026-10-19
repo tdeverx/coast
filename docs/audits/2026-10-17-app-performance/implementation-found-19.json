@@ -1,0 +1,129 @@
+{
+  "at": "2026-10-19T02:17:00.035023+00:00",
+  "status": "boolean-aggregate-candidate-correctness-verified-performance-inconsistent-unapplied",
+  "canonicalId": "PLAN-08",
+  "candidateApplied": false,
+  "sourcePins": {
+    "src/lib/server/queries/profile.ts": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe"
+  },
+  "actualRef": "candidates/profile-season-booleans/actual.json",
+  "comparisons": 36,
+  "completeSeasonLists": 12,
+  "equalReadBufferFamilies": 12,
+  "warmMediansImproved": 8,
+  "warmMediansWorsened": 4,
+  "runtimeSourceChanged": false,
+  "newCommonGateRerun": false,
+  "unchangedRuntimeGatesRef": "evidence/implementation-found-17-gates.json",
+  "artifactPins": {
+    "candidates/profile-season-booleans/source-manifest.json": "59ddcfd5c40aa3bcd1cc30de09402a7b1d540e5d405022397d01d6fd66fc1a36",
+    "candidates/profile-season-booleans/candidate.patch": "b0a1bfebec4a1b004d2406cb5d180d63b6d60f6937ae302094dd862363c78f22",
+    "candidates/profile-season-booleans/actual.json": "7ca8906b6254d5c2bdcd96551955a763bf28f89b5eb493082830d2a87f30e817",
+    "candidates/profile-season-booleans/profile.candidate.ts.txt": "7bae42d7a9e4b3f10ca5b0cc0dfc5db78165b80acc1d0d4d7a472f68960cd7ae",
+    "candidates/profile-season-booleans/profile.before.ts.txt": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e",
+    "candidates/profile-season-booleans/performance.md.before.snapshot": "ca2374c9a3eb4f18164c8ff167afd8ec60d2c1828ab5c476840fae31248e3ecf",
+    "candidates/profile-season-booleans/probe.executed.snapshot": "a6f9e80cc827f99496d7c1d28be1f5acc3b7e973d1103c050fda35d5b5660598",
+    "candidates/profile-season-booleans/verifier.before.snapshot": "0bf02abbb1284ca0a0b9ce7d1db40ce86aef49bfd91aaaf2fdda721b9a5ab3ab",
+    "probes/profile-season-booleans-real.ts": "a6f9e80cc827f99496d7c1d28be1f5acc3b7e973d1103c050fda35d5b5660598"
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T02:53:01.778274+00:00",
+      "reportRef": "implementation-found-21.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact planned DATA-07 command guards plus guide/checker bookkeeping. Historical source/evidence epochs retained; no older acceptance upgraded."
+    },
+    {
+      "at": "2026-10-19T02:55:26.686530+00:00",
+      "reportRef": "failed-method-backlog.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "User clarified execution-only stopping rule and future investigation order; runtime and prior evidence unchanged."
+    },
+    {
+      "at": "2026-10-19T03:11:12.006201+00:00",
+      "reportRef": "admin-real-data-policy.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Corrected interpretation of authorized real-data/admin test states; runtime and historical results unchanged."
+    },
+    {
+      "at": "2026-10-19T03:22:06.569202+00:00",
+      "reportRef": "implementation-found-22.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Admin actual-data acceptance, measurement/stopping guidance and checker bookkeeping; runtime unchanged, old evidence not promoted beyond named new acceptance."
+    },
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T03:58:03.995927+00:00",
+      "reportRef": "implementation-found-24.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared conflict summaries native actual-admin adoption; sequence named acceptance; phased finalization not adopted. Historical evidence retains source/acceptance boundaries, no whole-audit completion."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    }
+  ]
+}

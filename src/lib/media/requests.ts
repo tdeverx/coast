@@ -11,14 +11,15 @@ export type RequestVariant = {
   seasons: { number: number; requested: boolean; mine: boolean; available: boolean }[];
 };
 
-export function requestScope(
-  request: MediaActionData['requests'][number],
-  requests: MediaActionData['requests']
-) {
-  const scope = request.seasons.length
-    ? `${request.seasons.length === 1 ? 'Season' : 'Seasons'} ${request.seasons.join(', ')}`
-    : request.is4k
-      ? '4K version'
-      : 'Standard version';
-  return `${scope}${request.is4k && request.seasons.length ? ' · 4K' : ''}${new Set(requests.map((entry) => entry.destination)).size > 1 ? ` · ${request.destination}` : ''}`;
+/** Bind destination multiplicity once for a request snapshot, then format its labels. */
+export function requestScopeFormatter(requests: MediaActionData['requests']) {
+  const multipleDestinations = new Set(requests.map((entry) => entry.destination)).size > 1;
+  return (request: MediaActionData['requests'][number]) => {
+    const scope = request.seasons.length
+      ? `${request.seasons.length === 1 ? 'Season' : 'Seasons'} ${request.seasons.join(', ')}`
+      : request.is4k
+        ? '4K version'
+        : 'Standard version';
+    return `${scope}${request.is4k && request.seasons.length ? ' · 4K' : ''}${multipleDestinations ? ` · ${request.destination}` : ''}`;
+  };
 }

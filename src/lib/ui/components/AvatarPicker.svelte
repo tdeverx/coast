@@ -12,8 +12,11 @@
  let avatarVersion=0;
  let providerRequest:AbortController|undefined;
  let fileReader:FileReader|undefined;
+ type AvatarImage={image:HTMLImageElement;url:string;released:boolean};
+ let pendingImage:AvatarImage|undefined;
  const providerKey=$derived(`${name}:${choices.map(choice=>choice.id).join(',')}`);
- function cancelRead(){avatarVersion++;providerRequest?.abort();providerRequest=undefined;fileReader?.abort();fileReader=undefined;reading=false;}
+ function releaseImage(resource:AvatarImage|undefined){if(!resource||resource.released)return;resource.released=true;resource.image.removeAttribute('src');URL.revokeObjectURL(resource.url);if(pendingImage===resource)pendingImage=undefined;}
+ function cancelRead(){avatarVersion++;providerRequest?.abort();providerRequest=undefined;fileReader?.abort();fileReader=undefined;releaseImage(pendingImage);reading=false;}
  function beginRead(){cancelRead();error='';reading=true;return avatarVersion;}
  $effect(()=>{if(providerKey)return cancelRead;});
   async function selectAvatar(event: Event) {
@@ -23,19 +26,20 @@
     await prepareAvatar(file,beginRead());
   }
   async function prepareAvatar(file:Blob,version:number){
-    let url = '';
+    let resource:AvatarImage|undefined;
     try {
       if (
         !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type) ||
         file.size > 5 * 1024 * 1024
       )
         throw new Error('Choose a PNG, JPEG, WebP or GIF smaller than 5 MB.');
-      url = URL.createObjectURL(file);
       const image = new Image();
-      image.src = url;
+      resource={image,url:URL.createObjectURL(file),released:false};pendingImage=resource;
+      image.src = resource.url;
       await image.decode();
       if(version!==avatarVersion)return;
       if (file.type === 'image/gif') {
+        releaseImage(resource);
         const result = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           fileReader=reader;
@@ -69,7 +73,7 @@
     } catch (e) {
       if(version===avatarVersion)error = message(e);
     } finally {
-      if (url) URL.revokeObjectURL(url);
+      releaseImage(resource);
       if (version === avatarVersion){reading = false;fileReader=undefined;}
     }
   }

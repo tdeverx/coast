@@ -1,0 +1,381 @@
+{
+  "schemaVersion": 1,
+  "findingIds": [
+    "PLAN-03",
+    "PLAN-05"
+  ],
+  "relatedFindingIds": [
+    "PLAN-04"
+  ],
+  "status": "partial_shared_interest_input_actual_verified",
+  "implementationApplied": true,
+  "report": "implementation-interest-fallback.md",
+  "sharedOwner": "src/lib/recommendations/interests.server.ts:interestWorks",
+  "change": "Inside the existing album-parent lateral only, add e.show_id IS NULL AND s.show_id IS NULL. The album result is consumed only as the third root COALESCE term; skip unused lookups without changing root values.",
+  "sourceBefore": {
+    "src/lib/recommendations/interests.server.ts": "72258e798dfe65c1a618aa8e64eaac61dc1cb03b7994f91c0fc8f74aa93ff8f9"
+  },
+  "sourceAfter": {
+    "src/lib/recommendations/interests.server.ts": "ebc4a4050d98eb00c884dc40db2b46aa57d73a6666130f04f54b4d712d51e79e",
+    "src/lib/recommendations/feed.server.ts": "c6b5a1aa8e4bb6ea7bd805fcc7f4cfe5a0edc7bb82e6e3aef70c6d359f0c4b2b",
+    "src/lib/recommendations/query.server.ts": "aa1a7457c830733bf44c1d363e714beb420034261848a913e87c51dfe0a33c59",
+    "src/lib/recommendations/providers.server.ts": "0a607de5b0e22c7bb30e755c52c44623a4acaac472d4eea3ff21af81babee703",
+    "src/lib/social/taste-cache.server.ts": "ab588a44d7307a2ae79b1ddd80647000d5b5a9fbc1acab5a5660a04871c35c1e",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "tests/interest-root-fallback-db.test.ts": "a91f0a3e1357e22a59fa4bbef5cd8e92f00ddd1356418a28b55ac21717a86d45"
+  },
+  "baseline": "candidates/recommendations/interests-before.ts.txt",
+  "executedPrivateCandidate": "candidates/recommendations/interests-candidate.ts.txt",
+  "consumers": [
+    {
+      "finding": "PLAN-03",
+      "owner": "src/lib/social/taste-cache.server.ts:refreshTasteCaches",
+      "scope": "personal",
+      "contract": "Same interest evidence before profiles/features; ten-user checkpoint, revision/lease/publication and500-per-medium bounds unchanged."
+    },
+    {
+      "finding": "PLAN-05",
+      "owner": "src/lib/recommendations/feed.server.ts:dynamicFeed",
+      "scope": "personal",
+      "contract": "Same complete ordered input to one immutable per-visit definition census; recency/genres/seeds/ranking,4adjacency reads and10000-definition bound unchanged."
+    },
+    {
+      "finding": "PLAN-04",
+      "owner": "src/lib/recommendations/query.server.ts:recommendationRows",
+      "scope": "personal",
+      "contract": "Same category-filtered ordered evidence and first100positive roots; existing scoring/candidate/page contracts unchanged."
+    },
+    {
+      "owner": "src/lib/recommendations/providers.server.ts:refreshProviderRecommendations",
+      "scope": "global/null for TMDB and IGDB only",
+      "contract": "Same max-weight interests, seed sorting/freshness/six-seed checkpoint. No provider job run; Trakt fixed independent seed kinds unchanged."
+    }
+  ],
+  "sourceDependencies": {
+    "files": [
+      "src/lib/recommendations/interests.server.ts",
+      "src/lib/recommendations/feed.server.ts",
+      "src/lib/recommendations/query.server.ts",
+      "src/lib/recommendations/providers.server.ts",
+      "src/lib/social/taste-cache.server.ts",
+      "src/lib/server/db/index.ts"
+    ],
+    "signalTables": [
+      "tracking_state",
+      "reading_progress",
+      "ratings",
+      "game_playthroughs",
+      "music_progress",
+      "music_listens",
+      "social_reactions"
+    ],
+    "admissionAndRootTables": [
+      "users",
+      "works",
+      "episodes",
+      "seasons",
+      "media_relationships"
+    ],
+    "metadataTables": [
+      "media",
+      "games",
+      "music_works",
+      "reading_works"
+    ],
+    "functions": [
+      "coast_feature_enabled",
+      "coast_category_enabled"
+    ],
+    "preserved": [
+      "Every signal source/filter/weight/consumed/positive/updated field",
+      "Personal negative-min versus global maximum root weight",
+      "Root max timestamp and boolean folds",
+      "Recent300root order/cap and complete metadata projection",
+      "Album kind/contains relationship/position,parent_id/limit1",
+      "interestPolicyRevision and all caller feature/privacy/config admission",
+      "No cache/schema/dependency/deadline/retention/model change"
+    ]
+  },
+  "actual": {
+    "status": "passed",
+    "settings": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s"
+    },
+    "sourceUnchanged": true,
+    "poolClosed": true,
+    "enabledOwners": 4,
+    "contexts": 5,
+    "completeOrderedObjectObservations": 1018,
+    "completeOrderedDtoEqual": true,
+    "comparisons": [
+      {
+        "scope": "personal",
+        "ownerOrdinal": 0,
+        "rows": 29,
+        "positive": 28,
+        "negative": 1,
+        "returnedKinds": {
+          "movie": 14,
+          "show": 11,
+          "album": 2,
+          "game": 1,
+          "comic": 1
+        },
+        "completeOrderedDtoEqual": true,
+        "sha256": "1b84f6e099585432201f4fc8bb0c3dfa4b3f53dd168fd735d83386c2a1e9d7f5"
+      },
+      {
+        "scope": "personal",
+        "ownerOrdinal": 1,
+        "rows": 298,
+        "positive": 298,
+        "negative": 0,
+        "returnedKinds": {
+          "show": 25,
+          "movie": 272,
+          "album": 1
+        },
+        "completeOrderedDtoEqual": true,
+        "sha256": "daf051ab3b2f3df7f07c61a455fe8827fa4b811b56d8f4f15f8b222a6a134575"
+      },
+      {
+        "scope": "personal",
+        "ownerOrdinal": 2,
+        "rows": 103,
+        "positive": 103,
+        "negative": 0,
+        "returnedKinds": {
+          "show": 27,
+          "movie": 76
+        },
+        "completeOrderedDtoEqual": true,
+        "sha256": "3912fd6ceeb65a19b28339fb92101d1c742cff08c7a9471d02057a02b7fe839b"
+      },
+      {
+        "scope": "personal",
+        "ownerOrdinal": 3,
+        "rows": 300,
+        "positive": 300,
+        "negative": 0,
+        "returnedKinds": {
+          "show": 18,
+          "movie": 282
+        },
+        "completeOrderedDtoEqual": true,
+        "sha256": "7993ebdf17e0424e8fa7c701a72d4734698c6331be06d203eb4239fd7c29e150"
+      },
+      {
+        "scope": "global",
+        "rows": 288,
+        "positive": 288,
+        "negative": 0,
+        "returnedKinds": {
+          "show": 35,
+          "movie": 250,
+          "album": 2,
+          "comic": 1
+        },
+        "completeOrderedDtoEqual": true,
+        "sha256": "a8339babfa1f4e9ee861a07b32fe651d10e6285d66f4895fd67378868e5215ee"
+      }
+    ],
+    "rootCensus": {
+      "signal_rows": 20336,
+      "admitted_signal_rows": 20336,
+      "show_rooted_signals": 19164,
+      "fallback_eligible_signals": 1172,
+      "album_fallback_signals": 6,
+      "global_mixed_sign_roots": 0,
+      "personal_mixed_sign_roots": 0,
+      "owners": [
+        {
+          "ownerOrdinal": 0,
+          "show_rooted_signals": 47,
+          "admitted_signal_rows": 72,
+          "album_fallback_signals": 4,
+          "fallback_eligible_signals": 25
+        },
+        {
+          "ownerOrdinal": 1,
+          "show_rooted_signals": 11011,
+          "admitted_signal_rows": 11650,
+          "album_fallback_signals": 2,
+          "fallback_eligible_signals": 639
+        },
+        {
+          "ownerOrdinal": 2,
+          "show_rooted_signals": 1316,
+          "admitted_signal_rows": 1420,
+          "album_fallback_signals": 0,
+          "fallback_eligible_signals": 104
+        },
+        {
+          "ownerOrdinal": 3,
+          "show_rooted_signals": 6790,
+          "admitted_signal_rows": 7194,
+          "album_fallback_signals": 0,
+          "fallback_eligible_signals": 404
+        }
+      ]
+    },
+    "representativePlans": [
+      {
+        "scope": "personal",
+        "ownerOrdinal": 1,
+        "rows": 298,
+        "completeOrderedDtoEqual": true,
+        "plans": {
+          "before": {
+            "executionMs": 1089.185,
+            "planningMs": 1.374,
+            "relationshipScanLoops": 11650,
+            "relationshipRowsRemovedPerLoop": 4051,
+            "sharedHits": 552623,
+            "sharedReads": 0,
+            "temporaryReads": 439,
+            "temporaryWrites": 439
+          },
+          "candidate": {
+            "executionMs": 298.774,
+            "planningMs": 1.308,
+            "relationshipScanLoops": 639,
+            "relationshipRowsRemovedPerLoop": 4051,
+            "sharedHits": 134205,
+            "sharedReads": 0,
+            "temporaryReads": 439,
+            "temporaryWrites": 439
+          }
+        }
+      },
+      {
+        "scope": "global",
+        "rows": 288,
+        "completeOrderedDtoEqual": true,
+        "plans": {
+          "before": {
+            "executionMs": 1948.317,
+            "planningMs": 1.629,
+            "relationshipScanLoops": 20336,
+            "relationshipRowsRemovedPerLoop": 4051,
+            "sharedHits": 989795,
+            "sharedReads": 0,
+            "temporaryReads": 476,
+            "temporaryWrites": 476
+          },
+          "candidate": {
+            "executionMs": 515.226,
+            "planningMs": 1.416,
+            "relationshipScanLoops": 1172,
+            "relationshipRowsRemovedPerLoop": 4051,
+            "sharedHits": 261563,
+            "sharedReads": 0,
+            "temporaryReads": 476,
+            "temporaryWrites": 476
+          }
+        }
+      }
+    ],
+    "boundary": "All4 actual enabled users plus null/global, exact complete ordered InterestWork[] DTOs. No subset/sort/field normalization. Same10s/1s READ ONLY repeatable-read actual clone session. No provider, keys, normal/deployed DB, fixtures or writes; pool closed.",
+    "performanceBoundary": "Full source-shaped plans for largest personal owner/global only, one warmed ordered pair each. Shared-buffer/relationship-scan reduction verified; temporary I/O unchanged. No latency distribution, concurrent load, CPU/RSS, route/browser/provider performance claim."
+  },
+  "functionalControls": {
+    "status": "passed",
+    "file": "tests/interest-root-fallback-db.test.ts",
+    "sourcePins": {
+      "src/lib/recommendations/interests.server.ts": "ebc4a4050d98eb00c884dc40db2b46aa57d73a6666130f04f54b4d712d51e79e",
+      "tests/interest-root-fallback-db.test.ts": "a91f0a3e1357e22a59fa4bbef5cd8e92f00ddd1356418a28b55ac21717a86d45"
+    },
+    "tests": 1,
+    "aggregateAssertions": 4,
+    "rootCases": 7,
+    "foldCases": 2,
+    "boundary": "Authored tableless SQL correctness controls, not actual saved media or performance evidence. Source-derived root expression/album lateral/recent fold; seven ancestry/fallback cases and two mixed-sign global/personal folds. One verified READ ONLY transaction with10s/1s limits; actual-clone pool closes.",
+    "identityTypeBoundary": "Tableless root controls use text labels, not a naturally observed UUID multiple-parent/tie cohort. Actual ordered DTO comparisons retain real UUIDs.",
+    "defaultDiscovery": {
+      "pass": 0,
+      "guardedSkip": 1,
+      "fail": 0
+    }
+  },
+  "review": {
+    "status": "independent_read_only_no_material_issue",
+    "reviewer": "playback_readers_audit",
+    "boundary": "Source/control inspection only; no tests, DB or edits by reviewer."
+  },
+  "knownGaps": [
+    "Actual personal/global roots have zero mixed-sign roots; authored tableless global-max/personal-min control is supplemental only.",
+    "No positive natural multiple-album-parent/tied-position cohort was established; unchanged selection order is source-reviewed and tableless controls use text labels.",
+    "Actual returned kinds cover movies,shows,albums,onegame/onecomic; no positive book or large game/reading workload.",
+    "Only four enabled owners; disabled/consent withdrawal/concurrent metadata edits not rerun. Existing admission SQL unchanged.",
+    "No full feed DTO, taste refresh/profile publication or remote provider seed job executed; canonical shared input equality and unchanged caller source establish the scoped composition boundary.",
+    "All four personal outputs compared; only largest personal/global query plans measured. Pure non-screen inputs may have little benefit and pay the added null checks.",
+    "Full-history signal folding, recent-root sorting/temp I/O, metadata, adjacency/profile/scoring and provider lifecycle costs remain."
+  ],
+  "priorRecommendationProof": {
+    "report": "implementation-recommendation-scoring.md",
+    "historicalInterestSourceSha256": "72258e798dfe65c1a618aa8e64eaac61dc1cb03b7994f91c0fc8f74aa93ff8f9",
+    "currentInterestSourceSha256": "ebc4a4050d98eb00c884dc40db2b46aa57d73a6666130f04f54b4d712d51e79e",
+    "boundary": "New5-context complete ordered shared-input equality bridges dependency change;9543scores/one60itemDTO were not redundantly rerun or relabelled as current-source receipts."
+  },
+  "supersedesHistoricalLead": {
+    "report": "implementation-recommendation-scoring.json",
+    "field": "sourceOnlyFollowup",
+    "historicalState": "not_implemented",
+    "currentState": "implemented_shared_input_slice_in_this_report"
+  },
+  "remaining": {
+    "PLAN-03": "Taste staleness/profile/candidate ranking remain open; global scalar hoist remains rejected as already one-shot InitPlans.",
+    "PLAN-05": "Definition genre fanout/adjacency/overall feed cost remain open.",
+    "PLAN-04": "Broader scoring/candidate/media cohorts remain open; this change only improves shared input preparation."
+  },
+  "futureDriftAcceptance": [
+    "Retain one shared interest owner for personal/global consumers; no feature-private copies or cache.",
+    "Preserve show COALESCE precedence and album kind/contains/position,parent_id/limit1.",
+    "Keep global max versus personal negative-min, boolean/timestamp folds, recent300 order/cap and complete DTO metadata.",
+    "Rerun all personal/global complete ordered outputs and source-shaped scan/buffer plans after root/query changes.",
+    "Keep tableless controls labelled functional; require natural positive multi-parent/mixed-sign/other-medium cohorts when claiming their actual performance or concurrency.",
+    "Retain source-pinned baseline/candidate, sanitize every EXPLAIN expression and private identity, and keep all DB probes explicitly read-only/bounded."
+  ],
+  "evidenceRefs": [
+    "evidence/implementation-interest-fallback-before.json",
+    "evidence/implementation-interest-fallback-plans.json",
+    "evidence/implementation-interest-fallback-actual.json",
+    "evidence/implementation-interest-fallback-controls.json"
+  ],
+  "probeRefs": [
+    "probes/interest-root-fallback-census.ts",
+    "probes/interest-root-fallback-plans.ts",
+    "probes/interest-root-fallback-controls.ts"
+  ],
+  "commonGatesOwner": "root",
+  "sharedLedgerEdited": false,
+  "rootCombinedAcceptance": {
+    "common": "787pass/708guardedskip/0fail/33642assertions/1495tests276files/check0/0/build/inventories",
+    "normalDevReceipt": "evidence/implementation-shared-admission-normal.json",
+    "signedIn": true,
+    "sourceUnchangedDuringTrial": true,
+    "scope": "Continue34links/Next36;3friends and actual taste/overlap35links;Library120media links/28completedimages;Listen102musiclinks\u21921989detail41\u2192settledBack102;Admin115rows;finalTasks30paused/0dialogs/0popovers/0newwarnerror. Functional actual-data acceptance, no live provider job/page, admitted plan creation or browser resource/timing claim."
+  },
+  "sourcePins": {
+    "src/lib/recommendations/interests.server.ts": "ebc4a4050d98eb00c884dc40db2b46aa57d73a6666130f04f54b4d712d51e79e",
+    "src/lib/recommendations/feed.server.ts": "c6b5a1aa8e4bb6ea7bd805fcc7f4cfe5a0edc7bb82e6e3aef70c6d359f0c4b2b",
+    "src/lib/recommendations/query.server.ts": "aa1a7457c830733bf44c1d363e714beb420034261848a913e87c51dfe0a33c59",
+    "src/lib/recommendations/providers.server.ts": "0a607de5b0e22c7bb30e755c52c44623a4acaac472d4eea3ff21af81babee703",
+    "src/lib/social/taste-cache.server.ts": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "tests/interest-root-fallback-db.test.ts": "a91f0a3e1357e22a59fa4bbef5cd8e92f00ddd1356418a28b55ac21717a86d45"
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T02:01:55.166883+00:00",
+      "reportRef": "implementation-found-17.md",
+      "owner": "src/lib/social/taste-cache.server.ts",
+      "before": "ab588a44d7307a2ae79b1ddd80647000d5b5a9fbc1acab5a5660a04871c35c1e",
+      "after": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+      "boundary": "Separate current pins from immutable original sourceAfter adoption epoch; previous scoring/input receipts are not rerun or promoted by this identity advance."
+    }
+  ]
+}

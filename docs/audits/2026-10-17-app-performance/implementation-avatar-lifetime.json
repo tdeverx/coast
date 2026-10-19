@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "reportRef": "implementation-avatar-lifetime.md",
+  "committed": false,
+  "productionDependenciesAdded": false,
+  "schemaChanged": false,
+  "uiRedesigned": false,
+  "normalDbMutations": false,
+  "sourcePins": {
+    "src/lib/ui/components/AvatarPicker.svelte": "f7beee4bc465d320c18728ea164b36dc9b82be8559392ee4da7d034da0fcdc1b",
+    "tests/avatar-picker-lifetime.test.ts": "a118ee4cb9e261029bc79a1b631b09fdd7fa7f4180370c2ec0b4d1a6f5ed0657",
+    "docs/audits/2026-10-17-app-performance/probes/avatar-native.ts": "93e15317bb120efbb03d6ae8de4f11d3a272898cba7779758e7f4f9bedc96ce9",
+    "docs/audits/2026-10-17-app-performance/candidates/avatar-picker/AvatarPicker.before.svelte.txt": "6732bd940949cc11b6fdb1887a5940bee8a39d4bc25b4a7cbd8708a5da4067e0"
+  },
+  "beforeSourcePins": {
+    "src/lib/ui/components/AvatarPicker.svelte": "6732bd940949cc11b6fdb1887a5940bee8a39d4bc25b4a7cbd8708a5da4067e0",
+    "tests/avatar-picker-lifetime.test.ts": "3269d1ca0ae6c7c3aae8f7e5355aefe716f145cb9dc75958d19b997f199666d6"
+  },
+  "changes": [
+    {
+      "findingId": "UIS-07",
+      "state": "partial_shared_avatar_pending_decode_ownership_implemented_actual_four_format_output_equal_pixel_allocation_policy_open",
+      "implementationApplied": true,
+      "sharedOwner": "src/lib/ui/components/AvatarPicker.svelte",
+      "consumers": [
+        "src/lib/ui/components/ProfileEditor.svelte open profile editor and provider/local avatars",
+        "src/routes/onboarding/+page.svelte",
+        "src/routes/ui-preview/Demo.svelte AvatarPicker scenarios",
+        "src/routes/ui-preview/ComponentSpecimen.svelte dynamic AvatarPicker instance"
+      ],
+      "implemented": [
+        "Own image and Blob URL before decode await.",
+        "Shared idempotent release detaches src and revokes URL on cancel, identity replacement, disposal, completion or error.",
+        "Stale finally cannot release a newer image owner or reader; generation checks unchanged.",
+        "Release GIF validation image before native FileReader; preserve exact original GIF bytes."
+      ],
+      "preserved": [
+        "image/jpeg,image/png,image/webp,image/gif accepted types",
+        "5MiB compressed admission",
+        "square center crop256x256",
+        "WebP quality0.85 and220000-character nonGIF output cap",
+        "GIF unchanged original-byte data URL",
+        "provider transport/AbortController and FileReader abort",
+        "current loading/error/current-version publication behavior",
+        "all approved markup and UX"
+      ],
+      "remaining": [
+        "No predecode pixel/frame or animated allocation bound added; compressed cap does not bound decode allocation.",
+        "Native source detach/URL revoke does not establish immediate heap/RSS release or universally stop decoder CPU.",
+        "Four finite actual assets do not establish large-image or all-animation behavior.",
+        "Full normal rendered chooser open/cancel/provider icon acceptance is root-owned pending."
+      ]
+    },
+    {
+      "findingId": "UPP-02",
+      "state": "image_background_lifetime_rechecked_healthy_original_input_budget_work_still_open",
+      "implementationApplied": false,
+      "sharedOwner": "src/routes/ui-preview/+page.svelte:setBackgroundImage/onDestroy",
+      "healthy": [
+        "Existing preview background revokes previous URL on replacement/clear and on destroy.",
+        "No extra preview predecode image/helper added; no timing/error/format/configuration change."
+      ],
+      "remaining": [
+        "Arbitrary custom JSON/serialized event previews and image decode/pixel/frame admission remain open.",
+        "No new limits, truncation, worker or changed accepted configuration behavior."
+      ]
+    }
+  ],
+  "relatedHealthyOwners": [
+    "src/lib/reading/reader/comic.ts pending/displayed images already detach and revoke idempotently",
+    "src/lib/ui/artwork-colour.ts current image already clears handlers/src on replacement/destroy"
+  ],
+  "verification": {
+    "focused": {
+      "passed": 6,
+      "failed": 0,
+      "assertions": 56,
+      "files": 1,
+      "completeTemplateCompilations": 2,
+      "newTests": 4,
+      "receipt": "evidence/implementation-avatar-lifetime-tests.txt"
+    },
+    "actualNative": {
+      "status": "passed",
+      "checks": 41,
+      "actualFormats": 4,
+      "completeEncodedOutputsEqual": true,
+      "controlledLateSchedules": 4,
+      "scope": "Actual native Image/Canvas/FileReader using script extracted from exact before/current shared component; not full component UI",
+      "runtime": {
+        "bun": "1.4.3",
+        "playwright": "installed1.63.0",
+        "browserPlugin": "not available in session",
+        "browser": "isolated installed Chromium headless; no shared CUA tab",
+        "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.12 Safari/537.36",
+        "title": "Coast avatar ownership verification",
+        "url": "about:blank",
+        "width": 900,
+        "height": 650
+      },
+      "normalDbWrites": 0,
+      "providerCalls": 0,
+      "pageExternalAttempts": 0,
+      "originalAssetsUnchanged": true,
+      "browserClosed": true,
+      "temporaryBundlesRemoved": true,
+      "rawOutputsOrIdsRetained": false,
+      "receipt": "evidence/implementation-avatar-native.json",
+      "screenshot": "evidence/implementation-avatar-native-status.png",
+      "probe": "probes/avatar-native.ts",
+      "gaps": [
+        "Native actual Image/Canvas/FileReader contracts on four existing assets; not a full rendered AvatarPicker UI or live provider icon acceptance.",
+        "Held decode delivery occurs after actual native decode; it does not establish a naturally hung decoder or universal CPU/decode cancellation.",
+        "No heap/RSS/pixel/frame bound, new format policy or large/multiframe allocation measurement.",
+        "Preview background already owns replacement/destroy URL cleanup and was not changed."
+      ]
+    },
+    "independentReview": {
+      "reviewer": "providers_jobs_audit",
+      "scope": "read-only exact application/test diff",
+      "materialBlockers": 0
+    },
+    "commonCheckBuild": "Root-owned pending current-source gates",
+    "normalRenderedChooser": "Root-owned pending current-source open/cancel without save"
+  },
+  "actualCohort": [
+    {
+      "role": "authorized-jpeg",
+      "mime": "image/jpeg",
+      "bytes": 242684,
+      "inputDimensions": {
+        "width": 780,
+        "height": 1169
+      },
+      "outputDimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "completeEncodedOutputEqual": true,
+      "gifOriginalBytesPreserved": null
+    },
+    {
+      "role": "authorized-webp",
+      "mime": "image/webp",
+      "bytes": 58904,
+      "inputDimensions": {
+        "width": 780,
+        "height": 1170
+      },
+      "outputDimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "completeEncodedOutputEqual": true,
+      "gifOriginalBytesPreserved": null
+    },
+    {
+      "role": "app-grain-png",
+      "mime": "image/png",
+      "bytes": 24973,
+      "inputDimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "outputDimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "completeEncodedOutputEqual": true,
+      "gifOriginalBytesPreserved": null
+    },
+    {
+      "role": "retained-avatar-gif",
+      "mime": "image/gif",
+      "bytes": 325896,
+      "inputDimensions": {
+        "width": 150,
+        "height": 150
+      },
+      "outputDimensions": {
+        "width": 150,
+        "height": 150
+      },
+      "completeEncodedOutputEqual": true,
+      "gifOriginalBytesPreserved": true
+    }
+  ],
+  "probePreflight": {
+    "moduleResolution": "Initial isolated Bun build rejected file URL runtime import; changed test bundler seam to filesystem path before native proof.",
+    "sandbox": "Initial installed Chromium launch denied macOS Mach IPC; same guarded probe passed after approved sandbox escalation.",
+    "cli": "Browser plugin/skill absent. npx no-install CLI lookup did not complete and was interrupted; existing installed Playwright API/browser used without installation.",
+    "retainedLogs": [
+      "evidence/implementation-avatar-native-preflight.log",
+      "evidence/implementation-avatar-native-sandbox.log"
+    ]
+  },
+  "evidenceRefs": [
+    "evidence/implementation-avatar-lifetime-tests.txt",
+    "evidence/implementation-avatar-native.json",
+    "evidence/implementation-avatar-native.log",
+    "evidence/implementation-avatar-native-status.png",
+    "evidence/implementation-avatar-native-preflight.log",
+    "evidence/implementation-avatar-native-sandbox.log",
+    "probes/avatar-native.ts",
+    "candidates/avatar-picker/AvatarPicker.before.svelte.txt"
+  ],
+  "rootCurrentNormalAcceptance": {
+    "receipt": "evidence/implementation-summary-avatar-normal.json",
+    "signedIn": true,
+    "chooserCancelReopenSavedPreviewUnchanged": true,
+    "normalProfileSaveSubmitted": false,
+    "genreHeadingRendered": true,
+    "settledLibraryMediaLinks": 120,
+    "completedPrivateImages": 29,
+    "tasks": 30,
+    "newWarningsErrors": 0,
+    "sourceManifestUnchanged": true,
+    "scope": "Normal functional UI acceptance; API bearer-token/auth/quota HTTP and precise provider/decode/cancel timing remain uninstrumented."
+  },
+  "rootCommonAndNormalAcceptance": "784pass/704guardedskip/0fail/33604assertions/1488tests/269files, check0/0/build/inventories; normal5173chooser/Profile/Library/Tasks functional pass."
+}

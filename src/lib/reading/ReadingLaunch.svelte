@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
  import { onDestroy, untrack } from 'svelte';
  import { useClient, reportFailure } from '$lib/ui/client-context';
  import { createOperation } from '$lib/ui/operation.svelte';
@@ -9,7 +10,7 @@
  import Field from '$lib/ui/components/Field.svelte';
  import {readingFileAccept,readingFileLabel,type ReadingFormat} from './model';
  let {workId,title,compact=false,hideTrigger=false,onopened}:{workId:string;title:string;compact?:boolean;hideTrigger?:boolean;onopened?:()=>Promise<void>}=$props();
- const {api,preview}=useClient(),operation=createOperation();
+ const {api,preview}=useClient(),operation=createOperation(useRetention());
  type Linked={connectionId:string;externalId:string;name:string;format:string|null};
  const resource=createResource<{connections:{id:string;name:string}[];linked:Linked[];items:{id:string;title:string;format:ReadingFormat|null}[];nextOffset:number|null}>({connections:[],linked:[],items:[],nextOffset:null});
  let open=$state(false),connectionId=$state(''),query=$state(''),offset=$state(0),searched=$state(false),target='',opening:AbortController|undefined;

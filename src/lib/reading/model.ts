@@ -9,6 +9,11 @@ export const comicFormats = ['cbz', 'cbr', 'cb7', 'cbt'] as const;
 export const readingFormats = ['pdf', 'epub', ...comicFormats] as const;
 export type ReadingFormat = (typeof readingFormats)[number];
 export type ComicFormat = (typeof comicFormats)[number];
+export const readingPrepareSchema=v.variant('source',[
+  v.strictObject({source:v.literal('local'),format:v.picklist(readingFormats),edition:v.pipe(v.string(),v.regex(/^[a-f0-9]{64}$/))}),
+  v.strictObject({source:v.literal('jellyfin'),connectionId:v.pipe(v.string(),v.uuid()),externalId:v.pipe(v.string(),v.regex(/^[a-f0-9-]{32,36}$/i))}),
+]);
+export type ReadingPrepareInput=v.InferOutput<typeof readingPrepareSchema>;
 export const readingFileAccept = '.pdf,.epub,.cbz,.zip,.cbr,.rar,.cb7,.7z,.cbt';
 export const readingFileLabel = 'PDF, EPUB, CBZ/ZIP, CBR/RAR, CB7/7z or CBT';
 const readerPage = v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(100000));

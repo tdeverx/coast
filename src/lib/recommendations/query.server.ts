@@ -33,6 +33,10 @@ export async function recommendationRows(userId:string,feature:string,url:URL){
  const sql=getSql();
  const [result]=await sql`with evidence as (
   select w.id,e.weight,coalesce(m.genres,g.genres,a.genres,b.subjects,'{}'::text[]) as genres,coalesce(b.authors,'{}'::text[]) as authors,b.series_title as series from unnest(${sql.array(ids,'UUID')}::uuid[],${sql.array(weights,'FLOAT8')}::float[]) e(id,weight) join works w on w.id=e.id left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id left join reading_works b on b.id=w.id
+ ), evidence_genres as materialized (
+  select unique_genre.genre,sum(e.weight) as weight from evidence e
+  cross join lateral(select distinct evidence_genre.genre from unnest(e.genres) as evidence_genre(genre)) unique_genre
+  group by unique_genre.genre
  ), provider_matches as (
   select item.id,max(coalesce(e.weight,3)*(21-least(item.position,20))) as score
   from recommendation_sets s join provider_instances i on i.id=s.instance_id and i.enabled
@@ -58,7 +62,7 @@ export async function recommendationRows(userId:string,feature:string,url:URL){
   and (m.release_date is null or m.release_date<=current_date) and (g.release_date is null or g.release_date<=current_date) and (a.release_date is null or a.release_date<=current_date) and (b.release_date is null or b.release_date<=current_date)
   order by coalesce(p.score,0)+case when ts.revision=${revision?.revision??''} then coalesce((ts.score-50)*ts.confidence/100*.6,0) else 0 end desc,w.id limit 2000
  ), scored as (
-  select c.id,c.provider_score+c.taste_score+least(20,coalesce((select sum(e.weight*2) from evidence e where c.authors&&e.authors or c.series is not null and c.series=e.series),0))+least(30,coalesce((select sum(e.weight*(select count(*) from unnest(c.genres) genre where genre=any(e.genres))) from evidence e where c.genres&&e.genres),0))-3*(select count(*) from unnest(c.genres) genre where genre=any(${sql.array(negative,'TEXT')}::text[])) as score from candidates c
+  select c.id,c.provider_score+c.taste_score+least(20,coalesce((select sum(e.weight*2) from evidence e where c.authors&&e.authors or c.series is not null and c.series=e.series),0))+least(30,coalesce((select sum(e.weight) from unnest(c.genres) as candidate_genre(genre) join evidence_genres e on e.genre=candidate_genre.genre),0))-3*(select count(*) from unnest(c.genres) genre where genre=any(${sql.array(negative,'TEXT')}::text[])) as score from candidates c
  ), selected as(select * from scored where score>0), totals as(select count(*)::int as total from selected)
  select total,coalesce((select jsonb_agg(row_to_json(p)) from(select id,score from selected order by score desc,case when ${feature}='row' then md5(${orderSeed}||coalesce(${genre}::text,${workId}::text,'')||id::text) else id::text end,id limit ${PAGE_SIZE} offset (least(${requested},greatest(1,ceil(total::numeric/${PAGE_SIZE})::int))-1)*${PAGE_SIZE})p),'[]'::jsonb) as candidates from totals`;
  const candidates=result.candidates as {id:string;score:number}[];

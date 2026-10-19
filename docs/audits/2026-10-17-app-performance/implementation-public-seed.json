@@ -1,0 +1,389 @@
+{
+  "schemaVersion": 1,
+  "status": "applied_exact_query_actual_broader_resource_main_common_and_normal_smoke_passed_with_remaining_gaps",
+  "canonicalFinding": "PLAN-09",
+  "sourcePins": {
+    "src/lib/server/queries/pagination.ts": "06421c9a2324fca85c513f98d7fd0bd8db4233af422335b46bb6955d9743bd14",
+    "src/lib/server/queries/library.ts": "4cb615fc401570cf8da95776915005e7ae4a84108b3d5f986a82f2d4dd67b96d",
+    "src/lib/server/queries/library-content.ts": "b678862173375262bf42ad9d092aa1551780305a2242eac49c55cb6e16c3652a",
+    "src/lib/server/queries/profile.ts": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e",
+    "src/lib/server/queries/media-actions.ts": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/core/tracking/recorded-watches.server.ts": "8a42f9bca18f5f49799922aa27f3dcf55ccd7d540c8609d6d42a91a0c8c22f01",
+    "src/lib/core/tracking/history-scope.server.ts": "430188553b789f726ec7c16fe560c9ddbcee34648d92b6691ca9d1cdd1fcb689",
+    "src/lib/server/public-api/library.server.ts": "0e8b3f3431c6d790fcf36d1096b93d359d3ed8ab19e037bab4f62a90ba9e9dcb",
+    "src/lib/server/public-api/response.ts": "ca5f7eeb3326f2b7b088239014b045a0ad40dfee659c6ae049662e41868c1981",
+    "src/lib/server/public-api/handler.server.ts": "1c4dc5119aa0dfe898babf35cfd8c903e3792e929937eb3cce26d6edb7d51044",
+    "src/lib/server/api/profile.server.ts": "b0523f2a7a0d31c6838823dc563b321ef914b3e501f3d3b68ed2b4ec925170ec",
+    "src/lib/server/api/media.server.ts": "494d5e177de0d62c4b3d500f4de46b36c603b8ed78f2b13af3773995317b8d49",
+    "src/lib/server/api/reading.server.ts": "f6c9ceed6606cabc2b5500e33a0c3d49a01f6cb44bd972a943599a92fcb17ebc",
+    "src/lib/reading/query.server.ts": "6315a5cd137e89a9b39b85e8c61af6567a8cb4aedc51afc97a38d64df7cef526",
+    "src/lib/music/history.server.ts": "a24895287829b56a9b684160b44878ccbf968b8c581748fd8f2d777dcc4db9ad",
+    "src/lib/music/editions.server.ts": "fd3a5b49c589de17f0eec88b5265f5c5725cb382eefde6f9aaf91720c2ed208d",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/catalogue/overrides/presentation.server.ts": "a2b35f3c4fe5467f2338c582d9a6ecc74a238c94dd66f25a62b1b2d5d5461447",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/social/privacy.server.ts": "ccb9b58e23eafee8c531a19d419dfe65c73adbad89e51b9e9c61b8602b788857",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/library.ts": "cd629858c8518e8f94bdf7520d6c835235078a3cdba736555821ec5d6945da91",
+    "src/lib/ui/section-target.ts": "3920829e19358f68a08c08737729b48b057630f1f918f98ddd4be22f99f25d05",
+    "src/lib/ui/shelves/library.svelte.ts": "0e7b4f024bf38df12188c6b27de6d4da26e859131ea1fd3d335d38267da35024",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/ui/components/Pagination.svelte": "60339601773c7eaf9286f23882c37d223a7f43f5480707d850cb1d6f6bc04a27",
+    "src/lib/core/games/service.server.ts": "034e72426d23d1f4d9d194fe55c36942aea729bf5b28e50fedd55bc528b6d3f4",
+    "src/lib/benchmarks/service.server.ts": "2b20918bb628053f96a9a703faedc5b795f06bb75b06d2a55a4810661e82f835",
+    "src/lib/reading/detail.server.ts": "105b871ef2751c1eabf26fa1efc6291f6aec1b77c110da66c8ce3bd055a0d90d",
+    "src/lib/reading/groups.server.ts": "7c28ade2625f573c5d5d40b2ba9b0cf2036ada56f80ae9dbf2b6f3008bbf37fd",
+    "src/lib/recommendations/query.server.ts": "aa1a7457c830733bf44c1d363e714beb420034261848a913e87c51dfe0a33c59",
+    "src/lib/social/insights.server.ts": "5b7d718009227bdd32a9bd9a9f86544350c14da95582b0a1f5e139ec1a21f238",
+    "src/lib/collection/demand.server.ts": "d4184856a41af3d287c0af8ab1f467f44e31cfef84ab195043034603b5615c1b",
+    "src/lib/experiments/planning.server.ts": "aef16dae069ac1f18484e4666887da1cc6572d95d803e8e43c5ea8ba5ed850a9",
+    "src/lib/server/public-api/webhooks.server.ts": "70c4d1ea244d7e3c723bb6fda6cb05c51300046c511bc6803667daf27d69aefb",
+    "src/lib/server/notifications/inbox.ts": "c8d44c3f7bc05ca7331a333bbdbcfff5d7f8dc1bd1178bf8eac957e7e6c48fdf",
+    "src/lib/server/queries/lists.ts": "0942e66e26f5ada3baf2668a8bc551728f57f8e2dd23e37b4990a0b202d87f8c",
+    "src/lib/server/queries/show-next.ts": "9da07185ba0cfda304262c087683581562caa59ccd741f8f00a4b970b2005a26",
+    "src/lib/server/queries/progress.ts": "c6dc479be1ea09bdd477d0eb21780361cf3eb0edc56d07e8a5e3a65e9cd9d7c7",
+    "src/lib/server/queries/requests.ts": "10f42871eb9f1bb9b938b4366400eca208b3173d552a1cf391d75b2094eab09c",
+    "src/lib/social/service.server.ts": "71872325c753fe705047bf201186d0c5073750c07c93979b75d259e5ebc90d26",
+    "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
+    "src/lib/music/queue.server.ts": "46975b7dfe3bd446e3b8bc4f180518edf9e54e1782dcfc0bbe6fe255c49fe862",
+    "src/lib/features.ts": "ec2ce3649b7a479b18127a665dd0c3ece29de5fc983b2136d16d23b6697589c1",
+    "package.json": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2",
+    "bun.lock": "53d8feaa37aefa6ada339d3cd2da73a9985cba24a1cf96e4da64cfa24b2c065d",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "sourcePinCount": 50,
+  "artifactPins": {
+    "candidates/public-seed-guard/pilot18/launch.py": "62f3d4cf8292fccac9233aabc20c8d17c04c72dc4b43be47598c72c96c250ba4",
+    "candidates/public-seed-guard/pilot18/library.before.ts.txt": "d977a9a4e628a1dbbb9f69a69b30da7d38e2fb687b9323bdbf8d76a749e513ee",
+    "candidates/public-seed-guard/pilot18/library.seed-materialized.ts.txt": "8c44d103a25e0d434ff43d6c026e35c96926c0b5911c84caf2f04298dd00b61e",
+    "candidates/public-seed-guard/pilot18/library.seed-not-materialized.ts.txt": "2e006c8c2637f99c98edc8c8ff036c3ea62f5e2debec924b79a4ec643ca29d6d",
+    "candidates/public-seed-guard/pilot18/pilot.ts": "4870cfa5df2e9060ff7f66444bb5c831e06cd256795296b80c62d4c2b30f3f97",
+    "candidates/public-seed-guard/pilot18/plan.json": "82ef9ce7a96b8a6178462c24f04107e1b901a0f7d8cb4a5d00628ef2a5a99af8",
+    "candidates/public-seed-guard/pilot18/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/public-seed-guard/pilot18/prepare.py": "350e85cb6f1477a6c47be1a04a34c037bb9f96ae26f03a668577fd4c1d0020b3",
+    "candidates/public-seed-guard/pilot18/seed-pilot-actual.json": "f1299c268c7f182418766d3a2517542da344fe1098512c5a70ac87f32947ae9c",
+    "candidates/public-seed-guard/pilot18/source-pins.json": "69bb5ebc84a644f7baa172e4f4a73bbeb8e9e7c4604123b664f93b99a8ac9437",
+    "candidates/public-seed-guard/pilot18/strict-first.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/public-seed-guard/pilot18/transforms.ts": "daeb03f00a9fb1718a9957d67544ccb6d2a90a7ff5c31ab55030c76cf7f026d4",
+    "candidates/public-seed-guard/broader142/full-actual.json": "511ad7292b32fef14ba8f8db538edb7572702f5cf6837a550e30a203366d27a8",
+    "candidates/public-seed-guard/broader142/full.ts": "8e9143d7ae6a948caa459bb275ded134716276a2532da3c78c58658de1320c93",
+    "candidates/public-seed-guard/broader142/launch.py": "8bcd3c8f60989caee511dea815fa746d09f62f8955a7085998af92568f0db3b3",
+    "candidates/public-seed-guard/broader142/library.before.ts.txt": "d977a9a4e628a1dbbb9f69a69b30da7d38e2fb687b9323bdbf8d76a749e513ee",
+    "candidates/public-seed-guard/broader142/library.seed.ts.txt": "0e8b3f3431c6d790fcf36d1096b93d359d3ed8ab19e037bab4f62a90ba9e9dcb",
+    "candidates/public-seed-guard/broader142/plan.json": "a40562e16650341b90bfb1de3c102da0a8a3a97e3cf49bb37811131303fc6d24",
+    "candidates/public-seed-guard/broader142/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/public-seed-guard/broader142/prepare.py": "0a8e43530f991a3455c759dbe659190a9fdbb4b2fcf6f4646f83704ef6154f2e",
+    "candidates/public-seed-guard/broader142/seed-guard.patch": "b8713d3efa93eadf7b63f1fe1f51db1e3201b4a8a7389f56ccf70f1190544ea0",
+    "candidates/public-seed-guard/broader142/source-pins.json": "69bb5ebc84a644f7baa172e4f4a73bbeb8e9e7c4604123b664f93b99a8ac9437",
+    "candidates/public-seed-guard/broader142/strict-first.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/public-seed-guard/broader142/transforms.ts": "daeb03f00a9fb1718a9957d67544ccb6d2a90a7ff5c31ab55030c76cf7f026d4",
+    "candidates/public-seed-guard/resources54/adoption-assessment.json": "4581b918f7a183f4380c16ecf693f340effb3083d0b2748eba02bea195488151",
+    "candidates/public-seed-guard/resources54/launch.py": "d5f7a7121fec8ee33ab11ffb7f8db18bdd97486e847c33afea55403150c893b4",
+    "candidates/public-seed-guard/resources54/library.before.ts.txt": "d977a9a4e628a1dbbb9f69a69b30da7d38e2fb687b9323bdbf8d76a749e513ee",
+    "candidates/public-seed-guard/resources54/library.seed.ts.txt": "0e8b3f3431c6d790fcf36d1096b93d359d3ed8ab19e037bab4f62a90ba9e9dcb",
+    "candidates/public-seed-guard/resources54/metrics.ts": "bc640594233df4d69d3a6708bed8e509a7ef008f0e36690acc31b855f7b9e802",
+    "candidates/public-seed-guard/resources54/plan.json": "9615505e7f67d7e243373295f1f67e7d2566782ef9fec4cc3fbfea759c720b14",
+    "candidates/public-seed-guard/resources54/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/public-seed-guard/resources54/prepare.py": "0d65b2977717bc3d5e2527c3a2725324e94d3383faf09e119c2b1eaeae82b421",
+    "candidates/public-seed-guard/resources54/profile.ts": "3ccc312b32288d0890ab17f80e7215ec0ee7946dbda10ddb1f6826abd951dabc",
+    "candidates/public-seed-guard/resources54/resources-actual.json": "779c6e71a304e472fb7ffbd2a3ef741929c3d80c69e1e017876e55272d7eec15",
+    "candidates/public-seed-guard/resources54/seed-guard.patch": "b8713d3efa93eadf7b63f1fe1f51db1e3201b4a8a7389f56ccf70f1190544ea0",
+    "candidates/public-seed-guard/resources54/source-application.json": "bc139fda05339d4dfe13617b2e26803be28897fc17e4436c8b8a3bab2d980948",
+    "candidates/public-seed-guard/resources54/source-pins.json": "69bb5ebc84a644f7baa172e4f4a73bbeb8e9e7c4604123b664f93b99a8ac9437",
+    "candidates/public-seed-guard/resources54/strict-first.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/public-seed-guard/resources54/transforms.ts": "daeb03f00a9fb1718a9957d67544ccb6d2a90a7ff5c31ab55030c76cf7f026d4",
+    "candidates/public-seed-guard/main9/acceptance.ts": "b99b66eb4085458c2b4c70038eb711c8f961b5dc92e3ada1a94bbb6b87956304",
+    "candidates/public-seed-guard/main9/broader-anchors.json": "545334c966cfcbfe61543fe0120d2ffb867c9a922f2526b4c88dca08c9b27154",
+    "candidates/public-seed-guard/main9/launch.py": "f98a507913ec2a46119c3ba8fd6aeb01e153767b12cc7bdd54bfa5745150458d",
+    "candidates/public-seed-guard/main9/library.before.ts.txt": "d977a9a4e628a1dbbb9f69a69b30da7d38e2fb687b9323bdbf8d76a749e513ee",
+    "candidates/public-seed-guard/main9/library.seed.ts.txt": "0e8b3f3431c6d790fcf36d1096b93d359d3ed8ab19e037bab4f62a90ba9e9dcb",
+    "candidates/public-seed-guard/main9/main-actual.json": "e4248cef965fbe46d66c0f653fdc7d5c684f090c46b8eee4ce7f18cef4bac812",
+    "candidates/public-seed-guard/main9/plan.json": "970ee4fc3df59ff1cf0bdc777ff65cd6ca7d25ce36d626b37641b535459af525",
+    "candidates/public-seed-guard/main9/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/public-seed-guard/main9/prepare.py": "497403e52addcc3d9cbc78e1686726ef5a44294e56b60a1443daa12e989e8c83",
+    "candidates/public-seed-guard/main9/source-pins.json": "1c5bcb318ca02616dcf5c5341791a0d1c3741155d84ddd14380c5cdd44536e8c",
+    "candidates/public-seed-guard/main9/strict-first.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/public-seed-guard/main9/transforms.ts": "daeb03f00a9fb1718a9957d67544ccb6d2a90a7ff5c31ab55030c76cf7f026d4",
+    "candidates/public-seed-guard/approved-private-runner.py": "3d527a67ece961a9701d7f1f6ae25f69404c9c6945b574eef98c09397e0693c8",
+    "candidates/public-seed-guard/common-gates.py": "af090b53b766ce41b4de1a3797d79bb19614a0b67ead8e3386ae2ce6551aae38",
+    "evidence/public-seed-pilot-actual.json": "f1299c268c7f182418766d3a2517542da344fe1098512c5a70ac87f32947ae9c",
+    "evidence/public-seed-broader-actual.json": "511ad7292b32fef14ba8f8db538edb7572702f5cf6837a550e30a203366d27a8",
+    "evidence/public-seed-resources-actual.json": "779c6e71a304e472fb7ffbd2a3ef741929c3d80c69e1e017876e55272d7eec15",
+    "evidence/public-seed-main-actual.json": "e4248cef965fbe46d66c0f653fdc7d5c684f090c46b8eee4ce7f18cef4bac812",
+    "evidence/public-seed-adoption-assessment.json": "4581b918f7a183f4380c16ecf693f340effb3083d0b2748eba02bea195488151",
+    "evidence/public-seed-source-application.json": "bc139fda05339d4dfe13617b2e26803be28897fc17e4436c8b8a3bab2d980948",
+    "evidence/implementation-public-seed-acceptance.json": "77bc9c67cca553f42e354a4ff81570bdec485b4fab9c876fe21fcf4307be560f",
+    "evidence/implementation-public-seed-normal.json": "739ab0a5d0a02fff983e592fad9393c74fe3b46abb06bb71dac4559ef7f26154",
+    "evidence/implementation-public-seed-normal-source-check.json": "5be1c4ccffa63914f608d33a55dcb4cd50ca83735b3515c3df0c76a9da4fd436",
+    "evidence/implementation-public-seed-normal-library.png": "2ec14897047e0443ae0ca95cdf0115948c167c92c519d675cce7f9b4c345e1ef",
+    "evidence/implementation-20261018-public-seed-gates.json": "a297f8dfd19d6f11193858987423a7a9ff029c33d5ef27ce4e2d9a4885d5262e",
+    "evidence/implementation-20261018-public-seed-source-inventory.json": "e76cfd28f0bb4d22c5d6f714e979f05d3861fe15f995bf376d63f98bf4ded2df",
+    "implementation-public-seed.md": "c1dbd2c5eb8938adbdfc16de59e467afc70886618b275fc1c74a36cd892711af",
+    "evidence/implementation-20261018-public-seed-unit.log": "d6439401390db650f37201e78098d3e889b0a081ad2756c66e304e41c5028adc",
+    "evidence/implementation-20261018-public-seed-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "evidence/implementation-20261018-public-seed-build.log": "aecf66d68088d559ce696874eaeb07d8991c35ea977e1901015efc84223b32d0",
+    "evidence/implementation-20261018-public-seed-code-inventory.log": "8ba45ace4a12d8a1c2e58eacee3c725a558d0ad5bc7958f8a807598d8cf1e89e",
+    "evidence/implementation-20261018-public-seed-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "evidence/implementation-20261018-public-seed-code-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c"
+  },
+  "sourceBeforeSha256": "d977a9a4e628a1dbbb9f69a69b30da7d38e2fb687b9323bdbf8d76a749e513ee",
+  "sourceAfterSha256": "0e8b3f3431c6d790fcf36d1096b93d359d3ed8ab19e037bab4f62a90ba9e9dcb",
+  "sourceApplied": true,
+  "broaderActualInputs": 142,
+  "positive": 114,
+  "empty": 28,
+  "planPairs": 65,
+  "resourceTrials": 54,
+  "mainImportedActualPairs": 9,
+  "pilotActualInputs": 9,
+  "pilotCandidatePairs": 18,
+  "all54ResourceSqlAndBindingsMatchBroader": true,
+  "tradeoffs": {
+    "retainedAllocatorCapacityDeltaBytes": 98304,
+    "positiveRootSharedVisitsIncrease": true,
+    "tinyEmptyCpuRankingUnresolved": true,
+    "emptyElapsedAdversePairs": 3
+  },
+  "commonGatesPassed": true,
+  "normalSignedInUiSmokePassed": true,
+  "publicHttpTokenAcceptance": false,
+  "schemaDependencyProviderNormalDbMutation": false,
+  "clientRangeApplied": false,
+  "goalComplete": false,
+  "review": "Root review and actual execution; no new independentpeer execution.",
+  "laterLibraryMembershipAdoptionChange": {
+    "at": "2026-10-18T13:02:16.881554+00:00",
+    "path": "src/lib/server/queries/library.ts",
+    "beforeSha256": "ceae8d87a2e6f1ab70fc7db812e9bf028b63c6141f1ba3cbd50ec6decfa6e9df",
+    "initialExecutedCandidateSha256": "cc54bac25c54d55bc70c71d12f359a8b700137411b29423e1d500ab4099493fb",
+    "afterSha256": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+    "report": "implementation-library-membership.md",
+    "boundary": "Current identity only advances after separately verified one-page adoption and exact type-erasure transfer. Earlier source-frozen executions remain at their archived then-current hashes."
+  },
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/server/queries/pagination.ts": "8d13fbda75755cb40c53f1db2d4c8a16b127010791f5fd35eacff116e4c56f9f",
+      "src/lib/server/queries/library.ts": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3",
+      "src/lib/server/queries/library-content.ts": "08e6fb735feeb7a805672ca27cc7cc83005a046632f1e3b1d9e75f125b07b54c",
+      "src/lib/reading/query.server.ts": "2f4550c48c06258dfd52890cec466e5abe0c91a0f5118c433cf1b1a9c1613ca9",
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+      "src/lib/library.ts": "1b94f5839453943c83a32ef51f8581923a40cedbe41beaa3f66daf2d94dc5c58",
+      "src/lib/ui/section-target.ts": "e325668b0e3ae9b5eee6e65bf6b959551560fb1d90916a96f056f367c02a8cf8",
+      "src/lib/ui/shelves/library.svelte.ts": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+      "src/lib/ui/components/Shelf.svelte": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4",
+      "src/lib/core/games/service.server.ts": "e6e01eac392126a5c06fdaf246fc139b7cfa57e7d01e59845d502386894bf52d"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "finalBoundedWindowSourceFollowThrough": {
+    "at": "2026-10-18T17:42:06.448267+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/shelves/library.svelte.ts": "991fae02c2c35e174b41f867411b83fe75fcc777390b9fbd814d0cee49823053"
+    },
+    "boundary": "Later scope-ledger/SSR engagement and Music error admission corrections have separate exact/current source controls. Historical receipts stay immutable; this map is current identity, not transferred runtime/resource acceptance."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "package.json": {
+        "before": "faacde885a670752c385f25f114b3ff80e0182769d72a82706ce5d804a509139",
+        "after": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  },
+  "laterFound07IdentityAdvance": {
+    "at": "2026-10-18T22:39:47.956698+00:00",
+    "ref": "implementation-found-07.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5",
+        "after": "b105d63777dd22496674950d457d81e889eb26da17cfc0a21c6a90411e3ec318"
+      }
+    },
+    "boundary": "Current reviewed identity only; original historical actual receipts remain immutable. Profile candidate has its own108complete actual comparisons and final common/normal checks. No Collection candidate adopted."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  },
+  "laterFound10IdentityAdvance": {
+    "at": "2026-10-18T23:35:57.455314+00:00",
+    "ref": "implementation-found-10.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "b105d63777dd22496674950d457d81e889eb26da17cfc0a21c6a90411e3ec318",
+        "after": "1a49d5e2b59ccf222233a18e896952d21941255b938b114c31a3aa617f7acd12"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical receipts/limits remain immutable; new Profile query has36actual complete outcomes, current UI acceptance and supplementary pending controls. Other owners not retested."
+  },
+  "laterFound11IdentityAdvance": {
+    "at": "2026-10-18T23:42:10.655439+00:00",
+    "ref": "implementation-found-11.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "1a49d5e2b59ccf222233a18e896952d21941255b938b114c31a3aa617f7acd12",
+        "after": "7b22e7ed057544924720f0a7ff1386b0061ece42757303c6bb4f473a85b7a22b"
+      }
+    },
+    "boundary": "Reviewed identity only. Historical source/proofs stay immutable. Guarded count reuse has192actual section comparisons and final gates/native panel; prior activity owner body is unchanged, its receipt not newly rerun."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:32:19.107523+00:00",
+      "path": "src/lib/server/queries/profile.ts",
+      "beforeSha256": "7b22e7ed057544924720f0a7ff1386b0061ece42757303c6bb4f473a85b7a22b",
+      "afterSha256": "21149729c90b373f5f59e922e303031d4bec45eb4d6625a96f82789ac16cd03a",
+      "beforeRef": "candidates/found-implementation-13/profile.before.ts.txt",
+      "reviewRef": "implementation-found-13.md",
+      "boundary": "Only internal Profile activity projection narrows; other functions and contracts are byte-identical. Current identity review does not re-run or upgrade old evidence. Guide append records current proof and rejected Taste alternative."
+    },
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/queries/profile.ts",
+          "before": "21149729c90b373f5f59e922e303031d4bec45eb4d6625a96f82789ac16cd03a",
+          "after": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T02:53:01.778274+00:00",
+      "reportRef": "implementation-found-21.md",
+      "paths": [
+        "src/lib/core/games/service.server.ts"
+      ],
+      "boundary": "Exact planned DATA-07 command guards plus guide/checker bookkeeping. Historical source/evidence epochs retained; no older acceptance upgraded."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "src/lib/music/queue.server.ts",
+        "src/lib/core/games/service.server.ts"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "src/lib/social/service.server.ts"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "src/lib/social/queries.server.ts"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    }
+  ]
+}

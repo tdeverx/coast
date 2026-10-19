@@ -1,0 +1,35 @@
+# Recovery pipe consumption and admin health timing
+
+UPP-04's two offline command collectors now start stdout, stderr and exit collection together with the existing `Promise.all` pattern. MIN-05's database latency records the `SELECT 1` interval before the existing history/provider aggregate queries. These are narrow ownership/reporting fixes: no dependency, production schema, health status, UI design, provider operation or normal/deployed database changed.
+
+## Shared owners and preserved contracts
+
+- [Recovery command helper](../../../scripts/test-recovery.ts:15) serves migration, credential subprocesses, `pg_dump`, `pg_restore` and container dump cleanup in that drill. Successful stdout remains exact; a nonzero child still rejects with the complete stderr and the existing password redaction. The success label now queries `server_version` instead of always claiming PostgreSQL17.
+- [Historical verification source collector](../../../scripts/performance-verification.ts:133) also drains its formerly unread git stderr concurrently. Baseline source output and the existing generic missing-source error remain unchanged. That historical tool's fabricated catalogue workload was not run or presented as actual-data verification.
+- `scripts/fixtures/container-runtime.ts:28-31,107-108` already collects both pipes and exit concurrently; it remains unchanged. Production `container-application.ts`/`container-postgres.ts` supervise streaming stderr and inherited stdout; they are separate owners, not whole-output collectors, and remain unchanged.
+- [Admin health](../../../src/lib/server/notifications/index.ts:151) retains administrator authorization, the same three sequential queries, aggregate values, status, uptime and output shape. Its consumers are the settings Admin loader/UI and `GET admin/health`. `database.latencyMs` now ends when `SELECT 1` settles, including the existing connection acquisition/query wait. It is not total health preparation time.
+
+No process framework, general deadline or captured-byte policy was added. Whole-output collection and an independently nonterminating child can still consume unbounded time/text. Bounded capture/deadline/owned descendant cleanup needs a separate explicit tooling contract. The MIN-05 whole-history action aggregate is also unchanged; a durable count snapshot was not introduced.
+
+## Actual-data recovery and health verification
+
+The [actual proof](evidence/implementation-recovery-actual.json) executes the current source-owned recovery helper against real PostgreSQL tools. A guarded read-only dump source is the existing approved actual-data audit clone. A freshly generated `coast_audit_recovery_actual_*` database is the only restore target. No catalogue/user fixture is invented. The private container dump is created with mode0600; [cleanup](evidence/implementation-recovery-actual-runner.json) confirms that target and dump were removed. Normal, deployed and the original source clone are not mutation targets.
+
+On queried PostgreSQL17.11, real `pg_dump --verbose` and `pg_restore --verbose --exit-on-error` both exited0. They naturally produced19,389 and135,855 stderr bytes respectively, with empty stdout as expected. Their command intervals were9.48s and13.11s in this quiet private environment; these are operational observations, not performance savings or production throughput estimates.
+
+Logical SHA-256 sorted row-value multisets matched across **102 tables and1,864,145 rows**, including the62 existing migration ledger rows. The one sequence's value/called state and checked columns, indexes, constraints, user triggers and function definitions matched. A second source snapshot confirmed its row/schema/sequence state unchanged. Explicit read-only snapshot transactions verified30s statement/5s lock limits. These projections do not attest every ACL/ownership/catalog detail or physical tuple layout.
+
+The health function then ran on that restored actual corpus using an existing administrator and a verified read-only30s/5s session. Its observed call order was `clock → SELECT1 → clock → action aggregate → connection aggregate`; both aggregates matched independent reads. The reported1ms is a single connectivity sample, not a speedup. Existing encrypted credential bytes were restored and compared opaquely; no live key material was copied and no actual credential decryption, restored-app startup, external provider or deployed recovery acceptance is claimed. The separate existing authored key-copy drill was not substituted for this actual-data proof.
+
+## Controlled regressions and calibration
+
+[Seven focused tests /20 assertions pass](evidence/implementation-recovery-tests.json). They cover concurrent reader admission, real stderr-first output, exact successful stdout, full nonzero failure/redaction, the historical git collector, health query order/output, authorization and all query-failure positions. Test-only watchdogs kill only their own noisy child; no production deadline behavior is inferred.
+
+The [source-pinned controlled comparison](evidence/implementation-recovery-controlled.json) makes an important limitation visible: **both audited and current collectors completed the real2MiB stderr-first child under Bun1.4.3**. An OS-pipe deadlock was not reproduced, and no natural recovery hang was observed. A coupled `ReadableStream` contract separately confirms the ordering difference: the audited helper does not start its stderr reader before stdout EOF, while current code does. This controlled contract and the actual backup/restore are complementary evidence, not a claim of measured production instability or improvement.
+
+The retained [actual probe](probes/recovery-actual.ts), [guarded runner](probes/recovery-actual-run.py) and [controlled probe](probes/recovery-pipes.ts) are exact executed local artifacts, with intentional checkout/private-stage paths. Future use must review target guards, credentials-in-memory boundaries and source pins. They are not a general restore CLI and must never target normal/deployed databases. Root owns coordinated full application gates and any signed-in Admin UI acceptance. The staged toast patch also touches the notifications file and must rebase its dependency/source pins before adoption; this change does not modify that staged patch.
+
+
+## Current applied-source browser acceptance
+
+The [2026-10-18 signed-in normal-dev trial](evidence/implementation-owner-batch-normal.json) reloaded the current source after the build, with audit-owned repository writes frozen. The actual dropped-game preview, movie and episode menus, profile overview/favourites panel, Admin health and 30 task rows rendered. This trial recorded zero new console warnings/errors and no framework overlay. It did not exercise real filter/preference writes, active device authorization, chunk failure, natural cancellation schedules or performance/resource limits. Historical HMR errors before the reload and the earlier unresolved route observations remain separate.

@@ -3,7 +3,7 @@ import { featureValues, type FeatureConfiguration } from '$lib/features';
 import { defaultConfig } from '$lib/server/config';
 import {jellyfinItemKey} from '$lib/providers/jellyfin/paging';
 import {importJellyfinReading} from './jellyfin-reading.server';
-import { persistMusic, observeMusicPageAccess, recordMusicListen, importedListenBatch } from '$lib/music/persistence.server';
+import { persistMusic, observeMusicPageAccess, recordImportedMusicListens } from '$lib/music/persistence.server';
 import { enqueueInTransaction } from '$lib/sync/changes.server';
 import {
   reconcileProviderValue,
@@ -472,7 +472,7 @@ async function runJellyfinScan(
               const [baseline]=await tx.select().from(syncValues).where(and(eq(syncValues.connectionId,connectionId),eq(syncValues.mediaId,saved.workId!),eq(syncValues.category,'history')));
               const local=await localSyncValue(tx,userId,saved.workId!,'history');
               const observed=Number(baseline?.remote.playCount??local.playCount??0);
-              for(let n=Math.min(count,observed);n<count;n++)if(await recordMusicListen(tx,userId,saved.workId!,importedListenBatch(connection.syncAccountId??connectionId,saved.workId,n),'jellyfin',undefined,false))added++;
+              added=await recordImportedMusicListens(tx,userId,saved.workId!,connection.syncAccountId??connectionId,Math.min(count,observed),count);
               await tx.insert(musicProgress).values({userId,trackId:saved.workId!,playCount:count}).onConflictDoUpdate({target:[musicProgress.userId,musicProgress.trackId],set:{playCount:count,updatedAt:new Date()}});
               return {changed:added>0};
             }});

@@ -1,0 +1,201 @@
+{
+  "at": "2026-10-19T05:49:50.443510+00:00",
+  "scope": "Failed or unadopted proposed methods from the execution pass; no further investigation during this run. Canonical finding statuses remain separate.",
+  "priorityAfter": "All uninvestigated areas on follow-up-roadmap.json",
+  "items": [
+    {
+      "findingId": "PJ-09",
+      "methodId": "target-local-membership-guard",
+      "state": "awaiting-later-investigation",
+      "outcome": "Rejected: no eligible consumer cohort; real-parent diagnostic increases read work and time.",
+      "evidenceRef": "implementation-found-21.md"
+    },
+    {
+      "findingId": "PLAN-03",
+      "methodId": "taste-revision-split",
+      "state": "awaiting-later-investigation",
+      "outcome": "Rejected after existing actual comparison.",
+      "evidenceRef": "taste-query-measurement.md"
+    },
+    {
+      "findingId": "PLAN-03",
+      "methodId": "four-additional-feature-query-shapes",
+      "state": "awaiting-later-investigation",
+      "outcome": "Rejected after complete actual output/score comparisons and adverse timings.",
+      "evidenceRef": "implementation-found-18.md"
+    },
+    {
+      "findingId": "PLAN-03",
+      "methodId": "index-fence-and-materialized-feature-options",
+      "state": "awaiting-later-investigation",
+      "outcome": "Not adopted after copied index-state comparisons; mixed costs and further acceptance absent.",
+      "evidenceRef": "implementation-found-20.md"
+    },
+    {
+      "findingId": "PLAN-08",
+      "methodId": "completed-season-input-filter",
+      "state": "awaiting-later-investigation",
+      "outcome": "Rejected/reverted after11of12buffer families increase.",
+      "evidenceRef": "implementation-found-15.md"
+    },
+    {
+      "findingId": "PLAN-08",
+      "methodId": "completed-season-boolean-simplification",
+      "state": "awaiting-later-investigation",
+      "outcome": "Not adopted: equal buffers and mixed warm timings.",
+      "evidenceRef": "implementation-found-19.md"
+    },
+    {
+      "findingId": "DATA-14",
+      "methodId": "collection-traversal-options",
+      "state": "awaiting-later-investigation",
+      "outcome": "Three tested options unadopted; adverse observations retained.",
+      "evidenceRef": "implementation-found-07.md"
+    },
+    {
+      "findingId": "DATA-06",
+      "methodId": "shared-SQL-grouped-count-page-assessment",
+      "state": "awaiting-later-investigation",
+      "outcome": "33native semantics match; lower transfer but adverse finite large-case native/source elapsed observations; default retained.",
+      "evidenceRef": "implementation-found-22.md"
+    },
+    {
+      "findingId": "MIN-04",
+      "methodId": "source-recipient-direct-notifyMany",
+      "state": "awaiting-later-investigation",
+      "outcome": "Stable outputs match and statements fall12\u21923, but actual controlled preference timing and later-write prefix behavior differ; default retained.",
+      "evidenceRef": "implementation-found-23.md"
+    },
+    {
+      "findingId": "PR-08",
+      "methodId": "unchanged-heartbeat-membership-reconciliation-skip",
+      "state": "awaiting-later-investigation",
+      "outcome": "Actual controlled admin/peer friendship revocation leaves candidate joined=true while native removes participation. Default retained despite10\u21928statement sample.",
+      "evidenceRef": "implementation-found-23.md"
+    },
+    {
+      "findingId": "PJ-07",
+      "methodId": "bounded-replay-safe-finalization-phases",
+      "state": "awaiting-later-investigation-resource-positive-concurrency-incomplete",
+      "outcome": "Local resource/native state results positive, but required concurrent native edit deadlocks in DEFAULT and candidate; retain current runtime, no alternate lock redesign.",
+      "evidenceRef": "implementation-found-24.md"
+    },
+    {
+      "findingId": "FRT-03",
+      "methodId": "adjacent-equivalent-pending-preference-delivery",
+      "state": "awaiting-later-investigation",
+      "outcome": "Stable2\u21921API/4\u21922ORM but nativefirstwrite503 removes the default second caller independent recovery; reject/retain default. No alternative.",
+      "evidenceRef": "implementation-found-25.md"
+    },
+    {
+      "findingId": "PR-13",
+      "methodId": "bounded-predecode-image-dimension-header",
+      "state": "awaiting-later-investigation",
+      "outcome": "Private original method tried; actual accepted JPEG/PNG dimensions match but adds bounded inspection with no demonstrated saving. Missing oversize/cross-format/browser/peak-memory acceptance; not adopted. No alternative this pass.",
+      "evidenceRef": "implementation-found-26.md"
+    }
+  ],
+  "notRunnableOrContractIncompatible": [
+    {
+      "findingId": "DATA-07",
+      "method": "screen-observation-write-suppression",
+      "outcome": "not-applicable-contract-admission-failed",
+      "evidenceRef": "DATA07screen-noop/decision.md",
+      "gain": null,
+      "reason": "Ignoring advancing timestamps changes precedence/provenance/freshness; retaining required timestamps admits writes. No candidate or database comparison claimed."
+    },
+    {
+      "findingId": "PR-02",
+      "method": "bounded-report-and-independent-stop-release",
+      "outcome": "human-deferred-design-backlog",
+      "evidenceRef": "implementation-found-26.md",
+      "gain": null,
+      "reason": "Concrete durable ownership/receipt/recovery contracts prepared. Human chose defer these methods; no private implementation or actual-data performance comparison. No pending approval this run.",
+      "priorDisposition": {
+        "findingId": "PR-02",
+        "method": "bounded-report-and-independent-stop-release",
+        "outcome": "not-runnable-missing-design-and-actual-media-acceptance",
+        "evidenceRef": "evidence/candidates/pr02-report-stop-20261019/README.md",
+        "gain": null,
+        "reason": "Final-stop recovery/ambiguous-ack contract and isolated actual-media decoder/HLS acceptance are absent. No candidate or runtime comparison claimed."
+      }
+    },
+    {
+      "findingId": "PJ-08",
+      "method": "resumable-track-import-commits",
+      "outcome": "partial-batching-adopted-full-checkpoint-contract-deferred",
+      "gain": null,
+      "reason": "Per-statement batching verified separately. Intermediate committed history/progress and fenced pending occurrence target remain undefined; publishing full remote baseline early skips unfinished history.",
+      "evidenceRef": "implementation-found-23.md"
+    },
+    {
+      "findingId": "PJ-15",
+      "method": "bounded-keyset-bulk-task-controls",
+      "outcome": "human-deferred-design-backlog",
+      "gain": null,
+      "reason": "Concrete durable ownership/receipt/recovery contracts prepared. Human chose defer these methods; no private implementation or actual-data performance comparison. No pending approval this run.",
+      "evidenceRef": "implementation-found-26.md",
+      "priorDisposition": {
+        "findingId": "PJ-15",
+        "method": "bounded-keyset-bulk-task-controls",
+        "outcome": "not-runnable-continuation-receipt-frozen-target-contract",
+        "gain": null,
+        "reason": "Finite command budget cannot preserve current complete response and target membership/replay accounting without a defined durable contract. No actual-data performance comparison.",
+        "evidenceRef": "implementation-found-23.md"
+      }
+    },
+    {
+      "findingId": "UIC-04",
+      "method": "genuine-native-provider-preview-approval-and-bounded-review-lifecycle",
+      "outcome": "narrow-DTO-independently-adopted-broader-acceptance-deferred",
+      "gain": null,
+      "reason": "Narrow persisted-preview/compiled transform independentlyverified; full genuine remote/account/approval and mounted cardinality remain separate.",
+      "evidenceRef": "implementation-found-25.md",
+      "priorDisposition": {
+        "findingId": "UIC-04",
+        "method": "narrow-durable-preview-browser-DTO",
+        "outcome": "prepared-genuine-provider-acceptance-deferred",
+        "gain": null,
+        "reason": "Native preview/approval need genuine provider profile and remote collection evidence; no external transport or fabricated replies in batch. Source proof is not runtime acceptance.",
+        "evidenceRef": "implementation-found-23.md"
+      }
+    },
+    {
+      "findingId": "PJ-12",
+      "method": "deterministic-conflict-page-selected-detail-lifecycle",
+      "outcome": "narrow-summary-adopted-broader-page-detail-contract-deferred",
+      "gain": null,
+      "reason": "Complete-array settings/API and current selection lifetime need a concrete page/detail contract; narrow summary portion verified separately. No arbitrary truncation.",
+      "evidenceRef": "implementation-found-24.md"
+    },
+    {
+      "findingId": "DATA-07",
+      "method": "equal-game-provider-feature-write-suppression",
+      "outcome": "contract-incompatible-authoritative-source-precedence",
+      "gain": null,
+      "reason": "workTasteFeatures resolves per-key newest updatedAt/provider; unchanged refresh can retake precedence. Actual native source-precedence control keeps refresh in both variants. Variant structure guarded separately.",
+      "evidenceRef": "implementation-found-25.md"
+    }
+  ],
+  "appliedRegressionFollowUp": [
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "comparisonRef": "final-original-comparison.md",
+      "findingIds": [
+        "PLAN-02",
+        "PJ-10",
+        "DATA-04"
+      ],
+      "state": "activity-follow-up-adopted-tasks-not-reproduced-other-overhead-awaiting-later-investigation",
+      "outcome": "Identical full outputs in all13cases, but Activity+20.9%median/3of4slower; several small reads and Tasks higher elapsed medians; full-season processCPU higher; emitted bytes grow. Composed cause not isolated; no candidate failure, rollback, query/index adoption or alternative claimed.",
+      "priority": "Material unscoped Activity first; repeatability and attribution of smaller overhead next.",
+      "laterAttribution": {
+        "at": "2026-10-19T07:02:20.557208+00:00",
+        "reportRef": "implementation-found-27.md",
+        "activity": "Original adverse ratio varied with isolation; global screen remained slow. Newly authorized shared policy-key repair is adopted after exact-output/privacy tests and repeated gain. Earlier scoped/parent/reasons repairs retained.",
+        "tasks": "Unchanged owner and exact SQL/parameters; original adverse ratio did not reproduce. No query/index rollback or speedup claim.",
+        "remaining": "Other small-read/full-season CPU/output-size observations from the original comparison remain unisolated and on later investigation backlog."
+      }
+    }
+  ]
+}

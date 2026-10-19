@@ -1,0 +1,624 @@
+{
+  "optionId": "SCOPED-ACTIVITY-ADMISSION-V1",
+  "relatedFindings": [
+    "PLAN-02"
+  ],
+  "title": "Early exact structural Activity admission, V1 full-row materialization",
+  "state": "private_verified_unadopted",
+  "productionSourceEdited": false,
+  "normalDatabaseTouched": false,
+  "schemaChanges": false,
+  "providerCalls": 0,
+  "sharedOwner": "src/lib/social/queries.server.ts:activityFeed",
+  "consumers": [
+    "First-party social/feed including item Activity from MediaDetails/socialShelf",
+    "Notification inbox explicit activityIds hydration; no workSocial change"
+  ],
+  "sourceAtExecution": {
+    "src/lib/social/queries.server.ts": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "src/lib/social/relationships.server.ts": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2"
+  },
+  "sourceAtClosure": {
+    "src/lib/social/queries.server.ts": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "src/lib/social/relationships.server.ts": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2"
+  },
+  "currentOwnerAtPublication": {
+    "path": "src/lib/social/queries.server.ts",
+    "sha256": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54"
+  },
+  "exactSources": {
+    "baselineSha256": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "candidateSha256": "230dc62aa877f0c86f1f6c7d82174b1e2932b8fa3a577c488d1168b3dc67a6e5",
+    "patchSha256": "0c752d73b261bb7ba47627a99e656f12dde258ecad251d27fa04a4f28f50931e",
+    "executedProbeSha256": "e5a9fe826afa43702e1f390a2dff116719278840ce8db90d0f003eb98767bc70",
+    "reviewedPlanSha256": "08eefef867a822b9fa7ea91b47cc4aca5e026b1d2cd86655945cf079f55a071b"
+  },
+  "contract": {
+    "admission": "Conditional same-statement MATERIALIZED admitted_activity selects actual a.* under exactly the existing work/artist/reading-group/activityIds predicates, before visible_raw policy/enrichment. visible_raw reads it directly, no unrestricted base rejoin. Original four predicates remain in original WHERE and reuse exact fragments.",
+    "unscoped": "No admission CTE and original source; compiled primary SQL and all parameters byte-identical for every34unscoped actual comparison.",
+    "preserved": [
+      "Direct work/show/season/season-show/direct contains semantics, not recursive descendants or root_id substitution",
+      "Multiple event scopes AND; relationship target roots UNION unchanged",
+      "Artist/group EXISTS and one base event occurrence",
+      "Undefined/empty/duplicate explicit IDs and explicit grouping mode",
+      "Visibility/features/friend/category/kind gates and one-statement observation",
+      "All-history dedupe/listen/run grouping, unknown-date/order/cursor/period/final limit",
+      "Final visible_raw-based relationship fallback, reactions, captions, occurrence identities and complete DTO"
+    ],
+    "notIncluded": [
+      "No source adoption",
+      "No relationshipReasons/edge materialization",
+      "No raw-event early LIMIT",
+      "No index/schema/cache/provider/UI change"
+    ]
+  },
+  "actualVerification": {
+    "status": "passed",
+    "historicalLabels": 42,
+    "additionalAttributionLabels": 16,
+    "baseCoverageLabels": 58,
+    "extraRequestShapeLabels": 6,
+    "totalCoverageLabels": 64,
+    "uniqueCompleteDtoAndOrderedPrimaryRowPairs": 64,
+    "identicalInputReuses": 0,
+    "unscopedCompiledSqlAndParameterIdentities": 34,
+    "sourceShapedPlanPairs": 8,
+    "sourceShapedPlans": 16,
+    "alternatingFullOwnerTimingPairs": 4,
+    "additionalCompleteTimingComparisons": 4,
+    "executedOwners": 4,
+    "retainedLargestSeasonEpisodes": 829,
+    "retainedLargestCollectionMembers": 23,
+    "positiveShowRawEvents": 3424,
+    "positiveShowVisibleItemsByOwner": [
+      28,
+      19,
+      10,
+      28
+    ],
+    "positiveRelationshipFallback": "Active show has one relationship-only card for every scoped owner; complete outcome/primary row comparisons preserve it.",
+    "extraShapes": [
+      {
+        "label": {
+          "kind": "actual-id-empty-array"
+        },
+        "items": 0,
+        "events": 0,
+        "reactions": 0
+      },
+      {
+        "label": {
+          "kind": "actual-id-duplicates",
+          "identities": 2
+        },
+        "items": 1,
+        "events": 1,
+        "reactions": 1
+      },
+      {
+        "label": {
+          "kind": "actual-artist-scope"
+        },
+        "items": 3,
+        "events": 3,
+        "reactions": 0
+      },
+      {
+        "label": {
+          "kind": "actual-artist-work-and-scope"
+        },
+        "items": 3,
+        "events": 3,
+        "reactions": 0
+      },
+      {
+        "label": {
+          "kind": "actual-reading-group-scope"
+        },
+        "items": 1,
+        "events": 1,
+        "reactions": 0
+      },
+      {
+        "label": {
+          "kind": "actual-reading-group-work-and-scope"
+        },
+        "items": 1,
+        "events": 1,
+        "reactions": 0
+      }
+    ],
+    "census": {
+      "owners": 4,
+      "normalMoviePresent": true,
+      "largestSeasonEpisodes": 829,
+      "largestCollectionMembers": 23,
+      "activeShowRawEvents": 3424,
+      "normalViewerOwnerMappingEstablished": false,
+      "unknownDateCursorPresent": true,
+      "actualReactionTargets": 3,
+      "activityShapes": {
+        "total_listens": 3,
+        "unknown_events": 1152,
+        "dated_multitrack_listen_batches": 0,
+        "repeated_dated_work_listens": 0
+      },
+      "actualActivityArtistPresent": true,
+      "actualActivityReadingGroupPresent": true
+    },
+    "allSourcePinsUnchanged": true,
+    "sameBackend": true,
+    "externalAttempts": 0,
+    "rolledBack": true,
+    "poolClosed": true,
+    "writes": false,
+    "normalDatabaseTouched": false,
+    "cohortFabrication": false,
+    "receipt": "evidence/scoped-activity-admission-v1-full.json"
+  },
+  "pilot": {
+    "status": "passed",
+    "completePairs": 2,
+    "plans": 4,
+    "receipt": "evidence/scoped-activity-admission-v1-pilot.json",
+    "receiptSha256": "efa54fa5509d853f9a2d17c3b0d04b41b33c18c14fc79be2238fbb194cb231e4",
+    "scope": "Existing owner0/observed movie empty and active show populated; retained independently, not replaced by full receipt."
+  },
+  "session": {
+    "read_only": "on",
+    "isolation": "repeatable read",
+    "statement_timeout": "30s",
+    "lock_timeout": "1s",
+    "jit": "off",
+    "work_mem": "4MB"
+  },
+  "exclusivePreflight": {
+    "other_clone_client_backends": 0,
+    "active_other_clients": 0,
+    "idle_other_clients": 0,
+    "idle_transaction_other_clients": 0
+  },
+  "guards": "Exact designated clone-name file plus loopback endpoint/privateclone env, explicit phase-specific root lease, one reserved max1 backend, sourcepins before/after, globalfetch denied, read-intent ORM checks and database READONLY enforcement, durable aggregate progress, samebackend, rollback and poolclose. Other-client0 is a preflight observation, not atomic exclusivity.",
+  "fullPlanTradeoffs": [
+    {
+      "context": "reaction-activity-ids",
+      "beforePlanMs": 3.32,
+      "candidatePlanMs": 3.04,
+      "beforeRootSharedHits": 223,
+      "candidateRootSharedHits": 233,
+      "beforeRootSharedReads": 10,
+      "candidateRootSharedReads": 0,
+      "beforeRootTempReads": 0,
+      "candidateRootTempReads": 0,
+      "beforeRootTempWrites": 0,
+      "candidateRootTempWrites": 0
+    },
+    {
+      "context": "0:observed-normal-movie",
+      "beforePlanMs": 6221.316,
+      "candidatePlanMs": 1436.96,
+      "beforeRootSharedHits": 1341648,
+      "candidateRootSharedHits": 553488,
+      "beforeRootSharedReads": 3319,
+      "candidateRootSharedReads": 1351,
+      "beforeRootTempReads": 2696,
+      "candidateRootTempReads": 3352,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 5068
+    },
+    {
+      "context": "0:largest-season",
+      "beforePlanMs": 6405.09,
+      "candidatePlanMs": 1357.66,
+      "beforeRootSharedHits": 1339305,
+      "candidateRootSharedHits": 554831,
+      "beforeRootSharedReads": 5662,
+      "candidateRootSharedReads": 8,
+      "beforeRootTempReads": 5488,
+      "candidateRootTempReads": 6144,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 5068
+    },
+    {
+      "context": "0:largest-collection",
+      "beforePlanMs": 6296.063,
+      "candidatePlanMs": 1322.406,
+      "beforeRootSharedHits": 1362818,
+      "candidateRootSharedHits": 574982,
+      "beforeRootSharedReads": 2389,
+      "candidateRootSharedReads": 97,
+      "beforeRootTempReads": 2696,
+      "candidateRootTempReads": 3352,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 5068
+    },
+    {
+      "context": "0:retained-active-show",
+      "beforePlanMs": 6389.089,
+      "candidatePlanMs": 2721.408,
+      "beforeRootSharedHits": 1337626,
+      "candidateRootSharedHits": 759238,
+      "beforeRootSharedReads": 3082,
+      "candidateRootSharedReads": 467,
+      "beforeRootTempReads": 4092,
+      "candidateRootTempReads": 4748,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 5068
+    },
+    {
+      "context": "1:observed-normal-movie",
+      "beforePlanMs": 5536.99,
+      "candidatePlanMs": 1307.051,
+      "beforeRootSharedHits": 948265,
+      "candidateRootSharedHits": 553838,
+      "beforeRootSharedReads": 1639,
+      "candidateRootSharedReads": 1001,
+      "beforeRootTempReads": 2696,
+      "candidateRootTempReads": 3352,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 5068
+    },
+    {
+      "context": "2:observed-normal-movie",
+      "beforePlanMs": 1964.964,
+      "candidatePlanMs": 1358.984,
+      "beforeRootSharedHits": 730850,
+      "candidateRootSharedHits": 554839,
+      "beforeRootSharedReads": 807,
+      "candidateRootSharedReads": 0,
+      "beforeRootTempReads": 2696,
+      "candidateRootTempReads": 3352,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 5068
+    },
+    {
+      "context": "3:observed-normal-movie",
+      "beforePlanMs": 6379.285,
+      "candidatePlanMs": 1314.712,
+      "beforeRootSharedHits": 1177521,
+      "candidateRootSharedHits": 554542,
+      "beforeRootSharedReads": 3081,
+      "candidateRootSharedReads": 293,
+      "beforeRootTempReads": 2696,
+      "candidateRootTempReads": 3352,
+      "beforeRootTempWrites": 4412,
+      "candidateRootTempWrites": 5068
+    }
+  ],
+  "fullOwnerTimingSamples": [
+    {
+      "context": "0:observed-normal-movie",
+      "alternatingPairs": 2,
+      "beforeFullOwnerMedianMs": 6547.452166500007,
+      "candidateFullOwnerMedianMs": 1263.8773125000007,
+      "beforePrimaryMedianMs": 6546.393583500001,
+      "candidatePrimaryMedianMs": 1263.203916999977,
+      "allCompleteOutputsEqual": true
+    },
+    {
+      "context": "0:retained-active-show",
+      "alternatingPairs": 2,
+      "beforeFullOwnerMedianMs": 6837.339812499995,
+      "candidateFullOwnerMedianMs": 2768.0570000000007,
+      "beforePrimaryMedianMs": 6692.981583499961,
+      "candidatePrimaryMedianMs": 2671.4481249999953,
+      "allCompleteOutputsEqual": true
+    }
+  ],
+  "temporaryWorkExplanation": {
+    "supportedByPlans": true,
+    "explanation": "For every measured workId scope, the new admitted_activity joins social_activity to episodes/seasons before expensive policy work. PostgreSQL chose an episodes hash with134289rows and2batches under verifiedwork_mem4MB. The hash-join admission subtree reports656temporary read/written blocks, matching the extra656 at whole-plan root; a zero-row movie admission still incurs this join spill, so it is not evidence that materialized result rows themselves caused the spill. The seasons hash has5547rows and onebatch in pilot. Do not sum nested node counters.",
+    "perContext": [
+      {
+        "context": "reaction-activity-ids",
+        "admittedRows": 3,
+        "admissionTempReadBlocks": 0,
+        "admissionTempWrittenBlocks": 0,
+        "multiBatchHashNodes": []
+      },
+      {
+        "context": "0:observed-normal-movie",
+        "admittedRows": 0,
+        "admissionTempReadBlocks": 656,
+        "admissionTempWrittenBlocks": 656,
+        "multiBatchHashNodes": [
+          {
+            "Node Type": "Hash",
+            "Parent Relationship": "Inner",
+            "Actual Rows": 134289,
+            "Actual Loops": 1,
+            "Actual Startup Time": 15.025,
+            "Actual Total Time": 15.025,
+            "Plan Rows": 134289,
+            "Shared Hit Blocks": 1520,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 550,
+            "Hash Batches": 2,
+            "Peak Memory Usage": 6218
+          }
+        ]
+      },
+      {
+        "context": "0:largest-season",
+        "admittedRows": 0,
+        "admissionTempReadBlocks": 656,
+        "admissionTempWrittenBlocks": 656,
+        "multiBatchHashNodes": [
+          {
+            "Node Type": "Hash",
+            "Parent Relationship": "Inner",
+            "Actual Rows": 134289,
+            "Actual Loops": 1,
+            "Actual Startup Time": 16.421,
+            "Actual Total Time": 16.421,
+            "Plan Rows": 134289,
+            "Shared Hit Blocks": 1520,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 550,
+            "Hash Batches": 2,
+            "Peak Memory Usage": 6218
+          }
+        ]
+      },
+      {
+        "context": "0:largest-collection",
+        "admittedRows": 0,
+        "admissionTempReadBlocks": 656,
+        "admissionTempWrittenBlocks": 656,
+        "multiBatchHashNodes": [
+          {
+            "Node Type": "Hash",
+            "Parent Relationship": "Inner",
+            "Actual Rows": 134289,
+            "Actual Loops": 1,
+            "Actual Startup Time": 15.227,
+            "Actual Total Time": 15.228,
+            "Plan Rows": 134289,
+            "Shared Hit Blocks": 1520,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 550,
+            "Hash Batches": 2,
+            "Peak Memory Usage": 6218
+          }
+        ]
+      },
+      {
+        "context": "0:retained-active-show",
+        "admittedRows": 3424,
+        "admissionTempReadBlocks": 656,
+        "admissionTempWrittenBlocks": 656,
+        "multiBatchHashNodes": [
+          {
+            "Node Type": "Hash",
+            "Parent Relationship": "Inner",
+            "Actual Rows": 134289,
+            "Actual Loops": 1,
+            "Actual Startup Time": 14.921,
+            "Actual Total Time": 14.922,
+            "Plan Rows": 134289,
+            "Shared Hit Blocks": 1520,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 550,
+            "Hash Batches": 2,
+            "Peak Memory Usage": 6218
+          }
+        ]
+      },
+      {
+        "context": "1:observed-normal-movie",
+        "admittedRows": 0,
+        "admissionTempReadBlocks": 656,
+        "admissionTempWrittenBlocks": 656,
+        "multiBatchHashNodes": [
+          {
+            "Node Type": "Hash",
+            "Parent Relationship": "Inner",
+            "Actual Rows": 134289,
+            "Actual Loops": 1,
+            "Actual Startup Time": 16.908,
+            "Actual Total Time": 16.908,
+            "Plan Rows": 134289,
+            "Shared Hit Blocks": 990,
+            "Shared Read Blocks": 530,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 550,
+            "Hash Batches": 2,
+            "Peak Memory Usage": 6218
+          }
+        ]
+      },
+      {
+        "context": "2:observed-normal-movie",
+        "admittedRows": 0,
+        "admissionTempReadBlocks": 656,
+        "admissionTempWrittenBlocks": 656,
+        "multiBatchHashNodes": [
+          {
+            "Node Type": "Hash",
+            "Parent Relationship": "Inner",
+            "Actual Rows": 134289,
+            "Actual Loops": 1,
+            "Actual Startup Time": 26.069,
+            "Actual Total Time": 26.069,
+            "Plan Rows": 134289,
+            "Shared Hit Blocks": 1520,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 550,
+            "Hash Batches": 2,
+            "Peak Memory Usage": 6218
+          }
+        ]
+      },
+      {
+        "context": "3:observed-normal-movie",
+        "admittedRows": 0,
+        "admissionTempReadBlocks": 656,
+        "admissionTempWrittenBlocks": 656,
+        "multiBatchHashNodes": [
+          {
+            "Node Type": "Hash",
+            "Parent Relationship": "Inner",
+            "Actual Rows": 134289,
+            "Actual Loops": 1,
+            "Actual Startup Time": 16.263,
+            "Actual Total Time": 16.263,
+            "Plan Rows": 134289,
+            "Shared Hit Blocks": 1520,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 550,
+            "Hash Batches": 2,
+            "Peak Memory Usage": 6218
+          }
+        ]
+      }
+    ],
+    "notPhysicalDiskClaim": true
+  },
+  "interpretation": "All seven measured work-scoped contexts reduce whole-root shared buffer accesses while increasing temporary counters. The explicit-ID plan has233combined shared hits/reads on both sides and zero temp; cache hit/read split shifts. Repeated local full-owner samples support the two measured contexts only. Full-history relationship reasons and remaining empty-scope primary work persist; this is not a complete Activity remedy.",
+  "independentReview": {
+    "agent": "providers_jobs_audit",
+    "scope": "Exact source patch0c752d73 source-only; no semantic blocker, exact predicates/PK cardinality/AND-vs-UNION/fallback/window/cursor preserved. Actual broad proof subsequently passed.",
+    "notClaimed": "Reviewer did not run tests/DB."
+  },
+  "nextOption": {
+    "state": "separate_private_preparation_unexecuted",
+    "owner": "Same activityFeed scope admission",
+    "description": "Requested work plus DIRECT contains child roots; eligible event work IDs are those roots union episode IDs whose own show/season is in ORIGINAL roots union season IDs whose own show is in ORIGINAL roots. IN/semijoin and dedup, no recursive expansion or derivation through another season. This may avoid the full admission episode hash; requires separate reviewed proof and lease, no benefit assumed.",
+    "adoption": "No V1 or V2 source adoption authorized by this report. Parent owns subsequent choice and common/live acceptance."
+  },
+  "limits": [
+    "Actual clone selected movie identity matches the observed normal href, but owners/settings/time/cache differ; no normal latency-cause equality.",
+    "Only four existing owners and their retained policy states; no actual live revocation/concurrent feature-change/HTTPauth/API/browser acceptance.",
+    "Actual total listens3, unknown events1152, zero dated multi-track album batches and zero repeated dated work listens; no fabricated cohort or correctness/performance claim for those shapes.",
+    "Positive artist+work and reading-group+work pairs exist and match; conflicting multi-scope and hidden-event fallback schedules are not claimed actual.",
+    "Only two alternating timing pairs per sampled context; local owner timings exclude JSONserialization/HTTP/browser and do not establish a universal latency effect.",
+    "Primary is part of full owner time; ORM metrics exclude raw config/session reads. No RSS/CPU/WAL measurement.",
+    "Only root buffer counters are whole-plan totals. Shared Read Blocks and temporary counters are PostgreSQL metrics, not proven physical disk traffic.",
+    "Installed dependency work may change background/cache conditions; exact plans and output equality are stronger than isolated elapsed comparisons. No background-idle or production-load claim.",
+    "Executed scripts retain exact original local paths/source pins as historical evidence, not a generic runnable production CLI. Future replay requires separately reviewed path/source rebinding and root lease.",
+    "No maintained app/test edits or common gate execution in this candidate verification; existing baseline lateral fix and its tests stay unchanged.",
+    "Filter/cursor and empty/duplicate-ID request arguments are explicit verification inputs over retained actual rows, not captured natural browser traffic. No actual saved row or identity was fabricated."
+  ],
+  "artifactPins": {
+    "candidates/scoped-activity-admission-v1/scope-admission.patch": "0c752d73b261bb7ba47627a99e656f12dde258ecad251d27fa04a4f28f50931e",
+    "candidates/scoped-activity-admission-v1/source-pins-at-execution.json": "de288656c1a485b7076511c9b4c191737b061313be2a2e6d90005d34ba41ddf3",
+    "candidates/scoped-activity-admission-v1/reviewed-verification-plan.json": "08eefef867a822b9fa7ea91b47cc4aca5e026b1d2cd86655945cf079f55a071b",
+    "candidates/scoped-activity-admission-v1/queries.before.ts.txt": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "candidates/scoped-activity-admission-v1/executed-probe.ts.txt": "e5a9fe826afa43702e1f390a2dff116719278840ce8db90d0f003eb98767bc70",
+    "candidates/scoped-activity-admission-v1/candidate-manifest.json": "eb29221526200c1d3498eb25cc2bfe05c4f4b3952a08ddb7041a1d26f1af76b5",
+    "candidates/scoped-activity-admission-v1/queries.candidate.ts.txt": "230dc62aa877f0c86f1f6c7d82174b1e2932b8fa3a577c488d1168b3dc67a6e5",
+    "candidates/scoped-activity-admission-v1/syntax-only.json": "6da8a7ceebc9eee6dc65608b62b9b4df9c04cbc663f79239cfd20f1a898c610c",
+    "evidence/scoped-activity-admission-v1-pilot.json": "efa54fa5509d853f9a2d17c3b0d04b41b33c18c14fc79be2238fbb194cb231e4",
+    "evidence/scoped-activity-admission-v1-pilot-summary.json": "619b07f35a8336d368b404fa4218a38d9546fe734a145e93e91722c04aa76a41",
+    "evidence/scoped-activity-admission-v1-full.json": "11488b98761f2f3ef3ab0d3452eb7712dcf5ef73e7dc515da6664994d033e275"
+  },
+  "sourcePins": {
+    "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
+    "src/lib/social/relationships.server.ts": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2"
+  },
+  "currentSourceBoundary": "Current drift-check map copied from verified V1 closure; the candidate remains unapplied. Original sourceAtExecution/sourceAtClosure remain runtime evidence and are not rewritten by later changes.",
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterScopedActivityAdoptionChange": {
+    "at": "2026-10-18T05:19:07.473156+00:00",
+    "source": "src/lib/social/queries.server.ts",
+    "before": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "after": "29f1f31c79d67c75dc94127054d195a3810221480269fa0cb6737ce0095c4fb3",
+    "updatedCurrentMaps": [
+      "sourcePins"
+    ],
+    "report": "implementation-scoped-activity-workset.json",
+    "boundary": "Only current identity advances for exact shared scope-admission repair. Historical measurements/manifests stay immutable and are not implied rerun."
+  },
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T06:24:24.888971+00:00",
+      "path": "src/lib/social/relationships.server.ts",
+      "before": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+      "after": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+      "evidence": "evidence/implementation-activity-reasons-selective-applied.json",
+      "boundary": "Current source identity refreshed after separate selective-helper adoption. Immutable original execution receipts/manifests are unchanged; this does not rerun their measurements or transfer missing acceptance."
+    }
+  ],
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "src/lib/social/queries.server.ts"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+# Scoped Activity work-ID admission — V2 full verification
+
+**Current adoption:** the exact V2 candidate is now applied at the shared owner. See [implementation and maintained current-source checks](implementation-scoped-activity-workset.md): 16 actual admission comparisons, common gates and normal filter/inbox results pass; full Back acceptance remains partial. The 64-pair proof below is historical and was not rerun after the separate toast schema declaration.
+
+## Historical pre-adoption full proof
+
+V2 independently passed **64 complete actual-data response and ordered-primary-row comparisons**, all 34 unscoped SQL/parameter identities, sixteen source-shaped plans and four alternating timing pairs. All seven measured work scopes reduce whole-root shared buffer accesses, and all eight plan pairs retain **exactly the baseline temporary read/write counters**. The candidate remains private; no production source is adopted by this report. Root is separately handling the normal toast rollout.
+
+The shared `activityFeed` owner derives a nonrecursive root set from the requested work and its direct `contains` children. Allowed event work IDs are those original roots, episodes whose **own show or own season** belongs to those roots, and seasons whose **own show** belongs to those roots. Every lookup uses the original roots. UNION and an IN semijoin preserve one occurrence per event. No kind/existence/privacy join narrows the root seed, no derived season parent broadens episode membership, and no recursive descendant or display-root substitution is introduced. Artist, reading-group and explicit-ID scopes remain ANDed, and the original visibility/scope/grouping/cursor/relationship fallback stays in place. Unscoped queries retain their original source.
+
+The [full actual receipt](evidence/scoped-activity-admission-v2-full.json) repeats the exact 42 historical cases, sixteen four-owner detail scopes and six additional retained-data request shapes: empty/duplicate IDs, artist/artist+work and reading-group/group+work. The hash-pinned expected 64 labels and aggregate census must match; missing positive cases cannot silently reduce coverage. Actual baseline/candidate outputs execute afresh. The corpus includes four owners, a largest 829-episode season, a largest 23-member collection, 3,424 raw events for the active show, three reaction targets and positive artist/group results. Actual dated multi-track batches and repeated dated listens remain absent. Filter/cursor/empty/duplicate-ID arguments are explicit verification inputs over actual saved rows, not captured natural browser traffic.
+
+The separate [V2 pilot](evidence/scoped-activity-admission-v2-pilot.json) contains two actual scope pairs for **one existing viewer**, four plans and two supplementary intercept-only compilation controls. Those controls stop before SQL execution/owner completion; they are not a third actual full DTO case. The full run subsequently executes all 34 unscoped cases. The original [V1 full proof and first pilot](next-scoped-activity-admission.md) remain immutable and independently verified. V1 added 656 temporary reads/writes through an episode hash join; V2 has its own full proof and returns to baseline temporary counters. No cross-run V1-versus-V2 elapsed ranking is inferred.
+
+| Exact source-shaped plan context | Execution ms before → V2 | Shared Hit Blocks | Shared Read Blocks | Temp Read Blocks | Temp Written Blocks |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| reaction-activity-ids | 3.3 → 3.4 | 223 → 233 | 10 → 0 | 0 → 0 | 0 → 0 |
+| 0:observed-normal-movie | 6631.6 → 1317.8 | 1,341,647 → 525,474 | 3,320 → 3 | 2,696 → 2,696 | 4,412 → 4,412 |
+| 0:largest-season | 6410.8 → 1351.6 | 1,341,916 → 525,446 | 3,051 → 67 | 5,488 → 5,488 | 4,412 → 4,412 |
+| 0:largest-collection | 6482.3 → 1294.9 | 1,361,011 → 525,253 | 4,196 → 225 | 2,696 → 2,696 | 4,412 → 4,412 |
+| 0:retained-active-show | 7419.4 → 2696.6 | 1,336,462 → 743,891 | 4,246 → 166 | 4,092 → 4,092 | 4,412 → 4,412 |
+| 1:observed-normal-movie | 5674.9 → 1450.4 | 946,935 → 523,975 | 2,969 → 1,501 | 2,696 → 2,696 | 4,412 → 4,412 |
+| 2:observed-normal-movie | 2224.1 → 1622.0 | 728,601 → 525,470 | 3,056 → 7 | 2,696 → 2,696 | 4,412 → 4,412 |
+| 3:observed-normal-movie | 6466.1 → 1456.9 | 1,179,480 → 524,973 | 1,122 → 500 | 2,696 → 2,696 | 4,412 → 4,412 |
+
+Only root counters represent whole-query totals; nested counters are not summed. Shared Read Blocks and temporary counters do not prove physical disk traffic. The explicit-ID pair has the same 233 combined shared hits/reads and zero temporary work, so no gain is claimed for that already selective path.
+
+The plans support the spill explanation: V2 looks up allowed subtype IDs from the root set rather than building the full 134,289-row episode hash used by V1. The pilot has one allowed movie work or 148 allowed show works (138 episodes, nine seasons and the root), with zero temporary blocks in admission. The full node attribution is retained for all cases. The pilot still scans all 13,902 social events cheaply before policy, so this is **not a bounded history read or new index**. Existing recursive/relationship temporary work remains.
+
+For 0:observed-normal-movie, the full-owner median across two alternating pairs was 6562 → 1402ms; primary median 6562 → 1401ms.
+For 0:retained-active-show, the full-owner median across two alternating pairs was 7016 → 2856ms; primary median 6835 → 2699ms.
+
+These local clone samples exclude serialization, HTTP and the browser and do not establish a general latency SLO. Empty Activity still takes about 1.4 seconds in the sampled owner; relationship/privacy and other remaining work have not disappeared. The actual selected movie exists in both installations, but no equality of viewers/settings/runtime or causal normal-browser latency is inferred.
+
+The full run used one reserved repeatable-read/read-only backend with explicitly verified 30s statement/1s lock budgets, `jit=off`, `work_mem=4MB`, exact clone/source guards and denied fetch. All seventeen source/runtime pins stayed unchanged, the exact census matched, the transaction rolled back and the pool/process closed. Other-client zero is only a preflight observation under coordinated leases. Only existing approved private-clone credentials were used in memory. No fixture rows, schema change, provider call, normal key or normal database access occurred.
+
+At-execution and at-closure seventeen-file pins are immutable historical evidence. Current social source remains the original baseline at publication; the normal toast rollout can later change separate source/schema dependencies without rewriting these receipts or implying re-execution. Parent owns that overlay, adoption choice, maintained scoped-SQL controls, common gates and signed-in normal Activity/Back/panel/inbox acceptance. Actual revocation races, missing/contradictory subtype or multiple-parent cohorts, every filter crossproduct, CPU/RSS/WAL and concurrency remain outside this proof. Materialized sets can grow with the scope; these eight measured plan pairs do not establish a universal memory or concurrent-load bound.
+
+[Machine-readable report](next-scoped-activity-workset.json), [baseline](candidates/scoped-activity-admission-v2/queries.before.ts.txt), [exact V2 candidate](candidates/scoped-activity-admission-v2/queries.candidate.ts.txt), [patch](candidates/scoped-activity-admission-v2/workset-admission.patch), [full executed probe](candidates/scoped-activity-admission-v2/full-executed-probe.ts.txt), [full reviewed plan](candidates/scoped-activity-admission-v2/full-reviewed-plan.json), [pilot executed probe](candidates/scoped-activity-admission-v2/pilot-executed-probe.ts.txt). Executed artifacts retain original path/source guards; future replay requires an explicitly reviewed rebinding and lease, not blind execution after adoption.

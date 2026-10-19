@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-19T02:01:28.135299+00:00",
+  "status": "staleness-split-rejected-shared-ranking-admission-later-adopted",
+  "sourcePins": {
+    "src/lib/social/taste-cache.server.ts": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "src/lib/social/work-features.server.ts": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63",
+    "src/lib/social/taste-profile.ts": "7fef66e2f4fb58ccf3e017ec799d7cc216fb5301ae2db570c8e76b6b0dd04227",
+    "src/lib/recommendations/interests.server.ts": "ebc4a4050d98eb00c884dc40db2b46aa57d73a6666130f04f54b4d712d51e79e"
+  },
+  "candidateApplied": false,
+  "stalenessRef": "candidates/taste-staleness/staleness-actual.json",
+  "rankingRef": "candidates/taste-staleness/ranking-actual.json",
+  "artifactPins": {
+    "candidates/taste-staleness/ranking-actual.json": "2938205c87ccaac5a28ae05591b5dd28ff6372b76621c51768a438b952286d1a",
+    "candidates/taste-staleness/ranking-failed-result-container.json": "549cd5656daa004a3547cca1c1d4aeba70f75b9fe08de971ef2ebdfd786d8055",
+    "candidates/taste-staleness/ranking-failed-result-container.snapshot": "a1e2958f0a48736fbc5067eeed62529af2f3cf6f66bfacade4239fe6483153ea",
+    "candidates/taste-staleness/staleness-actual.json": "9e7330a206a83573f5ed3d996eff1213c8d22318e850fef47257a0698d3647cf",
+    "candidates/taste-staleness/staleness-summary.json": "7553db35b7f6bf910af72daa1267d9ab8af20fe1bdbfdab88f47271efbb41e3f",
+    "candidates/taste-staleness/taste-owner.before.snapshot": "ab588a44d7307a2ae79b1ddd80647000d5b5a9fbc1acab5a5660a04871c35c1e",
+    "candidates/taste-staleness/taste-ranking-real.ts.executed.snapshot": "e60576d80fc1fcf4104be9b6393b8171447342ac57dc89cb5fbafed99dc2f2bb",
+    "candidates/taste-staleness/taste-staleness-real.ts.executed.snapshot": "21fa566b9ff7064207ef712a32e7262accf48b933f6bff493f0d08d0baa70d59",
+    "probes/taste-staleness-real.ts": "21fa566b9ff7064207ef712a32e7262accf48b933f6bff493f0d08d0baa70d59",
+    "probes/taste-ranking-real.ts": "e60576d80fc1fcf4104be9b6393b8171447342ac57dc89cb5fbafed99dc2f2bb"
+  },
+  "remaining": [
+    "Full worker publication/leases/restart/concurrent revisions, broader scan admission and missing natural policy/book/provider/growth/resource cohorts remain."
+  ],
+  "revisionSplitCandidateApplied": false,
+  "laterRankingAdmissionApplied": true,
+  "laterRankingReportRef": "implementation-found-17.md",
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T02:01:28.135299+00:00",
+      "reportRef": "implementation-found-17.md",
+      "paths": [
+        "src/lib/social/taste-cache.server.ts"
+      ],
+      "boundary": "Current reviewed owner/prose/checker identity only; archived native query epochs and every previous acceptance receipt remain unchanged."
+    }
+  ]
+}

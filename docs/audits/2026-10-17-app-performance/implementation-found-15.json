@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-19T01:52:49.356026+00:00",
+  "status": "candidate-reverted-resource-tradeoff-unresolved",
+  "sourcePins": {
+    "src/lib/server/queries/profile.ts": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e"
+  },
+  "sourceBefore": {
+    "src/lib/server/queries/profile.ts": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e"
+  },
+  "measuredCandidateSha256": "a542f603fb40a1390c5c5d6cc358ab336179e72c2c3974f804dae35a0be2d909",
+  "candidateApplied": false,
+  "actualRef": "evidence/implementation-found-15-actual.json",
+  "normalRef": "evidence/implementation-found-14-15-normal.json",
+  "gatesRef": "evidence/implementation-approved-avatar-final-gates.json",
+  "comparisons": 36,
+  "changedPlanFamilies": 12,
+  "artifactPins": {
+    "candidates/found-implementation-15/source-manifest.json": "9e81b3c139877b05d02e2f10c187b746d751d8e4cec7f4c041c110ce2d4bdc4a",
+    "candidates/found-implementation-15/runtime-owner-changes.patch": "3ac5db7babcd5ec724046e8c009edacbdeba413b5acacf582264f0193640c686",
+    "candidates/found-implementation-15/profile.candidate.ts.txt": "a542f603fb40a1390c5c5d6cc358ab336179e72c2c3974f804dae35a0be2d909",
+    "candidates/found-implementation-15/profile.before.ts.txt": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e",
+    "candidates/found-implementation-15/source-manifest.applied-before-resource-review.snapshot": "0f5b5d95e21cb716f099182d069964bca41b5588bd1244d650258a23dc3caf11",
+    "evidence/implementation-found-15-actual.json": "769a2cb49f04f319b6632531533da836c6f7e433c9ec798dd7ec9d2fbd486936",
+    "evidence/implementation-found-14-15-normal.json": "5ea07702c63ae9acd764281b0cb9e3dda9d0ed34f81c6b70ec2ff2b34870c612",
+    "evidence/implementation-approved-avatar-final-gates.json": "de238f8333e5b8f31cc738ae6d2d7994a982d8744fb9abed14e47d0783aad943",
+    "probes/profile-season-admission-real.ts": "be0756af9fadea0fb0f1e554a5998929683af08b928487a9ce52bba0b9a53348"
+  }
+}

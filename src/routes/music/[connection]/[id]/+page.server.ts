@@ -6,7 +6,7 @@ import { jellyfinMusicIdSchema } from '$lib/providers/jellyfin/music.server';
 import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({locals, params, url, depends}) => {
+export const load: PageServerLoad = async ({locals, params, url, depends,request}) => {
   depends('coast:tracking');
 
   if (!locals.user) error(401, 'Sign in to browse music.');
@@ -18,8 +18,9 @@ export const load: PageServerLoad = async ({locals, params, url, depends}) => {
   const page = Number(url.searchParams.get('page') ?? 1);
   if (!Number.isInteger(page) || page < 1 || page > 42949673)
     error(400, 'Choose a positive music page number.');
-  return await musicSourceDetailData(locals.user.id, params.connection, params.id,page).catch(
+  return await musicSourceDetailData(locals.user.id, params.connection, params.id,page,request.signal).catch(
     async (cause) => {
+      request.signal.throwIfAborted();
       if(cause instanceof AppError)error(cause.status,cause.message);
       await logDiagnostic('error', 'application.failed', {
         failure: classifyFailure(cause),

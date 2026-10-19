@@ -26,8 +26,8 @@ const code=compileRunes(`import {untrack} from ${JSON.stringify(svelteUrl)};
 const {create}=await import(moduleUrl(code));
 const settle=async()=>{for(let i=0;i<8;i++){runtime.flush();await Promise.resolve();}};
 const content=(source:string,page=1)=>({source,page,pages:2,reviews:[{id:source+'-'+page}],crew:[{id:1,name:'Crew',character:'Director'}],facts:[]});
-function fixture(section?:string,parameters:Record<string,string>={}){
- page.data.user={id:'viewer'};page.url=new URL('http://test/media/title?'+new URLSearchParams(parameters));
+function fixture(section?:string,parameters:Record<string,string>={},signedIn=true){
+ page.data.user=signedIn?{id:'viewer'}:null;page.url=new URL('http://test/media/title?'+new URLSearchParams(parameters));
  const options=runtime.state({item:{id:'title-a'},section,cast:[{id:2,name:'Cast',character:'Actor'}]});
  const requests:{path:string;signal:AbortSignal;finish:(value:unknown)=>void;fail:(error:Error)=>void}[]=[];
  let controller:any;
@@ -90,5 +90,19 @@ test('item/viewer replacement and destruction abort stale detail requests, retai
   const current=f.requests[4];f.close();expect(current.signal.aborted).toBe(true);
   current.finish(content('after-destruction'));await settle();expect(f.controller.data.tmdb).toBeNull();
   await f.controller.load('tmdb');expect(f.requests).toHaveLength(5);
+ }finally{f.close();}
+});
+
+test('anonymous detail demand never calls private enrichment, while sign-in and withdrawal retain ownership',async()=>{
+ const f=fixture(undefined,{},false);
+ try{
+  f.controller.activate('insights');f.controller.activate('reviews');f.controller.activate('credits');await settle();
+  await f.controller.load('tmdb');await settle();
+  expect(f.requests).toHaveLength(0);expect(f.controller.busy).toEqual({tmdb:false,trakt:false});
+  page.data.user={id:'signed-in'};await settle();expect(f.requests).toHaveLength(2);
+  page.data.user=null;await settle();expect(f.requests.every(request=>request.signal.aborted)).toBe(true);
+  f.requests.forEach(request=>request.finish(content('withdrawn')));await settle();
+  expect(f.controller.data).toEqual({tmdb:null,trakt:null});expect(f.controller.busy).toEqual({tmdb:false,trakt:false});
+  page.data.user={id:'another-viewer'};await settle();expect(f.requests).toHaveLength(4);
  }finally{f.close();}
 });

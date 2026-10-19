@@ -24,7 +24,7 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
  if (path[0] === 'media') {
       if(path.length===2&&path[1]==='details'&&method==='GET'){
         const href=v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(2048)),url.searchParams.get('href'));
-        return json(await mediaDetailData(uid,href,context.request.signal));
+        return json(await mediaDetailData(uid,href,context.request.signal,url.searchParams.get('enhance')==='true'));
       }
       if(path.length===3&&path[2]==='edition'&&method==='GET'){
         const editionName=v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(500)),url.searchParams.get('name'));
@@ -37,7 +37,7 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
         const [reading] = await getDb().select({kind:readingWorks.kind}).from(readingWorks).where(eq(readingWorks.id,id));
         if (reading) return json({reading:{...await readingDetails(uid,id),kind:reading.kind,remote:false}});
         result = url.searchParams.get('enhance') === 'true'
-          ? await (await loadMediaDetails(uid, uuid(path[1]))).enhancement
+          ? await (await loadMediaDetails(uid, uuid(path[1]), context.request.signal)).enhancement
           : await detailsData(uid, id);
       } else if (path[2] === 'playable' && path.length === 3 && method === 'GET') {
         const [item] = await mediaViewsForIds(uid, [uuid(path[1])]);
@@ -54,7 +54,7 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
       else if (path[2] === 'history' && method === 'GET')
         result = await mediaHistory(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1));
       else if (path[2] === 'trailer' && method === 'GET')
-        result = { url: await getTrailer(uid, uuid(path[1])) };
+        result = { url: await getTrailer(uid, uuid(path[1]),context.request.signal) };
       else if (path[2] === 'refresh' && method === 'POST') {
         await requireFeature(uid,'screen');
         result = await refreshMedia(uuid(path[1]), (user.settings.region as string) || 'GB');

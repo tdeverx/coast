@@ -309,7 +309,7 @@
     {:else if name==='FriendRoster'}<FriendRoster userId={id} friends={[{id,userId:id,username:'Alice',state:'accepted',requestedBy:id,avatar:null,canCompare:true,activityStatus:'online',backgroundArtwork:movie.backdrop??undefined}]} act={()=>{}} />
     {:else if name==='NotificationInbox'}<NotificationInbox bind:open />
     {:else if name==='NotificationToasts'}
-      <NotificationToasts notifications={[{id,title:"Preview notification",body:"Demo notification; nothing has changed.",level:"persistent",readAt:null,createdAt:today}]} />
+      <NotificationToasts notifications={[{id,title:"Preview notification",body:"Demo notification; nothing has changed.",level:"persistent",readAt:null,toastHiddenAt:null,createdAt:today}]} />
     {:else if name==='Pagination'}
       <Pagination page={number} pages={5} onchange={(value)=>number=value} label="Preview pages" />
     {:else if name==='PlaybackTimeline'}

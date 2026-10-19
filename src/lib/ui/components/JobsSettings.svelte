@@ -3,7 +3,7 @@
   import {providerSchedule} from '$lib/providers/schedule';
   import {recurringTask} from '$lib/providers/task-timing';
   import { onMount } from 'svelte';
-  import { invalidate } from '$app/navigation';
+  import { refreshRouteDependencies } from '$lib/ui/client';
   import { useClient } from '$lib/ui/client-context';
   const { preview } = useClient();
   import { maintenanceKinds, serviceTasks, type ServiceTask } from '$lib/providers/tasks';
@@ -88,7 +88,7 @@
     const timer = setInterval(() => {
       if (!document.hidden && !polling) {
         polling = true;
-        void invalidate('coast:settings')
+        void refreshRouteDependencies(['settings'])
           .catch(() => {})
           .finally(() => (polling = false));
       }

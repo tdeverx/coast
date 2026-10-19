@@ -12,7 +12,11 @@ const tool=(command:string,args:string[])=>container?[containerTool,'exec',conta
 const pgEnv={...process.env,PGHOST:target.hostname,PGPORT:target.port||'5432',PGUSER:role,PGPASSWORD:decodeURIComponent(target.password)};
 const dumpPath=container?'/tmp/'+source+'.dump':directory+'/database.dump';
 let sourceDb:Bun.SQL|undefined,restoreDb:Bun.SQL|undefined;
-async function child(args:string[],options:any={}){const p=Bun.spawn(args,{stdout:'pipe',stderr:'pipe',...options});const output=await new Response(p.stdout).text(),err=await new Response(p.stderr).text();if(await p.exited)throw Error('Recovery drill step failed: '+err.replaceAll(target.password,'[redacted]'));return output;}
+async function child(args:string[],options:any={}){
+ const p=Bun.spawn(args,{stdout:'pipe',stderr:'pipe',...options});
+ const [output,err,status]=await Promise.all([new Response(p.stdout).text(),new Response(p.stderr).text(),p.exited]);
+ if(status)throw Error('Recovery drill step failed: '+err.replaceAll(target.password,'[redacted]'));return output;
+}
 try{
  await admin.unsafe(`create database ${source}`);await admin.unsafe(`create database ${restored}`);
  target.pathname='/'+source;await child([process.execPath,'scripts/migrate.ts'],{env:{...env,DATABASE_URL:target.toString()}});sourceDb=new Bun.SQL(target.toString());
@@ -31,7 +35,8 @@ try{
  const wrongDir=await mkdtemp('/tmp/coast-recovery-wrong-key-');try{
  const rejected=await child([process.execPath,'--eval',`import {decryptCredential} from './src/lib/server/security/credentials.ts';try{await decryptCredential(process.env.DRILL_CIPHER!);console.log('failed');}catch{console.log('rejected');}`],{env:{...env,COAST_DATA_DIR:wrongDir,DRILL_CIPHER:row.credentials}});if(rejected.trim()!=='rejected')throw Error('Missing-key restore was accepted');
  }finally{await rm(wrongDir,{recursive:true,force:true});}
- console.log('PASS PostgreSQL 17 logical dump/restore, copied key decrypts in a fresh process, missing key rejected, queued work retained');
+ const [version]=await restoreDb`SELECT current_setting('server_version') AS version`;
+ console.log(`PASS PostgreSQL ${version.version} logical dump/restore, copied key decrypts in a fresh process, missing key rejected, queued work retained`);
 }finally{
  await sourceDb?.close();await restoreDb?.close();
  for(const name of [source,restored]){await admin.unsafe(`drop database if exists ${name} with (force)`);if(container&&name===source)await child(tool('rm',['-f',dumpPath]));}

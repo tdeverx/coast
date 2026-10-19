@@ -1,0 +1,559 @@
+{
+  "id": "ANCESTOR-AGGREGATE-OBS-08",
+  "canonicalOverlap": [
+    "DATA-02",
+    "DATA-07"
+  ],
+  "status": "partial-actual-helper-rollback-verified",
+  "implementationApplied": true,
+  "sharedOwner": "Existing refreshAncestors and refreshCollections helpers in core tracking service",
+  "scope": "SQL aggregates replace complete child-state row transfer and JavaScript date sorting; every existing caller benefits. Existing main command admission, locks, recursion, write counts and fields remain.",
+  "sourcePins": {
+    "src/lib/core/tracking/service.server.ts": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29",
+    "src/lib/core/tracking/state.ts": "6bbf3d974be91d3256189a9922568d54f96e63911fa01965cf1caf35abf1062b",
+    "src/lib/core/tracking/rewatch.server.ts": "9d9dbba3ef75f32eb45d5f932011ea52506f1b0102a5f8899f1e9f012e513e1c",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/db/jsonb.ts": "de3327d4ffa147b122667c9fcde34fde89fb33f62daa8a8068f0aee1d97a590b",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "drizzle/0039_performance_benchmarks.sql": "46c40ee9cd4c53adecd1a68a1df1c11afc2055bd888c4281d1a840750eef7cc2",
+    "tests/tracking-ancestor-aggregate-db.test.ts": "72308e60a110e95cc2bff2b2b7bc0c06053331baaefcbfec5f149a986a81d1c2"
+  },
+  "sourceBefore": {
+    "src/lib/core/tracking/service.server.ts": "56c92cfeb728cb5942241801db4a9020d7f29b9dcec6b6392ecf7ff243290012",
+    "src/lib/core/tracking/state.ts": "6bbf3d974be91d3256189a9922568d54f96e63911fa01965cf1caf35abf1062b",
+    "src/lib/core/tracking/rewatch.server.ts": "9d9dbba3ef75f32eb45d5f932011ea52506f1b0102a5f8899f1e9f012e513e1c",
+    "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "src/lib/server/db/jsonb.ts": "de3327d4ffa147b122667c9fcde34fde89fb33f62daa8a8068f0aee1d97a590b",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "drizzle/0039_performance_benchmarks.sql": "46c40ee9cd4c53adecd1a68a1df1c11afc2055bd888c4281d1a840750eef7cc2"
+  },
+  "candidatePins": {
+    "before": "56c92cfeb728cb5942241801db4a9020d7f29b9dcec6b6392ecf7ff243290012",
+    "candidate": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a"
+  },
+  "artifactPins": {
+    "probes/ancestor-aggregation-candidate-actual.ts": "a525737aed9611542b555db1cfaed48c8bf576b3825fabb974a4c8f5e116106d",
+    "probes/ancestor-aggregation-real.ts": "e5ca78d84a18cac7193536f202c0ff71472e1f3a8740ba7b2755915c9c15ae12",
+    "probes/ancestor-aggregation-failed-1.ts": "40f383b8cfd887428c4b31fddf271f7566c7145ff5d9abcf1994ede024f83539",
+    "evidence/ancestor-aggregation-actual.json": "c25ad28c3b256cbe3a56124c65839653667c25d0cf381a51ced040de47e85dc2",
+    "evidence/ancestor-aggregation-failed-1.json": "c9f3ff24fa7fd25da783f7139270cba3b8e94de26ab0f4e90bc807e1fbf0b2cd",
+    "candidates/ancestor-aggregation/service.before.ts.txt": "56c92cfeb728cb5942241801db4a9020d7f29b9dcec6b6392ecf7ff243290012",
+    "candidates/ancestor-aggregation/service.candidate.ts.txt": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+    "evidence/ancestor-aggregation-controls.json": "9d6635882e6697695df8338ab1833cea2f8e88f0fd544413485747bc66dc29d8",
+    "evidence/ancestor-aggregation-controls-tests.txt": "b2531581ed0b78d2e9d282daeab1a87054c52cf215055fc3d5630f94b4a7537f",
+    "probes/tracking-ancestor-aggregate-controls.ts": "1000352c811676fba7776491a6ca499461e5848359d2c6e099c9cf26dcf34894"
+  },
+  "actualProof": {
+    "receipt": "evidence/ancestor-aggregation-actual.json",
+    "cases": 28,
+    "cohorts": [
+      {
+        "kind": "largest_regular_show",
+        "regularChildren": 6903,
+        "missing_states": 6903,
+        "completed": 0,
+        "dated": 0
+      },
+      {
+        "kind": "actual_partial_dated_show",
+        "ownerOrdinal": 0,
+        "regularChildren": 91,
+        "completed": 11,
+        "dated": 11
+      },
+      {
+        "kind": "actual_complete_dated_season",
+        "ownerOrdinal": 0,
+        "regularChildren": 10,
+        "completed": 10,
+        "dated": 10
+      },
+      {
+        "kind": "actual_dated_collection",
+        "ownerOrdinal": 0,
+        "regularChildren": 6,
+        "completed": 1,
+        "dated": 1,
+        "collectionOnly": true
+      },
+      {
+        "kind": "actual_partial_dated_show",
+        "ownerOrdinal": 1,
+        "regularChildren": 806,
+        "completed": 800,
+        "dated": 800
+      },
+      {
+        "kind": "actual_complete_dated_season",
+        "ownerOrdinal": 1,
+        "regularChildren": 38,
+        "completed": 38,
+        "dated": 38
+      },
+      {
+        "kind": "actual_dated_collection",
+        "ownerOrdinal": 1,
+        "regularChildren": 12,
+        "completed": 3,
+        "dated": 3,
+        "collectionOnly": true
+      },
+      {
+        "kind": "actual_partial_dated_show",
+        "ownerOrdinal": 2,
+        "regularChildren": 806,
+        "completed": 270,
+        "dated": 263
+      },
+      {
+        "kind": "actual_complete_dated_season",
+        "ownerOrdinal": 2,
+        "regularChildren": 26,
+        "completed": 26,
+        "dated": 26
+      },
+      {
+        "kind": "actual_dated_collection",
+        "ownerOrdinal": 2,
+        "regularChildren": 12,
+        "completed": 2,
+        "dated": 2,
+        "collectionOnly": true
+      },
+      {
+        "kind": "actual_partial_dated_show",
+        "ownerOrdinal": 3,
+        "regularChildren": 806,
+        "completed": 799,
+        "dated": 799
+      },
+      {
+        "kind": "actual_complete_dated_season",
+        "ownerOrdinal": 3,
+        "regularChildren": 38,
+        "completed": 38,
+        "dated": 38
+      },
+      {
+        "kind": "actual_dated_collection",
+        "ownerOrdinal": 3,
+        "regularChildren": 23,
+        "completed": 1,
+        "dated": 1,
+        "collectionOnly": true
+      },
+      {
+        "kind": "actual_special_only_season",
+        "regularChildren": 0,
+        "specialChildren": 829
+      }
+    ],
+    "equality": {
+      "allPerStepAccountTracking": true,
+      "allTablePostValues": true,
+      "postDigest": "216504e0a68b549abdd9a88b8c526a99f76af7f6a6ddbf40c298fbfe6c03537b",
+      "tupleAndDmlAdmission": true
+    },
+    "metrics": {
+      "before": {
+        "variant": "before",
+        "statements": 296,
+        "boundParameters": 1074,
+        "mappedRows": 28276,
+        "mappedJsonProxyBytes": 1676793,
+        "childProjectionStatements": 48,
+        "childProjectionRows": 28054,
+        "childProjectionJsonProxyBytes": 1638240,
+        "positiveMappedDates": 5052,
+        "dml": {
+          "tracking_state": {
+            "statements": 96,
+            "affectedOrReturnedRows": 55
+          }
+        },
+        "tupleChanges": {
+          "beforeRows": 90971,
+          "afterRows": 90978,
+          "inserted": 7,
+          "deleted": 0,
+          "changed": 16,
+          "insertedKeysDigest": "8749ffc475b8437f929afcddfea1fb6a681e6a594e8cc291a1613bb62047fcce",
+          "deletedKeysDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "changedKeysDigest": "aa217a6f40fc63163a47007a8fe808244b0f3ea59d702907842172f6976dbd9d"
+        }
+      },
+      "candidate": {
+        "variant": "candidate",
+        "statements": 296,
+        "boundParameters": 1074,
+        "mappedRows": 270,
+        "mappedJsonProxyBytes": 42803,
+        "childProjectionStatements": 48,
+        "childProjectionRows": 48,
+        "childProjectionJsonProxyBytes": 4250,
+        "positiveMappedDates": 38,
+        "dml": {
+          "tracking_state": {
+            "statements": 96,
+            "affectedOrReturnedRows": 55
+          }
+        },
+        "tupleChanges": {
+          "beforeRows": 90971,
+          "afterRows": 90978,
+          "inserted": 7,
+          "deleted": 0,
+          "changed": 16,
+          "insertedKeysDigest": "8749ffc475b8437f929afcddfea1fb6a681e6a594e8cc291a1613bb62047fcce",
+          "deletedKeysDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "changedKeysDigest": "aa217a6f40fc63163a47007a8fe808244b0f3ea59d702907842172f6976dbd9d"
+        }
+      }
+    },
+    "restoration": {
+      "allTableLogicalMultisetsEqual": true,
+      "sequencesEqual": true,
+      "tables": 102,
+      "rows": 1864145,
+      "beforeDigest": "8abe50d3bedf11e0b634c8b9af7a4346a1f728fc539ffddfb813c63bee122468",
+      "afterDigest": "8abe50d3bedf11e0b634c8b9af7a4346a1f728fc539ffddfb813c63bee122468"
+    },
+    "settings": {
+      "read_only": "off",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "5s"
+    },
+    "childPlans": [
+      {
+        "ordinal": 0,
+        "variant": "before",
+        "sqlSha256": "ab3dd7f7acc00336928fc661811c665a8d39223ad8b62ffaf24229796a9fe3aa",
+        "parameterCount": 3,
+        "returnedRows": 6903,
+        "executionMs": 5.14,
+        "planningMs": 0.16,
+        "rootSharedHits": 429,
+        "rootSharedReads": 245,
+        "rootTempReads": 0,
+        "rootTempWrites": 0,
+        "nodes": [
+          {
+            "type": "Hash Join",
+            "rows": 6903,
+            "loops": 1,
+            "rowsTimesLoops": 6903
+          },
+          {
+            "type": "Bitmap Heap Scan",
+            "relation": "tracking_state",
+            "rows": 23793,
+            "loops": 1,
+            "rowsTimesLoops": 23793
+          },
+          {
+            "type": "Bitmap Index Scan",
+            "rows": 23819,
+            "loops": 1,
+            "rowsTimesLoops": 23819
+          },
+          {
+            "type": "Hash",
+            "rows": 6903,
+            "loops": 1,
+            "rowsTimesLoops": 6903
+          },
+          {
+            "type": "Bitmap Heap Scan",
+            "relation": "episodes",
+            "rows": 6903,
+            "loops": 1,
+            "rowsTimesLoops": 6903
+          },
+          {
+            "type": "Bitmap Index Scan",
+            "rows": 6911,
+            "loops": 1,
+            "rowsTimesLoops": 6911
+          }
+        ]
+      },
+      {
+        "ordinal": 0,
+        "variant": "candidate",
+        "sqlSha256": "b8140a2c286e85e76c03d22c746362fbee5d9852b6d5b52c5de9677a5b72f800",
+        "parameterCount": 3,
+        "returnedRows": 1,
+        "executionMs": 3.905,
+        "planningMs": 0.088,
+        "rootSharedHits": 674,
+        "rootSharedReads": 0,
+        "rootTempReads": 0,
+        "rootTempWrites": 0,
+        "nodes": [
+          {
+            "type": "Aggregate",
+            "rows": 1,
+            "loops": 1,
+            "rowsTimesLoops": 1
+          },
+          {
+            "type": "Hash Join",
+            "rows": 6903,
+            "loops": 1,
+            "rowsTimesLoops": 6903
+          },
+          {
+            "type": "Bitmap Heap Scan",
+            "relation": "tracking_state",
+            "rows": 23793,
+            "loops": 1,
+            "rowsTimesLoops": 23793
+          },
+          {
+            "type": "Bitmap Index Scan",
+            "rows": 23819,
+            "loops": 1,
+            "rowsTimesLoops": 23819
+          },
+          {
+            "type": "Hash",
+            "rows": 6903,
+            "loops": 1,
+            "rowsTimesLoops": 6903
+          },
+          {
+            "type": "Bitmap Heap Scan",
+            "relation": "episodes",
+            "rows": 6903,
+            "loops": 1,
+            "rowsTimesLoops": 6903
+          },
+          {
+            "type": "Bitmap Index Scan",
+            "rows": 6911,
+            "loops": 1,
+            "rowsTimesLoops": 6911
+          }
+        ]
+      },
+      {
+        "ordinal": 1,
+        "variant": "before",
+        "sqlSha256": "f3a854be5a5ea621690252a6524078edd80e59cb92448316c7ce4096b761f1bb",
+        "parameterCount": 3,
+        "returnedRows": 249,
+        "executionMs": 1.19,
+        "planningMs": 0.055,
+        "rootSharedHits": 640,
+        "rootSharedReads": 125,
+        "rootTempReads": 0,
+        "rootTempWrites": 0,
+        "nodes": [
+          {
+            "type": "Nested Loop",
+            "rows": 249,
+            "loops": 1,
+            "rowsTimesLoops": 249
+          },
+          {
+            "type": "Bitmap Heap Scan",
+            "relation": "episodes",
+            "rows": 249,
+            "loops": 1,
+            "rowsTimesLoops": 249
+          },
+          {
+            "type": "Bitmap Index Scan",
+            "rows": 249,
+            "loops": 1,
+            "rowsTimesLoops": 249
+          },
+          {
+            "type": "Index Scan",
+            "relation": "tracking_state",
+            "rows": 0,
+            "loops": 249,
+            "rowsTimesLoops": 0
+          }
+        ]
+      },
+      {
+        "ordinal": 1,
+        "variant": "candidate",
+        "sqlSha256": "8a0ef8a80f5bd9e62ea70c4fae02ba07308f93e00713d14ba53add21fa70e9e9",
+        "parameterCount": 3,
+        "returnedRows": 1,
+        "executionMs": 0.31,
+        "planningMs": 0.104,
+        "rootSharedHits": 765,
+        "rootSharedReads": 0,
+        "rootTempReads": 0,
+        "rootTempWrites": 0,
+        "nodes": [
+          {
+            "type": "Aggregate",
+            "rows": 1,
+            "loops": 1,
+            "rowsTimesLoops": 1
+          },
+          {
+            "type": "Nested Loop",
+            "rows": 249,
+            "loops": 1,
+            "rowsTimesLoops": 249
+          },
+          {
+            "type": "Bitmap Heap Scan",
+            "relation": "episodes",
+            "rows": 249,
+            "loops": 1,
+            "rowsTimesLoops": 249
+          },
+          {
+            "type": "Bitmap Index Scan",
+            "rows": 249,
+            "loops": 1,
+            "rowsTimesLoops": 249
+          },
+          {
+            "type": "Index Scan",
+            "relation": "tracking_state",
+            "rows": 0,
+            "loops": 249,
+            "rowsTimesLoops": 0
+          }
+        ]
+      }
+    ],
+    "externalAttempts": 0,
+    "poolClosed": true
+  },
+  "independentReview": [
+    {
+      "reviewer": "providers_jobs_audit",
+      "scope": "Exact aggregation semantics, baseline/candidate and private rollback safety, native Date mapping, complete logical values and changed-key hashes, sanitized read-only plan tail. Loader first failed before variants; subsequent emitted-import relocation changed probe only.",
+      "outcome": "no material source/rollback blocker",
+      "finalLoaderReview": "scanImports emittedpath relocation reviewedafterfailedfirstattempt; static/multiline/dynamicpaths allfileURL/node: and failclosedrescanned; no domainlogicchange."
+    }
+  ],
+  "portableReplay": {
+    "path": "probes/ancestor-aggregation-real.ts",
+    "status": "prepared_syntax_checked_not_executed",
+    "boundary": "Historical executed source and receipt remain immutable. Portable replay accepts the adopted exact candidate and retained baseline; do not substitute syntax admission for a new actual replay."
+  },
+  "supplementaryRegression": {
+    "status": "passed_actual_clone_readonly_tableless",
+    "test": "tests/tracking-ancestor-aggregate-db.test.ts",
+    "receipt": "evidence/ancestor-aggregation-controls.json",
+    "transcript": "evidence/ancestor-aggregation-controls-tests.txt",
+    "runner": "probes/tracking-ancestor-aggregate-controls.ts",
+    "passed": 2,
+    "failed": 0,
+    "guardedSkip": 0,
+    "assertions": 55,
+    "settings": "Eachtest verified READONLY10sstatement/1slock; poolclosed, no savedrows/DBfixture/schema/providerwork.",
+    "boundary": "Authored tableless correctness controls are supplemental, not actual catalogue or performance evidence. Native Date decoder positive proof comes from fullhelper actualreplay, not rawcontrolSQL coercion."
+  },
+  "limits": [
+    "Only the two complete ancestor helpers are invoked with caller-order account/policy locks; track/bulk/rebuild input validation, events, webhook admission and live concurrent caller schedules are outside this proof.",
+    "Actual saved cohorts only; no catalogue, tracking, relationship, user or event cohort is fabricated. Ordinary then rebuilding calls run sequentially in each variant, including earlier helper-produced state.",
+    "Same module observation time and PostgreSQL transaction timestamp establish equality; private real nested savepoints/outer rollback retain locks longer than normal commits.",
+    "Mapped JSON UTF8 sizes are serialization representation proxies at the Drizzle boundary, not browser/server heap, encoder CPU, wire/WAL bytes or clean latency. Database scans still visit children; fewer result rows do not prove less server CPU or I/O.",
+    "Whole-table logical/sequence restoration does not imply zero physical WAL/dead tuples. No migration, normal DB, provider call or credential decryption.",
+    "14 existing cohorts cover largest missing regular-show children, all four owners with partial dated shows, complete dated seasons and dated collections, plus an actual special-only season with zero regular children. No actual franchise/repeated cross-kind relationship or engineered invalid/missing cohort is fabricated.",
+    "Ordinary then rebuilding helpers execute sequentially in each variant; this is not every possible call order or top-level command validation/authorization/event/webhook acceptance.",
+    "Exact changed tracking keys and their counts match by digest, as do full per-step account values and final all-table values. Physical CTIDs themselves are not equal across variants; WAL/physical allocation is not measured.",
+    "Single child plans have identical underlying scan structure and total root shared-block accesses (674/765); the later candidate reads warmed blocks. Their5.140\u21923.905ms and1.190\u21920.310ms samples are descriptive, not an alternating clean runtime benchmark. Row-times-loop node estimates use rounded per-loop row counters.",
+    "COUNT/FILTER/MIN/MAX move reduction into PostgreSQL; database CPU can increase for aggregates. Application mapped-row/serialized-representation reductions do not establish measured heap, CPU, peak RAM, wire or tail-latency improvement."
+  ],
+  "priorFailedHarness": {
+    "probe": "probes/ancestor-aggregation-failed-1.ts",
+    "receipt": "evidence/ancestor-aggregation-failed-1.json",
+    "status": "probe_import_resolution_before_helper_variants",
+    "outcome": "READ ONLY census completed and pool closed; no mutation helper ran. Emitted multiline imports were not all relocated by the first one-line matcher; repaired probe scans all emitted paths, including dynamic imports."
+  },
+  "rootCombinedAcceptance": {
+    "commonPassed": true,
+    "unit": {
+      "passed": 791,
+      "guardedSkip": 710,
+      "failed": 0,
+      "assertions": 33722,
+      "tests": 1501,
+      "files": 279
+    },
+    "check": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "buildInventoriesStyle": "passed",
+    "receipt": "evidence/implementation-20261018-ancestor-material-gates.json",
+    "normalTrial": {
+      "receipt": "evidence/implementation-ancestor-material-normal.json",
+      "passedFunctional": true,
+      "sourceUnchanged": true,
+      "boundary": "Functional current-source signed-in normal5173 actual-data trial. No job/plan/request/status/profile/friend/reading/tracking/settings/schema command submitted; ordinary session/presence/freshness/enrichment side effects not claimed absent. No live provider ingestion, helper write, touch/compact, browser CPU/heap/GPU/network timing or long retained-browse proof."
+    },
+    "goalComplete": false
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  }
+}

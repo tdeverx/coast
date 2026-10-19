@@ -1,0 +1,1181 @@
+{
+  "schemaVersion": 1,
+  "scope": "Lossless archived protocol/source/numerical evidence except explicit public derivatives and withheld private verification images. Original private payloads/images remain local and must not be committed.",
+  "archive": "verification-artifacts.tar.gz",
+  "archiveSha256": "7ba50d868eca624eb7fa5b830aeed726a5f0d130b9428f397d06d66b301ee8ed",
+  "archiveBytes": 23310065,
+  "members": 3011,
+  "unpackedSourceBytes": 325347648,
+  "projections": {
+    "detail-close-candidate.md": {
+      "originalSha256": "995c0d30b6f733b7f2a667978cc021f7f693950b3cdbd373f2891a6f24b4a5b4",
+      "publishedSha256": "afb7fb5c23b7fee393991b9b2ab838bf32aad4e4e93b4448ebbac385af1378e7",
+      "originalBytes": 7618,
+      "publishedBytes": 7642,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-found-16.md": {
+      "originalSha256": "16dbd5b627425dcdff4cf92ee1bb5d4a47fb7e4b085417aec1f8c08a95d6f3be",
+      "publishedSha256": "0214cf6f94830703c4048939c7c869243036e56e09c54e87a143303fd7a7e2bb",
+      "originalBytes": 5249,
+      "publishedBytes": 5270,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-route-refresh.md": {
+      "originalSha256": "f0ab5d95e8f1a515b50fc26051b8b523ebdecd41bb079349fba00c3f12551384",
+      "publishedSha256": "0df577b52136bd6912696e935f75cc633a0d07c8f4f98f03b7479a2e7bb30140",
+      "originalBytes": 10582,
+      "publishedBytes": 10614,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-found-06.md": {
+      "originalSha256": "d419ad5080f986a5a3f953c58244247f2fa480881d9ba0fb9b8679ee92da153f",
+      "publishedSha256": "f563178e6f445592f74b06303b6e97bf6e14cbe7c3bf8f69c9cfdf21749c3476",
+      "originalBytes": 5681,
+      "publishedBytes": 5702,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-profile-genres.md": {
+      "originalSha256": "fa1afd1b41adce2e7c20d7b9dbc80342922b5e4258848227e345cc1a77b1a32a",
+      "publishedSha256": "d777d1f33825ba4ebf9e9db281f6801c37303bd1d991cecf957be6207bc80c01",
+      "originalBytes": 8065,
+      "publishedBytes": 8079,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-found-13.md": {
+      "originalSha256": "981288c307400de576b85a456a019bdc8d69b10fd56a090390b43717419fd87f",
+      "publishedSha256": "e9185ed67e79ed6e627e6c01d110fd9fbbd271e47835b4d5bbcc8321873c4137",
+      "originalBytes": 4421,
+      "publishedBytes": 4437,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-found-03.md": {
+      "originalSha256": "4d1c8c760b13d772eb2aab5b70fa95a6f4b9a89338e9e6a33be701b110f7e9b9",
+      "publishedSha256": "40e33ef6b2356ce363d0d8d32b1eaeb2a806d499be92b227ede7b5a9b8a24479",
+      "originalBytes": 7029,
+      "publishedBytes": 7052,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-found-07.md": {
+      "originalSha256": "863ac5ee9230922c12d138ebe71b121d2c63949d8df6f7d30ceeed38ef716d5e",
+      "publishedSha256": "9c57d7051ff1ec343dcfac00dfbab64b6dcd86411a81e4f4955578fd52935a12",
+      "originalBytes": 6543,
+      "publishedBytes": 6562,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-detail-close.md": {
+      "originalSha256": "47102f49b4ac33f6280784a965d753f738470ee5f68421dd88b9414c5f78ddb1",
+      "publishedSha256": "6ff9de2af06e9f93b3037cfa9655894ca33a9afdf075f6af6d1d0b733053928e",
+      "originalBytes": 7278,
+      "publishedBytes": 7319,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-found-09.md": {
+      "originalSha256": "b01d4e83eb5187e79113b7581cb33e7372f546348ef0473fefb3a5c7cdb0dae7",
+      "publishedSha256": "11d93f8b59132e38b55c208d03d53cd95148e2c29a82470e9d28999169e7c794",
+      "originalBytes": 6733,
+      "publishedBytes": 6772,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-library-membership.md": {
+      "originalSha256": "104de017870cd6a07ba7e5dd01b76cd3def6205f306c3979190dc0652d1b8325",
+      "publishedSha256": "349b02ffddfe0c116914c39b23459671ac1567a28feeb52bb65c5f39f6c7e662",
+      "originalBytes": 19145,
+      "publishedBytes": 19153,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "detail-close-baseline.md": {
+      "originalSha256": "70c2e0322f9a50acb61ab8e8d10665356e89acc16f180c018bff942f7e9b09ae",
+      "publishedSha256": "2825070bf618385765c1587f551b93c07c66f91676da7d8aff390e3a13203af0",
+      "originalBytes": 6682,
+      "publishedBytes": 6747,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-material-diagnostics.md": {
+      "originalSha256": "7f4d01482e56a1eedc8303d2029d1aefcfdc05b402fc8487ca2e2dcd6f457650",
+      "publishedSha256": "2aaf32f19689b171dba92d765607a86c13f78bf876fd0d40b0271d8715a42779",
+      "originalBytes": 11295,
+      "publishedBytes": 11309,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-avatar-lifetime.md": {
+      "originalSha256": "1f3f894653748c9639925d3ed057717df34fda399ca2787da51d8ffaf3da34c5",
+      "publishedSha256": "8002bbeaca571e33179dbef9d35507c37b002976eb5d9de21795a407f1b51859",
+      "originalBytes": 9281,
+      "publishedBytes": 9317,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-public-seed.md": {
+      "originalSha256": "67bf26ac3db8f314b5ab932eb6141564d70aa46eb92ef32a47441b5eb6b679db",
+      "publishedSha256": "c1dbd2c5eb8938adbdfc16de59e467afc70886618b275fc1c74a36cd892711af",
+      "originalBytes": 14236,
+      "publishedBytes": 14252,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-ledger.md": {
+      "originalSha256": "131b44fd1914bab8c6c60b61060a884e77fce9dfd768dae5b4ac3aee3c809429",
+      "publishedSha256": "4935f2f52063240ecf461bc899165b1856bcba73aca486a570e7cdb896be4c0a",
+      "originalBytes": 113418,
+      "publishedBytes": 113508,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "library-append-reset.md": {
+      "originalSha256": "ec9abfced74a1fae71392e7e8f03d4aecabe95e5be61dd2b8db325789e2a33cf",
+      "publishedSha256": "0fd31594d87cb2655f4380cee830661c6a28a3ad67fea52ab0caa79bcd25d2ba",
+      "originalBytes": 13423,
+      "publishedBytes": 13532,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "avatar-storage-candidate.md": {
+      "originalSha256": "0254cb75f910c1170f6321830d6151397b23b1411d0dbfb0078e072e0f700da3",
+      "publishedSha256": "7a1c62114f77a89176b8246133913fcf754454562dafe60a81e20c250f9ded0f",
+      "originalBytes": 8130,
+      "publishedBytes": 8157,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-work-summaries.md": {
+      "originalSha256": "1410cfc1288f14e1f0ebddba7296506b5e8460c4aa43c9440028494f5b8a2071",
+      "publishedSha256": "4ffbe45ca30697f7b0c6e0063566120bba148ee03467b4f4467a575620516272",
+      "originalBytes": 7228,
+      "publishedBytes": 7242,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-found-10.md": {
+      "originalSha256": "06ac48b091e39ef6ea6a381a3b144886f98359f1045982422728fb087d12bf7a",
+      "publishedSha256": "feb64cc3fd409efc65b3db64ebf18b2831adbe18d75ef935b943f2229fd42dff",
+      "originalBytes": 7462,
+      "publishedBytes": 7479,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-found-04.md": {
+      "originalSha256": "ecdc8807292bd136607edae3fb3272badda6a383fb7246ba25f21704250a00df",
+      "publishedSha256": "31a762eee8615e146b15304331402896c9df907dd57111fdbfb8e81d2e8295fb",
+      "originalBytes": 15372,
+      "publishedBytes": 15414,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "library-append-trace.md": {
+      "originalSha256": "d057b7b2c76655e3cc6a6d540bfbcf7c99f315d9bc53ba789e08a50e59e0299f",
+      "publishedSha256": "89a4d2a470fa2f6f65cc3e0e92f12aed53dd8dda2e7026edfc0243a5f7183580",
+      "originalBytes": 8109,
+      "publishedBytes": 8170,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-found-05.md": {
+      "originalSha256": "56364472cf92a9e730c9c93f622bee559d6ec5b44296d0d09fa1de1be8e75441",
+      "publishedSha256": "2e9a3c31e9a34a7c58825b51e53a248860b7e1a343c0773f8c19d29bf3eae402",
+      "originalBytes": 6908,
+      "publishedBytes": 6940,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "implementation-found-11.md": {
+      "originalSha256": "0fbb57d87cabe0137955440f2e80317f4eddf5dc5ae2abf18679c6b59d277e94",
+      "publishedSha256": "0e1b7678fbd0239543ced623a273191a1c1be5d1be19929e1f8db36fae2ae73c",
+      "originalBytes": 5645,
+      "publishedBytes": 5659,
+      "redactions": [
+        {
+          "kind": "private-verification-image-links-redirected-to-public-omission-record"
+        }
+      ]
+    },
+    "candidates/admin-continue-undo/actual.json": {
+      "originalSha256": "f8757f564d52c836e5494b61534b46ac65ea47b1eaced1ec60623e5688c79e35",
+      "publishedSha256": "37408f9a3de3f45f3ab7a4c5ac2ef22777bb18685e206ae261d5ba1e961beb30",
+      "originalBytes": 86849042,
+      "publishedBytes": 36639,
+      "redactions": [
+        {
+          "path": "$.comparisons[0].default.removedQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "e6596f65a0cea5c1ce19d1f69b4ebf8644bb995c9ce0fed5b6a52ada0b4f15c9",
+          "rows": 1,
+          "bytes": 89
+        },
+        {
+          "path": "$.comparisons[0].default.beforeQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "df1b1a723bfacac7b9108d3af45dbb9bfe98696fe64ef04a8993cece676da5e7",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[0].default.afterRemoveQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "d0e5891ff5e1f25967fd3d4e285f4eedc618f41f578b2994d321621c39262034",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[0].default.afterRepeatQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "d0e5891ff5e1f25967fd3d4e285f4eedc618f41f578b2994d321621c39262034",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[0].default.finalQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "df1b1a723bfacac7b9108d3af45dbb9bfe98696fe64ef04a8993cece676da5e7",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[0].default.finalState",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "523e68f703e9d637575ea54727db1f7e4dbc31741000262e3a06d38dff9565f4",
+          "rows": 23794,
+          "bytes": 6258428
+        },
+        {
+          "path": "$.comparisons[0].default.finalRewatches",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "e2719349f8e55654e15d273f73b51e19dccc34379e399ce8bcd7874796823727",
+          "rows": 1,
+          "bytes": 94
+        },
+        {
+          "path": "$.comparisons[0].current.removedQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "e6596f65a0cea5c1ce19d1f69b4ebf8644bb995c9ce0fed5b6a52ada0b4f15c9",
+          "rows": 1,
+          "bytes": 89
+        },
+        {
+          "path": "$.comparisons[0].current.beforeQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "df1b1a723bfacac7b9108d3af45dbb9bfe98696fe64ef04a8993cece676da5e7",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[0].current.afterRemoveQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "d0e5891ff5e1f25967fd3d4e285f4eedc618f41f578b2994d321621c39262034",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[0].current.afterRepeatQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "d0e5891ff5e1f25967fd3d4e285f4eedc618f41f578b2994d321621c39262034",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[0].current.finalQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "df1b1a723bfacac7b9108d3af45dbb9bfe98696fe64ef04a8993cece676da5e7",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[0].current.finalState",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "523e68f703e9d637575ea54727db1f7e4dbc31741000262e3a06d38dff9565f4",
+          "rows": 23794,
+          "bytes": 6258428
+        },
+        {
+          "path": "$.comparisons[0].current.finalRewatches",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "e2719349f8e55654e15d273f73b51e19dccc34379e399ce8bcd7874796823727",
+          "rows": 1,
+          "bytes": 94
+        },
+        {
+          "path": "$.comparisons[1].default.removedQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "7d576bfa5182cc3f7cea8d3ed6f8af6189924927194ab20fbd5a6aaa02e4b2bf",
+          "rows": 1,
+          "bytes": 89
+        },
+        {
+          "path": "$.comparisons[1].default.beforeQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "89f0a17547c967a08f46775d81ef9b5e49083f37d0f4ca1dce28a8e6218fb2a2",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[1].default.afterRemoveQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "58c4ff6ab6721c7a55c5fd303c7eb12b7e4e0ce7235aa544bbfebcadd30fb1ac",
+          "rows": 127,
+          "bytes": 11812
+        },
+        {
+          "path": "$.comparisons[1].default.afterRepeatQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "58c4ff6ab6721c7a55c5fd303c7eb12b7e4e0ce7235aa544bbfebcadd30fb1ac",
+          "rows": 127,
+          "bytes": 11812
+        },
+        {
+          "path": "$.comparisons[1].default.finalQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "89f0a17547c967a08f46775d81ef9b5e49083f37d0f4ca1dce28a8e6218fb2a2",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[1].default.finalState",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "57c32f83633e14e8ac1043ff512cbb2e6c87d616af00f9594e59e67ec26ab35c",
+          "rows": 23794,
+          "bytes": 6258428
+        },
+        {
+          "path": "$.comparisons[1].default.finalRewatches",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "491c251f5dd9db0014d02b084a2d14dde140bad5ef6e1f97ef7ce73bb5b66e46",
+          "rows": 1,
+          "bytes": 94
+        },
+        {
+          "path": "$.comparisons[1].current.removedQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "7d576bfa5182cc3f7cea8d3ed6f8af6189924927194ab20fbd5a6aaa02e4b2bf",
+          "rows": 1,
+          "bytes": 89
+        },
+        {
+          "path": "$.comparisons[1].current.beforeQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "89f0a17547c967a08f46775d81ef9b5e49083f37d0f4ca1dce28a8e6218fb2a2",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[1].current.afterRemoveQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "58c4ff6ab6721c7a55c5fd303c7eb12b7e4e0ce7235aa544bbfebcadd30fb1ac",
+          "rows": 127,
+          "bytes": 11812
+        },
+        {
+          "path": "$.comparisons[1].current.afterRepeatQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "58c4ff6ab6721c7a55c5fd303c7eb12b7e4e0ce7235aa544bbfebcadd30fb1ac",
+          "rows": 127,
+          "bytes": 11812
+        },
+        {
+          "path": "$.comparisons[1].current.finalQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "89f0a17547c967a08f46775d81ef9b5e49083f37d0f4ca1dce28a8e6218fb2a2",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[1].current.finalState",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "57c32f83633e14e8ac1043ff512cbb2e6c87d616af00f9594e59e67ec26ab35c",
+          "rows": 23794,
+          "bytes": 6258428
+        },
+        {
+          "path": "$.comparisons[1].current.finalRewatches",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "491c251f5dd9db0014d02b084a2d14dde140bad5ef6e1f97ef7ce73bb5b66e46",
+          "rows": 1,
+          "bytes": 94
+        },
+        {
+          "path": "$.comparisons[2].default.removedQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "c061205b9cbec85c2492863c92a39f782c869f373b87db9b5fc15767fc578f4b",
+          "rows": 1,
+          "bytes": 89
+        },
+        {
+          "path": "$.comparisons[2].default.beforeQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "244c3b711fa9a6b16a71967a7583ee725688007ea04ed1686dcbe5081a61da4d",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[2].default.afterRemoveQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "89f0a17547c967a08f46775d81ef9b5e49083f37d0f4ca1dce28a8e6218fb2a2",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[2].default.afterRepeatQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "89f0a17547c967a08f46775d81ef9b5e49083f37d0f4ca1dce28a8e6218fb2a2",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[2].default.finalQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "244c3b711fa9a6b16a71967a7583ee725688007ea04ed1686dcbe5081a61da4d",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[2].default.finalState",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "cb6e1bb90c602f14eb1e7f12bd183f5b131e2bdb4705361a29e3c59d91a1afb3",
+          "rows": 23794,
+          "bytes": 6258428
+        },
+        {
+          "path": "$.comparisons[2].default.finalRewatches",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "3b43ddf50d6a0f50416dd1ec1283c6de4b5b569d169e66c7b16e53fbbf8ca484",
+          "rows": 1,
+          "bytes": 94
+        },
+        {
+          "path": "$.comparisons[2].current.removedQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "c061205b9cbec85c2492863c92a39f782c869f373b87db9b5fc15767fc578f4b",
+          "rows": 1,
+          "bytes": 89
+        },
+        {
+          "path": "$.comparisons[2].current.beforeQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "244c3b711fa9a6b16a71967a7583ee725688007ea04ed1686dcbe5081a61da4d",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[2].current.afterRemoveQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "89f0a17547c967a08f46775d81ef9b5e49083f37d0f4ca1dce28a8e6218fb2a2",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[2].current.afterRepeatQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "89f0a17547c967a08f46775d81ef9b5e49083f37d0f4ca1dce28a8e6218fb2a2",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[2].current.finalQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "244c3b711fa9a6b16a71967a7583ee725688007ea04ed1686dcbe5081a61da4d",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[2].current.finalState",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "cb6e1bb90c602f14eb1e7f12bd183f5b131e2bdb4705361a29e3c59d91a1afb3",
+          "rows": 23794,
+          "bytes": 6258428
+        },
+        {
+          "path": "$.comparisons[2].current.finalRewatches",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "3b43ddf50d6a0f50416dd1ec1283c6de4b5b569d169e66c7b16e53fbbf8ca484",
+          "rows": 1,
+          "bytes": 94
+        },
+        {
+          "path": "$.comparisons[3].default.removedQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "66d5b93c57e47a1e24778b02ea97747f84028802eab37f96c1d26fbcf2f4a4ed",
+          "rows": 1,
+          "bytes": 89
+        },
+        {
+          "path": "$.comparisons[3].default.beforeQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "6104a4004890797cd722836b37a21c60e990c538a4c672a2bdd6714828bbfb95",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[3].default.afterRemoveQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "cebb58e24f6708f19d188e5294de6e62ffbc311099117c1fd6f385a6e736f013",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[3].default.afterRepeatQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "cebb58e24f6708f19d188e5294de6e62ffbc311099117c1fd6f385a6e736f013",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[3].default.finalQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "6104a4004890797cd722836b37a21c60e990c538a4c672a2bdd6714828bbfb95",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[3].default.finalState",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "a6327193994c54914090ab83b8d34bf9b5bb9be0a180c7ac73b4ffcb2de120ba",
+          "rows": 23794,
+          "bytes": 6258428
+        },
+        {
+          "path": "$.comparisons[3].default.finalRewatches",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "d3b95dcd82b27f4672dd9dc473583558f4f4b6e6eb27e4429662c0490dcff5ad",
+          "rows": 1,
+          "bytes": 94
+        },
+        {
+          "path": "$.comparisons[3].current.removedQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "66d5b93c57e47a1e24778b02ea97747f84028802eab37f96c1d26fbcf2f4a4ed",
+          "rows": 1,
+          "bytes": 89
+        },
+        {
+          "path": "$.comparisons[3].current.beforeQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "6104a4004890797cd722836b37a21c60e990c538a4c672a2bdd6714828bbfb95",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[3].current.afterRemoveQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "cebb58e24f6708f19d188e5294de6e62ffbc311099117c1fd6f385a6e736f013",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[3].current.afterRepeatQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "cebb58e24f6708f19d188e5294de6e62ffbc311099117c1fd6f385a6e736f013",
+          "rows": 128,
+          "bytes": 11905
+        },
+        {
+          "path": "$.comparisons[3].current.finalQueue",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "6104a4004890797cd722836b37a21c60e990c538a4c672a2bdd6714828bbfb95",
+          "rows": 129,
+          "bytes": 11998
+        },
+        {
+          "path": "$.comparisons[3].current.finalState",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "a6327193994c54914090ab83b8d34bf9b5bb9be0a180c7ac73b4ffcb2de120ba",
+          "rows": 23794,
+          "bytes": 6258428
+        },
+        {
+          "path": "$.comparisons[3].current.finalRewatches",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "d3b95dcd82b27f4672dd9dc473583558f4f4b6e6eb27e4429662c0490dcff5ad",
+          "rows": 1,
+          "bytes": 94
+        }
+      ]
+    },
+    "candidates/admin-party-liveness/actual.json": {
+      "originalSha256": "133bd126b5a009484f53e985b7817d6a6cd161a3a03d69ebf241de8ef7c1225f",
+      "publishedSha256": "f54e961e7692374b6d552c9d4f00d90325e9a08a10bb378a37c257f30defb584",
+      "originalBytes": 23858,
+      "publishedBytes": 22977,
+      "redactions": [
+        {
+          "path": "$.scenarios[0].pair[0].response.participants",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "c8ea28318483c3873272142cd085a653dd7ac050bfa32efca4517994c13111b4",
+          "rows": 1,
+          "bytes": 165
+        },
+        {
+          "path": "$.scenarios[0].pair[1].response.participants",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "c8ea28318483c3873272142cd085a653dd7ac050bfa32efca4517994c13111b4",
+          "rows": 1,
+          "bytes": 165
+        },
+        {
+          "path": "$.scenarios[1].pair[0].response.participants",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "8f14ffd2537547a892425bc8ba61e19990f2797068d10d8320b64aa12ce565ae",
+          "rows": 2,
+          "bytes": 318
+        },
+        {
+          "path": "$.scenarios[1].pair[1].response.participants",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "6098c11df0c9193b4f002cf6186bce9429cd3436e431413a6d5b33ab5b1d087a",
+          "rows": 2,
+          "bytes": 317
+        }
+      ]
+    },
+    "candidates/admin-party-liveness/second-attempt-admin-only.json": {
+      "originalSha256": "0feb0321b72f4c02e89ea03e6ff1056383d684d55565ac974c1b67a149d47503",
+      "publishedSha256": "6e0cfa1c3735b5e81c4206ee60241954ee7394e1baffcd97a05b4ddb576c461a",
+      "originalBytes": 12240,
+      "publishedBytes": 12280,
+      "redactions": [
+        {
+          "path": "$.scenarios[0].pair[0].response.participants",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "c8ea28318483c3873272142cd085a653dd7ac050bfa32efca4517994c13111b4",
+          "rows": 1,
+          "bytes": 165
+        },
+        {
+          "path": "$.scenarios[0].pair[1].response.participants",
+          "publicationRedacted": true,
+          "orderedCanonicalSha256": "c8ea28318483c3873272142cd085a653dd7ac050bfa32efca4517994c13111b4",
+          "rows": 1,
+          "bytes": 165
+        }
+      ]
+    },
+    "comic-lab-follow-up.md": {
+      "originalSha256": "270a08a5311faafc7df42abd5c4d1dca410b32bc2dc375133d85ad08c60daec4",
+      "publishedSha256": "457b7e1694409ae7f57ffa6dc2e03f02788cab8fa4635d87ca9e3afd570e1123",
+      "redactions": [
+        {
+          "kind": "unrelated-experiment-links-redirected-to-scope-record"
+        }
+      ]
+    }
+  },
+  "withheld": {
+    "candidates/approved-avatar-normal/normal-after.png": {
+      "originalSha256": "b7f30a5ce110d3a154e16ae8b07f00194c72e90f416a03603c73a536427f0dbf",
+      "bytes": 78248,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "candidates/approved-avatar-normal/normal-insights.png": {
+      "originalSha256": "c423123eb6326a69adfafe43c62c7c438578e4bb30455e3463e1d9779170ec6f",
+      "bytes": 57004,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "candidates/avatar-storage/normal-before.png": {
+      "originalSha256": "761e377c37b886aada9c2b5f29022f63c1d5b0cbfb71cbc5e66ae8fd31de019e",
+      "bytes": 105416,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "candidates/found-implementation-09/normal-final.png": {
+      "originalSha256": "45816ef261c37f8698221b04d5c4c17fb6c7dd7f580603b0cd0b322636015929",
+      "bytes": 86379,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "candidates/found-implementation-09/normal-for-you.png": {
+      "originalSha256": "83c4b40de11b22d86a78c804bcc8bdd16599b117ad219e8edfc52c709c7055d8",
+      "bytes": 59535,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "candidates/found-implementation-09/normal-menu.png": {
+      "originalSha256": "5ab7db7695addfabc0d0393b03deb3a5c73fc1b547384debe27a7b9d88468dfd",
+      "bytes": 160385,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "candidates/found-implementation-10/normal-profile.png": {
+      "originalSha256": "e2d4396054022328867f68456ae8fe30ab246bedb5ec6ce1151f9baedbabb8df",
+      "bytes": 49005,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "candidates/found-implementation-10/normal-visitor.png": {
+      "originalSha256": "5c1929141d674184604488800d75fb298408b959c98c10cd3fe6fc01e855790c",
+      "bytes": 62246,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "candidates/found-implementation-11/normal-favourites.png": {
+      "originalSha256": "50089fe395881095619f6e87100c780a72df111610c6c376516247e1da3e8698",
+      "bytes": 80941,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "candidates/found-implementation-13/normal-insights.png": {
+      "originalSha256": "d5e62907b25187800a04f49888c6e0f7947205445fd40e94bfa4ca61e3bbe990",
+      "bytes": 57508,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-activity-workset-normal-back-unexpected.png": {
+      "originalSha256": "ef140c4af94a0a829add702fc2e9350fd967ea59db69cb4ae23122c04f8b0c8a",
+      "bytes": 155034,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-activity-workset-normal-empty.png": {
+      "originalSha256": "95092ccfe66c945829f67f77d1100b4fafe6648fa6c7cfdf93272d6063b77f8c",
+      "bytes": 12257,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-activity-workset-normal-tasks.png": {
+      "originalSha256": "8df07f24d29c85977cc2f100f387ed380b5822b14375dff3b859af071373715c",
+      "bytes": 54858,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-activity-workset-normal-watching.png": {
+      "originalSha256": "211f570aefa15c945203f4cfb69b2225741f4761e58e0ed8497f406b5a2529b7",
+      "bytes": 27104,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-ancestor-material-card.png": {
+      "originalSha256": "c0f9d1078adbb7da56738f8458ade81149460d7f8ca6ab42cee171a2baca09b6",
+      "bytes": 137384,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-ancestor-material-continue.png": {
+      "originalSha256": "f3c437a7aadfeef9dfbf9e784e2da2e4c234ca22d2311a417d692d842df84116",
+      "bytes": 169434,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-ancestor-material-menu.png": {
+      "originalSha256": "7ad8f344ac357094d8cc8033b4ab20a039732b07f85069c2f5ef910e2dc2cf77",
+      "bytes": 84525,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-ancestor-material-tasks.png": {
+      "originalSha256": "415c511c0213435642748222582e5aad94b047bf1b433534ba2d0175d292db2c",
+      "bytes": 74913,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-api-http-errors-normal-response.png": {
+      "originalSha256": "dd426b64e6d813ad9860330ae468a46708688975da61413018fe68731ddeee65",
+      "bytes": 13184,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-api-http-errors-normal-tasks.png": {
+      "originalSha256": "eecdae12965f1c53252f114dcac7c6060d7163eb05451a85ccb2bc3ef73655ff",
+      "bytes": 74904,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-avatar-native-status.png": {
+      "originalSha256": "2af2a3e2d34fa07b9034a708268a7b467fa0e0068235152e6a277d26034cc2df",
+      "bytes": 16806,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-close-reasons-normal-back.png": {
+      "originalSha256": "20cc15c4062aca57323a3835ac35c8b72edd97e149727d69d631b66c3b51603f",
+      "bytes": 115116,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-close-reasons-normal-friends.png": {
+      "originalSha256": "0910baaca39fe33dc6015edd2f6acadbb0e4af8ab5223cdacdf13af38ea21528",
+      "bytes": 90346,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-close-reasons-normal-overview.png": {
+      "originalSha256": "18389412143cee42399febc19a5a50f72c94e03e71796614b72f0c2274f1dbeb",
+      "bytes": 115099,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-close-reasons-normal-tasks.png": {
+      "originalSha256": "eecdae12965f1c53252f114dcac7c6060d7163eb05451a85ccb2bc3ef73655ff",
+      "bytes": 74904,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-close-reasons-normal-watching.png": {
+      "originalSha256": "66e42b149102fbfffc69dcc813c2468b5268e171372328d54e6800f00265df38",
+      "bytes": 27766,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-collection-admission-normal-collection.png": {
+      "originalSha256": "4dda3b66ef532bde1bfafe121a9267b4dfc8b70f0bb4bbbd387e0bc602ee6e9d",
+      "bytes": 78222,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-collection-admission-normal-tasks.png": {
+      "originalSha256": "e58059d6aaa789c266b88108af7a24e94bb358322bc8e4e4a14961149cb2167e",
+      "bytes": 74911,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-comic-reader.png": {
+      "originalSha256": "55fd53eae97ed2942d635a733fefbc3b3e699c291fbb44851862be38ae72c4fb",
+      "bytes": 141580,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-context-material-normal-tasks.png": {
+      "originalSha256": "e58059d6aaa789c266b88108af7a24e94bb358322bc8e4e4a14961149cb2167e",
+      "bytes": 74911,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-current-library.png": {
+      "originalSha256": "69fc0f062767547867b6c171afdd9c2dbd7eef9141e7fd79b82616a7eaab67f2",
+      "bytes": 142472,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-current-tasks.png": {
+      "originalSha256": "e58059d6aaa789c266b88108af7a24e94bb358322bc8e4e4a14961149cb2167e",
+      "bytes": 74911,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-found-05-detail-menu-final.png": {
+      "originalSha256": "a84147e9655ce9ff521b3c7ea95044176dadfb16a1214dea5c9f57168efed725",
+      "bytes": 150093,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-found-05-diagnostics-final.png": {
+      "originalSha256": "e15e57836294a131c1ff289624eed78bd75763b2901c5fe94b093557da40ecb0",
+      "bytes": 58738,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-found-06-search-final.png": {
+      "originalSha256": "243ebf910655172dba061f10697051ce4696fca36fc5ca8a96af598efa092a63",
+      "bytes": 185744,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-found-07-profile-normal.png": {
+      "originalSha256": "04069de9dd7a0f6ef94b538db56a9c1fcbada2e54a6aa07d3c56c28bfa090c7d",
+      "bytes": 91643,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-found-social-normal.png": {
+      "originalSha256": "6004eb9986a615d514c4791f37a46833a61f354eb1e56c0389b7cfe7053fa243",
+      "bytes": 119143,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-found-window-normal.png": {
+      "originalSha256": "d193627715a133eb224fb6d73de876a7ebdf986393414db6990398084353e85f",
+      "bytes": 167201,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-found-window-ssr-normal.png": {
+      "originalSha256": "a34b45894e059cc2bd01dcf0f7751ab8682e82ce3251b80f14bedd49c7987f14",
+      "bytes": 128986,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-lazy-browser-before-failure.png": {
+      "originalSha256": "fa6e5c52d860d1bd7878d516f49ddf91e1b91faa695278ce5d6c6a3f521db90d",
+      "bytes": 64388,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-lazy-browser-before-reload.png": {
+      "originalSha256": "58cf7105986d4d3c93b68d4d78357cb6279004f6ce39283730b565d265a01931",
+      "bytes": 77751,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-lazy-browser-before-retry.png": {
+      "originalSha256": "0bea304aa0b134bb3288d2c82449c2f5b3a708d3dc22fb866f1c08a00eb05ca8",
+      "bytes": 64368,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-lazy-browser-final-error.png": {
+      "originalSha256": "ae7f57db037a847cb08475630a7ff1f27deaca5807dc4713054cb7791ab69c4d",
+      "bytes": 65346,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-lazy-browser-final-recovered.png": {
+      "originalSha256": "58cf7105986d4d3c93b68d4d78357cb6279004f6ce39283730b565d265a01931",
+      "bytes": 77751,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-lazy-browser-late-recovered.png": {
+      "originalSha256": "0c6e87c29b8b07ba1509621ba12fe5701c16d99d723ece5bf01cbc945f6fa447",
+      "bytes": 77752,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-library-membership-normal-progress.png": {
+      "originalSha256": "69da1d53f0d7b7774d79750a13a564294c952bce4cd9ab6ed69a8329a1a3878e",
+      "bytes": 187638,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-music-detail.png": {
+      "originalSha256": "fe38150b9e9da403bfb921ad6efb51c78c1b4a532c8fafb5937073655a4523a0",
+      "bytes": 52644,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-navigation-normal-friends.png": {
+      "originalSha256": "de08307c4aecb0202269c4935a614a01ccf8022adc9ebd2fe54315f8c8163229",
+      "bytes": 90140,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-navigation-normal-panel.png": {
+      "originalSha256": "2d2bd24064f8468e8797f997243c2f1e6762d995d7d8b9a97c13773f9e564617",
+      "bytes": 118691,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-navigation-normal-tasks.png": {
+      "originalSha256": "d4f175f0f736fe874fcc3a840402a67cfcb9a48499c4d6be5ee7b211b8ea6cc0",
+      "bytes": 75749,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-owner-batch-menu.png": {
+      "originalSha256": "12b3786a61acd0ed820ed79fcec99ec930db57eb8f6a942ade42c9a74d341ed4",
+      "bytes": 156781,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-owner-batch-profile.png": {
+      "originalSha256": "a500a0970b9c8b2ac2a481dcccae69d8f692564f44643b9b179b921150ba12b1",
+      "bytes": 83123,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-owner-batch-tasks.png": {
+      "originalSha256": "dd41419d0e57ec9e4235fc01876a926f67e96e77670808a849b46bbdda73ee73",
+      "bytes": 74936,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-panel-collapsed.png": {
+      "originalSha256": "908aec8b10b10e4842073b46450b3793449ae04fa957674671f5df532abfc08e",
+      "bytes": 176522,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-public-seed-normal-library.png": {
+      "originalSha256": "2ec14897047e0443ae0ca95cdf0115948c167c92c519d675cce7f9b4c345e1ef",
+      "bytes": 226435,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-read-demand-activity.png": {
+      "originalSha256": "b3527f2495885ab3c52aae82a575f9f0e7921b93ab7d1a98688cf9f5f1c2dd18",
+      "bytes": 94587,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-read-demand-detail.png": {
+      "originalSha256": "e6c9f7519b8461eef20d0ca590bb7a6317a7c8e01263755162cf89fd17e99d08",
+      "bytes": 121420,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-read-demand-library.png": {
+      "originalSha256": "69fc0f062767547867b6c171afdd9c2dbd7eef9141e7fd79b82616a7eaab67f2",
+      "bytes": 142472,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-read-demand-tasks.png": {
+      "originalSha256": "e58059d6aaa789c266b88108af7a24e94bb358322bc8e4e4a14961149cb2167e",
+      "bytes": 74911,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-route-refresh-normal-friends.png": {
+      "originalSha256": "c8d96f3ef0fff190f54756ebd9e187eb590da30fd30ce85241cc981a57459fee",
+      "bytes": 90156,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-route-refresh-normal-tasks.png": {
+      "originalSha256": "eecdae12965f1c53252f114dcac7c6060d7163eb05451a85ccb2bc3ef73655ff",
+      "bytes": 74904,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-search-empty-selected.png": {
+      "originalSha256": "2c3f7a3964bf029e6939b76de241d8e07f9024fc651545af07ae11a9dfd0b31c",
+      "bytes": 38612,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-section-demand-credits.png": {
+      "originalSha256": "0b25514a14949a2d556732cf96c52b6ac0e7541c0e535237e893dde19f6777d1",
+      "bytes": 79957,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-section-demand-default-full.png": {
+      "originalSha256": "681935684cc9342dc951c45973c8e5424410c649f6ff0b1cd0ffeeb647179145",
+      "bytes": 132073,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-section-demand-direct-credits.png": {
+      "originalSha256": "a291c2f5f841ff077123601754df762430ea03d8de945db09f359d7a37f9af9d",
+      "bytes": 86201,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-section-demand-final-tasks.png": {
+      "originalSha256": "415c511c0213435642748222582e5aad94b047bf1b433534ba2d0175d292db2c",
+      "bytes": 74913,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-section-demand-reviews.png": {
+      "originalSha256": "20119e460f05bfdfe5212c93266fa237e38037343ea1e2d3715a1c2291425a1c",
+      "bytes": 9426,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-shared-admission-continue.png": {
+      "originalSha256": "3500f075dadab015c625b0b97c3e80f4d54798427e511781d2912e71cb71b80f",
+      "bytes": 169775,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-shared-admission-music.png": {
+      "originalSha256": "e0e48324ca214828932462f104d2f70d44100b5fac8b10247a87021718ca760c",
+      "bytes": 74379,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-shared-admission-tasks.png": {
+      "originalSha256": "d4f175f0f736fe874fcc3a840402a67cfcb9a48499c4d6be5ee7b211b8ea6cc0",
+      "bytes": 75749,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-shared-normal-before-poll-fix-menu.png": {
+      "originalSha256": "d9ebd8c7abac1355532e417a0d2adb3937fb4c018ec02b829ee21fa24373d790",
+      "bytes": 79928,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-shared-normal-before-poll-fix-tasks.png": {
+      "originalSha256": "8ab80931fd6dba1ff2c60f3450bc51ca7e37f874c9e940dc6c8018df602250ad",
+      "bytes": 75033,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-summary-avatar-normal-library.png": {
+      "originalSha256": "fea15870fda12d46e6fd621eda29e9c55d203a2785cfb5bb7128a49d20430f8f",
+      "bytes": 142493,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-summary-avatar-normal-tasks.png": {
+      "originalSha256": "d4f175f0f736fe874fcc3a840402a67cfcb9a48499c4d6be5ee7b211b8ea6cc0",
+      "bytes": 75749,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-toast-normal-inbox.png": {
+      "originalSha256": "bd9d9e0bc7cfdbb582923ba88e9e7cdb04afde4a94476ea88c036df5b6464556",
+      "bytes": 91138,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "evidence/implementation-toast-normal-tasks.png": {
+      "originalSha256": "8df07f24d29c85977cc2f100f387ed380b5822b14375dff3b859af071373715c",
+      "bytes": 54858,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/coast-append-final-tasks.png": {
+      "originalSha256": "e58059d6aaa789c266b88108af7a24e94bb358322bc8e4e4a14961149cb2167e",
+      "bytes": 74911,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/coast-append-five-pages.png": {
+      "originalSha256": "e0a150f65b1f944a8bf1fa0b1bf9e4308b6fa1e62092d38ef4cffef69243609e",
+      "bytes": 195969,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/coast-append-reset-observed.png": {
+      "originalSha256": "6e51fb9bd546c8587afceb229a7ba6e8506cd4495d65d79cf1868f183a9ad1b8",
+      "bytes": 198397,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/detail-close-baseline-back.png": {
+      "originalSha256": "25eb640f298ef38c584210c35c7248226e5023bfc19eae5d8f97189e64de6bf8",
+      "bytes": 134923,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/detail-close-baseline-duplicate.png": {
+      "originalSha256": "fe3cb8785d8c4770a7fa7aa8d77cbd85c8a3906244b6be3e0379e160f73e6f1d",
+      "bytes": 83448,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/detail-close-candidate-delivery-failure.png": {
+      "originalSha256": "45ec00e63aadaeb5b61a856e2931e7afae5c78112fb94f2b7f4bba6f7085e158",
+      "bytes": 102807,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/detail-close-candidate-first-failure.png": {
+      "originalSha256": "39f4226d405a799d6918f2f8defdab9bc9fb9525d4c4ec33a097a0059c102c5b",
+      "bytes": 83528,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/detail-close-candidate-operation-back.png": {
+      "originalSha256": "1e162b85c7f6afcb1f493a3ad295f49d5ceafb0b70a7f50980a9456263fdecf3",
+      "bytes": 151285,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/detail-close-v4-back.png": {
+      "originalSha256": "f43fe826d98e2b7f40a7231d813434e30a6536b6b50595062ac51d29c5ca9897",
+      "bytes": 173747,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/library-append-trace-reset.png": {
+      "originalSha256": "7e3d0e494f5402de8bfd31f767835b8d48df63dd59897e2238566cf32445f766",
+      "bytes": 171108,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    },
+    "proof/library-append-trace-restored-tasks.png": {
+      "originalSha256": "8df07f24d29c85977cc2f100f387ed380b5822b14375dff3b859af071373715c",
+      "bytes": 54858,
+      "reason": "Private actual-account/catalogue/content verification image; retained locally, not published."
+    }
+  },
+  "extract": "tar -xzf docs/audits/2026-10-17-app-performance/verification-artifacts.tar.gz -C docs/audits/2026-10-17-app-performance",
+  "verificationBoundary": "Public projection checks verify published bytes against this manifest; they do not assert possession or re-execution of private originals. Native result assertions stay at their recorded epochs."
+}

@@ -20,22 +20,27 @@ export async function getFeatureConfig(userId: string | null, database?: ReturnT
     experimentalPlanning:features.planning,
     allowPlaybackSharing:features.sharing, enableRequests:features.requests};
 }
+/** Acquire policy/subject before account or domain locks, without rejecting cleanup. */
+export async function lockFeaturePolicyInTransaction(store: Pick<Database, 'execute'> | ReturnType<typeof getSql>, userId: string) {
+  if ('execute' in store) await store.execute(sql`select coast_lock_feature_policy(${userId}::uuid)`);
+  else await store`select coast_lock_feature_policy(${userId}::uuid)`;
+}
 export async function requireFeature(userId: string, feature: Feature, database?: ReturnType<typeof getSql>) {
   // Explicit command transactions fence policy before taking a fresh decision snapshot.
-  if(database)await database`select coast_lock_feature_policy(${userId}::uuid)`;
+  if(database)await lockFeaturePolicyInTransaction(database,userId);
   const config = await getFeatureConfig(userId, database ?? getSql());
   if (!config.features[feature]) throw new AppError(403, 'This feature is disabled.', 'feature_disabled');
   return config;
 }
 
 export async function requireFeatureInTransaction(store: Pick<Database, 'execute'>, userId: string, feature: Feature) {
-  await store.execute(sql`select coast_lock_feature_policy(${userId}::uuid)`);
+  await lockFeaturePolicyInTransaction(store,userId);
   const [row] = await store.execute<{enabled:boolean}>(sql`select coast_feature_enabled(${userId}::uuid,${feature}) as enabled`);
   if (!row?.enabled) throw new AppError(403, 'This feature is disabled.', 'feature_disabled');
 }
 
 export async function requireWorkFeature(store: Pick<Database, 'execute'>, userId: string, workId: string) {
-  await store.execute(sql`select coast_lock_feature_policy(${userId}::uuid)`);
+  await lockFeaturePolicyInTransaction(store,userId);
   const [row] = await store.execute<{allowed:boolean}>(sql`select coast_category_enabled(${userId}::uuid,category) as allowed from works where id=${workId}::uuid`);
   if (!row) throw new AppError(404, 'This work was not found.', 'not_found');
   if (!row.allowed) throw new AppError(403, 'This medium is turned off.', 'feature_disabled');

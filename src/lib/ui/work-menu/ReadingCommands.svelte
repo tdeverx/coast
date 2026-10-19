@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import FormActions from '$lib/ui/components/FormActions.svelte';
   import Field from '$lib/ui/components/Field.svelte';
@@ -13,7 +14,7 @@
   let { workId, progress, ensure, changed }: { workId: string; progress?: ReadingActionState | null;
     ensure: () => Promise<unknown>; changed: () => Promise<unknown> } = $props();
   const { change } = useClient();
-  const mutation = createMutation(() => changed(), useClient().feedback.notify);
+  const mutation = createMutation(() => changed(), useClient().feedback.notify, useRetention());
   export function failure() { return mutation.error; }
   export function isBusy() { return mutation.busy; }
   let alive = true;

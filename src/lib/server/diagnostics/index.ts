@@ -29,19 +29,32 @@ export class DiagnosticStore {
   private failures = 0;
   metrics() { return {diagnosticPending: this.pending, diagnosticDropped: this.dropped, diagnosticFailures: this.failures}; }
   constructor(private directory: () => string = () => join(dataDirectory(), 'diagnostics'), private maxLineBytes = storageLimits.segmentBytes) {}
-  private async prune(force = false) {
+  private async prepare(directory: string) {
+    try {
+      const file = await stat(directory);
+      if (!file.isDirectory()) throw new Error('Diagnostic storage is not a directory.');
+      if ((file.mode & 0o7777) !== 0o700) await chmod(directory, 0o700);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      await mkdir(directory, { recursive: true, mode: 0o700 });
+      await chmod(directory, 0o700);
+    }
+  }
+  private async prune(directory: string, force = false) {
     if (!force && Date.now() - this.lastPrune < 60_000) return;
     this.lastPrune = Date.now();
     for (let i = 0; i < storageLimits.segments; i++) {
-      const path = join(this.directory(), `${i}.jsonl`);
+      const path = join(directory, `${i}.jsonl`);
       try {
         const file = await stat(path);
         let oldest = file.mtimeMs;
         if (file.size <= storageLimits.segmentBytes) {
           try {
+            const contents = await readFile(path, 'utf8');
+            const boundary = contents.indexOf('\n');
             oldest = Math.min(
               oldest,
-              Date.parse(JSON.parse((await readFile(path, 'utf8')).split('\n')[0]).createdAt)
+              Date.parse(JSON.parse(boundary < 0 ? contents : contents.slice(0, boundary)).createdAt)
             );
           } catch {
             /* Not a complete event. */
@@ -83,23 +96,26 @@ export class DiagnosticStore {
     this.pending++;
     this.tail = this.tail
       .then(async () => {
-        await mkdir(this.directory(), { recursive: true, mode: 0o700 });
-        await chmod(this.directory(), 0o700);
-        await this.prune();
-        const path = join(this.directory(), '0.jsonl');
+        const directory = this.directory();
+        await this.prepare(directory);
+        await this.prune(directory);
+        const path = join(directory, '0.jsonl');
         const size = await stat(path)
           .then((s) => s.size)
-          .catch(() => 0);
+          .catch((error) => {
+            if (error.code !== 'ENOENT') throw error;
+            return 0;
+          });
         if (size + Buffer.byteLength(line) > storageLimits.segmentBytes) {
-          await unlink(join(this.directory(), `${storageLimits.segments - 1}.jsonl`)).catch(
+          await unlink(join(directory, `${storageLimits.segments - 1}.jsonl`)).catch(
             (error) => {
               if (error.code !== 'ENOENT') throw error;
             }
           );
           for (let i = storageLimits.segments - 2; i >= 0; i--)
             await rename(
-              join(this.directory(), `${i}.jsonl`),
-              join(this.directory(), `${i + 1}.jsonl`)
+              join(directory, `${i}.jsonl`),
+              join(directory, `${i + 1}.jsonl`)
             ).catch((error) => {
               if (error.code !== 'ENOENT') throw error;
             });
@@ -112,13 +128,15 @@ export class DiagnosticStore {
       });
     return this.tail;
   }
-  async recent() {
+  async recent(limit = Infinity) {
+    limit = Math.max(0, Math.trunc(limit) || 0);
     await this.tail;
-    await this.prune(true);
+    const directory = this.directory();
+    await this.prune(directory, true);
     const rows = [];
     for (let i = 0; i < storageLimits.segments; i++) {
       try {
-        const path = join(this.directory(), `${i}.jsonl`);
+        const path = join(directory, `${i}.jsonl`);
         if ((await stat(path)).size > storageLimits.segmentBytes) continue;
         const lines = (await readFile(path, 'utf8')).trim().split('\n');
         for (const line of lines) {
@@ -135,7 +153,7 @@ export class DiagnosticStore {
                 kind: row.kind,
                 message: eventMessages[row.kind as DiagnosticEvent],
                 correlationId: correlationId(row.correlationId),
-                detail: safeFields(row.detail),
+                detail: row.detail,
               });
           } catch {
             /* truncated line */
@@ -145,7 +163,18 @@ export class DiagnosticStore {
         /* Diagnostics must never prevent application use. */
       }
     }
-    return rows.reverse().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const recent = [];
+    for (const row of rows.reverse().sort((a, b) => b.createdAt.localeCompare(a.createdAt))) {
+      if (recent.length >= limit) break;
+      try {
+        // Sanitize only admitted output, but keep looking if malformed fields
+        // reject a record. Sorting and equal-time occurrence order stay exact.
+        recent.push({ ...row, detail: safeFields(row.detail) });
+      } catch {
+        /* Invalid diagnostic detail must not hide the next eligible record. */
+      }
+    }
+    return recent;
   }
 }
 export const diagnosticStore = new DiagnosticStore();

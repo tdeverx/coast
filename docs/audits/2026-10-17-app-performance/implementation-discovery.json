@@ -1,0 +1,91 @@
+{
+  "id": "DATA-08",
+  "implementationApplied": true,
+  "status": "implemented-final-source-actual-retained-snapshot-replay-verified",
+  "sharedOwner": "src/lib/catalogue/service.server.ts:discoverMedia",
+  "consumers": [
+    "src/lib/server/queries/discovery.ts:screenDiscovery",
+    "src/lib/server/api/index.server.ts:GET discover",
+    "src/lib/ui/shelves/discovery.svelte.ts:lazy rows, section grids, medium changes, retries and revision reloads",
+    "src/lib/ui/section-target.ts and ui/pages/SectionDetails.svelte:linked discovery section grids",
+    "src/routes/discover/+page.server.ts:unchanged combined authenticated/guest/Watch-section SSR"
+  ],
+  "productionFiles": [
+    "src/lib/catalogue/service.server.ts",
+    "src/lib/server/queries/discovery.ts"
+  ],
+  "behavior": [
+    "Named bucket admitted before provider invocation and shared metadata ingestion",
+    "Combined call retains both buckets, ordering, deduplication, fallback and error behavior",
+    "Existing four ingestion slots per admitted bucket",
+    "TMDB priority and Seerr fallback retained; Seerr has no recent feed",
+    "Unrequested provider failure cannot affect selected result"
+  ],
+  "focusedTests": {
+    "command": ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/discovery-admission.test.ts tests/ui-discovery-source.test.ts",
+    "passed": 12,
+    "assertions": 58,
+    "newTests": 8,
+    "negativeControl": "Named-admission regression fails against audited owner by observing unrequested recent invocation",
+    "boundary": "Empty-result branch/admission correctness tests, not fabricated provider-content/performance proof"
+  },
+  "actualData": {
+    "evidence": "evidence/implementation-discovery-real.json",
+    "matchEvidence": "evidence/implementation-discovery-real-match.json",
+    "probe": "probes/real-discovery-admission.ts",
+    "matchProbe": "probes/real-discovery-match.ts",
+    "checks": 31,
+    "phases": 15,
+    "capturedPositions": 40,
+    "uniqueActualTitles": 35,
+    "bucketOverlap": 5,
+    "externalProviderCalls": 0,
+    "allIngestionTransactionsRolledBack": true,
+    "allSelectedSnapshotTupleAndContentDigestsRestored": true,
+    "canonicalQueryAndRealCards": true,
+    "actualProvider": "tmdb",
+    "beforeNamed": {
+      "transactions": 40,
+      "ormStatements": 403,
+      "snapshotUpdates": 40,
+      "maximumActive": 8
+    },
+    "finalNamedTrending": {
+      "transactions": 20,
+      "ormStatements": 211,
+      "snapshotUpdates": 20,
+      "maximumActive": 4
+    },
+    "finalNamedRecent": {
+      "transactions": 20,
+      "ormStatements": 193,
+      "snapshotUpdates": 20,
+      "maximumActive": 4
+    },
+    "finalCombined": {
+      "transactions": 40,
+      "ormStatements": 403,
+      "snapshotUpdates": 40,
+      "maximumActive": 8
+    },
+    "constructorTransportReplacedWithActualRetainedMetadata": true,
+    "naturalWireSavingsMeasured": false,
+    "rawPrivateIdsOrPayloadsCommitted": false
+  },
+  "remaining": [
+    "Root-owned common check/build and post-change normal-development acceptance are separate evidence",
+    "Natural provider response/cancellation/freshness behavior and wire savings were not measured",
+    "Retained per-item snapshots may be richer than original feed response payloads; counts apply to this actual retained corpus replay",
+    "Direct Watch section SSR intentionally remains combined by existing loader contract",
+    "Actual Seerr feed/outage acceptance remains separate from controlled branch checks"
+  ],
+  "evidenceRefs": [
+    "implementation-discovery.md",
+    "tests/discovery-admission.test.ts",
+    "tests/ui-discovery-source.test.ts",
+    "evidence/implementation-discovery-real-match.json",
+    "evidence/implementation-discovery-real.json",
+    "probes/real-discovery-match.ts",
+    "probes/real-discovery-admission.ts"
+  ]
+}

@@ -1,5 +1,5 @@
 import { api, message, refreshAfterChange, isFeatureDisabled, ApiError } from '$lib/ui/client';
-import { readingFormat, readingFileLabel, sameReadingLocation, type ReadingLocation, type ReadingSessionView } from './model';
+import { readingFormat, readingFileLabel, sameReadingLocation, type ReadingLocation, type ReadingSessionView, type ReadingPrepareInput } from './model';
 export const reader = $state({session:null as ReadingSessionView|null,file:null as File|null,visible:false,loading:false,rendering:false,syncing:false,unsaved:false,error:'',location:null as ReadingLocation|null});
 let move:((location:ReadingLocation)=>Promise<void>)|null=null;
 let generation=0, opening:AbortController|null=null;
@@ -31,14 +31,14 @@ export async function openReading(workId:string,input:{file:File}|{connectionId:
  const cancel=()=>abort.abort();signal?.addEventListener('abort',cancel,{once:true});if(signal?.aborted)abort.abort();
  let prepared:ReadingSessionView|undefined,installed=false;
  try{
-  let body;
+  let body:ReadingPrepareInput;
   if('file' in input){
    const format=readingFormat(input.file.name);if(!format)throw new Error(`Choose ${readingFileLabel}.`);
    if(input.file.size>128*1024**2)throw new Error('Local reading files must be smaller than 128 MB.');
    const {readingFileIdentity}=await import('./reader/file-identity');
    if(!current())return;
    body={source:'local',format,edition:await readingFileIdentity(input.file,abort.signal)};
-  }else body={source:'jellyfin',...input};
+  }else body={source:'jellyfin',connectionId:input.connectionId,externalId:input.externalId};
   if(!current())return;
   const session=prepared=await api<ReadingSessionView>(`reading/${workId}/session`,body,'POST',{signal:abort.signal});
   if(!current())return;

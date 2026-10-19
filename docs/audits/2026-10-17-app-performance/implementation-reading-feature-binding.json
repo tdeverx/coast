@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "relatedFindings": [
+    "DATA-07"
+  ],
+  "report": "implementation-reading-feature-binding.md",
+  "recordedAt": "2026-10-18T03:02:40.701013+00:00",
+  "status": "exact_reading_native_feature_binding_reuse_implemented_actual_canonical_row_rollback_verified",
+  "canonicalStatusEdited": false,
+  "productionApplied": true,
+  "applicationFilesChanged": [
+    "src/lib/catalogue/reading.server.ts"
+  ],
+  "testFilesAdded": [
+    "tests/reading-feature-binding.test.ts"
+  ],
+  "sourceBeforeSha256": "72d42f74144f850310c5ffcc27309d7a707a28b77f8178ea773350990f33146e",
+  "verifiedCandidateSha256": "5d677f505b3e129ddef5faab3acb6c82fafe1f0fc1c6b2e8e68d73e06cb7b0b7",
+  "sourcePins": {
+    "src/lib/catalogue/reading.server.ts": "5d677f505b3e129ddef5faab3acb6c82fafe1f0fc1c6b2e8e68d73e06cb7b0b7",
+    "src/lib/reading/model.ts": "ca2b04a736935886e77776ead6255c5630627d622e1ae0315061fa39d5227e60",
+    "src/lib/social/taste-profile.ts": "7fef66e2f4fb58ccf3e017ec799d7cc216fb5301ae2db570c8e76b6b0dd04227",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/experimental.ts": "c0f6e86e6ac06824c6787101fc1293cd24283ea7fac883518b47ea2efe3a85dd",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/db/jsonb.ts": "de3327d4ffa147b122667c9fcde34fde89fb33f62daa8a8068f0aee1d97a590b",
+    "drizzle/0039_performance_benchmarks.sql": "46c40ee9cd4c53adecd1a68a1df1c11afc2055bd888c4281d1a840750eef7cc2",
+    "tests/reading-feature-binding.test.ts": "d921952ac491b0fac1929f0d1354c88b23e31e0b6481bed1622cfa7b011e3d98",
+    "src/lib/application/reading.server.ts": "c5046afc47a358cf254e441a9b2cb402c1e8de1ffeecaf17863928f7b54bb8d5",
+    "src/lib/reading/groups.server.ts": "7c28ade2625f573c5d5d40b2ba9b0cf2036ada56f80ae9dbf2b6f3008bbf37fd",
+    "src/lib/sync/jellyfin-reading.server.ts": "9c13545fb04e2d755e9ba960c7fa2e09cc567036194a658fe0bf9269ca149f2d"
+  },
+  "evidencePins": {
+    "evidence/implementation-reading-feature-binding-actual.json": "919d217cd0e5715e5bb690493bf0f373615edae552095095441cf72f9571845e",
+    "evidence/implementation-reading-feature-binding-executed-probe.ts.txt": "53afd8fbad92e568c2055d4defe1ccf2dab93c692b71b47cab37522b0cc39d84",
+    "evidence/implementation-reading-feature-binding-census.json": "1d238756a8e33384d011198c814e7c3d85bfc9c72e10b73ff6c09aba3400cf25",
+    "evidence/implementation-reading-feature-binding-census-probe.ts.txt": "5fe5ace344431b44531da269a8fbdc47d60c8a0b571db1e5a99e9afc225415a0",
+    "evidence/implementation-reading-feature-binding-tests.txt": "afa1090fc111242e003799363efd6bb3dbc55cc613cf74e70d0d7eb98947d406",
+    "evidence/implementation-reading-feature-binding-portable-syntax.txt": "5a33ecad5b2bf4dbe62042a699553086f9954e4dc4149441d8e85ef2347d8a93",
+    "candidates/reading-feature-binding/reading.before.ts.txt": "72d42f74144f850310c5ffcc27309d7a707a28b77f8178ea773350990f33146e",
+    "candidates/reading-feature-binding/reading.candidate.ts.txt": "5d677f505b3e129ddef5faab3acb6c82fafe1f0fc1c6b2e8e68d73e06cb7b0b7",
+    "probes/reading-feature-binding-real.ts": "d0470836537cd645ddbf289cadd49478e05d07dda868040bfb7c29a4846cf284"
+  },
+  "sharedOwner": "importReading saveFeatures upsert",
+  "consumers": [
+    {
+      "path": "src/lib/application/reading.server.ts",
+      "entry": "addReading"
+    },
+    {
+      "path": "src/lib/reading/groups.server.ts",
+      "entry": "groupsForReading lazy metadata enrichment"
+    },
+    {
+      "path": "src/lib/sync/jellyfin-reading.server.ts",
+      "entry": "importJellyfinReading exact identity hydration"
+    }
+  ],
+  "change": {
+    "conflictSet": "features: sql`excluded.features`",
+    "existingNoOpPredicate": "work_features.features is distinct from excluded.features",
+    "independentlySampledFeatureTimestamps": 2,
+    "structuralEarlyReturnAdded": false
+  },
+  "preserved": [
+    "upfront strict schema/config medium admission",
+    "always-generated named feature contents and empty arrays",
+    "sorted identity advisory locks and aliases/conflict checks",
+    "primary/alternate metadata and book-to-comic upgrade behavior",
+    "identifier verification, optional groups/members and complete returns",
+    "no-op guard, timestamps and revisions",
+    "all upstream provider/account/file/reset/scan admission"
+  ],
+  "actual": {
+    "ref": "evidence/implementation-reading-feature-binding-actual.json",
+    "canonicalSingleRowInputs": 12,
+    "capturedProviderInput": false,
+    "assembledAliasesGroupCredits": false,
+    "comics": 12,
+    "books": 0,
+    "completeReturnsAndAllTablePostStateEqual": true,
+    "revisionsAndTupleDmlAdmissionEqual": true,
+    "fullActualNoOp": true,
+    "before": {
+      "metric": {
+        "variant": "before",
+        "ormStatements": 72,
+        "boundParameters": 204,
+        "parameterArrayJsonBytes": 11844,
+        "featureUpserts": 12,
+        "nativeFeatureParameters": 36,
+        "generatedFeaturesJsonBytes": 2688,
+        "boundFeaturesJsonBytes": 8064,
+        "featureUpsertParameters": 84,
+        "logicalOwnerTransactions": 12,
+        "schemaAdmissions": 12,
+        "enabledCategoryAdmissions": 12,
+        "observationDateCalls": 24,
+        "dml": {
+          "work_identifiers": {
+            "statements": 12,
+            "affectedOrReturnedRows": 0
+          },
+          "work_features": {
+            "statements": 12,
+            "affectedOrReturnedRows": 0
+          }
+        }
+      },
+      "tupleChanges": {
+        "reading_group_members": {
+          "rows": 12,
+          "changed": 0
+        },
+        "reading_groups": {
+          "rows": 2,
+          "changed": 0
+        },
+        "reading_works": {
+          "rows": 12,
+          "changed": 0
+        },
+        "work_features": {
+          "rows": 12,
+          "changed": 0
+        },
+        "work_identifiers": {
+          "rows": 12,
+          "changed": 0
+        },
+        "works": {
+          "rows": 12,
+          "changed": 0
+        }
+      },
+      "settings": {
+        "read_only": "off",
+        "statement_timeout": "30s",
+        "lock_timeout": "5s"
+      }
+    },
+    "after": {
+      "metric": {
+        "variant": "candidate",
+        "ormStatements": 72,
+        "boundParameters": 180,
+        "parameterArrayJsonBytes": 6444,
+        "featureUpserts": 12,
+        "nativeFeatureParameters": 12,
+        "generatedFeaturesJsonBytes": 2688,
+        "boundFeaturesJsonBytes": 2688,
+        "featureUpsertParameters": 60,
+        "logicalOwnerTransactions": 12,
+        "schemaAdmissions": 12,
+        "enabledCategoryAdmissions": 12,
+        "observationDateCalls": 24,
+        "dml": {
+          "work_identifiers": {
+            "statements": 12,
+            "affectedOrReturnedRows": 0
+          },
+          "work_features": {
+            "statements": 12,
+            "affectedOrReturnedRows": 0
+          }
+        }
+      },
+      "tupleChanges": {
+        "reading_group_members": {
+          "rows": 12,
+          "changed": 0
+        },
+        "reading_groups": {
+          "rows": 2,
+          "changed": 0
+        },
+        "reading_works": {
+          "rows": 12,
+          "changed": 0
+        },
+        "work_features": {
+          "rows": 12,
+          "changed": 0
+        },
+        "work_identifiers": {
+          "rows": 12,
+          "changed": 0
+        },
+        "works": {
+          "rows": 12,
+          "changed": 0
+        }
+      },
+      "settings": {
+        "read_only": "off",
+        "statement_timeout": "30s",
+        "lock_timeout": "5s"
+      }
+    },
+    "restoration": {
+      "allTableLogicalMultisetsEqual": true,
+      "sequencesEqual": true,
+      "tables": 102,
+      "rows": 1864145,
+      "beforeDigest": "8abe50d3bedf11e0b634c8b9af7a4346a1f728fc539ffddfb813c63bee122468",
+      "afterDigest": "8abe50d3bedf11e0b634c8b9af7a4346a1f728fc539ffddfb813c63bee122468"
+    },
+    "externalAttempts": 0,
+    "poolClosed": true,
+    "historicalSourceBoundary": "Actual receipt has pre-adoption productionStillBaseline=true; exact candidate adopted only afterward.",
+    "clockAndTransactionBoundary": {
+      "fixedObservationTime": true,
+      "scope": "Every new Date() sample in the two private reading modules calls a fresh helper/new Date at one shared observation instant; the two feature timestamps remain independently evaluated. Canonical dependency clocks unchanged."
+    },
+    "spareConfigConnectionBudgetIndependentlyVerified": false
+  },
+  "census": {
+    "ref": "evidence/implementation-reading-feature-binding-census.json",
+    "inventory": [
+      {
+        "kind": "comic",
+        "provider": "comic-vine",
+        "works": 12,
+        "with_authors": 12,
+        "with_subjects": 0,
+        "with_series": 12,
+        "with_page_count": 0
+      }
+    ],
+    "retainedInputObjects": {
+      "providerItems": {
+        "objects": 12,
+        "strictReadingMetadata": 0,
+        "exactNormalizedReadingMetadata": 0,
+        "knownObjectKeys": {
+          "title": 12,
+          "format": 12,
+          "version": 12
+        },
+        "otherObjectKeyOccurrences": 0
+      },
+      "editionMetadata": {
+        "objects": 12,
+        "strictReadingMetadata": 0,
+        "exactNormalizedReadingMetadata": 0,
+        "knownObjectKeys": {
+          "version": 12,
+          "identityConflict": 12
+        },
+        "otherObjectKeyOccurrences": 0
+      },
+      "metadataSnapshotRaw": {
+        "objects": 0,
+        "strictReadingMetadata": 0,
+        "exactNormalizedReadingMetadata": 0,
+        "knownObjectKeys": {},
+        "otherObjectKeyOccurrences": 0
+      }
+    },
+    "canonicalReplayProjection": {
+      "rows": 12,
+      "validCurrentReadingMetadata": 12,
+      "normalizedCanonicalProjectionEqual": 12,
+      "providerOriginalCaptured": false,
+      "singleStoredRowProjection": true,
+      "nullOptionalFieldsOmitted": true,
+      "addedGroupAliasesCredits": false,
+      "generatedFeatureRowsPresent": 12,
+      "generatedFeaturesEqualSaved": 12,
+      "generatedFeaturesWouldChange": 0,
+      "featureJsonSizeProxyBytes": 2688,
+      "byKind": {
+        "comic": 12
+      },
+      "nonemptyFeatureDimensions": {
+        "genres": 0,
+        "tags": 0,
+        "writers": 12,
+        "franchises": 12
+      },
+      "nonNullOptionalFields": {
+        "overview": 12,
+        "coverUrl": 12,
+        "publishedYear": 12,
+        "releaseDate": 12,
+        "pageCount": 0,
+        "seriesTitle": 12,
+        "issueNumber": 12
+      }
+    },
+    "structure": {
+      "identifiers": 12,
+      "groups": 2,
+      "group_members": 12,
+      "feature_rows": 12
+    },
+    "settings": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s"
+    },
+    "rolledBack": true,
+    "poolClosed": true
+  },
+  "measurement": {
+    "nativeBindingMultiplicity": "Exact actual compiled owners36\u219212",
+    "featureParameterSizeProxy": "JSON.stringify native objects UTF8 representation8064\u21922688bytes",
+    "allParameterArrayProxy": "11844\u21926444bytes",
+    "totalBoundParameters": "204\u2192180",
+    "ormMetricScope": "Installed Drizzle execute; raw config/capture SQL excluded.",
+    "notMeasured": [
+      "wire traffic",
+      "Bun encoder work",
+      "CPU",
+      "allocations",
+      "heap",
+      "latency",
+      "physical writes",
+      "WAL"
+    ],
+    "unchangedCounts": [
+      "72 ORM statements",
+      "12 logical owner transactions",
+      "12 schema and12 enabled-category admissions",
+      "24 independently evaluated feature timestamp calls",
+      "12 identifier and12 feature DML attempts,0 affected rows"
+    ]
+  },
+  "focusedTests": {
+    "ref": "evidence/implementation-reading-feature-binding-tests.txt",
+    "passed": 1,
+    "failed": 0,
+    "assertions": 14,
+    "files": 1,
+    "cases": "Source-derived real installed driver statement; empty/nonempty Unicode authored controls, native object identity, no-op predicate, two distinct timestamp values.",
+    "supplementaryNotActualData": true
+  },
+  "independentReview": [
+    "providers_jobs_audit read-only private proof guard/scope review: no material blocker; spare config budget claim limited",
+    "root complete actual receipt and exact candidate adoption approval",
+    "providers_jobs_audit read-only adopted source5d677f50\u2026/testd921952a\u2026 spot-check: no material blocker; driver controls substantive and supplemental; no tests/DB/edits."
+  ],
+  "reproduction": {
+    "exactExecutedProof": "evidence/implementation-reading-feature-binding-executed-probe.ts.txt",
+    "portableReplay": "probes/reading-feature-binding-real.ts",
+    "portableStatus": "syntax_checked_not_database_rerun_after_adoption",
+    "baseline": "candidates/reading-feature-binding/reading.before.ts.txt",
+    "candidate": "candidates/reading-feature-binding/reading.candidate.ts.txt",
+    "execution": "New authorized designated clone and COAST_AUDIT_READING_FEATURE_ROLLBACK=1; failclosed strict host/port/name/current-source guards; new receipt required."
+  },
+  "limits": [
+    "These twelve single reading_works row projections are actual canonical comic metadata, not exact captured provider inputs. Null optional fields are omitted; no aliases, group or credits are assembled from other tables. Books, subjects/genres and changed-feature/group/alias/upgrades are not positive actual cohorts.",
+    "Both source owners retain the upfront strict schema and actual enabled-category/config admission. A bounded two-connection pool leaves the unchanged pretransaction getConfig read available while the outer rollback holds one connection; it does not establish one shared snapshot across config and owner transactions.",
+    "Private module observation clocks are fixed to the same instant for full state equality, with two independent feature timestamp calls per item still evaluated. This does not measure actual wall-clock sampling or timestamp freshness under concurrency.",
+    "Real owner transactions use nested savepoints inside an outer rollback. Advisory locks live until outer rollback; normal per-item commit, lock-release schedules, cancellations, revocations and provider concurrency are not established.",
+    "Native parameter objects are counted at the installed Drizzle boundary. JSON.stringify UTF8 parameter representations are size proxies, not Bun/PostgreSQL wire bytes, encoder CPU, heap allocations or elapsed-time measurements.",
+    "The existing no-op guard is retained and these unchanged actual rows remain unchanged. No transaction, statement, physical-write, WAL, memory or latency reduction is claimed. Full logical values and sequences restore after rollback; rollback does not imply no physical WAL/dead tuples.",
+    "All raw identities/titles/metadata remain private RAM. No normal/deployed database, keys/credentials or reading files were accessed, and no provider transport or fabricated row was used."
+  ],
+  "remainingGaps": [
+    "No actual book, changed/new-feature, new-work, alias-conflict, supplied-group or upgrade input cohort.",
+    "No provider transport, fresh provider input, normal per-item commit/concurrent freshness/cancellation or browser resource acceptance.",
+    "Common gates/inventory and normal browser are root-owned; no focused-pass claim of those gates.",
+    "Larger reading/import lifecycle and persistence work is not completed by this exact parameter repair."
+  ],
+  "rootCombinedAcceptance": {
+    "commonPassed": true,
+    "unit": {
+      "passed": 791,
+      "guardedSkip": 710,
+      "failed": 0,
+      "assertions": 33722,
+      "tests": 1501,
+      "files": 279
+    },
+    "check": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "buildInventoriesStyle": "passed",
+    "receipt": "evidence/implementation-20261018-ancestor-material-gates.json",
+    "normalTrial": {
+      "receipt": "evidence/implementation-ancestor-material-normal.json",
+      "passedFunctional": true,
+      "sourceUnchanged": true,
+      "boundary": "Functional current-source signed-in normal5173 actual-data trial. No job/plan/request/status/profile/friend/reading/tracking/settings/schema command submitted; ordinary session/presence/freshness/enrichment side effects not claimed absent. No live provider ingestion, helper write, touch/compact, browser CPU/heap/GPU/network timing or long retained-browse proof."
+    },
+    "goalComplete": false
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  }
+}

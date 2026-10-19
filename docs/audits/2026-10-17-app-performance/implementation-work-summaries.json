@@ -1,0 +1,152 @@
+{
+  "id": "MIN-03",
+  "recordedAt": "2026-10-18T01:39:03.038509+00:00",
+  "status": "partial-actual-data-verified",
+  "implementationApplied": true,
+  "sourcePins": {
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/server/public-api/handler.server.ts": "1c4dc5119aa0dfe898babf35cfd8c903e3792e929937eb3cce26d6edb7d51044",
+    "src/lib/server/public-api/library.server.ts": "0e8b3f3431c6d790fcf36d1096b93d359d3ed8ab19e037bab4f62a90ba9e9dcb",
+    "src/lib/server/public-api/response.ts": "ca5f7eeb3326f2b7b088239014b045a0ad40dfee659c6ae049662e41868c1981",
+    "src/lib/ui/types.ts": "7788012bdfba6c720f72a3bd8669195cca71f29a9b3a6d6e878399ddab4ca5f9",
+    "tests/work-summary-projection.test.ts": "680c1d0ec27f7fe2c44998927b5bf25bc22276e8b7c597be8b5e02384428a762",
+    "docs/audits/2026-10-17-app-performance/probes/work-summaries-real.ts": "45e9c1e3db23a5a515263b571549e83c275917beaa779ba827cea6ee19366b67"
+  },
+  "change": "Shared bounded workSummaries and screenWorkSummaries, with one existing Collection eligibility/page owner, serve public catalogue single/list, accessible Library and Collection identity DTOs. Full workCards/mediaViews and personal progress remain unchanged.",
+  "actualEvidence": "evidence/implementation-work-summaries-actual.json",
+  "actual": {
+    "completeComparisons": 133,
+    "allEqual": true,
+    "actualExternalFetches": 0
+  },
+  "actualCensus": {
+    "enabledOwners": 4,
+    "cohorts": [
+      {
+        "name": "screen",
+        "identities": 60
+      },
+      {
+        "name": "game",
+        "identities": 15
+      },
+      {
+        "name": "music",
+        "identities": 30
+      },
+      {
+        "name": "comic",
+        "identities": 12
+      },
+      {
+        "name": "mixed-duplicate",
+        "identities": 42
+      },
+      {
+        "name": "multi-batch",
+        "identities": 76
+      },
+      {
+        "name": "empty",
+        "identities": 0
+      }
+    ],
+    "preferenceTargets": 0,
+    "overrides": 0,
+    "locks": 0,
+    "preferences": 0,
+    "books": 0
+  },
+  "mediansMs": {
+    "before": 117.78781249999884,
+    "after": 3.4588330000005953
+  },
+  "supplementaryTests": {
+    "tests": 3,
+    "assertions": 60,
+    "boundary": "Controlled title-lock/provider-policy/blank-alias/batching contracts supplement actual zero-positive override/book/preference cohorts."
+  },
+  "independentReview": [
+    "providers_jobs_audit exact source/test review passed",
+    "data_api_audit exact source/probe review passed; existing mediaViews and following source byte-identical to saved baseline"
+  ],
+  "remaining": [
+    "No saved book or metadata override/lock may be available; positive source branches are separately controlled and census reports the truth.",
+    "No token was created and real API authentication/quota HTTP was not invoked; read-owner results use actual users/data while unchanged token admission is source/regression covered.",
+    "All scoped reads are READ ONLY; local snapshot boundaries follow existing owner transactions. No normal DB, credential/master key or provider transport used.",
+    "ORM execute mapped byte/row counts omit raw BunSQL/config and PostgreSQL internal work. Warm local timings do not establish production latency or heap savings.",
+    "Guest/cross-profile comparisons check metadata identities only, never claim full UI cards/private-state equivalence from thin summaries.",
+    "Actual API bearer token/auth/quota HTTP acceptance and positive book/override/lock/preference data remain open.",
+    "Measured counters are ORM execute mapped rows/JSON bytes, not full SQL/wire/heap/RSS; final public DTO/HTTP payload size remains unchanged."
+  ],
+  "rootCommonAndNormalAcceptance": "784pass/704guardedskip/0fail/33604assertions/1488tests/269files, check0/0/build/inventories; normal5173chooser/Profile/Library/Tasks functional pass.",
+  "rootCurrentNormalAcceptance": {
+    "receipt": "evidence/implementation-summary-avatar-normal.json",
+    "signedIn": true,
+    "chooserCancelReopenSavedPreviewUnchanged": true,
+    "normalProfileSaveSubmitted": false,
+    "genreHeadingRendered": true,
+    "settledLibraryMediaLinks": 120,
+    "completedPrivateImages": 29,
+    "tasks": 30,
+    "newWarningsErrors": 0,
+    "sourceManifestUnchanged": true,
+    "scope": "Normal functional UI acceptance; API bearer-token/auth/quota HTTP and precise provider/decode/cancel timing remain uninstrumented."
+  },
+  "finalIndependentCoherenceReview": {
+    "reviewer": "providers_jobs_audit",
+    "result": "passed_no_material_issue",
+    "scope": "Final133actualsaved-old-formattercomparisons, sourcepins, normalreceipt, UIunchangedcounters, gatecounts and missingcohort boundaries."
+  },
+  "currentSourcePinRefresh": {
+    "at": "2026-10-18T02:03:53.987799+00:00",
+    "reason": "Later DATA04 detailsData-local reuse only. Complete source prefix before detailsData, including screenWorkSummaries/mediaViews, is byte-identical to the saved DATA04 baseline. Original summary proof hashes/receipts remain immutable.",
+    "laterReport": "implementation-detail-hydration.md"
+  },
+  "laterSectionDemandChange": {
+    "ref": "next-detail-section-demand.json",
+    "priorSourcePins": {
+      "src/lib/server/queries/media.ts": "f66f0f80a7b78288efd48994379510915d4e21a4894a5aaa377e9b8e79856bda"
+    },
+    "scope": "Exact8file presentation-demand patch; media query module prefix before detailsData is byte-identical. Complete default/full12signedin+3guest outputpairs pluscompact12signedin+3guest pairs verified in actual30readonlyproof. Prior score/Continue/work-summary/oldbrowser receipts remain historical and were not rerun by a fingerprint refresh.",
+    "ordinaryApiAndDefaultFullUnchanged": true,
+    "currentCommonAndNormalAcceptance": {
+      "commonGateReceipt": "evidence/implementation-20261018-section-demand-gates.json",
+      "normalReceipt": "evidence/implementation-section-demand-normal.json",
+      "boundary": "Current combined gates and selected-section functional acceptance passed. The report\u2019s older owner-specific runtime measurements remain historical and were not rerun."
+    },
+    "sourceIdentityIsNotRuntimeAcceptance": true
+  },
+  "laterPublicSeedAdoptionChange": {
+    "at": "2026-10-18T12:13:28.378232+00:00",
+    "source": "src/lib/server/public-api/library.server.ts",
+    "before": "d977a9a4e628a1dbbb9f69a69b30da7d38e2fb687b9323bdbf8d76a749e513ee",
+    "after": "0e8b3f3431c6d790fcf36d1096b93d359d3ed8ab19e037bab4f62a90ba9e9dcb",
+    "updatedCurrentMaps": [
+      "sourcePins"
+    ],
+    "report": "implementation-public-seed.json",
+    "boundary": "Current source identity advances for the separately verified generic seed-gate application. All earlier raw inputs/receipts/results and rejected candidates remain historical; no earlier experiment is implied rerun on current source."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  }
+}

@@ -1,6 +1,7 @@
 import type {ShelfConfig} from './shelves';
 import {dynamicKind} from '$lib/recommendations/model';
 import type {ProgressOptions} from '$lib/progress';
+import {validPageInterval} from '$lib/page-window';
 /** Only linked row destinations; ordinary navigation to these pages stays unchanged. */
 export function sectionTarget(href:string,base:URL):({href:string;source:ShelfConfig}|{href:string;profile:{username:string;section:'insights'|'favourites';period:'all'|'month'|'year';kind:string;scope:string}})|null{
  let url:URL;try{url=new URL(href,base);}catch{return null;}
@@ -16,9 +17,11 @@ export function sectionTarget(href:string,base:URL):({href:string;source:ShelfCo
  }else if(['/library','/music','/games'].includes(url.pathname)){
   const surface=url.pathname==='/music'?'listen':url.pathname==='/games'?'play':get('view','watch');
   if(!['watch','listen','play','read'].includes(surface))return null;
+  const lastPage=Number(get('page','1')),firstPage=Number(get('firstPage',String(lastPage)));
+  if(!validPageInterval(firstPage,lastPage))return null;
   const kind=get('kind','all'),activity=get('activity','all');
   const selection=get('tracking',surface==='listen'?kind:get('state',surface==='watch'?activity==='completed'?'watched':activity==='active'?'progress':activity:activity));
-  source={type:'library',layout:'grid',surface:surface as 'watch'|'listen'|'play'|'read',collection:get('collection')==='true'||get('personal')==='true',username:get('username'),genre:get('genre'),initialSelection:selection,initialKind:(['movie','show','book','comic'].includes(kind)?kind:'all') as 'all'|'movie'|'show'|'book'|'comic',initialScope:get('scope',get('availability'))==='available'?'available':'all',initialRelationship:get('relationship','all'),initialSource:get('source','all'),initialAvailability:get('availability','all')};
+  source={type:'library',layout:'grid',surface:surface as 'watch'|'listen'|'play'|'read',initialPage:lastPage,initialFirstPage:p.has('firstPage')?firstPage:undefined,collection:get('collection')==='true'||get('personal')==='true',username:get('username'),genre:get('genre'),initialSelection:selection,initialKind:(['movie','show','book','comic'].includes(kind)?kind:'all') as 'all'|'movie'|'show'|'book'|'comic',initialScope:get('scope',get('availability'))==='available'?'available':'all',initialRelationship:get('relationship','all'),initialSource:get('source','all'),initialAvailability:get('availability','all')};
  }else if(url.pathname==='/for-you'){
   const section=get('section'),category=get('category','screen');
   if(!['screen','game','music','reading'].includes(category))return null;

@@ -24,7 +24,8 @@ export async function createApiToken(actor: SessionUser|null,input:unknown) {
   const expiresAt=new Date(Date.now()+settings.days*86400000);
   const id=await getSql().begin(async sql=>{
     await requireFeature(user.id,'api',sql);
-    const active=await sql`select id from users where id=${user.id} and not disabled for update`;
+    await sql`select pg_advisory_xact_lock(hashtextextended(${user.id},0))`;
+    const active=await sql`select id from users where id=${user.id} and not disabled`;
     if(!active.length)throw new AppError(401,'Account unavailable.','invalid_token');
     const [count]=await sql`select count(*)::int as total from api_tokens where user_id=${user.id} and revoked_at is null and expires_at>now()`;
     if(count.total>=20) throw new AppError(409,'Revoke an existing token before creating another.','token_limit');

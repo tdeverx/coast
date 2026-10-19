@@ -1,3 +1,4 @@
+import { requestedPageInterval } from '$lib/server/queries/pagination';
 import { getFeatureConfig } from '$lib/server/features';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
@@ -11,7 +12,7 @@ import { libraryBrowseDefaults } from '$lib/library';
 import { requireEnabledCategory } from '$lib/server/experimental';
 import { AppError } from '$lib/server/security/errors';
 
-const loadLibrary = async ({ locals, url, depends }: Parameters<PageServerLoad>[0]) => {
+const loadLibrary = async ({ locals, url, depends, request }: Parameters<PageServerLoad>[0]) => {
   depends('coast:tracking');
   if (!locals.user) error(401, 'Sign in to browse your library.');
   const parameters = url.searchParams;
@@ -42,8 +43,8 @@ const loadLibrary = async ({ locals, url, depends }: Parameters<PageServerLoad>[
     view, collection, username: profile?.username ?? null, owner: !profile || profile.id === locals.user.id,
     filters: { ...collectionFilters, genre, tracking, scope, kind },
     content: view === 'overview' ? null : collection
-      ? await collectionData(locals.user.id, collectionFilters, username)
-      : await libraryContent(locals.user.id, browseUrl),
+      ? await collectionData(locals.user.id, collectionFilters, username, requestedPageInterval(collectionFilters.page,parameters.get('firstPage')),request.signal)
+      : await libraryContent(locals.user.id, browseUrl,request.signal),
     missing: collection && !profile && parameters.get('missing') === 'true'
       ? missingDemand(locals.user.id, new URL(`http://coast/missing?page=${parameters.get('missingPage') ?? 1}`)) : null,
   };

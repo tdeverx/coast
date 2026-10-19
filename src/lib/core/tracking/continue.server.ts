@@ -1,10 +1,10 @@
-import { requireWorkFeature } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction, requireWorkFeature } from '$lib/server/features';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';
 import * as s from '../../server/db/schema';
 import { DomainError } from '../errors';
-import { trackInTransaction } from './service.server';
+import { consumedQueueCondition, trackInTransaction } from './service.server';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 const uuid = v.pipe(v.string(), v.uuid());
@@ -51,6 +51,7 @@ export async function changeContinue(userId: string, raw: unknown) {
     raw
   );
   return getDb().transaction(async (tx) => {
+    await lockFeaturePolicyInTransaction(tx,userId);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
     await requireWorkFeature(tx,userId,input.mediaId);
     const mediaId = await wholeWorkId(tx, input.mediaId);
@@ -126,7 +127,7 @@ export async function changeContinue(userId: string, raw: unknown) {
       .select()
       .from(s.rewatches)
       .where(and(eq(s.rewatches.userId, userId), inArray(s.rewatches.mediaId, scope)));
-    const queued = await tx.select().from(s.upNext).where(eq(s.upNext.userId, userId));
+    const queued = await tx.select().from(s.upNext).where(consumedQueueCondition(userId, mediaId));
     const result = await trackInTransaction(tx, userId, {
       mediaId,
       action: 'drop',

@@ -1,0 +1,227 @@
+{
+  "at": "2026-10-19T03:58:03.995927+00:00",
+  "status": "shared-conflict-summary-adopted-sequence-acceptance-finalization-deferred",
+  "canonicalIds": [
+    "PJ-12",
+    "DATA-02",
+    "PJ-07",
+    "UIC-03"
+  ],
+  "runtimeSourceChanged": true,
+  "runtimePaths": [
+    "src/lib/sync/conflicts.server.ts",
+    "src/lib/ui/components/ConflictList.svelte"
+  ],
+  "sourcePins": {
+    "src/lib/sync/changes.server.ts": "5b781dfbf935afa83d7fa54b8446fc9d4830d7f375d26f6c3658ba00191868af",
+    "src/lib/sync/list-values.server.ts": "2352d763f297de83636f406d1d070f5fd78901c1beef63fb5ab44afc2671ff7a",
+    "src/lib/core/tracking/rewatch.server.ts": "9d9dbba3ef75f32eb45d5f932011ea52506f1b0102a5f8899f1e9f012e513e1c",
+    "src/lib/core/lists/sequence.server.ts": "57f6f05eda50129707fffce767da1ae1749ca97bd02fb056c518c9b4237ad018",
+    "src/lib/sync/conflicts.server.ts": "1008c5840ed41b299c9591fb8afb63cd4c0da728a18d5119b285dbeb61bb87b4",
+    "src/lib/core/tracking/service.server.ts": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29",
+    "src/lib/sync/jellyfin.server.ts": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
+    "src/lib/ui/components/ConflictList.svelte": "5a36966f9b8e3f8384482315ffef694eeea0120fcb0302b8f66abdbc936bb6a3",
+    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe",
+    "docs/audits/2026-10-17-app-performance/verify-report-integrity.py": "db234fcbfdcd60a3d700254e9eb93bc6265e8b695f57d92924666058b81d10f1",
+    "src/lib/sync/jellyfin-progress.ts": "0903bc89327889133dc6deec820b4ebe2733059ae7b5a39e2a090d2d741d0a7e"
+  },
+  "sourceChanges": {
+    "src/lib/sync/conflicts.server.ts": {
+      "before": "f3183a3edf206bd8c745790673b16fe7346dd273d48e9e86993e49fe6894a109",
+      "after": "1008c5840ed41b299c9591fb8afb63cd4c0da728a18d5119b285dbeb61bb87b4"
+    },
+    "src/lib/ui/components/ConflictList.svelte": {
+      "before": "d897f318157faa15ab8f667f3e612a61321d3abb5d01ab7d9bcb4c17ed6f155a",
+      "after": "5a36966f9b8e3f8384482315ffef694eeea0120fcb0302b8f66abdbc936bb6a3"
+    }
+  },
+  "outcomes": {
+    "PJ-12": "narrow-summary-adopted-broader-pagination-deferred",
+    "DATA-02": "named-positive-native-acceptance-passed-finding-partial",
+    "PJ-07": "resource-positive-deferred-concurrency-acceptance",
+    "UIC-03": "prior-backend-evidence-boundary-corrected-no-new-client-acceptance"
+  },
+  "canonicalCounts": {
+    "canonical": 94,
+    "sourceApplied": 71,
+    "implemented": 32,
+    "partial": 37,
+    "open": 20,
+    "other": 5
+  },
+  "additionalObservations": 15,
+  "nativeConflictRecords": 103,
+  "nativeConflictApprovalPairs": 6,
+  "nativeSequenceMutationPairs": 11,
+  "nativeSequenceBoundaryCases": 4,
+  "restorationRef": "evidence/implementation-found-24-restoration.json",
+  "commonGatesRef": "evidence/implementation-found-24-gates.json",
+  "wholeGoalComplete": false,
+  "artifactPins": {
+    "candidates/admin-execution-batch24/src__lib__sync__list-values.server.ts.before.snapshot": "2352d763f297de83636f406d1d070f5fd78901c1beef63fb5ab44afc2671ff7a",
+    "candidates/admin-execution-batch24/docs__performance.md.before.snapshot": "c129c30d60e723ea70e76c550f7eb046904c8b7822ebb3053a25f5484375c383",
+    "candidates/admin-execution-batch24/docs__audits__2026-10-17-app-performance__verify-report-integrity.py.before.snapshot": "e9744819b779b92325eecf158c0aad7a7168b8ddf9f25cf22d16dbb30a20227c",
+    "candidates/admin-execution-batch24/src__lib__core__tracking__rewatch.server.ts.before.snapshot": "9d9dbba3ef75f32eb45d5f932011ea52506f1b0102a5f8899f1e9f012e513e1c",
+    "candidates/admin-execution-batch24/source-before.json": "936e00624bf34d7860f0bd437755c13e95ff85c2c4948b93f328e234dca5ad9b",
+    "candidates/admin-execution-batch24/report-body.md": "b3f37f9e5b17dd1cd23d149314bd43defdaa90f127da7057b0622326492be40d",
+    "candidates/admin-execution-batch24/src__lib__core__tracking__service.server.ts.before.snapshot": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29",
+    "candidates/admin-execution-batch24/src__lib__core__lists__sequence.server.ts.before.snapshot": "57f6f05eda50129707fffce767da1ae1749ca97bd02fb056c518c9b4237ad018",
+    "candidates/admin-execution-batch24/src__lib__sync__jellyfin.server.ts.before.snapshot": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
+    "candidates/admin-execution-batch24/normal-ui.json": "074481e2d54ab5502a826d79bbbc8a6b8c6770ea9d99bad3e147aac5a82281cb",
+    "candidates/admin-execution-batch24/src__lib__sync__conflicts.server.ts.before.snapshot": "f3183a3edf206bd8c745790673b16fe7346dd273d48e9e86993e49fe6894a109",
+    "candidates/admin-execution-batch24/src__lib__ui__components__ConflictList.svelte.before.snapshot": "d897f318157faa15ab8f667f3e612a61321d3abb5d01ab7d9bcb4c17ed6f155a",
+    "candidates/admin-conflict-review/typecheck-before.ts": "0041f44e8085ba6cb7fcf60b90661ceeaef1a18700b4478d626119bd2a8de676",
+    "candidates/admin-conflict-review/conflicts.server.ts.before.txt": "b7dd03e6c358b8418b68084ee4e2d88b36a2261890ec8aab568b553b087bc1c2",
+    "candidates/admin-conflict-review/conflicts.server.ts.production-ready.txt": "1008c5840ed41b299c9591fb8afb63cd4c0da728a18d5119b285dbeb61bb87b4",
+    "candidates/admin-conflict-review/production-ready.patch": "05063b0618e5c78a21d4544868a0af61eaa937e6926956349e14e51d7b433a49",
+    "candidates/admin-conflict-review/source-pins.json": "83bf403848cfbc29f83c47b59ab0ef2ffcb0e139c01864414f4c4af714d19662",
+    "candidates/admin-conflict-review/narrow-source-proof.json": "ab66afa185ab8dfb3a1b9e6847cbbf51aa222fee4d0f7b05f54cd4c37addb2a1",
+    "candidates/admin-conflict-review/probe.ts": "09a158c01d647fd5dca0072e0ce1e638b2ea718d9e345cbfd12e16114f0338d2",
+    "candidates/admin-conflict-review/narrow-candidate.patch": "c2d2844fe0deca14a27096a1f29bf863febb06b1a1060d1e932d418afe390df6",
+    "candidates/admin-conflict-review/isolated-typecheck-before.ts": "2ac43ccc16bbc2e50840ba7465a93e6577caa529dfff1175c24ff90cd63a28c9",
+    "candidates/admin-conflict-review/+page.server.ts.before.txt": "fc45d87fd0ff72e1c1f6600362f2710c35ccd197bb7266eb388395c2e6616d72",
+    "candidates/admin-conflict-review/isolated-typecheck-tsconfig.after.json": "7018184966f68447a221e255b55015e2e6bcc08456353848ba64bf69d2f9dd68",
+    "candidates/admin-conflict-review/actual.json": "fdab02982e28da3000f7037a468fe3c1888cd950108b468b91570ce50706da98",
+    "candidates/admin-conflict-review/native-actual.first-failed.json": "ac0561d58163d4b38da396820b8156f93d75b5e0db354affdfb5d7561926366b",
+    "candidates/admin-conflict-review/isolated-typecheck-after.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/admin-conflict-review/list-values.server.ts.before.txt": "2352d763f297de83636f406d1d070f5fd78901c1beef63fb5ab44afc2671ff7a",
+    "candidates/admin-conflict-review/typecheck-after.ts": "18febf662e37d7f2aca5041b87bdfa371a0b3edd2ff5cb972df232455a7b9dfb",
+    "candidates/admin-conflict-review/type-only-delta.patch": "ecff54860223b69398562106b9ef16e55c0899fee53ed6451029e269e622573c",
+    "candidates/admin-conflict-review/isolated-typecheck-before.log": "c26ec214c812964acecff5ae35b75a4769ff6319f1379895d447e0495573b582",
+    "candidates/admin-conflict-review/command-source-proof.json": "bb3b17f49bbdbfacfb2e331d248379b3eabea81deb530b0992f765b6f8adc24b",
+    "candidates/admin-conflict-review/artifact-manifest.json": "4cf30f0032c562ed7477e612820956fde20c44b2fbc2d164b09eef9dec9ce425",
+    "candidates/admin-conflict-review/native-candidate.ts": "354d2a8b6b1b78189593316295305287abf86f0889d7e2ba4d7bfe11239ce69e",
+    "candidates/admin-conflict-review/sync-conflicts.server.ts.before.txt": "f3183a3edf206bd8c745790673b16fe7346dd273d48e9e86993e49fe6894a109",
+    "candidates/admin-conflict-review/type-readiness.json": "0909fbe91e804f06b865b54b01563857c3b5f3521929e9eea1b8435c857fe01b",
+    "candidates/admin-conflict-review/actual.initial-projection.json": "39cea768900f13943fbe95b847987f67b509bf94e875ecfd1dc069e8ebb515dd",
+    "candidates/admin-conflict-review/ConflictList.svelte.before.txt": "d897f318157faa15ab8f667f3e612a61321d3abb5d01ab7d9bcb4c17ed6f155a",
+    "candidates/admin-conflict-review/conflicts.server.ts.narrow-candidate.txt": "e143cd12e9e9d88caa525ca8afbe3f87452c3994b23c3d044d793aa29c3a127b",
+    "candidates/admin-conflict-review/outcome.md": "412cd1d1cffce7e1e506b3a8419f0cc6570f8fdc8cd77209e955faff40cea830",
+    "candidates/admin-conflict-review/proposal.json": "4f525431e2c6eb54122b1d344d7bd04b4f449af58cabba43ac59232d594a806c",
+    "candidates/admin-conflict-review/type-erasure.json": "8d412771abf5d005de821cd01a579b0b31f1d70b669faae988a4b3da0567d95c",
+    "candidates/admin-conflict-review/isolated-typecheck-tsconfig.before.json": "c17ee3c77c94f0c8381e7781617e1d93e839cc3b1c9f9c80fe5fb12fc8d4ac4f",
+    "candidates/admin-conflict-review/ConflictList.svelte.narrow-candidate.txt": "5a36966f9b8e3f8384482315ffef694eeea0120fcb0302b8f66abdbc936bb6a3",
+    "candidates/admin-conflict-review/native-actual.json": "10a7c370e2bcebd1bb3187941fa1d8ec69980858ed31649dc9dce7a9ed07a690",
+    "candidates/admin-conflict-review/isolated-typecheck-after.ts": "7a211cae953df4b18962877795fa7ac2b1546d12f254b1a02677bbbc0ca2eff5",
+    "candidates/admin-conflict-review/native-proof.ts": "b0486641242caa2f688a57ce56ba1d06fa76e83cca4a20ceef8397e02f7ae1b7",
+    "candidates/admin-conflict-review/actual.first-failed.json": "454335a111a8e82fcee28d4cce9ea2c0c83cb9ae29417b57de80475212548127",
+    "candidates/admin-sequence-acceptance/summary.json": "6e4c3ab0e85d7c1d4d6028138cfb644d382034e519d65f3d6a316dd19bccf0a6",
+    "candidates/admin-sequence-acceptance/run-locks.py": "2b105945f6fb778198885df47d66e52e0b9d9bff6b3f16e66c11ff6ca25ad25e",
+    "candidates/admin-sequence-acceptance/run.py": "bf600fa0c947ab0fda4dc94c0e0a2e44d2b41b69e281fac24d09942b440c8a0b",
+    "candidates/admin-sequence-acceptance/wrapper-followup.ts": "f7b266def36951a8aabf9b71a943e0cff8d1d2043844a668bf8faa387c7a3120",
+    "candidates/admin-sequence-acceptance/sequence.default.ts.txt": "9b5968880b044be87701ff77f78e044c392e15b5a114727bea3b6f899feab212",
+    "candidates/admin-sequence-acceptance/run-followup.py": "912b3d5d43dae8e3af3acf3a84413631dc0d9560ecf3e01b76200a4a2d1a35a0",
+    "candidates/admin-sequence-acceptance/probe-followup.ts": "b6e86b8a4939f1f0da4cf1d0ee0b3f19550d0d6450a765d8e37fed0b59a6881b",
+    "candidates/admin-sequence-acceptance/rewatch.default.ts.txt": "c29eb1e8e40622594d721787cf4f7ae5b7d6a2eea664efb828bb8d35a4fca295",
+    "candidates/admin-sequence-acceptance/probe.ts": "d86b2558f08fc349b3d2fcd9be5dc1f5436537e39697b6fe7f41f36f164ece73",
+    "candidates/admin-sequence-acceptance/service.default.ts.txt": "3d02e5936338634f7a5e07cf4301d617f4a45b7099e67581db8456cb3b819cf1",
+    "candidates/admin-sequence-acceptance/actual-followup.json": "87d2f4d8486b15cc6a8edf0cdb727fdee7acab98f5eb6be553eb0298d5880a33",
+    "candidates/admin-sequence-acceptance/redundant-dispatch-receipt.json": "a0f077431bf7b7f80db30232335da8f9eeb226936da2f10f1f2726b664b5b8ca",
+    "candidates/admin-sequence-acceptance/locks-import-attempt.json": "69cf42244598a36ea78df5e707fd16f6b7f1949df57e9fb4bcf585bfd4d7d37d",
+    "candidates/admin-sequence-acceptance/actual.json": "7d46512f6420a86e9167aa043fac1056bba6cb996ed3e294730c7b7cec501ecb",
+    "candidates/admin-sequence-acceptance/README.md": "f1f7d893af196c8cc644c64c3b43163824921696176be20d10dd7f0859aff656",
+    "candidates/admin-sequence-acceptance/actual-locks.json": "f17006d1d21c65257db35472316ab93b688b067b6ca35dc6fd09b863b7b9f33b",
+    "candidates/admin-sequence-acceptance/probe-locks.ts": "e7abd91d6d6b24a701744e1f17faa85518fca5778c110e0122e3fa547093aa84",
+    "candidates/admin-sequence-acceptance/probe-locks-import-attempt.ts.txt": "2956a77db3f8db463b6791b111b0ee7a700e57d13de6c9fc2e96d0c0cc503389",
+    "candidates/admin-sequence-acceptance/actual-pairs.json": "7d46512f6420a86e9167aa043fac1056bba6cb996ed3e294730c7b7cec501ecb",
+    "candidates/admin-sequence-acceptance/wrapper-locks.ts": "515ad4b17e7a2017100cfa15c231c08ffa07471d77d00b7922dc6bcef1b310ed",
+    "candidates/admin-sequence-acceptance/wrapper.ts": "9efe784bfb8231b06730e811bd8801e58486b26f79517600376bb3cddf79fa03",
+    "candidates/admin-jellyfin-finalization/jellyfin.before.ts.txt": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
+    "candidates/admin-jellyfin-finalization/run.py": "18c43adebeb9335020412ae157fcc14bedc124da0632549043395fb903fe8d29",
+    "candidates/admin-jellyfin-finalization/progress.before.ts.txt": "0903bc89327889133dc6deec820b4ebe2733059ae7b5a39e2a090d2d741d0a7e",
+    "candidates/admin-jellyfin-finalization/probe.attempt-2.ts.txt": "7a130f7c46e537f3c1e20a15d95d46c4b2b3747f3b02dedd65e67ccf5dec0624",
+    "candidates/admin-jellyfin-finalization/actual-rollback.json": "b8109a906a6031497c18bf76a849017ac5462300e48e65c75c60e989cfbcfbb0",
+    "candidates/admin-jellyfin-finalization/RESULT.md": "7f6e4958e1ac0fc209662430e911db3e14bf35a748a0cff0c9cc522f96b003ad",
+    "candidates/admin-jellyfin-finalization/queue.owner.ts.txt": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "candidates/admin-jellyfin-finalization/outcome.json": "a952ae307266cc5f3b8b87a35bacb7dce0814eb46a8886a19e8669827230b1e0",
+    "candidates/admin-jellyfin-finalization/native-comparison-and-schedules.json": "11b899750b7b2f6459def031cb86883d483ef8d2d127ef10288259f6a4b8202e",
+    "candidates/admin-jellyfin-finalization/candidate.patch": "b9593cda7c9d885da6bb9f7d98a021827a2c60e0ee83effac7da55becc12017c",
+    "candidates/admin-jellyfin-finalization/bootstrap-concurrency.ts": "00281629637172ff7389363b911cfee9e9cc17ee6187cf54076fd72e0aedc0cd",
+    "candidates/admin-jellyfin-finalization/bootstrap-rollback.ts": "c8e8b32bc0add3d9a54a520ea067983743c1895ca8033dcf63ec848d05d8df20",
+    "candidates/admin-jellyfin-finalization/probe-concurrency.ts": "d70f541cbe702eb7c3f00e833856f0fceb0df27219e548993d905eae71c4d84f",
+    "candidates/admin-jellyfin-finalization/jellyfin.candidate.ts.txt": "91ab5f754fe768f3547d1dbae005e008d8f42c943141bc5990cc8bd5a1d8eb07",
+    "candidates/admin-jellyfin-finalization/harness-attempt-2.json": "0e227d36ece7eca4c137193bb01da91c331c77e99ca08c8d97c0ee6b8e70a7fc",
+    "candidates/admin-jellyfin-finalization/probe.ts": "ed8cd0b661fa11ebf2142d16cb62bb7405e581a292838f5a1a848609cc13ea10",
+    "candidates/admin-jellyfin-finalization/execution.owner.ts.txt": "ea415b763273144b794cdc759954fb9a1397a97d2b32708689c6ebb855f64ec2",
+    "candidates/admin-jellyfin-finalization/actual.json": "11b899750b7b2f6459def031cb86883d483ef8d2d127ef10288259f6a4b8202e",
+    "candidates/admin-jellyfin-finalization/run-concurrency.py": "057ace7478adc88503352dbf33f6ebded948d81b92dabe1fb6c73b951561f7c1",
+    "candidates/admin-jellyfin-finalization/probe.attempt-1.ts.txt": "047c26ed4d235fb85ffca6e950c60f626d08824021ea8a14840cb4c0343e695e",
+    "candidates/admin-jellyfin-finalization/actual-concurrency.json": "8ef2b0747019457b1dc6293dbe57bb13250c5d6cae3f50133c84346263a8b031",
+    "candidates/admin-jellyfin-finalization/run-rollback.py": "fc32208124912ea327b55259687c018495a771c5c9e05f291d3b56a36ad6f509",
+    "candidates/admin-jellyfin-finalization/manifest.json": "5f27ad791438e85b9e6d44d22f1b0c9f58558f78fd5d0c58f80dbe75156dcbc9",
+    "candidates/admin-jellyfin-finalization/probe-rollback.ts": "51886a2d69a57830b89a541bc5068939f1f64947b86dd03ce7950c374820932c",
+    "candidates/admin-jellyfin-finalization/wrapper-concurrency.ts": "c817037d86927f61c522e0a53fef5995ae2b1275cd6bb3475b35e57ea985733a",
+    "candidates/admin-jellyfin-finalization/harness-attempt-1.json": "e484c5a826e2ab17005a325cad0581c75f6d77a1ed66f8408a904f39d422bdb8",
+    "candidates/admin-jellyfin-finalization/progress.candidate.ts.txt": "b4a5c96ec698f80a761da40c61aab7f078c44172c1dd9074edf9a762f23dc21b",
+    "candidates/admin-jellyfin-finalization/wrapper.ts": "8476a11fe4775b3e70caa508856a50482f78d6bb5a1e3834064f7d6b9bab5a7c",
+    "candidates/admin-jellyfin-finalization/changes.owner.ts.txt": "5b781dfbf935afa83d7fa54b8446fc9d4830d7f375d26f6c3658ba00191868af",
+    "candidates/admin-jellyfin-finalization/wrapper-rollback.ts": "1438f3233899f41430580945ff22ad415ac06616d529845f0ab23a9e3371535c",
+    "candidates/admin-jellyfin-finalization/bootstrap.ts": "715f2d16e430befc241aee569e0fdaee2adbf976a9bc0fb6d5be8eb8d478ed1a",
+    "evidence/implementation-found-24-restoration.json": "406f72e09560c5d8de392001c57fb483777209070f07135142495f725e19c5a2",
+    "evidence/implementation-found-24-gates.json": "09a082891d663654bda2c862d69fd9135f772fd4ca5545deaf1418df01cf523a"
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T03:58:03.995927+00:00",
+      "reportRef": "implementation-found-24.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Shared conflict summaries native actual-admin adoption; sequence named acceptance; phased finalization not adopted. Historical evidence retains source/acceptance boundaries, no whole-audit completion."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    }
+  ]
+}

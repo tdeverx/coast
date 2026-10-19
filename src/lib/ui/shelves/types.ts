@@ -44,6 +44,7 @@ export interface ShelfSource {
   readonly rows?: 1 | 2;
   readonly resetKey?: string;
   readonly initialItemId?: string;
+  readonly location?: string;
   readonly empty?: string;
   readonly emptyHref?: string;
   readonly emptyLink?: string;
@@ -55,4 +56,6 @@ export interface ShelfSource {
   details?: (item: ShelfItem) => ShelfItemDetails | undefined;
   load: (page?: number, append?: boolean) => Promise<unknown>;
   loadPrevious?: () => Promise<unknown>;
+  retain?: (key:string) => () => void;
+  retry?: () => Promise<unknown>;
 }

@@ -3,7 +3,7 @@ import { categoryEnabled } from '$lib/experimental';
 import * as v from 'valibot';
 import { getSql } from '$lib/server/db';
 import { AppError } from '$lib/server/security/errors';
-import { requireFriend } from '$lib/social/service.server';
+import { requireFriend, requireFriends } from '$lib/social/service.server';
 import { workCards } from '$lib/collection/query.server';
 import { notify } from '$lib/server/notifications';
 import { pagination,PAGE_SIZE } from '$lib/server/queries/pagination';
@@ -12,18 +12,19 @@ async function enabled(userId:string){return requireFeature(userId,'planning');}
 export async function createPlan(userId:string,input:unknown){
  const config=await enabled(userId);
  const data=v.parse(v.strictObject({workId:uuid,startsAt:v.pipe(v.string(),v.isoTimestamp(),v.check(value=>Date.parse(value)>Date.now()&&Date.parse(value)<Date.now()+365*86400000,'Plan within the next year.')),party:v.optional(v.boolean(),false),friends:v.optional(v.pipe(v.array(uuid),v.maxLength(20)),[])}),input);
+ const friends=[...new Set(data.friends)];
  const db=getSql(),[work]=await db`select category,kind from works where id=${data.workId}`;
  if(!work||!categoryEnabled(config,work.category))throw new AppError(404,'Work not found.');
  if(data.party&&(!config.experimentalParties||!['movie','episode','track','book','comic'].includes(work.kind)))throw new AppError(400,'Enable Parties and choose a playable or readable title.');
- for(const friend of data.friends)await requireFriend(userId,friend);
+ await requireFriends(userId,friends);
  return db.begin(async tx=>{
   const current=await requireFeature(userId,'planning',tx);
   if(!categoryEnabled(current,work.category)||data.party&&!current.features.parties)throw new AppError(403,'This planned feature is disabled.','feature_disabled');
-  for(const friend of data.friends){const [allowed]=await tx`select 1 from friendships where user_a=least(${userId}::uuid,${friend}::uuid) and user_b=greatest(${userId}::uuid,${friend}::uuid) and state='accepted' and coast_feature_enabled(${userId}::uuid,'social') and coast_feature_enabled(${friend}::uuid,'social')`;if(!allowed)throw new AppError(403,'This action is available between friends.');}
+  await requireFriends(userId,friends,tx);
   await tx`select pg_advisory_xact_lock(hashtextextended(${userId},0))`;
   const [count]=await tx`select count(*)::int as total from media_plans where user_id=${userId} and state='scheduled'`;
   if(count.total>=100)throw new AppError(409,'Complete or cancel a plan before adding more.');
-  const [row]=await tx`insert into media_plans(user_id,work_id,starts_at,party,friends) values(${userId},${data.workId},${data.startsAt}::timestamptz,${data.party},${JSON.stringify([...new Set(data.friends)])}::text::jsonb) returning id`;
+  const [row]=await tx`insert into media_plans(user_id,work_id,starts_at,party,friends) values(${userId},${data.workId},${data.startsAt}::timestamptz,${data.party},${JSON.stringify(friends)}::text::jsonb) returning id`;
   await tx`insert into outbox_actions(user_id,kind,payload,next_attempt_at) values(${userId},'planning.reminder',${{planId:row.id}}::jsonb,${new Date(Math.max(Date.now(),Date.parse(data.startsAt)-15*60000))})`;
   return {id:row.id};
  });

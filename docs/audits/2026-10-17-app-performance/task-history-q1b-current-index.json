@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "finding": "PJ-10",
+  "status": "negative_option_verified_not_adopted",
+  "title": "FK-validated Q1b still increases task-history buffer work on current indexes",
+  "applicationChange": false,
+  "queryChange": false,
+  "schemaChange": false,
+  "sourcePins": {
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/providers/job-timing.server.ts": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+    "tests/job-task-summary-db.test.ts": "312154f05b572ddf4b815a65339c742aacecb9fcf83cb5e1f7bc0820e0977085",
+    "drizzle/0015_maintenance_indexes.sql": "c58c2a8f79d2b2a8e522e206c04495d5ed29ed45c7b74d0c8a4b4165989dea27",
+    "drizzle/0055_bounded_read_indexes.sql": "e716c1c956be6833b7272f5622a080ed8383bdc3d478a5318ab6bc96a4fef936"
+  },
+  "artifactPins": {
+    "probes/task-history-q1b-current-index.ts": "291c9bc69a4d4f224812b7f3867bdf4fac744753c44cb0ff09de52ac83eb037b",
+    "candidates/task-history-next/query-q1b.sql": "42b380f6fed774d8d935da9ec42bad4f9e56408e95655f3c919cd17cecfb69e2",
+    "evidence/task-history-q1b-current-index-actual.json": "fbd5d3d46df213762320a4ecc7fa68d1c09534e80f2257c1bd0a49ad211ca555",
+    "evidence/task-history-q1-current-index-actual.json": "fca1ac5b93cc44fedab970f8c4c63128ac506b3bc53132e2662cc0d12b063504"
+  },
+  "evidenceRefs": [
+    "evidence/task-history-q1b-current-index-actual.json",
+    "probes/task-history-q1b-current-index.ts",
+    "candidates/task-history-next/query-q1b.sql",
+    "task-history-q1-current-index.md",
+    "next-task-history-plan.md"
+  ],
+  "exactDelta": "Q1 minus only orphan_ids materialized CTE and its second fallback UNION branch; descriptive comment changes. Connected pass, null fallback, raw derived scope/current generation and final total-order merge untouched. No production replacement.",
+  "schemaAdmission": {
+    "passed": true,
+    "constraint": {
+      "conname": "outbox_actions_connection_id_provider_connections_id_fk",
+      "contype": "f",
+      "convalidated": true,
+      "condeferrable": false,
+      "condeferred": false,
+      "confdeltype": "n",
+      "confupdtype": "a",
+      "confmatchtype": "s",
+      "source_table": "outbox_actions",
+      "referenced_table": "provider_connections",
+      "source_columns": [
+        "connection_id"
+      ],
+      "referenced_columns": [
+        "id"
+      ]
+    },
+    "triggers": [
+      {
+        "relation": "outbox_actions",
+        "tgisinternal": true,
+        "tgenabled": "O",
+        "tgdeferrable": false,
+        "tginitdeferred": false,
+        "function": "RI_FKey_check_ins"
+      },
+      {
+        "relation": "outbox_actions",
+        "tgisinternal": true,
+        "tgenabled": "O",
+        "tgdeferrable": false,
+        "tginitdeferred": false,
+        "function": "RI_FKey_check_upd"
+      },
+      {
+        "relation": "provider_connections",
+        "tgisinternal": true,
+        "tgenabled": "O",
+        "tgdeferrable": false,
+        "tginitdeferred": false,
+        "function": "RI_FKey_noaction_upd"
+      },
+      {
+        "relation": "provider_connections",
+        "tgisinternal": true,
+        "tgenabled": "O",
+        "tgdeferrable": false,
+        "tginitdeferred": false,
+        "function": "RI_FKey_setnull_del"
+      }
+    ],
+    "sessionReplicationRole": "origin",
+    "scope": "New candidate is admitted only after these actual same-transaction enforcement checks. Current source loader and GET callers cannot self-author a transient invalid-FK transaction."
+  },
+  "sourceProof": {
+    "schema": "src/lib/server/db/schema.ts:682 connectionId FK is nullable ON DELETE SET NULL; original drizzle/0000_curly_millenium_guard.sql:428 ON UPDATE NO ACTION, not DEFERRABLE.",
+    "allRuntimeCallers": [
+      "src/routes/settings/[[section]]/+page.server.ts:93 plain Jobs loader read",
+      "src/lib/server/api/queue.server.ts:10 GET queue/tasks plain read"
+    ],
+    "callerBoundary": "Neither runtime call is inside a caller-authored DB mutation transaction. listTaskActions accepts no transaction. SQL triggers do not call this JS reader. Source searches found no FK defer/drop/disable or session_replication_role mutation path.",
+    "snapshotReason": "Under the enforced immediate FK, any visible non-null connection resolves in the same committed snapshot. A concurrent delete is either invisible to the snapshot or its SET NULL history changes are visible atomically. Removing a schema-invalid orphan compatibility branch preserves current supported states.",
+    "notGeneralGuarantee": "Administrative out-of-band constraint disabling, replication bypass, new deferred FK or new same-transaction caller would invalidate admission; the probe fails closed before candidate execution on observed drift."
+  },
+  "actualCensus": {
+    "actions": 25891,
+    "terminal": 25891,
+    "active": 0,
+    "pending": 0,
+    "running": 0,
+    "failed": 0,
+    "null_connection": 2054,
+    "null_generation": 2054,
+    "dangling_connection": 0,
+    "obsolete_generation": 0
+  },
+  "actualConnections": {
+    "connections": 9,
+    "instances": 3,
+    "no_terminal_history": 0
+  },
+  "equality": {
+    "actualCanonicalOwnerMatchesExtractedBaseline": true,
+    "completeOrderedActiveTuplesEqual": true,
+    "completeOrderedTerminalIdScopeTuplesEqual": true,
+    "completeOrderedFullTaskDtoAndCountsEqual": true,
+    "activeRepresentatives": 0,
+    "activeTaskCount": 0,
+    "terminalRepresentatives": 23,
+    "terminalNullScopes": 4,
+    "fullTaskDtoRows": 23,
+    "activeTerminalSharedIds": 0,
+    "activeAggregateSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "terminalAggregateSha256": "baa16bad7287a62f9044c5bfd138c8de0dbf1d7e83e5f25a2b43843ea9b323fa",
+    "fullDtoAggregateSha256": "e6440d27c9e240734b2c20fb776ecc42439f0a5db9d9072e99f3c5edb0945aca"
+  },
+  "metrics": {
+    "baseline": {
+      "sharedHitBlocks": 670,
+      "sharedReadBlocks": 0,
+      "tempReadBlocks": 0,
+      "tempWrittenBlocks": 0,
+      "historyScanReturnedRowsApprox": 25891,
+      "sortOutputRowsApprox": 25891,
+      "largestReportedSingleSortKiB": 3023,
+      "singleExecutionMs": 30.157
+    },
+    "candidate": {
+      "sharedHitBlocks": 3191,
+      "sharedReadBlocks": 0,
+      "tempReadBlocks": 0,
+      "tempWrittenBlocks": 0,
+      "historyScanReturnedRowsApprox": 25895,
+      "sortOutputRowsApprox": 25928,
+      "largestReportedSingleSortKiB": 635,
+      "singleExecutionMs": 18.318
+    },
+    "interpretation": [
+      "Root buffers include children; do not add descendant buffer totals.",
+      "Rows\u00d7loops are approximate because EXPLAIN rounds per-loop rows.",
+      "Immutable raw sortSpaceUsedKiB is \u03a3(reported per-node sort space \u00d7 loops),3023/6031, not cumulative allocation, simultaneous or peak RAM. Largest individual reported sorts3023/635KiB.",
+      "Heap Fetches0 reflects no index-only nodes, not no heap reads.",
+      "One ordered plan per variant, no repeats; no latency distribution, CPU/RSS, busy production or deployed claim."
+    ]
+  },
+  "decision": {
+    "adopt": false,
+    "repeatTimings": false,
+    "reason": "Q1b removes the zero-result orphan scan, but nine current-index bitmap heap/sort passes still raise shared hits670\u21923191. The lower single execution is insufficient resource evidence.",
+    "q1RawEvidenceUnchanged": true,
+    "priorGroupedAndStateLaneCandidatesNotRerun": true
+  },
+  "actualGaps": [
+    "No pending/running/failed actions; active/count equality is empty, not busy task acceptance.",
+    "No positive obsolete-generation, deliberate timestamp/UUID tie, malformed/empty raw scope, unknown-kind or failed dual-representative schedule claimed.",
+    "No current large deployed spill replay, index-only access, CPU/RSS or concurrency claim."
+  ],
+  "safety": {
+    "settings": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB"
+    },
+    "samePhysicalSession": true,
+    "poolClosed": true,
+    "networkCalls": 0,
+    "sourceUnchanged": true,
+    "noFixtures": true,
+    "noDomainWrites": true,
+    "normalDatabaseAccess": false,
+    "publicPlanPolicy": "Whitelist plan structural/numeric fields only; all plan expression/filter/output/index condition/sort key text omitted. Full actual IDs/scopes/DTOs stay only in memory; opaque aggregate hashes retained."
+  },
+  "nextOption": {
+    "name": "I1 terminal ordering/coverage on fresh generated secondary clone",
+    "state": "not_executed",
+    "scope": "Existing offline plan only; current-index rejection does not establish index gain or approve production DDL. Exact ordered/index-only admission and complete task/timing consumers require actual proof, then storage/build/write maintenance tradeoffs. Keep existing indexes and retained history."
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  }
+}

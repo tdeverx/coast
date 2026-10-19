@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from '$app/state';
-  import { goto, invalidateAll } from '$app/navigation';
+  import { goto } from '$app/navigation';
+  import { refreshRouteDependencies } from '$lib/ui/client';
   import Heading from '$lib/ui/components/Heading.svelte';
   import { browseHeading } from '$lib/ui/headings';
   import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
@@ -24,7 +25,7 @@
 <svelte:head><title>Games · Coast</title></svelte:head>
 <div class="content page route-content">
 
-  <Shelf title="Games" layout="grid" items={data.items} shape="poster" mediaKind="game" enrichSocial={false} artworkOptions={false} hideEmpty={false} error={data.failure} retry={()=>invalidateAll()} pageNumber={data.page} pages={data.pages} {pageUrl}>
+  <Shelf title="Games" layout="grid" items={data.items} shape="poster" mediaKind="game" enrichSocial={false} artworkOptions={false} hideEmpty={false} error={data.failure} retry={()=>refreshRouteDependencies('all')} pageNumber={data.page} pages={data.pages} {pageUrl}>
     {#snippet heading()}<Heading title="Library" level={1} variant="title" />{/snippet}
     {#snippet segments()}{@const browse=browseHeading('play',{...data,features:data.capabilities})}{#if browse.selection}<SegmentedControl label={browse.selection.label} value={browse.selection.value} options={browse.selection.options} onchange={browse.selection.change} />{/if}{#if data.filters.view==='library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state=>goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{keepFocus:true,noScroll:true})}/>{/if}{/snippet}
     {#snippet controls()}<RowFilter groups={[

@@ -269,13 +269,26 @@ suite('Steam account imports and ownership availability',()=>{
       await getDb().insert(s.outboxActions).values({...action,state:'running'});
       await expect(jobExecution.run({id:action.id,attempts:1,purpose:'bootstrap',started:performance.now(),checkpoints:4},()=>syncSteam(action))).rejects.toBeInstanceOf(JobYield);
       const [snapshot]=await getDb().select().from(s.providerJobSnapshots).where(eq(s.providerJobSnapshots.actionId,action.id));
-      expect(snapshot.data.next).toBe(100);
+      expect(snapshot.data.next).toBe(0);
+      const [checkpoint]=await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.id,action.id));
+      expect(checkpoint.payload._checkpoint).toEqual({task:'steam-ownership',scanId:snapshot.data.scanId,next:100,added:100});
       const during=await getDb().select().from(s.availability).where(eq(s.availability.connectionId,connectionId));
       expect(originalAvailable.every(old=>during.some(row=>row.id===old.id&&row.state==='available'))).toBe(true);
+      // A cursor from another census or outside this one cannot publish absence.
+      for(const invalid of [{...(checkpoint.payload._checkpoint as object),scanId:crypto.randomUUID()},{...(checkpoint.payload._checkpoint as object),next:112}]){
+        await getDb().update(s.outboxActions).set({payload:{...checkpoint.payload,_checkpoint:invalid}}).where(eq(s.outboxActions.id,action.id));
+        await expect(jobExecution.run({id:action.id,attempts:1,purpose:'bootstrap',started:performance.now(),checkpoints:0},()=>syncSteam(action))).rejects.toThrow('checkpoint is invalid');
+        expect(await getDb().select().from(s.availability).where(eq(s.availability.connectionId,connectionId))).toEqual(during);
+      }
+      await getDb().update(s.outboxActions).set({payload:{...checkpoint.payload,_manual:true,_jobPurpose:'manual'}}).where(eq(s.outboxActions.id,action.id));
       // A changing upstream result must not silently replace the retained census.
       ownership={response:{game_count:0}};
       const outcome=await jobExecution.run({id:action.id,attempts:1,purpose:'bootstrap',started:performance.now(),checkpoints:0},()=>syncSteam(action));
       expect(outcome.checked).toBe(111);expect(ownedReads-beforeOwned).toBe(1);expect(igdbReads).toBe(beforeIgdb);
+      const [retained]=await getDb().select().from(s.providerJobSnapshots).where(eq(s.providerJobSnapshots.actionId,action.id));
+      expect(retained.data).toEqual(snapshot.data);expect(retained.updatedAt).toEqual(snapshot.updatedAt);
+      const [completed]=await getDb().select().from(s.outboxActions).where(eq(s.outboxActions.id,action.id));
+      expect(completed.payload).toMatchObject({_manual:true,_jobPurpose:'manual',_checkpoint:{task:'steam-ownership',scanId:snapshot.data.scanId,next:111,added:111}});
       const complete=await getDb().select().from(s.availability).where(eq(s.availability.connectionId,connectionId));
       expect(complete.filter(row=>row.state==='available')).toHaveLength(111);
       await getDb().update(s.outboxActions).set({state:'succeeded'}).where(eq(s.outboxActions.id,action.id));

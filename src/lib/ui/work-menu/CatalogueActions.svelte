@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import { page } from '$app/state';
   import { onDestroy, untrack } from 'svelte';
@@ -52,14 +53,14 @@
   const game = $derived(work.data.game ?? gameState);
   const progress = $derived(work.data.reading ?? readingState);
   const relationships = $derived(work.relationships);
-  const mutation = createMutation(async () => { await work.refresh(); onchanged?.(); }, useClient().feedback.notify);
-  const playback = createOperation();
+  const mutation = createMutation(async () => { await work.refresh(); onchanged?.(); }, useClient().feedback.notify, useRetention());
+  const playback = createOperation(useRetention());
   const playIdentity = createResource<MusicItem | null>(null);
   let alive = true;
   onDestroy(() => { alive = false; playIdentity.dispose(); });
   const busy = $derived(mutation.busy || playback.busy || !!gameCommands?.isBusy() || !!readingCommands?.isBusy() || !!musicCommands?.isBusy());
   const error = $derived(mutation.error || work.error || identity.error || gameCommands?.failure() || readingCommands?.failure() || musicCommands?.failure());
-  $effect(() => { const key = workMenuScope([item.id, item.workId, item.connectionId]); untrack(() => { key; identity.sync(); }); });
+  $effect(() => { const key = workMenuScope([item.id, item.workId, item.connectionId]); untrack(() => { key; identity.sync(key); }); });
   onDestroy(identity.dispose);
   function open() { if (workId) void work.open(); }
   function close() { work.close(); identity.close(); }

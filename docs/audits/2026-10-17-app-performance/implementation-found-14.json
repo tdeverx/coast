@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-19T01:52:49.356026+00:00",
+  "status": "shared-source-applied-actual-data-and-native-verified",
+  "sourcePins": {
+    "src/lib/server/queries/profile.ts": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e"
+  },
+  "sourceBefore": {
+    "src/lib/server/queries/profile.ts": "21149729c90b373f5f59e922e303031d4bec45eb4d6625a96f82789ac16cd03a"
+  },
+  "measuredCandidateSha256": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e",
+  "candidateApplied": true,
+  "actualRef": "evidence/implementation-found-14-actual.json",
+  "normalRef": "evidence/implementation-found-14-15-normal.json",
+  "gatesRef": "evidence/implementation-approved-avatar-final-gates.json",
+  "comparisons": 36,
+  "changedPlanFamilies": 8,
+  "artifactPins": {
+    "candidates/found-implementation-14/source-manifest.json": "48320a94ed43a8efc80c26bd88b5e3df30dd534e4221bcf95c290cf446148b09",
+    "candidates/found-implementation-14/runtime-owner-changes.patch": "ddd4c432be267412f2c80bb4b09e07c3253d2c9c4f1ab6bf34558cbb656ebbfd",
+    "candidates/found-implementation-14/profile.candidate.ts.txt": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e",
+    "candidates/found-implementation-14/profile.before.ts.txt": "21149729c90b373f5f59e922e303031d4bec45eb4d6625a96f82789ac16cd03a",
+    "evidence/implementation-found-14-actual.json": "334a8a17b02b50c80aa957ae53f0235e9ad9a22232e155585f6e4c2e58d3ff5f",
+    "evidence/implementation-found-14-15-normal.json": "5ea07702c63ae9acd764281b0cb9e3dda9d0ed34f81c6b70ec2ff2b34870c612",
+    "evidence/implementation-approved-avatar-final-gates.json": "de238f8333e5b8f31cc738ae6d2d7994a982d8744fb9abed14e47d0783aad943",
+    "probes/profile-activity-periods-real.ts": "3c57c5d9dd448d559dbcfaa55d2bba173e82e86eefbaa6eebe1ca2ff6200ecb5"
+  }
+}

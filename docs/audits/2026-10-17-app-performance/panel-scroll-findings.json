@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-10-17",
+  "commit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "scope": "panel-scroll",
+  "readOnlyAudit": true,
+  "evidenceBoundary": "Actual native CUA scrolling plus console-only before/after trace confirms small cancelable prevented reverse assignments snap immediately from160 back to160; large reverse input reaches0. Temporary logging removed and baseline source restored. No implementation fix.",
+  "count": 1,
+  "findings": [
+    {
+      "id": "PANEL-01",
+      "priority": "P2",
+      "title": "Small reverse detail-sheet scrolling snaps immediately back to the expanded position",
+      "confidence": "high_actual_native_input_and_programmatic_assignment_trace",
+      "state": "runtime_source_mechanism_confirmed",
+      "sharedOwner": "Dialog expanding sheet scroll admission, content/expansion handoff and snap settlement",
+      "consumers": [
+        "DetailOverlay shared wrapper (src/lib/ui/components/DetailOverlay.svelte:11)",
+        "Row/section details (src/lib/media/DetailPanel.svelte:71)",
+        "Reading details (src/lib/media/DetailPanel.svelte:72)",
+        "Game details (src/lib/media/DetailPanel.svelte:73)",
+        "Music details (src/lib/media/DetailPanel.svelte:74)",
+        "Reading groups (src/lib/media/DetailPanel.svelte:75)",
+        "Remote game details (src/lib/media/DetailPanel.svelte:76)",
+        "Person details (src/lib/media/DetailPanel.svelte:77)",
+        "Screen and edition details (src/lib/media/DetailPanel.svelte:78)",
+        "Shared preview (src/routes/ui-preview/Demo.svelte:277; src/routes/ui-preview/FeatureExamples.svelte:94)",
+        "Edition, Back and floating section navigation (src/lib/ui/components/DetailOverlay.svelte:12)"
+      ],
+      "evidenceRefs": [
+        "panel-scroll.md",
+        "evidence/panel-real-scroll.json",
+        "src/lib/ui/components/Dialog.svelte:44",
+        "src/lib/ui/components/Dialog.svelte:65",
+        "src/lib/ui/components/Dialog.svelte:80",
+        "src/lib/ui/components/Dialog.svelte:234",
+        "src/lib/ui/components/Dialog.svelte:243",
+        "tests/dialog-geometry.test.ts:86",
+        "tests/dialog-geometry.test.ts:119",
+        "tests/fixtures/ui-script.ts:9"
+      ],
+      "smallestOption": "Allow cumulative admitted gesture travel in the existing Dialog expansion owner without immediately resnapping each programmatic assignment, then settle through that same owner; preserve approved presentation and content-first policy.",
+      "alternatives": [
+        "One native vertical scroll owner with sticky expansion stage if a narrow correction cannot satisfy browser acceptance; larger geometry/focus/mobile regression surface, no new dependency required."
+      ],
+      "acceptance": [
+        "Actual signed-in normal-dev small reverse trackpad deltas at expanded/top accumulate contraction",
+        "Continuing and fresh reverse gestures cross content top into collapse, including observed noncancelable events",
+        "Fractional top, short/long content, resize and direction reversal retain one effective travel consumer",
+        "All DetailPanel feature kinds, row/section, editions, Back, floating navigation and shared preview",
+        "Nested vertical owners, horizontal rails, ctrl zoom, prevented events and focus/keyboard behavior preserved",
+        "Fresh open collapsed, content replacement retains expansion, close/reopen/disposal cancels resources",
+        "Browser native gesture regression with position/presentation assertions after frames/settlement; script tests remain policy coverage"
+      ],
+      "gaps": [
+        "Shared wrapper tested on actual detail panels; other consumers/browsers/touch and mixed momentum remain acceptance",
+        "Cancelable prevented small-input snap branch confirmed; noncancelable latching was not the cause of observed inputs",
+        "Fractional inner offsets and nested/target admission remain regression cases",
+        "Existing six passing tests/93 assertions omit CSS/native default-scroll/snap/latching",
+        "No implementation fix or after-fix browser result"
+      ],
+      "relatedFindingIds": [],
+      "reportRef": "panel-scroll.md",
+      "reportSection": "PANEL-01"
+    }
+  ]
+}

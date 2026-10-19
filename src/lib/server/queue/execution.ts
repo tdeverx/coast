@@ -12,11 +12,22 @@ export class JobYield extends Error {
   constructor() { super('Job yielded at a committed checkpoint.'); this.name = 'JobYield'; }
 }
 
-/** Fence personal writes in their committing transaction, after locking the
- * connection so reconnect/reset retains the same lock order. */
-export async function assertJobLease(store:Pick<Database,'select'>, lock=false) {
+/** Fence writes in their committing transaction, after the existing connection
+ * or account lock so reconnect/reset retains the same lock order. */
+export async function assertJobLease(store:Pick<Database,'select'>|Pick<ReturnType<typeof getSql>,'unsafe'>, lock=false) {
   const execution=jobExecution.getStore();
   if(!execution)return;
+  if('unsafe' in store){
+    if(execution.userId&&execution.kind){
+      const [policy]=await store.unsafe('select coast_job_allowed($1::uuid,$2,$3::jsonb) as allowed',
+        [execution.userId,execution.kind,JSON.stringify(execution.payload??{})]);
+      if(!policy.allowed)throw new JobYield();
+    }
+    const [lease]=await store.unsafe(`select id from outbox_actions where id=$1::uuid and state='running' and attempts=$2${lock?' for update':''}`,
+      [execution.id,execution.attempts]);
+    if(!lease)throw new JobYield();
+    return;
+  }
   const query=store.select({id:outboxActions.id}).from(outboxActions).where(and(
     eq(outboxActions.id,execution.id),eq(outboxActions.state,'running'),eq(outboxActions.attempts,execution.attempts)));
   if(execution.userId&&execution.kind){

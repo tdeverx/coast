@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import ReadingLaunch from './ReadingLaunch.svelte';
   import { navigateMedia } from '$lib/ui/media-navigation';
   import { replaceState, afterNavigate } from '$app/navigation';
@@ -43,7 +44,7 @@
   $effect(()=>{if(creditsActive&&!data.remote&&!credits.activated)untrack(()=>void loadCredits());});
   $effect(()=>{if(insight==='community'&&!data.remote&&!community.activated)untrack(()=>void loadCommunity());});
   onDestroy(()=>{credits.dispose();community.dispose();});
-  const operation = createOperation();
+  const operation = createOperation(useRetention());
   const busy = $derived(operation.busy);
   const failure = $derived(operation.error);
   let menu = $state<WorkMenu>();

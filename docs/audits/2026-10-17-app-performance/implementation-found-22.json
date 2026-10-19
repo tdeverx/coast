@@ -1,0 +1,164 @@
+{
+  "at": "2026-10-19T03:22:06.569202+00:00",
+  "status": "positive-admin-acceptance-three-existing-shared-repairs-verified-one-method-rejected",
+  "canonicalIds": [
+    "DATA-03",
+    "DATA-12",
+    "MIN-06",
+    "DATA-06"
+  ],
+  "runtimeSourceChanged": false,
+  "sourcePins": {
+    "src/lib/core/lists/service.server.ts": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9",
+    "src/lib/server/api/lists.server.ts": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4",
+    "src/lib/core/lists/sequence.server.ts": "57f6f05eda50129707fffce767da1ae1749ca97bd02fb056c518c9b4237ad018",
+    "src/lib/core/tracking/continue.server.ts": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5",
+    "src/lib/core/tracking/service.server.ts": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29",
+    "src/lib/core/lists/up-next.server.ts": "7a8f166108059953bb1366c5a1459e486c767ed3015cef6a931b224f46f36421",
+    "src/lib/server/queries/progress.ts": "c6dc479be1ea09bdd477d0eb21780361cf3eb0edc56d07e8a5e3a65e9cd9d7c7",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "docs/performance.md": "75786271ccf3dc9725c11eb29dd43aff63e1418f2661ddfb7c2ee13d97a99ffe"
+  },
+  "sourceChanges": {},
+  "nativeListComparisons": 32,
+  "continueLifecycleChecks": 78,
+  "continueConcurrencyChecks": 37,
+  "receivedRecommendationSemanticPairs": 33,
+  "receivedRecommendationResourcePairs": 3,
+  "candidateAdopted": false,
+  "canonicalCounts": {
+    "canonical": 94,
+    "sourceApplied": 69,
+    "implemented": 32,
+    "partial": 35,
+    "open": 22,
+    "other": 5
+  },
+  "additionalObservations": 14,
+  "restorationRef": "evidence/implementation-found-22-restoration.json",
+  "commonGatesRef": "evidence/implementation-found-21-gates.json",
+  "newCommonGateRerun": false,
+  "wholeGoalComplete": false,
+  "artifactPins": {
+    "candidates/admin-acceptance-batch/performance.md.before.snapshot": "d8954c50d9480ca334c6d6645296c7d921bddce4a0dac9fc58ff96ec2b027ab2",
+    "candidates/admin-acceptance-batch/verifier.before.snapshot": "9bb65ae7d15e2314f5674815e14bb3556aa39d6bd35e863c8605df3a7e176a54",
+    "candidates/admin-list-verification/summary.json": "8c502928508177bffff1faf3e4f13da5b3377f20a108b865a4d14e97a19fbf87",
+    "candidates/admin-list-verification/probe.corrected.ts.txt": "84c34e134a095d717f18f64acef6692ebb532040bb986d1cdecf4b712124ffef",
+    "candidates/admin-list-verification/remainder-summary.json": "d1982a20638a903d1fcd9c957c1a280fd5b1c81c7a30ec1fb782fc7699ea044d",
+    "candidates/admin-list-verification/api-before.txt": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+    "candidates/admin-list-verification/before.txt": "79fdd8483ca752d05606991b7c8910cc0f7ae0d0b2c3102b2b778f6f73b0cbf2",
+    "candidates/admin-list-verification/wal-probe.ts.txt": "7a0df831651596622180cfe91b4f27d1bdb7ab8967c2bc274122de7a2ad11407",
+    "candidates/admin-list-verification/api-current.executed.ts.txt": "0bffe6db9cede8e481c53fc5bbec2591733bed1beaad614d41cbcfefb3ca4ac1",
+    "candidates/admin-list-verification/sequence.executed.ts.txt": "280dc09ac072c1694a418372a7bfbf172b8ca6bae6f5572bad4e704df4ab9ac7",
+    "candidates/admin-list-verification/actual.json": "dacfb8464613716aa0c54ae2bdf7d6b82d6d6809cb2a3f0f6565c9bc53118cf1",
+    "candidates/admin-list-verification/current.txt": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9",
+    "candidates/admin-list-verification/api-current.txt": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4",
+    "candidates/admin-list-verification/final-pins.json": "8f48636264888c8d4851e40f2ab9ede6f13be7f1a76cf5907e2dd9ae56caf9ee",
+    "candidates/admin-list-verification/wal-summary.json": "334aad62c06a62acb8f9f0ed147174b71952c94b137926eefaf6d9d9955074ce",
+    "candidates/admin-list-verification/api-before.executed.ts.txt": "b648d4059df80448147ddef4135904b9fe27e01eeb75061e7cc8fc5b7ca071ed",
+    "candidates/admin-list-verification/remainder-actual.json": "94142c59a75bca953963b91faff00f9e77a2bf8d53a27ca606cf8ad45da9198f",
+    "candidates/admin-list-verification/remainder-pins.json": "10b469e0f67c50aa5b34585751b381e357184e16cd963cb135272e9731ff4af9",
+    "candidates/admin-list-verification/first-attempt-classification.json": "85d3ae3403f18e9673909e103f92e8a196f79894cd2b62ebd7f9f7a52a55a9c5",
+    "candidates/admin-list-verification/probe.executed.ts.txt": "656b7c8c75f64bc02d9e25c9ba501e351f2dbc75917e650cda61a577ac0beb95",
+    "candidates/admin-list-verification/wal-actual.json": "913e729c375ac9a0bd53aa6f1d873bfcec08ed5517aa0db9720f29a38c4a6618",
+    "candidates/admin-list-verification/corrected-actual.json": "be40fa263a236547423b0f79d108f6a01aad54cef05cbaa24aa5b620c35025e5",
+    "candidates/admin-list-verification/remainder-probe.ts.txt": "43c23aed8f570a8931840a603a6aaeb2f505c8346578eeb0a7a6f09b611ac567",
+    "candidates/admin-list-verification/pins.json": "27762d41838110da54a87dcb3d11b074d02170211bf531effe048adba3e61cfe",
+    "candidates/admin-list-verification/wal-pins.json": "7dc06b53f36913b8111794ecc37a2ecaa7fc9d088ae6da615c5a366490d008fa",
+    "candidates/admin-continue-undo/summary.json": "fee4a7105b2a80c042752c594e7fb7f6656c0d3b27cba9733ec1646d71d52cc8",
+    "candidates/admin-continue-undo/probe-concurrency.ts": "47d63a3eeef4ccde317572f2495d7fffd8db4b67828eb2942c723f82774ab801",
+    "candidates/admin-continue-undo/first-stop.json": "767db0af54fe526e953ba9a4f3ffbc5773bc139f6b7cb9f6da0caacff6bb6eed",
+    "candidates/admin-continue-undo/probe.ts": "206b2865feb0434ca63d62d847534745b8c01cac5495ddf291213e97059f6b4a",
+    "candidates/admin-continue-undo/continue.default.ts.txt": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+    "candidates/admin-continue-undo/actual.json": "f8757f564d52c836e5494b61534b46ac65ea47b1eaced1ec60623e5688c79e35",
+    "candidates/admin-continue-undo/README.md": "02249403a95f8a9f00a7a7f97d3885b15d7f2487b6a9820dfcf9f6b2b7d5b72a",
+    "candidates/admin-continue-undo/run-concurrency.py": "b4e53cc55a1df727404777944fc9b980e2c80baa4618ea315516a5c876987963",
+    "candidates/admin-continue-undo/actual-concurrency.json": "61e44ea944bc766c79de87360e3e77e35e5f88a061356561d4f072df069ed00a",
+    "candidates/admin-continue-undo/wrapper-concurrency.ts": "21dee833329c2b86cd65128d3ac729a0c807f75435877cb1f21865479db6ae77",
+    "candidates/admin-continue-undo/summary-concurrency.json": "7b8d86ee7c26bab8acf4e8e7fdfe1aa0b10d10a4681c9b8582fbc5998dd77b40",
+    "candidates/admin-continue-undo/README-concurrency.md": "dda8b4f9ffe88422cde50ab1a17a8cbd1d5ce80be969d5395de227c9836f07c8",
+    "candidates/admin-received-recommendations/summary.json": "ff3018d8907f11064948751c1d6d002376e8634d5bced07492b057f65f2d8c54",
+    "candidates/admin-received-recommendations/resource-probe.ts": "9f5fe7407a65a3259f191bb80d5f4684f312d317cd14aeae3484d529a248a446",
+    "candidates/admin-received-recommendations/progress.candidate.ts": "def13902bab4e0e663624b9546837ddb2506997799d4b9101756e420731d6c9e",
+    "candidates/admin-received-recommendations/progress.before.ts.txt": "c6dc479be1ea09bdd477d0eb21780361cf3eb0edc56d07e8a5e3a65e9cd9d7c7",
+    "candidates/admin-received-recommendations/collection.before.ts.txt": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "candidates/admin-received-recommendations/probe.ts": "8a890471f1e96b0dfcc9153627bcc182424cfd4a18820ae9343abb7945f61939",
+    "candidates/admin-received-recommendations/collection.candidate.ts": "9b1dab6aa00b0ca67ae6810801d5b90447084a06de6886a49a1d0f0d8d3586fa",
+    "candidates/admin-received-recommendations/actual.json": "b7d4081e0704cad32b5d67a2972becd004aa8d63449517b4e40a0ca12b9aa976",
+    "candidates/admin-received-recommendations/resources.json": "a0a4d7723e92e7e655ad524159a3489236cb7ddd3d6ca383cb8fa7d2b472581c",
+    "candidates/admin-received-recommendations/README.md": "629d96b33a6926fb0783cdb787df1e496827c537314dd08f649347d71e01eb52",
+    "candidates/admin-received-recommendations/manifest.json": "af618c4aae0b3ecabccd9f215333fa1af67101ec4ac11818c437772ebad80957",
+    "candidates/admin-received-recommendations/collection.baseline.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "candidates/admin-received-recommendations/progress.baseline.ts": "1824521a2229b4ca720d6bf7e201fa29930f139f32c23f95ff82be2f4197b911",
+    "probes/admin-rollback-restoration.ts": "7fcce0e50f12405ad9370a6d8f168d8e665b7ae2331ca0e98dd1f0d62c689e0c",
+    "evidence/implementation-found-22-restoration.json": "4cbee18ff8aef1a0550f162cbde601c3b34f39fd900d581df196b40da13026ec",
+    "admin-real-data-policy.json": "aaa47d0153bccf5135783288c78d427f59e7a54e568c706ae5d93fec8f560b2f"
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T03:58:03.995927+00:00",
+      "reportRef": "implementation-found-24.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared conflict summaries native actual-admin adoption; sequence named acceptance; phased finalization not adopted. Historical evidence retains source/acceptance boundaries, no whole-audit completion."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    }
+  ]
+}

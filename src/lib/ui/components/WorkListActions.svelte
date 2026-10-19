@@ -16,7 +16,7 @@
   const lists = createMenuResource<WorkListPage>(() => ({ items: [], page: 1, pages: 1, total: 0 }),
     () => workMenuScope([workId, reading, number]),
     signal => api(`collection/${workId}/lists?page=${number}&reading=${reading}`, undefined, 'GET', { signal }));
-  $effect(() => { const scope = workMenuScope([workId, reading, number]); untrack(() => { scope; lists.sync(); if (lists.active && !disabled) void lists.load(); }); });
+  $effect(() => { const scope = workMenuScope([workId, reading, number]); untrack(() => { scope; lists.sync(scope); if (lists.active && !disabled) void lists.load(); }); });
   onDestroy(lists.dispose);
   async function toggle(list: WorkList) { await select(list); await lists.refresh(); }
 

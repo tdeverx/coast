@@ -8,8 +8,12 @@ import type { WorkActionState } from '$lib/media/work-actions';
 
 /** Only meaningful scope changes invalidate menu data; session heartbeat replacement does not. */
 export function workMenuScope(target: unknown) {
+  const settings = page.data.user?.settings;
+  // Menu snapshots do not contain the actor's avatar; keep all other settings dependencies.
+  const { avatar: _avatar, ...profile } = settings?.profile ?? {};
+  const menuSettings = settings?.profile ? { ...settings, profile } : settings;
   return JSON.stringify([target, contentRevisionKey(page.data, ['tracking']),
-    page.data.user?.role, page.data.user?.settings, page.data.experimentalMusic,
+    page.data.user?.role, menuSettings, page.data.experimentalMusic,
     page.data.experimentalGaming, page.data.experimentalBooks, page.data.experimentalComics,
     page.data.experimentalParties, page.data.experiments, page.data.playbackSharing, page.data.capabilities]);
 }
@@ -26,7 +30,7 @@ export function createWorkActions(getId: () => string | undefined, context: () =
     const scope = workMenuScope([getId(), context(), playthrough()]);
     untrack(() => {
       scope;
-      resource.sync();
+      resource.sync(scope);
       if (resource.active && !mutating()) void resource.load();
     });
   });
