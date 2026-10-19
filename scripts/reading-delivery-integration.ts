@@ -4,6 +4,11 @@ import { getSql, closeDb } from '$lib/server/db';
 import { prepareReading, closeReading, readingDeliverySource } from '$lib/reading/sessions.server';
 import { readingManifest, readingPage } from '$lib/reading/delivery.server';
 import { readingCache, readingLease, stopReadingCache, initializeReadingCache } from '$lib/reading/cache.server';
+import { secureProviderFetch } from '$lib/server/security/provider-fetch';
+import { instanceFetchConfig } from '$lib/providers/instances.server';
+import { decryptCredential } from '$lib/server/security/credentials';
+import { jellyfinAuthorization } from '$lib/providers/jellyfin/adapter.server';
+import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { ComicDecoder } from '$lib/reading/reader/archive-decoder';
 import { createRoom, joinRoom, commandRoom, leaveRoom } from '$lib/playback/synced/service.server';
 const manifest = process.env.COAST_READING_ACTUAL_MANIFEST, output = process.env.COAST_READING_AUDIT_OUTPUT;
@@ -54,7 +59,25 @@ try {
     assert.equal(renewed.controller.signal.aborted, false);
     pass('superseded request cleanup preserves the actual session renewed by a newer request');
     const [row] = await sql `select s.external_id,s.connection_id,c.instance_id from reading_sessions s join provider_connections c on c.id=s.connection_id where s.id=${host.id}`;
-    const [guest] = await sql `select u.id,c.id as connection_id from users u join provider_connections c on c.user_id=u.id join availability a on a.user_id=u.id and a.connection_id=c.id where u.id<>${admin.id} and not u.disabled and c.instance_id=${row.instance_id} and c.status='connected' and a.media_id=${input.id} and a.state in ('available','unknown') order by u.id limit 1`;
+    const candidates = await sql `select u.id,c.id as connection_id from users u join provider_connections c on c.user_id=u.id where u.id<>${admin.id} and not u.disabled and c.instance_id=${row.instance_id} and c.status='connected' order by u.id`;
+    let guest: typeof candidates[number] | undefined, denied: typeof candidates[number] | undefined;
+    let deniedPolicies = 0;
+    for (const candidate of candidates) {
+        const { adapter, connection, instance } = await getJellyfin(candidate.id, candidate.connection_id);
+        const permitted = await adapter.downloadAllowed(connection.externalUserId!, instance.serverIdentity);
+        if (!permitted)
+            deniedPolicies++;
+        try {
+            await adapter.readingItem(connection.externalUserId!, row.external_id);
+        }
+        catch {
+            continue;
+        }
+        if (permitted)
+            guest ??= candidate;
+        else
+            denied ??= candidate;
+    }
     assert(guest, 'Actual independent guest connection required.');
     const guestSession = await prepareReading(guest.id, input.id, { source: 'jellyfin', connectionId: guest.connection_id, externalId: row.external_id });
     assert.equal(guestSession.edition, host.edition);
@@ -179,6 +202,34 @@ try {
             await closeReading(guest.id, guestSession.id);
             await closeReading(admin.id, host.id);
         }
+    }
+    if (denied) {
+        await stopReadingCache();
+        await initializeReadingCache();
+        const permitted = await prepareReading(admin.id, input.id, { source: 'linked' });
+        await layout(admin.id, permitted.id);
+        const deniedSession = await prepareReading(denied.id, input.id, { source: 'jellyfin', connectionId: denied.connection_id, externalId: row.external_id });
+        const deniedContext = await getJellyfin(denied.id, denied.connection_id);
+        assert(await deniedContext.adapter.readingItem(deniedContext.connection.externalUserId!, row.external_id));
+        const credentials = JSON.parse(await decryptCredential(deniedContext.connection.credentials!));
+        const deniedDownload = await secureProviderFetch(await instanceFetchConfig(deniedContext.instance), `/Items/${row.external_id}/Download`, { headers: { Authorization: jellyfinAuthorization(denied.id, credentials.accessToken), Range: 'bytes=0-0' } }, { stream: true });
+        await deniedDownload.body?.cancel();
+        assert.equal(deniedDownload.status, 403, 'The real provider independently denies this account’s original download');
+        const sharedCache = await readingCache(), beforeDenied = sharedCache.snapshot();
+        await fails(403, () => readingPage(denied!.id, deniedSession.id, '0', request()));
+        await fails(403, () => readingManifest(denied!.id, deniedSession.id, request()));
+        assert.deepEqual(sharedCache.snapshot(), beforeDenied);
+        const permittedPage = await readingPage(admin.id, permitted.id, '0', request());
+        assert.equal(permittedPage.status, 200);
+        await permittedPage.body?.cancel();
+        await closeReading(denied.id, deniedSession.id);
+        await closeReading(admin.id, permitted.id);
+        pass('actual metadata-visible download-disabled account cannot borrow admin cached pages or manifest; allowed host remains authorized');
+    }
+    else {
+        assert(deniedPolicies > 0, 'Actual download-disabled accounts required for policy acceptance.');
+        report.absentCohorts = ['No connected actual account combines visible comic metadata with disabled downloads; the two disabled accounts have zero visible books. Natural warm-cache exploit replay is unavailable.'];
+        pass('actual download-disabled token-owned policies are denied; absent metadata-visible negative cohort is explicit');
     }
     report.status = 'passed';
 }

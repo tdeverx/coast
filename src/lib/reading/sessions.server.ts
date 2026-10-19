@@ -156,12 +156,14 @@ async function remoteReadingContext(userId:string,id:string,signal:AbortSignal) 
  const {connection,instance,adapter}=jellyfin;
  const book=await adapter.readingItem(connection.externalUserId!,session.externalId,signal);
  if(bookFormat(book)!==session.format||sourceEdition(instance.serverIdentity??instance.id,book)!==session.edition)throw new AppError(409,'This reading file changed. Open the new edition.');
- return {session,connection,instance,book};
+ return {session,connection,instance,book,adapter};
 }
 /** Cache reuse never replaces this operation's fresh per-reader source authorization. */
 export async function readingDeliverySource(userId:string,id:string,signal:AbortSignal):Promise<ReadingCacheSource> {
  try {
-  const {session,connection,instance,book}=await remoteReadingContext(userId,id,signal);
+  const {session,connection,instance,book,adapter}=await remoteReadingContext(userId,id,signal);
+  if(!await adapter.downloadAllowed(connection.externalUserId!,instance.serverIdentity,signal))throw new AppError(403,'Jellyfin has disabled downloads for this account.');
+
   if(!comicFormats.includes(session.format as typeof comicFormats[number]))throw new AppError(400,'This format uses its document reader.');
   const credentials=v.parse(v.object({accessToken:v.string()}),JSON.parse(await decryptCredential(connection.credentials!)));
   const config={...await instanceFetchConfig(instance),timeoutMs:20000};

@@ -10,7 +10,7 @@
     "src/lib/reading/cache.server.ts": "71ac444e70e6c37951a553f357a814b0de3ce952a90b7def70c69595da731114",
     "src/lib/reading/delivery.server.ts": "bb35d955f13a61d6cc277b8a9481a303729b3744fd950034abf470e0d29a9343",
     "src/lib/reading/delivery.ts": "f83e8795d6fa76a26e94def046cf444657d3fa719563908df5d6210765b6b7c6",
-    "src/lib/reading/sessions.server.ts": "b6d5d34ece2fc2445d5113003e3b5e8b0ee6191f1520ff78a7fcb5df19666955",
+    "src/lib/reading/sessions.server.ts": "fbc0b2bc0c3b2a8550ee26126f88caf0141f35986b81301e73845c83a79c32aa",
     "src/lib/reading/Reader.svelte": "aaf4259fa336260b4249058857c415df1a8222cbadb8caa221083556cd3e095c",
     "src/lib/reading/model.ts": "8dce0d9d7cd0825e4a0847004d36e75768a8dd1ae7daf479106af1aad772ab84",
     "src/lib/reading/client.svelte.ts": "7bfb7adc0545d8d63edc26ca76ef0a190682542545d17fac39d1959e07155b69",
@@ -24,9 +24,10 @@
     "src/lib/ui/components/Header.svelte": "eaab91cf97570315ca1628667e254d787c7eb34c7747f180bb7d02a0afce39fa",
     "src/lib/providers/instances.server.ts": "b49e1ed5dba1b531fde924484842f51b7ad5735e07e7c917ae69d21bb0ccd61c",
     "src/lib/playback/service.server.ts": "4aad199dbd10daf442c46babea9cb1ad8068098abee29f82bd5cb77466526208",
-    "src/lib/ui/components/IntegrationSettings.svelte": "d394ae092d5f96531cf68921bddfb27b5626d4a98e65bb80a295725eaa9e3db9"
+    "src/lib/ui/components/IntegrationSettings.svelte": "d394ae092d5f96531cf68921bddfb27b5626d4a98e65bb80a295725eaa9e3db9",
+    "src/lib/providers/jellyfin/adapter.server.ts": "d9714e2164c0778b8a91575f6b3cdb6ed203057843d7ed35abc0a240ad38249b"
   },
-  "runtimeFingerprint": "e40186d153abf7cb74e4da88dbc686ce2e07924a17b86010cecbec3dbda719e1",
+  "runtimeFingerprint": "3127c344944e70f2d76e0fe7d552785c9246e17daecc6b57c508218896505620",
   "runtime": {
     "bun": "1.4.3",
     "sharp": "0.35.5",
@@ -359,9 +360,16 @@
       {
         "name": "actual generation withdrawal during shared preparation rejects waiting page while host remains authorized",
         "status": "passed"
+      },
+      {
+        "name": "actual download-disabled token-owned policies are denied; absent metadata-visible negative cohort is explicit",
+        "status": "passed"
       }
     ],
-    "coldAuthenticatedManifestMs": 543.452791,
+    "coldAuthenticatedManifestMs": 520.069583,
+    "absentCohorts": [
+      "No connected actual account combines visible comic metadata with disabled downloads; the two disabled accounts have zero visible books. Natural warm-cache exploit replay is unavailable."
+    ],
     "status": "passed"
   },
   "renderEquality": {
@@ -711,8 +719,8 @@
     "status": "passed"
   },
   "supplementalTests": {
-    "newBoundaryCases": 31,
-    "meaning": "21 server-native reading fixtures, four client protocol/cancellation fixtures, five exit/navigation cases, and one public/LAN playback-alias confinement case. Authored boundaries supplement actual-data acceptance."
+    "newBoundaryCases": 32,
+    "meaning": "21 server-native reading fixtures, four client protocol/cancellation fixtures, five exit/navigation cases, and one public/LAN playback-alias confinement case. Authored boundaries supplement actual-data acceptance. One additional controlled metadata-visible/download-disabled source-authorization boundary."
   },
   "gates": {
     "appTests": "892 passed / 718 guarded skips / 0 failed",
@@ -1178,13 +1186,14 @@
         }
       ],
       "mode": "verify",
-      "upstreamCalls": 11,
+      "upstreamCalls": 12,
       "allJellyfinCallsUsedLan": true,
       "paths": [
         "/System/Info/Public",
         "/Items",
         "/Sessions",
         "/Users/<id>/Items/<id>",
+        "/Users/Me",
         "/Items/<id>/Download",
         "/Items/<id>/Images/Primary",
         "/Items/<id>/PlaybackInfo"
@@ -1287,6 +1296,73 @@
         "manifestMs": 227.77604200000133,
         "sourcePages": 24
       }
+    ]
+  },
+  "downloadEntitlement": {
+    "owner": "readingDeliverySource via token-owned /Users/Me with matching pinned server identity, disabled=false and EnableContentDownloading=true",
+    "cost": "One additional fresh policy request per source verification; no cross-request authorization cache. Long manifest/page waits recheck this too. Raw document downloads retain their actual provider Download authorization.",
+    "actualAcceptance": "Actual admin and permitted independent guest still pass the 13 delivery/party/admission/withdrawal cases. Two real connected download-disabled policies return false. Both disabled accounts have zero visible books.",
+    "absentCohort": "No real metadata-visible/download-disabled comic reader; natural warm-cache exploit replay cannot be claimed.",
+    "supplementalRegression": "Controlled metadata-visible/cache-source case rejects 403 and releases its lease before download/cache admission. Frozen 7e03dab sessions source resolves and fails this regression; current source passes. This is explicitly supplemental controlled evidence."
+  },
+  "normalLanEntitlementReopen": {
+    "boundary": "Actual normal-dev admin sessions, actual Boss Bitches/Journey To Love and final source with LAN transport plus fresh per-reader download policy. Single cold/reopen pairs; session+manifest excludes Three.js entrance, not a production percentile or matched WAN comparison. Unreliable CDP/file identity data omitted.",
+    "status": "passed",
+    "cases": [
+      {
+        "title": "Boss Bitches",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 30,
+        "manifestMs": 704.640958,
+        "sourcePages": 24
+      },
+      {
+        "title": "Boss Bitches",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 65.97883300000012,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 0,
+        "firstEvent": "prepare",
+        "eventCount": 29,
+        "manifestMs": 604.5530000000001,
+        "sourcePages": 24
+      },
+      {
+        "title": "Journey To Love",
+        "round": 1,
+        "firstEvent": "manifest",
+        "eventCount": 1,
+        "manifestMs": 73.53933299999994,
+        "sourcePages": 24
+      }
+    ]
+  },
+  "normalBrowserFinalEntitlement": {
+    "boundary": "Actual normal-dev admin and original comic, genuine HTTP, desktop/mobile Chromium. Ephemeral admin login; no page turns or setting mutations. Browser plugin not available; existing Playwright fallback.",
+    "status": "passed",
+    "checks": [
+      "signed-in actual media identity and meaningful content",
+      "desktop/mobile original Three.js reader renders without archive request or full-image scan",
+      "minimize/resume reacquires page delivery",
+      "dim and blur both have live 250ms fade keyframes in/out; observed dim/outro intermediate opacity; reduced motion creates no backdrop animations",
+      "reverse exit persists mid-flight then tears down every WebGL context; reduced motion exits without animation",
+      "cold loading indicator visible before prepared covers; completed shared cache survives close/reopen",
+      "open/minimize/resume/close and reduced-motion reopen, unchanged progress/history, no framework overlay or app console errors"
+    ],
+    "coldLoadingLabel": "Opening comic\u2026\n\nJourney To Love Part 6",
+    "knownArtworkErrors": [
+      "Access to image at 'https://comicvine.gamespot.com/a/uploads/scale_large/11131/111316219/8318384-01.jpg' from origin 'http://localhost:5173' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "viewports": [
+      "1280x800",
+      "390x844"
     ]
   }
 }
