@@ -152,7 +152,7 @@
       unread={data.unreadNotifications}
       friendRequests={data.friendRequestCount}
     />{/if}
-  <div class="page-shell" class:watching inert={watching} aria-hidden={watching}>
+  <div class="page-shell" class:watching inert={watching||reader.visible} aria-hidden={watching||reader.visible}>
     <main bind:this={content} id="main-content" tabindex="-1">{@render children()}</main>
   </div>
   {#if notificationOpen&&NotificationInbox}<NotificationInbox open={true} initialKind={page.state.notificationKind??page.url.searchParams.get('notificationKind')??'all'} onclose={closeNotifications}/>{/if}

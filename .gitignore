@@ -9,6 +9,10 @@ test-results/
 playwright-report/
 .DS_Store
 
+# Local-only physical reader experiments and rollback checkpoints.
+experiments/comic-lab/
+experiments/comic-lab-checkpoints/
+
 # Unpacked audit proof; publish the reviewed portable bundle instead.
 docs/audits/2026-10-17-app-performance/candidates/
 docs/audits/2026-10-17-app-performance/evidence/

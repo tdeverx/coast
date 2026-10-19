@@ -18,7 +18,8 @@
   const value=example;if(!preview||!value)return;
   untrack(()=>{sample.visible=false;sample.session={id:'preview-reader',workId:'preview-book',kind:'book',title:value.title,format:'cbz',edition:'Preview edition',location:{format:'cbz',page:1,total:8},url:null,source:'local'};sample.location=sample.session.location;sample.error=value.state==='error'?'The preview file could not be opened.':value.state==='unsaved'?'Your last bookmark could not be saved.':'';sample.unsaved=value.state==='unsaved';});
  });
- let host:HTMLElement,engine:ReaderEngine|undefined,busy=$state(false),loading=$state(false);
+ let host=$state<HTMLElement>();
+ let engine:ReaderEngine|undefined,busy=$state(false),loading=$state(false);
  const following=$derived(!preview&&syncedPlayer.room?.mediaType==='reading'&&!!reader.session&&syncedPlayer.room.mediaId===reader.session.workId&&syncedPlayer.room.edition===reader.session.edition&&syncedPlayer.room.readingFormat===reader.session.format);
  const controlled=$derived(preview ? example?.state!=='follower' : !following||canControlPlayback());
  let external=false,minimizing=false,readerOwner=0;
@@ -26,6 +27,8 @@
  $effect(()=>{
   if(preview)return;
   const session=reader.session,file=reader.file;if(!session||!host||!reader.visible)return;
+  const surface=host;
+  const initialLocation=untrack(()=>reader.location??session.location);
   const controller=new AbortController(),owner=++readerOwner;let current:ReaderEngine|undefined,resize:ResizeObserver|undefined,navigation=0;loading=true;reader.rendering=true;
   let heartbeatPending=false;
   const heartbeat=setInterval(()=>{
@@ -36,7 +39,7 @@
     .finally(()=>{heartbeatPending=false;});
   },60000);
   const ownsNavigation=(revision:number)=>!controller.signal.aborted&&revision===navigation&&reader.session?.id===session.id;
-  void import('./reader/engine').then(module=>module.createReader({host,source:file??session.url!,format:session.format,location:session.location,signal:controller.signal,changed:location=>{
+  void import('./reader/engine').then(module=>module.createReader({host:surface,source:file??session.url!,format:session.format,kind:session.kind,location:initialLocation,signal:controller.signal,dismiss:()=>{if(!controller.signal.aborted)close();},controlled:()=>controlled,failed:cause=>{if(!controller.signal.aborted&&reader.session?.id===session.id)reader.error=message(cause);},changed:location=>{
     if(controller.signal.aborted)return;
     const room=syncedPlayer.room;
     // EPUB links are navigation too: viewers follow the room's location.
@@ -48,26 +51,29 @@
     if(external||sameReadingLocation(previous,location))return;
     void recordReading(location);
     if(syncedPlayer.room?.mediaType==='reading'&&syncedPlayer.room.mediaId===session.workId&&syncedPlayer.room.edition===session.edition&&canControlPlayback()&&!syncedPlayer.changing)publishReading(syncedPlayer.room.id,location);
-   }})).then(result=>{
+   }})).then(async result=>{
     if(controller.signal.aborted){result.destroy();return;}engine=current=result;
     if(result.resize){
-     let width=host.clientWidth,height=host.clientHeight;
-     resize=new ResizeObserver(()=>{const nextWidth=host.clientWidth,nextHeight=host.clientHeight;if(width===nextWidth&&height===nextHeight)return;width=nextWidth;height=nextHeight;
+     let width=surface.clientWidth,height=surface.clientHeight;
+     resize=new ResizeObserver(()=>{const nextWidth=surface.clientWidth,nextHeight=surface.clientHeight;if(width===nextWidth&&height===nextHeight)return;width=nextWidth;height=nextHeight;
       void result.resize!().catch(cause=>{if(!controller.signal.aborted)reader.error=message(cause);});
-     });resize.observe(host);
+     });resize.observe(surface);
     }
-    setReadingNavigator(async location=>{
+    const navigate=async(location:ReadingLocation)=>{
      const revision=++navigation;external=true;
      try{await result.go(location);if(!ownsNavigation(revision))return;reader.location=location;void recordReading(location);}
      catch(cause){if(ownsNavigation(revision))throw cause;}
      finally{if(ownsNavigation(revision))external=false;}
-    });
+    };
+    setReadingNavigator(navigate);
+    const latest=reader.location;
+    if(latest&&!sameReadingLocation(initialLocation,latest))await navigate(latest);
    }).catch(cause=>{if(!controller.signal.aborted)reader.error=message(cause);}).finally(()=>{if(!controller.signal.aborted){loading=false;reader.rendering=false;}});
   return ()=>{clearInterval(heartbeat);resize?.disconnect();controller.abort();navigation++;if(readerOwner===owner){readerOwner++;busy=false;}external=false;current?.destroy();setReadingNavigator(null);engine=undefined;reader.rendering=false;};
  });
  async function turn(direction:'previous'|'next'){
   if(preview){if(!controlled||example?.state==='opening'||example?.state==='error')return;const location=sample.location;if(location&&location.format!=='epub')sample.location={...location,page:Math.min(location.total,Math.max(1,location.page+(direction==='next'?1:-1)))};return;}
-  if(busy||!controlled||!engine)return;
+  if(!controlled||!engine||busy&&!engine.canTurn?.(direction))return;
   const current=engine,owner=readerOwner,sessionId=reader.session?.id;busy=true;
   const ownsTurn=()=>readerOwner===owner&&engine===current&&reader.session?.id===sessionId&&reader.visible;
   try{await current[direction]();}catch(cause){if(ownsTurn())reader.error=message(cause);}finally{if(ownsTurn())busy=false;}
@@ -75,7 +81,14 @@
   reportFailure(()=>({text:reader.error,retry:reader.unsaved ? ()=>{if(preview){sample.error='';sample.unsaved=false;}else return retryReadingSave();} : undefined}));
 </script>
 {#if preview}<Button onclick={()=>sample.visible=true}>Open reader example</Button>{/if}
-<svelte:window onkeydown={event=>{if(!reader.visible||event.target instanceof HTMLInputElement)return;if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();void turn(event.key==='ArrowLeft'?'previous':'next');}}} />
+<svelte:window onkeydown={event=>{
+ if(!reader.visible||event.defaultPrevented)return;
+ const target=event.target;
+ if(target instanceof HTMLElement&&(target.closest('input,textarea,select,button,a,[contenteditable="true"]')||!preview&&target.closest('dialog')))return;
+ if(event.key==='Escape'&&!preview){event.preventDefault();close();return;}
+ if(event.key==='ArrowLeft'||event.key==='ArrowRight'){event.preventDefault();void turn(event.key==='ArrowLeft'?'previous':'next');}
+}} />
+{#if preview||reader.session?.format==='epub'}
 <Dialog bind:open={reader.visible} title={reader.session?.title??'Reader'} wide edgeToEdge onclose={()=>{if(minimizing){minimizing=false;return;}if(!reader.visible&&reader.session)close();}}>
  {#snippet heading()}<div class="reader-heading spread"><strong>{reader.session?.title}</strong><div class="row"><Button emphasis="subtle" onclick={()=>{minimizing=true;reader.visible=false;}}>Show UI</Button><Button size="icon" icon="close" label="Close reader" onclick={close} /></div></div>{/snippet}
 
@@ -83,7 +96,15 @@
  <div class="reader-controls"><Button icon="left" label="Previous page" disabled={loading||busy||!controlled||preview&&(example?.state==='opening'||example?.state==='error')} onclick={()=>void turn('previous')} /><span aria-live="polite">{loading||preview&&example?.state==='opening'?'Opening…':readingLocationLabel(reader.location)}</span><Button icon="right" label="Next page" disabled={loading||busy||!controlled||preview&&(example?.state==='opening'||example?.state==='error')} onclick={()=>void turn('next')} /></div>
  <div class="reader-progress"><ProgressBar progress={readingFraction(reader.location)} label="Reading progress" /></div>
 </Dialog>
+{:else if reader.visible}
+ <!-- svelte-ignore a11y_no_noninteractive_tabindex (The physical canvas is a keyboard-controlled reading surface.) -->
+ <div class="physical-reader" bind:this={host} onpointerup={event=>{if(event.target===host&&!host?.querySelector('canvas'))close();}} role="application" aria-roledescription="book reader" tabindex="0" aria-label={reader.session?.title??'Book reader'} aria-describedby="physical-reader-help" aria-busy={loading}></div>
+ <span id="physical-reader-help" class="sr-only">Click to focus. Click or drag a page to turn it. Double click to read a single page. Drag outside the book to rotate, or click outside to dismiss. Use left and right arrow keys to turn pages, Escape to close, or the reading button in navigation to show the app.</span>
+ <span class="sr-only" role="status">{loading?'Opening…':readingLocationLabel(reader.location)}</span>
+{/if}
 <style>
+ .physical-reader{position:fixed;inset:0;z-index:70;overflow:hidden;touch-action:none;outline:none;background:color-mix(in srgb,var(--canvas) 75%,transparent);}
+ .physical-reader :global(canvas){display:block;width:100%;height:100%;}
  .reader-heading{padding:16px;gap:16px;}.reader-heading strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
  .reading-view{height:max(0px,calc(85dvh - 150px));min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto;background:var(--white);color:var(--black);}
  .reading-view :global(canvas),.reading-view :global(img){max-width:100%;max-height:100%;object-fit:contain;}

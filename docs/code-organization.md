@@ -25,6 +25,8 @@ Keep code beside the feature that owns it. Share a helper when it has a concrete
 | `src/routes/ui-preview`, `src/lib/ui/charts` | Preview recipes, fictional chart data and unused chart explorations. |
 | `tests`, `scripts`, `migrations`, `docs` | Verification, operational tooling, immutable schema history and source-of-truth guidance. |
 
+The physical reader lives under `src/lib/reading/reader/physical/`: `book-model` and `page-geometry` own the binding and leaf shapes, `turn-gesture`/`turn-cascade` own interactive timelines, and `view` owns pure framing math. `physical-reader.ts` adapts Coast locations, `physical-pages.ts` uses the existing archive owner, and `physical-pdf.ts` rasterizes PDF.js pages. The local-only isolated lab imports this core while retaining its own host and server; the lab and its checkpoints are excluded from Git and container build context.
+
 Small root modules such as `artwork.ts`, `library.ts` and `progress.ts` are shared pure contracts or mappings. A single-file helper does not need its own directory. Give a feature a folder when it has several related responsibilities.
 
 ## Naming and boundaries
