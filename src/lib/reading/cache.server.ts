@@ -146,7 +146,9 @@ export function createReadingCache(root: string, extractor: string, overrides: P
         reserved += added;
         entry.reserved = bytes;
         const space = await statfs(root);
-        if (space.bavail * space.bsize < added + limits.freeBytes)
+        // Count every reservation, including concurrent writers. Deliberately
+        // conservative: materialized bytes are also already reflected by statfs.
+        if (space.bavail * space.bsize < reserved + limits.freeBytes)
             throw new AppError(503, 'Reading temporary storage needs more free disk space.');
     }
     async function inspect(entry: ReadingCacheEntry, row: {
@@ -207,6 +209,8 @@ export function createReadingCache(root: string, extractor: string, overrides: P
         if (entry.expected && (!expected || expected.hash !== page.hash || expected.width !== page.width || expected.height !== page.height || expected.size !== page.size))
             throw new Error('The cached reading manifest no longer matches this file.');
         entry.pages.set(filename, page);
+        if (entry.progress.phase === 'inspect')
+            entry.progress = { ...entry.progress, loaded: entry.pages.size };
         notify(entry);
     }
     async function prepare(entry: ReadingCacheEntry, source: ReadingCacheSource) {

@@ -2,7 +2,7 @@
 import { createReadingCache } from '$lib/reading/cache.server';
 import { ComicDecoder } from '$lib/reading/reader/archive-decoder';
 import { ZipReader, BlobReader, Uint8ArrayWriter } from '@zip.js/zip.js';
-import { readdir, mkdir, writeFile, symlink, readFile, rm } from 'node:fs/promises';
+import { readdir, mkdir, writeFile, symlink, readFile, rm, statfs } from 'node:fs/promises';
 import { join, dirname, resolve } from 'node:path';
 import assert from 'node:assert/strict';
 const manifest = process.env.COAST_READING_ACTUAL_MANIFEST, output = process.env.COAST_READING_AUDIT_OUTPUT;
@@ -111,6 +111,51 @@ try {
         cache = undefined;
     }
     pass('actual source rejects disk/metadata capacity pressure and returns both reservations');
+    const space = await statfs(working), available = space.bavail * space.bsize, reservation = first.bytes + 512 * 1024 ** 2;
+    assert(available > reservation * 2, 'Concurrent admission probe needs free working capacity.');
+    cache = createReadingCache(join(working, 'concurrent-floor'), extractor, { freeBytes: available - Math.floor(reservation * 1.5) });
+    let unlock!: () => void, opened = 0, bothOpened!: () => void;
+    const gate = new Promise<void>(resolve => { unlock = resolve; }), admitted = new Promise<void>(resolve => { bothOpened = resolve; });
+    const gated = (key: string) => ({ ...source, key, open: async (signal: AbortSignal) => {
+            if (++opened === 2)
+                bothOpened();
+            await gate;
+            signal.throwIfAborted();
+            return new Response(Bun.file(first.file));
+        } });
+    const [a, b] = await Promise.all([cache.acquire('actual-a', gated('controlled-a')), cache.acquire('actual-b', gated('controlled-b'))]);
+    await Promise.race([a.job, b.job, admitted]);
+    unlock();
+    await Promise.all([a.job, b.job]);
+    assert(a.error || b.error, 'Combined reservations must not both pass a floor that only admits one.');
+    await cache.stop();
+    assert.equal(cache.snapshot().reserved, 0);
+    cache = undefined;
+    pass('actual source concurrent preparations reject combined free-space overcommit');
+    const { default: sharp } = await import('sharp'), original = sharp.prototype.metadata;
+    const values: number[] = [];
+    cache = createReadingCache(join(working, 'inspect-progress'), extractor);
+    try {
+        (sharp.prototype as any).metadata = async function (...args: unknown[]) {
+            await Bun.sleep(50); // Controlled scheduling delay; metadata and page bytes stay genuine.
+            return (original as any).apply(this, args);
+        };
+        const inspected = await cache.acquire('actual-progress', source);
+        inspected.listeners.add(() => { if (inspected.progress.phase === 'inspect')
+            values.push(inspected.progress.loaded ?? 0); });
+        await inspected.job;
+        if (inspected.error)
+            throw inspected.error;
+        assert.equal(values.at(-1), inspected.manifest!.pages.length);
+        assert(new Set(values).size > 1, 'Progress must advance while actual metadata trails acquisition.');
+    }
+    finally {
+        (sharp.prototype as any).metadata = original;
+        await cache.stop();
+        cache = undefined;
+    }
+    report.controlledProgress = values;
+    pass('actual image metadata with controlled latency advances every inspection notification');
     const cancelled = join(working, 'cancelled');
     cache = createReadingCache(cancelled, extractor);
     const entry = await cache.acquire('actual-host', source);

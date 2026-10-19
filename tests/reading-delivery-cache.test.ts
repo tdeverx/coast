@@ -165,5 +165,47 @@ nativeTest('superseded manifest cleanup cannot cancel a newer request on the sam
         expect(current.controller.signal.aborted).toBe(false);
         await current.job;
         expect(current.error).toBeUndefined();
-    } finally { await cache.stop(); }
+    }
+    finally {
+        await cache.stop();
+    }
+});
+nativeTest('concurrent preparations account for combined outstanding free-space reservations', async () => {
+    const { statfs } = await import('node:fs/promises');
+    const directory = join(root, crypto.randomUUID());
+    const data = tarComic({ 'page.png': png }), reservation = data.byteLength + 512 * 1024 ** 2;
+    const space = await statfs(root), available = space.bavail * space.bsize;
+    expect(available).toBeGreaterThan(reservation * 2);
+    const cache = createReadingCache(directory, extractor, { freeBytes: available - Math.floor(reservation * 1.5) });
+    try {
+        const [first, second] = await Promise.all([cache.acquire('first', source(data)), cache.acquire('second', source(data))]);
+        await Promise.all([first.job, second.job]);
+        expect(Boolean(first.error) || Boolean(second.error)).toBe(true);
+    }
+    finally {
+        await cache.stop();
+    }
+    expect(cache.snapshot().reserved).toBe(0);
+});
+nativeTest('slow real metadata completion advances inspect progress instead of repeating its initial count', async () => {
+    const original = sharp.prototype.metadata;
+    (sharp.prototype as any).metadata = async function (...args: unknown[]) {
+        await Bun.sleep(10);
+        return (original as any).apply(this, args);
+    };
+    const cache = createReadingCache(join(root, crypto.randomUUID()), extractor), values: number[] = [];
+    try {
+        const files = Object.fromEntries(Array.from({ length: 20 }, (_, index) => [`page${index}.png`, png]));
+        const entry = await cache.acquire('reader', source(tarComic(files)));
+        entry.listeners.add(() => { if (entry.progress.phase === 'inspect')
+            values.push(entry.progress.loaded ?? 0); });
+        await entry.job;
+        expect(entry.error).toBeUndefined();
+        expect(values.at(-1)).toBe(20);
+        expect(new Set(values).size).toBeGreaterThan(1);
+    }
+    finally {
+        (sharp.prototype as any).metadata = original;
+        await cache.stop();
+    }
 });

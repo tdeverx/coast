@@ -7,7 +7,7 @@
     "bun.lock": "1e4b54e41340c8bdc578d25a96ae2d97696967828c6a62f486d6d426af878aff",
     "scripts/build-reading-extractor.ts": "9a7205a8c84e77ed27bf45bfccaee8394960a8419f2520975b2e9196c8550f99",
     "scripts/native/reading-extractor.cc": "eee8ae8e95169ebbe51a1d9d17ccc0afd8129d37cffb77bf04ee64bf43a65924",
-    "src/lib/reading/cache.server.ts": "1587f499b1c57ecb9e5a3b6d5e6710c7037658288221e0c8c03d43e43abee443",
+    "src/lib/reading/cache.server.ts": "a5b2c5eab0c144a2d499f1d61b71fb6663cca9aec0759e2c9e977f4ae7892fab",
     "src/lib/reading/delivery.server.ts": "6fc74521b0965160a89ee711a1a0aa8bc41fd2b2e6c8a45e1ac7ab65ad2be5f3",
     "src/lib/reading/delivery.ts": "f83e8795d6fa76a26e94def046cf444657d3fa719563908df5d6210765b6b7c6",
     "src/lib/reading/sessions.server.ts": "b6d5d34ece2fc2445d5113003e3b5e8b0ee6191f1520ff78a7fcb5df19666955",
@@ -23,7 +23,7 @@
     "src/lib/server/api/reading.server.ts": "ed3ca9b2223ecb9089ec61826307c99908483fa2eb13514f4c22479ede88e102",
     "src/lib/ui/components/Header.svelte": "eaab91cf97570315ca1628667e254d787c7eb34c7747f180bb7d02a0afce39fa"
   },
-  "runtimeFingerprint": "8ce92524aa38270d721a1b464a945df551b38500c0f60cf94cc5af207ab7f4c0",
+  "runtimeFingerprint": "fa261c19847726baecbe3f9d7a14277304860a2a78fbb16f99ffc8253da9028f",
   "runtime": {
     "bun": "1.4.3",
     "sharp": "0.35.5",
@@ -32,7 +32,7 @@
   },
   "actualFiles": {
     "boundary": "Actual archived file replay on private temporary disk. No database/provider/browser timings or production admission claim for missing formats. Controlled leases/capacity/abort use exact original bytes.",
-    "source": "463fa8ae992a59ca13c7dd80ef456f0cc9503aa9",
+    "source": "191ed7e92c70697d46c27ff1947832193ae852b6",
     "cases": [
       {
         "name": "cbr: independent concurrent leases share one acquisition",
@@ -159,6 +159,14 @@
         "status": "passed"
       },
       {
+        "name": "actual source concurrent preparations reject combined free-space overcommit",
+        "status": "passed"
+      },
+      {
+        "name": "actual image metadata with controlled latency advances every inspection notification",
+        "status": "passed"
+      },
+      {
         "name": "actual-source cancellation drains extraction and deletes partial files",
         "status": "passed"
       },
@@ -173,11 +181,11 @@
         "bytes": 73339323,
         "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
         "pages": 24,
-        "coldPreparationMs": 538.968667,
+        "coldPreparationMs": 461.092708,
         "resources": {
-          "mainCpuMicros": 209178,
-          "beforeRss": 18465560,
-          "sampledPeakRss": 51315624,
+          "mainCpuMicros": 145873,
+          "beforeRss": 18989824,
+          "sampledPeakRss": 57099152,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -187,11 +195,11 @@
         "bytes": 39372234,
         "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
         "pages": 33,
-        "coldPreparationMs": 226.01287500000012,
+        "coldPreparationMs": 202.4920830000001,
         "resources": {
-          "mainCpuMicros": 72035,
-          "beforeRss": 115918000,
-          "sampledPeakRss": 117425328,
+          "mainCpuMicros": 51424,
+          "beforeRss": 123454712,
+          "sampledPeakRss": 125486328,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -201,11 +209,11 @@
         "bytes": 74500125,
         "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
         "pages": 24,
-        "coldPreparationMs": 420.59241599999996,
+        "coldPreparationMs": 371.613875,
         "resources": {
-          "mainCpuMicros": 107737,
-          "beforeRss": 84133040,
-          "sampledPeakRss": 84165808,
+          "mainCpuMicros": 79702,
+          "beforeRss": 89965792,
+          "sampledPeakRss": 89965792,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -215,11 +223,11 @@
         "bytes": 41725042,
         "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
         "pages": 30,
-        "coldPreparationMs": 233.79525000000012,
+        "coldPreparationMs": 207.26262499999984,
         "resources": {
-          "mainCpuMicros": 66590,
-          "beforeRss": 148030784,
-          "sampledPeakRss": 157320512,
+          "mainCpuMicros": 48392,
+          "beforeRss": 120718584,
+          "sampledPeakRss": 120718584,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -229,11 +237,11 @@
         "bytes": 82635611,
         "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
         "pages": 24,
-        "coldPreparationMs": 419.5034999999998,
+        "coldPreparationMs": 377.37808300000006,
         "resources": {
-          "mainCpuMicros": 104798,
-          "beforeRss": 103236880,
-          "sampledPeakRss": 190104848,
+          "mainCpuMicros": 85883,
+          "beforeRss": 86967520,
+          "sampledPeakRss": 170296544,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
@@ -243,15 +251,38 @@
         "bytes": 401719147,
         "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
         "pages": 265,
-        "coldPreparationMs": 442.4511249999996,
+        "coldPreparationMs": 355.0147500000003,
         "resources": {
-          "mainCpuMicros": 582772,
-          "beforeRss": 170526112,
-          "sampledPeakRss": 189253024,
+          "mainCpuMicros": 467136,
+          "beforeRss": 151897408,
+          "sampledPeakRss": 190039360,
           "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
         },
         "actualPageByteEquivalence": true
       }
+    ],
+    "controlledProgress": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      24,
+      24
     ],
     "status": "passed"
   },
@@ -645,12 +676,12 @@
     "status": "passed"
   },
   "supplementalTests": {
-    "newBoundaryCases": 22,
-    "meaning": "13 server-native fixtures, four client protocol/cancellation fixtures, four exit lifecycle fixtures and one external-navigation fence. Authored tests supplement real-file acceptance."
+    "newBoundaryCases": 24,
+    "meaning": "15 server-native fixtures, four client protocol/cancellation fixtures and five exit/navigation lifecycle cases. Authored tests supplement real-file acceptance."
   },
   "gates": {
     "appTests": {
-      "pass": 883,
+      "pass": 885,
       "guardedSkip": 718,
       "fail": 0
     },
@@ -663,5 +694,41 @@
     "Natural CB7/CBT/PDF/EPUB, solid-archive census, hardware mobile, sustained concurrent pressure and process-tree/GPU memory plateaus remain unverified.",
     "Same-host direct private-address benchmark is not cross-host LAN wire speed. Normal application uses its configured approved Jellyfin address.",
     "Measured three-pair median entry gain is descriptive, with adverse cold and individual paired samples."
-  ]
+  ],
+  "reviewRegressions": {
+    "baselineCommit": "191ed7e92c70697d46c27ff1947832193ae852b6",
+    "actualSource": "First recorded CBR, original bytes/hash unchanged",
+    "floor": {
+      "before": "FAILED: both concurrent preparations pass a controlled real-filesystem free-space floor admitting only one reservation.",
+      "after": "PASSED: combined reservations reject at least one preparation; cleanup returns reservations to zero.",
+      "tradeoff": "Conservative check counts all reservations, including bytes already reflected in statfs; it can reject earlier under low disk space."
+    },
+    "inspection": {
+      "control": "Actual sharp metadata/original bytes with 50ms scheduling delay per page; no fabricated provider or image metadata.",
+      "before": "FAILED: final inspect count remains 6, expected 24.",
+      "after": [
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        24,
+        24
+      ]
+    }
+  }
 }
