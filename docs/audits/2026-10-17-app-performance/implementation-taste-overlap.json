@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "baselineCommit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "reportRef": "implementation-taste-overlap.md",
+  "committed": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "databaseMutations": false,
+  "changes": [
+    {
+      "findingId": "MIN-08",
+      "state": "implemented_complete_results_equivalent_on_completed_actual_partial_corpus",
+      "sharedOwner": "tasteSignals per-dimension calculation-local right-value Map",
+      "consumers": ["friendInsights social taste comparisons"],
+      "files": ["src/lib/social/taste.ts"],
+      "sourceSha256": "c539c8aeb136337eed720218bec9e908e63a14ff64fbf58ee5d055efdb23f7ca",
+      "preserved": ["Primitive string identity", "Right duplicate last-value cosine semantics", "Left duplicate overlap counts/order", "Thresholds and weighted blend order"],
+      "operationBoundPerDimension": {"affinityCapPerSide":500,"baselineEqualityUpperBound":250000,"indexInsertionAndLookupUpperBound":1000},
+      "actualVerification": {
+        "evidenceRef": "evidence/implementation-taste-overlap-actual.json",
+        "completedComparisons": 40,
+        "completedContexts": 10,
+        "twoSidedWorkCohorts": 15,
+        "leftOwnersObserved": 3,
+        "rightOwnersObserved": 4,
+        "allCompleteResultsEquivalent": true,
+        "allOperationBoundsHold": true,
+        "sourceUnchanged": true,
+        "maxObservedLeftAffinities": 243,
+        "maxObservedRightAffinities": 500,
+        "baselineEqualityTests": 236666,
+        "indexInsertions": 4114,
+        "membershipLookups": 3152,
+        "cohortsWithMoreCountedIndexOperations": 16,
+        "captureCompletion": "Intentionally cancelled during a later existing insights SELECT;40of64planned comparisons completed",
+        "runnerExitCode": 1,
+        "cancellationErrorRetained": true,
+        "timingOrSpeedupClaim": false
+      },
+      "functionalVerification": {"runtime":"Bun1.4.3","passed":10,"failed":0,"assertions":536,"testFiles":["tests/social.test.ts","tests/taste-profile.test.ts"]},
+      "gaps": ["Uncompleted planned contexts", "No positive two-sided themes/developers/publishers/mechanics/perspectives in completed actual corpus", "No browser/endpoint CPU or latency certification", "Explicit capture deadline/corpus cap required before repeating expensive original capture"],
+      "tradeoff": "Map construction can exceed baseline equality count for small/empty cohorts; operation types have different cost"
+    }
+  ]
+}

@@ -2,6 +2,10 @@
 
 Reviewed 16 October 2026 against the current checkout and implementation reports. This lists remaining work only; implemented features are documented elsewhere, even when not yet published. Parked proposals are not implementation authorization. Fixture coverage does not replace real-provider, deployment or device acceptance.
 
+## Performance and stability — deferred audit coverage
+
+The prescribed-method implementation pass and later authorized Activity investigation closed on **19 October 2026**. See the [current handoff](audits/2026-10-17-app-performance/implementation-handoff.md) for applied repairs and exact limits. Resume future work with the [investigation checklist](audits/2026-10-17-app-performance/next-investigation-checklist.md) and [area roadmap](audits/2026-10-17-app-performance/follow-up-roadmap.md): unchecked areas/new observations first, failed methods afterward. Wider acceptance and explicit design deferrals remain; this does not authorize automatic continuation or a new architecture.
+
 ## Highest priority — recovery, reliable backups and data ownership
 
 - Establish scheduled, consistent database backups paired with the matching credential key and durable app files. Keep a versioned manifest with capture time, application/database versions, migration state and checksums; protect backups with appropriate access control and encryption. Define retention, independent storage, capacity checks and visible failure/staleness alerts. A Git checkpoint or live sparse-volume copy is not a verified database backup.

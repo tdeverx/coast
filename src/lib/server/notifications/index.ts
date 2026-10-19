@@ -21,6 +21,11 @@ export interface NotificationInput {
 export type NotificationDatabase = ReturnType<typeof getSql> | Pick<Database, 'execute'>;
 const notificationBatchSize = 100;
 const notificationDialect = new PgDialect();
+// Delivery policy needs these preferences, never profile artwork or other settings.
+const notificationSettings = sql`jsonb_build_object(
+  'notificationsSilenced', settings -> 'notificationsSilenced',
+  'notificationLevel', settings -> 'notificationLevel',
+  'social', jsonb_build_object('notifications', settings -> 'social' -> 'notifications'))`;
 async function notificationQuery<T extends Record<string, unknown>>(database: NotificationDatabase, query: SQL): Promise<T[]> {
   if ('execute' in database) return Array.from(await database.execute<T>(query)) as T[];
   const compiled = notificationDialect.sqlToQuery(query);
@@ -72,7 +77,7 @@ export async function notifyMany(inputs: NotificationInput[], database: Notifica
   for (let offset = 0; offset < inputs.length; offset += notificationBatchSize) {
     const batch = inputs.slice(offset, offset + notificationBatchSize);
     const users = await notificationQuery<{id: string; settings: UserSettings | null}>(database,
-      sql`SELECT id, settings FROM users WHERE id IN (${sql.join([...new Set(batch.map(input => input.userId))].map(id => sql`${id}::uuid`), sql`, `)})`);
+      sql`SELECT id, ${notificationSettings} AS settings FROM users WHERE id IN (${sql.join([...new Set(batch.map(input => input.userId))].map(id => sql`${id}::uuid`), sql`, `)})`);
     ids.push(...await writeNotifications(batch, new Map(users.map(user => [user.id, user.settings || {}])), config, database));
   }
   return ids;
@@ -97,6 +102,7 @@ export async function inbox(actor: SessionUser | null, limit = 50,filters:{kind?
       level: notifications.level,
       locked: notifications.locked,
       readAt: notifications.readAt,
+      toastHiddenAt: notifications.toastHiddenAt,
       createdAt: notifications.createdAt,
     })
     .from(notifications)
@@ -105,6 +111,21 @@ export async function inbox(actor: SessionUser | null, limit = 50,filters:{kind?
     .limit(Math.max(1, Math.min(200, limit)));
   return rows;
 }
+/** Toast suppression lasts exactly as long as its notification; it never marks the inbox read. */
+export async function hideNotificationToasts(actor: SessionUser | null, input: unknown, database?: NotificationDatabase) {
+  const user = requireUser(actor);
+  const { ids } = v.parse(v.strictObject({ids: v.pipe(v.array(v.pipe(v.string(),v.uuid())), v.minLength(1), v.maxLength(200))}), input);
+  const rows = await notificationQuery<{id: string}>(database ?? getSql(), sql`WITH owned AS MATERIALIZED (
+      SELECT id FROM notifications WHERE user_id = ${user.id}::uuid
+        AND id IN (${sql.join([...new Set(ids)].map(id => sql`${id}::uuid`), sql`, `)})
+    ), hidden AS (
+      UPDATE notifications n SET toast_hidden_at = NOW() FROM owned
+      WHERE n.id = owned.id AND n.user_id = ${user.id}::uuid AND n.toast_hidden_at IS NULL
+      RETURNING n.id
+    ) SELECT id FROM owned`);
+  return {ids: rows.map(row => row.id)};
+}
+
 export async function markNotification(
   actor: SessionUser | null,
   id: string,
@@ -133,7 +154,7 @@ export async function broadcast(actor: SessionUser | null, input: unknown) {
   let cursor: string | null = null, delivered = 0;
   while (true) {
     const users: {id: string; settings: UserSettings | null}[] = await notificationQuery(database,
-      sql`SELECT id, settings FROM users WHERE disabled = FALSE ${cursor ? sql`AND id > ${cursor}::uuid` : sql``}
+      sql`SELECT id, ${notificationSettings} AS settings FROM users WHERE disabled = FALSE ${cursor ? sql`AND id > ${cursor}::uuid` : sql``}
         ORDER BY id LIMIT ${notificationBatchSize}`);
     if (!users.length) break;
     const inputs = users.map(user => ({...message, userId: user.id, kind: 'administrator', sourceKey: `broadcast:${crypto.randomUUID()}`}));
@@ -146,18 +167,19 @@ export async function broadcast(actor: SessionUser | null, input: unknown) {
 
 export async function listDiagnostics(actor: SessionUser | null, limit = 100) {
   requireAdmin(actor);
-  return (await diagnosticStore.recent()).slice(0, Math.max(1, Math.min(500, limit)));
+  return diagnosticStore.recent(Math.max(1, Math.min(500, limit)));
 }
 export async function systemHealth(actor: SessionUser | null) {
   requireAdmin(actor);
   const started = Date.now();
   await getSql()`SELECT 1`;
+  const latencyMs = Date.now() - started;
   const actions =
     await getSql()`SELECT state, count(*)::int AS count FROM outbox_actions GROUP BY state`;
   const connections =
     await getSql()`SELECT status, count(*)::int AS count FROM provider_connections GROUP BY status`;
   return {
-    database: { status: 'healthy', latencyMs: Date.now() - started },
+    database: { status: 'healthy', latencyMs },
     actions,
     connections,
     uptimeSeconds: Math.floor(process.uptime()),

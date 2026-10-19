@@ -1,6 +1,7 @@
 FROM oven/bun:1.4.3-debian AS build
 WORKDIR /app
 COPY package.json bun.lock ./
+COPY patches/ ./patches/
 RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run build
@@ -8,6 +9,7 @@ RUN bun run build
 FROM oven/bun:1.4.3-debian AS production-dependencies
 WORKDIR /app
 COPY package.json bun.lock ./
+COPY patches/ ./patches/
 RUN bun install --frozen-lockfile --production
 
 FROM debian:bookworm-slim AS runtime

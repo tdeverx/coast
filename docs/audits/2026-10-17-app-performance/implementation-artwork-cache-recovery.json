@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "findingId": "ARTWORK-CACHE-OBS-03",
+  "state": "implemented_shared_owner_controlled_actual_byte_recovery_verified",
+  "reportRef": "implementation-artwork-cache-recovery.md",
+  "sharedOwner": "createImageCache.get serialized read/validation/eviction",
+  "consumers": [
+    "serverArtwork private WebP cache",
+    "streamTmdbArtwork JPEG/PNG/WebP cache"
+  ],
+  "files": [
+    "src/lib/server/storage/image-cache.server.ts",
+    "src/lib/providers/server-artwork.server.ts",
+    "src/lib/providers/tmdb/artwork.server.ts",
+    "tests/image-cache.test.ts"
+  ],
+  "sourceHashes": {
+    "src/lib/server/storage/image-cache.server.ts": "c1b0856ed8e770673b299e1ed31899c6b72e2022ad4240626b07d10a96fa7416",
+    "src/lib/providers/server-artwork.server.ts": "c0dbd0fbf64aeb45cc451af6d9a35f067f38818789005386bf0be5563f4d8980",
+    "src/lib/providers/tmdb/artwork.server.ts": "fde791f7e4d2af9bca70e205b3d1bca12abb6d3bf4609e3752261957a211aabd",
+    "tests/image-cache.test.ts": "75c9c99c2c0883e8cc736ee128b4a4145cdd025a8682f6279fd026267958b41f"
+  },
+  "behavior": [
+    "Optional synchronous boolean validator on cache get",
+    "Validator executes outside filesystem ENOENT catch; exceptions preserve bytes and index",
+    "Rejected bytes and index are removed before the serialized read resolves null",
+    "Queued replacement cannot overtake eviction; valid immutable put/dedup remains unchanged",
+    "Both production consumers reuse their existing magic-header validators",
+    "Pending write/byte admission, total budget, trimming and temporary cleanup unchanged"
+  ],
+  "verification": {
+    "focusedTests": {
+      "pass": 20,
+      "fail": 0,
+      "assertions": 115,
+      "files": [
+        "tests/image-cache.test.ts",
+        "tests/artwork-cache-lifecycle.test.ts",
+        "tests/private-artwork-lifetime.test.ts"
+      ],
+      "evidenceRef": "evidence/implementation-artwork-cache-recovery-tests.txt"
+    },
+    "actualByteFaultReplay": {
+      "status": "passed",
+      "checks": 28,
+      "jpegBytes": 242684,
+      "webpBytes": 58904,
+      "fault": "Two-byte truncation of each authorized sample in disposable indexed caches",
+      "providerCalls": 0,
+      "controlledReplay": true,
+      "beforeAndCurrentConsumers": true,
+      "currentRetainedHits": true,
+      "accountingAndValidatorFailureAndQueueProof": true,
+      "temporaryDirectoriesRemoved": true,
+      "evidenceRef": "evidence/implementation-artwork-cache-recovery-actual.json"
+    }
+  },
+  "probeRef": "probes/artwork-cache-recovery.ts",
+  "probeSha256": "0e42c79f68018d78b870bb5d79593f7d12d349758d151522d44972df974fedfe",
+  "naturalMalformedCacheCohort": false,
+  "actualCacheFilesModified": false,
+  "databaseAccess": false,
+  "normalOrDeployedDatabaseMutations": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "committed": false,
+  "gaps": [
+    "Existing magic-header checks reject the tested short entries; header-preserving truncation/decode corruption may still pass. No full image decoder/validation policy was added.",
+    "No natural corrupt-cache incident, production incidence/rate, live provider latency or heap/CPU saving is claimed.",
+    "Common check/build/full tests remain owned by root; this report records only focused gates.",
+    "Cross-process writers remain outside the existing one-process cache ownership contract."
+  ]
+}

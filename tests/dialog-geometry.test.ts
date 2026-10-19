@@ -4,25 +4,27 @@ import * as runtime from 'svelte/internal/client';
 import {compileRunes,componentScript,moduleUrl} from './fixtures/ui-script';
 let script=await componentScript('src/lib/ui/components/Dialog.svelte');
 const start=script.indexOf('let {'),end=script.indexOf('} = $props();',start);
-script=(script.slice(0,start)+"let open=$state(true),popover=!initial.expanding,popoverWidth=560,anchor=initial.anchor,onclose,contentKey=$state('first'),expanding=!!initial.expanding;"+script.slice(end+'} = $props();'.length))
+script=(script.slice(0,start)+"let open=$state(true),popover=!initial.expanding,popoverWidth=560,anchor=initial.anchor,onclose=initial.onclose,contentKey=$state('first'),expanding=!!initial.expanding;"+script.slice(end+'} = $props();'.length))
  .replace('let dialog: HTMLElement;','let dialog=element;').replace('$props.id()', '"fixture-dialog"').replace('let detailScroll=$state<HTMLDivElement>();','let detailScroll=$state.raw(initial.scroll);').replace('let expansionScroll=$state<HTMLDivElement>();','let expansionScroll=$state.raw(initial.expansionScroll);');
-const code=compileRunes(`export function create(initial,element,document,window,requestAnimationFrame,cancelAnimationFrame){
- const HTMLElement=class {};const useClient=()=>({feedback:{host:()=>()=>{}}});const callbacks=[],onDestroy=fn=>callbacks.push(fn),tick=()=>Promise.resolve();
+const code=compileRunes(`export function create(initial,element,document,window,requestAnimationFrame,cancelAnimationFrame,setTimeout,clearTimeout){
+ const HTMLElement=initial.HTMLElement??class {};const useClient=()=>({feedback:{host:initial.feedbackHost??(()=>()=>{})}});const callbacks=[],onDestroy=fn=>callbacks.push(fn),tick=()=>Promise.resolve();
  ${script}
  return {nativeClose:closed,get open(){return open;},handoff:handoffScroll,replace(key){contentKey=key;},scroll(top){expansionScroll.scrollTop=top;expandSheet();},scrollPage(top){detailScroll.scrollTop=top;},close(){open=false;},reopen(){open=true;},cleanup(){callbacks.forEach(fn=>fn());}};
 }`);
 const {create}=await import(moduleUrl(code));
-function fixture(anchor:string|undefined='#trigger',expanding=false){
- let reads=0,writes=0,next=0;const frames=new Map<number,FrameRequestCallback>(),listeners=new Map<string,Function>();
+function fixture(anchor:string|undefined='#trigger',expanding=false,snapping=false,lifecycle?:{onclose():void;focus():void;host():()=>void}){
+ let reads=0,writes=0,next=0;const frames=new Map<number,FrameRequestCallback>(),timers=new Map<number,()=>void>(),listeners=new Map<string,Function>();
  const properties=new Map<string,string>();
- const scroll={scrollTop:0},expansionScroll={scrollTop:0};
- const element={open:false,showModal(){this.open=true;},close(){this.open=false;},contains:()=>false,querySelector:()=>({focus(){}}),matches:()=>true,hidePopover(){},getBoundingClientRect(){reads++;return {width:240};},style:{setProperty(key:string,value:string){writes++;properties.set(key,value);}}};
+ let top=0;
+ class FocusTarget{isConnected=true;focus(){lifecycle?.focus();}}
+ const scroll={scrollTop:0},expansionScroll={style:{scrollSnapType:''},get scrollTop(){return top;},set scrollTop(value:number){top=snapping&&this.style.scrollSnapType!=='none'&&value>120?160:value;}};
+ const element={open:false,showModal(){this.open=true;},close(){this.open=false;},contains:()=>!!lifecycle,querySelector:()=>({focus(){}}),matches:()=>true,hidePopover(){},getBoundingClientRect(){reads++;return {width:240};},style:{setProperty(key:string,value:string){writes++;properties.set(key,value);}}};
  const window={innerHeight:900,innerWidth:1200,addEventListener(type:string,fn:Function){listeners.set(type,fn);},removeEventListener(type:string){listeners.delete(type);}};
- const document={querySelector:()=>({getBoundingClientRect(){reads++;return {bottom:50,right:1000};}})};
+ const document={activeElement:lifecycle?new FocusTarget():undefined,querySelector:()=>({getBoundingClientRect(){reads++;return {bottom:50,right:1000};}})};
  let controller:any;
- const dispose=runtime.effect_root(()=>controller=create({anchor,expanding,scroll,expansionScroll},element,document,window,(callback:FrameRequestCallback)=>{frames.set(++next,callback);return next;},(id:number)=>frames.delete(id)));
+ const dispose=runtime.effect_root(()=>controller=create({anchor,expanding,scroll,expansionScroll,onclose:lifecycle?.onclose,HTMLElement:FocusTarget,feedbackHost:lifecycle?.host},element,document,window,(callback:FrameRequestCallback)=>{frames.set(++next,callback);return next;},(id:number)=>frames.delete(id),(callback:()=>void)=>{timers.set(++next,callback);return next;},(id:number)=>timers.delete(id)));
  runtime.flush();
- return {controller,element,listeners,frames,properties,window,scroll,expansionScroll,get reads(){return reads;},get writes(){return writes;},reset(){reads=0;writes=0;},flush(){const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn(0));},destroy(){controller.cleanup();dispose();}};
+ return {controller,element,listeners,frames,timers,properties,window,scroll,expansionScroll,get reads(){return reads;},get writes(){return writes;},reset(){reads=0;writes=0;},flush(){const pending=[...frames.values()];frames.clear();pending.forEach(fn=>fn(0));},settle(){const pending=[...timers.values()];timers.clear();pending.forEach(fn=>fn());},destroy(){controller.cleanup();dispose();}};
 }
 test('Dialog retains initial/clamped placement and coalesces popover scroll/resize into one placement per frame',()=>{
  const f=fixture();
@@ -132,4 +134,55 @@ test('a queued native close event cannot dismiss a newly reopened dialog',()=>{
   f.controller.nativeClose();runtime.flush();expect(f.controller.open).toBe(true);expect(f.element.open).toBe(true);
   f.element.close();f.controller.nativeClose();runtime.flush();expect(f.controller.open).toBe(false);
  }finally{f.destroy();}
+});
+
+test('small reverse wheel travel accumulates before snap settlement and a direction change remains owned once',()=>{
+ const f=fixture(undefined,true,true),listeners=new Map<string,Function>();
+ const content=Object.assign(f.scroll,{scrollHeight:1600,clientHeight:400,contains:(target:any)=>target===content||target?.parentElement===content});
+ const node=Object.assign(f.expansionScroll,{addEventListener(type:string,fn:Function){listeners.set(type,fn);},removeEventListener(type:string){listeners.delete(type);}});
+ Object.assign(f.window,{getComputedStyle:(target:any)=>target.style});
+ const action=f.controller.handoff(node);
+ const send=(deltaY:number,cancelable=true,target:any=content)=>{let prevented=false;listeners.get('wheel')!({target,deltaY,deltaX:0,deltaMode:0,cancelable,preventDefault(){prevented=true;}});return prevented;};
+ try{
+  f.controller.scroll(160);f.flush();
+  expect(send(-19)).toBe(true);expect(node.scrollTop).toBe(141);
+  expect(send(-19)).toBe(true);expect(node.scrollTop).toBe(122);expect(f.timers.size).toBe(1);
+  f.flush();expect(f.properties.get('--detail-expansion')).toBe(String(122/160));
+  f.settle();f.flush();expect(node.scrollTop).toBe(0);expect(node.style.scrollSnapType).toBe('');expect(f.properties.get('--detail-expansion')).toBe('0');
+  f.controller.scroll(160);f.flush();expect(send(-19)).toBe(true);expect(send(8)).toBe(true);expect(node.scrollTop).toBe(149);
+  f.settle();f.flush();expect(node.scrollTop).toBe(160);expect(node.style.scrollSnapType).toBe('');
+  expect(send(-19,false)).toBe(false);expect(node.scrollTop).toBe(160);expect(f.timers.size).toBe(0);
+  send(-19);const late=[...f.timers.values()][0];
+  const nested={scrollHeight:600,clientHeight:100,scrollTop:100,parentElement:content,style:{overflowY:'auto',overscrollBehaviorY:'contain'}};
+  expect(send(8,true,nested)).toBe(false);expect(f.timers.size).toBe(0);expect(node.style.scrollSnapType).toBe('');
+  f.controller.scroll(160);f.flush();send(-19);late();expect(node.scrollTop).toBe(141);expect(f.timers.size).toBe(1);
+  expect(send(-19,false)).toBe(false);expect(f.timers.size).toBe(0);expect(node.style.scrollSnapType).toBe('');
+ }finally{action.destroy();f.destroy();}
+});
+
+test('handoff settlement releases its timer and snap ownership on navigation, close and teardown',()=>{
+ const f=fixture(undefined,true,true),listeners=new Map<string,Function>();
+ const content=Object.assign(f.scroll,{scrollHeight:1600,clientHeight:400,contains:(target:any)=>target===content});
+ const node=Object.assign(f.expansionScroll,{addEventListener(type:string,fn:Function){listeners.set(type,fn);},removeEventListener(type:string){listeners.delete(type);}});
+ const action=f.controller.handoff(node);
+ const reverse=()=>listeners.get('wheel')!({target:content,deltaY:-19,deltaX:0,deltaMode:0,cancelable:true,preventDefault(){}});
+ try{
+  f.controller.scroll(160);f.flush();content.scrollTop=.25;reverse();expect(content.scrollTop).toBe(0);expect(f.timers.size).toBe(1);
+  f.controller.replace('next');runtime.flush();expect(f.timers.size).toBe(0);expect(node.style.scrollSnapType).toBe('');
+  f.controller.scroll(160);f.flush();reverse();const late=[...f.timers.values()][0];
+  f.controller.close();runtime.flush();expect(f.timers.size).toBe(0);expect(node.style.scrollSnapType).toBe('');late();expect(f.frames.size).toBe(0);
+  f.controller.reopen();runtime.flush();f.controller.scroll(160);f.flush();reverse();action.destroy();expect(f.timers.size).toBe(0);expect(listeners.size).toBe(0);expect(node.style.scrollSnapType).toBe('');
+ }finally{action.destroy();f.destroy();}
+});
+
+// Authored controller lifetime; no browser/native task or real history claim.
+test('a disposed Dialog ignores late close without invoking history, focus or feedback ownership',()=>{
+ let closes=0,focus=0,hosts=0,releases=0;
+ const f=fixture(undefined,true,false,{onclose(){closes++;},focus(){focus++;},host(){hosts++;return()=>releases++;}});
+ expect(hosts).toBe(1);expect(f.controller.open).toBe(true);
+ // Model a native event queued after the physical dialog has closed but before
+ // its disposed callback is delivered. The native CUA fixture proves ordering.
+ f.element.open=false;f.destroy();expect(releases).toBe(1);
+ f.controller.nativeClose();runtime.flush();
+ expect(closes).toBe(0);expect(focus).toBe(0);expect(hosts).toBe(1);expect(releases).toBe(1);expect(f.controller.open).toBe(true);
 });

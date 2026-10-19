@@ -104,3 +104,52 @@ test('image cache accounts for externally restored files discovered by reads', a
     expect((await readdir(directory)).sort()).toEqual([key(2), key(3), key(4)]);
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
+
+test('invalid reads evict the file and release its indexed budget exactly once', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'coast-image-cache-'));
+  try {
+    const cache = createImageCache(directory, { bytes: 12, files: 3, freeBytes: 0 });
+    await cache.put(key(1), new Uint8Array(6));
+    await cache.put(key(2), new Uint8Array(6));
+    expect(await cache.get(key(1), () => false)).toBeNull();
+    expect(await cache.get(key(1), () => false)).toBeNull();
+    expect((await readdir(directory)).sort()).toEqual([key(2)]);
+    expect(await cache.put(key(3), new Uint8Array(6))).toBe(true);
+    expect((await readdir(directory)).sort()).toEqual([key(2), key(3)]);
+    expect(await cache.put(key(4), new Uint8Array(1))).toBe(true);
+    expect((await readdir(directory)).sort()).toEqual([key(3), key(4)]);
+    expect((await readdir(directory)).some(file => file.includes('.image.'))).toBe(false);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('validator exceptions preserve the file and immutable entry even when they resemble ENOENT', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'coast-image-cache-'));
+  try {
+    const cache = createImageCache(directory, { bytes: 12, files: 2, freeBytes: 0 });
+    await cache.put(key(1), new Uint8Array([1, 2, 3, 4]));
+    const cause = Object.assign(new Error('Validator failed'), { code: 'ENOENT' });
+    await expect(cache.get(key(1), () => { throw cause; })).rejects.toBe(cause);
+    expect((await readdir(directory)).sort()).toEqual([key(1)]);
+    expect(await cache.put(key(1), new Uint8Array([9]))).toBe(true);
+    expect(await cache.get(key(1), bytes => bytes[0] === 1)).toEqual(new Uint8Array([1, 2, 3, 4]));
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('serialized invalid readers cannot remove a queued replacement or overwrite a valid immutable hit', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'coast-image-cache-'));
+  try {
+    const cache = createImageCache(directory, { bytes: 12, files: 2, freeBytes: 0 });
+    await cache.put(key(1), new Uint8Array([0]));
+    const replacement = new Uint8Array([1, 2, 3, 4]);
+    const results = await Promise.all([
+      cache.get(key(1), bytes => bytes[0] === 1),
+      cache.get(key(1), bytes => bytes[0] === 1),
+      cache.put(key(1), replacement),
+      cache.get(key(1), bytes => bytes[0] === 1),
+    ]);
+    expect(results).toEqual([null, null, true, replacement]);
+    expect(await cache.put(key(1), new Uint8Array([9]))).toBe(true);
+    expect(await cache.get(key(1), bytes => bytes[0] === 1)).toEqual(replacement);
+    expect((await readdir(directory)).sort()).toEqual([key(1)]);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});

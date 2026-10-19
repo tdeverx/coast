@@ -1,19 +1,38 @@
 <script lang="ts">
   import { reportFailure } from '$lib/ui/client-context';
  import OperationProgress from '$lib/ui/components/OperationProgress.svelte';
- import {enhance,deserialize} from '$app/forms';import {invalidate} from '$app/navigation';import {onMount,untrack} from 'svelte';
+ import {enhance,deserialize} from '$app/forms';import {refreshRouteDependencies} from '$lib/ui/client';import {onMount,untrack} from 'svelte';
  import AvatarPicker from '$lib/ui/components/AvatarPicker.svelte';
+ import {createResource} from '$lib/ui/resource.svelte';
  import Brand from '$lib/ui/components/Brand.svelte';import Button from '$lib/ui/components/Button.svelte';
  let {data,form}=$props();let busy=$state(false),deviceError=$state(''),avatar=$state<string|null>(untrack(()=>data.profile.avatar??null)),reading=$state(false);
  $effect(()=>{if(form&&'device' in form)deviceError='';});
  const device=$derived(form&&'device' in form?form.device:null);
  const canContinue=$derived(data.requiredProvider==='none'||data.requiredProvider==='jellyfin'&&data.linked||data.requiredProvider==='trakt'&&data.traktLinked||data.requiredProvider==='either'&&(data.linked||data.traktLinked));
- onMount(()=>{let pending=false,nextPoll=0;const timer=setInterval(async()=>{
-  if(pending)return;pending=true;
-  try{if(device&&!deviceError&&!data.traktLinked&&Date.now()>=nextPoll){nextPoll=Date.now()+device.interval*1000;const body=new FormData();body.set('instanceId',device.instanceId);const result=deserialize(await(await fetch('?/poll',{method:'POST',body,headers:{'x-sveltekit-action':'true'}})).text());if(result.type==='failure')deviceError=String(result.data?.error??'Could not connect Trakt.');if(result.type==='success'&&result.data?.pending===false)await invalidate('coast:onboarding');}
-   if(data.phase==='importing')await invalidate('coast:onboarding');
-  }catch{deviceError='Connection interrupted. Try connecting again.';}finally{pending=false;}
- },2000);return()=>clearInterval(timer);});
+ onMount(()=>{let pending=false,nextPoll=0,stopped=false;const poll=createResource<ReturnType<typeof deserialize>|null>(null);
+  const refresh=async()=>{
+   if(stopped||pending)return;pending=true;
+   try{const currentDevice=device;
+    if(currentDevice&&!deviceError&&!data.traktLinked&&Date.now()>=nextPoll){
+     nextPoll=Date.now()+currentDevice.interval*1000;const body=new FormData();body.set('instanceId',currentDevice.instanceId);
+     const result=await poll.load(async signal=>{
+      const response=await fetch('?/poll',{method:'POST',body,headers:{'x-sveltekit-action':'true'},signal});signal.throwIfAborted();
+      const text=await response.text();signal.throwIfAborted();return deserialize(text);
+     });
+     if(stopped)return;
+     if(device===currentDevice){
+      if(result===undefined&&poll.error)throw Error(poll.error);
+      if(result?.type==='failure')deviceError=String(result.data?.error??'Could not connect Trakt.');
+      if(result?.type==='success'&&result.data?.pending===false)await refreshRouteDependencies(['onboarding']);
+     }
+    }
+    if(!stopped&&!document.hidden&&data.phase==='importing')await refreshRouteDependencies(['onboarding']);
+   }catch{if(!stopped)deviceError='Connection interrupted. Try connecting again.';}finally{pending=false;}
+  };
+  const visible=()=>{if(!document.hidden)void refresh();};
+  const timer=setInterval(()=>void refresh(),2000);document.addEventListener('visibilitychange',visible);
+  return()=>{stopped=true;clearInterval(timer);document.removeEventListener('visibilitychange',visible);poll.dispose();};
+ });
   reportFailure(()=>(form && 'error' in form ? form.error : '') || deviceError);
 </script>
 <svelte:head><title>Set up your account · Coast</title></svelte:head>

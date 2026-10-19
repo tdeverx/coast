@@ -1,0 +1,415 @@
+{
+  "schemaVersion": 1,
+  "id": "API-HTTP-ERROR-OBS-10",
+  "title": "Preserve trusted request errors in two shared API delivery owners",
+  "status": "implemented_actual_handler_common_and_signed_in_normal_body_verified",
+  "implementationApplied": true,
+  "recordedAt": "2026-10-18T04:36:32.394140+00:00",
+  "scope": "Additional observation outside the immutable94baseline. Exact two-file shared API delivery repair, no schema/dependency/provider/policy/cache change. Four controlled negative requests on one actual saved enabled owner/retained nonmedia work via direct exported handlers and synthetic RequestEvent/locals.",
+  "sharedOwners": {
+    "src/lib/server/api/index.server.ts": "Catch in shared GET/POST/PATCH/DELETE dispatcher, used by src/routes/api/v1/[...path]/+server.ts.",
+    "src/routes/api/v1/media/[id]/insights/+server.ts": "Dedicated insights GET catch wrapping titleInsights; initial route auth/parameter/source/page validation outside try unchanged."
+  },
+  "consumers": [
+    "Every central first-party API dispatch already passing through handler; actual accepted cases are music library page/filter/source validation only.",
+    "Dedicated media titleInsights GET, used by shared detail overview/community/reviews/credits insights resource paths.",
+    "Shared requestApi reads JSON.error and status; it can now display curated service errors instead of generic outage errors on these caught Kit paths."
+  ],
+  "cause": "Expected Svelte HttpError from existing services missed AppError/DomainError-only catches and reached generic503 fallbacks. The fix adds installed isHttpError class checking after prior expected-domain branches, returning only body.message with existing request_failed code and original trusted status.",
+  "preserved": [
+    "Central cancelled-abort499 first; ValiError400; AppError/DomainError shape/code/status.",
+    "ProviderActionError mapping; distinct ProviderHttpError upstream401/403\u2192502,429\u2192429 plusRetry-After, unknown\u2192redacted503/logging.",
+    "Dedicated insights AppError handling, source-specific503 fallback, route auth/parameter/source/page validation ordering.",
+    "No broad helper/framework, duck-typed status trust, source validation rewrite, cache/freshness or provider admission change."
+  ],
+  "actual": {
+    "receipt": "evidence/api-http-errors-actual-v3.json",
+    "receiptSha256": "60f793377d3bc55070c4ba51d979c1fb9556d694fc24021a4ede1292b39a16cb",
+    "probe": "probes/api-http-errors-actual.ts",
+    "probeSha256": "a942cf486440193397e6bc70154b809eb2b66a6300afc1c2294e03e3ed6c1c58",
+    "cases": [
+      {
+        "label": "music_invalid_page",
+        "beforeStatus": 503,
+        "candidateStatus": 400,
+        "curatedMessageAsserted": true,
+        "baselineBodyExact": true
+      },
+      {
+        "label": "music_invalid_filter",
+        "beforeStatus": 503,
+        "candidateStatus": 400,
+        "curatedMessageAsserted": true,
+        "baselineBodyExact": true
+      },
+      {
+        "label": "music_unavailable_source",
+        "beforeStatus": 503,
+        "candidateStatus": 404,
+        "curatedMessageAsserted": true,
+        "baselineBodyExact": true
+      },
+      {
+        "label": "insights_actual_nonmedia",
+        "beforeStatus": 503,
+        "candidateStatus": 404,
+        "curatedMessageAsserted": true,
+        "baselineBodyExact": true
+      }
+    ],
+    "actualCompletePairs": 4,
+    "actualOwnersSelected": 1,
+    "allCandidateCodes": "request_failed",
+    "sameBackend": true,
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB"
+    },
+    "dmlCounters": {
+      "inserted": "0",
+      "updated": "0",
+      "deleted": "0"
+    },
+    "rolledBack": true,
+    "poolClosed": true,
+    "externalCalls": 0,
+    "credentialKeyCreated": false,
+    "sourceUnchangedAtExecution": true,
+    "limits": [
+      "One real saved music/screen-enabled owner and one actual retained nonmedia/nonconnection work; invalid requests are controlled, not a natural reported incident.",
+      "Direct exported GET handlers with synthetic Request/locals, not normal HTTP/session-cookie/CSRF/hooks/token/browser acceptance.",
+      "Unavailable-source case calls existing listProviders SELECT-all: ciphertext-bearing provider/connection rows are private RAM only, never decrypted/retained; other cases fail before adapter setup.",
+      "No configured successful TMDB/Trakt/provider transport/cache or performance/latency/CPU/heap/wire-size acceptance.",
+      "READONLY mode plus zero transaction DML counters, not full table/physical restoration or concurrency proof. Baseline generic failures may emit private isolated diagnostics; no normal diagnostic or key read/write."
+    ]
+  },
+  "authoredControls": {
+    "source": "candidates/api-http-errors/classification-controls.installed-v2.test.ts",
+    "receipt": "candidates/api-http-errors/classification-v2.stderr.txt",
+    "tests": 3,
+    "assertions": 52,
+    "status": "passed",
+    "scope": "Exact historical catch fragments and real installed classes; diagnostic/classification boundaries controlled. Not actual-data/provider/HTTP evidence."
+  },
+  "maintenance": {
+    "test": "tests/api-http-errors.test.ts",
+    "sha256": "fdd088d65c3da8f7b34691b7f1bedb04fd15488fd92f4d91b8363349abc4ba69",
+    "purpose": "Compact portable current-catch class-trust/redaction/provider/cancellation drift control; separate later parent-owned tests and common gates are not inferred from historical3/52receipt.",
+    "independentReview": "Current-source test read-only reviewed, no material blocker; no repeated execution by this agent.",
+    "verification": {
+      "tests": 1,
+      "assertions": 61,
+      "strictFocusedTypesPassed": true,
+      "testLog": "evidence/implementation-api-http-errors-maintained-tests.txt",
+      "typesLog": "evidence/implementation-api-http-errors-maintained-types.txt",
+      "boundary": "Current real catch-body classification with installed classes; authored behavior controls, not actual data/performance/HTTP traffic."
+    }
+  },
+  "retainedFailures": [
+    {
+      "stage": "initial_parse",
+      "acceptedHandlerPairs": 0,
+      "receipt": "candidates/api-http-errors/parse-controls-20261018.json",
+      "diagnosis": "One missing event-object closing brace in original private probe; original bytes and parser output retained."
+    },
+    {
+      "stage": "initial_controls_module_resolution",
+      "acceptedHandlerPairs": 0,
+      "executedAssertions": 0,
+      "receipt": "candidates/api-http-errors/classification-only-20261018.json",
+      "diagnosis": "Private/tmp bare Kit resolution failed before tests; v2 uses actual installed package entrypoints only."
+    },
+    {
+      "stage": "actual_v2_import_relocation",
+      "acceptedHandlerPairs": 0,
+      "receipt": "evidence/api-http-errors-actual-v2-failed.json",
+      "diagnosis": "Three identical dynamic presence imports: first replaceAll removed all literals, later duplicate scan item failed literal guard. Transaction rolled back/pool closed. v3 iterates unique scanned specifiers, retaining all exact resolve/literal guards."
+    }
+  ],
+  "harnessCorrections": [
+    "Syntaxv2 adds exactly one event literal brace; controls resolve only two existing installed package entrypoints.",
+    "Importv3 changes only iteration to unique scanImports specifiers; replaceAll still relocates all occurrences and literal/resolve guards stay. Offline4variant relocation passed before separately authorized successful actual run.",
+    "Original unexecuted candidate/manifest/probes and failed receipts remain byte-exact; no actual retry occurred without new parent review+lease."
+  ],
+  "inventory": {
+    "routeFilesReviewed": 7,
+    "concreteSwallowingOwners": [
+      "central handler",
+      "dedicated insights GET"
+    ],
+    "rethrowPreserving": [
+      "media statistics GET",
+      "people credits GET",
+      "diagnostics GET/POST"
+    ],
+    "noConcreteCurrentKitServicePathEstablished": [
+      "share handler",
+      "public token handler"
+    ],
+    "existingHelper": "No existing shared JSON mapper preserving expected Kit class. Hooks isHttpError is logging/rethrow, providerApiError maps a distinct upstream class. No blanket migration made."
+  },
+  "adoption": {
+    "at": "2026-10-18T04:33:37.186910+00:00",
+    "status": "exact_reviewed_two_owner_patch_applied_common_and_normal_acceptance_pending",
+    "patchSha256": "8bd726ad65c80ea97e8cc474b700eb1325d6cb087d2ddc1956a54851f959f581",
+    "sourceBefore": {
+      "src/lib/server/api/index.server.ts": "d2954296497e69c6cf13549072e903fb13e816fdae36cbff5bfbdf538908b0d8",
+      "src/routes/api/v1/media/[id]/insights/+server.ts": "a3c28326b5fedc2b8603b2192be888cba681823fa567bea275ae35704b90a077"
+    },
+    "sourceAfter": {
+      "src/lib/server/api/index.server.ts": "b57522f429b0ccd5a6a047f8038880e3626d4b868479845c3bfb180c049dda3c",
+      "src/routes/api/v1/media/[id]/insights/+server.ts": "bade050c95206db61a2a53da8e1debd9563760046b874fd824ccda6575805098"
+    },
+    "actualProofReceiptSha256": "60f793377d3bc55070c4ba51d979c1fb9556d694fc24021a4ede1292b39a16cb",
+    "actualPairs": 4,
+    "normalDatabaseSchemaChanged": false,
+    "dependencyAdded": false
+  },
+  "currentAcceptance": {
+    "commonGates": {
+      "receipt": "evidence/implementation-20261018-api-http-error-gates.json",
+      "unit": {
+        "pass": 802,
+        "guardedSkip": 713,
+        "fail": 0,
+        "assertions": 33907,
+        "tests": 1515,
+        "files": 282
+      },
+      "checkErrors": 0,
+      "checkWarnings": 0,
+      "buildInventoriesStylePassed": true
+    },
+    "normalHttpBrowser": {
+      "receipt": "evidence/implementation-api-http-errors-normal.json",
+      "signedIn": true,
+      "actualResponseBodyCases": 3,
+      "allExpected": true,
+      "sourceUnchanged": true,
+      "finalTasks": 30,
+      "newConsoleWarnOrError": 0,
+      "statusNetworkCaptured": false,
+      "boundary": "Real normal authentication/hooks and GET response bodies; exact HTTP400/404 status is accepted separately through four actual exported-handler comparisons, not an invented browser network capture."
+    },
+    "productionDeploymentPerformed": false
+  },
+  "sourcePins": {
+    "src/lib/server/api/index.server.ts": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623",
+    "src/routes/api/v1/media/[id]/insights/+server.ts": "bade050c95206db61a2a53da8e1debd9563760046b874fd824ccda6575805098",
+    "src/lib/catalogue/details.server.ts": "dc3ab769b44ef0108824d684de2c5e0b9a468717a95666fedfe14c963bd8b4cf",
+    "src/lib/music/detail.server.ts": "9742facc42419f7190eae266fcf96a22f0bc76adf8012c9f90b28d1ea54ad0b1",
+    "src/lib/server/queries/music.ts": "76d9677ffcf5d80f8766f48270c66c729a396ac2efd1ef375fc3313109cc4305",
+    "src/lib/server/queries/library-content.ts": "b678862173375262bf42ad9d092aa1551780305a2242eac49c55cb6e16c3652a",
+    "src/lib/providers/instances.server.ts": "5d293e24f3480c30f58b4e0ece008c24d3b2ed0f933fcc9051c831ad22a27f58",
+    "src/lib/server/api/media.server.ts": "494d5e177de0d62c4b3d500f4de46b36c603b8ed78f2b13af3773995317b8d49",
+    "src/lib/application/work-details.server.ts": "d29507c739ac1b816d78928413c7536a869a5459fc4d0ca70adccb4e773a8e51",
+    "src/lib/server/security/errors.ts": "aa2d00bf5ada08637ed2689972de0623528eb03991454d02544bfdcd94181881",
+    "src/lib/core/errors.ts": "d9d9841f0ae4af41c00e0529c2871a12ebbdaff379cea48e1e424a10d999912a",
+    "src/lib/server/security/provider-api-error.ts": "75d1f1852ed02b22ab44875d22f5434535b14a05afc0add6db36dbb3da8cf354",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/auth/index.ts": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d",
+    "node_modules/@sveltejs/kit/src/exports/index.js": "ebada8fb940a7ebf75abfef7564150ad4b7f7c799ce8b50bb23eeba439034a9f",
+    "node_modules/@sveltejs/kit/src/exports/internal/index.js": "4929fe0fe4c24e6f6b049cf4122693dd4e4c3d7ee5474fd48161266f1a288bb7",
+    "node_modules/drizzle-orm/bun-sql/session.js": "4dc36d83dad472b55852da2ff08c20147c523415e5c5e547a3d59042667ee1ae",
+    "tests/api-http-errors.test.ts": "fdd088d65c3da8f7b34691b7f1bedb04fd15488fd92f4d91b8363349abc4ba69"
+  },
+  "atExecutionSourcePins": {
+    "src/lib/server/api/index.server.ts": "d2954296497e69c6cf13549072e903fb13e816fdae36cbff5bfbdf538908b0d8",
+    "src/routes/api/v1/media/[id]/insights/+server.ts": "a3c28326b5fedc2b8603b2192be888cba681823fa567bea275ae35704b90a077",
+    "src/lib/catalogue/details.server.ts": "dc3ab769b44ef0108824d684de2c5e0b9a468717a95666fedfe14c963bd8b4cf",
+    "src/lib/music/detail.server.ts": "9742facc42419f7190eae266fcf96a22f0bc76adf8012c9f90b28d1ea54ad0b1",
+    "src/lib/server/queries/music.ts": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+    "src/lib/server/queries/library-content.ts": "08e6fb735feeb7a805672ca27cc7cc83005a046632f1e3b1d9e75f125b07b54c",
+    "src/lib/providers/instances.server.ts": "5d293e24f3480c30f58b4e0ece008c24d3b2ed0f933fcc9051c831ad22a27f58",
+    "src/lib/server/api/media.server.ts": "494d5e177de0d62c4b3d500f4de46b36c603b8ed78f2b13af3773995317b8d49",
+    "src/lib/application/work-details.server.ts": "d29507c739ac1b816d78928413c7536a869a5459fc4d0ca70adccb4e773a8e51",
+    "src/lib/server/security/errors.ts": "aa2d00bf5ada08637ed2689972de0623528eb03991454d02544bfdcd94181881",
+    "src/lib/core/errors.ts": "d9d9841f0ae4af41c00e0529c2871a12ebbdaff379cea48e1e424a10d999912a",
+    "src/lib/server/security/provider-api-error.ts": "75d1f1852ed02b22ab44875d22f5434535b14a05afc0add6db36dbb3da8cf354",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "src/lib/server/auth/index.ts": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf",
+    "node_modules/@sveltejs/kit/src/exports/index.js": "ebada8fb940a7ebf75abfef7564150ad4b7f7c799ce8b50bb23eeba439034a9f",
+    "node_modules/@sveltejs/kit/src/exports/internal/index.js": "4929fe0fe4c24e6f6b049cf4122693dd4e4c3d7ee5474fd48161266f1a288bb7",
+    "node_modules/drizzle-orm/bun-sql/session.js": "4dc36d83dad472b55852da2ff08c20147c523415e5c5e547a3d59042667ee1ae"
+  },
+  "atExecutionVariants": {
+    "central": {
+      "path": "src/lib/server/api/index.server.ts",
+      "before": "d2954296497e69c6cf13549072e903fb13e816fdae36cbff5bfbdf538908b0d8",
+      "candidate": "b57522f429b0ccd5a6a047f8038880e3626d4b868479845c3bfb180c049dda3c"
+    },
+    "insights": {
+      "path": "src/routes/api/v1/media/[id]/insights/+server.ts",
+      "before": "a3c28326b5fedc2b8603b2192be888cba681823fa567bea275ae35704b90a077",
+      "candidate": "bade050c95206db61a2a53da8e1debd9563760046b874fd824ccda6575805098"
+    }
+  },
+  "sourcePinBoundary": "20 explicit owner/read-chain/security/installed-runtime files, not every transitive application module. Current two API source pins reflect adoption; immutable executed manifest retains preadoption baseline pins/variant bytes.",
+  "artifactPins": {
+    "candidates/api-http-errors/api-http-errors-actual.import-v3.ts": "a942cf486440193397e6bc70154b809eb2b66a6300afc1c2294e03e3ed6c1c58",
+    "candidates/api-http-errors/api-http-errors-actual.syntax-v2.ts": "49c3c69cb267cd9089c8fc3c4b048bf0416b276902f96fa2e63d00a213aec2c9",
+    "candidates/api-http-errors/api-http-errors-actual.ts": "a458d7bcd5fa360e65ac4a0eacebf93d2e0a133bbdf2c81c31f422ab127cd142",
+    "candidates/api-http-errors/candidate.json": "722403a72801485d9f1a8f746bb785ef54dad7c2cb363269e804d264c0bf0721",
+    "candidates/api-http-errors/central.before.ts.txt": "d2954296497e69c6cf13549072e903fb13e816fdae36cbff5bfbdf538908b0d8",
+    "candidates/api-http-errors/central.candidate.ts.txt": "b57522f429b0ccd5a6a047f8038880e3626d4b868479845c3bfb180c049dda3c",
+    "candidates/api-http-errors/classification-controls.installed-v2.test.ts": "eb0c6991d2832a9c8850162d068bb5d57b2ac8aab7bcc9c4b0cc85cee7190b95",
+    "candidates/api-http-errors/classification-controls.test.ts": "d88013f237caa14018c6d87e6fab015c9581862a25592059e5509cf0468bc056",
+    "candidates/api-http-errors/classification-only-20261018.json": "fe6ad8420ce7182420e26a6e61b191cb206328a8c39f9ac334dbf6eeb9bfeb18",
+    "candidates/api-http-errors/classification-only-20261018.stderr.txt": "9ba9874e1c4aaef51232d051dcc3de7ef9fc4756907ab80c2ee286fc917addd4",
+    "candidates/api-http-errors/classification-only-20261018.stdout.txt": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+    "candidates/api-http-errors/classification-v2.stderr.txt": "8669ccf4ffd683798d2f6ff4890da1589851b08698506a2b8d33a18819cae604",
+    "candidates/api-http-errors/classification-v2.stdout.txt": "93e17c6d85569f385aa7b45405c874ee0eea42e855761a831066dd5dcffcdf89",
+    "candidates/api-http-errors/controls-resolution-v2.patch": "8b5d7c669e895250e99bb11f7f1fcc80fbbd6310f92f7baaad96f57ef596950b",
+    "candidates/api-http-errors/harness-corrections-v2.json": "88899605d773e5fb57a76208973ace7c4a00e428657c96ea60b3e9173660ff1a",
+    "candidates/api-http-errors/import-dedup-v3.json": "81a6194dde914682c23c1877fc926b0e35dec110b38382cbc78d2d4c94cf664f",
+    "candidates/api-http-errors/import-dedup-v3.patch": "d7793acde0552d3b25fb3646f2aa550cc62b59123500380131675863dc88a154",
+    "candidates/api-http-errors/import-relocation-v3-offline.json": "6283b14ecc2b261d9616df2fcda79d9377ee441ce051aec96397b3a1bdc6a12e",
+    "candidates/api-http-errors/insights.before.ts.txt": "a3c28326b5fedc2b8603b2192be888cba681823fa567bea275ae35704b90a077",
+    "candidates/api-http-errors/insights.candidate.ts.txt": "bade050c95206db61a2a53da8e1debd9563760046b874fd824ccda6575805098",
+    "candidates/api-http-errors/parse-20261018.stderr.txt": "9c7f131232f7f3e0dfea97e8e6f041e6fea723f04261a42bab6bf1c35bbef699",
+    "candidates/api-http-errors/parse-20261018.stdout.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/api-http-errors/parse-controls-20261018.json": "502fe28349c901b3536739a676116010c97d2a68216724764b0aa0c9d34bdd16",
+    "candidates/api-http-errors/parse-v2.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/api-http-errors/parse-v2.stdout.txt": "64a27b96baf97282eb7fabaca9cfe2abc9db0bc6135d57a6d477ba7d31143a40",
+    "candidates/api-http-errors/plan.md": "88238ae66bc00681ba11c810279696e140927340569309c0b156f638287624ec",
+    "candidates/api-http-errors/probe-syntax-v2.patch": "becbd4ccad74ae3a64bc65538cf62771b2aedaf2d8d401121febfa6b6af556d9",
+    "candidates/api-http-errors/source-pins.json": "7cfdd1e64246037cc9a04f72a8d43fd8b03e6edab4790f58026c67c69cc763e6",
+    "candidates/api-http-errors/trusted-http-error.patch": "8bd726ad65c80ea97e8cc474b700eb1325d6cb087d2ddc1956a54851f959f581",
+    "candidates/api-http-errors/verification-plan.json": "062d72ac9f294c85c7af9b138cd274a42f0fd457ee905187549dd8ddf2f5bb22",
+    "evidence/api-http-errors-actual-v2-failed.json": "e563709c8964546b97892c5d7ac5721cb7508a54a19eb516264abd7791e43c9b",
+    "evidence/api-http-errors-actual-v3.json": "60f793377d3bc55070c4ba51d979c1fb9556d694fc24021a4ede1292b39a16cb",
+    "evidence/api-http-errors-adoption.json": "2cd4871fdbc20a62d91c8752a03d063e70385523138761ba71ce46b36e780d07",
+    "probes/api-http-errors-actual.ts": "a942cf486440193397e6bc70154b809eb2b66a6300afc1c2294e03e3ed6c1c58",
+    "evidence/implementation-api-http-errors-normal.json": "65cf2fc42b2131383f8e7c261454b2ec1efbe36c3a0febcd0630e324ffb6b151",
+    "evidence/implementation-api-http-errors-normal-response.png": "dd426b64e6d813ad9860330ae468a46708688975da61413018fe68731ddeee65",
+    "evidence/implementation-api-http-errors-normal-tasks.png": "eecdae12965f1c53252f114dcac7c6060d7163eb05451a85ccb2bc3ef73655ff",
+    "evidence/implementation-20261018-api-http-error-gates.json": "19db5cb4e112f2735aad36f075437fbb46b31d4e5bfb3a4b1e9acd919c9bb9ff",
+    "evidence/implementation-20261018-api-http-error-source-inventory.json": "047eb0600e5602232d294e1aa2e886d5e4c2c93c825c5b7430ad82344ae8d50c",
+    "evidence/implementation-api-http-errors-maintained-tests.txt": "c7576acba72900f0a7169fe0486321cb78c9a97ca8f2990d21137ecf0bf83fb9",
+    "evidence/implementation-api-http-errors-maintained-types.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "evidence/implementation-api-http-errors-maintained-tsconfig.json": "8ae0a5168448336956c38705c5c23a1ea25d85c4282d157d6fb91a3134f2dd71",
+    "evidence/implementation-20261018-api-http-error-unit.log": "c98aa81a30ebf477e64ff77aca6ea5120b4247bd40ed8fc87f24b011676c76f3",
+    "evidence/implementation-20261018-api-http-error-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "evidence/implementation-20261018-api-http-error-build.log": "cb47a7cbd9c8f3b415cd50ce7f65d4602ae3606b17b9afcc3aca9d9f797ec9bd",
+    "evidence/implementation-20261018-api-http-error-code-inventory.log": "c3cecdd87cada72421cbb61844240292b0d2103daa0a85051bf24d01da57730e",
+    "evidence/implementation-20261018-api-http-error-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "evidence/implementation-20261018-api-http-error-code-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c"
+  },
+  "replayBoundary": "Executed probe/controls retain original private paths and execution-time baseline pins as immutable historical evidence. Current adoption intentionally makes old source guards fail. Any replay requires reviewed staging/relocation and explicit baseline/current pin provenance; do not weaken guards or treat copied historical controls as portable current tests.",
+  "remaining": [
+    "Current common gates and three signed-in normal body checks pass. Token/CSRF/cancellation transport, natural failures and other actual error cohorts remain outside this narrow proof.",
+    "Other route protocols with no concrete current Kit service path were not converted; no app-wide uniform-envelope claim.",
+    "Natural failures, other expected statuses/messages, additional positive/denied-feature/user/provider cohorts and token/HTTP/cancellation transport remain outside actual proof."
+  ],
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/server/api/index.server.ts": "b57522f429b0ccd5a6a047f8038880e3626d4b868479845c3bfb180c049dda3c",
+      "src/lib/server/queries/music.ts": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253",
+      "src/lib/server/queries/library-content.ts": "08e6fb735feeb7a805672ca27cc7cc83005a046632f1e3b1d9e75f125b07b54c"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "finalBoundedWindowSourceFollowThrough": {
+    "at": "2026-10-18T17:42:06.448267+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/server/queries/music.ts": "9fa59c0795423d62fae52f133f99a78366265c53c2548ad708475dadc9a99ae1"
+    },
+    "boundary": "Later scope-ledger/SSR engagement and Music error admission corrections have separate exact/current source controls. Historical receipts stay immutable; this map is current identity, not transferred runtime/resource acceptance."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/api/index.server.ts",
+          "before": "1d631186ce2546acfc1e9f8aa1458932c2bed4f1568e491d1c8679da33afe5f2",
+          "after": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623"
+        },
+        {
+          "owner": "src/lib/server/auth/index.ts",
+          "before": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf",
+          "after": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    }
+  ]
+}

@@ -22,6 +22,7 @@ import { createProviderTransport } from '$lib/server/security/provider-fetch';
 import { decryptCredential } from '$lib/server/security/credentials';
 import { TmdbAdapter } from '$lib/providers/tmdb/adapter.server';
 import type { DiscoverKind, Metadata } from '$lib/providers/contracts';
+import type { DiscoverySection } from '$lib/discovery';
 
 export async function getTmdb(language = 'en-US', region = 'GB', instanceId?:string) {
   const [instance] = await getDb()
@@ -219,7 +220,7 @@ export async function ingestMetadata(
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtextextended(${`metadata:${mediaId}`},0))`
     );
-    if(metadata.tasteFeatures!==undefined)await tx.insert(workFeatures).values({workId:mediaId,provider:metadata.provider,features:metadata.tasteFeatures}).onConflictDoUpdate({target:[workFeatures.workId,workFeatures.provider],set:{features:metadata.tasteFeatures,updatedAt:new Date()}});
+    if(metadata.tasteFeatures!==undefined)await tx.insert(workFeatures).values({workId:mediaId,provider:metadata.provider,features:metadata.tasteFeatures}).onConflictDoUpdate({target:[workFeatures.workId,workFeatures.provider],set:{features:sql`excluded.features`,updatedAt:new Date()}});
     for (const [provider, externalId] of Object.entries(ids))
       await tx
         .insert(externalIds)
@@ -492,7 +493,7 @@ export async function searchMedia(userId: string, query: string) {
   const items = await mediaViews(userId, { query: needle, availableFirst: true, limit: 101 });
   return { items: items.slice(0, 100), providerUnavailable, truncated: items.length > 100 };
 }
-export async function discoverMedia(userId: string | null) {
+export async function discoverMedia(userId: string | null, section?: DiscoverySection) {
   if(!(await getFeatureConfig(userId)).features.screen)return {items:[],trending:[],recent:[],configured:true,providerUnavailable:false};
   const tmdb = await getTmdb();
   const adapter = tmdb || (userId ? await seerrDiscovery(userId) : null);
@@ -503,10 +504,10 @@ export async function discoverMedia(userId: string | null) {
     await Promise.all(
       (
         [
-          [trending, () => adapter.trending()],
-          [recent, () => (tmdb ? tmdb.recent('movie') : Promise.resolve([]))],
+          ['trending', trending, () => adapter.trending()],
+          ['recent', recent, () => (tmdb ? tmdb.recent('movie') : Promise.resolve([]))],
         ] as const
-      ).map(async ([bucket, fetcher]) => {
+      ).filter(([name]) => !section || name === section).map(async ([, bucket, fetcher]) => {
         try {
           const saved = await mapConcurrent(await fetcher(), 4, (item) => ingestMetadata(item));
           bucket.push(...saved.map((item) => item.id));

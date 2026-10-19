@@ -1,0 +1,200 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "baselineCommit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "scope": "playback-readers-implementation",
+  "implementationApplied": true,
+  "committed": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "normalOrDeployedDatabaseMutations": false,
+  "reportRef": "implementation-playback.md",
+  "verification": {
+    "runtime": "Bun1.4.3",
+    "focusedFiles": 12,
+    "passed": 62,
+    "failed": 0,
+    "assertions": 358,
+    "outputRef": "evidence/implementation-playback-focused-tests.txt",
+    "diffWhitespaceCheck": "passed",
+    "wholeProjectChecks": "root owns; not run concurrently by this agent",
+    "actualDataAfterChange": "Root automatic linked CBR render/navigation/minimize/resume/close passed; later sampler change live acceptance pending",
+    "boundary": "Installed library/native decoder and deterministic lifecycle/queue regressions; no actual-user EPUB or live-provider performance claim",
+    "supplementalChecks": {
+      "routeTests": {
+        "passed": 9,
+        "failed": 0,
+        "assertions": 23
+      },
+      "cropHeroReportTests": {
+        "passed": 15,
+        "failed": 0,
+        "assertions": 89,
+        "files": 5
+      },
+      "evidenceRef": "evidence/implementation-playback-supplemental.json"
+    }
+  },
+  "changes": [
+    {
+      "findingId": "LIVE-02",
+      "state": "implemented_actual_linked_cbr_acceptance_passed",
+      "sharedOwner": "openReading exact command projection and unchanged shared strict prepare schema",
+      "files": [
+        "src/lib/reading/client.svelte.ts",
+        "src/lib/reading/model.ts",
+        "src/lib/reading/sessions.server.ts"
+      ],
+      "verification": [
+        "Real serializer rich linked DTO passes actual strict schema",
+        "Unknown command fields remain rejected",
+        "Provider response format retained",
+        "Root actual automatic linked CBR decoded/navigated/minimized/resumed/closed without schema error"
+      ],
+      "gaps": [
+        "One actual CBR consumer; other formats/consumers and raw payload/latency measurements not certified"
+      ]
+    },
+    {
+      "findingId": "PR-01",
+      "state": "implemented_library_regression_verified_actual_epub_pending",
+      "sharedOwner": "Per-book EPUB asset/CSS URL owner installed at library replacements boundary",
+      "files": [
+        "src/lib/reading/reader/epub-resources.ts",
+        "src/lib/reading/reader/epub.ts"
+      ],
+      "verification": [
+        "Actual installed Book.open integration",
+        "Five asset/CSS cycles revoke real Blob URLs",
+        "Independent book unaffected",
+        "Late asset and CSS allocations immediately revoked after close"
+      ],
+      "gaps": [
+        "No actual private EPUB/browser RSS/worker plateau certification",
+        "Pinned library internal seam requires regression on dependency changes"
+      ]
+    },
+    {
+      "findingId": "PR-03",
+      "state": "implemented_one_flight_and_abort_verified",
+      "sharedOwner": "Reader presentation AbortController and heartbeat admission",
+      "files": [
+        "src/lib/reading/Reader.svelte"
+      ],
+      "verification": [
+        "Twenty held ticks yield one request",
+        "Presentation cleanup aborts request",
+        "Late terminal response cannot close replacement"
+      ],
+      "gaps": [
+        "Common request deadline/write acknowledgement work remains PR-02",
+        "Actual long-lived visible-reader trace pending"
+      ]
+    },
+    {
+      "findingId": "PR-04",
+      "state": "partially_implemented_request_signal_chain",
+      "sharedOwner": "Existing API/SSR read signal through music/trailer service, adapter and provider queue",
+      "files": [
+        "src/lib/server/api/providers.server.ts",
+        "src/lib/server/api/media.server.ts",
+        "src/lib/server/api/index.server.ts",
+        "src/lib/music/service.server.ts",
+        "src/lib/music/artwork.server.ts",
+        "src/lib/playback/service.server.ts",
+        "src/lib/providers/jellyfin/adapter.server.ts",
+        "src/lib/server/queries/library-content.ts",
+        "src/lib/server/queries/media-rows.ts",
+        "src/lib/server/queries/music.ts",
+        "src/lib/server/queries/search.ts",
+        "src/routes/library/+page.server.ts",
+        "src/routes/music/+page.server.ts",
+        "src/routes/music/[connection]/[id]/+page.server.ts",
+        "src/routes/search/+page.server.ts"
+      ],
+      "verification": [
+        "Five canceled route/service paths remove actual provider queue waiters",
+        "Zero provider executions/persistence observations/artwork downloads",
+        "Existing music filter/auth/children tests pass"
+      ],
+      "gaps": [
+        "Shared artwork flight ownership PJ-01",
+        "Shared metadata and matching-reading per-consumer cancellation",
+        "Actual canceled live-provider traces pending",
+        "Already admitted SQL is not made cancelable"
+      ]
+    },
+    {
+      "findingId": "PR-07",
+      "state": "partially_implemented_descriptor_lookup_only",
+      "sharedOwner": "Worker-owned ComicDecoder physical index map",
+      "files": [
+        "src/lib/reading/reader/archive-decoder.ts"
+      ],
+      "verification": [
+        "Existing real RAR/7z/TAR natural-order and reverse/repeated seek tests pass",
+        "Index clears on close"
+      ],
+      "gaps": [
+        "Native rewind/replay complexity unchanged",
+        "Actual-file latency/memory comparison still required"
+      ]
+    },
+    {
+      "findingId": "PR-10",
+      "state": "implemented_narrow_relay_projection_actual_gain_unmeasured",
+      "sharedOwner": "Playback relay provider identity query",
+      "files": [
+        "src/lib/playback/service.server.ts"
+      ],
+      "verification": [
+        "Provider row consumer uses only externalId; authorization/session/account/resource checks retained"
+      ],
+      "gaps": [
+        "Root integration/relay tests pending",
+        "Current snapshots modest; no measured byte/latency gain claimed"
+      ]
+    },
+    {
+      "findingId": "PR-12",
+      "state": "partially_implemented_analysis_lifetime_source_retention_unchanged",
+      "sharedOwner": "Both existing observeVideoCrop consumer lifetimes, retaining the common analysis algorithm",
+      "files": [
+        "src/lib/ui/heroes/playback.svelte.ts",
+        "src/lib/ui/components/PersistentPlayer.svelte"
+      ],
+      "verification": [
+        "Hero hidden/background/paused sampler disposed",
+        "Eight disabled player cases release timers/canvas ownership",
+        "Stale callback cannot reschedule",
+        "Retained source URL, position and reload count unchanged during suspension",
+        "Existing hero/crop/report tests green"
+      ],
+      "gaps": [
+        "Root actual browser acceptance of sampler change pending",
+        "Warm hidden hero source/buffer deliberately retained; full unload policy unchanged",
+        "No actual CPU/RSS savings claimed"
+      ]
+    }
+  ],
+  "deferredFindingIds": [
+    "PR-02",
+    "PR-05",
+    "PR-06",
+    "PR-08",
+    "PR-09",
+    "PR-11",
+    "PR-13",
+    "PR-14"
+  ],
+  "testFilesAddedOrChanged": [
+    "tests/media-lifecycle-client.test.ts",
+    "tests/reading-epub-resources.test.ts",
+    "tests/fixtures/epub-resources.ts",
+    "tests/provider-read-cancellation.test.ts",
+    "tests/fixtures/provider-read-cancellation.ts",
+    "tests/detail-route-errors.test.ts",
+    "tests/video-crop-lifecycle.test.ts",
+    "tests/fixtures/video-crop-lifecycle.ts"
+  ]
+}

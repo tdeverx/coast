@@ -62,7 +62,7 @@
     title: scenario === 'long' ? 'A longer notification title that remains readable on a narrow screen' : 'Your title is ready',
     body: scenario === 'long' ? 'This synthetic notification demonstrates wrapping without using a real account, provider or viewing history.' : 'Available from your connected library.',
     level: scenario === 'normal' ? 'normal' as const : 'persistent' as const,
-    readAt: null, createdAt: new Date().toISOString(),
+    readAt: null, toastHiddenAt: null, createdAt: new Date().toISOString(),
   })));
 
   let FriendsPanel = $state<typeof import('$lib/ui/components/FriendsPanel.svelte').default>();

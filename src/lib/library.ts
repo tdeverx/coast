@@ -1,3 +1,4 @@
+import type { PageWindow } from '$lib/page-window';
 import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
 export type LibrarySurface = 'watch' | 'listen' | 'play' | 'read';
 export type LibraryContent = {
@@ -6,6 +7,7 @@ export type LibraryContent = {
   pages: number;
   total: number;
   failure?: string;
+  range?: PageWindow;
 };
 export const libraryTitles = { watch: 'Watch', listen: 'Listen', play: 'Play', read: 'Read' } as const;
 export function libraryBrowseDefaults(parameters: URLSearchParams, profile = false) {
@@ -54,6 +56,7 @@ export function libraryPath(options: {
   scope?: string;
   genre?: string;
   page?: number;
+  firstPage?: number;
   preview?: boolean;
   personal?: boolean;
 }) {
@@ -66,9 +69,9 @@ export function libraryPath(options: {
 /** URL and API filter vocabulary stay together; sources only manage reactive state. */
 export function libraryBrowsePaths(options: {
   surface: LibrarySurface; collection: boolean; selection: string; kind: string; scope: string;
-  genre: string; relationship: string; source: string; availability: string; username: string; page: number;
+  genre: string; relationship: string; source: string; availability: string; username: string; page: number; firstPage?: number;
 }, preview?: { personal?: boolean }) {
-  const { surface, collection, selection, kind, scope, genre, relationship, source, availability, username, page } = options;
+  const { surface, collection, selection, kind, scope, genre, relationship, source, availability, username, page, firstPage } = options;
   if (preview) return {
     api: libraryPath({ preview: true, surface, selection, scope, personal: preview.personal ?? false }),
     href: surface === 'listen' ? '/music?' + new URLSearchParams({kind:selection,scope}) : '/games?' + new URLSearchParams({state: selection, scope, personal: String(preview.personal ?? false)}),
@@ -76,12 +79,12 @@ export function libraryBrowsePaths(options: {
   if (collection) {
     const parameters = new URLSearchParams({ category: surface === 'watch' ? 'screen' : surface === 'listen' ? 'music' : surface === 'read' ? 'reading' : 'game', level: 'root',
       activity: surface === 'listen' ? 'all' : ['progress','in-progress'].includes(selection) ? 'active' : selection === 'watched' ? 'completed' : selection,
-      kind: surface === 'listen' ? selection : surface === 'play' ? 'all' : kind, relationship, source, availability, ...(username ? { username } : {}), page: String(page) });
+      kind: surface === 'listen' ? selection : surface === 'play' ? 'all' : kind, relationship, source, availability, ...(username ? { username } : {}), page: String(page), ...(firstPage === undefined ? {} : {firstPage:String(firstPage)}) });
     const api = `collection?${parameters}`;
     parameters.set('view', surface);
     parameters.set('collection', 'true');
     return { api, href: `/library?${parameters}` };
   }
-  const href = '/library?' + new URLSearchParams({ view: surface, collection: 'false', tracking: selection, kind: surface === 'listen' ? selection : kind, scope, genre, page: String(page) });
-  return { api: libraryPath({ surface, selection, kind, scope, genre, page }), href };
+  const href = '/library?' + new URLSearchParams({ view: surface, collection: 'false', tracking: selection, kind: surface === 'listen' ? selection : kind, scope, genre, page: String(page), ...(firstPage === undefined ? {} : {firstPage:String(firstPage)}) });
+  return { api: libraryPath({ surface, selection, kind, scope, genre, page, firstPage }), href };
 }

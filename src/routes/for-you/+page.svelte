@@ -1,7 +1,9 @@
 <script lang="ts">
-  let DynamicFeed=$state<typeof import('$lib/recommendations/DynamicFeed.svelte').default>();
-  let dynamicLoading=false;
-  $effect(()=>{if(page.data.capabilities?.personalisation&&!DynamicFeed&&!dynamicLoading){dynamicLoading=true;void import('$lib/recommendations/DynamicFeed.svelte').then(module=>DynamicFeed=module.default).finally(()=>dynamicLoading=false);}});
+  import {onDestroy,untrack} from 'svelte';
+  import {createResource} from '$lib/ui/resource.svelte';
+  import {reportImportFailure} from '$lib/ui/client-context';
+  const dynamicImport=createResource<typeof import('$lib/recommendations/DynamicFeed.svelte').default|undefined>(undefined);
+  const DynamicFeed=$derived(dynamicImport.data);
   import {dynamicKind,type GenreReason} from '$lib/recommendations/model';
   import { page } from '$app/state';
   import Heading from '$lib/ui/components/Heading.svelte';
@@ -11,6 +13,11 @@
   import Button from '$lib/ui/components/Button.svelte';
   let { data } = $props();
   const section = $derived(page.url.searchParams.get('section'));
+  const dynamicWanted=$derived(!!page.data.user&&page.data.capabilities?.personalisation&&!section);
+  function loadDynamic(){if(dynamicWanted&&!dynamicImport.busy)return dynamicImport.load(async()=> (await import('$lib/recommendations/DynamicFeed.svelte')).default);}
+  $effect(()=>{const viewer=page.data.user?.id;if(!viewer||!dynamicWanted)return;untrack(()=>{if(!dynamicImport.data)void loadDynamic();});return()=>dynamicImport.cancel();});
+  onDestroy(()=>dynamicImport.dispose());
+  reportImportFailure(()=>dynamicWanted&&dynamicImport.error?'Recommendations could not load. Reload the page to try again.':'');
 </script>
 
 <svelte:head><title>For You · Coast</title></svelte:head>

@@ -1,0 +1,657 @@
+{
+  "schemaVersion": 1,
+  "id": "PLAN-06",
+  "status": "partially_implemented",
+  "title": "Materialize Collection once inside the shared missing-demand statement",
+  "sharedOwner": "src/lib/collection/demand.server.ts:14",
+  "sourcePins": {
+    "src/lib/collection/demand.server.ts": "d4184856a41af3d287c0af8ab1f467f44e31cfef84ab195043034603b5615c1b",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/server/queries/pagination.ts": "06421c9a2324fca85c513f98d7fd0bd8db4233af422335b46bb6955d9743bd14"
+  },
+  "baselineSourceSha256": "f749b05b32b2d0313df8592220919e5400ec1763661f0472e6fa1ae42eccd596",
+  "verifiedCandidateSourceSha256": "d4184856a41af3d287c0af8ab1f467f44e31cfef84ab195043034603b5615c1b",
+  "scope": "Add one local demand_collection AS MATERIALIZED (SELECT * FROM collection), then read it in the original candidates/assessment join. No count/detail split or shared Collection owner change.",
+  "consumers": [
+    "Library personal missing-demand SSR",
+    "Admin demand SSR",
+    "Authenticated GET missing API",
+    "Existing admin-authorized GET admin/demand API"
+  ],
+  "preservedContracts": [
+    "exact original owner/source correlation and statement snapshot",
+    "active/consent filtering",
+    "collection rules and reasons, assessments and policy/privacy",
+    "next/planned rules, release/availability/category filters",
+    "one preferred row per next_id and existing ties",
+    "source and request arrays including their order",
+    "outer user and inner item totals/page/clamps",
+    "immediate fresh reads; no persistent cache"
+  ],
+  "actualVerification": {
+    "totalCompleteDtoPairs": 76,
+    "defaultPairs": 1,
+    "variantPairs": 69,
+    "representativeWorkPairs": 6,
+    "additionalAlternatingDefaultPairs": 4,
+    "allEqual": true,
+    "actualOwners": 4,
+    "defaultMissingTotal": 197,
+    "defaultReturnedDetails": 115,
+    "actualConnections": 9,
+    "fabricatedRows": false,
+    "databaseWrites": false,
+    "normalDatabaseTouched": false,
+    "externalFetches": 0,
+    "transaction": "Explicit verified repeatable-read READ ONLY,30s statement/5s lock budgets, existing Collection jit=off/recursive_worktable_factor=0.01",
+    "poolsClosed": true,
+    "proofSourceUnchanged": true,
+    "probeProgress": "Aggregate checkpoint after each case/plan/timing pair"
+  },
+  "defaultPlan": {
+    "before": {
+      "executionMs": 10036.285,
+      "sharedHits": 2387723,
+      "sharedReads": 129828,
+      "tempReads": 2003226,
+      "tempWritten": 32097,
+      "largeMaterializations": [
+        {
+          "Node Type": "Materialize",
+          "Actual Rows": 2,
+          "Actual Loops": 1594,
+          "Shared Hit Blocks": 2,
+          "Shared Read Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        },
+        {
+          "Node Type": "Materialize",
+          "Actual Rows": 1,
+          "Actual Loops": 1591,
+          "Shared Hit Blocks": 34,
+          "Shared Read Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        },
+        {
+          "Node Type": "Materialize",
+          "Actual Rows": 4,
+          "Actual Loops": 88068,
+          "Shared Hit Blocks": 1,
+          "Shared Read Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        },
+        {
+          "Node Type": "Materialize",
+          "Actual Rows": 8614,
+          "Actual Loops": 7062,
+          "Shared Hit Blocks": 0,
+          "Shared Read Blocks": 0,
+          "Temp Read Blocks": 1950056,
+          "Temp Written Blocks": 2241
+        }
+      ],
+      "estimatedJoinFilterDiscardedPairs": 61435906
+    },
+    "candidate": {
+      "executionMs": 5112.473,
+      "sharedHits": 2351522,
+      "sharedReads": 133234,
+      "tempReads": 55900,
+      "tempWritten": 33233,
+      "largeMaterializations": [
+        {
+          "Node Type": "Materialize",
+          "Actual Rows": 2,
+          "Actual Loops": 1594,
+          "Shared Hit Blocks": 2,
+          "Shared Read Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        },
+        {
+          "Node Type": "Materialize",
+          "Actual Rows": 1,
+          "Actual Loops": 1591,
+          "Shared Hit Blocks": 34,
+          "Shared Read Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        },
+        {
+          "Node Type": "Materialize",
+          "Actual Rows": 4,
+          "Actual Loops": 88068,
+          "Shared Hit Blocks": 1,
+          "Shared Read Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0
+        }
+      ],
+      "estimatedJoinFilterDiscardedPairs": 601130
+    },
+    "counterBoundary": "Whole-plan buffer/temp counters are taken from root nodes, never summed through nested nodes. Shared Read Blocks are PostgreSQL reads, not proven physical disk I/O. totalRowsRemovedByJoinFilters is a derived estimate using rounded per-loop counts across nodes, not unique exact pairs."
+  },
+  "defaultTimings": {
+    "pairs": 4,
+    "beforeMs": [
+      6638.528583000007,
+      7140.913499999995,
+      6479.19320899999,
+      7104.341584000038
+    ],
+    "candidateMs": [
+      3962.118374999991,
+      4424.125375000003,
+      3856.5449160000135,
+      3987.486249999958
+    ],
+    "medianBeforeMs": 6871.435083500022,
+    "medianCandidateMs": 3974.8023124999745,
+    "boundary": "Alternating warm local full owner-call round trips; not live HTTP/browser, tail latency, CPU/RSS/WAL or every-variant benefit."
+  },
+  "representativeTradeoffs": [
+    {
+      "bound": "smallest",
+      "ownerOrdinal": 2,
+      "sourceKind": "all",
+      "totalMissing": 7,
+      "returnedItems": 7,
+      "beforeMs": 1306.585,
+      "candidateMs": 592.9511669999999,
+      "before": {
+        "executionMs": 752.669,
+        "sharedHitBlocks": 155800,
+        "sharedReadBlocks": 16959,
+        "tempReadBlocks": 12953,
+        "tempWrittenBlocks": 8923,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 1462,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 1464,
+            "Actual Loops": 1158,
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ],
+        "demandCollectionNodes": []
+      },
+      "candidate": {
+        "executionMs": 696.309,
+        "sharedHitBlocks": 147975,
+        "sharedReadBlocks": 16671,
+        "tempReadBlocks": 13033,
+        "tempWrittenBlocks": 9003,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 1462,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ],
+        "demandCollectionNodes": [
+          {
+            "Node Type": "CTE Scan",
+            "Alias": "c_8",
+            "CTE Name": "demand_collection",
+            "Actual Rows": 32,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 232,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 670,
+            "Temp Written Blocks": 90,
+            "Rows Removed by Filter": 1437
+          }
+        ]
+      }
+    },
+    {
+      "bound": "smallest",
+      "ownerOrdinal": 2,
+      "sourceKind": "owned-first",
+      "totalMissing": 7,
+      "returnedItems": 7,
+      "beforeMs": 529.0553330000002,
+      "candidateMs": 476.9566670000004,
+      "before": {
+        "executionMs": 979.806,
+        "sharedHitBlocks": 156951,
+        "sharedReadBlocks": 15807,
+        "tempReadBlocks": 12953,
+        "tempWrittenBlocks": 8923,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 1462,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 1464,
+            "Actual Loops": 1158,
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ],
+        "demandCollectionNodes": []
+      },
+      "candidate": {
+        "executionMs": 713.525,
+        "sharedHitBlocks": 149126,
+        "sharedReadBlocks": 15519,
+        "tempReadBlocks": 13033,
+        "tempWrittenBlocks": 9003,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 1462,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ],
+        "demandCollectionNodes": [
+          {
+            "Node Type": "CTE Scan",
+            "Alias": "c_8",
+            "CTE Name": "demand_collection",
+            "Actual Rows": 32,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 232,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 670,
+            "Temp Written Blocks": 90,
+            "Rows Removed by Filter": 1437
+          }
+        ]
+      }
+    },
+    {
+      "bound": "smallest",
+      "ownerOrdinal": 2,
+      "sourceKind": "other-owner-first",
+      "totalMissing": 29,
+      "returnedItems": 29,
+      "beforeMs": 563.549,
+      "candidateMs": 497.91899999999987,
+      "before": {
+        "executionMs": 860.155,
+        "sharedHitBlocks": 148737,
+        "sharedReadBlocks": 14655,
+        "tempReadBlocks": 12953,
+        "tempWrittenBlocks": 8923,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 1462,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 1449,
+            "Actual Loops": 1183,
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ],
+        "demandCollectionNodes": []
+      },
+      "candidate": {
+        "executionMs": 654.623,
+        "sharedHitBlocks": 140912,
+        "sharedReadBlocks": 14367,
+        "tempReadBlocks": 13033,
+        "tempWrittenBlocks": 9003,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 1462,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ],
+        "demandCollectionNodes": [
+          {
+            "Node Type": "CTE Scan",
+            "Alias": "c_8",
+            "CTE Name": "demand_collection",
+            "Actual Rows": 32,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 232,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 670,
+            "Temp Written Blocks": 90,
+            "Rows Removed by Filter": 1437
+          }
+        ]
+      }
+    },
+    {
+      "bound": "largest",
+      "ownerOrdinal": 3,
+      "sourceKind": "all",
+      "totalMissing": 142,
+      "returnedItems": 60,
+      "beforeMs": 3616.0425419999992,
+      "candidateMs": 2386.0654159999995,
+      "before": {
+        "executionMs": 6269.461,
+        "sharedHitBlocks": 781155,
+        "sharedReadBlocks": 41456,
+        "tempReadBlocks": 1963364,
+        "tempWrittenBlocks": 11515,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 13099,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 12909,
+            "Actual Loops": 3790,
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 1948343,
+            "Temp Written Blocks": 524
+          }
+        ],
+        "demandCollectionNodes": []
+      },
+      "candidate": {
+        "executionMs": 2207.155,
+        "sharedHitBlocks": 772809,
+        "sharedReadBlocks": 38690,
+        "tempReadBlocks": 15607,
+        "tempWrittenBlocks": 12220,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 13099,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ],
+        "demandCollectionNodes": [
+          {
+            "Node Type": "CTE Scan",
+            "Alias": "c_8",
+            "CTE Name": "demand_collection",
+            "Actual Rows": 265,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 4216,
+            "Shared Read Blocks": 3,
+            "Temp Read Blocks": 1220,
+            "Temp Written Blocks": 1283,
+            "Rows Removed by Filter": 12888
+          }
+        ]
+      }
+    },
+    {
+      "bound": "largest",
+      "ownerOrdinal": 3,
+      "sourceKind": "owned-first",
+      "totalMissing": 264,
+      "returnedItems": 60,
+      "beforeMs": 3740.8143750000017,
+      "candidateMs": 1409.9104169999991,
+      "before": {
+        "executionMs": 5948.686,
+        "sharedHitBlocks": 726534,
+        "sharedReadBlocks": 39629,
+        "tempReadBlocks": 1997344,
+        "tempWrittenBlocks": 11515,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 13099,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 12723,
+            "Actual Loops": 3913,
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 1982323,
+            "Temp Written Blocks": 524
+          }
+        ],
+        "demandCollectionNodes": []
+      },
+      "candidate": {
+        "executionMs": 1828.589,
+        "sharedHitBlocks": 703147,
+        "sharedReadBlocks": 51904,
+        "tempReadBlocks": 15604,
+        "tempWrittenBlocks": 12214,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 13099,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ],
+        "demandCollectionNodes": [
+          {
+            "Node Type": "CTE Scan",
+            "Alias": "c_8",
+            "CTE Name": "demand_collection",
+            "Actual Rows": 265,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 4216,
+            "Shared Read Blocks": 3,
+            "Temp Read Blocks": 1217,
+            "Temp Written Blocks": 1277,
+            "Rows Removed by Filter": 12888
+          }
+        ]
+      }
+    },
+    {
+      "bound": "largest",
+      "ownerOrdinal": 3,
+      "sourceKind": "other-owner-first",
+      "totalMissing": 264,
+      "returnedItems": 60,
+      "beforeMs": 4124.370582999996,
+      "candidateMs": 1091.6365409999999,
+      "before": {
+        "executionMs": 7723.223,
+        "sharedHitBlocks": 723250,
+        "sharedReadBlocks": 38350,
+        "tempReadBlocks": 2594704,
+        "tempWrittenBlocks": 11515,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 13099,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          },
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 12820,
+            "Actual Loops": 5053,
+            "Shared Hit Blocks": 0,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 2579683,
+            "Temp Written Blocks": 524
+          }
+        ],
+        "demandCollectionNodes": []
+      },
+      "candidate": {
+        "executionMs": 1480.743,
+        "sharedHitBlocks": 702191,
+        "sharedReadBlocks": 48297,
+        "tempReadBlocks": 15604,
+        "tempWrittenBlocks": 12214,
+        "largeMaterializations": [
+          {
+            "Node Type": "Materialize",
+            "Actual Rows": 4,
+            "Actual Loops": 13099,
+            "Shared Hit Blocks": 1,
+            "Shared Read Blocks": 0,
+            "Temp Read Blocks": 0,
+            "Temp Written Blocks": 0
+          }
+        ],
+        "demandCollectionNodes": [
+          {
+            "Node Type": "CTE Scan",
+            "Alias": "c_8",
+            "CTE Name": "demand_collection",
+            "Actual Rows": 265,
+            "Actual Loops": 1,
+            "Shared Hit Blocks": 4216,
+            "Shared Read Blocks": 3,
+            "Temp Read Blocks": 1217,
+            "Temp Written Blocks": 1277,
+            "Rows Removed by Filter": 12888
+          }
+        ]
+      }
+    }
+  ],
+  "smallOwnerTradeoff": "All three smallest-owner source variants added80 Temp Read Blocks and80 Temp Written Blocks. Shared Hit Blocks declined7825 and Shared Read Blocks288. The explicit materialization retains/filter-scans1469 intermediate rows rather than allowing all pushdown; no universal memory/temp decrease is claimed.",
+  "largeOwnerTradeoff": "Largest-owner temporary reads declined1.96\u20132.59million\u2192about15.6thousand, while temp writes rose699\u2013705 blocks. Shared Read Blocks rose for two selected-source cases; they are not physical-disk measurements.",
+  "testDisposition": {
+    "newAuthoredFixtures": false,
+    "reason": "Actual saved demand spans142 items and exercises real second/clamped pages;69 complete source/paging comparisons cover the changed boundary. Existing guarded tests already protect opt-out, empty-user filtering/clamping, feature-disabled demand and album next selection. No duplicate SQL-shape fixture was added.",
+    "existingTests": [
+      "tests/collection-db.test.ts:82",
+      "tests/collection-db.test.ts:90",
+      "tests/collection-db.test.ts:153",
+      "tests/feature-boundaries-db.test.ts:55"
+    ],
+    "newFixtureDatabaseRun": false,
+    "combinedGates": "Owned and reported by root separately."
+  },
+  "independentReview": {
+    "reviewer": "providers_jobs_audit",
+    "result": "Approved exact private two-line candidate; no material semantic blocker, no tests/DB/edits. Warned to retain materialization memory/strong-filter tradeoff and avoid every-variant latency claims."
+  },
+  "gaps": [
+    "Four actual accounts all fit one outer user page. No large-user count/detail scalability fix was adopted.",
+    "Zero actual disabled/opted-out users; no consent withdrawal or preferences were manufactured. Existing gate source remains unchanged.",
+    "No actual empty personal-demand owner in the saved bounds; no fabricated empty performance cohort.",
+    "Source/request arrays were completely compared, but positive request-array cardinality was not separately retained; do not infer nonempty coverage for every field.",
+    "Source-filter work plans sample first actual own/other-owner IDs on the smallest/largest owners; all9 owned connection IDs were output-compared but not every variant received a plan/timing distribution.",
+    "No admin token/auth HTTP, live API, normal-browser/resource/RSS/WAL or universal latency acceptance from this private proof.",
+    "Materialization may cost more intermediate memory/temp storage on other future distributions; rerun full output/plans when this owner or Collection dependencies drift."
+  ],
+  "relatedLead": {
+    "id": "DATA-05",
+    "disposition": "Unadopted separate option; root baseline census found89830screen state rows and0dropped rows. No progress source change and no execution of the separately prepared progress probe is claimed.",
+    "evidence": "evidence/admin-demand-actual.json"
+  },
+  "reproduction": {
+    "exactDefault": "probes/demand-materialization-candidate-actual.ts",
+    "exactVariants": "probes/demand-materialization-candidate-variants.ts",
+    "exactRepresentativeWork": "probes/demand-materialization-candidate-work.ts",
+    "baseline": "candidates/demand-materialization/demand.before.ts.txt",
+    "maintained": "probes/demand-materialization-real.ts",
+    "maintainedExecuted": false,
+    "maintainedChanges": "Pinned baseline/current admission and relocatable roots; matrix records requestedPage separately, representative replay freshly selects current actual owner bounds. Both syntax checked without another DB run. Historical exact work probe retains its original prior-receipt dependency.",
+    "maintainedWork": "probes/demand-materialization-work-real.ts"
+  },
+  "calibration": {
+    "requestedPageRecording": "Historical raw variant comparison page stores the returned clamp, overwriting requested page label. Exact request schedule is retained in executed code and reconstructed as clearly derived metadata in evidence/implementation-demand-materialization-request-schedule.json. No receipt or DB result was rewritten.",
+    "preAdoptionBoundary": "All actual probes ran while production demand source retained baseline pin. The exact verified candidate was adopted afterward."
+  },
+  "artifacts": {
+    "candidates/demand-materialization/demand.before.ts.txt": "f749b05b32b2d0313df8592220919e5400ec1763661f0472e6fa1ae42eccd596",
+    "probes/demand-materialization-candidate-actual.ts": "9c43be15d034f571b03d748959f735a371004a8ad5d16c4dad8bb5ba536cfdb0",
+    "probes/demand-materialization-candidate-variants.ts": "4e6c033eba3ff3df1dcdcb9febe57045b70b87ba5f0c5e0be27327b58d5099b4",
+    "probes/demand-materialization-candidate-work.ts": "2d6751c395c8a1bb189f1c40551f3ab8818b3f940383ec3b0f3be6057f940223",
+    "evidence/implementation-demand-materialization-default.json": "ef4118a4e5efc8c4d047b73a8c4eaa17cd4ebd0c4a75f714681573a8d1f85cbc",
+    "evidence/implementation-demand-materialization-variants.json": "8f8e5417b2b27c26146ee7d118ee17738a2d1ae6a9c6c9e6c834747d1a5eac4f",
+    "evidence/implementation-demand-materialization-work.json": "314ea6ff923c7c5e3832d6775ed8c170d024acf51eed048ce1242b6fd9ea230a",
+    "evidence/implementation-demand-materialization-request-schedule.json": "bab32ea5c1d5803b64200488d58e1fe20a2f2d5140c570524051a537d91a2198",
+    "probes/demand-materialization-real.ts": "c774b3fd12bfb58f6151a5b4cabefc229892dfd795aa6bab395c2cdc3737a0a8",
+    "probes/demand-materialization-work-real.ts": "93c3ca1ab8b76f775c3e2b9a32cb5eeaa3211f77f9bebe9ae753468de51cc11b"
+  },
+  "rootCombinedAcceptance": {
+    "common": "785pass/706guardedskip/0fail/33625assertions/1491tests/272files/check0/0/build/inventories",
+    "normalDevReceipt": "evidence/implementation-read-demand-normal.json",
+    "signedIn": true,
+    "sourceUnchangedDuringTrial": true,
+    "scope": "Normal Activity120anchors, show/collection details, Library120anchors/28completedimages, Admin115items/4accounts, Tasks30/noopenDialogs/0newWarningsErrors. Normal Recommendations empty; positive9543rawscore/one60itemDTO proof remains private. No browser resource/timing distribution claim."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+      "src/lib/server/queries/pagination.ts": "8d13fbda75755cb40c53f1db2d4c8a16b127010791f5fd35eacff116e4c56f9f"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  }
+}

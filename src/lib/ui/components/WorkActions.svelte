@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import { page } from '$app/state';
   import type { ComponentProps } from 'svelte';
@@ -14,10 +15,10 @@
     recommendationIds?: string[];
     controls?: ComponentProps<typeof Button>[];
   } = $props();
-  const {change}=useClient();
-  const mutation=createMutation(async()=>{}, useClient().feedback.notify);
+  const {changeMany}=useClient();
+  const mutation=createMutation(async()=>{}, useClient().feedback.notify, useRetention());
   async function respond(action:'save'|'dismiss') {
-    await mutation.run(async()=>{for(const id of recommendationIds)await change(`social/recommendations/${id}`,{action});},action==='save'?'Recommendation saved.':'Recommendation dismissed.');
+    await mutation.run(()=>changeMany(recommendationIds.map(id=>`social/recommendations/${id}`),{action}),action==='save'?'Recommendation saved.':'Recommendation dismissed.');
   }
 
   reportFailure(()=>mutation.error);

@@ -17,7 +17,7 @@
   const selection = $derived(model.rows[selected]);
   function select(index:number) { selected=index; onselect?.(index); }
   let loadError=$state('');
-  $effect(()=>{const pending=loaded;loadError='';let current=true;void pending.catch(()=>{if(current)loadError='The chart could not load. Reload this page to try again.';});return()=>{current=false;};});
+  $effect(()=>{loadError='';if(compact&&!model.rows.length)return;const pending=loaded;let current=true;void pending.catch(()=>{if(current)loadError='The chart could not load. Reload this page to try again.';});return()=>{current=false;};});
   reportFailure(()=>loadError);
 </script>
 

@@ -1,4 +1,5 @@
 import { resolveListConflict, localListValue, projectProviderListInTransaction } from './list-values.server';
+import { lockFeaturePolicyInTransaction } from '$lib/server/features';
 import { applySyncValue, localSyncValue, valueCategories, decideSync, sameValue, type ValueCategory } from './values.server';
 import { enqueueSyncValueInTransaction, enqueueInTransaction } from './changes.server';
 import * as v from 'valibot';
@@ -74,8 +75,13 @@ export async function getPendingConflicts(userId: string) {
           ? await localSyncValue(tx, userId, entry.mediaId, entry.category as ValueCategory)
           : (entry.agreed ?? {})
       );
-    for (const { entry } of listConflicts)
-      values.set(entry.id, await localListValue(tx, userId, entry.listId));
+    for (const { entry } of listConflicts) {
+      const [local] = await tx.execute<{name:string;description:string;itemCount:number}>(sql`select l.name,coalesce(l.description,'') as description,
+        (select count(*)::int from list_items item where item.list_id=l.id) as "itemCount"
+        from lists l where l.id=${entry.listId}::uuid and l.user_id=${userId}::uuid`);
+      if(!local)throw new Error('List not found.');
+      values.set(entry.id,local);
+    }
     return values;
   });
   return [
@@ -92,8 +98,10 @@ export async function getPendingConflicts(userId: string) {
       occurredAt: entry.updatedAt,
       reason:
         'List names, membership or order differ. Choose which service should replace the others.',
-      remoteValue: entry.remote,
-      localValue: localValues.get(entry.id),
+      remoteValue: (()=>{const {items,...value}=entry.remote;return value;})(),
+      remoteItemCount: 'items' in entry.remote ? (Array.isArray(entry.remote.items)?entry.remote.items.length:0) : undefined,
+      localValue: (()=>{const {itemCount,...value}=localValues.get(entry.id)!;return value;})(),
+      localItemCount: localValues.get(entry.id)!.itemCount as number,
     })),
     ...providerConflicts.map(({ entry, title, kind, source }) => ({
       id: entry.id,
@@ -180,6 +188,7 @@ export async function resolveConflict(
   v.parse(v.pipe(v.string(), v.uuid()), eventId);
   v.parse(v.picklist(['accepted', 'ignored']), decision);
   const apply=async (tx:Transaction) => {
+    await lockFeaturePolicyInTransaction(tx,userId);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const [listConflict] = await tx
       .select({ entry: syncListValues })

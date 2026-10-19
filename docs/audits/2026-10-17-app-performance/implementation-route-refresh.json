@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "id": "ROUTE-REFRESH-OBS-07",
+  "outsideCanonical94": true,
+  "status": "implemented_shared_in_place_refresh_caller_contract; actual_normal_dev_visible_windows_verified; midflight_state_ownership_open",
+  "reportRef": "implementation-route-refresh.md",
+  "sharedOwner": "src/lib/ui/client.ts:refreshRouteDependencies",
+  "implementationApplied": true,
+  "schemaChanged": false,
+  "dependenciesAdded": false,
+  "frameworkChanged": false,
+  "uiRedesigned": false,
+  "sourcePins": {
+    "src/lib/ui/client.ts": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+    "src/lib/social/status.svelte.ts": "3bf38d686032151873c130bed89a5d0a303214517e4522e8906e83246c0e842b",
+    "src/lib/ui/components/JobsSettings.svelte": "12c7a75098e6fa015f4e4a4e9be30d489b1b47d624cd6a86e4a698a33ae89488",
+    "src/routes/settings/[[section]]/+page.svelte": "e48d91b7fe0723f3a03306f92c927a4abd39037afc244e44e10db7f142184bed",
+    "src/routes/onboarding/+page.svelte": "aafd509d54a35bccebaaa21b85c6f4cb0b83a95be167f885907acafb5758e6e7",
+    "src/routes/music/+page.svelte": "4d4c4d34afecf9cbae0a9b424f0cb78abf941bc1b5bb149c57ecd316418ddf74",
+    "src/routes/games/+page.svelte": "dd4cd781626cc65cc6dc5a7f4467e4d6f2e589ad693bc47da625e72097fd68f7",
+    "tests/route-refresh.test.ts": "187e951b4b11360f2766545196cfed726b73bd6cd3a1ceee7e8b5c460b3dbb96",
+    "tests/ui-client.test.ts": "7595b34f89f130672cc98ed93b3b6352fbb85be40216a2e01fed09ea72ef2d46",
+    "tests/presence-lifecycle.test.ts": "887d5d285937ce82aa4fb260959b630ef6d8dc8f111d3c77dad4e6a85456cee2",
+    "tests/route-read-lifetimes.test.ts": "4caa33f90e67c69030159cfe73a079780fa9275513e4a89b59caed9eb270807e",
+    "tests/preview-party-guards.test.ts": "24bc2aabd2477f4f62f8a6395c75a22761d9bfcd18ff3b85e64ace9adac21802"
+  },
+  "priorDirectCalls": 9,
+  "priorDirectCallerFiles": 6,
+  "consumerChanges": [
+    {
+      "path": "src/lib/ui/components/JobsSettings.svelte",
+      "line": 91,
+      "priorCalls": 1,
+      "admission": [
+        "settings"
+      ],
+      "preserved": "10s, visible-only, one pending poll, preview no polling, interval teardown"
+    },
+    {
+      "path": "src/lib/social/status.svelte.ts",
+      "line": 14,
+      "priorCalls": 2,
+      "admission": [
+        "session",
+        "social"
+      ],
+      "preserved": "acknowledged status/presence result, busy state and social content revision"
+    },
+    {
+      "path": "src/lib/social/status.svelte.ts",
+      "line": 33,
+      "priorCalls": 1,
+      "admission": [
+        "social"
+      ],
+      "preserved": "interested current heartbeat only, stopped/abort fence; normal root refreshFriends callback is false"
+    },
+    {
+      "path": "src/routes/settings/[[section]]/+page.svelte",
+      "line": 354,
+      "priorCalls": 1,
+      "admission": [
+        "settings"
+      ],
+      "preserved": "invitation revoke acknowledgement/busy/error order"
+    },
+    {
+      "path": "src/routes/onboarding/+page.svelte",
+      "line": 26,
+      "priorCalls": 1,
+      "admission": [
+        "onboarding"
+      ],
+      "preserved": "current device success after explicit signal/body ownership checks"
+    },
+    {
+      "path": "src/routes/onboarding/+page.svelte",
+      "line": 29,
+      "priorCalls": 1,
+      "admission": [
+        "onboarding"
+      ],
+      "preserved": "current visible importing phase and nonoverlap/cleanup"
+    },
+    {
+      "path": "src/routes/music/+page.svelte",
+      "line": 27,
+      "priorCalls": 1,
+      "admission": "all",
+      "preserved": "full route/query Retry, existing labels and presentation"
+    },
+    {
+      "path": "src/routes/games/+page.svelte",
+      "line": 28,
+      "priorCalls": 1,
+      "admission": "all",
+      "preserved": "full route/query Retry, existing labels and presentation"
+    }
+  ],
+  "existingConsumers": [
+    "refreshAfterChange for acknowledged domain writes",
+    "root session refresh",
+    "search shelf refresh"
+  ],
+  "helperContract": {
+    "empty": "no refresh",
+    "noOverlayScoped": "same coast dependency invalidations",
+    "noOverlayAll": "same invalidateAll full refresh",
+    "alreadyOpenOverlay": "existing refreshAll state-snapshot preservation",
+    "midFlightStateOwnershipChanged": false
+  },
+  "actualBefore": {
+    "normalDev": "http://localhost:5173",
+    "signedIn": true,
+    "sourceFrozen": true,
+    "beforeAt": "2026-10-18T00:54:29.533Z",
+    "afterAt": "2026-10-18T00:54:51.630Z",
+    "beforeFriendActions": 3,
+    "afterFriendActions": 0,
+    "beforeCloseControls": 1,
+    "afterCloseControls": 0,
+    "addressFriendsQueryRetained": true,
+    "importError": false,
+    "newConsoleWarnOrError": 0,
+    "receipt": "evidence/implementation-shared-normal-before-poll-fix.json",
+    "boundary": "Actual settled before/after observation across about22s, not instrumentation proving exact poll count or which invalidation committed."
+  },
+  "verification": {
+    "focused": {
+      "pass": 33,
+      "fail": 0,
+      "assertions": 164,
+      "files": 5,
+      "completeClientAndServerTemplateCompilations": 10,
+      "receipt": "evidence/implementation-route-refresh-tests.txt"
+    },
+    "installedOwner": {
+      "version": "@sveltejs/kit2.70.3",
+      "source": "node_modules/@sveltejs/kit/src/runtime/client/client.js",
+      "sha256": "a2e26ea4f6b2668c396af9b44bbda2047640c2c9cbb81d3660ec4b1e3310a2c3",
+      "functions": [
+        "_invalidate",
+        "get_navigation_result_from_branch",
+        "clone_page",
+        "pushState",
+        "replaceState",
+        "invalidate",
+        "invalidateAll",
+        "refreshAll"
+      ],
+      "boundary": "Exact installed function source; diagnostic branch payload and history/root I/O boundaries controlled. Supplementary state contract proof, not browser or actual-data performance."
+    },
+    "commonGatesReportedByRoot": {
+      "passed": 766,
+      "guardedSkips": 703,
+      "fail": 0,
+      "assertions": 33338,
+      "totalTests": 1469,
+      "files": 263,
+      "checkErrors": 0,
+      "checkWarnings": 0,
+      "productionBuild": "passed",
+      "codeInventory": "passed",
+      "uiInventory": "passed",
+      "sourceStyle": "passed",
+      "inventorySummary": {
+        "files": 576,
+        "lines": 59178,
+        "sites": 3711
+      },
+      "owner": "root"
+    },
+    "independentReview": {
+      "reviewer": "playback_readers_audit",
+      "materialBlockers": 0,
+      "scope": "read-only final narrow source/test diff"
+    },
+    "actualAfter": {
+      "status": "passed_normal_signed_in_current_source",
+      "receipt": "evidence/implementation-route-refresh-normal-after.json",
+      "coldTasksUrlQueryAbsent": true,
+      "initialAndFinalTaskRows": 30,
+      "friends": {
+        "elapsedMs": 45893,
+        "beforeRows": 3,
+        "afterRows": 3,
+        "beforeAndAfterCloseControls": 1,
+        "queryRetained": true,
+        "visible": true,
+        "closeAndReopenRows": 3
+      },
+      "notifications": {
+        "elapsedMs": 20322,
+        "closeControlRetained": true,
+        "queryRetained": true,
+        "visible": true
+      },
+      "streams": {
+        "elapsedMs": 21231,
+        "closeControlRetained": true,
+        "queryRetained": true,
+        "visible": true
+      },
+      "finalOpenPopovers": 0,
+      "newWarningsErrors": 0,
+      "frameworkOverlay": false,
+      "actualCompletedPollCountInstrumented": false,
+      "sourceManifestUnchanged": true,
+      "statusPreferenceJobWrites": false,
+      "boundary": "Observed state across elapsed visible windows on the normal installation; no exact poll-completion count, natural cancellation, mid-flight ownership, provider/format/device or resource gain claim."
+    }
+  },
+  "remaining": [
+    "Opening a shallow overlay while an ordinary scoped refresh is pending can still lose that new state at commit.",
+    "Closing an overlay while refreshAll is pending can still restore its captured open state.",
+    "The tests explicitly reproduce both residual schedules; they are not successful mid-flight recovery acceptance.",
+    "No status preference write, invitation revoke or real onboarding device change was performed for actual acceptance.",
+    "Existing refreshAll intentionally reruns all active loaders/queries while an overlay is already open; no SQL-count/latency/heap gain claim.",
+    "Pending private navigation dependency proposal remains unapplied and is separate from this caller repair.",
+    "Earlier FRT04 built asset/fault receipts remain tied to their earlier build; this newer shared client does not relabel them as final-build acceptance."
+  ],
+  "evidenceRefs": [
+    "evidence/implementation-shared-normal-before-poll-fix.json",
+    "evidence/implementation-route-refresh-tests.txt",
+    "evidence/implementation-route-refresh-unit.log",
+    "evidence/implementation-route-refresh-check.log",
+    "evidence/implementation-route-refresh-build.log",
+    "evidence/implementation-route-refresh-code-inventory.log",
+    "evidence/implementation-route-refresh-ui-inventory.log",
+    "evidence/implementation-route-refresh-code-style.log",
+    "evidence/implementation-route-refresh-normal-after.json",
+    "evidence/implementation-route-refresh-normal-friends.png",
+    "evidence/implementation-route-refresh-normal-tasks.png"
+  ],
+  "currentSharedCallerInvocations": 8,
+  "changedApplicationFiles": 7
+}

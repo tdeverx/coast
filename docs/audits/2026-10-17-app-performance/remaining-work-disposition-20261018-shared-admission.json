@@ -1,0 +1,3228 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-18T02:47:41.502022+00:00",
+  "status": "maintained_remaining_open_work_disposition_not_completion",
+  "count": 30,
+  "scope": "Exactly30currentstatus=open canonical records. Historical46/41/38/34open snapshots remain captured. Partial/staged work retains remaining acceptance in the mainledger.",
+  "ledgerSnapshotSha256": "0a5d6a214b05fb1c5797e905d56c60b5274f9b9b8ae782ceb9b2452bd0e89fca",
+  "ledgerRef": "implementation-ledger.json",
+  "canonicalStatusesChanged": true,
+  "newApplicationChanges": true,
+  "newDatabaseOrProviderExecution": true,
+  "newTestsOrPerformanceResults": true,
+  "reviewBasis": "Existing primary audit reports and latest maintained implementation receipts, plus targeted current-source review of candidates. Hashes identify source, not a claim of a new full-file or runtime audit.",
+  "instructions": {
+    "workingApproach": "Prefer the simplest solution that fully solves the problem. Ask before introducing unavoidable complexity.",
+    "dependencies": "Ask before adding production dependencies.",
+    "source": "User-supplied AGENTS.md instructions for this session. No new dependency is proposed here.",
+    "interpretation": "Routine read-only measurement, existing-owner projection, no-op or lifecycle corrections do not inherently require permission. A substantial option needs a concrete plan; ask only if its complexity is unavoidable for the selected behavior."
+  },
+  "recommendedRoutineNext": [
+    "Run the prepared new Tasks Q1 on actual data/current indexes, retaining complete active/terminal/DTO equivalence; no replay of rejected exact candidates.",
+    "Census actual retained metadata feature inputs before catalogue/reading/game duplicate-parameter candidates; preserve undefined/no-op/freshness semantics and no fabricated richer provider page.",
+    "Continue residual descendant/card/resource work in shared owners; actual replay/playlist/future-party/device gaps and pending normal toast/migration/navigation decisions remain explicit."
+  ],
+  "recentlyImplementedOutsideOpenSet": [
+    {
+      "id": "DATA-07",
+      "scope": "Profile settings value-difference guard only; other no-op owners remain open under partial status.",
+      "ref": "implementation-profile-write.md"
+    },
+    {
+      "id": "DATA-13",
+      "scope": "Narrow profile section projection; positive guest/featured/pinned and current browser boundaries remain explicit.",
+      "ref": "implementation-profile-sections.md"
+    }
+  ],
+  "items": [
+    {
+      "id": "DATA-03",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W06",
+      "title": "list removal and reorder issue one update for every member under an owner-wide lock",
+      "sharedOwner": "Core list mutation service",
+      "minimalSharedOption": "Keep exact list/user locks and permutation validation; use one set-based changed-position write and return early for an absent removal or unchanged reorder.",
+      "actualData": "Both captured installations and the private clone have zero saved lists/items; repeated-entry and export cohorts are absent.",
+      "nextMeaningfulTest": "When a real list exists, compare complete first/middle/last/absent remove and same/reversed order, Undo, revisions/exports, concurrent add/delete and statement/affected-row counts in rollback.",
+      "dispositionReasons": [
+        "actual_cohort_gap"
+      ],
+      "whyNotImplementedInThisPass": "The routine set-based direction is clear, but no actual nonempty list can verify order, repeated occurrences or export effects. Sparse/fractional positions are an optional larger redesign, not required for this next step.",
+      "overlaps": [
+        "DATA-12",
+        "PJ-06",
+        "UIS-03"
+      ],
+      "sourceFiles": [
+        "src/lib/core/lists/service.server.ts",
+        "src/lib/sync/trakt-lists.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/core/lists/service.server.ts": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "src/lib/sync/trakt-lists.server.ts": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d"
+      },
+      "originalAnalysisRef": "data-api.md",
+      "originalDetailRef": "data-api-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "data-api-findings.json",
+        "optionsAndAcceptance": "**Status:** source-confirmed; actual-list operation measurement pending.\n\n**References:** `src/lib/core/lists/service.server.ts:180-202`, `:217-249`; browser entry `src/lib/server/api/lists.server.ts:37-47`.\n\nRemoval deletes the requested entry, reads every remaining row, then runs one `UPDATE` per row to reassign positions. Removing an already absent entry still rewrites all surviving positions, updates list time and queues projection/export work. Reorder permits 10,000 IDs, validates an exact permutation, then writes every position individually, including unchanged positions. Both hold `hash(userId)` for the whole transaction. Bound: approximately N update round trips plus full-row list materialization; 10,000 is the explicit reorder input bound, not a measured installation size.\n\n**Smallest option:** return immediately when `DELETE ... RETURNING` finds no row. For an actual removal, use one set-based `UPDATE ... FROM` with `row_number()` or decrement only positions after the removed item where the current contiguous-order invariant holds. For exact reorder, use `unnest(ids) WITH ORDINALITY` and update only changed positions. Keep exact permutation validation and the existing list/user locks. **Larger option:** sparse/fractional position keys avoid many position writes but introduce key maintenance and concurrency complexity; they are unnecessary before measuring the simpler set-based repair.\n\n**Acceptance:** actual cloned ordinary lists and playlists, repeated titles represented by entry IDs, first/middle/last/absent removal, same/reversed/permuted order, concurrent move/add/delete and cross-page neighbours. Preserve exact sequence order, membership, IDs, timestamps and export intent semantics. Assert O(1) update statements per operation and zero mutation/outbox/revision change for an absent remove or identical reorder where semantics allow a no-op. Measure row writes/WAL separately from round-trip reduction.",
+        "references": [
+          {
+            "path": "src/lib/core/lists/service.server.ts",
+            "line": 180
+          },
+          {
+            "path": "src/lib/server/api/lists.server.ts",
+            "line": 37
+          }
+        ]
+      },
+      "evidenceRefs": [
+        "data-api.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "list page",
+        "work-list menus",
+        "playlist order",
+        "undo",
+        "Trakt export"
+      ]
+    },
+    {
+      "id": "DATA-06",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W02",
+      "title": "received-recommendation progress fetches all candidates and assesses all candidates before paging",
+      "sharedOwner": "Received recommendation progress projection and shared assessment SQL",
+      "minimalSharedOption": "Separate an exact all-pending count from the selected visible-page projection and assess only admitted identities through the same recommendation/privacy owner.",
+      "actualData": "The measured selected owner has no pending received recommendations. Existing social/friend records do not supply a verified multi-sender pending cohort.",
+      "nextMeaningfulTest": "Use naturally pending actual recommendations; compare complete grouped IDs/senders/names/order/total and Save/Dismiss outcomes across privacy/feature/source withdrawal, then SQL/admission counts.",
+      "dispositionReasons": [
+        "actual_cohort_gap",
+        "semantic_contract"
+      ],
+      "whyNotImplementedInThisPass": "Grouping and availability can affect page membership; limiting raw candidates before the exact grouping/filter boundary would change results.",
+      "overlaps": [
+        "UIC-03",
+        "DATA-14",
+        "PLAN-04"
+      ],
+      "sourceFiles": [
+        "src/lib/server/queries/progress.ts",
+        "src/lib/social/service.server.ts",
+        "src/lib/collection/query.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/server/queries/progress.ts": "c6dc479be1ea09bdd477d0eb21780361cf3eb0edc56d07e8a5e3a65e9cd9d7c7",
+        "src/lib/social/service.server.ts": "7bd88b9379b22ee6e0646d948aa0309116eb94c17588fff7d7f60da3bd07354b",
+        "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e"
+      },
+      "originalAnalysisRef": "data-api.md",
+      "originalDetailRef": "data-api-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "data-api-findings.json",
+        "optionsAndAcceptance": "**Status:** source-confirmed preparation/transfer slope; actual installation may have few pending recommendations.\n\n**References:** `src/lib/server/queries/progress.ts:297-325`; `src/lib/collection/query.server.ts:237-240`.\n\nThe received-recommendations branch aggregates every pending work and every sender/name/notification identity, transfers the full relation, optionally calls `workAssessments` with every candidate ID, filters in JavaScript, then slices 60 items. Pending recommendations have no total-per-recipient cap. `workAssessments` does not chunk its ID list, so this caller can produce large statements and recursive evidence sets. It is distinct from the social recommendation list endpoint's 61-row output and from provider recommendation scoring's 2,000-candidate bound.\n\n**Smallest option:** compute authorization, availability eligibility, per-work grouping, total and page IDs together in the shared PostgreSQL read, then hydrate only the returned page. Sender names and recommendation IDs need be transferred only for page works. Use existing Collection assessment/visibility semantics; do not prematurely limit senders or roots and alter totals. **Alternative:** durable recipient/work aggregates if actual fan-out justifies their mutation/invalidation maintenance; ordinary SQL paging is simpler first.\n\n**Acceptance:** actual pending data plus every available real boundary case, all/available scope, duplicate senders/work, removed friends, disabled categories and absent sources. Exact IDs/order/totals/names/recommendation IDs must match. Measure both all-pending count and visible-page count; zero pending recommendations is a coverage gap, not proof of scalability.",
+        "references": [
+          {
+            "path": "src/lib/server/queries/progress.ts",
+            "line": 297
+          },
+          {
+            "path": "src/lib/collection/query.server.ts",
+            "line": 237
+          }
+        ]
+      },
+      "evidenceRefs": [
+        "data-api.md",
+        "evidence/data-api-real-reads.json"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "progress recommendations rows",
+        "progress page",
+        "browser progress",
+        "public progress",
+        "all enabled media"
+      ]
+    },
+    {
+      "id": "DATA-09",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W08",
+      "title": "inline raster avatars amplify settings reads and repeated social payloads",
+      "sharedOwner": "Existing profile avatar storage/stream owner",
+      "minimalSharedOption": "Extend the existing permission-checked avatar storage/stream lifecycle for raster formats, retaining exact appearance, privacy, hashed identity, replacement cleanup and session fields. Further narrow non-display settings reads only by a complete consumer contract.",
+      "actualData": "Three actual development and four deployed inline-avatar accounts exist; actual maximums are about15KB, far below the220,000-character cap. Scope omission already removes repeated key serialization only.",
+      "nextMeaningfulTest": "Replay copies of actual PNG/JPEG/WebP/GIF through private storage and measure real compressed session/social bytes and image-request/cache behavior; verify policy change, replacement/error cleanup and old-image denial.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "substantial_complexity"
+      ],
+      "whyNotImplementedInThisPass": "Representation changes need a concrete storage/stream/migration/failure plan; the observed bytes do not justify an unmeasured broad settings or filesystem rewrite. No dependency is required by the minimal option.",
+      "overlaps": [
+        "UIS-07",
+        "HELPER-01",
+        "UIC-01",
+        "UPP-02"
+      ],
+      "sourceFiles": [
+        "src/lib/core/profile/service.server.ts",
+        "src/lib/core/profile/gif-avatar.server.ts",
+        "src/lib/core/profile/avatars.server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/social/queries.server.ts"
+      ],
+      "additionalEvidenceRefs": [
+        "evidence/development-real-sql.json",
+        "evidence/deployed-real-sql.json",
+        "implementation-work-menu-scope.md"
+      ],
+      "currentSourcePins": {
+        "src/lib/core/profile/service.server.ts": "5f4cd96495347811e7c11e9126417a8b8c0a41d5046414e92e3fd114384be904",
+        "src/lib/core/profile/gif-avatar.server.ts": "5c91fa12ac03dac622826280de60afd26574ee39f04fa75db8457561b155f617",
+        "src/lib/core/profile/avatars.server.ts": "f5e79c9673fe1b294136802e81a7cd77a0491b7abc105415a9c50294842b885b",
+        "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+        "src/lib/social/queries.server.ts": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54"
+      },
+      "originalAnalysisRef": "data-api.md",
+      "originalDetailRef": "data-api-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "data-api-findings.json",
+        "optionsAndAcceptance": "**Status:** representation confirmed on actual installations. Development aggregate shows 3 inline-avatar users, maximum 15,243 avatar bytes and 16,276 settings bytes; deployed aggregate shows 4 inline-avatar users, maximum 14,947 avatar bytes. These are materially below the allowed maximum, so treat this as a smaller repeated-byte opportunity, not the dominant observed bottleneck. Evidence: `evidence/development-real-sql.json` and `evidence/deployed-real-sql.json`, `user-settings-bytes`.\n\n**References:** `src/lib/core/profile/service.server.ts:43-59`; `src/lib/server/auth/index.ts:161-166`; `src/lib/server/config.ts:127`; `src/lib/social/queries.server.ts:107-119`; `src/lib/core/profile/gif-avatar.server.ts:13-65`.\n\nPNG/JPEG/WebP avatars remain data URLs of up to 220,000 characters inside `users.settings`. Session auth selects the full user row; feature subject reads full settings; social rows copy avatar strings. A single accepted friend's inline image can repeat on many work heads/activity cards. The existing three-head/60-work bound controls friend objects, not bytes per avatar. GIFs already use the local file/URL owner and permission-checked stream.\n\n**Option:** generalize that existing avatar storage/stream owner for raster images and migrate inline content without changing appearance. Keep stable hashed identities, privacy checks, cleanup and fallback semantics. Narrow policy reads to feature settings when appropriate, but continue returning the settings required by the session/UI. **Tradeoff:** more authenticated small image requests and filesystem lifecycle management in exchange for substantially smaller repeated JSON; measure actual browser cache/no-store policy before choosing.\n\n**Acceptance:** aggregate actual settings/avatar byte sizes without logging content; compare compressed network bytes and repeat social responses. Verify all image formats, account/public/privacy changes, replacement cleanup and old-image access denial. This is an opportunity if the current installation has small/no inline avatars; it must not be presented as a measured major bottleneck without data.",
+        "references": [
+          {
+            "path": "src/lib/core/profile/service.server.ts",
+            "line": 43
+          },
+          {
+            "path": "src/lib/server/auth/index.ts",
+            "line": 161
+          },
+          {
+            "path": "src/lib/server/config.ts",
+            "line": 127
+          },
+          {
+            "path": "src/lib/social/queries.server.ts",
+            "line": 107
+          },
+          {
+            "path": "src/lib/core/profile/gif-avatar.server.ts",
+            "line": 13
+          }
+        ]
+      },
+      "evidenceRefs": [
+        "data-api.md",
+        "evidence/development-real-sql.json",
+        "evidence/deployed-real-sql.json",
+        "implementation-work-menu-scope.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "session",
+        "feature policy",
+        "card heads",
+        "friends",
+        "activity",
+        "notifications",
+        "public/private profile"
+      ]
+    },
+    {
+      "id": "DATA-12",
+      "canonicalStatus": "open",
+      "priority": "P3",
+      "workstream": "W05",
+      "title": "a playlist-start command reads the complete list to inspect one header field",
+      "sharedOwner": "Core list header/summary/detail reader",
+      "minimalSharedOption": "Add/reuse an owner-validated list header read for playback-start admission; retain the complete getList and existing complete endpoint until consumers/contracts are deliberately changed.",
+      "actualData": "Zero saved lists/playlists in actual snapshots. Header-only admission has no positive existing-list replay.",
+      "nextMeaningfulTest": "On an actual list, compare start/already-started/restart/missing/cross-owner responses and timestamp behavior; prove zero item hydration and unchanged full-list/summary/paged output.",
+      "dispositionReasons": [
+        "actual_cohort_gap"
+      ],
+      "whyNotImplementedInThisPass": "This is a routine narrow projection, not a necessary architecture change. Missing actual lists prevent the requested positive acceptance; endpoint retirement is a separate contract choice.",
+      "overlaps": [
+        "DATA-03",
+        "PJ-06"
+      ],
+      "sourceFiles": [
+        "src/lib/core/lists/service.server.ts",
+        "src/lib/server/api/lists.server.ts",
+        "src/lib/core/lists/sequence.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/core/lists/service.server.ts": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "src/lib/server/api/lists.server.ts": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "src/lib/core/lists/sequence.server.ts": "57f6f05eda50129707fffce767da1ae1749ca97bd02fb056c518c9b4237ad018"
+      },
+      "originalAnalysisRef": "data-api.md",
+      "originalDetailRef": "data-api-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "data-api-findings.json",
+        "optionsAndAcceptance": "**Status:** active source path confirmed; API compatibility use of the separate complete-list endpoint needs a product decision.\n\n**References:** `src/lib/server/api/lists.server.ts:15,29-32`; `src/lib/core/lists/service.server.ts:108-139`; `src/lib/server/queries/lists.ts:203-233`.\n\nThe playlist playback command calls `getList`, materializing all list items and full joined media rows, then uses only `playbackStartedAt` and `id`. Separately, GET `/api/v1/lists` still expands every user's list through `userLists`; ordinary UI paths use summaries/paged selected lists, but the endpoint remains callable. Do not call the legacy endpoint a hot production path without caller evidence.\n\n**Smallest option:** use an owner-validated header-only domain read for playback-start admission. Retire or truthfully paginate the complete-list endpoint only after confirming consumers/contract. Do not silently cap returned members.\n\n**Acceptance:** real large playlist first start/restart/already-started/missing/cross-owner cases; zero item hydration for header admission. Existing full list/summary/paged identity and order must remain unchanged until intentionally migrated.",
+        "references": [
+          {
+            "path": "src/lib/server/api/lists.server.ts",
+            "line": 15
+          },
+          {
+            "path": "src/lib/core/lists/service.server.ts",
+            "line": 108
+          },
+          {
+            "path": "src/lib/server/queries/lists.ts",
+            "line": 203
+          }
+        ]
+      },
+      "evidenceRefs": [
+        "data-api.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "playlist admission",
+        "list commands",
+        "summaries",
+        "legacy complete endpoint"
+      ]
+    },
+    {
+      "id": "PLAN-03",
+      "canonicalStatus": "open",
+      "priority": "measurement-gated",
+      "workstream": "W12",
+      "title": "Taste staleness/ranking",
+      "sharedOwner": "Taste staleness/ranking",
+      "minimalSharedOption": "Measure current ten-user taste staleness/ranking query; hoist invariant aggregate work only if actual plans and full candidate/order comparison prove equivalence.",
+      "actualData": "Shared interest input5completeactualorderedcontexts/1018objects equal;6albumfallbacks retained, measured under PLAN05. Four-user staleness2.126ms;globalconfig/catalogueInitPlansonce, userrevisionloops4.",
+      "nextMeaningfulTest": "Capture actual staleness/candidate SQL plans and complete selected users/ranks across policy/revision/date cases, retaining any empty/absent dimensions and current lease/checkpoint behavior.",
+      "dispositionReasons": [
+        "measurement_gap"
+      ],
+      "whyNotImplementedInThisPass": "Shared interest fallback repair benefits taste through its existing input owner, recorded under PLAN05 without duplicate savings. No staleness or candidate-ranking rewrite was justified or adopted.",
+      "overlaps": [
+        "MIN-08",
+        "PLAN-04",
+        "PLAN-05"
+      ],
+      "sourceFiles": [
+        "src/lib/social/taste-cache.server.ts",
+        "src/lib/social/work-features.server.ts"
+      ],
+      "additionalEvidenceRefs": [
+        "implementation-taste-overlap.md",
+        "implementation-recommendation-scoring.md",
+        "implementation-interest-fallback.md"
+      ],
+      "currentSourcePins": {
+        "src/lib/social/taste-cache.server.ts": "ab588a44d7307a2ae79b1ddd80647000d5b5a9fbc1acab5a5660a04871c35c1e",
+        "src/lib/social/work-features.server.ts": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63"
+      },
+      "originalAnalysisRef": "data-api.md",
+      "originalDetailRef": "data-api-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "data-api-findings.json",
+        "originalPlanLead": {
+          "owner": "Taste staleness/ranking",
+          "dimensionAndBound": "Ten users/run, 300 evidence roots/user, 500 candidates/medium; freshness expression can rescan recommendations per candidate user and candidate windows rank all eligible matches.",
+          "investigationOptions": "Actual many-user/set/feature plans before global aggregate hoisting or candidate access redesign. Existing compile/checkpoint/fencing repairs must stay."
+        }
+      },
+      "evidenceRefs": [
+        "data-api.md",
+        "implementation-taste-overlap.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": "See query family coverage"
+    },
+    {
+      "id": "PLAN-09",
+      "canonicalStatus": "open",
+      "priority": "measurement-gated",
+      "workstream": "W12",
+      "title": "Deep numbered pages",
+      "sharedOwner": "Deep numbered pages",
+      "minimalSharedOption": "Measure real first/deep numbered pages at existing query owners; adopt keyset only as an explicit complete pagination contract where offset work is actually material.",
+      "actualData": "Actual large catalogue/history exists, but saved lists are absent and no exhaustive late-page plan/performance comparison was captured.",
+      "nextMeaningfulTest": "EXPLAIN actual first/middle/deep/clamped pages with exact count/order/ties/filter behavior; preserve Back/cursor or numbered-page semantics and public API links.",
+      "dispositionReasons": [
+        "measurement_gap",
+        "semantic_contract"
+      ],
+      "whyNotImplementedInThisPass": "OFFSET alone is not a defect. Cursor conversion changes API/navigation semantics and must not be slipped into a small query fix.",
+      "overlaps": [
+        "DATA-03",
+        "DATA-05",
+        "PR-14",
+        "PJ-10",
+        "UIS-03"
+      ],
+      "sourceFiles": [
+        "src/lib/server/queries/pagination.ts",
+        "src/lib/server/queries/library.ts",
+        "src/lib/server/public-api/handler.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/server/queries/pagination.ts": "8d13fbda75755cb40c53f1db2d4c8a16b127010791f5fd35eacff116e4c56f9f",
+        "src/lib/server/queries/library.ts": "ceae8d87a2e6f1ab70fc7db812e9bf028b63c6141f1ba3cbd50ec6decfa6e9df",
+        "src/lib/server/public-api/handler.server.ts": "1c4dc5119aa0dfe898babf35cfd8c903e3792e929937eb3cce26d6edb7d51044"
+      },
+      "originalAnalysisRef": "data-api.md",
+      "originalDetailRef": "data-api-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "data-api-findings.json",
+        "originalPlanLead": {
+          "owner": "Deep numbered pages",
+          "dimensionAndBound": "Count+OFFSET across catalogue/library/history/list/public API. 60 outputs; public page input10,000.",
+          "investigationOptions": "Compare actual page1 and actual deep pages. Cursor contract migration is optional product/API work; OFFSET alone is not a defect."
+        }
+      },
+      "evidenceRefs": [
+        "data-api.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": "See query family coverage"
+    },
+    {
+      "id": "PLAN-10",
+      "canonicalStatus": "open",
+      "priority": "measurement-gated",
+      "workstream": "W12",
+      "title": "Presence/read freshness",
+      "sharedOwner": "Presence/read freshness",
+      "minimalSharedOption": "Capture active-session/peer visibility plans first; reduce repeated candidate work within the existing presence/read owner while preserving fresh permission and expiration checks.",
+      "actualData": "Actual users and retained sessions exist, but retained39 rooms are not an active-session scale cohort. No current large active-peer plan is established.",
+      "nextMeaningfulTest": "Use actual active source/peer sessions when present; compare visible states/expiration/withdrawal under normal settings, and SQL/rows separately from heartbeat write frequency.",
+      "dispositionReasons": [
+        "measurement_gap",
+        "actual_cohort_gap"
+      ],
+      "whyNotImplementedInThisPass": "Existing10s write threshold and revision exclusion are useful. Global inspection in a query is not evidence of a current history-sized scan or leak.",
+      "overlaps": [
+        "PR-08",
+        "HELPER-03"
+      ],
+      "sourceFiles": [
+        "src/lib/social/presence.server.ts",
+        "src/lib/social/status.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/social/presence.server.ts": "64c185536df3632ed3da595d55cfb399afcc4e1fbfb933f3f8bba1537d71fcc3",
+        "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772"
+      },
+      "originalAnalysisRef": "data-api.md",
+      "originalDetailRef": "data-api-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "data-api-findings.json",
+        "originalPlanLead": {
+          "owner": "Presence/read freshness",
+          "dimensionAndBound": "One latest live state/person but visibility/candidate SQL can inspect active sessions globally.",
+          "investigationOptions": "Plans need active-session/source/peer scale, not whole-history assumptions. Heartbeat write threshold10s and content revisions excluding heartbeat are good defenses."
+        }
+      },
+      "evidenceRefs": [
+        "data-api.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": "See query family coverage"
+    },
+    {
+      "id": "PJ-03",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W04",
+      "title": "crop processes and retained results lack aggregate bounds",
+      "sharedOwner": "Plugin crop admission/results/process lifetime",
+      "minimalSharedOption": "Bound active/pending/result crop resources at the shared plugin owner with independent waiters, cancellation and complete process-output/drain ownership.",
+      "actualData": "Controlled lifecycle proof exists; actual FFmpeg RSS/CPU, distinct-trailer concurrency and deployed plugin configuration/load are absent.",
+      "nextMeaningfulTest": "Capture real trailer process/result sizes; verify selected aggregate bounds, cancel-before-start, follower survival, stop/drain, cache invalidation and Coast fallback using actual media.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "substantial_complexity",
+        "actual_cohort_gap"
+      ],
+      "whyNotImplementedInThisPass": "Budgets, pending/fallback behavior and lifetime ownership must be concrete before introducing queues/caches. Choose caps from actual process evidence; no invented OOM or arbitrary threshold.",
+      "overlaps": [
+        "PJ-02",
+        "PR-12",
+        "PJ-14"
+      ],
+      "sourceFiles": [
+        "../coast-plugin/Coast/Api/TrailerCropController.cs"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "../coast-plugin/Coast/Api/TrailerCropController.cs": "2f689280858d5f4f64cd1bf945b788bfb348ba70c28e4f992b45853ad91b6d71"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Bound shared active/pending/cache resources; per-waiter cancellation; capped diagnostic parser; process drain",
+        "alternatives": [
+          "Explicit approved crop fallback/opt-out"
+        ],
+        "acceptance": [
+          "Aggregate process/queue/cache caps",
+          "cancelled-before-start zero work",
+          "shutdown drain",
+          "fault/null policy",
+          "content invalidation"
+        ],
+        "gaps": [
+          "Caps require real FFmpeg RSS/CPU evidence; no production OOM claim"
+        ],
+        "evidenceRefs": [
+          "providers-jobs.md#pj-03"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "All distinct crop requests",
+        "joined viewers",
+        "plugin stop/config",
+        "Coast fallback"
+      ]
+    },
+    {
+      "id": "PJ-04",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W10",
+      "title": "Comic Vine search waits on optional enrichment",
+      "sharedOwner": "Reading-provider service/cache demand contract and common origin lane",
+      "minimalSharedOption": "Keep issue-result and optional series-enrichment demand explicit in the existing reading-provider/cache owner; omit enrichment only where the approved result contract permits.",
+      "actualData": "Controlled2/3-call composition is known; no real Comic Vine cold/warm search trace, provider latency or volume-result equivalence was retained.",
+      "nextMeaningfulTest": "Capture actual first/later search and subsequent details with exact items/order/total/fallback, calls/cache/cooldown, and independent concurrent/cancelled consumers.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "actual_cohort_gap"
+      ],
+      "whyNotImplementedInThisPass": "Issue titles/artwork may depend on enrichment. Merely parallelizing same-origin paced calls or removing metadata can alter results and gives no verified wire-time gain.",
+      "overlaps": [
+        "PJ-14",
+        "FRT-01"
+      ],
+      "sourceFiles": [
+        "src/lib/providers/comic-vine/adapter.server.ts",
+        "src/lib/providers/reading.server.ts",
+        "src/lib/server/security/provider-fetch.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/providers/comic-vine/adapter.server.ts": "c57a10d2bb65c99c3a46e19366cc5cdd6bb09a0a858cd39bb594fff40d8f359a",
+        "src/lib/providers/reading.server.ts": "7b8e7344d59090b73ee674a16fcbc7708c67857f7df47f69cf8568444c85c94f",
+        "src/lib/server/security/provider-fetch.ts": "412271ebd72de3e4530a95830954dc1657265a67cae2f637a4d37fe82bea2d7d"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Define successful issue-result/enrichment demand contract and remove unnecessary serial optional demand where approved",
+        "alternatives": [
+          "Bounded query-volume reuse; retain semantics and communicate long work"
+        ],
+        "acceptance": [
+          "Exact items/order/total/fallback",
+          "no unrelated volumes",
+          "cooldown/concurrent callers",
+          "cold/warm actual trace"
+        ],
+        "gaps": [
+          "2/3 calls verified; spacing arithmetic is not measured end-to-end; product decision required"
+        ],
+        "evidenceRefs": [
+          "src/lib/providers/comic-vine/adapter.server.ts:105-143",
+          "server/security/provider-fetch.ts:335-336",
+          "providers/reading.server.ts:63-69",
+          "providers-jobs.md#pj-04"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "Comic first/later search",
+        "series enrichment",
+        "verify",
+        "metadata/group/discovery",
+        "book shared contracts"
+      ]
+    },
+    {
+      "id": "PJ-05",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W06",
+      "title": "one Trakt value can require a full account walk",
+      "sharedOwner": "Canonical Trakt complete traversal/staging/current-value owner",
+      "minimalSharedOption": "Use exact supported lookups or existing durable authoritative traversal/staging to avoid repeating a full account walk for one value; keep terminal evidence and activity/generation fences.",
+      "actualData": "Actual local history exists; no complete live Trakt personal history/removal trace or remote latency was captured.",
+      "nextMeaningfulTest": "Replay actual retained provider pages for first/middle/last/absent values, true terminal page, removal/activity/reconnect/lease changes and safe yield/resume; never infer absence from a prefix.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "substantial_complexity",
+        "actual_cohort_gap"
+      ],
+      "whyNotImplementedInThisPass": "Mutable remote history and authoritative negative evidence prevent a trivial LIMIT/cache shortcut. A shared resumable census adds recovery/freshness ownership.",
+      "overlaps": [
+        "PJ-06",
+        "PJ-12",
+        "DATA-12"
+      ],
+      "sourceFiles": [
+        "src/lib/sync/trakt-export.server.ts",
+        "src/lib/sync/trakt-import.server.ts",
+        "src/lib/collection/projection.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/sync/trakt-export.server.ts": "a74c753043d10f2a3290d53e77639dee5b0529f9729b2ebdd733f3b02665cf31",
+        "src/lib/sync/trakt-import.server.ts": "b60035dea2ea16c13da5376fdb0aac2196dfbb68df1c779488d2d08348d046b5",
+        "src/lib/collection/projection.server.ts": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Exact supported lookup or shared durable authoritative census/resumable traversal",
+        "alternatives": [
+          "Scoped complete-read single-flight with explicit freshness/activity fences"
+        ],
+        "acceptance": [
+          "First/middle/last/absent",
+          "exact terminal page",
+          "no partial absence",
+          "reconnect/lease/activity change",
+          "safe yields"
+        ],
+        "gaps": [
+          "No live Trakt history or provider latency measured"
+        ],
+        "evidenceRefs": [
+          "providers-jobs.md#pj-05"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "Scalar export",
+        "progress/history clearing",
+        "Collection projection/preview/cleanup/review",
+        "lists"
+      ]
+    },
+    {
+      "id": "PJ-06",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W06",
+      "title": "Trakt list delivery still rebuilds full identities and rewrites converged lists",
+      "sharedOwner": "Canonical Trakt batched identity and list/traversal delivery",
+      "minimalSharedOption": "Batch exact canonical identity reads and skip only proven converged complete list snapshots at the existing Trakt list/traversal owner.",
+      "actualData": "Actual snapshots have zero local lists; no complete large remote list or local/remote concurrent-edit capture.",
+      "nextMeaningfulTest": "Compare complete real rename/add/remove/reorder/converged lists, aliases/unsupported entries, uncertain create and concurrent edits under rollback/recorded provider replay.",
+      "dispositionReasons": [
+        "actual_cohort_gap",
+        "semantic_contract"
+      ],
+      "whyNotImplementedInThisPass": "Identity batching is routine but must cover all scalar/list/projection callers. Broader write-phase or convergence behavior needs actual remote completeness and race evidence.",
+      "overlaps": [
+        "DATA-03",
+        "DATA-12",
+        "PJ-05",
+        "PJ-12",
+        "UIC-04"
+      ],
+      "sourceFiles": [
+        "src/lib/sync/trakt-identity.server.ts",
+        "src/lib/sync/trakt-lists.server.ts",
+        "src/lib/collection/projection.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/sync/trakt-identity.server.ts": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "src/lib/sync/trakt-lists.server.ts": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "src/lib/collection/projection.server.ts": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Batch exact identity reads at common owner and no-op truly converged complete snapshots",
+        "alternatives": [
+          "Bounded write phases only if large-list evidence justifies"
+        ],
+        "acceptance": [
+          "Rename/add/remove/reorder/no-op",
+          "aliases/unsupported media",
+          "concurrent local edit",
+          "uncertain create",
+          "exact remote result"
+        ],
+        "gaps": [
+          "Actual captures have zero local lists; no large-list latency"
+        ],
+        "evidenceRefs": [
+          "sync/trakt-identity.server.ts:26-45",
+          "providers-jobs.md#pj-06"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "List export preflight/write/reorder",
+        "Collection/source preview",
+        "scalar consumers retain validation"
+      ]
+    },
+    {
+      "id": "PJ-07",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W07",
+      "title": "Jellyfin final reconciliation escapes page/transaction budgets",
+      "sharedOwner": "Existing Jellyfin scan progress plus queue checkpoints/intents",
+      "minimalSharedOption": "Split reconciliation intent seed/enqueue/finalization into bounded set-based/keyset phases through existing queue/checkpoint owners, with commit-coupled cursors and fresh account/lease/policy fences.",
+      "actualData": "Deployed snapshot has8,919 pending reconcile and2,867 pending delta jobs; this is not a causal throughput result. Current clone history is terminal, and enabled reconciliation/user lock spans are not measured.",
+      "nextMeaningfulTest": "Read actual eligible payload overlap/age/gates; replay natural finalization rollback on an isolated clone, compare exact intents/versions and crash/resume/withdrawal semantics with bounded statements/lock spans.",
+      "dispositionReasons": [
+        "measurement_gap",
+        "semantic_contract",
+        "substantial_complexity"
+      ],
+      "whyNotImplementedInThisPass": "Changing unsplit units requires replay-safe phases and publication completeness, not merely more workers. FEATURE-JOB-LEASE-OBS-06 guards only feature.reconcile raw cleanup chunks. It does not fence or change Jellyfin finalization and does not close PJ-07, PJ-09 or PJ-10.",
+      "overlaps": [
+        "PJ-08",
+        "PJ-09",
+        "PJ-15",
+        "DATA-07"
+      ],
+      "sourceFiles": [
+        "src/lib/sync/jellyfin.server.ts",
+        "src/lib/sync/changes.server.ts",
+        "src/lib/server/queue/execution.ts"
+      ],
+      "additionalEvidenceRefs": [
+        "implementation-feature-job-lease.md",
+        "evidence/deployed-real-sql.json"
+      ],
+      "currentSourcePins": {
+        "src/lib/sync/jellyfin.server.ts": "3ab6f5c69014adad7a61ef422c330f0d0007e1cef26226fccf60799245d73370",
+        "src/lib/sync/changes.server.ts": "5b781dfbf935afa83d7fa54b8446fc9d4830d7f375d26f6c3658ba00191868af",
+        "src/lib/server/queue/execution.ts": "ea415b763273144b794cdc759954fb9a1397a97d2b32708689c6ebb855f64ec2"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Set-based bounded intent seed and keyset enqueue phases with commit-coupled cursors/fences",
+        "alternatives": [
+          "Small shared finalization helper only if multiple importers need it"
+        ],
+        "acceptance": [
+          "Five-page/10-second safe yields",
+          "exact versions",
+          "crash/resume",
+          "concurrent edits/reset/feature change",
+          "complete publication"
+        ],
+        "gaps": [
+          "8919 actual pending reconciliation jobs alone do not establish cause; enabled scope and lock spans pending"
+        ],
+        "evidenceRefs": [
+          "src/lib/sync/jellyfin.server.ts:841-857",
+          "src/lib/sync/changes.server.ts:72-116",
+          "providers-jobs.md#pj-07"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md",
+        "implementation-feature-job-lease.md",
+        "evidence/deployed-real-sql.json"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "Bootstrap",
+        "user/personal/full sync",
+        "screen/music reconciliation",
+        "companion backfill"
+      ]
+    },
+    {
+      "id": "PJ-08",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W06",
+      "title": "a single music track can materialize 10,000 listens in one transaction",
+      "sharedOwner": "Shared imported-listen persistence and existing import checkpoint owner",
+      "minimalSharedOption": "Persist imported listens in bounded replay-safe batches under the current import checkpoint, preserving exact per-listen events, unknown dates, duplicates and webhooks.",
+      "actualData": "Actual music/listen history exists; no actual10,000-listen positive delta was executed or measured.",
+      "nextMeaningfulTest": "Replay naturally retained actual source count deltas and compare every listen/session/provenance/webhook/cursor field, unchanged retry and concurrent listening; measure batch SQL/WAL.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "substantial_complexity",
+        "actual_cohort_gap"
+      ],
+      "whyNotImplementedInThisPass": "Replacing repeated listens with a cumulative representation changes history semantics; splitting exact events needs atomic resume/dedup ownership. No fabricated high-delta cohort may establish gain.",
+      "overlaps": [
+        "PR-05",
+        "PR-14",
+        "DATA-07",
+        "PJ-07"
+      ],
+      "sourceFiles": [
+        "src/lib/music/persistence.server.ts",
+        "src/lib/sync/jellyfin.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/music/persistence.server.ts": "78c409fd3261227a39aa196a855a16dbcb9b26a0dba68cf572a6487d327cfe3f",
+        "src/lib/sync/jellyfin.server.ts": "3ab6f5c69014adad7a61ef422c330f0d0007e1cef26226fccf60799245d73370"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Bound idempotent imported-listen batches with replay-safe continuation and equivalent events",
+        "alternatives": [
+          "Cumulative history model only with explicit approval/migration"
+        ],
+        "acceptance": [
+          "Delta0/1/100/10000",
+          "unchanged no growth",
+          "concurrent listening",
+          "retry",
+          "unknown dates",
+          "duplicate editions",
+          "webhook equivalence"
+        ],
+        "gaps": [
+          "No actual10000-delta execution or WAL/statement measurement"
+        ],
+        "evidenceRefs": [
+          "src/lib/sync/jellyfin.server.ts:465-479",
+          "src/lib/music/persistence.server.ts:166",
+          "providers-jobs.md#pj-08"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "Full/personal/delta music",
+        "manual track/album listens",
+        "progress",
+        "per-listen webhooks"
+      ]
+    },
+    {
+      "id": "PJ-09",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W06",
+      "title": "final shared-library membership update rewrites matching parents and correlates child counts",
+      "sharedOwner": "Canonical membership-evidence projection",
+      "minimalSharedOption": "Guard unchanged membershipComplete only at its canonical evidence scope; aggregate touched child counts once if actual plans justify it and keep finalization fencing.",
+      "actualData": "Actual census3,618 parents/26 expected-member declarations/0 membershipEvidence/0 currently eligible parents; the26 computed values already match.",
+      "nextMeaningfulTest": "Wait for naturally valid current membership evidence, then compare complete parent/Collection flags, distinct children, partial-scan exclusion, tuple admission and safe plans in rollback.",
+      "dispositionReasons": [
+        "actual_cohort_gap"
+      ],
+      "whyNotImplementedInThisPass": "A value-difference guard is plausible but no positive current admission exists. Rebuilding provenance or seeding evidence solely to benchmark would fabricate the missing cohort.",
+      "overlaps": [
+        "PJ-07",
+        "DATA-07",
+        "DATA-14"
+      ],
+      "sourceFiles": [
+        "src/lib/sync/jellyfin.server.ts"
+      ],
+      "additionalEvidenceRefs": [
+        "evidence/implementation-provider-membership-census.json"
+      ],
+      "currentSourcePins": {
+        "src/lib/sync/jellyfin.server.ts": "3ab6f5c69014adad7a61ef422c330f0d0007e1cef26226fccf60799245d73370"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Value-difference guard for identical membership with same evidence scope",
+        "alternatives": [
+          "Aggregate touched child counts once only if plan supports"
+        ],
+        "acceptance": [
+          "Exact complete parent flags/Collection",
+          "distinct child identity",
+          "partial scan never complete",
+          "unchanged tuple/revision/WAL counts"
+        ],
+        "gaps": [
+          "Actual update/read-equivalent plan and touched parent subset unknown"
+        ],
+        "evidenceRefs": [
+          "src/lib/sync/jellyfin.server.ts:830-840",
+          "providers-jobs.md#pj-09"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md",
+        "evidence/implementation-provider-membership-census.json"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "Full/recent shared library",
+        "targeted imports",
+        "show/season consumers",
+        "Collection derivation"
+      ]
+    },
+    {
+      "id": "PJ-10",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W07",
+      "title": "Jobs terminal representatives scan and spill permanent history",
+      "sharedOwner": "Shared queue task evidence/read model and scheduler index contracts",
+      "minimalSharedOption": "Use a bounded complete dynamic/null task-key discovery and indexed representative owner; if necessary stage a durable latest-task model with explicit write/rebuild/retention semantics.",
+      "actualData": "Actual permanent history plans show sort/spill cost. A later read-only hash-group alternative preserved23 representatives including4 null scopes but still sorted25,891 rows and doubled hits669\u21921,338; it was rejected.",
+      "nextMeaningfulTest": "Execute prepared source-pinned Q1/current-index READ ONLY comparison first. Only a clearly useful ordering/coverage gap justifies Q0/Q1 with a private candidate index in a fresh secondary clone; preserve all scopes/counts/generations/ties and report maintenance costs.",
+      "dispositionReasons": [
+        "measurement_gap",
+        "semantic_contract",
+        "substantial_complexity"
+      ],
+      "whyNotImplementedInThisPass": "A closed serviceTasks list loses dynamic/null representatives. The tested SQL is not a gain; a new index/projection is a substantive schema/write-maintenance option, not authorized by this disposition.",
+      "overlaps": [
+        "PJ-15",
+        "PR-14",
+        "MIN-05"
+      ],
+      "sourceFiles": [
+        "src/lib/server/queue/index.ts",
+        "src/lib/providers/job-timing.server.ts",
+        "src/lib/server/storage/retention.server.ts"
+      ],
+      "additionalEvidenceRefs": [
+        "evidence/deployed-real-sql.json",
+        "evidence/development-real-sql.json",
+        "task-history-lane-seek.md",
+        "next-task-history-plan.md"
+      ],
+      "currentSourcePins": {
+        "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+        "src/lib/providers/job-timing.server.ts": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+        "src/lib/server/storage/retention.server.ts": "50b898518a5ac21573ed69ae514c90b9e27062acd1aeb35a78b2affde3e04ad1"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Finite task scopes and bounded indexed latest-record seeks",
+        "alternatives": [
+          "Durable shared latest-task evidence snapshot maintained with terminal transitions, with approval/rebuild contract"
+        ],
+        "acceptance": [
+          "Exact IDs/counts/outcomes/old one-off",
+          "ties/deleted scopes",
+          "same actual-data before/after plan",
+          "keep permanent history",
+          "Complete dynamic-kind/null-scope representative set; 400-day-old webhook retained",
+          "Exact current/null/obsolete generation eligibility; bounded dynamic-key discovery"
+        ],
+        "gaps": [
+          "134.122ms deployed/36.744ms dev medians are one query, not route/tail latency or controlled scaling",
+          "Closed serviceTasks enumeration alone does not preserve existing fallback representatives"
+        ],
+        "evidenceRefs": [
+          "src/lib/server/queue/index.ts:563-591",
+          "storage/retention.server.ts:4",
+          "job-timing.server.ts:27-35",
+          "evidence/deployed-real-sql.json",
+          "evidence/development-real-sql.json",
+          "providers-jobs.md#pj-10",
+          "src/lib/server/queue/index.ts:593-597",
+          "src/lib/ui/components/JobsSettings.svelte:66-72"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md",
+        "evidence/deployed-real-sql.json",
+        "evidence/development-real-sql.json"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "Jobs cards/counts/controls",
+        "timings",
+        "history",
+        "one-off/current/null/obsolete generations",
+        "Dynamic local/event-driven kinds absent from serviceTasks",
+        "Null instance/deleted-connection scopes"
+      ]
+    },
+    {
+      "id": "PJ-12",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W08",
+      "title": "list conflicts have no page bound and hydrate complete local membership per conflict",
+      "sharedOwner": "Shared conflict projection and bounded summary/detail requests",
+      "minimalSharedOption": "Return bounded conflict summaries, demand-load the complete selected list diff, and share batched canonical membership/identity projection.",
+      "actualData": "Captured actual installations contain no saved lists; no large positive list-conflict/provider response was retained.",
+      "nextMeaningfulTest": "Compare naturally retained actual scalar/list conflicts, exact ordered unsupported membership, selected huge diff, local edits/privacy/acknowledgement and bounded summary admission.",
+      "dispositionReasons": [
+        "actual_cohort_gap",
+        "semantic_contract"
+      ],
+      "whyNotImplementedInThisPass": "Complete approval evidence cannot be silently capped. Paging/summary/detail contracts must remain coherent with the approved review interface.",
+      "overlaps": [
+        "UIC-04",
+        "PJ-05",
+        "PJ-06",
+        "UIS-03"
+      ],
+      "sourceFiles": [
+        "src/lib/sync/conflicts.server.ts",
+        "src/lib/sync/list-values.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/sync/conflicts.server.ts": "f3183a3edf206bd8c745790673b16fe7346dd273d48e9e86993e49fe6894a109",
+        "src/lib/sync/list-values.server.ts": "2352d763f297de83636f406d1d070f5fd78901c1beef63fb5ab44afc2671ff7a"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Bound summary pages; demand-load complete selected-list diff; batch scalar state",
+        "alternatives": [
+          "Shared selected-conflict domain projection"
+        ],
+        "acceptance": [
+          "Over100 conflicts",
+          "huge exact selected list",
+          "local edits/privacy",
+          "unsupported items preserved"
+        ],
+        "gaps": [
+          "Captured actual datasets have zero lists; actual route timing unknown"
+        ],
+        "evidenceRefs": [
+          "src/lib/sync/conflicts.server.ts:55-78",
+          "sync/list-values.server.ts:47-65",
+          "providers-jobs.md#pj-12"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "Settings/reviews",
+        "scalar/list conflicts",
+        "supported/unsupported media"
+      ]
+    },
+    {
+      "id": "PJ-13",
+      "canonicalStatus": "open",
+      "priority": "P3",
+      "workstream": "W08",
+      "title": "review pagination refetches invariant TMDB detail and credits",
+      "sharedOwner": "Shared catalogue insights/cache",
+      "minimalSharedOption": "Separate invariant TMDB detail/credits from requested review-page demand inside the existing catalogue cache, preserving language/region/identity/retry behavior.",
+      "actualData": "Actual screen catalogue exists, but no saved real review navigation/provider trace proves redundant calls in cold/warm usage.",
+      "nextMeaningfulTest": "Record actual consecutive review pages and compare full review/detail output, provider calls/cache entries and incomplete/error retry; retain Trakt-specific behavior.",
+      "dispositionReasons": [
+        "safe_next_implementation",
+        "measurement_gap"
+      ],
+      "whyNotImplementedInThisPass": "This can be a routine shared-cache composition change once invariant lookup ownership is demonstrated. Do not add a second cache or assume current cache misses/wire latency.",
+      "overlaps": [
+        "DATA-04",
+        "PJ-14"
+      ],
+      "sourceFiles": [
+        "src/lib/catalogue/details.server.ts",
+        "src/lib/providers/tmdb/adapter.server.ts"
+      ],
+      "additionalEvidenceRefs": [
+        "task-history-lane-seek.md"
+      ],
+      "currentSourcePins": {
+        "src/lib/catalogue/details.server.ts": "ab72ccba2d2144bc84b0bed1e14bec87be4cb264eeda56a9a2ba69003d67d567",
+        "src/lib/providers/tmdb/adapter.server.ts": "8258fd241769f8c5354ee31ba1e15af99aa09900a55ca55f7984f30abb62c672"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Split bounded base/review demand only if actual use warrants",
+        "alternatives": [
+          "Retain current simple cache if rare"
+        ],
+        "acceptance": [
+          "Region/language/identity",
+          "incomplete review retry",
+          "exact result",
+          "finite bytes"
+        ],
+        "gaps": [
+          "No actual review navigation/provider trace"
+        ],
+        "evidenceRefs": [
+          "src/lib/catalogue/details.server.ts:67",
+          "providers-jobs.md#pj-13"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "Movie/show review pages",
+        "season/episode paths",
+        "detail rows",
+        "provider-specific Trakt contract"
+      ]
+    },
+    {
+      "id": "PJ-14",
+      "canonicalStatus": "open",
+      "priority": "policy",
+      "workstream": "W03",
+      "title": "queued provider time has no caller deadline",
+      "sharedOwner": "Common request priority/transport/deadline/shared waiter owner",
+      "minimalSharedOption": "Define caller-aware overall queued+active deadlines in the common priority/transport owner, with distinct local expiry, per-waiter ownership and durable continuation semantics.",
+      "actualData": "Queued wait distributions and natural stuck incidence are unmeasured; existing queue128 and cancellation/admission bounds already work.",
+      "nextMeaningfulTest": "Use actual interactive/job provider traces plus controlled held queues; verify expired-before-send zero transport, follower survival, fairness/reservations/Retry-After and durable resumption.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "substantial_complexity"
+      ],
+      "whyNotImplementedInThisPass": "A blanket timeout changes long import behavior and ambiguous acknowledgement. Deadline values and recovery policy cannot be invented from source alone.",
+      "overlaps": [
+        "PR-02",
+        "PJ-03",
+        "PJ-04",
+        "PR-04"
+      ],
+      "sourceFiles": [
+        "src/lib/server/security/request-priority.ts",
+        "src/lib/server/security/provider-fetch.ts",
+        "src/lib/providers/reading.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/server/security/request-priority.ts": "fafb402e4b583d7b247611cbadc708c3497caaae09a4d475f25fe56afdd4662c",
+        "src/lib/server/security/provider-fetch.ts": "412271ebd72de3e4530a95830954dc1657265a67cae2f637a4d37fe82bea2d7d",
+        "src/lib/providers/reading.server.ts": "7b8e7344d59090b73ee674a16fcbc7708c67857f7df47f69cf8568444c85c94f"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Define caller-aware overall deadline and cancellation with distinct local expiry semantics",
+        "alternatives": [
+          "Retain durable waits with progress and no policy change until selected"
+        ],
+        "acceptance": [
+          "Expired queue caller sends zero HTTP",
+          "durable continuation",
+          "priorities/fairness/reservations",
+          "Retry-After",
+          "live follower"
+        ],
+        "gaps": [
+          "Wait distributions unknown; generic15s import timeout violates contract"
+        ],
+        "evidenceRefs": [
+          "server/security/request-priority.ts:75-124",
+          "providers/reading.server.ts:63-110",
+          "providers-jobs.md#pj-14"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "Every provider family",
+        "interactive/job calls",
+        "webhooks",
+        "streams separate lifetime"
+      ]
+    },
+    {
+      "id": "PJ-15",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W07",
+      "title": "bulk task controls select all matching jobs and execute serial transactions",
+      "sharedOwner": "Existing queue task-control admission/selection/progress with canonical cancel/retry/promote policies",
+      "minimalSharedOption": "Use bounded keyset chunks and a finite command budget in existing task-control admission, with a validated original target/generation boundary and exact updated/skipped/failed continuation.",
+      "actualData": "Actual deployed pending backlog exists; per-control eligible count, clone mutation/lock/WAL and live busy-navigation behavior are unverified.",
+      "nextMeaningfulTest": "First read actual eligible scopes/counts; then clone-only cancel/retry/promote with dynamic/null scopes, auth/generation/active conflicts, notifications/priorities, lost acknowledgement and no newly created work swept in.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "substantial_complexity",
+        "measurement_gap"
+      ],
+      "whyNotImplementedInThisPass": "Necessary per-job effects cannot be replaced with a broad UPDATE. Partial completion/recovery and whether work survives navigation require one concrete command contract, not card-private loops or a second scheduler.",
+      "overlaps": [
+        "PJ-07",
+        "PJ-10",
+        "PR-02"
+      ],
+      "sourceFiles": [
+        "src/lib/server/queue/index.ts",
+        "src/lib/ui/components/JobSchedule.svelte"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+        "src/lib/ui/components/JobSchedule.svelte": "d282369189bb64a6ca9fd746875000b7cb4fb6e9e81d7c2eae246b097303e863"
+      },
+      "originalAnalysisRef": "providers-jobs.md",
+      "originalDetailRef": "providers-jobs-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "providers-jobs-findings.json",
+        "smallestOption": "Bounded keyset chunks and command work budget with validated continuation, target/generation fence and exact updated/skipped/failed progress",
+        "alternatives": [
+          "Existing durable job/checkpoint infrastructure if completion must survive navigation/restart; no second queue",
+          "Set-based shared writer only if every policy and side effect is preserved"
+        ],
+        "acceptance": [
+          "Read-only actual eligible count; mutate only isolated actual-data clone",
+          "Bounded selection/chunk SQL/lock spans and retained IDs",
+          "Notification resolution, retry credit/service gates and duplicate-active conflict skips",
+          "Manual priorities, cancel-waiting preserves running work",
+          "Dynamic/null scopes, generation/auth withdrawal and concurrent transitions",
+          "Lost acknowledgement/restart continuation and no newly created work swept in",
+          "Busy/navigation release with honest partial outcomes; actual latency/WAL before speedup claim"
+        ],
+        "gaps": [
+          "Actual installation has 8919 pending reconcile and 2867 pending delta jobs; per-control eligible counts unknown",
+          "No task control mutation, latency, lock-wait, WAL or browser-hang reproduction",
+          "JobSchedule source prevents different-path navigation while the whole command remains busy"
+        ],
+        "evidenceRefs": [
+          "src/lib/server/queue/index.ts:602-620",
+          "src/lib/server/queue/index.ts:623-661",
+          "src/lib/ui/components/JobSchedule.svelte:57-63",
+          "src/lib/ui/components/JobSchedule.svelte:148-154",
+          "evidence/deployed-real-sql.json",
+          "providers-jobs.md#pj-15"
+        ]
+      },
+      "evidenceRefs": [
+        "providers-jobs.md",
+        "evidence/deployed-real-sql.json"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "All provider/media/experiment task controls",
+        "Dynamic local/event-driven and null-scope tasks",
+        "Jobs and integration JobSchedule cards",
+        "API task-control callers",
+        "Individual-job command policies"
+      ]
+    },
+    {
+      "id": "PR-02",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W03",
+      "title": "Hung control report blocks Stop and queues lifecycle events",
+      "sharedOwner": "Common API request lifetime plus existing ordered report and bookmark writers",
+      "minimalSharedOption": "Bound ordered report/bookmark delivery and release local decoder/media ownership independently of its final persistence acknowledgement, preserving recoverable unsaved state.",
+      "actualData": "Actual audio/video and23-page CBR happy lifecycles exist; held-send mechanism is controlled, not an observed natural outage or measured incidence.",
+      "nextMeaningfulTest": "Controlled held/late/ambiguous start-pause-seek-stop plus actual decoder/HLS release and exact played-time/bookmark equivalence; prevent old replies affecting a replacement.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "substantial_complexity"
+      ],
+      "whyNotImplementedInThisPass": "A routine timeout alone cannot decide idempotency, retries, lifecycle ordering or unsaved feedback. Durable client outbox is an optional larger requirement, not the default fix.",
+      "overlaps": [
+        "PJ-14",
+        "UIC-03",
+        "PR-14"
+      ],
+      "sourceFiles": [
+        "src/lib/playback/reports.ts",
+        "src/lib/ui/components/PersistentPlayer.svelte",
+        "src/lib/ui/client.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/playback/reports.ts": "785206512a7b1459381c005cc9d4c9511a36d0eb814e39f3cd8c7b36d139bea9",
+        "src/lib/ui/components/PersistentPlayer.svelte": "324658e123153e41c98f990bb3c2ac119757fea9b172e9dcd4caecde71023bd5",
+        "src/lib/ui/client.ts": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16"
+      },
+      "originalAnalysisRef": "playback-readers.md",
+      "originalDetailRef": "playback-readers-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "playback-readers-findings.json",
+        "smallestOption": "Give delivery a bounded request lifetime and recoverable acknowledgement semantics; release local media independently of bounded final persistence.",
+        "alternatives": [
+          "Durable client outbox if offline persistence is an explicit requirement"
+        ],
+        "acceptance": [
+          "Stop releases HLS/media source within named deadline under hung transport",
+          "Lifecycle order/start acknowledgement/final played time remain correct",
+          "Replacement sessions cannot receive old writes/errors"
+        ],
+        "gaps": [
+          "Failure mechanism proven; actual frequency and release latency unmeasured"
+        ],
+        "evidenceRefs": [
+          "evidence/playback-resource-probes.json",
+          "evidence/playback-resource-probes.ts",
+          "src/lib/playback/reports.ts:4",
+          "src/lib/ui/components/PersistentPlayer.svelte:202",
+          "src/lib/ui/client.ts:44"
+        ]
+      },
+      "evidenceRefs": [
+        "playback-readers.md",
+        "evidence/playback-resource-probes.json",
+        "evidence/playback-resource-probes.ts"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "personal audio/video",
+        "shared playback",
+        "party control",
+        "reading bookmark/final close"
+      ]
+    },
+    {
+      "id": "PR-06",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W04",
+      "title": "EPUB preflight and assets scale with full expanded archive",
+      "sharedOwner": "Verified EPUB archive preparation and engine-loading boundary",
+      "minimalSharedOption": "Move existing verified EPUB preflight into an owned cancellable worker, then evaluate on-demand resource preparation only if actual expanded bytes/first-page work still warrant it.",
+      "actualData": "No actual EPUB is supplied; installed-library/control proofs establish work shape, not real archive resource usage.",
+      "nextMeaningfulTest": "Actual ordinary/large EPUB first page/chapter/font/CSS/CFI/protection tests with expanded-byte/long-task/worker/heap counts and close-during-decode cancellation.",
+      "dispositionReasons": [
+        "actual_cohort_gap",
+        "substantial_complexity"
+      ],
+      "whyNotImplementedInThisPass": "Worker/resource transfer and archive hardening are substantive format/lifetime work. Do not replace the engine or add dependencies without evidence and the explicit dependency/complexity decision.",
+      "overlaps": [
+        "PR-01",
+        "PR-09",
+        "UIS-07"
+      ],
+      "sourceFiles": [
+        "src/lib/reading/reader/epub-archive.ts",
+        "src/lib/reading/reader/epub.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/reading/reader/epub-archive.ts": "26f6826a94ffb10fc2d1d25dd6fa84d17fed80ed101495d2a7518d54882ffb7c",
+        "src/lib/reading/reader/epub.ts": "be0d77545700bbc00d3f9ca7f8ece4436f263a34c6e52a9554fc7c12e78be512"
+      },
+      "originalAnalysisRef": "playback-readers.md",
+      "originalDetailRef": "playback-readers-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "playback-readers-findings.json",
+        "smallestOption": "Move verified preflight into a cancellable owned worker and transfer its result.",
+        "alternatives": [
+          "Verified on-demand resource adapter replacing whole-archive rewrite/eager substitution",
+          "Finite per-session verified-byte cache only with measured byte/lifetime budget"
+        ],
+        "acceptance": [
+          "Actual typical/large EPUB first-page and chapter timing/long tasks/expanded bytes/peak memory",
+          "Worker cancellation terminates actual decoding",
+          "Images/fonts/CSS/CFI/protections preserved"
+        ],
+        "gaps": [
+          "Only authored supplementary work-count proof",
+          "No actual EPUB file supplied; total CPU/memory reduction not established"
+        ],
+        "evidenceRefs": [
+          "evidence/playback-resource-probes.json",
+          "evidence/playback-resource-probes.ts",
+          "src/lib/reading/reader/epub-archive.ts:20",
+          "src/lib/reading/reader/epub.ts:15"
+        ]
+      },
+      "evidenceRefs": [
+        "playback-readers.md",
+        "evidence/playback-resource-probes.json",
+        "evidence/playback-resource-probes.ts"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "local EPUB",
+        "remote EPUB",
+        "standalone reader",
+        "party reader",
+        "minimize/reopen"
+      ]
+    },
+    {
+      "id": "PR-08",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W03",
+      "title": "Room wide reconciliation per participant heartbeat",
+      "sharedOwner": "Shared roomState and party command/read model",
+      "minimalSharedOption": "Measure roomState, then separate participant liveness from repeated room reconciliation while retaining fresh authority/policy checks and exact command/read results.",
+      "actualData": "Thirty-nine retained rooms do not establish active1/8/16-client or200-track contention; active-party scale is absent from current evidence.",
+      "nextMeaningfulTest": "On naturally active parties compare full room/host/buffer/ready/queue/privacy/generation/disconnect behavior, SQL/lock spans/payload and command latency; controlled interleavings supplement actual clients.",
+      "dispositionReasons": [
+        "actual_cohort_gap",
+        "semantic_contract",
+        "substantial_complexity"
+      ],
+      "whyNotImplementedInThisPass": "Revision-keyed room state or event delivery adds ownership/backpressure/authority semantics. No party-private cache or polling redesign is justified merely by retained row count.",
+      "overlaps": [
+        "PLAN-10",
+        "PJ-14",
+        "PR-02"
+      ],
+      "sourceFiles": [
+        "src/lib/playback/synced/service.server.ts",
+        "src/routes/+layout.svelte"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/playback/synced/service.server.ts": "bf228ef304b2610d04e1d066d4db754c82ae5885a010a3d638265e7e9d2f4ce6",
+        "src/routes/+layout.svelte": "484247b5dd94e7bdd57daa87cc158afb86281d6f8a419a1f063cad4628e62c73"
+      },
+      "originalAnalysisRef": "playback-readers.md",
+      "originalDetailRef": "playback-readers-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "playback-readers-findings.json",
+        "smallestOption": "Instrument actual statement/lock/payload work, then separate liveness from repeated room reconciliation while retaining fresh policy checks.",
+        "alternatives": [
+          "Revision-keyed viewer-independent state only",
+          "Event delivery plus explicit heartbeats after measuring connection/backpressure tradeoffs"
+        ],
+        "acceptance": [
+          "Actual-data clone at one/eight/sixteen clients and zero/two-hundred queued tracks",
+          "Measure lock wait/hold, SQL/WAL/payload and command latency",
+          "Host/buffering/ready/privacy/generation/disconnect semantics equivalent"
+        ],
+        "gaps": [
+          "Thirty-nine retained development rooms do not imply live sessions",
+          "No current sixteen-user contention measurement"
+        ],
+        "evidenceRefs": [
+          "evidence/development-real-sql.json",
+          "evidence/deployed-real-sql.json",
+          "src/lib/playback/synced/service.server.ts:118",
+          "src/routes/+layout.svelte:86"
+        ]
+      },
+      "evidenceRefs": [
+        "playback-readers.md",
+        "evidence/development-real-sql.json",
+        "evidence/deployed-real-sql.json"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "heartbeats",
+        "room detail",
+        "join/command responses",
+        "now-playing media",
+        "party cards"
+      ]
+    },
+    {
+      "id": "PR-13",
+      "canonicalStatus": "open",
+      "priority": "P3",
+      "workstream": "W04",
+      "title": "Post-decode comic dimension guard cannot bound peak allocation",
+      "sharedOwner": "Common comic image admission and existing PDF renderer owner",
+      "minimalSharedOption": "Inspect supported image dimensions in bounded headers before decoding, retaining the post-decode guard and shared cleanup; define cross-format pixel/frame policy.",
+      "actualData": "Actual CBR image1,988\u00d73,057 exists; no actual oversized scan/PDF failure or decoder allocation trace was captured.",
+      "nextMeaningfulTest": "Replay real scanned/compressed pages and PDFs; verify preallocation rejection, dimensions/orientation/animation, long tasks/peak memory and close/reopen release.",
+      "dispositionReasons": [
+        "actual_cohort_gap",
+        "semantic_contract",
+        "substantial_complexity"
+      ],
+      "whyNotImplementedInThisPass": "A parser/header bound and decoder/resize policy must handle every supported format. Compressed bytes and one successful page do not select a truthful universal pixel cap.",
+      "overlaps": [
+        "UIS-07",
+        "UPP-02",
+        "PR-06"
+      ],
+      "sourceFiles": [
+        "src/lib/reading/reader/comic.ts",
+        "src/lib/reading/reader/pdf.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/reading/reader/comic.ts": "156d2f9fa9b5c1d0ad9d0a041907b51744074e338bb5b543a89aa10cbd4ae10e",
+        "src/lib/reading/reader/pdf.ts": "b64770f9853154c213873890fb386c63ff5541e64c3137c6cfcbff3a8c2c144f"
+      },
+      "originalAnalysisRef": "playback-readers.md",
+      "originalDetailRef": "playback-readers-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "playback-readers-findings.json",
+        "smallestOption": "Inspect supported image dimensions within a bounded header read before decoder allocation; retain post-decode guard and common cleanup.",
+        "alternatives": [
+          "Decoder API with explicit allocation/resize limit after codec/orientation verification"
+        ],
+        "acceptance": [
+          "Actual large scanned/compressed pages and PDFs: decoded dimensions/long tasks/peak memory",
+          "Fail or reject before excessive allocation",
+          "Close/reopen plateau and identical page/orientation/animation behavior"
+        ],
+        "gaps": [
+          "Post-decode guard placement proven; no current oversized-image failure demonstrated",
+          "PDF complex-document resource acceptance outstanding"
+        ],
+        "evidenceRefs": [
+          "src/lib/reading/reader/comic.ts:50"
+        ]
+      },
+      "evidenceRefs": [
+        "playback-readers.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "CBZ/CBR/CB7/CBT image pages",
+        "PDF",
+        "local/remote/party"
+      ]
+    },
+    {
+      "id": "PR-14",
+      "canonicalStatus": "open",
+      "priority": "P3",
+      "workstream": "W07",
+      "title": "Evidence/session growth and history late page plans",
+      "sharedOwner": "Existing retention operation and shared history/session query projections",
+      "minimalSharedOption": "Capture actual growth and late-page/session plans; add only plan-justified read/index improvements while preserving complete permanent history and newest-edition bookmarks.",
+      "actualData": "Actual watch/listen/playback/reading evidence exists. No fully verified growth curve, all late-page plans or archival requirement.",
+      "nextMeaningfulTest": "Read-only actual cardinality/plans/buffers and first/deep page equivalence; any proposed index must measure write overhead and history/bookmark completeness.",
+      "dispositionReasons": [
+        "measurement_gap",
+        "semantic_contract"
+      ],
+      "whyNotImplementedInThisPass": "Permanent history is deliberate, not a leak. Deletion/archival changes retention semantics; routine plan measurement needs no approval or fake rows.",
+      "overlaps": [
+        "PJ-10",
+        "PLAN-02",
+        "PLAN-09",
+        "PJ-08"
+      ],
+      "sourceFiles": [
+        "src/lib/server/storage/retention.server.ts",
+        "src/lib/music/history.server.ts",
+        "src/lib/reading/sessions.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/server/storage/retention.server.ts": "50b898518a5ac21573ed69ae514c90b9e27062acd1aeb35a78b2affde3e04ad1",
+        "src/lib/music/history.server.ts": "a24895287829b56a9b684160b44878ccbf968b8c581748fd8f2d777dcc4db9ad",
+        "src/lib/reading/sessions.server.ts": "989979b445037540bb17ce1f172dc1af249713b4dcbc11673706813a11bca9aa"
+      },
+      "originalAnalysisRef": "playback-readers.md",
+      "originalDetailRef": "playback-readers-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "playback-readers-findings.json",
+        "smallestOption": "Capture actual plans/cardinality/growth; add only plan-justified indexes and preserve existing evidence retention.",
+        "alternatives": [
+          "Keyset history with explicit totals contract",
+          "User-approved evidence archival/retention distinct from progress/history"
+        ],
+        "acceptance": [
+          "Actual plans/buffers/late pages and growth milestones",
+          "Preserve complete events/order and newest edition bookmark",
+          "Measure index write/WAL overhead; no ad hoc deletion job"
+        ],
+        "gaps": [
+          "Permanent history is deliberate, not a leak",
+          "Current history latency/growth projections not fully verified"
+        ],
+        "evidenceRefs": [
+          "evidence/development-table-stats.json",
+          "evidence/deployed-table-stats.json",
+          "evidence/development-real-sql.json",
+          "evidence/deployed-real-sql.json",
+          "src/lib/server/storage/retention.server.ts:4",
+          "src/lib/music/history.server.ts:14"
+        ]
+      },
+      "evidenceRefs": [
+        "playback-readers.md",
+        "evidence/development-table-stats.json",
+        "evidence/deployed-table-stats.json",
+        "evidence/development-real-sql.json",
+        "evidence/deployed-real-sql.json"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "playback/shared session evidence",
+        "reading edition bookmarks",
+        "music listens/history"
+      ]
+    },
+    {
+      "id": "UIS-03",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W09",
+      "title": "append retains all loaded items and card owners",
+      "sharedOwner": "Canonical Shelf/source pagination and retained-card policy",
+      "minimalSharedOption": "Choose a shared retained-page/card window with complete adapter cursors/occurrence identity and stable visible anchors, or an explicit supported backward-reload/page contract.",
+      "actualData": "Actual large initial pages and short detail cycles exist; no20-page natural retained browse/DOM-resource plateau proof was captured.",
+      "nextMeaningfulTest": "Actual1/5/20-page browse across available media: complete order/occurrences, Back/anchor/menu/focus/keyboard/privacy and bounded DOM/observers/images/retained owners.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "substantial_complexity",
+        "measurement_gap"
+      ],
+      "whyNotImplementedInThisPass": "Windowing can change approved Back/scroll/focus behavior and needs a complete retention policy. A component-private cap or silently dropping cards is not a routine safe fix.",
+      "overlaps": [
+        "DATA-04",
+        "UIS-04",
+        "PLAN-09",
+        "UIC-04"
+      ],
+      "sourceFiles": [
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/shelves/library.svelte.ts",
+        "src/lib/ui/shelves/detail.svelte.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/ui/components/Shelf.svelte": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "src/lib/ui/shelves/library.svelte.ts": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+        "src/lib/ui/shelves/detail.svelte.ts": "00be76aa839f4eeded9634eb6451960efa8497d0b24ed7450eba496521c94d24"
+      },
+      "originalAnalysisRef": "ui-second-pass.md",
+      "originalDetailRef": "ui-second-pass-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "ui-second-pass-findings.json",
+        "smallestOption": "One shared retained-page/card window with adapter identity/cursors and stable anchors",
+        "alternatives": [
+          "Supported page budget/backward reload; approved explicit pagination"
+        ],
+        "acceptance": [
+          "Actual1/5/20pagebrowse",
+          "DOM/observers/images plateau",
+          "exact occurrence order",
+          "keyboard/menu/episode anchors",
+          "privacy"
+        ],
+        "gaps": [
+          "Actual multipage browser trace pending; per-request60 cap works"
+        ],
+        "evidenceRefs": [
+          "src/lib/ui/shelves/library.svelte.ts:95-98",
+          "credits.svelte.ts:64-70",
+          "detail.svelte.ts:23-25",
+          "social.svelte.ts:35-36",
+          "for-you.svelte.ts:39",
+          "journal.svelte.ts:53",
+          "ui-second-pass.md#uis-03"
+        ]
+      },
+      "evidenceRefs": [
+        "ui-second-pass.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "All10source cases",
+        "screen/music/game/book/comic",
+        "embedded sections",
+        "preview clients"
+      ]
+    },
+    {
+      "id": "UIS-04",
+      "canonicalStatus": "open",
+      "priority": "P3",
+      "workstream": "W09",
+      "title": "card/shelf demand is latched after first contact",
+      "sharedOwner": "Shared MediaCard interaction and lazyContent/Shelf demand",
+      "minimalSharedOption": "Measure offscreen refresh first; separate current-visibility/dirty refresh ownership from open menus and essential playback through the existing shared card/Shelf demand owner.",
+      "actualData": "No actual offscreen HTTP/refresh or long retained-menu cohort was measured; source activation latches are confirmed.",
+      "nextMeaningfulTest": "Observe real unseen\u2192visible\u2192offscreen\u2192revision\u2192visible sequences plus open menu offscreen, keyboard/touch and immediate permission removal; count actual admitted reads and stale publications.",
+      "dispositionReasons": [
+        "measurement_gap",
+        "semantic_contract"
+      ],
+      "whyNotImplementedInThisPass": "Cancelling every offscreen owner can break active menus/playback or stale permission removal. Retain current policy if measured savings are small; do not add per-medium exceptions.",
+      "overlaps": [
+        "UIS-03",
+        "UIC-01",
+        "DATA-04"
+      ],
+      "sourceFiles": [
+        "src/lib/ui/components/MediaCard.svelte",
+        "src/lib/ui/lazy-content.ts",
+        "src/lib/ui/shelves/library.svelte.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/ui/components/MediaCard.svelte": "057ff79292214b7eefd0311efce0ce6c8dd5866b375ad88c116b30e2a022897a",
+        "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+        "src/lib/ui/shelves/library.svelte.ts": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79"
+      },
+      "originalAnalysisRef": "ui-second-pass.md",
+      "originalDetailRef": "ui-second-pass-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "ui-second-pass-findings.json",
+        "smallestOption": "Measure first then shared current visibility/dirty refresh and distinct open-menu ownership",
+        "alternatives": [
+          "Retain existing policy if savings small; no feature-private workaround"
+        ],
+        "acceptance": [
+          "Unseen/visible/offscreen/revision/visible",
+          "openmenuoffscreen",
+          "immediate permission removal",
+          "touch/keyboard",
+          "essential playback unaffected"
+        ],
+        "gaps": [
+          "Actual offscreen requests/retained menu cohort unmeasured"
+        ],
+        "evidenceRefs": [
+          "library.svelte.ts:121-131",
+          "discovery.svelte.ts:143-156",
+          "social.svelte.ts:44-50",
+          "ui-second-pass.md#uis-04"
+        ]
+      },
+      "evidenceRefs": [
+        "ui-second-pass.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "All medium cards and10Shelf cases",
+        "enrichment",
+        "menus/materials"
+      ]
+    },
+    {
+      "id": "UIC-03",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W06",
+      "title": "Grouped recommendation responses refresh once per recommendation ID",
+      "sharedOwner": "common API mutation acknowledgement and logical completion refresh",
+      "minimalSharedOption": "Add one logical completion/refresh contract to the existing mutation acknowledgement owner: preserve every per-ID write/outcome, then refresh once including partial-success recovery.",
+      "actualData": "The source loop is definite, but no actual pending multi-sender card operation was captured; one ID has no amplified refresh.",
+      "nextMeaningfulTest": "When a real grouped card exists, Save/Dismiss1/multiple IDs with partial server/refresh failure and target replacement; compare exact final states/acknowledgements and one completion refresh, across all consumers.",
+      "dispositionReasons": [
+        "actual_cohort_gap",
+        "semantic_contract"
+      ],
+      "whyNotImplementedInThisPass": "Suppressing refresh inside one component without shared acknowledgement/recovery can misreport earlier committed writes. A batch endpoint is an alternative only with explicit atomic/partial-result semantics.",
+      "overlaps": [
+        "DATA-06",
+        "PR-02",
+        "PJ-15"
+      ],
+      "sourceFiles": [
+        "src/lib/ui/components/WorkActions.svelte",
+        "src/lib/ui/client.ts",
+        "src/lib/ui/mutation.svelte.ts",
+        "src/lib/social/service.server.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/ui/components/WorkActions.svelte": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "src/lib/ui/client.ts": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "src/lib/ui/mutation.svelte.ts": "b8d1cefaf4dd4bf0ac589e3ca6f7c6e4c078012a0b1f366647c7fbd21861f217",
+        "src/lib/social/service.server.ts": "7bd88b9379b22ee6e0646d948aa0309116eb94c17588fff7d7f60da3bd07354b"
+      },
+      "originalAnalysisRef": "ui-components.md",
+      "originalDetailRef": "ui-components-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "ui-components-findings.json",
+        "smallestOption": "Acknowledge per-ID writes with one coalesced refresh after logical completion, preserving partial success",
+        "alternatives": [
+          "Bounded server batch endpoint reusing same domain writer with explicit outcomes"
+        ],
+        "acceptance": [
+          "Actual one/multiple-ID Save/Dismiss",
+          "One refresh per logical completion/recovery",
+          "Partial failure and refresh failure preserve acknowledged mutations and exact IDs"
+        ],
+        "gaps": [
+          "Actual multi-sender card operation not observed"
+        ],
+        "evidenceRefs": [
+          "src/lib/ui/components/WorkActions.svelte:17",
+          "src/lib/ui/client.ts:75",
+          "src/lib/ui/client.ts:85"
+        ]
+      },
+      "evidenceRefs": [
+        "ui-components.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "WorkActions grouped Save/Dismiss",
+        "screen/music/game/reading recommendation cards",
+        "other multi-target client loops"
+      ]
+    },
+    {
+      "id": "UIC-04",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W08",
+      "title": "Collection export preview returns full entries and mounts unbounded review panels",
+      "sharedOwner": "durable projection preview read DTO and shared bounded-review composition",
+      "minimalSharedOption": "Expose bounded durable Collection preview summaries and demand-load complete selected review details through the shared projection/conflict owner.",
+      "actualData": "Actual Collection membership exists; the captures have no saved list-conflict cohort or verified large export-review browser journey.",
+      "nextMeaningfulTest": "Compare full real preview approval evidence/ordered entries/totals under local edits, remote change/privacy and unsupported items; measure initial summary bytes and mounted selected detail owners.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "actual_cohort_gap",
+        "substantial_complexity"
+      ],
+      "whyNotImplementedInThisPass": "Approval must still see complete evidence. Do not silently truncate entries or redesign the approved review UI; summary/detail pagination needs one exact contract.",
+      "overlaps": [
+        "PJ-12",
+        "PJ-06",
+        "UIS-03",
+        "PLAN-06"
+      ],
+      "sourceFiles": [
+        "src/lib/collection/projection.server.ts",
+        "src/lib/ui/components/CollectionProjectionSettings.svelte"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/collection/projection.server.ts": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "src/lib/ui/components/CollectionProjectionSettings.svelte": "f3c4a63b930f30a728bc764b631baf804c0dae5b8147e061a48d0038ec8a7b12"
+      },
+      "originalAnalysisRef": "ui-components.md",
+      "originalDetailRef": "ui-components-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "ui-components-findings.json",
+        "smallestOption": "Return narrow browser preview DTO; retain complete durable server evidence; deduplicate review IDs once with Set/Map",
+        "alternatives": [
+          "Stable paged review source using existing resource/pagination pattern"
+        ],
+        "acceptance": [
+          "Actual-data clone preview byte/DOM/retained state comparison",
+          "Complete ID/count/decision equivalence and every review accessible",
+          "Approval/version/account/remote-change rejection unchanged"
+        ],
+        "gaps": [
+          "No large actual projection preview generated",
+          "One retained preview is not per-close accumulation"
+        ],
+        "evidenceRefs": [
+          "src/lib/collection/projection.server.ts:17",
+          "src/lib/collection/projection.server.ts:78",
+          "src/lib/ui/components/CollectionProjectionSettings.svelte:35"
+        ]
+      },
+      "evidenceRefs": [
+        "ui-components.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "CollectionProjectionSettings summary and review",
+        "generic conflict-review policy"
+      ]
+    },
+    {
+      "id": "UPP-01",
+      "canonicalStatus": "open",
+      "priority": "P2",
+      "workstream": "W11",
+      "title": "shared chart model lacks family work and generated-mark budgets",
+      "sharedOwner": "ChartModel/adapters and shared chart geometry admission contract",
+      "minimalSharedOption": "Declare semantic input/work/generated-mark budgets at ChartModel/adapters, with truthful aggregation plus complete paged detail; validate invalid DAG/non-finite/unit inputs.",
+      "actualData": "Current live adapters are bars/donut/target; complex reference families are finite fictional galleries. No actual packed/isotype/flow stall is verified.",
+      "nextMeaningfulTest": "Feed actual medium/experiment distributions through shared adapters; preserve totals/order/selection/table completeness and measure geometry/marks/long tasks/heap; controlled invalid semantic inputs protect the contract.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "measurement_gap",
+        "substantial_complexity"
+      ],
+      "whyNotImplementedInThisPass": "Do not infer production slowness from worst-case source bounds or silently cap data. Spatial indexing/workers or alternative packing require actual demand and a concrete complexity choice.",
+      "overlaps": [
+        "PLAN-08",
+        "UPP-02",
+        "UIS-06"
+      ],
+      "sourceFiles": [
+        "src/lib/ui/charts/model.ts",
+        "src/lib/ui/charts/extended-geometry.ts",
+        "src/lib/ui/charts/insights.ts"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/lib/ui/charts/model.ts": "f217cc80e27e2c165a3b7cb89ea8718f0ae402c8dfa424f49ddbacdd47650549",
+        "src/lib/ui/charts/extended-geometry.ts": "a294e07c2fae0a247c0255c49ee7dfa29e7841c2289a07f2eeb8af01918a0d63",
+        "src/lib/ui/charts/insights.ts": "58ba4e831ab598cd037e98f7a94b5b6ee3133cc0fe5e50c97bcde193fb3a8da7"
+      },
+      "originalAnalysisRef": "ui-preview-platform.md",
+      "originalDetailRef": "ui-preview-platform-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "ui-preview-platform-findings.json",
+        "smallestOption": "Declare and validate semantic/work/mark budgets at the shared model boundary; truthful aggregation with complete paged data",
+        "alternatives": [
+          "Existing linear bubble arrangement for large actual cohorts",
+          "Spatial indexing or cancellable geometry only after measured demand"
+        ],
+        "acceptance": [
+          "Actual datasets across all enabled media",
+          "Exact totals/order/selection and complete table",
+          "Geometry/marks/long tasks/heap",
+          "Invalid DAG/numeric/unit inputs controlled"
+        ],
+        "gaps": [
+          "Current live adapters use bars/donut/target, not packed/isotype/flow",
+          "No actual oversized chart stall verified"
+        ],
+        "evidenceRefs": [
+          "src/lib/ui/charts/extended-geometry.ts:90-114",
+          "src/lib/ui/charts/extended-geometry.ts:121-170",
+          "src/lib/ui/charts/insights.ts:7",
+          "ui-preview-platform.md#upp-01"
+        ]
+      },
+      "evidenceRefs": [
+        "ui-preview-platform.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "ChartView",
+        "StandardChart",
+        "ExtendedChart",
+        "ChartMark",
+        "preview chart normalizer/gallery",
+        "ui/insights/media",
+        "ui/insights/profile",
+        "ui/insights/community",
+        "DetailCard",
+        "games/Details",
+        "reading/Details",
+        "all future media/experiment chart adapters"
+      ]
+    },
+    {
+      "id": "UPP-02",
+      "canonicalStatus": "open",
+      "priority": "P3",
+      "workstream": "W11",
+      "title": "custom preview JSON and image imports bypass finite fixture bounds",
+      "sharedOwner": "Preview data admission and shared local-image/decode ownership from UIS-07",
+      "minimalSharedOption": "Define accepted custom JSON/event-preview bounds and reuse the shared decoded-image/cancellation owner for local preview backgrounds, preserving accepted configurations losslessly.",
+      "actualData": "No actual large imported JSON/image stall or ordinary preview leak is demonstrated; existing gallery fixtures are not performance cohorts.",
+      "nextMeaningfulTest": "Replay actual saved user configurations/images; compare exact accepted edits/copies and explicit rejection, bounded event formatting and URL/decode release on replace/close/error.",
+      "dispositionReasons": [
+        "semantic_contract",
+        "actual_cohort_gap"
+      ],
+      "whyNotImplementedInThisPass": "Input/large-data inspection limits need a truthful acceptance policy. Off-thread parsing is optional and should follow actual workflow evidence; no separate preview image algorithm.",
+      "overlaps": [
+        "UIS-07",
+        "UPP-01"
+      ],
+      "sourceFiles": [
+        "src/routes/ui-preview/props.ts",
+        "src/routes/ui-preview/ComponentPlayground.svelte",
+        "src/routes/ui-preview/+page.svelte"
+      ],
+      "additionalEvidenceRefs": [],
+      "currentSourcePins": {
+        "src/routes/ui-preview/props.ts": "74f7e448309da5c008f17bd7830c500e90c93a532005de120086587a1b3e42f2",
+        "src/routes/ui-preview/ComponentPlayground.svelte": "1ca78d69db0e27763e210fce7f33f4171f9d41127be0a97cd5d70d96dcee07e9",
+        "src/routes/ui-preview/+page.svelte": "8a7b9666fa88dd9a76de168ce54d4f9fc3edc1b0c296bf2a649081b8b6b24a4e"
+      },
+      "originalAnalysisRef": "ui-preview-platform.md",
+      "originalDetailRef": "ui-preview-platform-findings.json",
+      "preservedBaselineOptions": {
+        "artifact": "ui-preview-platform-findings.json",
+        "smallestOption": "Explicit accepted JSON policy, bounded event formatting and shared decoded-image ownership",
+        "alternatives": [
+          "Explicit large-data inspection mode",
+          "Off-thread parsing only if actual need"
+        ],
+        "acceptance": [
+          "Accepted configuration lossless",
+          "Object URL/decode release on replace/close/error",
+          "Actual user configurations/images"
+        ],
+        "gaps": [
+          "No measured ordinary preview leak",
+          "No new fictional large-input experiment"
+        ],
+        "evidenceRefs": [
+          "src/routes/ui-preview/props.ts:85-91",
+          "src/routes/ui-preview/ComponentPlayground.svelte:40-46",
+          "src/routes/ui-preview/+page.svelte:20-26",
+          "ui-preview-platform.md#upp-02"
+        ]
+      },
+      "evidenceRefs": [
+        "ui-preview-platform.md"
+      ],
+      "approval": {
+        "requiredForThisReadOnlyDisposition": false,
+        "routineFixRequiresExtraHumanPermission": false,
+        "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+      },
+      "consumers": [
+        "PropEditor",
+        "ComponentPlayground",
+        "ComponentSpecimen",
+        "PreviewExample families",
+        "canvas background import",
+        "avatar/local image pickers via common decoder"
+      ]
+    }
+  ],
+  "sourcePinsRefreshedAt": "2026-10-18T02:05:28.891651+00:00",
+  "identityPinsRefreshedAfterCallerRepair": {
+    "src/lib/ui/client.ts": {
+      "before": "12169ff02c3deec67ccbdc3f4d669568d0eadb9ba6d8d034b74cd0a0707bf0d8",
+      "after": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16"
+    }
+  },
+  "independentReview": {
+    "providersJobsAndPreviewPlatform": "Provider/jobs agent read the private PJ/UPP entries. One ambiguity was corrected: FEATURE-JOB-LEASE-OBS-06 only guards feature.reconcile cleanup, not Jellyfin finalization. Remaining PJ/UPP entries preserve actual gaps, rejected PJ10 evidence and routine-versus-policy boundaries. Reviewer ran no tests or DB operations.",
+    "otherOwners": "Playback/reader owner guidance was incorporated; a further optional matrix reread was requested, not claimed complete.",
+    "readDemandBatch": "Playback agent checked all35 open IDs versus the prior38 snapshot, byte-equal preserved original options, exact source slices and actual receipt counts. No material issue; final generated Markdown/count/link synchronization remains root responsibility."
+  },
+  "supplementalObservationBoundary": "Seven observations outside94canonical records remain separate. Prior46/41/38 open dispositions are captured historical snapshots.",
+  "ledgerSnapshotBoundary": "Original46-record hash and captured46/41/38-record dispositions remain historical. currentOpenSetVerification describes only this maintained open set.",
+  "currentOpenSetVerification": {
+    "at": "2026-10-18T02:47:41.502022+00:00",
+    "count": 30,
+    "ledgerSha256": "048cb2cd94251613c5940a7d4361e5adc65a8a0e9f6875ccca1fce9707609e49",
+    "idsMatchLedger": true
+  },
+  "priorCapturedDispositionRef": "remaining-work-disposition-20261018-read-demand.md",
+  "advancedThisBatch": [
+    {
+      "priorDisposition": {
+        "id": "MIN-04",
+        "canonicalStatus": "open",
+        "priority": "P3",
+        "workstream": "W08",
+        "title": "A source change sends one notification operation per affected user, each independently reading config/preferences.",
+        "sharedOwner": "`src/lib/collection/source-changes.server.ts:57-58`",
+        "minimalSharedOption": "Review one canonical shared preparation pass with ordered individual writes to preserve statement-level partial delivery; direct notifyMany is smaller but changes chunk failure atomicity. Neither snapshot/atomicity behavior is adopted yet.",
+        "actualData": "Read-only census found one enabled Jellyfin instance with4 connected bindings/4 distinct existing enabled owners,518 stored notices across4 owners, and0 saved collection-source-review keys. No source mutation, delivery replay or failure schedule was executed.",
+        "nextMeaningfulTest": "After selecting the exact failure and preparation-snapshot contract, replay complete notices for the actual4 bindings under rollback; compare original518 rows, full fields/mapping/preferences/visibility/upserts and all raw SQL counts. No real source disconnect/delete.",
+        "dispositionReasons": [
+          "safe_next_implementation",
+          "actual_cohort_gap",
+          "semantic_contract"
+        ],
+        "whyNotImplementedInThisPass": "Candidate publication only. The source change already commits before delivery; direct multi-row batching changes the previously committed prefix on a later error. Shared preparation also changes config/preference read timing. Review the smallest chosen contract before implementation; no measured delivery gain or adopted semantics is claimed.",
+        "overlaps": [
+          "MIN-07",
+          "PJ-06"
+        ],
+        "sourceFiles": [
+          "src/lib/collection/source-changes.server.ts",
+          "src/lib/server/notifications/index.ts",
+          "src/lib/application/provider-sources.server.ts"
+        ],
+        "additionalEvidenceRefs": [
+          "next-notification-batch.md",
+          "next-notification-batch.json",
+          "evidence/next-notification-batch-census.json",
+          "evidence/next-notification-batch-census-first-attempt.json"
+        ],
+        "currentSourcePins": {
+          "src/lib/collection/source-changes.server.ts": "2a948f416248eeee77a4481ff6dbc72b8bbbf917d8b9fef5892ed5e75c5d5741",
+          "src/lib/server/notifications/index.ts": "a8f88fbf9ed03536869e2c601bd2c5569cf663e53000a07912275448db4382e9",
+          "src/lib/application/provider-sources.server.ts": "5dc4f1ab35e1a47e4fb1728d45a367106015f787297f18714d425a3cc56f9f2c"
+        },
+        "originalAnalysisRef": "data-api.md",
+        "originalDetailRef": "data-api-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "data-api-findings.json",
+          "originalOpportunity": {
+            "source": "`src/lib/collection/source-changes.server.ts:57-58`",
+            "cost": "A source change sends one notification operation per affected user, each independently reading config/preferences.",
+            "sharedOptionAndVerification": "Reuse existing `notifyMany` in batches100 where event semantics permit; verify per-user visibility/preferences/deduplication, failures and source-key identities.",
+            "classification": "source-confirmed bounded opportunity, runtime value unmeasured",
+            "implementationApplied": false
+          }
+        },
+        "evidenceRefs": [
+          "data-api.md",
+          "next-notification-batch.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": "See data-api.md smaller opportunities"
+      },
+      "currentStatus": "partial-actual-data-verified",
+      "reportRefs": [
+        "implementation-notification-preferences.md",
+        "next-notification-batch.md"
+      ]
+    },
+    {
+      "priorDisposition": {
+        "id": "PJ-02",
+        "canonicalStatus": "open",
+        "priority": "P2",
+        "workstream": "W04",
+        "title": "crop cache does not provide true single-flight",
+        "sharedOwner": "Plugin crop work/results owner with thin controller",
+        "minimalSharedOption": "Choose the winning shared Lazy<Task> entry before starting crop work; exact-entry failure eviction must not remove a replacement.",
+        "actualData": "Actual installed controller behavior was reproduced with controlled process input; deployed plugin/media/contention frequency and actual FFmpeg capture are absent.",
+        "nextMeaningfulTest": "At the real plugin owner, controlled same-key contenders/failure replacement prove one process; then replay one actual authorized trailer/crop and fallback without synthetic media performance claims.",
+        "dispositionReasons": [
+          "safe_next_implementation",
+          "actual_cohort_gap"
+        ],
+        "whyNotImplementedInThisPass": "This separable routine ownership fix does not require aggregate budget policy or a new dependency. Actual plugin acceptance still remains and must not be inferred from stub process counts.",
+        "overlaps": [
+          "PJ-03",
+          "PR-12"
+        ],
+        "sourceFiles": [
+          "../coast-plugin/Coast/Api/TrailerCropController.cs"
+        ],
+        "additionalEvidenceRefs": [
+          "evidence/providers-plugin-probe.json"
+        ],
+        "currentSourcePins": {
+          "../coast-plugin/Coast/Api/TrailerCropController.cs": "a131f78506d3b9a78a270ef4675a74a3c9b1ed759a8e971eb55bead1549b1cec"
+        },
+        "originalAnalysisRef": "providers-jobs.md",
+        "originalDetailRef": "providers-jobs-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "providers-jobs-findings.json",
+          "smallestOption": "Select winning Lazy<Task> owner before process creation",
+          "alternatives": [
+            "Explicit shared process owner with exact-entry failure eviction"
+          ],
+          "acceptance": [
+            "2/8/32 contenders start one process",
+            "failure retryable",
+            "stale failure cannot evict replacement"
+          ],
+          "gaps": [
+            "Real deployed plugin frequency and CPU unknown"
+          ],
+          "evidenceRefs": [
+            "providers-jobs.md#pj-02"
+          ]
+        },
+        "evidenceRefs": [
+          "providers-jobs.md",
+          "evidence/providers-plugin-probe.json"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": [
+          "Every authenticated crop caller",
+          "same-item simultaneous viewers"
+        ]
+      },
+      "currentStatus": "partial-regression-verified",
+      "reportRefs": [
+        "implementation-plugin-crop.md"
+      ]
+    },
+    {
+      "priorDisposition": {
+        "id": "PR-09",
+        "canonicalStatus": "open",
+        "priority": "P3",
+        "workstream": "W08",
+        "title": "Reading range/HEAD metadata authorization amplification",
+        "sharedOwner": "ownedReadingSession and streamReading verified request context",
+        "minimalSharedOption": "Reuse the exact already verified Jellyfin connection/context within one stream request and narrow its repeated projection; preserve fresh validation on every separate Range/HEAD request.",
+        "actualData": "A real CBR opens/turns/minimizes/resumes/closes; no complete actual PDF/EPUB Range/HEAD metadata-to-byte fanout trace exists.",
+        "nextMeaningfulTest": "Capture actual linked-file GET/HEAD/ranges and compare exact bytes/status/MIME/range/fingerprint behavior and reconnect/revocation/file-change rejection, counting duplicate metadata/credential reads.",
+        "dispositionReasons": [
+          "safe_next_implementation",
+          "actual_cohort_gap"
+        ],
+        "whyNotImplementedInThisPass": "Current ownedReadingSession then streamReading resolves Jellyfin twice. Same-request reuse is routine if the verified context contract is explicit; cross-request capability/coalescing is a different freshness/privacy design.",
+        "overlaps": [
+          "PR-06",
+          "PJ-14",
+          "DATA-09"
+        ],
+        "sourceFiles": [
+          "src/lib/reading/sessions.server.ts",
+          "src/lib/providers/jellyfin/connection.server.ts"
+        ],
+        "additionalEvidenceRefs": [],
+        "currentSourcePins": {
+          "src/lib/reading/sessions.server.ts": "3f0d9b0b65620d4abbacf4dcaf0e992106e20963ed45b873df195d245249e923",
+          "src/lib/providers/jellyfin/connection.server.ts": "625eeb87200dfe91ff1fcf7a8485eb8c6051037360f8573d4b8a33b5c947f04b"
+        },
+        "originalAnalysisRef": "playback-readers.md",
+        "originalDetailRef": "playback-readers-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "playback-readers-findings.json",
+          "smallestOption": "Reuse the already verified Jellyfin context within one request and narrow projections.",
+          "alternatives": [
+            "Coalesce concurrent exact user/generation/file checks among live consumers",
+            "Immutable version capability only with authoritative revocation/version semantics"
+          ],
+          "acceptance": [
+            "Actual source Range/HEAD trace counts metadata versus byte requests",
+            "File change/revocation/reconnect between ranges stops delivery or explicitly reopens",
+            "Same bytes, MIME/range headers and fingerprint semantics"
+          ],
+          "gaps": [
+            "Current fresh checks are correctness requirements",
+            "Actual range request fanout not captured"
+          ],
+          "evidenceRefs": [
+            "src/lib/reading/sessions.server.ts:117"
+          ]
+        },
+        "evidenceRefs": [
+          "playback-readers.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": [
+          "PDF and CBZ ranges",
+          "GET/HEAD reading file",
+          "EPUB/native archive download",
+          "party copies"
+        ]
+      },
+      "currentStatus": "partial-regression-verified",
+      "reportRefs": [
+        "implementation-reading-context.md"
+      ]
+    },
+    {
+      "priorDisposition": {
+        "id": "UIS-06",
+        "canonicalStatus": "open",
+        "priority": "P3",
+        "workstream": "W09",
+        "title": "scheduling is shared, but native SVG still rebuilds and has no pixel budget",
+        "sharedOwner": "Shared liquidGlass action",
+        "minimalSharedOption": "After measuring actual effective render keys, skip rebuilding an unchanged native glass map while retaining resize/DPR/theme/preference/quality/destroy behavior.",
+        "actualData": "Shared scheduling is present; no actual frame/GPU cost or ineffective-key frequency was measured in the native enhancement path.",
+        "nextMeaningfulTest": "Capture actual render-key/update counts and real long browse/resize with every glass consumer; verify DPR/theme/reduced-transparency and release/visual identity before claiming CPU/GPU gain.",
+        "dispositionReasons": [
+          "safe_next_implementation",
+          "measurement_gap"
+        ],
+        "whyNotImplementedInThisPass": "An unchanged-key guard can be routine. Pixel caps, workers, disabled-map release policy or new caches are separate options needing measured demand and preserved quality.",
+        "overlaps": [
+          "UIS-03",
+          "UPP-01"
+        ],
+        "sourceFiles": [
+          "src/lib/ui/materials/glass.ts"
+        ],
+        "additionalEvidenceRefs": [],
+        "currentSourcePins": {
+          "src/lib/ui/materials/glass.ts": "234cd8ea6656437094aabd29b14af839daec69f263167f45e1774bc6b0103918"
+        },
+        "originalAnalysisRef": "ui-second-pass.md",
+        "originalDetailRef": "ui-second-pass-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "ui-second-pass-findings.json",
+          "smallestOption": "No-op unchanged effective render key after actual profile",
+          "alternatives": [
+            "Justified pixelcap; disabled map release; bounded map reuse; worker only if measured"
+          ],
+          "acceptance": [
+            "Actual default resize/longbrowse traces",
+            "all consumers",
+            "reduced transparency",
+            "quality",
+            "finite bytes",
+            "destroy"
+          ],
+          "gaps": [
+            "No frame/GPU measurement; native enhancement conditional"
+          ],
+          "evidenceRefs": [
+            "ui-second-pass.md#uis-06"
+          ]
+        },
+        "evidenceRefs": [
+          "ui-second-pass.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": [
+          "All native surfaces",
+          "MediaCard",
+          "nav",
+          "buttons/dialogs/menus",
+          "materials preview"
+        ]
+      },
+      "currentStatus": "partial-regression-verified",
+      "reportRefs": [
+        "implementation-material-diagnostics.md"
+      ]
+    },
+    {
+      "priorDisposition": {
+        "id": "UPP-03",
+        "canonicalStatus": "open",
+        "priority": "P3",
+        "workstream": "W11",
+        "title": "bounded diagnostic store repeats filesystem and full-tail parsing work",
+        "sharedOwner": "DiagnosticStore for normal and runtime sample persistence",
+        "minimalSharedOption": "Trace actual DiagnosticStore I/O, then initialize private-directory permissions and maintain segment-byte accounting once per valid directory lifetime with missing/external-change/error recovery.",
+        "actualData": "Storage is already bounded4MiB/128 pending; no actual event-rate/disk bottleneck or repeated viewer trace proves current cost.",
+        "nextMeaningfulTest": "Compare actual normal/trace sessions and viewer refreshes for I/O/pending/drops/CPU; preserve permission failures, external rotation, retention/order, safe fields and separate runtime history.",
+        "dispositionReasons": [
+          "safe_next_implementation",
+          "measurement_gap",
+          "semantic_contract"
+        ],
+        "whyNotImplementedInThisPass": "Initialization/accounting may be routine when recovery is specified. Append batching trades crash-tail durability and a new logger/database is not justified.",
+        "overlaps": [
+          "UIS-02",
+          "PJ-10"
+        ],
+        "sourceFiles": [
+          "src/lib/server/diagnostics/index.ts"
+        ],
+        "additionalEvidenceRefs": [],
+        "currentSourcePins": {
+          "src/lib/server/diagnostics/index.ts": "bbdac918ce08bc80bc9eaadf787b9631f6b12e2cf18c663c8bcbb2f3e044d749"
+        },
+        "originalAnalysisRef": "ui-preview-platform.md",
+        "originalDetailRef": "ui-preview-platform-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "ui-preview-platform-findings.json",
+          "smallestOption": "After real trace, initialize permissions once and track segment bytes with error/external-change recovery",
+          "alternatives": [
+            "Bounded append batch with explicit crash-tail durability tradeoff",
+            "Revision/seek finite-tail API if real viewer reads dominate"
+          ],
+          "acceptance": [
+            "Actual normal/trace sessions I/O/CPU/pending/drops",
+            "Permissions/error/rotation/retention preserved",
+            "Safe fields and runtime-history isolation"
+          ],
+          "gaps": [
+            "Four MiB and 128 pending already bound storage",
+            "No actual disk or event-rate bottleneck established"
+          ],
+          "evidenceRefs": [
+            "src/lib/server/diagnostics/index.ts:85-107",
+            "src/lib/server/diagnostics/index.ts:115-148",
+            "ui-preview-platform.md#upp-03"
+          ]
+        },
+        "evidenceRefs": [
+          "ui-preview-platform.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": [
+          "hooks/API",
+          "provider fetch",
+          "queue/maintenance",
+          "music sync/queries",
+          "Collection",
+          "playback/sharing",
+          "public API",
+          "diagnostics viewer",
+          "runtime samples"
+        ]
+      },
+      "currentStatus": "partial-actual-data-verified",
+      "reportRefs": [
+        "implementation-material-diagnostics.md"
+      ]
+    },
+    {
+      "priorDisposition": {
+        "id": "MIN-03",
+        "canonicalStatus": "open",
+        "priority": "P3",
+        "workstream": "W08",
+        "title": "Catalogue and accessible-library responses use full `workCards` then the non-personal DTO discards state, artwork, credits and most metadata.",
+        "sharedOwner": "`src/lib/server/public-api/handler.server.ts:58-81`, `response.ts:6-9`",
+        "minimalSharedOption": "Extract a non-personal identity projection through the existing medium presentation owners, preserving title override/game variant/year/reading attribution and privacy precedence.",
+        "actualData": "Actual screen/game/music/comic identities exist; no saved book cohort, and reduced-head game private preferences/variants are sparse. Current full-card oracle is available.",
+        "nextMeaningfulTest": "Compare complete public catalogue/detail/library DTOs for all actual admitted kinds and selected metadata preferences/editions/attribution before counting statement/row/byte reduction.",
+        "dispositionReasons": [
+          "semantic_contract",
+          "actual_cohort_gap"
+        ],
+        "whyNotImplementedInThisPass": "A plain works-table SELECT drops medium presentation contracts. No coherent shared narrow projection was established; avoid a private endpoint shortcut.",
+        "overlaps": [
+          "DATA-11",
+          "DATA-09",
+          "PR-09"
+        ],
+        "sourceFiles": [
+          "src/lib/server/public-api/handler.server.ts",
+          "src/lib/server/public-api/library.server.ts",
+          "src/lib/server/public-api/response.ts",
+          "src/lib/collection/query.server.ts"
+        ],
+        "additionalEvidenceRefs": [
+          "implementation-profile-sections.md",
+          "implementation-card-categories.md"
+        ],
+        "currentSourcePins": {
+          "src/lib/server/public-api/handler.server.ts": "7681f395ed3139c02a7e309102bb24d04414ddd5eb626f8c4b1adab091156dfc",
+          "src/lib/server/public-api/library.server.ts": "5e51061cd7911adc78719859917c2c01d4cb115d69536cb10b9224f8781e7ecc",
+          "src/lib/server/public-api/response.ts": "3cf20d73a88f92b54b16d1f59e1e2c8f7f47cfa9d9fe861e3c56c5574c6ad9a7",
+          "src/lib/collection/query.server.ts": "65c64495e6057b4af63c01cef0120e4563e134855c3783f494095601fe59e043"
+        },
+        "originalAnalysisRef": "data-api.md",
+        "originalDetailRef": "data-api-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "data-api-findings.json",
+          "originalOpportunity": {
+            "source": "`src/lib/server/public-api/handler.server.ts:58-81`, `response.ts:6-9`",
+            "cost": "Catalogue and accessible-library responses use full `workCards` then the non-personal DTO discards state, artwork, credits and most metadata.",
+            "sharedOptionAndVerification": "Add a narrow shared work-summary projection preserving title preferences, game variant presentation, year and attribution. Reuse it in all summary-only consumers; do not duplicate field precedence/privacy. Compare actual DTO identities/order/content and query/byte work.",
+            "classification": "source-confirmed bounded opportunity, runtime value unmeasured",
+            "implementationApplied": false
+          }
+        },
+        "evidenceRefs": [
+          "data-api.md",
+          "implementation-profile-sections.md",
+          "implementation-card-categories.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": "See data-api.md smaller opportunities"
+      },
+      "currentStatus": "partial-actual-data-verified",
+      "reportRefs": [
+        "implementation-work-summaries.md"
+      ]
+    },
+    {
+      "priorDisposition": {
+        "id": "PLAN-08",
+        "canonicalStatus": "open",
+        "priority": "measurement-gated",
+        "workstream": "W12",
+        "title": "Profile insight aggregations",
+        "sharedOwner": "Profile insight aggregations",
+        "minimalSharedOption": "Reuse exact watch-history aggregates/CTEs inside shared profile insight readers where plans show repeated work, retaining complete all-time dates and six+Other genre totals.",
+        "actualData": "Actual histories up to10,779 displayed-history total and long daily evidence exist. DATA13 proves section projection equality, not insight aggregate optimization.",
+        "nextMeaningfulTest": "Capture actual all/month/year insight plans/returned rows and compare complete totals/daily/genre/rating/season outputs including unknown dates and leap/day boundaries.",
+        "dispositionReasons": [
+          "measurement_gap"
+        ],
+        "whyNotImplementedInThisPass": "No query-level duplicate aggregate cost or safe SQL rewrite is verified. The calendar-bucket CPU repair and section projection do not close this plan lead.",
+        "overlaps": [
+          "DATA-13",
+          "UPP-01",
+          "PLAN-02"
+        ],
+        "sourceFiles": [
+          "src/lib/server/queries/profile.ts",
+          "src/lib/profile/activity.ts"
+        ],
+        "additionalEvidenceRefs": [
+          "implementation-profile-sections.md"
+        ],
+        "currentSourcePins": {
+          "src/lib/server/queries/profile.ts": "cc48016583bb73514f5024a6f96bb5a97b9fcb4cba277eaaab932b0d7782b5c2",
+          "src/lib/profile/activity.ts": "c7ea146613e4c1e5ca81e5c356ab82be905b2a0fdd9292f6487a0bcee31316ca"
+        },
+        "originalAnalysisRef": "data-api.md",
+        "originalDetailRef": "data-api-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "data-api-findings.json",
+          "originalPlanLead": {
+            "owner": "Profile insight aggregations",
+            "dimensionAndBound": "Period/all owner watch history; daily series can span all dated years; genre rows transfer all then display six+Other.",
+            "investigationOptions": "Request-local shared aggregate/CTE may reduce repeated watch projection. Keep truthful all-period exact data and do not fabricate chart caps."
+          }
+        },
+        "evidenceRefs": [
+          "data-api.md",
+          "implementation-profile-sections.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": "See query family coverage"
+      },
+      "currentStatus": "partial-actual-data-verified",
+      "reportRefs": [
+        "implementation-profile-genres.md"
+      ]
+    },
+    {
+      "priorDisposition": {
+        "id": "UIS-07",
+        "canonicalStatus": "open",
+        "priority": "P2",
+        "workstream": "W04",
+        "title": "avatar compressed-byte bound does not bound decode memory/lifetime",
+        "sharedOwner": "Shared avatar/image decode lifetime",
+        "minimalSharedOption": "Use one shared cancellable image/decode owner with immediate late/error/supersession release and a concrete cross-format pixel/frame policy.",
+        "actualData": "Actual small inline avatars exist, but no large/animated upload allocation/late-decoder trace or oversized real image was supplied.",
+        "nextMeaningfulTest": "Use actual formats/dimensions/animation, late success/reject, replace/remove/dispose and object URL release; measure retained decoded memory separately from compressed input.",
+        "dispositionReasons": [
+          "actual_cohort_gap",
+          "semantic_contract",
+          "substantial_complexity"
+        ],
+        "whyNotImplementedInThisPass": "Image decoding may allocate before post-decode limits; choosing a browser API/parser/resize policy is not solved by copying a compressed-byte check. Preserve GIF/appearance semantics.",
+        "overlaps": [
+          "DATA-09",
+          "UPP-02",
+          "PR-13"
+        ],
+        "sourceFiles": [
+          "src/lib/ui/components/AvatarPicker.svelte",
+          "src/lib/core/profile/avatars.server.ts",
+          "src/lib/core/profile/gif-avatar.server.ts"
+        ],
+        "additionalEvidenceRefs": [],
+        "currentSourcePins": {
+          "src/lib/ui/components/AvatarPicker.svelte": "6732bd940949cc11b6fdb1887a5940bee8a39d4bc25b4a7cbd8708a5da4067e0",
+          "src/lib/core/profile/avatars.server.ts": "f5e79c9673fe1b294136802e81a7cd77a0491b7abc105415a9c50294842b885b",
+          "src/lib/core/profile/gif-avatar.server.ts": "5c91fa12ac03dac622826280de60afd26574ee39f04fa75db8457561b155f617"
+        },
+        "originalAnalysisRef": "ui-second-pass.md",
+        "originalDetailRef": "ui-second-pass-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "ui-second-pass-findings.json",
+          "smallestOption": "Explicit bounded decode owner with immediate release/cancel and approved pixel/frame policy",
+          "alternatives": [
+            "Browser decode API choice based on real allocation evidence"
+          ],
+          "acceptance": [
+            "Real dimensions/animation",
+            "late success/reject",
+            "supersede/remove/dispose",
+            "URL release",
+            "GIF behavior"
+          ],
+          "gaps": [
+            "No actual large-image trace; compressed bytes are not decodedRSS"
+          ],
+          "evidenceRefs": [
+            "ui-second-pass.md#uis-07"
+          ]
+        },
+        "evidenceRefs": [
+          "ui-second-pass.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": [
+          "Local file/provider import",
+          "GIF",
+          "profile replace/remove/supersede"
+        ]
+      },
+      "currentStatus": "partial-actual-native-lifetime-verified",
+      "reportRefs": [
+        "implementation-avatar-lifetime.md"
+      ]
+    },
+    {
+      "id": "DATA-04",
+      "originalRecord": {
+        "id": "DATA-04",
+        "canonicalStatus": "open",
+        "priority": "P2",
+        "workstream": "W05",
+        "title": "initial screen details materialize complete child and overlapping parent-collection cards",
+        "sharedOwner": "Shared screen detail composition and detail row sources",
+        "minimalSharedOption": "First share the union of required collection/parent member identities within detailsData and remap each exact sequence occurrence. Separately specify demand-paged detail rows if full initial hydration remains costly.",
+        "actualData": "Actual season829 and collection23 prove large complete response work. Those measured details have zero parentCollections, so cross-parent overlap savings are not verified.",
+        "nextMeaningfulTest": "Read-only census natural overlapping/nested collection details; compare every existing DTO field, occurrence/order, next context and missing/privacy behavior while counting unique and duplicate card admission. Retest the829-episode response and browser resources.",
+        "dispositionReasons": [
+          "actual_cohort_gap",
+          "semantic_contract"
+        ],
+        "whyNotImplementedInThisPass": "Union hydration is a routine candidate once a positive overlapping cohort is located. Deferring full-row paging preserves approved completeness/anchors; it must not silently truncate initial detail arrays.",
+        "overlaps": [
+          "UIS-03",
+          "UIS-04",
+          "MIN-02"
+        ],
+        "sourceFiles": [
+          "src/lib/server/queries/media.ts",
+          "src/lib/application/media-details.server.ts"
+        ],
+        "additionalEvidenceRefs": [
+          "evidence/data-api-real-reads.json",
+          "implementation-menu-context.md"
+        ],
+        "currentSourcePins": {
+          "src/lib/server/queries/media.ts": "efa1b01cceba025b1127b1733f29796cdf6cdde67eb680a890ae8d76278bec9d",
+          "src/lib/application/media-details.server.ts": "4f803ced8515d1162cb01b32776b787c66a8eda5d97adc6372aa41569620e028"
+        },
+        "originalAnalysisRef": "data-api.md",
+        "originalDetailRef": "data-api-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "data-api-findings.json",
+          "optionsAndAcceptance": "**Status:** measured on actual data: the largest existing season returned all 829 episodes, 1,490,119 JSON bytes and 5,910 ORM driver rows through 264 ORM statements, with a 1,975.81 ms median. Root browser evidence independently found 29,157 DOM nodes / 6.93 MB HTML for that real season. UI owner determines which arrays are needed immediately. Evidence: `evidence/data-api-real-reads.json` and coordinator browser record.\n\n**References:** `src/lib/server/queries/media.ts:642-791`; `src/lib/application/work-details.server.ts:20`; `src/lib/application/media-details.server.ts:10-23`; `src/lib/server/api/media.server.ts:24-42`.\n\nA season detail load enumerates every episode and hydrates them all in batches. A collection detail load enumerates and hydrates its complete sequence. For each parent collection, `detailsData` independently expands and hydrates the complete sequence, using `Promise.all` across all parents; shared leaves are hydrated repeatedly. Batching at 60 bounds individual metadata reads, but aggregate work, response bytes and concurrent parent branches scale with the complete memberships. `loadMediaDetails` may repeat the entire read after own-title or parent enrichment.\n\n**Option A:** preserve complete response semantics initially, collect the union of requested leaf IDs once, hydrate once, and remap each independent sequence/repeated entry. This reduces duplication without changing the approved UI. **Option B:** move each child/collection detail row to its existing on-demand paged source, leaving only header/summary/next selection in the initial detail response. This needs a clear replacement completeness/pagination contract, including all members and repeated entries; silent truncation is unacceptable. First verify actual UI demand so useful visible content is not withheld.\n\n**Acceptance:** compare normalized complete initial and paged results on actual largest seasons/collections and titles in multiple collections; preserve season ordering, repeated entry identity, membership, next item, availability and rewatch state. Record initial response bytes, card identities hydrated (including duplicates), SQL statements, peak process memory and number of active branches. Closing/replacing a detail panel must prevent stale publication; DB cancellation behavior remains a separate gap.",
+          "references": [
+            {
+              "path": "src/lib/server/queries/media.ts",
+              "line": 642
+            },
+            {
+              "path": "src/lib/application/work-details.server.ts",
+              "line": 20
+            },
+            {
+              "path": "src/lib/application/media-details.server.ts",
+              "line": 10
+            },
+            {
+              "path": "src/lib/server/api/media.server.ts",
+              "line": 24
+            }
+          ]
+        },
+        "evidenceRefs": [
+          "data-api.md",
+          "evidence/data-api-real-reads.json",
+          "implementation-menu-context.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": [
+          "full detail page",
+          "canonical overlay",
+          "enhancement",
+          "season/collection/parent rows"
+        ]
+      },
+      "currentStatus": "partial-actual-data-verified",
+      "reportRefs": [
+        "implementation-detail-hydration.md",
+        "implementation-detail-hydration.json"
+      ]
+    },
+    {
+      "id": "PLAN-02",
+      "originalRecord": {
+        "id": "PLAN-02",
+        "canonicalStatus": "open",
+        "priority": "measurement-gated",
+        "workstream": "W12",
+        "title": "`activityFeed`",
+        "sharedOwner": "`activityFeed`",
+        "minimalSharedOption": "Capture actual activityFeed grouping plans first; only move an exact boundary-preserving page plan or maintained grouped projection into its shared owner.",
+        "actualData": "Actual long watch/listen histories and friend relationships exist; no current complete feed plan/late-cursor equivalence demonstrates a repair.",
+        "nextMeaningfulTest": "Use actual user feeds and cursor boundaries; compare album/episode runs, unknown dates, listen numbering, repeated events, reactions and relationship rows before/after EXPLAIN/row counts.",
+        "dispositionReasons": [
+          "measurement_gap",
+          "semantic_contract",
+          "substantial_complexity"
+        ],
+        "whyNotImplementedInThisPass": "This is a measurement-gated query shape, not a verified bad plan. Early raw-event LIMIT changes grouping; a durable grouped projection adds replay/invalidation obligations.",
+        "overlaps": [
+          "DATA-05",
+          "PR-14",
+          "PLAN-09"
+        ],
+        "sourceFiles": [
+          "src/lib/social/queries.server.ts"
+        ],
+        "additionalEvidenceRefs": [],
+        "currentSourcePins": {
+          "src/lib/social/queries.server.ts": "6f292e1bdaf2b7de9c074019a48e7828c42c3b4d5fb080e143c16ce18204774d"
+        },
+        "originalAnalysisRef": "data-api.md",
+        "originalDetailRef": "data-api-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "data-api-findings.json",
+          "originalPlanLead": {
+            "owner": "`activityFeed`",
+            "dimensionAndBound": "Complete visible histories are windowed/grouped before final 61-row lookahead. Relationship traversal is conditional on item relationship scope.",
+            "investigationOptions": "Existing parked redesign requires exact run/album grouping, listen numbering, unknown dates, repeated events and cursor identity. A durable grouped projection or exact boundary-preserving page plan is possible; early raw-event LIMIT changes behavior."
+          }
+        },
+        "evidenceRefs": [
+          "data-api.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": "See query family coverage"
+      },
+      "currentStatus": "partial-actual-data-verified",
+      "reportRefs": [
+        "implementation-activity-feed.md",
+        "implementation-activity-feed.json"
+      ]
+    },
+    {
+      "id": "PLAN-04",
+      "originalRecord": {
+        "id": "PLAN-04",
+        "canonicalStatus": "open",
+        "priority": "measurement-gated",
+        "workstream": "W12",
+        "title": "Recommendation scoring",
+        "sharedOwner": "Recommendation scoring",
+        "minimalSharedOption": "Measure the existing2000-candidate preselection and100-positive-evidence scoring; optimize joins/aggregation within the exact existing ranking contract first.",
+        "actualData": "Actual recommendation catalogue/evidence exists; no completed current scoring plan or quality-neutral preselection change is established.",
+        "nextMeaningfulTest": "Compare full candidate/score/order results and actual plans for saved evidence across enabled media; preserve ties, missing features and feature/privacy decisions.",
+        "dispositionReasons": [
+          "measurement_gap",
+          "semantic_contract"
+        ],
+        "whyNotImplementedInThisPass": "Changing preselection cap/rank is also recommendation-quality behavior. A source bound is not evidence that reducing candidates preserves recommendations.",
+        "overlaps": [
+          "DATA-06",
+          "PLAN-03",
+          "MIN-08"
+        ],
+        "sourceFiles": [
+          "src/lib/recommendations/query.server.ts",
+          "src/lib/social/work-features.server.ts"
+        ],
+        "additionalEvidenceRefs": [],
+        "currentSourcePins": {
+          "src/lib/recommendations/query.server.ts": "6db125c7611e418315ff93fba6a9e829ce6d415d49d2f2444632d1900d054f54",
+          "src/lib/social/work-features.server.ts": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63"
+        },
+        "originalAnalysisRef": "data-api.md",
+        "originalDetailRef": "data-api-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "data-api-findings.json",
+          "originalPlanLead": {
+            "owner": "Recommendation scoring",
+            "dimensionAndBound": "Up to 2,000 preselected candidates, 100 positive evidence roots; local reads only.",
+            "investigationOptions": "Measure joins and correlated scoring against actual catalogue. Preselection occurs before weighted genre/author scoring; changing its cap/ranking is also a recommendation quality decision."
+          }
+        },
+        "evidenceRefs": [
+          "data-api.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": "See query family coverage"
+      },
+      "currentStatus": "partial-actual-data-verified",
+      "reportRefs": [
+        "implementation-recommendation-scoring.md",
+        "implementation-recommendation-scoring.json"
+      ]
+    },
+    {
+      "id": "PLAN-06",
+      "originalRecord": {
+        "id": "PLAN-06",
+        "canonicalStatus": "open",
+        "priority": "measurement-gated",
+        "workstream": "W12",
+        "title": "Admin missing demand",
+        "sharedOwner": "Admin missing demand",
+        "minimalSharedOption": "Separate exact consenting-user count/existence from selected-user detailed missing-demand projection while keeping authoritative feature/privacy/source predicates.",
+        "actualData": "Actual consenting accounts and catalogue exist; a large consenting-user demand cohort and current per-user plan distribution are not measured.",
+        "nextMeaningfulTest": "Capture adminDemand complete user IDs/order/totals and per-user60-detail arrays with actual plans; verify consent/disabled/availability withdrawal before admitting narrower detail work.",
+        "dispositionReasons": [
+          "measurement_gap",
+          "semantic_contract"
+        ],
+        "whyNotImplementedInThisPass": "The final60-user page does not prove the upstream projection is bad at current scale. Count/detail splitting requires exact consent/filter membership, not a blind early user LIMIT.",
+        "overlaps": [
+          "DATA-14",
+          "UIC-04"
+        ],
+        "sourceFiles": [
+          "src/lib/collection/demand.server.ts",
+          "src/lib/collection/query.server.ts"
+        ],
+        "additionalEvidenceRefs": [],
+        "currentSourcePins": {
+          "src/lib/collection/demand.server.ts": "f749b05b32b2d0313df8592220919e5400ec1763661f0472e6fa1ae42eccd596",
+          "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e"
+        },
+        "originalAnalysisRef": "data-api.md",
+        "originalDetailRef": "data-api-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "data-api-findings.json",
+          "originalPlanLead": {
+            "owner": "Admin missing demand",
+            "dimensionAndBound": "Complete demand projection per consenting active user before final 60-user page; each returned user contains at most 60 demand items.",
+            "investigationOptions": "User count multiplies full projection work. Consider separate existence/count and selected-user detailed projections; do not lose exact total/filter consent."
+          }
+        },
+        "evidenceRefs": [
+          "data-api.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": "See query family coverage"
+      },
+      "currentStatus": "partial-actual-data-verified",
+      "reportRefs": [
+        "implementation-demand-materialization.md",
+        "implementation-demand-materialization.json"
+      ]
+    },
+    {
+      "id": "DATA-05",
+      "newStatus": "partial-actual-state-admission-verified",
+      "implementationRef": "implementation-continuation-admission.md",
+      "previousDisposition": {
+        "id": "DATA-05",
+        "canonicalStatus": "open",
+        "priority": "P2",
+        "workstream": "W02",
+        "title": "Continue and the initial home hero still plan from the owner's complete screen state and descendant sets",
+        "sharedOwner": "Shared continuation/progress planner",
+        "minimalSharedOption": "Move only provably ineligible states before hydration or reuse one exact plan when one request actually needs it twice. Larger SQL/durable continuation projection must preserve next-season/rewatch/membership rules.",
+        "actualData": "Actual owner returns97 Continue candidates,60 cards,43,200 ORM rows; function median488.73ms. Its separately forced recursive-factor EXPLAIN is exploratory, not the normal plan. Saved playlists/rewatches are absent. New actual census:89,830 screen tracking states,0 dropped across4owners. No observed savings can verify the source-exact early dropped=false option.",
+        "nextMeaningfulTest": "When a real dropped-screen cohort exists, execute the prepared complete planner/hero/DTO probe under default owner settings. Meanwhile investigate descendant work with existing actual started shows; preserve zero playlist/rewatch gaps.",
+        "dispositionReasons": [
+          "semantic_contract",
+          "substantial_complexity",
+          "actual_cohort_gap"
+        ],
+        "whyNotImplementedInThisPass": "Both downstream state consumers already reject dropped rows, so an early predicate is source-equivalent under the NOT NULL schema. The actual cohort has zero dropped screen states; no runtime gain is established and the prepared broad candidate probe was not executed. Broader continuation planning still requires exact next-season/rewatch/membership proof.",
+        "overlaps": [
+          "DATA-02",
+          "DATA-04",
+          "PLAN-09"
+        ],
+        "sourceFiles": [
+          "src/lib/server/queries/progress.ts",
+          "src/lib/server/queries/continuations.ts",
+          "src/lib/server/queries/home.ts"
+        ],
+        "additionalEvidenceRefs": [
+          "evidence/data-api-real-reads.json",
+          "evidence/admin-demand-actual.json",
+          "probes/progress-dropped-state-real.ts"
+        ],
+        "currentSourcePins": {
+          "src/lib/server/queries/progress.ts": "988f3c3239523534fb2538d63bea30fbdb32d119710a2312ac53ed9a150fcd33",
+          "src/lib/server/queries/continuations.ts": "a136f3bc8d4722419b7865219041851f4f87005264b461c919e515ea06491916",
+          "src/lib/server/queries/home.ts": "4fd157072d3f343b49cc3f88a012450743199e43e7f22a15d78f46b245886b24"
+        },
+        "originalAnalysisRef": "data-api.md",
+        "originalDetailRef": "data-api-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "data-api-findings.json",
+          "optionsAndAcceptance": "**Status:** actual-data clone measured 43,200 ORM driver rows for a 60-card Continue response (97 total results), 488.73 ms median and 27 ORM statements through the unmodified production functions. A separate exploratory EXPLAIN of its episode-planning statement returned 16,590 rows with 681,769 shared hits and 663.183 ms execution **under the probe's forced `recursive_worktable_factor=0.01`**. That setting is not applied by this production query owner, and its normal inherited value was not recorded; the plan's node work, buffers and elapsed time are not established as its ordinary runtime plan. Earlier audits already parked semantic restructuring; the production-function row transfer and timing independently renew that evidence. Source: `evidence/data-api-real-reads.json`.\n\n**References:** `src/lib/server/queries/progress.ts:157-271`; `src/lib/server/queries/continuations.ts:67-156`; `src/lib/server/queries/home.ts:12-19`.\n\n`screenProgressPlan` reads all owner screen tracking rows. `continuationIds` then returns eligible shows' episode observations, collection identities and started playlists before selecting next entries. Candidate IDs and availability/order checks are materialized before the final 60-ID slice. `continueHeroId` invokes this full planner to select one initial hero, so lazy shelves do not remove that route cost. Work grows with owner rows, episodes in relevant shows, collections and playlist sources; the public output bound is not a preparation bound.\n\n**Smallest options:** reuse one request-local exact plan if a request needs both hero and Continue; move plainly ineligible stored states into SQL while retaining all continuation evidence; return only the selected candidate/summary from PostgreSQL where equivalence can be proven. **Structural option:** maintain a durable continuation projection through the existing mutation/import owners. That requires membership/release-date/rewatch/privacy invalidation and rebuild/recovery support, so choose it only after actual plans show the remaining cost warrants it.\n\n**Acceptance:** large real owners, regular/special episodes, unfinished current season, untouched next season, unavailable next season, dropped parents, rewatches, playlists, saved parent deduplication and cross-profile privacy. Compare complete IDs/order/count/next context with the present oracle, not just the first card. Record full owner/child rows transferred and representative SQL plans under the owner's actual inherited/local settings; record those settings explicitly rather than applying Collection's override to another owner.",
+          "references": [
+            {
+              "path": "src/lib/server/queries/progress.ts",
+              "line": 157
+            },
+            {
+              "path": "src/lib/server/queries/continuations.ts",
+              "line": 67
+            },
+            {
+              "path": "src/lib/server/queries/home.ts",
+              "line": 12
+            }
+          ]
+        },
+        "evidenceRefs": [
+          "data-api.md",
+          "evidence/data-api-real-reads.json"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": [
+          "home hero",
+          "For You hero",
+          "Continue",
+          "Next",
+          "up-next",
+          "progress API",
+          "public progress",
+          "cross-profile progress"
+        ]
+      }
+    },
+    {
+      "id": "MIN-07",
+      "newStatus": "partial-planning-friend-admission-actual-verified",
+      "implementationRef": "implementation-planning-admission.md",
+      "previousDisposition": {
+        "id": "MIN-07",
+        "canonicalStatus": "open",
+        "priority": "P3",
+        "workstream": "W08",
+        "title": "Up to20 friend relationships are checked serially twice during creation, then reminders notify up to21 users serially.",
+        "sharedOwner": "`src/lib/experiments/planning.server.ts:18-22,63-65`",
+        "minimalSharedOption": "Deduplicate friend IDs before checks; batch authoritative friendship admission inside the existing transaction, and reuse notifyMany for eligible reminders without dropping transaction-time feature/privacy validation.",
+        "actualData": "Accepted friends exist, but no positive saved plan/reminder or20-friend plan operation was captured.",
+        "nextMeaningfulTest": "Census existing scheduled plans; on naturally available rows compare complete friend admission/recipients, duplicate inputs, withdrawn friendships/features and reminder upserts in rollback with exact query counts.",
+        "dispositionReasons": [
+          "actual_cohort_gap",
+          "semantic_contract"
+        ],
+        "whyNotImplementedInThisPass": "A bounded routine batching option exists, but preflight and transaction checks are intentionally distinct and must not be collapsed into stale authorization. Partial reminder failure needs the same notification contract as MIN-04.",
+        "overlaps": [
+          "MIN-04",
+          "PJ-14"
+        ],
+        "sourceFiles": [
+          "src/lib/experiments/planning.server.ts",
+          "src/lib/social/service.server.ts",
+          "src/lib/server/notifications/index.ts"
+        ],
+        "additionalEvidenceRefs": [],
+        "currentSourcePins": {
+          "src/lib/experiments/planning.server.ts": "e768a2a915034cd42b8c9d5689622514a3ba05ac11853068e999ff5fd2f6e9de",
+          "src/lib/social/service.server.ts": "cd1d95a5755bef10eb12e62553c78960da25b9fb8272f0d02fae369fed9166e5",
+          "src/lib/server/notifications/index.ts": "d004d879a1194caef408f783fadb838198adf8b0d3dbb26bc60b0fb2badd57cc"
+        },
+        "originalAnalysisRef": "data-api.md",
+        "originalDetailRef": "data-api-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "data-api-findings.json",
+          "originalOpportunity": {
+            "source": "`src/lib/experiments/planning.server.ts:18-22,63-65`",
+            "cost": "Up to20 friend relationships are checked serially twice during creation, then reminders notify up to21 users serially.",
+            "sharedOptionAndVerification": "Deduplicate inputs before both checks, batch authoritative friendship admission and reuse shared notification batches; retain transaction-time validation, policy withdrawal and per-recipient visibility. The existing bound makes this lower priority.",
+            "classification": "source-confirmed bounded opportunity, runtime value unmeasured",
+            "implementationApplied": false
+          }
+        },
+        "evidenceRefs": [
+          "data-api.md"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": "See data-api.md smaller opportunities"
+      }
+    },
+    {
+      "id": "PLAN-05",
+      "newStatus": "partial-interest-input-actual-verified",
+      "implementationRef": "implementation-interest-fallback.md",
+      "previousDisposition": {
+        "id": "PLAN-05",
+        "canonicalStatus": "open",
+        "priority": "measurement-gated",
+        "workstream": "W12",
+        "title": "Feed definition census",
+        "sharedOwner": "Feed definition census",
+        "minimalSharedOption": "Profile the current one-census feed definition/interest/adjacency work; reuse only proven request-local invariant computations through the existing feed owner.",
+        "actualData": "Actual350 definitions/63,551 JSON bytes and1,151.91ms median were recorded. Direct BunSQL counts were not instrumented; no dominant subquery/subject fanout attribution yet.",
+        "nextMeaningfulTest": "Run source-pinned actual interest/feed/adjacency timings and safe plans with complete definition/order equivalence; count raw SQL as well as ORM and compare revisit demand separately.",
+        "dispositionReasons": [
+          "measurement_gap"
+        ],
+        "whyNotImplementedInThisPass": "The old repeated-per-page census is already repaired. Further reuse/caching has no proven freshness/key/invalidation benefit and would add ownership without attribution.",
+        "overlaps": [
+          "PLAN-03",
+          "PLAN-04",
+          "UIS-03"
+        ],
+        "sourceFiles": [
+          "src/lib/recommendations/feed.server.ts",
+          "src/lib/recommendations/interests.server.ts",
+          "src/lib/recommendations/query.server.ts"
+        ],
+        "additionalEvidenceRefs": [
+          "evidence/data-api-real-reads.json"
+        ],
+        "currentSourcePins": {
+          "src/lib/recommendations/feed.server.ts": "c6b5a1aa8e4bb6ea7bd805fcc7f4cfe5a0edc7bb82e6e3aef70c6d359f0c4b2b",
+          "src/lib/recommendations/interests.server.ts": "72258e798dfe65c1a618aa8e64eaac61dc1cb03b7994f91c0fc8f74aa93ff8f9",
+          "src/lib/recommendations/query.server.ts": "aa1a7457c830733bf44c1d363e714beb420034261848a913e87c51dfe0a33c59"
+        },
+        "originalAnalysisRef": "data-api.md",
+        "originalDetailRef": "data-api-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "data-api-findings.json",
+          "originalPlanLead": {
+            "owner": "Feed definition census",
+            "dimensionAndBound": "300 evidence works; at most 10,000 definitions; up to four adjacency reads each bounded to 2,000 catalogue candidates.",
+            "investigationOptions": "Current one-census-per-visit client architecture removes prior page replay. Profile actual interest aggregation/subject fan-out before introducing reuse."
+          }
+        },
+        "evidenceRefs": [
+          "data-api.md",
+          "evidence/data-api-real-reads.json"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": "See query family coverage"
+      }
+    },
+    {
+      "id": "PR-05",
+      "newStatus": "partial-actual-snapshot-binding-verified",
+      "implementationRef": "implementation-music-snapshot-binding.md",
+      "previousDisposition": {
+        "id": "PR-05",
+        "canonicalStatus": "open",
+        "priority": "P2",
+        "workstream": "W06",
+        "title": "Serial rich music persistence and per-source page growth",
+        "sharedOwner": "persistMusic and existing page-observation operation",
+        "minimalSharedOption": "Skip unchanged meaningful music metadata/structural work and batch page access observations under current account fences and deterministic locks.",
+        "actualData": "Real music/provider mappings exist; no captured real50/60-item provider page was replayed cold and unchanged with SQL/WAL measurement.",
+        "nextMeaningfulTest": "Capture/replay one actual page in rollback; compare complete releases/tracks/occurrences/access/artists/artwork and cancellations/reconnects, then changed versus unchanged updates/queries/revisions.",
+        "dispositionReasons": [
+          "semantic_contract",
+          "substantial_complexity",
+          "actual_cohort_gap"
+        ],
+        "whyNotImplementedInThisPass": "Repeated tracks/releases and access freshness are meaningful. A page transaction/refactor needs canonical lock/occurrence semantics, not a blanket timestamp no-op.",
+        "overlaps": [
+          "DATA-07",
+          "PJ-08",
+          "DATA-09"
+        ],
+        "sourceFiles": [
+          "src/lib/music/persistence.server.ts",
+          "src/lib/server/queries/music.ts",
+          "src/lib/music/service.server.ts"
+        ],
+        "additionalEvidenceRefs": [],
+        "currentSourcePins": {
+          "src/lib/music/persistence.server.ts": "e56488be60bfb07c6ce4bfcfddc44bfbda924de1dc9661e7d75e0d5943cc2da6",
+          "src/lib/server/queries/music.ts": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+          "src/lib/music/service.server.ts": "39087bfd357be38b60cb1ba6cac6c857421870c682066c125c86aef98b6bb42a"
+        },
+        "originalAnalysisRef": "playback-readers.md",
+        "originalDetailRef": "playback-readers-findings.json",
+        "preservedBaselineOptions": {
+          "artifact": "playback-readers-findings.json",
+          "smallestOption": "Compare meaningful shared metadata; skip unchanged structural work and batch access observations under current account fence.",
+          "alternatives": [
+            "Bounded page persistence transaction with deterministic lock order",
+            "Explicit selected-source or bounded merged-source paging after product agreement"
+          ],
+          "acceptance": [
+            "Replay actual fifty/sixty-item page cold and unchanged; count queries/updates/WAL/revisions",
+            "Single changed track/artist/artwork/membership remains exact",
+            "Cancellation/reconnect retains exact release occurrences and access"
+          ],
+          "gaps": [
+            "Actual source page query/WAL magnitude pending; source amplification confirmed"
+          ],
+          "evidenceRefs": [
+            "evidence/development-real-sql.json",
+            "evidence/deployed-real-sql.json",
+            "src/lib/music/persistence.server.ts:103",
+            "src/lib/server/queries/music.ts:35"
+          ]
+        },
+        "evidenceRefs": [
+          "playback-readers.md",
+          "evidence/development-real-sql.json",
+          "evidence/deployed-real-sql.json"
+        ],
+        "approval": {
+          "requiredForThisReadOnlyDisposition": false,
+          "routineFixRequiresExtraHumanPermission": false,
+          "conditionalRule": "Ask only before a production dependency or an unavoidable-complexity implementation choice; semantic questions must name the concrete unresolved behavior, not invent a safety approval."
+        },
+        "consumers": [
+          "rich source browse",
+          "source detail",
+          "music child rows",
+          "library bootstrap",
+          "user sync",
+          "favourite/preparation observations"
+        ]
+      }
+    }
+  ],
+  "identityPinsRefreshedAfterSummaryProjection": {
+    "at": "2026-10-18T01:40:13.580463+00:00",
+    "boundary": "Current identity hashes only; no claim that old unrelated actual tests were rerun. New shared projection/formats have separate pinned receipts."
+  }
+}

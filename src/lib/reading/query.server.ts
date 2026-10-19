@@ -5,7 +5,7 @@ import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { ratings, readingProgress, readingWorks, workIdentifiers, trackingState } from '$lib/server/db/schema';
 import { DomainError } from '$lib/core/errors';
-import { PAGE_SIZE, pageNumberSchema, pagination } from '$lib/server/queries/pagination';
+import { PAGE_SIZE, pageNumberSchema, pagination, requestedPageInterval } from '$lib/server/queries/pagination';
 import { getConfig } from '$lib/server/config';
 import { enabledCategories, requireEnabledCategory } from '$lib/server/experimental';
 import type { ReadingMetadata } from './model';
@@ -13,6 +13,8 @@ import { readingStates, readingReferenceSchema, readingProviderForId, type Readi
 import { readingCard,type ReadingDetailData } from './presentation';
 import {readingProviderDetails} from '$lib/providers/reading.server';
 import { searchDocument, searchSql } from '$lib/server/queries/search-ranking';
+
+import { pageInterval } from '$lib/page-window';
 
 const uuid = v.pipe(v.string(), v.uuid());
 /** Resolve exact identity before fetching a preview; saved metadata survives source outages. */
@@ -63,9 +65,10 @@ export async function readingDetails(userId:string,id:string){
 }
 
 /** Personal membership and state filters precede both counts and the bounded page read. */
-export async function readingCatalogue(userId: string, raw: unknown = {}) {
+export async function readingCatalogue(userId: string, raw: unknown = {}, firstPage?: number) {
   v.parse(uuid, userId);
   const input = v.parse(readingCatalogueSchema, raw);
+  const interval = requestedPageInterval(input.page, firstPage);
   const config = await getFeatureConfig(userId);
   requireEnabledCategory(config, 'reading');
   if (input.kind !== 'all') requireEnabledCategory(config, input.kind);
@@ -89,10 +92,11 @@ export async function readingCatalogue(userId: string, raw: unknown = {}) {
   let [totals] = await db.select({ total: count() }).from(readingWorks).where(where);
   if (!totals.total && search) { where = buildWhere(true); [totals] = await db.select({ total: count() }).from(readingWorks).where(where); }
   const { page, pages } = pagination(totals.total, input.page);
-  const items = await db.select().from(readingWorks).where(where).orderBy(...(search ? [desc(sql`greatest(${search.rank},${aliases.rank})`)] : []), asc(readingWorks.title), asc(readingWorks.id)).limit(PAGE_SIZE).offset((page - 1) * PAGE_SIZE);
+  const bounds = pageInterval(pages, page, interval?.firstPage);
+  const items = await db.select().from(readingWorks).where(where).orderBy(...(search ? [desc(sql`greatest(${search.rank},${aliases.rank})`)] : []), asc(readingWorks.title), asc(readingWorks.id)).limit((page - bounds.firstPage + 1) * PAGE_SIZE).offset((bounds.firstPage - 1) * PAGE_SIZE);
   // SQL has ranked both canonical metadata and the viewer's private aliases
   // before paging. Rescoring raw titles here would demote alias-only matches.
-  return { items, total: totals.total, page, pages };
+  return { items, total: totals.total, page, pages, ...(interval ? { range: { ...bounds, counts: Array.from({length:page-bounds.firstPage+1}, (_,index)=>items.slice(index*PAGE_SIZE,(index+1)*PAGE_SIZE).length) } } : {}) };
 }
 
 /** Hydrate private page progress for only the selected card page, respecting the actual category. */

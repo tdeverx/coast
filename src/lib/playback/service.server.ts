@@ -1,6 +1,6 @@
 import {namedEdition} from '$lib/media/editions';
 import { requireEnabledCategory } from '$lib/server/experimental';
-import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '$lib/server/features';
 import { ProviderQueueBusyError, requestPriority } from '$lib/server/security/request-priority';
 import { playbackLimits, sharedResourcePath, minimumSharedBitrate } from '$lib/sharing/policy';
 import {playbackArtwork} from '$lib/media/artwork';
@@ -464,6 +464,7 @@ export async function progressPlayback(userId: string, sessionId: string, input:
   );
   v.parse(uuid, sessionId);
   return getDb().transaction(async (tx) => {
+    await lockFeaturePolicyInTransaction(tx,userId);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
     const [session] = await tx
       .select()
@@ -632,7 +633,7 @@ export async function streamPlayback(
   const { connection, instance } = await getJellyfin(userId, session.connectionId);
   if(connection.accountGeneration!==session.accountGeneration)return new Response('Playback source account changed.',{status:410});
   const [item] = await getDb()
-    .select()
+    .select({externalId:providerItems.externalId})
     .from(providerItems)
     .where(eq(providerItems.id, session.providerItemId));
   if (!item) return new Response('Playback source unavailable.', { status: 404 });
@@ -724,7 +725,8 @@ export async function streamPlayback(
 }
 
 /** Local trailers use the persistent native video element without creating tracking events. */
-export async function getTrailer(userId: string, mediaId: string): Promise<string | null> {
+export async function getTrailer(userId: string, mediaId: string,signal?:AbortSignal): Promise<string | null> {
+  signal?.throwIfAborted();
   await requireFeature(userId,'playback');
   await requireFeature(userId,'screen');
   const rows = await getDb()
@@ -741,9 +743,10 @@ export async function getTrailer(userId: string, mediaId: string): Promise<strin
   for (const row of rows)
     try {
       const { adapter, connection } = await getJellyfin(userId, row.availability.connectionId);
+      signal?.throwIfAborted();
       const trailers = await adapter.localTrailers(
         connection.externalUserId!,
-        row.providerItem.externalId
+        row.providerItem.externalId,signal
       );
       for (const trailer of trailers) {
         const info = await adapter.playbackInfo(
@@ -756,7 +759,7 @@ export async function getTrailer(userId: string, mediaId: string): Promise<strin
             nativeHls: false,
             hlsJs: false,
           },
-          20000000
+          20000000,{signal}
         );
         const source = info.sources.find(
           (s) =>
@@ -779,6 +782,7 @@ export async function getTrailer(userId: string, mediaId: string): Promise<strin
         }
       }
     } catch {
+      signal?.throwIfAborted();
       /* Trailer failure leaves the artwork in place. */
     }
   return null;

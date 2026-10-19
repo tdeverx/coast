@@ -8,8 +8,8 @@ export function createMenuResource<T>(initial: () => T, key: () => string, fetch
   let active = false;
   let disposed = false;
   let pending: Promise<T | undefined> | undefined;
-  function sync() {
-    const next = key();
+  // Reactive owners may pass the key they just tracked in this synchronous effect.
+  function sync(next = key()) {
     if (scope === next) return;
     scope = next;
     pending = undefined;

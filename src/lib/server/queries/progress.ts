@@ -164,7 +164,7 @@ async function screenProgressPlan(userId: string, options: import('$lib/progress
     })
     .from(s.trackingState)
     .innerJoin(s.media, eq(s.media.id, s.trackingState.mediaId))
-    .where(eq(s.trackingState.userId, userId))
+    .where(and(eq(s.trackingState.userId, userId), eq(s.trackingState.dropped, false), sql`(${s.trackingState.watched} or ${s.trackingState.positionSeconds}>0 or ${rewatchBoundary(userId, sql`${s.media.id}`)} is not null)`))
     .orderBy(desc(s.trackingState.updatedAt), s.media.id);
   const planned = await continuationIds(
     userId,

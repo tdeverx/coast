@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import WorkActions from '../components/WorkActions.svelte';
   import { relationshipControls } from '$lib/ui/controls/actions';
@@ -35,7 +36,6 @@
   import Dialog from '../components/Dialog.svelte';
   import RequestDialog from '../components/RequestDialog.svelte';
   import { createRequestControls } from '$lib/ui/controls/requests.svelte';
-  import { requestScope } from '$lib/media/requests';
   import { createSequencePlayback } from '$lib/ui/controls/sequence.svelte';
   import MetadataEditor from '../components/MetadataEditor.svelte';
 
@@ -87,12 +87,12 @@
       return result;
     });
   const data = $derived(snapshot.data), loading = $derived(snapshot.busy);
-  const mutation = createMutation(() => snapshot.refresh(), useClient().feedback.notify);
+  const mutation = createMutation(() => snapshot.refresh(), useClient().feedback.notify, useRetention());
   const busy = $derived(mutation.busy);
   const error = $derived(mutation.error || snapshot.error);
   $effect(() => {
     const key = workMenuScope([item.id, item.sequence, item.listContext]);
-    untrack(() => { key; snapshot.sync(); requests.resetOptions(); if (snapshot.active && !mutation.busy) void snapshot.load(); });
+    untrack(() => { key; snapshot.sync(key); requests.resetOptions(); if (snapshot.active && !mutation.busy) void snapshot.load(); });
   });
   const playTarget = createResource<MediaView | null>(null);
   let alive = true;
@@ -166,7 +166,7 @@
   ) {
     confirm(
       `${action === 'cancel' ? 'Cancel' : action === 'approve' ? 'Approve' : 'Decline'} request?`,
-      `${requestItem?.title ?? active.title} · ${requestScope(request, data?.requests ?? [])}`,
+      `${requestItem?.title ?? active.title} · ${requests.scopeLabel(request)}`,
       async () => {
         if (
           await perform(
@@ -485,9 +485,9 @@
       {@render requestManagement(requests.existingRequests[0])}
     {:else}
       {#each requests.existingRequests as request (request.id)}
-        <Button menu label={requestScope(request, requests.existingRequests)} panel>
+        <Button menu label={requests.scopeLabel(request)} panel>
           {#snippet trigger()}<Icon name="request" /><span class="menu-action-label"
-              >{requestScope(request, requests.existingRequests)}</span
+              >{requests.scopeLabel(request)}</span
             ><span class="menu-chevron"><Icon name="right" /></span>{/snippet}
           {@render requestManagement(request)}
         </Button>

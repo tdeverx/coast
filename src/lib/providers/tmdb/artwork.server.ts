@@ -4,30 +4,10 @@ import { createImageCache } from '$lib/server/storage/image-cache.server';
 import { getConfig } from '$lib/server/config';
 import { dataDirectory } from '$lib/server/security/credentials';
 import { secureProviderFetch } from '$lib/server/security/provider-fetch';
+import { createArtworkFlights } from '../artwork-flight.server';
 
 const caches = new Map<string, ReturnType<typeof createImageCache>>();
-type ArtworkDownload = {promise: Promise<Uint8Array | null>; controller: AbortController; waiters: number; settled: boolean};
-const pending = new Map<string, ArtworkDownload>();
-let activeDownloads = 0;
-async function waitForArtwork(key: string, download: ArtworkDownload, signal: AbortSignal) {
-  signal.throwIfAborted();
-  download.waiters++;
-  let aborted!: () => void;
-  try {
-    return await Promise.race([download.promise, new Promise<never>((_resolve, reject) => {
-      aborted = () => reject(signal.reason ?? new DOMException('Artwork request cancelled.', 'AbortError'));
-      signal.addEventListener('abort', aborted, {once: true});
-      if (signal.aborted) aborted();
-    })]);
-  } finally {
-    signal.removeEventListener('abort', aborted);
-    download.waiters--;
-    if (!download.waiters && !download.settled) {
-      download.controller.abort();
-      if (pending.get(key) === download) pending.delete(key);
-    }
-  }
-}
+const flights = createArtworkFlights();
 const imagePath = /^\/(w342|w780|w1280|original)\/([a-zA-Z0-9_-]+\.(?:jpg|jpeg|png|webp))$/;
 
 /** Keep stored metadata canonical; only route displayed TMDB artwork through the cache when enabled. */
@@ -74,33 +54,26 @@ export async function streamTmdbArtwork(size: string, filename: string, request:
         })
       : new Response('Unsupported image.', { status: 502 });
   };
-  const cached = await cache.get(key);
+  const cached = await cache.get(key, bytes => imageType(bytes) !== null);
   request.signal.throwIfAborted();
   if (cached) return respond(cached);
   const pendingKey = `${directory}/${key}`;
-  let download = pending.get(pendingKey);
-  if (!download) {
-    // Bound aggregate memory/network work. Saturation still delivers artwork via the CDN.
-    if (activeDownloads >= 4) return new Response(null, { status: 302, headers: { Location: `${origin}/t/p${path}`, 'Cache-Control': 'no-store' } });
-    const store = cache;
-    const entry: ArtworkDownload = {promise: Promise.resolve(null), controller: new AbortController(), waiters: 0, settled: false};
-    activeDownloads++;
-    entry.promise = (async () => {
-      const upstream = await secureProviderFetch({ baseUrl: origin, approved: true }, `/t/p${path}`, {signal: entry.controller.signal}, { maxBytes: 20 * 1024 * 1024 });
+  // Bound aggregate memory/network work. Saturation still delivers artwork via the CDN.
+  if (!flights.has(pendingKey) && flights.active >= 4) return new Response(null, { status: 302, headers: { Location: `${origin}/t/p${path}`, 'Cache-Control': 'no-store' } });
+  const store = cache;
+  const bytes = await flights.run(pendingKey, request.signal, async signal => {
+      const upstream = await secureProviderFetch({ baseUrl: origin, approved: true }, `/t/p${path}`, {signal}, { maxBytes: 20 * 1024 * 1024 });
+      if (signal.aborted) { await upstream.body?.cancel(); signal.throwIfAborted(); }
       if (!upstream.ok || !upstream.headers.get('content-type')?.startsWith('image/')) {
         await upstream.body?.cancel();
         return null;
       }
       const bytes = new Uint8Array(await upstream.arrayBuffer());
+      signal.throwIfAborted();
       if (!imageType(bytes)) return null;
-      if ((await getConfig()).cacheTmdbArtwork) { entry.controller.signal.throwIfAborted(); await store.put(key, bytes); }
+      if ((await getConfig()).cacheTmdbArtwork) { signal.throwIfAborted(); await store.put(key, bytes); }
       return bytes;
-    })().finally(() => {
-      entry.settled = true; activeDownloads--;
-      if (pending.get(pendingKey) === entry) pending.delete(pendingKey);
-    });
-    download = entry; pending.set(pendingKey, entry);
-  }
-  const bytes = await waitForArtwork(pendingKey, download, request.signal);
+  });
+  request.signal.throwIfAborted();
   return bytes ? respond(bytes) : new Response('Image unavailable.', { status: 404 });
 }

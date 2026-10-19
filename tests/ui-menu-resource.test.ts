@@ -22,6 +22,28 @@ test('menus single-flight cold reads and reuse an unchanged snapshot on reopen',
   menu.close(); await menu.open();
   expect(menu.data).toBe('loaded'); expect(reads).toBe(1);
 });
+test('a tracked scope can synchronize once while read admission still rejects a stale captured key', async () => {
+  let scope = 'first', keys = 0, reads = 0;
+  const menu = createMenuResource(() => '', () => { keys++; return scope; }, async () => { reads++; return scope; });
+  menu.sync(scope);
+  expect(keys).toBe(0);
+  await menu.open(); menu.close();
+  const captured = scope;
+  scope = 'replacement';
+  menu.sync(captured);
+  // A captured effect value is not authority for a later read.
+  await menu.open();
+  expect(menu.data).toBe('replacement');
+  expect(reads).toBe(2);
+  menu.close();
+  const beforeSync = keys;
+  menu.sync(scope);
+  expect(keys).toBe(beforeSync);
+  await menu.open();
+  expect(menu.data).toBe('replacement');
+  expect(reads).toBe(2);
+  menu.dispose();
+});
 test('closing aborts optional reads; late delivery cannot replace a reopened menu', async () => {
   const held = [deferred<string>(), deferred<string>()]; const signals: AbortSignal[] = [];
   const menu = createMenuResource(() => '', () => 'one', signal => { signals.push(signal); return held[signals.length - 1].promise; });

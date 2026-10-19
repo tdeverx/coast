@@ -26,12 +26,14 @@ export async function publicMedia(ids?:string[]):Promise<MediaView[]> {
  const byId=new Map(cards.map(card=>[card.id,card]));
  return requested?requested.flatMap(id=>byId.has(id)?[byId.get(id)!]:[]):cards;
 }
-export async function publicDetails(id:string) {
+export async function publicDetails(id:string,includeChildren=true) {
  const [item]=await publicMedia([id]);if(!item)throw new AppError(404,'Media not found.');
- const related=await getSql()`select child_id from media_relationships where parent_id=${id} and kind in ('contains','collection','franchise') union select media_id from episodes where show_id=${id} or season_id=${id} union select media_id from seasons where show_id=${id}`;
+ const related=includeChildren?await getSql()`select child_id from media_relationships where parent_id=${id} and kind in ('contains','collection','franchise') union select media_id from episodes where show_id=${id} or season_id=${id} union select media_id from seasons where show_id=${id}`:[];
  const children=await publicMedia(related.map((r:{child_id:string})=>r.child_id));
- const parentIds=await getSql()`select parent_id from media_relationships where child_id=${id} union select show_id from episodes where media_id=${id}`;
- const seasonRows=await getSql()<{mediaId:string;showId:string;seasonNumber:number}[]>`select media_id as "mediaId",show_id as "showId",season_number as "seasonNumber" from seasons where show_id=${id} order by season_number,media_id`;
+ // Recommendation edges are not ancestry: exposing them here can replace the
+ // hero title with an unrelated show and hydrate unrelated parent cards.
+ const parentIds=await getSql()`select parent_id from media_relationships where child_id=${id} and kind in ('contains','collection','franchise') union select show_id from episodes where media_id=${id}`;
+ const seasonRows=includeChildren?await getSql()<{mediaId:string;showId:string;seasonNumber:number}[]>`select media_id as "mediaId",show_id as "showId",season_number as "seasonNumber" from seasons where show_id=${id} order by season_number,media_id`:[];
  const seasonItems=new Map((await publicMedia(seasonRows.map((season:{mediaId:string})=>season.mediaId))).map(season=>[season.id,season]));
  return {item,episodes:children.filter(m=>m.kind==='episode'),members:children.filter(m=>!['season','episode'].includes(m.kind)),parents:await publicMedia(parentIds.map((r:{parent_id:string})=>r.parent_id)),cast:[],seasons:seasonRows.map(season=>({...season,title:seasonItems.get(season.mediaId)?.title,item:seasonItems.get(season.mediaId)})),next:null,related:[],collections:[],availability:[],history:[]};
 }

@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-18T15:09:33.358179+00:00",
+  "status": "shared_source_applied_with_actual_boundaries",
+  "findings": [
+    "DATA-03",
+    "DATA-07",
+    "DATA-12"
+  ],
+  "additionalFix": "Shared Listen final-observation page bound",
+  "sourcePins": {
+    "src/lib/core/lists/service.server.ts": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9",
+    "src/lib/server/api/lists.server.ts": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4",
+    "src/lib/server/queries/music.ts": "76d9677ffcf5d80f8766f48270c66c729a396ac2efd1ef375fc3313109cc4305"
+  },
+  "actualEvidence": [
+    "evidence/implementation-found-lists-actual.json",
+    "evidence/implementation-found-listen-normal.json"
+  ],
+  "gates": "evidence/implementation-found-01-gates.json",
+  "acceptanceGaps": [
+    "No actual nonempty list mutation/export/concurrency cohort.",
+    "No natural Listen growth-between-clamp observation; stable full DTO equality only."
+  ],
+  "allKnownWorkComplete": false,
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/server/queries/music.ts": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "finalBoundedWindowSourceFollowThrough": {
+    "at": "2026-10-18T17:42:06.448267+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/server/queries/music.ts": "9fa59c0795423d62fae52f133f99a78366265c53c2548ad708475dadc9a99ae1"
+    },
+    "boundary": "Later scope-ledger/SSR engagement and Music error admission corrections have separate exact/current source controls. Historical receipts stay immutable; this map is current identity, not transferred runtime/resource acceptance."
+  }
+}

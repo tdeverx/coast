@@ -9,7 +9,8 @@
   import type { ArtworkPriority } from '$lib/ui/types';
   import { artworkTypes } from '$lib/artwork';
   import { displayLabel } from '$lib/ui/labels';
-  import { tick, getContext } from 'svelte';
+  import { tick, getContext, onDestroy } from 'svelte';
+  import {provideRetention,type Retain} from '$lib/ui/retention';
   import type { Snippet } from 'svelte';
   import type {
     MediaView,
@@ -51,6 +52,7 @@
     captionAction,
     body,
     footer,
+    retain,
   }: {
     item: MediaView | MediaCardPresentation | MediaCardDisplay;
     shape?: MediaCardShape;
@@ -68,8 +70,18 @@
     captionAction?: Snippet;
     body?: Snippet;
     footer?: Snippet;
+    retain?: Retain;
     social?:{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number};
   } = $props();
+  const retainCard=provideRetention(()=>retain?.()??(()=>{}));
+  let releaseFocus:(()=>void)|undefined;
+  function cardFocus(event:FocusEvent) {
+    if(event.type==='focusin'){active=true;releaseFocus??=retainCard();}
+    else if(!(event.relatedTarget instanceof Node)||!(event.currentTarget instanceof Node)||!event.currentTarget.contains(event.relatedTarget)){
+      releaseFocus?.();releaseFocus=undefined;
+    }
+  }
+  onDestroy(()=>releaseFocus?.());
   const clock=useClock('minute',()=>showActivityContext&&!!item.captionActivity?.dateKnown);
   const contextReadOnly = getContext<() => boolean>('profile-read-only') ?? (() => false);
   const readOnly = () => !page.data.user || contextReadOnly() || ('href' in item&&item.href===null);
@@ -119,10 +131,13 @@
   });
   async function openMenu(point: MenuPoint) {
     if (readOnly() || item.kind === 'person'&&!primaryMenu) return;
+    const release=retainCard();
+    try {
     active = true;
     await tick();
     if(primaryMenu) primaryMenuButton?.openAt(point);
     else actions?.openAt(point);
+    } finally {release();}
   }
   const completion = $derived(
     progressFraction(
@@ -153,6 +168,8 @@
     }[primaryAction]
   );
   async function activate(event:MouseEvent) {
+    const release=retainCard();
+    try {
     const rect=event.currentTarget instanceof HTMLElement?event.currentTarget.getBoundingClientRect():null;
     active = true;
     await tick();
@@ -164,6 +181,7 @@
     else if (primaryAction === 'read') await actions?.startReading();
     else if (primaryAction === 'request') actions?.request();
     else if(href) await navigateMedia(href);
+    } finally {release();}
   }
   function cardGesture(node: HTMLElement) {
     return contextGesture(node, openMenu);
@@ -184,7 +202,8 @@
   class:loading
   use:cardGesture
   onpointerenter={() => (active = true)}
-  onfocusin={() => (active = true)}
+  onfocusin={cardFocus}
+  onfocusout={cardFocus}
 >
   {#if showActivityContext && item.captionActor}
     <div class="activity-context">

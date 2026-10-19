@@ -1,4 +1,4 @@
-import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '$lib/server/features';
 import * as v from 'valibot';
 import {and,eq,sql} from 'drizzle-orm';
 import {getDb,getSql} from '$lib/server/db';
@@ -28,6 +28,7 @@ export async function startCheckin(userId:string,raw:unknown) {
  await requireFeature(userId,'screen');
  const {workId}=v.parse(v.object({workId:v.pipe(v.string(),v.uuid())}),raw);
  return getDb().transaction(async tx=>{
+  await lockFeaturePolicyInTransaction(tx,userId);
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
   await requireFeatureInTransaction(tx,userId,'presence');
   await requireFeatureInTransaction(tx,userId,'screen');
@@ -52,6 +53,7 @@ export async function cancelCheckin(userId:string,id:string) {
 }
 export async function completeCheckin(userId:string,id:string) {
  return getDb().transaction(async tx=>{
+  await lockFeaturePolicyInTransaction(tx,userId);
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId},0))`);
   const [row]=await tx.select().from(socialCheckins).where(and(eq(socialCheckins.id,id),eq(socialCheckins.userId,userId))).for('update');
   if(!row||row.state!=='active'||row.expiresAt.getTime()>Date.now())return;

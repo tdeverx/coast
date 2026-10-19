@@ -21,7 +21,7 @@ import {
   type TraktKind,
   type TraktIds,
   traktPlurals,
-  exportIdentity,
+  exportIdentities,
 } from '$lib/sync/trakt-identity.server';
 import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
 import { matchTraktList } from './trakt-list-matching';
@@ -148,15 +148,16 @@ export async function exportTraktListToAdapter(
     episodes: [],
   };
   const desired: { kind: TraktKind; ids: TraktIds }[] = [];
-  for (const row of local) {
-    if (row.item.kind === 'collection') continue;
-    const category = traktPlurals[row.item.kind];
-    const ids = await exportIdentity(row.item.id, row.item.kind);
+  const exportable=local.flatMap(({item})=>item.kind==='collection'?[]:[{id:item.id,kind:item.kind}]);
+  const identities=await exportIdentities(exportable.map(item=>({mediaId:item.id,kind:item.kind})));
+  for (const [index, item] of exportable.entries()) {
+    const category = traktPlurals[item.kind];
+    const ids = identities[index];
     if (!Object.keys(ids).length)
       throw new PermanentActionError('This list contains a title with no identity Trakt can match.');
     if (Object.keys(ids).length) {
       payload[category].push({ ids });
-      desired.push({ kind: row.item.kind, ids });
+      desired.push({ kind: item.kind, ids });
     }
   }
   await adapter.writeList(remoteId, payload);

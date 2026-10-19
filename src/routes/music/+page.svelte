@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { goto, invalidateAll } from '$app/navigation';
+  import { goto } from '$app/navigation';
+  import { refreshRouteDependencies } from '$lib/ui/client';
   import Heading from '$lib/ui/components/Heading.svelte';
   import { browseHeading } from '$lib/ui/headings';
   import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
@@ -23,7 +24,7 @@
 <svelte:head><title>Music · Coast</title></svelte:head>
 <div class="content page route-content">
 
-  <Shelf title="Music" layout="grid" items={data.items} shape="square" mediaKind="music" enrichSocial={false} artworkOptions={false} hideEmpty={false} error={data.failure} retry={()=>invalidateAll()} pageNumber={data.page} pages={data.pages} {pageUrl}>
+  <Shelf title="Music" layout="grid" items={data.items} shape="square" mediaKind="music" enrichSocial={false} artworkOptions={false} hideEmpty={false} error={data.failure} retry={()=>refreshRouteDependencies('all')} pageNumber={data.page} pages={data.pages} {pageUrl}>
     {#snippet heading()}<Heading title="Library" level={1} variant="title" />{/snippet}
     {#snippet segments()}{@const browse=browseHeading('listen',{...data,features:data.capabilities})}{#if browse.selection}<SegmentedControl label={browse.selection.label} value={browse.selection.value} options={browse.selection.options} onchange={browse.selection.change} />{/if}<SegmentedControl label="Listen type" value={data.filters.kind} options={librarySelections.listen} onchange={kind => goto(pageUrl(1,kind as typeof data.filters.kind),{keepFocus:true,noScroll:true})} />{/snippet}
     {#snippet controls()}<RowFilter groups={[{label:'Availability',value:data.filters.scope,options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:value=>{void goto(pageUrl(1,data.filters.kind,value as typeof data.filters.scope),{keepFocus:true,noScroll:true});}}]}/>{/snippet}

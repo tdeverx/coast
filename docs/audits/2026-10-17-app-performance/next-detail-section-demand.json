@@ -1,0 +1,969 @@
+{
+  "id": "DATA-04",
+  "status": "partially_implemented",
+  "canonicalStatusUnchanged": true,
+  "scope": "Adopted byte-exact eight-file selected screen-section presentation demand slice of DATA-04 after actual private verification and independent review. Default overview/insights/full APIs remain complete and eager; broader paging is unimplemented. No DB writes, schema/dependencies or UI redesign.",
+  "sourcePins": {
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/media/Details.svelte": "8621b46f560de97442dcdb9490df245dd5de7bed985ef45865e784c5400b50cd",
+    "src/lib/media/DetailRows.svelte": "294fd86abe1195bb0c4818f58d5fe2620ddf752a7ecdb0e42f20f2cd7715335c",
+    "src/lib/ui/insights/media.ts": "829d3d56533074169429f5ed69d21b6bede2bfc4114179dce3a6caff09bc2bd7",
+    "src/lib/ui/shelves/detail.svelte.ts": "00be76aa839f4eeded9634eb6451960efa8497d0b24ed7450eba496521c94d24",
+    "src/lib/ui/shelves/local.svelte.ts": "79772309b9f4b2946149a0abbc93875bf13929e06c48b0d3d29c93b97acbaac4",
+    "src/lib/ui/shelves/layout.svelte.ts": "85d6fc90d52176f4a49c3aeb98c64d3ed9b4b83aff321462a7d24be1e6b4f84f",
+    "src/lib/server/queries/show-next.ts": "9da07185ba0cfda304262c087683581562caa59ccd741f8f00a4b970b2005a26",
+    "src/lib/core/lists/sequence.server.ts": "57f6f05eda50129707fffce767da1ae1749ca97bd02fb056c518c9b4237ad018",
+    "src/lib/application/media-details.server.ts": "7be79c1df14ff453e821472760534406b02eda9d6847a1ad1a84b86658dc9b97",
+    "src/lib/application/work-details.server.ts": "d29507c739ac1b816d78928413c7536a869a5459fc4d0ca70adccb4e773a8e51",
+    "src/lib/server/api/media.server.ts": "494d5e177de0d62c4b3d500f4de46b36c603b8ed78f2b13af3773995317b8d49",
+    "src/lib/social/public.server.ts": "f8076a6d539b1699820d7356bdf4c27517fe18fec9b725bd9338fe34a4171b17",
+    "src/routes/media/[id]/+page.server.ts": "b1efcbec0a7f434141f57c2a40906edae2891f0077f7efd632107c1b8bef580d",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/media/detail-target.ts": "8beb2d610cd3c480d0c268a9a0f49c908043ca30333575f7be982091fe45fdab",
+    "src/lib/server/api/index.server.ts": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/media/DetailPanel.svelte": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/core/tracking/rewatch.server.ts": "9d9dbba3ef75f32eb45d5f932011ea52506f1b0102a5f8899f1e9f012e513e1c",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/queries/pagination.ts": "06421c9a2324fca85c513f98d7fd0bd8db4233af422335b46bb6955d9743bd14",
+    "src/lib/providers/tmdb/artwork.server.ts": "fde791f7e4d2af9bca70e205b3d1bca12abb6d3bf4609e3752261957a211aabd",
+    "src/lib/media/edition-metadata.ts": "737882f4bbb901f116d0637a59550437513c0e2b2c725afba9972730fc8e490a",
+    "tests/media-detail-section-projection.test.ts": "e85d505626ee7dc8ded72a4dcb7962e5f2993bc400c799170ee84c5802b36c41",
+    "tests/detail-panel-lifetime.test.ts": "8f67f23fd17a972b0479b3430bd5da344b2ac5c1024ef8f752a8bcd175be301d",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "candidatePatchSha256": "e993f3cfab2bb5a9beb87c0d47b41951219c0dfdf66cedc2eeca83b89c1c2c55",
+  "candidatePins": {
+    "src/lib/media/detail-target.ts": {
+      "before": "17c0904dcc15220cebbe12c8d5ea54849bbb199723742edc88187843b19f7649",
+      "candidate": "8beb2d610cd3c480d0c268a9a0f49c908043ca30333575f7be982091fe45fdab",
+      "current": "8beb2d610cd3c480d0c268a9a0f49c908043ca30333575f7be982091fe45fdab"
+    },
+    "src/lib/server/queries/media.ts": {
+      "before": "f66f0f80a7b78288efd48994379510915d4e21a4894a5aaa377e9b8e79856bda",
+      "candidate": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+      "current": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3"
+    },
+    "src/lib/application/media-details.server.ts": {
+      "before": "4f803ced8515d1162cb01b32776b787c66a8eda5d97adc6372aa41569620e028",
+      "candidate": "7be79c1df14ff453e821472760534406b02eda9d6847a1ad1a84b86658dc9b97",
+      "current": "7be79c1df14ff453e821472760534406b02eda9d6847a1ad1a84b86658dc9b97"
+    },
+    "src/lib/application/work-details.server.ts": {
+      "before": "c4f51937d2193d1ead3d8f17a904bae5d928562a44732f05df36a379869c04bf",
+      "candidate": "d29507c739ac1b816d78928413c7536a869a5459fc4d0ca70adccb4e773a8e51",
+      "current": "d29507c739ac1b816d78928413c7536a869a5459fc4d0ca70adccb4e773a8e51"
+    },
+    "src/lib/social/public.server.ts": {
+      "before": "f636792a59e72b7bef73f8b165c52b259c68c19ca051ae26b2901dddd5a4f3bb",
+      "candidate": "f8076a6d539b1699820d7356bdf4c27517fe18fec9b725bd9338fe34a4171b17",
+      "current": "f8076a6d539b1699820d7356bdf4c27517fe18fec9b725bd9338fe34a4171b17"
+    },
+    "src/routes/media/[id]/+page.server.ts": {
+      "before": "6cd48141ed9a03e6a396f88e486b275a6b149db6fb0cdd8f97154f71a13cde31",
+      "candidate": "b1efcbec0a7f434141f57c2a40906edae2891f0077f7efd632107c1b8bef580d",
+      "current": "b1efcbec0a7f434141f57c2a40906edae2891f0077f7efd632107c1b8bef580d"
+    },
+    "src/lib/server/api/media.server.ts": {
+      "before": "8f0d9837880f5272a180db7559e67e84c672a6077d4072def6ab8ef90a352c02",
+      "candidate": "494d5e177de0d62c4b3d500f4de46b36c603b8ed78f2b13af3773995317b8d49",
+      "current": "494d5e177de0d62c4b3d500f4de46b36c603b8ed78f2b13af3773995317b8d49"
+    },
+    "src/lib/media/DetailPanel.svelte": {
+      "before": "ece36c1f13727ab9cb125e8072b687a7a8101c415b28a4f7d772b5cb58e7c5af",
+      "candidate": "59c9dc9f338be06b0c6eb680cd65ec31a8eeeb40cd2fe5fbea312f2a5a3a57bb",
+      "current": "59c9dc9f338be06b0c6eb680cd65ec31a8eeeb40cd2fe5fbea312f2a5a3a57bb"
+    }
+  },
+  "artifactPins": {
+    "candidates/detail-section-demand/before/src/lib/application/media-details.server.ts.txt": "4f803ced8515d1162cb01b32776b787c66a8eda5d97adc6372aa41569620e028",
+    "candidates/detail-section-demand/before/src/lib/application/work-details.server.ts.txt": "c4f51937d2193d1ead3d8f17a904bae5d928562a44732f05df36a379869c04bf",
+    "candidates/detail-section-demand/before/src/lib/media/DetailPanel.svelte.txt": "ece36c1f13727ab9cb125e8072b687a7a8101c415b28a4f7d772b5cb58e7c5af",
+    "candidates/detail-section-demand/before/src/lib/media/detail-target.ts.txt": "17c0904dcc15220cebbe12c8d5ea54849bbb199723742edc88187843b19f7649",
+    "candidates/detail-section-demand/before/src/lib/server/api/media.server.ts.txt": "8f0d9837880f5272a180db7559e67e84c672a6077d4072def6ab8ef90a352c02",
+    "candidates/detail-section-demand/before/src/lib/server/queries/media.ts.txt": "f66f0f80a7b78288efd48994379510915d4e21a4894a5aaa377e9b8e79856bda",
+    "candidates/detail-section-demand/before/src/lib/social/public.server.ts.txt": "f636792a59e72b7bef73f8b165c52b259c68c19ca051ae26b2901dddd5a4f3bb",
+    "candidates/detail-section-demand/before/src/routes/media/[id]/+page.server.ts.txt": "6cd48141ed9a03e6a396f88e486b275a6b149db6fb0cdd8f97154f71a13cde31",
+    "candidates/detail-section-demand/candidate/src/lib/application/media-details.server.ts.txt": "7be79c1df14ff453e821472760534406b02eda9d6847a1ad1a84b86658dc9b97",
+    "candidates/detail-section-demand/candidate/src/lib/application/work-details.server.ts.txt": "d29507c739ac1b816d78928413c7536a869a5459fc4d0ca70adccb4e773a8e51",
+    "candidates/detail-section-demand/candidate/src/lib/media/DetailPanel.svelte.txt": "59c9dc9f338be06b0c6eb680cd65ec31a8eeeb40cd2fe5fbea312f2a5a3a57bb",
+    "candidates/detail-section-demand/candidate/src/lib/media/detail-target.ts.txt": "8beb2d610cd3c480d0c268a9a0f49c908043ca30333575f7be982091fe45fdab",
+    "candidates/detail-section-demand/candidate/src/lib/server/api/media.server.ts.txt": "494d5e177de0d62c4b3d500f4de46b36c603b8ed78f2b13af3773995317b8d49",
+    "candidates/detail-section-demand/candidate/src/lib/server/queries/media.ts.txt": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "candidates/detail-section-demand/candidate/src/lib/social/public.server.ts.txt": "f8076a6d539b1699820d7356bdf4c27517fe18fec9b725bd9338fe34a4171b17",
+    "candidates/detail-section-demand/candidate/src/routes/media/[id]/+page.server.ts.txt": "b1efcbec0a7f434141f57c2a40906edae2891f0077f7efd632107c1b8bef580d",
+    "candidates/detail-section-demand/manifest.original.json": "12220f1b7a15a0ec64631d50d38f40dec683e39b9a6a095ebe60addfc135a9c9",
+    "candidates/detail-section-demand/proposal.original.md.txt": "73b754f86c929c1b970fb04f201491e62f21984ef7bf880fa7de39b6ae96d74f",
+    "candidates/detail-section-demand/section-demand.patch": "e993f3cfab2bb5a9beb87c0d47b41951219c0dfdf66cedc2eeca83b89c1c2c55",
+    "evidence/detail-section-demand-actual-progress.json": "706e7115bac1106f3bed21b76cb96d4382ae04248cc75f7998d6c49f27425566",
+    "evidence/detail-section-demand-actual.json": "c0b966885bd88da923a4d46f0f93c07678bdc02dbb3ea0232d458f6cf2fa0590",
+    "evidence/detail-section-demand-controls.txt": "04802062f1ea8c2d67b5ce527dba3097a2b67ad1d02680f2be54c8a2f21be468",
+    "evidence/detail-section-demand-executed-controls.test.ts.txt": "83c4e1e9e64578202503aad1a90250c244d71607ce21eb1bd6d27461442c739c",
+    "evidence/detail-section-demand-executed-probe.ts.txt": "9357903f5184cc9a7e6690fc83e87bd45b32025192e8d524843528dfc110bacb",
+    "probes/detail-section-demand-contracts.ts": "b397dad2a1ce0daaca644d4ec69f9ae062c16bd8e65566235402f48599db15ab",
+    "probes/detail-section-demand-real.ts": "0d591d2d1fbe675d95d8b2e65c415c6d46df1256acc0cc5db99917023f9c286f",
+    "evidence/detail-section-demand-maintained-controls.txt": "49870be67f8faa4e838b492229192d4f6b0d1dd31bca96a0f3b57b8d2d263e33",
+    "evidence/detail-section-demand-focused-tests.txt": "1728a29624810e49a4da236b0056ffc3186f301c274bdd21b0b5ca974d5da5ed",
+    "evidence/detail-section-demand-panel-promotion.json": "3bc7a9a3791b564425f67a3e0f408671410c391bdd7de09dbafd5ff6ecaff656",
+    "evidence/detail-section-demand-maintained-controls-types.txt": "d5385be3dc5ac8f685b92ae8080eb0ee0bb1e9b6b356351cf43c12212133d79f",
+    "evidence/implementation-section-demand-normal.json": "cb1fd6ac69e0a4bc0141e98b232e2526c138692bce75bfd33e5f3870345c2515",
+    "evidence/implementation-section-demand-reviews.png": "20119e460f05bfdfe5212c93266fa237e38037343ea1e2d3715a1c2291425a1c",
+    "evidence/implementation-section-demand-credits.png": "0b25514a14949a2d556732cf96c52b6ac0e7541c0e535237e893dde19f6777d1",
+    "evidence/implementation-section-demand-direct-credits.png": "a291c2f5f841ff077123601754df762430ea03d8de945db09f359d7a37f9af9d",
+    "evidence/implementation-section-demand-default-full.png": "681935684cc9342dc951c45973c8e5424410c649f6ff0b1cd0ffeeb647179145",
+    "evidence/implementation-section-demand-final-tasks.png": "415c511c0213435642748222582e5aad94b047bf1b433534ba2d0175d292db2c"
+  },
+  "candidate": {
+    "admittedCompactSections": [
+      "reviews",
+      "credits",
+      "activity"
+    ],
+    "completeControls": [
+      "undefined/null/empty/default",
+      "insights including initially selected Activity/Community locally switchable tabs",
+      "episodes/progress/related",
+      "collection UUID",
+      "unknown/future sections",
+      "ordinary media/:id and media/:id?enhance=true APIs",
+      "default core/domain reads"
+    ],
+    "demandOwner": "src/lib/media/detail-target.ts:screenDetailChildren",
+    "coreOwner": "src/lib/server/queries/media.ts:detailsData(userId,id,includeChildren=true)",
+    "publicOwner": "src/lib/social/public.server.ts:publicDetails(id,includeChildren=true)",
+    "compactProjectionIntent": "Empty child arrays explicitly mean not requested for an isolated presentation section, not an assertion that the underlying collection or season is empty.",
+    "signedInOmittedArrays": [
+      "episodes",
+      "members",
+      "seasons",
+      "related",
+      "collections[].items"
+    ],
+    "guestOmittedArrays": [
+      "episodes",
+      "members",
+      "seasons"
+    ],
+    "retainedFields": [
+      "complete root item and identifiers",
+      "hierarchy parents",
+      "cast",
+      "independent nextPlayable selection with occurrence/tracking fields",
+      "availability",
+      "history",
+      "complete parent collection item/id/title headers"
+    ],
+    "refreshOwner": "loadMediaDetails threads the same demand through its initial read and both root/parent-collection enhancement rereads; existing admission/fallback/request signal retained.",
+    "panelOwner": "Initial and enhanced calls use the existing media/details href endpoint and normalized target. The enhanced endpoint returns existing kind/data envelope; panel unwraps screen or uses the existing saved-detail fallback. AbortController/late publication/markup unchanged.",
+    "crossMediumScope": "Only screen dispatch changes; reading, music, games, person and remote/group detail branches stay unchanged."
+  },
+  "sharedConsumers": [
+    {
+      "consumer": "/media/[id] full route signed-in",
+      "owner": "loadMediaDetails",
+      "behavior": "derive one demand from URL; retain reading early dispatch and all enhancement rereads"
+    },
+    {
+      "consumer": "/media/[id] full route guest",
+      "owner": "publicDetails",
+      "behavior": "same conservative section decision, distinct safe public projection"
+    },
+    {
+      "consumer": "DetailPanel initial read",
+      "owner": "media/details href \u2192 mediaDetailData \u2192 workDetailData",
+      "behavior": "normalized section determines screen demand"
+    },
+    {
+      "consumer": "DetailPanel enhancement",
+      "owner": "media/details href enhance=true \u2192 loadMediaDetails",
+      "behavior": "same href/demand/signal throughout refresh"
+    },
+    {
+      "consumer": "ordinary API/core/domain callers",
+      "owner": "media/:id / detailsData / publicDetails default",
+      "behavior": "complete unchanged DTO"
+    },
+    {
+      "consumer": "Details \u2192 DetailRows \u2192 mediaOverviewPanels/Shelf",
+      "owner": "unchanged presentation components",
+      "behavior": "default, insights and collection receive complete summaries/filters/order; isolated selected sections do not render omitted arrays"
+    }
+  ],
+  "supplementaryControls": {
+    "status": "passed",
+    "tests": 7,
+    "assertions": 94,
+    "failures": 0,
+    "source": "evidence/detail-section-demand-executed-controls.test.ts.txt",
+    "output": "evidence/detail-section-demand-controls.txt",
+    "scope": "Whole staged functions at controlled named I/O seams; section mapping, full/compact, repeated occurrences/next, all enrichment rereads, request signal, normalized dispatch, ordinary API, guest and full-route paths. Authored controls are not actual DB/provider data."
+  },
+  "actualProof": {
+    "status": "passed",
+    "completeComparisons": 30,
+    "signedInComparisons": 24,
+    "guestComparisons": 6,
+    "ownerInvocations": 45,
+    "fullDtoComparisons": 15,
+    "explicitCompactProjectionComparisons": 15,
+    "actualCohorts": {
+      "owners": 4,
+      "largestSeasonEpisodes": 829,
+      "largestCollectionDirectEdges": 23,
+      "existingMember": true
+    },
+    "summary": [
+      {
+        "audience": "signed-in",
+        "cohort": "largest-season",
+        "compactComparisons": 4,
+        "allEqual": true,
+        "beforeJsonBytes": [
+          1490119,
+          1490119
+        ],
+        "candidateJsonBytes": [
+          3437,
+          3437
+        ],
+        "independentNextPositiveCases": 0,
+        "metrics": {
+          "ormExecuteStatements": {
+            "beforeRange": [
+              248,
+              248
+            ],
+            "candidateRange": [
+              38,
+              38
+            ]
+          },
+          "ormRowsReturned": {
+            "beforeRange": [
+              5902,
+              5902
+            ],
+            "candidateRange": [
+              18,
+              18
+            ]
+          },
+          "rawTaggedStatements": {
+            "beforeRange": [
+              2,
+              2
+            ],
+            "candidateRange": [
+              2,
+              2
+            ]
+          },
+          "membershipCardIdsAdmitted": {
+            "beforeRange": [
+              830,
+              830
+            ],
+            "candidateRange": [
+              1,
+              1
+            ]
+          },
+          "membershipSequenceReads": {
+            "beforeRange": [
+              0,
+              0
+            ],
+            "candidateRange": [
+              0,
+              0
+            ]
+          },
+          "independentNextOwnerCalls": {
+            "beforeRange": [
+              1,
+              1
+            ],
+            "candidateRange": [
+              1,
+              1
+            ]
+          },
+          "allMediaViewIdsAdmitted": {
+            "beforeRange": [
+              831,
+              831
+            ],
+            "candidateRange": [
+              2,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "audience": "signed-in",
+        "cohort": "largest-collection",
+        "compactComparisons": 4,
+        "allEqual": true,
+        "beforeJsonBytes": [
+          78092,
+          78135
+        ],
+        "candidateJsonBytes": [
+          3155,
+          3170
+        ],
+        "independentNextPositiveCases": 4,
+        "metrics": {
+          "ormExecuteStatements": {
+            "beforeRange": [
+              62,
+              62
+            ],
+            "candidateRange": [
+              42,
+              42
+            ]
+          },
+          "ormRowsReturned": {
+            "beforeRange": [
+              207,
+              208
+            ],
+            "candidateRange": [
+              64,
+              64
+            ]
+          },
+          "rawTaggedStatements": {
+            "beforeRange": [
+              2,
+              2
+            ],
+            "candidateRange": [
+              2,
+              2
+            ]
+          },
+          "membershipCardIdsAdmitted": {
+            "beforeRange": [
+              23,
+              23
+            ],
+            "candidateRange": [
+              0,
+              0
+            ]
+          },
+          "membershipSequenceReads": {
+            "beforeRange": [
+              1,
+              1
+            ],
+            "candidateRange": [
+              0,
+              0
+            ]
+          },
+          "independentNextOwnerCalls": {
+            "beforeRange": [
+              1,
+              1
+            ],
+            "candidateRange": [
+              1,
+              1
+            ]
+          },
+          "allMediaViewIdsAdmitted": {
+            "beforeRange": [
+              25,
+              25
+            ],
+            "candidateRange": [
+              2,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "audience": "signed-in",
+        "cohort": "actual-collection-member",
+        "compactComparisons": 4,
+        "allEqual": true,
+        "beforeJsonBytes": [
+          45732,
+          45768
+        ],
+        "candidateJsonBytes": [
+          4184,
+          4199
+        ],
+        "independentNextPositiveCases": 0,
+        "metrics": {
+          "ormExecuteStatements": {
+            "beforeRange": [
+              60,
+              60
+            ],
+            "candidateRange": [
+              40,
+              40
+            ]
+          },
+          "ormRowsReturned": {
+            "beforeRange": [
+              180,
+              181
+            ],
+            "candidateRange": [
+              42,
+              42
+            ]
+          },
+          "rawTaggedStatements": {
+            "beforeRange": [
+              2,
+              2
+            ],
+            "candidateRange": [
+              2,
+              2
+            ]
+          },
+          "membershipCardIdsAdmitted": {
+            "beforeRange": [
+              23,
+              23
+            ],
+            "candidateRange": [
+              1,
+              1
+            ]
+          },
+          "membershipSequenceReads": {
+            "beforeRange": [
+              1,
+              1
+            ],
+            "candidateRange": [
+              0,
+              0
+            ]
+          },
+          "independentNextOwnerCalls": {
+            "beforeRange": [
+              1,
+              1
+            ],
+            "candidateRange": [
+              1,
+              1
+            ]
+          },
+          "allMediaViewIdsAdmitted": {
+            "beforeRange": [
+              24,
+              24
+            ],
+            "candidateRange": [
+              2,
+              2
+            ]
+          }
+        }
+      },
+      {
+        "audience": "guest",
+        "cohort": "largest-season",
+        "compactComparisons": 1,
+        "allEqual": true,
+        "beforeJsonBytes": [
+          472367,
+          472367
+        ],
+        "candidateJsonBytes": [
+          665,
+          665
+        ],
+        "independentNextPositiveCases": 0,
+        "metrics": {
+          "ormExecuteStatements": {
+            "beforeRange": [
+              0,
+              0
+            ],
+            "candidateRange": [
+              0,
+              0
+            ]
+          },
+          "ormRowsReturned": {
+            "beforeRange": [
+              0,
+              0
+            ],
+            "candidateRange": [
+              0,
+              0
+            ]
+          },
+          "rawTaggedStatements": {
+            "beforeRange": [
+              7,
+              7
+            ],
+            "candidateRange": [
+              3,
+              3
+            ]
+          },
+          "publicCardIdsAdmitted": {
+            "beforeRange": [
+              830,
+              830
+            ],
+            "candidateRange": [
+              1,
+              1
+            ]
+          }
+        }
+      },
+      {
+        "audience": "guest",
+        "cohort": "largest-collection",
+        "compactComparisons": 1,
+        "allEqual": true,
+        "beforeJsonBytes": [
+          22226,
+          22226
+        ],
+        "candidateJsonBytes": [
+          535,
+          535
+        ],
+        "independentNextPositiveCases": 0,
+        "metrics": {
+          "ormExecuteStatements": {
+            "beforeRange": [
+              0,
+              0
+            ],
+            "candidateRange": [
+              0,
+              0
+            ]
+          },
+          "ormRowsReturned": {
+            "beforeRange": [
+              0,
+              0
+            ],
+            "candidateRange": [
+              0,
+              0
+            ]
+          },
+          "rawTaggedStatements": {
+            "beforeRange": [
+              6,
+              6
+            ],
+            "candidateRange": [
+              3,
+              3
+            ]
+          },
+          "publicCardIdsAdmitted": {
+            "beforeRange": [
+              24,
+              24
+            ],
+            "candidateRange": [
+              1,
+              1
+            ]
+          }
+        }
+      },
+      {
+        "audience": "guest",
+        "cohort": "actual-collection-member",
+        "compactComparisons": 1,
+        "allEqual": true,
+        "beforeJsonBytes": [
+          1645,
+          1645
+        ],
+        "candidateJsonBytes": [
+          1645,
+          1645
+        ],
+        "independentNextPositiveCases": 0,
+        "metrics": {
+          "ormExecuteStatements": {
+            "beforeRange": [
+              0,
+              0
+            ],
+            "candidateRange": [
+              0,
+              0
+            ]
+          },
+          "ormRowsReturned": {
+            "beforeRange": [
+              0,
+              0
+            ],
+            "candidateRange": [
+              0,
+              0
+            ]
+          },
+          "rawTaggedStatements": {
+            "beforeRange": [
+              6,
+              6
+            ],
+            "candidateRange": [
+              4,
+              4
+            ]
+          },
+          "publicCardIdsAdmitted": {
+            "beforeRange": [
+              2,
+              2
+            ],
+            "candidateRange": [
+              2,
+              2
+            ]
+          }
+        }
+      }
+    ],
+    "allPayloadFieldsAndOrderedOccurrencesCompared": true,
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "5s",
+      "jit": "off"
+    },
+    "sameBackend": true,
+    "rolledBack": true,
+    "poolClosed": true,
+    "externalAttempts": 0,
+    "sourcesBeforeAfterEqual": true,
+    "actualReceipt": "evidence/detail-section-demand-actual.json",
+    "executedProbe": "evidence/detail-section-demand-executed-probe.ts.txt",
+    "durableProgress": "evidence/detail-section-demand-actual-progress.json",
+    "failures": [],
+    "historicalExactCandidateProof": true,
+    "executedSourcePins": {
+      "src/lib/server/queries/media.ts": "f66f0f80a7b78288efd48994379510915d4e21a4894a5aaa377e9b8e79856bda",
+      "src/lib/media/Details.svelte": "8621b46f560de97442dcdb9490df245dd5de7bed985ef45865e784c5400b50cd",
+      "src/lib/media/DetailRows.svelte": "294fd86abe1195bb0c4818f58d5fe2620ddf752a7ecdb0e42f20f2cd7715335c",
+      "src/lib/ui/insights/media.ts": "829d3d56533074169429f5ed69d21b6bede2bfc4114179dce3a6caff09bc2bd7",
+      "src/lib/ui/shelves/detail.svelte.ts": "00be76aa839f4eeded9634eb6451960efa8497d0b24ed7450eba496521c94d24",
+      "src/lib/ui/shelves/local.svelte.ts": "79772309b9f4b2946149a0abbc93875bf13929e06c48b0d3d29c93b97acbaac4",
+      "src/lib/ui/shelves/layout.svelte.ts": "fd449adc5c7878f6b1170dcffa9ba39c200dbb7369bc30d2f646c07c3ba37fd4",
+      "src/lib/server/queries/show-next.ts": "9da07185ba0cfda304262c087683581562caa59ccd741f8f00a4b970b2005a26",
+      "src/lib/core/lists/sequence.server.ts": "57f6f05eda50129707fffce767da1ae1749ca97bd02fb056c518c9b4237ad018",
+      "src/lib/application/media-details.server.ts": "4f803ced8515d1162cb01b32776b787c66a8eda5d97adc6372aa41569620e028",
+      "src/lib/application/work-details.server.ts": "c4f51937d2193d1ead3d8f17a904bae5d928562a44732f05df36a379869c04bf",
+      "src/lib/server/api/media.server.ts": "8f0d9837880f5272a180db7559e67e84c672a6077d4072def6ab8ef90a352c02",
+      "src/lib/social/public.server.ts": "f636792a59e72b7bef73f8b165c52b259c68c19ca051ae26b2901dddd5a4f3bb",
+      "src/routes/media/[id]/+page.server.ts": "6cd48141ed9a03e6a396f88e486b275a6b149db6fb0cdd8f97154f71a13cde31",
+      "src/lib/ui/components/Shelf.svelte": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+      "src/lib/media/detail-target.ts": "17c0904dcc15220cebbe12c8d5ea54849bbb199723742edc88187843b19f7649",
+      "src/lib/server/api/index.server.ts": "d2954296497e69c6cf13549072e903fb13e816fdae36cbff5bfbdf538908b0d8",
+      "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+      "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+      "src/lib/media/DetailPanel.svelte": "ece36c1f13727ab9cb125e8072b687a7a8101c415b28a4f7d772b5cb58e7c5af",
+      "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+      "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+      "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+      "src/lib/core/tracking/rewatch.server.ts": "9d9dbba3ef75f32eb45d5f932011ea52506f1b0102a5f8899f1e9f012e513e1c",
+      "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+      "src/lib/server/queries/pagination.ts": "8d13fbda75755cb40c53f1db2d4c8a16b127010791f5fd35eacff116e4c56f9f",
+      "src/lib/providers/tmdb/artwork.server.ts": "fde791f7e4d2af9bca70e205b3d1bca12abb6d3bf4609e3752261957a211aabd",
+      "src/lib/media/edition-metadata.ts": "737882f4bbb901f116d0637a59550437513c0e2b2c725afba9972730fc8e490a"
+    },
+    "allAdoptedSourcesMatchExecutedCandidate": true
+  },
+  "instrumentation": {
+    "composition": "readCards missing IDs and direct detailsData sequence reads; separate from next owner internals",
+    "next": "one independent next owner invocation retained; all four collection contexts have positive next, tested season/member next are null",
+    "orm": "BunSQLPreparedQuery.execute statements/rows only; raw configuration/public queries and PostgreSQL internal work excluded",
+    "raw": "Tagged getSql invocation admission only; native Query result not replaced, raw returned rows not instrumented",
+    "elapsed": "Single ordered observations retained only; not alternating timing or CPU/heap/DOM/disk improvement proof",
+    "portableCopies": "Portable actual replay now requires current production to match adopted candidate; immutable historical executed probe/tests are preserved. Portable post-adoption replay is syntax-only checked; no new DB execution."
+  },
+  "independentReview": {
+    "reviewer": "playback_readers_audit",
+    "status": "source_chrome_and_private_lifetime_review_no_blocker",
+    "scope": "Source-only exact candidate/chrome/navigation/read-demand analysis; no actual provider/browser or full held-enhancement execution inferred.",
+    "heldEnhancementFixture": "private6tests37assertions passed; maintained compiled panel promotion also6passed0failed37assertions against exact adopted Panel and current Details effect",
+    "privateFixtureScope": "Compiled exact candidate Panel and exact current Details enhancement effect at controlled transport/presenter seams; no actual catalogue/provider/browser section acceptance.",
+    "panelPromotionReceipt": "evidence/detail-section-demand-panel-promotion.json",
+    "panelTypeCorrection": "One explicit evaluate callback parameter type; installed runtime transpilation unchanged; corrected maintained panel rerun6passed0failed37assertions. Prior promotion and executed receipts preserved by its owner."
+  },
+  "pendingAcceptance": [
+    "Normal actual populated reviews/feed, real root/parent enrichment outcome, revocation/viewer/revision replacement and saved fallback were not forced; no original provider-wire/decryption claim.",
+    "Default eager829-episode rendering/retained-card/resource scale and larger paging remain outside this compact selected-section repair.",
+    "Observed Activity loading delay needs attributed scoped SQL/transport/render evidence; the projection proof does not establish its cause or latency gain."
+  ],
+  "pagingDecisionBoundary": {
+    "defaultRemainsEager": true,
+    "requiresSeparateDesign": [
+      "Complete resolved runtime/state/availability totals and local watched/type facets independent of hydrated rows",
+      "Canonical complete ordered occurrence identities including special episodes/repeated paths and current source boundaries",
+      "Paging/cursor/filter/sort and anchor/Back contract across plain full-page grid versus overlay append",
+      "Retained DOM/resource ownership; merely appending pages does not bound cumulative mounted cards"
+    ],
+    "existingShowNextNotEquivalent": "Show-only airdate/default-special exclusion and next-focus behavior do not preserve arbitrary season/collection semantics.",
+    "complexityRule": "A broader paging implementation needs a concrete design and user discussion only if unavoidable complexity is introduced under AGENTS.md; this report does not invent approval requirements for routine fixes."
+  },
+  "limits": [
+    "All comparisons use an explicitly verified READ ONLY repeatable-read snapshot on the approved actual clone; production does not gain an outer transaction or new freshness guarantee.",
+    "Only three existing natural identities and four current enabled owners were tested. No nested/multiple-parent/repeated/missing membership, additional party state or catalogue was fabricated.",
+    "Actual full/default and compact owner reads are compared. Seven separate source-derived controls map callers/sections/refresh signals; no provider enrichment, credential decryption, remote permissions or rendered section-navigation acceptance is claimed.",
+    "ORM statement/row counters cover BunSQLPreparedQuery.execute only. rawTaggedStatements counts tagged getSql invocation admission and excludes ORM unsafe/internal PostgreSQL work; raw row counts are not instrumented.",
+    "Membership counters cover detailsData readCards missing IDs and direct sequence reads only. allMediaViews includes root and independently observed next selection; that next owner may still read/hydrate children.",
+    "Elapsed samples are single ordered observations including probe overhead/cache effects, not alternating timing or resource speedup verification. Response bytes/card admission/statement reductions do not establish CPU/heap/DOM/GPU or disk improvements.",
+    "Default overview/insights/collection and ordinary API remain complete and unbounded; this is section-only hidden-array omission, not paging/virtualization.",
+    "No actual nested/multiple-parent/repeated/missing membership or changed-category cohort was fabricated; the 23-member collection does not establish page-scale acceptance.",
+    "The private held-enhancement fixture and source-only chrome review are supplementary protocols, not actual selected-section/provider traces.",
+    "Original 19-source review pins plus panel pin are retained in immutable historical manifest; current proof separately pins 28 dependencies."
+  ],
+  "approvalBoundary": "Exact eight-file source adoption authorized and applied after full private proof and independent source/chrome/lifetime review. Broader paging, new dependencies/frameworks, production schema and UI redesign remain outside this slice. No canonical/common ledger edited.",
+  "sourceBefore": {
+    "src/lib/server/queries/media.ts": "f66f0f80a7b78288efd48994379510915d4e21a4894a5aaa377e9b8e79856bda",
+    "src/lib/media/Details.svelte": "8621b46f560de97442dcdb9490df245dd5de7bed985ef45865e784c5400b50cd",
+    "src/lib/media/DetailRows.svelte": "294fd86abe1195bb0c4818f58d5fe2620ddf752a7ecdb0e42f20f2cd7715335c",
+    "src/lib/ui/insights/media.ts": "829d3d56533074169429f5ed69d21b6bede2bfc4114179dce3a6caff09bc2bd7",
+    "src/lib/ui/shelves/detail.svelte.ts": "00be76aa839f4eeded9634eb6451960efa8497d0b24ed7450eba496521c94d24",
+    "src/lib/ui/shelves/local.svelte.ts": "79772309b9f4b2946149a0abbc93875bf13929e06c48b0d3d29c93b97acbaac4",
+    "src/lib/ui/shelves/layout.svelte.ts": "fd449adc5c7878f6b1170dcffa9ba39c200dbb7369bc30d2f646c07c3ba37fd4",
+    "src/lib/server/queries/show-next.ts": "9da07185ba0cfda304262c087683581562caa59ccd741f8f00a4b970b2005a26",
+    "src/lib/core/lists/sequence.server.ts": "57f6f05eda50129707fffce767da1ae1749ca97bd02fb056c518c9b4237ad018",
+    "src/lib/application/media-details.server.ts": "4f803ced8515d1162cb01b32776b787c66a8eda5d97adc6372aa41569620e028",
+    "src/lib/application/work-details.server.ts": "c4f51937d2193d1ead3d8f17a904bae5d928562a44732f05df36a379869c04bf",
+    "src/lib/server/api/media.server.ts": "8f0d9837880f5272a180db7559e67e84c672a6077d4072def6ab8ef90a352c02",
+    "src/lib/social/public.server.ts": "f636792a59e72b7bef73f8b165c52b259c68c19ca051ae26b2901dddd5a4f3bb",
+    "src/routes/media/[id]/+page.server.ts": "6cd48141ed9a03e6a396f88e486b275a6b149db6fb0cdd8f97154f71a13cde31",
+    "src/lib/ui/components/Shelf.svelte": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+    "src/lib/media/detail-target.ts": "17c0904dcc15220cebbe12c8d5ea54849bbb199723742edc88187843b19f7649",
+    "src/lib/server/api/index.server.ts": "d2954296497e69c6cf13549072e903fb13e816fdae36cbff5bfbdf538908b0d8",
+    "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/media/DetailPanel.svelte": "ece36c1f13727ab9cb125e8072b687a7a8101c415b28a4f7d772b5cb58e7c5af",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/core/tracking/rewatch.server.ts": "9d9dbba3ef75f32eb45d5f932011ea52506f1b0102a5f8899f1e9f012e513e1c",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/queries/pagination.ts": "8d13fbda75755cb40c53f1db2d4c8a16b127010791f5fd35eacff116e4c56f9f",
+    "src/lib/providers/tmdb/artwork.server.ts": "fde791f7e4d2af9bca70e205b3d1bca12abb6d3bf4609e3752261957a211aabd",
+    "src/lib/media/edition-metadata.ts": "737882f4bbb901f116d0637a59550437513c0e2b2c725afba9972730fc8e490a"
+  },
+  "adoption": {
+    "status": "applied_exact_verified_candidate",
+    "approvedBy": "parent after7/94controls,actual30comparisons and independent source/chrome/private6/37lifetime review",
+    "baselinePinsChecked": 8,
+    "gitApplyCheck": "passed_before_application",
+    "exactPatchSha256": "e993f3cfab2bb5a9beb87c0d47b41951219c0dfdf66cedc2eeca83b89c1c2c55",
+    "adoptedSourcesMatchExecutedCandidate": true,
+    "applicationFilesChanged": 8,
+    "maintainedProtocolTest": "tests/media-detail-section-projection.test.ts",
+    "maintainedProtocolResult": {
+      "passed": 7,
+      "failed": 0,
+      "assertions": 94,
+      "output": "evidence/detail-section-demand-maintained-controls-types.txt",
+      "sourceSha256": "e85d505626ee7dc8ded72a4dcb7962e5f2993bc400c799170ee84c5802b36c41"
+    },
+    "focusedRelevantResult": {
+      "passed": 11,
+      "failed": 0,
+      "assertions": 125,
+      "files": [
+        "tests/media-detail-section-projection.test.ts",
+        "tests/media-details-enrichment.test.ts",
+        "tests/media-detail-hydration.test.ts"
+      ],
+      "output": "evidence/detail-section-demand-focused-tests.txt",
+      "sourceState": "Passed before two type-only Map annotations; runtime transpilation unchanged, then maintained7/94rerun passed after correction."
+    },
+    "databaseRerunAfterAdoption": false,
+    "fullGatesOrInventoryByThisAgent": false
+  },
+  "testTypeCorrection": {
+    "issue": "Root first combined typecheck found6errors in the new protocol test: crypto.randomUUID inferred template-literal keys did not accept string IDs at controlled source seams.",
+    "change": "Only two explicit Map generic annotations; no source seam/runtime/production changes.",
+    "beforeTestSha256": "9cdd77afe1ba328ab301bf943d64afb7b24cbb60baaa33a1acdda0db9f1e23e9",
+    "currentTestSha256": "e85d505626ee7dc8ded72a4dcb7962e5f2993bc400c799170ee84c5802b36c41",
+    "installedBunTranspiledRuntimeIdentical": true,
+    "focusedResult": {
+      "passed": 7,
+      "failed": 0,
+      "assertions": 94,
+      "output": "evidence/detail-section-demand-maintained-controls-types.txt"
+    },
+    "commonTypecheckRerunOwner": "root; no common gate run by this agent",
+    "separatelyOwnedPanelTypeCorrection": "Current panel test/promotion receipt repinned after its one callback parameter annotation and6/37rerun; prior artifact preserved under detail-section-demand-panel-promotion-before-type-annotation.json."
+  },
+  "rootCombinedAcceptance": {
+    "commonPassed": true,
+    "unit": {
+      "passed": 798,
+      "guardedSkip": 713,
+      "failed": 0,
+      "assertions": 33816,
+      "tests": 1511,
+      "files": 280
+    },
+    "check": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "buildInventoriesStyle": "passed",
+    "receipt": "evidence/implementation-20261018-section-demand-gates.json",
+    "normalTrial": {
+      "receipt": "evidence/implementation-section-demand-normal.json",
+      "passedFunctional": true,
+      "sourceUnchanged": true,
+      "signedIn": true,
+      "normalDev": "http://localhost:5173",
+      "newConsoleWarnOrError": 0,
+      "limits": [
+        "Actual selected movie reviews/activity were empty; no populated review/feed acceptance",
+        "Activity loading exceeded one default3s selector wait before settling empty",
+        "Direct Back first automated action failed on detached element; fresh AX native click verified full panel",
+        "Actual normal movie collection had2 members; private actual owner proof covers largest23members/829episodes",
+        "Functional UI only; no CPU/heap/GPU/wire/latency distribution or long-soak claim",
+        "Controlled enhancement race tests are supplementary; normal real enrichment outcome/revision/viewer replacement not forced"
+      ],
+      "goalComplete": false
+    },
+    "preflight": {
+      "receipt": "evidence/implementation-20261018-section-demand-preflight-gates.json",
+      "appErrors": 0,
+      "newTestTypeErrors": 9,
+      "correction": "Only Map-key/callback typeannotations;runtimeJSunchanged;failedlogsretained;typedfocusedsuitesrerun7/94+6/37."
+    },
+    "goalComplete": false,
+    "verifiedAt": "2026-10-18T03:40:36.869381+00:00"
+  },
+  "completedAcceptance": [
+    "Combined current-source 798-pass unit/check/build/inventory/style gates; first type-only test preflight retained.",
+    "Source-frozen authenticated normal full-page and overlay Reviews/Credits/Activity, full default and Back/two-member collection transitions; no new console warnings/errors and unchanged source.",
+    "Private actual 30 full/compact owner comparisons, including complete/default829-episode and23-member outputs; controlled compiled lifecycle/protocol supplements separately labeled."
+  ],
+  "laterApiErrorDeliveryChange": {
+    "report": "implementation-api-http-errors.json",
+    "sourceChanges": {
+      "src/lib/server/api/index.server.ts": {
+        "previousSha256": "d2954296497e69c6cf13549072e903fb13e816fdae36cbff5bfbdf538908b0d8",
+        "currentSha256": "b57522f429b0ccd5a6a047f8038880e3626d4b868479845c3bfb180c049dda3c"
+      }
+    },
+    "boundary": "Only the two expected Kit HttpError delivery branches are later adopted. Earlier service/projection data measurements remain historical and were not rerun; their pinned artifacts and source manifests are unchanged. Current broader gates and normal acceptance are recorded separately."
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T10:21:52.057608+00:00",
+      "changes": {
+        "src/lib/media/DetailPanel.svelte": {
+          "before": "59c9dc9f338be06b0c6eb680cd65ec31a8eeeb40cd2fe5fbea312f2a5a3a57bb",
+          "after": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55"
+        }
+      },
+      "evidence": "evidence/implementation-detail-close-applied.json",
+      "boundary": "Current identity after separate three-line shared close adoption. Historical receipts/manifests remain unchanged; their measurements were not rerun on this source."
+    }
+  ],
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/shelves/layout.svelte.ts": "fd449adc5c7878f6b1170dcffa9ba39c200dbb7369bc30d2f646c07c3ba37fd4",
+      "src/lib/ui/components/Shelf.svelte": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4",
+      "src/lib/server/api/index.server.ts": "b57522f429b0ccd5a6a047f8038880e3626d4b868479845c3bfb180c049dda3c",
+      "src/lib/server/queries/pagination.ts": "8d13fbda75755cb40c53f1db2d4c8a16b127010791f5fd35eacff116e4c56f9f"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/api/index.server.ts",
+          "before": "1d631186ce2546acfc1e9f8aa1458932c2bed4f1568e491d1c8679da33afe5f2",
+          "after": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    }
+  ]
+}

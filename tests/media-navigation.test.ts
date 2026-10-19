@@ -33,6 +33,8 @@ const boundaryUrl=moduleUrl(`
  let entries=[],position=0;
  export function reset(){page.data.user={id:'viewer'};page.url=new URL('https://coast.invalid/for-you?friends=true');page.state={friendsPopover:true};player.session=null;player.browsing=false;player.paused=false;calls.length=0;entries=[{url:page.url,state:page.state}];position=0;}
  export function pushState(url,state){entries=entries.slice(0,position+1);entries.push({url,state});position++;page.state=state;calls.push(['push',url.href,state]);}
+ export function replaceState(url,state){entries[position]={url,state};page.state=state;calls.push(['replace',url.href,state]);}
+ export const document={querySelectorAll:()=>[]};
  export async function goto(href,options){calls.push(['goto',href,options]);}
  export const history={back(){this.go(-1);},go(delta){position+=delta;page.state=entries[position].state;page.url=entries[position].url;}};
  export class MouseEvent{constructor(path,options={}){this.path=path;this.button=0;this.defaultPrevented=false;Object.assign(this,options);}composedPath(){return this.path;}preventDefault(){this.defaultPrevented=true;}}
@@ -41,10 +43,11 @@ const boundaryUrl=moduleUrl(`
 `);
 const source=await Bun.file(new URL('../src/lib/ui/media-navigation.ts',import.meta.url)).text();
 const code=new Bun.Transpiler({loader:'ts'}).transformSync(source)
+ .replaceAll('./shelf-position',new URL('../src/lib/ui/shelf-position.ts',import.meta.url).href)
  .replaceAll('$app/state',boundaryUrl).replaceAll('$app/navigation',boundaryUrl).replaceAll('$lib/playback/client.svelte',boundaryUrl)
  .replaceAll('$lib/ui/section-target',new URL('../src/lib/ui/section-target.ts',import.meta.url).href)
  .replaceAll('$lib/media/detail-target',new URL('../src/lib/media/detail-target.ts',import.meta.url).href);
-const navigation=await import(moduleUrl(`import {history,MouseEvent,HTMLAnchorElement} from '${boundaryUrl}';\n${code}`));
+const navigation=await import(moduleUrl(`import {history,MouseEvent,HTMLAnchorElement,document} from '${boundaryUrl}';\n${code}`));
 const boundary=await import(boundaryUrl);
 test('nested detail links retain the underlying URL, support Back/Forward history and close the whole trail',()=>{
  boundary.reset();boundary.player.session={mediaType:'video'};

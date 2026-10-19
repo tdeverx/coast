@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "finding": "PJ-10",
+  "status": "negative_option_verified_not_adopted",
+  "applicationChange": false,
+  "queryChange": false,
+  "schemaChange": false,
+  "title": "Q1 connection-partitioned terminal history rejected on current indexes",
+  "sourcePins": {
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/providers/job-timing.server.ts": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+    "tests/job-task-summary-db.test.ts": "312154f05b572ddf4b815a65339c742aacecb9fcf83cb5e1f7bc0820e0977085",
+    "drizzle/0015_maintenance_indexes.sql": "c58c2a8f79d2b2a8e522e206c04495d5ed29ed45c7b74d0c8a4b4165989dea27",
+    "drizzle/0055_bounded_read_indexes.sql": "e716c1c956be6833b7272f5622a080ed8383bdc3d478a5318ab6bc96a4fef936"
+  },
+  "artifactPins": {
+    "probes/task-history-q1-current-index.ts": "f958ebc43a65a635ee260975b6ffbb00f68175f6308bf1f60261570b639a1218",
+    "evidence/task-history-q1-current-index-actual.json": "fca1ac5b93cc44fedab970f8c4c63128ac506b3bc53132e2662cc0d12b063504",
+    "candidates/task-history-next/query.sql": "d58597211e21f76c90bf3e1c5aca0ee0a0fb52bcb0ae5bd446bce896eb392e28"
+  },
+  "evidenceRefs": [
+    "evidence/task-history-q1-current-index-actual.json",
+    "probes/task-history-q1-current-index.ts",
+    "next-task-history-plan.md",
+    "task-history-lane-seek.md",
+    "implementation-feature-job-lease.md"
+  ],
+  "actualCensus": {
+    "actions": 25891,
+    "terminal": 25891,
+    "active": 0,
+    "pending": 0,
+    "running": 0,
+    "failed": 0,
+    "null_connection": 2054,
+    "null_generation": 2054,
+    "dangling_connection": 0,
+    "obsolete_generation": 0
+  },
+  "actualConnections": {
+    "connections": 9,
+    "instances": 3,
+    "no_terminal_history": 0
+  },
+  "equality": {
+    "actualCanonicalOwnerMatchesExtractedBaseline": true,
+    "completeOrderedActiveTuplesEqual": true,
+    "completeOrderedTerminalIdScopeTuplesEqual": true,
+    "completeOrderedFullTaskDtoAndCountsEqual": true,
+    "activeRepresentatives": 0,
+    "activeTaskCount": 0,
+    "terminalRepresentatives": 23,
+    "terminalNullScopes": 4,
+    "fullTaskDtoRows": 23,
+    "activeTerminalSharedIds": 0,
+    "activeAggregateSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "terminalAggregateSha256": "baa16bad7287a62f9044c5bfd138c8de0dbf1d7e83e5f25a2b43843ea9b323fa",
+    "fullDtoAggregateSha256": "e6440d27c9e240734b2c20fb776ecc42439f0a5db9d9072e99f3c5edb0945aca"
+  },
+  "decision": {
+    "adopt": false,
+    "repeatTimings": false,
+    "reason": "Shared hits670\u21923861; nine connection bitmap-heap/sort passes plus a full-history orphan anti-join. Lower single-plan latency is insufficient resource evidence. Q1/I0 stays rejected; earlier grouped-maximum and state-lane candidates were not rerun."
+  },
+  "metrics": {
+    "baseline": {
+      "sharedHitBlocks": 670,
+      "sharedReadBlocks": 0,
+      "tempReadBlocks": 0,
+      "tempWrittenBlocks": 0,
+      "historyScanReturnedRowsApprox": 25891,
+      "sortOutputRowsApprox": 25891,
+      "largestReportedSingleSortKiB": 3023,
+      "singleExecutionMs": 29.976
+    },
+    "candidate": {
+      "sharedHitBlocks": 3861,
+      "sharedReadBlocks": 0,
+      "tempReadBlocks": 0,
+      "tempWrittenBlocks": 0,
+      "historyScanReturnedRowsApprox": 49732,
+      "sortOutputRowsApprox": 25928,
+      "largestReportedSingleSortKiB": 635,
+      "singleExecutionMs": 21.756
+    },
+    "interpretation": [
+      "Query-root buffer totals already include children; do not sum descendant totals again.",
+      "EXPLAIN per-loop rows are rounded averages; row\u00d7loop totals are approximate.",
+      "Raw immutable receipt field sortSpaceUsedKiB is \u03a3(node Sort Space Used \u00d7 Actual Loops),3023/6031. It is a descriptive product, NOT measured cumulative allocations, simultaneous or peak memory. Largest reported per-sort space is3023/635KiB.",
+      "Zero Heap Fetches comes from absence of index-only nodes; it does not mean zero heap access.",
+      "Single ordered EXPLAIN ANALYZE plans, not latency distributions, CPU/RSS, concurrency or deployed acceptance."
+    ]
+  },
+  "preservedSourceContract": [
+    "Canonical unfiltered terminal state/derived-scope/current-generation query is extracted from current owner, never replaced in production.",
+    "Compiled exact read functions+canonical SQL helper source preserve active window query, actionDetails, final taskCount and output order. Extracted baseline fully equals actual exported canonical listTaskActions result on same physical transaction.",
+    "Q1 chooses per-connection then final kind/scope total-order maxima; fallback has identical four-kind raw-text/null scope and no status/user/kind catalogue gate.",
+    "Active failed may differ from terminal failed on exact ties; original active query and union-map/count semantics remain unchanged."
+  ],
+  "actualGaps": [
+    "Zero active/pending/running/failed actions, so active tuple and taskCount equality is genuinely empty; no positive failed dual-representative/count schedule.",
+    "Zero dangling/obsolete generations; no deliberate timestamp+UUID tie, malformed/empty raw scope or unknown-kind positive control claimed.",
+    "No current deployed105079-row/spill replay, busy queue, CPU/RSS or I1 index evidence."
+  ],
+  "safety": {
+    "readOnly": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB"
+    },
+    "samePhysicalSession": true,
+    "poolClosed": true,
+    "networkCalls": 0,
+    "sourceUnchanged": true,
+    "publicPlanPolicy": "Whitelist plan structural/numeric fields only; all plan expression/filter/output/index condition/sort key text omitted. Full actual IDs/scopes/DTOs stay only in memory; opaque aggregate hashes retained.",
+    "noDomainWrites": true,
+    "noFixtures": true,
+    "normalDatabaseAccess": false
+  },
+  "nextOption": {
+    "name": "Q1b validated-FK admission",
+    "state": "source_review_only_not_executed",
+    "change": "Omit orphan_ids CTE and only its second fallback UNION branch; retain null-connection history, canonical scope/generation/tie semantics.",
+    "precondition": "Fresh actual pg_constraint verifies validated nondeferrable FK, initially immediate, ON DELETE SET NULL/ON UPDATE NO ACTION, enabled RI enforcement. Source callers are normal loader/GET reads, not self-authored invalid-FK transactions. Fail closed on schema drift.",
+    "noGainClaim": true,
+    "indexI1": "Still a separately reviewed generated secondary-clone option; not executed."
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  }
+}

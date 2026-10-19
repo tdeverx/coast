@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import Field from '$lib/ui/components/Field.svelte';
   import Button from '$lib/ui/components/Button.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
@@ -9,7 +10,7 @@
   let { workId, title, partyAllowed = false, open = $bindable(false) }: {
     workId: string; title: string; partyAllowed?: boolean; open?: boolean;
   } = $props();
-  const operation = createOperation();
+  const operation = createOperation(useRetention());
   const {api,change}=useClient();
   let generation=0;
   let date = $state(''), party = $state(false), friendsError = $state('');

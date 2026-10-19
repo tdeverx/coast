@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-18T15:48:24.962261+00:00",
+  "status": "applied_shared_repairs_bounded_retention_still_in_progress",
+  "sourcePins": {
+    "src/lib/collection/projection.server.ts": "77632c37e3ac6a793efadfe07c76d5be0cf1dd24927fa0a11973f264d1dc8736",
+    "src/lib/server/queries/media-actions.ts": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601",
+    "src/lib/sync/trakt-identity.server.ts": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb",
+    "src/lib/sync/trakt-lists.server.ts": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "canonicalFindings": [
+    "PLAN-09",
+    "PR-14",
+    "PJ-06",
+    "UIS-04"
+  ],
+  "auditPairs": 10,
+  "identityInputs": 1249,
+  "actualPositiveProjectionEntries": 757,
+  "actualNormalSocialGeometryMatches": true,
+  "commonGate": "evidence/implementation-found-04-gates.json",
+  "boundedRetentionComplete": false,
+  "tasksCurrentPairKeptByUser": true,
+  "allKnownWorkComplete": false,
+  "artifactPins": {
+    "candidates/found-implementation-03/combined-gates.py": "9c99a443b6f1eff8735e4fbaf51ec733b89ac6e78c6d2e98224ec12534591a1f",
+    "candidates/found-implementation-03/identity-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "candidates/found-implementation-03/approved-private-runner.py": "3d527a67ece961a9701d7f1f6ae25f69404c9c6945b574eef98c09397e0693c8",
+    "candidates/found-implementation-03/visibility-controls.log": "6fe96d68a9f72ab6a6e12360afa850ccaad893922efd7a2a448dd740dd31df75",
+    "candidates/found-implementation-03/visibility-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "candidates/found-implementation-03/audit-only-gates.py": "597298d1eac5cdafc96b6d25aface2c84df3154625c97e2a8649a8cac4b6d4c2",
+    "candidates/found-implementation-03/identity-first/projection.server.ts.candidate.txt": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0",
+    "candidates/found-implementation-03/identity-first/pilot-actual.json": "18aef7ff08959df3ac4af682f114c07458bbd52fa58020e36e3c4775bd58193c",
+    "candidates/found-implementation-03/identity-first/trakt-identity.server.ts.before.txt": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+    "candidates/found-implementation-03/identity-first/trakt-lists.server.ts.before.txt": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+    "candidates/found-implementation-03/identity-first/identity-batch.patch": "6be35d676a6424db810d25736926905166db576a99f6b103a84040889aaf5162",
+    "candidates/found-implementation-03/identity-first/plan.json": "580dafec2b52f6503943170ab1bc30898d74c5abf8fe2c800af3c86d63d56cde",
+    "candidates/found-implementation-03/identity-first/trakt-identity.server.ts.candidate.txt": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb",
+    "candidates/found-implementation-03/identity-first/source-pins.json": "bccfcb393d1aa81a67301c425c9b89862a6ba827a6f15b8a0a6db3409c442db8",
+    "candidates/found-implementation-03/identity-first/launch.py": "b221fb58c2c133205e02e2c5a33f154acff76866827d8a1f187c1c1680e303c7",
+    "candidates/found-implementation-03/identity-first/projection.server.ts.before.txt": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+    "candidates/found-implementation-03/identity-first/trakt-lists.server.ts.candidate.txt": "59ef8e30ab480d417a49f77d95618da0e1c8f0c120300bac8508ac1f5c34c03d",
+    "candidates/found-implementation-03/identity-first/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/found-implementation-03/identity-first/pilot.ts": "9e6c95182e8d9fa3b3330edf20f9e05d8d716653eccf370669b53e3089847f68",
+    "candidates/found-implementation-03/identity-broader/projection.server.ts.candidate.txt": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0",
+    "candidates/found-implementation-03/identity-broader/pilot-actual.json": "4a17b3fc63c4bf5e91a77eee7690dc5fb3cbf9ddcd7a211908ba3d205ecac7c4",
+    "candidates/found-implementation-03/identity-broader/trakt-identity.server.ts.before.txt": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+    "candidates/found-implementation-03/identity-broader/trakt-lists.server.ts.before.txt": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+    "candidates/found-implementation-03/identity-broader/identity-batch.patch": "6be35d676a6424db810d25736926905166db576a99f6b103a84040889aaf5162",
+    "candidates/found-implementation-03/identity-broader/plan.json": "722d672de0c795623eb2ce1393614291a210f8064ecb1d99c35e26685132a8bf",
+    "candidates/found-implementation-03/identity-broader/trakt-identity.server.ts.candidate.txt": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb",
+    "candidates/found-implementation-03/identity-broader/source-pins.json": "bccfcb393d1aa81a67301c425c9b89862a6ba827a6f15b8a0a6db3409c442db8",
+    "candidates/found-implementation-03/identity-broader/launch.py": "b6dc2001b336e5fbfba7234eafe229c65988dee2d4104f179d03b711075a4538",
+    "candidates/found-implementation-03/identity-broader/projection.server.ts.before.txt": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+    "candidates/found-implementation-03/identity-broader/trakt-lists.server.ts.candidate.txt": "59ef8e30ab480d417a49f77d95618da0e1c8f0c120300bac8508ac1f5c34c03d",
+    "candidates/found-implementation-03/identity-broader/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/found-implementation-03/identity-broader/pilot.ts": "3ee946a9f3e0c3b73e0073df1d184dca293706c22118ae331b6d239eb97bf912",
+    "candidates/found-implementation-03/audit-history/pilot-actual.json": "10c24387d33dc3f959215530a31f8bb52b2300d8ca154ba7ff4c9a900bfe5754",
+    "candidates/found-implementation-03/audit-history/plan.json": "c9445f64580e82a6e8f6c2aa88ffbd425843279e13e41ea13068d24e134d4c5a",
+    "candidates/found-implementation-03/audit-history/source-pins.json": "01f832c00dbfde16d96cf312074dceac18ca665ace5856c47f1c5d4f089095fc",
+    "candidates/found-implementation-03/audit-history/launch.py": "f3eca13177c014ec813ba0e180b27acbfc694c3b51b0d57bcf943cc64de923e2",
+    "candidates/found-implementation-03/audit-history/library.candidate.ts.txt": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601",
+    "candidates/found-implementation-03/audit-history/library.before.ts.txt": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+    "candidates/found-implementation-03/audit-history/history.patch": "560cc41488bd17297cecc0cfb4f410c864173522523fb34b1e2e714fd91cc526",
+    "candidates/found-implementation-03/audit-history/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/found-implementation-03/audit-history/pilot.ts": "00c840522680ca0528cc12ad4b4f7f64e78345d702a292f0ef316e0d42d16ca3",
+    "implementation-found-03.md": "40e33ef6b2356ce363d0d8d32b1eaeb2a806d499be92b227ede7b5a9b8a24479",
+    "evidence/implementation-found-audit-normal.json": "41b6f4a31648a15290ce0fe4bb8c89fb2fb8662cccc797e6fbedecdf6aa5bac9",
+    "evidence/implementation-found-audit-history-actual.json": "10c24387d33dc3f959215530a31f8bb52b2300d8ca154ba7ff4c9a900bfe5754",
+    "evidence/implementation-found-identity-first-actual.json": "18aef7ff08959df3ac4af682f114c07458bbd52fa58020e36e3c4775bd58193c",
+    "evidence/implementation-found-identity-actual.json": "4a17b3fc63c4bf5e91a77eee7690dc5fb3cbf9ddcd7a211908ba3d205ecac7c4",
+    "evidence/implementation-found-social-normal.png": "6004eb9986a615d514c4791f37a46833a61f354eb1e56c0389b7cfe7053fa243",
+    "evidence/implementation-found-social-normal.json": "adcdd3ea3917b5ade1bfb5c9b58307b3a9264dde9e26920c7bb9843e0af1239d",
+    "evidence/implementation-found-direction-decisions.json": "ec09ca568af686e764f36756fb34256ecc9d4af273c9cd98aa2e800c69385d47",
+    "evidence/implementation-found-03-source.json": "2bf96bd6becf6a173b2e20898b2f48de91638b8442a4c4bba89dd6e8b82c9c90",
+    "evidence/implementation-found-04-gates.json": "94e43ec89f55db03e226d52ff3d96d7668ee788d5b989ed3176fff0bcddee81e"
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/components/Shelf.svelte": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "src/lib/collection/projection.server.ts"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    }
+  ]
+}

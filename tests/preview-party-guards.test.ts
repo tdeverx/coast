@@ -22,7 +22,7 @@ function forbidden(): never { throw new Error('A live owner was accessed'); }
 const live = new Proxy({}, { get: forbidden, set: forbidden });
 
 test('job previews neither poll route settings nor block real navigation with draft guards', async () => {
-  await (await handler('JobsSettings.svelte', 'onMount', {preview:true,setInterval:forbidden,invalidate:forbidden}))();
+  await (await handler('JobsSettings.svelte', 'onMount', {preview:true,setInterval:forbidden,refreshRouteDependencies:forbidden}))();
   await (await handler('JobSchedule.svelte', 'beforeNavigate', {preview:true,window:live,busy:true,dirty:true}))({cancel:forbidden,to:{url:new URL('https://coast.example/library')}});
 });
 

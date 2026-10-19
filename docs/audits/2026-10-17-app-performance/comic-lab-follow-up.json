@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "recordedAt": "2026-10-18T00:13:17.639158+00:00",
+  "reportRef": "comic-lab-follow-up.md",
+  "scope": "Concurrent untracked experiment snapshot; separate follow-up outside immutable baseline/src inventory and94canonical findings",
+  "canonicalBaselineIncluded": false,
+  "root": "experiments/comic-lab",
+  "gitState": "untracked",
+  "sourceFiles": [
+    {
+      "path": "experiments/comic-lab/.gitignore",
+      "sha256": "828c1813977c17ad02af370b8825830924a0fa104ca5e179c9362a6b9a76adac",
+      "bytes": 41,
+      "lines": 3,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/README.md",
+      "sha256": "b72f00b64629aa01e17de87f5cc50343a9db66ffdacde038f611ec1a25a2eb77",
+      "bytes": 6497,
+      "lines": 67,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/archive.test.mjs",
+      "sha256": "5143666776539d4acb9fff112053edba81c20a7ab258a14f9c23261b23334ea5",
+      "bytes": 5842,
+      "lines": 127,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/build.mjs",
+      "sha256": "ff72d60e847764e8b9c7448e960a522b1b31ae6b3a0f66e5905ce70e683cad2e",
+      "bytes": 636,
+      "lines": 15,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/package-lock.json",
+      "sha256": "46ba86edbfab4e7909178eb21a771c05efd7cddbdd52ec40af8b0a68b5d641ef",
+      "bytes": 24601,
+      "lines": 802,
+      "reviewDepth": "lock_metadata_direct_pins_reviewed"
+    },
+    {
+      "path": "experiments/comic-lab/package.json",
+      "sha256": "db29e6409adb9f0a10af1a30d3bc04012bb6530831a427642db15ae19bc85846",
+      "bytes": 455,
+      "lines": 20,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/public/app.js",
+      "sha256": "5fe7eb83e5c2d6a2709bf0568435e42dd9d688d0402b19eee8fd77ff6d414437",
+      "bytes": 17216,
+      "lines": 189,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/public/archive.js",
+      "sha256": "25a7f3a0839dd603efc072bc3dbe5ca44ec8f47996502904a8db8f8dbaf1c2ab",
+      "bytes": 7059,
+      "lines": 181,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/public/engines/babylon.js",
+      "sha256": "c36b0fb9230cd8c4de3b6c5e17f16025177fcafbb195b22e2cf56caf11b94709",
+      "bytes": 16403,
+      "lines": 344,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/public/engines/css.js",
+      "sha256": "653ec6ee059a4ccd4606d1c5dd7a7e6165ba9e79690a75a82069c3b3a00e053c",
+      "bytes": 14982,
+      "lines": 329,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/public/engines/fiber.js",
+      "sha256": "6aa6c5f1ea3e52ccdedd727f103f9d48eb85239b7384d5b96c0f0de89f4a55ef",
+      "bytes": 1500,
+      "lines": 28,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/public/engines/three.js",
+      "sha256": "3a179a927dabcd8d83cf33b1edf436b8ffecb3d7116ad37b96624a6b8778e236",
+      "bytes": 14530,
+      "lines": 185,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/public/index.html",
+      "sha256": "29b437e1788c851c7a857b1e8c5c329a886b8d2cc42001ce1e6f1a5ac6636a80",
+      "bytes": 5555,
+      "lines": 61,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/public/sample-atlas.png",
+      "sha256": "0f15e99b36c9f4e268c2803cfa26f37a743a9b552380a22b2638c6ebe9866dc5",
+      "bytes": 3604114,
+      "lines": null,
+      "reviewDepth": "binary_metadata_only"
+    },
+    {
+      "path": "experiments/comic-lab/public/style.css",
+      "sha256": "8ff2af4df5fcfe375e78bf622b9328b91dcf3b546b2a0a7c2cc700d7a97317d8",
+      "bytes": 12074,
+      "lines": 8,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/server.mjs",
+      "sha256": "d2acb1fddec0c7e1dbd66c178b97aef8e81e25d96924572b0c2435802bd7e261",
+      "bytes": 17678,
+      "lines": 295,
+      "reviewDepth": "source_read_only"
+    },
+    {
+      "path": "experiments/comic-lab/server.test.mjs",
+      "sha256": "e41f6f057cde62bb1faa27302f93cc9f773fa56569cd7582e9d3046962013399",
+      "bytes": 8064,
+      "lines": 133,
+      "reviewDepth": "source_read_only"
+    }
+  ],
+  "sourceFileCount": 17,
+  "sourceTextFileCount": 16,
+  "sourceBytesIncludingSample": 3757247,
+  "ignoredGeneratedOutputs": {
+    "reviewDepth": "metadata_hash_and_size_only_not_independent_vendor_or_bundle_audit",
+    "fileCount": 82,
+    "bytes": 2615327,
+    "manifestSha256": "16a26ba736faefdbbc0b288dddb25761e89bde7006500f084a97da580bb1cd9b"
+  },
+  "installedNodeModulesReviewed": false,
+  "treeMutated": false,
+  "testsRun": false,
+  "buildRun": false,
+  "dependenciesInstalled": false,
+  "serverLaunched": false,
+  "providerOrDatabaseCalls": false,
+  "sourceChangedDuringRead": false,
+  "addedDuringRead": [],
+  "removedDuringRead": [],
+  "readOnlyIndependentReview": "playback_readers_audit reviewed archive/server-test sources without execution or mutation",
+  "verificationBoundary": {
+    "archiveTestDefinitions": 8,
+    "serverTestDefinitions": 1,
+    "authoredTinyPngZipsAndHeaderMutations": true,
+    "serverUsesFakeJellyfinAndLiteralMediaStrings": true,
+    "readmePriorTestAndBrowserClaimsReverified": false,
+    "actualUserMediaVerified": false,
+    "actualEnginePerformanceOrMemoryVerified": false
+  },
+  "observations": [
+    {
+      "id": "COMIC-LAB-OBS-01",
+      "priority": "P2 measurement/admission opportunity",
+      "title": "ZIP worker isolation disabled; image checks follow full decode",
+      "state": "source_confirmed_mechanism_no_measured_stall_or_oom",
+      "sharedOwner": "Archive/page-asset admission",
+      "consumers": [
+        "Local CBZ/ZIP",
+        "Jellyfin CBZ/ZIP",
+        "Three",
+        "Fiber",
+        "Babylon",
+        "CSS",
+        "Flat"
+      ],
+      "sourceRefs": [
+        "experiments/comic-lab/public/archive.js:76",
+        "experiments/comic-lab/public/archive.js:160",
+        "experiments/comic-lab/public/app.js:29",
+        "experiments/comic-lab/public/engines/css.js:106"
+      ],
+      "option": "Trace actual pages; choose explicit decoded-byte/work contract, then evaluate existing ZIP workers/dimension preflight and owned encoded-page reuse.",
+      "implementationApplied": false,
+      "nativeCodecSchedulingVerified": false
+    },
+    {
+      "id": "COMIC-LAB-OBS-02",
+      "priority": "P2 failure-lifetime review",
+      "title": "Renderer construction has incomplete failure cleanup",
+      "state": "source_confirmed_missing_owner_retention_not_reproduced",
+      "sharedOwner": "Common renderer factory and app sequence boundary",
+      "consumers": [
+        "Three",
+        "Fiber",
+        "Babylon",
+        "CSS"
+      ],
+      "sourceRefs": [
+        "experiments/comic-lab/public/app.js:78",
+        "experiments/comic-lab/public/engines/three.js:20",
+        "experiments/comic-lab/public/engines/three.js:88",
+        "experiments/comic-lab/public/engines/fiber.js:10"
+      ],
+      "option": "Add cancellable construction ownership and cleanup for rejection/late completion, retaining existing CSS failure disposal.",
+      "implementationApplied": false
+    },
+    {
+      "id": "COMIC-LAB-OBS-03",
+      "priority": "P3 product/resource tradeoff",
+      "title": "Flat retains and animates the hidden renderer",
+      "state": "source_confirmed_no_actual_latency_or_gpu_measurement",
+      "sharedOwner": "App reading-state/view owner and renderer interface",
+      "consumers": [
+        "Three",
+        "Fiber",
+        "Babylon",
+        "CSS",
+        "Flat"
+      ],
+      "sourceRefs": [
+        "experiments/comic-lab/public/app.js:175",
+        "experiments/comic-lab/public/app.js:181"
+      ],
+      "option": "Measure actual Flat turns; explicitly decide reusable3D retention versus suspension/release and animation-free page state.",
+      "implementationApplied": false
+    },
+    {
+      "id": "COMIC-LAB-OBS-04",
+      "priority": "P3 scale opportunity",
+      "title": "Shelf scan and retained cards exceed one upstream page",
+      "state": "source_confirmed_actual_large_library_unverified",
+      "sharedOwner": "Library traversal/presentation and scoped media-access owner",
+      "consumers": [
+        "Jellyfin shelf",
+        "Search",
+        "Load more",
+        "Cover proxies"
+      ],
+      "sourceRefs": [
+        "experiments/comic-lab/server.mjs:214",
+        "experiments/comic-lab/server.mjs:237",
+        "experiments/comic-lab/public/app.js:149"
+      ],
+      "option": "Bound and resume scanned pages per action; snapshot search and measure density before DOM windowing or scoped coalescing.",
+      "implementationApplied": false
+    },
+    {
+      "id": "COMIC-LAB-OBS-05",
+      "priority": "P3 tooling IO opportunity",
+      "title": "JSON/static paths materialize data before useful limits",
+      "state": "source_confirmed_no_actual_io_or_transfer_measurement",
+      "sharedOwner": "Server upstream/static IO and build publication",
+      "consumers": [
+        "Login/library/item metadata",
+        "Shell/engine/vendor/image assets",
+        "HEAD",
+        "Manual rebuild"
+      ],
+      "sourceRefs": [
+        "experiments/comic-lab/server.mjs:116",
+        "experiments/comic-lab/server.mjs:141",
+        "experiments/comic-lab/build.mjs:7"
+      ],
+      "option": "Enforce streamed JSON bytes; use stat-only HEAD and review conditional caching with atomic output/freshness contracts.",
+      "implementationApplied": false
+    },
+    {
+      "id": "COMIC-LAB-OBS-06",
+      "priority": "P3 acceptance gap",
+      "title": "pagehide teardown has no cached-document restore path",
+      "state": "conditional_source_hypothesis_no_bfcache_reproduction",
+      "sharedOwner": "Page/document/renderer lifecycle",
+      "consumers": [
+        "Three",
+        "Fiber",
+        "Babylon",
+        "CSS",
+        "Flat"
+      ],
+      "sourceRefs": [
+        "experiments/comic-lab/public/app.js:187"
+      ],
+      "option": "Test actual persisted roundtrip; choose persisted suspension or explicit pageshow reconstruction without weakening permanent cleanup.",
+      "implementationApplied": false
+    }
+  ]
+}

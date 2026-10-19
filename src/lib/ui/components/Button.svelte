@@ -97,7 +97,7 @@
 {/snippet}
 {#if controller}<div bind:this={root} class="context" class:external-trigger={hideTrigger} class:submenu={nested}>
   {@render control()}
-  <div bind:this={surface} id={`${id}-menu`} use:liquidGlass={{variant:'glassDark'}} class="menu-surface glass"
+  <div bind:this={surface} id={`${id}-menu`} use:surfaceMaterial={{enabled:controller.open,variant:'glassDark',blur:false}} class="menu-surface glass"
     class:menu-panel={panel} class:drill-hidden={controller.childHidden} role="menu" aria-label={label ?? 'More options'} popover="manual" tabindex="-1"
     onclick={controller.action} onkeydown={controller.menuKey} ontoggle={controller.toggle}>
     {#if nested && controller.compact}<Button item keepOpen icon="left" text={`Back · ${label}`} onclick={()=>controller.close(true)} />{/if}

@@ -1,0 +1,526 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-10-17",
+  "commit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "scope": "playback-readers",
+  "readOnlyAudit": true,
+  "evidenceBoundary": "Actual installation aggregates are separated from authored supplementary mechanism/failure proofs. No actual private EPUB/PDF/comic or browser decoder-memory certification. See report for full limits.",
+  "findings": [
+    {
+      "id": "PR-01",
+      "priority": "P1",
+      "title": "EPUB asset object URL cleanup failure",
+      "confidence": "high",
+      "state": "confirmed_defect",
+      "sharedOwner": "Existing EPUB engine adapter and per-book resource creator/disposer",
+      "consumers": [
+        "local EPUB",
+        "Jellyfin EPUB",
+        "minimize/reopen",
+        "party leader/follower"
+      ],
+      "evidenceRefs": [
+        "evidence/playback-epub-url-probe.json",
+        "evidence/playback-epub-url-probe.ts",
+        "src/lib/reading/reader/epub.ts:33",
+        "node_modules/epubjs/src/archive.js:245",
+        "node_modules/epubjs/src/resources.js:306"
+      ],
+      "smallestOption": "Own exact archive and rewritten-CSS Blob URL values per book; revoke on disposal including late asset creation.",
+      "alternatives": [
+        "Corrected upstream release after equivalent verification",
+        "Replace rendition engine only if actual-file results justify complexity"
+      ],
+      "acceptance": [
+        "Actual-file twenty-cycle open/turn/minimize/reopen/close resource plateau",
+        "Cancel/error/replace reaches zero per-book URLs",
+        "CFI, internal links, protections and party navigation equivalent"
+      ],
+      "gaps": [
+        "No actual EPUB supplied",
+        "No rendered-browser/private-file RSS measurement"
+      ],
+      "relatedFindingIds": [],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-01"
+    },
+    {
+      "id": "PR-02",
+      "priority": "P2",
+      "title": "Hung control report blocks Stop and queues lifecycle events",
+      "confidence": "high_mechanism_unmeasured_incidence",
+      "state": "failure_proof",
+      "sharedOwner": "Common API request lifetime plus existing ordered report and bookmark writers",
+      "consumers": [
+        "personal audio/video",
+        "shared playback",
+        "party control",
+        "reading bookmark/final close"
+      ],
+      "evidenceRefs": [
+        "evidence/playback-resource-probes.json",
+        "evidence/playback-resource-probes.ts",
+        "src/lib/playback/reports.ts:4",
+        "src/lib/ui/components/PersistentPlayer.svelte:202",
+        "src/lib/ui/client.ts:44"
+      ],
+      "smallestOption": "Give delivery a bounded request lifetime and recoverable acknowledgement semantics; release local media independently of bounded final persistence.",
+      "alternatives": [
+        "Durable client outbox if offline persistence is an explicit requirement"
+      ],
+      "acceptance": [
+        "Stop releases HLS/media source within named deadline under hung transport",
+        "Lifecycle order/start acknowledgement/final played time remain correct",
+        "Replacement sessions cannot receive old writes/errors"
+      ],
+      "gaps": [
+        "Failure mechanism proven; actual frequency and release latency unmeasured"
+      ],
+      "relatedFindingIds": [
+        "PJ-14"
+      ],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-02"
+    },
+    {
+      "id": "PR-03",
+      "priority": "P2",
+      "title": "Reader heartbeat overlap and no teardown abort",
+      "confidence": "high",
+      "state": "failure_proof",
+      "sharedOwner": "Existing abortable resource/request ownership and common poll admission pattern",
+      "consumers": [
+        "visible Reader heartbeat",
+        "party heartbeat",
+        "share state",
+        "streams/session polling"
+      ],
+      "evidenceRefs": [
+        "evidence/playback-resource-probes.json",
+        "evidence/playback-resource-probes.ts",
+        "src/lib/reading/Reader.svelte:29"
+      ],
+      "smallestOption": "Use the existing renderer AbortController and at-most-one pending heartbeat; clear ownership in finally.",
+      "alternatives": [
+        "Session-level heartbeat owner only if minimized reading must remain live"
+      ],
+      "acceptance": [
+        "One heartbeat request per owner under delayed transport",
+        "Minimize/replace/close aborts request",
+        "Keep required sixty-second visible-reader presence"
+      ],
+      "gaps": [
+        "Controlled callback overlap proof; live latency unmeasured"
+      ],
+      "relatedFindingIds": [
+        "PJ-14"
+      ],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-03"
+    },
+    {
+      "id": "PR-04",
+      "priority": "P2",
+      "title": "Missing cancellation at music/trailer request boundaries",
+      "confidence": "high",
+      "state": "source_confirmed",
+      "sharedOwner": "Common request-signal propagation across route/service/provider and shared-flight boundaries",
+      "consumers": [
+        "music browse/full route/children/menu",
+        "music artwork",
+        "trailers",
+        "reading matching and metadata demand"
+      ],
+      "evidenceRefs": [
+        "src/lib/server/api/providers.server.ts:50",
+        "src/lib/music/artwork.server.ts:21",
+        "src/lib/server/queries/music.ts:12",
+        "src/lib/playback/service.server.ts:727"
+      ],
+      "smallestOption": "Pass original request cancellation through existing service/adapter seams; check before expensive observations/publication.",
+      "alternatives": [
+        "Reference-counted existing shared flights when multiple consumers truly share work"
+      ],
+      "acceptance": [
+        "Queued cancellation executes zero upstream calls",
+        "Active transport aborts and cancelled observations grant no access",
+        "Remaining shared consumer succeeds; full route/overlay/menu/artwork consistent"
+      ],
+      "gaps": [
+        "Missing caller signals source-confirmed; actual abandoned provider work unmeasured"
+      ],
+      "relatedFindingIds": [
+        "PJ-01",
+        "PJ-14"
+      ],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-04"
+    },
+    {
+      "id": "PR-05",
+      "priority": "P2",
+      "title": "Serial rich music persistence and per-source page growth",
+      "confidence": "high_work_shape_unmeasured_cost",
+      "state": "measurement_gated",
+      "sharedOwner": "persistMusic and existing page-observation operation",
+      "consumers": [
+        "rich source browse",
+        "source detail",
+        "music child rows",
+        "library bootstrap",
+        "user sync",
+        "favourite/preparation observations"
+      ],
+      "evidenceRefs": [
+        "evidence/development-real-sql.json",
+        "evidence/deployed-real-sql.json",
+        "src/lib/music/persistence.server.ts:103",
+        "src/lib/server/queries/music.ts:35"
+      ],
+      "smallestOption": "Compare meaningful shared metadata; skip unchanged structural work and batch access observations under current account fence.",
+      "alternatives": [
+        "Bounded page persistence transaction with deterministic lock order",
+        "Explicit selected-source or bounded merged-source paging after product agreement"
+      ],
+      "acceptance": [
+        "Replay actual fifty/sixty-item page cold and unchanged; count queries/updates/WAL/revisions",
+        "Single changed track/artist/artwork/membership remains exact",
+        "Cancellation/reconnect retains exact release occurrences and access"
+      ],
+      "gaps": [
+        "Actual source page query/WAL magnitude pending; source amplification confirmed"
+      ],
+      "relatedFindingIds": [
+        "DATA-07"
+      ],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-05"
+    },
+    {
+      "id": "PR-06",
+      "priority": "P2",
+      "title": "EPUB preflight and assets scale with full expanded archive",
+      "confidence": "high_work_shape_unmeasured_actual_impact",
+      "state": "work_proof",
+      "sharedOwner": "Verified EPUB archive preparation and engine-loading boundary",
+      "consumers": [
+        "local EPUB",
+        "remote EPUB",
+        "standalone reader",
+        "party reader",
+        "minimize/reopen"
+      ],
+      "evidenceRefs": [
+        "evidence/playback-resource-probes.json",
+        "evidence/playback-resource-probes.ts",
+        "src/lib/reading/reader/epub-archive.ts:20",
+        "src/lib/reading/reader/epub.ts:15"
+      ],
+      "smallestOption": "Move verified preflight into a cancellable owned worker and transfer its result.",
+      "alternatives": [
+        "Verified on-demand resource adapter replacing whole-archive rewrite/eager substitution",
+        "Finite per-session verified-byte cache only with measured byte/lifetime budget"
+      ],
+      "acceptance": [
+        "Actual typical/large EPUB first-page and chapter timing/long tasks/expanded bytes/peak memory",
+        "Worker cancellation terminates actual decoding",
+        "Images/fonts/CSS/CFI/protections preserved"
+      ],
+      "gaps": [
+        "Only authored supplementary work-count proof",
+        "No actual EPUB file supplied; total CPU/memory reduction not established"
+      ],
+      "relatedFindingIds": [],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-06"
+    },
+    {
+      "id": "PR-07",
+      "priority": "P2",
+      "title": "Native comic forward display depends on storage order",
+      "confidence": "high_mechanism_unknown_actual_incidence",
+      "state": "complexity_proof",
+      "sharedOwner": "ComicDecoder and ComicArchive owner",
+      "consumers": [
+        "CBR",
+        "CB7",
+        "CBT",
+        "ordinary/party navigation",
+        "local/remote sources"
+      ],
+      "evidenceRefs": [
+        "evidence/playback-resource-probes.json",
+        "evidence/playback-resource-probes.ts",
+        "src/lib/reading/reader/archive-decoder.ts:43"
+      ],
+      "smallestOption": "Index descriptors by physical entry ID; use a strict byte-bounded current/nearby page cache only if actual navigation warrants it.",
+      "alternatives": [
+        "Format-capable random-access indexing",
+        "Normalized disk-backed page representation with explicit cleanup policy"
+      ],
+      "acceptance": [
+        "Natural page order and output hashes preserved",
+        "Measure native visits and skipped/decompressed bytes on actual solid and nonsolid archives",
+        "Abort/retry/close terminate worker and retain bounded bytes"
+      ],
+      "gaps": [
+        "Adverse storage-order header counts proven on authored TAR",
+        "Actual file prevalence and solid RAR/7z costs unknown"
+      ],
+      "relatedFindingIds": [],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-07"
+    },
+    {
+      "id": "PR-08",
+      "priority": "P2",
+      "title": "Room wide reconciliation per participant heartbeat",
+      "confidence": "high_work_shape_unmeasured_contention",
+      "state": "measurement_gated",
+      "sharedOwner": "Shared roomState and party command/read model",
+      "consumers": [
+        "heartbeats",
+        "room detail",
+        "join/command responses",
+        "now-playing media",
+        "party cards"
+      ],
+      "evidenceRefs": [
+        "evidence/development-real-sql.json",
+        "evidence/deployed-real-sql.json",
+        "src/lib/playback/synced/service.server.ts:118",
+        "src/routes/+layout.svelte:86"
+      ],
+      "smallestOption": "Instrument actual statement/lock/payload work, then separate liveness from repeated room reconciliation while retaining fresh policy checks.",
+      "alternatives": [
+        "Revision-keyed viewer-independent state only",
+        "Event delivery plus explicit heartbeats after measuring connection/backpressure tradeoffs"
+      ],
+      "acceptance": [
+        "Actual-data clone at one/eight/sixteen clients and zero/two-hundred queued tracks",
+        "Measure lock wait/hold, SQL/WAL/payload and command latency",
+        "Host/buffering/ready/privacy/generation/disconnect semantics equivalent"
+      ],
+      "gaps": [
+        "Thirty-nine retained development rooms do not imply live sessions",
+        "No current sixteen-user contention measurement"
+      ],
+      "relatedFindingIds": [],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-08"
+    },
+    {
+      "id": "PR-09",
+      "priority": "P3",
+      "title": "Reading range/HEAD metadata authorization amplification",
+      "confidence": "high_work_shape_correctness_tradeoff",
+      "state": "measurement_gated",
+      "sharedOwner": "ownedReadingSession and streamReading verified request context",
+      "consumers": [
+        "PDF and CBZ ranges",
+        "GET/HEAD reading file",
+        "EPUB/native archive download",
+        "party copies"
+      ],
+      "evidenceRefs": [
+        "src/lib/reading/sessions.server.ts:117"
+      ],
+      "smallestOption": "Reuse the already verified Jellyfin context within one request and narrow projections.",
+      "alternatives": [
+        "Coalesce concurrent exact user/generation/file checks among live consumers",
+        "Immutable version capability only with authoritative revocation/version semantics"
+      ],
+      "acceptance": [
+        "Actual source Range/HEAD trace counts metadata versus byte requests",
+        "File change/revocation/reconnect between ranges stops delivery or explicitly reopens",
+        "Same bytes, MIME/range headers and fingerprint semantics"
+      ],
+      "gaps": [
+        "Current fresh checks are correctness requirements",
+        "Actual range request fanout not captured"
+      ],
+      "relatedFindingIds": [],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-09"
+    },
+    {
+      "id": "PR-10",
+      "priority": "P3",
+      "title": "Full provider snapshot hydration per playback relay request",
+      "confidence": "high_projection_unmeasured_gain",
+      "state": "source_confirmed_opportunity",
+      "sharedOwner": "Shared playback relay projections",
+      "consumers": [
+        "personal/shared/external HLS",
+        "segments/manifests/subtitles",
+        "direct byte relay"
+      ],
+      "evidenceRefs": [
+        "evidence/development-real-sql.json",
+        "evidence/deployed-real-sql.json",
+        "src/lib/playback/service.server.ts:634"
+      ],
+      "smallestOption": "Select provider externalId rather than the complete provider snapshot, retaining current authorization/account-generation fields.",
+      "alternatives": [
+        "Consolidate request-local policy/context reads after complete field inventory"
+      ],
+      "acceptance": [
+        "Identical stream bytes/Range/HEAD/HLS child capabilities",
+        "Revocation and account replacement remain effective",
+        "Measure DB bytes/allocations/CPU before claiming visible gain"
+      ],
+      "gaps": [
+        "Actual snapshots are modest: episode median852/max2399 stored bytes",
+        "No large current metadata memory bottleneck demonstrated"
+      ],
+      "relatedFindingIds": [],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-10"
+    },
+    {
+      "id": "PR-11",
+      "priority": "P2",
+      "title": "Queue materialization silent cap and whole sequence validation",
+      "confidence": "high_unmeasured_actual_population",
+      "state": "source_confirmed_boundary",
+      "sharedOwner": "Shared sequence definition plus music queue expansion/member projection",
+      "consumers": [
+        "album queue",
+        "saved list/Up Next",
+        "party picker/replacement",
+        "screen collection/playlist preparation"
+      ],
+      "evidenceRefs": [
+        "evidence/development-real-sql.json",
+        "evidence/deployed-real-sql.json",
+        "src/lib/music/queue.server.ts:35",
+        "src/lib/playback/service.server.ts:169"
+      ],
+      "smallestOption": "Use exact selected-entry sequence projection; for music read cap plus one and return explicit overflow or bounded continuation.",
+      "alternatives": [
+        "Cursor/session-owned queue preserving occurrence/reorder/resume semantics"
+      ],
+      "acceptance": [
+        "Actual largest queue/sequence baseline plus supplementary cap-minus-one/cap/cap-plus-one boundaries",
+        "Complete IDs/order/repeats/rewatch/dropped semantics",
+        "No apparently complete silently truncated queue"
+      ],
+      "gaps": [
+        "Actual installations have no lists/list items and about one thousand music works",
+        "Screen preparation shares sequence cause with DATA-02; deduplicate master root cause"
+      ],
+      "relatedFindingIds": [
+        "DATA-02"
+      ],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-11"
+    },
+    {
+      "id": "PR-12",
+      "priority": "P3",
+      "title": "One hidden hero source/crop sampler retained",
+      "confidence": "high_finite_retention_unmeasured_bytes",
+      "state": "policy_acceptance_gap",
+      "sharedOwner": "Root hero playback claim/source owner",
+      "consumers": [
+        "home/detail/discover heroes",
+        "modal/reader/foreground occlusion",
+        "feature off",
+        "no-hero route"
+      ],
+      "evidenceRefs": [
+        "src/lib/ui/heroes/playback.svelte.ts:26",
+        "src/lib/ui/heroes/presentation.svelte.ts:121"
+      ],
+      "smallestOption": "Release source and crop sampler on feature withdrawal or when no hero claims it; retain only permitted identity for reattachment.",
+      "alternatives": [
+        "Explicit finite paused-source grace for ordinary offscreen return if measurements justify it"
+      ],
+      "acceptance": [
+        "Actual trailer play/scroll/no-hero/modal/feature-off/hidden/reopen sequence",
+        "Enforce selected zero-owner states",
+        "Intentional main audio/video playback unchanged"
+      ],
+      "gaps": [
+        "One retained source is finite retention, not growing leak",
+        "Current buffer bytes and chosen suspend/unload policy not measured"
+      ],
+      "relatedFindingIds": [],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-12"
+    },
+    {
+      "id": "PR-13",
+      "priority": "P3",
+      "title": "Post-decode comic dimension guard cannot bound peak allocation",
+      "confidence": "high_guard_placement_unknown_actual_failure",
+      "state": "acceptance_gap",
+      "sharedOwner": "Common comic image admission and existing PDF renderer owner",
+      "consumers": [
+        "CBZ/CBR/CB7/CBT image pages",
+        "PDF",
+        "local/remote/party"
+      ],
+      "evidenceRefs": [
+        "src/lib/reading/reader/comic.ts:50"
+      ],
+      "smallestOption": "Inspect supported image dimensions within a bounded header read before decoder allocation; retain post-decode guard and common cleanup.",
+      "alternatives": [
+        "Decoder API with explicit allocation/resize limit after codec/orientation verification"
+      ],
+      "acceptance": [
+        "Actual large scanned/compressed pages and PDFs: decoded dimensions/long tasks/peak memory",
+        "Fail or reject before excessive allocation",
+        "Close/reopen plateau and identical page/orientation/animation behavior"
+      ],
+      "gaps": [
+        "Post-decode guard placement proven; no current oversized-image failure demonstrated",
+        "PDF complex-document resource acceptance outstanding"
+      ],
+      "relatedFindingIds": [],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-13"
+    },
+    {
+      "id": "PR-14",
+      "priority": "P3",
+      "title": "Evidence/session growth and history late page plans",
+      "confidence": "high_policy_unknown_future_cost",
+      "state": "measurement_gated",
+      "sharedOwner": "Existing retention operation and shared history/session query projections",
+      "consumers": [
+        "playback/shared session evidence",
+        "reading edition bookmarks",
+        "music listens/history"
+      ],
+      "evidenceRefs": [
+        "evidence/development-table-stats.json",
+        "evidence/deployed-table-stats.json",
+        "evidence/development-real-sql.json",
+        "evidence/deployed-real-sql.json",
+        "src/lib/server/storage/retention.server.ts:4",
+        "src/lib/music/history.server.ts:14"
+      ],
+      "smallestOption": "Capture actual plans/cardinality/growth; add only plan-justified indexes and preserve existing evidence retention.",
+      "alternatives": [
+        "Keyset history with explicit totals contract",
+        "User-approved evidence archival/retention distinct from progress/history"
+      ],
+      "acceptance": [
+        "Actual plans/buffers/late pages and growth milestones",
+        "Preserve complete events/order and newest edition bookmark",
+        "Measure index write/WAL overhead; no ad hoc deletion job"
+      ],
+      "gaps": [
+        "Permanent history is deliberate, not a leak",
+        "Current history latency/growth projections not fully verified"
+      ],
+      "relatedFindingIds": [
+        "PJ-10",
+        "DATA-07"
+      ],
+      "reportRef": "playback-readers.md",
+      "reportSection": "PR-14"
+    }
+  ]
+}

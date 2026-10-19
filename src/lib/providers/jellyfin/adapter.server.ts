@@ -380,12 +380,13 @@ export class JellyfinAdapter {
       }
     );
   }
-  async localTrailers(userId: string, itemId: string) {
+  async localTrailers(userId: string, itemId: string,signal?:AbortSignal) {
+    signal?.throwIfAborted();
     return v
       .parse(
         v.array(v.object({ Id: v.string(), Name: v.string() })),
         await this.call(
-          `/Items/${encodeURIComponent(itemId)}/LocalTrailers?userId=${encodeURIComponent(userId)}`
+          `/Items/${encodeURIComponent(itemId)}/LocalTrailers?userId=${encodeURIComponent(userId)}`,{signal}
         )
       )
       .map((item) => ({ id: item.Id, name: item.Name }));

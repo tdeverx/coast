@@ -1,0 +1,204 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "reportRef": "implementation-material-diagnostics.md",
+  "committed": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "schemaChanged": false,
+  "normalDatabaseMutations": false,
+  "actualDiagnosticStoreMutations": false,
+  "sourcePins": {
+    "src/lib/ui/materials/glass.ts": "de2a840f0e28956c2e50749fd06a2dc146870fe393c20ce6adc72233f5b3b179",
+    "src/lib/server/diagnostics/index.ts": "265f5134662ec314627de934b817741409ecbe1f358ce86cb26a532319ee9d10",
+    "tests/glass-lifecycle.test.ts": "f5328fa3fef384167272aa1a7e009d2056a5fb43dcc1b50d3f8f04f79b519f08",
+    "tests/diagnostic-storage-lifecycle.test.ts": "22a7ba7898a1326d36435e418590dc17d752d16898244ca050371b9254cb8c32",
+    "docs/audits/2026-10-17-app-performance/probes/material-diagnostics-real.ts": "5d0488671ec6b45c501e3b65efede5e243c4178a391adc855c6dd0e67b40b320"
+  },
+  "beforeSourcePins": {
+    "src/lib/ui/materials/glass.ts": "234cd8ea6656437094aabd29b14af839daec69f263167f45e1774bc6b0103918",
+    "src/lib/server/diagnostics/index.ts": "bbdac918ce08bc80bc9eaadf787b9631f6b12e2cf18c663c8bcbb2f3e044d749"
+  },
+  "changes": [
+    {
+      "findingId": "UIS-06",
+      "state": "implemented_unchanged_native_svg_definition_admission_only_actual_native_functional_pass_broader_measurement_open",
+      "sharedOwner": "src/lib/ui/materials/glass.ts:liquidGlass",
+      "consumers": [
+        "src/lib/ui/components/Header.svelte",
+        "src/lib/ui/components/MediaCard.svelte",
+        "src/lib/ui/components/Button.svelte",
+        "src/lib/ui/components/SegmentedControl.svelte",
+        "src/lib/ui/components/PersistentPlayer.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/lib/ui/components/Shelf.svelte",
+        "src/lib/ui/materials/MaterialTweaker.svelte",
+        "src/routes/ui-preview/charts/ChartGallery.svelte"
+      ],
+      "smallestOption": "Reuse the connected SVG definition for an identical effective native filter key; keep applying all surface/grain/CSS state.",
+      "implemented": [
+        "Definition key covers map geometry/depth, effective scale/dispersion and SVG blur.",
+        "Connected definition required; fallback/reset/destroy clear identity.",
+        "Every CSS/grain/surface/filter update still runs on a positive-size native render.",
+        "Native gate, displacement map cache, CSS fallback, zero-size behavior, shared frame/watchers and delayed teardown unchanged."
+      ],
+      "gaps": [
+        "Actual native Header/Account menu functional normal5173 rendering passed; object identity/pixels/resources remain unverified.",
+        "No actual redundant-key frequency, pixel/paint equivalence, GPU/frame/CPU or heap measurement.",
+        "Main-thread pixel work, resolution policy, map reuse across nodes and cache retention remain open separate options."
+      ],
+      "acceptance": [
+        "Root record actual userAgent/native renderer gate and enabled preference without changing normal DB.",
+        "When native is available, real Header/card/menu updates preserve rendered style and same-key definition identity; effective geometry/filter changes remain live.",
+        "Fallback/disable/re-enable/close and pending-frame teardown preserve approved UI."
+      ],
+      "readOnlyDomAcceptance": {
+        "primaryNode": "header nav[aria-label=\"Primary navigation\"]",
+        "rendererNodes": "[data-coast-glass-renderer]",
+        "nativeNodes": "[data-coast-glass-renderer=\"original-svg-backdrop\"]",
+        "filterDefinitions": "svg[aria-hidden=\"true\"] > filter[id^=\"coast-liquid-glass-\"]",
+        "map": "feImage href/x/y/width/height; report href hash only",
+        "privateKeyExposed": false,
+        "identityBoundary": "Stable ID/outerHTML/map URL does not prove DOM object identity; use an existing retained DOM handle if available, otherwise identity is controlled-test-only. No injected globals/counters or browser-state overrides.",
+        "unsupportedGate": "Non-Blink/iOS or unsupported SVG backdrop syntax legitimately uses CSS; root preference and appearance gates also apply."
+      }
+    },
+    {
+      "findingId": "UPP-03",
+      "state": "implemented_directory_setup_and_fail_closed_accounting_slice_actual_copy_equivalence_verified_tail_parsing_open",
+      "sharedOwner": "src/lib/server/diagnostics/index.ts:DiagnosticStore",
+      "consumers": [
+        "src/hooks.server.ts",
+        "src/routes/music/[connection]/[id]/+page.server.ts",
+        "src/lib/server/notifications/index.ts",
+        "src/routes/api/v1/diagnostics/+server.ts",
+        "src/lib/server/config.ts",
+        "src/lib/collection/query.server.ts",
+        "src/lib/sharing/leases.server.ts",
+        "src/lib/server/queries/music.ts",
+        "src/lib/server/api/index.server.ts",
+        "src/lib/server/diagnostics/index.ts",
+        "src/lib/server/diagnostics/runtime.ts",
+        "src/lib/server/security/provider-fetch.ts",
+        "src/lib/application/configuration.server.ts",
+        "src/lib/server/public-api/handler.server.ts",
+        "src/lib/sync/jellyfin-reading.server.ts",
+        "src/lib/providers/maintenance.server.ts",
+        "src/lib/playback/service.server.ts",
+        "src/lib/server/queue/index.ts"
+      ],
+      "storeInstances": [
+        "diagnosticStore",
+        "runtimeSampleStore"
+      ],
+      "smallestOption": "Validate directory/mode with warm stat, initialize only when missing, repair mode when changed; retain authoritative per-write segment stat and treat only ENOENT as zero.",
+      "implemented": [
+        "One resolved directory per queued write/read operation.",
+        "Existing private directory avoids recursive mkdir/chmod on warm write.",
+        "Missing/wrong-type/replaced/mode-changed directory recovers or fails best effort without blind append.",
+        "All non-ENOENT current-size failures fail closed and later writes remain usable.",
+        "Four1MiB segments,7day retention,128 pending writes/drop metrics, redaction and independent runtime quota unchanged."
+      ],
+      "actualVerification": {
+        "status": "passed",
+        "checks": 30,
+        "completeDtoComparisons": 10,
+        "actualDiagnosticRows": 12640,
+        "actualRuntimeRows": 1610,
+        "capturedSegmentCount": 6,
+        "capturedBytes": 4533132,
+        "bothActualNearFullRotationChecks": true,
+        "warmOwnerApiOperationsBefore": [
+          "mkdir",
+          "chmod",
+          "stat(segment)",
+          "appendFile"
+        ],
+        "warmOwnerApiOperationsCurrent": [
+          "stat(directory)",
+          "stat(segment)",
+          "appendFile"
+        ],
+        "originalObservedBytesUnchanged": true,
+        "temporaryCopiesRemoved": true,
+        "actualSourceWrites": 0,
+        "dbConnections": 0,
+        "providerCalls": 0,
+        "receipt": "evidence/implementation-material-diagnostics-actual.json",
+        "probe": "probes/material-diagnostics-real.ts"
+      },
+      "gaps": [
+        "No normal event-rate, disk syscall/latency/CPU or diagnostics-viewer polling cost measurement.",
+        "Cold missing-directory path adds validation stat; no universal reduction in all error/initialization paths claimed.",
+        "Full recent() prune/read/parse/filter/sort work remains unchanged and bounded; no tail cache or batching.",
+        "External faults tested on disposable actual-byte copies are controlled, not natural incidents.",
+        "External mutation after a checked stat and before append remains the pre-existing concurrent-writer boundary."
+      ]
+    }
+  ],
+  "verification": {
+    "focused": {
+      "passed": 23,
+      "failed": 0,
+      "assertions": 343,
+      "files": 6,
+      "newTests": 8,
+      "receipt": "evidence/implementation-material-diagnostics-tests.txt"
+    },
+    "independentReview": {
+      "scope": "read-only exact production-source diff",
+      "materialBlockers": 0,
+      "reviewers": [
+        "data_api_audit",
+        "providers_jobs_audit"
+      ]
+    },
+    "commonCheckBuild": "Root777pass/703guardedskip/0fail;33502assertions/1480tests/267files;check0/0/build/inventoriespass.",
+    "nativeBrowser": "Normal5173 source-frozen positive Header/Account menu SVG functional rendering passed; object identity/pixels/GPU/frame/heap not verified."
+  },
+  "evidenceRefs": [
+    "evidence/implementation-material-diagnostics-tests.txt",
+    "evidence/implementation-material-diagnostics-actual.json",
+    "evidence/implementation-material-diagnostics-actual.log",
+    "probes/material-diagnostics-real.ts"
+  ],
+  "rootCurrentNormalAcceptance": {
+    "receipt": "evidence/implementation-context-material-normal.json",
+    "signedIn": true,
+    "actualCbrFunctionalLifecyclePassed": true,
+    "nativeHeaderAndAccountMenuRendered": true,
+    "sourceManifestUnchanged": true,
+    "newConsoleWarnOrError": 0,
+    "remaining": "No byte/range/HEAD/SQL/decrypt instrumentation, DOM object identity, GPU/frame/pixel or heap claim."
+  },
+  "laterMenuMaterialRegression": {
+    "ref": "implementation-menu-material.json",
+    "path": "tests/glass-lifecycle.test.ts",
+    "beforeSha256": "60d64e3b3408f20abb531d969a7fcd5ed639c76f85722682b28b76a0210f5771",
+    "currentSha256": "b6b93dbff32ffe0b84379d79450642cc9d4223bf82595c8960b250857de22dd2",
+    "boundary": "Adds source-derived open-menu wrapper lifecycle controls; original glass cases retained. Currentcombined791pass gate covers updatedfile; historical nativebrowser evidence remains historical."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "src/lib/ui/materials/glass.ts": {
+        "before": "2780410aec249c0d1020f04b382b7888faa3dd2425bc7ce238cef88e7fcaab33",
+        "after": "de2a840f0e28956c2e50749fd06a2dc146870fe393c20ce6adc72233f5b3b179"
+      },
+      "src/lib/server/diagnostics/index.ts": {
+        "before": "fb1ca47e47be10c59a01b09758cf7c9e26d9a36d395581e7633ae00d39e1e18d",
+        "after": "265f5134662ec314627de934b817741409ecbe1f358ce86cb26a532319ee9d10"
+      },
+      "tests/glass-lifecycle.test.ts": {
+        "before": "b6b93dbff32ffe0b84379d79450642cc9d4223bf82595c8960b250857de22dd2",
+        "after": "f5328fa3fef384167272aa1a7e009d2056a5fb43dcc1b50d3f8f04f79b519f08"
+      },
+      "tests/diagnostic-storage-lifecycle.test.ts": {
+        "before": "56119c94c6b2dc7b474da9062f54218cf37cbe5e08c3624b1414f70e0901510b",
+        "after": "22a7ba7898a1326d36435e418590dc17d752d16898244ca050371b9254cb8c32"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  }
+}

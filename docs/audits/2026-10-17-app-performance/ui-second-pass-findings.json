@@ -1,0 +1,227 @@
+{
+  "head": "eb0673873462b71118d1c11678d128958a05ff07",
+  "count": 7,
+  "findings": [
+    {
+      "id": "UIS-01",
+      "priority": "P3",
+      "title": "toast suppression remembers every historical ID",
+      "confidence": "high",
+      "state": "source-confirmed session metadata lifetime defect; magnitude unknown",
+      "sharedOwner": "Shared notification visibility/suppression lifetime",
+      "consumers": [
+        "Toast normal/persistent suppression",
+        "Inbox seenAt",
+        "all event/media kinds"
+      ],
+      "evidenceRefs": [
+        "ui-second-pass.md#uis-01"
+      ],
+      "smallestOption": "Finite suppression window/expiry and constant-time lookup preserving no-reappearance",
+      "alternatives": [
+        "Timestamp normal eligibility with durable persistent dismissal"
+      ],
+      "acceptance": [
+        "Many successive real windows plateau",
+        "removed/reappearing IDs",
+        "persistent failure",
+        "logout/dispose"
+      ],
+      "gaps": [
+        "Actual retainedJS IDs not measured; DB rows are not JS retention"
+      ]
+    },
+    {
+      "id": "UIS-02",
+      "priority": "P3",
+      "title": "browser diagnostics poll in hidden tabs and permit overlap",
+      "confidence": "high",
+      "state": "source-confirmed optional polling/lifetime",
+      "sharedOwner": "Canonical browser diagnostics installation",
+      "consumers": [
+        "Root layout",
+        "every browser tab",
+        "diagnostic level consumers"
+      ],
+      "evidenceRefs": [
+        "src/lib/ui/diagnostics.ts:53-69",
+        "ui-second-pass.md#uis-02"
+      ],
+      "smallestOption": "One pending visible/resume settings read with abort on uninstall",
+      "alternatives": [
+        "Optional settings deadline; keep unload error keepalive semantics"
+      ],
+      "acceptance": [
+        "Delayed endpoint beyond cadence",
+        "hidden/resume",
+        "stop/reinstall pending",
+        "reporting intact"
+      ],
+      "gaps": [
+        "Actual network/backend cost unknown"
+      ]
+    },
+    {
+      "id": "UIS-03",
+      "priority": "P2",
+      "title": "append retains all loaded items and card owners",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Canonical Shelf/source pagination and retained-card policy",
+      "consumers": [
+        "All10source cases",
+        "screen/music/game/book/comic",
+        "embedded sections",
+        "preview clients"
+      ],
+      "evidenceRefs": [
+        "src/lib/ui/shelves/library.svelte.ts:95-98",
+        "credits.svelte.ts:64-70",
+        "detail.svelte.ts:23-25",
+        "social.svelte.ts:35-36",
+        "for-you.svelte.ts:39",
+        "journal.svelte.ts:53",
+        "ui-second-pass.md#uis-03"
+      ],
+      "smallestOption": "One shared retained-page/card window with adapter identity/cursors and stable anchors",
+      "alternatives": [
+        "Supported page budget/backward reload; approved explicit pagination"
+      ],
+      "acceptance": [
+        "Actual1/5/20pagebrowse",
+        "DOM/observers/images plateau",
+        "exact occurrence order",
+        "keyboard/menu/episode anchors",
+        "privacy"
+      ],
+      "gaps": [
+        "Actual multipage browser trace pending; per-request60 cap works"
+      ]
+    },
+    {
+      "id": "UIS-04",
+      "priority": "P3",
+      "title": "card/shelf demand is latched after first contact",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Shared MediaCard interaction and lazyContent/Shelf demand",
+      "consumers": [
+        "All medium cards and10Shelf cases",
+        "enrichment",
+        "menus/materials"
+      ],
+      "evidenceRefs": [
+        "library.svelte.ts:121-131",
+        "discovery.svelte.ts:143-156",
+        "social.svelte.ts:44-50",
+        "ui-second-pass.md#uis-04"
+      ],
+      "smallestOption": "Measure first then shared current visibility/dirty refresh and distinct open-menu ownership",
+      "alternatives": [
+        "Retain existing policy if savings small; no feature-private workaround"
+      ],
+      "acceptance": [
+        "Unseen/visible/offscreen/revision/visible",
+        "openmenuoffscreen",
+        "immediate permission removal",
+        "touch/keyboard",
+        "essential playback unaffected"
+      ],
+      "gaps": [
+        "Actual offscreen requests/retained menu cohort unmeasured"
+      ]
+    },
+    {
+      "id": "UIS-05",
+      "priority": "P3",
+      "title": "empty compact charts still request an engine",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Shared ChartView renderer wrapper",
+      "consumers": [
+        "DetailCard compact",
+        "standard/extended wrappers",
+        "preview charts"
+      ],
+      "evidenceRefs": [
+        "ui-second-pass.md#uis-05"
+      ],
+      "smallestOption": "Condition renderer demand on branch actually rendering chart",
+      "alternatives": [
+        "Reuse module cache and existing wrapper"
+      ],
+      "acceptance": [
+        "Actual empty chart network",
+        "empty-to-nonempty",
+        "style switch",
+        "error reporting"
+      ],
+      "gaps": [
+        "Actual entry/network effect unmeasured"
+      ]
+    },
+    {
+      "id": "UIS-06",
+      "priority": "P3",
+      "title": "scheduling is shared, but native SVG still rebuilds and has no pixel budget",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Shared liquidGlass action",
+      "consumers": [
+        "All native surfaces",
+        "MediaCard",
+        "nav",
+        "buttons/dialogs/menus",
+        "materials preview"
+      ],
+      "evidenceRefs": [
+        "ui-second-pass.md#uis-06"
+      ],
+      "smallestOption": "No-op unchanged effective render key after actual profile",
+      "alternatives": [
+        "Justified pixelcap; disabled map release; bounded map reuse; worker only if measured"
+      ],
+      "acceptance": [
+        "Actual default resize/longbrowse traces",
+        "all consumers",
+        "reduced transparency",
+        "quality",
+        "finite bytes",
+        "destroy"
+      ],
+      "gaps": [
+        "No frame/GPU measurement; native enhancement conditional"
+      ]
+    },
+    {
+      "id": "UIS-07",
+      "priority": "P2",
+      "title": "avatar compressed-byte bound does not bound decode memory/lifetime",
+      "confidence": "high for source shape; runtime impact measurement-gated",
+      "state": "source-confirmed opportunity; actual impact unmeasured",
+      "sharedOwner": "Shared avatar/image decode lifetime",
+      "consumers": [
+        "Local file/provider import",
+        "GIF",
+        "profile replace/remove/supersede"
+      ],
+      "evidenceRefs": [
+        "ui-second-pass.md#uis-07"
+      ],
+      "smallestOption": "Explicit bounded decode owner with immediate release/cancel and approved pixel/frame policy",
+      "alternatives": [
+        "Browser decode API choice based on real allocation evidence"
+      ],
+      "acceptance": [
+        "Real dimensions/animation",
+        "late success/reject",
+        "supersede/remove/dispose",
+        "URL release",
+        "GIF behavior"
+      ],
+      "gaps": [
+        "No actual large-image trace; compressed bytes are not decodedRSS"
+      ]
+    }
+  ]
+}

@@ -17,7 +17,7 @@ export async function interestWorks(userId:string|null){
  ), roots as (
   select coalesce(e.show_id,s.show_id,r.parent_id,p.id) as id,p.updated,p.weight,p.consumed,p.positive from signals p join works admitted on admitted.id=p.id and coast_category_enabled(p.user_id,admitted.category)
   left join episodes e on e.media_id=p.id left join seasons s on s.media_id=p.id
-  left join lateral(select parent_id from media_relationships r join works w on w.id=r.parent_id and w.kind='album' where r.child_id=p.id and r.kind='contains' order by position,parent_id limit 1) r on true
+  left join lateral(select parent_id from media_relationships r join works w on w.id=r.parent_id and w.kind='album' where e.show_id is null and s.show_id is null and r.child_id=p.id and r.kind='contains' order by position,parent_id limit 1) r on true
  ), recent as (
   select id,max(updated) as updated,case when ${userId}::uuid is null then max(weight) when min(weight)<0 then min(weight) else max(weight) end as weight,bool_or(consumed) as consumed,bool_or(positive) as positive from roots group by id order by max(updated) desc,id limit 300
  ) select w.id,case when w.category in ('book','comic') then 'reading' else w.category end as category,w.kind,coalesce(m.title,g.title,a.title,b.title) as title,coalesce(m.genres,g.genres,a.genres,b.subjects,'{}'::text[]) as genres,p.weight,p.consumed,p.positive,p.updated from recent p join works w on w.id=p.id left join media m on m.id=w.id left join games g on g.id=w.id left join music_works a on a.id=w.id left join reading_works b on b.id=w.id where w.kind in ('movie','show','game','album','track','book','comic')`;

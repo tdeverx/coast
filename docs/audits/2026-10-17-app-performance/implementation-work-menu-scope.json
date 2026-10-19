@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-10-18T00:23:38.032569+00:00",
+  "ids": [
+    "HELPER-01",
+    "UIC-01"
+  ],
+  "status": "partial-avatar-scope-serialization-removed-actual-settings-verified",
+  "sharedOwner": "workMenuScope in src/lib/ui/controls/work.svelte.ts",
+  "files": [
+    "src/lib/ui/controls/work.svelte.ts",
+    "tests/work-menu-scope.test.ts"
+  ],
+  "sourceSha256": "cd7e916de5db6573174b761066391d5a1dbda594a6bc437cf831191ce58fe1fb",
+  "baselineSha256": "f233383cc9c2cf0e68957741853129a512844f25a30cb4426683961a057bfc3c",
+  "actual": {
+    "comparisons": 16,
+    "allOtherValuesEquivalent": true,
+    "accountsWithInlineAvatar": 3,
+    "maximumBeforeScopeBytes": 16640,
+    "maximumAfterScopeBytes": 1385
+  },
+  "focused": {
+    "pass": 14,
+    "fail": 0,
+    "assertions": 59,
+    "boundary": "Three new scope/controller tests plus eleven existing menu/resource tests; authored states are supplementary."
+  },
+  "verificationRefs": [
+    "evidence/implementation-work-menu-scope-actual.json",
+    "evidence/implementation-work-menu-scope-tests.txt",
+    "probes/work-menu-scope-real.ts"
+  ],
+  "consumers": [
+    "ScreenActions local menu snapshot",
+    "createWorkActions shared catalogue/work state",
+    "CatalogueActions music identity",
+    "WorkListActions list picker",
+    "PartyMenu saved music queue picker"
+  ],
+  "preserved": [
+    "Every non-avatar settings value",
+    "Tracking revision, viewer, role, target occurrence and every existing feature/capability flag",
+    "Current visible avatar rendering and server authorization",
+    "Profile object presence remains conservative invalidation input"
+  ],
+  "independentReview": {
+    "reviewer": "data_api_audit",
+    "materialBlockers": 0,
+    "fiveConsumerFamiliesChecked": true,
+    "actualEvidenceCalibrated": true
+  },
+  "remaining": [
+    "Scope strings are application-internal invalidation keys, not network payloads. Byte reduction is exact string size, not CPU/heap/latency measurement.",
+    "No saved list or party session was fabricated; their actual route/browser acceptance remains absent. Generic controlled resource tests verify shared key lifetime.",
+    "All non-avatar settings still serialize per consumer. Adding/removing the profile object can conservatively change scope; only avatar values within an existing profile are excluded.",
+    "Current-batch normal-dev menu functional acceptance and common gates pending."
+  ],
+  "normalOrDeployedDataMutations": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "testSourcePin": {
+    "path": "tests/work-menu-scope.test.ts",
+    "sha256": "756f26534f23db9af76c136a03140663bd85ec030e6f606c2dfe54ebe9ec8466"
+  }
+}

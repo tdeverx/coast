@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "findingId": "UIS-01",
+  "status": "actual_canonical_commit_and_fresh_process_read_passed_ephemeral_copy_dropped",
+  "productionSourceChange": false,
+  "normalDatabaseAccess": false,
+  "sourcePins": {
+    "drizzle/0063_notification_toast_suppression.sql": "fcb04e9f6aec6aea14c5782c015b3f61ce6e7096faa2ebdc8d72cd53160ff7a5",
+    "drizzle/meta/0063_snapshot.json": "7490e38964e68abb73d012a53f3a1d49c6c108831f7e4f55d661673172a9d92c",
+    "drizzle/meta/_journal.json": "806f751a10b70a4d0d2fbbf03faa8dca1597d62fda5911496b2223850db03995",
+    "src/lib/server/api/notifications.server.ts": "58a76749ad7c8696c5e13e468683aa1685eeec4fd8ee2b6330ac89cb88f1cd51",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "src/lib/ui/components/NotificationToasts.svelte": "e02bef528dc595cb4c2ba0c9d956e2fa561f0ec22f9b23d10b397a2ed6a9b11f",
+    "src/lib/ui/controls/notification-toasts.ts": "a7da5916600c07842fec123bb23389a461ce667ce74cb4c81185c13a677bf93d",
+    "src/routes/+layout.svelte": "fa2da910bdfa5d467592bb1496fab1afb8eca1ce5dc6849bd1e437b6e20d4baa",
+    "src/routes/ui-preview/Demo.svelte": "b1597ad2a924030afa0bb86598c5516facf8e9124a482a530cd5a1bfeaa7614e",
+    "src/routes/ui-preview/SocialExamples.svelte": "f41d2b5a59c633e8232c3da0f474306e0f06189cc1521696e17f57e0009d8103",
+    "src/routes/ui-preview/props.ts": "801590c239003cf399d69d53fb90cb783ab3a4dafe5c9497df1c10c4cb595126",
+    "tests/notification-toasts-component.test.ts": "146efed3e785d442802d91e9fc07ccea7e4f2d6b710c05215a95b59801ecd099",
+    "tests/notification-toasts-lifetime.test.ts": "c1fc0de1bb6cb4454fd34ac93c9f120899017fa876926ec80fbc8fb175a60750",
+    "src/lib/ui/client.ts": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7",
+    "src/lib/ui/action-feedback.svelte.ts": "8bf2a5e699eff2dff0180ac316987028a4ad82e611e5ae4b878d9791523b5734",
+    "src/lib/ui/client-context.ts": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205",
+    "src/lib/ui/components/Dialog.svelte": "af712feba97efe636b88ae94cb21814bfa7c4166e8007ba0a90f7bdaab9fa555",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/server/notifications/inbox.ts": "c8d44c3f7bc05ca7331a333bbdbcfff5d7f8dc1bd1178bf8eac957e7e6c48fdf",
+    "src/lib/server/auth/index.ts": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d",
+    "src/lib/server/api/context.server.ts": "c2c7a2cde4839b66f4ca9dfe1ba67ebaf92fe2cb12ab6457494fd564c1afbe42",
+    "src/lib/server/api/index.server.ts": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623",
+    "src/lib/server/security/errors.ts": "aa2d00bf5ada08637ed2689972de0623528eb03991454d02544bfdcd94181881",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "tsconfig.json": "eee4aad5a76d92737ae4d3cbef569b181727bad6c3445c2fac51f7f51acbeb50",
+    ".svelte-kit/tsconfig.json": "c01d35eee60b3cb21e230c392c72c947234d7f406b83959a042a63e09db454c4",
+    "node_modules/drizzle-orm/bun-sql/session.js": "4dc36d83dad472b55852da2ff08c20147c523415e5c5e547a3d59042667ee1ae",
+    "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a"
+  },
+  "sourcePinCount": 31,
+  "artifactPins": {
+    "candidates/toast-commit/syntax.stdout.txt": "417c1e2721aab2a08d43fea9d960d860c92a43cbc29cfd47521d644954bc75d1",
+    "candidates/toast-commit/plan.json": "c35f72ee88121976b2a83b3358a123377457391616ee152ce769720234f2165e",
+    "candidates/toast-commit/source-pins.json": "f59592edb32858a224515a75f8c1ceadd963f52d47cb69b28d7d27d8b3c6f390",
+    "candidates/toast-commit/syntax.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/toast-commit/parent.ts": "9a30eb569c96506e596a6a2f95edb8043f1d5057f3b8188b702c94ca1c35b8ae",
+    "candidates/toast-commit/approved-private-runner.py.txt": "3d527a67ece961a9701d7f1f6ae25f69404c9c6945b574eef98c09397e0693c8",
+    "candidates/toast-commit/worker.ts": "de68a11a4480999b4e424eb4bb22ffe034c28c92259cd1e108b21c84b136fa61",
+    "evidence/toast-commit-actual.json": "dc07762090c911dd837a880571968dd66b2009f7b5b5cf5efb30df9d239a6ac6",
+    "implementation-toast-commit.md": "e388bbeb6ce41e901d0f46f7463fc94f3c63cbaa708f387bf159cb8ca5a586ff"
+  },
+  "receipt": "evidence/toast-commit-actual.json",
+  "contracts": {
+    "separateProcesses": true,
+    "distinctPhysicalSessions": true,
+    "canonicalCommandCommitted": true,
+    "freshCanonicalDtoReadsCommittedTimestamp": true,
+    "exactStoredTimestampAcrossSessions": true,
+    "all518NonToastValuesExact": true,
+    "inboxMembershipOrderAndUnreadPreserved": true,
+    "noNormalDatabase": true,
+    "noFabricatedNotification": true
+  },
+  "cleanup": {
+    "ephemeralCopyDropped": true,
+    "copyAbsentAfterCleanup": true,
+    "maintenanceReservedReleased": true,
+    "maintenancePoolClosed": true,
+    "originalReadPoolsClosed": true,
+    "taskCredentialKeyAbsent": true
+  },
+  "original518NotificationValuesAndToastSchemaPreserved": true,
+  "sourceUnchanged": true,
+  "leaseReleased": true,
+  "proofBoundary": "Separate canonical-handler COMMIT and fresh process/backend read on actual persisted notice; not authenticatedHTTP/browser multiwindow/recent/persistent timer acceptance or normalwrite. Original source was read-only; postcheck covers518notices and toastcolumn only.",
+  "commonGatesRepeated": false,
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T10:21:52.057608+00:00",
+      "changes": {
+        "src/lib/ui/components/Dialog.svelte": {
+          "before": "1e4df07f144e6fd5bf1f5429283849f6e72b1c7d99a4f114b4ad770ae1c3ffbf",
+          "after": "cecb013bb41e725f3c4de65c75757ce64c218143368d471f9542230c25b69f0a"
+        }
+      },
+      "evidence": "evidence/implementation-detail-close-applied.json",
+      "boundary": "Current identity after separate three-line shared close adoption. Historical receipts/manifests remain unchanged; their measurements were not rerun on this source."
+    }
+  ],
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/components/Dialog.svelte": "cecb013bb41e725f3c4de65c75757ce64c218143368d471f9542230c25b69f0a",
+      "src/lib/server/api/index.server.ts": "b57522f429b0ccd5a6a047f8038880e3626d4b868479845c3bfb180c049dda3c"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "src/lib/server/notifications/index.ts": {
+        "before": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+        "after": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:04:47.823817+00:00",
+      "path": "drizzle/meta/_journal.json",
+      "beforeSha256": "0be13c8ea88483ba780318b212c6ff73dd33c83d1bca437dbe2383ffa1904241",
+      "afterSha256": "806f751a10b70a4d0d2fbbf03faa8dca1597d62fda5911496b2223850db03995",
+      "beforeRef": "candidates/account-deletion/generated-_journal.json.before.snapshot",
+      "reviewRef": "implementation-found-12.md",
+      "boundary": "Reviewed guide update or forward0064journal append only; no normal database/avatar rollout and no upgrade of prior runtime evidence."
+    },
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/auth/index.ts",
+          "before": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf",
+          "after": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d"
+        },
+        {
+          "owner": "src/lib/server/api/index.server.ts",
+          "before": "1d631186ce2546acfc1e9f8aa1458932c2bed4f1568e491d1c8679da33afe5f2",
+          "after": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "src/lib/social/queries.server.ts"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    }
+  ]
+}

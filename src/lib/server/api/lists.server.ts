@@ -25,7 +25,7 @@ export async function handleLists(context: ApiContext): Promise<Response | undef
       else if (path.length === 2 && method === 'DELETE')
         result = await deleteListWithExports(uid, uuid(path[1]));
       else if (path[2] === 'playback' && method === 'POST') {
-        const list = await lists.getList(uid, uuid(path[1]));
+        const list = await lists.getListHeader(uid, uuid(path[1]));
         if (!list.playbackStartedAt || body.restart === true) await restartPlaylist(uid, list.id);
         result = { ok: true };
       } else if (path[2] === 'items' && method === 'POST')

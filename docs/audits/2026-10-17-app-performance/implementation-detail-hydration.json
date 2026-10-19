@@ -1,0 +1,283 @@
+{
+  "schemaVersion": 1,
+  "id": "DATA-04",
+  "recordedAt": "2026-10-18T02:02:57.908409+00:00",
+  "report": "implementation-detail-hydration.md",
+  "status": "request_local_duplicate_hydration_implemented_full_membership_and_broader_acceptance_open",
+  "canonicalStatusEdited": false,
+  "applicationFilesChanged": [
+    "src/lib/server/queries/media.ts"
+  ],
+  "testFilesAdded": [
+    "tests/media-detail-hydration.test.ts"
+  ],
+  "sourceBeforeSha256": "efa1b01cceba025b1127b1733f29796cdf6cdde67eb680a890ae8d76278bec9d",
+  "sourcePins": {
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "tests/media-detail-hydration.test.ts": "e21b3454120a683b8052d6e1f9a4bc7fb24aab66fd1624f65d34868fc9eb5289",
+    "src/lib/application/media-details.server.ts": "7be79c1df14ff453e821472760534406b02eda9d6847a1ad1a84b86658dc9b97",
+    "src/lib/application/work-details.server.ts": "d29507c739ac1b816d78928413c7536a869a5459fc4d0ca70adccb4e773a8e51",
+    "src/lib/server/api/media.server.ts": "494d5e177de0d62c4b3d500f4de46b36c603b8ed78f2b13af3773995317b8d49",
+    "src/routes/media/[id]/+page.server.ts": "b1efcbec0a7f434141f57c2a40906edae2891f0077f7efd632107c1b8bef580d"
+  },
+  "evidencePins": {
+    "evidence/implementation-detail-hydration-actual.json": "c09a43cee8e51b2f4225c2dbb4bc8df39509f4f0d66feb4be99aa82a6e19c6c5",
+    "evidence/implementation-detail-hydration-census.json": "b6bac8d6cd9321bec95dace244ce670c6c6d1b82cf52822a4b0621b2dc0e6003",
+    "evidence/implementation-detail-hydration-tests.txt": "ae329da6f70d1b1426a7ad56668eddad5df9a3afee248efba865b57d8a439fa6",
+    "evidence/implementation-detail-hydration-executed-probe.ts.txt": "49ceb58cd1173044e1f8aa7c2b7a6415b9eaf7db4273fb4bcc638ef45f69380e",
+    "probes/detail-hydration-real.ts": "325352e3baeeb0017c3330f394828ef9d4fbaf291d5b2fc38d6705ae2b374e5f",
+    "probes/detail-hydration-census.ts": "c8be9e2f6d09ee035819ebe6ea4ac8aec34de09783db6fb1acea2a23f087ebb2",
+    "candidates/detail-hydration/media.before.ts.txt": "efa1b01cceba025b1127b1733f29796cdf6cdde67eb680a890ae8d76278bec9d"
+  },
+  "sharedOwner": "detailsData, using unchanged mediaViewsForIds and applySequenceEntry",
+  "consumers": [
+    "full media detail route",
+    "canonical media API initial/enhanced detail",
+    "loadMediaDetails initial and optional enrichment rereads",
+    "workDetailData screen composition",
+    "MediaDetails/MediaDetailRows/media Details/DetailPanel"
+  ],
+  "implementation": {
+    "cache": "Local to one detailsData invocation, seeded root and remembering missing identities. No retained/global cache.",
+    "admission": "Union parent/child cards, reuse related identities, union already-expanded parent/member sequences. Existing60-item batches and requested order.",
+    "occurrences": "Every sequence occurrence uses existing applySequenceEntry fresh outer/sequence/trackingProgress objects. Base/nested cards treated as immutable.",
+    "nextPlayable": "Unchanged independently observed selection/hydration; remains possible repeated card admission.",
+    "observation": "Earliest observed base or missing card within invocation. Every later invocation/enrichment starts fresh; no new production outer snapshot or concurrent revocation/graph linearization."
+  },
+  "actual": {
+    "ref": "evidence/implementation-detail-hydration-actual.json",
+    "status": "passed",
+    "completeDtoPairs": 12,
+    "owners": 4,
+    "cohorts": [
+      "largest829-episode season",
+      "largest23-member collection",
+      "actual movie member with23-occurrence parent sequence"
+    ],
+    "completeEquality": true,
+    "orderedSourceAndSequenceContextsEqual": true,
+    "uniqueAdmittedIdentitiesEqual": true,
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "5s",
+      "jit": "off"
+    },
+    "perOwnerCounts": [
+      {
+        "cohort": "largest-season",
+        "before": {
+          "ormStatements": 264,
+          "ormReadStatements": 264,
+          "ormNonReadStatements": 0,
+          "ormDriverRows": 5910,
+          "cardHydrationCalls": 16,
+          "cardIdsAdmitted": 832,
+          "uniqueCardIdsAdmitted": 831,
+          "duplicateCardAdmissions": 1,
+          "batchSizes": [
+            1,
+            1,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            50
+          ]
+        },
+        "after": {
+          "ormStatements": 248,
+          "ormReadStatements": 248,
+          "ormNonReadStatements": 0,
+          "ormDriverRows": 5902,
+          "cardHydrationCalls": 15,
+          "cardIdsAdmitted": 831,
+          "uniqueCardIdsAdmitted": 831,
+          "duplicateCardAdmissions": 0,
+          "batchSizes": [
+            1,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            60,
+            50
+          ]
+        },
+        "responseBytes": 1490119
+      },
+      {
+        "cohort": "largest-collection",
+        "before": {
+          "ormStatements": 78,
+          "ormReadStatements": 78,
+          "ormNonReadStatements": 0,
+          "ormDriverRows": 328,
+          "cardHydrationCalls": 4,
+          "cardIdsAdmitted": 48,
+          "uniqueCardIdsAdmitted": 24,
+          "duplicateCardAdmissions": 24,
+          "batchSizes": [
+            1,
+            23,
+            1,
+            23
+          ]
+        },
+        "after": {
+          "ormStatements": 62,
+          "ormReadStatements": 62,
+          "ormNonReadStatements": 0,
+          "ormDriverRows": 208,
+          "cardHydrationCalls": 3,
+          "cardIdsAdmitted": 25,
+          "uniqueCardIdsAdmitted": 24,
+          "duplicateCardAdmissions": 1,
+          "batchSizes": [
+            1,
+            23,
+            1
+          ]
+        },
+        "responseBytes": 78108
+      },
+      {
+        "cohort": "actual-collection-member",
+        "before": {
+          "ormStatements": 60,
+          "ormReadStatements": 60,
+          "ormNonReadStatements": 0,
+          "ormDriverRows": 186,
+          "cardHydrationCalls": 3,
+          "cardIdsAdmitted": 25,
+          "uniqueCardIdsAdmitted": 24,
+          "duplicateCardAdmissions": 1,
+          "batchSizes": [
+            1,
+            1,
+            23
+          ]
+        },
+        "after": {
+          "ormStatements": 60,
+          "ormReadStatements": 60,
+          "ormNonReadStatements": 0,
+          "ormDriverRows": 181,
+          "cardHydrationCalls": 3,
+          "cardIdsAdmitted": 24,
+          "uniqueCardIdsAdmitted": 24,
+          "duplicateCardAdmissions": 0,
+          "batchSizes": [
+            1,
+            1,
+            22
+          ]
+        },
+        "responseBytes": 45732
+      }
+    ],
+    "perOwnerCountRangesNote": "Collection driverrows326\u2013328\u2192207\u2013208; member185\u2013186\u2192180\u2013181. Complete exact per-owner counts retained in receipt.",
+    "externalAttempts": 0,
+    "ormWrites": 0,
+    "rolledBack": true,
+    "poolClosed": true,
+    "productionAdoption": "Applied byte-identical verified candidate f66f0f80\u2026 after private proof.",
+    "scope": "No provider/key/decryption/normal database access. IDs/parameters/DTOs privateRAM; aggregate digests/counts only."
+  },
+  "census": {
+    "ref": "evidence/implementation-detail-hydration-census.json",
+    "collections": 413,
+    "directCollectionEdges": 1348,
+    "naturalOverlap": "23 related/member identities; root repeated in parent sequence/season child cards.",
+    "missingPositiveCohorts": [
+      "multiple-parent collections",
+      "nested collections",
+      "repeated sequence paths",
+      "missing collection children"
+    ],
+    "calibration": [
+      "Historical max_direct_parent_collections is the maximum among >1-parent groups only, not all groups; selected member has1parent.",
+      "Preliminary union counters exclude separately hydrated tracking parents; full owner counts supersede for admissions."
+    ]
+  },
+  "controlled": {
+    "ref": "evidence/implementation-detail-hydration-tests.txt",
+    "testsPassed": 12,
+    "failed": 0,
+    "assertions": 84,
+    "files": 3,
+    "newRegression": "Whole current detailsData owner with existing named read boundaries: shared/repeated occurrence order, context copies, immutable base, bounded per-identity/missing admission and fresh next invocation.",
+    "notActualPerformanceData": true
+  },
+  "independentReviews": [
+    "providers_jobs_audit exact private candidate: no material blocker",
+    "root adopted source and whole-owner regression: no material blocker"
+  ],
+  "reproduction": {
+    "exactExecutedSource": "evidence/implementation-detail-hydration-executed-probe.ts.txt",
+    "portableReplay": "probes/detail-hydration-real.ts",
+    "portableCensus": "probes/detail-hydration-census.ts",
+    "baseline": "candidates/detail-hydration/media.before.ts.txt",
+    "portableStatus": "syntax_checked_not_DB_rerun; path/production guard adapted after adoption, exact historical executed text preserved",
+    "requirements": "Separately authorized strict designated actual clone only; new receipt on source/data change."
+  },
+  "remainingGaps": [
+    "Complete829episode response remains1490119JSONbytes for this cohort; no truncation/paging/windowing.",
+    "No actual nested/multiple-parent/repeated-path/missing-child positive cohort.",
+    "No latency,CPU,heap,DOM,response-byte reduction or provider-enrichment timing claim.",
+    "Root common gates and actual rendered acceptance pending for this exact batch.",
+    "Existing detailsData rereads after enrichment remain separate full invocations.",
+    "No production outer transaction/snapshot or concurrent permission/graph change linearization introduced.",
+    "Public guest detail owner remains separate and unchanged."
+  ],
+  "rootPreflightCorrection": {
+    "type": "test-only inferred UUID Map key",
+    "change": "Explicit Map<string,ReturnType<typeof entry>[]> annotation. No runtime/app source behavior changed.",
+    "failedCheck": "evidence/implementation-20261018-read-demand-check-preflight.log",
+    "focusedAfterCorrection": "12tests/84assertions/0fail",
+    "sourcePinRefreshedAt": "2026-10-18T02:11:39.335736+00:00"
+  },
+  "rootCombinedAcceptance": {
+    "common": "785pass/706guardedskip/0fail/33625assertions/1491tests/272files/check0/0/build/inventories",
+    "normalDevReceipt": "evidence/implementation-read-demand-normal.json",
+    "signedIn": true,
+    "sourceUnchangedDuringTrial": true,
+    "scope": "Normal Activity120anchors, show/collection details, Library120anchors/28completedimages, Admin115items/4accounts, Tasks30/noopenDialogs/0newWarningsErrors. Normal Recommendations empty; positive9543rawscore/one60itemDTO proof remains private. No browser resource/timing distribution claim."
+  },
+  "laterSectionDemandChange": {
+    "ref": "next-detail-section-demand.json",
+    "priorSourcePins": {
+      "src/lib/server/queries/media.ts": "f66f0f80a7b78288efd48994379510915d4e21a4894a5aaa377e9b8e79856bda",
+      "src/lib/application/media-details.server.ts": "4f803ced8515d1162cb01b32776b787c66a8eda5d97adc6372aa41569620e028",
+      "src/lib/application/work-details.server.ts": "c4f51937d2193d1ead3d8f17a904bae5d928562a44732f05df36a379869c04bf",
+      "src/lib/server/api/media.server.ts": "8f0d9837880f5272a180db7559e67e84c672a6077d4072def6ab8ef90a352c02",
+      "src/routes/media/[id]/+page.server.ts": "6cd48141ed9a03e6a396f88e486b275a6b149db6fb0cdd8f97154f71a13cde31"
+    },
+    "scope": "Exact8file presentation-demand patch; media query module prefix before detailsData is byte-identical. Complete default/full12signedin+3guest outputpairs pluscompact12signedin+3guest pairs verified in actual30readonlyproof. Prior score/Continue/work-summary/oldbrowser receipts remain historical and were not rerun by a fingerprint refresh.",
+    "ordinaryApiAndDefaultFullUnchanged": true,
+    "currentCommonAndNormalAcceptance": {
+      "commonGateReceipt": "evidence/implementation-20261018-section-demand-gates.json",
+      "normalReceipt": "evidence/implementation-section-demand-normal.json",
+      "boundary": "Current combined gates and selected-section functional acceptance passed. The report\u2019s older owner-specific runtime measurements remain historical and were not rerun."
+    },
+    "sourceIdentityIsNotRuntimeAcceptance": true
+  }
+}

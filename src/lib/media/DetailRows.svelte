@@ -15,7 +15,8 @@
 
   import type {DetailRowsModel,DetailFailure} from '$lib/ui/pages/detail-rows';
   import type {MediaCardPresentation} from '$lib/ui/types';
-  const { api } = useClient();
+  const { api, preview } = useClient();
+  const canLoadPrivate = $derived(preview || !!page.data.user);
 
   let {
     item,
@@ -72,8 +73,8 @@
   });
   const data = $derived({ tmdb: resources.tmdb.data, trakt: resources.trakt.data });
   const busy = $derived({
-    tmdb: resources.tmdb.busy || (!resources.tmdb.ready && !resources.tmdb.error),
-    trakt: resources.trakt.busy || (!resources.trakt.ready && !resources.trakt.error),
+    tmdb: canLoadPrivate && (resources.tmdb.busy || (!resources.tmdb.ready && !resources.tmdb.error)),
+    trakt: canLoadPrivate && (resources.trakt.busy || (!resources.trakt.ready && !resources.trakt.error)),
   });
   const errors = $derived({ tmdb: resources.tmdb.error, trakt: resources.trakt.error });
   const community = $derived(
@@ -83,6 +84,7 @@
   const more = $derived(reviews.filter((s) => data[s] && data[s]!.page < data[s]!.pages));
   const neededSources = $derived.by(() => {
     const needed = new Set<Source>();
+    if (!canLoadPrivate) return [];
     if ((!section || section === 'insights') && insightsActive) {
       if (selection === 'overview') needed.add('tmdb');
       else if (selection === 'community') community.forEach(source => needed.add(source));
@@ -101,6 +103,7 @@
     }));
   });
   async function load(source: Source, page = 1) {
+    if (!canLoadPrivate) return;
     const path = `media/${item.id}/insights?source=${source}&page=${page}`;
     await resources[source].load(signal => api<MediaInsights | null>(path, undefined, 'GET', { signal }), {
       merge: (previous, next) => next && previous && page > 1
@@ -139,5 +142,5 @@
       more:more.length?()=>Promise.all(more.map(source=>load(source,data[source]!.page+1))):undefined},
   });
 </script>
-{#snippet activity()}<MediaActivity mediaId={item.id} {period} />{/snippet}
+{#snippet activity()}{#if canLoadPrivate}<MediaActivity mediaId={item.id} {period} />{/if}{/snippet}
 {@render children(model)}

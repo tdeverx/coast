@@ -1,9 +1,10 @@
+import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
 import * as v from 'valibot';
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { getDb } from '$lib/server/db';
 import { users, media, trackingState, type ProfileSettings } from '$lib/server/db/schema';
 import { AppError } from '$lib/server/security/errors';
-import { avatarRequestLimit, gifBytes, storeGifAvatar, pruneGifAvatars } from './gif-avatar.server';
+import { avatarRequestLimit, avatarImage, storeAvatar, pruneAvatars } from './avatar-storage.server';
 const uuid = v.pipe(v.string(), v.uuid());
 const profileInput = v.variant('action', [
   v.object({
@@ -33,30 +34,18 @@ const profileInput = v.variant('action', [
 ]);
 export async function updateProfile(userId: string, input: unknown) {
   const data = v.parse(profileInput, input);
-  if (data.action === 'edit' && data.avatar && !data.avatar.startsWith(`/api/v1/profile/avatar/${userId}/`)) {
-    if (!/^data:image\/(png|jpeg|webp|gif);base64,[A-Za-z0-9+/]+=*$/.test(data.avatar))
-      throw new AppError(400, 'Choose a PNG, JPEG, WebP or GIF avatar.');
-    if (data.avatar.startsWith('data:image/gif;')) gifBytes(data.avatar);
-    else if (data.avatar.length > 220000) throw new AppError(400, 'Choose a smaller image.');
-    const bytes = Buffer.from(data.avatar.split(',')[1], 'base64');
-    const valid = data.avatar.startsWith('data:image/png;')
-      ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
-      : data.avatar.startsWith('data:image/jpeg;')
-        ? bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255
-        : data.avatar.startsWith('data:image/gif;')
-          ? ['GIF87a', 'GIF89a'].includes(bytes.toString('ascii', 0, 6))
-          : bytes.toString('ascii', 0, 4) === 'RIFF' && bytes.toString('ascii', 8, 12) === 'WEBP';
-    if (!valid) throw new AppError(400, 'The avatar is not a valid image.');
-  }
+  const image=data.action==='edit'&&data.avatar&&!data.avatar.startsWith(`/api/v1/profile/avatar/${userId}/`)
+    ?avatarImage(data.avatar):undefined;
+  let previousAvatar:string|null|undefined;
   const result = await getDb().transaction(async (tx) => {
     const [user] = await tx.select().from(users).where(eq(users.id, userId)).for('update');
     if (!user) throw new AppError(404, 'Account not found.');
     const profile: ProfileSettings = { ...user.settings.profile };
     if (data.action === 'edit') {
+      previousAvatar=profile.avatar;
       if (data.avatar?.startsWith('/api/') && data.avatar !== profile.avatar)
         throw new AppError(400, 'Choose your own profile icon.');
-      const avatar = data.avatar?.startsWith('data:image/gif;')
-        ? await storeGifAvatar(userId, data.avatar) : data.avatar;
+      const avatar = image ? await storeAvatar(userId,image) : data.avatar;
       Object.assign(profile, { displayName: data.displayName, bio: data.bio, avatar });
     }
     else if (data.action === 'preferences') {
@@ -126,14 +115,15 @@ export async function updateProfile(userId: string, input: unknown) {
         profile.favouriteOrder = order;
       }
     }
+    const settings = { ...user.settings, profile };
     await tx
       .update(users)
       .set({
-        settings: { ...user.settings, profile },
+        settings,
       })
-      .where(eq(users.id, userId));
+      .where(and(eq(users.id, userId), sql`${users.settings} is distinct from ${settings}::jsonb`));
     return profile;
   });
-  if (data.action === 'edit') await pruneGifAvatars(userId);
+  if (data.action === 'edit') await pruneAvatars(userId,previousAvatar).catch(cause=>{void logDiagnostic('warn','application.failed',{operation:'settings',failure:classifyFailure(cause)});});
   return result;
 }

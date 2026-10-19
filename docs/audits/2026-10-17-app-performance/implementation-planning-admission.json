@@ -1,0 +1,314 @@
+{
+  "schemaVersion": 1,
+  "id": "MIN-07",
+  "status": "partially_implemented",
+  "title": "Batch planned-party creation friend admission at the shared friendship owner",
+  "sourcePins": {
+    "src/lib/social/service.server.ts": "71872325c753fe705047bf201186d0c5073750c07c93979b75d259e5ebc90d26",
+    "src/lib/experiments/planning.server.ts": "aef16dae069ac1f18484e4666887da1cc6572d95d803e8e43c5ea8ba5ed850a9",
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "drizzle/0058_feature_controls.sql": "3da7e76b2d95d3cb3624d6760ffac3c2554f9c9323aea2b4d1e9fb0169e1567e",
+    "tests/planning-admission.test.ts": "9fa414db43efdba54247e035c43c0fcf11de78d47213d3b7fec2ecc87ba54be9",
+    "tests/fixtures/planning-admission.ts": "0bb2f6656d4cb38338d96a5fce0f59195112cac9adf570fea67db402ccc9e0d8"
+  },
+  "baselineSourcePins": {
+    "src/lib/social/service.server.ts": "cd1d95a5755bef10eb12e62553c78960da25b9fb8272f0d02fae369fed9166e5",
+    "src/lib/experiments/planning.server.ts": "e768a2a915034cd42b8c9d5689622514a3ba05ac11853068e999ff5fd2f6e9de"
+  },
+  "verifiedCandidatePins": {
+    "src/lib/social/service.server.ts": "7bd88b9379b22ee6e0646d948aa0309116eb94c17588fff7d7f60da3bd07354b",
+    "src/lib/experiments/planning.server.ts": "aef16dae069ac1f18484e4666887da1cc6572d95d803e8e43c5ea8ba5ed850a9"
+  },
+  "sharedOwner": "src/lib/social/service.server.ts:62 requireFriends / single-target requireFriend delegation",
+  "consumers": [
+    "Planned-party creation: preflight admission plus separate fresh native-transaction admission",
+    "Existing single-target recommendation preflight",
+    "Friend insight comparison",
+    "Synced-party authorization/invitation checks",
+    "Existing per-recipient planning reminder checks remain one-target calls"
+  ],
+  "scope": "One canonical ordered friendship predicate accepts a caller list and optional native transaction. Planned creation computes the existing string Set once after raw validation and calls it independently at both original admission phases. No reminder notification batching.",
+  "preserved": [
+    "raw20 UUID validation before Set, including21duplicates rejection",
+    "first-occurrence case-sensitive string Set and stored JSON order",
+    "first missing identity in caller order; same generic403 status/code/message",
+    "accepted friendship, existing not-disabled recipient, both social features",
+    "separate preflight and fresh transaction observations",
+    "existing actor feature/policy fence before account advisory lock",
+    "work/category/party validation,100plan cap, plan/outbox transaction fields",
+    "zero friendship SQL for empty list",
+    "single-target one-query count and result/error behavior",
+    "remindPlan body byte identical, individual notification writes/preferences/error boundaries unchanged"
+  ],
+  "snapshotCalibration": "Within each phase, one statement snapshot replaces serial per-recipient snapshots (including duplicate rechecks). Two fresh phases remain; equivalent outcomes on unchanged state do not establish identical concurrent read schedules or a new commit-time friendship fence.",
+  "actualCensus": {
+    "owners": [
+      {
+        "ownerOrdinal": 0,
+        "disabled": false,
+        "social": true,
+        "planning": false,
+        "parties": true,
+        "accepted": 3,
+        "admitted": 3,
+        "hasSavedEligibleWork": true,
+        "savedWorkCategory": "screen",
+        "savedWorkKind": "movie"
+      },
+      {
+        "ownerOrdinal": 1,
+        "disabled": false,
+        "social": true,
+        "planning": false,
+        "parties": true,
+        "accepted": 2,
+        "admitted": 2,
+        "hasSavedEligibleWork": true,
+        "savedWorkCategory": "screen",
+        "savedWorkKind": "episode"
+      },
+      {
+        "ownerOrdinal": 2,
+        "disabled": false,
+        "social": true,
+        "planning": false,
+        "parties": true,
+        "accepted": 2,
+        "admitted": 2,
+        "hasSavedEligibleWork": true,
+        "savedWorkCategory": "screen",
+        "savedWorkKind": "episode"
+      },
+      {
+        "ownerOrdinal": 3,
+        "disabled": false,
+        "social": true,
+        "planning": false,
+        "parties": true,
+        "accepted": 3,
+        "admitted": 3,
+        "hasSavedEligibleWork": true,
+        "savedWorkCategory": "screen",
+        "savedWorkKind": "episode"
+      }
+    ],
+    "plans": {
+      "total": 1,
+      "scheduled": 1,
+      "party": 0,
+      "owners": 1,
+      "future": 0,
+      "future_scheduled": 0,
+      "nonarray_friend_payloads": 0,
+      "max_raw_friends": 0,
+      "stored_friend_slots": 0
+    },
+    "planStates": [
+      {
+        "state": "scheduled",
+        "total": 1
+      }
+    ],
+    "planFriendBindings": {
+      "slots": 0,
+      "non_uuid_slots": 0,
+      "self_slots": 0,
+      "currently_admitted_slots": 0,
+      "duplicate_raw_value_groups": 0
+    },
+    "friendships": [
+      {
+        "state": "accepted",
+        "total": 5
+      },
+      {
+        "state": "pending",
+        "total": 1
+      }
+    ],
+    "notifications": {
+      "all_notices": 518,
+      "planning_notices": 0,
+      "plan_source_notices": 0,
+      "planning_recipients": 0,
+      "synced_invites": 5
+    },
+    "reminderJobs": [
+      {
+        "state": "cancelled",
+        "total": 1
+      }
+    ],
+    "rooms": {
+      "total": 39,
+      "unended": 0,
+      "within_owner_age": 0,
+      "hosts": 2
+    },
+    "participants": {
+      "total": 43,
+      "joined": 0,
+      "invited": 43,
+      "recent_heartbeats": 0
+    },
+    "evidence": "evidence/implementation-planning-admission-census.json"
+  },
+  "actualVerification": {
+    "singleComparisons": 16,
+    "singleAllowed": 10,
+    "singleDenied": 6,
+    "batchComparisons": 36,
+    "allOutcomesAndFirstInvalidOrderEqual": true,
+    "existingAdmittedFriendCounts": [
+      3,
+      2,
+      2,
+      3
+    ],
+    "existingAdmittedListQueries": {
+      "before": [
+        3,
+        2,
+        2,
+        3
+      ],
+      "candidate": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "emptyReadsBeforeAndAfter": 0,
+    "singletonReadsBeforeAndAfter": 1,
+    "actualFeatureFunction": {
+      "sourceMigrationSha256": "3da7e76b2d95d3cb3624d6760ffac3c2554f9c9323aea2b4d1e9fb0169e1567e",
+      "actualBodySha256": "9036ffccb09cb6e31bdd2a4bfea30a17482eca8ddd16389e1fe4d52136e50e83",
+      "actualDefinitionSha256": "f08ecd474d5ae81744f1dff978527aeacbd40dd38a97da4b2954180d7f15a47b",
+      "normalizedBodyMatchesSource": true,
+      "stable": true,
+      "securityDefiner": false,
+      "sessionOverrides": false,
+      "language": "sql",
+      "existingNotDisabledSubjectGuard": true
+    },
+    "verifiedReadOnlyRepeatableRead": true,
+    "statementTimeout": "10s",
+    "lockTimeout": "1s",
+    "rolledBack": true,
+    "poolClosed": true,
+    "providerFetches": 0,
+    "databaseWrites": false,
+    "normalDatabaseTouched": false,
+    "productionRetainedBaselineDuringProof": true
+  },
+  "controlledInputBoundary": "Duplicate/uppercase/raw20 repeated inputs are controlled caller inputs over actual saved friend rows, not natural20-distinct-friend scale or an admitted planning operation. No PostgreSQL latency/CPU/RSS/WAL gain was measured.",
+  "supplementaryCommandProof": {
+    "cases": 8,
+    "completeBaselineCandidateOutcomeAndStoredFieldsEqual": true,
+    "tableless": true,
+    "databaseConnections": 0,
+    "providerCalls": 0,
+    "modeledCountersNotSqlMeasurements": true,
+    "reminderBodyIdentical": true,
+    "casesCovered": [
+      "ordered-deduplicated-store",
+      "case-sensitive-string-set",
+      "empty-friends",
+      "raw21-before-dedup",
+      "first-invalid-input-order",
+      "fresh-friend-withdrawal",
+      "fresh-party-withdrawal",
+      "plan-cap-remains-before-insert"
+    ]
+  },
+  "maintainedRegression": {
+    "command": "bun test tests/planning-admission.test.ts",
+    "passed": 1,
+    "failed": 0,
+    "assertions": 5,
+    "internalCommandScenarios": 8,
+    "loadsCurrentSource": true,
+    "databaseConnections": 0,
+    "scope": "Expected current command outcomes/stored fields/phase ownership, not a production SQL model or an actual planned-party mutation."
+  },
+  "independentReview": {
+    "reviewer": "providers_jobs_audit",
+    "result": "Read-only approved exact predicate/Set/order/fresh-tx candidate, no definite issue. Explicitly calibrated per-phase snapshot timing difference; no tests/DB/edits."
+  },
+  "remainingNotificationOption": {
+    "adopted": false,
+    "reason": "Current reminder owner then each friend notification commits separately, query errors are caught per friend, notification failures leave an earlier committed prefix, and policy/preferences reread per recipient. notifyMany changes these boundaries and needs a selected delivery contract.",
+    "related": "MIN-04",
+    "report": "next-notification-batch.md"
+  },
+  "gaps": [
+    "All4actualowners currently planning=false. No actual admitted createPlan, future planned-party creation, plan/outbox mutation or reminder delivery was executed.",
+    "One actual scheduled plan is past, party=false and has no friends;0planning notices/1cancelled reminder. Do not call this a positive planned-party cohort.",
+    "Actual39ended rooms/43not-joined participants/5synced-invite notices do not establish active or planned-party lifecycle acceptance.",
+    "No20-distinct-friend population, removed/disabled/social-off actual participant or concurrent friendship-withdrawal schedule was manufactured.",
+    "Actor policy/account fencing remains; friendship admission is still a read check and per-phase observation timing changes.",
+    "No normal-browser/API/transport/resource or reminder batching gain claim."
+  ],
+  "reproduction": {
+    "census": "probes/planning-friends-census.ts",
+    "exactPreAdoptionActual": "probes/planning-friend-candidate-actual.ts",
+    "exactPrivateCommandControls": "probes/planning-command-candidate-controls.ts",
+    "maintainedActual": "probes/planning-friend-real.ts",
+    "maintainedActualExecuted": false,
+    "maintainedChanges": "Read captured baseline/current candidate, pin the reviewed feature migration and use relocatable root; syntax checked without another clone run. Historical private command proof retains its original captured-file paths; maintained project regression loads current source."
+  },
+  "artifacts": {
+    "probes/planning-friends-census.ts": "dafc522b1a22fb3677359c1155d3b8c9d69c89aedead4cb656e88ff19ab2c66f",
+    "evidence/implementation-planning-admission-census.json": "eae88fd456ac6df85db722d736dc9f18cb0235922e3b6641e1d1ea97f702eb20",
+    "probes/planning-friend-candidate-actual.ts": "52d3b18ab064eeed590c16b2a2f00c7b05363c6db25f42659814e05aa38c02c1",
+    "evidence/implementation-planning-admission-actual.json": "3ddce7a02f7128ebdc4f38a8fa0bac097312e3b3ed16fe1e6a2e9a137cbd4f58",
+    "probes/planning-command-candidate-controls.ts": "fdaf74b174d20339180edfff907ea92c7a51ada9fa48d2aec53f97d49fd23a76",
+    "evidence/implementation-planning-admission-command-controls.json": "98f8f906fcead7992d96b4f558ef60b82589f6baf55a2c779bce726fec6e5323",
+    "candidates/planning-admission/social.before.ts.txt": "cd1d95a5755bef10eb12e62553c78960da25b9fb8272f0d02fae369fed9166e5",
+    "candidates/planning-admission/social.candidate.ts.txt": "7bd88b9379b22ee6e0646d948aa0309116eb94c17588fff7d7f60da3bd07354b",
+    "candidates/planning-admission/planning.before.ts.txt": "e768a2a915034cd42b8c9d5689622514a3ba05ac11853068e999ff5fd2f6e9de",
+    "candidates/planning-admission/planning.candidate.ts.txt": "aef16dae069ac1f18484e4666887da1cc6572d95d803e8e43c5ea8ba5ed850a9",
+    "probes/planning-friend-real.ts": "7cee994425980895a42f2b73d2b945d438b7a145529f0b426c058c60adfd21d4"
+  },
+  "rootCombinedAcceptance": {
+    "common": "787pass/708guardedskip/0fail/33642assertions/1495tests276files/check0/0/build/inventories",
+    "normalDevReceipt": "evidence/implementation-shared-admission-normal.json",
+    "signedIn": true,
+    "sourceUnchangedDuringTrial": true,
+    "scope": "Continue34links/Next36;3friends and actual taste/overlap35links;Library120media links/28completedimages;Listen102musiclinks\u21921989detail41\u2192settledBack102;Admin115rows;finalTasks30paused/0dialogs/0popovers/0newwarnerror. Functional actual-data acceptance, no live provider job/page, admitted plan creation or browser resource/timing claim."
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/notifications/index.ts": {
+        "before": "d004d879a1194caef408f783fadb838198adf8b0d3dbb26bc60b0fb2badd57cc",
+        "after": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "src/lib/server/notifications/index.ts": {
+        "before": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+        "after": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "src/lib/social/service.server.ts"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    }
+  ]
+}

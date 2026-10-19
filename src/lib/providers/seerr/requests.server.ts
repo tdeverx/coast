@@ -58,14 +58,18 @@ type RequestCache = {
   options: RequestOption[];
 };
 
-export async function requestOptions(userId: string, mediaId: string) {
+export async function requestOptions(userId: string, mediaId: string, signal?: AbortSignal) {
+  signal?.throwIfAborted();
   const config=await getFeatureConfig(userId);
+  signal?.throwIfAborted();
   if (!config.features.requests||!config.features.screen) return [];
   const [item] = await getDb().select().from(media).where(eq(media.id, mediaId));
+  signal?.throwIfAborted();
   const [mapping] = await getDb()
     .select()
     .from(externalIds)
     .where(and(eq(externalIds.mediaId, mediaId), eq(externalIds.provider, 'tmdb')));
+  signal?.throwIfAborted();
   if (!item || !mapping || !['movie', 'show'].includes(item.kind)) return [];
   const instances = await getDb()
     .select()
@@ -74,9 +78,10 @@ export async function requestOptions(userId: string, mediaId: string) {
   const options: RequestOption[] = [];
   for (const instance of instances)
     try {
+      signal?.throwIfAborted();
       const { adapter, account, connection, linkedJellyfinUserId } = await getSeerr(
           userId,
-          instance.id
+          instance.id, undefined, signal
         ),
         kind = item.kind as DiscoverKind;
       const [servers, details, local] = await Promise.all([
@@ -93,6 +98,7 @@ export async function requestOptions(userId: string, mediaId: string) {
             )
           ),
       ]);
+      signal?.throwIfAborted();
       const destinations = groupDestination(
         instance.id,
         instance.name,
@@ -172,6 +178,7 @@ export async function requestOptions(userId: string, mediaId: string) {
         linkedUserId: linkedJellyfinUserId,
         options: verified,
       };
+      signal?.throwIfAborted();
       await getDb()
         .update(providerConnections)
         .set({
@@ -179,6 +186,7 @@ export async function requestOptions(userId: string, mediaId: string) {
         })
         .where(eq(providerConnections.id, connection.id));
     } catch (error) {
+      signal?.throwIfAborted();
       // A recently verified dialog can still create durable work during an outage. Dispatch always rechecks it.
       const status = (error as { status?: number }).status;
       if (
@@ -220,11 +228,14 @@ export async function requestOptions(userId: string, mediaId: string) {
               eq(providerConnections.externalUserId, cached.linkedUserId)
             )
           );
+        signal?.throwIfAborted();
         if (linked) options.push(...cached.options);
       } catch {
+        signal?.throwIfAborted();
         /* Revoked policy or a missing verified account cannot use cached capabilities. */
       }
     }
+  signal?.throwIfAborted();
   return options;
 }
 

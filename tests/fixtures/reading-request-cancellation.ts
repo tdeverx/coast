@@ -10,7 +10,7 @@ const session={id:sessionId,userId,workId,connectionId,externalId,accountGenerat
 let adapter:JellyfinAdapter,downloads=0,metadataExecutions=0,authorizations=0;
 const db={select(){return {from(table:unknown){return {async where(){authorizations++;if(table===users)return [{id:userId}];if(table===readingWorks)return [{id:workId,kind:'book',title:'Fixture'}];if(table===readingSessions)return [session];throw Error('Unexpected authorization query');}};}};},transaction(){throw Error('Cancelled preparation reached database mutation');}};
 mock.module('../../src/lib/server/db',()=>({getDb:()=>db}));
-mock.module('../../src/lib/server/features',()=>({requireFeature:async()=>({}),requireFeatureInTransaction:async()=>{},getFeatureConfig:async()=>({})}));
+mock.module('../../src/lib/server/features',()=>({lockFeaturePolicyInTransaction:async()=>{},requireFeature:async()=>({}),requireFeatureInTransaction:async()=>{},getFeatureConfig:async()=>({})}));
 mock.module('../../src/lib/server/experimental',()=>({requireEnabledCategory(){}}));
 mock.module('../../src/lib/providers/jellyfin/connection.server',()=>({getJellyfin:async()=>({connection:{externalUserId:'synthetic-user',accountGeneration:'fixture-generation',credentials:'synthetic'},instance:{id:'fixture'},adapter})}));
 mock.module('../../src/lib/providers/instances.server',()=>({instanceFetchConfig:async()=>({})}));

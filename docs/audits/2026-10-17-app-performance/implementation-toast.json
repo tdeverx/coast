@@ -1,0 +1,633 @@
+{
+  "id": "UIS-01",
+  "state": "normal_schema_source_common_authenticated_inbox_and_integrated_actual_contracts_verified",
+  "sharedOwner": "notification row lifecycle + createNotificationToasts + viewer-keyed NotificationToasts host",
+  "candidateRoot": "/private/tmp/coast-toast-stage-20261018",
+  "patch": "/private/tmp/coast-toast-stage-20261018/candidate/durable-toast.patch",
+  "patchSha256": "933bf86339c8756a9fa8c0341af47445d3816c2a0f9e4d34def33483ae4f6af6",
+  "files": [
+    "drizzle/0063_notification_toast_suppression.sql",
+    "drizzle/meta/0063_snapshot.json",
+    "drizzle/meta/_journal.json",
+    "src/lib/server/api/notifications.server.ts",
+    "src/lib/server/db/schema.ts",
+    "src/lib/server/notifications/index.ts",
+    "src/lib/ui/components/NotificationToasts.svelte",
+    "src/lib/ui/controls/notification-toasts.ts",
+    "src/routes/+layout.svelte",
+    "src/routes/ui-preview/Demo.svelte",
+    "src/routes/ui-preview/SocialExamples.svelte",
+    "src/routes/ui-preview/props.ts",
+    "tests/notification-toasts-component.test.ts",
+    "tests/notification-toasts-lifetime.test.ts"
+  ],
+  "normalSourceUnchanged": false,
+  "migration": {
+    "file": "drizzle/0063_notification_toast_suppression.sql",
+    "additiveNullableTimestamp": "notifications.toast_hidden_at",
+    "normalApplied": true,
+    "cloneAppliedPermanently": false,
+    "retention": "same notification row; no TTL, no independent table; source-key upsert retains; delete/cascade removes",
+    "mustPrecedeNewApplicationSource": true
+  },
+  "behavior": {
+    "normalInitialOnlyAgeSeconds": 30,
+    "normalAutoHideSeconds": 7,
+    "visibleLimit": 3,
+    "unchangedDtoDefault": 50,
+    "unchangedDtoMaximum": 200,
+    "pendingPlusFlightMaximum": 200,
+    "requestFlightMaximum": 1,
+    "requestDeadlineMs": 15000,
+    "refreshDeadlineAdded": false,
+    "persistentDismiss": "existing read+dismiss command",
+    "previewWrites": 0,
+    "durabilityStarts": "server acknowledgement",
+    "initialReadOrAlreadyHiddenWrites": 0,
+    "writeWaitsForRefresh": false,
+    "refreshActiveMaximum": 1,
+    "refreshFollowupState": "one coalesced boolean",
+    "persistentUnavailable404": "Genuine ApiError404 is terminal no-longer-available reconciliation; does not assert a new successful write. Other errors rollback/retry.",
+    "refreshFailureFeedback": "Refresh-only hint; does not claim a new saved write on terminal404."
+  },
+  "verification": {
+    "unit": {
+      "pass": 13,
+      "fail": 0,
+      "assertions": 103,
+      "kind": "authored functional clocks/transports and compiled component script"
+    },
+    "check": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "migrationCheck": "passed",
+    "patchApplyCheck": "historical_forward_pass; current_exact14candidate_hashes_and_reverse_check",
+    "actual": {
+      "status": "passed",
+      "contracts": 15,
+      "totalActualNotifications": 518,
+      "actualOwnersWithNotices": 4,
+      "selectedWindow": 2,
+      "originalRowsExactAfterRollback": true,
+      "candidateColumnAbsentAfterRollback": true,
+      "stageAliasAndTsconfigBinding": true,
+      "noRepeatedTupleRewrite": true,
+      "evidence": "evidence/implementation-toast-actual.json",
+      "idempotentRepeatAcknowledgesOwned": true,
+      "existingDismissRepeatUnavailable404": true,
+      "healthRebasedSourceRerun": true,
+      "layoutRebasedSourceRerun": true,
+      "preferenceProjectedSourceRerun": true,
+      "sourceSha256": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699"
+    },
+    "common": {
+      "pass": 815,
+      "guardedSkip": 713,
+      "fail": 0,
+      "assertions": 34010,
+      "tests": 1528,
+      "files": 284,
+      "svelteErrors": 0,
+      "svelteWarnings": 0,
+      "buildInventoriesStylePassed": true,
+      "receipt": "evidence/implementation-20261018-toast-adoption-v2-gates.json"
+    },
+    "normal": {
+      "receipt": "evidence/implementation-toast-normal.json",
+      "signedIn": true,
+      "cardsBeforeAndAfterReload": 12,
+      "all518LogicalValuesExact": true,
+      "newConsoleWarnOrError": 0,
+      "normalToastWriteObserved": false,
+      "boundary": "Existing signed-in account had no eligible unread normal/persistent toast. Shell/inbox/reload integration only; no fake notice inserted or timestamp modified to force a cohort."
+    },
+    "integratedMainActual": {
+      "report": "implementation-toast-main.md",
+      "machine": "implementation-toast-main.json",
+      "receipt": "evidence/toast-main-actual.json",
+      "originalContracts": 15,
+      "additiveTimestampContract": 1,
+      "notifications": 518,
+      "owners": 4,
+      "selectedWindow": 2,
+      "allValuesExactAfterRollback": true,
+      "candidateColumnAbsentAfterRollback": true,
+      "poolClosed": true,
+      "normalWriteVerified": false,
+      "separateSessionCommitVerified": false,
+      "boundary": "Direct current main owner/API contracts on exact private actual clone, not authenticated HTTP, normal successful toast write or committed cross-session durability."
+    }
+  },
+  "acceptanceGaps": [
+    "Actual recent normal and persistent toast cohorts remain absent; their clocks, failure, capacity and disposal cases are controlled regressions, not actual-data timing/performance evidence.",
+    "Normal signed-in shell/inbox/reload acceptance passes, but this account has no eligible toast write. Normal successful-write/recent/persistent/multi-window delivery acceptance remains unobserved.",
+    "Integrated actual15+1contracts pass with rollback restoration; separate-session COMMIT durability was not exercised.",
+    "Optional refresh has no new deadline; one active refresh and one coalesced follow-up per host, independent from write admission.",
+    "General inbox retention is unchanged; storage remains proportional to retained notifications.",
+    "Unsent or failed hides are not durable across a hard reload; acknowledged state is.",
+    "Historical0039 original SQL bytes/data effects remain unknown and were explicitly accepted for this exact forward rollout; no provenance recovery claimed."
+  ],
+  "rollback": "Revert candidate application only, preserve concurrent work and additive nullable column/ledger; no automatic drop.",
+  "sharedClientDependency": {
+    "path": "src/lib/ui/client.ts",
+    "sha256": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+    "includedInPatch": false
+  },
+  "rolloutPreflight": {
+    "probe": "/private/tmp/coast-toast-stage-20261018/candidate/verify-toast-preflight.ts",
+    "readOnly": true,
+    "writes": false,
+    "cloneStatus": "failed_closed",
+    "clonePending": [
+      "0062_reading_detail_candidates",
+      "0063_notification_toast_suppression"
+    ],
+    "cloneDriftNames": [
+      "0039_performance_benchmarks"
+    ],
+    "cloneFailureCode": "applied_prefix_drift",
+    "normalTarget": "failed_closed_actual_socket_read_only",
+    "broadMigratorAuthorized": false,
+    "requiredBeforeExecution": "Target exact local applied prefix hashes, only0063pending, candidatecolumnabsent",
+    "portableProbeRef": "probes/toast-migration-preflight.ts",
+    "probeSha256": "582f83dfb6150f373b755208c434781886f5c58cc7f5688680750f6922823a45",
+    "normalPending": [
+      "0062_reading_detail_candidates",
+      "0063_notification_toast_suppression"
+    ],
+    "normalDriftNames": [
+      "0039_performance_benchmarks"
+    ],
+    "normalFailureCode": "applied_prefix_drift",
+    "normalCredentialRead": false,
+    "normalDatabaseWrites": false,
+    "reviewedForwardAlternative": {
+      "provenanceRef": "migration-provenance.md",
+      "machineRef": "migration-provenance.json",
+      "strictDefaultRemainsFailed": true,
+      "normalExecutorPrepared": true,
+      "normalExecutorRun": true,
+      "freshDisposableActualCloneProof": "exact0062+0063; all historical62ledger entries and existing101tables/1864083logicalrows preserved; clone dropped",
+      "requiresHumanAcceptance": [
+        "Exact known0039applied/sourcehashpair; original SQL bytes/historical data effects remain unknown",
+        "0062twoordinaryreadingGINindexbuilds",
+        "0063nullabletoasttimestamp/comment",
+        "Agreedrestorecheckpointandcoordinatedsinglemigrator"
+      ],
+      "normalAdopted": true,
+      "humanAcceptanceGranted": true,
+      "normalReceipt": "evidence/implementation-approved-normal-rollout.json"
+    },
+    "checkpointBoundary": "Historical read-only preflight snapshot; pending/schema fields below describe before rollout, not current normal state."
+  },
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "baselineCommit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "reportRef": "implementation-toast.md",
+  "committed": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "normalOrDeployedDatabaseMutations": true,
+  "normalApplicationSourceApplied": true,
+  "evidenceRefs": [
+    "evidence/implementation-toast-source-manifest.json",
+    "evidence/implementation-toast-dependency-manifest.json",
+    "evidence/implementation-toast-actual.json",
+    "evidence/implementation-toast-tests.txt",
+    "evidence/implementation-toast-check.txt",
+    "evidence/implementation-toast-migration-check.txt",
+    "evidence/implementation-toast-preflight-clone.json",
+    "evidence/implementation-toast-preflight-unconfigured.json",
+    "evidence/implementation-toast-preflight-types.txt",
+    "evidence/implementation-toast-preflight-normal.json",
+    "evidence/implementation-toast-health-rebase.json",
+    "evidence/implementation-toast-health-rebase.diff",
+    "evidence/implementation-toast-actual-pre-health-rebase.json",
+    "evidence/implementation-toast-lazy-rebase.json",
+    "evidence/implementation-toast-actual-pre-lazy-rebase.json",
+    "evidence/implementation-toast-route-refresh-dependency.json",
+    "evidence/implementation-toast-preference-rebase.json",
+    "evidence/implementation-toast-preference-rebase.diff",
+    "evidence/implementation-toast-actual-pre-preference-rebase.json",
+    "evidence/implementation-toast-source-manifest-pre-preference-rebase.json",
+    "implementation-toast-main.md",
+    "implementation-toast-main.json",
+    "evidence/toast-main-actual.json",
+    "implementation-toast-commit.md",
+    "implementation-toast-commit.json"
+  ],
+  "healthTimingRebase": {
+    "status": "passed",
+    "recordedAt": "2026-10-18T00:08:37.083238+00:00",
+    "onlyCandidateSourceChanged": "src/lib/server/notifications/index.ts",
+    "scope": "Rebase only existing admin-health latency capture after SELECT1; no toast/controller/API/schema/migration/client changes or normal adoption.",
+    "baseSourceSha256": "a8f88fbf9ed03536869e2c601bd2c5569cf663e53000a07912275448db4382e9",
+    "priorCandidateSha256": "279793054ae21e4aa3e0665d5d4ca26c50e2c43323f1c2262a97f390e7de3623",
+    "candidateSha256": "b9ff269ba4e734b7b95f730d3880dd0b1b9fd48185980031f2a8b48e094aa780",
+    "patchSha256": "6e025e3237cc89e598e254c3bf63072d885234bea03d32360008ac7937c8132f",
+    "patchBytesUnchanged": true,
+    "patchIntendedFiles": 14,
+    "sourceManifestSha256": "6bbb0dbc36809bf6b6e6fe268377c18f69788f611cc04c8ae0518419f1506ee6",
+    "sqlSnapshotJournalUnchanged": true,
+    "sharedClientSha256": "12169ff02c3deec67ccbdc3f4d669568d0eadb9ba6d8d034b74cd0a0707bf0d8",
+    "sharedClientUnchanged": true,
+    "focusedTests": {
+      "passed": 13,
+      "failed": 0,
+      "assertions": 103
+    },
+    "stageCheck": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "patchApplyCheck": "passed_against_current_main",
+    "actualContractsRerun": 15,
+    "actualReceiptSha256": "4e7fc5568f7e4fb9ecc6d4d1b988821bd43870db7d8fabbab196313983cd2f9d",
+    "all518NoticeRowsExactAfterRollback": true,
+    "candidateColumnAbsentAfterRollback": true,
+    "normalOrDeployedDatabaseMutations": false,
+    "normalApplicationSourceAdopted": false,
+    "historicalReceiptRef": "evidence/implementation-toast-actual-pre-health-rebase.json"
+  },
+  "layoutReloadRebase": {
+    "status": "passed",
+    "recordedAt": "2026-10-18T00:41:35.814663+00:00",
+    "scope": "Rebase only current FRT-04 layout import feedback and NotificationToasts actionLabel; preserve all durable suppression/controller/API/schema/migration behavior. Shared dependencies copied and pinned but excluded from toast patch.",
+    "sourceChanges": [
+      "src/routes/+layout.svelte",
+      "src/lib/ui/components/NotificationToasts.svelte"
+    ],
+    "mainLayoutSha256": "484247b5dd94e7bdd57daa87cc158afb86281d6f8a419a1f063cad4628e62c73",
+    "priorCandidateLayoutSha256": "40b13911bc6f5dc944a3352e561e4b8b8f16ad452547fa72734ad0c07417c996",
+    "candidateLayoutSha256": "fa2da910bdfa5d467592bb1496fab1afb8eca1ce5dc6849bd1e437b6e20d4baa",
+    "mainHostSha256": "ef93521ea4fee3b7b490227c0640c0382a81b6a7005a0371b9a19aeba2e9e419",
+    "priorCandidateHostSha256": "c50346b521e85f2a272ca55d5c648d45c10738c044cedbdc0f0377088ab82dd2",
+    "candidateHostSha256": "e02bef528dc595cb4c2ba0c9d956e2fa561f0ec22f9b23d10b397a2ed6a9b11f",
+    "priorPatchSha256": "6e025e3237cc89e598e254c3bf63072d885234bea03d32360008ac7937c8132f",
+    "patchSha256": "4b044749cfb79a2160bbb6ad22e346ade2cfe5c05fe72daf234d5d3d12bc5d50",
+    "patchIntendedFiles": 14,
+    "sourceManifestSha256": "66fad328bd254148654874de5af65c9d9b785934adb8e7e8e98cb252d4b01ba7",
+    "dependencyManifestSha256": "29747cc58b919268e7ed7e0d3f3d21581ed8512a62dc1c6570837775183328e6",
+    "toastBehaviorUnchanged": true,
+    "sqlSnapshotJournalUnchanged": true,
+    "sharedClientSha256": "12169ff02c3deec67ccbdc3f4d669568d0eadb9ba6d8d034b74cd0a0707bf0d8",
+    "normalApplicationSourceAdopted": false,
+    "normalOrDeployedDatabaseMutations": false,
+    "completedAt": "2026-10-18T00:45:43.059566+00:00",
+    "focusedTests": {
+      "passed": 13,
+      "failed": 0,
+      "assertions": 103
+    },
+    "stageCheck": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "patchApplyCheck": "passed_against_current_main",
+    "actualContractsRerun": 15,
+    "actualReceiptSha256": "cca19b57dbb937697306b9ed5849ab935ed7574833d520d0baf22c806cd05d44",
+    "all518NoticeRowsExactAfterRollback": true,
+    "candidateColumnAbsentAfterRollback": true,
+    "onlyTwoCandidateSourceFilesChanged": true,
+    "mainAndDependencyPinsRechecked": true,
+    "historicalReceiptRef": "evidence/implementation-toast-actual-pre-lazy-rebase.json"
+  },
+  "sharedDependencies": {
+    "src/lib/ui/client.ts": {
+      "sha256": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+      "matchesCurrentMain": true,
+      "includedInCandidatePatch": false,
+      "owner": "shared transport and overlay-preserving route refresh (scoped dependencies or explicit all)"
+    },
+    "src/lib/ui/action-feedback.svelte.ts": {
+      "sha256": "8bf2a5e699eff2dff0180ac316987028a4ad82e611e5ae4b878d9791523b5734",
+      "matchesCurrentMain": true,
+      "includedInCandidatePatch": false,
+      "owner": "shared main transport / explicit import reload feedback / resource and dialog ownership"
+    },
+    "src/lib/ui/client-context.ts": {
+      "sha256": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+      "matchesCurrentMain": true,
+      "includedInCandidatePatch": false,
+      "owner": "shared main transport / explicit import reload feedback / resource and dialog ownership"
+    },
+    "src/lib/ui/components/Dialog.svelte": {
+      "sha256": "1e4df07f144e6fd5bf1f5429283849f6e72b1c7d99a4f114b4ad770ae1c3ffbf",
+      "matchesCurrentMain": true,
+      "includedInCandidatePatch": false,
+      "owner": "shared main transport / explicit import reload feedback / resource and dialog ownership"
+    },
+    "src/lib/ui/resource.svelte.ts": {
+      "sha256": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+      "matchesCurrentMain": true,
+      "includedInCandidatePatch": false,
+      "owner": "shared main transport / explicit import reload feedback / resource and dialog ownership"
+    }
+  },
+  "routeRefreshDependency": {
+    "status": "passed",
+    "recordedAt": "2026-10-18T00:57:22.761804+00:00",
+    "path": "src/lib/ui/client.ts",
+    "beforeSha256": "12169ff02c3deec67ccbdc3f4d669568d0eadb9ba6d8d034b74cd0a0707bf0d8",
+    "sha256": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+    "scope": "Excluded shared client dependency only; current overlay-preserving refresh helper and narrow all option. No toast application/controller/API/schema/SQL changes.",
+    "includedInCandidatePatch": false,
+    "patchSha256": "4b044749cfb79a2160bbb6ad22e346ade2cfe5c05fe72daf234d5d3d12bc5d50",
+    "all14CandidateFilesUnchanged": true,
+    "actual15ContractsRerun": false,
+    "actualProofRetainedExactly": true,
+    "normalApplicationSourceAdopted": false,
+    "normalOrDeployedDatabaseMutations": false,
+    "completedAt": "2026-10-18T00:58:15.144890+00:00",
+    "focusedTests": {
+      "passed": 13,
+      "failed": 0,
+      "assertions": 103
+    },
+    "stageCheck": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "patchApplyCheck": "passed_against_current_main",
+    "allDependencyPinsCurrent": true,
+    "dependencyManifestSha256": "e122832fbfecc3e16918224b038bcba31b0188dd10c9b90092f6ee1a623b64a1",
+    "retainedActual15ReceiptSha256": "cca19b57dbb937697306b9ed5849ab935ed7574833d520d0baf22c806cd05d44"
+  },
+  "preferenceProjectionRebase": {
+    "status": "passed",
+    "recordedAt": "2026-10-18T01:18:03.868423+00:00",
+    "scope": "Only staged src/lib/server/notifications/index.ts rebased onto current main notification preference projection. No main source, normal DB or schema adoption.",
+    "onlyCandidateSourceChanged": "src/lib/server/notifications/index.ts",
+    "candidateFiles": 14,
+    "otherCandidateFilesUnchanged": 13,
+    "mainSourceSha256": "d004d879a1194caef408f783fadb838198adf8b0d3dbb26bc60b0fb2badd57cc",
+    "priorCandidateSha256": "b9ff269ba4e734b7b95f730d3880dd0b1b9fd48185980031f2a8b48e094aa780",
+    "candidateSha256": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+    "priorPatchSha256": "4b044749cfb79a2160bbb6ad22e346ade2cfe5c05fe72daf234d5d3d12bc5d50",
+    "patchSha256": "933bf86339c8756a9fa8c0341af47445d3816c2a0f9e4d34def33483ae4f6af6",
+    "patchOther13FileBlocksUnchanged": true,
+    "sourceManifestSha256": "fe546c4abb0fa126daa9cf49b16bba8dc388ba567d77ffa5bff622e02102b6ab",
+    "dependencyManifestSha256": "e122832fbfecc3e16918224b038bcba31b0188dd10c9b90092f6ee1a623b64a1",
+    "dependenciesUnchangedAndMatchCurrentMain": true,
+    "toastBehaviorAndExactCommandBlockUnchanged": true,
+    "toastCommandBlockSha256": "625d266f68932bdc0faef6d7b6d593539ac0a42b3f3a64c918ec738dc4185e42",
+    "sqlSnapshotJournalUnchanged": true,
+    "normalApplicationSourceApplied": false,
+    "normalOrDeployedDatabaseMutations": false,
+    "actual15ContractsRerun": true,
+    "historicalActualReceiptRef": "evidence/implementation-toast-actual-pre-preference-rebase.json",
+    "completedAt": "2026-10-18T01:20:10.893719+00:00",
+    "focusedTests": {
+      "passed": 13,
+      "failed": 0,
+      "assertions": 103
+    },
+    "stageCheck": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "patchApplyCheck": "passed_against_current_main",
+    "actualContracts": 15,
+    "actualReceiptSha256": "5612208e7a55072da1504746093e573c4a067c7bdb2108f8c43c946263cdc6ec",
+    "all518NoticeRowsExactAfterRollback": true,
+    "candidateColumnAbsentAfterRollback": true,
+    "actualExplicitTimeouts": {
+      "statement_timeout": "30s",
+      "lock_timeout": "5s"
+    },
+    "actualStageAliasVerified": true,
+    "actualProbeSha256": "b22b772d7ef9a19f419757b5da03e56606ac8cb6b229127be4b4e8205dc3a460",
+    "all14MainBasePinsRechecked": true,
+    "normalNotificationSourceSha256": "d004d879a1194caef408f783fadb838198adf8b0d3dbb26bc60b0fb2badd57cc",
+    "archivedPriorActualReceiptSha256": "cca19b57dbb937697306b9ed5849ab935ed7574833d520d0baf22c806cd05d44",
+    "stagedFocusedBoundary": "The13 toast suites run, not the historical staged notification-batching fixture. Root separately corrected its main fixture query dispatch and verified5/51; no other stage source/test/dependency was copied or changed.",
+    "normalSchemaAdopted": false,
+    "allClonePoolsClosed": true,
+    "mainAndDependencyPinsRechecked": true
+  },
+  "reviewPatch": "candidates/toast/durable-toast.patch",
+  "reviewPatchBoundary": "Exact retained review patch has been applied; original staged manifest/receipts remain historical. Current14candidate hashes and reverse-apply check attest adoption; combined and signed-in normal acceptance are separate.",
+  "humanApprovedRollout": {
+    "at": "2026-10-18T04:16:59.974431+00:00",
+    "receipt": "evidence/implementation-approved-rollout-decisions.json",
+    "status": "normal_rollout_applied_common_and_authenticated_inbox_verified",
+    "normalExecutionPerformed": true,
+    "normalConnectionSourceApproved": true
+  },
+  "normalMigrationApplied": true,
+  "deploymentPerformed": false,
+  "normalRollout": {
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "sourcePatchExact": true,
+    "candidateFiles": 14,
+    "ledgerBefore": 62,
+    "ledgerAfter": 64,
+    "historical0039Preserved": true,
+    "validReadyGinIndexes": 2,
+    "nullableToastFieldAdded": true,
+    "checkpointArchiveVerified": true,
+    "actualArchiveRestoreExercised": false,
+    "serverOwnedListenerVerified": true,
+    "combinedAndBrowserAcceptance": "common_passed_authenticated_inbox_reload_passed_no_eligible_toast_write_cohort",
+    "normalBrowserReceipt": "evidence/implementation-toast-normal.json",
+    "commonReceipt": "evidence/implementation-20261018-toast-adoption-v2-gates.json"
+  },
+  "sourcePins": {
+    "drizzle/0063_notification_toast_suppression.sql": "fcb04e9f6aec6aea14c5782c015b3f61ce6e7096faa2ebdc8d72cd53160ff7a5",
+    "drizzle/meta/0063_snapshot.json": "7490e38964e68abb73d012a53f3a1d49c6c108831f7e4f55d661673172a9d92c",
+    "drizzle/meta/_journal.json": "806f751a10b70a4d0d2fbbf03faa8dca1597d62fda5911496b2223850db03995",
+    "src/lib/server/api/notifications.server.ts": "58a76749ad7c8696c5e13e468683aa1685eeec4fd8ee2b6330ac89cb88f1cd51",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "src/lib/ui/components/NotificationToasts.svelte": "e02bef528dc595cb4c2ba0c9d956e2fa561f0ec22f9b23d10b397a2ed6a9b11f",
+    "src/lib/ui/controls/notification-toasts.ts": "a7da5916600c07842fec123bb23389a461ce667ce74cb4c81185c13a677bf93d",
+    "src/routes/+layout.svelte": "fa2da910bdfa5d467592bb1496fab1afb8eca1ce5dc6849bd1e437b6e20d4baa",
+    "src/routes/ui-preview/Demo.svelte": "b1597ad2a924030afa0bb86598c5516facf8e9124a482a530cd5a1bfeaa7614e",
+    "src/routes/ui-preview/SocialExamples.svelte": "f41d2b5a59c633e8232c3da0f474306e0f06189cc1521696e17f57e0009d8103",
+    "src/routes/ui-preview/props.ts": "801590c239003cf399d69d53fb90cb783ab3a4dafe5c9497df1c10c4cb595126",
+    "tests/notification-toasts-component.test.ts": "146efed3e785d442802d91e9fc07ccea7e4f2d6b710c05215a95b59801ecd099",
+    "tests/notification-toasts-lifetime.test.ts": "c1fc0de1bb6cb4454fd34ac93c9f120899017fa876926ec80fbc8fb175a60750",
+    "src/lib/ui/client.ts": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7",
+    "src/lib/ui/action-feedback.svelte.ts": "8bf2a5e699eff2dff0180ac316987028a4ad82e611e5ae4b878d9791523b5734",
+    "src/lib/ui/client-context.ts": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205",
+    "src/lib/ui/components/Dialog.svelte": "af712feba97efe636b88ae94cb21814bfa7c4166e8007ba0a90f7bdaab9fa555",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/routes/ui-preview/prop-manifest.json": "707380ee4df9b67a4cbe3180755df6c2ede57824319f0b6953aea35c2f5543d4",
+    "tests/auth-feedback.test.ts": "bd4a77242d156deeb36972011832f9359c41e6144a74f60d918ab2f35e5222d2"
+  },
+  "adoptionIntegrationCorrections": {
+    "firstFailedCommonReceipt": "evidence/implementation-20261018-toast-adoption-gates.json",
+    "firstUnit": {
+      "pass": 812,
+      "guardedSkip": 713,
+      "fail": 2,
+      "error": 1,
+      "assertions": 33911,
+      "tests": 1527,
+      "files": 284
+    },
+    "corrections": [
+      "UI prop reference metadata now matches ToastNotification[]; metadata only, no visual change.",
+      "Existing auth-feedback compiled-host fixture isolates the actual ApiError class and browser-only ports; original8 assertions retained."
+    ],
+    "focusedUi": {
+      "pass": 3,
+      "assertions": 218
+    },
+    "focusedAuthAndToast": {
+      "pass": 15,
+      "assertions": 111,
+      "strictTypesPassed": true
+    },
+    "boundary": "Both edits lie outside the approved14-file toast patch; exact adoption hashes remain unchanged. Failed first common run remains retained."
+  },
+  "artifactPins": {
+    "candidates/toast/durable-toast.patch": "933bf86339c8756a9fa8c0341af47445d3816c2a0f9e4d34def33483ae4f6af6",
+    "evidence/implementation-toast-source-manifest.json": "fe546c4abb0fa126daa9cf49b16bba8dc388ba567d77ffa5bff622e02102b6ab",
+    "evidence/implementation-approved-normal-rollout.json": "a42bdc2a3373e9a5db4daf588eb2d399def2b2ed733b68aa634ab04c22bf26fe",
+    "evidence/implementation-toast-normal.json": "94ce2487b02e8689f0598234682ae42e8dbe555cdb41a0df33115ffcfb0e5a5f",
+    "evidence/implementation-toast-normal-inbox.png": "bd9d9e0bc7cfdbb582923ba88e9e7cdb04afde4a94476ea88c036df5b6464556",
+    "evidence/implementation-toast-normal-tasks.png": "8df07f24d29c85977cc2f100f387ed380b5822b14375dff3b859af071373715c",
+    "evidence/implementation-20261018-toast-adoption-gates.json": "01e461279c8de845188f4402d617dee11275c91ca68bc60f4134ccef0386a759",
+    "evidence/implementation-20261018-toast-adoption-unit.log": "f9492bbaccd5cc52989bf6fe2be01853c0e6c439784d710f6682abf624a30ff2",
+    "evidence/implementation-20261018-toast-adoption-v2-gates.json": "b2572968076044e3f0536f25dfcee243fca0fb94d0cab3266dd4ea0ba613529f",
+    "evidence/implementation-20261018-toast-adoption-source-inventory.json": "a8bedd0f2065f2727766a976826b233e9bc73b8509815b44976cddde1fe59ddb",
+    "evidence/implementation-20261018-toast-adoption-v2-unit.log": "2b9a0f1a38b80d35d3d9a5726519ae65f85146e39a027f78d650874272c54b0b",
+    "evidence/implementation-20261018-toast-adoption-v2-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "evidence/implementation-20261018-toast-adoption-v2-build.log": "56ea545584994de416a89cc4a7f390ba1f81dea0ebdf85c2ca0490b760207b02",
+    "evidence/implementation-20261018-toast-adoption-v2-code-inventory.log": "8ba45ace4a12d8a1c2e58eacee3c725a558d0ad5bc7958f8a807598d8cf1e89e",
+    "evidence/implementation-20261018-toast-adoption-v2-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "evidence/implementation-20261018-toast-adoption-v2-code-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "evidence/implementation-toast-ui-props-focused.log": "b387a3e4d88d1b48e2745f1c3e05292af58cdc1c5f5638c6e59ce80b4313fa81",
+    "evidence/implementation-toast-auth-feedback-focused.txt": "9d37789f1d1acd55b49a850e774156c689e5342b9405b4d1933f79d90c4c7aa8",
+    "evidence/implementation-toast-auth-feedback-types.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "evidence/implementation-toast-auth-feedback-tsconfig.json": "d8a8cf53d4ea60c117b582360467bc14cd8e5fb2e5f62157b5d3e02a38739111",
+    "candidates/toast/adoption-integration-corrections.patch": "36c1ad679efb692e2100367092c998ee695b3e22a27a55313f9919f879ffc0e7",
+    "implementation-toast-main.md": "2ef0cacc7360b15e3e17f0aa9ca5ef5c66b4d9e9fc630b6d5bb8a6a34590a107",
+    "implementation-toast-commit.md": "e388bbeb6ce41e901d0f46f7463fc94f3c63cbaa708f387bf159cb8ca5a586ff",
+    "implementation-toast-commit.json": "6ae8026ec0eb99cff20140dbeb44457f927ad6a38b37efe3f0eb4d38a418eb00",
+    "evidence/toast-commit-actual.json": "dc07762090c911dd837a880571968dd66b2009f7b5b5cf5efb30df9d239a6ac6"
+  },
+  "laterActualCommittedDurability": {
+    "report": "implementation-toast-commit.md",
+    "machine": "implementation-toast-commit.json",
+    "receipt": "evidence/toast-commit-actual.json",
+    "canonicalCommandCommitted": true,
+    "freshPhysicalBackendRead": true,
+    "ephemeralCopyDropped": true,
+    "normalWriteOrMultiwindowAcceptance": false,
+    "boundary": "Additive current integrated-source proof, distinct from immutable earlier rollback-only receipt; no retroactive claim the original15+1contract run committed."
+  },
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T10:21:52.057608+00:00",
+      "changes": {
+        "src/lib/ui/components/Dialog.svelte": {
+          "before": "1e4df07f144e6fd5bf1f5429283849f6e72b1c7d99a4f114b4ad770ae1c3ffbf",
+          "after": "cecb013bb41e725f3c4de65c75757ce64c218143368d471f9542230c25b69f0a"
+        }
+      },
+      "evidence": "evidence/implementation-detail-close-applied.json",
+      "boundary": "Current identity after separate three-line shared close adoption. Historical receipts/manifests remain unchanged; their measurements were not rerun on this source."
+    }
+  ],
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/components/Dialog.svelte": "cecb013bb41e725f3c4de65c75757ce64c218143368d471f9542230c25b69f0a",
+      "src/routes/ui-preview/prop-manifest.json": "2767c8414af87f1c8e949c4a115ac4009077a5c3220309d2b21ef680ecaaf339"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "src/lib/server/notifications/index.ts": {
+        "before": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+        "after": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  },
+  "laterOwnerRepairs": {
+    "src/lib/server/notifications/index.ts": {
+      "beforeSha256": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+      "afterSha256": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+      "beforeRef": "candidates/found-implementation-05/notifications-before.ts",
+      "patchRef": "candidates/found-implementation-05/runtime-owner-changes.patch",
+      "patchSha256": "cdc2bf59aba7d5f4cf7f822f66bbeb8bee9fb39e2a463021142a1acb04e8c56d",
+      "reportRef": "implementation-found-05.md"
+    },
+    "drizzle/meta/_journal.json": {
+      "beforeRef": "candidates/account-deletion/generated-_journal.json.before.snapshot",
+      "beforeSha256": "0be13c8ea88483ba780318b212c6ff73dd33c83d1bca437dbe2383ffa1904241",
+      "afterSha256": "806f751a10b70a4d0d2fbbf03faa8dca1597d62fda5911496b2223850db03995",
+      "patchRef": "candidates/account-deletion/migration-source.patch",
+      "patchSha256": "94a95cf827e3cd481e1d23677b671ad3802906bda08d604d713d05366a9dee6c",
+      "boundary": "Append only forward migration0064 for verified shared user-deletion lifecycle; preserve recorded toast migration history, snapshots and SQL. Normal database rollout is not performed by this source adoption."
+    }
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:04:47.820225+00:00",
+      "path": "drizzle/meta/_journal.json",
+      "beforeSha256": "0be13c8ea88483ba780318b212c6ff73dd33c83d1bca437dbe2383ffa1904241",
+      "afterSha256": "806f751a10b70a4d0d2fbbf03faa8dca1597d62fda5911496b2223850db03995",
+      "beforeRef": "candidates/account-deletion/generated-_journal.json.before.snapshot",
+      "reviewRef": "implementation-found-12.md",
+      "boundary": "Reviewed guide update or forward0064journal append only; no normal database/avatar rollout and no upgrade of prior runtime evidence."
+    }
+  ]
+}

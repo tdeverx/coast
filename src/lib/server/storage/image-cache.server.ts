@@ -46,18 +46,26 @@ export function createImageCache(directory: string, limits: ImageCacheLimits = {
     }
   }
   return {
-    get(key: string) {
+    get(key: string, valid?: (bytes: Uint8Array) => boolean) {
       return serial(async () => {
         await initialize();
+        let bytes: Uint8Array;
         try {
-          const bytes = await readFile(join(directory, key));
-          setEntry(key, bytes.byteLength, Date.now());
-          return bytes;
+          bytes = await readFile(join(directory, key));
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
           deleteEntry(key);
           return null;
         }
+        // Validation and removal share the read's serial slot, ahead of any replacement.
+        // A validator failure must propagate without being mistaken for a missing file.
+        if (valid && !valid(bytes)) {
+          await unlink(join(directory, key)).catch(error => { if (error.code !== 'ENOENT') throw error; });
+          deleteEntry(key);
+          return null;
+        }
+        setEntry(key, bytes.byteLength, Date.now());
+        return bytes;
       });
     },
     put(key: string, bytes: Uint8Array) {

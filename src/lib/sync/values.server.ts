@@ -1,4 +1,5 @@
 import { conflictPreference } from './preference.server';
+import { lockFeaturePolicyInTransaction } from '$lib/server/features';
 import { and, eq, sql, inArray } from 'drizzle-orm';
 import { getDb, type Database } from '$lib/server/db';
 import {
@@ -158,6 +159,7 @@ export async function reconcileProviderValue(
   } = {}
 ) {
   return getDb().transaction(async (tx) => {
+    await lockFeaturePolicyInTransaction(tx,userId);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
     const [connection] = await tx
       .select()

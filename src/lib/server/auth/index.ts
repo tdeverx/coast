@@ -1,3 +1,5 @@
+import { pruneAvatars } from '$lib/core/profile/avatar-storage.server';
+import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
 import { featureValues, hasWithdrawnFeatures } from '$lib/features';
 import { invalidateFeatureSubject } from '$lib/server/config';
 import { queueFeatureTransition } from '$lib/application/feature-transition.server';
@@ -148,8 +150,20 @@ export async function authenticateSession(
 ): Promise<AuthenticatedSession | null> {
   if (!token || !/^[A-Za-z0-9_-]{43}$/.test(token)) return null;
   const tokenHash = await hashToken(token);
+  // Ordinary requests need a fresh authentication snapshot, not an exclusive
+  // session mutex. A committed logout/disable is visible in this same statement.
+  const [current] = await getSql()`SELECT s.*, u.username, u.email, u.role, u.settings
+    FROM sessions s JOIN users u ON u.id = s.user_id AND NOT u.disabled
+    WHERE s.expires_at > NOW() AND (s.token_hash = ${tokenHash}
+      OR (s.previous_token_hash = ${tokenHash} AND s.previous_valid_until > NOW()))`;
+  if (!current || new Date(current.expires_at).getTime() <= Date.now()) return null;
+  if (current.token_hash !== tokenHash || Date.now() - new Date(current.last_seen_at).getTime() <= 60 * 60_000)
+    return { user: publicUser({...current,id:current.user_id}), expiresAt: new Date(current.expires_at) };
   const { sessionLifetimeDays } = await getConfig();
+  const nextToken = randomToken(), nextHash = await hashToken(nextToken);
   return getSql().begin(async (sql) => {
+    // Rotation still serializes and rechecks after waiting: another request may
+    // have rotated, logged out or disabled the account since the initial read.
     const [session] = await sql`SELECT * FROM sessions WHERE token_hash = ${tokenHash}
       OR (previous_token_hash = ${tokenHash} AND previous_valid_until > NOW()) FOR UPDATE`;
     if (!session || new Date(session.expires_at).getTime() <= Date.now()) return null;
@@ -160,10 +174,9 @@ export async function authenticateSession(
       session.token_hash === tokenHash &&
       Date.now() - new Date(session.last_seen_at).getTime() > 60 * 60_000
     ) {
-      const nextToken = randomToken();
       const expiresAt = new Date(Date.now() + sessionLifetimeDays * 86_400_000);
       await sql`UPDATE sessions SET previous_token_hash = token_hash, previous_valid_until = NOW() + INTERVAL '30 seconds',
-        token_hash = ${await hashToken(nextToken)}, expires_at = ${expiresAt}, last_seen_at = NOW() WHERE id = ${session.id}`;
+        token_hash = ${nextHash}, expires_at = ${expiresAt}, last_seen_at = NOW() WHERE id = ${session.id}`;
       return { user, token: nextToken, expiresAt };
     }
     return { user, expiresAt: new Date(session.expires_at) };
@@ -239,9 +252,9 @@ export async function deleteUser(actor: SessionUser | null, userId: string): Pro
   const admin = requireAdmin(actor);
   if (admin.id === userId)
     throw new AppError(400, 'You cannot delete your current administrator account.');
-  await getSql().begin(async (sql) => {
+  const previousAvatar=await getSql().begin(async (sql) => {
     await sql`SELECT pg_advisory_xact_lock(73001602)`;
-    const [target] = await sql`SELECT id, role, disabled FROM users WHERE id = ${userId} FOR UPDATE`;
+    const [target] = await sql`SELECT id, role, disabled, settings#>>'{profile,avatar}' AS avatar FROM users WHERE id = ${userId} FOR UPDATE`;
     if (!target) throw new AppError(404, 'Account not found.');
     if (target.role === 'admin' && !target.disabled) {
       const [count] =
@@ -250,7 +263,9 @@ export async function deleteUser(actor: SessionUser | null, userId: string): Pro
     }
     // Provider account deletion is deliberately a separate, explicit adapter operation.
     await sql`DELETE FROM users WHERE id = ${userId}`;
+    return target.avatar as string|null;
   });
+  await pruneAvatars(userId,previousAvatar).catch(cause=>{void logDiagnostic('warn','application.failed',{operation:'settings',failure:classifyFailure(cause)});});
 }
 
 export async function updateUser(actor: SessionUser | null, userId: string, input: unknown) {

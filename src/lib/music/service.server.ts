@@ -11,6 +11,7 @@ import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
 import { jellyfinMusicIdSchema, musicBrowseSchema } from '$lib/providers/jellyfin/music.server';
 
 export async function musicLibrary(userId: string, connectionId: string, input: unknown = {},signal?:AbortSignal) {
+  signal?.throwIfAborted();
   const options = v.parse(musicBrowseSchema, input);
   await requireFeature(userId,'music');
   const { adapter, connection, instance } = await getJellyfin(userId, connectionId);
@@ -21,6 +22,7 @@ export async function musicLibrary(userId: string, connectionId: string, input: 
 }
 
 export async function musicDetails(userId: string, connectionId: string, id: string,signal?:AbortSignal) {
+  signal?.throwIfAborted();
   v.parse(jellyfinMusicIdSchema, id);
   await requireFeature(userId,'music');
   const { adapter, connection, instance } = await getJellyfin(userId, connectionId);

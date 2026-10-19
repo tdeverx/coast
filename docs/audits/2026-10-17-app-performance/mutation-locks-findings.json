@@ -1,0 +1,482 @@
+{
+  "head": "eb0673873462b71118d1c11678d128958a05ff07",
+  "count": 4,
+  "findings": [
+    {
+      "id": "LOCK-01",
+      "priority": "P2",
+      "title": "Account-first commands later acquire the shared policy fence",
+      "confidence": "high",
+      "state": "implemented; representative actual-data global-policy wait cycle removed; hard deadlock not reproduced",
+      "implementationApplied": true,
+      "sharedOwner": "src/lib/server/features.ts lockFeaturePolicyInTransaction and ten existing transaction entry owners",
+      "consumers": [
+        "src/lib/core/lists/service.server.ts:addListItem",
+        "src/lib/core/lists/service.server.ts:createList",
+        "src/lib/core/reading/service.server.ts:writeReadingInTransaction",
+        "src/lib/core/tracking/continue.server.ts:changeContinue",
+        "src/lib/playback/service.server.ts:progressPlayback",
+        "src/lib/reading/sessions.server.ts:prepareReading",
+        "src/lib/social/presence.server.ts:completeCheckin",
+        "src/lib/social/presence.server.ts:startCheckin",
+        "src/lib/sync/conflicts.server.ts:resolveConflict",
+        "src/lib/sync/values.server.ts:reconcileProviderValue"
+      ],
+      "evidenceRefs": [
+        "mutation-locks.md#lock-01--account-first-callers-later-enter-policy-admission",
+        "evidence/implementation-mutation-locks-real.json",
+        "probes/real-mutation-locks.ts",
+        "drizzle/0058_feature_controls.sql:4"
+      ],
+      "smallestOption": "Implemented existing lock-only configuration/subject fence before the account lock, preserving later admission and disabled cleanup branches",
+      "alternatives": [
+        "Moving existing admission earlier may change error order; lock-only admission preserves it",
+        "Blanket fencing all account-only writes would add unproved policy contention"
+      ],
+      "acceptance": [
+        "Audited real Continue forms an observed directed global-policy wait cycle; fixed sample does not",
+        "Real Continue transactions roll back; return target preserved",
+        "Queued user-row negative control completes both versions",
+        "Disabled-subject lock-only helper succeeds while existing write admission rejects",
+        "Ten source entry points reviewed; no17-site blanket edits"
+      ],
+      "gaps": [
+        "Only representative Continue concurrency schedule exercised against actual rows",
+        "All conditional route/job schedules are not exhaustively runtime verified",
+        "Controlled protocol timings are not natural UI latency or universal gains"
+      ]
+    },
+    {
+      "id": "LOCK-02",
+      "priority": "P2",
+      "title": "Concurrent token creators upgrade shared user locks for quota serialization",
+      "confidence": "high",
+      "state": "implemented and actual-data concurrency/quota verified",
+      "implementationApplied": true,
+      "sharedOwner": "src/lib/server/public-api/tokens.server.ts createApiToken",
+      "consumers": [
+        "Every authenticated API token creation, its20-token quota and concurrent public mutations on the same account"
+      ],
+      "evidenceRefs": [
+        "mutation-locks.md#lock-02--token-quota-upgrades-a-shared-user-row",
+        "evidence/implementation-mutation-locks-real.json",
+        "probes/real-mutation-locks.ts",
+        "src/lib/server/public-api/tokens.server.ts:26"
+      ],
+      "smallestOption": "Implemented policy\u2192existing account advisory mutex\u2192fresh nonexclusive active-user read",
+      "alternatives": [
+        "A new quota lock or retry layer adds an unnecessary owner"
+      ],
+      "acceptance": [
+        "Audited real concurrent creators produce40P01; fixed creators both succeed",
+        "At19active tokens exactly1issuance succeeds,1reports token_limit and count reaches20",
+        "Temporary private-clone auth metadata removed and exact original full token row digest restored",
+        "Zero external provider calls"
+      ],
+      "gaps": [
+        "Broader issuer/password/role revocation schedules remain in existing auth acceptance scope"
+      ]
+    },
+    {
+      "id": "LOCK-03",
+      "priority": "P2",
+      "title": "Steam ownership publication holds a connection before nested account admission",
+      "confidence": "high observed source acquisition sequence; same-Steam-connection counterpart unverified",
+      "state": "source ordering candidate; same-connection counterpart and runtime cycle unverified; no implementation",
+      "implementationApplied": false,
+      "sharedOwner": "providers/steam/sync.server.ts ownership chunk transaction and assertAccount",
+      "consumers": [
+        "Steam first ownership collect publication",
+        "Concrete account-first commands requiring the same provider connection"
+      ],
+      "evidenceRefs": [
+        "mutation-locks.md#lock-03--steam-connection-precedes-nested-account-admission",
+        "src/lib/providers/steam/sync.server.ts:18",
+        "src/lib/providers/steam/sync.server.ts:78"
+      ],
+      "smallestOption": "Prove exact connection/account wait graph, then consider policy/account at ownership chunk entry before assertAccount while retaining connection\u2192job attempt fencing",
+      "alternatives": [
+        "Do not broaden network-lane locking or change all assertion phases without tracing them"
+      ],
+      "acceptance": [
+        "Actual connection/account cycle or explicit data gap",
+        "New ownership branch, reconnect/reset/stale attempt and immutable cursor contracts preserved"
+      ],
+      "gaps": [
+        "Existing1144-game snapshot probe refreshed existing owned states; it did not enter first-ownership tracking",
+        "No actual connection/account cycle yet captured",
+        "Opposite account\u2192connection owners are usually Jellyfin/Trakt/Seerr-specific; a real same-Steam-connection counterpart has not been established",
+        "deleteUser user-row\u2192connection cascade suggests a distinct user-row/connection interaction requiring separate proof"
+      ]
+    },
+    {
+      "id": "LOCK-04",
+      "priority": "P2",
+      "title": "Social commands lock friendship rows before later policy admission",
+      "confidence": "high source inversion; runtime consequence unverified",
+      "state": "source-confirmed order inversion; runtime unreproduced; no implementation",
+      "implementationApplied": false,
+      "sharedOwner": "social/service.server.ts friendship and recommendation command transactions",
+      "consumers": [
+        "Accept friendship",
+        "Save recommendation",
+        "Recommendation delivery with opposite policy\u2192friendship order"
+      ],
+      "evidenceRefs": [
+        "mutation-locks.md#lock-04--social-row-locks-precede-nested-policy-admission",
+        "src/lib/social/service.server.ts:48",
+        "src/lib/social/service.server.ts:56",
+        "src/lib/social/service.server.ts:103",
+        "src/lib/social/service.server.ts:120",
+        "src/lib/social/service.server.ts:128"
+      ],
+      "smallestOption": "Prove actual row/policy wait graph, then add lock-only admission before domain row locks with coherent participant identity revalidation",
+      "alternatives": [
+        "Do not reject disabled-feature dismiss/remove cleanup",
+        "Do not introduce unordered multi-user row upgrades"
+      ],
+      "acceptance": [
+        "Existing actual friendship/recommendation rows or explicit actual-data gap",
+        "Preserve actor/state/privacy/notification behavior and cleanup"
+      ],
+      "gaps": [
+        "No actual social row/policy concurrency schedule executed",
+        "Multi-subject identity and row-order plan needs independent review before implementation"
+      ]
+    }
+  ],
+  "accountLockInventory": {
+    "reference": "pre-LOCK implementation tree, including earlier DATA01/02 changes; not an immutable audited-HEAD source census",
+    "preChangeSites": 39,
+    "preChangeFiles": 23,
+    "currentSites": 40,
+    "currentFiles": 24,
+    "classificationBoundary": "TypeScript direct/callback graph plus repository SQL search and actual private-clone pg_proc/trigger inventory. Independently modified deployed schemas, dynamic SQL, cascades and non-policy row locks remain separate review boundaries.",
+    "sqlEvidenceRefs": [
+      "evidence/implementation-mutation-locks-real.json",
+      "drizzle/0058_feature_controls.sql:4"
+    ],
+    "sites": [
+      {
+        "path": "src/lib/application/feature-transition.server.ts",
+        "line": 33,
+        "function": "reconcileFeatures",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/core/lists/sequence.server.ts",
+        "line": 186,
+        "function": "restartPlaylist",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/core/lists/service.server.ts",
+        "line": 40,
+        "function": "createList",
+        "preChangeClassification": "inverted",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-01"
+      },
+      {
+        "path": "src/lib/core/lists/service.server.ts",
+        "line": 65,
+        "function": "updateList",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/core/lists/service.server.ts",
+        "line": 80,
+        "function": "deleteList",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/core/lists/service.server.ts",
+        "line": 143,
+        "function": "addListItem",
+        "preChangeClassification": "inverted",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-01"
+      },
+      {
+        "path": "src/lib/core/lists/service.server.ts",
+        "line": 183,
+        "function": "removeListItem",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/core/lists/service.server.ts",
+        "line": 213,
+        "function": "reorderList",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/core/lists/service.server.ts",
+        "line": 244,
+        "function": "moveListItem",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/core/ratings/service.server.ts",
+        "line": 33,
+        "function": "rateInTransaction",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/core/reading/service.server.ts",
+        "line": 41,
+        "function": "writeReadingInTransaction",
+        "preChangeClassification": "inverted",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-01"
+      },
+      {
+        "path": "src/lib/core/tracking/continue.server.ts",
+        "line": 55,
+        "function": "changeContinue",
+        "preChangeClassification": "inverted",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-01"
+      },
+      {
+        "path": "src/lib/core/tracking/rewatch.server.ts",
+        "line": 52,
+        "function": "setRewatch",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/core/tracking/service.server.ts",
+        "line": 506,
+        "function": "trackInTransaction",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/core/tracking/service.server.ts",
+        "line": 551,
+        "function": "bulkTrackInTransaction",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/experiments/planning.server.ts",
+        "line": 23,
+        "function": "createPlan",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/music/persistence.server.ts",
+        "line": 176,
+        "function": "logMusic",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/playback/service.server.ts",
+        "line": 390,
+        "function": "preparePlayback",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/playback/service.server.ts",
+        "line": 468,
+        "function": "progressPlayback",
+        "preChangeClassification": "inverted",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-01"
+      },
+      {
+        "path": "src/lib/providers/seerr/requests.server.ts",
+        "line": 299,
+        "function": "requestMedia",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/reading/sessions.server.ts",
+        "line": 68,
+        "function": "prepareReading",
+        "preChangeClassification": "inverted",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-01"
+      },
+      {
+        "path": "src/lib/reading/sessions.server.ts",
+        "line": 100,
+        "function": "moveReading",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/server/public-api/mutations.server.ts",
+        "line": 46,
+        "function": "publicMutation",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/server/public-api/tokens.server.ts",
+        "line": 27,
+        "function": "createApiToken",
+        "preChangeClassification": "new-in-LOCK-02",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-02"
+      },
+      {
+        "path": "src/lib/server/public-api/webhooks.server.ts",
+        "line": 27,
+        "function": "createWebhook",
+        "preChangeClassification": "policy-first",
+        "currentClassification": "policy-first",
+        "finding": null
+      },
+      {
+        "path": "src/lib/sharing/service.server.ts",
+        "line": 30,
+        "function": "createShare",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/social/presence.server.ts",
+        "line": 32,
+        "function": "startCheckin",
+        "preChangeClassification": "inverted",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-01"
+      },
+      {
+        "path": "src/lib/social/presence.server.ts",
+        "line": 47,
+        "function": "cancelCheckin",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/social/presence.server.ts",
+        "line": 57,
+        "function": "completeCheckin",
+        "preChangeClassification": "inverted",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-01"
+      },
+      {
+        "path": "src/lib/sync/conflicts.server.ts",
+        "line": 137,
+        "function": "refreshConflictStatus",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/sync/conflicts.server.ts",
+        "line": 185,
+        "function": "resolveConflict",
+        "preChangeClassification": "inverted",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-01"
+      },
+      {
+        "path": "src/lib/sync/history-removal.server.ts",
+        "line": 34,
+        "function": "removeHistory",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/sync/jellyfin-playback.server.ts",
+        "line": 19,
+        "function": "unchangedJellyfinPlayback",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/sync/jellyfin-playback.server.ts",
+        "line": 77,
+        "function": "seedEmptyJellyfinPlayback",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/sync/list-values.server.ts",
+        "line": 134,
+        "function": "reconcileProviderList",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/sync/list-values.server.ts",
+        "line": 247,
+        "function": "acknowledgeProviderList",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/sync/trakt-lists.server.ts",
+        "line": 104,
+        "function": "exportTraktListToAdapter",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/sync/trakt-lists.server.ts",
+        "line": 191,
+        "function": "deleteListWithExports",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      },
+      {
+        "path": "src/lib/sync/values.server.ts",
+        "line": 163,
+        "function": "reconcileProviderValue",
+        "preChangeClassification": "inverted",
+        "currentClassification": "policy-first",
+        "finding": "LOCK-01"
+      },
+      {
+        "path": "src/lib/sync/values.server.ts",
+        "line": 330,
+        "function": "acknowledgeProviderValue",
+        "preChangeClassification": "no-later-policy-in-reviewed-TS-graph",
+        "currentClassification": "no-later-policy-in-reviewed-TS-graph",
+        "finding": null
+      }
+    ]
+  }
+}

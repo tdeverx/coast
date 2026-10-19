@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "reportRef": "implementation-lazy-recovery.md",
+  "committed": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "databaseMutations": false,
+  "changes": [
+    {
+      "findingId": "FRT-04",
+      "state": "implemented_explicit_reload_and_late_close_actual_native_iab_verified; normal_dev_acceptance_pending",
+      "sharedOwner": "existing createResource, action-feedback.watch and client-context.reportImportFailure; existing playback startup teardown",
+      "files": [
+        "src/lib/ui/action-feedback.svelte.ts",
+        "src/lib/ui/client-context.ts",
+        "src/lib/ui/components/NotificationToasts.svelte",
+        "src/lib/ui/components/Dialog.svelte",
+        "src/routes/+layout.svelte",
+        "src/routes/for-you/+page.svelte",
+        "src/lib/ui/components/PersistentPlayer.svelte"
+      ],
+      "sourcePins": {
+        "src/lib/ui/action-feedback.svelte.ts": "8bf2a5e699eff2dff0180ac316987028a4ad82e611e5ae4b878d9791523b5734",
+        "src/lib/ui/client-context.ts": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "src/lib/ui/components/NotificationToasts.svelte": "ef93521ea4fee3b7b490227c0640c0382a81b6a7005a0371b9a19aeba2e9e419",
+        "src/lib/ui/components/Dialog.svelte": "1e4df07f144e6fd5bf1f5429283849f6e72b1c7d99a4f114b4ad770ae1c3ffbf",
+        "src/routes/+layout.svelte": "484247b5dd94e7bdd57daa87cc158afb86281d6f8a419a1f063cad4628e62c73",
+        "src/routes/for-you/+page.svelte": "19f46f003f2678b950b89148b3423455bd6f888fc6e37b46a8e7f46672f529b0",
+        "src/lib/ui/components/PersistentPlayer.svelte": "324658e123153e41c98f990bb3c2ac119757fea9b172e9dcd4caecde71023bd5",
+        "tests/lazy-import-lifetimes.test.ts": "784bad887b8659c6ae66303b82920a7b737f7bc9fc9d3b24e7478ca0457e1c15",
+        "tests/ui-feedback.test.ts": "e01e419cfd90f5c388961ee76c6caed6ac07a5df9d8f1ba011742f73205b77f1"
+      },
+      "consumers": [
+        "root Reader",
+        "root StreamsPanel",
+        "root MediaDetailPanel",
+        "root NotificationInbox",
+        "root FriendsPanel",
+        "For You overview DynamicFeed",
+        "personal/shared/party HLS module import",
+        "NotificationToasts global feedback host",
+        "Dialog modal feedback host"
+      ],
+      "preserved": [
+        "successful component/module caches",
+        "default Retry and Undo actions",
+        "no automatic reactive module retry loop",
+        "same-session HLS setup/attach retry and immediate idempotent teardown",
+        "other playback failures retain switchEdition",
+        "reader engine/file/bookmark ownership",
+        "medium detail navigation/payload ownership",
+        "preview isolation",
+        "scoped watch publication and destruction cleanup"
+      ],
+      "verification": {
+        "runtime": "Bun1.4.3 / Svelte5.57.1",
+        "focused": {
+          "passed": 26,
+          "failed": 0,
+          "assertions": 177,
+          "files": 4,
+          "fullClientAndServerTemplateCompilations": 10,
+          "receipt": "evidence/implementation-lazy-recovery-tests.txt"
+        },
+        "priorFocused": {
+          "passed": 22,
+          "failed": 0,
+          "assertions": 127,
+          "receipt": "evidence/before-import-reload-tests.txt",
+          "boundary": "Prior module transport mocks appeared to recover by calling import again; the subsequent actual built-browser trial disproved that recovery assumption."
+        },
+        "actualBefore": {
+          "sameDocumentRetryRecovered": false,
+          "manualDocumentReloadRecoveredActualFriendRows": 3,
+          "reopenCacheRetained": true,
+          "warningsErrors": 0,
+          "stylesheetSheetPropertyProbe": "inconclusive; false exposure is not a stylesheet failure claim",
+          "uiReceipt": "evidence/implementation-lazy-browser-before-ui.json",
+          "serverReceipt": "evidence/implementation-lazy-browser-before-server.json",
+          "runnerReceipt": "evidence/implementation-lazy-browser-before-runner.json"
+        },
+        "initialFullCheck": {
+          "state": "historical_failed_preflight_unrelated_concurrent_test_typing",
+          "path": "tests/work-menu-scope.test.ts:46",
+          "receipt": "evidence/implementation-lazy-recovery-check-preflight.txt"
+        },
+        "currentFullCheckBuild": {
+          "owner": "root",
+          "unitPassed": 757,
+          "guardedSkips": 703,
+          "failed": 0,
+          "checkErrors": 0,
+          "checkWarnings": 0,
+          "productionBuild": "passed",
+          "boundary": "Common gates reported by root after the correction; guarded skips are not passes."
+        },
+        "actualBuiltExplicitReload": {
+          "state": "passed_native_in_app_browser_on_actual_copied_data",
+          "failureActionLabel": "Reload page",
+          "reloadButtons": 1,
+          "retryButtons": 0,
+          "actualFriendRows": 3,
+          "computedHeaderActionsDisplay": "flex",
+          "reopenCacheRetained": true,
+          "warningsErrors": 0,
+          "uiReceipt": "evidence/implementation-lazy-browser-final-ui.json",
+          "serverReceipt": "evidence/implementation-lazy-browser-final-server.json",
+          "runnerReceipt": "evidence/implementation-lazy-browser-final-runner.json",
+          "invalidProbeRetained": "Repeated Header Friends click did not withdraw demand; that attempted late-close check is not counted as acceptance."
+        },
+        "actualNewSignedInUiAcceptance": "pending_root_browser",
+        "independentReview": {
+          "reviewers": [
+            "playback_readers_audit",
+            "root"
+          ],
+          "materialBlockersRemaining": 0,
+          "scope": "current narrow source diff; no repeat tests/database by reviewer"
+        },
+        "actualLateClose": {
+          "state": "passed_separate_fresh_origin_native_in_app_browser",
+          "demandWithdrawnByBrowserBackBefore503Release": true,
+          "friendsQueryBeforeRelease": false,
+          "lateFailureFeedback": false,
+          "reopenOffersExplicitReload": true,
+          "actualFriendRowsAfterReload": 3,
+          "computedHeaderActionsDisplay": "flex",
+          "warningsErrors": 0,
+          "uiReceipt": "evidence/implementation-lazy-browser-late-ui.json",
+          "serverReceipt": "evidence/implementation-lazy-browser-late-server.json",
+          "runnerReceipt": "evidence/implementation-lazy-browser-late-runner.json"
+        },
+        "actualAssetIdentity": {
+          "contentEncoding": "br",
+          "javascript": {
+            "status": 200,
+            "contentType": "text/javascript",
+            "contentEncoding": "br",
+            "encodedBytes": 3100,
+            "encodedSha256": "b79ebeeca0fe38dcbac6d710c850a7a82e8d65efb50e4dade4ae595470775d58",
+            "decodedBytes": 9155,
+            "decodedSha256": "0899835c98990b8e3aad855f172e6aaea43af6a63ca242bb69b42502d640770e",
+            "sourceSha256": "0899835c98990b8e3aad855f172e6aaea43af6a63ca242bb69b42502d640770e",
+            "decodedMatchesSource": true
+          },
+          "css": {
+            "status": 200,
+            "contentType": "text/css",
+            "contentEncoding": "br",
+            "encodedBytes": 225,
+            "encodedSha256": "b22b0e657f7832624d388c6d3f41bdc183bfe652dac72c856d911de10c8385e0",
+            "decodedBytes": 606,
+            "decodedSha256": "cf6fca7301012f31c69658c017acdc8186a314189da313cc1d6f4b82f7f6e764",
+            "sourceSha256": "cf6fca7301012f31c69658c017acdc8186a314189da313cc1d6f4b82f7f6e764",
+            "decodedMatchesSource": true
+          },
+          "boundary": "Encoded Brotli response bytes differ from decoded build-file bytes; decoded SHA256 matches actual build file in each case. No CSS failure was induced."
+        },
+        "privateTrialCleanup": {
+          "trials": 3,
+          "everyCreatedSessionRemoved": true,
+          "everyFreshCloneDropped": true,
+          "everyPrivateRuntimeRemoved": true,
+          "everyServerStopped": true,
+          "normalDatabaseTouched": false,
+          "sourceCloneMutated": false
+        }
+      },
+      "actionContract": {
+        "label": "Reload page",
+        "invocation": "explicit user action only",
+        "currentReadGuard": true,
+        "previewReload": false,
+        "automaticReload": false,
+        "cacheBusting": false,
+        "hlsClassification": "Only rejection from import(hls.js) marks module failure; setup/attach exception keeps same-session Retry."
+      },
+      "boundaries": [
+        "Resource cancellation fences publication, not ES module network work.",
+        "Controlled import/media fixtures and fake reload spy are supplementary source contracts, not native browser retry proof.",
+        "The before built trial used copied actual catalogue/accounts and a single intentional503; it is an induced transport fault, not a natural provider incident.",
+        "No schema/provider/normal database changes by this correction.",
+        "Reload is document navigation and does not promise uninterrupted active playback or restoration of an unsaved transient UI.",
+        "Actual explicit reload, late-close publication and JS/CSS identity passed only in the native in-app browser with a controlled same-hash503 on copied actual data; not version-skew, every browser, real HLS or normal5173 acceptance."
+      ],
+      "gaps": [
+        "Normal signed-in development5173 acceptance remains pending root; native in-app-browser copied-data trials do not replace it.",
+        "Other browsers, version-skew deployment and an induced CSS failure are unverified; successful CSS response identity is not a CSS failure-recovery proof.",
+        "Actual HLS import failure/reload, codec/native pause-load/shared-party trial.",
+        "Chart/editor retained rejected module promises and nested domain import recovery remain separate.",
+        "No latency, native module network cancellation or heap measurement."
+      ],
+      "evidenceRefs": [
+        "evidence/implementation-lazy-recovery-tests.txt",
+        "evidence/before-import-reload-tests.txt",
+        "evidence/implementation-lazy-browser-before-ui.json",
+        "evidence/implementation-lazy-browser-before-server.json",
+        "evidence/implementation-lazy-browser-before-runner.json",
+        "evidence/implementation-lazy-browser-final-ui.json",
+        "evidence/implementation-lazy-browser-final-server.json",
+        "evidence/implementation-lazy-browser-final-runner.json",
+        "evidence/implementation-lazy-browser-late-ui.json",
+        "evidence/implementation-lazy-browser-late-server.json",
+        "evidence/implementation-lazy-browser-late-runner.json"
+      ]
+    }
+  ]
+}

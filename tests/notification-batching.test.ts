@@ -24,7 +24,7 @@ function fixture(count:number){
  const counts={policy:0,reads:0,writes:0,maxRead:0,maxWrite:0};
  let policy={allowNotificationSilencing:true,notificationLevel:'normal'},lastDatabase:unknown;
  const query=async(text:string,params:unknown[])=>{
-  if(text.includes('SELECT id, settings FROM users')){
+  if(text.startsWith('SELECT id,')&&text.includes('FROM users')){
    counts.reads++;
    const selected=[...users].filter(([key,user])=>text.includes('disabled = FALSE')?!user.disabled&&(!text.includes('AND id >')||key>String(params[0])):params.includes(key));
    const page=selected.slice(0,text.includes('LIMIT')?Number(params.at(-1)):selected.length);

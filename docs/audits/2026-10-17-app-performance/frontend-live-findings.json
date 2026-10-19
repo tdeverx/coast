@@ -1,0 +1,110 @@
+{
+  "commit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "count": 1,
+  "boundary": "Actual signed-in normal-development supplementary finding; report remains incomplete for untested live families",
+  "findings": [
+    {
+      "id": "LIVE-01",
+      "priority": "P1",
+      "title": "Section-to-detail replacement invalidates an outgoing Shelf source and blocks navigation",
+      "workstream": "W03",
+      "relatedWorkstreams": [
+        "W05",
+        "W09"
+      ],
+      "sharedOwner": "DetailPanel resolved render identity/payload, typed Shelf source lifetime and detail-section host publication",
+      "consumers": [
+        "All shallow detail and section transitions",
+        "Library/Progress/For You/Discovery/Social/Journal/Search/List/Credits/Detail Shelf source families",
+        "Overlay heading/segments/controls",
+        "Back/Forward/close/reopen and active playback/reader state"
+      ],
+      "state": "Actual signed-in normal-development failure reproduced twice, including after hard reload; source and compiler contract confirmed; fix not applied",
+      "evidenceClass": "runtime-reproduced-actual-data; source-and-installed-compiler-confirmed",
+      "confidence": "High for observed failure and source contract breach; intermediate live reactive reads not instrumented",
+      "evidenceRefs": [
+        "frontend-live.md",
+        "evidence/normal-dev-row-transition.json"
+      ],
+      "sourceRefs": [
+        {
+          "file": "src/lib/media/DetailPanel.svelte",
+          "lines": [
+            55,
+            58,
+            70,
+            78
+          ]
+        },
+        {
+          "file": "src/lib/ui/pages/SectionDetails.svelte",
+          "lines": [
+            15,
+            30,
+            34
+          ]
+        },
+        {
+          "file": "src/lib/ui/components/Shelf.svelte",
+          "lines": [
+            98
+          ]
+        },
+        {
+          "file": "src/lib/ui/shelves/index.ts",
+          "lines": [
+            22,
+            35
+          ]
+        },
+        {
+          "file": "src/lib/ui/shelves/library.svelte.ts",
+          "lines": [
+            40,
+            54
+          ]
+        },
+        {
+          "file": "src/lib/ui/detail-section.svelte.ts",
+          "lines": [
+            9,
+            14
+          ]
+        },
+        {
+          "file": "src/lib/ui/components/DetailOverlay.svelte",
+          "lines": [
+            11,
+            19
+          ]
+        }
+      ],
+      "rootCause": "Outgoing keyed RowDetails props remain live getters over a newly shaped shared detail union. Its href and derived source disappear before every outgoing consumer is disposed; the once-created Shelf adapter still dereferences its asserted non-null source.",
+      "smallestOption": "Publish a coherent per-identity resolved render snapshot in the existing detail owner; keep outgoing component props and section presentation bound to it until disposal, with a separate pending target and existing freshness/access controls.",
+      "alternatives": [
+        "Where source replacement is intentional, enforce fixed source-family/identity ownership at the sourced-Shelf component boundary and dispose/recreate coherently without resetting equivalent same-owner state."
+      ],
+      "rejectedPartialRepairs": [
+        "Optional chaining one preview dereference",
+        "Defaulting to an unrelated medium configuration",
+        "Timer-delayed replacement",
+        "Catching the render exception without restoring ownership"
+      ],
+      "acceptance": [
+        "Repeat actual 50-link Library Listen section to real music detail with zero uncaught errors and correct body",
+        "Back/Forward/close/reopen preserves filters/page/scroll/history and expected detail",
+        "Actual section/item transitions across every enabled medium and all source families; record absent real families as gaps",
+        "Pending response/import replacement and teardown never expose undefined/wrong-family configuration to outgoing adapters; late reads cannot publish",
+        "Immediate account/feature withdrawal preserves privacy; coherent snapshots do not extend authorization",
+        "Personal/party playback, reader visibility, editions, focus and overlay controls remain correct"
+      ],
+      "gaps": [
+        "No fix or after-change acceptance",
+        "Other source families/directions not yet reproduced",
+        "No live per-derived-read instrumentation"
+      ],
+      "implementationApplied": false,
+      "crossConsumerAcceptanceRequired": true
+    }
+  ]
+}

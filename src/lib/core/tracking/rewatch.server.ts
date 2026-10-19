@@ -44,15 +44,18 @@ export async function setRewatch(userId: string, raw: unknown) {
     .where(eq(media.id, input.mediaId));
   if (!item || !['movie', 'show', 'season', 'episode', 'collection'].includes(item.kind))
     throw new DomainError('This title cannot be rewatched.');
-  if (!startedAt) {
-    await db
-      .delete(rewatches)
-      .where(and(eq(rewatches.userId, userId), eq(rewatches.mediaId, input.mediaId)));
-    return;
-  }
   await db.transaction(async (tx) => {
-    await requireWorkFeature(tx,userId,input.mediaId);
+    // Clearing remains available after a medium is disabled, but all boundary
+    // writes share the policy/account order held by bulk tracking's census.
+    if (startedAt) await requireWorkFeature(tx,userId,input.mediaId);
+    else await tx.execute(sql`select coast_lock_feature_policy(${userId}::uuid)`);
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`);
+    if (!startedAt) {
+      await tx
+        .delete(rewatches)
+        .where(and(eq(rewatches.userId, userId), eq(rewatches.mediaId, input.mediaId)));
+      return;
+    }
     // A whole-show run supersedes old season/episode boundaries, never historical watches.
     if (item.kind === 'show')
       await tx

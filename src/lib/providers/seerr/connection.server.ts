@@ -30,9 +30,11 @@ export async function assertSeerrAccount(tx:Tx,scope:SeerrAccountScope) {
   return connection;
 }
 
-export async function getSeerr(userId: string, instanceId: string,expected?:{connectionId:string;accountGeneration:string}) {
+export async function getSeerr(userId: string, instanceId: string,expected?:{connectionId:string;accountGeneration:string},signal?:AbortSignal) {
+  signal?.throwIfAborted();
   if (!(await getConfig()).enableRequests)
     throw new Error('Requests are disabled by the administrator.');
+  signal?.throwIfAborted();
   const instance = await getInstance(instanceId, 'seerr');
   if (!instance.credentials || !instance.linkedMediaInstanceId)
     throw new Error('Seerr is not configured.');
@@ -40,6 +42,7 @@ export async function getSeerr(userId: string, instanceId: string,expected?:{con
     v.object({ apiKey: v.string() }),
     JSON.parse(await decryptCredential(instance.credentials))
   );
+  signal?.throwIfAborted();
   // Only a verified linked Jellyfin account can establish the Seerr identity. Never accept an arbitrary Seerr user ID.
   const [jellyfin] = await getDb()
     .select()
@@ -53,9 +56,11 @@ export async function getSeerr(userId: string, instanceId: string,expected?:{con
     );
   if (!jellyfin?.externalUserId)
     throw new Error('Connect the associated Jellyfin account before making requests.');
-  const admin = new SeerrAdapter(instanceTransport(instance), credentials.apiKey);
+  signal?.throwIfAborted();
+  const transport=instanceTransport(instance,signal);
+  const admin = new SeerrAdapter(transport, credentials.apiKey);
   const mapped = await admin.jellyfinUser(jellyfin.externalUserId);
-  const adapter = new SeerrAdapter(instanceTransport(instance), credentials.apiKey, mapped.id);
+  const adapter = new SeerrAdapter(transport, credentials.apiKey, mapped.id);
   const account = await adapter.user();
   if (account.id !== mapped.id)
     throw new Error('Seerr did not preserve the linked account identity.');
@@ -73,6 +78,7 @@ export async function getSeerr(userId: string, instanceId: string,expected?:{con
   // A queued task must never establish or remap a replacement account while resolving its identity.
   if(expected&&(!existing||existing.id!==expected.connectionId||existing.accountGeneration!==expected.accountGeneration))
     throw new PermanentActionError('The connected request account changed. Run the task for the current account.');
+  signal?.throwIfAborted();
   const saved = existing
     ? existing
     : await saveConnection(
@@ -91,6 +97,7 @@ export async function getSeerr(userId: string, instanceId: string,expected?:{con
     linkedGeneration:jellyfin.accountGeneration,linkedExternalUserId:jellyfin.externalUserId};
   await getDb().transaction(async tx=>{
     await assertSeerrAccount(tx,scope);
+    signal?.throwIfAborted();
     await tx
     .update(providerConnections)
     .set({

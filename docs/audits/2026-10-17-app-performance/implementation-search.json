@@ -1,0 +1,561 @@
+{
+  "schemaVersion": 1,
+  "updated": "2026-10-18",
+  "finding": "FRT-01",
+  "baselineCommit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "baselineRouteSha256": "7ee91ad7742e72471c4f63232eb9ce71f5c9c514d11e6c5d8df217f21b679aad",
+  "status": "Implemented; 14 focused correctness tests pass. All local outputs match in 15 actual route pairs. Normal rendered acceptance remains coordinator-owned.",
+  "sharedOwner": "searchSelection/searchDemand/searchSelectionUrl +existing SearchSource and search route/page",
+  "consumers": {
+    "server": "Search route family admission/localinitial+streamed provider slots",
+    "clientRows": [
+      "Available independent type/scope",
+      "Unavailable independent type/scope"
+    ],
+    "preview": "existing SearchSource local selection retained",
+    "public": "existing public screen catalogue only"
+  },
+  "applicationFiles": [
+    {
+      "path": "src/lib/search-selection.ts",
+      "sha256": "43e482049fd7a724d795bc0c0d8d7010665f371952874831dcad06ddb8dbbefc"
+    },
+    {
+      "path": "src/routes/search/+page.server.ts",
+      "sha256": "fe45bd8472872c194009a851975ca7b7d983c9423ced0d25deda25c9146d6bfa"
+    },
+    {
+      "path": "src/routes/search/+page.svelte",
+      "sha256": "66d2346e11d863d3ead2cdc783c9bb37c5813f01cd98e58e42456d3ff25133fb"
+    },
+    {
+      "path": "src/lib/ui/shelves/search.svelte.ts",
+      "sha256": "c259c437cab143eebe0d2268bf095767b689bd90af658e015aaea699805f2875"
+    }
+  ],
+  "testFiles": [
+    {
+      "path": "tests/search-selection.test.ts",
+      "sha256": "5eb55b60975bda42f16d0b74c0d3f14b205f1681a830502a239e3d6766b4d605"
+    },
+    {
+      "path": "tests/ui-search.test.ts",
+      "sha256": "1d518e5cf833c0b1749194ca4c0d4f1ff6077e588d142a3d8eb35e6dcb9201db"
+    },
+    {
+      "path": "tests/search-demand.test.ts",
+      "sha256": "801956e45f10dad85f62267ce909a2298db42cca790aca2b67ab0c2d63093ffb"
+    },
+    {
+      "path": "tests/search-page-lifetime.test.ts",
+      "sha256": "13930e0147b89508bba30b6f63e036f482cc8d568d1da5b4bc47dc24dd2ee498"
+    }
+  ],
+  "parameters": {
+    "availableType": "Independent Available row kind",
+    "unavailableType": "Independent Unavailable row kind",
+    "omitted": "Inherit existing view/type or explicit reading-kind defaults",
+    "all": "Explicit global All for that row",
+    "existingReadingContract": "Explicit view=read preserves page/subtype. New conflicting reading row overrides broaden the required reading-type union."
+  },
+  "navigation": {
+    "rowChange": "Push history",
+    "queryDebounce": "Replace current history entry",
+    "pending": "Compose latest URL intent; monotonic owner revision; retain only live pending target revisions",
+    "fences": [
+      "beforeNavigate Back/external navigation",
+      "Latest goto success/failure",
+      "Component disposal"
+    ],
+    "resetOnChangedSelectionOrQuery": [
+      "page",
+      "scope"
+    ]
+  },
+  "actualEvidence": {
+    "path": "evidence/implementation-search-actual.json",
+    "actualOwners": 1,
+    "routePairs": 15,
+    "rowComparisons": 30,
+    "familyComparisons": 30,
+    "allEquivalent": true,
+    "sourceUnchanged": true,
+    "trackedSourceHashes": {
+      "src/lib/search-selection.ts": "43e482049fd7a724d795bc0c0d8d7010665f371952874831dcad06ddb8dbbefc",
+      "src/routes/search/+page.server.ts": "fe45bd8472872c194009a851975ca7b7d983c9423ced0d25deda25c9146d6bfa",
+      "src/routes/search/+page.svelte": "66d2346e11d863d3ead2cdc783c9bb37c5813f01cd98e58e42456d3ff25133fb",
+      "src/lib/ui/shelves/search.svelte.ts": "c259c437cab143eebe0d2268bf095767b689bd90af658e015aaea699805f2875",
+      "src/lib/server/queries/search.ts": "4ae0cf1037b278b84b09dfb081a7f34f84a0ceacea8630e241b4db20d8cef067",
+      "src/lib/server/queries/media.ts": "62494341598bc41b01cd4847bf9cd2fc21e1fe9e9f81fcec62cd1c595f19e90b",
+      "src/lib/catalogue/service.server.ts": "0354e7ec7ccf63d7c22b06b764f6eb362a9f47776ed6d78baf09612c3bab1f6b",
+      "src/lib/collection/query.server.ts": "65c64495e6057b4af63c01cef0120e4563e134855c3783f494095601fe59e043",
+      "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+      "src/lib/providers/reading.server.ts": "7b8e7344d59090b73ee674a16fcbc7708c67857f7df47f69cf8568444c85c94f"
+    },
+    "actualCohorts": [
+      {
+        "category": "comic",
+        "kind": "comic"
+      },
+      {
+        "category": "game",
+        "kind": "game"
+      },
+      {
+        "category": "music",
+        "kind": "album"
+      },
+      {
+        "category": "screen",
+        "kind": "movie"
+      }
+    ],
+    "missingActualCategories": [
+      "book"
+    ],
+    "writeAttempts": 0,
+    "unexpectedFetches": 0,
+    "sessionSettings": [
+      {
+        "timeout": "30s",
+        "read_only": "on"
+      },
+      {
+        "timeout": "30s",
+        "read_only": "on"
+      },
+      {
+        "timeout": "30s",
+        "read_only": "on"
+      },
+      {
+        "timeout": "30s",
+        "read_only": "on"
+      }
+    ]
+  },
+  "resourceResults": [
+    {
+      "category": "comic",
+      "case": "all",
+      "ormBefore": 61,
+      "ormAfter": 61,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {
+        "openlibrary": 1
+      }
+    },
+    {
+      "category": "comic",
+      "case": "view",
+      "ormBefore": 61,
+      "ormAfter": 7,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "readInitial": 1,
+        "read": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {
+        "openlibrary": 1
+      }
+    },
+    {
+      "category": "comic",
+      "case": "type",
+      "ormBefore": 61,
+      "ormAfter": 7,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "readInitial": 1,
+        "read": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {
+        "openlibrary": 1
+      }
+    },
+    {
+      "category": "game",
+      "case": "all",
+      "ormBefore": 52,
+      "ormAfter": 52,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {
+        "openlibrary": 1
+      }
+    },
+    {
+      "category": "game",
+      "case": "view",
+      "ormBefore": 52,
+      "ormAfter": 7,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "play": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {}
+    },
+    {
+      "category": "game",
+      "case": "type",
+      "ormBefore": 52,
+      "ormAfter": 7,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "play": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {}
+    },
+    {
+      "category": "music",
+      "case": "all",
+      "ormBefore": 62,
+      "ormAfter": 62,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {
+        "openlibrary": 1
+      }
+    },
+    {
+      "category": "music",
+      "case": "view",
+      "ormBefore": 62,
+      "ormAfter": 5,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "listen": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {}
+    },
+    {
+      "category": "music",
+      "case": "type",
+      "ormBefore": 62,
+      "ormAfter": 5,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "listen": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {}
+    },
+    {
+      "category": "screen",
+      "case": "all",
+      "ormBefore": 54,
+      "ormAfter": 54,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {
+        "openlibrary": 1
+      }
+    },
+    {
+      "category": "screen",
+      "case": "view",
+      "ormBefore": 54,
+      "ormAfter": 33,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "watchInitial": 1,
+        "watch": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {}
+    },
+    {
+      "category": "screen",
+      "case": "type",
+      "ormBefore": 54,
+      "ormAfter": 33,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "watchInitial": 1,
+        "watch": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {}
+    },
+    {
+      "category": "comic",
+      "case": "independent-watch-read",
+      "ormBefore": 61,
+      "ormAfter": 48,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "read": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {
+        "openlibrary": 1
+      }
+    },
+    {
+      "category": "comic",
+      "case": "scoped-read-plus-watch",
+      "ormBefore": 61,
+      "ormAfter": 48,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "read": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {
+        "openlibrary": 1
+      }
+    },
+    {
+      "category": "music",
+      "case": "independent-listen-play",
+      "ormBefore": 62,
+      "ormAfter": 13,
+      "ownersBefore": {
+        "watchInitial": 1,
+        "readInitial": 1,
+        "watch": 1,
+        "listen": 1,
+        "play": 1,
+        "read": 1
+      },
+      "ownersAfter": {
+        "listen": 1,
+        "play": 1
+      },
+      "transportAdmissionsBefore": {
+        "openlibrary": 1
+      },
+      "transportAdmissionsAfter": {}
+    }
+  ],
+  "measurementBoundary": {
+    "data": "Persisted owner, catalogue and query terms; no fabricated rows, settings or credentials",
+    "equivalence": "Requested kind/scope/availability projection of complete baseline cards plus full admitted-family payloads; order and every field compared in memory then discarded",
+    "providers": "Factory denied before DNS/network; no fabricated provider content. Service/transport admission only; no successful HTTP or remote latency claim",
+    "database": "Explicit read-only and 30s startup settings on the probe pool; SHOW verified on four reserved sessions; no target database defaults changed",
+    "counts": "ORM root/transaction logger; excludes direct Bun SQL",
+    "sizes": "JSON string UTF-16 code units; not HTTP wire bytes",
+    "timing": "One alternating observation per case; no production latency/p95 claim",
+    "baselineDependencies": "Immutable audited route body with shared current query owners"
+  },
+  "focusedTests": {
+    "command": ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/search-selection.test.ts tests/ui-search.test.ts tests/search-demand.test.ts tests/search-page-lifetime.test.ts",
+    "passed": 14,
+    "failed": 0,
+    "assertions": 93,
+    "fixtures": "Correctness only; actual local output/resource evidence is separate."
+  },
+  "remainingAcceptance": [
+    "Coordinator full check/build",
+    "Normal signed-in rendered independent filters, Back and empty-selected All path",
+    "Successful remote providers and remote pagination",
+    "Other actual owners/public-site configurations",
+    "Actual saved books",
+    "Populated music search without provider credentials",
+    "Full provider cancellation ownership"
+  ],
+  "remainingOpportunities": [
+    {
+      "owner": "searchPresentations local music admission",
+      "status": "Source candidate and actual empty album cohort; unchanged under the exact-family-output constraint",
+      "source": [
+        "src/lib/server/queries/search.ts:116",
+        "src/lib/catalogue/overrides/presentation.server.ts:29"
+      ],
+      "observation": "Canonical album-title cohort yielded zero music cards in both versions. The selector sampled all persisted music_works, without joining the chosen owner\u2019s access/availability, so this is not evidence of a lost owned album result. The local viewer-alias predicate is a source candidate; canonical provider behavior, authoritative access and ranking need separate verification."
+    },
+    {
+      "owner": "Admitted subtype queries",
+      "status": "Deferred to result-budget acceptance",
+      "observation": "Pushing kind into capped queries/providers can change selected card membership; broad family caps/ranking are retained."
+    },
+    {
+      "owner": "searchMedia provider ingestion",
+      "status": "Unchanged",
+      "observation": "Successful screen providers may ingest before the catalogue reread; the read-only probe denies providers."
+    }
+  ],
+  "reproduction": {
+    "extractor": "probes/search-baseline.py",
+    "actualProbe": "probes/search-real.ts",
+    "credentialBoundary": "Separately approved in-memory runner only; credentials never enter repository arguments/files",
+    "guard": "COAST_AUDIT_REAL_DATA_CLONE=1 and a coast_audit_fix_actual_* URL",
+    "retainedPortability": "Repository-relative imports; the executed temporary copy used equivalent absolute imports"
+  },
+  "noSchemaDependencyUiRedesignCommitDeployment": true,
+  "acceptanceQualifications": {
+    "musicCohort": "One owner was used for route calls, but the album-title cohort selector sampled all music_works rather than owner-accessible/available works. Zero-card equality is real empty-output coverage, not a verified missing-owned-result failure.",
+    "pendingBack": "The isolated page fixture delivers beforeNavigate explicitly. Installed Kit suppresses it during is_navigating; actual rapid pending-filter\u2192Back\u2192nextfilter remains required and is related to the proposed shared navigation-owner repair.",
+    "navigationProposal": "implementation-navigation.md"
+  }
+}

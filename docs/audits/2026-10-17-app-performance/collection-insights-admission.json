@@ -1,0 +1,223 @@
+{
+  "title": "Early collection title-insights admission",
+  "status": "applied_partial",
+  "canonicalFinding": "DATA-04",
+  "scope": "Shared titleInsights owner returns its existing unsupported-collection null immediately after feature and media existence gates. All consumers benefit; no UI or provider/cache contract is added.",
+  "sourceBefore": {
+    "src/lib/catalogue/details.server.ts": "ab72ccba2d2144bc84b0bed1e14bec87be4cb264eeda56a9a2ba69003d67d567",
+    "src/lib/catalogue/service.server.ts": "c84a162bcf380326f8c02a3ed5fa76f135716fcc5581804a04eb814934986e7a",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/security/credentials.ts": "237630e6a4b83529458c8479afbbd4024be850e5d3fbb74c4fe00e84981326ac",
+    "src/lib/providers/trakt/connection.server.ts": "4a023788bba52b580aa98378d102bbb4e211297fcc59524ae1e08fbff13dd33c",
+    "src/lib/server/utils/provider-cache.ts": "f1befbc9b71a8570abe3846057dd33592ae44a323ab688fdf3a283fd58327770",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "src/routes/api/v1/media/[id]/insights/+server.ts": "a3c28326b5fedc2b8603b2192be888cba681823fa567bea275ae35704b90a077"
+  },
+  "sourcePins": {
+    "src/lib/catalogue/details.server.ts": "dc3ab769b44ef0108824d684de2c5e0b9a468717a95666fedfe14c963bd8b4cf",
+    "src/lib/catalogue/service.server.ts": "c84a162bcf380326f8c02a3ed5fa76f135716fcc5581804a04eb814934986e7a",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/security/credentials.ts": "237630e6a4b83529458c8479afbbd4024be850e5d3fbb74c4fe00e84981326ac",
+    "src/lib/providers/trakt/connection.server.ts": "4a023788bba52b580aa98378d102bbb4e211297fcc59524ae1e08fbff13dd33c",
+    "src/lib/server/utils/provider-cache.ts": "f1befbc9b71a8570abe3846057dd33592ae44a323ab688fdf3a283fd58327770",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/routes/api/v1/media/[id]/insights/+server.ts": "bade050c95206db61a2a53da8e1debd9563760046b874fd824ccda6575805098"
+  },
+  "sourceAfter": {
+    "src/lib/catalogue/details.server.ts": "dc3ab769b44ef0108824d684de2c5e0b9a468717a95666fedfe14c963bd8b4cf",
+    "src/lib/catalogue/service.server.ts": "c84a162bcf380326f8c02a3ed5fa76f135716fcc5581804a04eb814934986e7a",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/security/credentials.ts": "237630e6a4b83529458c8479afbbd4024be850e5d3fbb74c4fe00e84981326ac",
+    "src/lib/providers/trakt/connection.server.ts": "4a023788bba52b580aa98378d102bbb4e211297fcc59524ae1e08fbff13dd33c",
+    "src/lib/server/utils/provider-cache.ts": "f1befbc9b71a8570abe3846057dd33592ae44a323ab688fdf3a283fd58327770",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+    "src/routes/api/v1/media/[id]/insights/+server.ts": "a3c28326b5fedc2b8603b2192be888cba681823fa567bea275ae35704b90a077"
+  },
+  "exactAdoption": {
+    "file": "src/lib/catalogue/details.server.ts",
+    "beforeSha256": "ab72ccba2d2144bc84b0bed1e14bec87be4cb264eeda56a9a2ba69003d67d567",
+    "candidateAndAppliedSha256": "dc3ab769b44ef0108824d684de2c5e0b9a468717a95666fedfe14c963bd8b4cf",
+    "patchSha256": "50bf50f963f7e80668af559944412e6b47cab88fcb01c6c8667812f2807f7f58",
+    "appliedBy": "parent agent after exact baseline/hash/applicability checks",
+    "commonGatesAndNormalAcceptance": "798 common passes/713 guarded skips/zero failures/33,816 assertions; typecheck0/0/build/inventories/style; source-frozen signed-in normal GETs return JSON null for actual collection in both supported sources. Library and collection overview render; final30Tasks paused, zero dialogs/popovers/new warnings/errors."
+  },
+  "contract": {
+    "preserved": [
+      "requireFeature before media lookup",
+      "genuine absent-media service error",
+      "unsupported collection null",
+      "noncollection identity/source/page/adapter/cache/DTO path",
+      "all route and panel callers"
+    ],
+    "changedAdmission": "Collection branch skips unused external identity, viewer region and adapter setup. Unreachable later collection checks removed. Unrelated provider setup errors no longer escape an unsupported-kind null path.",
+    "consumerOwner": "src/lib/catalogue/details.server.ts:titleInsights; existing media insights HTTP route, server API callers and detail presentation callers all share this owner."
+  },
+  "actualProof": {
+    "narrowedStatus": "passed",
+    "completeOutcomePairs": 5,
+    "collectionNullPairs": 4,
+    "service404Pairs": 1,
+    "screenEnabledExistingOwners": 4,
+    "collectionRepresentatives": 1,
+    "largestCollectionMembers": 23,
+    "beforeCollectionOrmStatements": 2,
+    "afterCollectionOrmStatements": 1,
+    "beforeCollectionOrmRows": 2,
+    "afterCollectionOrmRows": 1,
+    "service404StatementsUnchanged": 1,
+    "adapterAdmissions": 0,
+    "externalAttempts": 0,
+    "normalDatabaseTouched": false,
+    "writes": false,
+    "schemaChanges": false,
+    "fixtureRows": false,
+    "rolledBack": true,
+    "poolClosed": true,
+    "sameBackend": true,
+    "taskKeyAbsentAtStartAndEnd": true,
+    "session": {
+      "isolation": "repeatable read",
+      "readOnly": true,
+      "statementTimeout": "30s",
+      "lockTimeout": "1s",
+      "jit": "off",
+      "workMem": "4MB",
+      "maxConnections": 1,
+      "exactDesignatedCloneName": true,
+      "otherClientPreflightCount": 0
+    },
+    "ownerBoundary": "Actual exported owner outcomes using current shared DB/feature/config dependencies. Read-only actual retained clone, no configured successful adapter or provider transport. Counts are ORM execute/returned rows, not wire bytes/CPU/latency.",
+    "receipt": "evidence/collection-insights-admission-narrowed-actual.json"
+  },
+  "actualCensus": {
+    "collections": 413,
+    "withTmdbIdentity": 413,
+    "withoutTmdbIdentity": 0,
+    "enabledTmdbCipherRows": 1,
+    "enabledTraktCipherRows": 1,
+    "actualBlockedScreenOwners": 0,
+    "selection": "Largest and positive-identity representative deduplicated to the same actual 23-member collection. No missing identity or denied owner was fabricated."
+  },
+  "failedExperiment": {
+    "status": "failed_unaccepted",
+    "acceptedComparisons": 0,
+    "probeSha256": "d4edfd3560959e625ebf947fa74f99ce6da653b904bece5678c6a22bc5aa2634",
+    "receiptSha256": "93e2f7fd58e2cf7ba336da3991b77d28fead76ca39f7801f4773a8031844bf5e",
+    "failureCode": "only_documented_isolated_adapter_setup_difference",
+    "actualObservedShape": {
+      "beforeErrorType": "DOMException",
+      "beforeErrorName": "OperationError",
+      "nativeDomException": true,
+      "credentialDecryptStackOrigin": false,
+      "beforeTmdbAdapterAdmissions": 1,
+      "candidateOutcome": "null"
+    },
+    "interpretation": "Strict classifier rejected the first TMDB attempt; no retry or relaxed classifier. This is not configured-provider success, natural app defect, accepted equivalence or a measured gain. Fresh isolated runtime lacked original credential key; no normal key was read/copied.",
+    "cleanupBoundary": "Failed runner did not retain the exact task runtime path. Generated-key existence/cleanup could not be proven; no key bytes read and no inferred nonempty task directory deleted. Narrowed run separately proved no task key generated.",
+    "receipt": "evidence/collection-insights-admission-failed-full.json"
+  },
+  "supplementalControls": {
+    "tests": 5,
+    "assertions": 75,
+    "failed": 0,
+    "kind": "Authored source-derived function protocols with named I/O seams, not actual DB/provider/performance cohorts.",
+    "covers": [
+      "feature and absent-title gate precede guard",
+      "positive/missing identity collection null and omitted work",
+      "controlled broken-adapter setup no longer admitted for unsupported kind",
+      "noncollection movie/show/season/episode TMDB/Trakt argument/return/page dispatch",
+      "missing-identity noncollection behavior"
+    ],
+    "firstSyntaxFailure": "Authored object-brace syntax defect retained with source/note; corrected before 5/75 run, no product defect.",
+    "maintainedFixture": "No new maintained fixture required for this small admission guard; existing tests and exact actual/source-derived evidence retained."
+  },
+  "limits": [
+    "No successful configured TMDB collection path accepted; original first strict failure remains unaccepted.",
+    "No actual missing-identity collection or screen-disabled owner positive cohort exists in this retained corpus.",
+    "Actual nonmedia error is service-level HttpError404 only. Current media insights HTTP route catches it through generic503; no HTTP404 claim or route repair.",
+    "No provider wire/cache/freshness, latency, heap, CPU or WAL gain measured. One ORM identity read/row removed on each verified Trakt null call.",
+    "Default full noncollection DTOs, ranking and privacy unchanged by source review and supplementary protocols; no new live noncollection provider acceptance here.",
+    "Other-client0 is a preflight observation under parent-coordinated lease, not an atomic database exclusivity guarantee.",
+    "Executed scripts bind immutable baseline source pins and private original paths; post-adoption they are historical evidence, not blindly replayable commands. A fresh replay requires explicitly reviewed path/source-pin rebinding."
+  ],
+  "nextAcceptance": [
+    "Configured successful TMDB provider/decryption/cache behavior remains unaccepted; the new normal unsupported-kind null response does not exercise that setup.",
+    "Natural denied-screen and missing-identity collection cohorts are absent. Earlier failed native-error trial stays failed with zero accepted comparisons.",
+    "Default detail paging, cache pagination/freshness and HTTP error delivery remain separate work."
+  ],
+  "artifactPins": {
+    "candidates/collection-insights-admission/authored-controls-first-syntax-failure.ts.txt": "b5eb9e2bd7d42ccdabc0b5b4c150c3b532662be1a76663e31c34757be53df306",
+    "candidates/collection-insights-admission/authored-controls-syntax-note.txt": "6ba786c7b0e9a1eb3744d24b8d6a82ea4aedd353bc394ff56da29a0b30e89c59",
+    "candidates/collection-insights-admission/authored-controls.test.ts.txt": "00a49a5df79eaa9c91341512f96c68e31cd65c28a4136e399094382409888b79",
+    "candidates/collection-insights-admission/details.before.ts.txt": "ab72ccba2d2144bc84b0bed1e14bec87be4cb264eeda56a9a2ba69003d67d567",
+    "candidates/collection-insights-admission/details.candidate.ts.txt": "dc3ab769b44ef0108824d684de2c5e0b9a468717a95666fedfe14c963bd8b4cf",
+    "candidates/collection-insights-admission/early-collection.patch": "50bf50f963f7e80668af559944412e6b47cab88fcb01c6c8667812f2807f7f58",
+    "candidates/collection-insights-admission/failed-full-executed-probe.ts.txt": "d4edfd3560959e625ebf947fa74f99ce6da653b904bece5678c6a22bc5aa2634",
+    "candidates/collection-insights-admission/failed-full-plan.json": "48cd29b346f2a8fa2c6e05fd830332af4f901ee5af183d89ea2f2919479f56f7",
+    "candidates/collection-insights-admission/initial-preparation.ts.txt": "5a2ea10d227bd9a0bf95698cb03fe81062133bdc71e2004e9e489e170233a055",
+    "candidates/collection-insights-admission/narrowed-executed-probe.ts.txt": "37259ec60f892cff7483dcfdb0a13ffebe1330d65842ce45af63622fe05f8084",
+    "candidates/collection-insights-admission/narrowed-plan.json": "18fb5ee91fea1a5a5fa6b2c5f8dff916d92112dcd64bfe1c0d98d5987d8737b2",
+    "candidates/collection-insights-admission/source-pins-before.json": "5dbffb4a499a23f79ffc013825d3a8784d0cc1ae64ea3c6f6b6ecd7a74cea749",
+    "evidence/collection-insights-admission-authored-controls.txt": "68bb736f24cb2cd5e0a0e8d94a5f5ae2dfb957fb0987d5a111a45b099218316e",
+    "evidence/collection-insights-admission-failed-full.json": "93e2f7fd58e2cf7ba336da3991b77d28fead76ca39f7801f4773a8031844bf5e",
+    "evidence/collection-insights-admission-narrowed-actual.json": "2feefc9f47309d902dde542c6982645a7489cc0d29dd1bf65223dbd4c9cef323",
+    "evidence/implementation-collection-admission-normal.json": "d49c9d9142e52317a5c8d812eb24f227c32943c9b0ec1545b62bf79106bcb33e",
+    "evidence/implementation-collection-admission-normal-collection.png": "4dda3b66ef532bde1bfafe121a9267b4dfc8b70f0bb4bbbd387e0bc602ee6e9d",
+    "evidence/implementation-collection-admission-normal-tasks.png": "e58059d6aaa789c266b88108af7a24e94bb358322bc8e4e4a14961149cb2167e"
+  },
+  "commonGates": {
+    "reportedBy": "parent agent",
+    "unitPassed": 798,
+    "unitGuardedSkipped": 713,
+    "unitFailed": 0,
+    "assertions": 33816,
+    "checkErrors": 0,
+    "checkWarnings": 0,
+    "build": "passed",
+    "inventory": "passed",
+    "style": "passed",
+    "normalSmoke": {
+      "receipt": "evidence/implementation-collection-admission-normal.json",
+      "signedIn": true,
+      "sourceUnchanged": true,
+      "bothActualCollectionSourcesReturnJsonNull": true,
+      "newConsoleWarnOrError": 0,
+      "finalTasks": 30,
+      "boundary": [
+        "Normal live GET responses rendered JSON null for both canonical supported sources using observed actual collection identity; response status/SQL/provider internals were not instrumented",
+        "This verifies new unsupported-kind admission, not successful configured TMDB decryption or provider wire/cache behavior",
+        "Clone actual5pair proof remains distinct from normal viewer and data; earlier native-error classifier failure remains failed",
+        "Functional API/UI smoke only; no CPU/heap/GPU/wire/latency distribution benchmark",
+        "No mutation command was submitted; ordinary session/presence/freshness/enrichment may run"
+      ]
+    },
+    "receipt": "evidence/implementation-20261018-collection-admission-gates.json"
+  },
+  "laterApiErrorDeliveryChange": {
+    "report": "implementation-api-http-errors.json",
+    "sourceChanges": {
+      "src/routes/api/v1/media/[id]/insights/+server.ts": {
+        "previousSha256": "a3c28326b5fedc2b8603b2192be888cba681823fa567bea275ae35704b90a077",
+        "currentSha256": "bade050c95206db61a2a53da8e1debd9563760046b874fd824ccda6575805098"
+      }
+    },
+    "boundary": "Only the two expected Kit HttpError delivery branches are later adopted. Earlier service/projection data measurements remain historical and were not rerun; their pinned artifacts and source manifests are unchanged. Current broader gates and normal acceptance are recorded separately."
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-19T03:11:12.006201+00:00",
+  "source": "User clarified existing real-data access: use admin account.",
+  "mode": "real-catalogue-controlled-admin-scenarios",
+  "allowed": "Use existing real catalogue/user records and temporary admin test state on the private actual clone, with rollback or owned-copy cleanup and external delivery disabled.",
+  "notRequired": "Naturally preexisting examples of every queue/list/pending state are not a test-admission requirement.",
+  "limits": "No fabricated users/catalogue/provider responses. Controlled scenarios are not claimed as naturally observed usage, production incidence or production tails. Missing real files/formats/external responses remain separate prerequisites.",
+  "harnessFailure": "A test harness that never reaches comparison is not a rejected optimization. Preserve failed attempt; correct known wiring without changing proposed method."
+}

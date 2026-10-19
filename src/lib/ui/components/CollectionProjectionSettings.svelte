@@ -12,6 +12,11 @@
   let {connectionId,settings,sources=[]}:{connectionId:string;settings:Record<string,unknown>;sources?:{id:string;name:string}[]}=$props();
   let config=$state<ProjectionConfig>(untrack(()=>({enabled:false,source:'collected',availableOnly:false,scope:'dynamic',sourceIds:[],...(settings.collectionProjection as Partial<ProjectionConfig>)})));
   let busy=$state(false),failure=$state(''),open=$state(false),preview=$state<ProjectionPreview|null>(null);
+  const reviewEntries=$derived.by(()=>{
+    if(!preview)return [];
+    const conflictIds=new Set(preview.conflicts.map(entry=>entry.workId));
+    return [...preview.conflicts,...preview.uncertain.filter(entry=>!conflictIds.has(entry.workId))];
+  });
   async function prepare(){busy=true;failure='';try{preview=await change(`providers/${connectionId}/collection-preview`,config);open=true;}catch(e){failure=message(e);}finally{busy=false;}}
   async function approve(choice:string){if(!preview)return;busy=true;failure='';try{await change(`providers/${connectionId}/collection-approve`,{previewId:preview.id,choice});open=false;}catch(e){failure=message(e);}finally{busy=false;}}
   async function review(workId:string,choice:'remote'|'coast'){if(!preview)return;busy=true;failure='';try{await change(`providers/${connectionId}/collection-review`,{previewId:preview.id,workId,choice});preview={...preview,conflicts:preview.conflicts.filter(e=>e.workId!==workId),uncertain:preview.uncertain.filter(e=>e.workId!==workId)};}catch(e){failure=message(e);}finally{busy=false;}}
@@ -37,7 +42,7 @@
     {#if preview.blocked}<p class="notice">Source assessments are incomplete or stale. Removals are blocked until access is verified.</p>{/if}
     {#each [{title:'Additions',items:preview.additions},{title:'Obsolete entries',items:preview.removals},{title:'Uncertain attribution — review required',items:preview.uncertain},{title:'Remote changes — conflicts',items:preview.conflicts}] as group}{#if group.items.length}<div><h3>{group.title}</h3><ul>{#each group.items.slice(0,60) as item}<li>{item.title}</li>{/each}</ul></div>{/if}{/each}
     {#if preview.unresolved.length}<p class="small">Unresolved: {preview.unresolved.slice(0,60).join(', ')}</p>{/if}
-    {#each [...preview.conflicts,...preview.uncertain.filter(e=>!preview?.conflicts.some(c=>c.workId===e.workId))] as entry (entry.workId)}<div class="panel stack"><strong>{entry.title}</strong><p class="small">Keep the remote membership as it is, or confirm Coast may manage this entry. Delivery is queued and rechecks the account and remote state.</p><div class="row"><Button  disabled={busy} onclick={()=>review(entry.workId,'remote')}>Keep remote changes</Button><Button emphasis="subtle" disabled={busy} onclick={()=>review(entry.workId,'coast')}>Use Coast selection</Button></div></div>{/each}
+    {#each reviewEntries as entry (entry.workId)}<div class="panel stack"><strong>{entry.title}</strong><p class="small">Keep the remote membership as it is, or confirm Coast may manage this entry. Delivery is queued and rechecks the account and remote state.</p><div class="row"><Button  disabled={busy} onclick={()=>review(entry.workId,'remote')}>Keep remote changes</Button><Button emphasis="subtle" disabled={busy} onclick={()=>review(entry.workId,'coast')}>Use Coast selection</Button></div></div>{/each}
     <p class="small">Managed cleanup removes confirmed Coast additions only. Pre-existing and uncertain entries stay. Replace/Clear all also removes entries created outside Coast.</p>
 
     <div class="row"><Button disabled={busy} onclick={()=>approve('leave')}>Leave existing entries</Button><Button  disabled={busy||preview.blocked} onclick={()=>approve('remove-managed')}>{config.enabled?'Remove obsolete Coast-added entries':'Remove Coast-added entries'}</Button><Button danger disabled={busy||preview.blocked} onclick={()=>approve(config.enabled?'replace-all':'clear-all')}>{config.enabled?'Replace all':'Clear all'}</Button></div>

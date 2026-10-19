@@ -1918,6 +1918,14 @@
         "bindable": false,
         "kind": "snippet",
         "nullable": false
+      },
+      {
+        "name": "retain",
+        "type": "Retain",
+        "optional": true,
+        "bindable": false,
+        "kind": "callback",
+        "nullable": false
       }
     ]
   },
@@ -2436,7 +2444,7 @@
     "props": [
       {
         "name": "notifications",
-        "type": "InboxNotification[]",
+        "type": "ToastNotification[]",
         "optional": false,
         "bindable": false,
         "kind": "data",

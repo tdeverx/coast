@@ -26,8 +26,15 @@
  $effect(()=>{
   if(preview)return;
   const session=reader.session,file=reader.file;if(!session||!host||!reader.visible)return;
-  const heartbeat=setInterval(()=>{if(!document.hidden&&reader.visible)void api(`reading/sessions/${session.id}/heartbeat`,{}).catch(cause=>{if((isFeatureDisabled(cause)||cause instanceof ApiError&&cause.status===410)&&reader.session?.id===session.id)void closeReading(true,false).catch(()=>{});});},60000);
   const controller=new AbortController(),owner=++readerOwner;let current:ReaderEngine|undefined,resize:ResizeObserver|undefined,navigation=0;loading=true;reader.rendering=true;
+  let heartbeatPending=false;
+  const heartbeat=setInterval(()=>{
+   if(document.hidden||!reader.visible||controller.signal.aborted||heartbeatPending)return;
+   heartbeatPending=true;
+   void api(`reading/sessions/${session.id}/heartbeat`,{},'POST',{signal:controller.signal})
+    .catch(cause=>{if(!controller.signal.aborted&&(isFeatureDisabled(cause)||cause instanceof ApiError&&cause.status===410)&&reader.session?.id===session.id)void closeReading(true,false).catch(()=>{});})
+    .finally(()=>{heartbeatPending=false;});
+  },60000);
   const ownsNavigation=(revision:number)=>!controller.signal.aborted&&revision===navigation&&reader.session?.id===session.id;
   void import('./reader/engine').then(module=>module.createReader({host,source:file??session.url!,format:session.format,location:session.location,signal:controller.signal,changed:location=>{
     if(controller.signal.aborted)return;

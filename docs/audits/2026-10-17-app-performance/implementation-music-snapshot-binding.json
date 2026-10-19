@@ -1,0 +1,341 @@
+{
+  "schemaVersion": 1,
+  "id": "PR-05",
+  "report": "implementation-music-snapshot-binding.md",
+  "recordedAt": "2026-10-18T02:40:17.913103+00:00",
+  "status": "narrow_native_snapshot_binding_reuse_implemented_actual_rollback_verified_broader_serial_persistence_open",
+  "canonicalStatusEdited": false,
+  "applicationFilesChanged": [
+    "src/lib/music/persistence.server.ts"
+  ],
+  "testFilesAdded": [
+    "tests/music-snapshot-binding.test.ts"
+  ],
+  "sourceBeforeSha256": "e56488be60bfb07c6ce4bfcfddc44bfbda924de1dc9661e7d75e0d5943cc2da6",
+  "verifiedCandidateSha256": "78c409fd3261227a39aa196a855a16dbcb9b26a0dba68cf572a6487d327cfe3f",
+  "sourcePins": {
+    "src/lib/music/persistence.server.ts": "049aca51bfd61c2c8fa973e7ce51572ecf1bf2c94a78fb652c58f8fb0d197977",
+    "src/lib/music/editions.server.ts": "fd3a5b49c589de17f0eec88b5265f5c5725cb382eefde6f9aaf91720c2ed208d",
+    "src/lib/music/service.server.ts": "39087bfd357be38b60cb1ba6cac6c857421870c682066c125c86aef98b6bb42a",
+    "src/lib/music/credits.server.ts": "cc7574b65b96cbd8abf16b5bd995f033b2e51e62fe1b43230a1f027089687a77",
+    "src/lib/providers/jellyfin/music.server.ts": "c94faaac3df4679b6a4a47cb95a8e01111fc8c5d1fd04c24c7077d0a1a9b607a",
+    "src/lib/providers/jellyfin/paging.ts": "88acf781617f8e3894167bd35e0d223fb3a3e20b5958ac417223a11e68387085",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/db/jsonb.ts": "de3327d4ffa147b122667c9fcde34fde89fb33f62daa8a8068f0aee1d97a590b",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/queue/execution.ts": "ea415b763273144b794cdc759954fb9a1397a97d2b32708689c6ebb855f64ec2",
+    "tests/music-snapshot-binding.test.ts": "6047235ab45c36a1729310191e92150751e79290fae7038b42f070062087cfa1"
+  },
+  "evidencePins": {
+    "evidence/implementation-music-snapshot-binding-actual.json": "4cecd039c7fb4ffc32716a1170ec69eeb1f8790acb1dfd66031bc499c495a151",
+    "evidence/implementation-music-snapshot-binding-failed-1.json": "303aa8bc15c0ba302e529c0b254a00f360fb112660db59ab45d7585a5d64b42a",
+    "evidence/implementation-music-snapshot-binding-failed-1-probe.ts.txt": "ba086fb0250fd66748ffd69422475ad4fca337105b23773f0cef624695d13508",
+    "evidence/implementation-music-snapshot-binding-census-v1.json": "125e7ba0131ea422eee6aa225851f75d7885e3e89add85a0e02a797051e259a4",
+    "evidence/implementation-music-snapshot-binding-census-v1-probe.ts.txt": "769fce034f9307923f63fa7539dfc3663d8227650fbb146673139230e5b4ed8f",
+    "evidence/implementation-music-snapshot-binding-census-v2.json": "3d912eeafe372e7441a644d670d6e80bd0b755ded80f3a304fe7ebcf2122b611",
+    "evidence/implementation-music-snapshot-binding-census-v2-probe.ts.txt": "e21a8b272c043ec1f28ca44402a1272b662b509137a67092de21e33a9b87bde0",
+    "evidence/implementation-music-snapshot-binding-tests.txt": "0a69d1889550cb1903b2249b5bf4ce4f577d93c1748831e5cabf2b2c58972461",
+    "evidence/implementation-music-snapshot-binding-executed-probe.ts.txt": "edb027456fe05cb2797027cd73af3fe1e920c11dfdd4785fad1a46b2c1829257",
+    "probes/music-snapshot-binding-real.ts": "08e35fd47fdf6f5a3a5baa679da9c9242f5de1c5e58d407133b51d288b914114",
+    "probes/music-persistence-census.ts": "7d50aca35a2c8167f5a8c5d547eb6f36232b363c5d9a04d443750d34f831e05a",
+    "candidates/music-snapshot-binding/persistence.before.ts.txt": "e56488be60bfb07c6ce4bfcfddc44bfbda924de1dc9661e7d75e0d5943cc2da6"
+  },
+  "change": "Provider-item conflict SET snapshot uses existing excluded.snapshot instead of second native JSON object binding; independent lastSeenAt newDate and all other code unchanged.",
+  "sharedOwner": "persistMusic album/track provider-item upsert",
+  "consumers": [
+    "interactive music source browsing",
+    "source detail and child rows",
+    "favourite preparation",
+    "missing-metadata user scan hydration",
+    "library bootstrap/full scans",
+    "change-hint music observations"
+  ],
+  "preserved": [
+    "Jellyfin normalized identity and conflict/verified MusicBrainz checks",
+    "per-item and verified-identifier locks",
+    "canonical metadata/edition guards",
+    "selected release occurrences/position and membership reconciliation",
+    "artist attribution/credit repair",
+    "lastSeenAt and verifiedAt freshness",
+    "feature/policy/account-generation/enabled connection access checks and job lease/reset fences",
+    "serial owner transactions, per-source page semantics and artwork/presentation behavior"
+  ],
+  "actual": {
+    "ref": "evidence/implementation-music-snapshot-binding-actual.json",
+    "cases": 3,
+    "fullRetainedSnapshotReturns": 959,
+    "existingAccessOwners": 2,
+    "selectedExistingAccessCohortItemsEach": 50,
+    "capturedProviderPages": false,
+    "completeReturnsAndAllTablePostStateEqual": true,
+    "all162OrderedAlbumMemberArraysEqual": true,
+    "tupleAndDmlAdmissionEqual": true,
+    "fullCorpusBefore": {
+      "ormStatements": 13136,
+      "boundParameters": 54333,
+      "parameterArrayJsonBytes": 3394535,
+      "providerItemUpserts": 959,
+      "snapshotParameters": 1918,
+      "snapshotPayloadBytes": 914557,
+      "snapshotBoundUtf8Bytes": 1829114,
+      "providerUpsertParameters": 7672,
+      "providerItemReturnedRows": 959,
+      "logicalOwnerTransactions": 959,
+      "dml": {
+        "works": {
+          "statements": 959,
+          "affectedOrReturnedRows": 0
+        },
+        "music_works": {
+          "statements": 1121,
+          "affectedOrReturnedRows": 0
+        },
+        "work_identifiers": {
+          "statements": 956,
+          "affectedOrReturnedRows": 0
+        },
+        "provider_items": {
+          "statements": 959,
+          "affectedOrReturnedRows": 959
+        },
+        "music_credits": {
+          "statements": 1933,
+          "affectedOrReturnedRows": 0
+        }
+      },
+      "tupleChanges": {
+        "music_works": {
+          "rows": 959,
+          "changed": 0
+        },
+        "provider_items": {
+          "rows": 959,
+          "changed": 959
+        },
+        "work_editions": {
+          "rows": 959,
+          "changed": 0
+        }
+      }
+    },
+    "fullCorpusAfter": {
+      "ormStatements": 13136,
+      "boundParameters": 53374,
+      "parameterArrayJsonBytes": 2479019,
+      "providerItemUpserts": 959,
+      "snapshotParameters": 959,
+      "snapshotPayloadBytes": 914557,
+      "snapshotBoundUtf8Bytes": 914557,
+      "providerUpsertParameters": 6713,
+      "providerItemReturnedRows": 959,
+      "logicalOwnerTransactions": 959,
+      "dml": {
+        "works": {
+          "statements": 959,
+          "affectedOrReturnedRows": 0
+        },
+        "music_works": {
+          "statements": 1121,
+          "affectedOrReturnedRows": 0
+        },
+        "work_identifiers": {
+          "statements": 956,
+          "affectedOrReturnedRows": 0
+        },
+        "provider_items": {
+          "statements": 959,
+          "affectedOrReturnedRows": 959
+        },
+        "music_credits": {
+          "statements": 1933,
+          "affectedOrReturnedRows": 0
+        }
+      },
+      "tupleChanges": {
+        "music_works": {
+          "rows": 959,
+          "changed": 0
+        },
+        "provider_items": {
+          "rows": 959,
+          "changed": 959
+        },
+        "work_editions": {
+          "rows": 959,
+          "changed": 0
+        }
+      }
+    },
+    "accessCaseRefs": "Exact two separate owner metrics retained in receipt.",
+    "restoration": {
+      "allTableLogicalMultisetsEqual": true,
+      "sequencesEqual": true,
+      "tables": 102,
+      "rows": 1864145,
+      "beforeDigest": "8abe50d3bedf11e0b634c8b9af7a4346a1f728fc539ffddfb813c63bee122468",
+      "afterDigest": "8abe50d3bedf11e0b634c8b9af7a4346a1f728fc539ffddfb813c63bee122468"
+    },
+    "externalAttempts": 0,
+    "poolClosed": true,
+    "fixedClockScope": "Private music module newDate calls only, same observation time for both variants.",
+    "transactionHarness": "Each owner transaction is a real nested savepoint under an outer rollback; no normal commit/lock-release/concurrency claim.",
+    "historicalSourceBoundary": "Receipt productionStillBaseline=true is before-adoption authority. Candidate module pin78c409\u2026 was adopted byte-identically only after proof."
+  },
+  "measurement": {
+    "nativeBindingMultiplicity": "Exact actual compiled owner calls: full1918\u2192959, each access100\u219250.",
+    "snapshotSizeProxy": "JSON.stringify(native parameter) UTF8 byte representation; full1829114\u2192914557, each access93594\u219246797.",
+    "notMeasured": [
+      "wire bytes",
+      "Bun driver encoding work",
+      "CPU",
+      "allocation",
+      "heap",
+      "WAL",
+      "latency",
+      "HTTP bytes"
+    ],
+    "noCountReduction": [
+      "ORM statements",
+      "transactions",
+      "round trips",
+      "provider freshness writes",
+      "access writes",
+      "canonical tuple admission"
+    ]
+  },
+  "census": {
+    "ref": "evidence/implementation-music-snapshot-binding-census-v2.json",
+    "snapshotCohorts": {
+      "validCurrentShape": 959,
+      "exactCurrentSnapshotShape": 959,
+      "personalOrPresentationKeys": 0,
+      "byKind": {
+        "track": 797,
+        "album": 162
+      },
+      "optionalMissing": {
+        "releaseDate": 1,
+        "year": 1,
+        "durationSeconds": 1,
+        "overview": 924
+      },
+      "omittedFieldHasSavedCanonicalValue": {
+        "releaseDate": 0,
+        "year": 0,
+        "durationSeconds": 0,
+        "overview": 0
+      },
+      "baselineGuardWouldUpdate": 0,
+      "effectiveSetWouldChange": 0,
+      "timestampOnlyGuardMismatch": 0,
+      "fullyUnchangedEffectiveMetadata": 959,
+      "artistObservations": 1933,
+      "maxArtistsPerSnapshot": 7
+    },
+    "inventory": {
+      "works": 959,
+      "albums": 162,
+      "tracks": 797,
+      "selected_editions": 162,
+      "retainedProviderItems": 959,
+      "instances": 1
+    },
+    "structure": {
+      "editions": 959,
+      "artists": 28,
+      "credits": 1934,
+      "album_membership_edges": 797,
+      "tracks_with_multiple_editions": 0
+    },
+    "typedCurrentCanonicalTupleMatches": 959,
+    "sparseFieldPositiveCohorts": 0,
+    "invalidPriorJSModel": {
+      "ref": "evidence/implementation-music-snapshot-binding-census-v1.json",
+      "counters": [
+        "baselineGuardWouldUpdate940",
+        "effectiveSetWouldChange940",
+        "fullyUnchangedEffectiveMetadata19"
+      ],
+      "reason": "Binary Math.fround versus PostgreSQL real-to-JSON decimal rendering is not assignment equality. Typed PG comparison supersedes these counters. Inventory and omitted-field/non-null0 independently reproduced."
+    }
+  },
+  "failedAttempt": {
+    "ref": "evidence/implementation-music-snapshot-binding-failed-1.json",
+    "source": "evidence/implementation-music-snapshot-binding-failed-1-probe.ts.txt",
+    "reason": "Instrumentation assumed generic Drizzle JSON strings rather than current native Bun JSONB objects.",
+    "beforeFirstProviderUpsert": true,
+    "outerRollbackAndPoolClosed": true,
+    "equivalenceOrGainClaimed": false
+  },
+  "tests": {
+    "ref": "evidence/implementation-music-snapshot-binding-tests.txt",
+    "passed": 12,
+    "failed": 0,
+    "assertions": 77,
+    "files": 2,
+    "newCase": "Actual source statement compiled through installed dialect/schema/nativeJSONB codec; exactly one native JSON object and both independent observation timestamps.",
+    "notActualPerformanceData": true
+  },
+  "independentReview": [
+    "providers_jobs_audit private probe guard/scope review: no material blocker",
+    "root actual proof review and exact candidate adoption approval",
+    "data_api_audit read-only approved exact source/test/native codec/EXCLUDED/freshness and corrected full receipt; no tests/DB/edits."
+  ],
+  "reproduction": {
+    "exactExecutedProof": "evidence/implementation-music-snapshot-binding-executed-probe.ts.txt",
+    "portableReplay": "probes/music-snapshot-binding-real.ts",
+    "portableCensus": "probes/music-persistence-census.ts",
+    "baseline": "candidates/music-snapshot-binding/persistence.before.ts.txt",
+    "portableStatus": "syntax_checked_not_DB_rerun_after_adoption",
+    "execution": "Separately authorized strict designated actual clone plus COAST_AUDIT_MUSIC_ROLLBACK=1; new receipts after source/data changes."
+  },
+  "remainingGaps": [
+    "PR05 larger serial per-item persistence/artist/credit/release query costs remain: full actual corpus13136ORM statements and959logical owner transactions in each variant.",
+    "No captured current providerpage, cold new-item/provider-field change, cancellation/reconnect or normal per-item commit concurrency acceptance.",
+    "No actual multi-edition track cohort or sparse-field omitted/non-null cohort fabricated.",
+    "Artist-only persist branch unchanged; positive active job-lease/reset failure scenarios not exercised by this ordinary access proof.",
+    "Full per-source card growth/pagination UI contract unchanged.",
+    "Normal Library/Listen/detail/Back functional acceptance passed; live provider-page persistence and browser CPU/heap/network timing were not exercised."
+  ],
+  "rootReportedCommonGates": {
+    "passed": 787,
+    "guardedSkips": 708,
+    "failed": 0,
+    "assertions": 33642,
+    "checkErrors": 0,
+    "checkWarnings": 0,
+    "build": "passed",
+    "sourceInventoryFiles": 576,
+    "sourceInventoryLines": 59302,
+    "normalUiAcceptance": "evidence/implementation-shared-admission-normal.json",
+    "rawGatePublicationOwner": "root"
+  },
+  "rootCombinedAcceptance": {
+    "common": "787pass/708guardedskip/0fail/33642assertions/1495tests276files/check0/0/build/inventories",
+    "normalDevReceipt": "evidence/implementation-shared-admission-normal.json",
+    "signedIn": true,
+    "sourceUnchangedDuringTrial": true,
+    "scope": "Continue34links/Next36;3friends and actual taste/overlap35links;Library120media links/28completedimages;Listen102musiclinks\u21921989detail41\u2192settledBack102;Admin115rows;finalTasks30paused/0dialogs/0popovers/0newwarnerror. Functional actual-data acceptance, no live provider job/page, admitted plan creation or browser resource/timing claim."
+  },
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "src/lib/music/persistence.server.ts"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    }
+  ]
+}

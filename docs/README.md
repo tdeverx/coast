@@ -35,6 +35,9 @@
 
 ## Evidence and roadmap
 
+- [Current app-wide performance pass](audits/2026-10-17-app-performance/README.md): applied shared repairs, verified results, retained tradeoffs and closeout.
+- [Next performance investigation checklist](audits/2026-10-17-app-performance/next-investigation-checklist.md): unchecked areas, unresolved observations, failed methods and acceptance gates.
+
 - [Performance implementation — 3 October](audits/2026-10-03-performance-implementation.md): controlled query/revision measurements, client work and benchmark verification.
 - [Frontend performance evidence](audits/2026-10-03-frontend-performance-implementation.md) and [server performance evidence](audits/2026-10-03-server-performance-implementation.md): focused findings and acceptance limits.
 

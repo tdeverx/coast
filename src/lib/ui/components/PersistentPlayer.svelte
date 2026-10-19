@@ -14,7 +14,7 @@
   import { observeVideoCrop } from '$lib/playback/observe-crop';
   import { message, capturePlaybackApi } from '$lib/ui/client';
   import { createPlaybackReports } from '$lib/playback/reports';
-  import { useClient, reportFailure } from '$lib/ui/client-context';
+  import { useClient, reportFailure, reportImportFailure } from '$lib/ui/client-context';
   import type { MediaView } from '$lib/ui/types';
   import { liquidGlass } from '$lib/ui/materials/glass';
   import Icon from './Icon.svelte';
@@ -51,6 +51,8 @@
     closed = false;
   const reports = createPlaybackReports();
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
+  let foreground=$state(true);
+  let startupAttempt=$state(0),retryStartup:(()=>void)|undefined,startupImportError=$state('');
   let keyboardInteraction = false;
   let scrubbing = $state(false);
   const partyRoom=$derived(preview?null:syncedPlayer.room);
@@ -373,10 +375,20 @@
   $effect(() => {
     if (preview) return;
     const url = src,
+      sessionId=player.session?.id,
       kind = player.session?.kind,
-      element = media;
+      element = media,
+      attempt=startupAttempt;
     if (!element || !url) return;
-    let cancelled = false;
+    let cancelled = false,released=false,importFailed=false;
+    const ownsStartup=()=>!cancelled&&attempt===startupAttempt&&player.session?.id===sessionId&&src===url&&media===element;
+    function releaseStartup(){
+      if(released)return;released=true;
+      clearStreamFailure();hls?.destroy();hls=null;
+      element.pause();element.removeAttribute('src');element.load();
+    }
+    retryStartup=undefined;
+    startupImportError='';
     error = '';
     bars = noCrop;
     clearStreamFailure();
@@ -385,8 +397,8 @@
     hls = null;
     const start = async () => {
       if (kind === 'hls' && !element.canPlayType('application/vnd.apple.mpegurl')) {
-        const { default: Hls } = await import('hls.js');
-        if (cancelled) return;
+        const { default: Hls } = await import('hls.js').catch(cause=>{importFailed=true;throw cause;});
+        if (!ownsStartup()) return;
         if (!Hls.isSupported()) {
           await failure({code: 4});
           return;
@@ -414,21 +426,32 @@
         });
       }
     };
-    untrack(() => void start());
-    const stopCrop = audioMode ? () => {} : observeVideoCrop(video, {
-      enabled: () => crop,
-      onCrop: (next) => (bars = next),
-    });
+    untrack(() => void start().catch(cause=>{
+      if(!ownsStartup())return;
+      releaseStartup();
+      if(importFailed){
+        startupImportError='Playback could not load. Reload the page to try again.';
+        error=startupImportError;
+      }else{
+        retryStartup=()=>{if(ownsStartup())startupAttempt++;};
+        error=message(cause);
+      }
+    }));
     return () => {
       cancelled = true;
-      clearStreamFailure();
-      stopCrop();
-      hls?.destroy();
-      hls = null;
-      element.pause();
-      element.removeAttribute('src');
-      element.load();
+      retryStartup=undefined;
+      if(importFailed){startupImportError='';error='';}
+      releaseStartup();
     };
+  });
+  // Analysis has a shorter lifetime than the retained source and playback position.
+  $effect(() => {
+    const element=video,url=src;
+    if(preview||!element||!url||audioMode||!active||!crop||!foreground||player.browsing||player.paused)return;
+    return observeVideoCrop(element, {
+      enabled:()=>crop,
+      onCrop:next=>(bars=next),
+    });
   });
   $effect(() => {
     if (preview) return;
@@ -436,6 +459,8 @@
   });
   onMount(() => {
     if (preview) return;
+    const updateForeground=()=>{foreground=!document.hidden;};
+    updateForeground();document.addEventListener('visibilitychange',updateForeground);
     const unregister = registerPlaybackController({
       beginPlaybackGesture: type => {
         const element=type==='audio'?audio:video;
@@ -490,6 +515,7 @@
       for (const event of ['pointermove', 'pointerdown', 'touchstart', 'keydown'])
         document.removeEventListener(event, revealControls);
       observer.disconnect();
+      document.removeEventListener('visibilitychange',updateForeground);
       document.removeEventListener('keydown', key);
       unregister();
       hls?.destroy();
@@ -500,7 +526,8 @@
     if(preview)return;
     browserDiagnostic(event, { sessionId: player.session?.id, durationMs: player.preparationStartedAt ? performance.now() - player.preparationStartedAt : 0, bufferedSeconds: media?.buffered.length ? Math.max(0, media.buffered.end(media.buffered.length - 1) - media.currentTime) : 0, positionSeconds: media?.currentTime, readyState: media?.readyState, networkState: media?.networkState, code: media?.error?.code });
   }
-  reportFailure(()=>error, ()=>switchEdition());
+  reportFailure(()=>startupImportError?'':error, ()=>{if(retryStartup)retryStartup();else return switchEdition();});
+  reportImportFailure(()=>startupImportError);
   reportFailure(()=>trackingNotice);
 </script>
 {#if page.data.experimentalParties}<SyncedControls bind:this={syncControls} />{/if}

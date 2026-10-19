@@ -14,7 +14,7 @@ import { getConfig } from '../config';
 import { resolveMetadata } from '../../catalogue/metadata/resolve';
 import { AppError } from '../security/errors';
 import { PAGE_SIZE } from './pagination';
-import type { MediaView } from '../../ui/types';
+import type { MediaView, WorkSummary } from '../../ui/types';
 import { searchDocument, searchSql } from './search-ranking';
 import { rankSearch } from '$lib/search';
 import {namedEdition} from '$lib/media/editions';
@@ -98,6 +98,39 @@ export function hasPermittedWorkSource(userId: string) {
     with recursive scope(id,path) as (select ${s.works.id},array[${s.works.id}] union all select r.child_id,d.path||r.child_id from scope d join media_relationships r on r.parent_id=d.id where r.kind in ('contains','collection','sequence') and not r.child_id=any(d.path) and cardinality(d.path)<20)
     select 1 from scope d join availability a on a.media_id=d.id join provider_connections c on c.id=a.connection_id join provider_instances i on i.id=c.instance_id where a.user_id=${userId} and c.user_id=${userId} and a.state='available' and c.status='connected' and i.enabled
   )`);
+}
+
+/** Resolve the same title/year policy without constructing private or visual cards. */
+export async function screenWorkSummaries(userId: string, ids: string[], viewerId: string | null = userId): Promise<WorkSummary[]> {
+  v.parse(uuidSchema, userId);
+  v.parse(v.pipe(v.array(uuidSchema), v.maxLength(PAGE_SIZE)), ids);
+  if (!ids.length || !(await getFeatureConfig(viewerId)).features.screen) return [];
+  if (viewerId === null) return (await (await import('$lib/social/public.server')).publicMedia(ids))
+    .map(item => ({id:item.id, kind:item.kind, title:item.title, year:item.year}));
+  const db=getDb();
+  const [rows,snapshots,overrides,locks,preferences,userRows,config]=await Promise.all([
+    db.select({id:s.media.id,kind:s.media.kind,title:s.media.title,originalTitle:s.media.originalTitle,
+      releaseDate:s.media.releaseDate,year:s.media.year}).from(s.media).where(inArray(s.media.id,ids)),
+    db.select({mediaId:s.metadataSnapshots.mediaId,title:s.metadataSnapshots.title,originalTitle:s.metadataSnapshots.originalTitle,
+      releaseDate:s.metadataSnapshots.releaseDate,provider:s.metadataSnapshots.provider,updatedAt:s.metadataSnapshots.updatedAt})
+      .from(s.metadataSnapshots).where(inArray(s.metadataSnapshots.mediaId,ids)),
+    db.select({mediaId:s.metadataOverrides.mediaId,title:s.metadataOverrides.title,originalTitle:s.metadataOverrides.originalTitle,
+      releaseDate:s.metadataOverrides.releaseDate}).from(s.metadataOverrides).where(inArray(s.metadataOverrides.mediaId,ids)),
+    db.select({mediaId:s.metadataLocks.mediaId,field:s.metadataLocks.field}).from(s.metadataLocks).where(inArray(s.metadataLocks.mediaId,ids)),
+    db.select({mediaId:s.userMetadataPreferences.mediaId,title:s.userMetadataPreferences.title}).from(s.userMetadataPreferences)
+      .where(and(eq(s.userMetadataPreferences.userId,viewerId),inArray(s.userMetadataPreferences.mediaId,ids))),
+    db.select({originalTitles:sql<boolean|undefined>`${s.users.settings}->'originalTitles'`}).from(s.users).where(eq(s.users.id,userId)),
+    getConfig(),
+  ]);
+  const bySnapshot=groupBy(snapshots,row=>row.mediaId),byOverride=new Map(overrides.map(row=>[row.mediaId,row])),
+    byLock=groupBy(locks,row=>row.mediaId),byPreference=new Map(preferences.map(row=>[row.mediaId,row]));
+  return rows.map(row=>{
+    const metadata=resolveMetadata({fallback:row,snapshots:bySnapshot.get(row.id),override:byOverride.get(row.id),
+      locks:byLock.get(row.id)?.map(lock=>lock.field),user:byPreference.get(row.id),
+      policy:config.metadataSource==='tmdb-only'?'tmdb-only':'local-first',preferOriginalTitle:userRows[0]?.originalTitles}).values;
+    return {id:row.id,kind:row.kind,title:metadata.title??row.title,
+      year:metadata.releaseDate?Number(metadata.releaseDate.slice(0,4)):row.year};
+  });
 }
 
 export async function mediaViews(
@@ -639,23 +672,23 @@ export async function nextPlayable(userId: string, item: MediaView): Promise<Med
   return (await mediaViews(userId, { ids: [candidate.id] }))[0] ?? null;
 }
 
-export async function detailsData(userId: string, id: string) {
+export async function detailsData(userId: string, id: string, includeChildren = true) {
   v.parse(uuidSchema, id);
   const [item] = await mediaViews(userId, { ids: [id] });
   if (!item) throw new AppError(404, 'This title was not found.');
   const db = getDb();
   const contextId = item.showId ?? id;
   const [episodeIds, seasonRows, relationships, availability, history, ids] = await Promise.all([
-    db
+    includeChildren ? db
       .select()
       .from(s.episodes)
       .where(item.kind === 'season' ? eq(s.episodes.seasonId, id) : sql`false`)
-      .orderBy(asc(s.episodes.seasonNumber), asc(s.episodes.episodeNumber)),
-    db
+      .orderBy(asc(s.episodes.seasonNumber), asc(s.episodes.episodeNumber)) : [],
+    includeChildren ? db
       .select()
       .from(s.seasons)
       .where(or(eq(s.seasons.showId, id), eq(s.seasons.mediaId, id)))
-      .orderBy(asc(s.seasons.seasonNumber)),
+      .orderBy(asc(s.seasons.seasonNumber)) : [],
     db
       .select()
       .from(s.mediaRelationships)
@@ -692,23 +725,34 @@ export async function detailsData(userId: string, id: string) {
     item.kind === 'episode'
       ? await db.select().from(s.episodes).where(eq(s.episodes.mediaId, id))
       : [];
-  const parents = await mediaViewsForIds(
-    userId,
-    [item.showId, episodeParent?.seasonId].filter((id): id is string => Boolean(id))
-  );
-  const childViews = await mediaViewsForIds(userId, [
-    ...episodeIds.map((episode) => episode.mediaId),
-    ...seasonRows.map((season) => season.mediaId),
-  ]);
+  // One detail composition observes each base card once. Sequence state is
+  // applied to fresh occurrence copies; never retain these cards between reads.
+  const cards = new Map<string, MediaView | undefined>([[item.id, item]]);
+  const orderedCards = (ids: string[]) => [...new Set(ids)].flatMap(id => {
+    const card = cards.get(id);
+    return card ? [card] : [];
+  });
+  const readCards = async (ids: string[]) => {
+    const missing = [...new Set(ids)].filter(id => !cards.has(id));
+    if (missing.length) {
+      for (const id of missing) cards.set(id, undefined);
+      for (const card of await mediaViewsForIds(userId, missing)) cards.set(card.id, card);
+    }
+    return orderedCards(ids);
+  };
+  const parentIds = [item.showId, episodeParent?.seasonId].filter((id): id is string => Boolean(id));
+  const childIds = [...episodeIds.map(episode => episode.mediaId), ...seasonRows.map(season => season.mediaId)];
+  await readCards([...parentIds, ...childIds]);
+  const parents = orderedCards(parentIds);
+  const childViews = orderedCards(childIds);
   const childById = new Map(childViews.map((child) => [child.id, child]));
   const episodes = episodeIds.flatMap((episode) =>
     childById.get(episode.mediaId) ? [childById.get(episode.mediaId)!] : []
   );
   const [next, related] = await Promise.all([
     nextPlayable(userId, item),
-    mediaViewsForIds(
-      userId,
-      relationships.map((relationship) =>
+    readCards(
+      relationships.filter(relationship => includeChildren || (relationship.childId === id && relationship.kind === 'collection')).map((relationship) =>
         relationship.parentId === contextId ? relationship.childId : relationship.parentId
       )
     ),
@@ -721,46 +765,26 @@ export async function detailsData(userId: string, id: string) {
   const parentCollections = related.filter(
     (relatedItem) => relatedItem.kind === 'collection' && collectionIds.has(relatedItem.id)
   );
-  const collections = await Promise.all(
-    parentCollections.map(async (collection) => {
-      const source = { kind: 'collection' as const, id: collection.id };
-      const entries = await sequenceEntries(userId, source);
-      const members = new Map(
-        (
-          await mediaViewsForIds(
-            userId,
-            entries.map((entry) => entry.mediaId)
-          )
-        ).map((item) => [item.id, item])
-      );
-      return {
-        item: collection,
-        id: collection.id,
-        title: collection.title,
-        items: entries.flatMap((entry) => {
-          const item = members.get(entry.mediaId);
-          return item ? [applySequenceEntry(item, entry, source)] : [];
-        }),
-      };
-    })
-  );
-  let members: MediaView[] = [];
-  if (item.kind === 'collection') {
-    const source = { kind: 'collection' as const, id };
-    const entries = await sequenceEntries(userId, source);
-    const views = new Map(
-      (
-        await mediaViewsForIds(
-          userId,
-          entries.map((e) => e.mediaId)
-        )
-      ).map((m) => [m.id, m])
-    );
-    members = entries.flatMap((entry) => {
-      const child = views.get(entry.mediaId);
-      return child ? [applySequenceEntry(child, entry, source)] : [];
-    });
-  }
+  const sequences = await Promise.all(parentCollections.map(async collection => {
+    const source = {kind: 'collection' as const, id: collection.id};
+    return {collection, source, entries: includeChildren ? await sequenceEntries(userId, source) : []};
+  }));
+  const source = {kind: 'collection' as const, id};
+  const entries = includeChildren && item.kind === 'collection' ? await sequenceEntries(userId, source) : [];
+  await readCards([...sequences.flatMap(sequence => sequence.entries.map(entry => entry.mediaId)), ...entries.map(entry => entry.mediaId)]);
+  const collections = sequences.map(({collection, source, entries}) => ({
+    item: collection,
+    id: collection.id,
+    title: collection.title,
+    items: entries.flatMap(entry => {
+      const card = cards.get(entry.mediaId);
+      return card ? [applySequenceEntry(card, entry, source)] : [];
+    }),
+  }));
+  const members = entries.flatMap(entry => {
+    const card = cards.get(entry.mediaId);
+    return card ? [applySequenceEntry(card, entry, source)] : [];
+  });
   const [castSnapshot] = await db
     .select({ cast: sql<CastMember[] | null>`${s.metadataSnapshots.raw}->'cast'` })
     .from(s.metadataSnapshots)
@@ -793,7 +817,7 @@ export async function detailsData(userId: string, id: string) {
       item: childById.get(season.mediaId),
     })),
     next,
-    related,
+    related: includeChildren ? related : [],
     collections,
     availability,
     history,

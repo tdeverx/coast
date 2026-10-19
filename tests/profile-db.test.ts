@@ -20,7 +20,7 @@ import {
   works,
 } from '../src/lib/server/db/schema';
 import { updateProfile } from '../src/lib/core/profile/service.server';
-import { streamGifAvatar } from '../src/lib/core/profile/gif-avatar.server';
+import { streamAvatar } from '../src/lib/core/profile/avatar-storage.server';
 import { track } from '../src/lib/core/tracking/service.server';
 import { progressData } from '../src/lib/server/queries/progress';
 import { profileData, profileActivity, profileProgress } from '../src/lib/server/queries/profile';
@@ -101,6 +101,30 @@ afterAll(async () => {
     .delete(users)
     .where(inArray(users.id, [owner, other]));
   await getDb().delete(media).where(inArray(media.id, ids));
+});
+
+run('equivalent profile preferences retain the tuple while a changed preference writes normally', async () => {
+  const [original] = await getDb().select({ settings: users.settings }).from(users).where(eq(users.id, owner));
+  try {
+    await updateProfile(owner, { action: 'preferences', period: 'all', favouriteKind: 'all' });
+    const snapshot = async () => {
+      const [user] = await getSql()`select ctid::text as tuple,settings from users where id=${owner}::uuid`;
+      const revisions = await getSql()`select domain,revision::text from content_revisions where scope=${owner} order by domain`;
+      return { ...user, revisions: Array.from(revisions) };
+    };
+    const before = await snapshot();
+    const same = await updateProfile(owner, { action: 'preferences', period: 'all', favouriteKind: 'all' });
+    expect(same).toEqual(before.settings.profile);
+    expect(await snapshot()).toEqual(before);
+    const changed = await updateProfile(owner, { action: 'preferences', period: 'month' });
+    const after = await snapshot();
+    expect(changed.period).toBe('month');
+    expect(changed.favouriteKind).toBe('all');
+    expect(after.settings.profile).toEqual(changed);
+    expect(after.tuple).not.toBe(before.tuple);
+  } finally {
+    await getDb().update(users).set({ settings: original.settings }).where(eq(users.id, owner));
+  }
 });
 
 async function withReadingProfile(
@@ -375,18 +399,18 @@ run('GIF avatars preserve all frames, enforce visibility and remove replaced fil
   const saved = await updateProfile(owner,input);
   expect(saved.avatar).toMatch(new RegExp(`^/api/v1/profile/avatar/${owner}/[a-f0-9]{64}$`));
   const hash = saved.avatar!.split('/').at(-1)!;
-  const response = await streamGifAvatar(owner,hash,owner);
+  const response = await streamAvatar(owner,hash,owner);
   expect(response.headers.get('content-type')).toBe('image/gif');
   expect(Buffer.from(await response.arrayBuffer())).toEqual(Buffer.from(animatedAvatar,'base64'));
-  await expect(streamGifAvatar(owner,hash,other)).rejects.toThrow('private');
-  await expect(streamGifAvatar(owner,hash,null)).rejects.toThrow('private');
+  await expect(streamAvatar(owner,hash,other)).rejects.toThrow('private');
+  await expect(streamAvatar(owner,hash,null)).rejects.toThrow('private');
   await expect(updateProfile(other,{...input,avatar:saved.avatar})).rejects.toThrow();
   expect((await updateProfile(owner,{...input,avatar:saved.avatar,bio:'Still animated'})).avatar).toBe(saved.avatar);
   const tooLarge=Buffer.concat([Buffer.from(animatedAvatar,'base64'),Buffer.alloc(5*1024*1024)]);
   await expect(updateProfile(owner,{...input,avatar:'data:image/gif;base64,'+tooLarge.toString('base64')})).rejects.toThrow('5 MB');
   await expect(updateProfile(owner,{...input,avatar:'data:image/gif;base64,PHN2Zz4='})).rejects.toThrow('valid GIF');
   await updateProfile(owner,{...input,avatar:null});
-  await expect(streamGifAvatar(owner,hash,owner)).rejects.toThrow('not found');
+  await expect(streamAvatar(owner,hash,owner)).rejects.toThrow('not found');
 });
 
 run('periods align history, totals, genres and ratings without changing favourites', async () => {

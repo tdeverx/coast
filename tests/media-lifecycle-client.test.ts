@@ -1,5 +1,7 @@
 import {expect,test} from 'bun:test';
 import {compileModule} from 'svelte/compiler';
+import * as v from 'valibot';
+import {readingPrepareSchema} from '../src/lib/reading/model';
 const moduleUrl=(code:string)=>`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`;
 const deferred=<T=any>()=>{let resolve!:(value:T)=>void,reject!:(cause:unknown)=>void;const promise=new Promise<T>((done,fail)=>{resolve=done;reject=fail;});return {promise,resolve,reject};};
 const settle=async()=>{for(let i=0;i<30;i++)await Promise.resolve();};
@@ -26,6 +28,18 @@ async function loadClient(kind:'reading'|'playback'){
 }
 const readingSession=(id:string)=>({id,workId:'book',title:'Book',format:'pdf',edition:'edition',location:{format:'pdf',page:50,total:100},source:'jellyfin',url:'/file'});
 const input={connectionId:'connection',externalId:'external'};
+
+test('linked reading display metadata cannot escape the shared prepare-command boundary',async()=>{
+ const {client:c,transport:t}=await loadClient('reading');
+ const linked={connectionId:crypto.randomUUID(),externalId:'123456781234123412341234567890ab',name:'Saved source',format:'cbr',futureDisplay:{label:'Edition'}};
+ let parsed:unknown;
+ t.delivery((path:string,body:unknown)=>{if(path.endsWith('/session')){parsed=v.parse(readingPrepareSchema,body);return Promise.resolve(readingSession('linked'));}return Promise.resolve({});});
+ await c.openReading('book',linked);
+ expect(parsed).toEqual({source:'jellyfin',connectionId:linked.connectionId,externalId:linked.externalId});
+ expect(c.reader.session.id).toBe('linked');
+ expect(c.reader.session.format).toBe('pdf');
+ expect(v.safeParse(readingPrepareSchema,{...parsed as object,name:'Unexpected command field'}).success).toBe(false);
+});
 
 test('acknowledged bookmarks skip identical saves and final flush while failed saves remain retryable',async()=>{
  const {client:c,transport:t}=await loadClient('reading');c.reader.session=readingSession('a');c.reader.location=c.reader.session.location;
@@ -98,6 +112,23 @@ test('reader alignment publishes only the newest completion and keeps its explic
  effect.intervals[0].callback();await settle();expect(t.calls.filter((call:any)=>call.args[0].endsWith('/heartbeat'))).toHaveLength(1);
  effect.fixture.document.hidden=true;effect.intervals[0].callback();c.reader.visible=false;effect.fixture.document.hidden=false;effect.intervals[0].callback();await settle();
  expect(t.calls.filter((call:any)=>call.args[0].endsWith('/heartbeat'))).toHaveLength(1);effect.cleanup();expect(effect.cleared).toEqual([1]);
+});
+
+test('visible reader heartbeat has one pending request and aborts with its presentation owner',async()=>{
+ const {client:c,transport:t}=await loadClient('reading'),delivery=deferred();
+ c.reader.session=readingSession('a');c.reader.visible=true;
+ t.delivery(()=>delivery.promise);
+ const effect=await readerEffect(c,t,async()=>{});
+ for(let tick=0;tick<20;tick++)effect.intervals[0].callback();
+ expect(t.calls).toHaveLength(1);
+ const signal=t.calls[0].args[3].signal;
+ expect(signal.aborted).toBe(false);
+ effect.cleanup();expect(signal.aborted).toBe(true);
+ c.reader.session=readingSession('replacement');c.reader.visible=true;
+ delivery.reject(new t.ApiError('Old session ended',410));await settle();
+ effect.intervals[0].callback();await settle();
+ expect(t.calls).toHaveLength(1);expect(c.reader.session.id).toBe('replacement');
+ expect(c.reader.visible).toBe(true);
 });
 
 test('failed final bookmark retains the session and newest location for visible retry',async()=>{

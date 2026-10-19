@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "status": "actual_matched_copy_contracts_passed_extra_write_work_unadopted",
+  "findingId": "PJ-10",
+  "sourcePins": {
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "src/lib/server/notifications/inbox.ts": "c8d44c3f7bc05ca7331a333bbdbcfff5d7f8dc1bd1178bf8eac957e7e6c48fdf",
+    "src/lib/providers/job-timing.server.ts": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+    "src/lib/providers/seerr/requests.server.ts": "b7c80ac2400e66f245bd4ab134188f0eaed018bdf7ea23e95dbeff625c140685",
+    "src/lib/providers/connections.server.ts": "4ea7ef7b06a8dc16e3800a34b0c58f7ca7446861a3d17cb5b3ecfe6a8830efc1",
+    "src/lib/catalogue/maintenance.server.ts": "48bc05752d52e3e0813996a34b0e399af2ecd38cc9a879b553f81f9afaf05dd8",
+    "src/lib/providers/steam/sync.server.ts": "da87cd5ba1336c3ddaaa953f6fdd9397ddc79c0640b38979202eb274fe6ba4c1",
+    "src/lib/experiments/planning.server.ts": "aef16dae069ac1f18484e4666887da1cc6572d95d803e8e43c5ea8ba5ed850a9",
+    "src/lib/providers/maintenance.server.ts": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b",
+    "src/lib/providers/jellyfin/updates.server.ts": "568108807e944df42b0d0203fd0040a7b49d70a20f710a75b0472804c39ba50f",
+    "src/lib/providers/jellyfin/stream-history.server.ts": "243f20cee43e4d31116169355379072931ed8170cad4ef44f590608e6fb32453",
+    "src/lib/sync/jellyfin.server.ts": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
+    "src/lib/sync/jellyfin-playback.server.ts": "7eed2b4b624f01ead9425a456fdee2a8b656aa59c586fdd68034d0d6f336ff4d",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/queue/execution.ts": "ea415b763273144b794cdc759954fb9a1397a97d2b32708689c6ebb855f64ec2",
+    "src/lib/server/storage/retention.server.ts": "50b898518a5ac21573ed69ae514c90b9e27062acd1aeb35a78b2affde3e04ad1",
+    "src/lib/server/public-api/webhooks.server.ts": "70c4d1ea244d7e3c723bb6fda6cb05c51300046c511bc6803667daf27d69aefb",
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "src/lib/sync/changes.server.ts": "5b781dfbf935afa83d7fa54b8446fc9d4830d7f375d26f6c3658ba00191868af",
+    "src/lib/application/feature-transition.server.ts": "62c2509fb4edb4cd95a36547a85990d2d400977a489400c4fdfe4152c9941b5c",
+    "src/lib/application/streams.server.ts": "55f29d818b5076b5eb3c90dc541d675be3ddf402a4720486f83e859ea0e2d334",
+    "src/lib/application/provider-sources.server.ts": "5dc4f1ab35e1a47e4fb1728d45a367106015f787297f18714d425a3cc56f9f2c",
+    "src/lib/sync/trakt-staging.server.ts": "3ff5497378a116f97b1073a0ea871f000ab7c08abd086cc23c21cb16d93f5413",
+    "src/lib/server/auth/onboarding.ts": "ece68e11f072f86d1aeb5ac26cdbf4b4d2024ab8c5d0508de0f6613b142f227b",
+    "src/lib/sync/values.server.ts": "46363d9edcbd1692a6492c14624a5d80bb68546579a7ef54826aaa0c035641c4",
+    "src/lib/sync/trakt-lists.server.ts": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb",
+    "src/lib/sync/history-removal.server.ts": "10f62835a0d8c9178c608b3f65cff66331f42fe7f2df8e4b8e9a18b21491017e",
+    "src/lib/benchmarks/service.server.ts": "2b20918bb628053f96a9a703faedc5b795f06bb75b06d2a55a4810661e82f835",
+    "src/lib/recommendations/providers.server.ts": "0a607de5b0e22c7bb30e755c52c44623a4acaac472d4eea3ff21af81babee703",
+    "src/lib/social/taste-cache.server.ts": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "src/lib/social/presence.server.ts": "64c185536df3632ed3da595d55cfb399afcc4e1fbfb933f3f8bba1537d71fcc3",
+    "drizzle/0016_collection_and_music.sql": "911f5a3f1f726e7496edd369e6741eb4ef46755ac151960bd7023141ec26863b",
+    "drizzle/0045_trakt_import_staging.sql": "e6d6793b83f6add894a424c1e8a266014764214104090e8d092e52b3b03f02fe",
+    "drizzle/0046_provider_job_snapshots.sql": "ef2bb871b060687b19a769d6aa02e213306208bc4a3c2694ce8c5d9941533768",
+    "src/lib/providers/tasks.ts": "0f0c3adf6584398d2d5a28fd9d2c418c5077edda694bcb5c54131f9f318a85f8",
+    "drizzle/0058_feature_controls.sql": "3da7e76b2d95d3cb3624d6760ffac3c2554f9c9323aea2b4d1e9fb0169e1567e",
+    "package.json": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2",
+    "bun.lock": "53d8feaa37aefa6ada339d3cd2da73a9985cba24a1cf96e4da64cfa24b2c065d"
+  },
+  "sourcePinCount": 38,
+  "artifactPins": {
+    "candidates/task-writer-cost-actual/capacity.json": "27bb216cf5bbbb4d29da750fa0e0470f9dfdf334ff42b7650d8667cfc3d9790a",
+    "candidates/task-writer-cost-actual/execution-plan-before-launcher-pin-check.json": "92b4f20de9813ecdc0f049ec1b4176518145c3a847095e3488bdfc110ee356c7",
+    "candidates/task-writer-cost-actual/execution-plan.json": "1151d506bb1b7c21018a959d6775bb206ec20dd0e62830f8faea44085bbb96e5",
+    "candidates/task-writer-cost-actual/helpers.ts": "1be5563e51cd1300d9833d21362f58571544521be6cffbb33ed6ec60b85f2a30",
+    "candidates/task-writer-cost-actual/interpretation.json": "b0896ae123d136396df231242e04404e9166cf4ca5595b0fc08527847794a46f",
+    "candidates/task-writer-cost-actual/launch.py": "7447b12debc96821c9235a4eed8d580846457d3935eefe1e2cd65051780fa446",
+    "candidates/task-writer-cost-actual/preflight-actual.json": "c1490909209abdd9afde63ee3cbd57adb1b2edd3915e49d7e47e71241084b1f8",
+    "candidates/task-writer-cost-actual/preflight.ts": "7474e7a19d22bba0a95b72713d8fdb16d4dd8c82ac8f3c7bcbc1877697f3e077",
+    "candidates/task-writer-cost-actual/prepare.ts": "1c2a16353713d2af77a30e2dd62ec040188187b289fc12430bcd2f1564f11004",
+    "candidates/task-writer-cost-actual/prepared-review.json": "06206ad8eba5a7e797f3f69a06d9abb306ddc618f8d9322862f9db9c1aa18529",
+    "candidates/task-writer-cost-actual/read-adapters.json": "62953545901ffbc512956800fe7db1de343f4bf0e65e1d7c8eccb06fecedcd6f",
+    "candidates/task-writer-cost-actual/reader-admission-actual.json": "ed3d661cee14cfb5ff6140d3dbde7f92932a01233a707d34ef38e5ea01722507",
+    "candidates/task-writer-cost-actual/reader-admission-corrected.json": "e302132ce30f7e15041ffee367efc8e1789cd616407fb9d4fc061c5528798f97",
+    "candidates/task-writer-cost-actual/reader-admission-diagnostic/helpers.ts": "1be5563e51cd1300d9833d21362f58571544521be6cffbb33ed6ec60b85f2a30",
+    "candidates/task-writer-cost-actual/reader-admission-diagnostic/read-adapters.json": "62953545901ffbc512956800fe7db1de343f4bf0e65e1d7c8eccb06fecedcd6f",
+    "candidates/task-writer-cost-actual/reader-admission-diagnostic/reader-admission-diagnostic.json": "42a8626da21653289211062f54f7eb439efe8f9193f698d9fb871e4007dff24b",
+    "candidates/task-writer-cost-actual/reader-admission-diagnostic/reader-admission.ts": "d856b5c5864435c6ebdc63ac3b9378e86e0b9edf4808a993447b97aefc5c5a31",
+    "candidates/task-writer-cost-actual/reader-admission-diagnostic/readers.ts": "cf776db2f676ae562be8f6f98ddea5a915d1227834a2b742f2083b19f5e50884",
+    "candidates/task-writer-cost-actual/reader-admission-diagnostic.json": "42a8626da21653289211062f54f7eb439efe8f9193f698d9fb871e4007dff24b",
+    "candidates/task-writer-cost-actual/reader-admission-first/helpers.ts": "1be5563e51cd1300d9833d21362f58571544521be6cffbb33ed6ec60b85f2a30",
+    "candidates/task-writer-cost-actual/reader-admission-first/read-adapters.json": "62953545901ffbc512956800fe7db1de343f4bf0e65e1d7c8eccb06fecedcd6f",
+    "candidates/task-writer-cost-actual/reader-admission-first/reader-admission-actual.json": "ed3d661cee14cfb5ff6140d3dbde7f92932a01233a707d34ef38e5ea01722507",
+    "candidates/task-writer-cost-actual/reader-admission-first/reader-admission.ts": "b4ca65fa833d48802309798cbb6a34f5ad2c9bf6070a4cbab2f032b1123cfbda",
+    "candidates/task-writer-cost-actual/reader-admission-first/readers.ts": "e1174ca29a18a2912e74daad69ae02388c55a520bd643abe82f0fecf98cde185",
+    "candidates/task-writer-cost-actual/reader-admission.ts": "db8f04660eb1dc76204cd6f47dae1ccad0bb62c8bba1a5b9adac14d9e54c7e89",
+    "candidates/task-writer-cost-actual/reader-wrapper-correction.json": "9b0520e1562a638ce723d102fdb59dae0ed4427395a1bfe1970aa4243d3d8284",
+    "candidates/task-writer-cost-actual/readers.ts": "10666e5fc7742ffc2ecc399c05ae7b0d66da9362663063ce4e645f338ff16b9a",
+    "candidates/task-writer-cost-actual/review-prepared.ts": "a0c10fa8190f87d15e6ea805a6aff3dd46287324c6e8710c9addab702c9168d8",
+    "candidates/task-writer-cost-actual/strict-typecheck-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/task-writer-cost-actual/strict-typecheck-first.log": "4f35379f0f5e4fd73c3b592829e9c6c000f43f89b1c289cfe562698c72734d82",
+    "candidates/task-writer-cost-actual/writer.ts": "07a142e655f9df7e9338d8d2c89bc6e516be2b33dba3bdc46b51eda2becbdb58",
+    "candidates/task-writer-cost-actual/approved-private-runner.py": "3d527a67ece961a9701d7f1f6ae25f69404c9c6945b574eef98c09397e0693c8",
+    "evidence/task-writer-cost-actual.json": "b0af32f75ffc6fb0fa277c0a10a0d7bc3302acc76b7830ae889457cc8245dae3",
+    "evidence/task-writer-cost-interpretation.json": "b0896ae123d136396df231242e04404e9166cf4ca5595b0fc08527847794a46f",
+    "task-writer-cost-actual.md": "1823dd94b6b9377f21d03485a0fb50c6b53860101b7bb36ff540ca4088183052",
+    "task-writer-cost-plan.md": "dbb0372739b98647aebeb4837a633b2a767871ac2732c09c622f6956b560e66f",
+    "task-writer-cost-plan.json": "2020dcd3bd8096771f52074d77ec3b055429f18c9acd24e23e89ac90c8dfc078"
+  },
+  "actualReceipt": "evidence/task-writer-cost-actual.json",
+  "interpretation": "evidence/task-writer-cost-interpretation.json",
+  "writerStatements": 16,
+  "savedDistinctRows": 8,
+  "readerLabelsPerPhase": 13,
+  "distinctSqlAndBindings": 11,
+  "pairedReaderLabels": 26,
+  "readerPlanPairs": 8,
+  "writerRootSums": {
+    "i0": {
+      "Shared Hit Blocks": 175,
+      "Shared Read Blocks": 33,
+      "Shared Dirtied Blocks": 50,
+      "Shared Written Blocks": 1,
+      "WAL Records": 61,
+      "WAL FPI": 46,
+      "WAL Bytes": 351727,
+      "Root Shared Visits": 208
+    },
+    "i1": {
+      "Shared Hit Blocks": 190,
+      "Shared Read Blocks": 42,
+      "Shared Dirtied Blocks": 56,
+      "Shared Written Blocks": 1,
+      "WAL Records": 69,
+      "WAL FPI": 0,
+      "WAL Bytes": 10203,
+      "Root Shared Visits": 232
+    }
+  },
+  "everyWriterExtraSharedVisits": 3,
+  "everyWriterExtraWalRecords": 1,
+  "causalWalByteComparisonAccepted": false,
+  "naturalHotActiveOrCommittedWriterAcceptance": false,
+  "allCopyAndOriginalLogicalRestorationPassed": true,
+  "originalTables": 102,
+  "originalRows": 1864145,
+  "copiesDropped": 2,
+  "sourceUnchanged": true,
+  "all577AppSourcesUnchanged": true,
+  "leaseReleased": true,
+  "productionTasksAdoption": false,
+  "commonGatesRerun": false,
+  "commonGateBoundary": "No application/test source changed; current825/715 common batch and prior normal trial remain separate.",
+  "statisticsBoundary": "The immutable receipt field checkpointCountersStableWithinEachWriterWindow means equal observed endpoint values only. Cumulative statistics can remain cached in the transaction; stats_fetch_consistency was not recorded or changed and pg_stat_clear_snapshot was not called. No no-checkpoint/autovacuum interval claim is admitted. Same-transaction pg_stat_xact_user_tables counters continuously update and remain separate.",
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "src/lib/server/notifications/index.ts": {
+        "before": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+        "after": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7"
+      },
+      "package.json": {
+        "before": "faacde885a670752c385f25f114b3ff80e0182769d72a82706ce5d804a509139",
+        "after": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/providers/maintenance.server.ts",
+          "before": "dcc93147ba085a07562271c9acc54aa5aec49e7356be01d89ba749fb1dd2ee13",
+          "after": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T02:01:28.135299+00:00",
+      "reportRef": "implementation-found-17.md",
+      "paths": [
+        "src/lib/social/taste-cache.server.ts"
+      ],
+      "boundary": "Current reviewed owner/prose/checker identity only; archived native query epochs and every previous acceptance receipt remain unchanged."
+    },
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "src/lib/sync/jellyfin.server.ts"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "src/lib/providers/steam/sync.server.ts"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    }
+  ]
+}

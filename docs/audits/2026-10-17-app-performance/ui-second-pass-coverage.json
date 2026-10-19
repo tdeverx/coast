@@ -1,0 +1,1189 @@
+{
+  "head": "eb0673873462b71118d1c11678d128958a05ff07",
+  "date": "2026-10-17",
+  "scope": "independent shared UI source second pass;root owns actual browser/build checks",
+  "files": [
+    {
+      "file": "src/lib/ui/charts/ChartView.svelte",
+      "lines": 38,
+      "sha256": "5f92ec30193d1802969e8e4c171fdae84271045881b0d796f809d8033f955ae1",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/clock.svelte.ts",
+      "lines": 40,
+      "sha256": "28a47a5a8b51ad980da44d82cc882e52f837ddc5542462da33a0b623b5f12df8",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/Avatar.svelte",
+      "lines": 21,
+      "sha256": "0bcf81b737191de45ef0464ddb2a24fd0c1ac3af7f70c2660031427a44b0c082",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/AvatarPicker.svelte",
+      "lines": 140,
+      "sha256": "6732bd940949cc11b6fdb1887a5940bee8a39d4bc25b4a7cbd8708a5da4067e0",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/ConnectionCard.svelte",
+      "lines": 419,
+      "sha256": "d8f107af46b2c7ba35852f81107e5fd836d075613d0b46d715522de6fe9ce969",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/DetailCard.svelte",
+      "lines": 90,
+      "sha256": "eac8f6324922d923480af4b00ca437ea3d9a6ab1859f1402e01c329ac3f7ee98",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/DetailOverlay.svelte",
+      "lines": 30,
+      "sha256": "dee4a3b5edb0bc89c63eb7e6f0f6b3eab5c3aba80d5001842392387a87be1118",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/Dialog.svelte",
+      "lines": 263,
+      "sha256": "b47f6f269a93b85265302e346071cad37013343eb1bf4faf516305b43351faaa",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/FriendsPanel.svelte",
+      "lines": 91,
+      "sha256": "162843b32d075e56a051852d70e7dc0d4e275d21e4ba68a5f8b806d6d0ea3857",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/Header.svelte",
+      "lines": 206,
+      "sha256": "2976f0ff76329d05455135eacfb53c8317f3f30489492c35ee510835984d4780",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/JobsSettings.svelte",
+      "lines": 150,
+      "sha256": "64e08d0467aca8e3f8f1e4079a9874ce32a54bb785c799c573adde048a299e94",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/MediaCard.svelte",
+      "lines": 564,
+      "sha256": "057ff79292214b7eefd0311efce0ce6c8dd5866b375ad88c116b30e2a022897a",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/MediaHero.svelte",
+      "lines": 371,
+      "sha256": "f8ad70c4381400015b295acb417978d25a294a3b2adfe690befc7181b270f3ea",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/NotificationInbox.svelte",
+      "lines": 188,
+      "sha256": "925312bf997664a68f10214ada93341a1acc9c646c668f8ee5edff9ab2e294af",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/NotificationToasts.svelte",
+      "lines": 91,
+      "sha256": "e6c820cf6e118fc2dd9fe765e93fd44917e5270aaf949331d248339281a59672",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/Shelf.svelte",
+      "lines": 469,
+      "sha256": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/StreamsPanel.svelte",
+      "lines": 52,
+      "sha256": "6b89fa07280b2742701f4ecfb1eef61fe1b00050abc1e0e3d25fe289580fdf9b",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/components/WorkMenu.svelte",
+      "lines": 38,
+      "sha256": "510bd0cc9d8b6f8b2c223ffdd3da60b5361591fba5f2af9c0ea7f4679619c553",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/context-gesture.ts",
+      "lines": 85,
+      "sha256": "9d5c5049d0311fd58fae58a13cfa2593efe96c6d3df7c836f1ad005eee66277d",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/controls/menu-resource.svelte.ts",
+      "lines": 85,
+      "sha256": "7695cc48f4c22899cd9609df7e7784c8df6c7102e9d9ca6cf50a9f3001ab77b5",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/controls/menu.svelte.ts",
+      "lines": 331,
+      "sha256": "193db0b6d6f0b5d53b424f3a29b1316d9a83453464562b32962c66968b457e4c",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/detail-section.svelte.ts",
+      "lines": 19,
+      "sha256": "dd2156aa5d90546a7c74cd413cda961dc6cd507108501f522a3d2dcd8a4adf0d",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/diagnostics.ts",
+      "lines": 70,
+      "sha256": "2cbf4464475f6e55dddd9d0e14cc0d160f745f56d1bb2917f9ddc5afc4d5dbd1",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/heroes/playback.svelte.ts",
+      "lines": 72,
+      "sha256": "edd01eb653f34a47737612a134186c11a27cc142793f59be7e160c3d7c182e01",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/heroes/presentation.svelte.ts",
+      "lines": 229,
+      "sha256": "bfebb4ffc44c07bc1f3a504c122b38aa8749c6f372c46d49efa73b54798a85fb",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/lazy-content.ts",
+      "lines": 19,
+      "sha256": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/lazy-image.ts",
+      "lines": 97,
+      "sha256": "8922b71afabcffb43a0215ef837b79f7dec98a2631f70a47e1c9b9f1f853744d",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/materials/experimental.ts",
+      "lines": 137,
+      "sha256": "e28fdab493940eb7181e2d1beb069b5a49693e7eef0072e7aafdf02f76f79f93",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/materials/glass.ts",
+      "lines": 347,
+      "sha256": "234cd8ea6656437094aabd29b14af839daec69f263167f45e1774bc6b0103918",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/materials/sliding-pill.ts",
+      "lines": 68,
+      "sha256": "b1d69faeb0b9f36216d78cd2274373c6a62858c7676fac70cb9d0473ce956752",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/resource.svelte.ts",
+      "lines": 75,
+      "sha256": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/cast.svelte.ts",
+      "lines": 28,
+      "sha256": "c565e1a7e7478a5e9f6150b8f8fa7baabbd8cfa1f84e738541fc16c11854dd98",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/controls.ts",
+      "lines": 19,
+      "sha256": "0b9c9f1d8fb02391fab8263113485c167f9daff2f6875e683812d63be6d298bb",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/credits.svelte.ts",
+      "lines": 112,
+      "sha256": "5f749b9cdbfdd7865f161b705bb2b5f99127db57097ecbbbc3defee86a9e9987",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/detail.svelte.ts",
+      "lines": 50,
+      "sha256": "00be76aa839f4eeded9634eb6451960efa8497d0b24ed7450eba496521c94d24",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/discovery.svelte.ts",
+      "lines": 224,
+      "sha256": "0eea654859d9848e3457b9863ac11b71ce3de8f468fdd8f9be30df33503406a5",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/episodes.svelte.ts",
+      "lines": 44,
+      "sha256": "ed03d3212ea0fbd54ffc4995ab801d0592a449baae9fd8d6c1205ddf5074bf30",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/for-you.svelte.ts",
+      "lines": 90,
+      "sha256": "82bfd382e8d045ca3ef2c56b5ae6de68f8e901ea47fd3ab7bba38f76325b7d9a",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/home.ts",
+      "lines": 11,
+      "sha256": "d5ac544ba280a416571b7b5485af36e87bf768777f770bd81c23a0034a2c3efa",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/index.ts",
+      "lines": 36,
+      "sha256": "6e5055dfe6308433a718bbb0405de541011a934efb582db76becaa1834f7afc5",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/journal-cards.ts",
+      "lines": 37,
+      "sha256": "3f5be0496e19fbbd9f462cbd852e25b860853633d9f9bbb9538ce67b9eb55f52",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/journal-visible.ts",
+      "lines": 11,
+      "sha256": "b938b5ee967de28f3c143d1dc28c99b05e06370143077bd1e92870ce14435146",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/journal.svelte.ts",
+      "lines": 96,
+      "sha256": "819b8fd31384bf7c9abed912cfa1db3bf4855e766046c405fc9893d14808b1a1",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/layout.svelte.ts",
+      "lines": 181,
+      "sha256": "fd449adc5c7878f6b1170dcffa9ba39c200dbb7369bc30d2f646c07c3ba37fd4",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/library.svelte.ts",
+      "lines": 165,
+      "sha256": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/list.svelte.ts",
+      "lines": 100,
+      "sha256": "eed96a076485e546ef405bb9230d0a5a0f3f6993b07191cc1cecda3ff3534c22",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/local.svelte.ts",
+      "lines": 90,
+      "sha256": "79772309b9f4b2946149a0abbc93875bf13929e06c48b0d3d29c93b97acbaac4",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/progress.svelte.ts",
+      "lines": 175,
+      "sha256": "2d6bdc1f28373132abb542a6b3ce79fb4555d0fac690814f382d794b0bf74111",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/search.svelte.ts",
+      "lines": 56,
+      "sha256": "81597cfbfd699848a051a5cb9c9821d981fd3b172cf4dcc82cb466ba592c9c12",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/social.svelte.ts",
+      "lines": 59,
+      "sha256": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/shelves/types.ts",
+      "lines": 58,
+      "sha256": "10e7b93e83e7944eb998ef54ccd6abbaeaa86ad4cf663cf58ce9c044b936af37",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    },
+    {
+      "file": "src/lib/ui/social-enrichment.ts",
+      "lines": 83,
+      "sha256": "2e03db35cbdab64ba099713005b9fc579c7b999d8755c0399b4539d0592e75d4",
+      "review": "source owner/lifetime/bounds inspection; not a runtime certification"
+    }
+  ],
+  "sourceCount": 52,
+  "sourceLines": 6620,
+  "canonicalOwners": [
+    {
+      "owner": "src/lib/ui/resource.svelte.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/friends.svelte.ts",
+          "line": 3,
+          "import": "./resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/shelves/detail.svelte.ts",
+          "line": 4,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/shelves/for-you.svelte.ts",
+          "line": 9,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/shelves/list.svelte.ts",
+          "line": 9,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/shelves/progress.svelte.ts",
+          "line": 16,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/shelves/journal.svelte.ts",
+          "line": 3,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/shelves/library.svelte.ts",
+          "line": 8,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/shelves/discovery.svelte.ts",
+          "line": 7,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/shelves/social.svelte.ts",
+          "line": 6,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/shelves/credits.svelte.ts",
+          "line": 5,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/controls/menu-resource.svelte.ts",
+          "line": 1,
+          "import": "../resource.svelte"
+        },
+        {
+          "file": "src/lib/reading/Details.svelte",
+          "line": 18,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/reading/ReadingLaunch.svelte",
+          "line": 5,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/recommendations/DynamicFeed.svelte",
+          "line": 6,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/benchmarks/BenchmarkSettings.svelte",
+          "line": 10,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/media/Details.svelte",
+          "line": 16,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/media/DetailRows.svelte",
+          "line": 9,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/work-menu/CatalogueActions.svelte",
+          "line": 28,
+          "import": "../resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/work-menu/ScreenActions.svelte",
+          "line": 6,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/NotificationInbox.svelte",
+          "line": 19,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/FriendsPanel.svelte",
+          "line": 23,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/StreamsPanel.svelte",
+          "line": 9,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/ReactionActions.svelte",
+          "line": 9,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/MediaActivity.svelte",
+          "line": 7,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/SyncedControls.svelte",
+          "line": 6,
+          "import": "$lib/ui/resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/pages/SectionDetails.svelte",
+          "line": 4,
+          "import": "$lib/ui/resource.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/social-enrichment.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/components/Shelf.svelte",
+          "line": 22,
+          "import": "$lib/ui/social-enrichment"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/lazy-image.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/components/MediaCard.svelte",
+          "line": 22,
+          "import": "$lib/ui/lazy-image"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/lazy-content.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/recommendations/DynamicFeed.svelte",
+          "line": 7,
+          "import": "$lib/ui/lazy-content"
+        },
+        {
+          "file": "src/lib/ui/components/Shelf.svelte",
+          "line": 13,
+          "import": "$lib/ui/lazy-content"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/clock.svelte.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/components/JobSchedule.svelte",
+          "line": 6,
+          "import": "$lib/ui/clock.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/FriendsPanel.svelte",
+          "line": 17,
+          "import": "$lib/ui/clock.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/MediaCard.svelte",
+          "line": 26,
+          "import": "$lib/ui/clock.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/StreamsPanel.svelte",
+          "line": 11,
+          "import": "$lib/ui/clock.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/PartyMenu.svelte",
+          "line": 6,
+          "import": "$lib/ui/clock.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/SyncedControls.svelte",
+          "line": 10,
+          "import": "$lib/ui/clock.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/shelves/index.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/section-target.ts",
+          "line": 1,
+          "import": "./shelves"
+        },
+        {
+          "file": "src/lib/ui/shelves/home.ts",
+          "line": 2,
+          "import": "./index"
+        },
+        {
+          "file": "src/lib/ui/pages/types.ts",
+          "line": 8,
+          "import": "$lib/ui/shelves"
+        },
+        {
+          "file": "src/routes/discover/+page.svelte",
+          "line": 4,
+          "import": "$lib/ui/shelves"
+        },
+        {
+          "file": "src/routes/ui-preview/Demo.svelte",
+          "line": 87,
+          "import": "$lib/ui/shelves"
+        },
+        {
+          "file": "src/lib/ui/components/Shelf.svelte",
+          "line": 9,
+          "import": "$lib/ui/shelves"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/shelves/layout.svelte.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/components/Shelf.svelte",
+          "line": 12,
+          "import": "$lib/ui/shelves/layout.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/controls/menu-resource.svelte.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/controls/work.svelte.ts",
+          "line": 5,
+          "import": "./menu-resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/work-menu/CatalogueActions.svelte",
+          "line": 18,
+          "import": "../controls/menu-resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/work-menu/ScreenActions.svelte",
+          "line": 7,
+          "import": "$lib/ui/controls/menu-resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/WorkListActions.svelte",
+          "line": 5,
+          "import": "$lib/ui/controls/menu-resource.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/PartyMenu.svelte",
+          "line": 10,
+          "import": "$lib/ui/controls/menu-resource.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/controls/menu.svelte.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/components/RecommendAction.svelte",
+          "line": 8,
+          "import": "$lib/ui/controls/menu.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/Button.svelte",
+          "line": 7,
+          "import": "$lib/ui/controls/menu.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/materials/glass.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/routes/ui-preview/charts/ChartGallery.svelte",
+          "line": 11,
+          "import": "$lib/ui/materials/glass"
+        },
+        {
+          "file": "src/lib/ui/materials/MaterialTweaker.svelte",
+          "line": 9,
+          "import": "./glass"
+        },
+        {
+          "file": "src/lib/ui/components/SegmentedControl.svelte",
+          "line": 3,
+          "import": "$lib/ui/materials/glass"
+        },
+        {
+          "file": "src/lib/ui/components/Header.svelte",
+          "line": 41,
+          "import": "$lib/ui/materials/glass"
+        },
+        {
+          "file": "src/lib/ui/components/MediaCard.svelte",
+          "line": 25,
+          "import": "$lib/ui/materials/glass"
+        },
+        {
+          "file": "src/lib/ui/components/Button.svelte",
+          "line": 5,
+          "import": "$lib/ui/materials/glass"
+        },
+        {
+          "file": "src/lib/ui/components/PersistentPlayer.svelte",
+          "line": 19,
+          "import": "$lib/ui/materials/glass"
+        },
+        {
+          "file": "src/lib/ui/components/Dialog.svelte",
+          "line": 7,
+          "import": "$lib/ui/materials/glass"
+        },
+        {
+          "file": "src/lib/ui/components/Shelf.svelte",
+          "line": 14,
+          "import": "$lib/ui/materials/glass"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/materials/experimental.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/materials/export.ts",
+          "line": 1,
+          "import": "./experimental"
+        },
+        {
+          "file": "src/lib/ui/materials/MaterialTweaker.svelte",
+          "line": 10,
+          "import": "./experimental"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/materials/sliding-pill.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/components/SegmentedControl.svelte",
+          "line": 2,
+          "import": "$lib/ui/materials/sliding-pill"
+        },
+        {
+          "file": "src/lib/ui/components/Header.svelte",
+          "line": 40,
+          "import": "$lib/ui/materials/sliding-pill"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/components/MediaCard.svelte",
+      "directStaticConsumers": [
+        {
+          "file": "src/routes/ui-preview/Demo.svelte",
+          "line": 42,
+          "import": "$lib/ui/components/MediaCard.svelte"
+        },
+        {
+          "file": "src/routes/profile/[username]/+page.svelte",
+          "line": 20,
+          "import": "$lib/ui/components/MediaCard.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/NotificationInbox.svelte",
+          "line": 14,
+          "import": "./MediaCard.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/PartyCard.svelte",
+          "line": 3,
+          "import": "./MediaCard.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/StreamsPanel.svelte",
+          "line": 7,
+          "import": "./MediaCard.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/MediaDetailRows.svelte",
+          "line": 4,
+          "import": "./MediaCard.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/Shelf.svelte",
+          "line": 35,
+          "import": "./MediaCard.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/components/Shelf.svelte",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/pages/detail.ts",
+          "line": 3,
+          "import": "../components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/music/+page.svelte",
+          "line": 10,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/discover/+page.svelte",
+          "line": 8,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/FeatureExamples.svelte",
+          "line": 8,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/CatalogueExamples.svelte",
+          "line": 6,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/Demo.svelte",
+          "line": 86,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/progress/+page.svelte",
+          "line": 3,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/lists/+page.svelte",
+          "line": 3,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/for-you/+page.svelte",
+          "line": 9,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/planning/+page.svelte",
+          "line": 9,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/library/+page.svelte",
+          "line": 6,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/requests/+page.svelte",
+          "line": 6,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/search/+page.svelte",
+          "line": 5,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/games/+page.svelte",
+          "line": 11,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/media/[id]/history/+page.svelte",
+          "line": 3,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/taste/[friendId]/+page.svelte",
+          "line": 7,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/routes/profile/[username]/+page.svelte",
+          "line": 18,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/lib/reading/Details.svelte",
+          "line": 8,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/lib/reading/GroupDetails.svelte",
+          "line": 4,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/lib/recommendations/DynamicFeed.svelte",
+          "line": 8,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/lib/media/Details.svelte",
+          "line": 10,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/lib/media/PersonDetails.svelte",
+          "line": 2,
+          "import": "$lib/ui/components/Shelf.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/MediaDetails.svelte",
+          "line": 7,
+          "import": "./Shelf.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/MediaDetailRows.svelte",
+          "line": 3,
+          "import": "./Shelf.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/Shelf.svelte",
+          "line": 31,
+          "import": "./Shelf.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/MediaPage.svelte",
+          "line": 9,
+          "import": "./Shelf.svelte"
+        },
+        {
+          "file": "src/lib/ui/pages/SectionDetails.svelte",
+          "line": 13,
+          "import": "../components/Shelf.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/components/Dialog.svelte",
+      "directStaticConsumers": [
+        {
+          "file": "src/routes/ui-preview/CatalogueExamples.svelte",
+          "line": 11,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/Demo.svelte",
+          "line": 31,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/routes/lists/+page.svelte",
+          "line": 11,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/routes/requests/+page.svelte",
+          "line": 9,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/routes/media/[id]/history/+page.svelte",
+          "line": 11,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/routes/settings/[[section]]/+page.svelte",
+          "line": 34,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/reading/Reader.svelte",
+          "line": 8,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/reading/ReadingLaunch.svelte",
+          "line": 7,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/sharing/ShareAction.svelte",
+          "line": 3,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/experiments/PlanAction.svelte",
+          "line": 4,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/media/Details.svelte",
+          "line": 13,
+          "import": "$lib/ui/components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/work-menu/CatalogueActions.svelte",
+          "line": 16,
+          "import": "../components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/work-menu/MusicCommands.svelte",
+          "line": 6,
+          "import": "../components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/work-menu/ReadingCommands.svelte",
+          "line": 12,
+          "import": "../components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/work-menu/ScreenActions.svelte",
+          "line": 35,
+          "import": "../components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/work-menu/GameCommands.svelte",
+          "line": 12,
+          "import": "../components/Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/RecommendAction.svelte",
+          "line": 10,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/NotificationInbox.svelte",
+          "line": 7,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/ProfileFeatureEditor.svelte",
+          "line": 6,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/DetailOverlay.svelte",
+          "line": 3,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/JobSchedule.svelte",
+          "line": 17,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/CollectionProjectionSettings.svelte",
+          "line": 8,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/FriendsPanel.svelte",
+          "line": 4,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/IntegrationSettings.svelte",
+          "line": 9,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/StreamsPanel.svelte",
+          "line": 3,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/ConflictList.svelte",
+          "line": 7,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/ConnectionCard.svelte",
+          "line": 12,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/PersistentPlayer.svelte",
+          "line": 23,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/RequestDialog.svelte",
+          "line": 9,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/Shelf.svelte",
+          "line": 17,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/MetadataEditor.svelte",
+          "line": 7,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/SyncedControls.svelte",
+          "line": 15,
+          "import": "./Dialog.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/ProfileEditor.svelte",
+          "line": 9,
+          "import": "./Dialog.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/components/NotificationToasts.svelte",
+      "directStaticConsumers": [
+        {
+          "file": "src/routes/+layout.svelte",
+          "line": 20,
+          "import": "$lib/ui/components/NotificationToasts.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/+page.svelte",
+          "line": 12,
+          "import": "$lib/ui/components/NotificationToasts.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/SocialExamples.svelte",
+          "line": 71,
+          "import": "$lib/ui/components/NotificationToasts.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/SocialExamples.svelte",
+          "line": 81,
+          "import": "$lib/ui/components/NotificationToasts.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/Demo.svelte",
+          "line": 57,
+          "import": "$lib/ui/components/NotificationToasts.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/PreviewExample.svelte",
+          "line": 6,
+          "import": "$lib/ui/components/NotificationToasts.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/components/NotificationInbox.svelte",
+      "directStaticConsumers": [
+        {
+          "file": "src/routes/+layout.svelte",
+          "line": 31,
+          "import": "$lib/ui/components/NotificationInbox.svelte"
+        },
+        {
+          "file": "src/routes/+layout.svelte",
+          "line": 42,
+          "import": "$lib/ui/components/NotificationInbox.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/SocialExamples.svelte",
+          "line": 69,
+          "import": "$lib/ui/components/NotificationInbox.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/SocialExamples.svelte",
+          "line": 79,
+          "import": "$lib/ui/components/NotificationInbox.svelte"
+        },
+        {
+          "file": "src/routes/ui-preview/Demo.svelte",
+          "line": 56,
+          "import": "$lib/ui/components/NotificationInbox.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/components/AvatarPicker.svelte",
+      "directStaticConsumers": [
+        {
+          "file": "src/routes/ui-preview/Demo.svelte",
+          "line": 3,
+          "import": "$lib/ui/components/AvatarPicker.svelte"
+        },
+        {
+          "file": "src/routes/onboarding/+page.svelte",
+          "line": 5,
+          "import": "$lib/ui/components/AvatarPicker.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/ProfileEditor.svelte",
+          "line": 8,
+          "import": "./AvatarPicker.svelte"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/diagnostics.ts",
+      "directStaticConsumers": [
+        {
+          "file": "src/lib/ui/client.ts",
+          "line": 1,
+          "import": "./diagnostics"
+        },
+        {
+          "file": "src/lib/playback/client.svelte.ts",
+          "line": 1,
+          "import": "$lib/ui/diagnostics"
+        },
+        {
+          "file": "src/routes/+layout.svelte",
+          "line": 15,
+          "import": "$lib/ui/diagnostics"
+        },
+        {
+          "file": "src/lib/ui/components/PersistentPlayer.svelte",
+          "line": 5,
+          "import": "$lib/ui/diagnostics"
+        }
+      ]
+    },
+    {
+      "owner": "src/lib/ui/charts/ChartView.svelte",
+      "directStaticConsumers": [
+        {
+          "file": "src/routes/ui-preview/charts/ChartGallery.svelte",
+          "line": 13,
+          "import": "$lib/ui/charts/ChartView.svelte"
+        },
+        {
+          "file": "src/lib/reading/Details.svelte",
+          "line": 12,
+          "import": "$lib/ui/charts/ChartView.svelte"
+        },
+        {
+          "file": "src/lib/games/Details.svelte",
+          "line": 17,
+          "import": "$lib/ui/charts/ChartView.svelte"
+        },
+        {
+          "file": "src/lib/ui/components/DetailCard.svelte",
+          "line": 3,
+          "import": "../charts/ChartView.svelte"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "static import graph does not certify every dynamic runtime call",
+    "no new synthetic workload measurements",
+    "actual-data acceptance from coordinator required",
+    "catalogue/planning/preview state and essential playback policies must be preserved"
+  ]
+}

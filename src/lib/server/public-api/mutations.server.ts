@@ -15,7 +15,7 @@ import { logMusic } from '$lib/music/persistence.server';
 import { createPlaythrough,updatePlaythrough,logGameSession } from '$lib/core/games/service.server';
 import { createWebhook,removeWebhook } from './webhooks.server';
 import type { authenticateApiToken } from './tokens.server';
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig, requireFeatureInTransaction } from '$lib/server/features';
 
 const uuid=v.pipe(v.string(),v.uuid());
 export function canonicalJson(value:unknown):string{if(Array.isArray(value))return `[${value.map(canonicalJson).join(',')}]`;if(value!==null&&typeof value==='object')return `{${Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>`${JSON.stringify(key)}:${canonicalJson(item)}`).join(',')}}`;return JSON.stringify(value);}
@@ -39,10 +39,14 @@ export async function publicMutation(user:Awaited<ReturnType<typeof authenticate
  const hash=createHash('sha256').update(`${method}:${route}:${canonicalJson(data)}`).digest('hex');
  const config=await getFeatureConfig(user.id);
  return getDb().transaction(async tx=>{
-  // Lock the account before replay state: the same order as concrete tracking writes.
+  // Policy/subject admission precedes the account lock, as it does in concrete writes.
+  // Keep the subject lock shared: upgrading it while another writer awaits the
+  // account lock creates a cycle. Only the credential needs an exclusive row lock.
+  await tx.execute(sql`select coast_lock_feature_policy(${user.id}::uuid)`);
   await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${user.id},0))`);
-  const [token]=await tx.select({id:apiTokens.id}).from(apiTokens).innerJoin(users,eq(users.id,apiTokens.userId)).where(and(eq(apiTokens.id,user.tokenId),eq(apiTokens.userId,user.id),sql`${apiTokens.revokedAt} is null and ${apiTokens.expiresAt}>now()`,eq(users.disabled,false))).for('update');
+  const [token]=await tx.select({id:apiTokens.id}).from(apiTokens).innerJoin(users,eq(users.id,apiTokens.userId)).where(and(eq(apiTokens.id,user.tokenId),eq(apiTokens.userId,user.id),sql`${apiTokens.revokedAt} is null and ${apiTokens.expiresAt}>now()`,eq(users.disabled,false))).for('update',{of:apiTokens});
   if(!token)throw new AppError(401,'This token is invalid or expired.','invalid_token');
+  await requireFeatureInTransaction(tx,user.id,'api');
   const [replay]=await tx.select().from(apiIdempotency).where(and(eq(apiIdempotency.tokenId,user.tokenId),eq(apiIdempotency.key,key)));
   if(replay){if(replay.requestHash!==hash)throw new AppError(409,'This idempotency key belongs to a different request.','idempotency_conflict');return {response:JSON.parse(await decryptCredential(replay.response)),status:replay.status,replayed:true};}
   let result:unknown;

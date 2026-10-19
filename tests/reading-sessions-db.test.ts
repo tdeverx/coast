@@ -146,7 +146,8 @@ run('reading files share metadata but never grant another account cached availab
   await updateReading(users[0],work,{state:'reading'});
   expect((await collectionData(users[0],{category:'reading',activity:'reading'})).items.map(item=>item.id)).toContain(work);
   const {load}=await import('../src/routes/library/+page.server');
-  const event={locals:{user:{id:users[0]}},depends:()=>{},url:new URL(`http://coast/library?view=read&collection=true&activity=reading&scope=available&source=${connections[0]}`)};
+  const request=new Request(`http://coast/library?view=read&collection=true&activity=reading&scope=available&source=${connections[0]}`);
+  const event={locals:{user:{id:users[0]}},depends:()=>{},request,url:new URL(request.url)};
   const page=await load(event as Parameters<typeof load>[0]);
   expect(page?.filters).toMatchObject({source:connections[0],scope:'available',availability:'available',activity:'reading'});
   expect(page?.content?.items.map(item=>item.id)).toContain(work);

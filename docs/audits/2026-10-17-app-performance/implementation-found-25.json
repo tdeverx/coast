@@ -1,0 +1,253 @@
+{
+  "at": "2026-10-19T05:08:15.317815+00:00",
+  "status": "prescribed-methods-adopted-accepted-or-default-retained",
+  "canonicalIds": [
+    "PR-11",
+    "DATA-07",
+    "FRT-03",
+    "MIN-03",
+    "MIN-07",
+    "MIN-05",
+    "PR-14",
+    "UIC-04",
+    "PLAN-10",
+    "UPP-01",
+    "UPP-02",
+    "PR-13"
+  ],
+  "runtimeSourceChanged": true,
+  "runtimePaths": [
+    "src/lib/music/queue.server.ts",
+    "src/lib/core/games/service.server.ts",
+    "src/lib/collection/projection.server.ts",
+    "src/lib/ui/components/CollectionProjectionSettings.svelte"
+  ],
+  "sourcePins": {
+    "src/lib/music/queue.server.ts": "46975b7dfe3bd446e3b8bc4f180518edf9e54e1782dcfc0bbe6fe255c49fe862",
+    "src/lib/core/games/service.server.ts": "034e72426d23d1f4d9d194fe55c36942aea729bf5b28e50fedd55bc528b6d3f4",
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b",
+    "docs/audits/2026-10-17-app-performance/verify-report-integrity.py": "db234fcbfdcd60a3d700254e9eb93bc6265e8b695f57d92924666058b81d10f1",
+    "src/lib/collection/projection.server.ts": "77632c37e3ac6a793efadfe07c76d5be0cf1dd24927fa0a11973f264d1dc8736",
+    "src/lib/ui/components/CollectionProjectionSettings.svelte": "d984109c757899b09a16300d5f2cb6587d9c2e3f55fdad968d557825e0c96115"
+  },
+  "sourceChanges": {
+    "src/lib/music/queue.server.ts": {
+      "before": "b447ce0d30bf9ae46c2e2ae1bb9a3019d57caa4b5e978808765ad56fdc85636d",
+      "after": "46975b7dfe3bd446e3b8bc4f180518edf9e54e1782dcfc0bbe6fe255c49fe862"
+    },
+    "src/lib/core/games/service.server.ts": {
+      "before": "053d8dad52b931840d7acedbd4e3d0900dd501a387750f5c63d9bf8c550d1ddc",
+      "after": "034e72426d23d1f4d9d194fe55c36942aea729bf5b28e50fedd55bc528b6d3f4"
+    },
+    "src/lib/collection/projection.server.ts": {
+      "before": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0",
+      "after": "77632c37e3ac6a793efadfe07c76d5be0cf1dd24927fa0a11973f264d1dc8736"
+    },
+    "src/lib/ui/components/CollectionProjectionSettings.svelte": {
+      "before": "f3c4a63b930f30a728bc764b631baf804c0dae5b8147e061a48d0038ec8a7b12",
+      "after": "d984109c757899b09a16300d5f2cb6587d9c2e3f55fdad968d557825e0c96115"
+    }
+  },
+  "methodOutcomes": {
+    "PR-11": "adopted-native-explicit-overflow",
+    "DATA-07": "adopted-structural-guard-authoritative-clocks-retained",
+    "UIC-04": "adopted-independent-narrow-transform-broader-acceptance-deferred",
+    "FRT-03": "rejected-native-recovery-divergence-default-retained",
+    "MIN-03": "named-positive-native-acceptance-passed",
+    "MIN-07": "positive-native-command-acceptance-passed-reminder-batching-not-adopted",
+    "PLAN-10": "original-measurement-executed-keep-current-no-candidate",
+    "PR-14": "original-capacity-measurement-executed-keep-current",
+    "MIN-05": "aggregate-measurement-executed-existing-ping-fix-retained",
+    "UPP-01": "conditional-method-input-contract-not-ready",
+    "UPP-02": "input-budget-contract-not-ready",
+    "PR-13": "actual-encoded-format-input-not-admitted"
+  },
+  "canonicalCounts": {
+    "canonical": 94,
+    "sourceApplied": 72,
+    "implemented": 33,
+    "partial": 37,
+    "open": 19,
+    "other": 5
+  },
+  "additionalObservations": 15,
+  "restorationRef": "evidence/implementation-found-25-restoration.json",
+  "commonGatesRef": "evidence/implementation-found-25-gates.json",
+  "wholeGoalComplete": false,
+  "artifactPins": {
+    "candidates/admin-execution-batch25/src__lib__collection__projection.server.ts.before.snapshot": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0",
+    "candidates/admin-execution-batch25/docs__performance.md.before.snapshot": "5bc443a4dd28cf7c7a84ec6cf160f09d4fb55611bc796addb103e6badc11ec02",
+    "candidates/admin-execution-batch25/docs__audits__2026-10-17-app-performance__verify-report-integrity.py.before.snapshot": "255556af7bbdee78483b76203638e8930c9f4b1cd870e81c99b49d701fd2ced6",
+    "candidates/admin-execution-batch25/source-before.json": "31182edce610e20dbe7ee01489c43a3a2e81d15bed3c92ef7caef1117696a9d3",
+    "candidates/admin-execution-batch25/report-body.md": "bd1f35ae85ffb1e979ca6b17efb7d7228059022dff1051b4710fb877fc354dcf",
+    "candidates/admin-execution-batch25/src__lib__music__queue.server.ts.before.snapshot": "b447ce0d30bf9ae46c2e2ae1bb9a3019d57caa4b5e978808765ad56fdc85636d",
+    "candidates/admin-execution-batch25/src__lib__core__games__service.server.ts.before.snapshot": "053d8dad52b931840d7acedbd4e3d0900dd501a387750f5c63d9bf8c550d1ddc",
+    "candidates/admin-execution-batch25/src__lib__ui__components__CollectionProjectionSettings.svelte.before.snapshot": "f3c4a63b930f30a728bc764b631baf804c0dae5b8147e061a48d0038ec8a7b12",
+    "candidates/admin-game-metadata-noop/preflight.ts": "aad19b1cf4bcea508b6d08f1ac27a6e0e2cd227368dd16492ebbb511393472a7",
+    "candidates/admin-game-metadata-noop/run.py": "0a009b31984e1db0f6d87c6883088c1ee400bf61013ba74f35d9f4a899eecc90",
+    "candidates/admin-game-metadata-noop/RESULT.md": "b0eac78efa67232b06fbf0a251cf5f4ab37a9328a69348cc88cfb4abed27e119",
+    "candidates/admin-game-metadata-noop/outcome.json": "16f417e7f6c2a258619e06768e80d13d5fb3e2a83faaa49e87d7e68ee567c0de",
+    "candidates/admin-game-metadata-noop/service.before.ts.txt": "053d8dad52b931840d7acedbd4e3d0900dd501a387750f5c63d9bf8c550d1ddc",
+    "candidates/admin-game-metadata-noop/candidate.patch": "97230f786300be16b30f39c8661eb04b0eed4864e8fea8d7efc653495ba4ace1",
+    "candidates/admin-game-metadata-noop/probe.ts": "b33e8aa1b418141480ff9e533503cc2dc051cc798d261110abe013da7df17ef7",
+    "candidates/admin-game-metadata-noop/actual.json": "181386df3eec818bf60beeda169630a5ce7ea0a0994a0b4887d1eff8a1d997df",
+    "candidates/admin-game-metadata-noop/service.candidate.ts.txt": "034e72426d23d1f4d9d194fe55c36942aea729bf5b28e50fedd55bc528b6d3f4",
+    "candidates/admin-game-metadata-noop/probe.attempt-1.ts.txt": "c18e3041e63850ed5f895cd5fe61f87423bdb8b258df4aa513175d2972e7f321",
+    "candidates/admin-game-metadata-noop/manifest.json": "51c788c2812d1d5d117700a01369afd75900ad34ffb64feb990a81b7783c5a67",
+    "candidates/admin-game-metadata-noop/harness-attempt-1.json": "07cc7bd774565037d56c0b22a5db76a75019b0f5d3a417e5574a1e8ef548757e",
+    "candidates/admin-game-metadata-noop/preflight.json": "1c45ff6a2a5c17f40ec7e88313f3f11422a566d267ce78d9e597af1e05b0d5d4",
+    "candidates/admin-game-metadata-noop/wrapper.ts": "b715170359212da96f83960f7cbc115fac3553f2444ea8e56eb67cf4d8c556ea",
+    "candidates/admin-game-metadata-noop/bootstrap.ts": "21050e25a3436c9f21ff04e0be6df6ff0911b91e5526c2ae33357373f6dc1b5b",
+    "candidates/admin-game-metadata-noop/work-features.owner.ts.txt": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63",
+    "candidates/admin-projection-preview/actual.raw-execution.json": "ef335d46f8edc100a23960f570a1eb547e4dca0d94e19a54423fd1bea68500a6",
+    "candidates/admin-projection-preview/projection.server.ts.candidate.txt": "77632c37e3ac6a793efadfe07c76d5be0cf1dd24927fa0a11973f264d1dc8736",
+    "candidates/admin-projection-preview/run.py": "afd12a476666df530b4784338aad945e60eed2739dd00d9e4462b6239185232b",
+    "candidates/admin-projection-preview/prepare.ts": "06a4a1767bfa0563531bd6e023f6cd260dbfbf667947eede2a9f9446ce0c15e5",
+    "candidates/admin-projection-preview/candidate.patch": "cca3f1badb75477e493ea16ab624cd02a50631014fc536d375ddee834059a1ac",
+    "candidates/admin-projection-preview/source-pins.json": "9217be6bf8f84f27703359fa6254c6458183eb4a28648d35593e75a38733e7e6",
+    "candidates/admin-projection-preview/CollectionProjectionSettings.svelte.candidate.txt": "d984109c757899b09a16300d5f2cb6587d9c2e3f55fdad968d557825e0c96115",
+    "candidates/admin-projection-preview/probe.ts": "7e9edf4e2bec65a390e18d19996681a085acab97acb90e10cab055a44d517d9a",
+    "candidates/admin-projection-preview/derivation.candidate.js": "6e2f9b680c05d4d097af4153b56c32341eea5545a8b0f778f316997bda09180c",
+    "candidates/admin-projection-preview/derivation.default.js": "3a168aae2ad525acc687c0adc61507c0dbbb6d6a9eea3f81f7783240436573d2",
+    "candidates/admin-projection-preview/actual.json": "239f6fc3f6cf79eb643258582452f120cfe0a6d4deee4f6b277043f583b966ca",
+    "candidates/admin-projection-preview/artifact-manifest.json": "3df1458e01c9f200dbbf5513e6f5b169d52ca71316b7322e842bece4e3626cb9",
+    "candidates/admin-projection-preview/projection.server.ts.before.txt": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0",
+    "candidates/admin-projection-preview/source-proof.json": "9d0694bfdf6889b407b1a504161f2f65c2b50793edd55fc3786306113b64cdf9",
+    "candidates/admin-projection-preview/outcome.md": "b6cdd7c3e9e20dc620f8154a93be4b67b6dfe14429d70142fe70f82e3b9f8e65",
+    "candidates/admin-projection-preview/wrapper.ts": "62e1a93fb0b1d1acb367a1cf61c8c248c0cf3d471da04ff0fbe9c74cad339d1b",
+    "candidates/admin-projection-preview/compiled-preflight.json": "0408b2a9aa8fdedebce683a58d154541e7f9ba7111eeec8c1207f33036346525",
+    "candidates/admin-projection-preview/CollectionProjectionSettings.svelte.before.txt": "f3c4a63b930f30a728bc764b631baf804c0dae5b8147e061a48d0038ec8a7b12",
+    "candidates/admin-music-queue-overflow/queue.candidate.ts.txt": "46975b7dfe3bd446e3b8bc4f180518edf9e54e1782dcfc0bbe6fe255c49fe862",
+    "candidates/admin-music-queue-overflow/summary.json": "ca1776ee92b4f8a1d648365d96a8a266f0965f0d4d41651b97c2e05e2073165a",
+    "candidates/admin-music-queue-overflow/run.py": "ef8579315c1c5bcf4c83aed2856b578139760cf16575ec361f0df67a0d6023c3",
+    "candidates/admin-music-queue-overflow/prepare.ts": "94d70aab0c3916ce681664875cac3180db97db9b9cda06f3a1c1a8fecc176016",
+    "candidates/admin-music-queue-overflow/candidate.patch": "9f0b4c891bdfe5b2604376d927e45109265da7cf8247245ca2d62ccbfc0bcebb",
+    "candidates/admin-music-queue-overflow/probe.ts": "7e4a7a1a5e9dff3b5115112c3a9c70686aab7b3e532aed020e5d0452583bd597",
+    "candidates/admin-music-queue-overflow/queue.default.ts.txt": "b447ce0d30bf9ae46c2e2ae1bb9a3019d57caa4b5e978808765ad56fdc85636d",
+    "candidates/admin-music-queue-overflow/actual.json": "64cc2a01af2d50f2e2c167dcb714721412ba894d4268dbbf187c96c9ae630f84",
+    "candidates/admin-music-queue-overflow/README.md": "fbc6ebda53fb3d99cee79670f86035bf2bcc164e078dccf6c9c3f6da4dd5980f",
+    "candidates/admin-music-queue-overflow/run-resource.py": "f9215b14e85bae0c91e273d3ccfce968b45f2713f3d3713f5c7c45728b83cad9",
+    "candidates/admin-music-queue-overflow/probe-resource.ts": "da4642f0e699e2edde01d85cc91bdedda9a225acdaba7ca3283218d7c49b132d",
+    "candidates/admin-music-queue-overflow/wrapper.ts": "d0d748e4ef0a81c50e4b9021a75fc491b27d23b13df589d976e0d2ec2b59d2f1",
+    "candidates/admin-music-queue-overflow/wrapper-resource.ts": "b0174960fceb129ff111b71e5f12e6b8279c7791f1ee6f0874de35314c244876",
+    "candidates/admin-music-queue-overflow/actual-first.json": "bd0103354a04c7b5e5f950bbd2355aff7e3f8feebf101dec792c6f6bbae339bf",
+    "candidates/admin-music-queue-overflow/actual-resource.json": "665d67e8bfb453e4ccc1ecd6792af197abaf7cf76a59392c418eb5a45eeadc80",
+    "candidates/admin-planning-acceptance/summary.json": "45b66be70632bfed5308fe86ceab14c0958a657d4aa3b1fd0ccd1e8965cf6f77",
+    "candidates/admin-planning-acceptance/run.py": "3934960a3c177bff8779ccd2752930ac298f86dca2ca02763fb4f9d0ea861451",
+    "candidates/admin-planning-acceptance/RESULT.md": "62fc1c324782f87615437e5f044f6cd499331d05ac5a0244c1b7c980940cacb3",
+    "candidates/admin-planning-acceptance/source-pins.json": "3726d2088e0f8f425ce2b5bdd9e34a31bd507046f07fe37f982769ea04e3450e",
+    "candidates/admin-planning-acceptance/probe.ts": "b5c8cb7e277cd9b9d5403fd6e9d520e345d0deb13b585083dc8e80ad2c549bbf",
+    "candidates/admin-planning-acceptance/actual.json": "ebc42e9dbad08f944951fc0a65b97a0f311da70045b9e534723d36aebec2067f",
+    "candidates/admin-planning-acceptance/artifact-manifest.json": "26c25c3da6ed87ee0f4efb7fac12d1e56301399f629871668f2fcf79863ecf9e",
+    "candidates/admin-planning-acceptance/actual.identity-preparation-failed.json": "2470501909c79564ea476bb53c785eda37d8ad88766d225e9af64863337ad5b9",
+    "candidates/admin-planning-acceptance/planning.default.ts": "11c2adad114ff0898b82e454c149c14ab462cf9c6063263647f9539a15e297ba",
+    "candidates/admin-planning-acceptance/friend.default.ts": "4f5a738919b7ecf18f7caa9baf534a06698639c34b9c4503734d6107956b65a5",
+    "candidates/admin-planning-acceptance/api.default.ts": "32962e764c7edc140a9991cbf658b1d8d028714a4ffb4ed8a04c99bd2d00bbac",
+    "candidates/admin-planning-acceptance/preflight.json": "5f52cea2af8345aead8a36fff01701ae1caa9007918cab3e341ac18305c7cf6f",
+    "candidates/admin-planning-acceptance/wrapper.ts": "5efb26bd3ce8e0781c630c409ab1245661ee247d0bb6d3ed9ed40d321e4f1524",
+    "candidates/admin-title-preference-acceptance/summary.json": "a45044f41d2f67b9f1c1ff6d0dd9dab5b9caeb4d288ca37376ccbf1c5162617f",
+    "candidates/admin-title-preference-acceptance/run.py": "e8de23e54526ebf68906349d8a07fc514fddfc2ca8792a05ccfd2d9485cb8f09",
+    "candidates/admin-title-preference-acceptance/prepare.ts": "243513f26e101cd60e30eda31ffb342acb2926b115dde8f4f6b5c856e078a2fb",
+    "candidates/admin-title-preference-acceptance/probe.ts": "025efd3dc7d932bce7e3c6f482a046dbcc4f5b10e9dcab383d93942b6993b139",
+    "candidates/admin-title-preference-acceptance/actual.json": "f9463c8e1c9c0253b0448a8886c96be2346b6e5396d5fb79ad49f00659a11799",
+    "candidates/admin-title-preference-acceptance/README.md": "8395ef1a67784acebb308c72280095b0ffa9ba16a4153aa77116ef73c2002b65",
+    "candidates/admin-title-preference-acceptance/wrapper.ts": "3d4bed26dec789d6e492841cca585fa1bd84393629d4091a78569d5387699413",
+    "candidates/admin-preference-coalescing/run.py": "1aa4e171971f4139dbd56d12b2b641841d6fddb0ee2f142e7e3903f218b206b0",
+    "candidates/admin-preference-coalescing/RESULT.md": "026cd042116c67523966e6b4fc2c789e50f5fa4390c24c61b6fdf2167e6ba956",
+    "candidates/admin-preference-coalescing/default-chain.ts.txt": "7216ad206ce396d161ea13708c596d380cd092a7847a580688e562a40ddc2ddf",
+    "candidates/admin-preference-coalescing/plan.json": "4f6a0c1b1cf6020fa368c79bbb628dda25bc31ea729ccf52073c25742bcd6ab0",
+    "candidates/admin-preference-coalescing/candidate.ts": "32bd7c6c4d22a30bc1b727714605a593b0b2a388eaf0bc77f5a5824fc7324bb0",
+    "candidates/admin-preference-coalescing/source-pins.json": "d0044e8c5031d6fd1bf6c6d96c77786467ce45c8335f2464fb908db6ea460eaf",
+    "candidates/admin-preference-coalescing/probe.ts": "86912d7d95104e3de98c56b4e5cc5c90c11138d5afa3f4eff01362a6d5d3a203",
+    "candidates/admin-preference-coalescing/actual.json": "6bf7268b4c0999ed38e1d4aed87683998122f8f27e7f228d5fe1b478919d8cc9",
+    "candidates/admin-preference-coalescing/artifact-manifest.json": "d79fe2ee501e9e84201ee58b4611302358a95ff13e149d10dc8220997b13dc61",
+    "candidates/admin-preference-coalescing/preflight.json": "2fdd9e859267319335d90b421e60afb7a235f313c01ac75aa73908766401074a",
+    "candidates/admin-preference-coalescing/wrapper.ts": "5653fac81173a508062dbe00af1f25202c3136c2d6dd4620449f28a1d5dbbb7e",
+    "candidates/execution-pass-closure/capacity-plans.json": "610e4310278f12a814303603d22d6591dba8cd041ea01595bad0434632575fec",
+    "candidates/execution-pass-closure/capacity-outcome.md": "85f0045334f619b1645698fb8fd4c4bb3c1a83c9004962f46aaf7b532b085d12",
+    "candidates/execution-pass-closure/capacity-plans.ts": "2d42d9e9d2c3394232f2cc39164191b56b96991a8889f1a0a77341bf40e045c7",
+    "candidates/execution-pass-closure/presence-plans.ts": "b0609f5e8b619813a7fb5d92066e39582a22a09db3b73f867152d28fa3c772da",
+    "candidates/execution-pass-closure/presence-plans.json": "e188bc6c0bf49d9df3107525144ad2e5712f01db59d9534c282f3992e969cd0c",
+    "candidates/execution-pass-closure/game-metadata-admission.ts": "74ea7d93b7374053750793ede622f99b0ce6991d54cd244a47a6d5196edcb905",
+    "candidates/execution-pass-closure/presence-outcome.md": "52b93d2cc8d0f624a5b7caf256a22287a5d0eae27ce26eaae8212082c925fe32",
+    "candidates/execution-pass-closure/final-dispositions.json": "c7a9c25de1c6c729b587e3909337152d409fbbc8f35b37f66edca003d7fe9c78",
+    "candidates/execution-pass-closure/preflight.json": "d2450e3d45f0e9a8e9e107bd8d10ef0222190ca6a9a41d9cf50129fefe21d77e",
+    "candidates/admin-presence-read-admission/RESULT.md": "77bd989c83c1cbafaa13f4cbbb29fc47550d2d40ba386e7a57af15b6aea4315e",
+    "candidates/admin-presence-read-admission/outcome.json": "b97331c76cfd29af5ee7ba72558ddb3aa251399da3cd66dfb1de3b61db85c3ca",
+    "candidates/admin-workload-admission-closure/closure-disposition.md": "81ff7c4b7f0864845e4debddb79b22098f108c6a59a6cdd4201957be6a07fbea",
+    "candidates/admin-workload-admission-closure/closure-disposition.json": "970d39607a462618cd432bf2dd6fcaf5244ab3e141765a40f84a6ffb73d28b93",
+    "evidence/implementation-found-25-restoration.json": "a46b0bdbe796e44ec9b3092989d0ca7dfa07242764e3392f2f03a3362f7e1f8a",
+    "evidence/implementation-found-25-gates.json": "1f55832f9f91ee48111383d149f79c683f8728bb185c14c615e9a6990acb50e2",
+    "candidates/admin-projection-preview/artifact-manifest.batch23.json": "dbb396c18dc77f0fbbd27b7134c272aadd2fb2cc538dc7eed5a0201565b91d19",
+    "candidates/admin-projection-preview/artifact-manifest.acceptance.json": "3df1458e01c9f200dbbf5513e6f5b169d52ca71316b7322e842bece4e3626cb9",
+    "candidates/admin-projection-preview/source-proof.batch23.json": "11bcc903ae9348391e45b1c4fcf2fd1272462762d4ce4c8d8325f634c42c8dfb",
+    "candidates/admin-projection-preview/outcome.batch23.md": "2dff4f633abd89ccf2203a26ad97f6d036738fda766b0cf1d6fbacab1b0ca520",
+    "candidates/admin-projection-preview/batch23-recovery.json": "60b4280504b14df568474851295e09ae4c3cce5078b16ac22d5e7afc50453734",
+    "candidates/admin-projection-preview/source-proof.acceptance.json": "9d0694bfdf6889b407b1a504161f2f65c2b50793edd55fc3786306113b64cdf9",
+    "candidates/admin-projection-preview/outcome.acceptance.md": "b6cdd7c3e9e20dc620f8154a93be4b67b6dfe14429d70142fe70f82e3b9f8e65"
+  },
+  "coverageSourcePins": {
+    "src/lib/music/history.server.ts": "a24895287829b56a9b684160b44878ccbf968b8c581748fd8f2d777dcc4db9ad",
+    "src/lib/music/editions.server.ts": "fd3a5b49c589de17f0eec88b5265f5c5725cb382eefde6f9aaf91720c2ed208d",
+    "src/lib/reading/query.server.ts": "6315a5cd137e89a9b39b85e8c61af6567a8cb4aedc51afc97a38d64df7cef526",
+    "src/lib/playback/service.server.ts": "f454cec9ccfdaf9e59546e72fd25ceae9b948a4641fcdc270dc71db398bcd751",
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "src/lib/social/presence.server.ts": "64c185536df3632ed3da595d55cfb399afcc4e1fbfb933f3f8bba1537d71fcc3"
+  },
+  "historicalArtifactRecoveryRef": "candidates/admin-projection-preview/batch23-recovery.json",
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md",
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/audits/2026-10-17-app-performance/verify-report-integrity.py",
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
+    }
+  ]
+}

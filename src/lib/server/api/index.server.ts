@@ -1,3 +1,4 @@
+import { requestedPageInterval } from '$lib/server/queries/pagination';
 import { getFeatureConfig, requireFeature } from '$lib/server/features';
 import { readJsonBody as readBody } from '$lib/server/security/request-body';
 import {databaseReady} from '$lib/server/readiness';
@@ -14,7 +15,7 @@ import * as synced from '$lib/playback/synced/service.server';
 import { createInvite, listInvites, revokeInvite } from '$lib/server/auth/onboarding';
 import { isPublicReadPath } from '$lib/social/public.server';
 import { profileAvatarChoices, providerProfileAvatar } from '$lib/core/profile/avatars.server';
-import { avatarRequestLimit, streamGifAvatar } from '$lib/core/profile/gif-avatar.server';
+import { avatarRequestLimit, streamAvatar } from '$lib/core/profile/avatar-storage.server';
 import * as social from '$lib/social/service.server';
 import { activityFeed, workSocial,reactionSummary } from '$lib/social/queries.server';
 import { friendInsights, friendDiscovery } from '$lib/social/insights.server';
@@ -37,10 +38,10 @@ import { profileUser } from '$lib/server/queries/profile-user';
 import { progressData } from '$lib/server/queries/progress';
 import { progressParameters } from '$lib/progress';
 import { listsData } from '$lib/server/queries/lists';
-import { profileData, profileInsightsData } from '$lib/server/queries/profile';
+import { profileSectionData, profileInsightsData } from '$lib/server/queries/profile';
 import { fallbackArtwork } from '$lib/providers/tmdb/fallback.server';
 import { streamTmdbArtwork } from '$lib/providers/tmdb/artwork.server';
-import { json, type RequestHandler } from '@sveltejs/kit';
+import { json, isHttpError, type RequestHandler } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { getDb, getSql } from '$lib/server/db';
 import { requireUser, requireAdmin } from '$lib/server/auth';
@@ -86,7 +87,7 @@ export const handler: RequestHandler = async (event) => {
       return json({status:ready?'healthy':'unavailable'}, {status:ready?200:503, headers:{'Cache-Control':'no-store'}});
     }
     if(path[0]==='profile'&&path[1]==='avatar'&&path.length===4&&method==='GET')
-      return await streamGifAvatar(uuid(path[2]),path[3],locals.user?.id??null);
+      return await streamAvatar(uuid(path[2]),path[3],locals.user?.id??null);
     if(!locals.user && method==='GET' && isPublicReadPath(url.pathname,'public-read-only') && isPublicReadPath(url.pathname,(await getConfig()).siteAccess)) {
       if(path[0]==='artwork'&&path[1]==='tmdb')return streamTmdbArtwork(path[2],path[3],request);
       if(path[0]==='profile' && ['section','activity'].includes(path[1]) && url.searchParams.has('username')) {
@@ -95,8 +96,7 @@ export const handler: RequestHandler = async (event) => {
         if(section!=='favourites')await requireVisible(owner.id,null,section,'screen');
         const options={view:section==='activity'?'history':section==='favourites'?'favourites':'overview',page:Number(url.searchParams.get('page')??1),period:url.searchParams.get('period')??'all',kind:url.searchParams.get('kind')??'all'};
         if(section==='insights')return json(await profileInsightsData(owner.id,options,new Date(),null));
-        const data=await profileData(owner.id,options,new Date(),null);
-        return json(section==='activity'?{items:data.history,page:data.page,pages:data.pages,total:data.total}:{favourites:data.favourites,page:data.page,pages:data.pages,total:data.total});
+        return json(await profileSectionData(owner.id,options,new Date(),null));
       }
     }
     const user = requireUser(locals.user),
@@ -183,7 +183,7 @@ export const handler: RequestHandler = async (event) => {
     if(path[0]==='music' && path[2]==='queue' && method==='GET') return json(await musicQueue(uid,uuid(path[1])));
     if(path[0]==='music' && path[1]==='queue' && path[2]==='picker' && path.length===3 && method==='GET')return json(await savedMusicQueuePage(uid,Number(url.searchParams.get('page')??1)));
     if(path[0]==='music' && path[1]==='queue' && path.length===2 && method==='GET')return json(await savedMusicQueue(uid,url.searchParams.has('listId')?uuid(url.searchParams.get('listId')):undefined));
-    if (path[0] === 'collection' && path.length === 1 && method === 'GET') return json(await collectionData(uid,collectionParameters(url),url.searchParams.get('username')??undefined));
+    if (path[0] === 'collection' && path.length === 1 && method === 'GET') return json(await collectionData(uid,collectionParameters(url),url.searchParams.get('username')??undefined,requestedPageInterval(Number(url.searchParams.get('page')??1),url.searchParams.get('firstPage')),request.signal));
     if (path[0] === 'collection' && path[1] && (path.length === 2 || path.length === 3 && path[2] === 'lists') && method === 'GET') {
       const [work]=await getDb().select().from(works).where(eq(works.id,uuid(path[1])));if(!work)throw new AppError(404,'This work was not found.');requireEnabledCategory(await getFeatureConfig(uid),work.category);
       if (path[2] === 'lists') return json(await workActionLists(uid, uuid(path[1]), Number(url.searchParams.get('page') ?? 1), url.searchParams.get('reading') === 'true'));
@@ -216,7 +216,7 @@ export const handler: RequestHandler = async (event) => {
     }
     if(path[0]==='discover' && path.length===1 && method==='GET')return json(await discoveryContent(uid,discoveryParameters(url)));
     if (path[0] === 'library' && path.length === 1 && method === 'GET')
-      return json(await libraryContent(uid, url));
+      return json(await libraryContent(uid, url,request.signal));
     if (path[0] === 'progress' && path.length === 1 && method === 'GET')
       return json(await progressData(subjectId, progressParameters(url), uid));
     if (path[0] === 'lists' && path[1] === 'content' && path.length === 2 && method === 'GET')
@@ -271,6 +271,8 @@ export const handler: RequestHandler = async (event) => {
       );
     if (error instanceof AppError || error instanceof DomainError)
       return json({ error: error.message, code: error.code }, { status: error.status });
+    if (isHttpError(error))
+      return json({ error: error.body.message, code: 'request_failed' }, { status: error.status });
     if (error instanceof ProviderActionError)
       return json(
         { error: error.message, code: error.code },

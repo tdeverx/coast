@@ -4,7 +4,7 @@ import { getDb } from '$lib/server/db';
 import { providerConnections, collectionProjectionEntries as ledger, collectionProjectionPreviews as previews, media, episodes } from '$lib/server/db/schema';
 import { getTrakt } from '$lib/providers/trakt/connection.server';
 import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
-import { exportIdentity } from '$lib/sync/trakt-identity.server';
+import { exportIdentities } from '$lib/sync/trakt-identity.server';
 import { ingestMetadata } from '$lib/catalogue/service.server';
 import { PermanentActionError } from '$lib/server/queue';
 import { enqueueInTransaction } from '$lib/sync/changes.server';
@@ -15,7 +15,8 @@ import type { TraktAdapter } from '$lib/providers/trakt/adapter.server';
 export const projectionSchema=v.object({enabled:v.optional(v.boolean(),false),source:v.optional(v.picklist(['collected','personal','server']),'collected'),availableOnly:v.optional(v.boolean(),false),scope:v.optional(v.picklist(['dynamic','fixed']),'dynamic'),sourceIds:v.optional(v.pipe(v.array(v.pipe(v.string(),v.uuid())),v.maxLength(100)),[])});
 export type ProjectionConfig=v.InferOutput<typeof projectionSchema>;
 type Entry={workId:string;title:string;payload:Record<string,unknown>;snapshot:Record<string,unknown>};
-export type ProjectionPreview={id:string;version:string;configuration:ProjectionConfig;additions:Entry[];removals:Entry[];uncertain:Entry[];conflicts:Entry[];unresolved:string[];blocked:boolean};
+type ProjectionPreviewEntry=Pick<Entry,'workId'|'title'>;
+export type ProjectionPreview={id:string;version:string;configuration:ProjectionConfig;additions:ProjectionPreviewEntry[];removals:ProjectionPreviewEntry[];uncertain:ProjectionPreviewEntry[];conflicts:ProjectionPreviewEntry[];unresolved:string[];blocked:boolean};
 export function projectionConfig(settings:Record<string,unknown>){return v.parse(projectionSchema,settings.collectionProjection??{});}
 function canonical(value:unknown):unknown{
   if(Array.isArray(value)){const items=value.map(canonical);return items.every(item=>item&&typeof item==='object'&&'workId' in item)?items.sort((a,b)=>String((a as Entry).workId).localeCompare(String((b as Entry).workId))):items;}
@@ -67,10 +68,12 @@ export async function desiredProjection(userId:string,configuration:ProjectionCo
     where a.kind in ('movie','episode') and (a.id=r.id and (a.release_date is null or a.release_date::date<=current_date) or a.release_date::date<=current_date)
     and (${!configuration.availableOnly&&configuration.source!=='server'} or exists(select 1 from availability av join provider_connections c on c.id=av.connection_id join provider_instances i on i.id=c.instance_id where av.user_id=${userId} and av.media_id=a.id and av.state='available' and c.status='connected' and i.enabled and ${selected} and not coalesce(${excluded},false)))`);
   const entries=new Map<string,Entry>(),unresolved:string[]=[];
-  for(const row of rows){
+  const identities=await exportIdentities(rows.map(row=>row.kind==='movie'
+    ?{mediaId:String(row.id),kind:'movie' as const}:{mediaId:String(row.show_id),kind:'show' as const}));
+  for(const [index,row] of rows.entries()){
     const id=String(row.id),kind=row.kind as 'movie'|'episode';let payload:Record<string,unknown>;
-    if(kind==='movie'){const ids=await exportIdentity(id,kind);if(!Object.keys(ids).length){unresolved.push(String(row.title));continue;}payload={movies:[{ids}]};}
-    else {const ids=await exportIdentity(String(row.show_id),'show');if(!Object.keys(ids).length){unresolved.push(String(row.title));continue;}payload={shows:[{ids,seasons:[{number:row.season_number,episodes:[{number:row.episode_number}]}]}]};}
+    if(kind==='movie'){const ids=identities[index];if(!Object.keys(ids).length){unresolved.push(String(row.title));continue;}payload={movies:[{ids}]};}
+    else {const ids=identities[index];if(!Object.keys(ids).length){unresolved.push(String(row.title));continue;}payload={shows:[{ids,seasons:[{number:row.season_number,episodes:[{number:row.episode_number}]}]}]};}
     entries.set(id,{workId:id,title:String(row.title),payload,snapshot:{}});
   }
   return {entries,unresolved,blocked};
@@ -86,7 +89,8 @@ export async function previewProjection(userId:string,connectionId:string,input:
     .map(old=>remote.get(old.workId)??desired.entries.get(old.workId)??{workId:old.workId,title:'Removed entry',payload:{},snapshot:{}});
   const version=String(context.connection.settings.collectionProjectionVersion??context.connection.accountGeneration);
   const [saved]=await getDb().insert(previews).values({connectionId,accountId:context.connection.syncAccountId!,configurationVersion:version,configuration,snapshot:{additions,removals,uncertain,conflicts,remote:[...remote.values()],unresolved:desired.unresolved,blocked:desired.blocked}}).returning();
-  return {id:saved.id,version,configuration,additions,removals,uncertain,conflicts,unresolved:desired.unresolved,blocked:desired.blocked};
+  const browserEntries=(entries:Entry[])=>entries.map(({workId,title})=>({workId,title}));
+  return {id:saved.id,version,configuration,additions:browserEntries(additions),removals:browserEntries(removals),uncertain:browserEntries(uncertain),conflicts:browserEntries(conflicts),unresolved:desired.unresolved,blocked:desired.blocked};
 }
 export async function approveProjection(userId:string,connectionId:string,input:unknown,provided?:ProjectionContext){
   const data=v.parse(v.object({previewId:v.pipe(v.string(),v.uuid()),choice:v.picklist(['leave','remove-managed','replace-all','clear-all'])}),input),context=await verifiedContext(userId,connectionId,provided);

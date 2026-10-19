@@ -1,0 +1,391 @@
+{
+  "schemaVersion": 1,
+  "id": "LIBRARY-APPEND-OBS-09",
+  "status": "actual_revision_replacement_cause_captured_temporary_trace_restored_repair_open",
+  "canonicalBaselineFinding": false,
+  "implementationApplied": false,
+  "productionSourceChangeRemaining": false,
+  "normalSchemaChange": false,
+  "sourcePins": {
+    "src/routes/library/+page.svelte": "4889dfcefe263dcc75ae07e36117e5acc3e35598f259b7c2450ff639264901c5",
+    "src/routes/library/+page.server.ts": "7b0f0465ee6cbbbf08a9af39ec9971fe7caf40af7104b4565810405656f753d0",
+    "src/lib/ui/shelves/library.svelte.ts": "0e7b4f024bf38df12188c6b27de6d4da26e859131ea1fd3d335d38267da35024",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+    "src/lib/ui/pages/SectionDetails.svelte": "3677798a0e0a2f1c950f47d8f0f89f67070b7315bbc41e40bc10051acd78481a",
+    "src/lib/media/DetailPanel.svelte": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55",
+    "src/lib/ui/detail-section.svelte.ts": "dd2156aa5d90546a7c74cd413cda961dc6cd507108501f522a3d2dcd8a4adf0d",
+    "src/lib/ui/content-revision.svelte.ts": "a020f2a02ab30655fe9d1203fe3c90200625e874c2e63714a499f5c8b1661fd3",
+    "src/lib/ui/client.ts": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7",
+    "src/routes/+layout.svelte": "fa2da910bdfa5d467592bb1496fab1afb8eca1ce5dc6849bd1e437b6e20d4baa",
+    "src/routes/+layout.server.ts": "4e2fe9e9fb784a3c674e2fea1b8b265caa263b8e0861466451e98d884262a187",
+    "src/lib/server/content-revision.server.ts": "d2ac47a240a40816f16393af3ca772b2bf0c6d728cda89128c8e94404a4f18bc",
+    "src/lib/ui/shelves/layout.svelte.ts": "85d6fc90d52176f4a49c3aeb98c64d3ed9b4b83aff321462a7d24be1e6b4f84f",
+    "src/lib/ui/shelves/local.svelte.ts": "79772309b9f4b2946149a0abbc93875bf13929e06c48b0d3d29c93b97acbaac4",
+    "src/lib/ui/shelves/types.ts": "9f17724b57b6c072f70bb09ff565c19b198078b1c4fba41b85ef4a965fe2b54a",
+    "src/lib/ui/shelves/index.ts": "6e5055dfe6308433a718bbb0405de541011a934efb582db76becaa1834f7afc5",
+    "src/lib/library.ts": "cd629858c8518e8f94bdf7520d6c835235078a3cdba736555821ec5d6945da91",
+    "src/lib/ui/shelves/progress.svelte.ts": "2d6bdc1f28373132abb542a6b3ce79fb4555d0fac690814f382d794b0bf74111",
+    "src/lib/ui/shelves/credits.svelte.ts": "5f749b9cdbfdd7865f161b705bb2b5f99127db57097ecbbbc3defee86a9e9987",
+    "src/lib/ui/shelves/detail.svelte.ts": "00be76aa839f4eeded9634eb6451960efa8497d0b24ed7450eba496521c94d24",
+    "src/lib/ui/shelves/discovery.svelte.ts": "0eea654859d9848e3457b9863ac11b71ce3de8f468fdd8f9be30df33503406a5",
+    "src/lib/ui/shelves/for-you.svelte.ts": "82bfd382e8d045ca3ef2c56b5ae6de68f8e901ea47fd3ab7bba38f76325b7d9a",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/shelves/list.svelte.ts": "eed96a076485e546ef405bb9230d0a5a0f3f6993b07191cc1cecda3ff3534c22",
+    "src/lib/ui/components/NotificationToasts.svelte": "e02bef528dc595cb4c2ba0c9d956e2fa561f0ec22f9b23d10b397a2ed6a9b11f",
+    "package.json": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2",
+    "bun.lock": "53d8feaa37aefa6ada339d3cd2da73a9985cba24a1cf96e4da64cfa24b2c065d",
+    "node_modules/svelte/package.json": "5a0d57cb27afe0365075723a85b19123006e3c8f00a518283272773f52b9b2dc",
+    "node_modules/@sveltejs/kit/package.json": "4a12466ff8570bd0a141c8082e6acb6673af30ec53f6b5a38aa7718abe6e715f",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "sourcePinCount": 31,
+  "sourcePinsMatchAfterExactRestoration": true,
+  "preparationManifest": "candidates/library-append-trace/preparation-manifest.json",
+  "artifactPins": {
+    "candidates/library-append-trace/shelf-append-origin.optional.patch": "2e8034be611f2890571a4390f154dc69362f0b8dcab808ffd6785d0d5ff32744",
+    "candidates/library-append-trace/syntax.stdout.txt": "0152c70b80d81e05c56b41aeaaba15b45f50f1594b5eba5073ae7b720aa0c868",
+    "candidates/library-append-trace/library-trace.patch": "29e3b831dafaa47456ebd4c8ae7b34f2c6f2ab7b8a2098fed4c31283ee992721",
+    "candidates/library-append-trace/library.before.svelte.ts.txt": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+    "candidates/library-append-trace/verify-syntax.ts": "2e4e6cdf914b62bfa8f48a7ea4bf1ec35e2c69fd1e10ad244955cb670b463ce1",
+    "candidates/library-append-trace/syntax.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/library-append-trace/library.trace.svelte.ts.txt": "936953ee157d6dce736d80b414d9708a7721d9b98af72ebce2e67ba16ecfc17f",
+    "candidates/library-append-trace/Shelf.before.svelte.txt": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+    "candidates/library-append-trace/syntax.json": "e6b22b67747106a0798466b48034236b371b515eed5a5d7dd373c071bdfb6050",
+    "candidates/library-append-trace/prepare.py": "8fa3384ce2b71122dd7aae9e4e19f886d49f670e7dc12c40a644aec0b469ce4e",
+    "candidates/library-append-trace/preparation-manifest.json": "721a51763811644c3678b7b5e8b818e358553f1ae27d4a06ac043232b55be2c1",
+    "candidates/library-append-trace/Shelf.optional-trace.svelte.txt": "641b142df437fce3b66c4e138b87ac5c881e17ab1cd908b4f7624adf61f847bc",
+    "candidates/library-append-trace/protocol.md": "277a4c30febe8b97667605bced92308ef156634ccf5e04370fe5d58760bd9d71",
+    "evidence/library-append-trace-applied.json": "bb99cded7085ae37029f48bb303cd8663cb35764a35edc06eb877bae21e0b775",
+    "evidence/library-append-trace-restoration.json": "de646edf2a3ad5dbc4d4aa5f7d0617b1c498b1ed0cc0d0916fed148fb70da434",
+    "evidence/library-append-trace-before-close.json": "241536ec5332a665aabbccb8a058362091f08f4d3a07968e7135ddb868d5e3c3",
+    "evidence/library-append-trace-normal.json": "78993aa521d99b469bb4642790c8a4c93b3376b4af0680abe6b7b470d411061f",
+    "evidence/library-append-trace-restored-normal.json": "a428e5d96329af7280134d42313bd902006f99f8044d4feafc120de499f7d36a",
+    "proof/library-append-trace-reset.png": "7e3d0e494f5402de8bfd31f767835b8d48df63dd59897e2238566cf32445f766",
+    "proof/library-append-trace-restored-tasks.png": "8df07f24d29c85977cc2f100f387ed380b5822b14375dff3b859af071373715c",
+    "library-append-trace.md": "89a4d2a470fa2f6f65cc3e0e92f12aed53dd8dda2e7026edfc0243a5f7183580"
+  },
+  "actual": {
+    "startedAt": "2026-10-18T05:20:38.554Z",
+    "finishedAt": "2026-10-18T05:22:42.756Z",
+    "targetOwnerOrdinal": 5,
+    "embedded": true,
+    "grid": true,
+    "commits": [
+      {
+        "at": "2026-10-18T05:20:46.143Z",
+        "ownerOrdinal": 5,
+        "eventOrdinal": 5,
+        "event": "commit_admitted",
+        "requestGeneration": 1,
+        "requestedPage": 1,
+        "append": false,
+        "embedded": true,
+        "grid": true,
+        "origin": "external",
+        "previousPage": 1,
+        "previousCount": 0,
+        "returnedPage": 1,
+        "returnedCount": 60,
+        "publishedPage": 1,
+        "publishedCount": 60
+      },
+      {
+        "at": "2026-10-18T05:21:27.827Z",
+        "ownerOrdinal": 5,
+        "eventOrdinal": 10,
+        "event": "commit_admitted",
+        "requestGeneration": 2,
+        "requestedPage": 2,
+        "append": true,
+        "embedded": true,
+        "grid": true,
+        "origin": "external",
+        "previousPage": 1,
+        "previousCount": 60,
+        "returnedPage": 2,
+        "returnedCount": 60,
+        "publishedPage": 2,
+        "publishedCount": 120
+      },
+      {
+        "at": "2026-10-18T05:21:28.959Z",
+        "ownerOrdinal": 5,
+        "eventOrdinal": 15,
+        "event": "commit_admitted",
+        "requestGeneration": 3,
+        "requestedPage": 3,
+        "append": true,
+        "embedded": true,
+        "grid": true,
+        "origin": "external",
+        "previousPage": 2,
+        "previousCount": 120,
+        "returnedPage": 3,
+        "returnedCount": 60,
+        "publishedPage": 3,
+        "publishedCount": 180
+      },
+      {
+        "at": "2026-10-18T05:21:39.457Z",
+        "ownerOrdinal": 5,
+        "eventOrdinal": 21,
+        "event": "commit_admitted",
+        "requestGeneration": 4,
+        "requestedPage": 3,
+        "append": false,
+        "embedded": true,
+        "grid": true,
+        "origin": "refresh",
+        "previousPage": 3,
+        "previousCount": 180,
+        "returnedPage": 3,
+        "returnedCount": 60,
+        "publishedPage": 3,
+        "publishedCount": 60
+      },
+      {
+        "at": "2026-10-18T05:21:39.961Z",
+        "ownerOrdinal": 5,
+        "eventOrdinal": 26,
+        "event": "commit_admitted",
+        "requestGeneration": 5,
+        "requestedPage": 4,
+        "append": true,
+        "embedded": true,
+        "grid": true,
+        "origin": "external",
+        "previousPage": 3,
+        "previousCount": 60,
+        "returnedPage": 4,
+        "returnedCount": 60,
+        "publishedPage": 4,
+        "publishedCount": 120
+      },
+      {
+        "at": "2026-10-18T05:22:39.898Z",
+        "ownerOrdinal": 5,
+        "eventOrdinal": 32,
+        "event": "commit_admitted",
+        "requestGeneration": 6,
+        "requestedPage": 4,
+        "append": false,
+        "embedded": true,
+        "grid": true,
+        "origin": "refresh",
+        "previousPage": 4,
+        "previousCount": 120,
+        "returnedPage": 4,
+        "returnedCount": 60,
+        "publishedPage": 4,
+        "publishedCount": 60
+      },
+      {
+        "at": "2026-10-18T05:22:40.286Z",
+        "ownerOrdinal": 5,
+        "eventOrdinal": 37,
+        "event": "commit_admitted",
+        "requestGeneration": 7,
+        "requestedPage": 5,
+        "append": true,
+        "embedded": true,
+        "grid": true,
+        "origin": "external",
+        "previousPage": 4,
+        "previousCount": 60,
+        "returnedPage": 5,
+        "returnedCount": 60,
+        "publishedPage": 5,
+        "publishedCount": 120
+      }
+    ],
+    "refreshes": [
+      {
+        "at": "2026-10-18T05:21:38.718Z",
+        "ownerOrdinal": 5,
+        "eventOrdinal": 17,
+        "event": "refresh_trigger",
+        "ownerChanged": false,
+        "refreshChanged": true,
+        "trackingChanged": true,
+        "socialChanged": true,
+        "initialChanged": false,
+        "activated": true,
+        "embedded": true,
+        "grid": true,
+        "currentPage": 3,
+        "itemCount": 180,
+        "initialPresent": false
+      },
+      {
+        "at": "2026-10-18T05:22:39.133Z",
+        "ownerOrdinal": 5,
+        "eventOrdinal": 28,
+        "event": "refresh_trigger",
+        "ownerChanged": false,
+        "refreshChanged": true,
+        "trackingChanged": true,
+        "socialChanged": true,
+        "initialChanged": false,
+        "activated": true,
+        "embedded": true,
+        "grid": true,
+        "currentPage": 4,
+        "itemCount": 120,
+        "initialPresent": false
+      }
+    ],
+    "initialCardDom": 60,
+    "correctedCardDom": 120,
+    "prefixLost": true,
+    "measurementCorrectionRetained": true,
+    "original123CardMetricAccepted": false,
+    "newConsoleWarnError": 0,
+    "afterClose": {
+      "dialogs": 0,
+      "embeddedOwnerDisposeEvents": 1
+    },
+    "no300Or20PageAcceptance": true
+  },
+  "causalBoundary": "New actual instrumented same-owner revision\u2192currentPage replacement\u2192sentinel append sequence established. No retroactive causal proof for original uninstrumented300\u2192180. Underlying revision field/poll count not traced; admitted data commit not paint.",
+  "sourceRestoration": "evidence/library-append-trace-restoration.json",
+  "freshUninstrumentedAcceptance": "evidence/library-append-trace-restored-normal.json",
+  "mainInventory": "evidence/implementation-20261018-activity-workset-source-inventory.json",
+  "mainInventoryUnchanged": true,
+  "limits": [
+    "Instrumentation may perturb scheduling and adds console/JSON/abortobserver work; no timing/resource SLO.",
+    "This establishes the actual new instrumented sequence, not retroactive causation for the original300\u2192180 trial.",
+    "No appstate/response injection, newfakecohort, write, task, preference, tracking orcatalogue command used to manufacture revision. Ordinary session/presence/freshness effects may run.",
+    "Source restoration must be verified before uninstrumented acceptance.",
+    "Complete finalreceipt includes a second refresh while inspecting/documenting the first; no further footer action was required.",
+    "O(range) revalidation, reset/anchor policy, bounded retention and cross-adapter generalization are options, not adopted behavior."
+  ],
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T10:21:52.057608+00:00",
+      "changes": {
+        "src/lib/media/DetailPanel.svelte": {
+          "before": "59c9dc9f338be06b0c6eb680cd65ec31a8eeeb40cd2fe5fbea312f2a5a3a57bb",
+          "after": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55"
+        }
+      },
+      "evidence": "evidence/implementation-detail-close-applied.json",
+      "boundary": "Current identity after separate three-line shared close adoption. Historical receipts/manifests remain unchanged; their measurements were not rerun on this source."
+    }
+  ],
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/routes/library/+page.server.ts": "47ad54551a78f8810bb1053d6eada88f81c116da5ab1bca65346bb3ca8c904e6",
+      "src/lib/ui/shelves/library.svelte.ts": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+      "src/lib/ui/components/Shelf.svelte": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4",
+      "src/lib/ui/shelves/layout.svelte.ts": "fd449adc5c7878f6b1170dcffa9ba39c200dbb7369bc30d2f646c07c3ba37fd4",
+      "src/lib/ui/shelves/types.ts": "10e7b93e83e7944eb998ef54ccd6abbaeaa86ad4cf663cf58ce9c044b936af37",
+      "src/lib/library.ts": "1b94f5839453943c83a32ef51f8581923a40cedbe41beaa3f66daf2d94dc5c58"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "finalBoundedWindowSourceFollowThrough": {
+    "at": "2026-10-18T17:42:06.448267+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/shelves/library.svelte.ts": "991fae02c2c35e174b41f867411b83fe75fcc777390b9fbd814d0cee49823053"
+    },
+    "boundary": "Later scope-ledger/SSR engagement and Music error admission corrections have separate exact/current source controls. Historical receipts stay immutable; this map is current identity, not transferred runtime/resource acceptance."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "package.json": {
+        "before": "faacde885a670752c385f25f114b3ff80e0182769d72a82706ce5d804a509139",
+        "after": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  }
+}

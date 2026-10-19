@@ -17,7 +17,7 @@
       },
       "devDependencies": {
         "@playwright/test": "^1.55.0",
-        "@sveltejs/kit": "^2.70.3",
+        "@sveltejs/kit": "2.70.3",
         "@sveltejs/vite-plugin-svelte": "^7.3.0",
         "@tailwindcss/vite": "^4.3.3",
         "@types/bun": "^1.4.0",
@@ -30,6 +30,9 @@
         "vite": "^8.2.2",
       },
     },
+  },
+  "patchedDependencies": {
+    "@sveltejs/kit@2.70.3": "patches/sveltejs-kit-2.70.3.patch",
   },
   "packages": {
     "@drizzle-team/brocli": ["@drizzle-team/brocli@0.10.2", "", {}, "sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w=="],

@@ -1,0 +1,378 @@
+{
+  "id": "PLAN-02",
+  "status": "measurement_only_no_new_fix",
+  "canonicalStatusUnchanged": true,
+  "scope": "Current exact work-scoped Activity baseline attribution on actual retained data; no application source/candidate adoption, SQL/schema/data mutation, provider/credential work or normal-browser latency causation claim.",
+  "sourcePins": {
+    "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
+    "src/lib/social/relationships.server.ts": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2"
+  },
+  "artifactPins": {
+    "candidates/scoped-activity-attribution/plan.executed.json": "92335b6bb777fbbaae39192e4500ad86ef7452caf4693f8bb48cbc93bbf1bcde",
+    "candidates/scoped-activity-attribution/plan.original.md.txt": "ab7a11bc7aa05b0a5b2b94ec8302923e8ec6c33471bc8ba0c9e11afaa970a93b",
+    "candidates/scoped-activity-attribution/probe.pre-guard-draft.ts.txt": "28f8b28d7a1f60e0caa4132cedd2c3d831879820a34ea0fae785a4664d6d14c0",
+    "candidates/scoped-activity-attribution/queries.before.ts.txt": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "candidates/scoped-activity-attribution/relationships.before.ts.txt": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+    "candidates/scoped-activity-attribution/source-pins.json": "de288656c1a485b7076511c9b4c191737b061313be2a2e6d90005d34ba41ddf3",
+    "evidence/scoped-activity-attribution-actual.json": "707b6541f7eafdfaa83aea3a595d0cf47ec04a222dd82c6f23dea4e68ba28ad7",
+    "evidence/scoped-activity-attribution-executed-probe.ts.txt": "2f39d6a562c900280a74e02de87e7cb1551c99007f7aceeab631039b6dfdd460",
+    "evidence/scoped-activity-attribution-syntax.json": "b1656f3be74c8799602c3f02823a9c31b49d28443c7567403030b2908e4fb55f",
+    "probes/scoped-activity-attribution-real.ts": "8c0dff6fdfeba887f20ac2c7ce6db1b9d29a05be5c6caf9241ec1ed65506c15b"
+  },
+  "actualProof": {
+    "status": "passed",
+    "ownerReads": 16,
+    "sourceShapedPlans": 7,
+    "cohorts": {
+      "owners": 4,
+      "normalSelectedMoviePresent": true,
+      "largestSeasonEpisodes": 829,
+      "largestCollectionDirectMembers": 23,
+      "activeShowRawEvents": 3424,
+      "normalViewerOwnerMappingEstablished": false
+    },
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB"
+    },
+    "exclusivePreflight": {
+      "other_clone_client_backends": 0,
+      "active_other_clients": 0,
+      "idle_other_clients": 0,
+      "idle_transaction_other_clients": 0
+    },
+    "sameBackend": true,
+    "externalAttempts": 0,
+    "rolledBack": true,
+    "poolClosed": true,
+    "sourcePinsBeforeAfterEqual": true,
+    "summaries": [
+      {
+        "scope": "observed-normal-movie",
+        "owners": 4,
+        "items": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "events": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "relationshipOnlyCards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "primaryElapsedMs": [
+          7468.098,
+          6741.32,
+          2613.669,
+          7554.399
+        ],
+        "fullOwnerElapsedMs": [
+          7470.677,
+          6741.964,
+          2614.284,
+          7555.552
+        ],
+        "outputBytes": [
+          52,
+          52,
+          52,
+          52
+        ],
+        "outsidePrimaryElapsedMs": [
+          2.579,
+          0.644,
+          0.615,
+          1.153
+        ]
+      },
+      {
+        "scope": "largest-season",
+        "owners": 4,
+        "items": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "events": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "relationshipOnlyCards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "primaryElapsedMs": [
+          7484.892,
+          6952.787,
+          2667.225,
+          7917.38
+        ],
+        "fullOwnerElapsedMs": [
+          7486.106,
+          6955.358,
+          2667.792,
+          7918.417
+        ],
+        "outputBytes": [
+          52,
+          52,
+          52,
+          52
+        ],
+        "outsidePrimaryElapsedMs": [
+          1.214,
+          2.571,
+          0.567,
+          1.037
+        ]
+      },
+      {
+        "scope": "largest-collection",
+        "owners": 4,
+        "items": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "events": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "relationshipOnlyCards": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "primaryElapsedMs": [
+          7437.544,
+          7003.955,
+          2641.947,
+          7740.731
+        ],
+        "fullOwnerElapsedMs": [
+          7438.175,
+          7005.322,
+          2642.267,
+          7741.773
+        ],
+        "outputBytes": [
+          52,
+          52,
+          52,
+          52
+        ],
+        "outsidePrimaryElapsedMs": [
+          0.631,
+          1.367,
+          0.32,
+          1.042
+        ]
+      },
+      {
+        "scope": "retained-active-show",
+        "owners": 4,
+        "items": [
+          28,
+          19,
+          10,
+          28
+        ],
+        "events": [
+          27,
+          18,
+          9,
+          27
+        ],
+        "relationshipOnlyCards": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "primaryElapsedMs": [
+          7986.208,
+          6797.908,
+          2712.529,
+          7857.912
+        ],
+        "fullOwnerElapsedMs": [
+          8729.061,
+          7138.904,
+          2923.829,
+          8100.072
+        ],
+        "outputBytes": [
+          877557,
+          578239,
+          303075,
+          877668
+        ],
+        "outsidePrimaryElapsedMs": [
+          742.853,
+          340.996,
+          211.3,
+          242.16
+        ]
+      }
+    ],
+    "receipt": "evidence/scoped-activity-attribution-actual.json",
+    "failures": []
+  },
+  "attribution": {
+    "allThreeSelectedContainerOrMovieScopesEmpty": true,
+    "positiveShowItems": [
+      28,
+      19,
+      10,
+      28
+    ],
+    "positiveShowRelationshipCards": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "selectedMovieFullMsRange": [
+      2614.284,
+      7555.552
+    ],
+    "selectedMoviePrimaryMsRange": [
+      2613.669,
+      7554.399
+    ],
+    "selectedMovieOwner0Plan": {
+      "executionMs": 7890.433,
+      "rootSharedHitBlocks": 1341261,
+      "rootSharedReadBlocks": 3706,
+      "rootTempReadBlocks": 2696,
+      "rootTempWrittenBlocks": 4412,
+      "visibleRawSubtreeMs": 5924.566,
+      "visibleRawResultRows": 0,
+      "socialActivityRowsScanned": 13902,
+      "screenRowsReachingLateWorkFilter": 12757,
+      "lateWorkFilterRowsRemoved": 12757,
+      "trackingStateInputRows": 90971,
+      "trackingStateScanMs": 1718.821,
+      "descendantRows": 1,
+      "globalEdgesMaterializedRows": 274922,
+      "globalEdgesAggregateMs": 113.06
+    },
+    "interpretation": "The exact cloned selected-movie scope discards all events late, after expensive event/privacy/enrichment work; relationship reasons also scan a broad tracking input. Global edges materialization is real but smaller than those dominant subtrees. Per-node times/buffers include descendants and are not summed as independent totals.",
+    "normalBoundary": "Only the observed movie identity is shared with current normal UI. Current cloned owner/settings/events/time/cache differ; current clone attribution is not measured normal endpoint/browser cause or causal timing equivalence.",
+    "selectedMovieOutsidePrimaryMsRange": [
+      0.615,
+      2.579
+    ]
+  },
+  "nextPrivateCandidateDirection": "Materialize the exact existing direct work/show/season/direct contains event admission before privacy/enrichment joins, keeping the current predicate and all other filters. No recursive scope broadening, early raw-event LIMIT, cache, schema/index/UI or policy change. Candidate and full prior42plusnew16 equivalence workload need separate review/lease.",
+  "limits": [
+    "These are current baseline owner observations and source-shaped plans, not a candidate equivalence or speedup claim.",
+    "Exact selected normal movie identity is shared, but private clone retained owners/settings/availability/events and time/cache differ; no causal latency equality with normal UI.",
+    "Full-history dedupe/group/listen numbering/privacy/relationship fallback remain unchanged. No raw-event LIMIT, cache, provider, schema or production change.",
+    "ORM metrics count execute results, not internal SQL work/raw config; primary elapsed is part of full-owner time and remaining time includes config/card/status/reaction work plus overhead.",
+    "Plan buffers are retained per node; only root counters represent whole-plan totals. Shared Read Blocks and temporary blocks are PostgreSQL counters, not proven physical disk I/O.",
+    "Node whitelist omits SQL/predicates/parameters/private row IDs/actor payloads. Complete owner payloads and exact parameters stay private RAM.",
+    "No repeated timing samples or live-browser/provider acceptance.",
+    "Exact designated clone-file match and zero-other-client preflight fail closed; the observed preflight is not an atomic database-wide lease or proof that later external clients cannot connect. Root coordination owns exclusivity.",
+    "Session jit off and work_mem4MB are explicitly set and verified for comparable source-shaped plans; no global database setting or default is changed."
+  ],
+  "lease": "Exact approved run closed and lease released to parent; no further SQL executed.",
+  "portableReplay": "Artifact-path/import/input-path relocation only; exact executed probe retained separately. Portable replay is not a second actual run; requires caller-supplied private file for the same genuinely observed movie, never an embedded private ID.",
+  "separateCollectionOption": "Unsupported-collection titleInsights guard remains private/unadopted/unexecuted; no result included here.",
+  "timingDefinition": "The historical receipt field afterPrimaryOwnerElapsedMs is fullOwnerElapsedMs minus primaryElapsedMs. It is the residual outside the measured primary execute call, including any setup before it and work after it, not strictly a post-query phase. Full timing excludes HTTP/JSON serialization/browser. Single ordered observations, not repeated timing trials.",
+  "laterToastRolloutChange": {
+    "at": "2026-10-18T04:59:11.603168+00:00",
+    "currentPinUpdates": {
+      "src/lib/server/db/schema.ts": {
+        "before": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+        "after": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6"
+      }
+    },
+    "receipt": "evidence/implementation-approved-normal-rollout.json",
+    "boundary": "Only current-source identity advanced for the approved toast row/host change. Prior owner measurements and atExecution/closure pins remain historical; their actual-data experiments were not rerun by this bookkeeping update."
+  },
+  "laterScopedActivityAdoptionChange": {
+    "at": "2026-10-18T05:19:07.473156+00:00",
+    "source": "src/lib/social/queries.server.ts",
+    "before": "06a033a23f749a5043049c50e030925bb21a2345741b0e2a0f8ca8e21bf73b54",
+    "after": "29f1f31c79d67c75dc94127054d195a3810221480269fa0cb6737ce0095c4fb3",
+    "updatedCurrentMaps": [
+      "sourcePins"
+    ],
+    "report": "implementation-scoped-activity-workset.json",
+    "boundary": "Only current identity advances for exact shared scope-admission repair. Historical measurements/manifests stay immutable and are not implied rerun."
+  },
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T06:24:24.888971+00:00",
+      "path": "src/lib/social/relationships.server.ts",
+      "before": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+      "after": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+      "evidence": "evidence/implementation-activity-reasons-selective-applied.json",
+      "boundary": "Current source identity refreshed after separate selective-helper adoption. Immutable original execution receipts/manifests are unchanged; this does not rerun their measurements or transfer missing acceptance."
+    }
+  ],
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "src/lib/social/queries.server.ts"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    }
+  ]
+}

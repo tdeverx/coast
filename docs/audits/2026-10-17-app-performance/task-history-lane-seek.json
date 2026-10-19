@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "findingIds": [
+    "PJ-10",
+    "PJ-13"
+  ],
+  "status": "read_only_options_assessed_no_adoption",
+  "implementationApplied": false,
+  "reportRef": "task-history-lane-seek.md",
+  "sourcePins": {
+    "src/lib/catalogue/details.server.ts": "dc3ab769b44ef0108824d684de2c5e0b9a468717a95666fedfe14c963bd8b4cf",
+    "src/lib/providers/tmdb/details.server.ts": "862050a2bf078b192cab4445064c68ba8228ef1a003208f69c93046488feda10",
+    "src/lib/providers/tmdb/adapter.server.ts": "8258fd241769f8c5354ee31ba1e15af99aa09900a55ca55f7984f30abb62c672",
+    "src/lib/server/utils/provider-cache.ts": "f1befbc9b71a8570abe3846057dd33592ae44a323ab688fdf3a283fd58327770",
+    "src/lib/server/utils/provider-single-flight.ts": "9bf65c34f3b7a2e69d481f906ae7cd4d04f2e6c1826f28b85b0964bc6bea48b8",
+    "src/lib/diagnostics.ts": "3a216cc827207627336cc5ce5a4fcd6e2c8a88a06903b8f575ca7ed2634c8130",
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def"
+  },
+  "evidenceRefs": [
+    "evidence/task-history-lane-seek-actual.json",
+    "evidence/insights-retained-corpus.json"
+  ],
+  "probeHashes": {
+    "probes/task-history-lane-seek.ts": "b4b9916603a9ac443dd44b532bcd593d588ca321f470f6f1d0d75e1b9527474b",
+    "probes/insights-retained-corpus.py": "8635d4308ebfba8955005f0540e7bc54d0ac27b35fb4ab0463b49b5b253793b3"
+  },
+  "pj10": {
+    "outcome": "rejected_more_buffer_work",
+    "fullRepresentativeRowsEqual": true,
+    "representatives": 23,
+    "nullScopes": 4,
+    "actualRows": 25891,
+    "terminalRows": 25891,
+    "lanes": 49,
+    "currentSharedHitBlocks": 670,
+    "candidateSharedHitBlocks": 4068,
+    "candidateSharedReadBlocks": 214,
+    "currentFinalSortRows": 25891,
+    "candidateFinalSortRows": 49,
+    "singlePlanExecutionMs": {
+      "current": 29.008,
+      "candidate": 45.469
+    },
+    "alternatingRepeatsAdmitted": false,
+    "existingMaintenanceIndexAdmitted": true,
+    "previousGroupedCandidatePreserved": true,
+    "gaps": [
+      "No positive dangling/deleted-connection or obsolete-generation cohort and no deliberate timestamp-tie schedule.",
+      "Single isolated plans are not a warmed timing distribution, natural-load measurement or CPU/RSS evidence."
+    ]
+  },
+  "pj13": {
+    "outcome": "persistent_split_requires_freshness_and_eviction_choice",
+    "currentAggregateCompletedEntryBudget": 100,
+    "currentTtlMs": 900000,
+    "currentLanguage": "en-US",
+    "cacheIncludes": [
+      "TMDB complete review pages",
+      "Trakt complete community pages"
+    ],
+    "currentIncompleteRetryRefetchesBase": true,
+    "inFlightOnlyOption": "Could share overlapping base reads without retaining completed base values, but only addresses concurrent overlap and needs ownership/failure/actual-response acceptance.",
+    "implemented": false,
+    "actualCompleteResponseCohortFound": false,
+    "diagnosticRows": 12893,
+    "tmdbProviderEvents": 60,
+    "normalizedRecords": 40,
+    "uniqueWorks": 35,
+    "gaps": [
+      "This is not a universal filesystem search or proof that a provider was never called.",
+      "Timing/status-only diagnostics cannot reconstruct response facts, credits, reviews, review pagination or wire content.",
+      "Normalized metadata cannot be expanded into missing original fields without inventing content."
+    ]
+  },
+  "database": {
+    "privateCloneOnly": true,
+    "readOnly": true,
+    "isolation": "repeatable read",
+    "statementTimeout": "30s",
+    "lockTimeout": "5s",
+    "poolClosed": true,
+    "writes": 0,
+    "schemaChanges": 0,
+    "newIndices": 0
+  },
+  "providerCalls": 0,
+  "normalDatabaseTouched": false,
+  "applicationSourceChanged": false,
+  "rootLedgerChanged": false,
+  "laterCollectionAdmissionChange": {
+    "report": "collection-insights-admission.json",
+    "previousReferencePin": "ab72ccba2d2144bc84b0bed1e14bec87be4cb264eeda56a9a2ba69003d67d567",
+    "currentReferencePin": "dc3ab769b44ef0108824d684de2c5e0b9a468717a95666fedfe14c963bd8b4cf",
+    "boundary": "Only unsupported collection admission moves before unused identity/region/adapter setup. Earlier reading/Tasks/cache-corpus evidence remains historical and was not rerun; cache/source/page/freshness behavior for supported kinds is unchanged. New five actual service comparisons and5/75authored controls belong to the separate collection report.",
+    "currentCombinedAcceptance": {
+      "commonGateReceipt": "evidence/implementation-20261018-collection-admission-gates.json",
+      "normalSmokeReceipt": "evidence/implementation-collection-admission-normal.json",
+      "boundary": "Current common gates and actual unsupported-kind normal null route checks passed. Earlier owner/cache/provider measurements remain historical and were not rerun."
+    }
+  }
+}

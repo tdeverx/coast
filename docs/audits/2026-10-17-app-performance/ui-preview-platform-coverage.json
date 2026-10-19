@@ -1,0 +1,674 @@
+{
+  "head": "eb0673873462b71118d1c11678d128958a05ff07",
+  "reviewedAt": "2026-10-17",
+  "scope": "final source gap sweep only",
+  "actualDataAcceptance": false,
+  "testsExecutedInThisSweep": [],
+  "notes": [
+    "Preview/fixture source bytes are not transfer/heap measurements",
+    "Generated JSON reviewed structurally as closed fictional fixture inventories",
+    "No synthetic workload or new benchmark ran",
+    "Actual browser/query/build/process evidence remains in parent evidence set",
+    "ChartView reused UIS-05; no duplicate finding",
+    "PG17 suite does not certify exact Bookworm PG15 image lifecycle"
+  ],
+  "fileCount": 77,
+  "sourceLineCount": 12705,
+  "counts": {
+    "benchmarks": 3,
+    "charts": 12,
+    "diagnostics": 2,
+    "infrastructure": 5,
+    "preview": 28,
+    "scripts": 27
+  },
+  "files": [
+    {
+      "path": "src/routes/ui-preview/+layout.server.ts",
+      "group": "preview",
+      "sourceBytes": 383,
+      "lines": 8,
+      "sha256": "24b95900f23264e24f032ca36e77c9b4f70b5b15949789726ab40c1d9061225e",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/+page.svelte",
+      "group": "preview",
+      "sourceBytes": 6684,
+      "lines": 89,
+      "sha256": "8a7b9666fa88dd9a76de168ce54d4f9fc3edc1b0c296bf2a649081b8b6b24a4e",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/AdminExamples.svelte",
+      "group": "preview",
+      "sourceBytes": 12876,
+      "lines": 141,
+      "sha256": "5b0da1190924e4c82b2d7d60d2b1dff0a77785baa610a32f2abc30dc57d18f24",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/Browser.svelte",
+      "group": "preview",
+      "sourceBytes": 4727,
+      "lines": 59,
+      "sha256": "cbfe44e1de0ca7e1b4788de1f72df5add460302c3b619c1d5109ffb4aedac45c",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/CatalogueExamples.svelte",
+      "group": "preview",
+      "sourceBytes": 14836,
+      "lines": 131,
+      "sha256": "065c369a278d43f3ca27e5b3e55b6cc034a33626102c68f9b838825cfb6242e2",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/ComponentPlayground.svelte",
+      "group": "preview",
+      "sourceBytes": 6490,
+      "lines": 98,
+      "sha256": "1ca78d69db0e27763e210fce7f33f4171f9d41127be0a97cd5d70d96dcee07e9",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/ComponentSpecimen.svelte",
+      "group": "preview",
+      "sourceBytes": 9071,
+      "lines": 99,
+      "sha256": "90901f890d930b8d0d814889b3ce27b8cf4f4c4c4bfd84d56cb2ec885daca52d",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/Demo.svelte",
+      "group": "preview",
+      "sourceBytes": 35205,
+      "lines": 363,
+      "sha256": "1ddd320910a741a637b366459035b308e3934352f616c3d44d6288bbcf72faae",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/FeatureExamples.svelte",
+      "group": "preview",
+      "sourceBytes": 18664,
+      "lines": 133,
+      "sha256": "eaa929957fe383f3f738d945627e1c2216f436d0c6abb5e07999adb32c43fb5c",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/Foundations.svelte",
+      "group": "preview",
+      "sourceBytes": 5737,
+      "lines": 81,
+      "sha256": "c1e978e39b14b585f933b70634d1575b47fd251eb4f7c301a2ba29f628a39361",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/PreviewExample.svelte",
+      "group": "preview",
+      "sourceBytes": 4114,
+      "lines": 66,
+      "sha256": "5139887f78cc0ae46d9aa94892e63ff4542dd17237021fa32b6c1bd656276bed",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/PropEditor.svelte",
+      "group": "preview",
+      "sourceBytes": 7961,
+      "lines": 82,
+      "sha256": "3a82273288cb69d51de9f4c9e515da95f61b7d23820e79b2c02801a4d03bdb54",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/SocialExamples.svelte",
+      "group": "preview",
+      "sourceBytes": 14123,
+      "lines": 155,
+      "sha256": "5dcf5d02caadd4b13fd8b723b273d4f6135d37dddf360062a82df4e5b8ccd902",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/Workspace.svelte",
+      "group": "preview",
+      "sourceBytes": 4893,
+      "lines": 64,
+      "sha256": "d076db82894cbcd2d344efe12efc2150ea00d9c76acc22d0a8c8493cf32d00a7",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/catalog.ts",
+      "group": "preview",
+      "sourceBytes": 1811,
+      "lines": 34,
+      "sha256": "637d2510c681bc004b8ff80241bcd612edcb7807f21c1a7646aacfca0be9086e",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/charts/ChartGallery.svelte",
+      "group": "preview",
+      "sourceBytes": 12270,
+      "lines": 170,
+      "sha256": "bf9b7affb76d3582b70b7dee5b88b36d14ad0eb6db2d6e5a4fdff71f378efe77",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/charts/ChartThumbnail.svelte",
+      "group": "preview",
+      "sourceBytes": 19793,
+      "lines": 204,
+      "sha256": "2159d6429267721adcf77b03bfc6ba4f02fa360ded5a48a19141b03560f4f170",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/charts/catalog.json",
+      "group": "preview",
+      "sourceBytes": 193464,
+      "lines": 1,
+      "sha256": "7bed295fdeb93e940c0252f0255d11b0c87c3d4a640b478159d4f3d980e9d5bd",
+      "review": "structural closed-data/schema inventory; fictional data not acceptance"
+    },
+    {
+      "path": "src/routes/ui-preview/charts/data.ts",
+      "group": "preview",
+      "sourceBytes": 60551,
+      "lines": 614,
+      "sha256": "0c1b50590e3aff9d9979d5cac7b88773f4d853418564da6c760b16755a9cb26b",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/charts/presentation.ts",
+      "group": "preview",
+      "sourceBytes": 1467,
+      "lines": 27,
+      "sha256": "1512b09b4ba58944e324d516c9fd33435c7936bf46007d33c9d919838decd1e3",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/charts/types.ts",
+      "group": "preview",
+      "sourceBytes": 607,
+      "lines": 22,
+      "sha256": "ff2445dff20938f06caef5016a40c89e45f85511c6dd961e73cc0658be330894",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/demo/+page.svelte",
+      "group": "preview",
+      "sourceBytes": 1212,
+      "lines": 23,
+      "sha256": "6fa3df10559072bbee6800ebf792b6d0f1c48037153e5b3c500883d0f20fa2d0",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/demo/+page.ts",
+      "group": "preview",
+      "sourceBytes": 81,
+      "lines": 2,
+      "sha256": "8a162834526dc87868adabe60280637e9abb8e0094b0b4cf60eec6969683ddc5",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/demo/fixtures.ts",
+      "group": "preview",
+      "sourceBytes": 18558,
+      "lines": 142,
+      "sha256": "c0f7001084e8000b12421eb8a7da75108bd32f8c7a9ff795b94ac6e362d32f0a",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/prop-manifest.json",
+      "group": "preview",
+      "sourceBytes": 102884,
+      "lines": 4423,
+      "sha256": "28c6d5115b22edad81791dde69c19ca36dc9045eb61af89556efeafacc6c2def",
+      "review": "structural closed-data/schema inventory; fictional data not acceptance"
+    },
+    {
+      "path": "src/routes/ui-preview/props.ts",
+      "group": "preview",
+      "sourceBytes": 11513,
+      "lines": 93,
+      "sha256": "74f7e448309da5c008f17bd7830c500e90c93a532005de120086587a1b3e42f2",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/reference.ts",
+      "group": "preview",
+      "sourceBytes": 9970,
+      "lines": 79,
+      "sha256": "cfd5e9ebbaec02b4f89b88548f92862506199e493af9e7ff7d4e70802b8620fc",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/routes/ui-preview/workspace.ts",
+      "group": "preview",
+      "sourceBytes": 602,
+      "lines": 15,
+      "sha256": "80fb4f5b70e0c738a424a2529304512ce3934d47e27816d3bb2079407dbc7199",
+      "review": "deep source lifecycle/import/data review; finite generated catalogue inventory"
+    },
+    {
+      "path": "src/lib/ui/charts/ChartMark.svelte",
+      "group": "charts",
+      "sourceBytes": 1755,
+      "lines": 28,
+      "sha256": "99e1fe7507c5d2d62316cc70219f19a2287928b27409dbaff6364fbabf34db0e",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05"
+    },
+    {
+      "path": "src/lib/ui/charts/ChartView.svelte",
+      "group": "charts",
+      "sourceBytes": 2289,
+      "lines": 38,
+      "sha256": "5f92ec30193d1802969e8e4c171fdae84271045881b0d796f809d8033f955ae1",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05",
+      "relatedFinding": "UIS-05"
+    },
+    {
+      "path": "src/lib/ui/charts/ExtendedChart.svelte",
+      "group": "charts",
+      "sourceBytes": 32935,
+      "lines": 389,
+      "sha256": "76819152e17e61d80d240c945650a53a0f814e23ea0f76cd973d3734c1432903",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05"
+    },
+    {
+      "path": "src/lib/ui/charts/StandardChart.svelte",
+      "group": "charts",
+      "sourceBytes": 44131,
+      "lines": 553,
+      "sha256": "40dc950778e8c105cc89797fd2b3453ac5291e01f4b7a439f30ef60a3a0f50ea",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05"
+    },
+    {
+      "path": "src/lib/ui/charts/activity.ts",
+      "group": "charts",
+      "sourceBytes": 1535,
+      "lines": 44,
+      "sha256": "b7a2cfc300b3232f0ef179e2e0a6fdf6c5a986a8126ce63fd30cc06c6663c3f2",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05"
+    },
+    {
+      "path": "src/lib/ui/charts/chart.css",
+      "group": "charts",
+      "sourceBytes": 6229,
+      "lines": 165,
+      "sha256": "5f9fb3aa3ad364377d23747021c99d81778c0676fa2a4324aa93cdbc150f9b88",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05"
+    },
+    {
+      "path": "src/lib/ui/charts/context.ts",
+      "group": "charts",
+      "sourceBytes": 152,
+      "lines": 2,
+      "sha256": "12216b941e05b8f56d4626b34073716cfbfcd27996dad53d0ebd7968aac3638f",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05"
+    },
+    {
+      "path": "src/lib/ui/charts/extended-geometry.ts",
+      "group": "charts",
+      "sourceBytes": 10144,
+      "lines": 179,
+      "sha256": "a294e07c2fae0a247c0255c49ee7dfa29e7841c2289a07f2eeb8af01918a0d63",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05",
+      "relatedFinding": "UPP-01"
+    },
+    {
+      "path": "src/lib/ui/charts/insights.ts",
+      "group": "charts",
+      "sourceBytes": 1856,
+      "lines": 29,
+      "sha256": "58ba4e831ab598cd037e98f7a94b5b6ee3133cc0fe5e50c97bcde193fb3a8da7",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05"
+    },
+    {
+      "path": "src/lib/ui/charts/model.ts",
+      "group": "charts",
+      "sourceBytes": 1847,
+      "lines": 54,
+      "sha256": "f217cc80e27e2c165a3b7cb89ea8718f0ae402c8dfa424f49ddbacdd47650549",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05"
+    },
+    {
+      "path": "src/lib/ui/charts/standard-geometry.ts",
+      "group": "charts",
+      "sourceBytes": 6037,
+      "lines": 96,
+      "sha256": "b676378ce7fe53b86b589c481c613a60275c0c81206820e0d869cec957fa2eb2",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05"
+    },
+    {
+      "path": "src/lib/ui/charts/types.ts",
+      "group": "charts",
+      "sourceBytes": 1632,
+      "lines": 36,
+      "sha256": "b1d5545dd8f1acf7c07fd9a617b7bd80740e5f5ca02c875229325e1b3ab90371",
+      "review": "deep geometry/mark/selection/import review; ChartView overlaps UIS-05"
+    },
+    {
+      "path": "src/lib/benchmarks/BenchmarkSettings.svelte",
+      "group": "benchmarks",
+      "sourceBytes": 7474,
+      "lines": 100,
+      "sha256": "62cd1e4f46bd3ba594d98a2adbdc049f622342e8710c0f4fdd6f118907885ee5",
+      "review": "deep admission/query/timing/comparison/polling review"
+    },
+    {
+      "path": "src/lib/benchmarks/model.ts",
+      "group": "benchmarks",
+      "sourceBytes": 3145,
+      "lines": 45,
+      "sha256": "7d03a7a6bc52827a925c76b7a413f4e8d15349c030d2d9c14c7cd6189b353fe4",
+      "review": "deep admission/query/timing/comparison/polling review"
+    },
+    {
+      "path": "src/lib/benchmarks/service.server.ts",
+      "group": "benchmarks",
+      "sourceBytes": 18354,
+      "lines": 233,
+      "sha256": "2b20918bb628053f96a9a703faedc5b795f06bb75b06d2a55a4810661e82f835",
+      "review": "deep admission/query/timing/comparison/polling review"
+    },
+    {
+      "path": "src/lib/server/diagnostics/index.ts",
+      "group": "diagnostics",
+      "sourceBytes": 5641,
+      "lines": 159,
+      "sha256": "bbdac918ce08bc80bc9eaadf787b9631f6b12e2cf18c663c8bcbb2f3e044d749",
+      "review": "deep persistence/retention/sampling review",
+      "relatedFinding": "UPP-03"
+    },
+    {
+      "path": "src/lib/server/diagnostics/runtime.ts",
+      "group": "diagnostics",
+      "sourceBytes": 7442,
+      "lines": 138,
+      "sha256": "5e850be6b1ec7b721d6dbe313677a1d0329fb8d7b0d0badc458742204925d571",
+      "review": "deep persistence/retention/sampling review"
+    },
+    {
+      "path": "scripts/browser-check.ts",
+      "group": "scripts",
+      "sourceBytes": 10800,
+      "lines": 202,
+      "sha256": "bd7cb2736d2fa2cedfad0946ea439b3fe13bcdad837c9c437ad150dc84e75bea",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "bounded local fictional browser fixture checks"
+    },
+    {
+      "path": "scripts/browser-diagnostics-check.ts",
+      "group": "scripts",
+      "sourceBytes": 5839,
+      "lines": 133,
+      "sha256": "b3d19a63ceebb3d1d7fe18d76402bc72f38f8e2550b820b22a5c6b795e1bc67b",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "diagnostic browser fixture test path"
+    },
+    {
+      "path": "scripts/browser-experimental-check.ts",
+      "group": "scripts",
+      "sourceBytes": 5542,
+      "lines": 128,
+      "sha256": "92a301f42f30a35b73bea4802d5a0466351fe22d3b215f516e31c1ee43cd2c81",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "experimental features local fixture checks"
+    },
+    {
+      "path": "scripts/browser-music-check.ts",
+      "group": "scripts",
+      "sourceBytes": 7240,
+      "lines": 56,
+      "sha256": "f0aab0efaec7bc3d446b893b78ed59bedbc6494ba865e7563d1ca0b52f514cbc",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "music local fixture browser check"
+    },
+    {
+      "path": "scripts/browser-playback-check.ts",
+      "group": "scripts",
+      "sourceBytes": 21510,
+      "lines": 429,
+      "sha256": "e5a5051a2e05dac0d04d260ed7c23f8200f13f8b488c8bf47864c7a4461a6ed5",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "playback fixture/capability simulation check"
+    },
+    {
+      "path": "scripts/code-inventory.ts",
+      "group": "scripts",
+      "sourceBytes": 3561,
+      "lines": 41,
+      "sha256": "849b247eba582e74a9b910efd7cc36f28cf1dc962bf03e6d2b132a73873fea48",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "offline static production/preview/tool import reachability"
+    },
+    {
+      "path": "scripts/container-application.ts",
+      "group": "scripts",
+      "sourceBytes": 2304,
+      "lines": 54,
+      "sha256": "af153c56b244a30de3a0aef7b26f9c43a6a55bc38d0efd7245794a0e6fa3e05a",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "owned app/migration signal forwarding and rotated stderr"
+    },
+    {
+      "path": "scripts/container-child-exit.ts",
+      "group": "scripts",
+      "sourceBytes": 1275,
+      "lines": 18,
+      "sha256": "f312438687e43460d1a27300ac9e5095f1c61a01dda6e6b9b0b9bde0a4198c99",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "best effort finite child exit metadata"
+    },
+    {
+      "path": "scripts/container-entrypoint.sh",
+      "group": "scripts",
+      "sourceBytes": 6031,
+      "lines": 124,
+      "sha256": "debe977ffb6f7cc83fe708af8b8272f24add3fc3fba01b68c0bd58e213f0784d",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "storage/PG readiness/migration/app sequencing"
+    },
+    {
+      "path": "scripts/container-postgres.ts",
+      "group": "scripts",
+      "sourceBytes": 3910,
+      "lines": 66,
+      "sha256": "15d0e37704a96787e1c2a55172554da7bfb423ed7018512f6adef914809d30de",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "bounded PG stderr lifecycle metadata parsing and signals"
+    },
+    {
+      "path": "scripts/container-shutdown-event.ts",
+      "group": "scripts",
+      "sourceBytes": 341,
+      "lines": 5,
+      "sha256": "8117d10fc46f7e54e4c8f38452c4a140c28658ec37f18aa6116b485094199514",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "bounded shutdown metadata audit"
+    },
+    {
+      "path": "scripts/container-shutdown.sh",
+      "group": "scripts",
+      "sourceBytes": 7046,
+      "lines": 145,
+      "sha256": "e3ec665e502a1897a3a8a62652a5a91a02d0a080a1b3d21fc9c7eae025416f4e",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "owned process tree finite drain/escalation"
+    },
+    {
+      "path": "scripts/container-stderr.ts",
+      "group": "scripts",
+      "sourceBytes": 868,
+      "lines": 19,
+      "sha256": "1ef3f953518188167f69ba4b4be8ed197ee5053006038c5e377e52376f65e2c7",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "direct exit plus bounded inherited-pipe drain"
+    },
+    {
+      "path": "scripts/container-storage.sh",
+      "group": "scripts",
+      "sourceBytes": 5270,
+      "lines": 113,
+      "sha256": "14ff1d89e5873f772c6ff8a750a08b1b8a1298fe76597c92cf222e1d3ce84e79",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "target user permission checks, secret subtree migration"
+    },
+    {
+      "path": "scripts/container-wait.sh",
+      "group": "scripts",
+      "sourceBytes": 514,
+      "lines": 15,
+      "sha256": "d2683a1f740aff3fc285704600bbdd6dcd3cee462ff324f9deb9874a075d2c42",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "child identity/status wait helper"
+    },
+    {
+      "path": "scripts/fixtures/container-runtime.ts",
+      "group": "scripts",
+      "sourceBytes": 15025,
+      "lines": 178,
+      "sha256": "c2e1313f1328f71e736dc0108c23715171db3c7cf0e7373406b4d8e549a207e7",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "guarded disposable Linux runtime scenarios; concurrent pipes"
+    },
+    {
+      "path": "scripts/migrate.ts",
+      "group": "scripts",
+      "sourceBytes": 2319,
+      "lines": 45,
+      "sha256": "c0b0267822552f6ce4441eef8d5e9ba4f88eaf8b7e0572babbd39ddfdc9e3cd6",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "migration lifecycle metadata, bounded version lookup and close"
+    },
+    {
+      "path": "scripts/performance-verification.ts",
+      "group": "scripts",
+      "sourceBytes": 14646,
+      "lines": 148,
+      "sha256": "81a3f41da5a35549ed21a6ef58a3e403af6541627f54ddeaba685f387bbc4b6c",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "historical query comparison, fictional disposable data only"
+    },
+    {
+      "path": "scripts/provider-browser-fixture.ts",
+      "group": "scripts",
+      "sourceBytes": 13933,
+      "lines": 304,
+      "sha256": "5cc1ea69bcda109037af60fcb07ea674335ba9af7d371104a84ca2829c9bd160",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "disposable fake provider and DB fixtures, not actual-data acceptance"
+    },
+    {
+      "path": "scripts/runtime-audit.ts",
+      "group": "scripts",
+      "sourceBytes": 5161,
+      "lines": 81,
+      "sha256": "a486522a8ab93caeff57dae2b0ee9b2443c634e58c49a32e0d8bf3816bed1dd0",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "bounded metadata audit rotation/pending/caller wait"
+    },
+    {
+      "path": "scripts/source-style.ts",
+      "group": "scripts",
+      "sourceBytes": 1950,
+      "lines": 48,
+      "sha256": "059812d866c2d2ecb82f97296fcd4bd72b7f95742a724c34d2e5e05b651c8c6b",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "finite adopted-file style checks, not whole app coverage"
+    },
+    {
+      "path": "scripts/test-container-lifecycle.ts",
+      "group": "scripts",
+      "sourceBytes": 9182,
+      "lines": 146,
+      "sha256": "c56b887979569732b60d5712ae35a13ef51e99fe43a797e212d960dad25e655e",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "dedicated Linux supervisor scenarios and cleanup"
+    },
+    {
+      "path": "scripts/test-container-runtime.ts",
+      "group": "scripts",
+      "sourceBytes": 748,
+      "lines": 7,
+      "sha256": "078c9ca26a36f433ddfabfd4a6192fedee92ee6409719b5537bf34ac5f3357c0",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "guarded fresh runtime fixture dispatcher"
+    },
+    {
+      "path": "scripts/test-database.ts",
+      "group": "scripts",
+      "sourceBytes": 2061,
+      "lines": 35,
+      "sha256": "975a514b7e58619ae585437c05fdaecc4795621d1b508d123631d7f1b4beb090",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "serial fresh disposable per-suite databases and key roots"
+    },
+    {
+      "path": "scripts/test-recovery.ts",
+      "group": "scripts",
+      "sourceBytes": 4627,
+      "lines": 39,
+      "sha256": "b1f660f04827a18e7c141297ab87daaa9da25d3004883b31d5798a9e171261ce",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "disposable logical backup/restore drill and key validation",
+      "relatedFinding": "UPP-04"
+    },
+    {
+      "path": "scripts/ui-inventory.ts",
+      "group": "scripts",
+      "sourceBytes": 14519,
+      "lines": 217,
+      "sha256": "01a27f3e24a50e03f9364e7d0105fcaab01adac343778f8f9be2d4f6fc6acd4c",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "offline AST component composition and manifest drift"
+    },
+    {
+      "path": "scripts/ui-props.ts",
+      "group": "scripts",
+      "sourceBytes": 7272,
+      "lines": 106,
+      "sha256": "331bb70b2100c5a21b8f060b20dc4a1644e5497895d17ea40c26d01466da5a4a",
+      "review": "source review of offline tooling and bounded runtime lifecycle; no execution in final sweep",
+      "role": "offline type/prop manifest generation"
+    },
+    {
+      "path": "Dockerfile",
+      "group": "infrastructure",
+      "sourceBytes": 2718,
+      "lines": 45,
+      "sha256": "e5e4cd12c53946c1fcbe8ae38673604f709da45046453f23f1626eebb829a6ff",
+      "review": "source build/deployment/runtime boundary review; image not executed in final sweep"
+    },
+    {
+      "path": "compose.yaml",
+      "group": "infrastructure",
+      "sourceBytes": 448,
+      "lines": 17,
+      "sha256": "ae084cbde7e4fba29c5aef3cbd20398ee0330551739d6ab0220d10d56409d9be",
+      "review": "source build/deployment/runtime boundary review; image not executed in final sweep"
+    },
+    {
+      "path": "svelte.config.js",
+      "group": "infrastructure",
+      "sourceBytes": 232,
+      "lines": 7,
+      "sha256": "970aeff710838be6bbe6418049ba09f9e7fa1a920f314f8ff309dfd151524d84",
+      "review": "source build/deployment/runtime boundary review; image not executed in final sweep"
+    },
+    {
+      "path": "vite.config.ts",
+      "group": "infrastructure",
+      "sourceBytes": 242,
+      "lines": 8,
+      "sha256": "d899bad30bf4c526affbead8adc71ad57467aaee6cc3750d70ad84a18744ea8f",
+      "review": "source build/deployment/runtime boundary review; image not executed in final sweep"
+    },
+    {
+      "path": ".dockerignore",
+      "group": "infrastructure",
+      "sourceBytes": 223,
+      "lines": 20,
+      "sha256": "3cefd4eb21ad31876a86d19d2851ef3ccd81626373ef1f60f3ae4ae3ec0f3056",
+      "review": "source build/deployment/runtime boundary review; image not executed in final sweep"
+    }
+  ]
+}

@@ -1,0 +1,157 @@
+{
+  "id": "MIN-01",
+  "status": "implemented_actual_equivalence_verified_current_status_cardinality_gap",
+  "report": "implementation-game-preview.md",
+  "sharedOwner": "src/lib/core/games/service.server.ts:listGames",
+  "change": "Validate an optional1..60integer head projection; smaller projections restricted to first unsearched page. Status preview requests12 before SQL hydration instead of slicing60 after hydration.",
+  "publicPaging": {
+    "defaultLimit": 60,
+    "offsetStride": 60,
+    "pageCountUses": 60,
+    "reducedProjectionLaterPages": "rejected",
+    "reducedProjectionNonemptySearch": "rejected",
+    "externalRequestProjectionParameterAdded": false
+  },
+  "consumers": [
+    {
+      "consumer": "presentationContent status-filtered Play preview through libraryContent",
+      "projection": 12,
+      "outputs": "Complete cards/failure/page/pages/total preserved across actual owners/status/personal/availability cases."
+    },
+    {
+      "consumer": "gameRow unfiltered all-state Play preview",
+      "projection": 12,
+      "outputs": "Same constant replaces existing literal; created/recent-personal order and existing presentation path retained."
+    },
+    {
+      "consumer": "Library Play grid; /games library grid; games API; local game search",
+      "projection": 60,
+      "outputs": "Default remains60; exact existing ranking, metadata, paging and availability behavior retained."
+    }
+  ],
+  "sourceBefore": {
+    "src/lib/core/games/service.server.ts": {
+      "beforeSha256": "50160bb3fddf9b8530e0c0b1262eaff133dccbeb73f12ae4056f819e04557753",
+      "beforePrivatePath": "/private/tmp/coast-game-preview-before-service.server.ts",
+      "sameAsHead": true
+    },
+    "src/lib/server/queries/media-rows.ts": {
+      "beforeSha256": "c1af737bd56006b966c942fdbd852313a0e0aebb99f3e778c4798f17e5c266b7",
+      "beforePrivatePath": "/private/tmp/coast-game-preview-before-media-rows.ts",
+      "sameAsHead": false
+    }
+  },
+  "sourceAfter": {
+    "src/lib/core/games/service.server.ts": "e6e01eac392126a5c06fdaf246fc139b7cfa57e7d01e59845d502386894bf52d",
+    "src/lib/server/queries/media-rows.ts": "0e7f387f6f7cf7d57949b9eec74dfafe997c170caac03ef9531c465deb0a975e",
+    "tests/games-preview-projection.test.ts": "f4cce134bf692be598c840699ce6b8ee1eb43f010b1326848622e9ac8adadaf8"
+  },
+  "baselineHead": "eb0673873462b71118d1c11678d128958a05ff07",
+  "actual": {
+    "status": "passed",
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "5s",
+      "jit": "off"
+    },
+    "census": {
+      "games": 1218,
+      "variants": 122,
+      "playthroughs": 1,
+      "game_preferences": 0,
+      "variant_in_head12": 0,
+      "playthrough_variants": 0,
+      "enabledGameOwners": 4
+    },
+    "statusCensus": [
+      {
+        "status": "dropped",
+        "count": 1
+      }
+    ],
+    "equivalence": {
+      "fullGridDtos": 96,
+      "headProjectionDtos": 96,
+      "previewDtos": 96,
+      "pageAndClampDtos": 32,
+      "rankedSearchDtos": 12,
+      "allEqual": true
+    },
+    "sourceUnchanged": true,
+    "rolledBack": true,
+    "normalDatabaseTouched": false,
+    "fabricatedData": false,
+    "fiveAlternatingGenericCatalogueSampleMedians": {
+      "full": {
+        "elapsedMs": 2.4010419999999613,
+        "ormStatements": 4,
+        "ormReturnedRows": 65,
+        "items": 60
+      },
+      "head": {
+        "elapsedMs": 1.5960419999998976,
+        "ormStatements": 4,
+        "ormReturnedRows": 13,
+        "items": 12
+      }
+    },
+    "metricsBoundary": "ORM prepared-query execute only; raw BunSQL/config reads and PostgreSQL internal work excluded. Full-owner call elapsed timings include their work. Generic catalogue projection samples are not observed busy-status-preview gains."
+  },
+  "focusedTests": {
+    "status": "passed",
+    "command": ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/games-preview-projection.test.ts",
+    "runtime": "Bun1.4.3",
+    "testsPassed": 2,
+    "testsFailed": 0,
+    "assertions": 8,
+    "databaseRequired": false,
+    "purpose": "Reject invalid projection bounds and reduced nonempty-search/later-page calls before data reads; no fabricated performance data.",
+    "sourceSha256": "f4cce134bf692be598c840699ce6b8ee1eb43f010b1326848622e9ac8adadaf8"
+  },
+  "knownLimits": [
+    "Only one persisted playthrough/latest dropped-status item; otherstatuses empty, no actual status cohort exceeding12. Current visible status-preview row admission remains1\u21921 or0\u21920.",
+    "Zero actual game metadata preferences and zero variants admitted by the title-sorted head12; no positive reduced-head private-alias or parent-inheritance cohort. Actual122variants and selected variant-ranked search exercise unchanged default-full presentation paths.",
+    "Count query and feature/policy reads remain; four ORM statements for nonempty measured projection. No count-elision or public pagination refactor.",
+    "Original domain probe has no browser, heap/RSS, CPU, provider-call or larger/concurrent-data latency claim. Separate current-source functional preview acceptance is recorded below."
+  ],
+  "futureDriftAcceptance": [
+    "Keep two focused projection-safety tests.",
+    "Re-run the actual read-only complete-DTO probe when catalogue/status/preferences grow, retaining source pins and aggregate-only output.",
+    "Require exact preview first12 and unchanged full-grid/search/defaultpaging outputs across admitted real cohorts; never manufacture tracking statuses to claim performance verification."
+  ],
+  "verificationArtifacts": [
+    "evidence/implementation-game-preview-actual.json",
+    "evidence/implementation-game-preview-census.json",
+    "evidence/implementation-game-preview-tests.json",
+    "probes/game-preview-actual.ts",
+    "probes/game-preview-census.ts",
+    "candidates/game-preview/service.before.ts.txt",
+    "candidates/game-preview/media-rows.before.ts.txt"
+  ],
+  "review": {
+    "design": "Independent provider/jobs source review accepted bounded first-page/empty-query contract and default60 preservation.",
+    "finalPatch": "independent_read_only_approved_no_material_issue",
+    "sourceHashes": {
+      "src/lib/core/games/service.server.ts": "e6e01eac392126a5c06fdaf246fc139b7cfa57e7d01e59845d502386894bf52d",
+      "src/lib/server/queries/media-rows.ts": "0e7f387f6f7cf7d57949b9eec74dfafe997c170caac03ef9531c465deb0a975e"
+    }
+  },
+  "normalOrDeployedDataMutated": false,
+  "navigationToastPackageSchemaChanged": false,
+  "artifactSha256": {
+    "evidence/implementation-game-preview-actual.json": "17a9c922021326c62faaf5c9fac94d4affa48bd968e6629dfc31f3ac9afeeb42",
+    "evidence/implementation-game-preview-census.json": "9446efcbd82d9a4b29ff7afc7a34941a7e2eb02306f5254749fc1462a16c228d",
+    "evidence/implementation-game-preview-tests.json": "10ab1a58ba491b5147eea6ab2c88ab6263af19e5b11fd7b221e41e4802c1fa81",
+    "probes/game-preview-actual.ts": "4b8f7f7d47a3c3407f3b9a813299f19136533787dd8f87bee8982c783f382d8e",
+    "probes/game-preview-census.ts": "e0a9c5725ddfb64c9ae6fe96b8efcbafebd80dd12737ee2c0f050b42d62c474b",
+    "candidates/game-preview/service.before.ts.txt": "50160bb3fddf9b8530e0c0b1262eaff133dccbeb73f12ae4056f819e04557753",
+    "candidates/game-preview/media-rows.before.ts.txt": "c1af737bd56006b966c942fdbd852313a0e0aebb99f3e778c4798f17e5c266b7"
+  },
+  "writeStatus": "frozen_after_final_review",
+  "currentBatchLiveAcceptance": {
+    "receipt": "evidence/implementation-owner-batch-normal.json",
+    "boundary": "Signed-in functional rendering and menu/panel open/close only; no real filter/preference writes, pending device authorization, fault injection or benchmark."
+  }
+}

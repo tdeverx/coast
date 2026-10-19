@@ -22,7 +22,6 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
   if (!item) throw new AppError(404, 'This title was not found.');
   const config = await getFeatureConfig(userId);
   const wholeId = await wholeWorkId(db, mediaId);
-  const [wholeWork] = wholeId === mediaId ? [item] : await mediaViewsForIds(userId, [wholeId]);
   const [dated] = await db
     .select({ releaseDate: effectiveReleaseDate(sql`${s.media.id}`, config.metadataSource) })
     .from(s.media)
@@ -37,10 +36,17 @@ export async function mediaActionData(userId: string, mediaId: string): Promise<
       ) select 1 from media where id in (select id from scope) and kind in ('movie','episode') and ${effectiveReleaseDate(sql`media.id`,config.metadataSource)} <= (now() at time zone 'UTC')::date limit 1`)
       ).length > 0
     : !!dated?.releaseDate && dated.releaseDate <= new Date().toISOString().slice(0, 10);
-  const views = await mediaViewsForIds(userId, [
+  const parentIds = new Set([
     ...(item.trackingParents ?? []).map((row) => row.id),
     ...(item.showId ? [item.showId] : []),
   ]);
+  const context = await mediaViewsForIds(userId, [
+    ...parentIds,
+    ...(wholeId === mediaId ? [] : [wholeId]),
+  ]);
+  const wholeWork = wholeId === mediaId ? item : context.find(view => view.id === wholeId);
+  // Whole-work hydration shares this batch without adding unrelated reset/rewatch targets.
+  const views = context.filter(view => parentIds.has(view.id));
   const byId = new Map(views.map((view) => [view.id, view]));
   const requestTarget = ['season', 'episode'].includes(item.kind)
     ? (byId.get(item.showId!) ?? null)
@@ -191,40 +197,35 @@ export async function mediaHistory(
   v.parse(pageNumberSchema, requestedPage);
   const db = getDb();
   const scope = historyScope(mediaId);
-  const where = and(
+  // Scope/count/page share one statement; keep counting before the media join.
+  const scopedWhere = and(
     eq(s.trackingEvents.userId, userId),
-    sql`${s.trackingEvents.mediaId} in (${scope})`,
+    sql`${s.trackingEvents.mediaId} in (select id from audit_scope)`,
     inArray(s.trackingEvents.action, ['watch', 'unwatch', 'progress'])
   );
-  const [count] = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(s.trackingEvents)
-    .where(where);
-  const { page, pages } = pagination(count.total, requestedPage);
-  const rows = await db
-    .select({
-      id: s.trackingEvents.id,
-      mediaId: s.media.id,
-      title: s.media.title,
-      action: s.trackingEvents.action,
-      source: s.trackingEvents.source,
-      occurredAt: s.trackingEvents.occurredAt,
-      occurredAtKnown: s.trackingEvents.occurredAtKnown,
-      rewatch: s.trackingEvents.rewatch,
-      positionSeconds: s.trackingEvents.positionSeconds,
-      applied: s.trackingEvents.applied,
-    })
-    .from(s.trackingEvents)
-    .innerJoin(s.media, eq(s.media.id, s.trackingEvents.mediaId))
-    .where(where)
-    .orderBy(desc(s.trackingEvents.occurredAt), desc(s.trackingEvents.id))
-    .limit(PAGE_SIZE)
-    .offset((page - 1) * PAGE_SIZE);
+  type Event = Omit<MediaHistory['items'][number], 'occurredAt'> & {occurredAt: Date};
+  const rows = (await db.execute(sql`
+    with audit_scope as materialized (${scope}),
+    totals as (select count(*)::int as total from ${s.trackingEvents} where ${scopedWhere})
+    select totals.total, page.* from totals left join lateral (
+      select ${s.trackingEvents.id} as id, ${s.media.id} as "mediaId", ${s.media.title} as title,
+        ${s.trackingEvents.action} as action, ${s.trackingEvents.source} as source,
+        ${s.trackingEvents.occurredAt} as "occurredAt", ${s.trackingEvents.occurredAtKnown} as "occurredAtKnown",
+        ${s.trackingEvents.rewatch} as rewatch, ${s.trackingEvents.positionSeconds} as "positionSeconds",
+        ${s.trackingEvents.applied} as applied
+      from ${s.trackingEvents} inner join ${s.media} on ${s.media.id}=${s.trackingEvents.mediaId}
+      where ${scopedWhere} order by ${s.trackingEvents.occurredAt} desc, ${s.trackingEvents.id} desc
+      limit ${PAGE_SIZE} offset (least(${requestedPage},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int))-1)*${PAGE_SIZE}
+    ) page on true order by page."occurredAt" desc, page.id desc
+  `)) as ({total:number} & {[K in keyof Event]:Event[K]|null})[];
+  const total=rows[0].total;
   return {
-    items: rows.map((row) => ({ ...row, occurredAt: row.occurredAt.toISOString() })),
-    page,
-    pages,
-    total: count.total,
+    items:rows.flatMap(row=>row.id===null?[]:[{
+      id:row.id,mediaId:row.mediaId!,title:row.title!,action:row.action!,source:row.source!,
+      occurredAt:row.occurredAt!.toISOString(),occurredAtKnown:row.occurredAtKnown!,
+      rewatch:row.rewatch!,positionSeconds:row.positionSeconds,applied:row.applied!,
+    }]),
+    ...pagination(total,requestedPage),total,
   };
 }
 

@@ -13,8 +13,9 @@
   import { mediaTypeOptions } from '$lib/ui/filter-options';
   import RowFilter from '$lib/ui/components/RowFilter.svelte';
   import Heading from '$lib/ui/components/Heading.svelte';
-  import { untrack, setContext } from 'svelte';
+  import { untrack, setContext, onDestroy } from 'svelte';
   import { api, change, message } from '$lib/ui/client';
+  import { createResource } from '$lib/ui/resource.svelte';
   import Shelf from '$lib/ui/components/Shelf.svelte';
 
   import MediaCard from '$lib/ui/components/MediaCard.svelte';
@@ -47,14 +48,15 @@
     featureTitle = title;
     featureOpen = true;
   }
-  let favouriteData = $state(
+  const favouriteRead = createResource(
     untrack(() => ({
       favourites: data.favourites,
       page: data.page,
       pages: data.pages,
       total: data.total,
-    }))
+    })), true
   );
+  const favouriteData = $derived(favouriteRead.data);
   const heroItems = $derived(
     data.view === 'favourites'
       ? favouriteData.favourites
@@ -68,13 +70,11 @@
   );
   let favouriteKind = $state(untrack(() => data.filters.kind));
   let insightPeriod = $state(untrack(() => data.filters.period));
-  let insights = $state(untrack(() => ({ totals: data.totals, activity: data.activity })));
-  let favouriteLoading = $state(false),
-    insightLoading = $state(false);
-  let favouriteError = $state(''),
-    insightError = $state('');
-  let favouriteRequest = 0,
-    insightRequest = 0;
+  const insight = createResource(untrack(() => ({ totals: data.totals, activity: data.activity, period: data.filters.period })), true);
+  const insights = $derived(insight.data);
+  const favouriteLoading = $derived(favouriteRead.busy), insightLoading = $derived(insight.busy);
+  const favouriteError = $derived(favouriteRead.error), insightError = $derived(insight.error);
+  onDestroy(() => { favouriteRead.dispose(); insight.dispose(); });
   let preferenceWrites = Promise.resolve<unknown>(undefined);
   function savePreference(patch: { favouriteKind?: typeof favouriteKind; period?: ProfilePeriod }) {
     if (!data.isOwner) return Promise.resolve();
@@ -84,68 +84,48 @@
     return preferenceWrites;
   }
   $effect(() => {
-    favouriteData = {
+    favouriteRead.replace({
       favourites: data.favourites,
       page: data.page,
       pages: data.pages,
       total: data.total,
-    };
+    });
     favouriteKind = data.filters.kind;
-    if(favouriteKind==='book'||favouriteKind==='comic')favouriteAvailable=false;
+    if(data.filters.kind==='book'||data.filters.kind==='comic')favouriteAvailable=false;
     insightPeriod = data.filters.period;
-    insights = { totals: data.totals, activity: data.activity };
-    favouriteRequest++;
-    insightRequest++;
-    favouriteLoading = false;
-    insightLoading = false;
+    insight.replace({ totals: data.totals, activity: data.activity, period: data.filters.period });
   });
   async function chooseFavourites(kind: typeof favouriteKind, number = 1) {
     favouriteKind = kind;
     if(kind==='book'||kind==='comic')favouriteAvailable=false;
-    favouriteLoading = true;
-    favouriteError = '';
-    const request = ++favouriteRequest;
-    try {
+    await favouriteRead.load(async signal => {
       const [result] = await Promise.all([
         api<typeof favouriteData>(
           `profile/section?section=favourites&kind=${kind}&scope=${favouriteAvailable ? 'available' : 'all'}&page=${number}&username=${encodeURIComponent(data.username)}`,
           undefined,
-          'GET'
+          'GET', { signal }
         ),
         savePreference({ favouriteKind: kind }),
       ]);
-      if (request === favouriteRequest)
-        favouriteData = {
+      return {
           ...result,
           favourites: result.favourites.slice(0, data.view === 'overview' ? 20 : 60),
-        };
-    } catch (e) {
-      if (request === favouriteRequest) favouriteError = message(e);
-    } finally {
-      if (request === favouriteRequest) favouriteLoading = false;
-    }
+      };
+    });
   }
   async function choosePeriod(period: ProfilePeriod) {
     insightPeriod = period;
-    insightLoading = true;
-    insightError = '';
-    const request = ++insightRequest;
-    try {
+    await insight.load(async signal => {
       const [result] = await Promise.all([
         api<{ totals: typeof data.totals; activity: Awaited<typeof data.activity> }>(
           `profile/section?section=insights&period=${period}&username=${encodeURIComponent(data.username)}`,
           undefined,
-          'GET'
+          'GET', { signal }
         ),
         savePreference({ period }),
       ]);
-      if (request === insightRequest)
-        insights = { totals: result.totals, activity: Promise.resolve(result.activity) };
-    } catch (e) {
-      if (request === insightRequest) insightError = message(e);
-    } finally {
-      if (request === insightRequest) insightLoading = false;
-    }
+      return { totals: result.totals, activity: Promise.resolve(result.activity), period };
+    });
   }
   let arranging = $state(false);
   let editing = $state(false),
@@ -374,7 +354,7 @@
     title={data.isOwner ? 'Your activity, in perspective' : 'Activity, in perspective'}
     size="panel"
     {layout}
-    href={layout === 'row' ? `${profileUrl}?section=insights&period=${insightPeriod}` : undefined}
+    href={layout === 'row' ? `${profileUrl}?section=insights&period=${insights.period}` : undefined}
     busy={insightLoading}
     error={insightError} retry={()=>void choosePeriod(insightPeriod)}
   >
@@ -397,11 +377,11 @@
             episodes={activity.days.reduce((n, d) => n + d.episodes, 0)}
             seasons={activity.completedSeasons}
             previousCount={activity.previousCount}
-            period={insightPeriod}
+            period={insights.period}
           />{/if}{/await}
       <MetricGrid items={statistics} />
       {#snippet footer()}
-        {periodLabel(insightPeriod)} · {insights.totals.movies}
+        {periodLabel(insights.period)} · {insights.totals.movies}
         {insights.totals.movies === 1 ? 'distinct movie' : 'distinct movies'} and {insights.totals
           .episodes}
         {insights.totals.episodes === 1 ? 'distinct episode' : 'distinct episodes'} · Recorded watches
@@ -409,8 +389,8 @@
       {/snippet}
     </DetailCard>
     {#await insights.activity then activity}{#if activity}
-        {#each [...profileActivityPanels(activity.days,activity.today,insightPeriod,profileUrl),
-          ...profileBreakdownPanels(activity.genres,activity.ratings,insightPeriod,profileUrl)] as panel}<DetailCard {...panel} />{/each}
+        {#each [...profileActivityPanels(activity.days,activity.today,insights.period,profileUrl),
+          ...profileBreakdownPanels(activity.genres,activity.ratings,insights.period,profileUrl)] as panel}<DetailCard {...panel} />{/each}
       {:else}<DetailCard title="Activity unavailable">
           <Button emphasis="subtle" onclick={() => choosePeriod(insightPeriod)}>Retry</Button>
         </DetailCard>{/if}{/await}

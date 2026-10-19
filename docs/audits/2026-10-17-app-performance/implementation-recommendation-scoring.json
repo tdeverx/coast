@@ -1,0 +1,384 @@
+{
+  "schemaVersion": 1,
+  "findingId": "PLAN-04",
+  "status": "partial_positive_genre_preaggregation_actual_verified",
+  "report": "implementation-recommendation-scoring.md",
+  "implementationApplied": true,
+  "sharedOwner": "src/lib/recommendations/query.server.ts:recommendationRows",
+  "change": "Materialize per-root DISTINCT genre weight sums inside the existing SQL statement; sum these weights per candidate genre occurrence. Only the positive genre term changes.",
+  "consumers": [
+    "GET /api/v1/experiments/recommendations",
+    "GET /api/v1/experiments/row",
+    "For You recommendation grid across admitted media",
+    "DynamicFeed recommendation shelves",
+    "DynamicFeed genre/kind and related-work shelves",
+    "Linked For You genre/work grids through createForYouSource"
+  ],
+  "sourceBefore": {
+    "src/lib/recommendations/query.server.ts": "6db125c7611e418315ff93fba6a9e829ce6d415d49d2f2444632d1900d054f54"
+  },
+  "sourceAfter": {
+    "src/lib/recommendations/query.server.ts": "aa1a7457c830733bf44c1d363e714beb420034261848a913e87c51dfe0a33c59",
+    "src/lib/social/taste-cache.server.ts": "ab588a44d7307a2ae79b1ddd80647000d5b5a9fbc1acab5a5660a04871c35c1e",
+    "src/lib/recommendations/interests.server.ts": "ebc4a4050d98eb00c884dc40db2b46aa57d73a6666130f04f54b4d712d51e79e",
+    "src/lib/social/work-features.server.ts": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "tests/recommendation-genre-score-db.test.ts": "c6805a221eb4a0bfcd5c654dddd9179632e3004bb037d52edb019da614dd333b"
+  },
+  "baseline": "candidates/recommendations/query-before.ts.txt",
+  "preserved": [
+    "300 interest roots, first100 positive evidence roots",
+    "Exact2,000 candidate preselection/order",
+    "Author/series OR term and negative-genre term",
+    "Provider/taste arithmetic, current connected generation and revision admission",
+    "Feature/privacy/category/availability/release-date admission",
+    "Score tie order, seeded row order, page60, clamping, titles and canonical card hydration",
+    "FLOAT8/double precision score type",
+    "No completed-result cache, schema/index/dependency/budget/policy changes"
+  ],
+  "arithmeticInvariant": "Current source positive interest weights are integer-valued FLOAT8 branches 1..5, with at most 100 positive roots. Keep FLOAT8; any future fractional-weight change requires full equivalence revalidation. Evidence genres are distinct per evidence root; candidate genre occurrences remain repeated.",
+  "actual": {
+    "status": "passed",
+    "sourcePinned": true,
+    "settings": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s"
+    },
+    "sourceUnchanged": true,
+    "externalFetches": 0,
+    "enabledOwners": 4,
+    "retainedTables": {
+      "enabled_users": 4,
+      "recommendation_sets": 64,
+      "recommendation_items": 1280,
+      "work_features": 5993,
+      "taste_profiles": 16,
+      "taste_scores": 5662,
+      "positive_taste_scores": 3523
+    },
+    "contexts": 8,
+    "allRawCandidateScoreObjects": 9543,
+    "allRawPreselectionScoreAndPageObjectsEqual": true,
+    "contextsSummary": [
+      {
+        "contextOrdinal": 0,
+        "ownerOrdinal": 0,
+        "feature": "recommendations",
+        "kind": null,
+        "evidenceRoots": 25,
+        "integerEvidenceWeights": true,
+        "scoreType": "double precision",
+        "preselectedCandidates": 2000,
+        "positiveScored": 2000,
+        "pageCandidates": 60,
+        "total": 2000,
+        "fullPreselectionAndScoreObjectsEqual": true,
+        "fullPageOrderAndScoresEqual": true
+      },
+      {
+        "contextOrdinal": 1,
+        "ownerOrdinal": 0,
+        "feature": "row",
+        "kind": "movie",
+        "evidenceRoots": 25,
+        "integerEvidenceWeights": true,
+        "scoreType": "double precision",
+        "preselectedCandidates": 690,
+        "positiveScored": 690,
+        "pageCandidates": 60,
+        "total": 690,
+        "fullPreselectionAndScoreObjectsEqual": true,
+        "fullPageOrderAndScoresEqual": true
+      },
+      {
+        "contextOrdinal": 2,
+        "ownerOrdinal": 1,
+        "feature": "recommendations",
+        "kind": null,
+        "evidenceRoots": 100,
+        "integerEvidenceWeights": true,
+        "scoreType": "double precision",
+        "preselectedCandidates": 2000,
+        "positiveScored": 2000,
+        "pageCandidates": 60,
+        "total": 2000,
+        "fullPreselectionAndScoreObjectsEqual": true,
+        "fullPageOrderAndScoresEqual": true
+      },
+      {
+        "contextOrdinal": 3,
+        "ownerOrdinal": 1,
+        "feature": "row",
+        "kind": "movie",
+        "evidenceRoots": 100,
+        "integerEvidenceWeights": true,
+        "scoreType": "double precision",
+        "preselectedCandidates": 149,
+        "positiveScored": 149,
+        "pageCandidates": 60,
+        "total": 149,
+        "fullPreselectionAndScoreObjectsEqual": true,
+        "fullPageOrderAndScoresEqual": true
+      },
+      {
+        "contextOrdinal": 4,
+        "ownerOrdinal": 2,
+        "feature": "recommendations",
+        "kind": null,
+        "evidenceRoots": 100,
+        "integerEvidenceWeights": true,
+        "scoreType": "double precision",
+        "preselectedCandidates": 2000,
+        "positiveScored": 2000,
+        "pageCandidates": 60,
+        "total": 2000,
+        "fullPreselectionAndScoreObjectsEqual": true,
+        "fullPageOrderAndScoresEqual": true
+      },
+      {
+        "contextOrdinal": 5,
+        "ownerOrdinal": 2,
+        "feature": "row",
+        "kind": "movie",
+        "evidenceRoots": 100,
+        "integerEvidenceWeights": true,
+        "scoreType": "double precision",
+        "preselectedCandidates": 245,
+        "positiveScored": 245,
+        "pageCandidates": 60,
+        "total": 245,
+        "fullPreselectionAndScoreObjectsEqual": true,
+        "fullPageOrderAndScoresEqual": true
+      },
+      {
+        "contextOrdinal": 6,
+        "ownerOrdinal": 3,
+        "feature": "recommendations",
+        "kind": null,
+        "evidenceRoots": 100,
+        "integerEvidenceWeights": true,
+        "scoreType": "double precision",
+        "preselectedCandidates": 2000,
+        "positiveScored": 2000,
+        "pageCandidates": 60,
+        "total": 2000,
+        "fullPreselectionAndScoreObjectsEqual": true,
+        "fullPageOrderAndScoresEqual": true
+      },
+      {
+        "contextOrdinal": 7,
+        "ownerOrdinal": 3,
+        "feature": "row",
+        "kind": "movie",
+        "evidenceRoots": 100,
+        "integerEvidenceWeights": true,
+        "scoreType": "double precision",
+        "preselectedCandidates": 459,
+        "positiveScored": 459,
+        "pageCandidates": 60,
+        "total": 459,
+        "fullPreselectionAndScoreObjectsEqual": true,
+        "fullPageOrderAndScoresEqual": true
+      }
+    ],
+    "representativeCompleteDto": {
+      "contextOrdinal": 2,
+      "ownerOrdinal": 1,
+      "feature": "recommendations",
+      "total": 2000,
+      "items": 60,
+      "completeDtoEqual": true,
+      "canonicalHydration": true,
+      "sha256": "c46eb2f91ac6f62a4b63282c781d854dcaa03ce3ea1f8de7ac68cb59d7463824"
+    },
+    "representativePlans": {
+      "before": {
+        "executionMs": 235.658,
+        "planningMs": 9.788,
+        "sharedHits": 40018,
+        "sharedReads": 0,
+        "temporaryReads": 0,
+        "temporaryWrites": 0
+      },
+      "candidate": {
+        "executionMs": 72.022,
+        "planningMs": 6.788,
+        "sharedHits": 40018,
+        "sharedReads": 0,
+        "temporaryReads": 0,
+        "temporaryWrites": 0
+      }
+    },
+    "positiveGenreUnnestLoops": {
+      "before": {
+        "candidatePerEvidence": [
+          79020,
+          79020
+        ]
+      },
+      "after": {
+        "evidenceOnce": 100,
+        "candidate": [
+          2000,
+          2000
+        ],
+        "weightedRows": 20,
+        "weightedHashPeakKiB": 24
+      }
+    },
+    "naturalGenreArrayCensus": {
+      "metadata_rows": 145757,
+      "duplicate_or_null_genre_arrays": 0,
+      "null_element_arrays": 0
+    },
+    "boundary": "Actual persisted interests/catalogue only; one explicit READ ONLY repeatable-read session with10s/1s budgets. Complete raw score/preselection/page equality for8contexts; only1complete60-item hydrated production DTO. No normal/deployed DB/provider calls or mutations. Pool closed.",
+    "performanceBoundary": "Two separate ordered single EXPLAIN pairs, final235.658/72.022ms and pre-adoption179.406/60.260ms, are descriptive samples. Same40,018hits/no reads/temp; reduced repeated in-memory scoring, not fewer catalogue reads. No latency distribution/CPU/RSS/browser/provider performance claim."
+  },
+  "functionalControls": {
+    "status": "passed",
+    "cases": 11,
+    "pass": 1,
+    "assertions": 34,
+    "fail": 0,
+    "file": "tests/recommendation-genre-score-db.test.ts",
+    "sourcePins": {
+      "src/lib/recommendations/query.server.ts": "aa1a7457c830733bf44c1d363e714beb420034261848a913e87c51dfe0a33c59",
+      "tests/recommendation-genre-score-db.test.ts": "c6805a221eb4a0bfcd5c654dddd9179632e3004bb037d52edb019da614dd333b"
+    },
+    "contracts": [
+      "Distinct evidence genres per root",
+      "Repeated candidate genre occurrences",
+      "Multiple evidence root weights",
+      "NULL/empty arrays and NULL elements",
+      "No evidence/no overlap",
+      "30-point cap",
+      "double precision type"
+    ],
+    "boundary": "Authored tableless functional SQL controls, not actual saved media, provider, or performance evidence. No table/data writes; the test owns one explicitly READ ONLY transaction with verified 10s/1s limits and closes its actual-clone pool.",
+    "defaultDiscovery": {
+      "pass": 0,
+      "guardedSkip": 1,
+      "fail": 0
+    }
+  },
+  "plan03": {
+    "status": "open_global_hoist_rejected",
+    "implementationApplied": false,
+    "measured": {
+      "selectedUsers": 4,
+      "limit": 10,
+      "executionMs": 2.126,
+      "configurationInitPlanLoops": 1,
+      "catalogueRevisionInitPlanLoops": 1,
+      "userDependentRevisionLoops": 4,
+      "recommendationSetRowsPerUser": 64
+    },
+    "reason": "Current PostgreSQL plan already evaluates global config/catalogue scalar reads once. Tracking/social/provider connection and recommendation-set revisions remain user dependent; no measured invariant hoist saving. Existing checkpoint/lease/revision publication unchanged.",
+    "remaining": "Broader taste freshness/ranking, concurrent edits, work-feature preparation and per-medium scoring need separate source/corpus proof; prior taste-overlap40proof not redundantly rerun."
+  },
+  "knownLimits": [
+    "No positive actual duplicate/null media genre arrays;11tableless authored controls supplement but do not replace actual cohort evidence.",
+    "No actual positive author/series score dimension in screen matrix; source term is unchanged.",
+    "No negative screen roots or large game/music/reading score cohort; census small music/reading and negative game roots are not called equivalent performance workloads.",
+    "No account-bound recommendation sets, available-only/related-work/cross-page positive matrix or provider-generation failure schedule.",
+    "No natural concurrent-update or HTTP/browser recommendation acceptance; eight raw SQL pages and one complete production DTO only.",
+    "Existing repeated author/series evidence scans and bounded candidate admission remain; PLAN-04 is partial.",
+    "No production latency/CPU/RSS/heap/WAL/load distribution claim; final representative querybufferwork is unchanged."
+  ],
+  "futureDriftAcceptance": [
+    "Keep one canonical genre scorer for every experiments row/recommendations consumer.",
+    "Retain evidence-side DISTINCT and candidate-side occurrence counts, SQLNULL semantics, cap30 and FLOAT8 type.",
+    "Any future fractional-weight branch requires new full-score equivalence; do not infer exact reassociation from integer controls.",
+    "Re-run full actual preselection/every-score/page equality and representative complete DTO after scoring/cap/order or metadata-array changes.",
+    "Keep source-pinned baseline and sanitized structural plans; omit every expression field/private identity from retainedEXPLAIN.",
+    "Validate missing positive media/author/series/negative/availability/generation cohorts before broader model/cache changes."
+  ],
+  "sourceOnlyFollowup": {
+    "owner": "src/lib/recommendations/interests.server.ts:roots",
+    "candidate": "Admit album parent lateral only when both e.show_id and s.show_id are null, preserving COALESCE and album ordering.",
+    "state": "not_implemented",
+    "gap": "Needs actual signal/root equality and source-shaped plan work; excluded from current score trial."
+  },
+  "evidenceRefs": [
+    "evidence/implementation-recommendation-census.json",
+    "evidence/implementation-recommendation-scoring-before-adoption.json",
+    "evidence/implementation-recommendation-scoring-actual.json",
+    "evidence/implementation-recommendation-scoring-controls.json"
+  ],
+  "probeRefs": [
+    "probes/recommendation-census.ts",
+    "probes/recommendation-genre-score.ts",
+    "probes/recommendation-genre-controls.ts"
+  ],
+  "commonGatesOwner": "root",
+  "sharedLedgerEdited": false,
+  "rootCombinedAcceptance": {
+    "common": "785pass/706guardedskip/0fail/33625assertions/1491tests/272files/check0/0/build/inventories",
+    "normalDevReceipt": "evidence/implementation-read-demand-normal.json",
+    "signedIn": true,
+    "sourceUnchangedDuringTrial": true,
+    "scope": "Normal Activity120anchors, show/collection details, Library120anchors/28completedimages, Admin115items/4accounts, Tasks30/noopenDialogs/0newWarningsErrors. Normal Recommendations empty; positive9543rawscore/one60itemDTO proof remains private. No browser resource/timing distribution claim."
+  },
+  "laterSharedOwnerChange": {
+    "report": "implementation-interest-fallback.json",
+    "priorDependencySha256": "72258e798dfe65c1a618aa8e64eaac61dc1cb03b7994f91c0fc8f74aa93ff8f9",
+    "currentDependencySha256": "ebc4a4050d98eb00c884dc40db2b46aa57d73a6666130f04f54b4d712d51e79e",
+    "scope": "One inside-lateral root fallback admission. Separate final-source actual5personal/global complete ordered interest outputs match. Earlier8context9543score/oneDTO receipts remain immutable at their original dependency pins; no new whole-scoring execution is claimed."
+  },
+  "laterSectionDemandChange": {
+    "ref": "next-detail-section-demand.json",
+    "priorSourcePins": {
+      "src/lib/server/queries/media.ts": "f66f0f80a7b78288efd48994379510915d4e21a4894a5aaa377e9b8e79856bda"
+    },
+    "scope": "Exact8file presentation-demand patch; media query module prefix before detailsData is byte-identical. Complete default/full12signedin+3guest outputpairs pluscompact12signedin+3guest pairs verified in actual30readonlyproof. Prior score/Continue/work-summary/oldbrowser receipts remain historical and were not rerun by a fingerprint refresh.",
+    "ordinaryApiAndDefaultFullUnchanged": true,
+    "currentCommonAndNormalAcceptance": {
+      "commonGateReceipt": "evidence/implementation-20261018-section-demand-gates.json",
+      "normalReceipt": "evidence/implementation-section-demand-normal.json",
+      "boundary": "Current combined gates and selected-section functional acceptance passed. The report\u2019s older owner-specific runtime measurements remain historical and were not rerun."
+    },
+    "sourceIdentityIsNotRuntimeAcceptance": true
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  },
+  "sourcePins": {
+    "src/lib/recommendations/query.server.ts": "aa1a7457c830733bf44c1d363e714beb420034261848a913e87c51dfe0a33c59",
+    "src/lib/social/taste-cache.server.ts": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "src/lib/recommendations/interests.server.ts": "ebc4a4050d98eb00c884dc40db2b46aa57d73a6666130f04f54b4d712d51e79e",
+    "src/lib/social/work-features.server.ts": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "tests/recommendation-genre-score-db.test.ts": "c6805a221eb4a0bfcd5c654dddd9179632e3004bb037d52edb019da614dd333b"
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T02:01:55.166158+00:00",
+      "reportRef": "implementation-found-17.md",
+      "owner": "src/lib/social/taste-cache.server.ts",
+      "before": "ab588a44d7307a2ae79b1ddd80647000d5b5a9fbc1acab5a5660a04871c35c1e",
+      "after": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+      "boundary": "Separate current pins from immutable original sourceAfter adoption epoch; previous scoring/input receipts are not rerun or promoted by this identity advance."
+    }
+  ]
+}

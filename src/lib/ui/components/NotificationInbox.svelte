@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
  import {page} from '$app/state';
  import {mediumOptions} from '$lib/experimental';
@@ -24,7 +25,7 @@
  const {api,change,preview}=useClient();
  let criteria=$state<NotificationFilters>(untrack(()=>({...defaultNotificationFilters,kind:notificationKinds.some(k=>k.value===initialKind)?initialKind:'all',...initialFilters})));
  const resource=createResource<NotificationResult>({items:[],hasMore:false,next:null,unread:0,snapshot:''});
- const operation=createOperation();
+ const operation=createOperation(useRetention());
  let clock=$state(Date.now());
  let seenAt=$state<Record<string,string>>({});
  const reading=new Set<string>();

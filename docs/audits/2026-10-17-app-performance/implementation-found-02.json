@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 1,
+  "status": "applied_known_shared_repairs_with_scoped_actual_verification",
+  "at": "2026-10-18T15:20:50.806504+00:00",
+  "sourcePins": {
+    "src/lib/core/lists/service.server.ts": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9",
+    "src/lib/core/tracking/continue.server.ts": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5",
+    "src/lib/core/tracking/service.server.ts": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29",
+    "src/lib/server/api/lists.server.ts": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4",
+    "src/lib/server/queries/library.ts": "4cb615fc401570cf8da95776915005e7ae4a84108b3d5f986a82f2d4dd67b96d",
+    "src/lib/server/queries/music.ts": "76d9677ffcf5d80f8766f48270c66c729a396ac2efd1ef375fc3313109cc4305",
+    "src/lib/server/queries/profile.ts": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e",
+    "src/lib/ui/client-context.ts": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205",
+    "src/lib/ui/client.ts": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7",
+    "src/lib/ui/components/WorkActions.svelte": "5538fac96af8ade695ae76439f91db89901566897e7c08c9ff740ecd1611a5ec"
+  },
+  "canonicalFindings": [
+    "PLAN-09",
+    "PR-14",
+    "MIN-06",
+    "UIC-03"
+  ],
+  "progress": {
+    "actualFullPairs": 12,
+    "predicateRows": 22032,
+    "actualOwners": 4,
+    "allAndShowBufferReduction": true,
+    "movieBufferAdverseRetained": true
+  },
+  "profileHistory": {
+    "actualFullPairs": 25,
+    "largestTotal": 10779,
+    "largestPages": 180,
+    "primaryRootVisitsBefore": 18564,
+    "primaryRootVisitsAfter": 9282,
+    "typeOnlyRuntimeEqual": true
+  },
+  "queueConsumption": {
+    "owners": 4,
+    "actualSampleTitles": 15,
+    "positiveQueueRows": 0,
+    "canonicalPredicateTransferredExactly": true,
+    "positiveMutationOrUndoVerified": false
+  },
+  "groupedCommands": {
+    "supplementaryControls": "3new meaningful tests; ordering/partial failure/empty-domain/refresh-failure controls",
+    "actualPositiveCohort": false,
+    "singleLogicalRefresh": true,
+    "atomicityChanged": false
+  },
+  "common": {
+    "pass": 828,
+    "guardedSkip": 715,
+    "fail": 0,
+    "assertions": 34117,
+    "typeErrors": 0,
+    "typeWarnings": 0,
+    "buildInventoryStylePassed": true
+  },
+  "allKnownWorkComplete": false,
+  "artifactPins": {
+    "candidates/found-implementation-02/apply-mutation-batch.py": "76100e268b2964cd24a2f71ac522ca694176b524fcde48267012dda7207b1b59",
+    "candidates/found-implementation-02/root-unit.log": "fc9a3338a8f97cec1e3e72dd1d086633f7d474f6bfd42c935eed4d35fe7e0679",
+    "candidates/found-implementation-02/apply-queue-consumption.py": "f43025639a14e0389944fa2fb05520f33fc62e03c340f771c1a01b8fe8dde5c8",
+    "candidates/found-implementation-02/approved-private-runner.py": "3d527a67ece961a9701d7f1f6ae25f69404c9c6945b574eef98c09397e0693c8",
+    "candidates/found-implementation-02/common-gates.py": "cd09c95d99e43dafcb34f8e5328eb00971127303a2fa4a8fcf51021650edab51",
+    "candidates/found-implementation-02/history-unit-final.log": "f758b821d40789ce9538a69e8422854d26e9f4fa8aace3a7dd8793bbd9e9a73f",
+    "candidates/found-implementation-02/history-unit-preflight.log": "d4f1f9c9fd49a2a66ac715daaa3406427d25b97475db23f121cc409ebfba4e32",
+    "candidates/found-implementation-02/history-type-preflight.log": "0b28b94a23491dc58bfe15ae3329c612eb946c095e2e6fbf62a9ed762ab65704",
+    "candidates/found-implementation-02/progress/pilot-actual.json": "aed508accfdaef5cb9aae0940f90301fd86ddcfc16e9e1d7b2566ea41f3c318a",
+    "candidates/found-implementation-02/progress/plan.json": "a1d30d9bb5cfb61ba346ce648a4aba08b828e7763adc53d90db9ba7fd45f938e",
+    "candidates/found-implementation-02/progress/source-pins.json": "64d2d0f65c3a1d57ea407ef24cc03406d79dca5e55b6e6e44f79f9f56a3726f7",
+    "candidates/found-implementation-02/progress/progress.patch": "7b3a882a0dddd978ed4de23c99597006cfc21d493c984678d937d3bf95d7d71b",
+    "candidates/found-implementation-02/progress/launch.py": "c9fed0971db33931833a8ec17a8bedc1b77476cfbe6c45c099a57a29cd36f03d",
+    "candidates/found-implementation-02/progress/library.candidate.ts.txt": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3",
+    "candidates/found-implementation-02/progress/library.before.ts.txt": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+    "candidates/found-implementation-02/progress/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/found-implementation-02/progress/pilot.ts": "1046f666809d9fab5853d047da1436ae24c645dab66a5b8afe301a84e58a070a",
+    "candidates/found-implementation-02/history-accepted/pilot-actual.json": "bd4eb118110b92a5d04717a2585b9542dec0cc198f8842d7154904c2b00043ac",
+    "candidates/found-implementation-02/history-accepted/plan.json": "832057c815282422991ff5fa0a62833200a13e52fd5bbaee592c2c60519d5575",
+    "candidates/found-implementation-02/history-accepted/source-pins.json": "016168e9b5613391ca6f4468f512dd4d97833c2bdd1c00c27852049dfecbc85f",
+    "candidates/found-implementation-02/history-accepted/launch.py": "8a1544699db025371716508a320c467c7fb3099c249614c53b964080ec891edf",
+    "candidates/found-implementation-02/history-accepted/library.candidate.ts.txt": "0b3979d07a5ee2a48a1d43bb14c7772ea84745eab60f1ab1884c15c904f803a3",
+    "candidates/found-implementation-02/history-accepted/library.before.ts.txt": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+    "candidates/found-implementation-02/history-accepted/history.patch": "a013efa3ff6ae3285a7e17c7a8775cde6d4bd929f25118e1465b3d787f4cd5da",
+    "candidates/found-implementation-02/history-accepted/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/found-implementation-02/history-accepted/pilot.ts": "f21339eb59e4a4cdee39475c3e9d470c4a7956c5eb9e7e169dd64d399554d949",
+    "candidates/found-implementation-02/history-first-stop/pilot-actual.json": "92e6d7ebb6ba4754382b6d8bc4cb1bc0a858feddae6fff017bd763800fc02d0e",
+    "candidates/found-implementation-02/history-first-stop/plan.json": "3fd76faccd7def9b14e0f2db05b479ac3cbf76d1fa777272e3742d89082cbd4a",
+    "candidates/found-implementation-02/history-first-stop/source-pins.json": "016168e9b5613391ca6f4468f512dd4d97833c2bdd1c00c27852049dfecbc85f",
+    "candidates/found-implementation-02/history-first-stop/launch.py": "24653c902a454f45b98dae4e1350379713661e8a8beee1f3867212ffdfbddb34",
+    "candidates/found-implementation-02/history-first-stop/library.candidate.ts.txt": "0b3979d07a5ee2a48a1d43bb14c7772ea84745eab60f1ab1884c15c904f803a3",
+    "candidates/found-implementation-02/history-first-stop/library.before.ts.txt": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+    "candidates/found-implementation-02/history-first-stop/history.patch": "a013efa3ff6ae3285a7e17c7a8775cde6d4bd929f25118e1465b3d787f4cd5da",
+    "candidates/found-implementation-02/history-first-stop/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/found-implementation-02/history-first-stop/pilot.ts": "d6c4705e75517a489af191cc8deeabd265f3d71a32f44eb3c2f0b244650d20a5",
+    "candidates/found-implementation-02/queue-consumption/pilot-actual.json": "a497dfff485fb1e7486d4e540952e72ef59d544fcfe1f0f57ae2f603e7527be3",
+    "candidates/found-implementation-02/queue-consumption/plan.json": "829b01c93a7240a31b253ea3897fd1661262513936d744c3ee252579933fbeeb",
+    "candidates/found-implementation-02/queue-consumption/source-pins.json": "a5e5b9d439f28bd85c1e58ce72dc6a3147f5708dc762a7202f130964c18724b6",
+    "candidates/found-implementation-02/queue-consumption/continue.after.ts.txt": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5",
+    "candidates/found-implementation-02/queue-consumption/continue.before.ts.txt": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+    "candidates/found-implementation-02/queue-consumption/tracking.before.ts.txt": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+    "candidates/found-implementation-02/queue-consumption/tracking.after.ts.txt": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29",
+    "candidates/found-implementation-02/queue-consumption/launch.py": "ccd78324cae9e5d0637d7a5f3fb372a64b1e68a33b9967a87f2f8fe3ce8454f8",
+    "candidates/found-implementation-02/queue-consumption/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/found-implementation-02/queue-consumption/pilot.ts": "90665a0ae90ad2c0c6ed91ac0e7fa4cd27a5773bbae38c3a09b156416ff9d13b",
+    "implementation-found-02.md": "c72827de0202bbe8cc1855e746aeba1f86cc8ac1537e391e9b5e89077a07db98",
+    "evidence/implementation-found-progress-actual.json": "aed508accfdaef5cb9aae0940f90301fd86ddcfc16e9e1d7b2566ea41f3c318a",
+    "evidence/implementation-found-history-adoption.json": "441a18484ae7ea534dca97ebe1164b3d0a686113b9ce6b0e1582305d1f0221ee",
+    "evidence/implementation-found-history-actual.json": "bd4eb118110b92a5d04717a2585b9542dec0cc198f8842d7154904c2b00043ac",
+    "evidence/implementation-found-history-first-stop.json": "92e6d7ebb6ba4754382b6d8bc4cb1bc0a858feddae6fff017bd763800fc02d0e",
+    "evidence/implementation-found-consumption-actual.json": "a497dfff485fb1e7486d4e540952e72ef59d544fcfe1f0f57ae2f603e7527be3",
+    "evidence/implementation-found-root-normal.json": "5135c4528bfaba1e00cd1621b1f07b68db4b652a46b5325d76070629acb5f237",
+    "evidence/implementation-found-02-gates.json": "4bc8b0c5443464f4bc701e5bef3cdee60b99cb6a34c09b3e300f1de0f7d4e522",
+    "evidence/implementation-found-02-source.json": "4f34af2e64a5ec98353ffa8c15f9a8a500e4de2eea129aff4721190a4e328322"
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/server/queries/library.ts": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3",
+      "src/lib/server/queries/music.ts": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253",
+      "src/lib/ui/components/WorkActions.svelte": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "finalBoundedWindowSourceFollowThrough": {
+    "at": "2026-10-18T17:42:06.448267+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/server/queries/music.ts": "9fa59c0795423d62fae52f133f99a78366265c53c2548ad708475dadc9a99ae1"
+    },
+    "boundary": "Later scope-ledger/SSR engagement and Music error admission corrections have separate exact/current source controls. Historical receipts stay immutable; this map is current identity, not transferred runtime/resource acceptance."
+  },
+  "laterFound07IdentityAdvance": {
+    "at": "2026-10-18T22:39:47.956698+00:00",
+    "ref": "implementation-found-07.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5",
+        "after": "b105d63777dd22496674950d457d81e889eb26da17cfc0a21c6a90411e3ec318"
+      }
+    },
+    "boundary": "Current reviewed identity only; original historical actual receipts remain immutable. Profile candidate has its own108complete actual comparisons and final common/normal checks. No Collection candidate adopted."
+  },
+  "laterFound10IdentityAdvance": {
+    "at": "2026-10-18T23:35:57.455314+00:00",
+    "ref": "implementation-found-10.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "b105d63777dd22496674950d457d81e889eb26da17cfc0a21c6a90411e3ec318",
+        "after": "1a49d5e2b59ccf222233a18e896952d21941255b938b114c31a3aa617f7acd12"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical receipts/limits remain immutable; new Profile query has36actual complete outcomes, current UI acceptance and supplementary pending controls. Other owners not retested."
+  },
+  "laterFound11IdentityAdvance": {
+    "at": "2026-10-18T23:42:10.655439+00:00",
+    "ref": "implementation-found-11.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "1a49d5e2b59ccf222233a18e896952d21941255b938b114c31a3aa617f7acd12",
+        "after": "7b22e7ed057544924720f0a7ff1386b0061ece42757303c6bb4f473a85b7a22b"
+      }
+    },
+    "boundary": "Reviewed identity only. Historical source/proofs stay immutable. Guarded count reuse has192actual section comparisons and final gates/native panel; prior activity owner body is unchanged, its receipt not newly rerun."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:32:19.107523+00:00",
+      "path": "src/lib/server/queries/profile.ts",
+      "beforeSha256": "7b22e7ed057544924720f0a7ff1386b0061ece42757303c6bb4f473a85b7a22b",
+      "afterSha256": "21149729c90b373f5f59e922e303031d4bec45eb4d6625a96f82789ac16cd03a",
+      "beforeRef": "candidates/found-implementation-13/profile.before.ts.txt",
+      "reviewRef": "implementation-found-13.md",
+      "boundary": "Only internal Profile activity projection narrows; other functions and contracts are byte-identical. Current identity review does not re-run or upgrade old evidence. Guide append records current proof and rejected Taste alternative."
+    },
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/queries/profile.ts",
+          "before": "21149729c90b373f5f59e922e303031d4bec45eb4d6625a96f82789ac16cd03a",
+          "after": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    }
+  ]
+}

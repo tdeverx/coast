@@ -1,0 +1,472 @@
+{
+  "schemaVersion": 1,
+  "status": "applied_actual_and_supplementary_common_and_signed_in_normal_functional_passed_remaining_gaps_open",
+  "implementationApplied": true,
+  "sourcePins": {
+    "src/lib/social/queries.server.ts": "4a6ac35e4d2623e864f81bb89d03dcbadca9147e7143df76eb4f448b46d9963a",
+    "src/lib/social/relationships.server.ts": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/catalogue/metadata/resolve.ts": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/ui/components/MediaDetails.svelte": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+    "node_modules/drizzle-orm/bun-sql/migrator.js": "b7f6bf40b94d906ea3b53276d3dd80fc8144f64c3b03ae3cbf91f34cbaaf94df",
+    "node_modules/drizzle-orm/pg-core/dialect.js": "a7d7921c939b228a3f1295be5f024a8c264169e368f591c2d29072ffe079b14e",
+    "node_modules/drizzle-orm/migrator.js": "8c5e22b76a6a239e426b659ba999f69b4b312a052e74f533758f876795f6377c",
+    "tsconfig.json": "eee4aad5a76d92737ae4d3cbef569b181727bad6c3445c2fac51f7f51acbeb50",
+    ".svelte-kit/tsconfig.json": "c01d35eee60b3cb21e230c392c72c947234d7f406b83959a042a63e09db454c4",
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "src/lib/server/api/notifications.server.ts": "58a76749ad7c8696c5e13e468683aa1685eeec4fd8ee2b6330ac89cb88f1cd51",
+    "src/lib/server/api/index.server.ts": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623",
+    "drizzle/meta/_journal.json": "806f751a10b70a4d0d2fbbf03faa8dca1597d62fda5911496b2223850db03995",
+    "drizzle/0058_feature_controls.sql": "3da7e76b2d95d3cb3624d6760ffac3c2554f9c9323aea2b4d1e9fb0169e1567e",
+    "drizzle/0059_provider_file_identity_lookup.sql": "28aa2f70f459131d0fad6f663e84c60a764d775808b51ca7a86f8165be426dfe",
+    "drizzle/0060_reading_groups.sql": "571d9296008721e3f13d6990266502c824922ed3f9b3da4d9d981d343643d518",
+    "drizzle/0061_reading_archive_formats.sql": "66f4f61e483e52cc893a8522ca8b09f2257b3af868e0a44a62e6309448f4daeb",
+    "drizzle/0062_reading_detail_candidates.sql": "ef8d92d43de2c8d1b14d1d18f3ead93f516ab8ca3a87b38ce7a7627c4740a77b",
+    "drizzle/0063_notification_toast_suppression.sql": "fcb04e9f6aec6aea14c5782c015b3f61ce6e7096faa2ebdc8d72cd53160ff7a5",
+    "src/lib/social/model.ts": "e4d56fbad35cfa4eda2f84f65de313254344439c95f38fefadf5bd925af97ea5",
+    "node_modules/drizzle-orm/bun-sql/session.js": "4dc36d83dad472b55852da2ff08c20147c523415e5c5e547a3d59042667ee1ae",
+    "tests/activity-reasons-sql-db.test.ts": "1275dba8a1a1cb02cd0b79a47a2a891246027b930963e6fd2a3d8f76a0f5a6f4"
+  },
+  "sourcePinCount": 32,
+  "artifactPins": {
+    "candidates/activity-reasons-selective/preparation.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/activity-reasons-selective/reasons-selective-full-actual.ts": "509a9115024719d6c215ef9006c15576363aeff7abe0587f160d136bff8f6d41",
+    "candidates/activity-reasons-selective/full-source-pins.json": "41600cb4a00175d80debb65396d408c201f2c00545854e7a1da01d52bd957dce",
+    "candidates/activity-reasons-selective/expected-full-revised-additional-labels.json": "2f5762b2603976515ee9bf8bd4a26d44587fad3d805e39d900855a2ae5efcc9e",
+    "candidates/activity-reasons-selective/selective-materialization.patch": "83ac676b75dfd5ef22f47db0d107d75e542c759683fd0253b7a8568652b71d9c",
+    "candidates/activity-reasons-selective/plan.json": "054ad40aacbaea60c2eda7a647dc9376e11993b4500862961f5dea0075b99346",
+    "candidates/activity-reasons-selective/expected-full-coverage-labels.json": "c12fef059d0e1e0b5a39712ab647ba74801aa443a9df5467d39e92a5e9f22b2b",
+    "candidates/activity-reasons-selective/verify-preparation.ts": "2a57693f9c860f5aa95159511220e23fa73b355eab5655f52fac3a431fde712b",
+    "candidates/activity-reasons-selective/relationships.selective.candidate.ts.txt": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+    "candidates/activity-reasons-selective/preparation-checks.json": "342e649197095f0bcf7254fe7f9bdce8456fffa9d6c3d1b685f98d8828a60f1d",
+    "candidates/activity-reasons-selective/relationships.before.ts.txt": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+    "candidates/activity-reasons-selective/expected-full-census.json": "0bef97163b167a6ea4d4f8b67ea5ef2e94f931a87e23d50497cbd22ac40adcd3",
+    "candidates/activity-reasons-selective/preparation.stdout.txt": "b0d695502b236b0cd373da7fe17437bbf243d4100d5f1d0f436a4dbb3631e4a1",
+    "candidates/activity-reasons-selective/unconditional-to-selective-probe.patch": "76fa58a6e888b2d38c1a1f9d3d25706ef1dadaf773c8de7ad76b007724cfa53d",
+    "candidates/activity-reasons-selective/filtered-future-option.md": "1a46ef163d005652e6883c5b219e01e1b6ad3c5a7485a89793336c13e5b47df3",
+    "candidates/activity-reasons-selective/prepare.py": "fefe9990a2d4bc4c93461f9cfe796e76281fc5383c3c2f9602006af6a65a6127",
+    "candidates/activity-reasons-selective/policy-function-contracts.json": "84be6ffa5d8899d943ff0e7ad37505289f14a9004256f4fedc951dd9bc6bcca4",
+    "candidates/activity-reasons-selective/protocol.md": "acba01558904f71cc46477f9403831a8625836689aec6ed93eb4f3d8acd3e551",
+    "evidence/activity-reasons-selective-actual.json": "c25cd9afb1094c3e45f8ea1a15d2ce8f4cea1164d22eae9855a38edeeef76cc7",
+    "activity-reasons-selective.md": "c9a79a8b67973a244558d4b9e8c08dc5e51834e245ea522d6237d407759dbc8a",
+    "evidence/implementation-activity-reasons-selective-applied.json": "968f8e5dc03dfde275915ed45b3bd1b717e1b4d3eb6a4914d3e8ad1c14325552",
+    "candidates/activity-reasons-sql-contract/maintained-test.patch": "d2eacaead5fd745439422c8095939855907f536fd6f72ce2dd64d5abf03f7dc8",
+    "candidates/activity-reasons-sql-contract/syntax.stdout.txt": "87344ac9712cf88b186b0b13acea2e2c36bab465659e5d1e00e32ea954c90892",
+    "candidates/activity-reasons-sql-contract/plan.json": "692f1754f2e825ea7362448c898b5ca241c793af1e97840d3c31a7d43524f574",
+    "candidates/activity-reasons-sql-contract/approved-current-runner.ts": "38b3ee85e2d8bca71f3df9f0fa30be16b28cc96a116124abb9845dfa71641789",
+    "candidates/activity-reasons-sql-contract/activity-reasons-sql-db.test.ts": "1275dba8a1a1cb02cd0b79a47a2a891246027b930963e6fd2a3d8f76a0f5a6f4",
+    "candidates/activity-reasons-sql-contract/syntax.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "candidates/activity-reasons-sql-contract/plan.md": "bc2ab72510eb76d78140c65b537e1e10f4136c8967d20879b3c5155b9b48d3b0",
+    "evidence/activity-reasons-maintained-current.json": "d3c2f2bfd7a842f03cd37d4538c9b9af9829bc3e3c4b40be7cb00dfc163d917f",
+    "evidence/activity-reasons-maintained-current.log": "005b46e834d7e7e5516b8fbe0acdc5e724094a44cfa2d2291a8e700d37a71dcb",
+    "evidence/implementation-close-reasons-normal.json": "7e67d62ea54777ca9e4f22f7c6316fbfbbb9641489b66c282db8ab65eabb70c6",
+    "evidence/implementation-close-reasons-normal-source-check.json": "c4fb03afebea4ead2901ef8ec4fcf6e36188714230c0c64dc0e9c8d949e0be33",
+    "evidence/implementation-close-reasons-freeze.json": "61576a1f66ab9360b3d670d18fae6d41c5565156c893f50fcabe0afa98473ea0",
+    "evidence/implementation-close-reasons-normal-overview.png": "18389412143cee42399febc19a5a50f72c94e03e71796614b72f0c2274f1dbeb",
+    "evidence/implementation-close-reasons-normal-watching.png": "66e42b149102fbfffc69dcc813c2468b5268e171372328d54e6800f00265df38",
+    "evidence/implementation-close-reasons-normal-back.png": "20cc15c4062aca57323a3835ac35c8b72edd97e149727d69d631b66c3b51603f",
+    "evidence/implementation-close-reasons-normal-friends.png": "0910baaca39fe33dc6015edd2f6acadbb0e4af8ab5223cdacdf13af38ea21528",
+    "evidence/implementation-close-reasons-normal-tasks.png": "eecdae12965f1c53252f114dcac7c6060d7163eb05451a85ccb2bc3ef73655ff"
+  },
+  "completeActualPairs": 115,
+  "uniqueInputPairs": 115,
+  "coverageSummary": {
+    "materialized": 48,
+    "ineligibleHelperByteIdentical": 21,
+    "helperActive": 69,
+    "helperAbsentScoped": 12,
+    "helperAbsentUnscoped": 34,
+    "identicalInputLabelsReused": 0
+  },
+  "plans": 28,
+  "timingSamples": 0,
+  "readWorkComparison": [
+    {
+      "name": "reaction-activity-ids",
+      "before": {
+        "sharedHits": 171,
+        "sharedReads": 62,
+        "rootSharedVisits": 233,
+        "tempReads": 0,
+        "tempWrites": 0
+      },
+      "candidate": {
+        "sharedHits": 233,
+        "sharedReads": 0,
+        "rootSharedVisits": 233,
+        "tempReads": 0,
+        "tempWrites": 0
+      }
+    },
+    {
+      "name": "0:observed-normal-movie",
+      "before": {
+        "sharedHits": 522589,
+        "sharedReads": 2888,
+        "rootSharedVisits": 525477,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      },
+      "candidate": {
+        "sharedHits": 6085,
+        "sharedReads": 0,
+        "rootSharedVisits": 6085,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      }
+    },
+    {
+      "name": "0:largest-season",
+      "before": {
+        "sharedHits": 525507,
+        "sharedReads": 6,
+        "rootSharedVisits": 525513,
+        "tempReads": 5488,
+        "tempWrites": 4412
+      },
+      "candidate": {
+        "sharedHits": 6121,
+        "sharedReads": 0,
+        "rootSharedVisits": 6121,
+        "tempReads": 5488,
+        "tempWrites": 4412
+      }
+    },
+    {
+      "name": "0:largest-collection",
+      "before": {
+        "sharedHits": 525471,
+        "sharedReads": 7,
+        "rootSharedVisits": 525478,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      },
+      "candidate": {
+        "sharedHits": 6086,
+        "sharedReads": 0,
+        "rootSharedVisits": 6086,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      }
+    },
+    {
+      "name": "0:retained-active-show",
+      "before": {
+        "sharedHits": 742913,
+        "sharedReads": 1144,
+        "rootSharedVisits": 744057,
+        "tempReads": 4092,
+        "tempWrites": 4412
+      },
+      "candidate": {
+        "sharedHits": 224811,
+        "sharedReads": 176,
+        "rootSharedVisits": 224987,
+        "tempReads": 4092,
+        "tempWrites": 4412
+      }
+    },
+    {
+      "name": "3:retained-active-show",
+      "before": {
+        "sharedHits": 702395,
+        "sharedReads": 137,
+        "rootSharedVisits": 702532,
+        "tempReads": 4092,
+        "tempWrites": 4412
+      },
+      "candidate": {
+        "sharedHits": 183462,
+        "sharedReads": 0,
+        "rootSharedVisits": 183462,
+        "tempReads": 4092,
+        "tempWrites": 4412
+      }
+    },
+    {
+      "name": "unscoped-selected-initial",
+      "before": {
+        "sharedHits": 912154,
+        "sharedReads": 2244,
+        "rootSharedVisits": 914398,
+        "tempReads": 0,
+        "tempWrites": 0
+      },
+      "candidate": {
+        "sharedHits": 914148,
+        "sharedReads": 250,
+        "rootSharedVisits": 914398,
+        "tempReads": 0,
+        "tempWrites": 0
+      }
+    },
+    {
+      "name": "filtered-watchlist",
+      "before": {
+        "sharedHits": 518275,
+        "sharedReads": 2506,
+        "rootSharedVisits": 520781,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      },
+      "candidate": {
+        "sharedHits": 520262,
+        "sharedReads": 519,
+        "rootSharedVisits": 520781,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      }
+    },
+    {
+      "name": "0:friend-other",
+      "before": {
+        "sharedHits": 217514,
+        "sharedReads": 2745,
+        "rootSharedVisits": 220259,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      },
+      "candidate": {
+        "sharedHits": 220259,
+        "sharedReads": 0,
+        "rootSharedVisits": 220259,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      }
+    },
+    {
+      "name": "0:artist-relationship",
+      "before": {
+        "sharedHits": 1560689,
+        "sharedReads": 2029,
+        "rootSharedVisits": 1562718,
+        "tempReads": 11479,
+        "tempWrites": 10422
+      },
+      "candidate": {
+        "sharedHits": 1043137,
+        "sharedReads": 216,
+        "rootSharedVisits": 1043353,
+        "tempReads": 11479,
+        "tempWrites": 10422
+      }
+    },
+    {
+      "name": "0:reading-group-relationship",
+      "before": {
+        "sharedHits": 524599,
+        "sharedReads": 982,
+        "rootSharedVisits": 525581,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      },
+      "candidate": {
+        "sharedHits": 6196,
+        "sharedReads": 0,
+        "rootSharedVisits": 6196,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      }
+    },
+    {
+      "name": "0:ancestor-episode",
+      "before": {
+        "sharedHits": 525468,
+        "sharedReads": 9,
+        "rootSharedVisits": 525477,
+        "tempReads": 4092,
+        "tempWrites": 4412
+      },
+      "candidate": {
+        "sharedHits": 6085,
+        "sharedReads": 0,
+        "rootSharedVisits": 6085,
+        "tempReads": 4092,
+        "tempWrites": 4412
+      }
+    },
+    {
+      "name": "0:collection-kind-member",
+      "before": {
+        "sharedHits": 525470,
+        "sharedReads": 7,
+        "rootSharedVisits": 525477,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      },
+      "candidate": {
+        "sharedHits": 6085,
+        "sharedReads": 0,
+        "rootSharedVisits": 6085,
+        "tempReads": 2696,
+        "tempWrites": 4412
+      }
+    },
+    {
+      "name": "mixed-roots",
+      "before": {
+        "sharedHits": 1561792,
+        "sharedReads": 2439,
+        "rootSharedVisits": 1564231,
+        "tempReads": 11479,
+        "tempWrites": 10422
+      },
+      "candidate": {
+        "sharedHits": 1041919,
+        "sharedReads": 3273,
+        "rootSharedVisits": 1045192,
+        "tempReads": 11479,
+        "tempWrites": 10422
+      }
+    }
+  ],
+  "rootSharedAndTemporaryCountersNoIncreaseAll14": true,
+  "mixedRootSharedReadComponentIncrease": {
+    "before": 2439,
+    "candidate": 3273
+  },
+  "sourcePinsBeforeAfterEqual": true,
+  "rolledBack": true,
+  "poolClosed": true,
+  "leaseReleased": true,
+  "normalAcceptance": true,
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T06:24:24.888971+00:00",
+      "path": "src/lib/social/relationships.server.ts",
+      "before": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+      "after": "968034fbd4033a21f9428bb47749b53f6d94872c9c50b6e33e9070996ca7fd6d",
+      "evidence": "evidence/implementation-activity-reasons-selective-applied.json",
+      "boundary": "Current source identity refreshed after separate selective-helper adoption. Immutable original execution receipts/manifests are unchanged; this does not rerun their measurements or transfer missing acceptance."
+    }
+  ],
+  "maintainedContract": {
+    "receipt": "evidence/activity-reasons-maintained-current.json",
+    "test": "tests/activity-reasons-sql-db.test.ts",
+    "activeCompileCases": 48,
+    "absentHelperCompileCases": 10,
+    "tests": 1,
+    "assertions": 99,
+    "cteFeedSqlExecuted": false,
+    "primaryFullOutputProofSeparate": true,
+    "rolledBack": true,
+    "poolClosed": true,
+    "leaseReleased": true
+  },
+  "commonGates": {
+    "receipt": "evidence/implementation-20261018-close-reasons-v2-gates.json",
+    "pass": 825,
+    "guardedSkip": 715,
+    "fail": 0
+  },
+  "normalFunctionalAcceptance": {
+    "receipt": "evidence/implementation-close-reasons-normal.json",
+    "postTrialSourceCheck": "evidence/implementation-close-reasons-normal-source-check.json",
+    "signedInNormalDev": "http://localhost:5173",
+    "startedAt": "2026-10-18T10:16:25.209Z",
+    "completedAt": "2026-10-18T10:22:17.580Z",
+    "functionalPassed": true,
+    "actualMovie": "Yossi & Jagger",
+    "expandedAtContentTopReverseWheel": {
+      "outerBefore": 160,
+      "innerBefore": 0,
+      "outerAfter": 0,
+      "innerAfter": 0
+    },
+    "activityPositiveEmptyPositiveFilters": true,
+    "filteredBackReturnedMovie": true,
+    "ordinaryCloseReturnedFocus": "Learn more",
+    "persistedInboxMediaLinks": 24,
+    "inboxArticleCountIsNoticeCount": false,
+    "jobsAndSchedulesCards": 30,
+    "automaticJobsPaused": true,
+    "friendsAtBothEndpoints": 3,
+    "friendsEndpointIntervalMs": 135308,
+    "exactPollCountOrUninterruptedVisibilityInstrumented": false,
+    "newWarningsErrors": 0,
+    "all577AppSourcesUnchanged": true,
+    "all10FreezePinsUnchanged": true,
+    "finalDialogs": 0,
+    "finalPopovers": 0,
+    "naturalHiddenErrorObserved": false,
+    "historicalFilteredBackCauseEstablished": false,
+    "noPlaybackTrackingSettingsJobOrRequestCommandSubmitted": true,
+    "performanceBenchmark": false
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+      "src/lib/server/api/index.server.ts": "b57522f429b0ccd5a6a047f8038880e3626d4b868479845c3bfb180c049dda3c"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "src/lib/server/notifications/index.ts": {
+        "before": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+        "after": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:04:47.825078+00:00",
+      "path": "drizzle/meta/_journal.json",
+      "beforeSha256": "0be13c8ea88483ba780318b212c6ff73dd33c83d1bca437dbe2383ffa1904241",
+      "afterSha256": "806f751a10b70a4d0d2fbbf03faa8dca1597d62fda5911496b2223850db03995",
+      "beforeRef": "candidates/account-deletion/generated-_journal.json.before.snapshot",
+      "reviewRef": "implementation-found-12.md",
+      "boundary": "Reviewed guide update or forward0064journal append only; no normal database/avatar rollout and no upgrade of prior runtime evidence."
+    },
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/api/index.server.ts",
+          "before": "1d631186ce2546acfc1e9f8aa1458932c2bed4f1568e491d1c8679da33afe5f2",
+          "after": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "src/lib/social/queries.server.ts"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    }
+  ]
+}

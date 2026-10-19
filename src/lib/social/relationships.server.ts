@@ -28,7 +28,7 @@ export function activityRelationships(viewer:string,scope:{workId?:string;artist
  ), edges(parent_id,child_id) as (${relationshipEdges}),
  descendants(root,id) as(select id,id from target_roots union select d.root,e.child_id from descendants d join edges e on e.parent_id=d.id),
  ancestors(root,id) as(select id,id from target_roots union select a.root,e.parent_id from ancestors a join edges e on e.child_id=a.id),
- reasons as (${relationshipReasons}), visible_relationships as (
+ reasons as${scope.relationship==='all'&&!scope.friendId?sql` materialized`:sql``} (${relationshipReasons}), visible_relationships as (
   select distinct r.user_id,r.id,r.relationship from reasons r join works w on w.id=r.id
   where coast_category_enabled(${viewer}::uuid,w.category) and coast_feature_enabled(r.user_id,'social') and coast_feature_enabled(${viewer}::uuid,'social')
    and (r.user_id=${viewer}::uuid or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${viewer}::uuid,r.user_id) and f.user_b=greatest(${viewer}::uuid,r.user_id)))

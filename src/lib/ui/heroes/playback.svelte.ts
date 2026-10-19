@@ -1,4 +1,5 @@
 import { onMount, untrack } from 'svelte';
+import { page } from '$app/state';
 import { usePlayback } from '$lib/playback/context.svelte';
 import { noCrop, videoFitStyle, type FrameCrop } from '$lib/playback/crop';
 import { heroPlaybackVisible } from '$lib/playback/visibility';
@@ -11,7 +12,8 @@ export function createHeroPlayback() {
   let foreground = $state(true);
   let frame = $state({ width: 0, height: 0 });
   let crop = $state<FrameCrop>(noCrop);
-  const visible = $derived(heroPlaybackVisible(heroPlayer.visible,player));
+  const permitted = $derived(page.data.capabilities?.playback !== false && page.data.capabilities?.screen !== false);
+  const visible = $derived(permitted && heroPlaybackVisible(heroPlayer.visible,player));
   const surfaceStyle = $derived(heroPlayer.rect
     ? `top:${heroPlayer.rect.top}px;left:${heroPlayer.rect.left}px;width:${heroPlayer.rect.width}px;height:${heroPlayer.rect.height}px;` : '');
   const videoStyle = $derived(videoFitStyle(frame.width, frame.height,
@@ -23,25 +25,29 @@ export function createHeroPlayback() {
     heroPlayer.paused = true;
   }
   $effect(() => {
-    if (preview) return;
+    if (preview || !permitted) return;
     const url = heroPlayer.url, id = heroPlayer.id, element = video;
     if (!element || !url || !id) return;
     crop = noCrop;
     frame = { width: 0, height: 0 };
     heroPlayer.ready = false;
     element.src = url;
-    const stopCrop = observeVideoCrop(element, {
-      continuous: true,
-      enabled: () => visible,
-      onCrop: (next) => (crop = next),
-      onReady: () => (heroPlayer.ready = true),
-    });
     return () => {
-      stopCrop();
       element.pause();
       element.removeAttribute('src');
       element.load();
     };
+  });
+  // Analysis has a shorter lifetime than the retained source and playback position.
+  $effect(() => {
+    const element=video,url=heroPlayer.url;
+    if(preview||!element||!url||!heroPlayer.id||!visible||!foreground||heroPlayer.paused)return;
+    return observeVideoCrop(element, {
+      continuous:true,
+      enabled:()=>visible&&foreground,
+      onCrop:next=>(crop=next),
+      onReady:()=>(heroPlayer.ready=true),
+    });
   });
   $effect(() => {
     if (preview) return;

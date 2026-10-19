@@ -1,11 +1,11 @@
-import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
+import type { MediaView, MediaCardPresentation, WorkSummary } from '$lib/ui/types';
 import { PAGE_SIZE } from '$lib/server/queries/pagination';
 
 /** Explicit DTOs prevent a browser read model from leaking new internal fields. */
-export function publicWork(item:MediaView|MediaCardPresentation,personal=false) {
+export function publicWork(item:MediaView|MediaCardPresentation|WorkSummary,personal=false) {
   const work={id:('workId' in item?item.workId:undefined)??item.id,kind:item.kind,title:item.title,year:item.year??null,...('attribution' in item&&item.attribution?{attribution:item.attribution}:{})};
   if(!personal)return work;
-  return {...work,available:item.available??false,...('progress' in item?{
+  return {...work,available:'available' in item?item.available??false:false,...('progress' in item?{
     positionSeconds:item.progress,durationSeconds:item.duration,watched:item.watched,
     playCount:item.playCount,collected:item.collected,watchlist:item.watchlist,
     favourite:item.favourite,dropped:item.dropped,rating:item.rating,

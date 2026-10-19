@@ -12,12 +12,44 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
  if(activityIds)v.parse(v.pipe(v.array(uuid),v.maxLength(60)),activityIds);
  const o=v.parse(feedOptionsSchema,raw);
  if(o.relationship!==undefined)v.parse(v.literal(true),!!(o.workId||o.artistId||o.readingGroupId));
+ const scoped=!!(o.workId||o.artistId||o.readingGroupId)||activityIds!==undefined;
+ const activityScope=sql`and (${activityIds===undefined} or a.id in (${activityIds?.length?sql.join(activityIds.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))`;
+ const workScope=o.workId?sql`and (a.work_id=${o.workId}::uuid or e.show_id=${o.workId}::uuid or e.season_id=${o.workId}::uuid or se.show_id=${o.workId}::uuid or exists(select 1 from media_relationships member where member.parent_id=${o.workId}::uuid and member.child_id in (a.work_id,e.show_id,e.season_id,se.show_id) and member.kind='contains'))`:sql``;
+ const artistScope=o.artistId?sql`and exists(select 1 from music_credits credit where credit.work_id=a.work_id and credit.artist_id=${o.artistId}::uuid)`:sql``;
+ const readingGroupScope=o.readingGroupId?sql`and exists(select 1 from reading_group_members member where member.group_id=${o.readingGroupId}::uuid and member.work_id=a.work_id)`:sql``;
+ // Expand only the requested work and its direct contains members. Each
+ // subtype lookup uses that original root set; this is not recursive descent.
+ const admittedWork=o.workId?sql`admitted_work_roots as materialized (
+  select ${o.workId}::uuid as work_id
+  union select child_id from media_relationships where parent_id=${o.workId}::uuid and kind='contains'
+ ), admitted_work_ids as materialized (
+  select work_id from admitted_work_roots
+  union select media_id from episodes where show_id in(select work_id from admitted_work_roots)
+  union select media_id from episodes where season_id in(select work_id from admitted_work_roots)
+  union select media_id from seasons where show_id in(select work_id from admitted_work_roots)
+ ), `:sql``;
+ // Materialize only admitted event rows before policy and enrichment. A
+ // semijoin keeps each event once even when several structural paths match.
+ const admitted=scoped?sql`${admittedWork}admitted_activity as materialized (
+  select a.* from social_activity a
+  where true ${activityScope} ${o.workId?sql`and a.work_id in(select work_id from admitted_work_ids)`:sql``} ${artistScope} ${readingGroupScope}
+ ), `:sql``;
  const rows=await getDb().execute<{id:string;userId:string;username:string;workId:string;eventKind:string;occurredAt:string;count:number;members:string[];dateKnown:boolean;displayWorkId:string;rootId:string;avatar:string|null;episodeCodes:string[];rating:number|null;minutes:number|null;rewatch:boolean;trackTitle:string|null;listenNumber:number;readingPage:number|null;readingTotal:number|null;isRelationship:boolean;relationships:string[]}>(sql`
- with recursive ${activityRelationships(userId,o)} visible_raw as (
+ with recursive ${admitted}${activityRelationships(userId,o)} activity_policy_keys as materialized (
+  select distinct a.user_id,a.section,w.category
+  from ${scoped?sql`admitted_activity`:sql`social_activity`} a join works w on w.id=a.work_id
+ ), activity_policy as materialized (
+  select k.user_id,k.section,k.category from activity_policy_keys k
+  where coast_category_enabled(${userId}::uuid,k.category)
+   and (k.user_id=${userId}::uuid or coast_feature_enabled(k.user_id,'social') and coast_feature_enabled(${userId}::uuid,'social'))
+   and (k.user_id=${userId}::uuid or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,k.user_id) and f.user_b=greatest(${userId}::uuid,k.user_id)))
+   and social_visible(k.user_id,${userId}::uuid,k.section,k.category)
+ ), visible_raw as (
   select a.*,w.category,w.kind,u.username,coalesce(e.show_id,se.show_id,r.parent_id,a.work_id) as root_id,
    case when e.media_id is not null then 'S'||lpad(e.season_number::text,greatest(2,length(e.season_number::text)),'0')||'E'||lpad(e.episode_number::text,greatest(2,length(e.episode_number::text)),'0') end as episode_code,
    history.page as reading_page,history.total_pages as reading_total,rating.value as rating, session.minutes_played as minutes,coalesce(tracking.rewatch,false) as rewatch,music.title as track_title
-  from social_activity a join works w on w.id=a.work_id join users u on u.id=a.user_id
+  from ${scoped?sql`admitted_activity`:sql`social_activity`} a join works w on w.id=a.work_id join users u on u.id=a.user_id
+  join activity_policy policy on policy.user_id=a.user_id and policy.section is not distinct from a.section and policy.category is not distinct from w.category
   left join reading_history history on history.id=substring(a.source_key from '^reading:([0-9a-f-]{36})$')::uuid
   left join music_works music on music.id=a.work_id
   left join ratings rating on a.event_kind='rating' and rating.user_id=a.user_id and rating.media_id=a.work_id
@@ -25,16 +57,15 @@ export async function activityFeed(userId:string,raw:unknown={},activityIds?:str
   left join tracking_events tracking on tracking.id=substring(a.source_key from '^tracking_events:([0-9a-f-]{36})$')::uuid
   left join episodes e on e.media_id=a.work_id
   left join seasons se on se.media_id=a.work_id
-  left join lateral(select parent_id from media_relationships where child_id=a.work_id and kind='contains' order by case when parent_id=${o.workId??null}::uuid then 0 else 1 end,position,parent_id limit 1) r on true
-  where coast_category_enabled(${userId}::uuid,w.category) and (a.user_id=${userId}::uuid or coast_feature_enabled(a.user_id,'social') and coast_feature_enabled(${userId}::uuid,'social')) and (a.user_id=${userId}::uuid or exists(select 1 from friendships f where f.state='accepted' and f.user_a=least(${userId}::uuid,a.user_id) and f.user_b=greatest(${userId}::uuid,a.user_id)))
-   and social_visible(a.user_id,${userId}::uuid,a.section,w.category)
+  left join lateral(select parent_id from media_relationships where e.show_id is null and se.show_id is null and child_id=a.work_id and kind='contains' order by case when parent_id=${o.workId??null}::uuid then 0 else 1 end,position,parent_id limit 1) r on true
+  where true
    ${relationshipEventFilter(o.relationship)}
-   and (${activityIds===undefined} or a.id in (${activityIds?.length?sql.join(activityIds.map(id=>sql`${id}::uuid`),sql`, `):sql`null::uuid`}))
+   ${activityScope}
    and (${o.category}='all' or w.category=${o.category} or ${o.category}='reading' and w.category in ('book','comic')) and (${o.kind}='all' or a.event_kind=${o.kind})
    and (${o.friendId??null}::uuid is null or a.user_id=${o.friendId??null}::uuid)
-   ${o.workId?sql`and (a.work_id=${o.workId}::uuid or e.show_id=${o.workId}::uuid or e.season_id=${o.workId}::uuid or se.show_id=${o.workId}::uuid or exists(select 1 from media_relationships member where member.parent_id=${o.workId}::uuid and member.child_id in (a.work_id,e.show_id,e.season_id,se.show_id) and member.kind='contains'))`:sql``}
-   ${o.artistId?sql`and exists(select 1 from music_credits credit where credit.work_id=a.work_id and credit.artist_id=${o.artistId}::uuid)`:sql``}
-   ${o.readingGroupId?sql`and exists(select 1 from reading_group_members member where member.group_id=${o.readingGroupId}::uuid and member.work_id=a.work_id)`:sql``}
+   ${workScope}
+   ${artistScope}
+   ${readingGroupScope}
    and (w.category='screen' or (w.category='music' and coalesce((select value->>'experimentalMusic' from system_settings where key='coast'),'false')='true') or (w.category='game' and coalesce((select value->>'experimentalGaming' from system_settings where key='coast'),'false')='true') or (w.category='book' and coalesce((select value->>'experimentalBooks' from system_settings where key='coast'),'false')='true') or (w.category='comic' and coalesce((select value->>'experimentalComics' from system_settings where key='coast'),'false')='true'))
  ), deduplicated as (
  select *,row_number() over(partition by user_id,case when source='jellyfin' and event_kind='watch' and date_known then work_id::text||':'||occurred_at::text else id::text end order by created_at,id) as observation_rank from visible_raw

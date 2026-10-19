@@ -1,10 +1,10 @@
 import { onDestroy, untrack } from 'svelte';
 import { message } from './client';
 
-export type FailureSource = string | null | undefined | {text:string|null|undefined;retry?:()=>unknown};
+export type FailureSource = string | null | undefined | {text:string|null|undefined;retry?:()=>unknown;actionLabel?:string};
 
 type ActionNotice = {
-  text: string; kind: 'info' | 'error'; undo?: () => Promise<void>; retry?: () => unknown;
+  text: string; kind: 'info' | 'error'; undo?: () => Promise<void>; retry?: () => unknown; actionLabel?:string;
   busy: boolean; error: string; owner?: symbol;
 };
 /** One delivery channel per client scope. Preview clients never publish into the application. */
@@ -15,7 +15,7 @@ export function createFeedback() {
     state.notices = [...state.notices.filter(value => value.owner !== notice.owner), notice];
   }
   function notify(text: string, undo?: () => Promise<void>) { publish({ text, undo, kind: 'info', busy: false, error: '' }); }
-  function failure(text: string, retry?: () => unknown, owner?: symbol) { publish({ text, retry, owner, kind: 'error', busy: false, error: '' }); }
+  function failure(text: string, retry?: () => unknown, owner?: symbol, actionLabel?:string) { publish({ text, retry, owner, actionLabel, kind: 'error', busy: false, error: '' }); }
   function clear(owner?: symbol) {
     if (owner) state.notices = state.notices.filter(value => value.owner !== owner);
     else state.notices = state.notices.slice(0, -1);
@@ -42,12 +42,13 @@ export function createFeedback() {
       const source = read();
       const text = (source && typeof source === 'object' ? source.text : source)?.trim() ?? '';
       const attempt = source && typeof source === 'object' ? source.retry : retry;
+      const actionLabel = source && typeof source === 'object' ? source.actionLabel : undefined;
       untrack(() => {
-        if (text && text !== previous) failure(text, attempt, owner);
+        if (text && text !== previous) failure(text, attempt, owner, actionLabel);
         else if (!text) clear(owner);
         else {
           const notice = state.notices.find(value => value.owner === owner);
-          if (notice) notice.retry = attempt;
+          if (notice) { notice.retry = attempt; notice.actionLabel = actionLabel; }
         }
         previous = text;
       });

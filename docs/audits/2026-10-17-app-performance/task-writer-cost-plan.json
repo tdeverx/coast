@@ -1,0 +1,161 @@
+{
+  "schemaVersion": 1,
+  "status": "historical_prepared_plan_with_separate_completed_private_execution",
+  "findingId": "PJ-10",
+  "preparedAt": "2026-10-18T10:29:29.695486+00:00",
+  "sourcePins": {
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "src/lib/server/notifications/inbox.ts": "c8d44c3f7bc05ca7331a333bbdbcfff5d7f8dc1bd1178bf8eac957e7e6c48fdf",
+    "src/lib/providers/job-timing.server.ts": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+    "src/lib/providers/seerr/requests.server.ts": "b7c80ac2400e66f245bd4ab134188f0eaed018bdf7ea23e95dbeff625c140685",
+    "src/lib/providers/connections.server.ts": "4ea7ef7b06a8dc16e3800a34b0c58f7ca7446861a3d17cb5b3ecfe6a8830efc1",
+    "src/lib/catalogue/maintenance.server.ts": "48bc05752d52e3e0813996a34b0e399af2ecd38cc9a879b553f81f9afaf05dd8",
+    "src/lib/providers/steam/sync.server.ts": "da87cd5ba1336c3ddaaa953f6fdd9397ddc79c0640b38979202eb274fe6ba4c1",
+    "src/lib/experiments/planning.server.ts": "aef16dae069ac1f18484e4666887da1cc6572d95d803e8e43c5ea8ba5ed850a9",
+    "src/lib/providers/maintenance.server.ts": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b",
+    "src/lib/providers/jellyfin/updates.server.ts": "568108807e944df42b0d0203fd0040a7b49d70a20f710a75b0472804c39ba50f",
+    "src/lib/providers/jellyfin/stream-history.server.ts": "243f20cee43e4d31116169355379072931ed8170cad4ef44f590608e6fb32453",
+    "src/lib/sync/jellyfin.server.ts": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
+    "src/lib/sync/jellyfin-playback.server.ts": "7eed2b4b624f01ead9425a456fdee2a8b656aa59c586fdd68034d0d6f336ff4d",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/queue/execution.ts": "ea415b763273144b794cdc759954fb9a1397a97d2b32708689c6ebb855f64ec2",
+    "src/lib/server/storage/retention.server.ts": "50b898518a5ac21573ed69ae514c90b9e27062acd1aeb35a78b2affde3e04ad1",
+    "src/lib/server/public-api/webhooks.server.ts": "70c4d1ea244d7e3c723bb6fda6cb05c51300046c511bc6803667daf27d69aefb",
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "src/lib/sync/changes.server.ts": "5b781dfbf935afa83d7fa54b8446fc9d4830d7f375d26f6c3658ba00191868af",
+    "src/lib/application/feature-transition.server.ts": "62c2509fb4edb4cd95a36547a85990d2d400977a489400c4fdfe4152c9941b5c",
+    "src/lib/application/streams.server.ts": "55f29d818b5076b5eb3c90dc541d675be3ddf402a4720486f83e859ea0e2d334",
+    "src/lib/application/provider-sources.server.ts": "5dc4f1ab35e1a47e4fb1728d45a367106015f787297f18714d425a3cc56f9f2c",
+    "src/lib/sync/trakt-staging.server.ts": "3ff5497378a116f97b1073a0ea871f000ab7c08abd086cc23c21cb16d93f5413",
+    "src/lib/server/auth/onboarding.ts": "ece68e11f072f86d1aeb5ac26cdbf4b4d2024ab8c5d0508de0f6613b142f227b",
+    "src/lib/sync/values.server.ts": "46363d9edcbd1692a6492c14624a5d80bb68546579a7ef54826aaa0c035641c4",
+    "src/lib/sync/trakt-lists.server.ts": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb",
+    "src/lib/sync/history-removal.server.ts": "10f62835a0d8c9178c608b3f65cff66331f42fe7f2df8e4b8e9a18b21491017e",
+    "src/lib/benchmarks/service.server.ts": "2b20918bb628053f96a9a703faedc5b795f06bb75b06d2a55a4810661e82f835",
+    "src/lib/recommendations/providers.server.ts": "0a607de5b0e22c7bb30e755c52c44623a4acaac472d4eea3ff21af81babee703",
+    "src/lib/social/taste-cache.server.ts": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "src/lib/social/presence.server.ts": "64c185536df3632ed3da595d55cfb399afcc4e1fbfb933f3f8bba1537d71fcc3",
+    "drizzle/0016_collection_and_music.sql": "911f5a3f1f726e7496edd369e6741eb4ef46755ac151960bd7023141ec26863b",
+    "drizzle/0045_trakt_import_staging.sql": "e6d6793b83f6add894a424c1e8a266014764214104090e8d092e52b3b03f02fe",
+    "drizzle/0046_provider_job_snapshots.sql": "ef2bb871b060687b19a769d6aa02e213306208bc4a3c2694ce8c5d9941533768"
+  },
+  "sourcePinCount": 34,
+  "artifactPins": {
+    "candidates/task-writer-cost-plan/source-pins.json": "57420dfa3294357fff0d96708ad5387b6e3c109bf6972a03a1884b66a43c9c90",
+    "candidates/task-writer-cost-plan/verification-plan.json": "5919a422609db9c1fa23f1606f1c8f994f3b4a5b70ed43ce9026c16ce4f6981b",
+    "candidates/task-writer-cost-plan/manifest.json": "d045766bd09f36568e4d8fdfd0a357c34e587e1b9dc19432c1e5d5fd8893b805",
+    "candidates/task-writer-cost-plan/protocol.md": "1329ce212e5d87b00c8b97af3a308d4c8ab86ec25b933d18f75536f5b8457bc1",
+    "task-history-index-matrix.md": "9ed5a186ac8e7e61481afc9bb175aa85182795fca87d80fec421fe016fc2ba6e",
+    "task-history-index-matrix.json": "797e678f73578b6e500fd330f88b9b894be8273394e9e05d33b5dd6e22f9bf5d",
+    "task-timing-index-consumers.md": "1e39c95a527dde71b435aec27a47b2c88d68617ec0a5abc5efb313b763105cc1",
+    "task-timing-index-consumers.json": "9a3a7654ddcf16bdb9f0851171aeaced9ce2d0e0fff799eb9100ed3330db40fa",
+    "candidates/task-history-next/index.sql": "92e1c1446df2efd5b6f9639640df68911afb8b8a53c75d4e5990ce1cbffcba46",
+    "candidates/task-history-next/query-q1b.sql": "42b380f6fed774d8d935da9ec42bad4f9e56408e95655f3c919cd17cecfb69e2",
+    "probes/task-history-index-matrix.ts": "8edc360603ca47b4c7431c60360ab0fca11577e15cffd1dd35ccf66415d3137a",
+    "probes/task-timing-index-consumers.ts": "ff3cfab51f879489f5fd00df329fe3fd4d93b031b6d799743dd96d17521476cd",
+    "evidence/task-history-index-matrix-actual.json": "51fb19b4f0d39c51c80e827cd86ba52d0c9ffc757482f678d74d2f37663a1731",
+    "evidence/task-timing-index-consumers-actual.json": "7dc4ed72090bab4635028cc5a175519ea36d9fbbbd4c011cd91999b45063c85b",
+    "evidence/task-timing-index-consumers-source-coverage.json": "35a87ec56edb995e9db65f8f62c47d67a070e12e6f8561c3030e97936a318bc3",
+    "task-writer-cost-plan.md": "dbb0372739b98647aebeb4837a633b2a767871ac2732c09c622f6956b560e66f"
+  },
+  "priorArtifactPinsChecked": 11,
+  "runnerExists": true,
+  "newDatabaseStatements": 0,
+  "newTests": 0,
+  "newApplicationEdits": 0,
+  "tasksQueryOrIndexAdopted": false,
+  "recommendedNext": "Implement and review one bounded W0 runner; admit capacity, exact generated targets and lease before execution. Optional H0 is separate.",
+  "actualDataOnly": true,
+  "authoredMutationBoundary": "Existing actual terminal identities; proposed recency-only updates, not natural active jobs or fabricated catalogue.",
+  "naturalActiveFailedAndCommittedOwnerAcceptance": false,
+  "publicationBoundary": "Private worker preparation and root report publication only; exact private input bytes retained. No newly inferred human approval requirement.",
+  "runnerExistedAtPreparation": false,
+  "laterActualReport": "task-writer-cost-actual.md",
+  "preparationAndPublicationDatabaseStatements": 0,
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "src/lib/server/notifications/index.ts": {
+        "before": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+        "after": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/providers/maintenance.server.ts",
+          "before": "dcc93147ba085a07562271c9acc54aa5aec49e7356be01d89ba749fb1dd2ee13",
+          "after": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T02:01:28.135299+00:00",
+      "reportRef": "implementation-found-17.md",
+      "paths": [
+        "src/lib/social/taste-cache.server.ts"
+      ],
+      "boundary": "Current reviewed owner/prose/checker identity only; archived native query epochs and every previous acceptance receipt remain unchanged."
+    },
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "src/lib/sync/jellyfin.server.ts"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "src/lib/providers/steam/sync.server.ts"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    }
+  ]
+}

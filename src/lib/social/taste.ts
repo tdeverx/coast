@@ -24,7 +24,8 @@ export function tasteSignals(left:TasteWork[],right:TasteWork[]) {
  const a=featureProfile(left),b=featureProfile(right);
  for(const dimension of tasteDimensions.filter(value=>value!=='genres')){
   const av=(a.dimensions[dimension]??[]).filter(value=>value.value>0&&(dimension!=='cast'||value.samples>=2)),bv=(b.dimensions[dimension]??[]).filter(value=>value.value>0&&(dimension!=='cast'||value.samples>=2));
-  signals[dimension]={score:a.works>=5&&b.works>=5&&av.length&&bv.length?cosine(new Map(av.map(v=>[v.id,v.value])),new Map(bv.map(v=>[v.id,v.value]))):null,shared:av.filter(v=>bv.some(other=>other.id===v.id)).length,left:av.length,right:bv.length,weight:dimension==='publishers'?2:5};
+  const rightValues=new Map(bv.map(v=>[v.id,v.value]));
+  signals[dimension]={score:a.works>=5&&b.works>=5&&av.length&&bv.length?cosine(new Map(av.map(v=>[v.id,v.value])),rightValues):null,shared:av.reduce((shared,v)=>shared+(rightValues.has(v.id)?1:0),0),left:av.length,right:bv.length,weight:dimension==='publishers'?2:5};
  }
  const qualified=Object.values(signals).filter(s=>s.score!==null),weight=qualified.reduce((s,v)=>s+v.weight,0);
  return {signals,score:weight?qualified.reduce((s,v)=>s+v.score!*v.weight,0)/weight:null};

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import {page} from '$app/state';
   import { createOperation } from '$lib/ui/operation.svelte';
@@ -15,7 +16,7 @@
   const parentMenu = getContext<MenuContext | undefined>('coast-context-menu');
   // Dialog pickers close their own menus, without unmounting this dialog's owner.
   setContext('coast-context-menu', undefined);
-  const operation = createOperation();
+  const operation = createOperation(useRetention());
 
   let {workId,disabled=false}:{workId:string;disabled?:boolean}=$props();
   import { createFriendsResource } from '$lib/ui/friends.svelte';

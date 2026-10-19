@@ -1,0 +1,72 @@
+{
+  "baseline": "eb0673873462b71118d1c11678d128958a05ff07",
+  "date": "2026-10-17",
+  "items": [
+    {
+      "id": "PJ-11",
+      "status": "implemented; actual retained-data recovery verified",
+      "implementationApplied": true,
+      "sharedOwner": "Steam sync transaction + existing queue checkpoint owner",
+      "consumers": [
+        "initial/unchanged/resumed Steam ownership",
+        "current-generation and stale-attempt jobs",
+        "terminal/reset snapshot cleanup",
+        "shared checkpoint preserves manual intent"
+      ],
+      "evidenceRefs": [
+        "implementation-providers.md",
+        "evidence/implementation-providers-real-steam.json",
+        "probes/real-steam-checkpoint.ts"
+      ],
+      "actualOwnedGames": 1144,
+      "passedChecks": 25,
+      "externalCalls": 0,
+      "remaining": [
+        "Fresh live Steam API/reconnect acceptance is distinct",
+        "No measured WAL or production latency speedup claim",
+        "Additional fixture suite/type/build validation belongs to coordinator"
+      ]
+    },
+    {
+      "id": "PJ-10",
+      "status": "open; query/index scope decision",
+      "implementationApplied": false,
+      "remaining": [
+        "Preserve dynamic/null scopes and current generation semantics; verify same actual history plans"
+      ]
+    },
+    {
+      "id": "PJ-13",
+      "status": "open; cache contract split and usage evidence needed",
+      "implementationApplied": false,
+      "remaining": [
+        "Current cache combines base+page; no safe invariant lookup already exposed",
+        "No actual review-navigation trace; no new partition/interface added during freeze"
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "src/lib/providers/steam/sync.server.ts",
+      "sha256": "44f326e8c70cea5f70ba9fea0e52a7390af39ac60e49f5421a08c9478cfca2da"
+    },
+    {
+      "path": "tests/steam-db.test.ts",
+      "sha256": "46c9575498b6120840434475838bfad2201cbf91172322e97d0b736222ddd2f3"
+    },
+    {
+      "path": "docs/audits/2026-10-17-app-performance/probes/real-steam-checkpoint.ts",
+      "sha256": "bd7f5d68ca9ab38d5cb006a5fc31531deaffcb31615170fea90cbf5238a1b78e"
+    }
+  ],
+  "schemaChanged": false,
+  "dependenciesAdded": false,
+  "liveDatabaseMutated": false,
+  "actualProbeBoundary": "existing actual account and persisted complete owned-game census; temporary job/snapshot metadata only in private clone; external fetch always throws",
+  "actualProbeLimitations": [
+    "Staged census reconstructed from actual retained observations; no live ownership API acceptance",
+    "Elapsed samples are sequential descriptive observations, not controlled cold/warm speedup or production percentiles",
+    "Baseline comparison changes only the audited Steam module against current dependencies",
+    "No cluster WAL claim; exact tuple version and ORM statement counts verify removal of snapshot rewrites"
+  ]
+}

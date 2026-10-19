@@ -5,6 +5,7 @@ import type { ShelfItem, ShelfSource, ShelfControl } from './types';
 import type { MediumFeatures } from '$lib/experimental';
 import { mediaTypeOptions } from '$lib/ui/filter-options';
 import { refreshRouteDependencies } from '$lib/ui/client';
+import { searchRowMatches, type SearchView } from '$lib/search-selection';
 
 export type SearchOptions = {
   surface?: LibrarySurface;
@@ -13,6 +14,8 @@ export type SearchOptions = {
   items: ShelfItem[];
   layout?: 'row' | 'grid';
   kind?: string;
+  view?: SearchView;
+  onKindChange?: (value: string) => void;
   busy?: boolean;
   failure?: string;
   truncated?: boolean;
@@ -24,16 +27,17 @@ export type SearchOptions = {
 export function createSearchSource(getOptions: () => SearchOptions): ShelfSource {
   let localKind = $state(untrack(() => getOptions().kind ?? 'all'));
   const options = $derived(getOptions());
-  const kind = $derived(localKind);
+  const kind = $derived(options.onKindChange ? options.kind ?? 'all' : localKind);
   function selectKind(value: string) {
-    localKind = value;
+    if (options.onKindChange) options.onKindChange(value);
+    else localKind = value;
   }
   return {
     pagination: { kind: 'local' },
     get title() { return options.bucket === 'available' ? 'Available' : options.bucket === 'unavailable' ? 'Unavailable' : libraryTitles[options.surface ?? 'watch']; },
     get items() {
       return options.items.filter(item =>
-        (kind === 'all' || item.kind === kind) &&
+        searchRowMatches({ kind, view: options.view }, item.kind) &&
         (!options.bucket || (item.available === true) === (options.bucket === 'available')));
     },
     get busy() { return options.busy ?? false; },
@@ -48,7 +52,7 @@ export function createSearchSource(getOptions: () => SearchOptions): ShelfSource
     controls: [],
     actions: [],
     rows: 1,
-    get resetKey() { return `${options.query}:${kind}`; },
+    get resetKey() { return `${options.query}:${options.view ?? 'all'}:${kind}`; },
     get notice() { return options.notice || (options.truncated ? 'Refine your search for more results.' : ''); },
     get empty() { return options.bucket === 'available' ? 'No available titles match this search.' : 'No unavailable titles match this search.'; },
     load: async () => refreshRouteDependencies(['tracking', 'reading', 'providers']),

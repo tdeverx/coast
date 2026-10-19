@@ -1,26 +1,19 @@
 import type { MediaActionData } from '$lib/media/actions';
 import type { MediaView } from '$lib/ui/types';
-import type { RequestDestination } from '$lib/media/requests';
-import { message, type api } from '$lib/ui/client';
+import { requestScopeFormatter, type RequestDestination } from '$lib/media/requests';
+import type { api } from '$lib/ui/client';
+import { createRequestOptions } from './request-options.svelte';
 
 /** Lazy request state, independent of the button/menu rendering. */
 export function createRequestControls(options: {
   item: () => MediaView | null; data: () => MediaActionData | null; api: typeof api;
   onrequest: () => (fourK?: boolean, destinations?: RequestDestination[]) => void;
 }) {
-  let requestOptions = $state<RequestDestination[] | undefined>(),
-    requestOptionsBusy = $state(false),
-    requestOptionsError = $state('');
-  let generation = 0;
-  let controller: AbortController | undefined;
-  function cancel() { generation++; controller?.abort(); controller = undefined; requestOptionsBusy = false; }
-  function resetOptions() {
-    cancel();
-    requestOptions = undefined;
-    requestOptionsBusy = false;
-    requestOptionsError = '';
-  }
+  const read = createRequestOptions(options.api);
+  const requestOptions = $derived(read.value);
+  const cancel = read.cancel, resetOptions = read.reset;
   const existingRequests = $derived(options.data()?.requests ?? []);
+  const scopeLabel = $derived(requestScopeFormatter(existingRequests));
   const canManageRequests = $derived(
     existingRequests.some(
       (request) => request.canCancel || request.canApprove || request.canDecline
@@ -55,25 +48,9 @@ export function createRequestControls(options: {
   );
   async function loadRequestOptions() {
     const item = options.item();
-    if (requestOptionsBusy || requestOptions || requestDisabledReason || !item) return;
+    if (read.busy || requestOptions || requestDisabledReason || !item) return;
     const id = item.id;
-    const token = ++generation;
-    controller = new AbortController();
-    const signal = controller.signal;
-    requestOptionsBusy = true;
-    requestOptionsError = '';
-    try {
-      const result = await options.api<{ destinations: RequestDestination[] }>(
-        `requests/options?mediaId=${id}`,
-        undefined,
-        'GET', { signal }
-      );
-      if (options.item()?.id === id && token === generation) requestOptions = result.destinations;
-    } catch (cause) {
-      if (token === generation) requestOptionsError = message(cause);
-    } finally {
-      if (token === generation) requestOptionsBusy = false;
-    }
+    await read.load(id, undefined, () => options.item()?.id === id);
   }
   function openRequest(fourK = false) {
     options.onrequest()(fourK, requestOptions);
@@ -81,8 +58,9 @@ export function createRequestControls(options: {
 
  return {cancel, resetOptions, loadRequestOptions, openRequest,
 get requestOptions() { return requestOptions; },
-get requestOptionsError() { return requestOptionsError; },
+get requestOptionsError() { return read.error; },
 get existingRequests() { return existingRequests; },
+get scopeLabel() { return scopeLabel; },
 get canManageRequests() { return canManageRequests; },
 get requestLabel() { return requestLabel; },
 get requestDisabledReason() { return requestDisabledReason; },

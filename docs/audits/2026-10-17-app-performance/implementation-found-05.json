@@ -1,0 +1,316 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-18T19:58:02.456432+00:00",
+  "status": "applied_known_partial_shared_resource_slices",
+  "canonicalFindings": [
+    "UIS-06",
+    "UPP-03"
+  ],
+  "sourcePins": {
+    "src/lib/ui/materials/glass.ts": "de2a840f0e28956c2e50749fd06a2dc146870fe393c20ce6adc72233f5b3b179",
+    "src/lib/server/diagnostics/index.ts": "265f5134662ec314627de934b817741409ecbe1f358ce86cb26a532319ee9d10",
+    "src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "package.json": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2",
+    "tests/glass-lifecycle.test.ts": "f5328fa3fef384167272aa1a7e009d2056a5fb43dcc1b50d3f8f04f79b519f08",
+    "tests/diagnostic-storage-lifecycle.test.ts": "22a7ba7898a1326d36435e418590dc17d752d16898244ca050371b9254cb8c32",
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b"
+  },
+  "actualDiagnosticComparisons": 20,
+  "actualDiagnosticRows": 16325,
+  "actualRuntimeRows": 2656,
+  "viewerDetailAdmission": {
+    "limit": 30,
+    "beforeCalls": 16325,
+    "afterCalls": 30
+  },
+  "normalZeroSizeNativeOwners": {
+    "before": 1,
+    "after": 0
+  },
+  "normalDiagnosticRows": 30,
+  "unit": {
+    "pass": 838,
+    "skip": 715,
+    "fail": 0,
+    "assertions": 34207
+  },
+  "allKnownWorkComplete": false,
+  "uncheckedAreaAuditPerformed": false,
+  "productionDependenciesAdded": false,
+  "databaseSchemaOrProviderCommand": false,
+  "commitPushPrDeploy": false,
+  "artifactPins": {
+    "implementation-found-05.md": "2e9a3c31e9a34a7c58825b51e53a248860b7e1a343c0773f8c19d29bf3eae402",
+    "evidence/implementation-found-05-source.json": "09af735b03ff17a786ee45e4a29765dbe4a2e5dbe09b0f6361f37a90d457d925",
+    "evidence/implementation-found-05-diagnostics-actual.json": "5b825dea7bb6a59bd0f19050bdaa9e2cbb98e494c86eb5015ec580fccc6205c5",
+    "evidence/implementation-found-05-normal.json": "932ab126ea6beb12ce221ba266e7fca8384445cf6853f4aba67ba97c623b9aba",
+    "evidence/implementation-found-05-resource-gates.json": "cdc150eedfa5e06ad9467bba35e216fa9a505b419457377f893c050e4d3866ee",
+    "probes/diagnostic-first-line-real.ts": "f055bda925a4f2436ccd2a8f9edf17849a16dbd1995d195a22dadc8a26d5bbf2",
+    "candidates/found-implementation-05/final-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "candidates/found-implementation-05/glass-before.ts": "2780410aec249c0d1020f04b382b7888faa3dd2425bc7ce238cef88e7fcaab33",
+    "candidates/found-implementation-05/diagnostic-storage-lifecycle.test.ts.snapshot": "22a7ba7898a1326d36435e418590dc17d752d16898244ca050371b9254cb8c32",
+    "candidates/found-implementation-05/runtime-owner-changes.patch": "cdc2bf59aba7d5f4cf7f822f66bbeb8bee9fb39e2a463021142a1acb04e8c56d",
+    "candidates/found-implementation-05/final-unit.log": "b1b4b72809c14b5bf09b887eb105832caaa22ab4eb94202ac7b99c32b5330960",
+    "candidates/found-implementation-05/final-code-inventory.log": "cac510d1bfc2b50e195f173b1d4f4af7d1775614da864cd91bb13dfa61a3bb10",
+    "candidates/found-implementation-05/final-build.log": "102d5a7a1adab6cbf9e75564de1eb5ffc5b98c4a8ee5a8c5571bcd8d452aa940",
+    "candidates/found-implementation-05/final-code-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "candidates/found-implementation-05/final-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "candidates/found-implementation-05/package-before.json": "faacde885a670752c385f25f114b3ff80e0182769d72a82706ce5d804a509139",
+    "candidates/found-implementation-05/failed-archive-discovery-unit.log": "695318513f987d5200aff1d50d6250e0304923335aa3e0bc5327182b5062f9d0",
+    "candidates/found-implementation-05/first-gates.json": "f688d2a2227e596252d92e3b23b5f22403942e5fb906175072acf9978f39bc65",
+    "candidates/found-implementation-05/diagnostic-first-line-stage-actual.json": "4788ccf5defe277e9d3c4cad363a099c634f1e8a9e89215f312db76a949d5da1",
+    "candidates/found-implementation-05/notifications-before.ts": "f197925f14290b6dac4c644ff4ccbedc0fad33ff08a2f7cc3447a00bb27fe699",
+    "candidates/found-implementation-05/glass-lifecycle.test.ts.snapshot": "f5328fa3fef384167272aa1a7e009d2056a5fb43dcc1b50d3f8f04f79b519f08",
+    "candidates/found-implementation-05/diagnostics-before.ts": "fb1ca47e47be10c59a01b09758cf7c9e26d9a36d395581e7633ae00d39e1e18d",
+    "candidates/found-implementation-05/applied-source/package.json": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2",
+    "candidates/found-implementation-05/applied-source/src/lib/server/diagnostics/index.ts": "265f5134662ec314627de934b817741409ecbe1f358ce86cb26a532319ee9d10",
+    "candidates/found-implementation-05/applied-source/src/lib/server/notifications/index.ts": "6ec6b58399029eeb6b8bcbfb022e1c6b333b0a628d66927859c0e3ae2d75a7f7",
+    "candidates/found-implementation-05/applied-source/src/lib/ui/materials/glass.ts": "de2a840f0e28956c2e50749fd06a2dc146870fe393c20ce6adc72233f5b3b179"
+  },
+  "laterFound06IdentityAdvance": {
+    "at": "2026-10-18T20:12:04.602850+00:00",
+    "ref": "implementation-found-06.md",
+    "paths": {
+      "docs/performance.md": {
+        "before": "5f8f6f09ebdf8b2c92232f4c615cb0ec4091ee5ea04adae756792380f3962171",
+        "after": "4e96ee74bcd78ac1c84aa0a0d1febc98649f831b2278da25193d871e40efa4fb"
+      }
+    },
+    "boundary": "Reviewed current identity; historical actual source epochs/results are not promoted. The changed shared search controller has its own actual before/final acceptance and current controls/gates."
+  },
+  "laterFound07IdentityAdvance": {
+    "at": "2026-10-18T22:39:47.956698+00:00",
+    "ref": "implementation-found-07.md",
+    "paths": {
+      "docs/performance.md": {
+        "before": "a0e3d01db81631fcb602a871216927c40cdad8e6ee52a7cfa664c6ba742a7314",
+        "after": "da99a103f4f00904645835c9d62449b3d3eae1db1972e6f776115b6d9dfbf298"
+      }
+    },
+    "boundary": "Current reviewed identity only; original historical actual receipts remain immutable. Profile candidate has its own108complete actual comparisons and final common/normal checks. No Collection candidate adopted."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "docs/performance.md": {
+        "before": "da99a103f4f00904645835c9d62449b3d3eae1db1972e6f776115b6d9dfbf298",
+        "after": "55284759ca8caa7ab3f7983680c4cd5621c83be7fea8eef01fe17bd62093c710"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  },
+  "laterFound09IdentityAdvance": {
+    "at": "2026-10-18T23:28:06.266259+00:00",
+    "ref": "implementation-found-09.md",
+    "paths": {
+      "docs/performance.md": {
+        "before": "55284759ca8caa7ab3f7983680c4cd5621c83be7fea8eef01fe17bd62093c710",
+        "after": "8e6b7c3a36d430a9f5d0eac8a239812c9622ec46f4ff9a74a8afb31c20d70b85"
+      }
+    },
+    "boundary": "Current reviewed identity only. Original actual receipts and acceptance limits retained. Menu actual-input and native enabled-hero acceptance have their own current proof; capability-Off remains authored controls."
+  },
+  "laterFound10IdentityAdvance": {
+    "at": "2026-10-18T23:35:57.455314+00:00",
+    "ref": "implementation-found-10.md",
+    "paths": {
+      "docs/performance.md": {
+        "before": "8e6b7c3a36d430a9f5d0eac8a239812c9622ec46f4ff9a74a8afb31c20d70b85",
+        "after": "9d808af9f4e62ba7b10b3d4b4f73236f897115ff059f4402ef343dfa217934ea"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical receipts/limits remain immutable; new Profile query has36actual complete outcomes, current UI acceptance and supplementary pending controls. Other owners not retested."
+  },
+  "laterFound11IdentityAdvance": {
+    "at": "2026-10-18T23:42:10.655439+00:00",
+    "ref": "implementation-found-11.md",
+    "paths": {
+      "docs/performance.md": {
+        "before": "9d808af9f4e62ba7b10b3d4b4f73236f897115ff059f4402ef343dfa217934ea",
+        "after": "c5a9ad8af1e8e07dd31f08434002dccee5042a6de7f529e4946bfd187b363102"
+      }
+    },
+    "boundary": "Reviewed identity only. Historical source/proofs stay immutable. Guarded count reuse has192actual section comparisons and final gates/native panel; prior activity owner body is unchanged, its receipt not newly rerun."
+  },
+  "laterDocumentationRefreshes": [
+    {
+      "at": "2026-10-19T00:33:57.548914+00:00",
+      "path": "docs/performance.md",
+      "beforeSha256": "c5a9ad8af1e8e07dd31f08434002dccee5042a6de7f529e4946bfd187b363102",
+      "afterSha256": "6cef728fce74239b718845edcf0d8e2b6582c48b58d80501c694a6fd7c105e14",
+      "beforeRef": "candidates/avatar-storage/performance.md.before.snapshot",
+      "reviewRef": "avatar-storage-candidate.md",
+      "boundary": "Append staged asset-lifecycle costs/failures and remaining work. No production source change and no upgrade of historical acceptance."
+    }
+  ],
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:04:47.830368+00:00",
+      "path": "docs/performance.md",
+      "beforeSha256": "6cef728fce74239b718845edcf0d8e2b6582c48b58d80501c694a6fd7c105e14",
+      "afterSha256": "0809f3bbe9c20967f7bddc32bdc4e7de5077bf00b1d0b0e6bf22d96f0173dd37",
+      "beforeRef": "candidates/account-deletion/performance.md.before.snapshot",
+      "reviewRef": "implementation-found-12.md",
+      "boundary": "Reviewed guide update or forward0064journal append only; no normal database/avatar rollout and no upgrade of prior runtime evidence."
+    },
+    {
+      "at": "2026-10-19T01:32:19.107523+00:00",
+      "path": "docs/performance.md",
+      "beforeSha256": "0809f3bbe9c20967f7bddc32bdc4e7de5077bf00b1d0b0e6bf22d96f0173dd37",
+      "afterSha256": "338a2c8cbeb326f3f9b80bf7880db5a037746a6caf85d25b1a6e9fc059c03792",
+      "beforeRef": "candidates/found-implementation-13/performance.md.before.snapshot",
+      "reviewRef": "implementation-found-13.md",
+      "boundary": "Only internal Profile activity projection narrows; other functions and contracts are byte-identical. Current identity review does not re-run or upgrade old evidence. Guide append records current proof and rejected Taste alternative."
+    },
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "docs/performance.md",
+          "before": "338a2c8cbeb326f3f9b80bf7880db5a037746a6caf85d25b1a6e9fc059c03792",
+          "after": "079a6996da4fa71bbd536d18eeea3ee39d71d42d530cf90110c3a6b8d7d033ab"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T01:54:19.077611+00:00",
+      "reportRef": "implementation-found-16.md",
+      "boundary": "Add exact ten-file avatar adoption/removed-owner/patch/normal-receipt drift checks and clarify guide prose; no runtime change or historical acceptance upgrade."
+    },
+    {
+      "at": "2026-10-19T02:01:28.135299+00:00",
+      "reportRef": "implementation-found-17.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Current reviewed owner/prose/checker identity only; archived native query epochs and every previous acceptance receipt remain unchanged."
+    },
+    {
+      "at": "2026-10-19T02:13:13.432509+00:00",
+      "reportRef": "implementation-found-18.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Performance-guide and current-checker bookkeeping only; runtime unchanged and no prior acceptance or timing upgraded."
+    },
+    {
+      "at": "2026-10-19T02:17:00.035023+00:00",
+      "reportRef": "implementation-found-19.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Guide/checker bookkeeping; runtime unchanged, no old acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T02:53:01.778274+00:00",
+      "reportRef": "implementation-found-21.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact planned DATA-07 command guards plus guide/checker bookkeeping. Historical source/evidence epochs retained; no older acceptance upgraded."
+    },
+    {
+      "at": "2026-10-19T02:55:26.686530+00:00",
+      "reportRef": "failed-method-backlog.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "User clarified execution-only stopping rule and future investigation order; runtime and prior evidence unchanged."
+    },
+    {
+      "at": "2026-10-19T03:11:12.006201+00:00",
+      "reportRef": "admin-real-data-policy.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Corrected interpretation of authorized real-data/admin test states; runtime and historical results unchanged."
+    },
+    {
+      "at": "2026-10-19T03:22:06.569202+00:00",
+      "reportRef": "implementation-found-22.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Admin actual-data acceptance, measurement/stopping guidance and checker bookkeeping; runtime unchanged, old evidence not promoted beyond named new acceptance."
+    },
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T03:58:03.995927+00:00",
+      "reportRef": "implementation-found-24.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared conflict summaries native actual-admin adoption; sequence named acceptance; phased finalization not adopted. Historical evidence retains source/acceptance boundaries, no whole-audit completion."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
+    }
+  ]
+}

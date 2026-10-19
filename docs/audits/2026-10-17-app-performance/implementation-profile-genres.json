@@ -1,0 +1,358 @@
+{
+  "id": "PLAN-08",
+  "schemaVersion": 1,
+  "report": "implementation-profile-genres.md",
+  "recordedAt": "2026-10-18T01:35:19.481340+00:00",
+  "status": "partial_shared_genre_fallback_admission_implemented_actual_outputs_and_scan_reduction_verified",
+  "canonicalStatusEdited": false,
+  "scope": "Only unused metadata-snapshot fallback admission in the existing shared genreRows owner. Repeated watch aggregates, full history/date-series costs and other PLAN08 options remain.",
+  "applicationFilesChanged": [
+    "src/lib/server/queries/profile.ts"
+  ],
+  "testsAdded": [
+    "tests/profile-genre-projection-db.test.ts"
+  ],
+  "sourceBeforeSha256": "cc48016583bb73514f5024a6f96bb5a97b9fcb4cba277eaaab932b0d7782b5c2",
+  "sourceAfterSha256": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+  "sourcePins": {
+    "src/lib/server/queries/profile.ts": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e",
+    "tests/profile-genre-projection-db.test.ts": "ec0c1f32a2ed34f628a9afc91a9feb868be112d335fc537fa73b4edae559369f",
+    "src/lib/core/tracking/recorded-watches.server.ts": "8a42f9bca18f5f49799922aa27f3dcf55ccd7d540c8609d6d42a91a0c8c22f01"
+  },
+  "change": "Add o.genres IS NULL AND nullif(m.genres,'{}') IS NULL inside the existing metadata_snapshots lateral WHERE. Keep COALESCE, latest nonempty order/limit and all outer history/genre predicates unchanged.",
+  "consumers": [
+    "profileActivity genre breakdown for page/API insights",
+    "profileSummary exact named-genre and __other__ history filtering",
+    "profileData full route contract",
+    "profileSectionData history row contract",
+    "profileInsightsData period refresh"
+  ],
+  "preserved": [
+    "Explicit non-null override, including empty arrays, wins.",
+    "Nonempty media genres beat snapshots; null/empty media with null override still reads the latest nonempty snapshot.",
+    "Distinct media+genre membership, count/rank, top6+Other, filter strings, period/date/rewatch semantics and every returned DTO field.",
+    "Canonical owner/viewer privacy/features and per-statement fresh metadata; no cache or changed read snapshot.",
+    "Earlier DATA13 presentation/section work and unrelated app changes."
+  ],
+  "actualCensus": {
+    "ref": "evidence/implementation-profile-genres-census.json",
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s"
+    },
+    "owners": [
+      {
+        "ownerOrdinal": 0,
+        "history_media": 53,
+        "genre_roots": 17,
+        "override_roots": 0,
+        "empty_override_roots": 0,
+        "media_genre_roots": 14,
+        "fallback_needed_roots": 3,
+        "true_snapshot_fallback_roots": 3,
+        "missing_fallback_roots": 0,
+        "potentially_avoided_snapshot_probes_per_distinct_history_media": 40,
+        "bypassable_roots_with_snapshot": 14
+      },
+      {
+        "ownerOrdinal": 1,
+        "history_media": 6703,
+        "genre_roots": 442,
+        "override_roots": 0,
+        "empty_override_roots": 0,
+        "media_genre_roots": 439,
+        "fallback_needed_roots": 3,
+        "true_snapshot_fallback_roots": 3,
+        "missing_fallback_roots": 0,
+        "potentially_avoided_snapshot_probes_per_distinct_history_media": 6539,
+        "bypassable_roots_with_snapshot": 439
+      },
+      {
+        "ownerOrdinal": 2,
+        "history_media": 1313,
+        "genre_roots": 102,
+        "override_roots": 0,
+        "empty_override_roots": 0,
+        "media_genre_roots": 100,
+        "fallback_needed_roots": 2,
+        "true_snapshot_fallback_roots": 2,
+        "missing_fallback_roots": 0,
+        "potentially_avoided_snapshot_probes_per_distinct_history_media": 1279,
+        "bypassable_roots_with_snapshot": 100
+      },
+      {
+        "ownerOrdinal": 3,
+        "history_media": 10779,
+        "genre_roots": 775,
+        "override_roots": 0,
+        "empty_override_roots": 0,
+        "media_genre_roots": 770,
+        "fallback_needed_roots": 5,
+        "true_snapshot_fallback_roots": 5,
+        "missing_fallback_roots": 0,
+        "potentially_avoided_snapshot_probes_per_distinct_history_media": 10643,
+        "bypassable_roots_with_snapshot": 770
+      }
+    ],
+    "allOverrideRows": {
+      "total": 0,
+      "with_genres": 0,
+      "empty_genres": 0
+    },
+    "savedFavouriteArtists": {
+      "favourites": 0,
+      "owners": 0
+    },
+    "databaseWrites": false,
+    "providerCalls": false
+  },
+  "actual": {
+    "ref": "evidence/implementation-profile-genres-actual.json",
+    "status": "passed",
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s"
+    },
+    "owners": 4,
+    "completeComparisonCounts": {
+      "genreComparisons": 12,
+      "activityComparisons": 36,
+      "historyComparisons": 24
+    },
+    "completeComparisonsTotal": 72,
+    "allEqual": true,
+    "activityAllowed": 24,
+    "activityDenied": 12,
+    "historyAllowed": 16,
+    "historyDenied": 8,
+    "productionSourceUnchangedDuringCandidateProof": true,
+    "adoptedSourceMatchesVerifiedCandidate": true,
+    "snapshotScanComparison": {
+      "before": [
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "metadata_snapshots",
+          "Index Name": "metadata_snapshots_media_idx",
+          "Actual Rows": 2,
+          "Actual Loops": 10779,
+          "Shared Hit Blocks": 53894,
+          "Shared Read Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0,
+          "Rows Removed by Filter": 0
+        }
+      ],
+      "after": [
+        {
+          "Node Type": "Index Scan",
+          "Relation Name": "metadata_snapshots",
+          "Index Name": "metadata_snapshots_media_idx",
+          "Actual Rows": 2,
+          "Actual Loops": 136,
+          "Shared Hit Blocks": 680,
+          "Shared Read Blocks": 0,
+          "Temp Read Blocks": 0,
+          "Temp Written Blocks": 0,
+          "Rows Removed by Filter": 0
+        }
+      ],
+      "actualScanLoopsBefore": 10779,
+      "actualScanLoopsAfter": 136,
+      "readWorkReductionConfirmed": true
+    },
+    "planTotals": {
+      "before": {
+        "planningMs": 0.671,
+        "executionMs": 110.177,
+        "sharedHitBlocks": 103029
+      },
+      "after": {
+        "planningMs": 0.33,
+        "executionMs": 138.593,
+        "sharedHitBlocks": 49911
+      }
+    },
+    "alternatingSamples": {
+      "pairs": 4,
+      "beforeMedianMs": 100.06460400000105,
+      "afterMedianMs": 66.9510205000006,
+      "boundary": "Warm local clone round trips for the exact full genre query on largest actual recorded-history owner. Not endpoint latency, wire/CPU/RSS or universal performance."
+    },
+    "rolledBack": true,
+    "allPoolsClosed": true,
+    "normalDatabaseTouched": false,
+    "databaseWrites": false,
+    "providerCalls": false
+  },
+  "tests": {
+    "command": ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/read-projections.test.ts tests/profile-genre-projection-db.test.ts",
+    "runtime": "Bun1.4.3",
+    "passed": 8,
+    "guardedSkip": 1,
+    "failed": 0,
+    "assertions": 53,
+    "newGuardedRegression": "Explicit empty and nonempty overrides, null override/media precedence, latest nonempty fallback skipping newer empty snapshot, missing fallback, fresh snapshot update and subsequent media precedence.",
+    "boundary": "New authored DB correctness regression was parsed/discovered but not executed here. It rejects actual-clone fixture setup explicitly. Primary evidence is the72 actual-output comparisons and plans, not a fabricated cohort."
+  },
+  "review": {
+    "status": "independent_source_review_approved_no_material_issue",
+    "reviewer": "playback_readers_audit",
+    "sourceSha256": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+    "boundary": "Read-only exact before/current source review; no repeated tests/DB/writes. Confirms the exact COALESCE admission conditions, no multiplicity/order change, and explicit actual override gap."
+  },
+  "measurementLimits": [
+    "No actual metadata override rows (empty or nonempty), so those positive branches are a controlled-regression gap, not actual cohort evidence.",
+    "Read-work reduction is confirmed: metadata_snapshots index-scan loops10779\u2192136 and sharedhits53894\u2192680. Loops remain136 for repeated media belonging to5 true fallback roots; the query still preserves per-media counting.",
+    "Overall sharedhits103029\u219249911. All measured target scan blocks were cache hits, not physical disk reads.",
+    "Four warm local query pairs have median100.064604\u219266.9510205ms, but one EXPLAIN ANALYZE sample was slower after (138.593ms vs110.177ms). Do not infer universal elapsed speedup or endpoint latency.",
+    "Outer statement count, full recorded-watch/window processing, metadata projections, daily date series, ratings/seasons and cards are unchanged; no CPU/RSS/WAL/browser resource claim.",
+    "Actual owners, periods and selected genre/Other filters were executed under one repeatable-read snapshot. Full outputs were compared in memory and discarded; only sanitized counts/plans remain."
+  ],
+  "otherLeads": {
+    "PLAN-03": "No staleness/ranking hoist adopted: global scalar subqueries may already be InitPlans; JS hoisting would change freshness. Duplicate music-profile construction with favourite-artist augmentation has0 actual saved favourite artists.",
+    "PLAN-05": "Current one-definition-census-per-visit is retained. No new attribution/plan established for interest/adjacency caching, so no additional cache or production change."
+  },
+  "artifacts": {
+    "baseline": "candidates/profile-genres/profile.before.ts.txt",
+    "executedCensusProbe": "probes/profile-genres-census.ts",
+    "exactBeforeAdoptionProbe": "probes/profile-genres-candidate-actual.ts",
+    "maintainedCurrentProbe": "probes/profile-genres-real.ts",
+    "census": "evidence/implementation-profile-genres-census.json",
+    "actual": "evidence/implementation-profile-genres-actual.json"
+  },
+  "probeBoundary": "Exact executed census and pre-adoption probe are retained unchanged. Maintained post-adoption probe only relocates repository/baseline paths and asserts the current candidate pin; it has been syntax-checked, not rerun against the clone in this publication.",
+  "artifactSha256": {
+    "candidates/profile-genres/profile.before.ts.txt": "cc48016583bb73514f5024a6f96bb5a97b9fcb4cba277eaaab932b0d7782b5c2",
+    "probes/profile-genres-census.ts": "1619b91333fffc4049cd41e79d882e018e9027a85b1ffc4f03bfde873f713f2f",
+    "probes/profile-genres-candidate-actual.ts": "2c42a31372189e432af3c7707fc5493402fabf55debe1aa25b85f72bed0fe794",
+    "probes/profile-genres-real.ts": "2e7892829e104445f0d16499980c7b4d0105774f41a4c4fae3f26b3f0ef7d964",
+    "evidence/implementation-profile-genres-census.json": "ca01d5b1de455441e6d6cc445e0c697bb162838668dba8963c32e2be5da3ca41",
+    "evidence/implementation-profile-genres-actual.json": "f566cb0abc3d91b2ca211f1acd3aef8b5f32ce5838523f340cc282e11632a930"
+  },
+  "rootCurrentNormalAcceptance": {
+    "receipt": "evidence/implementation-summary-avatar-normal.json",
+    "signedIn": true,
+    "chooserCancelReopenSavedPreviewUnchanged": true,
+    "normalProfileSaveSubmitted": false,
+    "genreHeadingRendered": true,
+    "settledLibraryMediaLinks": 120,
+    "completedPrivateImages": 29,
+    "tasks": 30,
+    "newWarningsErrors": 0,
+    "sourceManifestUnchanged": true,
+    "scope": "Normal functional UI acceptance; API bearer-token/auth/quota HTTP and precise provider/decode/cancel timing remain uninstrumented."
+  },
+  "rootCommonAndNormalAcceptance": "784pass/704guardedskip/0fail/33604assertions/1488tests/269files, check0/0/build/inventories; normal5173chooser/Profile/Library/Tasks functional pass.",
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterFound07IdentityAdvance": {
+    "at": "2026-10-18T22:39:47.956698+00:00",
+    "ref": "implementation-found-07.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5",
+        "after": "b105d63777dd22496674950d457d81e889eb26da17cfc0a21c6a90411e3ec318"
+      }
+    },
+    "boundary": "Current reviewed identity only; original historical actual receipts remain immutable. Profile candidate has its own108complete actual comparisons and final common/normal checks. No Collection candidate adopted."
+  },
+  "laterFound10IdentityAdvance": {
+    "at": "2026-10-18T23:35:57.455314+00:00",
+    "ref": "implementation-found-10.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "b105d63777dd22496674950d457d81e889eb26da17cfc0a21c6a90411e3ec318",
+        "after": "1a49d5e2b59ccf222233a18e896952d21941255b938b114c31a3aa617f7acd12"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical receipts/limits remain immutable; new Profile query has36actual complete outcomes, current UI acceptance and supplementary pending controls. Other owners not retested."
+  },
+  "laterFound11IdentityAdvance": {
+    "at": "2026-10-18T23:42:10.655439+00:00",
+    "ref": "implementation-found-11.md",
+    "paths": {
+      "src/lib/server/queries/profile.ts": {
+        "before": "1a49d5e2b59ccf222233a18e896952d21941255b938b114c31a3aa617f7acd12",
+        "after": "7b22e7ed057544924720f0a7ff1386b0061ece42757303c6bb4f473a85b7a22b"
+      }
+    },
+    "boundary": "Reviewed identity only. Historical source/proofs stay immutable. Guarded count reuse has192actual section comparisons and final gates/native panel; prior activity owner body is unchanged, its receipt not newly rerun."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:32:19.107523+00:00",
+      "path": "src/lib/server/queries/profile.ts",
+      "beforeSha256": "7b22e7ed057544924720f0a7ff1386b0061ece42757303c6bb4f473a85b7a22b",
+      "afterSha256": "21149729c90b373f5f59e922e303031d4bec45eb4d6625a96f82789ac16cd03a",
+      "beforeRef": "candidates/found-implementation-13/profile.before.ts.txt",
+      "reviewRef": "implementation-found-13.md",
+      "boundary": "Only internal Profile activity projection narrows; other functions and contracts are byte-identical. Current identity review does not re-run or upgrade old evidence. Guide append records current proof and rejected Taste alternative."
+    },
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/queries/profile.ts",
+          "before": "21149729c90b373f5f59e922e303031d4bec45eb4d6625a96f82789ac16cd03a",
+          "after": "4d22f950ec5b1bc246e963c65eb48cb6bbdb5e9e0489c450f84a01b34ab1b13e"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    }
+  ]
+}

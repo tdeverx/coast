@@ -1,0 +1,289 @@
+{
+  "id": "PR-09",
+  "schemaVersion": 1,
+  "report": "implementation-reading-context.md",
+  "recordedAt": "2026-10-18T01:15:48.613104+00:00",
+  "status": "narrow_request_context_implemented_actual_census_controlled_contracts_and_normal_CBR_lifecycle_pass_broader_acceptance_open",
+  "canonicalStatusEdited": false,
+  "sourceBeforeSha256": "3f0d9b0b65620d4abbacf4dcaf0e992106e20963ed45b873df195d245249e923",
+  "sourcePins": {
+    "src/lib/reading/sessions.server.ts": "989979b445037540bb17ce1f172dc1af249713b4dcbc11673706813a11bca9aa",
+    "tests/fixtures/reading-request-context.ts": "e05d3269773021338eca2a548a35d7605d10e89b385c1aa262e4890d0a238f58",
+    "tests/reading-request-context.test.ts": "33f82d882ee584bd54a6f16566772a6166a90f1bc8ce8ea613b2589facae3ee1",
+    "src/lib/providers/jellyfin/connection.server.ts": "625eeb87200dfe91ff1fcf7a8485eb8c6051037360f8573d4b8a33b5c947f04b",
+    "src/lib/providers/connections.server.ts": "4ea7ef7b06a8dc16e3800a34b0c58f7ca7446861a3d17cb5b3ecfe6a8830efc1",
+    "src/lib/providers/instances.server.ts": "5d293e24f3480c30f58b4e0ece008c24d3b2ed0f933fcc9051c831ad22a27f58",
+    "src/lib/providers/jellyfin/reading.server.ts": "401b39e1d9c2953ad349afd60eef6796847027417629de6acaa8573dbd99399e",
+    "src/lib/server/api/reading.server.ts": "f6c9ceed6606cabc2b5500e33a0c3d49a01f6cb44bd972a943599a92fcb17ebc",
+    "src/lib/core/reading/service.server.ts": "9db56d628c38297a7f017fa9b510baaad0394a2295a1eb233036561e08fb3330",
+    "src/lib/catalogue/reading-files.server.ts": "0c50840291643676a9aa356361a74545393d82b70f71c1e2fdd9616789e3d2fc",
+    "src/lib/playback/synced/service.server.ts": "bf228ef304b2610d04e1d066d4db754c82ae5885a010a3d638265e7e9d2f4ce6",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/hooks.server.ts": "fbb000658e73f3727fbd13515cee37c1b1da806330527827d4ddfc9c1e3921fc",
+    "src/lib/server/auth/index.ts": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d",
+    "tests/fixtures/reading-request-cancellation.ts": "b65a65fd290fa13ea3dbbdfa8e3422cda9b0cb4951339204338ddb81556d3d01",
+    "src/lib/catalogue/details.server.ts": "dc3ab769b44ef0108824d684de2c5e0b9a468717a95666fedfe14c963bd8b4cf",
+    "src/lib/providers/tmdb/details.server.ts": "862050a2bf078b192cab4445064c68ba8228ef1a003208f69c93046488feda10",
+    "src/lib/providers/tmdb/adapter.server.ts": "8258fd241769f8c5354ee31ba1e15af99aa09900a55ca55f7984f30abb62c672"
+  },
+  "applicationFilesChanged": [
+    "src/lib/reading/sessions.server.ts"
+  ],
+  "testFilesAdded": [
+    "tests/fixtures/reading-request-context.ts",
+    "tests/reading-request-context.test.ts"
+  ],
+  "change": "One private readingSessionContext operation resolves and generation-checks Jellyfin once. Keep exported ownedReadingSession row-only; streamReading consumes that exact verified context for metadata/fingerprint and byte relay.",
+  "lifetime": "Only an operation-local value; no memoizer, cache, cross-request capability or new client field. Every separate GET/HEAD/Range/owned operation starts fresh.",
+  "consumers": [
+    {
+      "owner": "streamReading",
+      "callers": "GET/HEAD /api/v1/reading/sessions/:id/file; PDF/CBZ ranges, EPUB/native archive download and each participant own linked copy",
+      "effect": "Remove second getJellyfin lookup only."
+    },
+    {
+      "owner": "ownedReadingSession",
+      "callers": "moveReading, touchReading, synced createRoom/joinRoom/commandRoom",
+      "effect": "Same exported session row and fresh validation; no context exposed or retained."
+    },
+    {
+      "owner": "prepareReading/observeReadingFile/moveReading/core updateReading/party transactions",
+      "effect": "Existing validation, policy/account locks and account-generation/publication fences unchanged."
+    }
+  ],
+  "preservedChecks": [
+    "Fresh browser auth and per-operation owned/open/unexpired session predicate; exact work-edition identity-conflict exclusion.",
+    "Enabled user, reading work, reader/medium feature checks and enabled connected Jellyfin instance/account.",
+    "The returned source context itself is checked against saved session accountGeneration.",
+    "Fresh per-user provider item lookup, exact item identity, format and complete sourceEdition fingerprint on every remote file request.",
+    "Request signal, one-range validation, GET/HEAD method, 20s provider timeout,512MiB stream cap, error/body cancellation, safe response-header allowlist and private no-store.",
+    "Existing prepare file-observation/source-generation and account/policy transaction fences; progress and party admission/publication checks."
+  ],
+  "actual": {
+    "ref": "evidence/implementation-reading-context-census.json",
+    "status": "read_only_census_passed",
+    "session": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s"
+    },
+    "works": [
+      {
+        "kind": "comic",
+        "works": 12,
+        "with_page_count": 0,
+        "minimum_page_count": null,
+        "maximum_page_count": null
+      }
+    ],
+    "editions": [
+      {
+        "format": "cbr",
+        "editions": 6,
+        "works": 6,
+        "instances": 1,
+        "conflicts": 0,
+        "with_fingerprint": 6
+      },
+      {
+        "format": "cbz",
+        "editions": 6,
+        "works": 6,
+        "instances": 1,
+        "conflicts": 0,
+        "with_fingerprint": 6
+      }
+    ],
+    "sessions": [
+      {
+        "format": "cbr",
+        "total": 4,
+        "owners": 1,
+        "remote": 4,
+        "closed": 1,
+        "expired": 0,
+        "active": 3,
+        "active_remote": 3
+      }
+    ],
+    "sessionAccess": {
+      "remote_sessions": 4,
+      "connection_present": 4,
+      "same_generation": 4,
+      "connected": 4,
+      "enabled_jellyfin": 4,
+      "credential_material_present": 4,
+      "enabled_owners": 4,
+      "active_candidate_sessions": 3
+    },
+    "linkedOwnerCohorts": [
+      {
+        "format": "cbr",
+        "candidate_bindings": 24,
+        "works": 6,
+        "owners": 4,
+        "connections": 4,
+        "enabled_owner_bindings": 24,
+        "fingerprinted_bindings": 24
+      },
+      {
+        "format": "cbz",
+        "candidate_bindings": 24,
+        "works": 6,
+        "owners": 4,
+        "connections": 4,
+        "enabled_owner_bindings": 24,
+        "fingerprinted_bindings": 24
+      }
+    ],
+    "progress": [
+      {
+        "state": "reading",
+        "records": 1,
+        "with_page_progress": 1,
+        "with_total": 1,
+        "maximum_total_pages": 23
+      }
+    ],
+    "databaseWrites": false,
+    "providerCalls": false,
+    "normalDatabaseTouched": false,
+    "poolClosed": true,
+    "boundary": "Persisted facts only; no real credential decryption, provider metadata, byte Range/HEAD response or elapsed gain was validated."
+  },
+  "supplementary": {
+    "ref": "evidence/implementation-reading-context-ownership.json",
+    "casesBefore": 19,
+    "casesAfter": 19,
+    "status": "passed",
+    "realOwners": [
+      "reading session source",
+      "getJellyfin",
+      "connectionFor",
+      "getInstance",
+      "JellyfinAdapter/jellyfinBook"
+    ],
+    "controlledBoundaries": [
+      "database rows",
+      "feature policy",
+      "credential decryption",
+      "provider transport/Download"
+    ],
+    "successfulGetHead": {
+      "countedLocalSelectsBefore": 7,
+      "countedLocalSelectsAfter": 5,
+      "providerConnectionSelectsBefore": 2,
+      "providerConnectionSelectsAfter": 1,
+      "providerInstanceSelectsBefore": 2,
+      "providerInstanceSelectsAfter": 1,
+      "credentialDecryptionsBefore": 3,
+      "credentialDecryptionsAfter": 2,
+      "featureCallsBeforeAndAfter": 1,
+      "metadataCallsBeforeAndAfter": 1,
+      "downloadCallsBeforeAndAfter": 1
+    },
+    "boundary": "Policy SQL and configuration queries are controlled here, so7\u21925 is not whole-request SQL count. Required metadata/byte requests remain; no actual file or runtime speedup claim."
+  },
+  "tests": {
+    "command": ".tools/bun-1.4.3/bun-darwin-aarch64/bun test tests/reading-request-context.test.ts tests/reading-request-cancellation.test.ts",
+    "runtime": "Bun1.4.3",
+    "passed": 2,
+    "failed": 0,
+    "outerExpectCalls": 6,
+    "contextSchedules": 19,
+    "cancellation": "Existing isolated queued/active/already-aborted lookup and identity controls pass unchanged.",
+    "boundary": "Controlled correctness, not fixtures executed against the actual clone. Initial test-mock missing export and private baseline alias invocation were probe setup corrections, not application failures."
+  },
+  "review": {
+    "status": "independent_read_only_approved_no_material_issue",
+    "reviewer": "playback_readers_audit",
+    "sourceSha256": "989979b445037540bb17ce1f172dc1af249713b4dcbc11673706813a11bca9aa",
+    "boundary": "Source review only; no test/DB rerun. Review remains valid after two local-session supplementary controls were added; application source unchanged."
+  },
+  "liveAcceptance": {
+    "status": "normal_signed_in_current_source_actual_CBR_functional_pass",
+    "existingEvidence": [
+      "evidence/normal-dev-live.json",
+      "implementation-playback.md"
+    ],
+    "visiblePath": "Library -> View all Read -> an actual issue -> Read using its saved linked CBR; previously accepted23-page image/turn/minimize/resume/close flow.",
+    "privateTitleOrUuidRetained": false,
+    "next": "Actual PDF/EPUB/CBZ Range/HEAD byte/status/header traces and reconnect/revocation/file-change interleavings, with actual request resource accounting.",
+    "currentReceipt": "evidence/implementation-context-material-normal.json"
+  },
+  "limits": [
+    "No measured latency, heap/RSS, wire-byte, WAL or provider-call reduction. The actual census is not a delivery equivalence trace.",
+    "Current stream has no new database publication lock after provider I/O. This local reuse does not promise to stop every already in-flight response after a later committed local revocation; no existing transaction fence was removed.",
+    "One fresh context replaces two consecutive pre-provider resolutions; the former second re-read was not checked against session generation. The same context used for metadata/Download is now the one compared with that generation.",
+    "No positive actual PDF/EPUB session, denied provider access, file-change, reconnect or Range/HEAD payload trace was supplied in this task.",
+    "Full provider/connection/session projections and the remaining Download header decrypt stay unchanged.",
+    "Census and controlled ownership probes read no normal database credentials/keys, changed no normal schema/preferences, fabricated no catalogue and made no actual provider request. Separate normal browser acceptance necessarily exercised the real provider/file and may save reading progress/time. No dependency was added."
+  ],
+  "pj13ReadOnlyAssessment": {
+    "status": "option_only_no_implementation",
+    "owner": "src/lib/catalogue/details.server.ts titleInsights/100-entry15-minute complete insights cache + TMDB details owner",
+    "current": "Review-page key causes TMDB base+credits fetch before each uncached review page. Season/episode paths make no review call; Trakt shares the existing bounded cache.",
+    "minimalOption": "Split TMDB invariant facts/crew and page-specific reviews, compose through an explicitly bounded existing typed cache owner, preserving DTO/error/incomplete/language/region/source semantics.",
+    "boundary": "A second independent100-entry base cache expands the present aggregate budget. Invariant reuse changes base refresh timing across review pages, including incomplete-review behavior; select a concrete bounded freshness contract first.",
+    "affectedFiles": [
+      "src/lib/providers/tmdb/details.server.ts",
+      "src/lib/providers/tmdb/adapter.server.ts",
+      "src/lib/catalogue/details.server.ts"
+    ],
+    "actualGap": "No retained actual consecutive review-page/provider response trace; local metadata is not a full wire-content oracle.",
+    "nextTest": "Capture actual base+credits and consecutive review page responses, compare complete DTO/failure/incomplete/TTL/eviction/concurrent behavior and provider counts; keep Trakt and child-path controls."
+  },
+  "artifacts": {
+    "baseline": "candidates/reading-context/sessions.before.ts.txt",
+    "censusProbe": "probes/reading-context-census.ts",
+    "controlledProbe": "probes/reading-context-ownership.py",
+    "actualCensus": "evidence/implementation-reading-context-census.json",
+    "controlledCounts": "evidence/implementation-reading-context-ownership.json"
+  },
+  "artifactSha256": {
+    "candidates/reading-context/sessions.before.ts.txt": "3f0d9b0b65620d4abbacf4dcaf0e992106e20963ed45b873df195d245249e923",
+    "probes/reading-context-census.ts": "3fa2c3555f22e6b1d3bfbdf4d33773a170037ac2b193ce5acd08e574c87517e0",
+    "probes/reading-context-ownership.py": "15a9080f744be7eccc4eeb7666b8d998da405f9e7ed25c34afbdac8ff25a1b9e",
+    "evidence/implementation-reading-context-census.json": "8e4fb50fa5576bb41d95a9919ea8a294d4fedd649725e39dc0292e42d09db5ea",
+    "evidence/implementation-reading-context-ownership.json": "c3a30b05d086264e68520589afa825303d2f0fb04b8213e2869a4de410f5b0bf"
+  },
+  "rootCurrentNormalAcceptance": {
+    "receipt": "evidence/implementation-context-material-normal.json",
+    "signedIn": true,
+    "actualCbrFunctionalLifecyclePassed": true,
+    "nativeHeaderAndAccountMenuRendered": true,
+    "sourceManifestUnchanged": true,
+    "newConsoleWarnOrError": 0,
+    "remaining": "No byte/range/HEAD/SQL/decrypt instrumentation, DOM object identity, GPU/frame/pixel or heap claim."
+  },
+  "laterCollectionAdmissionChange": {
+    "report": "collection-insights-admission.json",
+    "previousReferencePin": "ab72ccba2d2144bc84b0bed1e14bec87be4cb264eeda56a9a2ba69003d67d567",
+    "currentReferencePin": "dc3ab769b44ef0108824d684de2c5e0b9a468717a95666fedfe14c963bd8b4cf",
+    "boundary": "Only unsupported collection admission moves before unused identity/region/adapter setup. Earlier reading/Tasks/cache-corpus evidence remains historical and was not rerun; cache/source/page/freshness behavior for supported kinds is unchanged. New five actual service comparisons and5/75authored controls belong to the separate collection report.",
+    "currentCombinedAcceptance": {
+      "commonGateReceipt": "evidence/implementation-20261018-collection-admission-gates.json",
+      "normalSmokeReceipt": "evidence/implementation-collection-admission-normal.json",
+      "boundary": "Current common gates and actual unsupported-kind normal null route checks passed. Earlier owner/cache/provider measurements remain historical and were not rerun."
+    }
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/auth/index.ts",
+          "before": "83f1acbafb3e083d2bc56b31b9880afa16739566e88f801603e02d34a2bf0ebf",
+          "after": "10da4e956ade7515c865a8d2a3da8aae0bf9c03d137c6b99fba648a27f36021d"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    }
+  ]
+}

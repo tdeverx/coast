@@ -51,7 +51,7 @@ export async function discoveryContent(userId:string,raw:unknown):Promise<Discov
   return input.surface==='watch'?screenDiscovery(userId,input.section):input.surface==='play'?gameDiscovery(userId,input.section):musicDiscovery(userId,input.section);
 }
 async function screenDiscovery(userId:string,section:DiscoverySection):Promise<DiscoveryContent>{
-  const data=await discoverMedia(userId);
+  const data=await discoverMedia(userId,section);
   const ids=section==='recent'?data.recent:data.trending;
   const items=await mediaViews(userId,{ids,limit:60});
   const byId=new Map(items.map(i=>[i.id,i]));

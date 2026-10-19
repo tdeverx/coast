@@ -1,0 +1,523 @@
+{
+  "head": "eb0673873462b71118d1c11678d128958a05ff07",
+  "date": "2026-10-17",
+  "scope": "Residual shared UI components, settings/admin form compositions, work-menu and common control adapters",
+  "files": [
+    {
+      "file": "src/lib/collection/projection.server.ts",
+      "lines": 211,
+      "sha256": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/social/service.server.ts",
+      "lines": 138,
+      "sha256": "cd1d95a5755bef10eb12e62553c78960da25b9fb8272f0d02fae369fed9166e5",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/client-context.ts",
+      "lines": 14,
+      "sha256": "1e52c695112d35c360017bbbb449c444a27f26c3f521d3f9e5f72cf7e0b4f67b",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/client.ts",
+      "lines": 106,
+      "sha256": "af61ef7082bf81470584fcbd9912f91f3e0b880b05485101a45b38ce1bc9af53",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/AccountFields.svelte",
+      "lines": 9,
+      "sha256": "85f12a7dfdb20177a243b6bec1db1a32cdcd943eca961b75a33396f6ebffa6c9",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/ActivityHeader.svelte",
+      "lines": 20,
+      "sha256": "2024e6c0681aa98b478e65ec075e56e7640fe59b50a701d5aaf3fd8bb80bea65",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/Brand.svelte",
+      "lines": 24,
+      "sha256": "622869af25f7b201969f399af8e81583d0e9fa1194527c2ffdbf1fbae717a430",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/Button.svelte",
+      "lines": 125,
+      "sha256": "de5c965c139f864e6254cfc77c57c5c1d5c0cf97b3f53b70852d931e15ad31cd",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/ChoiceGroup.svelte",
+      "lines": 17,
+      "sha256": "96b415b83d39604a8f0f3539e874464185b36554ac2086ba636d59f7de2bcb17",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/CollectionProjectionSettings.svelte",
+      "lines": 45,
+      "sha256": "f3c4a63b930f30a728bc764b631baf804c0dae5b8147e061a48d0038ec8a7b12",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/ConflictList.svelte",
+      "lines": 116,
+      "sha256": "d897f318157faa15ab8f667f3e612a61321d3abb5d01ab7d9bcb4c17ed6f155a",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/EmptyState.svelte",
+      "lines": 24,
+      "sha256": "843508e6fc4a55ac311636379339c1a3b70cf6eb6bb0a4f9393560d861154cbe",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/FactList.svelte",
+      "lines": 43,
+      "sha256": "982b62bccf01bbd08728377d1267638dcb2cf2587cf0c2a7f4e1b813646af56b",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/Field.svelte",
+      "lines": 5,
+      "sha256": "d42f4742f152d976c4bc59dd63da9bc5a2bd4de776da9c2ee2d9ff71b279bde2",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/FormActions.svelte",
+      "lines": 6,
+      "sha256": "0096f4f80a767646d61fc1f0c6f4150e44c16248b0a91c0be63ef4a2d908fb93",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/FriendRoster.svelte",
+      "lines": 24,
+      "sha256": "7248ea9f16ad88714328a7870ea862ab8858ea620544b0434670baeb95f4c2f5",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/Heading.svelte",
+      "lines": 138,
+      "sha256": "c8bd592d0b637da8c1bd5dfa7344f1894efa25ba9015002a0ca38d808e27428d",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/Icon.svelte",
+      "lines": 123,
+      "sha256": "24120bbe501cc5d103c1f75d6294dbaf9e71da58f7efe39a20a585f041876eaa",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/IdentityCard.svelte",
+      "lines": 31,
+      "sha256": "31249d6bc96fce8aef76ee84c43691f0728181b4c09f4b6ae49f9039efbb0d5c",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/IntegrationSettings.svelte",
+      "lines": 273,
+      "sha256": "14dca90d757f8d3e0f990150cb14706e85c7a993f01065071902925950211a74",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/JobSchedule.svelte",
+      "lines": 312,
+      "sha256": "d282369189bb64a6ca9fd746875000b7cb4fb6e9e81d7c2eae246b097303e863",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/MediaActivity.svelte",
+      "lines": 35,
+      "sha256": "360efd31223278bbd357de75a5913ba33c1454f876b04800c54b57b9fbc954ca",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/MediaDetailRows.svelte",
+      "lines": 49,
+      "sha256": "71e828c7abe3ce024a4f8a734fc1d4b091afdfa4f6f0246c27a030323252b2eb",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/MediaDetails.svelte",
+      "lines": 37,
+      "sha256": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/MediaPage.svelte",
+      "lines": 61,
+      "sha256": "afb2bc49fae57d30b462ecae9435884073255e84a7726877fac9e5e2b36bff27",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/MetadataEditor.svelte",
+      "lines": 176,
+      "sha256": "04086155ab4f167ec86ad8047561e537c1cda400a00879b95919013f8dd5935c",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/MetricGrid.svelte",
+      "lines": 58,
+      "sha256": "238a00334c55146efb96a5e3743562136d5c319ad50f92b57d08906e6ee35fd2",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/OperationProgress.svelte",
+      "lines": 15,
+      "sha256": "1c946dc3e947cc37045aabf74ef20f0e325632cba9044798f6ba2e016cc2d202",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/Pagination.svelte",
+      "lines": 34,
+      "sha256": "60339601773c7eaf9286f23882c37d223a7f43f5480707d850cb1d6f6bc04a27",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/PartyCard.svelte",
+      "lines": 43,
+      "sha256": "e1103f971fa324a1c61072f7c945c37df6c0ef916889951e1c14a23b67cef2d4",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/PartyMenu.svelte",
+      "lines": 136,
+      "sha256": "b98ebb4a117e5702dcf3a4c4cb1cce64fd9c9f878231c5cce796fc2a32bab31a",
+      "reviewDepth": "previous deep playback audit plus common control integration recheck; no duplicate finding counts",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/PersistentPlayer.svelte",
+      "lines": 908,
+      "sha256": "c586c957730247a79835d3ff817ec9836dac9a99d1f5a93fc6c3abf51fd4a2ca",
+      "reviewDepth": "previous deep playback audit plus common control integration recheck; no duplicate finding counts",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/PlaybackTimeline.svelte",
+      "lines": 82,
+      "sha256": "58f0ed9b62cf51d3a0cf3c1bc484769e9de682adb7e59f8a2f49a1b8b0d316ef",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/ProfileEditor.svelte",
+      "lines": 84,
+      "sha256": "0045838745fdd72440d141bb4fc08ae443a8523d6c5b0cd490852c873e3cc385",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/ProfileFeatureEditor.svelte",
+      "lines": 66,
+      "sha256": "34205f691872181d892f44efceca6c8020ab3509732d3eba4d3fc0e64cc3a4dc",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/ProfileRecap.svelte",
+      "lines": 58,
+      "sha256": "5020d0d3ed99d0555d17fcec9e25eb78f8c6938abf8251aa6923260f7c2994a0",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/ProgressBar.svelte",
+      "lines": 11,
+      "sha256": "59082572cc0a1024e0c1c870b5809c2195a6e8b2f58cbf8a7195bd2d198fe242",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/ProviderAutomation.svelte",
+      "lines": 100,
+      "sha256": "961e458595ed32d62e6fb321c4a2eac96fb82bde11f20a38ee469785bba028ef",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/QueueList.svelte",
+      "lines": 107,
+      "sha256": "21740f1c214e93775bff999fc3a677b46fd78596f866816288a583589d1c163e",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/Rating.svelte",
+      "lines": 160,
+      "sha256": "48c96fa67504e80fff7ea08316a255caf54a004d65eaef0825d04e1fe0304f6c",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/ReactionActions.svelte",
+      "lines": 50,
+      "sha256": "a17058e3945ca951ca07ed3b0afbdf0954fe113c364c42f28eac20e18b1f39ed",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/RecommendAction.svelte",
+      "lines": 46,
+      "sha256": "6f6c6bd3f2e2e738327657a61aaa174bc1a5ccf48b7dec9c78d68598b0133cc4",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/RequestDialog.svelte",
+      "lines": 178,
+      "sha256": "18e513389c48a496ce1c7214c2cc4a1c8662d203f331c309cd682850ed067674",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/RowFilter.svelte",
+      "lines": 37,
+      "sha256": "6996cb9f6fa56a6d3b6190caecb7db56d057f587af517e780ba2b2c0e157f439",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/RowStyleMenu.svelte",
+      "lines": 93,
+      "sha256": "8887ea8d6f2ce93fc2f094e9e3e7c2d932cbb827533f4bcba1b7175708489dd6",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/SegmentedControl.svelte",
+      "lines": 61,
+      "sha256": "c7142c4038d28abded1dbd578e64c73ed07348f5695aede77cb75995e1853f78",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/SettingsRow.svelte",
+      "lines": 17,
+      "sha256": "f7af80630349e8c81ab780084ed9b9c3c49a8ac17e88c9851328b01139b4b3fe",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/SocialControls.svelte",
+      "lines": 24,
+      "sha256": "68aac9fcd8439781043404d2d45bf5a3127703d6f06d56496731a143697eb05a",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/SyncedControls.svelte",
+      "lines": 55,
+      "sha256": "0d71c2efddede1062ba55273e31c072e7c38d67d01f83b0ec734dd01e6ed9969",
+      "reviewDepth": "previous deep playback audit plus common control integration recheck; no duplicate finding counts",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/TextLink.svelte",
+      "lines": 13,
+      "sha256": "770ae4d543ff4399b9b158025a0d22c809c0e9625ec981ea33c75ba8cc9a60aa",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/Toast.svelte",
+      "lines": 22,
+      "sha256": "077d4433a37b3bba6c11f8091edfe13d2d969bad7d33af0d05789653482b45ca",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/WorkActions.svelte",
+      "lines": 35,
+      "sha256": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/WorkListActions.svelte",
+      "lines": 35,
+      "sha256": "7da77fce0df3f2c20af1087f0d2a234b3ea39b53218188c0247321b404cdc5d4",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/components/WorkMenu.svelte",
+      "lines": 38,
+      "sha256": "510bd0cc9d8b6f8b2c223ffdd3da60b5361591fba5f2af9c0ea7f4679619c553",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/context-gesture.ts",
+      "lines": 85,
+      "sha256": "9d5c5049d0311fd58fae58a13cfa2593efe96c6d3df7c836f1ad005eee66277d",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/controls/actions.ts",
+      "lines": 23,
+      "sha256": "74b419136c86408450f07cd8c228ce951ac1354b3b03bf03f7d28a5e2e43e426",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/controls/filters.ts",
+      "lines": 6,
+      "sha256": "20b9f9de2dfeae54045ddac259c5a4915c722090cf24da9b20f9ad04ef1855e2",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/controls/menu-resource.svelte.ts",
+      "lines": 85,
+      "sha256": "7695cc48f4c22899cd9609df7e7784c8df6c7102e9d9ca6cf50a9f3001ab77b5",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/controls/menu.svelte.ts",
+      "lines": 331,
+      "sha256": "193db0b6d6f0b5d53b424f3a29b1316d9a83453464562b32962c66968b457e4c",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/controls/queue.svelte.ts",
+      "lines": 22,
+      "sha256": "39abd3af90f6ef30a37b13b6e27f206bfa2c0f7dc6fb751730d6be5865aa9dbd",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/controls/requests.svelte.ts",
+      "lines": 92,
+      "sha256": "4e3336297c2a46649e85750e6f9bf1977e00df7da62078b06f2b8d04201f2546",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/controls/sequence.svelte.ts",
+      "lines": 50,
+      "sha256": "92adba067c1cee6a3127714420e2c4612279cef365dd9ff86cfc843c227c16aa",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/controls/work.svelte.ts",
+      "lines": 47,
+      "sha256": "f233383cc9c2cf0e68957741853129a512844f25a30cb4426683961a057bfc3c",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/friends.svelte.ts",
+      "lines": 18,
+      "sha256": "6206e7387bf915ecc0a74dc882036b4c0d4f2850d7dcc6eafeb5b75ba2784a0d",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/mutation.svelte.ts",
+      "lines": 19,
+      "sha256": "b8d1cefaf4dd4bf0ac589e3ca6f7c6e4c078012a0b1f366647c7fbd21861f217",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/operation.svelte.ts",
+      "lines": 13,
+      "sha256": "c0a20e789db76cc0a4a5c4a66429e74937c7aae9005c3beed2141ce11d95653f",
+      "reviewDepth": "targeted shared-owner/API boundary read; complete implementation outside relevant seams remains with existing audit owner",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/work-menu/CatalogueActions.svelte",
+      "lines": 200,
+      "sha256": "8730b941dc8e5c38042c3bfc024e2638f7fb2f9531a289975cbff5d9ef3c4414",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/work-menu/GameCommands.svelte",
+      "lines": 79,
+      "sha256": "011cbf53f30dd01e1be92683b052baabb2915c3fc15d35fe2685121506fa628d",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/work-menu/MusicCommands.svelte",
+      "lines": 32,
+      "sha256": "88f77aef3bcfdd074dc499afce08ec4961ece8413dd00f200589a0ef2be1ed0f",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/work-menu/ReadingCommands.svelte",
+      "lines": 50,
+      "sha256": "552ac16913f945be70a4d9c9c144ad2d2db85bb5612eaf9cfd2780fb38952a55",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    },
+    {
+      "file": "src/lib/ui/work-menu/ScreenActions.svelte",
+      "lines": 899,
+      "sha256": "a0820eb7da5b0603293a787e2ac4cbd52e821f1aa5cc0ef1efda654cd0675046",
+      "reviewDepth": "script/control flow and template allocation/lifetime review; CSS inspected only for animation/resource relevance",
+      "runtimeVerification": "source only in this sweep; actual root aggregates referenced; no synthetic tests"
+    }
+  ],
+  "sourceCount": 71,
+  "sourceLines": 6779,
+  "limitations": [
+    "No new browser/provider/backend execution or synthetic tests in this sweep",
+    "UI second pass retains Shelf/card/layout/material internals; root retains media feature details and route pages; provider agent charts/preview/benchmark/diagnostics",
+    "Source coverage does not certify actual user timing/heap/frame rate"
+  ],
+  "newFindingIds": [
+    "UIC-01",
+    "UIC-02",
+    "UIC-03",
+    "UIC-04"
+  ],
+  "canonicalOwners": {
+    "UIC-01": "workMenuScope primitive identity",
+    "UIC-02": "existing request-option resource and cancellation chain",
+    "UIC-03": "common mutation acknowledgement/refresh completion",
+    "UIC-04": "durable preview read DTO and shared bounded review composition"
+  }
+}

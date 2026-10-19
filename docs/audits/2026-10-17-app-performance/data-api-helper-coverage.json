@@ -1,0 +1,984 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-17",
+  "sourceHead": "eb0673873462b71118d1c11678d128958a05ff07",
+  "files": [
+    {
+      "path": "src/lib/media/actions.ts",
+      "sha256": "131aea05be6ee90bb430a60e42086814fe21c46491149dc7ad6f60a1ec494d1d",
+      "lines": 51,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Complete finite action/model/schema/helper read;identity/card contracts andvalidation boundaries;no independent resource owner.",
+      "exports": [
+        {
+          "name": "isMediaGroup",
+          "line": 3
+        },
+        {
+          "name": "isResumable",
+          "line": 5
+        },
+        {
+          "name": "targetLabel",
+          "line": 7
+        },
+        {
+          "name": "MediaActionData",
+          "line": 9
+        },
+        {
+          "name": "MediaHistory",
+          "line": 35
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/artwork.ts",
+      "sha256": "1ec9f7413e9ef86b981149b3bbdfa3096518ff340d41c7d524f625e82bb1b5f1",
+      "lines": 76,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Finite artwork-level/type selection and URL deduplication; source precedence retained; no network allocation or cache.",
+      "exports": [
+        {
+          "name": "orderedArtwork",
+          "line": 6
+        },
+        {
+          "name": "cardArtwork",
+          "line": 15
+        },
+        {
+          "name": "overlayArtwork",
+          "line": 49
+        },
+        {
+          "name": "playbackArtwork",
+          "line": 66
+        },
+        {
+          "name": "playbackBackground",
+          "line": 73
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/credits.ts",
+      "sha256": "9830bf988be22cb29895f034c42b71c6e501021f1e15b62a10b01f4b0126e5fc",
+      "lines": 28,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Per-string split/normalize/dedup;preview2roles/full original result;no cache.",
+      "exports": [
+        {
+          "name": "creditRoles",
+          "line": 2
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/detail-target.ts",
+      "sha256": "17c0904dcc15220cebbe12c8d5ea54849bbb199723742edc88187843b19f7649",
+      "lines": 32,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Finite same-origin destination dispatch;2048URL bound,query uniqueness,page andidentity gates;no arbitrary remote fetch.",
+      "exports": [
+        {
+          "name": "MediaDetailTarget",
+          "line": 7
+        },
+        {
+          "name": "mediaDetailTarget",
+          "line": 16
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/details.ts",
+      "sha256": "dfa9d172af8309e2511ddb9a202e65353e719b54d501d750bdf3bf4bcda7d60d",
+      "lines": 41,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Complete finite action/model/schema/helper read;identity/card contracts andvalidation boundaries;no independent resource owner.",
+      "exports": [
+        {
+          "name": "Review",
+          "line": 2
+        },
+        {
+          "name": "MediaInsights",
+          "line": 11
+        },
+        {
+          "name": "PersonDetails",
+          "line": 25
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/edition-metadata.ts",
+      "sha256": "737882f4bbb901f116d0637a59550437513c0e2b2c725afba9972730fc8e490a",
+      "lines": 15,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Fixed9field extraction;skip empty values;duration-derived runtime;no cache/lifecycle owner.",
+      "exports": [
+        {
+          "name": "editionSnapshot",
+          "line": 3
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/editions.ts",
+      "sha256": "e4c17d1f810946552cc4590791a8dc8dcbebe3d2451d3f27b5eb6b1c313e25cb",
+      "lines": 19,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Technical-label normalization and finite per-source edition choice dedup/sort;input source cardinality caller-owned.",
+      "exports": [
+        {
+          "name": "namedEdition",
+          "line": 2
+        },
+        {
+          "name": "editionChoices",
+          "line": 16
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/hero.ts",
+      "sha256": "f624da29a93a1c218b252b3ca69cec0aea775d00039d06935a1fb06d30f79462",
+      "lines": 20,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Linear identity collapse/dedup;no fetch or retained cache.",
+      "exports": [
+        {
+          "name": "isHeroTitle",
+          "line": 4
+        },
+        {
+          "name": "heroTitleIds",
+          "line": 8
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/model.ts",
+      "sha256": "c40c0a290dc14ceae6d1c02a46ddd4f24a2dc1cb17f86ec9f74267e57be119d0",
+      "lines": 123,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Finite category/lifecycle/progress validation andpresentation vocabulary;no effects/resources.",
+      "exports": [
+        {
+          "name": "MediaCategory",
+          "line": 2
+        },
+        {
+          "name": "ScreenKind",
+          "line": 3
+        },
+        {
+          "name": "Lifecycle",
+          "line": 4
+        },
+        {
+          "name": "ProgressUnit",
+          "line": 5
+        },
+        {
+          "name": "Progress",
+          "line": 13
+        },
+        {
+          "name": "ActivitySession",
+          "line": 18
+        },
+        {
+          "name": "WorkRelationship",
+          "line": 28
+        },
+        {
+          "name": "MediaRelationship",
+          "line": 29
+        },
+        {
+          "name": "mediaCategories",
+          "line": 30
+        },
+        {
+          "name": "validProgress",
+          "line": 49
+        },
+        {
+          "name": "progressFraction",
+          "line": 70
+        },
+        {
+          "name": "lifecycle",
+          "line": 75
+        },
+        {
+          "name": "primaryMediaAction",
+          "line": 89
+        },
+        {
+          "name": "trackingLanguage",
+          "line": 100
+        },
+        {
+          "name": "isScreenWork",
+          "line": 121
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/requests.ts",
+      "sha256": "133c9c682ca90a773a30ddf4e774fa88df94f814603c6e115c31500ea0e0d8ea",
+      "lines": 24,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "requestScope reconstructs distinct destination Set on each call;per-request list amplification opportunity H04.",
+      "exports": [
+        {
+          "name": "RequestDestination",
+          "line": 3
+        },
+        {
+          "name": "RequestVariant",
+          "line": 8
+        },
+        {
+          "name": "requestScope",
+          "line": 14
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/sequence.ts",
+      "sha256": "16da39f0d66d13653985b3f47b265b28c40af1f4daf6e7575c4f71d4c046c95a",
+      "lines": 27,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Complete finite action/model/schema/helper read;identity/card contracts andvalidation boundaries;no independent resource owner.",
+      "exports": [
+        {
+          "name": "sequenceSourceSchema",
+          "line": 3
+        },
+        {
+          "name": "sequenceContextSchema",
+          "line": 7
+        },
+        {
+          "name": "SequenceSource",
+          "line": 11
+        },
+        {
+          "name": "SequenceContext",
+          "line": 12
+        },
+        {
+          "name": "sequencePath",
+          "line": 15
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/statistics.ts",
+      "sha256": "f29d11cc1c297a5ce8eff25d4cdfee644b2608acc57409b573441d8542157bed",
+      "lines": 10,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Complete finite action/model/schema/helper read;identity/card contracts andvalidation boundaries;no independent resource owner.",
+      "exports": [
+        {
+          "name": "MediaStatistics",
+          "line": 2
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/media/work-actions.ts",
+      "sha256": "f5ceffb3efb0cd846c15f3a4a575e11369c8ec78fb75b8fa6d6ffa325edf095e",
+      "lines": 12,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Complete finite action/model/schema/helper read;identity/card contracts andvalidation boundaries;no independent resource owner.",
+      "exports": [
+        {
+          "name": "WorkList",
+          "line": 4
+        },
+        {
+          "name": "WorkListPage",
+          "line": 5
+        },
+        {
+          "name": "GameActionState",
+          "line": 6
+        },
+        {
+          "name": "ReadingActionState",
+          "line": 7
+        },
+        {
+          "name": "WorkActionState",
+          "line": 8
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/profile/activity.ts",
+      "sha256": "c7ea146613e4c1e5ca81e5c356ab82be905b2a0fdd9292f6487a0bcee31316ca",
+      "lines": 59,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "All-time>730days uses yearboundaries andrecorded days,avoiding quietday allocations;shorter charts<=730dayloop.",
+      "exports": [
+        {
+          "name": "ActivityDay",
+          "line": 1
+        },
+        {
+          "name": "activityBuckets",
+          "line": 2
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/profile/journal.ts",
+      "sha256": "b8209cabec60b9e655d3926847bbc09a029df15601a5e47ea179ac02ccdccb63",
+      "lines": 40,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "One ordered pass groups contiguous day/episode runs;unknown dates/applied/actions preserved.",
+      "exports": [
+        {
+          "name": "JournalEntry",
+          "line": 3
+        },
+        {
+          "name": "journalGroups",
+          "line": 14
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/profile/period.ts",
+      "sha256": "a2f43a004da32b88ffb270a414978e40b7a974f550a72573e402822166a2189a",
+      "lines": 10,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "UTC calendar day bounds,30/365dayperiod;no timers.",
+      "exports": [
+        {
+          "name": "ProfilePeriod",
+          "line": 1
+        },
+        {
+          "name": "periodLabel",
+          "line": 2
+        },
+        {
+          "name": "periodStart",
+          "line": 4
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/profile/url.ts",
+      "sha256": "57281d3a11b1b09c0ca3a50f80d2bce9e3c5e7dc3c7b14c7803a0b7d35a11768",
+      "lines": 1,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Stateless encodeURIComponent username route.",
+      "exports": [
+        {
+          "name": "profilePath",
+          "line": 1
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/social/status.svelte.ts",
+      "sha256": "39f7da07861be811f939aaa771085616d5acbb08d7469f5e201335307ed9493d",
+      "lines": 42,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "One in-flight30second heartbeat,hiddenunlessplaying,abort/timer/listenercleanup;missingpost-awaitstopped guard H03candidate.",
+      "exports": [
+        {
+          "name": "userStatus",
+          "line": 5
+        },
+        {
+          "name": "chooseStatus",
+          "line": 6
+        },
+        {
+          "name": "sharePresence",
+          "line": 7
+        },
+        {
+          "name": "startPresence",
+          "line": 19
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/action-feedback.svelte.ts",
+      "sha256": "dfc626ffc4212575e021f5fc59e8d48cacb3b23a3aefee951867cb4ba466dec2",
+      "lines": 66,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "One unownedlatestnotice;ownedfailures replace perowner andonDestroyclear;host referencecleanup;retrybusyguard.",
+      "exports": [
+        {
+          "name": "FailureSource",
+          "line": 4
+        },
+        {
+          "name": "createFeedback",
+          "line": 11
+        },
+        {
+          "name": "Feedback",
+          "line": 64
+        },
+        {
+          "name": "actionFeedback",
+          "line": 65
+        },
+        {
+          "name": "notifyAction",
+          "line": 66
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/client-context.ts",
+      "sha256": "1e52c695112d35c360017bbbb449c444a27f26c3f521d3f9e5f72cf7e0b4f67b",
+      "lines": 14,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Preview transport andfeedback isolated bySveltecontext;realclient fallback;no networkuntilrequested.",
+      "exports": [
+        {
+          "name": "useClient",
+          "line": 7
+        },
+        {
+          "name": "providePreviewClient",
+          "line": 8
+        },
+        {
+          "name": "reportFailure",
+          "line": 14
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/client.ts",
+      "sha256": "af61ef7082bf81470584fcbd9912f91f3e0b880b05485101a45b38ce1bc9af53",
+      "lines": 106,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Captured playbackauthority;abort signal passed;explicitmutationrefreshdomains;shallowstate-preserving refreshAll isbroad butintentional.",
+      "exports": [
+        {
+          "name": "setPlaybackApi",
+          "line": 9
+        },
+        {
+          "name": "capturePlaybackApi",
+          "line": 15
+        },
+        {
+          "name": "ApiTransport",
+          "line": 20
+        },
+        {
+          "name": "ApiError",
+          "line": 22
+        },
+        {
+          "name": "isFeatureDisabled",
+          "line": 32
+        },
+        {
+          "name": "api",
+          "line": 36
+        },
+        {
+          "name": "createApiClient",
+          "line": 66
+        },
+        {
+          "name": "change",
+          "line": 75
+        },
+        {
+          "name": "refreshAfterChange",
+          "line": 85
+        },
+        {
+          "name": "message",
+          "line": 96
+        },
+        {
+          "name": "refreshRouteDependencies",
+          "line": 101
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/content-revision.svelte.ts",
+      "sha256": "a020f2a02ab30655fe9d1203fe3c90200625e874c2e63714a499f5c8b1661fd3",
+      "lines": 22,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Three monotonic counters,primitiveuser/revision key;unchangedsession replacement isnot content;finite state.",
+      "exports": [
+        {
+          "name": "ContentDomain",
+          "line": 1
+        },
+        {
+          "name": "ContentRevisionData",
+          "line": 2
+        },
+        {
+          "name": "invalidateContentRevision",
+          "line": 11
+        },
+        {
+          "name": "readContentRevision",
+          "line": 15
+        },
+        {
+          "name": "contentRevisionKey",
+          "line": 20
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/controls/actions.ts",
+      "sha256": "74b419136c86408450f07cd8c228ce951ac1354b3b03bf03f7d28a5e2e43e426",
+      "lines": 23,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Complete finite action/model/schema/helper read;identity/card contracts andvalidation boundaries;no independent resource owner.",
+      "exports": [
+        {
+          "name": "relationshipControls",
+          "line": 5
+        },
+        {
+          "name": "listMembershipControls",
+          "line": 10
+        },
+        {
+          "name": "availabilityControl",
+          "line": 15
+        },
+        {
+          "name": "collectionControl",
+          "line": 20
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/controls/filters.ts",
+      "sha256": "20b9f9de2dfeae54045ddac259c5a4915c722090cf24da9b20f9ad04ef1855e2",
+      "lines": 6,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Complete finite action/model/schema/helper read;identity/card contracts andvalidation boundaries;no independent resource owner.",
+      "exports": [
+        {
+          "name": "FilterGroup",
+          "line": 1
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/controls/menu-resource.svelte.ts",
+      "sha256": "7695cc48f4c22899cd9609df7e7784c8df6c7102e9d9ca6cf50a9f3001ab77b5",
+      "lines": 85,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Shared resource has close cancellation,scope checks,singleflight,ready-empty memo,dispose;writes retain intentional lifetime.",
+      "exports": [
+        {
+          "name": "createMenuResource",
+          "line": 4
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/controls/menu.svelte.ts",
+      "sha256": "193db0b6d6f0b5d53b424f3a29b1316d9a83453464562b32962c66968b457e4c",
+      "lines": 331,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Global outside listener referencecount;open-only resize/scroll/observers,frame teardown;closedcontrollers each retainmediaquery listener H02.",
+      "exports": [
+        {
+          "name": "MenuContext",
+          "line": 31
+        },
+        {
+          "name": "createMenuController",
+          "line": 38
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/controls/queue.svelte.ts",
+      "sha256": "39abd3af90f6ef30a37b13b6e27f206bfa2c0f7dc6fb751730d6be5865aa9dbd",
+      "lines": 22,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Per-entry in-flight guard/pendingfinally cleanup;unrelatedentry retries permitted;writes intentionallycomplete.",
+      "exports": [
+        {
+          "name": "createQueueActions",
+          "line": 5
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/controls/requests.svelte.ts",
+      "sha256": "4e3336297c2a46649e85750e6f9bf1977e00df7da62078b06f2b8d04201f2546",
+      "lines": 92,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Lazy options,generation+ID guard,AbortController/cancel/reset;empty array memoized;caller owns cancel lifecycle.",
+      "exports": [
+        {
+          "name": "createRequestControls",
+          "line": 7
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/controls/sequence.svelte.ts",
+      "sha256": "92adba067c1cee6a3127714420e2c4612279cef365dd9ff86cfc843c227c16aa",
+      "lines": 50,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Single explicit playback command guardedbusy;captured source anduserintent;no autonomouspoll/cache;read cancellation notowned here.",
+      "exports": [
+        {
+          "name": "createSequencePlayback",
+          "line": 7
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/controls/work.svelte.ts",
+      "sha256": "f233383cc9c2cf0e68957741853129a512844f25a30cb4426683961a057bfc3c",
+      "lines": 47,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Shared workMenuScope fullsettings serialization;scope changes reset/reload active resource only;onDestroy disposal H01.",
+      "exports": [
+        {
+          "name": "workMenuScope",
+          "line": 10
+        },
+        {
+          "name": "createWorkActions",
+          "line": 18
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/mutation.svelte.ts",
+      "sha256": "b8d1cefaf4dd4bf0ac589e3ca6f7c6e4c078012a0b1f366647c7fbd21861f217",
+      "lines": 19,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Acknowledged writes do notfail because optional refreshfails;oneoperationguard;notification andUndo retained.",
+      "exports": [
+        {
+          "name": "createMutation",
+          "line": 4
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/operation.svelte.ts",
+      "sha256": "c0a20e789db76cc0a4a5c4a66429e74937c7aae9005c3beed2141ce11d95653f",
+      "lines": 13,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "One in-flight command,finally busy cleanup;no timer/listener/cache.",
+      "exports": [
+        {
+          "name": "createOperation",
+          "line": 3
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/queue.ts",
+      "sha256": "b708a009ba4f81e7869c954472b1c46a82c030e9fd8783066fbec072d9ea2c44",
+      "lines": 125,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Pure boundedtaskrepresentative display/grouping;repeatedstatefilters proportionaldisplayedjobs;no network/timer.",
+      "exports": [
+        {
+          "name": "QueueAction",
+          "line": 4
+        },
+        {
+          "name": "jobWaiting",
+          "line": 24
+        },
+        {
+          "name": "jobServiceWaiting",
+          "line": 26
+        },
+        {
+          "name": "jobWaitingReason",
+          "line": 28
+        },
+        {
+          "name": "jobPurposeLabel",
+          "line": 42
+        },
+        {
+          "name": "jobOutcome",
+          "line": 46
+        },
+        {
+          "name": "jobRemedy",
+          "line": 89
+        },
+        {
+          "name": "jobTaskSections",
+          "line": 99
+        },
+        {
+          "name": "lastJobOutcome",
+          "line": 113
+        },
+        {
+          "name": "taskJobCount",
+          "line": 118
+        },
+        {
+          "name": "taskLastRun",
+          "line": 121
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/relationships.ts",
+      "sha256": "34cd27b731a9351445efcca8f6553e21e2a01c12881b6f87bb69eff39a962fda",
+      "lines": 9,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Everycategory usesonecollection/tracking/queue deliverycontract;no privateimplementation.",
+      "exports": [
+        {
+          "name": "Relationship",
+          "line": 2
+        },
+        {
+          "name": "setRelationship",
+          "line": 5
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/section-target.ts",
+      "sha256": "e325668b0e3ae9b5eee6e65bf6b959551560fb1d90916a96f056f367c02a8cf8",
+      "lines": 43,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Same-origin supportedrow destinations only;reuses Shelfconfigs/profileprojection;2048URL bound;no arbitraryfetch.",
+      "exports": [
+        {
+          "name": "sectionTarget",
+          "line": 5
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    },
+    {
+      "path": "src/lib/ui/types.ts",
+      "sha256": "fec41648496416e867024e045d746de08d69e4a7bc51257ec938cc3575506b7f",
+      "lines": 140,
+      "reviewDepth": "full-helper-control-flow-read",
+      "reviewNote": "Type-only display/card/progress/playback shape contracts;no runtimework.",
+      "exports": [
+        {
+          "name": "MediaCardPresentation",
+          "line": 4
+        },
+        {
+          "name": "MediaCardDisplay",
+          "line": 26
+        },
+        {
+          "name": "MediaHeroPresentation",
+          "line": 27
+        },
+        {
+          "name": "MediaCardShape",
+          "line": 29
+        },
+        {
+          "name": "MediaCardArtwork",
+          "line": 30
+        },
+        {
+          "name": "MediaCardOverlay",
+          "line": 38
+        },
+        {
+          "name": "MediaKind",
+          "line": 39
+        },
+        {
+          "name": "ArtworkLevel",
+          "line": 40
+        },
+        {
+          "name": "ArtworkPriority",
+          "line": 41
+        },
+        {
+          "name": "MediaRowStyle",
+          "line": 48
+        },
+        {
+          "name": "MediaView",
+          "line": 54
+        },
+        {
+          "name": "PlaybackView",
+          "line": 116
+        }
+      ],
+      "verification": "Source/control-flow review only; no additional tests or fabricated data; actual avatar sizes from coordinator aggregates."
+    }
+  ],
+  "count": 36,
+  "findings": [
+    "HELPER-01",
+    "HELPER-02",
+    "HELPER-03",
+    "HELPER-04",
+    "HELPER-05"
+  ],
+  "runtimeLimitations": [
+    "No helper browser race/allocation benchmark executed in this residual pass.",
+    "Geometry and post-disposal behavior source-reviewed, not stress-certified.",
+    "No new tests requested or run."
+  ],
+  "helperFindings": [
+    {
+      "id": "HELPER-01",
+      "severity": "P3",
+      "classification": "source-confirmed opportunity; allocation impact unmeasured",
+      "title": "Menu scopes serialize full user settings per consumer",
+      "sharedOwner": "ui/controls/work.svelte.ts workMenuScope",
+      "consumers": [
+        "screen menus",
+        "catalogue menus",
+        "work commands",
+        "work-list menu",
+        "party queue picker"
+      ],
+      "references": [
+        {
+          "path": "src/lib/ui/controls/work.svelte.ts",
+          "line": 10
+        }
+      ],
+      "acceptance": "No read/scope change on equivalent session replacement; all meaningful policy changes invalidate correctly."
+    },
+    {
+      "id": "HELPER-02",
+      "severity": "P3",
+      "classification": "source-confirmed retained closed-controller resource; no leak shown",
+      "title": "Closed menu controllers retain individual breakpoint listeners",
+      "sharedOwner": "ui/controls/menu.svelte.ts createMenuController",
+      "consumers": [
+        "all menus",
+        "nested submenus"
+      ],
+      "references": [
+        {
+          "path": "src/lib/ui/controls/menu.svelte.ts",
+          "line": 283
+        }
+      ],
+      "acceptance": "Responsive modes, nested drill/focus, open-close-repeat and last-owner cleanup unchanged."
+    },
+    {
+      "id": "HELPER-03",
+      "severity": "P3",
+      "classification": "unverified disposal race candidate",
+      "title": "Presence heartbeat does not recheck owner after awaiting reply",
+      "sharedOwner": "social/status.svelte.ts startPresence",
+      "consumers": [
+        "application presence",
+        "playback presence",
+        "social invalidation"
+      ],
+      "references": [
+        {
+          "path": "src/lib/social/status.svelte.ts",
+          "line": 30
+        }
+      ],
+      "acceptance": "No old heartbeat publication/invalidation after stop; hidden/playing/restart/account/settings behavior preserved."
+    },
+    {
+      "id": "HELPER-04",
+      "severity": "P3",
+      "classification": "source-confirmed repeated computation; runtime size unmeasured",
+      "title": "Request labels repeat destination-set construction",
+      "sharedOwner": "media/requests.ts requestScope",
+      "consumers": [
+        "request rows",
+        "request menus"
+      ],
+      "references": [
+        {
+          "path": "src/lib/media/requests.ts",
+          "line": 14
+        }
+      ],
+      "acceptance": "Precompute per immutable request snapshot; exact destination/season/4K labels unchanged."
+    },
+    {
+      "id": "HELPER-05",
+      "severity": "P3",
+      "classification": "source-confirmed ownership mismatch; preview behavior unverified",
+      "title": "Queue actions publish feedback outside preview client scope",
+      "sharedOwner": "ui/controls/queue.svelte.ts createQueueActions",
+      "consumers": [
+        "real QueueList",
+        "preview QueueList"
+      ],
+      "references": [
+        {
+          "path": "src/lib/ui/controls/queue.svelte.ts",
+          "line": 16
+        }
+      ],
+      "acceptance": "Use client feedback; real actions and previews each notify exactly their own scope."
+    }
+  ]
+}

@@ -31,6 +31,7 @@ export async function titleInsights(userId: string, id: string, source: string, 
   const db = getDb();
   const [media] = await db.select().from(s.media).where(eq(s.media.id, id));
   if (!media) error(404, 'This title was not found.');
+  if (media.kind === 'collection') return null;
   const [season] =
     media.kind === 'season'
       ? await db.select().from(s.seasons).where(eq(s.seasons.mediaId, id))
@@ -46,7 +47,6 @@ export async function titleInsights(userId: string, id: string, source: string, 
     .where(and(eq(s.externalIds.mediaId, child?.showId ?? id), eq(s.externalIds.provider, 'tmdb')));
   if (!identity) return null;
   if (source === 'trakt') {
-    if (media.kind === 'collection') return null;
     const community = await getTraktCommunity();
     if (!community) return null;
     return insightsCache(`trakt:${community.instanceId}:${id}:${page}`, async () => {
@@ -62,7 +62,7 @@ export async function titleInsights(userId: string, id: string, source: string, 
   }
   const region = await viewerRegion(userId),
     adapter = await getTmdb('en-US', region);
-  if (!adapter || media.kind === 'collection') return null;
+  if (!adapter) return null;
   const path = `${media.kind === 'movie' ? 'movie' : 'tv'}/${encodeURIComponent(identity.externalId)}${child ? `/season/${child.seasonNumber}` : ''}${episode ? `/episode/${episode.episodeNumber}` : ''}`;
   return insightsCache(`tmdb:${region}:${path}:${page}`, () => adapter.insights(path, page));
 }

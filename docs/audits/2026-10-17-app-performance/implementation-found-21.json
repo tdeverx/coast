@@ -1,0 +1,217 @@
+{
+  "at": "2026-10-19T02:53:01.778274+00:00",
+  "status": "planned-actual-data-command-noop-repairs-applied-membership-option-rejected",
+  "canonicalIds": [
+    "DATA-07",
+    "PJ-09"
+  ],
+  "sourcePins": {
+    "src/lib/core/games/service.server.ts": "034e72426d23d1f4d9d194fe55c36942aea729bf5b28e50fedd55bc528b6d3f4",
+    "src/lib/core/lists/up-next.server.ts": "7a8f166108059953bb1366c5a1459e486c767ed3015cef6a931b224f46f36421",
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b",
+    "src/lib/playback/reports.ts": "785206512a7b1459381c005cc9d4c9511a36d0eb814e39f3cd8c7b36d139bea9",
+    "src/lib/ui/components/PersistentPlayer.svelte": "324658e123153e41c98f990bb3c2ac119757fea9b172e9dcd4caecde71023bd5",
+    "src/lib/ui/client.ts": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7",
+    "src/lib/playback/service.server.ts": "f454cec9ccfdaf9e59546e72fd25ceae9b948a4641fcdc270dc71db398bcd751",
+    "tests/playback-reports.test.ts": "a6da9c108e4e83725c94cafe6e9911f707b230885d548804fc57739666bb5fbb",
+    "src/lib/catalogue/service.server.ts": "c84a162bcf380326f8c02a3ed5fa76f135716fcc5581804a04eb814934986e7a",
+    "src/lib/social/work-features.server.ts": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63",
+    "src/lib/sync/jellyfin.server.ts": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
+    "src/lib/music/persistence.server.ts": "049aca51bfd61c2c8fa973e7ce51572ecf1bf2c94a78fb652c58f8fb0d197977"
+  },
+  "sourceChanges": {
+    "src/lib/core/games/service.server.ts": {
+      "before": "369135847c8a51c2a390f405fef5b05f6a0302f645e77e474263a877b5b6d8d6",
+      "after": "053d8dad52b931840d7acedbd4e3d0900dd501a387750f5c63d9bf8c550d1ddc"
+    },
+    "src/lib/core/lists/up-next.server.ts": {
+      "before": "05bf26403f6fb95c9bce5c678faee435e19118280bba3c6d0f37c59dc565df01",
+      "after": "7a8f166108059953bb1366c5a1459e486c767ed3015cef6a931b224f46f36421"
+    }
+  },
+  "actualAgentComparisons": {
+    "game": 12,
+    "upNext": 30,
+    "membershipExactScopes": 4,
+    "membershipDiagnosticParents": 26
+  },
+  "commonGatesRef": "evidence/implementation-found-21-gates.json",
+  "canonicalCounts": {
+    "canonical": 94,
+    "sourceApplied": 69,
+    "implemented": 29,
+    "partial": 38,
+    "open": 22,
+    "other": 5
+  },
+  "wholeGoalComplete": false,
+  "artifactPins": {
+    "candidates/planned-noop-batch/style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "candidates/planned-noop-batch/implementation-handoff.md.before.snapshot": "02478788434aec2a1ee8fd777f148feae501eb5f74b5b79e581e4750edfe6b3d",
+    "candidates/planned-noop-batch/implementation-queue.md.before.snapshot": "cd4a0c3666b23330cd0f5251e6cab51b35a4d7b0510e270ce6b472a7b16f5cf0",
+    "candidates/planned-noop-batch/code-inventory.log": "cac510d1bfc2b50e195f173b1d4f4af7d1775614da864cd91bb13dfa61a3bb10",
+    "candidates/planned-noop-batch/verify-report-integrity.py.before.snapshot": "46c22b15510fefcc0f3c0063b0c7a6f6a0ce4ae59533515230fffc63180106c9",
+    "candidates/planned-noop-batch/performance.md.before.snapshot": "78568da34aa7bcd4b78345724ed7ab861d3094b6c0c477f4dd334acbcc3e708a",
+    "candidates/planned-noop-batch/unit.log": "13855804bae9a74ff954969953fb923a71883fc2a6a1c241ad7c155b20f3aed0",
+    "candidates/planned-noop-batch/check.log": "9f3a9319f9d87527de82012d78b2b5718d2e50c263ff1a0ef5d10c63f98e111b",
+    "candidates/planned-noop-batch/ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "candidates/planned-noop-batch/build.log": "3845599d155964a564ef61b95b32bd3db0e380428a4029880762f2eeffaad176",
+    "candidates/game-playthrough-noop/source-manifest.json": "86b4781fcdb62370bec4d7c58a0364d9531a51e6f5f394ec65ceb67223c899ef",
+    "candidates/game-playthrough-noop/before-service.server.ts.snapshot": "369135847c8a51c2a390f405fef5b05f6a0302f645e77e474263a877b5b6d8d6",
+    "candidates/game-playthrough-noop/candidate.patch": "99d6cf4a62f8999dd85444e311eb09c57e9cc494e9bbc30abb53e77f1922f351",
+    "candidates/game-playthrough-noop/candidate-service.server.ts.snapshot": "053d8dad52b931840d7acedbd4e3d0900dd501a387750f5c63d9bf8c550d1ddc",
+    "candidates/game-playthrough-noop/actual.json": "4a8e64645f02edbdbcc11d5859d84dadb352366db787b04f15a8ae874029ec84",
+    "candidates/game-playthrough-noop/README.md": "00d79d6aeca7ee27d33d3b17dbaa2f9c103b2bbdb075f7c6be1528b0649ed823",
+    "candidates/up-next-noop/source-manifest.json": "b00dd1a06b3ea3f178238c810bae4158a4520365ed89d587bda3d15e41d3a931",
+    "candidates/up-next-noop/summary.json": "bc8a3f34897fddb598553cd32ed3ff8810ce9217eb19c41417d2fb4a2125fce1",
+    "candidates/up-next-noop/up-next.before.ts.txt": "05bf26403f6fb95c9bce5c678faee435e19118280bba3c6d0f37c59dc565df01",
+    "candidates/up-next-noop/candidate.patch": "f6973a0f209ff91ff043deb358911cebcd3b2ffc9043538aa3f760c930007037",
+    "candidates/up-next-noop/actual.json": "136f32ed9fa6a8965b12b616e75fa8054eb874a1390a27388b1cba1aef6a8a14",
+    "candidates/up-next-noop/up-next.candidate.ts.txt": "7a8f166108059953bb1366c5a1459e486c767ed3015cef6a931b224f46f36421",
+    "candidates/up-next-noop/README.md": "e713ae538a348cf48977df6c812f11f11d244a61959b17b45453c82b9ced7c79",
+    "candidates/provider-membership-guard/metrics.json": "4e875e7cf5dd9b5546d48b32d15fad6545c339570c0ecf1bd45fa94698228518",
+    "candidates/provider-membership-guard/jellyfin.before.ts.txt": "3ab6f5c69014adad7a61ef422c330f0d0007e1cef26226fccf60799245d73370",
+    "candidates/provider-membership-guard/candidate.patch": "9c1bf813886e96a7a28a67f1c60f6068edf2b2295ab35d36d1a2fb0dc4a21326",
+    "candidates/provider-membership-guard/jellyfin.candidate.ts.txt": "7be16712c0e7f7eb699262a5dcf16925d5965cdfc90f58f6e95fa20d950725a3",
+    "candidates/provider-membership-guard/actual.json": "176d59e47cfca7583e3022f19f1a417cccc6fe223e02c719a1cbc052765e9124",
+    "candidates/provider-membership-guard/README.md": "427dbd2c91ae1b5760e0d6dae9e6139b12bbad50e372b5d000ef05d0e006265d",
+    "candidates/provider-membership-guard/manifest.json": "ca0b19f3466091239d5ead71cadeb2604a6ee661d1f4dfff176966198497a978",
+    "probes/game-playthrough-noop-real.ts": "6b804ccd124c70592231da84a51c2ac750ecc24df1a6a0e1b358aea941f04a34",
+    "probes/up-next-noop-real.ts": "84105f3122cd90da658fa4884d99d79480478799ba48ee6e45b8839069496ef7",
+    "probes/provider-membership-guard-real.ts": "25587ecf22c9d265a537b32b95704408de0c4e6f986dc8f45ca1d9df764ba253",
+    "evidence/implementation-found-21-gates.json": "8e4b505ac3f9ae27fac6cd2952621c07490d4a935b7c240f3fba25883d899b4f",
+    "failed-method-backlog.json": "d44cd103df3ec71fbe538bc4e712486b1ab50021f1f4ce753a82510505599289",
+    "failed-method-backlog.md": "276ba8dc8d2a971204cdf40ada65c3f85948f053ac677ee4489a444038286171",
+    "DATA07screen-noop/decision.json": "a22bf32c8781406ca751c330460745bc809e0653b3f3221713bacf745a768a3e",
+    "DATA07screen-noop/decision.md": "a3435192c67d89e231f8fcdb1887f7f891ff8b04ddd2bcdabc361afa98375e5b",
+    "evidence/candidates/pr02-report-stop-20261019/README.md": "aa3c0c2aaccab83704e41b419746dc9d9ffa9bf05820e27dbd19281fc2a50392",
+    "evidence/candidates/pr02-report-stop-20261019/decision.json": "1ba723d7e756929275c59ab649f78f47e655aff24bbe036fb0c914e08f8984ca",
+    "candidates/pj08-actual-admission/evidence.json": "c53d343673e1d605fab7044ba4f92333f62cb0cfc1d42207eeb6b60218faea54",
+    "candidates/pj08-actual-admission/result.md": "80574cee41f560264b8a8c6b895327eed450fe73450e6279c110bd55b7e9b1dd",
+    "candidates/pj08-actual-admission/probe.ts": "4783fd0f496fb3bde9f7b26574f8a5dff71b88389f286f5ff52b19c547c11b81",
+    "proposal-execution-outcomes.md": "531f2e2cb8990a283a10ac8a731ee64da23e3f1d1f68bda60b429118de58b16e",
+    "proposal-execution-outcomes.json": "91077a2ae7bd3b18767316f7f56ac58271c04416f353d5e84afdab486a6b115d",
+    "candidates/proposal-execution-data/summary.json": "dd153d7b3125919d22e441db663e4ba2ec9180936016b846c3257888ddc3791a",
+    "candidates/proposal-execution-providers/summary.json": "ccfb2471d40bfa09cd2762da9f839ca010247964b734c725cb2316263b3e69d8",
+    "candidates/proposal-execution-ui-readers/summary.json": "1e48abbbaff9d18ffe17f5ad9b19b83e1cac21f06f478542f9a5f51060c58ac3",
+    "execution-pass-review.json": "8f9e64f99b4aaec06dca6c3b7fc3ac03b5d276d8676ef194a3eb7ba4b8af0463",
+    "execution-pass-review.md": "2bd7a787c0e9cae3102183b9c0b02a1fc77e339c611d2011ef0f901fcc97bdab",
+    "admin-real-data-policy.md": "abd890ebb78f231c9f98303f649461502dbf1e32ebfded535f25fce977f89a54",
+    "admin-real-data-policy.json": "aaa47d0153bccf5135783288c78d427f59e7a54e568c706ae5d93fec8f560b2f"
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T02:55:26.686530+00:00",
+      "reportRef": "failed-method-backlog.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "User clarified execution-only stopping rule and future investigation order; runtime and prior evidence unchanged."
+    },
+    {
+      "at": "2026-10-19T03:11:12.006201+00:00",
+      "reportRef": "admin-real-data-policy.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Corrected interpretation of authorized real-data/admin test states; runtime and historical results unchanged."
+    },
+    {
+      "at": "2026-10-19T03:22:06.569202+00:00",
+      "reportRef": "implementation-found-22.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Admin actual-data acceptance, measurement/stopping guidance and checker bookkeeping; runtime unchanged, old evidence not promoted beyond named new acceptance."
+    },
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "src/lib/music/persistence.server.ts",
+        "src/lib/sync/jellyfin.server.ts",
+        "docs/performance.md"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T03:58:03.995927+00:00",
+      "reportRef": "implementation-found-24.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared conflict summaries native actual-admin adoption; sequence named acceptance; phased finalization not adopted. Historical evidence retains source/acceptance boundaries, no whole-audit completion."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "src/lib/core/games/service.server.ts",
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
+    }
+  ],
+  "executionPolicy": {
+    "mode": "execute-existing-audit-proposals",
+    "acceptance": "Agent executes prescribed default/candidate checks on actual data before a verified handoff; concrete resource gain and required behavior must be proven.",
+    "onMethodFailure": "Retain default, record evidence and move method to failed-method-backlog.json; no alternative investigation this run.",
+    "onMissingPrerequisite": "Record not-runnable and exact missing actual-data/design prerequisite, without representing it as a failed measured method.",
+    "futureInvestigationOrder": [
+      "uninvestigated-areas",
+      "failed-methods"
+    ],
+    "finalIntegration": "Current main working tree; final PR/merge after completion, no commit/push yet."
+  },
+  "laterProposalOutcomesRef": "proposal-execution-outcomes.json",
+  "executionReviewRef": "execution-pass-review.json",
+  "laterAdminTestPolicyRef": "admin-real-data-policy.json"
+}

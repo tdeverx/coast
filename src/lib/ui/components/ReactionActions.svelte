@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import {page} from '$app/state';
   import Icon from './Icon.svelte';
@@ -23,7 +24,7 @@
   const result = await resource.load(async signal => (await api<Record<string, Reaction[]>>(`social/reactions?targetKind=${kind}&ids=${id}`, undefined, 'GET', { signal }))[id] ?? []);
   if (result) loaded = true;
  }
- const mutation = createMutation(load, useClient().feedback.notify);
+ const mutation = createMutation(load, useClient().feedback.notify, useRetention());
  const selected = $derived(loaded ? resource.data.find(row => row.mine)?.emoji ?? null : initialReaction);
  $effect(() => { targetId; targetKind;page.data.capabilities?.social; untrack(() => { resource.replace([]); loaded = false; mutation.error = ''; }); });
  onDestroy(resource.dispose);

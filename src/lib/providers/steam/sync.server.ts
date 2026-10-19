@@ -8,6 +8,7 @@ import { ProviderHttpError } from '$lib/server/security/provider-fetch';
 import { ProviderQueueBusyError } from '$lib/server/security/request-priority';
 import { PermanentActionError, enqueueAction, type OutboxAction } from '$lib/server/queue';
 import { trackInTransaction } from '$lib/core/tracking/service.server';
+import { lockFeaturePolicyInTransaction } from '$lib/server/features';
 import { importIgdbMetadata } from '$lib/core/games/service.server';
 import { igdbSteamMatches } from '../igdb/service.server';
 import { jobExecution, JobYield, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
@@ -51,14 +52,22 @@ export async function syncSteam(action:OutboxAction) {
   if(stored && (stored.connectionId!==connection.id || stored.accountGeneration!==connection.accountGeneration))throw new PermanentActionError('The Steam account changed.');
   const snapshot=stored?v.parse(snapshotSchema,stored.data):{
     items:await adapter.ownedGames(connection.externalUserId!),scanId:crypto.randomUUID(),observedAt:new Date().toISOString(),next:0,added:0};
+  const cursorSchema=v.object({task:v.literal('steam-ownership'),scanId:v.pipe(v.string(),v.uuid()),
+    next:v.pipe(v.number(),v.integer(),v.minValue(0)),added:v.pipe(v.number(),v.integer(),v.minValue(0))});
+  const saved=stored&&durable?await readJobCheckpoint():null;
+  const cursor=saved?v.parse(cursorSchema,saved):null;
+  const next=cursor?.next??snapshot.next;
+  if(cursor&&cursor.scanId!==snapshot.scanId||next>snapshot.items.length||(cursor?.added??snapshot.added)>next)throw new PermanentActionError('The Steam ownership checkpoint is invalid. Run a new ownership import.');
   if(!stored && durable)await getDb().transaction(async tx=>{
     await assertAccount(tx,action,accountId);
     await tx.insert(s.providerJobSnapshots).values({actionId:action.id,connectionId:connection.id,accountGeneration:connection.accountGeneration,data:snapshot});
+    await saveJobCheckpoint({task:'steam-ownership',scanId:snapshot.scanId,next:0,added:0},tx);
   });
   const owned=snapshot.items,now=new Date(snapshot.observedAt),scanId=snapshot.scanId;
-  let added=snapshot.added;
-  for(let start=snapshot.next;start<owned.length;start+=100){
+  let added=cursor?.added??snapshot.added;
+  for(let start=next;start<owned.length;start+=100){
   await getDb().transaction(async tx=>{
+    await lockFeaturePolicyInTransaction(tx,action.userId);
     const current=await assertAccount(tx,action,accountId);
     for(const item of owned.slice(start,start+100)){
       const gameId=await steamGame(tx,item);
@@ -75,7 +84,9 @@ export async function syncSteam(action:OutboxAction) {
       await tx.insert(s.availability).values({userId:action.userId,connectionId:current.id,providerItemId:mapping.id,mediaId:gameId,sourceId:'steam-owned',state:'available',source:{ownership:true,installed:null,authoritative:true},scanId,verifiedAt:now})
         .onConflictDoUpdate({target:[s.availability.userId,s.availability.connectionId,s.availability.providerItemId,s.availability.sourceId],set:{state:'available',scanId,verifiedAt:now,source:{ownership:true,installed:null,authoritative:true}}});
     }
-    if(durable)await tx.update(s.providerJobSnapshots).set({data:sql`${s.providerJobSnapshots.data} || ${{next:Math.min(owned.length,start+100),added}}::jsonb`,updatedAt:new Date()}).where(eq(s.providerJobSnapshots.actionId,action.id));
+    // The complete census is immutable; advance only the small cursor in the
+    // same fenced transaction as this chunk, preserving concurrent job intent.
+    if(durable)await saveJobCheckpoint({task:'steam-ownership',scanId,next:Math.min(owned.length,start+100),added},tx);
   });
   await jobCheckpoint();
   }

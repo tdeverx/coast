@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import { createOperation } from '$lib/ui/operation.svelte';
   import Field from './Field.svelte';
@@ -8,7 +9,7 @@
   import { useClient } from '$lib/ui/client-context';
 
   const { change } = useClient();
-  const operation = createOperation();
+  const operation = createOperation(useRetention());
   const busy = $derived(operation.busy);
 
   let {

@@ -1,0 +1,4649 @@
+{
+  "commit": "eb0673873462b71118d1c11678d128958a05ff07",
+  "sourceFiles": 572,
+  "independentManifestFiles": 505,
+  "coordinatorAdditionalFiles": 67,
+  "files": [
+    {
+      "file": "src/app.css",
+      "sha256": "4349610c5783064e210c53018a4ed0cc63a6dc2d48074f12e352e0bccc63a5b8",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/app.d.ts",
+      "sha256": "0142b0f306ebf9dbc3e684dfeb69e3b8b97c6a68510536abcdf6856e4c261b89",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/app.html",
+      "sha256": "5a7200a0b0871c10ea24635d1779cc2b1a9ab3fbf2a19b6ea8c42e37683a05f6",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/hooks.server.ts",
+      "sha256": "fbb000658e73f3727fbd13515cee37c1b1da806330527827d4ddfc9c1e3921fc",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/application/configuration.server.ts",
+      "sha256": "bf84df3efc820ef8728aaa1012deaf8b365f1d80886db80dcdebb2f72a0c4391",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/application/feature-transition.server.ts",
+      "sha256": "a2cb4b179ccbebeb65ffeac55c6744b34a4e6022c42aef46430f776dc8c5ad03",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/application/media-details.server.ts",
+      "sha256": "367b4c7f9c8280ba4f1f5fea191c11c6abeddc56dfc571a409a1f2ec33a4e148",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/application/provider-sources.server.ts",
+      "sha256": "5dc4f1ab35e1a47e4fb1728d45a367106015f787297f18714d425a3cc56f9f2c",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/application/reading.server.ts",
+      "sha256": "c5046afc47a358cf254e441a9b2cb402c1e8de1ffeecaf17863928f7b54bb8d5",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/application/streams.server.ts",
+      "sha256": "55f29d818b5076b5eb3c90dc541d675be3ddf402a4720486f83e859ea0e2d334",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/application/work-details.server.ts",
+      "sha256": "c4f51937d2193d1ead3d8f17a904bae5d928562a44732f05df36a379869c04bf",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/artwork.ts",
+      "sha256": "615867ddeea8cd5e736ff587393affe9eaac2fce1bc22c4fa5957293dd10fd34",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/auth/registration.ts",
+      "sha256": "e6d5627dac9f71b940b66d49d0a99498361307842f031463c0ad020354a5ac72",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/benchmarks/BenchmarkSettings.svelte",
+      "sha256": "62cd1e4f46bd3ba594d98a2adbdc049f622342e8710c0f4fdd6f118907885ee5",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/benchmarks/model.ts",
+      "sha256": "7d03a7a6bc52827a925c76b7a413f4e8d15349c030d2d9c14c7cd6189b353fe4",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/benchmarks/service.server.ts",
+      "sha256": "2b20918bb628053f96a9a703faedc5b795f06bb75b06d2a55a4810661e82f835",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/catalogue/details.server.ts",
+      "sha256": "ab72ccba2d2144bc84b0bed1e14bec87be4cb264eeda56a9a2ba69003d67d567",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/catalogue/maintenance.server.ts",
+      "sha256": "48bc05752d52e3e0813996a34b0e399af2ecd38cc9a879b553f81f9afaf05dd8",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/catalogue/metadata/release-date.server.ts",
+      "sha256": "2461195673e0b374e5efccce23c290757b3443925936fa9156e21c5635bcb184",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/catalogue/metadata/resolve.ts",
+      "sha256": "5f26387fa0fa79a1d979b1d7c31a4c4d551bb71b2a69cf0514824e89d050b1e4",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/catalogue/overrides/presentation.server.ts",
+      "sha256": "a2b35f3c4fe5467f2338c582d9a6ecc74a238c94dd66f25a62b1b2d5d5461447",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/catalogue/overrides/service.server.ts",
+      "sha256": "d7e300a9b1b692e9409020f7813a65bd70c109a698944cc38ae363005ea70c5c",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/catalogue/reading-files.server.ts",
+      "sha256": "0c50840291643676a9aa356361a74545393d82b70f71c1e2fdd9616789e3d2fc",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/catalogue/reading.server.ts",
+      "sha256": "72d42f74144f850310c5ffcc27309d7a707a28b77f8178ea773350990f33146e",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/catalogue/service.server.ts",
+      "sha256": "0354e7ec7ccf63d7c22b06b764f6eb362a9f47776ed6d78baf09612c3bab1f6b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/catalogue/trakt-identity.server.ts",
+      "sha256": "6221b7b7ff43d57d5d3f8333b70ee917102ee449d9869f8e07f040f80470e11f",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/collection/demand.server.ts",
+      "sha256": "f749b05b32b2d0313df8592220919e5400ec1763661f0472e6fa1ae42eccd596",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/collection/freshness.server.ts",
+      "sha256": "770bdbb426a6ce15e4c14e0dbeeece64690f710636b47d5df0b7f33a38d513c8",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/collection/preferences.ts",
+      "sha256": "99640b35ec4b27ab3383182222416572a04b0e666e9d33a62cebd810e37c7880",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/collection/projection.server.ts",
+      "sha256": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+      "reviewManifests": [
+        "data-api-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/collection/query.server.ts",
+      "sha256": "2a0d89967c04f114d4bf7d7216b7969702b499d25313f21833e9752d187da38d",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/collection/source-changes.server.ts",
+      "sha256": "2a948f416248eeee77a4481ff6dbc72b8bbbf917d8b9fef5892ed5e75c5d5741",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/errors.ts",
+      "sha256": "d9d9841f0ae4af41c00e0529c2871a12ebbdaff379cea48e1e424a10d999912a",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/games/service.server.ts",
+      "sha256": "50160bb3fddf9b8530e0c0b1262eaff133dccbeb73f12ae4056f819e04557753",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/lists/sequence.server.ts",
+      "sha256": "9b5968880b044be87701ff77f78e044c392e15b5a114727bea3b6f899feab212",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/lists/service.server.ts",
+      "sha256": "79fdd8483ca752d05606991b7c8910cc0f7ae0d0b2c3102b2b778f6f73b0cbf2",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/lists/up-next.server.ts",
+      "sha256": "05bf26403f6fb95c9bce5c678faee435e19118280bba3c6d0f37c59dc565df01",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/media/service.server.ts",
+      "sha256": "6ae9d180773f4a12c591078d6ba484a067076ab1584c2b8e484e83c1a79ced04",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/profile/avatars.server.ts",
+      "sha256": "f5e79c9673fe1b294136802e81a7cd77a0491b7abc105415a9c50294842b885b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/profile/gif-avatar.server.ts",
+      "sha256": "5c91fa12ac03dac622826280de60afd26574ee39f04fa75db8457561b155f617",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/profile/service.server.ts",
+      "sha256": "c302edb7c21be0ed1583f0792fa34004652f791180446b85bdff8f31c1f4520d",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/ratings/service.server.ts",
+      "sha256": "7fb9c4a7cf80685b6b9366cf1446e7977d12a0199e70cea885336aa22d06d065",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/reading/service.server.ts",
+      "sha256": "671f2a63517c4009b09bde0b4347d35ce48795f334024b7892081fe8176a6e8f",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/tracking/continue.server.ts",
+      "sha256": "872f2ec2a1d1c3032bf41f812d9e1d5303c48b4b8a2eb1907d90c3651640d6b6",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/tracking/history-scope.server.ts",
+      "sha256": "430188553b789f726ec7c16fe560c9ddbcee34648d92b6691ca9d1cdd1fcb689",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/tracking/recorded-watches.server.ts",
+      "sha256": "8a42f9bca18f5f49799922aa27f3dcf55ccd7d540c8609d6d42a91a0c8c22f01",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/tracking/rewatch.server.ts",
+      "sha256": "c29eb1e8e40622594d721787cf4f7ae5b7d6a2eea664efb828bb8d35a4fca295",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/tracking/service.server.ts",
+      "sha256": "3d02e5936338634f7a5e07cf4301d617f4a45b7099e67581db8456cb3b819cf1",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/core/tracking/state.ts",
+      "sha256": "6bbf3d974be91d3256189a9922568d54f96e63911fa01965cf1caf35abf1062b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/diagnostics.ts",
+      "sha256": "3a216cc827207627336cc5ce5a4fcd6e2c8a88a06903b8f575ca7ed2634c8130",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/discovery.ts",
+      "sha256": "7369b8b9e4b1371b0760f3989f3982b12f228847ba5f7d1f2e4d8f42b1cf840d",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/experimental.ts",
+      "sha256": "e779f8fabfb93156586dc5bb904c2ca282a56a32c24a42c0807f73e05cfc7c0b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/experiments/PlanAction.svelte",
+      "sha256": "02563d731e94ff9ec1baa725956ecb7f1893b2a562a4f76020b7548c678236f6",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/experiments/planning.server.ts",
+      "sha256": "e768a2a915034cd42b8c9d5689622514a3ba05ac11853068e999ff5fd2f6e9de",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/features.ts",
+      "sha256": "ec2ce3649b7a479b18127a665dd0c3ece29de5fc983b2136d16d23b6697589c1",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/games/Details.svelte",
+      "sha256": "1dca870cb1cd8a15f52d08834dcb39c4bf2698dfe38e2a8963188b1baaeec7b8",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/games/RemoteDetails.svelte",
+      "sha256": "30862dc10df350001d5edf8f1457278579324b7e736622f5929e10bdfba0f828",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/games/availability.server.ts",
+      "sha256": "bf02366e54bcda360e5dbe1bf5cdb4eaaac78dbe4906696b90aefc3da82a8260",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/games/detail.server.ts",
+      "sha256": "501c4e9e1726bec102d36701c7bac0dacb95e1a33035b6a1c2e7bb0875b4a773",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/games/model.ts",
+      "sha256": "9a0aa0881cce8401f47aa26333165e798b406c4e9d0f28236dd174ac75f248aa",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/games/presentation.server.ts",
+      "sha256": "c81557a16534ed94d22936d59295015a202045bdb2f0e366b18f2d18133bdbb1",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/games/presentation.ts",
+      "sha256": "b1d7b72c9e4985ec62820bc8b0cb1f15db15f20c7275034d680fe50d815f18a9",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/library.ts",
+      "sha256": "1b94f5839453943c83a32ef51f8581923a40cedbe41beaa3f66daf2d94dc5c58",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/DetailPanel.svelte",
+      "sha256": "0c009c71685ac9c48823e927addb7fa3dc558fe8f6af7abe43386473f8dceb70",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/DetailRows.svelte",
+      "sha256": "bc9bb2ccffd5e8f2d879f72772f73c916b579246a67cdb4fd9b2c85c10bfa80f",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/Details.svelte",
+      "sha256": "8621b46f560de97442dcdb9490df245dd5de7bed985ef45865e784c5400b50cd",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/PersonDetails.svelte",
+      "sha256": "0d65fb71fc8040567d36b6aff19d14041c40d81bf3a69cd7562ab0e1494b2163",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/actions.ts",
+      "sha256": "131aea05be6ee90bb430a60e42086814fe21c46491149dc7ad6f60a1ec494d1d",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/artwork.ts",
+      "sha256": "1ec9f7413e9ef86b981149b3bbdfa3096518ff340d41c7d524f625e82bb1b5f1",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/credits.ts",
+      "sha256": "9830bf988be22cb29895f034c42b71c6e501021f1e15b62a10b01f4b0126e5fc",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/detail-target.ts",
+      "sha256": "17c0904dcc15220cebbe12c8d5ea54849bbb199723742edc88187843b19f7649",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/details.ts",
+      "sha256": "dfa9d172af8309e2511ddb9a202e65353e719b54d501d750bdf3bf4bcda7d60d",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/edition-metadata.ts",
+      "sha256": "737882f4bbb901f116d0637a59550437513c0e2b2c725afba9972730fc8e490a",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/editions.ts",
+      "sha256": "e4c17d1f810946552cc4590791a8dc8dcbebe3d2451d3f27b5eb6b1c313e25cb",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/hero.ts",
+      "sha256": "f624da29a93a1c218b252b3ca69cec0aea775d00039d06935a1fb06d30f79462",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/model.ts",
+      "sha256": "c40c0a290dc14ceae6d1c02a46ddd4f24a2dc1cb17f86ec9f74267e57be119d0",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/requests.ts",
+      "sha256": "133c9c682ca90a773a30ddf4e774fa88df94f814603c6e115c31500ea0e0d8ea",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/sequence.ts",
+      "sha256": "16da39f0d66d13653985b3f47b265b28c40af1f4daf6e7575c4f71d4c046c95a",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/statistics.ts",
+      "sha256": "f29d11cc1c297a5ce8eff25d4cdfee644b2608acc57409b573441d8542157bed",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/media/work-actions.ts",
+      "sha256": "f5ceffb3efb0cd846c15f3a4a575e11369c8ec78fb75b8fa6d6ffa325edf095e",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/Details.svelte",
+      "sha256": "73eef887610e9813cda90661bd5a74c38bd7b193e7106b7689641c2a7fe8226b",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/artwork.server.ts",
+      "sha256": "faab90d0790407c4f4d8a58d1d0e51490b0d11ce578aa506558dbda853d7034e",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/credits.server.ts",
+      "sha256": "cc7574b65b96cbd8abf16b5bd995f033b2e51e62fe1b43230a1f027089687a77",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/detail.server.ts",
+      "sha256": "9742facc42419f7190eae266fcf96a22f0bc76adf8012c9f90b28d1ea54ad0b1",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/details.server.ts",
+      "sha256": "908bfc298d408b8192765bcfb72f69c7d94da404561e4e0f6941a3c1a664ccdf",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/editions.server.ts",
+      "sha256": "fd3a5b49c589de17f0eec88b5265f5c5725cb382eefde6f9aaf91720c2ed208d",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/history.server.ts",
+      "sha256": "a24895287829b56a9b684160b44878ccbf968b8c581748fd8f2d777dcc4db9ad",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/model.ts",
+      "sha256": "1ac3d485122fe62de7670298aac01eeeba839c76c3eec689806366ddab04ea3e",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/persistence.server.ts",
+      "sha256": "e56488be60bfb07c6ce4bfcfddc44bfbda924de1dc9661e7d75e0d5943cc2da6",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/presentation.server.ts",
+      "sha256": "7ac1c5dff8e91bbaf7cdb132488beebb449eabe3b9397a6d36e72505bf2d8fb8",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/presentation.ts",
+      "sha256": "5e1cfb96633007c7879e58753615b89a3dea25ade307cd36be3bf2bba313c09f",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/queue.server.ts",
+      "sha256": "b447ce0d30bf9ae46c2e2ae1bb9a3019d57caa4b5e978808765ad56fdc85636d",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/music/service.server.ts",
+      "sha256": "4246046b5e6092d2ebf765b67216434a3dbc1a239fa260b28b51d5c406df9bff",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/notifications/model.ts",
+      "sha256": "08fa8ac0591545a687553ea7d0e2f757bb86502b96c795b222caa06f4c88db97",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/client.svelte.ts",
+      "sha256": "eb7ab1c65d2bef1810e94206478d8e8eef883759b3973277c18d5133467c07ba",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/context.svelte.ts",
+      "sha256": "e53073d485bf26ea92917913a7dd00d02b55171e4536fe4918a5ad38d8b4329e",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/crop.ts",
+      "sha256": "a40b5f6b39653206cf541d4bcd40141ed4a1662b10d9ff87f239f58399f57e42",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/failures.ts",
+      "sha256": "a132446519fc71da49c5c8be9705b79392d20feaac6818fc91dfcddc45892dba",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/listening.ts",
+      "sha256": "6163c4303a16615878ccf1a9e51125bbbcd9fa03f3808353339a5d430ecd1231",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/observe-crop.ts",
+      "sha256": "b06d2727b78b7c67d54f5b761a31bf819706751ddf6bbbc80c9cbc99d3d23eaa",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/planning.ts",
+      "sha256": "aa75231e2ec0a77a1c69119a64e7ef171a69ae7283eb32b42dfaa45c96b668d0",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/reports.ts",
+      "sha256": "785206512a7b1459381c005cc9d4c9511a36d0eb814e39f3cd8c7b36d139bea9",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/service.server.ts",
+      "sha256": "b162de8b5332c28b7ae076599119f2400e88f19ded3c3105dccd95de887db454",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/synced/client.svelte.ts",
+      "sha256": "d8cc59549115718f33a52efd6b37df6ab2b7d43f6a7d5050713c1ccbf0dcd365",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/synced/model.ts",
+      "sha256": "fac57ccb529084bf15244ae024a405b646c191caf4a220adf3ffa9ef515c0fe0",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/synced/service.server.ts",
+      "sha256": "bf228ef304b2610d04e1d066d4db754c82ae5885a010a3d638265e7e9d2f4ce6",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/time.ts",
+      "sha256": "214954d0ad3efd7e8ddb81b114ebc6af76cd35cfafe7cc33ba34505830e57340",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/playback/visibility.ts",
+      "sha256": "cc02f0ed15a398d696400103eba672ac769aff5311efbb85653b1f81119e34f2",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/profile/activity.ts",
+      "sha256": "c7ea146613e4c1e5ca81e5c356ab82be905b2a0fdd9292f6487a0bcee31316ca",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/profile/journal.ts",
+      "sha256": "b8209cabec60b9e655d3926847bbc09a029df15601a5e47ea179ac02ccdccb63",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/profile/period.ts",
+      "sha256": "a2f43a004da32b88ffb270a414978e40b7a974f550a72573e402822166a2189a",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/profile/url.ts",
+      "sha256": "57281d3a11b1b09c0ca3a50f80d2bce9e3c5e7dc3c7b14c7803a0b7d35a11768",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/progress.ts",
+      "sha256": "8a08407f9f2666dbb2d1f6dee204851f565f65a123bd122670b887d133eb2fde",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/actions.server.ts",
+      "sha256": "4bfcada696896b834002aafa57f6b1a2ec22cdd5288d4a335354640ec6a29269",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/artwork.server.ts",
+      "sha256": "b46db8ca1015b5056e5583c6a32ddf62dbd341860bbb7ec96abf6c5ac29251cd",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/capabilities.ts",
+      "sha256": "02f9ba8525401545e6be969676310c3d013444cdece030305f8fbf12c81ab8b0",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/comic-vine/adapter.server.ts",
+      "sha256": "c57a10d2bb65c99c3a46e19366cc5cdd6bb09a0a858cd39bb594fff40d8f359a",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/connections.server.ts",
+      "sha256": "4ea7ef7b06a8dc16e3800a34b0c58f7ca7446861a3d17cb5b3ecfe6a8830efc1",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/contracts.ts",
+      "sha256": "da9ed858c4fbbd96ed0c4cc9aca0e84b21c393c542d74f4af82a767e3c391eb3",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/igdb/adapter.server.ts",
+      "sha256": "008889a4aea49fd2be4ccf1b295e2d63d29542b2a92f074edd73abd39a40bf29",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/igdb/service.server.ts",
+      "sha256": "89cbcf14b09cb7d2cefde99eecc8e6c66d218bab12799411c311a57a9aab693f",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/instances.server.ts",
+      "sha256": "3165d0a872ccfa7686231a2dbfdadb4a5ece9c29f1bb9318ada7af8df46aa6b7",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/access-proof.server.ts",
+      "sha256": "122554fecab3c1718f5e26649de0a980247fd4dc81d3ce5676d131a80595485a",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/adapter.server.ts",
+      "sha256": "8eb4ee167cdbe3067986d9262980c427f04d898a42f89cc6cd83c35a1eca0cfa",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/companion.ts",
+      "sha256": "18e4854d9044543725c8a49d60edee1223c1689952fc1c269860ff74a5e6ea99",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/connection.server.ts",
+      "sha256": "625eeb87200dfe91ff1fcf7a8485eb8c6051037360f8573d4b8a33b5c947f04b",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/music.server.ts",
+      "sha256": "c94faaac3df4679b6a4a47cb95a8e01111fc8c5d1fd04c24c7077d0a1a9b607a",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/paging.ts",
+      "sha256": "88acf781617f8e3894167bd35e0d223fb3a3e20b5958ac417223a11e68387085",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/provisioning.server.ts",
+      "sha256": "04529a746b5d8635b922949350c2c4df789780720f76c9dcf68bdeb1a8a3ee9d",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/reading.server.ts",
+      "sha256": "401b39e1d9c2953ad349afd60eef6796847027417629de6acaa8573dbd99399e",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/stream-history.server.ts",
+      "sha256": "243f20cee43e4d31116169355379072931ed8170cad4ef44f590608e6fb32453",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/streams.ts",
+      "sha256": "ec12d23d792b35c81af12308071b746f58d9410f8eebedb0c8cf4b74e022ef95",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/jellyfin/updates.server.ts",
+      "sha256": "568108807e944df42b0d0203fd0040a7b49d70a20f710a75b0472804c39ba50f",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/job-policy.ts",
+      "sha256": "58810bbdea1217109d0ffce9384c62bd770270afcba8fcdc5e7251773492ad66",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/job-timing.server.ts",
+      "sha256": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/maintenance.server.ts",
+      "sha256": "dcc93147ba085a07562271c9acc54aa5aec49e7356be01d89ba749fb1dd2ee13",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/openlibrary/adapter.server.ts",
+      "sha256": "d42af5d23311808e2c9157c8ce856e995a8cf9e4d2d80ce9782605d28740dfbb",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/reading.server.ts",
+      "sha256": "7b8e7344d59090b73ee674a16fcbc7708c67857f7df47f69cf8568444c85c94f",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/schedule.ts",
+      "sha256": "26b7776a5db5b4a10df04d1b38def92d785bf401a6658a1e5128c7c69f7d8164",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/seerr/adapter.server.ts",
+      "sha256": "b6ecf59409c69ed473c50a255c3ca89cc92a9ec13a6dd04cd4414e2964836adf",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/seerr/connection.server.ts",
+      "sha256": "e916794e05d800289843c7c6ef8b6d1b4e400abeeaabf5f4b249e31352e8b89c",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/seerr/requests.server.ts",
+      "sha256": "38305c2968417127918489c05f4d2997501aca0a6c33212d937541beea77d414",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/server-artwork.server.ts",
+      "sha256": "5a48ee098bbf7d8938b613297ed8fac3446e1eca54a57656b3f8e448b50338de",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/steam/adapter.server.ts",
+      "sha256": "7ec88f6b40895ca4214716ebc077a9359e0673b3084d39a55065ba1e53201fae",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/steam/connection.server.ts",
+      "sha256": "7b6f98d93ff85fd1c6f0c94184233abca6f1fadf8ebe9dc4f6c2da9d19f8e932",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/steam/sync.server.ts",
+      "sha256": "ff0d9b59892c2781a00e72486f3d76c523fba7897aa1434b2bb7848383a5e3c6",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/task-timing.ts",
+      "sha256": "41ffc963a7a1bda8642e3fe56c6b0bb28f0b6eb16dd9dc0f7cf12386aada36b9",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/tasks.ts",
+      "sha256": "0f0c3adf6584398d2d5a28fd9d2c418c5077edda694bcb5c54131f9f318a85f8",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/tmdb/adapter.server.ts",
+      "sha256": "8258fd241769f8c5354ee31ba1e15af99aa09900a55ca55f7984f30abb62c672",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/tmdb/artwork.server.ts",
+      "sha256": "74a89d420db3caee4bf4d175887375788a62a6c5d1e2fc145cc2b00b525c99db",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/tmdb/artwork.ts",
+      "sha256": "eafe9d4f113653b6d91de2526a5a21be36de2a95a290477774506c08da98857f",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/tmdb/details.server.ts",
+      "sha256": "862050a2bf078b192cab4445064c68ba8228ef1a003208f69c93046488feda10",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/tmdb/fallback.server.ts",
+      "sha256": "bd3056e3c5e9c968eeddab2e8413e4edbc28c23012f2e9396522a2124faaa3f7",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/trakt/adapter.server.ts",
+      "sha256": "162366fa67ed520ca6b99d704ff5900dabf153fa1669136869b18d60b49ad5a9",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/providers/trakt/connection.server.ts",
+      "sha256": "4a023788bba52b580aa98378d102bbb4e211297fcc59524ae1e08fbff13dd33c",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/public-api.ts",
+      "sha256": "8d0ad45c75996355916c3e2499cd97362c749cfad74d4470a48f323d325e4eb4",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/Details.svelte",
+      "sha256": "a9c8a53a701a0c257ffc6e050239f07453e8a8b6a6da50dede3285ad557388bf",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/GroupDetails.svelte",
+      "sha256": "497c4f2687df2868b003804e686a6de055f7fe075fe0bc87714f8a6d872bcd21",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/Reader.svelte",
+      "sha256": "30b0eb4d53eb2d5d13468ba09c10e3a24c5e02fa80164c0fd4dfde36b8aa3e59",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/ReadingLaunch.svelte",
+      "sha256": "d6711516fa0b2f1d2ac7f05477dbf45d4ec14a7448138e925a00a83888566700",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/client.svelte.ts",
+      "sha256": "f53bd5fc0cb2861426a1d1067251fc4beae2d8945ddcca1409feda9f275386ef",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/detail.server.ts",
+      "sha256": "105b871ef2751c1eabf26fa1efc6291f6aec1b77c110da66c8ce3bd055a0d90d",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/groups.server.ts",
+      "sha256": "7c28ade2625f573c5d5d40b2ba9b0cf2036ada56f80ae9dbf2b6f3008bbf37fd",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/model.ts",
+      "sha256": "87e5ff0e4fc09d68826e6140e3d0e58a59329182c389bfcd4cdd571e435d0a73",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/presentation.ts",
+      "sha256": "df4a3a9fe7973930ad4ab73ff18c4b541efa0d72182725be35d614425476c0eb",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/query.server.ts",
+      "sha256": "2f4550c48c06258dfd52890cec466e5abe0c91a0f5118c433cf1b1a9c1613ca9",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/archive-decoder.ts",
+      "sha256": "c6917f97e2809b798a944ae419edc210a12bad676737519be9b5f557aa742cf3",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/archive.ts",
+      "sha256": "d3ce23deab916d72577515c4aa74f80ffe4baec8b6d488bbdf1a2fd7b10b5ead",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/archive.worker.ts",
+      "sha256": "b0d0118f1df75d731fbfb14c578db0ec6fcb6d872ab2e152588a347dd54844a9",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/comic-archive.ts",
+      "sha256": "e8e1d7d5e086723a0c9ed0e109ec698428092b64799782df3f9ead133b910137",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/comic-pages.ts",
+      "sha256": "34f7c26c0e785909ac36281d683bcdc072aa19dab3b663d365ae4fc5f161fb9c",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/comic.ts",
+      "sha256": "156d2f9fa9b5c1d0ad9d0a041907b51744074e338bb5b543a89aa10cbd4ae10e",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/engine.ts",
+      "sha256": "cb99f3876cbeb7e2690fa674e18c9f83b3a23c57785557eee1a6409c569e83a2",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/epub-archive.ts",
+      "sha256": "26f6826a94ffb10fc2d1d25dd6fa84d17fed80ed101495d2a7518d54882ffb7c",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/epub-document.ts",
+      "sha256": "b0436287d06aab315733d2f4239f17ba4059ee9760e5a9c3628f21b8167c17a6",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/epub.ts",
+      "sha256": "a4fb9cbd63bd818dcba0cbf3646b682900537e2d10f519ec655d1189f5e7992f",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/file-identity.ts",
+      "sha256": "682ede10ae0df8efbb8cdb7dd92b95d00fa8e11cf3b41c2c5016fca0caae8376",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/hash.ts",
+      "sha256": "0ec9da1d6b3ab27bdcdda451c294f4b3a30b7cb192fee3850449a0ca0c15dd8e",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/hash.worker.ts",
+      "sha256": "cc0b3352bbfc7368ddbe8404d067d3a606dd89347e96c290aa2d82b15e6cc49c",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/load.ts",
+      "sha256": "44603dfe77b89db261579f6b491d59eee71d950f6c5b5b32d69135449875a9aa",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/reader/pdf.ts",
+      "sha256": "b64770f9853154c213873890fb386c63ff5541e64c3137c6cfcbff3a8c2c144f",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/routes.server.ts",
+      "sha256": "880fdb75230826f241855419b6a1bb54e2eae131951b1a1cf8c8744f5b330b92",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/reading/sessions.server.ts",
+      "sha256": "2531bff81d0a275cac6013690b69ee41a3edbec35d060c662b9bb8af017e35b9",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/recommendations/DynamicFeed.svelte",
+      "sha256": "8f48c11610fd2b992e2bcef0824d38c47599fe0f8bcb4321ea865e7820972013",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/recommendations/feed.server.ts",
+      "sha256": "c6b5a1aa8e4bb6ea7bd805fcc7f4cfe5a0edc7bb82e6e3aef70c6d359f0c4b2b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/recommendations/interests.server.ts",
+      "sha256": "72258e798dfe65c1a618aa8e64eaac61dc1cb03b7994f91c0fc8f74aa93ff8f9",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/recommendations/model.ts",
+      "sha256": "de5ac7080ee57b88c05f011cf5fc9655565c41b4f63c9363a0c545bd8fe8a35a",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/recommendations/providers.server.ts",
+      "sha256": "0a607de5b0e22c7bb30e755c52c44623a4acaac472d4eea3ff21af81babee703",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/recommendations/query.server.ts",
+      "sha256": "6db125c7611e418315ff93fba6a9e829ce6d415d49d2f2444632d1900d054f54",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/recommendations/row-ranking.ts",
+      "sha256": "594cee1840d4f2e2b47685f074f745dbe5deeed59f1fb240e80ed3c80650ed9c",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/recommendations/row-titles.ts",
+      "sha256": "7b77a21d288ec0fce36f5338d330955f5a1079f96e1fbcc75f5c5f5272448d49",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/search.ts",
+      "sha256": "c6376492d1f519bc6784eafdc4a51454114ce075840c1b1d0e463ab56802b33e",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/admin.server.ts",
+      "sha256": "2572db0091a4c2e02827d272cae649cfebb7cb146beaffe6a2799ddd78b51bd3",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/conflicts.server.ts",
+      "sha256": "b7dd03e6c358b8418b68084ee4e2d88b36a2261890ec8aab568b553b087bc1c2",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/context.server.ts",
+      "sha256": "c2c7a2cde4839b66f4ca9dfe1ba67ebaf92fe2cb12ab6457494fd564c1afbe42",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/continue.server.ts",
+      "sha256": "96c180d8df1ae75cc4199b5f77b96c8770a37a5e70276f0775f4ef9f30e8aac8",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/game-playthroughs.server.ts",
+      "sha256": "bfa070bb6522295080355e308d2da73bda97bb56acb3e59306ff7d75cec7eb24",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/games.server.ts",
+      "sha256": "4f1f563d6ded9d139d121b5d933928e9d477b856c0606b5aca88fbe9bbef5b3e",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/index.server.ts",
+      "sha256": "48c64621fd3460defdb54c2d86bbfd8e5013b4b4e2bf76df824656db8e049d01",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/lists.server.ts",
+      "sha256": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/media.server.ts",
+      "sha256": "2e44ca1f21d8e41dc0e1ed5d878439e99b1ef08bc2e770440ee8dbf1604524b3",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/notifications.server.ts",
+      "sha256": "c40a489d0e41b9e10891dc9766e8efa386e79e6b54c19cf215fc7b379c651815",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/playback.server.ts",
+      "sha256": "454e4a68aaea3f7eaceb943235996d236a49e01a4d30b8a3b2ba4e6f5e30a026",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/profile.server.ts",
+      "sha256": "5592dc2e26766a22827743b1483e69aa00cc722e610714bea4de8f2b076069e6",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/providers.server.ts",
+      "sha256": "0177e48d36f571428ea140cfdd6de130280997292da3acce24afc9df072e001e",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/queue.server.ts",
+      "sha256": "35f6f9424ff64793a5719ab8a187b6a9e9d1bdc6d3c86b83d7eaafdf505eacaa",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/ratings.server.ts",
+      "sha256": "c3dad87485dceee62e674d6b14d8a47a80c3fa1428028d236fd5b7a76cc74a8e",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/reading.server.ts",
+      "sha256": "f6c9ceed6606cabc2b5500e33a0c3d49a01f6cb44bd972a943599a92fcb17ebc",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/requests.server.ts",
+      "sha256": "a1212e76583f768971997a982a924c1a9aaf4bffed2edc08be72d32113666fcc",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/rewatch.server.ts",
+      "sha256": "156e0b8e0dd11eff925cfd41c6d48d1f1d27aba14000bd4196fd305369725fae",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/session.server.ts",
+      "sha256": "88a8e30900396c1f256f725846e1535ea14c637f3308019f6d050db28c47421b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/settings.server.ts",
+      "sha256": "650db75e608c66be474724fc87ae5f3dde25a492cdf2b4908658f4b8bfdfde10",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/tracking.server.ts",
+      "sha256": "1160de81532a29c56dcc408d22f0025bb03d7ee8fcdbe9565dd746d0583e472a",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/api/up-next.server.ts",
+      "sha256": "8b49a406fb7ebe4ad80d73858ac8e1f15cb32f7a6d29cf4c70e890f25548b490",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/auth/cookies.ts",
+      "sha256": "a40f22a702cd3490c9166042b567e6c648aada990df106c2eefa5f96a06d0dc5",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/auth/index.ts",
+      "sha256": "1251c0a5ebde74a241ac5b1df45cebe3639c7f8ca5a599649a94c27baaaa2731",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/auth/onboarding.ts",
+      "sha256": "ece68e11f072f86d1aeb5ac26cdbf4b4d2024ab8c5d0508de0f6613b142f227b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/build-identity.ts",
+      "sha256": "d708f078a5bf22098624016575d614c660f8e014ba22d07d224ee1477c1b7108",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/config.ts",
+      "sha256": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/content-revision.server.ts",
+      "sha256": "d2ac47a240a40816f16393af3ca772b2bf0c6d728cda89128c8e94404a4f18bc",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/db/index.ts",
+      "sha256": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/db/jsonb.ts",
+      "sha256": "de3327d4ffa147b122667c9fcde34fde89fb33f62daa8a8068f0aee1d97a590b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/db/schema.ts",
+      "sha256": "871186b6e1e26e72ac4342998d3c64aeff2805c965e1756d4cd39a228920c40e",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/diagnostics/index.ts",
+      "sha256": "bbdac918ce08bc80bc9eaadf787b9631f6b12e2cf18c663c8bcbb2f3e044d749",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/diagnostics/runtime.ts",
+      "sha256": "5e850be6b1ec7b721d6dbe313677a1d0329fb8d7b0d0badc458742204925d571",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/experimental.ts",
+      "sha256": "c0f6e86e6ac06824c6787101fc1293cd24283ea7fac883518b47ea2efe3a85dd",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/features.ts",
+      "sha256": "0b444ece28d8b2e44b303a3f0e727a216d7ceea9c4b794c1fa47d5ce9c35a9b5",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/notifications/inbox.ts",
+      "sha256": "c8d44c3f7bc05ca7331a333bbdbcfff5d7f8dc1bd1178bf8eac957e7e6c48fdf",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/notifications/index.ts",
+      "sha256": "b4fe46e35623d0c43a9f66a727e705f7a68f1c9babe5c8e15d3e842bc6456196",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/public-api/handler.server.ts",
+      "sha256": "7681f395ed3139c02a7e309102bb24d04414ddd5eb626f8c4b1adab091156dfc",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/public-api/library.server.ts",
+      "sha256": "5e51061cd7911adc78719859917c2c01d4cb115d69536cb10b9224f8781e7ecc",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/public-api/mutations.server.ts",
+      "sha256": "a053413458a82e9d6ca1efe58c47d2df4077f20f2b3619c2e6dba51c9978dbea",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/public-api/openapi.ts",
+      "sha256": "6a4be388743385d0a5808e0a89408a6f6eb934314dbd6b608b24355d44679be5",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/public-api/progress.server.ts",
+      "sha256": "52eb18a8f416d5b9bc5385f254bcbed60f8f3f8a913be2db49d277e62ef9c344",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/public-api/response.ts",
+      "sha256": "3cf20d73a88f92b54b16d1f59e1e2c8f7f47cfa9d9fe861e3c56c5574c6ad9a7",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/public-api/tokens.server.ts",
+      "sha256": "7f48df1284fb8c4254d33e0a7f92e9daf2d4736ea957d5f58455d7b766971ef0",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/public-api/webhooks.server.ts",
+      "sha256": "70c4d1ea244d7e3c723bb6fda6cb05c51300046c511bc6803667daf27d69aefb",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/continuations.ts",
+      "sha256": "a136f3bc8d4722419b7865219041851f4f87005264b461c919e515ea06491916",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/discovery.ts",
+      "sha256": "4a9417116b102b206b93c59f00fea2a19458fafdf102549e84f536126f16aa90",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/home.ts",
+      "sha256": "4fd157072d3f343b49cc3f88a012450743199e43e7f22a15d78f46b245886b24",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/library-content.ts",
+      "sha256": "9c2cdc0be520ebe7b5ca189a9693bd34b6ccbcabb1e26acb16396771a6350354",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/library.ts",
+      "sha256": "ceae8d87a2e6f1ab70fc7db812e9bf028b63c6141f1ba3cbd50ec6decfa6e9df",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/lists.ts",
+      "sha256": "0942e66e26f5ada3baf2668a8bc551728f57f8e2dd23e37b4990a0b202d87f8c",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/media-actions.ts",
+      "sha256": "5e4c415ef6db5d5a8df8b43986950022b9ffd8f98a14effd277f94c07e5464b6",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/media-rows.ts",
+      "sha256": "7d58ed35433fb890d19a07210af8605d867e667fcb4b8c15d50e5c0e113a847a",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/media-statistics.ts",
+      "sha256": "89dcaf54777bdef1e9fe2a7572a7b7eb21796619017ee85d85f9058eab63eff9",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/media.ts",
+      "sha256": "62494341598bc41b01cd4847bf9cd2fc21e1fe9e9f81fcec62cd1c595f19e90b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/music.ts",
+      "sha256": "babcbdd7a9de66ff560cf462bc506e37dc0b092e0599c9d5eccd841b4773c96a",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/pagination.ts",
+      "sha256": "8d13fbda75755cb40c53f1db2d4c8a16b127010791f5fd35eacff116e4c56f9f",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/profile-user.ts",
+      "sha256": "d7b068ad49c5ea08a43f2273134200f1305ee9b00f8727dd333ea47656a75733",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/profile.ts",
+      "sha256": "dc4e51103c9a2efa0c3fa1d762a74b82b8acae31c1634ffbde314db6c1fa073e",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/progress.ts",
+      "sha256": "988f3c3239523534fb2538d63bea30fbdb32d119710a2312ac53ed9a150fcd33",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/requests.ts",
+      "sha256": "10f42871eb9f1bb9b938b4366400eca208b3173d552a1cf391d75b2094eab09c",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/search-ranking.ts",
+      "sha256": "649de13320dd879a017e3402b5d8022a847336798584f36efc23732e342ecf23",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/search.ts",
+      "sha256": "70bcbd9b97575ca1c87196f462ee7f835cd08e74694761a588905805a3bf535c",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/show-next.ts",
+      "sha256": "9da07185ba0cfda304262c087683581562caa59ccd741f8f00a4b970b2005a26",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queries/viewing-recency.ts",
+      "sha256": "979b917342ee00a8b485e755bf10d0ee762c96c53bd2f95250944d4be8dee2c3",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queue/execution.ts",
+      "sha256": "d009837af44f027fa992d1dc2d0fe1638120817e1c7efb45950f583e8507e069",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/queue/index.ts",
+      "sha256": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/readiness.ts",
+      "sha256": "0233ee4af1195c8b9b0d23dda3f01b1c95b904ddbd6d5329ded2e079c9093f81",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/security/credentials.ts",
+      "sha256": "237630e6a4b83529458c8479afbbd4024be850e5d3fbb74c4fe00e84981326ac",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/security/csrf.ts",
+      "sha256": "959a271df8c24e5d80711f9f9a9d63fadc1728a3dac7f724059df9839578d6b4",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/security/errors.ts",
+      "sha256": "aa2d00bf5ada08637ed2689972de0623528eb03991454d02544bfdcd94181881",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/security/provider-api-error.ts",
+      "sha256": "75d1f1852ed02b22ab44875d22f5434535b14a05afc0add6db36dbb3da8cf354",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/security/provider-fetch.ts",
+      "sha256": "412271ebd72de3e4530a95830954dc1657265a67cae2f637a4d37fe82bea2d7d",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/security/request-body.ts",
+      "sha256": "83c49eeb5210d96c5c6c429f4287cb1f0631ce1bb086041ffc1a0d341f356762",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/security/request-priority.ts",
+      "sha256": "fafb402e4b583d7b247611cbadc708c3497caaae09a4d475f25fe56afdd4662c",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/startup.ts",
+      "sha256": "434b9926070dda44603c74f72c509d70808b5954365761c7e9952f619d7c6cdb",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/storage/image-cache.server.ts",
+      "sha256": "d080a944961ba9e58a0461c726038448140c97e842e07c6671ca97ac80a46e5f",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/storage/retention.server.ts",
+      "sha256": "50b898518a5ac21573ed69ae514c90b9e27062acd1aeb35a78b2affde3e04ad1",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/utils/async.ts",
+      "sha256": "5a5f655cb2405c42e6173bb5acd87ddf75917f17357ef1e8f919983a4ec18c66",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/utils/provider-cache.ts",
+      "sha256": "f1befbc9b71a8570abe3846057dd33592ae44a323ab688fdf3a283fd58327770",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/server/utils/provider-single-flight.ts",
+      "sha256": "9bf65c34f3b7a2e69d481f906ae7cd4d04f2e6c1826f28b85b0964bc6bea48b8",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/settings/sections.ts",
+      "sha256": "3cb9bd4ac4683d23d95bb6d4a08de04dccbf1f13fabdda8f9ccb1fe590944fec",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sharing/ShareAction.svelte",
+      "sha256": "cd1c6043522d39e649fa700b0b5f594f12ffe24b9e71300d5a83d34160376638",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sharing/external.server.ts",
+      "sha256": "4bb4db25a02a5124f2bc6af87ddecbd998e9bd216c79640436be3209d98de1d2",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sharing/leases.server.ts",
+      "sha256": "607843c44d27334d459561a29000620ec87c8ffa61bcbb46f30cc9d41363c873",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sharing/policy.ts",
+      "sha256": "5538cfca138f3087b572a032c496cb58e18448bc8141f9127e1512a65e59d47f",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sharing/request-leases.server.ts",
+      "sha256": "14c8519654798b5a198605bed4aa16bf9d035e906e7e6af9b9dcf895892fd603",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sharing/service.server.ts",
+      "sha256": "489ee903c17bc1d3bf97510ab68d4b5b00d5e0f74ac9933fa6cdece766fac504",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sharing/streams.server.ts",
+      "sha256": "620dbc33b224713f0983392af0eb70e0692179b6d11a5538f4f0570abfba33c7",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/insights.server.ts",
+      "sha256": "5b7d718009227bdd32a9bd9a9f86544350c14da95582b0a1f5e139ec1a21f238",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/live-freshness.server.ts",
+      "sha256": "fcee63fa742696b463c4649f4735ba4bc11e17b174d5b76dace9ddc8d937204c",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/model.ts",
+      "sha256": "e4d56fbad35cfa4eda2f84f65de313254344439c95f38fefadf5bd925af97ea5",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/presence.server.ts",
+      "sha256": "f95b71c8e48773f8aa080ccefe6d370e7a2ef18c55a956a2b7dd624b1c12f5d3",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/privacy.server.ts",
+      "sha256": "ccb9b58e23eafee8c531a19d419dfe65c73adbad89e51b9e9c61b8602b788857",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/provider-live.server.ts",
+      "sha256": "6308eccc874cfe5ea4bbb94832008ca9d51fd77166689de30fc560b8e57a107f",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/public.server.ts",
+      "sha256": "d3e48d9ba3a227e9368db980f79f4a4ee3d6f28a49621a4aa734a68b4eeea000",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/queries.server.ts",
+      "sha256": "6f292e1bdaf2b7de9c074019a48e7828c42c3b4d5fb080e143c16ce18204774d",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/relationships.server.ts",
+      "sha256": "82aa52a243cd049976549f319ab209da2ad9f997560354527141923c1ca30433",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/service.server.ts",
+      "sha256": "cd1d95a5755bef10eb12e62553c78960da25b9fb8272f0d02fae369fed9166e5",
+      "reviewManifests": [
+        "data-api-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/status.server.ts",
+      "sha256": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/status.svelte.ts",
+      "sha256": "39f7da07861be811f939aaa771085616d5acbb08d7469f5e201335307ed9493d",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/status.ts",
+      "sha256": "f031c48e2de2eb01e88d6fb3c80c1ef77d3d85d80c585e1841611313e230a22e",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/taste-cache.server.ts",
+      "sha256": "ab588a44d7307a2ae79b1ddd80647000d5b5a9fbc1acab5a5660a04871c35c1e",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/taste-profile.ts",
+      "sha256": "7fef66e2f4fb58ccf3e017ec799d7cc216fb5301ae2db570c8e76b6b0dd04227",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/taste.ts",
+      "sha256": "e8a1a376ff4de699a4cb2b7cbad81a854e4aa4c0452d7396b3c7db12b27ea38b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/trakt.server.ts",
+      "sha256": "f61bf850df9f08ac5b3ad4d7bb84d2065511b8f2d7b7094badabdb682218a415",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/social/work-features.server.ts",
+      "sha256": "e67d13669589d96046402286317087cb886cf3c18e946aa7c7537c2a50c0ee63",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/changes.server.ts",
+      "sha256": "5b781dfbf935afa83d7fa54b8446fc9d4830d7f375d26f6c3658ba00191868af",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/conflicts.server.ts",
+      "sha256": "b4957d6160e08a8fa127be242b915fa9e92c617860b14174a74e5616f428cd36",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/history-removal.server.ts",
+      "sha256": "10f62835a0d8c9178c608b3f65cff66331f42fe7f2df8e4b8e9a18b21491017e",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/jellyfin-playback.server.ts",
+      "sha256": "7eed2b4b624f01ead9425a456fdee2a8b656aa59c586fdd68034d0d6f336ff4d",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/jellyfin-progress.ts",
+      "sha256": "0903bc89327889133dc6deec820b4ebe2733059ae7b5a39e2a090d2d741d0a7e",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/jellyfin-reading.server.ts",
+      "sha256": "9c13545fb04e2d755e9ba960c7fa2e09cc567036194a658fe0bf9269ca149f2d",
+      "reviewManifests": [
+        "providers-jobs-coverage.json",
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/jellyfin.server.ts",
+      "sha256": "3ab6f5c69014adad7a61ef422c330f0d0007e1cef26226fccf60799245d73370",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/list-values.server.ts",
+      "sha256": "2352d763f297de83636f406d1d070f5fd78901c1beef63fb5ab44afc2671ff7a",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/preference.server.ts",
+      "sha256": "4e3b217fe77d7bcf505189ad887a4af9b14526fc89323a6e5da26287acdce957",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/trakt-export.server.ts",
+      "sha256": "a74c753043d10f2a3290d53e77639dee5b0529f9729b2ebdd733f3b02665cf31",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/trakt-history.ts",
+      "sha256": "7fa3cc28958929a436c193312ff1b147557aa4a98d7cbbcb9bdf9fa0a6a9b830",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/trakt-identity.server.ts",
+      "sha256": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/trakt-import.server.ts",
+      "sha256": "b60035dea2ea16c13da5376fdb0aac2196dfbb68df1c779488d2d08348d046b5",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/trakt-list-matching.ts",
+      "sha256": "e1439103b08b7caaa83f7df548c88ce7094107e2218ee8f42f74ab55ad87cdae",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/trakt-lists.server.ts",
+      "sha256": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/trakt-staging.server.ts",
+      "sha256": "3ff5497378a116f97b1073a0ea871f000ab7c08abd086cc23c21cb16d93f5413",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/sync/values.server.ts",
+      "sha256": "e344eb41440b9796d473cc00535ccfca708a538e15fe34d59c76ed7939377316",
+      "reviewManifests": [
+        "providers-jobs-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/action-feedback.svelte.ts",
+      "sha256": "dfc626ffc4212575e021f5fc59e8d48cacb3b23a3aefee951867cb4ba466dec2",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/artwork-colour.ts",
+      "sha256": "4ad26e1d403613a663f9864ca164b8836fc8d2a60d201d21df6ca6129d59641b",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/ChartMark.svelte",
+      "sha256": "99e1fe7507c5d2d62316cc70219f19a2287928b27409dbaff6364fbabf34db0e",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/ChartView.svelte",
+      "sha256": "5f92ec30193d1802969e8e4c171fdae84271045881b0d796f809d8033f955ae1",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json",
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/ExtendedChart.svelte",
+      "sha256": "76819152e17e61d80d240c945650a53a0f814e23ea0f76cd973d3734c1432903",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/StandardChart.svelte",
+      "sha256": "40dc950778e8c105cc89797fd2b3453ac5291e01f4b7a439f30ef60a3a0f50ea",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/activity.ts",
+      "sha256": "b7a2cfc300b3232f0ef179e2e0a6fdf6c5a986a8126ce63fd30cc06c6663c3f2",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/chart.css",
+      "sha256": "5f9fb3aa3ad364377d23747021c99d81778c0676fa2a4324aa93cdbc150f9b88",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/context.ts",
+      "sha256": "12216b941e05b8f56d4626b34073716cfbfcd27996dad53d0ebd7968aac3638f",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/extended-geometry.ts",
+      "sha256": "a294e07c2fae0a247c0255c49ee7dfa29e7841c2289a07f2eeb8af01918a0d63",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/insights.ts",
+      "sha256": "58ba4e831ab598cd037e98f7a94b5b6ee3133cc0fe5e50c97bcde193fb3a8da7",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/model.ts",
+      "sha256": "f217cc80e27e2c165a3b7cb89ea8718f0ae402c8dfa424f49ddbacdd47650549",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/standard-geometry.ts",
+      "sha256": "b676378ce7fe53b86b589c481c613a60275c0c81206820e0d869cec957fa2eb2",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/charts/types.ts",
+      "sha256": "b1d5545dd8f1acf7c07fd9a617b7bd80740e5f5ca02c875229325e1b3ab90371",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/client-context.ts",
+      "sha256": "1e52c695112d35c360017bbbb449c444a27f26c3f521d3f9e5f72cf7e0b4f67b",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/client.ts",
+      "sha256": "af61ef7082bf81470584fcbd9912f91f3e0b880b05485101a45b38ce1bc9af53",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/clock.svelte.ts",
+      "sha256": "28a47a5a8b51ad980da44d82cc882e52f837ddc5542462da33a0b623b5f12df8",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/AccountFields.svelte",
+      "sha256": "85f12a7dfdb20177a243b6bec1db1a32cdcd943eca961b75a33396f6ebffa6c9",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/ActivityHeader.svelte",
+      "sha256": "2024e6c0681aa98b478e65ec075e56e7640fe59b50a701d5aaf3fd8bb80bea65",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Avatar.svelte",
+      "sha256": "0bcf81b737191de45ef0464ddb2a24fd0c1ac3af7f70c2660031427a44b0c082",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/AvatarPicker.svelte",
+      "sha256": "6732bd940949cc11b6fdb1887a5940bee8a39d4bc25b4a7cbd8708a5da4067e0",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Brand.svelte",
+      "sha256": "622869af25f7b201969f399af8e81583d0e9fa1194527c2ffdbf1fbae717a430",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Button.svelte",
+      "sha256": "de5c965c139f864e6254cfc77c57c5c1d5c0cf97b3f53b70852d931e15ad31cd",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/ChoiceGroup.svelte",
+      "sha256": "96b415b83d39604a8f0f3539e874464185b36554ac2086ba636d59f7de2bcb17",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/CollectionProjectionSettings.svelte",
+      "sha256": "f3c4a63b930f30a728bc764b631baf804c0dae5b8147e061a48d0038ec8a7b12",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/ConflictList.svelte",
+      "sha256": "d897f318157faa15ab8f667f3e612a61321d3abb5d01ab7d9bcb4c17ed6f155a",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/ConnectionCard.svelte",
+      "sha256": "d8f107af46b2c7ba35852f81107e5fd836d075613d0b46d715522de6fe9ce969",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/DetailCard.svelte",
+      "sha256": "eac8f6324922d923480af4b00ca437ea3d9a6ab1859f1402e01c329ac3f7ee98",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/DetailOverlay.svelte",
+      "sha256": "dee4a3b5edb0bc89c63eb7e6f0f6b3eab5c3aba80d5001842392387a87be1118",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Dialog.svelte",
+      "sha256": "b47f6f269a93b85265302e346071cad37013343eb1bf4faf516305b43351faaa",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/EmptyState.svelte",
+      "sha256": "843508e6fc4a55ac311636379339c1a3b70cf6eb6bb0a4f9393560d861154cbe",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/FactList.svelte",
+      "sha256": "982b62bccf01bbd08728377d1267638dcb2cf2587cf0c2a7f4e1b813646af56b",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Field.svelte",
+      "sha256": "d42f4742f152d976c4bc59dd63da9bc5a2bd4de776da9c2ee2d9ff71b279bde2",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/FormActions.svelte",
+      "sha256": "0096f4f80a767646d61fc1f0c6f4150e44c16248b0a91c0be63ef4a2d908fb93",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/FriendRoster.svelte",
+      "sha256": "7248ea9f16ad88714328a7870ea862ab8858ea620544b0434670baeb95f4c2f5",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/FriendsPanel.svelte",
+      "sha256": "162843b32d075e56a051852d70e7dc0d4e275d21e4ba68a5f8b806d6d0ea3857",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Header.svelte",
+      "sha256": "2976f0ff76329d05455135eacfb53c8317f3f30489492c35ee510835984d4780",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Heading.svelte",
+      "sha256": "c8bd592d0b637da8c1bd5dfa7344f1894efa25ba9015002a0ca38d808e27428d",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Icon.svelte",
+      "sha256": "24120bbe501cc5d103c1f75d6294dbaf9e71da58f7efe39a20a585f041876eaa",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/IdentityCard.svelte",
+      "sha256": "31249d6bc96fce8aef76ee84c43691f0728181b4c09f4b6ae49f9039efbb0d5c",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/IntegrationSettings.svelte",
+      "sha256": "14dca90d757f8d3e0f990150cb14706e85c7a993f01065071902925950211a74",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/JobSchedule.svelte",
+      "sha256": "d282369189bb64a6ca9fd746875000b7cb4fb6e9e81d7c2eae246b097303e863",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/JobsSettings.svelte",
+      "sha256": "64e08d0467aca8e3f8f1e4079a9874ce32a54bb785c799c573adde048a299e94",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/MediaActivity.svelte",
+      "sha256": "360efd31223278bbd357de75a5913ba33c1454f876b04800c54b57b9fbc954ca",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/MediaCard.svelte",
+      "sha256": "057ff79292214b7eefd0311efce0ce6c8dd5866b375ad88c116b30e2a022897a",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/MediaDetailRows.svelte",
+      "sha256": "71e828c7abe3ce024a4f8a734fc1d4b091afdfa4f6f0246c27a030323252b2eb",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/MediaDetails.svelte",
+      "sha256": "1325e182e80e9a33a2e392a90ff9228a67b7f66411548109514862193b59aefd",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/MediaHero.svelte",
+      "sha256": "f8ad70c4381400015b295acb417978d25a294a3b2adfe690befc7181b270f3ea",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/MediaPage.svelte",
+      "sha256": "afb2bc49fae57d30b462ecae9435884073255e84a7726877fac9e5e2b36bff27",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/MetadataEditor.svelte",
+      "sha256": "04086155ab4f167ec86ad8047561e537c1cda400a00879b95919013f8dd5935c",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/MetricGrid.svelte",
+      "sha256": "238a00334c55146efb96a5e3743562136d5c319ad50f92b57d08906e6ee35fd2",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/NotificationInbox.svelte",
+      "sha256": "925312bf997664a68f10214ada93341a1acc9c646c668f8ee5edff9ab2e294af",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/NotificationToasts.svelte",
+      "sha256": "e6c820cf6e118fc2dd9fe765e93fd44917e5270aaf949331d248339281a59672",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/OperationProgress.svelte",
+      "sha256": "1c946dc3e947cc37045aabf74ef20f0e325632cba9044798f6ba2e016cc2d202",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Pagination.svelte",
+      "sha256": "60339601773c7eaf9286f23882c37d223a7f43f5480707d850cb1d6f6bc04a27",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/PartyCard.svelte",
+      "sha256": "e1103f971fa324a1c61072f7c945c37df6c0ef916889951e1c14a23b67cef2d4",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/PartyMenu.svelte",
+      "sha256": "b98ebb4a117e5702dcf3a4c4cb1cce64fd9c9f878231c5cce796fc2a32bab31a",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/PersistentPlayer.svelte",
+      "sha256": "c586c957730247a79835d3ff817ec9836dac9a99d1f5a93fc6c3abf51fd4a2ca",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/PlaybackTimeline.svelte",
+      "sha256": "58f0ed9b62cf51d3a0cf3c1bc484769e9de682adb7e59f8a2f49a1b8b0d316ef",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/ProfileEditor.svelte",
+      "sha256": "0045838745fdd72440d141bb4fc08ae443a8523d6c5b0cd490852c873e3cc385",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/ProfileFeatureEditor.svelte",
+      "sha256": "34205f691872181d892f44efceca6c8020ab3509732d3eba4d3fc0e64cc3a4dc",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/ProfileRecap.svelte",
+      "sha256": "5020d0d3ed99d0555d17fcec9e25eb78f8c6938abf8251aa6923260f7c2994a0",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/ProgressBar.svelte",
+      "sha256": "59082572cc0a1024e0c1c870b5809c2195a6e8b2f58cbf8a7195bd2d198fe242",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/ProviderAutomation.svelte",
+      "sha256": "961e458595ed32d62e6fb321c4a2eac96fb82bde11f20a38ee469785bba028ef",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/QueueList.svelte",
+      "sha256": "21740f1c214e93775bff999fc3a677b46fd78596f866816288a583589d1c163e",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Rating.svelte",
+      "sha256": "48c96fa67504e80fff7ea08316a255caf54a004d65eaef0825d04e1fe0304f6c",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/ReactionActions.svelte",
+      "sha256": "a17058e3945ca951ca07ed3b0afbdf0954fe113c364c42f28eac20e18b1f39ed",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/RecommendAction.svelte",
+      "sha256": "6f6c6bd3f2e2e738327657a61aaa174bc1a5ccf48b7dec9c78d68598b0133cc4",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/RequestDialog.svelte",
+      "sha256": "18e513389c48a496ce1c7214c2cc4a1c8662d203f331c309cd682850ed067674",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/RowFilter.svelte",
+      "sha256": "6996cb9f6fa56a6d3b6190caecb7db56d057f587af517e780ba2b2c0e157f439",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/RowStyleMenu.svelte",
+      "sha256": "8887ea8d6f2ce93fc2f094e9e3e7c2d932cbb827533f4bcba1b7175708489dd6",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/SegmentedControl.svelte",
+      "sha256": "c7142c4038d28abded1dbd578e64c73ed07348f5695aede77cb75995e1853f78",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/SettingsRow.svelte",
+      "sha256": "f7af80630349e8c81ab780084ed9b9c3c49a8ac17e88c9851328b01139b4b3fe",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Shelf.svelte",
+      "sha256": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/SocialControls.svelte",
+      "sha256": "68aac9fcd8439781043404d2d45bf5a3127703d6f06d56496731a143697eb05a",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/StreamsPanel.svelte",
+      "sha256": "6b89fa07280b2742701f4ecfb1eef61fe1b00050abc1e0e3d25fe289580fdf9b",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/SyncedControls.svelte",
+      "sha256": "0d71c2efddede1062ba55273e31c072e7c38d67d01f83b0ec734dd01e6ed9969",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/TextLink.svelte",
+      "sha256": "770ae4d543ff4399b9b158025a0d22c809c0e9625ec981ea33c75ba8cc9a60aa",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/Toast.svelte",
+      "sha256": "077d4433a37b3bba6c11f8091edfe13d2d969bad7d33af0d05789653482b45ca",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/WorkActions.svelte",
+      "sha256": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/WorkListActions.svelte",
+      "sha256": "7da77fce0df3f2c20af1087f0d2a234b3ea39b53218188c0247321b404cdc5d4",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/components/WorkMenu.svelte",
+      "sha256": "510bd0cc9d8b6f8b2c223ffdd3da60b5361591fba5f2af9c0ea7f4679619c553",
+      "reviewManifests": [
+        "ui-components-coverage.json",
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/content-revision.svelte.ts",
+      "sha256": "a020f2a02ab30655fe9d1203fe3c90200625e874c2e63714a499f5c8b1661fd3",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/context-gesture.ts",
+      "sha256": "9d5c5049d0311fd58fae58a13cfa2593efe96c6d3df7c836f1ad005eee66277d",
+      "reviewManifests": [
+        "ui-components-coverage.json",
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/controls/actions.ts",
+      "sha256": "74b419136c86408450f07cd8c228ce951ac1354b3b03bf03f7d28a5e2e43e426",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/controls/filters.ts",
+      "sha256": "20b9f9de2dfeae54045ddac259c5a4915c722090cf24da9b20f9ad04ef1855e2",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/controls/menu-resource.svelte.ts",
+      "sha256": "7695cc48f4c22899cd9609df7e7784c8df6c7102e9d9ca6cf50a9f3001ab77b5",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json",
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/controls/menu.svelte.ts",
+      "sha256": "193db0b6d6f0b5d53b424f3a29b1316d9a83453464562b32962c66968b457e4c",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json",
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/controls/queue.svelte.ts",
+      "sha256": "39abd3af90f6ef30a37b13b6e27f206bfa2c0f7dc6fb751730d6be5865aa9dbd",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/controls/requests.svelte.ts",
+      "sha256": "4e3336297c2a46649e85750e6f9bf1977e00df7da62078b06f2b8d04201f2546",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/controls/sequence.svelte.ts",
+      "sha256": "92adba067c1cee6a3127714420e2c4612279cef365dd9ff86cfc843c227c16aa",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/controls/work.svelte.ts",
+      "sha256": "f233383cc9c2cf0e68957741853129a512844f25a30cb4426683961a057bfc3c",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/detail-section.svelte.ts",
+      "sha256": "dd2156aa5d90546a7c74cd413cda961dc6cd507108501f522a3d2dcd8a4adf0d",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/diagnostics.ts",
+      "sha256": "2cbf4464475f6e55dddd9d0e14cc0d160f745f56d1bb2917f9ddc5afc4d5dbd1",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/filter-options.ts",
+      "sha256": "d065ff9a9209632f3811d9edbbe3cb460c36cba80ae5d66e0ebdb17e5ef446f8",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/friends.svelte.ts",
+      "sha256": "6206e7387bf915ecc0a74dc882036b4c0d4f2850d7dcc6eafeb5b75ba2784a0d",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/headings.ts",
+      "sha256": "616a9c034ab8db209d92ce0218036cee3dc527733e30fb55242922606fd3e2ad",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/heroes/playback.svelte.ts",
+      "sha256": "edd01eb653f34a47737612a134186c11a27cc142793f59be7e160c3d7c182e01",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/heroes/presentation.svelte.ts",
+      "sha256": "bfebb4ffc44c07bc1f3a504c122b38aa8749c6f372c46d49efa73b54798a85fb",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/insights/community.ts",
+      "sha256": "9cfc64115c882cae5134fc8d804a0e87f7f46ee19ed52897e4873ad96d1dcf19",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/insights/media.ts",
+      "sha256": "829d3d56533074169429f5ed69d21b6bede2bfc4114179dce3a6caff09bc2bd7",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/insights/overview.ts",
+      "sha256": "d2f6f120f811ac004665c1ec460db0dc47704368f6e7f63d7b7c3ef937f786dd",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/insights/profile.ts",
+      "sha256": "999c39004a5f622152ad83629f501ee264c05dfe5126e006110b13648f33e7c9",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/insights/types.ts",
+      "sha256": "1dcd0106fc471724c026bf6e2384e95c5e3301c42474e58777c8300cfc539d20",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/labels.ts",
+      "sha256": "7277e639d5e12eae14e1283655f1f90fdda3c7c35112e8f7db8ee1bd4007899d",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/lazy-content.ts",
+      "sha256": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/lazy-image.ts",
+      "sha256": "8922b71afabcffb43a0215ef837b79f7dec98a2631f70a47e1c9b9f1f853744d",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/materials/MaterialTweaker.svelte",
+      "sha256": "5969305c1b8adfd1ec7b4db9dee21891e36fc0a283ad78e0e08b62cb9294e0c7",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/materials/black-fade.ts",
+      "sha256": "b4b4d7a52a9f8cbbb46ad09c719eb7394c8171176985d4685bae28dfd2bb18cf",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/materials/experimental.ts",
+      "sha256": "e28fdab493940eb7181e2d1beb069b5a49693e7eef0072e7aafdf02f76f79f93",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/materials/export.ts",
+      "sha256": "dd04601ec4bbdadda7297aaff5e6176f4faa49bfcb4f46fc995a25391e9b4c85",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/materials/glass.ts",
+      "sha256": "234cd8ea6656437094aabd29b14af839daec69f263167f45e1774bc6b0103918",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/materials/presets.ts",
+      "sha256": "9520e2f59a21b66fbd0841f8bda5f169c5d45496e7edfbf7a83b0bd1ba5ee71b",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/materials/sliding-pill.ts",
+      "sha256": "b1d69faeb0b9f36216d78cd2274373c6a62858c7676fac70cb9d0473ce956752",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/materials/tuning.ts",
+      "sha256": "e9dba23c40393c4b60c0579be6abcc21b1b6f3ebaa01c443358a104628cf8596",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/media-navigation.ts",
+      "sha256": "e9703a6145b81b05a534ccae140d98239a216ae5c130ab140f00414be31dfbaa",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/mutation.svelte.ts",
+      "sha256": "b8d1cefaf4dd4bf0ac589e3ca6f7c6e4c078012a0b1f366647c7fbd21861f217",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/operation.svelte.ts",
+      "sha256": "c0a20e789db76cc0a4a5c4a66429e74937c7aae9005c3beed2141ce11d95653f",
+      "reviewManifests": [
+        "data-api-helper-coverage.json",
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/pages/SectionDetails.svelte",
+      "sha256": "3677798a0e0a2f1c950f47d8f0f89f67070b7315bbc41e40bc10051acd78481a",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/pages/detail-rows.ts",
+      "sha256": "706262606196547e6bae52d955416c5bda75c16b703a7d23700aedf7d6a0bb1e",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/pages/detail.ts",
+      "sha256": "f23ca28ad1a3432a1e9ebbf28131022046cf8295f6ec997443df4cbb468ae9ab",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/pages/music.svelte.ts",
+      "sha256": "88aa749b7746b045130245d3f768c1c990dd3adece13178d8ab2af885272be91",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/pages/types.ts",
+      "sha256": "b972071a3fcc20b307390edea6622e23ba96d8d81ee9a57df89ee21bf05a32a9",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/panels/friends.svelte.ts",
+      "sha256": "e6825c8c3dbc7e94bd2ae392bc090d71d4f6aebf9c7115aea24229375dc8ce9c",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/panels/notifications.svelte.ts",
+      "sha256": "f0c507daeb4c93b310ab0874dfb3cd414fbcd433d38d2f3f03fafdd41e296fd9",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/panels/streams.svelte.ts",
+      "sha256": "772f06ab81226ed6bb96ce7cd797b29840e7f80df9eb15ee60f00f3e93d07597",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/queue.ts",
+      "sha256": "b708a009ba4f81e7869c954472b1c46a82c030e9fd8783066fbec072d9ea2c44",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/relationships.ts",
+      "sha256": "34cd27b731a9351445efcca8f6553e21e2a01c12881b6f87bb69eff39a962fda",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/resource.svelte.ts",
+      "sha256": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/section-target.ts",
+      "sha256": "e325668b0e3ae9b5eee6e65bf6b959551560fb1d90916a96f056f367c02a8cf8",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/cast.svelte.ts",
+      "sha256": "c565e1a7e7478a5e9f6150b8f8fa7baabbd8cfa1f84e738541fc16c11854dd98",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/controls.ts",
+      "sha256": "0b9c9f1d8fb02391fab8263113485c167f9daff2f6875e683812d63be6d298bb",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/credits.svelte.ts",
+      "sha256": "5f749b9cdbfdd7865f161b705bb2b5f99127db57097ecbbbc3defee86a9e9987",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/detail.svelte.ts",
+      "sha256": "00be76aa839f4eeded9634eb6451960efa8497d0b24ed7450eba496521c94d24",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/discovery.svelte.ts",
+      "sha256": "0eea654859d9848e3457b9863ac11b71ce3de8f468fdd8f9be30df33503406a5",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/episodes.svelte.ts",
+      "sha256": "ed03d3212ea0fbd54ffc4995ab801d0592a449baae9fd8d6c1205ddf5074bf30",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/for-you.svelte.ts",
+      "sha256": "82bfd382e8d045ca3ef2c56b5ae6de68f8e901ea47fd3ab7bba38f76325b7d9a",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/home.ts",
+      "sha256": "d5ac544ba280a416571b7b5485af36e87bf768777f770bd81c23a0034a2c3efa",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/index.ts",
+      "sha256": "6e5055dfe6308433a718bbb0405de541011a934efb582db76becaa1834f7afc5",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/journal-cards.ts",
+      "sha256": "3f5be0496e19fbbd9f462cbd852e25b860853633d9f9bbb9538ce67b9eb55f52",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/journal-visible.ts",
+      "sha256": "b938b5ee967de28f3c143d1dc28c99b05e06370143077bd1e92870ce14435146",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/journal.svelte.ts",
+      "sha256": "819b8fd31384bf7c9abed912cfa1db3bf4855e766046c405fc9893d14808b1a1",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/layout.svelte.ts",
+      "sha256": "fd449adc5c7878f6b1170dcffa9ba39c200dbb7369bc30d2f646c07c3ba37fd4",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/library.svelte.ts",
+      "sha256": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/list.svelte.ts",
+      "sha256": "eed96a076485e546ef405bb9230d0a5a0f3f6993b07191cc1cecda3ff3534c22",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/local.svelte.ts",
+      "sha256": "79772309b9f4b2946149a0abbc93875bf13929e06c48b0d3d29c93b97acbaac4",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/progress.svelte.ts",
+      "sha256": "2d6bdc1f28373132abb542a6b3ce79fb4555d0fac690814f382d794b0bf74111",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/search.svelte.ts",
+      "sha256": "81597cfbfd699848a051a5cb9c9821d981fd3b172cf4dcc82cb466ba592c9c12",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/social.svelte.ts",
+      "sha256": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/shelves/types.ts",
+      "sha256": "10e7b93e83e7944eb998ef54ccd6abbaeaa86ad4cf663cf58ce9c044b936af37",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/social-enrichment.ts",
+      "sha256": "2e03db35cbdab64ba099713005b9fc579c7b999d8755c0399b4539d0592e75d4",
+      "reviewManifests": [
+        "ui-second-pass-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/types.ts",
+      "sha256": "fec41648496416e867024e045d746de08d69e4a7bc51257ec938cc3575506b7f",
+      "reviewManifests": [
+        "data-api-helper-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/work-menu/CatalogueActions.svelte",
+      "sha256": "8730b941dc8e5c38042c3bfc024e2638f7fb2f9531a289975cbff5d9ef3c4414",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/work-menu/GameCommands.svelte",
+      "sha256": "011cbf53f30dd01e1be92683b052baabb2915c3fc15d35fe2685121506fa628d",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/work-menu/MusicCommands.svelte",
+      "sha256": "88f77aef3bcfdd074dc499afce08ec4961ece8413dd00f200589a0ef2be1ed0f",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/work-menu/ReadingCommands.svelte",
+      "sha256": "552ac16913f945be70a4d9c9c144ad2d2db85bb5612eaf9cfd2780fb38952a55",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/lib/ui/work-menu/ScreenActions.svelte",
+      "sha256": "a0820eb7da5b0603293a787e2ac4cbd52e821f1aa5cc0ef1efda654cd0675046",
+      "reviewManifests": [
+        "ui-components-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/+error.svelte",
+      "sha256": "47e79cd2918e9ed7d0b3b3b320b8f88bde28dc2bea01e5782c061354f7109bd0",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/+layout.server.ts",
+      "sha256": "4e2fe9e9fb784a3c674e2fea1b8b265caa263b8e0861466451e98d884262a187",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/+layout.svelte",
+      "sha256": "1e5c8a3b4091290295eb05df4e517467a2210c40f7a38cf9860f0c4aacc516f8",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/+page.server.ts",
+      "sha256": "9b1a0ead316150842ea8f437c28166f34cb70f2de1a2d97e5e1289f243d30894",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/api/public/v1/[...path]/+server.ts",
+      "sha256": "2e3c70f4d6c8fd26db129f2296ad9f94c910b22452a8d1163b488831b5b4ccec",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/api/share/[...path]/+server.ts",
+      "sha256": "e4320e6a5e354cfef26374e2f36814cc41c98d5bf3dad386b3df6ca69e520687",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/api/v1/[...path]/+server.ts",
+      "sha256": "13a3fdd082849b6e6a327836698d5cb2d9dcc06668cf90e21cfa805145c2a8f7",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/api/v1/diagnostics/+server.ts",
+      "sha256": "fa99d90bd474e0dcb2943b7a51228c34d1baa33466865f13d71629b0488682ad",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/api/v1/media/[id]/insights/+server.ts",
+      "sha256": "a3c28326b5fedc2b8603b2192be888cba681823fa567bea275ae35704b90a077",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/api/v1/media/[id]/statistics/+server.ts",
+      "sha256": "c35ef837c871ff2c882010692d8be0f1685a5ca7adf410b557ee50d1fc9ca179",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/api/v1/people/[id]/credits/+server.ts",
+      "sha256": "fdb7f834d19c356633d5386354fea7224f9a22d0a7b80adc8a54c0b573ab3f3e",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/connections/steam/callback/+server.ts",
+      "sha256": "e37b0ebc95abc6dc38d1e284f093df353d8ea23376b6a15730647bcdac0e06d7",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/discover/+page.server.ts",
+      "sha256": "5a2a65f74f17f43e942c7ce335bb4571b01ce6491d65191ef75b27934c3f21c3",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/discover/+page.svelte",
+      "sha256": "b666607167f5efa54892666c398d5f38ae55d8f8317b06d0234edfc2bf4a2d60",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/for-you/+page.server.ts",
+      "sha256": "00e2d55a453f1313e0de71398bbd989529823e2afb0bed1038a050da3023f9dc",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/for-you/+page.svelte",
+      "sha256": "70878f1dd9588c3e405720ba03d4123adbc1f6232d8c072c39d30ece017e2849",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/games/+page.server.ts",
+      "sha256": "c7f0d9142b3b1bcb79df2e8df3c28c1136b49ae385439005db8809086bd6fd26",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/games/+page.svelte",
+      "sha256": "f297a931a4d5cd97d0160af27453adaaca3ec0a78911574e114c81ed23ca2e03",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/games/[id]/+page.server.ts",
+      "sha256": "e6a6fa2879d475544cd0a5b3c248f9acf0312bd5dc097f2207b0b130badde896",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/games/[id]/+page.svelte",
+      "sha256": "b5a5e9d3e50037face00c5fdf01a0ea603741a0273788ba7b65f30584a34826d",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/games/igdb/[instance]/[id]/+page.server.ts",
+      "sha256": "5514a70e131c0859c52fa200805b31940ae8bf6b830bba97402b3f8977353f07",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/games/igdb/[instance]/[id]/+page.svelte",
+      "sha256": "1c827b0d07a80050f3ea6ee020d37583b3973d2ae7640f95ab6c2488f67036da",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/library/+page.server.ts",
+      "sha256": "8763ebb4f756209458f07a2dc86566de9ce594daa83c05000a8aa7555b750694",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/library/+page.svelte",
+      "sha256": "4889dfcefe263dcc75ae07e36117e5acc3e35598f259b7c2450ff639264901c5",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/lists/+page.server.ts",
+      "sha256": "dd567fda8ab75c337cf0cda5e47ddca5f1bb341b655a5aecff99b798d78fdad1",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/lists/+page.svelte",
+      "sha256": "eba86ddb4551469b9592293fc22d7c63b68074b2c2b603a7436d7bc4d18aadc1",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/login/+page.server.ts",
+      "sha256": "3b2b394530e4030d384533ab3e47f70ab0af3833f95dbc497527bd0f01914633",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/login/+page.svelte",
+      "sha256": "d1671f7c6e99867dea33cbc5276c7860dd55b6998bc7f83a4ac52c63a61ad9fb",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/logout/+server.ts",
+      "sha256": "31c0750ce09e191798b08b9b0e2b85d9cb39f8b68e5e601f7ec6cd346cc5d7a6",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/media/[id]/+page.server.ts",
+      "sha256": "89e8e87219917341b7b6c122c1aa16effd35b53b1da074abd7487f347de18a01",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/media/[id]/+page.svelte",
+      "sha256": "bce8e7c4c1b9d70ec530daf5c6f2311dfd233aa85e229ea83fbe7e85ad8f4340",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/media/[id]/history/+page.server.ts",
+      "sha256": "43d7fa85c47ae984cc01b3527ecff34db1bb22e03b5943ff57198cea11e1f877",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/media/[id]/history/+page.svelte",
+      "sha256": "6c9856635d1644ea8fa1df06ccb80669ab71dc4dfabfc5d6c531114b8598f825",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/media/comic-vine/[externalId]/+page.server.ts",
+      "sha256": "d7ea9c51848cc82192bdb1a25ebcc14cd233226677d908fd143a890bab63973f",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/media/comic-vine/[externalId]/+page.svelte",
+      "sha256": "23178f99eedd8f94f9552b44eef39fedcb10f8d4f75e61ab8911e1fd5ca06ce3",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/media/openlibrary/[externalId]/+page.server.ts",
+      "sha256": "e64c5a48c50df9d1e9ec672d223650df8fd23199cd66c4d8bea743d85a7a7052",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/media/openlibrary/[externalId]/+page.svelte",
+      "sha256": "23178f99eedd8f94f9552b44eef39fedcb10f8d4f75e61ab8911e1fd5ca06ce3",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/media/reading-collection/[id]/+page.server.ts",
+      "sha256": "793f28be6f7eff612b564cc8fb758c52e12736cf4655681fdb639fe95d5b0979",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/media/reading-collection/[id]/+page.svelte",
+      "sha256": "07e6885a2eea693560dc0f22d29002d82099555e09d6abe9a67ce7bdc2186f0a",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/music/+page.server.ts",
+      "sha256": "5575d0b1a848e731a0fa15a10d05b767208c36bdefa6d6a9fd7356634b52ace0",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/music/+page.svelte",
+      "sha256": "cd3db701cec7e4ef0a41bd2b9b3865acd23529604224bb39e4ce15ed5b2a7953",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/music/[connection]/[id]/+page.server.ts",
+      "sha256": "1f3fdb77863635258e5bd32bdec140dacabf7b778ea7616a0ff289c1ec844ccb",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/music/[connection]/[id]/+page.svelte",
+      "sha256": "41767dbfba613340c8ce56969ab3c718eecb8a64ff24984019bd7853fa5a5b10",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/music/work/[id]/+page.server.ts",
+      "sha256": "04a7ddc0c5f7806e3234cb44b632e3cc5766be1c0362ecaf70c4fa0c9586546e",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/music/work/[id]/+page.svelte",
+      "sha256": "41767dbfba613340c8ce56969ab3c718eecb8a64ff24984019bd7853fa5a5b10",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/onboarding/+page.server.ts",
+      "sha256": "1a5aae30cd56ada0ea88f19b5aa2096921b205e9b639a766c4ff7acb27c44945",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/onboarding/+page.svelte",
+      "sha256": "097dc278bf00942aadb8af20902cd8f9875b68a4aae015e0781da5388d586e28",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/people/[id]/+page.server.ts",
+      "sha256": "efa14017aa5e9f66efa4bb9585d0fc5bc168f4448741624edaf0aafd0b4646e1",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/people/[id]/+page.svelte",
+      "sha256": "76d5f6d0adf8df2592186c6bdd4c194bb7fa77cb80971ac554da250dc86ed6f4",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/planning/+page.server.ts",
+      "sha256": "da4b64362bbf7e831d39dc03e3fd21bc81d47ea760e134beec6994cfeaa986b3",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/planning/+page.svelte",
+      "sha256": "f2b26056b2b2db2615cd7aab126f04bb0e61a63615869f34685507379e856711",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/profile/+page.server.ts",
+      "sha256": "b259344a8faa66f3910c0f42dc413f6b4660756ea2323fbf35af4879394bca56",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/profile/[username]/+page.server.ts",
+      "sha256": "b8a94bb3fd9d4923e07007ed5e50309b595d30acb5f791ce7e6323b78b3b5900",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/profile/[username]/+page.svelte",
+      "sha256": "e079dd2f4b9beec0846308d2757e6c850495ce701b10d597c51f9b45e470d2cd",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/progress/+page.server.ts",
+      "sha256": "bd027c9351c0ae6b6d80381f73262871b47a75b3433f2974978971e93018556b",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/progress/+page.svelte",
+      "sha256": "d9102241d8fde0659037a565928a94df58d8c89b4460288e7ce58ae9ee79020d",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/register/+page.server.ts",
+      "sha256": "6ef8c0f2d2db78c4525856fd1ee3201f2dfbb9bc475c52706f9a9594bc1595f6",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/register/+page.svelte",
+      "sha256": "b16ba74873c21e15f756d72b1ca0e52f009c66f10a4ab89b379064e2873fa161",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/requests/+page.server.ts",
+      "sha256": "ee5861e8a2823fc0efe9b737891329da62c627bb8ca611a0d68c149a43f75b03",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/requests/+page.svelte",
+      "sha256": "570a1dadf9537b4a9eca5fb45126138f7a2828bfb3abce5295ceddcf8f065990",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/search/+page.server.ts",
+      "sha256": "7ee91ad7742e72471c4f63232eb9ce71f5c9c514d11e6c5d8df217f21b679aad",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/search/+page.svelte",
+      "sha256": "175c51b34667730c28ee27de1bd9ae706329964902b4b62a28cdeafb1e30d31f",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/settings/[[section]]/+page.server.ts",
+      "sha256": "fc45d87fd0ff72e1c1f6600362f2710c35ccd197bb7266eb388395c2e6616d72",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/settings/[[section]]/+page.svelte",
+      "sha256": "27011540ac2c8856c06a3b05a60e2f5a610b59b16c79b09bd37ece762344a888",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/setup/+page.server.ts",
+      "sha256": "6d033a8f9f3485243a0f68334c7a355f72789a504063051a244cd8053a2cb22c",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/setup/+page.svelte",
+      "sha256": "531f136bafa846ce02f68c6f4164a609a404d33a355265ff03de7321d2bdfc26",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/share/+page.server.ts",
+      "sha256": "855205840233907df08fd6ea3b4b4a22d420b6e59c124b1e405fd6691b53a226",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/share/+page.svelte",
+      "sha256": "3cfb771a94fb986888b246609c9cc00f50d37c908d9f440df62896a6c4e01906",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/share/[token]/+server.ts",
+      "sha256": "a6e9de0524e3f09827e75ebb65eb5edf8c92e5434ff8b4853523624e878dd15c",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/synced/[id]/+page.server.ts",
+      "sha256": "0e17b7f0b3782fbb8f854ca3e0d472e6b0160e83ff050cff65977baee200a64f",
+      "reviewManifests": [
+        "playback-readers-coverage.json",
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/synced/[id]/+page.svelte",
+      "sha256": "44d9f4d9ce378118f78967e2bc45b8ef54bd627a62cbfd86a11e5692d515042b",
+      "reviewManifests": [
+        "playback-readers-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/taste/[friendId]/+page.server.ts",
+      "sha256": "266b32ee79ad498e2d1206405d285172abd3b26bb4fb085bb5708496d6e7d02e",
+      "reviewManifests": [
+        "data-api-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/taste/[friendId]/+page.svelte",
+      "sha256": "1bb32920615c57b01ec09a0b3b0f420a5346aac4ca9e795429fd888b1519533b",
+      "reviewManifests": [
+        "frontend-routes-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/+layout.server.ts",
+      "sha256": "24b95900f23264e24f032ca36e77c9b4f70b5b15949789726ab40c1d9061225e",
+      "reviewManifests": [
+        "data-api-coverage.json",
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/+page.svelte",
+      "sha256": "8a7b9666fa88dd9a76de168ce54d4f9fc3edc1b0c296bf2a649081b8b6b24a4e",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/AdminExamples.svelte",
+      "sha256": "5b0da1190924e4c82b2d7d60d2b1dff0a77785baa610a32f2abc30dc57d18f24",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/Browser.svelte",
+      "sha256": "cbfe44e1de0ca7e1b4788de1f72df5add460302c3b619c1d5109ffb4aedac45c",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/CatalogueExamples.svelte",
+      "sha256": "065c369a278d43f3ca27e5b3e55b6cc034a33626102c68f9b838825cfb6242e2",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/ComponentPlayground.svelte",
+      "sha256": "1ca78d69db0e27763e210fce7f33f4171f9d41127be0a97cd5d70d96dcee07e9",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/ComponentSpecimen.svelte",
+      "sha256": "90901f890d930b8d0d814889b3ce27b8cf4f4c4c4bfd84d56cb2ec885daca52d",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/Demo.svelte",
+      "sha256": "1ddd320910a741a637b366459035b308e3934352f616c3d44d6288bbcf72faae",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/FeatureExamples.svelte",
+      "sha256": "eaa929957fe383f3f738d945627e1c2216f436d0c6abb5e07999adb32c43fb5c",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/Foundations.svelte",
+      "sha256": "c1e978e39b14b585f933b70634d1575b47fd251eb4f7c301a2ba29f628a39361",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/PreviewExample.svelte",
+      "sha256": "5139887f78cc0ae46d9aa94892e63ff4542dd17237021fa32b6c1bd656276bed",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/PropEditor.svelte",
+      "sha256": "3a82273288cb69d51de9f4c9e515da95f61b7d23820e79b2c02801a4d03bdb54",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/SocialExamples.svelte",
+      "sha256": "5dcf5d02caadd4b13fd8b723b273d4f6135d37dddf360062a82df4e5b8ccd902",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/Workspace.svelte",
+      "sha256": "d076db82894cbcd2d344efe12efc2150ea00d9c76acc22d0a8c8493cf32d00a7",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/catalog.ts",
+      "sha256": "637d2510c681bc004b8ff80241bcd612edcb7807f21c1a7646aacfca0be9086e",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/charts/ChartGallery.svelte",
+      "sha256": "bf9b7affb76d3582b70b7dee5b88b36d14ad0eb6db2d6e5a4fdff71f378efe77",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/charts/ChartThumbnail.svelte",
+      "sha256": "2159d6429267721adcf77b03bfc6ba4f02fa360ded5a48a19141b03560f4f170",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/charts/data.ts",
+      "sha256": "0c1b50590e3aff9d9979d5cac7b88773f4d853418564da6c760b16755a9cb26b",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/charts/presentation.ts",
+      "sha256": "1512b09b4ba58944e324d516c9fd33435c7936bf46007d33c9d919838decd1e3",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/charts/types.ts",
+      "sha256": "ff2445dff20938f06caef5016a40c89e45f85511c6dd961e73cc0658be330894",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/demo/+page.svelte",
+      "sha256": "6fa3df10559072bbee6800ebf792b6d0f1c48037153e5b3c500883d0f20fa2d0",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/demo/+page.ts",
+      "sha256": "8a162834526dc87868adabe60280637e9abb8e0094b0b4cf60eec6969683ddc5",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/demo/fixtures.ts",
+      "sha256": "c0f7001084e8000b12421eb8a7da75108bd32f8c7a9ff795b94ac6e362d32f0a",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/props.ts",
+      "sha256": "74f7e448309da5c008f17bd7830c500e90c93a532005de120086587a1b3e42f2",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/reference.ts",
+      "sha256": "cfd5e9ebbaec02b4f89b88548f92862506199e493af9e7ff7d4e70802b8620fc",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    },
+    {
+      "file": "src/routes/ui-preview/workspace.ts",
+      "sha256": "80fb4f5b70e0c738a424a2529304512ce3934d47e27816d3bb2079407dbc7199",
+      "reviewManifests": [
+        "ui-preview-platform-coverage.json"
+      ],
+      "runtimeCoverage": "not inferred from source coverage"
+    }
+  ]
+}

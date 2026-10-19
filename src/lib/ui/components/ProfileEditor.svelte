@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { useRetention } from '$lib/ui/retention';
   import { reportFailure } from '$lib/ui/client-context';
   import FormActions from './FormActions.svelte';
   import Field from './Field.svelte';
@@ -10,7 +11,7 @@
   import Button from './Button.svelte';
 
   const { api, change } = useClient();
-  const operation = createOperation();
+  const operation = createOperation(useRetention());
   const busy = $derived(operation.busy);
 
   let {

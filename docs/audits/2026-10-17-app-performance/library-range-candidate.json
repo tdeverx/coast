@@ -1,0 +1,1166 @@
+{
+  "id": "LIBRARY-RANGE-CANDIDATE",
+  "relatedFindings": [
+    "LIBRARY-APPEND-OBS-09",
+    "UIS-03"
+  ],
+  "status": "unadopted_private_verified_user_complexity_decision_required",
+  "sourceAdopted": false,
+  "maintainedTestsAdopted": false,
+  "normalRepairAcceptance": false,
+  "scope": "One existing createLibrarySource owner; rows and embedded append grids. No production/test/README/ledger/integrity edits by this publication.",
+  "canonicalOwner": "src/lib/ui/shelves/library.svelte.ts",
+  "sourcePins": {
+    "bun.lock": "53d8feaa37aefa6ada339d3cd2da73a9985cba24a1cf96e4da64cfa24b2c065d",
+    "node_modules/drizzle-orm/bun-sql/session.js": "4dc36d83dad472b55852da2ff08c20147c523415e5c5e547a3d59042667ee1ae",
+    "node_modules/svelte/package.json": "5a0d57cb27afe0365075723a85b19123006e3c8f00a518283272773f52b9b2dc",
+    "node_modules/svelte/src/compiler/index.js": "875855ca6aed120cd7b3919582ea67e62ec79ed2c03b60d5d6311cafdfd6ce0b",
+    "node_modules/svelte/src/index-client.js": "6cfcb7b6eec91f8bdc364298177efab5e1a2f9e8e115f4f24086d54ea1795487",
+    "node_modules/svelte/src/internal/client/index.js": "5b16e981b8093b9c49512fc642c1b8364e8b1f4a3e3a4731446cc70032c523a9",
+    "package.json": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2",
+    "src/lib/collection/freshness.server.ts": "770bdbb426a6ce15e4c14e0dbeeece64690f710636b47d5df0b7f33a38d513c8",
+    "src/lib/collection/query.server.ts": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1",
+    "src/lib/core/games/service.server.ts": "034e72426d23d1f4d9d194fe55c36942aea729bf5b28e50fedd55bc528b6d3f4",
+    "src/lib/experimental.ts": "e779f8fabfb93156586dc5bb904c2ca282a56a32c24a42c0807f73e05cfc7c0b",
+    "src/lib/features.ts": "ec2ce3649b7a479b18127a665dd0c3ece29de5fc983b2136d16d23b6697589c1",
+    "src/lib/library.ts": "cd629858c8518e8f94bdf7520d6c835235078a3cdba736555821ec5d6945da91",
+    "src/lib/media/DetailPanel.svelte": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55",
+    "src/lib/reading/query.server.ts": "6315a5cd137e89a9b39b85e8c61af6567a8cb4aedc51afc97a38d64df7cef526",
+    "src/lib/server/api/index.server.ts": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623",
+    "src/lib/server/config.ts": "27932892d1089cab594df3cb9b210ecce1faef944d1ab5c1ae6ed2570d2caedb",
+    "src/lib/server/content-revision.server.ts": "d2ac47a240a40816f16393af3ca772b2bf0c6d728cda89128c8e94404a4f18bc",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "3bf0b89433555146d0ab356eac74ddaa5e9d1e2b8aae8bbc7c283c8b8eb4b3d6",
+    "src/lib/server/experimental.ts": "c0f6e86e6ac06824c6787101fc1293cd24283ea7fac883518b47ea2efe3a85dd",
+    "src/lib/server/features.ts": "cf7a5e566ffd9c64707303606942f21161abcf586e51e4e306f52f371ad664d8",
+    "src/lib/server/queries/library-content.ts": "b678862173375262bf42ad9d092aa1551780305a2242eac49c55cb6e16c3652a",
+    "src/lib/server/queries/library.ts": "4cb615fc401570cf8da95776915005e7ae4a84108b3d5f986a82f2d4dd67b96d",
+    "src/lib/server/queries/media.ts": "1f6dbc0e5404780072b88c35e793e55c882268484c5c101e7c536a481410a8c3",
+    "src/lib/server/queries/music.ts": "76d9677ffcf5d80f8766f48270c66c729a396ac2efd1ef375fc3313109cc4305",
+    "src/lib/server/queries/pagination.ts": "06421c9a2324fca85c513f98d7fd0bd8db4233af422335b46bb6955d9743bd14",
+    "src/lib/server/queries/profile-user.ts": "d7b068ad49c5ea08a43f2273134200f1305ee9b00f8727dd333ea47656a75733",
+    "src/lib/server/security/credentials.ts": "237630e6a4b83529458c8479afbbd4024be850e5d3fbb74c4fe00e84981326ac",
+    "src/lib/social/status.server.ts": "e8f8ab1330c691816618e09a4c3ff6e996206e4e8520a21061d190e1e77a9772",
+    "src/lib/ui/client.ts": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7",
+    "src/lib/ui/components/NotificationToasts.svelte": "e02bef528dc595cb4c2ba0c9d956e2fa561f0ec22f9b23d10b397a2ed6a9b11f",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/ui/content-revision.svelte.ts": "a020f2a02ab30655fe9d1203fe3c90200625e874c2e63714a499f5c8b1661fd3",
+    "src/lib/ui/detail-section.svelte.ts": "dd2156aa5d90546a7c74cd413cda961dc6cd507108501f522a3d2dcd8a4adf0d",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+    "src/lib/ui/pages/SectionDetails.svelte": "3677798a0e0a2f1c950f47d8f0f89f67070b7315bbc41e40bc10051acd78481a",
+    "src/lib/ui/resource.svelte.ts": "540ea2c53653be596d85ccc782132df44e40ad496e305fa47a600670eb4564b5",
+    "src/lib/ui/shelves/credits.svelte.ts": "5f749b9cdbfdd7865f161b705bb2b5f99127db57097ecbbbc3defee86a9e9987",
+    "src/lib/ui/shelves/detail.svelte.ts": "00be76aa839f4eeded9634eb6451960efa8497d0b24ed7450eba496521c94d24",
+    "src/lib/ui/shelves/discovery.svelte.ts": "0eea654859d9848e3457b9863ac11b71ce3de8f468fdd8f9be30df33503406a5",
+    "src/lib/ui/shelves/for-you.svelte.ts": "82bfd382e8d045ca3ef2c56b5ae6de68f8e901ea47fd3ab7bba38f76325b7d9a",
+    "src/lib/ui/shelves/index.ts": "6e5055dfe6308433a718bbb0405de541011a934efb582db76becaa1834f7afc5",
+    "src/lib/ui/shelves/layout.svelte.ts": "85d6fc90d52176f4a49c3aeb98c64d3ed9b4b83aff321462a7d24be1e6b4f84f",
+    "src/lib/ui/shelves/library.svelte.ts": "0e7b4f024bf38df12188c6b27de6d4da26e859131ea1fd3d335d38267da35024",
+    "src/lib/ui/shelves/list.svelte.ts": "eed96a076485e546ef405bb9230d0a5a0f3f6993b07191cc1cecda3ff3534c22",
+    "src/lib/ui/shelves/local.svelte.ts": "79772309b9f4b2946149a0abbc93875bf13929e06c48b0d3d29c93b97acbaac4",
+    "src/lib/ui/shelves/progress.svelte.ts": "2d6bdc1f28373132abb542a6b3ce79fb4555d0fac690814f382d794b0bf74111",
+    "src/lib/ui/shelves/social.svelte.ts": "0d368cee5662744eae531eb261875ba9bd6c86d63bf6ee6a71a64335f267cb28",
+    "src/lib/ui/shelves/types.ts": "9f17724b57b6c072f70bb09ff565c19b198078b1c4fba41b85ef4a965fe2b54a",
+    "src/routes/+layout.server.ts": "4e2fe9e9fb784a3c674e2fea1b8b265caa263b8e0861466451e98d884262a187",
+    "src/routes/+layout.svelte": "fa2da910bdfa5d467592bb1496fab1afb8eca1ce5dc6849bd1e437b6e20d4baa",
+    "src/routes/library/+page.server.ts": "7b0f0465ee6cbbbf08a9af39ec9971fe7caf40af7104b4565810405656f753d0",
+    "src/routes/library/+page.svelte": "4889dfcefe263dcc75ae07e36117e5acc3e35598f259b7c2450ff639264901c5",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "sourcePinsValidatedBeforeAndAfterPackaging": true,
+  "privateCandidatePins": {
+    "/private/tmp/coast-library-range-admission-next/library.range.svelte.ts.txt": "214b2c50d8cf38b94dac1fc875d393d9d324d47e81fa2a994ba6c96899d997ae",
+    "/private/tmp/coast-library-range-admission-next/library.before.svelte.ts.txt": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+    "/private/tmp/coast-library-range-admission-next/fixture.ts": "3c2216bd601d89f41cf9e0b29dbbd3fed2157d3b71a4be625e191c8b0c93f0ca",
+    "/private/tmp/coast-library-range-admission-next/combined-library-range.patch": "554874b6e3ad7cab3c677cf76358ae40fa147661b58490d137d1ee2f678ce4cd",
+    "/private/tmp/coast-library-range-admission-next/canonical-admission-followup.patch": "89fc4efe361fc43908461a3d19c25bc5e0a6c4c32b54cdee314d2a9787534db7"
+  },
+  "candidate": {
+    "ownerPath": "docs/audits/2026-10-17-app-performance/candidates/library-range-candidate/coast-library-range-admission-next/library.range.svelte.ts.txt",
+    "ownerSha256": "214b2c50d8cf38b94dac1fc875d393d9d324d47e81fa2a994ba6c96899d997ae",
+    "patchPath": "docs/audits/2026-10-17-app-performance/candidates/library-range-candidate/coast-library-range-admission-next/combined-library-range.patch",
+    "patchSha256": "554874b6e3ad7cab3c677cf76358ae40fa147661b58490d137d1ee2f678ce4cd",
+    "baseSha256": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79"
+  },
+  "confirmedNormalCause": {
+    "evidence": "candidates/library-range-candidate/normal-trace/normal-ui-capture.json",
+    "separateMaintainedReport": "library-append-trace.md",
+    "sequence": "Same owner60\u2192120\u2192180; tracking/social revision refresh currentPage3 append=false committed180\u219260; sentinel page4\u2192120.",
+    "historical300to180CauseProven": false,
+    "instrumentationRevertedExactly": true,
+    "normalRepairTrial": false
+  },
+  "firstStopped": {
+    "evidence": "evidence/library-range-actual-first-stopped.json",
+    "sha256": "e83af0ecf00fb6aa74bdc35f278b3ef06ceff1cbebde72b09811e5380faff381",
+    "status": "failed",
+    "feedCaptures": 0,
+    "compiledReplays": 0,
+    "failureCode": "nonread_owner_statement_forbidden",
+    "reason": "Construction-time query guard rejected a source-known lazy SQL fragment before feed capture. No nonread feed execution established.",
+    "rolledBack": true,
+    "poolClosed": true,
+    "supersededByDistinctReviewedRun2": true
+  },
+  "actualRun2": {
+    "evidence": "evidence/library-range-actual-run2.json",
+    "sha256": "8aba0f9256ea5015fc58c7899fbdcb5c715a05c1194cf475611ec2fbd8c95432",
+    "status": "passed",
+    "probeSha256": "3f073d862e3a93e26fe8d1a8c26b7e230ad5b0e0c7823c7410275c9291314ee0",
+    "manifestSha256": "030d60c8a9ac9309ee2df7cfeab9b393126c3a76da5d8de21caca19e2ffbd505",
+    "canonicalPageReadAdmissions": 14,
+    "selectedScopes": 8,
+    "positiveScopes": 7,
+    "naturallyEmptyScopes": 1,
+    "positivePageDTOs": 13,
+    "emptyPageResults": 1,
+    "compiledVariantReplays": 14,
+    "threePagePrefixCohorts": 3,
+    "capture": [
+      {
+        "family": "ordinary-watch",
+        "status": "positive_captured",
+        "pagesCaptured": 3,
+        "pages": [
+          {
+            "requestedPage": 1,
+            "page": 1,
+            "pages": 45,
+            "total": 2680,
+            "items": 60,
+            "completeDtoSha256": "bde0ea4b8cd1178b57f7aab4acf7a4fec120a1ec131c96668d8c2c73d5dd324f",
+            "completeDtoJsonBytes": 138709,
+            "ormStatements": 18,
+            "ormReadStatements": 18,
+            "ormControlStatements": 0,
+            "ormMappedRows": 555,
+            "rawReadQueryConstructions": 2,
+            "rawKnownFragmentConstructions": 0
+          },
+          {
+            "requestedPage": 2,
+            "page": 2,
+            "pages": 45,
+            "total": 2680,
+            "items": 60,
+            "completeDtoSha256": "1e8f5db1a95eeed86567c484b2a7122f68bbabe1c3ecce6782f1d27d5e14da76",
+            "completeDtoJsonBytes": 138717,
+            "ormStatements": 18,
+            "ormReadStatements": 18,
+            "ormControlStatements": 0,
+            "ormMappedRows": 603,
+            "rawReadQueryConstructions": 2,
+            "rawKnownFragmentConstructions": 0
+          },
+          {
+            "requestedPage": 3,
+            "page": 3,
+            "pages": 45,
+            "total": 2680,
+            "items": 60,
+            "completeDtoSha256": "0bfa9785805c9329785e15d4d8ad2c47fbb8227b3b21227d52977395febf23b0",
+            "completeDtoJsonBytes": 130287,
+            "ormStatements": 18,
+            "ormReadStatements": 18,
+            "ormControlStatements": 0,
+            "ormMappedRows": 601,
+            "rawReadQueryConstructions": 2,
+            "rawKnownFragmentConstructions": 0
+          }
+        ]
+      },
+      {
+        "family": "ordinary-play",
+        "status": "positive_captured",
+        "pagesCaptured": 3,
+        "pages": [
+          {
+            "requestedPage": 1,
+            "page": 1,
+            "pages": 21,
+            "total": 1218,
+            "items": 60,
+            "completeDtoSha256": "8188def2cc160d08db83013a911a8047913c7dbe0e7c24c5c07604d66c16cf9d",
+            "completeDtoJsonBytes": 26998,
+            "ormStatements": 4,
+            "ormReadStatements": 4,
+            "ormControlStatements": 0,
+            "ormMappedRows": 65,
+            "rawReadQueryConstructions": 3,
+            "rawKnownFragmentConstructions": 0
+          },
+          {
+            "requestedPage": 2,
+            "page": 2,
+            "pages": 21,
+            "total": 1218,
+            "items": 60,
+            "completeDtoSha256": "f10a2646cb2cfd3c60153b509883780fbd07f4267c57964b0acd626db409d397",
+            "completeDtoJsonBytes": 28064,
+            "ormStatements": 4,
+            "ormReadStatements": 4,
+            "ormControlStatements": 0,
+            "ormMappedRows": 69,
+            "rawReadQueryConstructions": 3,
+            "rawKnownFragmentConstructions": 0
+          },
+          {
+            "requestedPage": 3,
+            "page": 3,
+            "pages": 21,
+            "total": 1218,
+            "items": 60,
+            "completeDtoSha256": "7fe5ad81f1059ca7b0c390bf277aa00f8f30d3710a9f96b76d039efc7425c427",
+            "completeDtoJsonBytes": 27263,
+            "ormStatements": 4,
+            "ormReadStatements": 4,
+            "ormControlStatements": 0,
+            "ormMappedRows": 65,
+            "rawReadQueryConstructions": 3,
+            "rawKnownFragmentConstructions": 0
+          }
+        ]
+      },
+      {
+        "family": "ordinary-read",
+        "status": "positive_captured",
+        "pagesCaptured": 1,
+        "pages": [
+          {
+            "requestedPage": 1,
+            "page": 1,
+            "pages": 1,
+            "total": 12,
+            "items": 12,
+            "completeDtoSha256": "1a5f68fbc040afecf10b099a081421595560455b54d404ef7fe2d4ea23258cfa",
+            "completeDtoJsonBytes": 6554,
+            "ormStatements": 5,
+            "ormReadStatements": 5,
+            "ormControlStatements": 0,
+            "ormMappedRows": 26,
+            "rawReadQueryConstructions": 2,
+            "rawKnownFragmentConstructions": 0
+          }
+        ]
+      },
+      {
+        "family": "collection-watch",
+        "status": "positive_captured",
+        "pagesCaptured": 1,
+        "pages": [
+          {
+            "requestedPage": 1,
+            "page": 1,
+            "pages": 1,
+            "total": 31,
+            "items": 31,
+            "completeDtoSha256": "b383577c21cca312c8925ed0160b211b6b986cf32bc5e2c768eabb2d53c7e370",
+            "completeDtoJsonBytes": 90530,
+            "ormStatements": 24,
+            "ormReadStatements": 22,
+            "ormControlStatements": 2,
+            "ormMappedRows": 317,
+            "rawReadQueryConstructions": 2,
+            "rawKnownFragmentConstructions": 0
+          }
+        ]
+      },
+      {
+        "family": "collection-listen",
+        "status": "positive_captured",
+        "pagesCaptured": 1,
+        "pages": [
+          {
+            "requestedPage": 1,
+            "page": 1,
+            "pages": 1,
+            "total": 2,
+            "items": 2,
+            "completeDtoSha256": "d22f9c6e2781789415b59ced21b09418964802f26c8068beb6b26765d4e3b1b5",
+            "completeDtoJsonBytes": 2366,
+            "ormStatements": 9,
+            "ormReadStatements": 7,
+            "ormControlStatements": 2,
+            "ormMappedRows": 12,
+            "rawReadQueryConstructions": 2,
+            "rawKnownFragmentConstructions": 0
+          }
+        ]
+      },
+      {
+        "family": "collection-play",
+        "status": "natural_empty",
+        "pagesCaptured": 0,
+        "pages": [
+          {
+            "requestedPage": 1,
+            "page": 1,
+            "pages": 1,
+            "total": 0,
+            "items": 0,
+            "completeDtoSha256": "7b073b7ed5ba3270b80e5bb2bfe41be6bf68f608e9edceb0ee62ca28b2927192",
+            "completeDtoJsonBytes": 314,
+            "ormStatements": 4,
+            "ormReadStatements": 2,
+            "ormControlStatements": 2,
+            "ormMappedRows": 2,
+            "rawReadQueryConstructions": 2,
+            "rawKnownFragmentConstructions": 0
+          }
+        ]
+      },
+      {
+        "family": "collection-read",
+        "status": "positive_captured",
+        "pagesCaptured": 1,
+        "pages": [
+          {
+            "requestedPage": 1,
+            "page": 1,
+            "pages": 1,
+            "total": 1,
+            "items": 1,
+            "completeDtoSha256": "e66239210c2df229236895714094b41b9295ac58db31f9ad066f028b85e6c4d4",
+            "completeDtoJsonBytes": 1366,
+            "ormStatements": 9,
+            "ormReadStatements": 7,
+            "ormControlStatements": 2,
+            "ormMappedRows": 6,
+            "rawReadQueryConstructions": 2,
+            "rawKnownFragmentConstructions": 0
+          }
+        ]
+      },
+      {
+        "family": "profile-collection-watch",
+        "status": "positive_captured",
+        "pagesCaptured": 3,
+        "pages": [
+          {
+            "requestedPage": 1,
+            "page": 1,
+            "pages": 10,
+            "total": 552,
+            "items": 60,
+            "completeDtoSha256": "76dc5e1ae91c2b28babccbbd619154ef32da0b4d33888d7ef2610bd0be1c9bae",
+            "completeDtoJsonBytes": 283004,
+            "ormStatements": 25,
+            "ormReadStatements": 23,
+            "ormControlStatements": 2,
+            "ormMappedRows": 631,
+            "rawReadQueryConstructions": 4,
+            "rawKnownFragmentConstructions": 0
+          },
+          {
+            "requestedPage": 2,
+            "page": 2,
+            "pages": 10,
+            "total": 552,
+            "items": 60,
+            "completeDtoSha256": "4fd1d463d6c99f2349f948765602a15eaa9fbbb4dabbf3e6d628b4410d24c034",
+            "completeDtoJsonBytes": 248852,
+            "ormStatements": 25,
+            "ormReadStatements": 23,
+            "ormControlStatements": 2,
+            "ormMappedRows": 621,
+            "rawReadQueryConstructions": 4,
+            "rawKnownFragmentConstructions": 0
+          },
+          {
+            "requestedPage": 3,
+            "page": 3,
+            "pages": 10,
+            "total": 552,
+            "items": 60,
+            "completeDtoSha256": "6980791dbcf3d99807230e0ff3dcfac9d9d6cf5741dd3d15990af867c71747fc",
+            "completeDtoJsonBytes": 274467,
+            "ormStatements": 25,
+            "ormReadStatements": 23,
+            "ormControlStatements": 2,
+            "ormMappedRows": 627,
+            "rawReadQueryConstructions": 4,
+            "rawKnownFragmentConstructions": 0
+          }
+        ]
+      }
+    ],
+    "replays": [
+      {
+        "family": "ordinary-watch",
+        "variant": "before",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "initialRequests": 3,
+        "refreshRequests": 1,
+        "beforeCount": 180,
+        "afterCount": 60,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "ordinary-watch",
+        "variant": "repaired",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "initialRequests": 3,
+        "refreshRequests": 3,
+        "beforeCount": 180,
+        "afterCount": 180,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "ordinary-play",
+        "variant": "before",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "initialRequests": 3,
+        "refreshRequests": 1,
+        "beforeCount": 180,
+        "afterCount": 60,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "ordinary-play",
+        "variant": "repaired",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "initialRequests": 3,
+        "refreshRequests": 3,
+        "beforeCount": 180,
+        "afterCount": 180,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "ordinary-read",
+        "variant": "before",
+        "pages": [
+          1
+        ],
+        "initialRequests": 1,
+        "refreshRequests": 1,
+        "beforeCount": 12,
+        "afterCount": 12,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "ordinary-read",
+        "variant": "repaired",
+        "pages": [
+          1
+        ],
+        "initialRequests": 1,
+        "refreshRequests": 1,
+        "beforeCount": 12,
+        "afterCount": 12,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "collection-watch",
+        "variant": "before",
+        "pages": [
+          1
+        ],
+        "initialRequests": 1,
+        "refreshRequests": 1,
+        "beforeCount": 31,
+        "afterCount": 31,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "collection-watch",
+        "variant": "repaired",
+        "pages": [
+          1
+        ],
+        "initialRequests": 1,
+        "refreshRequests": 1,
+        "beforeCount": 31,
+        "afterCount": 31,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "collection-listen",
+        "variant": "before",
+        "pages": [
+          1
+        ],
+        "initialRequests": 1,
+        "refreshRequests": 1,
+        "beforeCount": 2,
+        "afterCount": 2,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "collection-listen",
+        "variant": "repaired",
+        "pages": [
+          1
+        ],
+        "initialRequests": 1,
+        "refreshRequests": 1,
+        "beforeCount": 2,
+        "afterCount": 2,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "collection-read",
+        "variant": "before",
+        "pages": [
+          1
+        ],
+        "initialRequests": 1,
+        "refreshRequests": 1,
+        "beforeCount": 1,
+        "afterCount": 1,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "collection-read",
+        "variant": "repaired",
+        "pages": [
+          1
+        ],
+        "initialRequests": 1,
+        "refreshRequests": 1,
+        "beforeCount": 1,
+        "afterCount": 1,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "profile-collection-watch",
+        "variant": "before",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "initialRequests": 3,
+        "refreshRequests": 1,
+        "beforeCount": 180,
+        "afterCount": 60,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      },
+      {
+        "family": "profile-collection-watch",
+        "variant": "repaired",
+        "pages": [
+          1,
+          2,
+          3
+        ],
+        "initialRequests": 3,
+        "refreshRequests": 3,
+        "beforeCount": 180,
+        "afterCount": 180,
+        "completeOrderedItemsEqual": true,
+        "completeRawComposedDTOEqual": true,
+        "disposalAbortAndLateDeliveryFence": true,
+        "embeddedRouteReplacements": 0
+      }
+    ],
+    "allRefreshComposedDTOsAndOrderedItemsEqual": true,
+    "postDisposeAssertionBoundary": "Items and URL publication plus aborted owned signal; separate whole raw DTO equality after disposal was not asserted.",
+    "transactionBinding": {
+      "outerNativeTransactions": 1,
+      "nestedNativeSavepoints": 7,
+      "settingCaptures": 7,
+      "settingRestores": 7,
+      "ownerBoundaryChecks": 55,
+      "knownSettingsRestored": true,
+      "sameTransactionTimestampBeforeAndAfterEveryOwner": true,
+      "boundary": "Explicit native outer begin and nested SAVEPOINT test-harness adapter; canonical domain bodies/SQL unchanged. This is not normal Bun nesting evidence. Harness setting/boundary controls are excluded from owner read counters."
+    },
+    "rawConstructionCounts": {
+      "knownLazyFragments": 4,
+      "wholeReadQueryConstructions": 47,
+      "boundary": "Template construction counts, not executed SQL."
+    },
+    "transactionWrites": {
+      "inserts": 0,
+      "updates": 0,
+      "deletes": 0
+    },
+    "censusSession": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "10s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB",
+      "recursive_factor": "10"
+    },
+    "captureSession": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB",
+      "recursive_factor": "10"
+    },
+    "finalSession": {
+      "read_only": "on",
+      "isolation": "repeatable read",
+      "statement_timeout": "30s",
+      "lock_timeout": "1s",
+      "jit": "off",
+      "work_mem": "4MB",
+      "recursive_factor": "10"
+    },
+    "externalAttempts": 0,
+    "credentialCryptoAttempts": 0,
+    "cleanup": {
+      "rolledBack": true,
+      "sameBackendAfterRollback": true,
+      "sameBackendAtClose": true,
+      "connectionReleased": true,
+      "poolClosed": true,
+      "finalPinsUnchanged": true,
+      "runtimeHasNoSecrets": true
+    },
+    "boundary": "Actual persisted canonical Library/Collection JSON page capture, then complete compiled before/repaired owners replay the same unchanged real DTO corpus under authored revision/delivery schedules. No provider, HTTP authentication, normal database, data/feature mutation, schema/index, fake catalogue or native browser claim.",
+    "limits": [
+      "No source, API, schema/index, provider, normal/deployed data, profile privacy or feature mutation.",
+      "One explicitly verified read-only snapshot supplies unchanged canonical DTOs. No natural deletion/ranking/partial-provider/403/feature-withdrawal cohort is invented; those remain separate authored controls/gaps.",
+      "Only selected naturally positive scopes are replayed; no selected empty or disabled owner is represented as a positive cohort.",
+      "Read counters separate canonical capture ORM execute/all admissions and raw read-query/known-fragment constructions from controlled in-memory logical replay requests. No measured speed, wire, CPU, heap/RSS, GPU, native DOM/focus/scroll or already-admitted SQL cancellation claim.",
+      "Underlying before/candidate client owners receive exactly the same complete actual serialized DTOs; this is not a before/after server-query rewrite or HTTP authentication proof.",
+      "Ordinary full-route grid numbered/SSR behavior and parent remounts remain separate from embedded retained-range replay."
+    ]
+  },
+  "supplementalControls": {
+    "currentReceipt": "candidates/library-range-candidate/coast-library-range-admission-next/resource-observation-controls-receipt.json",
+    "passed": 12,
+    "assertions": 277,
+    "failed": 0,
+    "kind": "Installed compiler/runtime with source-derived complete owners/resource, authored DTOs/delivery/admission/fault schedules. Not actual catalogue or native browser acceptance.",
+    "passiveResourceGetter": "Fixture only; sole real createResource object. No production getter/framework.",
+    "retryRedReceipt": "candidates/library-range-candidate/coast-library-range-admission-next/scoped-retry-before-receipt.json",
+    "retryRed": {
+      "passed": 0,
+      "failed": 1,
+      "assertions": 3,
+      "reason": "Actual Shelf Retry callback passed current page3; expected full retained interval starts page1."
+    },
+    "preservedEarlierGreenCounts": [
+      "7/171",
+      "11/265",
+      "12/273"
+    ]
+  },
+  "proposedBehavior": {
+    "refresh": "Capture committed page interval and scope; serial canonical reread and atomic ordered occurrence union.",
+    "concurrency": "One resource/abort owner; busy sentinel cannot replace refresh; superseded append not silently replayed.",
+    "knownWithdrawal": "Known viewer/surface/selected reading-kind withdrawal or current403/404 cancels and clears; re-enable fresh page1. Partial book/comic admission clears mixed range before canonical reload.",
+    "transientFailurePolicyRequiresDecision": "Keep last complete multi-page range on network/partial refresh failure, existing scoped error; actual Shelf current-page Retry rebuilds interval. Different explicit numbered page still replaces. Single-page partial behavior unchanged.",
+    "canonicalReorderDelete": "Publish new canonical order/deletions, no frozen ranking or custom scroll/anchor restoration.",
+    "preview": "Existing preview/isolation semantics preserved."
+  },
+  "options": [
+    {
+      "id": "A",
+      "title": "Exact client retained-range patch",
+      "scope": "Existing owner and current APIs",
+      "cost": "N serial requests per N retained pages versus defective single-page refresh; one in-flight per owner; transient O(N) old+new objects/references/metadata and union map/array.",
+      "decision": "Accept retain-complete-old-range transient/partial failure policy and growing refresh work before adoption.",
+      "acceptance": [
+        "Normal actual retained prefix across natural revision",
+        "Filter/owner/admission/403 and actual Shelf Retry",
+        "Sentinel/manual append coordination",
+        "Numbered navigation/SSR, close/reopen, focus/menu/draft/scroll"
+      ]
+    },
+    {
+      "id": "B",
+      "title": "One explicit server-range request",
+      "scope": "New exact captured first/last API input and response using canonical readers",
+      "cost": "Larger API/budget/read-observation contract; potential common-work reuse; still atomic old+new client memory. Provider Listen differs from local60-page SQL.",
+      "acceptance": [
+        "Complete DTO/order/count/missing/clamped/privacy equivalence across all categories",
+        "Define transaction and timeout/range limits",
+        "Ordinary Listen per-source50-item provider behavior"
+      ]
+    },
+    {
+      "id": "C",
+      "title": "Request-local read reuse within B",
+      "scope": "Canonical permission/membership/count/hydration reuse in one range request",
+      "cost": "Additional server work ownership; no cross-request stale cache or omission of revision checks.",
+      "acceptance": [
+        "Exact DTO/timestamp/permission/admission/ordering/occurrence/missing proof",
+        "No assumed safe shared cache across N separate HTTP requests"
+      ]
+    },
+    {
+      "id": "D",
+      "title": "Deliberate bounded range and DOM window",
+      "scope": "Page/DOM retention, backward rehydration and anchor/focus/menu/draft/Back contract",
+      "cost": "Substantial UX/resource policy. No arbitrary cap, virtualization or card unmount selected.",
+      "acceptance": [
+        "Long actual browse and retention/decoded-resource measurements",
+        "Defined scroll and interaction behavior",
+        "All relevant shared adapter consumers"
+      ]
+    }
+  ],
+  "readAndMemoryTradeoffs": {
+    "refreshReads": "N serial reads versus existing1; replay1\u21923 for three retained pages is logical owner demand, not additional SQL executed during replay.",
+    "memory": "Additional transient O(N) old+new range/metadata/references/union; heap/RSS/GC unmeasured. No memory gain.",
+    "restart": "Frequent revisions can cancel/restart and delay/starve completion; no new deadline/page cap/cross-shelf budget.",
+    "scroll": "Canonical rank/deletion can remove/move visible anchor; no custom restoration.",
+    "unseenRevocation": "Client retain-old during outage does not linearize unseen server permission revocation.",
+    "constructionCounts": "4 known fragment +47 whole read-query constructions are not executed SQL or network request counts."
+  },
+  "gaps": [
+    "Ordinary Listen provider pages and credentials are excluded; saved music Collection is not a Jellyfin page substitute.",
+    "collection-play: no natural positive page for selected actual scope.",
+    "No actual book/EPUB cohort.",
+    "Natural ranking/deletion, partial provider,403/feature-withdrawal cohorts not manufactured; authored schedules supplement only.",
+    "No repaired normal browser/HTTP authentication/20-page/native focus/scroll/DOM bound/resource measurement acceptance.",
+    "Full-route grid numbered/SSR one-page and parent remount resets remain separate; no hypothetical direct full-route append promise.",
+    "Other Progress/Credits/Discovery/ForYou/Lists/cursor Social owners not modified.",
+    "Explicit native outer/savepoint adapter is a harness binding seam, not normal Bun nested-transaction/concurrency proof."
+  ],
+  "archive": {
+    "manifest": "candidates/library-range-candidate/packaging-manifest.json",
+    "exactCopiedPrivateFiles": 155,
+    "historicalBytesAndTensePreserved": true,
+    "originalPrivatePathsRequireReviewedRestorationForReplay": true,
+    "futureExecutionRequiresNewExplicitCloneLease": true,
+    "noRawActualDTOOrIDsArchived": true
+  },
+  "independentReview": {
+    "agent": "providers_jobs_audit",
+    "scope": "Source-only final candidate, native adapter/getter, and run2 exact lazy-fragment classification; no material blocker. No acceptance beyond the described private proof.",
+    "finalProbePrefix": "3f073d86",
+    "finalManifestPrefix": "030d60c8",
+    "finalPlanPrefix": "e318717e",
+    "finalDeltaPrefix": "a28cee17"
+  },
+  "publication": {
+    "databaseExecution": false,
+    "browserExecution": false,
+    "commonGates": false,
+    "productionEdits": false,
+    "rootBookkeepingEdits": false,
+    "allowedWritesOnly": true
+  },
+  "artifactPins": {
+    "candidates/library-range-candidate/coast-library-range-actual-next/REVIEW-OPTIONS.json": "19b1331b8238a742692aed420f6f528431058fac19822aa56402e47c38b28fca",
+    "candidates/library-range-candidate/coast-library-range-actual-next/REVIEW-OPTIONS.md": "094e16ff816b9264f7e13bbd4725efa2aa746e78ea0343b847b9d662ab226e20",
+    "candidates/library-range-candidate/coast-library-range-actual-next/cleanup-only.json": "acae0b413ac27a738167273b501d54e30c45fedf29921434cc18275165d9dc36",
+    "candidates/library-range-candidate/coast-library-range-actual-next/cleanup-only.patch": "d73c308b5f376adf91ee221b03c74b2850732586b6c6e31afd34d7a8f4393393",
+    "candidates/library-range-candidate/coast-library-range-actual-next/full-dto-observation-only.patch": "e39b41596fc76168e91ec31ea33469e14973710a9fe05c9510bba4121c6ba553",
+    "candidates/library-range-candidate/coast-library-range-actual-next/library-range-actual.ts": "ad947dfde2b8dacc4723272ede53605130f69a05c00140cb2d590ce3535c0b67",
+    "candidates/library-range-candidate/coast-library-range-actual-next/native-binding-only.json": "6cc20728fbe987777548c9f7b0be7a48f82e0c2325ccb4577a33d94fe2855afe",
+    "candidates/library-range-candidate/coast-library-range-actual-next/native-binding-only.patch": "6f5aba2fcb0fa298b1bf0992e8a049154cd8d7a0952ee252b18e854913396251",
+    "candidates/library-range-candidate/coast-library-range-actual-next/plan.json": "4c51441a761b8a99ef902b7d4905ba71cd3d016cd4bae9e004e506c35ca87963",
+    "candidates/library-range-candidate/coast-library-range-actual-next/plan.md": "5d4145011c83328dd01a7781259d0dcbf952bf35d0cfc6a11b83b0d6f14c0a90",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepare-manifest.py": "624416b68e01a81851d8146e9e0ac7e745b47da8b9704b5fe19195d5dcadcdd1",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-cleanup-only/cleanup-only.json": "acae0b413ac27a738167273b501d54e30c45fedf29921434cc18275165d9dc36",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-cleanup-only/cleanup-only.patch": "d73c308b5f376adf91ee221b03c74b2850732586b6c6e31afd34d7a8f4393393",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-cleanup-only/library-range-actual.ts": "63a339587255a4af4f804230c927157e8db0b15a2b4bb60aa6bad0eddc50a515",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-cleanup-only/plan.json": "94c25d92096fec67724f7089e5d55ab0bb424ee09f1fba6294fd25af168a87a5",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-cleanup-only/plan.md": "b8202acc3d02efa4019332b542f4ce6a335c2644f46b9ffae6d792bc252e62c2",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-cleanup-only/prepare-manifest.py": "624416b68e01a81851d8146e9e0ac7e745b47da8b9704b5fe19195d5dcadcdd1",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-cleanup-only/source-pins.json": "18d09379f9ce207ca2cc8e1163e58c9ff9d8d279b7ddd18c02027f332fb4b8b0",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-cleanup-only/syntax-output.txt": "3586be70eb3a47d6267805f8c4860998a8ad3ce154ab20ad7d37ba77a4cc3922",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-cleanup-only/syntax.json": "77f229dfa7728e7307db48d675b3a5482b41c027c45fff22c2dc324585756932",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-cleanup-only/syntax.ts": "2ef9ce5bb5baaf087d19a703b03a5de4ba2125046ef934e831b2c8e11062d56f",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/cleanup-only.json": "acae0b413ac27a738167273b501d54e30c45fedf29921434cc18275165d9dc36",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/cleanup-only.patch": "d73c308b5f376adf91ee221b03c74b2850732586b6c6e31afd34d7a8f4393393",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/library-range-actual.ts": "eaf36e306cecee64dce177f96b1c04c411d74d81cbd5b98ee57117a5550fdbfc",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/native-binding-only.json": "6cc20728fbe987777548c9f7b0be7a48f82e0c2325ccb4577a33d94fe2855afe",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/native-binding-only.patch": "6f5aba2fcb0fa298b1bf0992e8a049154cd8d7a0952ee252b18e854913396251",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/plan.json": "1f2af1521dcdba316ecd7c30148c10989bdba343f561c1b27da7f50fc2efbf0d",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/plan.md": "22551dd98a319c3c81f677aea04a960816604e33777c6597adabf3e5ce330dc1",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/prepare-manifest.py": "624416b68e01a81851d8146e9e0ac7e745b47da8b9704b5fe19195d5dcadcdd1",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/source-pins.json": "18d09379f9ce207ca2cc8e1163e58c9ff9d8d279b7ddd18c02027f332fb4b8b0",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/syntax-output.txt": "5c8e953ccca6e256614848665acbe5518e7ed8c817fd63bf7e27e4588b4162b2",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/syntax.json": "3e68c7c929d072040b83e02fa4e7999aa75bafb54fd969232290852353642d7c",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-native-before-resource-observation/syntax.ts": "2ef9ce5bb5baaf087d19a703b03a5de4ba2125046ef934e831b2c8e11062d56f",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-v1/library-range-actual.ts": "f0ba9e3b795bbd28ee5cfaf147bcc1a64037011d97d91b852b18071e8c2aecd5",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-v1/plan.json": "94c25d92096fec67724f7089e5d55ab0bb424ee09f1fba6294fd25af168a87a5",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-v1/plan.md": "b8202acc3d02efa4019332b542f4ce6a335c2644f46b9ffae6d792bc252e62c2",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-v1/prepare-manifest.py": "624416b68e01a81851d8146e9e0ac7e745b47da8b9704b5fe19195d5dcadcdd1",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-v1/source-pins.json": "18d09379f9ce207ca2cc8e1163e58c9ff9d8d279b7ddd18c02027f332fb4b8b0",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-v1/syntax-output.txt": "fd1aedd3328cbece9999847103d6676800d890df0387a7349c434ee9498670a2",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-v1/syntax.json": "d6f6a7a918817d8f5b34db72353f984ae39c0bafd03b48ed97eec70a4976a2b6",
+    "candidates/library-range-candidate/coast-library-range-actual-next/prepared-v1/syntax.ts": "2ef9ce5bb5baaf087d19a703b03a5de4ba2125046ef934e831b2c8e11062d56f",
+    "candidates/library-range-candidate/coast-library-range-actual-next/source-pins.json": "6e1ab4b96d9cb018d5193c4906cc203b1b7365e549d2e19d4ff43722b7dd5ed1",
+    "candidates/library-range-candidate/coast-library-range-actual-next/syntax-output.txt": "f40dcabee93ffa21979cc9b34719577d9bfeba94572726c5809de4c379901472",
+    "candidates/library-range-candidate/coast-library-range-actual-next/syntax.json": "edf8d9f9606cca1f2c4a87718d2840f84d24b2f602ab570453651573fef418a2",
+    "candidates/library-range-candidate/coast-library-range-actual-next/syntax.ts": "2ef9ce5bb5baaf087d19a703b03a5de4ba2125046ef934e831b2c8e11062d56f",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/REVIEW-OPTIONS.json": "19b1331b8238a742692aed420f6f528431058fac19822aa56402e47c38b28fca",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/REVIEW-OPTIONS.md": "094e16ff816b9264f7e13bbd4725efa2aa746e78ea0343b847b9d662ab226e20",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/classification-preparation-checks.json": "dcd671a9e859c12b955fe071c3f73c44f22e793a12fa90a5f9693cc8428958ea",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/cleanup-only.json": "acae0b413ac27a738167273b501d54e30c45fedf29921434cc18275165d9dc36",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/cleanup-only.patch": "d73c308b5f376adf91ee221b03c74b2850732586b6c6e31afd34d7a8f4393393",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/full-dto-observation-only.patch": "e39b41596fc76168e91ec31ea33469e14973710a9fe05c9510bba4121c6ba553",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/known-fragment-only.patch": "a28cee1719e94e287eca38c05153bd7aa54526da379a44b1d7bef08a168e543a",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/known-fragment-spec.json": "685f32256d7fefe18847b4ddb4abcfdc823d423a2a55fcbe7ccafe495a5ceeb9",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/library-range-actual.ts": "3f073d862e3a93e26fe8d1a8c26b7e230ad5b0e0c7823c7410275c9291314ee0",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/native-binding-only.json": "6cc20728fbe987777548c9f7b0be7a48f82e0c2325ccb4577a33d94fe2855afe",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/native-binding-only.patch": "6f5aba2fcb0fa298b1bf0992e8a049154cd8d7a0952ee252b18e854913396251",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/plan.json": "e318717e893eb75e88c5d172fe7938fa91756dc9651cb80f8d6f1cb9b9efc3a9",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/plan.md": "4de8d81341157b7abaaacb2a94c5a58942ec9a1ac6e460ff5115b4197d4804a1",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/prepare-manifest.py": "bb1224348e4129bb81218f719cfcfdf974a0855ddb7c0197f3750a32badd28ee",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/prior-run1.json": "e83af0ecf00fb6aa74bdc35f278b3ef06ceff1cbebde72b09811e5380faff381",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/source-pins.json": "030d60c8a9ac9309ee2df7cfeab9b393126c3a76da5d8de21caca19e2ffbd505",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/syntax-output.txt": "560a7a7f917d18a992618ad36652860daf7340b565ad0f46b2ef3938ac67da02",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/syntax.json": "e08d852219fb3f68d2665d094f08f07582ac1a36d0b880d09a424f35f67d6d4b",
+    "candidates/library-range-candidate/coast-library-range-actual-run2-next/syntax.ts": "acf0d9b21dea7d090cd7c0a0ccada675921665e4d6c91e59e821bad4ea9517c7",
+    "candidates/library-range-candidate/coast-library-range-admission-next/README.md": "7763b0050b49f366147a697a4e6c084735c954e8633566d619aed2dfb0edd7ef",
+    "candidates/library-range-candidate/coast-library-range-admission-next/RESULT.md": "8ef0dd734e9de5b7d1a071c7608d841038880571f8f9a3146d22054c66b91824",
+    "candidates/library-range-candidate/coast-library-range-admission-next/canonical-admission-controls.test.ts": "36aa7de975df6b05cd907b05d0b1f17eb64791b0c88c9630f3f4a8d73f652bdd",
+    "candidates/library-range-candidate/coast-library-range-admission-next/canonical-admission-followup.patch": "89fc4efe361fc43908461a3d19c25bc5e0a6c4c32b54cdee314d2a9787534db7",
+    "candidates/library-range-candidate/coast-library-range-admission-next/combined-library-range.patch": "554874b6e3ad7cab3c677cf76358ae40fa147661b58490d137d1ee2f678ce4cd",
+    "candidates/library-range-candidate/coast-library-range-admission-next/controls-first-output.txt": "c7767b21c5ad7f1278037344e7f021001f511918650299575f563d6d7ad8e2f7",
+    "candidates/library-range-candidate/coast-library-range-admission-next/controls-first-receipt.json": "b22d0d892134e2d8ba797bc68599a9361202ea2543b7ec30f33f57ae07031ad0",
+    "candidates/library-range-candidate/coast-library-range-admission-next/fixture.ts": "3c2216bd601d89f41cf9e0b29dbbd3fed2157d3b71a4be625e191c8b0c93f0ca",
+    "candidates/library-range-candidate/coast-library-range-admission-next/library-range-controls.test.ts": "1c990db5e650db0907f8e423158bce131669879ff706aa38c9980c36b2baf6c6",
+    "candidates/library-range-candidate/coast-library-range-admission-next/library.before.svelte.ts.txt": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+    "candidates/library-range-candidate/coast-library-range-admission-next/library.range-before-admission.svelte.ts.txt": "5569e3c7308b47631ffa9f8d5c75ad4c89aaff0100cdd5a3a1f6495bdde9d580",
+    "candidates/library-range-candidate/coast-library-range-admission-next/library.range.svelte.ts.txt": "214b2c50d8cf38b94dac1fc875d393d9d324d47e81fa2a994ba6c96899d997ae",
+    "candidates/library-range-candidate/coast-library-range-admission-next/manifest-current.json": "11f113d5cd2164e604db13defef2f8a0dc4093a0e9f269e27254e8792fe1a1db",
+    "candidates/library-range-candidate/coast-library-range-admission-next/manifest.json": "4aff3d6ec785a7f183d5a1991d8d785f96c064a96c4e95b130ee6a76bde45567",
+    "candidates/library-range-candidate/coast-library-range-admission-next/prepare.py": "6f6e20e47e21cafee8650ca42e07a1bf287f347f648edac221d0ebacdc9a2491",
+    "candidates/library-range-candidate/coast-library-range-admission-next/resource-observation-controls-output.txt": "c6c852d500d42e5f2e32004103a6bcebeea3250762edb12b355faf3cb57886ff",
+    "candidates/library-range-candidate/coast-library-range-admission-next/resource-observation-controls-receipt.json": "0e442282287618c7a3074607448cfb8666085be9dfb466ca477f9898075d0884",
+    "candidates/library-range-candidate/coast-library-range-admission-next/resource-observation-only.patch": "b72b2baecbba8795de37f3b72dcd503251af89726858ee9ee1ab66892e6e652a",
+    "candidates/library-range-candidate/coast-library-range-admission-next/scoped-retry-after-output.txt": "9a60bd80b2944d21e811b795378ee9e64a1b94dde55f6c9ad3547a397b96f414",
+    "candidates/library-range-candidate/coast-library-range-admission-next/scoped-retry-after-receipt.json": "330da4874943fe641fbbae25cca77d77577c780880170bb70786b9f17eafd6b0",
+    "candidates/library-range-candidate/coast-library-range-admission-next/scoped-retry-before-output.txt": "c7562ebbe71d7988b29b9f6b0c15eb8a165f28ab6d75c3c6ea15a8112a420cea",
+    "candidates/library-range-candidate/coast-library-range-admission-next/scoped-retry-before-receipt.json": "a2e822276172bfde1f70a88dd229a6ea335b89ad4c784d2a7057a557a0053b16",
+    "candidates/library-range-candidate/coast-library-range-admission-next/shelf-retry-contract.test.ts": "0b99e87c71b02b9107d7e41ed63374cffef3f3f4de75194d952b2d204d9f7966",
+    "candidates/library-range-candidate/coast-library-range-admission-next/syntax-output.txt": "e4bb29f226e3237e27af98c2ac571d7ac09a4d187c8e06e4f02ebaf3f9647b30",
+    "candidates/library-range-candidate/coast-library-range-admission-next/syntax.json": "24e0f4a0f740d714d988bc83b7e5a6a688eeda3a6999da809b533bde8516301c",
+    "candidates/library-range-candidate/coast-library-range-admission-next/syntax.ts": "5831366e81cf3d0cfdb02ef359a38de7ea36298b8331757bcc6f347bba8c6ac4",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/README.md": "7763b0050b49f366147a697a4e6c084735c954e8633566d619aed2dfb0edd7ef",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/canonical-admission-controls.test.ts": "36aa7de975df6b05cd907b05d0b1f17eb64791b0c88c9630f3f4a8d73f652bdd",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/canonical-admission-followup.patch": "6af74768a847ccc7515601ac9895a4d3356381772922cf7e84a37588e64d6a02",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/combined-library-range.patch": "89897c90688a4acc391390a41acb90333e553e4b47a10751451948ddf94a1a52",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/controls-first-output.txt": "c7767b21c5ad7f1278037344e7f021001f511918650299575f563d6d7ad8e2f7",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/controls-first-receipt.json": "b22d0d892134e2d8ba797bc68599a9361202ea2543b7ec30f33f57ae07031ad0",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/fixture.ts": "7989da1d8230243000dc92797cdf3511bec1d6e197b6620dc53ad58023da0f8b",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/library-range-controls.test.ts": "f6e86b5c5471b0b1adf52f7e5cbc664adaaa17671fd74745e34509a60fe8b96f",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/library.before.svelte.ts.txt": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/library.range-before-admission.svelte.ts.txt": "5569e3c7308b47631ffa9f8d5c75ad4c89aaff0100cdd5a3a1f6495bdde9d580",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/library.range.svelte.ts.txt": "ae8ee1741abe91c6974fdf5b6b60a7ac3e0e702193251c398b1f20a6fe42b63c",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/manifest.json": "6023983cc6b17ec4a8d62d8e9c0bafa9c5a543ad78b74e42c10d6b888b395a58",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/prepare.py": "2cdfe346a2d8a1e88ed3d18c8451640c5271de405b7dbe582137a98b36979b95",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/syntax-output.txt": "b01982f86f472b7212a09c8dcf28d6a0df6648c2c5edb1c3e212b32ff31bb6b9",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/syntax.json": "dc2fca59066063e8d07d159183a17ce7aab2a03d5b1d6654a61e9cac9a6c6c6e",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v1/syntax.ts": "80214c5e5ea89f5d85fb2ec17ae5cb156a5dcd0552b9f6ab2836d352db27abf4",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/README.md": "7763b0050b49f366147a697a4e6c084735c954e8633566d619aed2dfb0edd7ef",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/RESULT.md": "a13f50107215383e2e6d3eb6c1cc68182df99cb91335c8bd677dd50e6c5e1f75",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/canonical-admission-controls.test.ts": "36aa7de975df6b05cd907b05d0b1f17eb64791b0c88c9630f3f4a8d73f652bdd",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/canonical-admission-followup.patch": "89fc4efe361fc43908461a3d19c25bc5e0a6c4c32b54cdee314d2a9787534db7",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/combined-library-range.patch": "554874b6e3ad7cab3c677cf76358ae40fa147661b58490d137d1ee2f678ce4cd",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/controls-first-output.txt": "c7767b21c5ad7f1278037344e7f021001f511918650299575f563d6d7ad8e2f7",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/controls-first-receipt.json": "b22d0d892134e2d8ba797bc68599a9361202ea2543b7ec30f33f57ae07031ad0",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/fixture.ts": "7989da1d8230243000dc92797cdf3511bec1d6e197b6620dc53ad58023da0f8b",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/library-range-controls.test.ts": "f6e86b5c5471b0b1adf52f7e5cbc664adaaa17671fd74745e34509a60fe8b96f",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/library.before.svelte.ts.txt": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/library.range-before-admission.svelte.ts.txt": "5569e3c7308b47631ffa9f8d5c75ad4c89aaff0100cdd5a3a1f6495bdde9d580",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/library.range.svelte.ts.txt": "214b2c50d8cf38b94dac1fc875d393d9d324d47e81fa2a994ba6c96899d997ae",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/manifest-current.json": "86c51e6e98850f540d4ade51a5461d605b93ce1fd73d58bac2e9d1df9bbbe67e",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/manifest.json": "4aff3d6ec785a7f183d5a1991d8d785f96c064a96c4e95b130ee6a76bde45567",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/prepare.py": "6f6e20e47e21cafee8650ca42e07a1bf287f347f648edac221d0ebacdc9a2491",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/scoped-retry-after-output.txt": "9a60bd80b2944d21e811b795378ee9e64a1b94dde55f6c9ad3547a397b96f414",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/scoped-retry-after-receipt.json": "330da4874943fe641fbbae25cca77d77577c780880170bb70786b9f17eafd6b0",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/scoped-retry-before-output.txt": "c7562ebbe71d7988b29b9f6b0c15eb8a165f28ab6d75c3c6ea15a8112a420cea",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/scoped-retry-before-receipt.json": "a2e822276172bfde1f70a88dd229a6ea335b89ad4c784d2a7057a557a0053b16",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/shelf-retry-contract.test.ts": "0b99e87c71b02b9107d7e41ed63374cffef3f3f4de75194d952b2d204d9f7966",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/syntax-output.txt": "e4bb29f226e3237e27af98c2ac571d7ac09a4d187c8e06e4f02ebaf3f9647b30",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/syntax.json": "4100307570dd68e102a1089fb2f7f2d1eeef21bfedddbc2a6389631b9f63862e",
+    "candidates/library-range-candidate/coast-library-range-admission-next/v2-before-resource-observation/syntax.ts": "5831366e81cf3d0cfdb02ef359a38de7ea36298b8331757bcc6f347bba8c6ac4",
+    "candidates/library-range-candidate/coast-library-range-next/README.md": "846d39b2a02718f8ea9e20ea6c3b9ae088b003bd5bb2851cd797d65b409916d0",
+    "candidates/library-range-candidate/coast-library-range-next/actual-feed-adapter.ts": "0062e4bfe02a92a1e3536ef85066d495530a6dc206ebcc9f436906083b889a66",
+    "candidates/library-range-candidate/coast-library-range-next/actual-range-replay.ts": "46a9b48b342e0effd6a1617f5f6e8f99a957643edc202e02f8788b1530d59ba0",
+    "candidates/library-range-candidate/coast-library-range-next/controls-first-manifest.json": "28d3b3d50a67333bfb6af02ac9b272348d0d898893a14a3b4e3daafa3714eea9",
+    "candidates/library-range-candidate/coast-library-range-next/controls-first-output.txt": "aeb5a843257e3cdd064d5058693c75dea4de01e83f522c200dcabcad501b9ac1",
+    "candidates/library-range-candidate/coast-library-range-next/controls-first-protocol.md": "ee8acd1ddf8e5f1d5dffd0dfb01fff6601d9067476542eea81ddc26bece8b2f6",
+    "candidates/library-range-candidate/coast-library-range-next/controls-first-receipt.json": "c90b56ebd450f08b4d5e0bb2d0ee61566889fe7e93373624866bb2983e7e29c8",
+    "candidates/library-range-candidate/coast-library-range-next/first-draft/library-range.patch": "06bfe5729ba075ae765313b13c29151f63b6251f7ace7ee5ef091698d623d421",
+    "candidates/library-range-candidate/coast-library-range-next/first-draft/library.before.svelte.ts.txt": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+    "candidates/library-range-candidate/coast-library-range-next/first-draft/library.range.svelte.ts.txt": "c656ed14c6701dabc0b7dad79c5568d44040b13f46f08c6667d809457c291094",
+    "candidates/library-range-candidate/coast-library-range-next/first-draft/manifest.json": "155d0368f57b848ff8ecd18cdc88f461881b6c005a86e02fd8a27cfcf91d4974",
+    "candidates/library-range-candidate/coast-library-range-next/first-draft/prepare.py": "a6f8361089b36519caf95d398911ed3619ea21bb114c9a72d757827cae0baa95",
+    "candidates/library-range-candidate/coast-library-range-next/fixture.ts": "32290efaedc0650c10d86d49afc4a327cb8f7475d1db7ff049daabfefe04552f",
+    "candidates/library-range-candidate/coast-library-range-next/library-range-controls.test.ts": "4a35fc5c27f486aca7b540ed6cf6c72658d513fddf621bd697e9c525c4fb416d",
+    "candidates/library-range-candidate/coast-library-range-next/library-range.patch": "849df85bd9878fbcdf60b60528401cc5ba780439e4b67ad37c25ecd548a0c077",
+    "candidates/library-range-candidate/coast-library-range-next/library.before.svelte.ts.txt": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+    "candidates/library-range-candidate/coast-library-range-next/library.range.svelte.ts.txt": "5569e3c7308b47631ffa9f8d5c75ad4c89aaff0100cdd5a3a1f6495bdde9d580",
+    "candidates/library-range-candidate/coast-library-range-next/manifest.json": "ffd0aa010d227842b14374a82062ba3919b5991946cbb1b0baf5c5b66f1ceee0",
+    "candidates/library-range-candidate/coast-library-range-next/prepare.py": "9c40bab1a84bb759db51c273bc6a64c2db8ed169789a7b89f36531439117e47e",
+    "candidates/library-range-candidate/coast-library-range-next/syntax-output.txt": "e4bb29f226e3237e27af98c2ac571d7ac09a4d187c8e06e4f02ebaf3f9647b30",
+    "candidates/library-range-candidate/coast-library-range-next/syntax.json": "5a37eaa88761fad3e8ec7a7a33fa5677279e16dad7b8ec143b8a15803d55bef2",
+    "candidates/library-range-candidate/coast-library-range-next/syntax.ts": "53bea37d7c40056d09c880560af96caccc20171c25d7938f4fd37e10822f0b5c",
+    "candidates/library-range-candidate/execution/approved-private-runner.py": "3d527a67ece961a9701d7f1f6ae25f69404c9c6945b574eef98c09397e0693c8",
+    "candidates/library-range-candidate/normal-trace/normal-ui-capture.json": "78993aa521d99b469bb4642790c8a4c93b3376b4af0680abe6b7b470d411061f",
+    "candidates/library-range-candidate/packaging-manifest.json": "c3d2727de8400df8737c60f5b4e3d0003322c1e55b57e7da59e849340ec3e5bd",
+    "evidence/library-range-actual-first-stopped.json": "e83af0ecf00fb6aa74bdc35f278b3ef06ceff1cbebde72b09811e5380faff381",
+    "evidence/library-range-actual-run2.json": "8aba0f9256ea5015fc58c7899fbdcb5c715a05c1194cf475611ec2fbd8c95432",
+    "library-range-candidate.md": "85a1266a8cc1325c98eae1f98ee0625d335658758da2a10819ab2ac2d2316b3a",
+    "evidence/implementation-library-server-range-choice.json": "ca95b026103193eabc22180ac1ce8815ca7663eead67a4e8182e9ddff80b3c4e"
+  },
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T10:21:52.057608+00:00",
+      "changes": {
+        "src/lib/media/DetailPanel.svelte": {
+          "before": "59c9dc9f338be06b0c6eb680cd65ec31a8eeeb40cd2fe5fbea312f2a5a3a57bb",
+          "after": "62426840753f027ee0d0c25e09f7bc836cca7708d207be11e4aa8916ee6fdb55"
+        }
+      },
+      "evidence": "evidence/implementation-detail-close-applied.json",
+      "boundary": "Current identity after separate three-line shared close adoption. Historical receipts/manifests remain unchanged; their measurements were not rerun on this source."
+    }
+  ],
+  "artifactPathBase": "Audit folder, consistent with maintained integrity checker.",
+  "userPreparationDecision": {
+    "at": "2026-10-18T12:22:32.862544+00:00",
+    "source": "Direct user reply to Library repair question",
+    "choice": "Prepare the server-range option first",
+    "authorized": "Prepare the one server-range/request-local read reuse alternative and compare actual behavior/resource/failure costs before proposing adoption.",
+    "clientRangeApplied": false,
+    "serverRangeApplied": false,
+    "complexityAdoptionApproved": false,
+    "independentNarrowQueryReuseMayProceed": true,
+    "boundary": "This selects preparation direction; it does not turn the previous N serial client candidate into an adopted repair or resolve proposed failure/window policy."
+  },
+  "laterLibraryMembershipAdoptionChange": {
+    "at": "2026-10-18T13:02:16.881554+00:00",
+    "path": "src/lib/server/queries/library.ts",
+    "beforeSha256": "ceae8d87a2e6f1ab70fc7db812e9bf028b63c6141f1ba3cbd50ec6decfa6e9df",
+    "initialExecutedCandidateSha256": "cc54bac25c54d55bc70c71d12f359a8b700137411b29423e1d500ab4099493fb",
+    "afterSha256": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+    "report": "implementation-library-membership.md",
+    "boundary": "Current identity only advances after separately verified one-page adoption and exact type-erasure transfer. Earlier source-frozen executions remain at their archived then-current hashes."
+  },
+  "laterServerRangePreparation": {
+    "report": "library-server-range.md",
+    "actualWatchRanges": 8,
+    "apiClientApplied": false,
+    "choice": "User selected B/C preparation first"
+  },
+  "laterKnownFindingsImplementation": {
+    "at": "2026-10-18T15:20:50.806504+00:00",
+    "report": "implementation-found-02.md",
+    "reviewedOwnerChanges": {
+      "src/lib/core/lists/service.server.ts": {
+        "before": "b811e10802b10c668b074be267396b80392d667d5ae8de8b683beabf5c1768ad",
+        "after": "58998adac9bdcbd3b9de0d9e3646324a3963c5cbe227ebd98544a8d87e92b6e9"
+      },
+      "src/lib/core/tracking/continue.server.ts": {
+        "before": "1240e70d7c5bf37c8bdac893b62af0a67911c14657ece86e977cfe5c19b35ebc",
+        "after": "1dec3b0bd586e320eb3fe61655f139ef9bb83a86a2c3766a67a525dee71ae7f5"
+      },
+      "src/lib/core/tracking/service.server.ts": {
+        "before": "ee9d126931910e5a271f4d77d7ca84c27dc728a186f434b8f1a9d046df89e41a",
+        "after": "5852eb7cf81fb0aa43280694208b7d3c99f915af5e5d37d01e5668adcdc55b29"
+      },
+      "src/lib/server/api/lists.server.ts": {
+        "before": "9c0ed276cae06b59012b348c83063027b7a207ca405ec2dcf0b2c298092aed43",
+        "after": "7c3a1231505eefe55bd6a894233f6b180c35f3c31388996cd71c5d1e2a4fa3b4"
+      },
+      "src/lib/server/queries/library.ts": {
+        "before": "d622a7fe0b7e5010cf2cc4f26306f684c71128be0d9aeefdbeaae753abb84d84",
+        "after": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3"
+      },
+      "src/lib/server/queries/music.ts": {
+        "before": "ffbe941015a8bf0c8d77e2db12111b01a5b8b13c09f8206fbc4e9ef18ae08c46",
+        "after": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253"
+      },
+      "src/lib/server/queries/profile.ts": {
+        "before": "e451cec5c46d3c544701be56dcd5f217d3e285c16617be9be62182644505f200",
+        "after": "7d357da2168753e076167e5757f7b78c36a19f843b8e72f4a7e439b3769d79f5"
+      },
+      "src/lib/ui/client-context.ts": {
+        "before": "f0f7eb97df47021a7bcc4887a4edfc1ae609aa48fcf242dc7d76c682905a5e27",
+        "after": "e239b6e3ac5d9236f3275fc7a3bc70f64fdfafd5c437031ad5afcc3c1942f205"
+      },
+      "src/lib/ui/client.ts": {
+        "before": "2f1e4e863bd22d068cfa5255dbb95da09014f25de131d4351bb846cc807fee16",
+        "after": "798685556fbf820d6e54e8799e4457f8c0b23719fbb44a4a90126356ffb961e7"
+      },
+      "src/lib/ui/components/WorkActions.svelte": {
+        "before": "1ba05b1a8cd9f23b7779c0da47df04f2d39a20ffd1858b9fbb5fd50a741fca72",
+        "after": "119d9645f3bbae1b72ffd1f202a21fe06e2d0c2ea84d935a5e76e46dbef2b0a1"
+      }
+    },
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only; new scoped actual proofs are named in the new report, older execution receipts unchanged."
+  },
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/collection/query.server.ts": "0e3d9a128cecf162280cec63ab0adaeeb861cf389ebedd29b64fe7a12fba580e",
+      "src/lib/core/games/service.server.ts": "e6e01eac392126a5c06fdaf246fc139b7cfa57e7d01e59845d502386894bf52d",
+      "src/lib/library.ts": "1b94f5839453943c83a32ef51f8581923a40cedbe41beaa3f66daf2d94dc5c58",
+      "src/lib/reading/query.server.ts": "2f4550c48c06258dfd52890cec466e5abe0c91a0f5118c433cf1b1a9c1613ca9",
+      "src/lib/server/api/index.server.ts": "b57522f429b0ccd5a6a047f8038880e3626d4b868479845c3bfb180c049dda3c",
+      "src/lib/server/queries/library-content.ts": "08e6fb735feeb7a805672ca27cc7cc83005a046632f1e3b1d9e75f125b07b54c",
+      "src/lib/server/queries/library.ts": "56e4eaa920c177624745fb0f8deb1832fa51e87ab7641b29d115ee82d59102f3",
+      "src/lib/server/queries/music.ts": "f5e9bdcc9cc860099332904decf4c603e184bf720812698813bf48bf27e04253",
+      "src/lib/server/queries/pagination.ts": "8d13fbda75755cb40c53f1db2d4c8a16b127010791f5fd35eacff116e4c56f9f",
+      "src/lib/ui/components/Shelf.svelte": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4",
+      "src/lib/ui/shelves/layout.svelte.ts": "fd449adc5c7878f6b1170dcffa9ba39c200dbb7369bc30d2f646c07c3ba37fd4",
+      "src/lib/ui/shelves/library.svelte.ts": "29985a393dc67161226e3875568429486b034f1eedb8b2d1d3a8c691db6b4a79",
+      "src/lib/ui/shelves/types.ts": "10e7b93e83e7944eb998ef54ccd6abbaeaa86ad4cf663cf58ce9c044b936af37",
+      "src/routes/library/+page.server.ts": "47ad54551a78f8810bb1053d6eada88f81c116da5ab1bca65346bb3ca8c904e6"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "finalBoundedWindowSourceFollowThrough": {
+    "at": "2026-10-18T17:42:06.448267+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/server/queries/music.ts": "9fa59c0795423d62fae52f133f99a78366265c53c2548ad708475dadc9a99ae1",
+      "src/lib/ui/shelves/library.svelte.ts": "991fae02c2c35e174b41f867411b83fe75fcc777390b9fbd814d0cee49823053"
+    },
+    "boundary": "Later scope-ledger/SSR engagement and Music error admission corrections have separate exact/current source controls. Historical receipts stay immutable; this map is current identity, not transferred runtime/resource acceptance."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "package.json": {
+        "before": "faacde885a670752c385f25f114b3ff80e0182769d72a82706ce5d804a509139",
+        "after": "7e4d8e1d2f636583b848ae17621f44cbf25f0a090380a13257a39148e4720fb2"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  },
+  "laterFound08IdentityAdvance": {
+    "at": "2026-10-18T22:56:10.507379+00:00",
+    "ref": "implementation-found-08.md",
+    "paths": {
+      "src/lib/collection/query.server.ts": {
+        "before": "c5406478f5fa52f2ad3ec5985e8871614d3904b34956a35d78bdc0033c2d5ea2",
+        "after": "ac8b6cbe1593919e1ba0e481c7262626ffd97310e41ff3f63fe7ffac969cb0f1"
+      }
+    },
+    "boundary": "Current reviewed identity only. Historical receipts/source epochs remain immutable. Explicit-ID Collection direct/parent admission has its own staged actual proof and final gates/normal consumer; other paths retain their prior acceptance boundaries."
+  },
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "src/lib/server/api/index.server.ts",
+          "before": "1d631186ce2546acfc1e9f8aa1458932c2bed4f1568e491d1c8679da33afe5f2",
+          "after": "c3dcdcbe41e20073e9f998742731d3df8ddde1c1c603de1a91adf0776ddfa623"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T02:53:01.778274+00:00",
+      "reportRef": "implementation-found-21.md",
+      "paths": [
+        "src/lib/core/games/service.server.ts"
+      ],
+      "boundary": "Exact planned DATA-07 command guards plus guide/checker bookkeeping. Historical source/evidence epochs retained; no older acceptance upgraded."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "src/lib/core/games/service.server.ts"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    }
+  ]
+}

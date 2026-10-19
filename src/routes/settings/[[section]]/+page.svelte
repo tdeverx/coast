@@ -25,10 +25,10 @@
   import ConflictList from '$lib/ui/components/ConflictList.svelte';
   import { page } from '$app/state';
   import { untrack } from 'svelte';
-  import { beforeNavigate, goto, invalidate } from '$app/navigation';
+  import { beforeNavigate, goto } from '$app/navigation';
 
   import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { api, change, message } from '$lib/ui/client';
+  import { api, change, message, refreshRouteDependencies } from '$lib/ui/client';
   import Button from '$lib/ui/components/Button.svelte';
   import Icon from '$lib/ui/components/Icon.svelte';
   import Dialog from '$lib/ui/components/Dialog.svelte';
@@ -351,7 +351,7 @@
           </p>
           {@render saveControls('Save playback preferences')}
         </form>
-        {#if data.playbackLinks.length}<div class="stack form-width"><Heading title="Playback invitations"/>{#each data.playbackLinks as link}<div class="panel spread"><div><a href={`/share?id=${link.id}`}>Open invitation</a><p class="small muted">{link.revokedAt?'Revoked':new Date(link.expiresAt)<=new Date()?'Expired':link.claimedAt?'Opened':'Available'} · {link.together?'Together':'Single item'} · {new Date(link.expiresAt).toLocaleString()}</p></div><Button disabled={busy||!!link.revokedAt} onclick={async()=>{if(busy)return;busy=true;try{await change(`sharing/${link.id}`,undefined,'DELETE');await invalidate('coast:settings');}catch(cause){error=message(cause);}finally{busy=false;}}}>Revoke</Button></div>{/each}</div>{/if}
+        {#if data.playbackLinks.length}<div class="stack form-width"><Heading title="Playback invitations"/>{#each data.playbackLinks as link}<div class="panel spread"><div><a href={`/share?id=${link.id}`}>Open invitation</a><p class="small muted">{link.revokedAt?'Revoked':new Date(link.expiresAt)<=new Date()?'Expired':link.claimedAt?'Opened':'Available'} · {link.together?'Together':'Single item'} · {new Date(link.expiresAt).toLocaleString()}</p></div><Button disabled={busy||!!link.revokedAt} onclick={async()=>{if(busy)return;busy=true;try{await change(`sharing/${link.id}`,undefined,'DELETE');await refreshRouteDependencies(['settings']);}catch(cause){error=message(cause);}finally{busy=false;}}}>Revoke</Button></div>{/each}</div>{/if}
       {:else if data.section === 'api'}<div class="stack form-width">
         <form class="panel stack" onsubmit={async event=>{
           event.preventDefault();if(busy)return;busy=true;error='';apiToken='';

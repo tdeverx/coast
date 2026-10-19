@@ -789,6 +789,7 @@ export const notifications = pgTable(
     data: jsonb('data').$type<import('../../social/model').NotificationData>(),
     readAt: timestamp('read_at', { withTimezone: true }),
     dismissedAt: timestamp('dismissed_at', { withTimezone: true }),
+    toastHiddenAt: timestamp('toast_hidden_at', { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [

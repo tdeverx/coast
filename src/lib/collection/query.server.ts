@@ -5,13 +5,16 @@ import { sql, eq, inArray, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '$lib/server/db';
 import { logDiagnostic } from '$lib/server/diagnostics';
-import { musicWorks, readingWorks, providerItems, providerConnections, providerInstances } from '$lib/server/db/schema';
-import { mediaViews } from '$lib/server/queries/media';
+import { works, musicWorks, readingWorks, providerItems, providerConnections, providerInstances } from '$lib/server/db/schema';
+import { mediaViews, screenWorkSummaries } from '$lib/server/queries/media';
 import { profileUser } from '$lib/server/queries/profile-user';
-import { PAGE_SIZE, pageNumberSchema, pagination } from '$lib/server/queries/pagination';
-import type { MediaCardPresentation, MediaView } from '$lib/ui/types';
+import { PAGE_SIZE, pageNumberSchema, pagination, requestedPageInterval } from '$lib/server/queries/pagination';
+import type { MediaCardPresentation, MediaView, WorkSummary } from '$lib/ui/types';
 import { readingCards } from '$lib/reading/query.server';
 import { musicWorkCredits } from '$lib/music/credits.server';
+import { readingCard } from '$lib/reading/presentation';
+
+import { pageInterval, type PageInterval } from '$lib/page-window';
 
 /** Cached inventory proves positive access only with this account's fresh grant
  * and the exact completed library census; it never proves negative user state. */
@@ -55,6 +58,8 @@ export async function collectionRead(statement:SQL){
 export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, source = 'all', scope: 'all' | 'personal' | string[] = 'all', category = 'all') {
   // Personal shelves only traverse their relationships and ancestors. Full inventory
   // remains an explicit scope for server projections; item menus scope to requested IDs.
+  // Personal roots depend on evidence; explicit-ID closures are independent.
+  const scopedParent = (id:SQL) => Array.isArray(scope) ? sql` and ${id} in (select id from scoped_works)` : sql``;
   const seeds = scope === 'all' ? sql`select id from works`
     : scope === 'personal' ? sql`select distinct d.id from direct d join works w on w.id=d.id where ${selectedCategory(sql`w.category`,category)}`
     : scope.length ? sql`select id from works where id in (${sql.join(scope.map(id => sql`${id}::uuid`), sql`,`)})` : sql`select id from works where false`;
@@ -78,7 +83,26 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
   ), descendants(root,id) as (
     select id,id from assessment_roots
     union select d.root,e.child_id from descendants d join edges e on e.parent_id=d.id
-  ), scoped_works as (select w.* from works w where exists(select 1 from descendants d where d.id=w.id)), raw_direct as (
+  ), scoped_works as (select w.* from works w where exists(select 1 from descendants d where d.id=w.id)), observed_shows as materialized (
+    select distinct e.show_id as id from episodes e join tracking_state t on t.media_id=e.media_id and t.user_id=${ownerId}
+    where not e.is_special${scopedParent(sql`e.show_id`)} and (t.watched or t.position_seconds>0)
+  ), active_shows as materialized (
+    select observed.id from observed_shows observed where exists(
+      select 1 from episodes remaining join media m on m.id=remaining.media_id left join tracking_state rt on rt.media_id=remaining.media_id and rt.user_id=${ownerId}
+      where remaining.show_id=observed.id and not remaining.is_special and not coalesce(rt.watched,false)
+        and (m.release_date is null or m.release_date<=current_date))
+  ), observed_albums as materialized (
+    select distinct r.parent_id as id from media_relationships r join music_works mw on mw.id=r.child_id
+    where r.kind='contains'${scopedParent(sql`r.parent_id`)} and mw.kind='track' and (
+      exists(select 1 from music_listens ml where ml.track_id=r.child_id and ml.user_id=${ownerId})
+      or exists(select 1 from music_progress mp where mp.track_id=r.child_id and mp.user_id=${ownerId} and (mp.position_seconds>0 or mp.play_count>0)))
+  ), active_albums as materialized (
+    select observed.id from observed_albums observed where exists(
+      select 1 from media_relationships remaining join music_works mt on mt.id=remaining.child_id
+      where remaining.parent_id=observed.id and remaining.kind='contains' and mt.kind='track'
+        and not exists(select 1 from music_listens ml where ml.track_id=mt.id and ml.user_id=${ownerId})
+        and not exists(select 1 from music_progress mp where mp.track_id=mt.id and mp.user_id=${ownerId} and mp.play_count>0))
+  ), raw_direct as (
     select media_id as id,'collected' as relationship from tracking_state where user_id=${ownerId} and collected
     union select media_id,'watchlist' from tracking_state where user_id=${ownerId} and watchlist
     union select media_id,'favourite' from tracking_state where user_id=${ownerId} and favourite
@@ -88,19 +112,8 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
     union select media_id,'active' from tracking_state where user_id=${ownerId} and (position_seconds>0 or dropped or (completed_episodes>0 and not watched))
     union select media_id,'history' from tracking_state where user_id=${ownerId} and (watched or play_count>0)
     union select media_id,'history' from tracking_events where user_id=${ownerId} and applied and action='watch'
-    union select e.show_id,'active' from episodes e join tracking_state t on t.media_id=e.media_id and t.user_id=${ownerId}
-      where not e.is_special and (t.watched or t.position_seconds>0) and exists(
-        select 1 from episodes remaining join media m on m.id=remaining.media_id left join tracking_state rt on rt.media_id=remaining.media_id and rt.user_id=${ownerId}
-        where remaining.show_id=e.show_id and not remaining.is_special and not coalesce(rt.watched,false)
-          and (m.release_date is null or m.release_date<=current_date))
-    union select r.parent_id,'active' from media_relationships r join music_works mw on mw.id=r.child_id
-      where r.kind='contains' and mw.kind='track' and (
-        exists(select 1 from music_listens ml where ml.track_id=r.child_id and ml.user_id=${ownerId})
-        or exists(select 1 from music_progress mp where mp.track_id=r.child_id and mp.user_id=${ownerId} and (mp.position_seconds>0 or mp.play_count>0)))
-      and exists(select 1 from media_relationships remaining join music_works mt on mt.id=remaining.child_id
-        where remaining.parent_id=r.parent_id and remaining.kind='contains' and mt.kind='track'
-          and not exists(select 1 from music_listens ml where ml.track_id=mt.id and ml.user_id=${ownerId})
-          and not exists(select 1 from music_progress mp where mp.track_id=mt.id and mp.user_id=${ownerId} and mp.play_count>0))
+    union select id,'active' from active_shows
+    union select id,'active' from active_albums
     union select game_id,'active' from game_playthroughs p where user_id=${ownerId} and status<>'completed' and (status in ('in-progress','paused','dropped') or progress_percent>0)
     union select game_id,'history' from game_playthroughs p where user_id=${ownerId} and (status='completed' or exists(select 1 from game_sessions where playthrough_id=p.id))
     union select track_id,'history' from music_listens where user_id=${ownerId}
@@ -110,7 +123,7 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
     union select work_id,'reading-history' from reading_progress where user_id=${ownerId} and state='completed'
   ), direct as (
     select d.id,case when d.relationship in ('active','history','reading-active','reading-history') then 'activity' else d.relationship end as relationship
-    from raw_direct d join works w on w.id=d.id join users u on u.id=${ownerId} join visibility vis on vis.category=w.category
+    from raw_direct d join ${Array.isArray(scope) ? sql`scoped_works` : sql`works`} w on w.id=d.id join users u on u.id=${ownerId} join visibility vis on vis.category=w.category
     where (case when d.relationship in ('reading-active','reading-history') then vis.progress_visible when d.relationship in ('active','history') then vis.activity_visible when d.relationship='favourite' then vis.favourites_visible when d.relationship='rating' then vis.ratings_visible else vis.collection_visible end)
     and (d.relationship='collected' or (
       coalesce((u.settings->'collection'->w.category->>(case when d.relationship like 'reading-%' then split_part(d.relationship,'-',2) else d.relationship end))::boolean,true)
@@ -192,14 +205,14 @@ export function collectionCTE(ownerId: string | SQL, viewerId: string | SQL, sou
   ), next_episodes as (
     select distinct on (e.show_id) e.show_id,e.media_id from episodes e
       join media em on em.id=e.media_id left join tracking_state t on t.media_id=e.media_id and t.user_id=${ownerId}
-    where not e.is_special and not coalesce(t.watched,false) and not coalesce(t.dropped,false)
+    where not e.is_special${scopedParent(sql`e.show_id`)} and not coalesce(t.watched,false) and not coalesce(t.dropped,false)
       and (em.release_date is null or em.release_date<=current_date)
     order by e.show_id,e.season_number,e.episode_number
   ), next_music as (
     select distinct on (r.parent_id) r.parent_id,child.id from media_relationships r
       join music_works child on child.id=r.child_id left join music_progress mp on mp.track_id=child.id and mp.user_id=${ownerId}
       left join listened l on l.track_id=child.id
-    where r.kind='contains' and child.kind='track'
+    where r.kind='contains'${scopedParent(sql`r.parent_id`)} and child.kind='track'
     order by r.parent_id,(coalesce(mp.position_seconds,0)>0) desc,
       (case when mp.position_seconds>0 then mp.updated_at end) desc nulls last,
       (l.track_id is not null or coalesce(mp.play_count,0)>0),r.position,child.id
@@ -277,6 +290,38 @@ export async function workActionLists(userId: string, id: string, requestedPage 
   return { items: Array.from(rows as unknown as { id: string; name: string; playlist: boolean; entryId: string | null; position: number | null; count: number }[]).map(({ entryId, position, ...list }) => ({ ...list,
     entries: entryId === null ? [] : [{ id: entryId, position: position! }] })), page, pages, total: count.total };
 }
+/** Same canonical identity presentation for consumers that never expose card state. */
+export async function workSummaries(ownerId: string, viewerId: string | null, ids: string[]): Promise<WorkSummary[]> {
+  const unique=[...new Set(ids)],summaries=new Map<string,WorkSummary>();
+  for(let offset=0;offset<unique.length;offset+=PAGE_SIZE) {
+    const page=unique.slice(offset,offset+PAGE_SIZE),uuid=v.pipe(v.string(),v.uuid());
+    v.parse(uuid,ownerId);v.parse(v.array(uuid),page);
+    const db=getDb(),[config,identities]=await Promise.all([getFeatureConfig(viewerId),
+      db.select({id:works.id,category:works.category}).from(works).where(inArray(works.id,page))]);
+    const selected=(category:string)=>identities.filter(row=>row.category===category).map(row=>row.id);
+    const screenIds=selected('screen'),gameIds=selected('game'),musicIds=selected('music'),readingIds=[...selected('book'),...selected('comic')];
+    const [screen,game,music,reading]=await Promise.all([
+      screenIds.length?screenWorkSummaries(ownerId,screenIds,viewerId):[],
+      gameIds.length?db.execute<{id:string;title:string}>(sql`select id,title from games where id in (${sql.join(gameIds.map(id=>sql`${id}::uuid`),sql`,`)})`).then(rows=>Array.from(rows)):[],
+      musicIds.length?db.select({id:musicWorks.id,kind:musicWorks.kind,title:musicWorks.title,year:musicWorks.year})
+        .from(musicWorks).where(inArray(musicWorks.id,musicIds)):[],
+      readingIds.length&&(config.experimentalBooks||config.experimentalComics)?db.select({id:readingWorks.id,kind:readingWorks.kind,title:readingWorks.title,
+        authors:readingWorks.authors,publishedYear:readingWorks.publishedYear,provider:readingWorks.provider,sourceUrl:readingWorks.sourceUrl})
+        .from(readingWorks).where(sql`${inArray(readingWorks.id,readingIds)} and ${enabledCategories(sql`${readingWorks.kind}`,config)}`).limit(PAGE_SIZE):[],
+    ]);
+    for(const item of screen)summaries.set(item.id,item);
+    // Screen titles already passed title locks and must not receive a second alias override.
+    const cards:MediaCardPresentation[]=[...game.map(item=>({id:item.id,workId:item.id,kind:'game' as const,title:item.title,href:`/games/${item.id}`})),
+      ...music.map(item=>({id:item.id,workId:item.id,kind:item.kind,title:item.title,year:item.year,href:`/music/work/${item.id}`})),
+      ...reading.map(item=>readingCard(item))];
+    for(const item of await personaliseWorkCards(viewerId,cards)) {
+      const id=item.workId??item.id;
+      summaries.set(id,{id,kind:item.kind,title:item.title,year:item.year,...(item.attribution?{attribution:item.attribution}:{})});
+    }
+  }
+  return ids.flatMap(id=>summaries.has(id)?[summaries.get(id)!]:[]);
+}
+
 export async function workCards(ownerId: string, viewerId: string | null, ids: string[]): Promise<(MediaView | MediaCardPresentation)[]> {
   const unique = [...new Set(ids)];
   const cards = new Map<string,MediaView|MediaCardPresentation>();
@@ -288,13 +333,25 @@ export async function workCards(ownerId: string, viewerId: string | null, ids: s
 }
 async function workCardPage(ownerId: string, viewerId: string | null, ids: string[]): Promise<(MediaView | MediaCardPresentation)[]> {
   if (!ids.length) return [];
-  const db=getDb(),config=await getFeatureConfig(viewerId);
+  const uuid=v.pipe(v.string(),v.uuid());
+  v.parse(uuid,ownerId);
+  v.parse(v.object({ids:v.array(uuid)}),{ids});
+  const db=getDb();
+  const [config,identities]=await Promise.all([
+    getFeatureConfig(viewerId),
+    db.select({id:works.id,category:works.category}).from(works).where(inArray(works.id,ids)),
+  ]);
+  // Canonical category admits projection work; it does not replace each owner's
+  // feature, privacy or source checks. Missing identities still produce no card.
+  const categoryIds=(category:string)=>identities.filter(work=>work.category===category).map(work=>work.id);
+  const screenIds=categoryIds('screen'),gameIds=categoryIds('game'),musicIds=categoryIds('music');
+  const readingIds=identities.filter(work=>work.category==='book'||work.category==='comic').map(work=>work.id);
   const [screen,gameRows,musicRows,readingRows] = await Promise.all([
-    mediaViews(ownerId,{ids,limit:PAGE_SIZE},viewerId),
-    (await import('$lib/core/games/service.server')).gamePresentationMetadata(ids).then(rows=>[...rows.values()]),
-    db.select().from(musicWorks).where(inArray(musicWorks.id,ids)),
-    config.experimentalBooks||config.experimentalComics
-      ? db.select().from(readingWorks).where(sql`${inArray(readingWorks.id,ids)} and ${enabledCategories(sql`${readingWorks.kind}`,config)}`).limit(PAGE_SIZE)
+    screenIds.length?mediaViews(ownerId,{ids:screenIds,limit:PAGE_SIZE},viewerId):[],
+    gameIds.length?(await import('$lib/core/games/service.server')).gamePresentationMetadata(gameIds).then(rows=>[...rows.values()]):[],
+    musicIds.length?db.select().from(musicWorks).where(inArray(musicWorks.id,musicIds)):[],
+    readingIds.length&&(config.experimentalBooks||config.experimentalComics)
+      ? db.select().from(readingWorks).where(sql`${inArray(readingWorks.id,readingIds)} and ${enabledCategories(sql`${readingWorks.kind}`,config)}`).limit(PAGE_SIZE)
       : Promise.resolve([]),
   ]);
   const [mappings,credits] = await Promise.all([musicRows.length && viewerId ? db.select({
@@ -316,9 +373,13 @@ async function workCardPage(ownerId: string, viewerId: string | null, ids: strin
   return ids.flatMap(id=>cards.has(id)?[cards.get(id)!]:[]);
 }
 export function collectionParameters(url: URL) { return Object.fromEntries(['page','level','category','kind','relationship','activity','availability','source'].flatMap(k=>url.searchParams.has(k)?[[k,k==='page'?Number(url.searchParams.get(k)):url.searchParams.get(k)]]:[])); }
-export async function collectionData(viewerId: string, raw: unknown={}, username?: string) {
+async function collectionPage(viewerId: string, raw: unknown={}, username?: string, interval?: PageInterval) {
   const owner=username?await profileUser(username):null, ownerId=owner?.id??viewerId;
   const input=v.parse(collectionOptionsSchema,raw);
+  if (interval) {
+    requestedPageInterval(input.page, interval.firstPage);
+    v.parse(v.literal(input.page), interval.lastPage);
+  }
   if(ownerId!==viewerId && input.category!=='reading')await (await import('$lib/social/privacy.server')).requireVisible(ownerId,viewerId,'collection',input.category==='all'?undefined:input.category);
   const config=await getFeatureConfig(viewerId);if(input.category!=='all')requireEnabledCategory(config,input.category);
   const condition=sql`(select collection_visible from visibility where category=c.category) and ${enabledCategories(sql`c.category`,config)} and ${selectedCategory(sql`c.category`,input.category)} and (${input.kind}='all' or c.kind=${input.kind})
@@ -335,12 +396,32 @@ export async function collectionData(viewerId: string, raw: unknown={}, username
     and (${input.source}='all' or exists(select 1 from descendants d join availability a on a.media_id=d.id where d.root=c.id and a.user_id=${viewerId} and a.connection_id::text=${input.source}))`;
   const result=await collectionRead(sql`${collectionCTE(ownerId,viewerId,input.source,'personal',input.category)}, filtered as (select c.* from collection c where ${condition}), totals as (select count(*)::int as total from filtered)
     select totals.total,coalesce((select jsonb_agg(selected order by lower(selected.title),selected.id) from
-      (select * from filtered order by lower(title),id limit ${PAGE_SIZE}
-        offset (least(${input.page},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int))-1)*${PAGE_SIZE}) selected),'[]'::jsonb) as items from totals`);
+      (select * from filtered order by lower(title),id limit ${interval ? sql`(least(${input.page},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int))
+          - least(${interval.firstPage},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int)) + 1)*${PAGE_SIZE}` : sql`${PAGE_SIZE}`}
+        offset (least(${interval?.firstPage ?? input.page},greatest(1,ceil(totals.total::numeric/${PAGE_SIZE})::int))-1)*${PAGE_SIZE}) selected),'[]'::jsonb) as items from totals`);
   const total=Number(result[0]?.total??0), {page,pages}=pagination(total,input.page);
   const assessments=(result[0]?.items as Record<string,any>[]??[]).map(mapAssessment);
+  return {ownerId,assessments,total,page,pages,...(interval ? { interval: pageInterval(pages,page,interval.firstPage) } : {}),filters:input,username:owner?.username??null,owner:ownerId===viewerId};
+}
+
+/** Public identity consumers retain the exact shared Collection eligibility and paging. */
+export async function collectionSummaries(viewerId: string, raw: unknown={}) {
+  const {ownerId,...page}=await collectionPage(viewerId,raw);
+  return {...page,items:await workSummaries(ownerId,viewerId,page.assessments.map(item=>item.id))};
+}
+
+export async function collectionData(viewerId: string, raw: unknown={}, username?: string, interval?: PageInterval, signal?: AbortSignal) {
+  signal?.throwIfAborted();
+  const {ownerId,assessments,total,page,pages,interval:bounds,...presentation}=await collectionPage(viewerId,raw,username,interval);
   const hydrationStarted = performance.now();
-  const cards=await workCards(ownerId,viewerId,assessments.map(r=>r.id));
+  const cards: Awaited<ReturnType<typeof workCards>> = [], counts: number[] = [];
+  for (let number = bounds?.firstPage ?? page; number <= page; number++) {
+    signal?.throwIfAborted();
+    const offset = (number - (bounds?.firstPage ?? page)) * PAGE_SIZE;
+    const selected = await workCards(ownerId,viewerId,assessments.slice(offset,offset+PAGE_SIZE).map(r=>r.id));
+    signal?.throwIfAborted();
+    cards.push(...selected); counts.push(selected.length);
+  }
   void logDiagnostic('debug','query.timing',{operation:'collection',stage:'card-hydration',durationMs:performance.now()-hydrationStarted});
   const byId=new Map(assessments.map(a=>[a.id,a]));
   const items=cards.map(item=>{
@@ -350,5 +431,5 @@ export async function collectionData(viewerId: string, raw: unknown={}, username
     return {...item,available:assessment?['available','partial'].includes(assessment.availability):item.available ?? false,...(details.length?{captionSubtitle:details.join(' · ')}:{})};
   });
   const sources=await getDb().select({id:providerConnections.id,name:providerInstances.name}).from(providerConnections).innerJoin(providerInstances,eq(providerInstances.id,providerConnections.instanceId)).where(sql`${providerConnections.userId}=${viewerId} and ${providerInstances.provider} in ('jellyfin','steam')`);
-  return {items,assessments,sources,total,page,pages,pageSize:PAGE_SIZE,filters:input,username:owner?.username??null,owner:ownerId===viewerId};
+  return {items,assessments,sources,total,page,pages,pageSize:PAGE_SIZE,...presentation,...(bounds ? {range:{...bounds,counts}} : {})};
 }

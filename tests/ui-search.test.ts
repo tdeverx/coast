@@ -14,7 +14,8 @@ const code = compileModule(source, { filename: 'search.svelte.js', generate: 'cl
   .replaceAll('$lib/ui/client', moduleUrl('export const refreshRouteDependencies=async()=>{};'))
   .replaceAll('$lib/library', import.meta.resolve('../src/lib/library'))
   .replaceAll('$lib/ui/filter-options', import.meta.resolve('../src/lib/ui/filter-options'));
-const { createSearchSource }: typeof import('../src/lib/ui/shelves/search.svelte') = await import(moduleUrl(code));
+const searchCode = code.replaceAll('$lib/search-selection', import.meta.resolve('../src/lib/search-selection'));
+const { createSearchSource }: typeof import('../src/lib/ui/shelves/search.svelte') = await import(moduleUrl(searchCode));
 
 const items = (['movie', 'show', 'album', 'game', 'book', 'comic'] as const).flatMap(kind =>
   [true, false].map(available => ({ id: `${kind}-${available}`, kind, title: kind, available }) as ShelfItem));
@@ -34,6 +35,20 @@ test('search partitions every medium by verified availability and streams new it
     unavailable.filters[0].change('comic'); runtime.flush();
     expect(unavailable.items.map(item => item.id)).toEqual(['comic-false']);
     expect(unavailable.href).toBeUndefined();
+  } finally { dispose(); }
+});
+test('route-owned row selections restore independently and scoped All excludes other requested families', () => {
+  const changed: string[] = [];
+  const state = runtime.state<SearchOptions>({ query: 'fixture', bucket: 'unavailable', items, kind: 'all', view: 'read', onKindChange: (value: string) => changed.push(value) });
+  let result!: ReturnType<typeof createSearchSource>;
+  const dispose = runtime.effect_root(() => { result = createSearchSource(() => runtime.get(state)); });
+  try {
+    runtime.flush(); expect(result.items.map(item => item.id)).toEqual(['book-false', 'comic-false']);
+    result.filters[0].change('movie'); expect(changed).toEqual(['movie']);
+    runtime.set(state, { ...runtime.get(state), kind: 'movie', view: 'watch' }); runtime.flush();
+    expect(result.items.map(item => item.id)).toEqual(['movie-false']);
+    runtime.set(state, { ...runtime.get(state), kind: 'all', view: 'read' }); runtime.flush();
+    expect(result.filters[0].value).toBe('all'); expect(result.items.map(item => item.id)).toEqual(['book-false', 'comic-false']);
   } finally { dispose(); }
 });
 test('shared type selection preserves the row layout and disabled medium gates', () => {

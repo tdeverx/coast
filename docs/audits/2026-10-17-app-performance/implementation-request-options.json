@@ -1,0 +1,108 @@
+{
+  "baseline": "eb0673873462b71118d1c11678d128958a05ff07",
+  "items": [
+    {
+      "id": "UIC-02",
+      "status": "implemented; focused lifetime/queue verification passed; actual options journey pending",
+      "implementationApplied": true,
+      "sharedOwner": "createResource-backed request options; canonical Seerr/request-instance read transport",
+      "consumers": [
+        "RequestDialog via ScreenActions work menus/heroes/cards/details/sections",
+        "createRequestControls menu choices",
+        "preview supplied options",
+        "requests/options API",
+        "loadMediaDetails API/direct-route enhancement",
+        "Seerr identity/permission/server/title read stages"
+      ],
+      "evidenceRefs": [
+        "implementation-request-options.md",
+        "tests/request-dialog-lifetime.test.ts",
+        "tests/request-options-cancellation.test.ts",
+        "tests/ui-request-controls.test.ts",
+        "tests/media-details-enrichment.test.ts"
+      ],
+      "remaining": [
+        "Coordinator signed-in normal-dev options-only acceptance; no request submission",
+        "No claim of cancelling already-admitted SQL or unrelated metadata enrichment",
+        "Combined check/build/inventory owned by coordinator"
+      ]
+    }
+  ],
+  "focusedTests": {
+    "passed": 9,
+    "failed": 0,
+    "runnerAssertions": 51,
+    "cancelledProviderExecutions": 0,
+    "queueStages": 3
+  },
+  "files": [
+    {
+      "path": "src/lib/ui/controls/request-options.svelte.ts",
+      "sha256": "f7c5498ad7159e94f37a59dba5a5ecfd67378d3cd4e2f6181e53dd8a00e34a81"
+    },
+    {
+      "path": "src/lib/ui/controls/requests.svelte.ts",
+      "sha256": "700304fdcfeffeaa0cea75bc7de267205a7e3ccc922205f81e8a0cdb65b12bb6"
+    },
+    {
+      "path": "src/lib/ui/components/RequestDialog.svelte",
+      "sha256": "d4562d7b6df3855e85d04f48b4eb782fd220f4a28dffa8fd93cc2d3327ad09b7"
+    },
+    {
+      "path": "src/lib/providers/instances.server.ts",
+      "sha256": "5d293e24f3480c30f58b4e0ece008c24d3b2ed0f933fcc9051c831ad22a27f58"
+    },
+    {
+      "path": "src/lib/providers/seerr/connection.server.ts",
+      "sha256": "72a0541fca5bda7badadc7a88fde2234955657d85d1fce36dd26bd6ae945702e"
+    },
+    {
+      "path": "src/lib/providers/seerr/requests.server.ts",
+      "sha256": "b7c80ac2400e66f245bd4ab134188f0eaed018bdf7ea23e95dbeff625c140685"
+    },
+    {
+      "path": "src/lib/server/api/requests.server.ts",
+      "sha256": "0d448817b855bf5b656b7d00d79da28ec6664f4d17c48ec0f4bf481c5b3c5618"
+    },
+    {
+      "path": "src/lib/application/media-details.server.ts",
+      "sha256": "4f803ced8515d1162cb01b32776b787c66a8eda5d97adc6372aa41569620e028"
+    },
+    {
+      "path": "src/lib/server/api/media.server.ts",
+      "sha256": "8f0d9837880f5272a180db7559e67e84c672a6077d4072def6ab8ef90a352c02"
+    },
+    {
+      "path": "src/routes/media/[id]/+page.server.ts",
+      "sha256": "6cd48141ed9a03e6a396f88e486b275a6b149db6fb0cdd8f97154f71a13cde31"
+    },
+    {
+      "path": "tests/request-dialog-lifetime.test.ts",
+      "sha256": "5ca969974fedec25e9e665279ee5091ba43ca6abeac26ffe8cf5e24e0d20b17e"
+    },
+    {
+      "path": "tests/request-options-cancellation.test.ts",
+      "sha256": "8f93ffcc1f6acd845f5f542ed61398fac2923c03f939e7cc1933baa9c4768b2d"
+    },
+    {
+      "path": "tests/fixtures/request-options.ts",
+      "sha256": "acfaf66e6d467ee0582e6b215bb70485d79e8026def640cf320326d047348109"
+    },
+    {
+      "path": "tests/fixtures/request-options-cancellation.ts",
+      "sha256": "1803a6372761cdf0e0ff6c361e866d22cfe01f56514791e5044ba8ff9f94aaf5"
+    },
+    {
+      "path": "tests/ui-request-controls.test.ts",
+      "sha256": "f75abdae2393f90515a26750e7324c1931404060f660788f43c1e0fc77be9af8"
+    },
+    {
+      "path": "tests/media-details-enrichment.test.ts",
+      "sha256": "eda2ec24cc7a21a0032e82ba43a28df6035aec036a5b4da07df5395f61e9e8ba"
+    }
+  ],
+  "dependenciesAdded": false,
+  "schemaChanged": false,
+  "actualRequestSubmitted": false,
+  "liveDataPerformanceClaim": false
+}

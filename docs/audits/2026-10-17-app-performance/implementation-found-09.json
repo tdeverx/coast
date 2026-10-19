@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "at": "2026-10-18T23:28:06.266259+00:00",
+  "status": "applied_shared_synchronous_scope_reuse_and_hero_capability_source_withdrawal",
+  "canonicalFindings": [
+    "HELPER-01",
+    "UIC-01",
+    "PR-12"
+  ],
+  "sourcePins": {
+    "src/lib/ui/controls/menu-resource.svelte.ts": "4e799f065e1666d7da7e418789f9d03caf77b9a0316dab57f0fcffacf39493aa",
+    "src/lib/ui/controls/work.svelte.ts": "9f1daac8dce18b55edf98cc6f3ef63f9a2a4cb3fc72c595e3e00b52c43cd6d1d",
+    "src/lib/ui/work-menu/ScreenActions.svelte": "4078742c5333ff3a7b7988f7dbff2a3c2ac73b01b59a0070231cd99e5f7b1b23",
+    "src/lib/ui/work-menu/CatalogueActions.svelte": "3b6659a229b1924d823e4b7c2ce33b1d37586ec8a2e5370151f786a6139b2199",
+    "src/lib/ui/components/WorkListActions.svelte": "22a6c95ac57f9e7372ab0aff6a8aec3ba72383d377135be758994bc0382fd6ea",
+    "src/lib/ui/components/PartyMenu.svelte": "8662d448c51765e8064ba2e592411976c76edcb966a42750ca2692c495b246e8",
+    "src/lib/ui/heroes/playback.svelte.ts": "1e0aa8343b58e9d42b386ffa8693e63e496998b23e91dd0a96fb560ff92af890",
+    "tests/ui-menu-resource.test.ts": "46dd325cc00f94a600d359507486b0ce4bec06aa54c1df3acc6a04467bd62ea3",
+    "tests/fixtures/video-crop-lifecycle.ts": "fa27ae70e9cdb25981e6570c2864f8d8aface115c31398533fedcfba05e3600f",
+    "tests/video-crop-lifecycle.test.ts": "dd8db6da5454e498c0cfacada1a9b305ae71bafdd971d3c940b490d61a46386a",
+    "docs/performance.md": "39dc4beafaaf87171967406a470ac290eb4ac542723d5a92245bedcbd7556f6b"
+  },
+  "actualMenuCallbackComparisons": 52,
+  "actualOwners": 4,
+  "closedScopeCalls": [
+    2,
+    1
+  ],
+  "completeResourceDtosEqual": true,
+  "domainReadCountsUnchanged": true,
+  "actualNativeMenuAndEnabledHero": true,
+  "naturalFeatureWithdrawalVerified": false,
+  "supplementaryCapabilityControls": 2,
+  "allKnownWorkComplete": false,
+  "uncheckedAreaAuditPerformed": false,
+  "commitPushPrDeploy": false,
+  "artifactPins": {
+    "implementation-found-09.md": "11d93f8b59132e38b55c208d03d53cd95148e2c29a82470e9d28999169e7c794",
+    "probes/menu-scope-reuse-real.ts": "4bd5ba7966853f9a61044d574bd9f180de15d8c11d0eda854f3b127695781cbb",
+    "candidates/found-implementation-09/final-ui-inventory.log": "bce52b3bb4ebb3e856116c30d38e008411c581dd71c43f16cbed98ff1c229945",
+    "candidates/found-implementation-09/hero-focused.log": "36bd0f451c18fe33fa1312214324262fa5059c89d00b8f204a60906607142ab6",
+    "candidates/found-implementation-09/src__lib__ui__work-menu__CatalogueActions.svelte.candidate.txt": "3b6659a229b1924d823e4b7c2ce33b1d37586ec8a2e5370151f786a6139b2199",
+    "candidates/found-implementation-09/src__lib__ui__components__WorkListActions.svelte.candidate.txt": "22a6c95ac57f9e7372ab0aff6a8aec3ba72383d377135be758994bc0382fd6ea",
+    "candidates/found-implementation-09/src__lib__ui__work-menu__ScreenActions.svelte.candidate.txt": "4078742c5333ff3a7b7988f7dbff2a3c2ac73b01b59a0070231cd99e5f7b1b23",
+    "candidates/found-implementation-09/src__lib__ui__work-menu__CatalogueActions.svelte.after.snapshot": "3b6659a229b1924d823e4b7c2ce33b1d37586ec8a2e5370151f786a6139b2199",
+    "candidates/found-implementation-09/src__lib__ui__work-menu__ScreenActions.svelte.after.snapshot": "4078742c5333ff3a7b7988f7dbff2a3c2ac73b01b59a0070231cd99e5f7b1b23",
+    "candidates/found-implementation-09/normal-for-you.png": "83c4b40de11b22d86a78c804bcc8bdd16599b117ad219e8edfc52c709c7055d8",
+    "candidates/found-implementation-09/tests__ui-menu-resource.test.ts.after.snapshot": "46dd325cc00f94a600d359507486b0ce4bec06aa54c1df3acc6a04467bd62ea3",
+    "candidates/found-implementation-09/src__lib__ui__heroes__playback.svelte.ts.after.snapshot": "1e0aa8343b58e9d42b386ffa8693e63e496998b23e91dd0a96fb560ff92af890",
+    "candidates/found-implementation-09/src__lib__ui__controls__menu-resource.svelte.ts.after.snapshot": "4e799f065e1666d7da7e418789f9d03caf77b9a0316dab57f0fcffacf39493aa",
+    "candidates/found-implementation-09/src__lib__ui__components__PartyMenu.svelte.candidate.txt": "8662d448c51765e8064ba2e592411976c76edcb966a42750ca2692c495b246e8",
+    "candidates/found-implementation-09/src__lib__ui__controls__work.svelte.ts.after.snapshot": "9f1daac8dce18b55edf98cc6f3ef63f9a2a4cb3fc72c595e3e00b52c43cd6d1d",
+    "candidates/found-implementation-09/runtime-owner-changes.patch": "3dc763a3c26b6e898ce1103545f5997118c021f7788beeb15b254d6c0743e73a",
+    "candidates/found-implementation-09/final-unit.log": "8d51d2a6427b1c5933c82aa4cc907091b94ccbd0ec28ec8f12f0c20c9c8e0c77",
+    "candidates/found-implementation-09/src__lib__ui__components__WorkListActions.svelte.before.txt": "7da77fce0df3f2c20af1087f0d2a234b3ea39b53218188c0247321b404cdc5d4",
+    "candidates/found-implementation-09/normal-menu.png": "5ab7db7695addfabc0d0393b03deb3a5c73fc1b547384debe27a7b9d88468dfd",
+    "candidates/found-implementation-09/final-code-inventory.log": "cac510d1bfc2b50e195f173b1d4f4af7d1775614da864cd91bb13dfa61a3bb10",
+    "candidates/found-implementation-09/tests__fixtures__video-crop-lifecycle.ts.after.snapshot": "fa27ae70e9cdb25981e6570c2864f8d8aface115c31398533fedcfba05e3600f",
+    "candidates/found-implementation-09/tests__video-crop-lifecycle.test.ts.after.snapshot": "dd8db6da5454e498c0cfacada1a9b305ae71bafdd971d3c940b490d61a46386a",
+    "candidates/found-implementation-09/src__lib__ui__controls__work.svelte.ts.before.txt": "cd7e916de5db6573174b761066391d5a1dbda594a6bc437cf831191ce58fe1fb",
+    "candidates/found-implementation-09/src__lib__ui__controls__work.svelte.ts.candidate.txt": "9f1daac8dce18b55edf98cc6f3ef63f9a2a4cb3fc72c595e3e00b52c43cd6d1d",
+    "candidates/found-implementation-09/menu-focused.log": "83178aeef79d079751dc99100c58a97b19346eb46368e69d5518bc38a7f6626b",
+    "candidates/found-implementation-09/final-build.log": "041cb8efce9ff0bd4145c948dc3a0d3156d9319026241f4166691d7a9f49b4cd",
+    "candidates/found-implementation-09/src__lib__ui__work-menu__CatalogueActions.svelte.before.txt": "009248bc4fa997f942f717c6a851709873a5cf784229ac608aae5447d22d947c",
+    "candidates/found-implementation-09/final-code-style.log": "6f9c3c54eceaf66e6c3f88ecbb7a0ce0c8df09c485b4b3079fed2de5969fba0c",
+    "candidates/found-implementation-09/src__lib__ui__controls__menu-resource.svelte.ts.before.txt": "7695cc48f4c22899cd9609df7e7784c8df6c7102e9d9ca6cf50a9f3001ab77b5",
+    "candidates/found-implementation-09/src__lib__ui__components__PartyMenu.svelte.after.snapshot": "8662d448c51765e8064ba2e592411976c76edcb966a42750ca2692c495b246e8",
+    "candidates/found-implementation-09/final-check.log": "3db9d00868e02f30a00cf6050eeeeb6a7868f6c11f3a9328cfb951d63281857a",
+    "candidates/found-implementation-09/src__lib__ui__work-menu__ScreenActions.svelte.before.txt": "cf7cc60f793a106e349d746d689bc2139b1eb53b78215f34ed5b583ca36c6139",
+    "candidates/found-implementation-09/source-and-tests.patch": "6556af6204869cfed36e9fc763a29cbf95d5dd2dd5862d26f6d7d906b7fa8ff6",
+    "candidates/found-implementation-09/src__lib__ui__components__PartyMenu.svelte.before.txt": "b98ebb4a117e5702dcf3a4c4cb1cce64fd9c9f878231c5cce796fc2a32bab31a",
+    "candidates/found-implementation-09/video-crop-lifecycle-test.before.snapshot": "cd13f470fcc4a9e090ad388d1a260eb220614e791cff562bd51a969577546c32",
+    "candidates/found-implementation-09/ui-menu-resource.before.snapshot": "7feb0c5ac8c17c9dff707d41096e4487dd1440f7f81739537d3e078fb82aa70e",
+    "candidates/found-implementation-09/src__lib__ui__components__WorkListActions.svelte.after.snapshot": "22a6c95ac57f9e7372ab0aff6a8aec3ba72383d377135be758994bc0382fd6ea",
+    "candidates/found-implementation-09/hero-playback.before.txt": "0597b39048c2f99b7f3ec8c0e11c133dedce6e3c1f2e2b6a32de3342a21b7bdc",
+    "candidates/found-implementation-09/normal-final.png": "45816ef261c37f8698221b04d5c4c17fb6c7dd7f580603b0cd0b322636015929",
+    "candidates/found-implementation-09/src__lib__ui__controls__menu-resource.svelte.ts.candidate.txt": "4e799f065e1666d7da7e418789f9d03caf77b9a0316dab57f0fcffacf39493aa",
+    "candidates/found-implementation-09/video-crop-lifecycle.before.snapshot": "5893347e8df440386014c109222ad64fe81b7259aa2c39e56663b6c4c5605158",
+    "evidence/implementation-found-09-gates.json": "fb540c67214d9e149192dc2b41a654248545b58b2528373f2c8b867068213cb3",
+    "evidence/implementation-found-09-menu-actual.json": "b3c68a3ca00d0a72a21d5d9686d4572e632237c344f44aaa62599f4ee8f71413",
+    "evidence/implementation-found-09-normal.json": "a30b8f3b2d58c7975acb8ed3d638e9003d22e8169e314e500c77d436102983c1",
+    "evidence/implementation-found-09-source.json": "59efd95d9c84043b39b5aa4cc67de8f80044d88b0a44c95b6fccab366c9f88fe"
+  },
+  "laterFound10IdentityAdvance": {
+    "at": "2026-10-18T23:35:57.455314+00:00",
+    "ref": "implementation-found-10.md",
+    "paths": {
+      "docs/performance.md": {
+        "before": "8e6b7c3a36d430a9f5d0eac8a239812c9622ec46f4ff9a74a8afb31c20d70b85",
+        "after": "9d808af9f4e62ba7b10b3d4b4f73236f897115ff059f4402ef343dfa217934ea"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical receipts/limits remain immutable; new Profile query has36actual complete outcomes, current UI acceptance and supplementary pending controls. Other owners not retested."
+  },
+  "laterFound11IdentityAdvance": {
+    "at": "2026-10-18T23:42:10.655439+00:00",
+    "ref": "implementation-found-11.md",
+    "paths": {
+      "docs/performance.md": {
+        "before": "9d808af9f4e62ba7b10b3d4b4f73236f897115ff059f4402ef343dfa217934ea",
+        "after": "c5a9ad8af1e8e07dd31f08434002dccee5042a6de7f529e4946bfd187b363102"
+      }
+    },
+    "boundary": "Reviewed identity only. Historical source/proofs stay immutable. Guarded count reuse has192actual section comparisons and final gates/native panel; prior activity owner body is unchanged, its receipt not newly rerun."
+  },
+  "laterDocumentationRefreshes": [
+    {
+      "at": "2026-10-19T00:33:57.550048+00:00",
+      "path": "docs/performance.md",
+      "beforeSha256": "c5a9ad8af1e8e07dd31f08434002dccee5042a6de7f529e4946bfd187b363102",
+      "afterSha256": "6cef728fce74239b718845edcf0d8e2b6582c48b58d80501c694a6fd7c105e14",
+      "beforeRef": "candidates/avatar-storage/performance.md.before.snapshot",
+      "reviewRef": "avatar-storage-candidate.md",
+      "boundary": "Append staged asset-lifecycle costs/failures and remaining work. No production source change and no upgrade of historical acceptance."
+    }
+  ],
+  "laterReviewedSourceEpochs": [
+    {
+      "at": "2026-10-19T01:04:47.831349+00:00",
+      "path": "docs/performance.md",
+      "beforeSha256": "6cef728fce74239b718845edcf0d8e2b6582c48b58d80501c694a6fd7c105e14",
+      "afterSha256": "0809f3bbe9c20967f7bddc32bdc4e7de5077bf00b1d0b0e6bf22d96f0173dd37",
+      "beforeRef": "candidates/account-deletion/performance.md.before.snapshot",
+      "reviewRef": "implementation-found-12.md",
+      "boundary": "Reviewed guide update or forward0064journal append only; no normal database/avatar rollout and no upgrade of prior runtime evidence."
+    },
+    {
+      "at": "2026-10-19T01:32:19.107523+00:00",
+      "path": "docs/performance.md",
+      "beforeSha256": "0809f3bbe9c20967f7bddc32bdc4e7de5077bf00b1d0b0e6bf22d96f0173dd37",
+      "afterSha256": "338a2c8cbeb326f3f9b80bf7880db5a037746a6caf85d25b1a6e9fc059c03792",
+      "beforeRef": "candidates/found-implementation-13/performance.md.before.snapshot",
+      "reviewRef": "implementation-found-13.md",
+      "boundary": "Only internal Profile activity projection narrows; other functions and contracts are byte-identical. Current identity review does not re-run or upgrade old evidence. Guide append records current proof and rejected Taste alternative."
+    },
+    {
+      "at": "2026-10-19T01:52:49.356026+00:00",
+      "reportRef": "implementation-found-16.md",
+      "profileRefs": [
+        "implementation-found-14.md",
+        "implementation-found-15.md"
+      ],
+      "changes": [
+        {
+          "owner": "docs/performance.md",
+          "before": "338a2c8cbeb326f3f9b80bf7880db5a037746a6caf85d25b1a6e9fc059c03792",
+          "after": "079a6996da4fa71bbd536d18eeea3ee39d71d42d530cf90110c3a6b8d7d033ab"
+        }
+      ],
+      "boundary": "Current source identity only. Historical receipts, frozen source epochs and approved manifests remain unchanged; combined normal/gates have their own receipts."
+    },
+    {
+      "at": "2026-10-19T01:54:19.078731+00:00",
+      "reportRef": "implementation-found-16.md",
+      "boundary": "Add exact ten-file avatar adoption/removed-owner/patch/normal-receipt drift checks and clarify guide prose; no runtime change or historical acceptance upgrade."
+    },
+    {
+      "at": "2026-10-19T02:01:28.135299+00:00",
+      "reportRef": "implementation-found-17.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Current reviewed owner/prose/checker identity only; archived native query epochs and every previous acceptance receipt remain unchanged."
+    },
+    {
+      "at": "2026-10-19T02:13:13.432509+00:00",
+      "reportRef": "implementation-found-18.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Performance-guide and current-checker bookkeeping only; runtime unchanged and no prior acceptance or timing upgraded."
+    },
+    {
+      "at": "2026-10-19T02:17:00.035023+00:00",
+      "reportRef": "implementation-found-19.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Guide/checker bookkeeping; runtime unchanged, no old acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T02:53:01.778274+00:00",
+      "reportRef": "implementation-found-21.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact planned DATA-07 command guards plus guide/checker bookkeeping. Historical source/evidence epochs retained; no older acceptance upgraded."
+    },
+    {
+      "at": "2026-10-19T02:55:26.686530+00:00",
+      "reportRef": "failed-method-backlog.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "User clarified execution-only stopping rule and future investigation order; runtime and prior evidence unchanged."
+    },
+    {
+      "at": "2026-10-19T03:11:12.006201+00:00",
+      "reportRef": "admin-real-data-policy.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Corrected interpretation of authorized real-data/admin test states; runtime and historical results unchanged."
+    },
+    {
+      "at": "2026-10-19T03:22:06.569202+00:00",
+      "reportRef": "implementation-found-22.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Admin actual-data acceptance, measurement/stopping guidance and checker bookkeeping; runtime unchanged, old evidence not promoted beyond named new acceptance."
+    },
+    {
+      "at": "2026-10-19T03:36:26.980220+00:00",
+      "reportRef": "implementation-found-23.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared imported-listen statement batching actual-data adoption plus explicit deferred methods; historical evidence remains scoped to archived sources, no full bounded-transaction or whole-audit completion claim."
+    },
+    {
+      "at": "2026-10-19T03:58:03.995927+00:00",
+      "reportRef": "implementation-found-24.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Shared conflict summaries native actual-admin adoption; sequence named acceptance; phased finalization not adopted. Historical evidence retains source/acceptance boundaries, no whole-audit completion."
+    },
+    {
+      "at": "2026-10-19T05:08:15.317815+00:00",
+      "reportRef": "implementation-found-25.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested queue overflow, variant structure guard and narrow preview transform adopted; native controlled acceptance and keep-current methods recorded separately. No full remote/browser/growth acceptance promoted."
+    },
+    {
+      "at": "2026-10-19T05:49:50.443510+00:00",
+      "reportRef": "implementation-found-26.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Exact tested friendship and Steam ownership chunk policy ordering adopted; actual concurrency/effects receipts and extra query costs recorded. No full Steam bootstrap/recommendation/other consumer acceptance promoted; older database epochs remain explicit."
+    },
+    {
+      "at": "2026-10-19T06:14:56.017437+00:00",
+      "reportRef": "final-original-comparison.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker composition only. Exact original/current native read equivalence and mixed resource results recorded separately; no runtime repair or older proof rerun/acceptance promotion."
+    },
+    {
+      "at": "2026-10-19T07:02:20.557208+00:00",
+      "reportRef": "implementation-found-27.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Reviewed shared Activity policy-key source/test composition plus guide/checker update. Older proof epochs and sourceAfter fields remain historical; current pins advance without claiming older native tests reran. Final original-comparison raw source snapshot and sample metrics stay frozen."
+    },
+    {
+      "at": "2026-10-19T07:17:04.054456+00:00",
+      "reportRef": "housekeeping-closeout.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Documentation/checker-only closeout. Runtime/test source unchanged; earlier measurements/proof epochs are not rerun or promoted."
+    },
+    {
+      "at": "2026-10-19T07:54:54.320874+00:00",
+      "reportRef": "publication.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "Public evidence packaging, image-link privacy and canonical CI test entry point; no application runtime/test owner changed or native proof rerun."
+    },
+    {
+      "at": "2026-10-19T08:09:11.693169+00:00",
+      "reportRef": "ci-integration-follow-up.md",
+      "paths": [
+        "docs/performance.md"
+      ],
+      "boundary": "CI exposed four fixture-assumption failures on both PostgreSQL majors; native Request fixtures and independent native UUID-array oracle corrected. Application owners unchanged; original actual-data performance/DTO proofs not rerun or promoted."
+    }
+  ]
+}

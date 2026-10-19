@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "MIN-02",
+  "status": "implemented-actual-data-verified",
+  "sharedOwner": "mediaActionData context hydration used by every screen media action menu",
+  "source": "src/lib/server/queries/media-actions.ts",
+  "sourceSha256": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+  "baselineSourceSha256": "5e4c415ef6db5d5a8df8b43986950022b9ffd8f98a14effd277f94c07e5464b6",
+  "change": "Combine whole-work and parent hydration in one deduplicated local mediaViewsForIds batch, then filter back to the original parent set before request/reset/rewatch targeting. Retain initial item lookup, fresh wholeWorkId lookup and fallback.",
+  "verification": {
+    "actualCompleteComparisons": 31,
+    "allEquivalent": true,
+    "validationContracts": 2,
+    "actualOwners": 4,
+    "actualKinds": [
+      "collection",
+      "episode",
+      "movie",
+      "season",
+      "show"
+    ],
+    "nonemptyRequestComparisons": 3,
+    "nonemptyProgressComparisons": 2,
+    "episodeOrm": [
+      56,
+      40
+    ],
+    "seasonOrm": [
+      57,
+      41
+    ],
+    "sourceUnchanged": true,
+    "providerTransportAttempts": 0
+  },
+  "evidenceRefs": [
+    "evidence/implementation-menu-context-actual.json",
+    "probes/media-actions-real.ts"
+  ],
+  "acceptanceGaps": [
+    "No selected actual active rewatches; nonempty rewatch target output is not exercised.",
+    "No actual saved franchise catalogue rows.",
+    "No fabricated changing-parent graph or natural concurrent mutation; code review checks that the union hydration is filtered back to original parent targets. Descriptive one-pair timings are not a benchmark."
+  ],
+  "normalDatabaseWrites": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "recordedAt": "2026-10-18T00:07:29.751258+00:00",
+  "currentBatchLiveAcceptance": {
+    "receipt": "evidence/implementation-owner-batch-normal.json",
+    "boundary": "Signed-in functional rendering and menu/panel open/close only; no real filter/preference writes, pending device authorization, fault injection or benchmark."
+  }
+}

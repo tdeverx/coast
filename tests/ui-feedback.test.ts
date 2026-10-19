@@ -81,3 +81,37 @@ test('overlapping failures restore the remaining operation and its latest retry'
   runtime.set(second,'');runtime.flush();expect(feedback.current).toBeNull();
  } finally {dispose();for(const hook of lifecycle.hooks.splice(0))hook();}
 });
+
+test('watched action labels update with an unchanged failure and retain Retry and Undo defaults',()=>{
+ const feedback=createFeedback(),label=runtime.state<string|undefined>('Reload page');
+ const dispose=runtime.effect_root(()=>feedback.watch(()=>({text:'Unavailable',retry:()=>{},actionLabel:runtime.get(label)})));
+ try{
+  runtime.flush();const notice=feedback.current;expect(notice?.actionLabel).toBe('Reload page');
+  runtime.set(label,undefined);runtime.flush();expect(feedback.current).toBe(notice);expect(notice?.actionLabel).toBeUndefined();
+  feedback.notify('Saved',async()=>{});expect(feedback.current?.undo).toBeFunction();expect(feedback.current?.actionLabel).toBeUndefined();
+ }finally{dispose();for(const hook of lifecycle.hooks.splice(0))hook();}
+});
+
+const contextSource=await Bun.file(new URL('../src/lib/ui/client-context.ts',import.meta.url)).text();
+const reporter=contextSource.slice(contextSource.indexOf('export function reportImportFailure(')).replace('export ','');
+function importReporter(feedback:ReturnType<typeof createFeedback>,preview=false){
+ let reloads=0;
+ const report=new Function('useClient','window',new Bun.Transpiler({loader:'ts'}).transformSync(reporter)+';return reportImportFailure;')(
+  ()=>({feedback,preview}),{location:{reload:()=>reloads++}});
+ return {report,get reloads(){return reloads;}};
+}
+
+test('module recovery reloads only on explicit action while the current error remains and never in preview',async()=>{
+ for(const preview of [false,true]){
+  const feedback=createFeedback(),error=runtime.state('Reload the page to try again.'),owner=importReporter(feedback,preview);
+  const dispose=runtime.effect_root(()=>owner.report(()=>runtime.get(error)));
+  try{
+   runtime.flush();expect(owner.reloads).toBe(0);expect(feedback.current?.actionLabel).toBe('Reload page');
+   await feedback.act();expect(owner.reloads).toBe(preview?0:1);expect(feedback.current?.text).toBe('Reload the page to try again.');
+   // A close/supersession may precede the next render; the old visible action must recheck demand.
+   runtime.set(error,'');await feedback.act();expect(owner.reloads).toBe(preview?0:1);runtime.flush();expect(feedback.current).toBeNull();
+   runtime.set(error,'Reload the page to try again.');runtime.flush();expect(feedback.current?.retry).toBeFunction();
+  }finally{dispose();for(const hook of lifecycle.hooks.splice(0))hook();}
+  expect(feedback.current).toBeNull();await feedback.act();expect(owner.reloads).toBe(preview?0:1);
+ }
+});

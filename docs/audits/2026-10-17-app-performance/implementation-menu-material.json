@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 1,
+  "id": "UIS-04",
+  "relatedFindings": [
+    "UIS-03",
+    "UIS-06"
+  ],
+  "report": "implementation-menu-material.md",
+  "recordedAt": "2026-10-18T03:07:47.282718+00:00",
+  "status": "narrow_open_menu_material_ownership_implemented_broader_card_shelf_lifetimes_open",
+  "canonicalStatusEdited": false,
+  "applicationFilesChanged": [
+    "src/lib/ui/components/Button.svelte"
+  ],
+  "testFilesChanged": [
+    "tests/glass-lifecycle.test.ts"
+  ],
+  "sourceBeforeSha256": "de5c965c139f864e6254cfc77c57c5c1d5c0cf97b3f53b70852d931e15ad31cd",
+  "verifiedCurrentSha256": "94aa6493576191d136b8da0286401527a69104a57bddd5416cbb06721dd7e496",
+  "sourcePins": {
+    "src/lib/ui/components/Button.svelte": "94aa6493576191d136b8da0286401527a69104a57bddd5416cbb06721dd7e496",
+    "src/lib/ui/components/MediaCard.svelte": "0b5cf21d1c6b943b176af9d09df4cc4a10709d4be6f3292ed1e9ab4eb65ab310",
+    "src/lib/ui/components/WorkMenu.svelte": "510bd0cc9d8b6f8b2c223ffdd3da60b5361591fba5f2af9c0ea7f4679619c553",
+    "src/lib/ui/components/Shelf.svelte": "888c18780cdbc39788ad82574c7d7e16a3322e38a8c31f6852a8415ba31652e4",
+    "src/lib/ui/components/Dialog.svelte": "af712feba97efe636b88ae94cb21814bfa7c4166e8007ba0a90f7bdaab9fa555",
+    "src/lib/ui/controls/menu.svelte.ts": "dcc43ba5e8ca322d3560377065f6a04b0d45c660bd7d5d6881ecd415e11b1841",
+    "src/lib/ui/controls/menu-resource.svelte.ts": "4e799f065e1666d7da7e418789f9d03caf77b9a0316dab57f0fcffacf39493aa",
+    "src/lib/ui/controls/work.svelte.ts": "9f1daac8dce18b55edf98cc6f3ef63f9a2a4cb3fc72c595e3e00b52c43cd6d1d",
+    "src/lib/ui/materials/glass.ts": "de2a840f0e28956c2e50749fd06a2dc146870fe393c20ce6adc72233f5b3b179",
+    "src/lib/ui/lazy-content.ts": "cb71cf521a665d6d133126c734436a0f678d379ff1bc014fc41d61b9093275f2",
+    "src/lib/ui/shelves/detail.svelte.ts": "00be76aa839f4eeded9634eb6451960efa8497d0b24ed7450eba496521c94d24",
+    "src/lib/ui/shelves/layout.svelte.ts": "85d6fc90d52176f4a49c3aeb98c64d3ed9b4b83aff321462a7d24be1e6b4f84f",
+    "src/app.css": "4349610c5783064e210c53018a4ed0cc63a6dc2d48074f12e352e0bccc63a5b8",
+    "tests/glass-lifecycle.test.ts": "f5328fa3fef384167272aa1a7e009d2056a5fb43dcc1b50d3f8f04f79b519f08",
+    "tests/menu-lifecycle.test.ts": "66e040ddae12eeebc8fbc51b46906cf46803243e0963a59db12caae31abe2564",
+    "src/lib/ui/visibility.ts": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+  },
+  "evidencePins": {
+    "evidence/implementation-menu-material-tests.txt": "7c7bfc3a52bf8919261ca5611f7c9a2e14a1225438ca7980902ddbb1535e444e",
+    "candidates/menu-material/Button.before.svelte.txt": "de5c965c139f864e6254cfc77c57c5c1d5c0cf97b3f53b70852d931e15ad31cd",
+    "candidates/menu-material/Button.candidate.svelte.txt": "94aa6493576191d136b8da0286401527a69104a57bddd5416cbb06721dd7e496"
+  },
+  "change": "One menu surface binding uses existing surfaceMaterial enabled=controller.open, variant=glassDark, blur=false; no menu/controller/domain-owner unmount.",
+  "sharedOwner": "Button menu-surface material action",
+  "consumers": [
+    "screen/catalogue WorkMenu roots and nested actions",
+    "row style menus",
+    "account/status menus",
+    "queue/friend actions",
+    "settings menus"
+  ],
+  "preserved": [
+    "existing variant/native gate/CSS fallback",
+    "current Menu controller focus/compact/touch/lifecycle",
+    "menu children/domain draft/playback/read/write owners",
+    "card mounts and all Shelf/source array/order/occurrence/anchor/filter semantics",
+    "existing deferred SVG cleanup"
+  ],
+  "currentSourceCorrection": {
+    "controllerBreakpointListenerAlreadyOpenOwned": true,
+    "refs": [
+      "src/lib/ui/controls/menu.svelte.ts:297",
+      "src/lib/ui/controls/menu.svelte.ts:307",
+      "src/lib/ui/controls/menu.svelte.ts:329"
+    ],
+    "materialObserverScope": "One ResizeObserver and settings callback per action; root MutationObserver/appearance media-query listener are shared globally."
+  },
+  "tradeoff": "Closed action loses its warm map cache; reopen reconstructs it. Existing500ms stale SVG removal remains. No measured net CPU/GPU/heap/timing gain.",
+  "focusedTests": {
+    "ref": "evidence/implementation-menu-material-tests.txt",
+    "passed": 6,
+    "failed": 0,
+    "assertions": 172,
+    "files": 2,
+    "newCase": "Actual Button binding + existing source-derived wrapper + real liquidGlass under controlled DOM/canvas/media/scheduler; supported/CSS gates, close/reopen/queued work/stale cleanup.",
+    "actualDataOrBrowserAcceptance": false
+  },
+  "browserAcceptance": {
+    "status": "passed_current_source_normal_functional_lifetime",
+    "receipt": "evidence/implementation-ancestor-material-normal.json",
+    "signedInNormalDev": true,
+    "nativeAccountNestedTaskMediaComicMenu": true,
+    "closedOwnerMarkers": 0,
+    "oldAccountFilterRemoved": true,
+    "keyboard": "Account ArrowDown and nestedArrowRight/Escape pass; custommediaEnteropens, ArrowDowndidnot. No event-handling changed bymaterialfix.",
+    "untested": [
+      "touch/compact",
+      "glasspreferencesave/CSSfallback inrealbrowser",
+      "resizewhileopen",
+      "longnaturalretainedbrowse",
+      "peakheap/GPU/latency"
+    ]
+  },
+  "commonGates": "passed_root_combined791pass710guardedskip0fail/check0/0/build/inventories/style",
+  "independentReview": {
+    "reviewer": "providers_jobs_audit",
+    "outcome": "approved exact source/test; conditional material lifetime only; staleSVGcleanup protected; normalpaint/resize remainsrootboundary"
+  },
+  "remainingGaps": [
+    "MediaCard active latch/retained WorkMenu remains; no pointer-leave unmount.",
+    "All domain engagement states need generic representation before reclaiming card command owners; WorkMenu.isBusy currently catalogueside only.",
+    "Shelf arrays/keyed DOM append/prepend, exact occurrence IDs/episode anchors/back navigation and journal variability require explicit shared retained-page/window policy.",
+    "Once-only lazy row activation/offscreen revision/social reads remain; no actual invisible-row transport trace measured.",
+    "No20page natural retained browse/DOM plateau, memory/GPU/latency or transfer gain established."
+  ],
+  "deduplication": "UIS04 narrow material ownership only; prior menu listener HELPER02 and UIS06 SVG reuse gains are not counted again. UIS03 remains open.",
+  "rootCombinedAcceptance": {
+    "commonPassed": true,
+    "unit": {
+      "passed": 791,
+      "guardedSkip": 710,
+      "failed": 0,
+      "assertions": 33722,
+      "tests": 1501,
+      "files": 279
+    },
+    "check": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "buildInventoriesStyle": "passed",
+    "receipt": "evidence/implementation-20261018-ancestor-material-gates.json",
+    "normalTrial": {
+      "receipt": "evidence/implementation-ancestor-material-normal.json",
+      "passedFunctional": true,
+      "sourceUnchanged": true,
+      "boundary": "Functional current-source signed-in normal5173 actual-data trial. No job/plan/request/status/profile/friend/reading/tracking/settings/schema command submitted; ordinary session/presence/freshness/enrichment side effects not claimed absent. No live provider ingestion, helper write, touch/compact, browser CPU/heap/GPU/network timing or long retained-browse proof."
+    },
+    "goalComplete": false
+  },
+  "laterSourceChanges": [
+    {
+      "at": "2026-10-18T10:21:52.057608+00:00",
+      "changes": {
+        "src/lib/ui/components/Dialog.svelte": {
+          "before": "1e4df07f144e6fd5bf1f5429283849f6e72b1c7d99a4f114b4ad770ae1c3ffbf",
+          "after": "cecb013bb41e725f3c4de65c75757ce64c218143368d471f9542230c25b69f0a"
+        }
+      },
+      "evidence": "evidence/implementation-detail-close-applied.json",
+      "boundary": "Current identity after separate three-line shared close adoption. Historical receipts/manifests remain unchanged; their measurements were not rerun on this source."
+    }
+  ],
+  "laterSharedHistoryIdentityVisibilityImplementation": {
+    "at": "2026-10-18T15:48:24.962261+00:00",
+    "report": "implementation-found-03.md",
+    "reviewedOwnerChanges": {
+      "src/lib/collection/projection.server.ts": {
+        "before": "ed3cf371da6ef6c11c6e75595a7971c5dd2ef4971a19f4a1f137a2ba7568a464",
+        "after": "3f1a0f6612a39b25ded225737425fec59c0ed5027783c58706967bd758b359f0"
+      },
+      "src/lib/server/queries/media-actions.ts": {
+        "before": "693fb68a33642e553feeb4027a1ea08855d54666cc19cc9cf532ebf5abb0664e",
+        "after": "51b3a33cf5f8d43e3513434b16cc5328004017a9207b88ff3ae26053c9b97601"
+      },
+      "src/lib/sync/trakt-identity.server.ts": {
+        "before": "4eec022b9117387396e22c333c57d8abf84f6b3d81c76ff63716c69cb0388f01",
+        "after": "148ca98b594be09728f4ac7e80b761fde0fbff9544979bd34db2f54773be5ccb"
+      },
+      "src/lib/sync/trakt-lists.server.ts": {
+        "before": "d11d13d01ee65844fb6abf862dbec71e50c6dfb3bc023b043913d6c831ed865d",
+        "after": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb"
+      },
+      "src/lib/ui/components/Shelf.svelte": {
+        "before": "cf332bcd252a8b6b0ee7d5f7ffaf89993405c580da28c7bfbca876ca9442586b",
+        "after": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4"
+      },
+      "src/lib/ui/visibility.ts": {
+        "before": null,
+        "after": "4943c53d80f56822a51faf70223b20f7009aeac587096c2531db3551799ddb69"
+      }
+    },
+    "newVisibilityDependency": "src/lib/ui/visibility.ts",
+    "historicalProofsRerun": false,
+    "boundary": "Current source identity only. New scoped actual/functional/supplemental receipts are linked separately; old raw execution receipts unchanged."
+  },
+  "laterBoundedCatalogueWindowSourceAdvance": {
+    "at": "2026-10-18T17:17:08.250473+00:00",
+    "ref": "implementation-found-04.md",
+    "priorCurrentPins": {
+      "src/lib/ui/components/MediaCard.svelte": "057ff79292214b7eefd0311efce0ce6c8dd5866b375ad88c116b30e2a022897a",
+      "src/lib/ui/components/Shelf.svelte": "98ebfa7968a94526293b8bbc4ec9ac79d61081c941e0719bf52b632de9cb31e4",
+      "src/lib/ui/components/Dialog.svelte": "cecb013bb41e725f3c4de65c75757ce64c218143368d471f9542230c25b69f0a",
+      "src/lib/ui/controls/menu.svelte.ts": "cb927c48a3e7d4cc295504dc16933c86d91df75d547bb17da94384dc5f327112",
+      "src/lib/ui/shelves/layout.svelte.ts": "fd449adc5c7878f6b1170dcffa9ba39c200dbb7369bc30d2f646c07c3ba37fd4"
+    },
+    "historicalProofsRerunForThisReport": false,
+    "boundary": "Current source identity advances at reviewed shared bounded-window/retention/position/operation owners. Old actual receipts are unchanged. The new32range/38buffer/5compiled-source/2normalMusic/nativeDOM-Back-lease proofs have separate frozen manifests; old CPU/heap/provider/concurrency acceptance does not transfer."
+  },
+  "laterFound05IdentityAdvance": {
+    "at": "2026-10-18T19:58:02.456432+00:00",
+    "ref": "implementation-found-05.md",
+    "paths": {
+      "src/lib/ui/materials/glass.ts": {
+        "before": "2780410aec249c0d1020f04b382b7888faa3dd2425bc7ce238cef88e7fcaab33",
+        "after": "de2a840f0e28956c2e50749fd06a2dc146870fe393c20ce6adc72233f5b3b179"
+      },
+      "tests/glass-lifecycle.test.ts": {
+        "before": "b6b93dbff32ffe0b84379d79450642cc9d4223bf82595c8960b250857de22dd2",
+        "after": "f5328fa3fef384167272aa1a7e009d2056a5fb43dcc1b50d3f8f04f79b519f08"
+      }
+    },
+    "boundary": "Reviewed current identity only. Historical actual receipts/source snapshots are immutable; the new diagnostic/native-root changes have their own actual evidence and canonical gates."
+  },
+  "laterFound09IdentityAdvance": {
+    "at": "2026-10-18T23:28:06.266259+00:00",
+    "ref": "implementation-found-09.md",
+    "paths": {
+      "src/lib/ui/controls/menu-resource.svelte.ts": {
+        "before": "7695cc48f4c22899cd9609df7e7784c8df6c7102e9d9ca6cf50a9f3001ab77b5",
+        "after": "4e799f065e1666d7da7e418789f9d03caf77b9a0316dab57f0fcffacf39493aa"
+      },
+      "src/lib/ui/controls/work.svelte.ts": {
+        "before": "cd7e916de5db6573174b761066391d5a1dbda594a6bc437cf831191ce58fe1fb",
+        "after": "9f1daac8dce18b55edf98cc6f3ef63f9a2a4cb3fc72c595e3e00b52c43cd6d1d"
+      }
+    },
+    "boundary": "Current reviewed identity only. Original actual receipts and acceptance limits retained. Menu actual-input and native enabled-hero acceptance have their own current proof; capability-Off remains authored controls."
+  }
+}

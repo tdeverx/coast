@@ -1,0 +1,119 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-18",
+  "reportRef": "implementation-route-lifetimes.md",
+  "committed": false,
+  "productionDependenciesAdded": false,
+  "uiRedesigned": false,
+  "normalDatabaseMutations": false,
+  "changes": [
+    {
+      "findingId": "FRT-03",
+      "state": "implemented_read_and_teardown_scope_actual_get_equivalence_verified_remaining_write_policy_open",
+      "sharedOwner": "src/lib/ui/resource.svelte.ts plus existing API signal support",
+      "files": [
+        "src/routes/profile/[username]/+page.svelte",
+        "src/routes/onboarding/+page.svelte"
+      ],
+      "sourcePins": {
+        "src/routes/profile/[username]/+page.svelte": "038cf3f58564065a3c662e34d17915ce689966e959ae69e132dacc2f18a6a81a",
+        "src/routes/onboarding/+page.svelte": "32f0ab000176a6b5bb1ba41a1a29b09e1bd2e1b06ca172ce6054648889fd7ca4",
+        "tests/route-read-lifetimes.test.ts": "053ab759ff4bc27136b8b99f557faa5902dc593b388065d5fd3ad8f9db613a50"
+      },
+      "consumers": [
+        "profile favourites all kinds/scope/page",
+        "profile insights month/year/all",
+        "profile SSR replacement and destroy",
+        "onboarding device poll wait",
+        "onboarding import-status visibility admission"
+      ],
+      "preserved": [
+        "profile preference POST ordering and acknowledgement",
+        "independent profile read lanes",
+        "overview20/full60 caps",
+        "reading kind scope all",
+        "provider device poll interval and hidden-tab authorization",
+        "server action commit semantics",
+        "current markup and error messages"
+      ],
+      "verification": {
+        "runtime": "Bun 1.4.3",
+        "focused": {
+          "passed": 14,
+          "failed": 0,
+          "assertions": 91,
+          "files": 2,
+          "newComponentRegressions": 8,
+          "receipt": "evidence/implementation-route-lifetimes-tests.txt"
+        },
+        "actual": {
+          "status": "passed",
+          "aggregateChecks": 12,
+          "canonicalGetReads": 4,
+          "enabledActualAccounts": 4,
+          "pendingSetupAccounts": 0,
+          "selectedPersistedFavourites": 3,
+          "persistedControls": {
+            "kind": "all",
+            "period": "year"
+          },
+          "fullOutputEqual": true,
+          "outputSha256": "f9eaa03bef1568c294c5bef7b38bc8f9a4fb54a4a8400a25431af2cbed340cd9",
+          "singleReadOnlyConnection": true,
+          "verifiedStatementTimeout": "30s",
+          "verifiedLockTimeout": "5s",
+          "externalCalls": 0,
+          "preferenceWrites": 0,
+          "connectionsClosed": true,
+          "sourcePinsUnchanged": true,
+          "receipt": "evidence/implementation-route-lifetimes-actual.json",
+          "probe": "probes/route-read-lifetimes.ts"
+        },
+        "fullCheck": {
+          "errors": 0,
+          "warnings": 0,
+          "receipt": "evidence/implementation-route-lifetimes-check.txt"
+        },
+        "preflightCorrection": {
+          "cause": "Initial resource binding favourites collided with existing template snippet favourites; script-only fixtures omitted markup",
+          "fix": "Rename resource only to favouriteRead",
+          "priorActualReceipt": "evidence/implementation-route-lifetimes-actual-prior.json",
+          "focusedAndActualRerun": true,
+          "failedParentCheckRetained": true
+        },
+        "independentReview": {
+          "reviewer": "providers_jobs_audit",
+          "scope": "read-only source and test review",
+          "materialBlockers": 0
+        }
+      },
+      "actualBoundary": "Actual GET/DTO and completed-setup contracts; DOM/lifecycle isolated, preference admission disabled in both old/current scripts. No browser cookie-auth/provider device-flow or natural cancellation/latency claim.",
+      "gaps": [
+        "No actual pending device-code/provider cohort",
+        "Current signed-in profile overview/favourites panel open/close passed; real filter/preference writes and natural abort schedules were not exercised",
+        "Already admitted Kit invalidation and backend SQL/action work are not cancelled",
+        "Existing new-code poll can wait for a hung previous poll",
+        "Preference write queue remains ordered and uncoalesced; policy change separate",
+        "No latency or heap measurement"
+      ],
+      "options": [
+        {
+          "owner": "profile preference commands",
+          "smallest": "one active write plus latest unsent absolute values per preference",
+          "tradeoff": "coalesces intermediate requested writes; requires explicit acknowledgement/failure/auth policy",
+          "implemented": false
+        },
+        {
+          "owner": "onboarding current-device poll epoch",
+          "smallest": "cancel old code wait and admit only current code with existing resource",
+          "tradeoff": "must preserve provider pacing/account-generation/server commit semantics and verify actual authorization",
+          "implemented": false
+        }
+      ]
+    }
+  ],
+  "currentBatchLiveAcceptance": {
+    "receipt": "evidence/implementation-owner-batch-normal.json",
+    "boundary": "Signed-in functional rendering and menu/panel open/close only; no real filter/preference writes, pending device authorization, fault injection or benchmark."
+  }
+}

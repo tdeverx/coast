@@ -1,5 +1,6 @@
 import { getContext, onMount, setContext, tick } from 'svelte';
 import { afterNavigate } from '$app/navigation';
+import { useRetention } from '../retention';
 
 const outsideWatchers = new Set<(event: Event) => void>();
 function dispatchOutside(event: Event) { for (const watcher of [...outsideWatchers]) watcher(event); }
@@ -36,11 +37,14 @@ export type MenuContext = {
 };
 /** One controller for focus, popover positioning, keyboard navigation and nested drill-down. */
 export function createMenuController(options: MenuOptions) {
+  const retain=useRetention();
+  let releaseRetention:(()=>void)|undefined;
   const parent = getContext<MenuContext | undefined>('coast-context-menu');
   let stopWatching: (() => void) | undefined;
   let startWatching = () => {};
   let open = $state(false);
   let compact = $state(false);
+  let modeQuery: MediaQueryList | undefined;
   let childHidden = $state(false);
   let childClose: (() => void) | null = null;
   let frame = 0;
@@ -63,6 +67,7 @@ export function createMenuController(options: MenuOptions) {
     for (const child of options.root()?.querySelectorAll<HTMLElement>('[popover]:popover-open') ?? [])
       child.hidePopover();
     open = false;
+    releaseRetention?.(); releaseRetention=undefined;
     options.onclose?.();
     stopWatching?.();
     stopWatching = undefined;
@@ -178,8 +183,10 @@ export function createMenuController(options: MenuOptions) {
   function openMenu(focus = false, last = false) {
     if (disposed || options.disabled() || !options.surface() || !options.triggerNode()) return;
     if (!open) {
+      compact = modeQuery?.matches ?? compact;
       parent?.showChild(closeFromParent, compact);
       options.surface().showPopover();
+      releaseRetention=retain();
       open = true;
       startWatching();
       place();
@@ -281,20 +288,21 @@ export function createMenuController(options: MenuOptions) {
   }
   afterNavigate(() => closeMenu());
   onMount(() => {
-    const query = window.matchMedia('(max-width: 640px), (hover: none)');
+    const query = modeQuery = window.matchMedia('(max-width: 640px), (hover: none)');
     const updateMode = () => {
       compact = query.matches;
       if (open && parent) parent.showChild(closeFromParent, compact);
       schedulePlace();
     };
     updateMode();
-    query.addEventListener('change', updateMode);
     const outside = (event: Event) => {
       const root = options.root();
       if (open && root && event.target instanceof Node && !root.contains(event.target)) closeMenu();
     };
     startWatching = () => {
       if (disposed || stopWatching) return;
+      updateMode();
+      query.addEventListener('change', updateMode);
       const observer = new ResizeObserver(schedulePlace);
       observer.observe(options.surface());
       observer.observe(options.triggerNode());
@@ -303,6 +311,7 @@ export function createMenuController(options: MenuOptions) {
       window.addEventListener('scroll', schedulePlace, true);
       stopWatching = () => {
         observer.disconnect();
+        query.removeEventListener('change', updateMode);
         releaseOutside();
         cancelAnimationFrame(frame);
         window.removeEventListener('resize', schedulePlace);
@@ -313,7 +322,6 @@ export function createMenuController(options: MenuOptions) {
     return () => {
       disposed = true;
       closeMenu();
-      query.removeEventListener('change', updateMode);
       cancelAnimationFrame(frame);
       stopWatching?.();
       startWatching = () => {};
@@ -323,9 +331,9 @@ export function createMenuController(options: MenuOptions) {
   return {
     get open() { return open; },
     get nested() { return !!parent; },
-    get compact() { return compact; },
+    get compact() { return open ? compact : modeQuery?.matches ?? compact; },
     get childHidden() { return childHidden; },
     openAt, focusFirst, close: closeMenu, openMenu, triggerKey, menuKey, action,
-    toggle(event: ToggleEvent) { if (disposed) return; if (event.newState === 'closed') closeMenu(); else { open = true; startWatching(); schedulePlace(); } },
+    toggle(event: ToggleEvent) { if (disposed) return; if (event.newState === 'closed') closeMenu(); else { releaseRetention??=retain();open = true; startWatching(); schedulePlace(); } },
   };
 }
