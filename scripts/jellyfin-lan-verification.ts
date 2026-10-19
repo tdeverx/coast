@@ -32,6 +32,11 @@ try {
     const [row] = await sql `select i.id,c.id as connection_id from provider_instances i join provider_connections c on c.instance_id=i.id where i.provider='jellyfin' and i.enabled and c.user_id=${admin.id} and c.status='connected' order by i.id limit 1`;
     assert(row);
     const before = await getInstance(row.id, 'jellyfin');
+    globalThis.fetch = Object.assign(async (input: any, init?: any) => {
+        const url = new URL(input instanceof Request ? input.url : String(input));
+        requests.push({ origin: url.origin, path: url.pathname });
+        return originalFetch(input, init);
+    }, originalFetch);
     if (mode !== 'read-only') {
         if (mode === 'configure-dev') {
             const backup = process.env.COAST_JELLYFIN_LAN_CHECKPOINT;
@@ -45,15 +50,10 @@ try {
     assert.equal(after.baseUrl, before.baseUrl);
     assert.equal(after.serverIdentity, before.serverIdentity);
     assert.equal(instanceServerUrl(after), lanUrl);
-    pass('same-server LAN identity verified while public URL, instance and account identity remain intact');
+    pass('existing pinned identity verifies LAN directly; public URL, instance and account identity remain intact');
     assert.equal((await listProviders(admin.id)).find(p => p.id === row.id)?.lanUrl, undefined);
     assert.equal((await listProviders(admin.id, true)).find(p => p.id === row.id)?.lanUrl, lanUrl);
     pass('LAN address is exposed only in administrator integration settings');
-    globalThis.fetch = Object.assign(async (input: any, init?: any) => {
-        const url = new URL(input instanceof Request ? input.url : String(input));
-        requests.push({ origin: url.origin, path: url.pathname });
-        return originalFetch(input, init);
-    }, originalFetch);
     const { adapter, connection, instance } = await getJellyfin(admin.id, row.connection_id);
     const identity = await adapter.identity(instance.serverIdentity!);
     assert.equal(identity.id, instance.serverIdentity);

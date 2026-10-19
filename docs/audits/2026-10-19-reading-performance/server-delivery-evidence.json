@@ -22,12 +22,12 @@
     "src/lib/server/startup.ts": "7aff39aab80e00e4ef6b4e33a0dc9a8243d4132560d02c4adc6801d98618229b",
     "src/lib/server/api/reading.server.ts": "ed3ca9b2223ecb9089ec61826307c99908483fa2eb13514f4c22479ede88e102",
     "src/lib/ui/components/Header.svelte": "eaab91cf97570315ca1628667e254d787c7eb34c7747f180bb7d02a0afce39fa",
-    "src/lib/providers/instances.server.ts": "b49e1ed5dba1b531fde924484842f51b7ad5735e07e7c917ae69d21bb0ccd61c",
+    "src/lib/providers/instances.server.ts": "10300fb8cfe778965ee09928cd54bb96b76f177d41ba8c5e3a438611b3f3282c",
     "src/lib/playback/service.server.ts": "4aad199dbd10daf442c46babea9cb1ad8068098abee29f82bd5cb77466526208",
     "src/lib/ui/components/IntegrationSettings.svelte": "d394ae092d5f96531cf68921bddfb27b5626d4a98e65bb80a295725eaa9e3db9",
     "src/lib/providers/jellyfin/adapter.server.ts": "d9714e2164c0778b8a91575f6b3cdb6ed203057843d7ed35abc0a240ad38249b"
   },
-  "runtimeFingerprint": "38d790d5efbfe46870416f95f504737e0b2dc59f966389735ea61c1eeae42dc1",
+  "runtimeFingerprint": "4cc74d53d95834ab18438b2e6ac0a4ed3b8b65ee29fdd2c4425e662cbad777c5",
   "runtime": {
     "bun": "1.4.3",
     "sharp": "0.35.5",
@@ -1169,7 +1169,7 @@
       "boundary": "Actual admin, catalogue and live Jellyfin. No generated media. Owned restore for playback/settings-negative checks; explicit normal-dev LAN configuration only in configure-dev mode.",
       "cases": [
         {
-          "name": "same-server LAN identity verified while public URL, instance and account identity remain intact",
+          "name": "existing pinned identity verifies LAN directly; public URL, instance and account identity remain intact",
           "status": "passed"
         },
         {
@@ -1198,7 +1198,7 @@
         }
       ],
       "mode": "verify",
-      "upstreamCalls": 12,
+      "upstreamCalls": 13,
       "allJellyfinCallsUsedLan": true,
       "paths": [
         "/System/Info/Public",
@@ -1261,9 +1261,9 @@
       "viewports": [
         "1280x800",
         "390x844"
-      ],
-      "harnessCorrections": "Duplicate heading/menuitem locators and pre-hydration clicks were corrected; previous private harness failures retained. Final ordinary menu/edit/save passes, no product change needed."
-    }
+      ]
+    },
+    "configuration": "Existing pinned instances verify LAN directly; public route retained without reachability dependency. New instances verify public identity plus LAN alias. URL validation changes scoped to Jellyfin only."
   },
   "pageWaitReauthorization": {
     "baselineCommit": "dde82ccb312a21c9efce3fc957164931676715b7",

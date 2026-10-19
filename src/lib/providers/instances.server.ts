@@ -83,10 +83,12 @@ export async function configureInstance(adminId: string, input: unknown) {
     if (config.serverAllowlist.length && !['tmdb','trakt','igdb','steam','comic-vine'].includes(data.provider) &&
       !config.serverAllowlist.some(entry => entry === new URL(url).hostname || entry === url.replace(/\/$/, '')))
       throw new Error('This service is outside the administrator server allowlist.');
-    validateProviderUrl({baseUrl:url, approved:true, allowPrivateNetwork:data.allowPrivateNetwork, allowedPorts:config.allowedProviderPorts});
+    if (data.provider === 'jellyfin')
+      validateProviderUrl({baseUrl:url, approved:true, allowPrivateNetwork:data.allowPrivateNetwork, allowedPorts:config.allowedProviderPorts});
   }
   const transport = createProviderTransport({
-    baseUrl,
+    // An existing pinned public identity can verify its LAN alias directly.
+    baseUrl: data.provider === 'jellyfin' && lanUrl && previous?.serverIdentity ? lanUrl : baseUrl,
     provider: data.provider,
     approved: true,
     allowPrivateNetwork: data.allowPrivateNetwork,
@@ -99,7 +101,7 @@ export async function configureInstance(adminId: string, input: unknown) {
         previous?.serverIdentity || undefined
       )
     ).id;
-  if (lanUrl)
+  if (lanUrl && !previous?.serverIdentity)
     await new JellyfinAdapter(createProviderTransport({
       baseUrl:lanUrl, provider:'jellyfin', approved:true,
       allowPrivateNetwork:data.allowPrivateNetwork, allowedPorts:config.allowedProviderPorts,
