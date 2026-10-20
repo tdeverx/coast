@@ -4,7 +4,7 @@
   import { untrack } from 'svelte';
   import { createQueueActions } from '$lib/ui/controls/queue.svelte';
   import EmptyState from './EmptyState.svelte';
-  import { jobWaiting, jobOutcome, jobRemedy, jobWaitingReason, jobPurposeLabel, type QueueAction } from '$lib/ui/queue';
+  import { jobWaiting, jobOutcome, jobRemedy, jobWaitingReason, jobBlockerHref, jobPurposeLabel, type QueueAction } from '$lib/ui/queue';
   import { displayLabel } from '$lib/ui/labels';
   import { contextGesture } from '$lib/ui/context-gesture';
   const queue = createQueueActions();
@@ -49,6 +49,7 @@
           · Next attempt {new Date(action.nextAttemptAt).toLocaleString()}{/if}
       </p>{/if}
     {#if jobOutcome(action)}<p>{jobOutcome(action)}</p>{/if}
+    {#if jobBlockerHref(action)}<p><a href={jobBlockerHref(action)!}>Review the earlier blocking task</a></p>{/if}
     {#if action.lastError}<p class="job-error">{action.lastError}</p>{/if}
   </div>
   {#if ['pending', 'running', 'failed'].includes(action.state)}

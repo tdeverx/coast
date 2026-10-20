@@ -85,7 +85,15 @@ export async function runProviderJob(
   )
     throw new Error('This task is unavailable for the selected service.');
   if (kind && !serviceTasks(instance.provider).some(entry => entry.scope === task && entry.kinds.includes(kind))) throw new Error('This job is unavailable for the selected service.');
-  return scheduleProviderMaintenance({ instanceId, force: true, task, adminId, kind });
+  const result=await scheduleProviderMaintenance({ instanceId, force: true, task, adminId, kind });
+  const kinds=serviceTasks(instance.provider).filter(entry=>task==='all'||entry.scope===task).flatMap(entry=>entry.kinds).filter(value=>!kind||value===kind);
+  const [failures]=await getDb().execute<{count:number;active:number}>(sql`select count(*) filter(where a.state='failed')::int as count,count(*) filter(where a.state in ('pending','running'))::int as active from outbox_actions a
+    left join provider_connections c on c.id=a.connection_id
+    where a.state in ('pending','running','failed') and a.kind in (${sql.join(kinds.map(value=>sql`${value}`),sql`,`)})
+      and coalesce(c.instance_id::text,a.payload->>'instanceId')=${instanceId}
+      and (a.account_generation is null or a.account_generation=c.account_generation)`);
+  const needsAttention=failures?.count??0;
+  return {...result,active:Math.max(0,(failures?.active??0)-result.queued),needsAttention};
 }
 
 let maintenanceTimer: ReturnType<typeof setInterval> | undefined;

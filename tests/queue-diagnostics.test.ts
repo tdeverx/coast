@@ -137,3 +137,22 @@ test('local provider admission saturation is retryable and does not claim a prov
  expect(jobFailureMessage(error,false)).toContain('Coast is busy');
  expect(jobFailureMessage(error,false)).not.toContain('cooldown');
 });
+
+test('typed permanent denials retain their remedy without relying on exception text',async()=>{
+ const {PermanentActionError,jobFailureDetail}=await import('../src/lib/server/queue');
+ const {safeFields}=await import('../src/lib/diagnostics');
+ for(const [reason,code,remedy] of [['permission','provider.permission','permissions'],['identity','provider.identity','connection'],['invalid-request','action.rejected','metadata']] as const){
+  const failure=jobFailureDetail(new PermanentActionError('PRIVATE PROVIDER RESPONSE',reason),true);
+  expect(failure).toEqual({code,remedy,retryable:false});
+  expect(safeFields({errorCode:code})).toEqual({errorCode:code});
+ }
+});
+
+test('dynamic record keys and literal schema values never enter durable validation context',()=>{
+ let failure:unknown;
+ try{v.parse(v.record(v.string(),v.picklist(['PRIVATE_EXPECTED_VALUE'])),{PRIVATE_DYNAMIC_KEY:'PRIVATE_INPUT'});}catch(error){failure=error;}
+ const detail=validationDiagnostic(failure);
+ expect(detail?.length).toBe(1);
+ expect(JSON.stringify(detail)).not.toContain('PRIVATE');
+ expect(detail?.[0].expected).toBe('schema');
+});

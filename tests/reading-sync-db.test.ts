@@ -43,7 +43,7 @@ run('Jellyfin reading imports commit their cursor before yielding, including ski
  for(let attempt=0;attempt<12&&!complete;attempt++){
   const [fresh]=await db.select().from(s.providerConnections).where(eq(s.providerConnections.id,connection.id));
   try{await jobExecution.run({id:job.id,attempts:1,purpose:'manual',started:performance.now(),checkpoints:0},()=>syncJellyfinUser(user.id,connection.id,undefined,{adapter,connection:fresh,instance}));complete=true;}
-  catch(cause){if(!(cause instanceof JobYield))throw cause;const [saved]=await db.select().from(s.providerConnections).where(eq(s.providerConnections.id,connection.id));const progress=saved.settings.userSync as {phase:string;readingOffset?:number};if(progress.phase==='reading')checkpoints.push(progress.readingOffset??0);}
+  catch(cause){if(!(cause instanceof JobYield))throw cause;const [saved]=await db.select().from(s.outboxActions).where(eq(s.outboxActions.id,job.id));const progress=saved.payload._checkpoint as {task:string;offset:number};if(progress.task==='jellyfin-reading-access')checkpoints.push(progress.offset);}
  }
  expect(complete).toBe(true);expect(checkpoints.some(offset=>offset>0&&offset<books.length)).toBe(true);
  expect(offsets).toEqual([...offsets].sort((a,b)=>a-b));expect(offsets.at(-1)).toBeGreaterThan(0);

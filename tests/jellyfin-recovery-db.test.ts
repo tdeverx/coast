@@ -106,8 +106,9 @@ run('reading resume rejects changed totals and repeated earlier files before wit
  for(const changed of ['total','repeat'] as const){
   // Yield with a real persisted per-file offset before changing the provider page.
   await expect(jobExecution.run({id:job.id,attempts:1,purpose:'manual',started:performance.now(),checkpoints:0},f.sync)).rejects.toBeInstanceOf(JobYield);
-  const progress=(await f.context()).connection.settings.userSync as {phase:string;readingOffset:number};
-  expect(progress.phase).toBe('reading');expect(progress.readingOffset).toBeGreaterThan(0);
+  const [saved]=await db.select().from(s.outboxActions).where(eq(s.outboxActions.id,job.id));
+  const progress=saved.payload._checkpoint as {task:string;offset:number};
+  expect(progress.task).toBe('jellyfin-reading-access');expect(progress.offset).toBeGreaterThan(0);
   mode=changed;await expect(f.sync()).rejects.toThrow('changed during pagination');
   const [point]=await db.select().from(s.syncCheckpoints).where(and(eq(s.syncCheckpoints.connectionId,f.connection.id),eq(s.syncCheckpoints.kind,'jellyfin-user')));
   expect(point.completedAt).toBeNull();expect((await db.select().from(s.availability).where(eq(s.availability.connectionId,f.connection.id))).every(row=>row.state==='available')).toBe(true);
@@ -121,11 +122,12 @@ run('reset during a yielded user traversal re-reads the earlier page under the n
  const f=await fixture(async path=>{
   const q=new URL(path,'https://fixture.invalid').searchParams,offset=Number(q.get('startIndex')??0);
   if(q.get('includeItemTypes')!=='Movie,Series,Season,Episode')return empty();
-  offsets.push(offset);return {Items:rows.slice(offset,offset+1),TotalRecordCount:rows.length,StartIndex:offset};
+  offsets.push(offset);const execution=jobExecution.getStore();if(execution&&offset===0)execution.started=performance.now()-11000;
+  return {Items:rows.slice(offset,offset+1),TotalRecordCount:rows.length,StartIndex:offset};
  });
  const db=getDb();for(const row of rows){const [work]=await db.insert(s.media).values({kind:'movie',title:'Reset title'}).returning();workIds.push(work.id);await db.insert(s.movies).values({mediaId:work.id});await db.insert(s.providerItems).values({instanceId:f.instance.id,mediaId:work.id,externalId:row.Id,kind:'movie'});}
  const [job]=await db.insert(s.outboxActions).values({userId:f.user.id,connectionId:f.connection.id,accountGeneration:f.connection.accountGeneration,kind:'jellyfin.sync',state:'running',attempts:1,payload:{}}).returning();
- await expect(jobExecution.run({id:job.id,attempts:1,purpose:'manual',started:performance.now()-11000,checkpoints:0},f.sync)).rejects.toBeInstanceOf(JobYield);
+ await expect(jobExecution.run({id:job.id,attempts:1,purpose:'manual',started:performance.now(),checkpoints:0},f.sync)).rejects.toBeInstanceOf(JobYield);
  expect(offsets).toEqual([0]);rows[0].UserData={Played:true,IsFavorite:true,PlayCount:1,PlaybackPositionTicks:0};
  const resetId=crypto.randomUUID();await db.update(s.providerConnections).set({settings:sql`${s.providerConnections.settings}||jsonb_build_object('userSyncResetId',${resetId}::text)`}).where(eq(s.providerConnections.id,f.connection.id));
  await f.sync();expect(offsets.slice(1)).toEqual([0,1]);

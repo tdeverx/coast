@@ -13,7 +13,7 @@ import {
 } from '$lib/sync/values.server';
 import { importJellyfinPlayback, seedEmptyJellyfinPlayback, unchangedJellyfinPlayback, type JellyfinPlaybackObservation } from '$lib/sync/jellyfin-playback.server';
 import { jellyfinScanProgressSchema, type JellyfinScanProgress } from './jellyfin-progress';
-import { jobCheckpoint, assertJobLease, JobYield } from '$lib/server/queue/execution';
+import { jobCheckpoint, assertJobLease, JobYield, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
 import { artworkKeys } from '$lib/artwork';
 import * as v from 'valibot';
 import { and, eq, isNull, ne, or, sql, desc, inArray, lte } from 'drizzle-orm';
@@ -31,6 +31,7 @@ import {
   users,
   works, musicProgress, reconciliationIntents, syncValues,
 } from '$lib/server/db/schema';
+import { ProviderHttpError } from '$lib/server/security/provider-fetch';
 import { PermanentActionError } from '$lib/server/queue';
 import { notify } from '$lib/server/notifications';
 import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
@@ -592,8 +593,52 @@ async function runJellyfinScan(
       }
       await (await import('$lib/sync/changes.server')).enqueueCollectionProjectionInTransaction(tx,userId);
     });
-    if(featureConfig.experimentalBooks||featureConfig.experimentalComics){for(const id of changes.reading??[]){const book=await adapter.readingItem(connection.externalUserId!,id);await importJellyfinReading({adapter,connection,instance},[book],{access:userScope,scanId});}}
-    return {checked:items.length+changes.music.length+(changes.reading?.length??0),count:touched.length,full:false};
+    let deferred=0;
+    if(featureConfig.experimentalBooks||featureConfig.experimentalComics)for(const id of changes.reading??[]){
+      let book;
+      try{book=await adapter.readingItem(connection.externalUserId!,id);}
+      catch(cause){
+        if(!(cause instanceof ProviderHttpError)||![404,410].includes(cause.status))throw cause;
+        // A missing individual file is an authoritative negative only for this
+        // authenticated account. It cannot withdraw other users' sources.
+        if(userScope)await db.transaction(async tx=>{
+          await ensureConnected(tx,true);
+          await tx.execute(sql`update availability a set state='unavailable',verified_at=now()
+            from provider_items pi join reading_works r on r.id=pi.media_id
+            where a.provider_item_id=pi.id and pi.instance_id=${instance.id} and a.connection_id=${connectionId}
+              and replace(lower(pi.external_id),'-','')=${jellyfinItemKey(id)}`);
+        });
+        deferred++;
+        continue;
+      }
+      await importJellyfinReading({adapter,connection,instance},[book],{access:userScope,scanId});
+    }
+    return {checked:items.length+changes.music.length+(changes.reading?.length??0),count:touched.length,full:false,deferred};
+  }
+  // Publish positive reading access before unrelated playback reconciliation.
+  // Keep its finite cursor in this job; the original multi-medium census/negative
+  // publication still completes under the existing scan/reset/generation fence.
+  if(scope!=='personal'&&(featureConfig.experimentalBooks||featureConfig.experimentalComics)){
+    const saved=await readJobCheckpoint();
+    const point=v.safeParse(v.object({task:v.literal('jellyfin-reading-access'),scanId:v.pipe(v.string(),v.uuid()),
+      offset:v.pipe(v.number(),v.integer(),v.minValue(0)),total:v.nullable(v.pipe(v.number(),v.integer(),v.minValue(0))),done:v.boolean()}),saved);
+    let access=point.success&&point.output.scanId===scanId?point.output:{task:'jellyfin-reading-access' as const,scanId,offset:0,total:null as number|null,done:false};
+    await saveJobCheckpoint(access);
+    while(!access.done){
+      await ensureConnected();
+      const page=await adapter.readingPage(connection.externalUserId!,access.offset);
+      await validateStagePage('reading',{items:page.items.map(item=>({id:item.Id})),total:page.total},access.offset,access.total);
+      const start=access.offset;
+      await importJellyfinReading({adapter,connection,instance},page.items,{access:scope==='user',scanId,
+        expectedResetId:scope==='user'?resetId??null:undefined,checkpoint:async count=>{
+          access={...access,offset:start+count,total:page.total};
+          await saveJobCheckpoint(access);
+          await jobCheckpoint();
+        }});
+      access={...access,offset:page.nextOffset??start+page.items.length,total:page.total,done:page.nextOffset===null};
+      await saveJobCheckpoint(access);
+      await jobCheckpoint();
+    }
   }
   let count = 0,
     processed = resume?.processed ?? offset,
@@ -806,24 +851,7 @@ async function runJellyfinScan(
     }
     await report(processed,total,'reading',{readingOffset:0,traversalTotal:null});
   }
-  const readingConfig=featureConfig;
-  if(scope!=='personal'&&(readingConfig.experimentalBooks||readingConfig.experimentalComics)&&phase!=='finalizing'){
-    let readingOffset=resume?.phase==='reading'?resume.readingOffset??0:0;
-    let traversalTotal=resume?.phase==='reading'?resume.traversalTotal??null:null;
-    await report(processed,total,'reading',{readingOffset,traversalTotal,stageProcessed:readingOffset,stageTotal:traversalTotal});
-    for(;;){
-      await ensureConnected();const page=await adapter.readingPage(connection.externalUserId!,readingOffset);
-      await validateStagePage('reading',{items:page.items.map(item=>({id:item.Id})),total:page.total},readingOffset,traversalTotal);
-      traversalTotal=page.total;
-      const start=readingOffset;
-      await importJellyfinReading({adapter,connection,instance},page.items,{access:scope==='user',scanId,expectedResetId:scope==='user'?resetId??null:undefined,checkpoint:async count=>{
-        readingOffset=start+count;await report(processed,total,'reading',{readingOffset,traversalTotal,stageProcessed:readingOffset,stageTotal:page.total});await jobCheckpoint();
-      }});
-      readingOffset=page.nextOffset??start+page.items.length;
-      await report(processed,total,'reading',{readingOffset,traversalTotal,stageProcessed:readingOffset,stageTotal:page.total});
-      if(page.nextOffset===null)break;await jobCheckpoint();
-    }
-  }
+  // Reading positives were already checked by the independently retained prepass.
   await report(processed, total, 'finalizing', {stageProcessed: 0, stageTotal: null});
   // Counts are scoped to the authenticated source account, never server-wide.
   // Restrict recomputation to parents touched by this metadata pass or its children.
@@ -894,7 +922,7 @@ async function runJellyfinScan(
       })
       .where(eq(providerInstances.id, instance.id));
   }
-  return { count, full, checked: processed };
+  return { count, full, checked: processed, deferred:0 };
 }
 
 export async function executeJellyfinUserState(

@@ -99,13 +99,18 @@ run('failed and backed-off maintenance does not block other users or later edits
   const edit = await queue(1, 'jellyfin.user-state');
   expect((await claimNextAction())?.id).toBe(edit);
 });
-run('Queue explains a failed account edit that blocks a later import',async()=>{
+run('Queue passes observations past failed edits while preserving dependent mutation barriers',async()=>{
   const actor={id:users[0],username:'runner',role:'admin' as const,email:null,settings:{}};
   const edit=await queue(1,'jellyfin.user-state');
   await getSql()`update outbox_actions set state='failed' where id=${edit}`;
   const importId=await queue(1,'jellyfin.sync');
+  expect((await claimNextAction())?.id).toBe(importId);
+  expect((await listActions(actor)).find(row=>row.id===edit)?.state).toBe('failed');
+  await getSql()`update outbox_actions set state='succeeded' where id=${importId}`;
+  const dependent=await queue(1,'jellyfin.user-state');
   expect(await claimNextAction()).toBeNull();
-  expect((await listActions(actor)).find(row=>row.id===importId)?.waitingReason).toBe('account-order');
+  const waiting=(await listActions(actor)).find(row=>row.id===dependent);
+  expect(waiting?.waitingReason).toBe('account-order');expect(waiting?.blockingAction?.id).toBe(edit);
 });
 run('shared rate-limit cooldown protects all queued accounts on the affected service', async () => {
   registerActionHandler('jellyfin.library', async () => {

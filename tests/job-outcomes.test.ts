@@ -9,3 +9,7 @@ test('scan counts do not claim tracking changes', () => {
 });
 test('authentication calls for account repair', () => expect(jobRemedy({ ...job, lastError: 'Authentication failed. Reconnect this account in Connections before retrying.' })).toBe('connection'));
 test('every provider card has one job kind', () => { for (const provider of ['trakt','jellyfin','seerr','tmdb']) for (const task of serviceTasks(provider)) expect(task.kinds.length).toBe(1); });
+test('applied counts describe only completed work and preserve review outcomes',()=>{
+ expect(jobOutcome({...job,kind:'trakt.import',outcome:{applied:4,review:2}})).toBe('4 changes applied · 2 need review');
+ expect(jobOutcome({...job,kind:'trakt.import',state:'pending',outcome:{applied:4,review:2}})).toBeNull();
+});

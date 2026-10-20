@@ -159,6 +159,7 @@ export function safeFields(input: Record<string, unknown> = {}) {
       'ERR_POSTGRES_CONNECTION_CLOSED', 'ERR_POSTGRES_CONNECTION_TIMEOUT',
       'ERR_POSTGRES_IDLE_TIMEOUT', 'ERR_POSTGRES_COMMIT_ROLLED_BACK',
       '53300', '57014', '57P01', '57P02', '57P03', 'unknown',
+      'provider.identity',
       'provider.permission',
       'provider.item-unavailable',
       'provider.rate-limit',
