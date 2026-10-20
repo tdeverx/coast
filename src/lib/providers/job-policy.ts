@@ -3,6 +3,9 @@ import type { RequestPriority } from '$lib/server/security/request-priority';
 export const jobPurposes = ['playback', 'interactive', 'bootstrap', 'manual', 'live', 'scheduled'] as const;
 export type JobPurpose = typeof jobPurposes[number];
 
+/** One visible bound for task-card commands and their server selection. */
+export const taskControlLimit = 100;
+
 /** Scheduling scope does not determine whose work a job represents. */
 export function jobIdentityScope(kind: string): 'account' | 'instance' {
   return ['jellyfin.library', 'jellyfin.streams', 'jellyfin.updates', 'tmdb.refresh', 'tmdb.recommendations', 'igdb.recommendations', 'igdb.steam-metadata'].includes(kind)

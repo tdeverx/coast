@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {getSql,closeDb} from '../../../src/lib/server/db';
+import {runProviderJob} from '../../../src/lib/providers/maintenance.server';
+import {listTaskActions} from '../../../src/lib/server/queue';
+import {jobTaskSections,taskJobCount} from '../../../src/lib/ui/queue';
+import {runTasteRefresh} from '../../../src/lib/social/taste-cache.server';
+const sql=getSql(),report:any={boundary:'Controlled failures on existing actual admin Seerr/taste task rows in the approved disposable catalogue. Scheduling database commands only; no workers/provider dispatch.',cases:[]};
+try{
+ assert.equal((await sql`select current_database() name`)[0].name,'coast_reading_audit_tasks_20261020');
+ const [admin]=await sql`select id from users where username='admin' and role='admin' and not disabled`;assert(admin);
+ const [link]=await sql`select c.* from provider_connections c join provider_instances i on i.id=c.instance_id where c.user_id=${admin.id} and i.provider='seerr' and c.status='connected' limit 1`;assert(link);
+ const [job]=await sql`select * from outbox_actions where connection_id=${link.id} and kind='seerr.sync' and account_generation=${link.account_generation} order by created_at limit 1`;assert(job);
+ await sql`update outbox_actions set state='cancelled' where connection_id=${link.id} and kind='seerr.sync'`;
+ await sql`update outbox_actions set state='failed' where id=${job.id}`;
+ const before=(await sql`select state,attempts,payload from outbox_actions where id=${job.id}`)[0];
+ const result=await runProviderJob(admin.id,link.instance_id,'all','seerr.sync');assert(result.needsAttention>=1);
+ assert.deepEqual((await sql`select state,attempts,payload from outbox_actions where id=${job.id}`)[0],before);
+ const [counts]=await sql`select count(*) filter(where a.state in ('pending','running'))::int healthy,count(*) filter(where a.state='failed')::int failed from outbox_actions a join provider_connections c on c.id=a.connection_id where c.instance_id=${link.instance_id} and a.kind='seerr.sync' and a.account_generation=c.account_generation`;
+ assert.equal(result.active,counts.healthy);assert.equal(result.needsAttention,counts.failed);
+ const actor={...(await sql`select id,username,role,settings from users where id=${admin.id}`)[0],email:null};
+ const jobs=(await listTaskActions(actor)).filter(job=>job.kind==='seerr.sync'&&job.instanceId===link.instance_id);
+ assert.equal(taskJobCount(jobs,'failed'),counts.failed);assert.equal(taskJobCount(jobs,'pending')+taskJobCount(jobs,'running'),counts.healthy);
+ const entry={jobs};assert(jobTaskSections([entry]).attention.includes(entry));
+ report.cases.push({name:'Native representative totals preserve mixed actual states and classify their shared card under Attention',status:'passed',failed:counts.failed,healthy:counts.healthy});
+ report.cases.push({name:'Provider Run now reports actual failed rows as needsAttention and preserves Retry state/attempts/checkpoint',status:'passed',queued:result.queued,healthy:result.active,needsAttention:result.needsAttention});
+ const [taste]=await sql`select * from outbox_actions where user_id=${admin.id} and kind='taste.refresh' order by created_at limit 1`;assert(taste);
+ await sql`update outbox_actions set state='cancelled' where kind='taste.refresh' and state in ('pending','running','failed')`;
+ await sql`update outbox_actions set state='failed' where id=${taste.id}`;
+ const t=await runTasteRefresh();assert.equal(t.active,0);assert.equal(t.needsAttention,1);assert.equal(t.queued,0);
+ assert.equal((await sql`select state from outbox_actions where id=${taste.id}`)[0].state,'failed');
+ report.cases.push({name:'Taste Run now distinguishes a retained failed actual task from healthy active work',status:'passed',...t});report.status='passed';
+}catch(error){report.status='failed';report.failure=String(error);throw error;}finally{await closeDb();await Bun.write('/private/tmp/coast-task-run-now-result.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report));}

@@ -1,0 +1,279 @@
+{
+  "auditDate": "2026-10-20",
+  "checkout": "0e0856520fa3ba42121c32a5e7bd7f47ab2a7e7e",
+  "liveBuild": "f7a3e3f71f1241a967106d5c6615726e965c3a5b",
+  "mode": "Read-only live metadata and plan observations; offline real-metadata replay; source review. No provider write or task mutation.",
+  "censusFinishedAt": "2026-10-20T11:39:41.292414+00:00",
+  "censusQueriesAreSeparateSnapshots": true,
+  "taskRows": 117717,
+  "registeredKinds": 41,
+  "observedRegisteredKinds": 20,
+  "sourceOnlyRegisteredKinds": 21,
+  "coverage": {
+    "observedRegistered": [
+      "feature.reconcile",
+      "benchmark.run",
+      "taste.refresh",
+      "jellyfin.updates",
+      "jellyfin.delta",
+      "jellyfin.streams",
+      "igdb.steam-metadata",
+      "steam.sync",
+      "steam.achievements",
+      "catalogue.user-scan",
+      "tmdb.recommendations",
+      "tmdb.refresh",
+      "jellyfin.live",
+      "steam.live",
+      "seerr.sync",
+      "jellyfin.reconcile",
+      "jellyfin.scrobble",
+      "jellyfin.library",
+      "jellyfin.sync",
+      "seerr.request"
+    ],
+    "unobservedRegistered": [
+      "planning.reminder",
+      "webhook.deliver",
+      "igdb.recommendations",
+      "trakt.recommendations",
+      "social.checkin-complete",
+      "trakt.live",
+      "trakt.checkin",
+      "seerr.manage",
+      "trakt.list-delete",
+      "trakt.progress",
+      "history.remove",
+      "trakt.collection-review",
+      "trakt.collection-project",
+      "trakt.collection-cleanup",
+      "jellyfin.user-state",
+      "trakt.scrobble",
+      "jellyfin.bootstrap",
+      "trakt.import",
+      "trakt.lists-import",
+      "trakt.list-export",
+      "trakt.export"
+    ],
+    "legacyObserved": [
+      "jellyfin.scan"
+    ]
+  },
+  "actualMetadataReplay": {
+    "status": "passed",
+    "meaning": "These checks confirm current behavior and audit findings; they are not acceptance tests for fixes.",
+    "checks": [
+      {
+        "name": "Actual mixed-state tasks reproduce failure exclusion from Needs attention",
+        "result": [
+          {
+            "kind": "jellyfin.delta",
+            "failed": 5,
+            "waiting": 3645
+          },
+          {
+            "kind": "jellyfin.reconcile",
+            "failed": 1,
+            "waiting": 8945
+          }
+        ]
+      },
+      {
+        "name": "Discarded bulk-control concern: production service normalization produces one kind per task card",
+        "result": {
+          "providers": 6,
+          "taskCards": 37
+        }
+      },
+      {
+        "name": "Shared due owner refuses an explicitly forced run while the actual failed task counts as active",
+        "result": {
+          "kind": "steam.achievements",
+          "forcedAt": null,
+          "boundary": "Pure branch replay with actual task schedule/account; maintenance SQL separately confirms failed is active. No handler is dispatched."
+        }
+      },
+      {
+        "name": "Failure notifications exist for every observed failed task",
+        "result": {
+          "state": "failed",
+          "tasks": 9,
+          "read_notices": 4,
+          "notification_rows": 9
+        }
+      },
+      {
+        "name": "No active stale-account-generation cohort observed",
+        "result": 0
+      },
+      {
+        "name": "No actual active action payload exceeds the 256KiB admission bound",
+        "result": {
+          "kinds": 12,
+          "maxBytes": 7297
+        }
+      },
+      {
+        "name": "Every observed active kind has exactly one registered handler",
+        "result": {
+          "registered": 41,
+          "observedActive": 12
+        }
+      },
+      {
+        "name": "Real task coverage, without interpreting absent providers as passing",
+        "result": {
+          "observedRegistered": [
+            "feature.reconcile",
+            "benchmark.run",
+            "taste.refresh",
+            "jellyfin.updates",
+            "jellyfin.delta",
+            "jellyfin.streams",
+            "igdb.steam-metadata",
+            "steam.sync",
+            "steam.achievements",
+            "catalogue.user-scan",
+            "tmdb.recommendations",
+            "tmdb.refresh",
+            "jellyfin.live",
+            "steam.live",
+            "seerr.sync",
+            "jellyfin.reconcile",
+            "jellyfin.scrobble",
+            "jellyfin.library",
+            "jellyfin.sync",
+            "seerr.request"
+          ],
+          "unobservedRegistered": [
+            "planning.reminder",
+            "webhook.deliver",
+            "igdb.recommendations",
+            "trakt.recommendations",
+            "social.checkin-complete",
+            "trakt.live",
+            "trakt.checkin",
+            "seerr.manage",
+            "trakt.list-delete",
+            "trakt.progress",
+            "history.remove",
+            "trakt.collection-review",
+            "trakt.collection-project",
+            "trakt.collection-cleanup",
+            "jellyfin.user-state",
+            "trakt.scrobble",
+            "jellyfin.bootstrap",
+            "trakt.import",
+            "trakt.lists-import",
+            "trakt.list-export",
+            "trakt.export"
+          ],
+          "legacyObserved": [
+            "jellyfin.scan"
+          ]
+        }
+      }
+    ]
+  },
+  "readOnlySelectionAnalogue": {
+    "at": "2026-10-20T11:41:25.454937+00:00",
+    "jit": "psql default; not application-matched",
+    "executionMs": 9454.761,
+    "planningMs": 1.631,
+    "sharedHitBlocks": 4140067,
+    "sharedReadBlocks": 84,
+    "matchedJitOff": {
+      "error": "ERROR:  canceling statement due to statement timeout"
+    },
+    "eligibilityAggregate": {
+      "error": "ERROR:  canceling statement due to statement timeout"
+    },
+    "boundary": "Not full claim UPDATE/advisory lock/row-lock timing; no candidate optimization or percentile proof"
+  },
+  "sourceHashes": {
+    "src/lib/server/queue/index.ts": "bdf123f7f05171f2db557d49e8da54886e8a5a05df678f45ab4945c702c37def",
+    "src/lib/server/queue/execution.ts": "ea415b763273144b794cdc759954fb9a1397a97d2b32708689c6ebb855f64ec2",
+    "src/lib/server/api/queue.server.ts": "35f6f9424ff64793a5719ab8a187b6a9e9d1bdc6d3c86b83d7eaafdf505eacaa",
+    "src/lib/providers/actions.server.ts": "4bfcada696896b834002aafa57f6b1a2ec22cdd5288d4a335354640ec6a29269",
+    "src/lib/providers/maintenance.server.ts": "04e04bf2fdcabdd4f5e5b17416312efdd741d0a640ae5eda886f5cfc3a421b3b",
+    "src/lib/providers/tasks.ts": "0f0c3adf6584398d2d5a28fd9d2c418c5077edda694bcb5c54131f9f318a85f8",
+    "src/lib/providers/job-policy.ts": "58810bbdea1217109d0ffce9384c62bd770270afcba8fcdc5e7251773492ad66",
+    "src/lib/providers/task-timing.ts": "41ffc963a7a1bda8642e3fe56c6b0bb28f0b6eb16dd9dc0f7cf12386aada36b9",
+    "src/lib/providers/job-timing.server.ts": "1c0ba3a4e7606b645cc4f4cf45254c0a95eec7ff89659f40a8c068c1ef1cb754",
+    "src/lib/providers/schedule.ts": "26b7776a5db5b4a10df04d1b38def92d785bf401a6658a1e5128c7c69f7d8164",
+    "src/lib/ui/queue.ts": "b708a009ba4f81e7869c954472b1c46a82c030e9fd8783066fbec072d9ea2c44",
+    "src/lib/ui/components/JobsSettings.svelte": "12c7a75098e6fa015f4e4a4e9be30d489b1b47d624cd6a86e4a698a33ae89488",
+    "src/lib/ui/components/JobSchedule.svelte": "d282369189bb64a6ca9fd746875000b7cb4fb6e9e81d7c2eae246b097303e863",
+    "src/lib/ui/controls/queue.svelte.ts": "a712169725d3f54d5d844a358a3c4e341c5ebfab568d6aecd8d79709e62b5370",
+    "src/lib/sync/jellyfin.server.ts": "dcc6b652de5a4f31795a901c09430b16334d1ff9302f9ff6babcf2a961709c11",
+    "src/lib/sync/jellyfin-reading.server.ts": "9c13545fb04e2d755e9ba960c7fa2e09cc567036194a658fe0bf9269ca149f2d",
+    "src/lib/catalogue/reading-files.server.ts": "0c50840291643676a9aa356361a74545393d82b70f71c1e2fdd9616789e3d2fc",
+    "src/lib/reading/query.server.ts": "6315a5cd137e89a9b39b85e8c61af6567a8cb4aedc51afc97a38d64df7cef526",
+    "src/lib/providers/jellyfin/updates.server.ts": "568108807e944df42b0d0203fd0040a7b49d70a20f710a75b0472804c39ba50f",
+    "src/lib/providers/jellyfin/companion.ts": "18e4854d9044543725c8a49d60edee1223c1689952fc1c269860ff74a5e6ea99",
+    "src/lib/providers/jellyfin/stream-history.server.ts": "243f20cee43e4d31116169355379072931ed8170cad4ef44f590608e6fb32453",
+    "src/lib/providers/steam/sync.server.ts": "da87cd5ba1336c3ddaaa953f6fdd9397ddc79c0640b38979202eb274fe6ba4c1",
+    "src/lib/catalogue/maintenance.server.ts": "48bc05752d52e3e0813996a34b0e399af2ecd38cc9a879b553f81f9afaf05dd8",
+    "src/lib/sync/trakt-import.server.ts": "b60035dea2ea16c13da5376fdb0aac2196dfbb68df1c779488d2d08348d046b5",
+    "src/lib/sync/trakt-staging.server.ts": "3ff5497378a116f97b1073a0ea871f000ab7c08abd086cc23c21cb16d93f5413",
+    "src/lib/sync/trakt-export.server.ts": "a74c753043d10f2a3290d53e77639dee5b0529f9729b2ebdd733f3b02665cf31",
+    "src/lib/sync/trakt-lists.server.ts": "7e4e49fe6253b7787a272f0f9a6440456be63c5870980ce31f01967ee63db2eb",
+    "src/lib/sync/history-removal.server.ts": "10f62835a0d8c9178c608b3f65cff66331f42fe7f2df8e4b8e9a18b21491017e",
+    "src/lib/sync/values.server.ts": "46363d9edcbd1692a6492c14624a5d80bb68546579a7ef54826aaa0c035641c4",
+    "src/lib/collection/projection.server.ts": "77632c37e3ac6a793efadfe07c76d5be0cf1dd24927fa0a11973f264d1dc8736",
+    "src/lib/recommendations/providers.server.ts": "0a607de5b0e22c7bb30e755c52c44623a4acaac472d4eea3ff21af81babee703",
+    "src/lib/social/taste-cache.server.ts": "77c4bdc6441732ef30c2217527efbe0c92acb452d3e8b0fd2c324d2d1f6f1724",
+    "src/lib/social/presence.server.ts": "64c185536df3632ed3da595d55cfb399afcc4e1fbfb933f3f8bba1537d71fcc3",
+    "src/lib/social/provider-live.server.ts": "6308eccc874cfe5ea4bbb94832008ca9d51fd77166689de30fc560b8e57a107f",
+    "src/lib/social/trakt.server.ts": "f61bf850df9f08ac5b3ad4d7bb84d2065511b8f2d7b7094badabdb682218a415",
+    "src/lib/experiments/planning.server.ts": "aef16dae069ac1f18484e4666887da1cc6572d95d803e8e43c5ea8ba5ed850a9",
+    "src/lib/server/public-api/webhooks.server.ts": "70c4d1ea244d7e3c723bb6fda6cb05c51300046c511bc6803667daf27d69aefb",
+    "src/lib/application/feature-transition.server.ts": "62c2509fb4edb4cd95a36547a85990d2d400977a489400c4fdfe4152c9941b5c",
+    "src/lib/benchmarks/service.server.ts": "2b20918bb628053f96a9a703faedc5b795f06bb75b06d2a55a4810661e82f835",
+    "src/lib/providers/seerr/requests.server.ts": "b7c80ac2400e66f245bd4ab134188f0eaed018bdf7ea23e95dbeff625c140685",
+    "src/lib/providers/seerr/connection.server.ts": "72a0541fca5bda7badadc7a88fde2234955657d85d1fce36dd26bd6ae945702e",
+    "src/lib/providers/contracts.ts": "da9ed858c4fbbd96ed0c4cc9aca0e84b21c393c542d74f4af82a767e3c391eb3",
+    "src/lib/server/security/provider-fetch.ts": "412271ebd72de3e4530a95830954dc1657265a67cae2f637a4d37fe82bea2d7d",
+    "src/lib/server/storage/retention.server.ts": "50b898518a5ac21573ed69ae514c90b9e27062acd1aeb35a78b2affde3e04ad1",
+    "src/lib/server/diagnostics/index.ts": "265f5134662ec314627de934b817741409ecbe1f358ce86cb26a532319ee9d10",
+    "src/lib/diagnostics.ts": "3a216cc827207627336cc5ce5a4fcd6e2c8a88a06903b8f575ca7ed2634c8130",
+    "src/lib/server/db/index.ts": "5642a5a8accee0ba8bdd0bc2d1d79ba88a3d4b67fa9e1163fb6c1d228d6001de",
+    "src/lib/server/db/schema.ts": "499505d3db306a79bf372633e197e2301b54558d52cc0c733d1475c03694dcd8",
+    "drizzle/0058_feature_controls.sql": "3da7e76b2d95d3cb3624d6760ffac3c2554f9c9323aea2b4d1e9fb0169e1567e"
+  },
+  "sourceFingerprint": "3fbbc3d23b26e5884d1c85b46e4d356f4680045bbcd3d9c7c7b5bf6c91ee0b93",
+  "privateReceiptHashes": {
+    "accounts.private.json": "b0c178f998073e5911ee23b716b4550da544facc57e4969d9d10d072fa03279a",
+    "live-claim-jit-off.private.json": "86a396502495810b6a2679dd81e91452692bca4d385e8315199a3e0b1f56ab79",
+    "live-eligibility-plan.private.json": "be4a7bea46b08ddfbd98bf3da0390f04ada873bd0c410fa66ecbb405d854c909",
+    "readonly-task-evidence.private.json": "55c070a10b3735458f0acb1d4e6db211163f1c822effee6f406b1964a43eec5d"
+  },
+  "auditToolHashes": {
+    "verify-actual-tasks.ts": "8cbacff84ab0bf8bdd75e8e8994e24b229011951398caed22f76e5404d0e93d3",
+    "collect-readonly.py": "362ae1c9daa33e149ad8e19f6dc9723b3efca509a8d982d9b48d35270dabf196",
+    "selection-sql.ts": "a1cb11023c61c72a85bb49d4009bbd3a1c9fe35dc33b0a2754bfdfa16ce29465"
+  },
+  "unexecuted": [
+    "full database clone denied and not performed",
+    "isolated state-changing task controls/crash/takeover tests",
+    "all real provider mutation acceptance",
+    "rendered live administrator browser acceptance",
+    "candidate query/index speedup acceptance"
+  ],
+  "discardedCandidates": [
+    "multi-kind bulk targeting: serviceTasks already normalizes to one kind",
+    "cancelled benchmark orphan admission: existing reconcile owner handles it"
+  ],
+  "liveVsCheckoutAuditedSourceDifferences": {
+    "src/lib/server/db/schema.ts": "Type-only sanitizeOddReadingPages user preference; no task schema/runtime change. All other hashed task owners match the live build."
+  },
+  "documentationValidation": {
+    "stableFindings": 14,
+    "handlerLedgerRows": 41,
+    "links": "passed",
+    "pythonSyntax": "passed",
+    "sourceHashIntegrity": "passed",
+    "actualMetadataReplay": "8 grouped checks passed; findings reproduction, not repair acceptance",
+    "selectionGenerator": "exact SQL equality with original private generated statements"
+  }
+}

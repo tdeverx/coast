@@ -396,6 +396,13 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
   while(point.phase==='scanning'){
     if(point.offset>100000)throw new Error('Seerr request sync exceeded the supported page bound.');
     const [stored]=execution?await db.select().from(providerJobSnapshots).where(eq(providerJobSnapshots.actionId,execution.id)):[];
+    if(!stored&&point.next>0){
+      // A partial-page cursor is meaningful only with its original page. Older
+      // installations may have expired it; restart a complete census instead
+      // of slicing a newly fetched, potentially reordered response.
+      await guarded(tx=>retain(tx,{task:'seerr-sync',scanId:crypto.randomUUID(),phase:'scanning',offset:0,next:0,after:null}));
+      continue;
+    }
     if(stored&&(stored.connectionId!==connection.id||stored.accountGeneration!==connection.accountGeneration))
       throw new PermanentActionError('The request scan account changed.');
     let page: v.InferOutput<typeof seerrPageSchema>;

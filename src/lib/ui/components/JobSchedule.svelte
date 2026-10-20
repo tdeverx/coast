@@ -16,11 +16,11 @@
 
   import Dialog from './Dialog.svelte';
   import RowFilter from './RowFilter.svelte';
-  import { taskJobCount, taskLastRun, lastJobOutcome, jobOutcome, jobRemedy, jobWaiting, jobWaitingReason, jobPurposeLabel, type QueueAction } from '$lib/ui/queue';
+  import { jobNeedsAttention, taskJobCount, taskLastRun, lastJobOutcome, jobOutcome, jobRemedy, jobWaiting, jobWaitingReason, jobBlockerHref, jobPurposeLabel, type QueueAction } from '$lib/ui/queue';
   import type { JobTiming } from '$lib/providers/job-timing.server';
   import {displayLabel} from '$lib/ui/labels';
   import {companionHealthy,type CompanionState} from '$lib/providers/jellyfin/companion';
-  import {jobIdentityScope} from '$lib/providers/job-policy';
+  import {taskControlLimit,jobIdentityScope} from '$lib/providers/job-policy';
 
   const { change, preview } = useClient();
 
@@ -58,8 +58,8 @@
     if(busy)return;
     busy=true;error='';
     try{
-      const result=await change<{updated:number;skipped:number}>(`queue/tasks/${action}`,{kind:task.kinds[0],instanceId:jobs[0]?.instanceId??null});
-      if (!preview) notifyAction(`${result.updated} jobs ${action==='retry'?'queued for retry':action==='cancel'?'cancelled':'prioritized'}${result.skipped?` · ${result.skipped} unchanged because the job changed or already has active work`:''}.`);
+      const result=await change<{updated:number;skipped:number;hasMore:boolean;limit:number;blocked:boolean}>(`queue/tasks/${action}`,{kind:task.kinds[0],instanceId:jobs[0]?.instanceId??null});
+      if (!preview) notifyAction(`${result.updated} jobs ${action==='retry'?'queued for retry':action==='cancel'?'cancelled':'prioritized'}${result.skipped?` · ${result.skipped} unchanged because the job changed or already has active work`:''}${result.hasMore?' · More eligible jobs remain; use the action again for the next batch':''}${result.blocked?' · Some failures must wait for queued or running work for the same task':''}.`);
     }catch(cause){error=message(cause);}finally{busy=false;}
   }
   let open = $state(false),
@@ -82,10 +82,11 @@
   );
   const running = $derived(active.find(job => job.state === 'running'));
   const failed = $derived(active.filter(job => job.state === 'failed'));
+  const retrying = $derived(active.filter(job => job.state === 'pending' && jobNeedsAttention(job)));
   const queued = $derived(active.filter(job => job.state === 'pending'));
   const counts = $derived({running:taskJobCount(jobs,'running'),waiting:taskJobCount(jobs,'pending'),failed:taskJobCount(jobs,'failed')});
   const lastRun = $derived(taskLastRun(jobs) ?? timing?.lastRun);
-  const status = $derived(active.length
+  const status = $derived(retrying.length ? `${retrying.reduce((total,job)=>total+(job.taskCount??1),0)} need attention · Automatic retries remain scheduled` : active.length
     ? [running ? `${counts.running} running` : null, queued.length ? `${counts.waiting} waiting` : null, failed.length ? `${counts.failed} ${counts.failed === 1 ? 'needs' : 'need'} attention` : null].filter(Boolean).join(' · ')
     : timing?.reason ?? (countdown === 0 ? 'Due now' : countdown !== null ? `Next in ${durationLabel(countdown)}` : task.scope ? 'No automatic run scheduled' : 'On demand'));
   const lastResult = $derived(lastRun ? lastJobOutcome(task.kinds[0], lastRun) ?? displayLabel(lastRun.state) : null);
@@ -130,14 +131,14 @@
     busy = true;
     error = '';
     try {
-      const result = await change<{ queued: number; active: number; busy?: boolean }>(
+      const result = await change<{ queued: number; active: number; busy?: boolean; needsAttention?:number }>(
         local?'admin/taste-refresh':`providers/${provider.id}/run-job`,
         { task: task.scope, kind: task.kinds[0] }
       );
       if (!preview) notifyAction(
         result.busy
           ? 'Maintenance is already being checked.'
-          : `${result.queued} jobs queued${result.active ? `; ${result.active} existing jobs requested now` : ''}.`
+          : `${result.queued} jobs queued${result.active ? `; ${result.active} jobs queued or running now` : ''}${result.needsAttention ? `; ${result.needsAttention} failed jobs need Retry or review` : ''}.`
       );
     } catch (cause) {
       error = message(cause);
@@ -167,10 +168,10 @@
       </p>{/if}
     </div>
     <Button menu bind:this={menu} label={`${provider.name} ${task.title} actions`} disabled={busy}>
-      {#if running || queued.length}<Button item icon="clock" keepOpen={false} onclick={()=>void updateActive('promote')}>Prioritize</Button>{/if}
-      {#if failed.length && task.kinds[0]!=='benchmark.run'}<Button item icon="refresh" keepOpen={false} onclick={()=>void updateActive('retry')}>Retry failures</Button>{/if}
+      {#if running || queued.length}<Button item icon="clock" keepOpen={false} onclick={()=>void updateActive('promote')}>Prioritize up to {taskControlLimit} jobs</Button>{/if}
+      {#if failed.length && task.kinds[0]!=='benchmark.run'}<Button item icon="refresh" keepOpen={false} onclick={()=>void updateActive('retry')}>Retry up to {taskControlLimit} failures</Button>{/if}
       {#if task.kinds[0]==='benchmark.run'}<Button item icon="refresh" href="/settings/benchmarks" keepOpen={false}>Run a new benchmark</Button>{/if}
-      {#if queued.length || failed.length}<Button item icon="close" danger keepOpen={false} onclick={()=>void updateActive('cancel')}>Cancel waiting work</Button>{/if}
+      {#if queued.length || failed.length}<Button item icon="close" danger keepOpen={false} onclick={()=>void updateActive('cancel')}>Cancel up to {taskControlLimit} waiting jobs</Button>{/if}
       {#if task.scope}
         <Button item icon="refresh" keepOpen={false}
           disabled={!provider.enabled || (!provider.connectedAccounts && !local && !['tmdb','igdb'].includes(provider.provider))}
@@ -215,6 +216,7 @@
     {#if jobOutcome(running)}<p class="small">{jobOutcome(running)}</p>{/if}
   {:else if queued.length}
     <p class="small" role="status">{[jobWaitingReason(queued[0]), jobPurposeLabel(queued[0]), queued[0].waitingReason === 'yielded' ? jobOutcome(queued[0]) : null].filter(Boolean).join(' · ')}</p>
+    {#if jobBlockerHref(queued[0])}<a class="small" href={jobBlockerHref(queued[0])!} onclick={()=>detailsOpen=false}>Review the earlier blocking task</a>{/if}
     {#if jobWaiting(queued[0])}<p class="small">Next attempt · {new Date(queued[0].nextAttemptAt!).toLocaleString()}</p>{/if}
   {:else if task.scope}
     <p class="small" role="status">{timing?.reason ?? (countdown === 0 ? 'Due now · checked within one minute' : countdown !== null ? `Next run in ${durationLabel(countdown)}` : 'Schedule assessment unavailable')}</p>
@@ -227,8 +229,11 @@
   {#if timing && task.scope && !local && jobIdentityScope(task.kinds[0])==='account'}<p class="small">{timing.fresh}/{timing.eligible} users fresh · Within two schedule intervals</p>{/if}
   {#if active.length}<p class="small">{[counts.running?`${counts.running} running`:null,counts.waiting?`${counts.waiting} waiting`:null,counts.failed?`${counts.failed} ${counts.failed === 1 ? 'needs' : 'need'} attention`:null].filter(Boolean).join(' · ')}</p>{/if}
   {#if timing?.reviews}<p class="small">{timing.reviews} titles need tracking review · Each owner can review them in <a href="/settings/pending" class="text-accent">Sync conflicts</a>.</p>{/if}
+  {#if retrying.length}<p class="small text-danger">Repeated failures · {retrying[0].lastError} Automatic retries remain scheduled.</p>{/if}
   {#if failed.length}
     <p class="small">{failed[0].lastError || 'Review diagnostics for the failure reason.'}</p>
+    {#if failed[0].failure?.stage}<p class="small">Stage · {failed[0].failure.stage}</p>{/if}
+    {#each failed[0].failure?.validation??[] as issue}<p class="small">{issue.path} · Expected {issue.expected}; received {issue.receivedType}</p>{/each}
     {#if failed.some(job=>jobRemedy(job)==='connection')}<a href="/settings/connections" class="text-accent">Reconnect accounts</a>{/if}
     {#if failed.some(job=>jobRemedy(job)==='permissions')}<a href="/settings/integrations" class="text-accent">Review permissions</a>{/if}
     {#if failed.some(job=>jobRemedy(job)==='metadata')}<a href="/settings/activity" class="text-accent">Review diagnostics</a>{/if}

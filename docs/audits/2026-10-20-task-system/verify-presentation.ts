@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {jobTaskSections,jobNeedsAttention,jobWaitingReason} from '../../../src/lib/ui/queue';
+const evidence=await Bun.file(process.cwd()+'/.data/task-audit-20261020/readonly-task-evidence.private.json').json();
+const jobs=evidence.representatives,keys=[...new Set(jobs.map((j:any)=>`${j.instanceId}:${j.kind}`))];
+const entries=keys.map(key=>({key,jobs:jobs.filter((j:any)=>`${j.instanceId}:${j.kind}`===key)}));
+const result=jobTaskSections(entries);
+const failing=entries.filter(e=>e.jobs.some((j:any)=>j.state==='failed'));
+assert(failing.length>0);
+assert(failing.every(e=>result.attention.includes(e)));
+assert(result.attention.every(e=>!result.waiting.includes(e)&&!result.running.includes(e)));
+const retrying=jobs.find((j:any)=>j.kind==='igdb.steam-metadata'&&j.attempts===57);
+assert(retrying);assert(jobNeedsAttention(retrying));assert.equal(retrying.state,'pending');
+assert.equal(retrying.failure.retryable,true);
+console.log(JSON.stringify({status:'passed',actualTaskGroups:entries.length,allTerminalFailureGroupsVisible:failing.length,automaticRetriesPreserved:retrying.attempts,needsAttentionGroups:result.attention.length,sharedWaitingLabelType:typeof jobWaitingReason(retrying)}));

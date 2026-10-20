@@ -56,9 +56,9 @@ test('existing Jobs text follows music/reconciliation stage counts and preserves
   expect(jobOutcome(action({ progress: { processed: 1, total: 4, phase: 'scanning' } }))).toBe('Checking library access · 1 of 4');
 });
 test('completion distinguishes personal bootstrap from full access and shared metadata', () => {
-  expect(jobOutcome(action({ kind: 'jellyfin.bootstrap', state: 'succeeded', outcome: { checked: 8 } }))).toBe('Personal activity imported · 8 screen items checked · Full library access checked separately');
-  expect(jobOutcome(action({ state: 'succeeded', outcome: { checked: 800 } }))).toBe('Full library access and personal activity checked · 800 screen items checked');
-  expect(jobOutcome(action({ kind: 'jellyfin.library', state: 'succeeded', outcome: { checked: 800 } }))).toBe('Shared library metadata checked · 800 screen items checked');
+  expect(jobOutcome(action({ kind: 'jellyfin.bootstrap', state: 'succeeded', outcome: { checked: 8 } }))).toBe('Personal activity imported · 8 screen records checked · Full library access checked separately');
+  expect(jobOutcome(action({ state: 'succeeded', outcome: { checked: 800 } }))).toBe('Account import completed · 800 screen records checked');
+  expect(jobOutcome(action({ kind: 'jellyfin.library', state: 'succeeded', outcome: { checked: 800 } }))).toBe('Shared library import completed · 800 screen records checked');
 });
 
 test('existing queue status text uses durable waiting reasons and requested purpose', () => {
@@ -91,10 +91,12 @@ test('Queue orders upcoming tasks by next run and separates manual tasks without
 test('one task represents multiple account jobs and moves sections as its accounts finish',()=>{
  const job=(id:string,state:string):QueueAction=>({id,kind:'jellyfin.sync',state,attempts:0,lastError:null});
  const task={id:'user-sync',timing:{nextAt:'2026-10-07T11:00:00Z'},jobs:[job('a','running'),job('b','pending'),job('c','failed')]};
- expect(jobTaskSections([task]).running).toHaveLength(1);
+ expect(jobTaskSections([task]).attention).toHaveLength(1);
+ expect(jobTaskSections([task]).running).toHaveLength(0);
  expect(jobTaskSections([task]).waiting).toHaveLength(0);
  task.jobs[0].state='succeeded';
- expect(jobTaskSections([task]).waiting).toHaveLength(1);
+ expect(jobTaskSections([task]).attention).toHaveLength(1);
+ expect(jobTaskSections([task]).waiting).toHaveLength(0);
  task.jobs[1].state='succeeded';
  expect(jobTaskSections([task]).attention).toHaveLength(1);
  task.jobs[2].state='succeeded';

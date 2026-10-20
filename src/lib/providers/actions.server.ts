@@ -27,7 +27,7 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
           throw new PermanentActionError('This service is disabled by the administrator.');
         return await handler(action);
       } catch (error) {
-        if (error instanceof ProviderActionError) throw new PermanentActionError(error.message);
+        if (error instanceof ProviderActionError) throw new PermanentActionError(error.message,error.code);
         throw error;
       }
     });
@@ -168,12 +168,14 @@ export function registerProviderActions(options: { maintenance?: boolean } = {})
     if (!action.connectionId)
       throw new PermanentActionError('The Trakt connection is unavailable.');
     const { importTrakt } = await import('$lib/sync/trakt-import.server');
-    await importTrakt(action.userId, action.connectionId, 'tracking',action.payload.initialImport===true);
+    const result=await importTrakt(action.userId, action.connectionId, 'tracking',action.payload.initialImport===true);
+    return {applied:result.imported,review:result.review};
   });
   register('trakt.lists-import', async (action) => {
     if (!action.connectionId) throw new PermanentActionError('The Trakt connection is unavailable.');
     const { importTrakt } = await import('$lib/sync/trakt-import.server');
-    await importTrakt(action.userId, action.connectionId, 'lists',action.payload.initialImport===true);
+    const result=await importTrakt(action.userId, action.connectionId, 'lists',action.payload.initialImport===true);
+    return {applied:result.imported,review:result.review};
   });
   register('trakt.list-export', async (action) => {
     if (!action.connectionId)

@@ -1,12 +1,14 @@
+import type { ProviderActionError } from '$lib/providers/contracts';
+import { dependencyScopeSql, queueOrderCteSql } from './dependencies';
 import { maintenanceKinds, serviceTraversalKinds } from '$lib/providers/tasks';
-import { jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, type JobPurpose } from '$lib/providers/job-policy';
+import { taskControlLimit, jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, type JobPurpose } from '$lib/providers/job-policy';
 import { jobExecution, JobYield } from './execution';
 import { requestPriority, providerJob, registerJobRequestPriority, updateJobRequestPriority, releaseJobRequestPriority, ProviderQueueBusyError, type RequestPriority } from '../security/request-priority';
 import { context, logDiagnostic, classifyFailure } from '../diagnostics';
 import { runtimeEvidence } from '../diagnostics/runtime';
 import { refreshDiagnosticConfig,getConfig } from '../config';
 import { correlationId } from '../../diagnostics';
-import { desc, eq, sql, inArray } from 'drizzle-orm';
+import { eq, sql, inArray } from 'drizzle-orm';
 import { getDb, getSql } from '../db';
 import { outboxActions, providerConnections, providerInstances, users } from '../db/schema';
 import { requireAdmin, type SessionUser } from '../auth';
@@ -28,7 +30,7 @@ export interface OutboxAction {
   priority?: RequestPriority;
   purpose?: JobPurpose;
 }
-export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number };
+export type JobOutcome = { checked?: number; added?: number; refreshed?: number; deferred?: number; applied?:number;review?:number;skipped?:number };
 export type ActionHandler = (action: OutboxAction) => Promise<void | JobOutcome>;
 
 const independentQueueKinds=['feature.reconcile','webhook.deliver','planning.reminder','benchmark.run','taste.refresh','jellyfin.streams','jellyfin.updates'];
@@ -52,39 +54,68 @@ function agedPrioritySql(action: string, connection: string) {
   return `greatest(0,(${jobPrioritySql(action,connection)})-floor(extract(epoch from (now()-${action}.next_attempt_at))/30)::integer)`;
 }
 
-/** The queue and its waiting explanation must agree on account write barriers. */
-function accountOrderBlockedSql(action:string,connection:string) {
-  return `EXISTS(SELECT 1 FROM outbox_actions earlier LEFT JOIN provider_connections earlier_connection ON earlier_connection.id=earlier.connection_id
-    WHERE earlier.user_id=${action}.user_id AND earlier.connection_id IS NOT DISTINCT FROM ${action}.connection_id
-      AND earlier.kind NOT IN ${sqlKinds(independentQueueKinds)} AND earlier.kind NOT LIKE '%.live'
-      AND earlier.state IN ('pending','running','failed') AND earlier.id<>${action}.id
-      AND (earlier.state='running' OR (earlier.created_at,earlier.id)<(${action}.created_at,${action}.id))
-      AND (coalesce((SELECT value->>'developerMode' FROM system_settings WHERE key='coast'),'false')<>'true'
-        OR earlier.state='running' OR earlier.kind NOT IN ${sqlKinds(automaticQueueKinds)} OR earlier.payload->>'_manual'='true')
-      AND (earlier.kind NOT IN ${sqlKinds(maintenanceKinds)} OR earlier.state='running'
-        OR (${action}.kind IN ${sqlKinds(maintenanceKinds)} AND earlier.state='pending' AND earlier.next_attempt_at<=NOW()
-          AND ${agedPrioritySql('earlier','earlier_connection')}<=${agedPrioritySql(action,connection)})))`;
+/** Running work keeps the account lane exclusive. Unsent mutations order only
+ * overlapping effects; observations can pass an unrelated blocked mutation. */
+function accountOrderBlockerSql(action:string) {
+  const requested=dependencyScopeSql(action), previous=dependencyScopeSql('earlier');
+  const common=`earlier.user_id=${action}.user_id and earlier.id<>${action}.id
+    and earlier.kind not in ${sqlKinds(independentQueueKinds)} and earlier.kind not like '%.live'
+    and earlier.state in ('pending','running','failed')
+    and (earlier.account_generation is null or earlier.connection_id is null or earlier.account_generation=(select account_generation from provider_connections where id=earlier.connection_id))
+    and (earlier.state='running' or (
+      (earlier.created_at,earlier.id)<(${action}.created_at,${action}.id)
+      and (${requested}) is not null and (${previous}) is not null
+      and ((${requested})='*' or (${previous})='*' or (${requested})=(${previous}))
+      and (coalesce((select value->>'developerMode' from system_settings where key='coast'),'false')<>'true'
+        or earlier.kind not in ${sqlKinds(automaticQueueKinds)} or earlier.payload->>'_manual'='true'))) `;
+  // Separate NULL/local lanes so PostgreSQL can use both leading columns of the
+  // existing account-order index instead of scanning every job for this user.
+  return `case when ${action}.connection_id is null then (select earlier.id from outbox_actions earlier
+    where earlier.connection_id is null and ${common} order by earlier.created_at,earlier.id limit 1) else (select earlier.id from outbox_actions earlier
+    where earlier.connection_id=${action}.connection_id and ${common} order by earlier.created_at,earlier.id limit 1) end`;
+}
+
+function accountOrderBlockedSql(action:string,_connection:string,cached=true) {
+  return cached?`${action}.id in (select id from queue_blockers where blocking_id is not null)`:`(${accountOrderBlockerSql(action)}) is not null`;
+}
+
+function featureTransitionBlockedSql(action:string) {
+  return `(${action}.kind in ('webhook.deliver','planning.reminder','jellyfin.sync','catalogue.user-scan','tmdb.refresh','trakt.import','trakt.lists-import','trakt.export','trakt.list-export','trakt.progress','trakt.collection-project','trakt.collection-review','jellyfin.live','steam.live','trakt.live','trakt.scrobble','trakt.checkin','social.checkin-complete','seerr.request','seerr.sync','steam.sync','steam.achievements','igdb.steam-metadata','trakt.recommendations','tmdb.recommendations','igdb.recommendations','taste.refresh') and exists(
+    select 1 from outbox_actions transition where transition.kind='feature.reconcile' and transition.state in ('pending','running','failed')
+      and (transition.payload->>'subjectId' is null or transition.payload->>'subjectId'=${action}.user_id::text)
+      and ${action}.created_at<=(transition.payload->>'cutoff')::timestamptz))`;
 }
 
 /** Read models and workers share eligibility; priority never bypasses a gate. */
-function pendingEligibleSql(action:string,connection:string,instance:string) {
+function pendingEligibleSql(action:string,connection:string,instance:string,cached=true) {
   return `(${action}.next_attempt_at<=NOW()
-    AND (${action}.kind NOT IN ('webhook.deliver','planning.reminder','jellyfin.sync','catalogue.user-scan','tmdb.refresh','trakt.import','trakt.lists-import','trakt.export','trakt.list-export','trakt.progress','trakt.collection-project','trakt.collection-review','jellyfin.live','steam.live','trakt.live','trakt.scrobble','trakt.checkin','social.checkin-complete','seerr.request','seerr.sync','steam.sync','steam.achievements','igdb.steam-metadata','trakt.recommendations','tmdb.recommendations','igdb.recommendations','taste.refresh') OR NOT EXISTS(
-      SELECT 1 FROM outbox_actions transition WHERE transition.kind='feature.reconcile' AND transition.state IN ('pending','running','failed')
-      AND (transition.payload->>'subjectId' IS NULL OR transition.payload->>'subjectId'=${action}.user_id::text)
-      AND ${action}.created_at<=(transition.payload->>'cutoff')::timestamptz))
+    AND NOT ${featureTransitionBlockedSql(action)}
     AND (coalesce((SELECT value->>'developerMode' FROM system_settings WHERE key='coast'),'false')<>'true'
       OR ${action}.kind NOT IN ${sqlKinds(automaticQueueKinds)} OR ${action}.payload->>'_manual'='true')
     AND (${instance}.settings->>'jobsRetryAt' IS NULL OR (${instance}.settings->>'jobsRetryAt')::timestamptz<=NOW())
-    AND (${action}.kind IN ${sqlKinds(independentQueueKinds)} OR ${action}.kind LIKE '%.live' OR NOT ${accountOrderBlockedSql(action,connection)})
+    AND (${action}.kind IN ${sqlKinds(independentQueueKinds)} OR ${action}.kind LIKE '%.live' OR NOT ${accountOrderBlockedSql(action,connection,cached)})
     AND (${action}.kind NOT IN ${sqlKinds(traversalKinds)} OR NOT EXISTS(SELECT 1 FROM outbox_actions active
       LEFT JOIN provider_connections active_connection ON active_connection.id=active.connection_id
       WHERE active.state='running' AND active.kind IN ${sqlKinds(traversalKinds)}
         AND coalesce(active_connection.instance_id::text,active.payload->>'instanceId')=${instance}.id::text)))`;
 }
 
+/** The worker and actual-data verification use the same complete candidate
+ * selection. Read-only probes omit only row locks and the outer claim update. */
+export function queueSelectionSql(urgentOnly=false,lock=false) {
+  return `${queueOrderCteSql(independentQueueKinds,automaticQueueKinds)}
+    select candidate.id from outbox_actions candidate
+    left join provider_connections connection on connection.id=candidate.connection_id
+    left join provider_instances instance on instance.id=connection.instance_id or
+      (candidate.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') and candidate.kind like instance.provider||'.%' and instance.id::text=candidate.payload->>'instanceId')
+    where candidate.state='pending' and (${!urgentOnly} or ${jobPrioritySql('candidate','connection')}<3)
+      and ${pendingEligibleSql('candidate','connection','instance')}
+    order by ${agedPrioritySql('candidate','connection')},candidate.next_attempt_at,candidate.created_at,candidate.id
+    ${lock?'for update of candidate skip locked':''} limit 1`;
+}
+
 export class PermanentActionError extends Error {
-  constructor(message: string) {
+  constructor(message: string, public reason?: ProviderActionError['code']) {
     super(message);
     this.name = 'PermanentActionError';
   }
@@ -166,8 +197,13 @@ export function jobFailureMessage(error: unknown, permanent: boolean) {
   return permanent ? 'This action could not be accepted. Review the connection and diagnostics before retrying.' : 'The connection was interrupted. Coast will retry automatically.';
 }
 
-export type JobFailure = { code: string; remedy: 'connection' | 'permissions' | 'metadata' | 'retry'; retryable: boolean };
+export type JobFailure = { stage?:string; validation?:{path:string;expected:string;receivedType:string}[]; code: string; remedy: 'connection' | 'permissions' | 'metadata' | 'retry'; retryable: boolean };
 export function jobFailureDetail(error: unknown, permanent: boolean): JobFailure {
+  if(error instanceof PermanentActionError && error.reason){
+    if(error.reason==='permission')return {code:'provider.permission',remedy:'permissions',retryable:false};
+    if(error.reason==='identity')return {code:'provider.identity',remedy:'connection',retryable:false};
+    return {code:'action.rejected',remedy:'metadata',retryable:false};
+  }
   if (error instanceof ProviderQueueBusyError) return {code:'local.provider-busy',remedy:'retry',retryable:true};
   if (classifyFailure(error) === 'timeout') return { code: 'provider.timeout', remedy: 'retry', retryable: true };
   if(error instanceof AppError && error.code === 'steam_private')return {code:'provider.permission',remedy:'permissions',retryable:false};
@@ -187,21 +223,23 @@ export function retryDelayMs(attempt: number): number {
   return Math.min(6 * 60 * 60_000, 5000 * 2 ** Math.min(13, Math.max(0, attempt - 1)));
 }
 
+// Valibot represents record keys as object path segments too. Syntax alone
+// cannot prove a key is a schema field: retain only these public field names.
+const diagnosticFieldNames=new Set(['Items','TotalRecordCount','StartIndex','Id','Name','Type','UserData','Played','PlayCount',
+  'PlaybackPositionTicks','RunTimeTicks','DateCreated','PremiereDate','ProviderIds','SortName','IndexNumber','ParentIndexNumber',
+  'SeriesId','SeasonId','ParentId','CollectionType','Artists','Album','AlbumId','ArtistItems','ImageTags','MediaSources','MediaStreams',
+  'Container','Size','Height','Width','UserId','results','page','totalResults','totalPages','id','type','status','media','mediaType',
+  'tmdbId','tvdbId','seasons','seasonNumber','episodes','episodeNumber','user','permissions','name','ids','title','year',
+  'rating','progress','watched_at','collected_at','listed_at','rated_at','plays','appid','playtime_forever','achievements']);
 /** Include only schema paths and value types; never persist rejected provider values. */
 export function validationDiagnostic(error: unknown) {
   if (!(error instanceof v.ValiError)) return undefined;
-  return error.issues.slice(0, 12).map((issue) => ({
-    path:
-      issue.path
-        ?.map((segment: { key: unknown }) =>
-          typeof segment.key === 'string' || typeof segment.key === 'number'
-            ? String(segment.key)
-            : '?'
-        )
-        .join('.') || '(root)',
-    expected: issue.expected,
-    receivedType:
-      issue.input === null ? 'null' : Array.isArray(issue.input) ? 'array' : typeof issue.input,
+  return error.issues.slice(0, 12).map(issue => ({
+    path: issue.path?.slice(0,12).map((segment:{type:string;key:unknown}) =>
+      segment.type==='array' && typeof segment.key==='number' && segment.key>=0 && segment.key<=1000000 ? String(segment.key)
+        : segment.type==='object' && typeof segment.key==='string' && diagnosticFieldNames.has(segment.key) ? segment.key : '*').join('.') || '(root)',
+    expected: ['string','number','boolean','object','array','null','undefined'].includes(issue.expected) ? issue.expected : 'schema',
+    receivedType: issue.input===null?'null':Array.isArray(issue.input)?'array':typeof issue.input,
   }));
 }
 
@@ -243,21 +281,13 @@ export async function claimNextAction(urgentOnly=false): Promise<OutboxAction | 
   // These are lazy SQL fragments, not standalone transaction queries. Bun
   // registers tx.unsafe() in its pending set and rejects the unawaited fragment
   // on disconnect, even when the containing query/transaction is caught.
-  const priority=database.unsafe(jobPrioritySql('candidate','connection'));
     await sql`SELECT pg_advisory_xact_lock(hashtextextended('queue-claim', 0))`;
     await sql`UPDATE outbox_actions SET state = 'pending', locked_at = NULL, next_attempt_at = NOW(), updated_at = NOW()
       WHERE state = 'running' AND locked_at < NOW() - INTERVAL '5 minutes'`;
     await sql`update outbox_actions set state='cancelled',last_error='Disabled in feature settings.',updated_at=now() where id in (select id from outbox_actions where state in ('pending','failed') and not coast_job_allowed(user_id,kind,payload) order by id limit 100 for update skip locked)`;
     const [row] =
       await sql`UPDATE outbox_actions SET state = 'running', attempts = attempts + 1, locked_at = NOW(), updated_at = NOW()
-      WHERE id = (
-        SELECT candidate.id FROM outbox_actions candidate
-        LEFT JOIN provider_connections connection ON connection.id = candidate.connection_id
-        LEFT JOIN provider_instances instance ON instance.id = connection.instance_id OR (candidate.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') AND candidate.kind like instance.provider||'.%' AND instance.id::text = candidate.payload->>'instanceId')
-        WHERE candidate.state='pending' AND (${urgentOnly}=false OR ${priority}<3)
-          AND ${database.unsafe(pendingEligibleSql('candidate','connection','instance'))}
-        ORDER BY ${database.unsafe(agedPrioritySql('candidate','connection'))}, candidate.next_attempt_at, candidate.created_at, candidate.id FOR UPDATE OF candidate SKIP LOCKED LIMIT 1
-      ) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') AND kind like provider||'.%' AND id::text=payload->>'instanceId')) AS instance_id`;
+        WHERE id = (${database.unsafe(queueSelectionSql(urgentOnly,true))}) RETURNING *, coalesce((SELECT instance_id FROM provider_connections WHERE id = connection_id), (SELECT id FROM provider_instances WHERE kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') AND kind like provider||'.%' AND id::text=payload->>'instanceId')) AS instance_id`;
     const initial = row && ['jellyfin.bootstrap','jellyfin.sync','trakt.import','trakt.lists-import','steam.sync'].includes(row.kind)
       ? (await sql`SELECT NOT EXISTS(SELECT 1 FROM outbox_actions WHERE connection_id=${row.connection_id} AND kind=${row.kind} AND account_generation IS NOT DISTINCT FROM ${row.account_generation}::uuid AND state='succeeded') AND NOT EXISTS(SELECT 1 FROM sync_checkpoints WHERE connection_id=${row.connection_id} AND kind=${'initial:'+row.kind+':'+row.account_generation} AND completed_at IS NOT NULL) AND (${row.kind}<>'jellyfin.sync' OR NOT EXISTS(SELECT 1 FROM sync_checkpoints WHERE connection_id=${row.connection_id} AND kind='jellyfin-personal' AND completed_at IS NOT NULL AND scan_id IS NULL)) AS first`)[0].first : false;
     return row
@@ -389,7 +419,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
             [400, 401, 403, 404, 405, 409, 410, 422].includes(error.status));
         const developerMode=(await getConfig()).developerMode;
         const message = developerMode?'Automatic retries are paused in developer mode. Review this failure and Retry when ready.':jobFailureMessage(error, permanent);
-        const failure = jobFailureDetail(error, permanent);
+        const failure:JobFailure = {...jobFailureDetail(error, permanent),stage:safeDiagnosticStage(error),validation:validationDiagnostic(error)};
         const retryAfter =
           error instanceof ProviderHttpError
             ? Math.min(86_400_000, Math.max(0, (error.retryAfterSeconds || 0) * 1000))
@@ -486,17 +516,15 @@ export async function listActions(actor: SessionUser | null) {
   requireAdmin(actor);
   const limits = {running: 20, pending: 100, failed: 30, succeeded: 40, cancelled: 10};
   const states = ['running','pending','failed','succeeded','cancelled'] as const;
+  const db=getSql();
   const recent = await Promise.all(states.map(state => {
-    const limit=limits[state];
-    const priority=sql.raw(agedPrioritySql('outbox_actions','provider_connections'));
-    const eligibility=sql`case when ${sql.raw(pendingEligibleSql('outbox_actions','provider_connections','provider_instances'))} then 0 else 1 end`;
-    return getDb().select({id:outboxActions.id}).from(outboxActions)
-      .leftJoin(providerConnections,eq(providerConnections.id,outboxActions.connectionId))
-      .leftJoin(providerInstances, sql`${providerInstances.id}=${providerConnections.instanceId} or (${outboxActions.kind} in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') and ${outboxActions.kind} like ${providerInstances.provider}||'.%' and ${providerInstances.id}::text=${outboxActions.payload}->>'instanceId')`)
-      .where(eq(outboxActions.state,state))
-      .orderBy(...(state==='pending' ? [eligibility,priority,outboxActions.nextAttemptAt,outboxActions.createdAt,outboxActions.id]
-        : state==='running' ? [outboxActions.lockedAt,outboxActions.createdAt] : [desc(outboxActions.updatedAt)]))
-      .limit(limit);
+    const order=state==='pending'?`case when ${pendingEligibleSql('outbox_actions','provider_connections','provider_instances')} then 0 else 1 end,${agedPrioritySql('outbox_actions','provider_connections')},outbox_actions.next_attempt_at,outbox_actions.created_at,outbox_actions.id`
+      :state==='running'?'outbox_actions.locked_at,outbox_actions.created_at':'outbox_actions.updated_at desc';
+    return db<{id:string}[]>`${db.unsafe(queueOrderCteSql(independentQueueKinds,automaticQueueKinds))}
+      select outbox_actions.id from outbox_actions
+      left join provider_connections on provider_connections.id=outbox_actions.connection_id
+      left join provider_instances on provider_instances.id=provider_connections.instance_id or (outbox_actions.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') and outbox_actions.kind like provider_instances.provider||'.%' and provider_instances.id::text=outbox_actions.payload->>'instanceId')
+      where outbox_actions.state=${state} order by ${db.unsafe(order)} limit ${limits[state]}`;
   }));
   const ids = recent.flat().map(row=>row.id);
   return actionDetails(ids);
@@ -511,7 +539,7 @@ async function actionDetails(ids: string[]) {
         total?: number | null;
         phase?: string;
         stageProcessed?: number; stageTotal?: number | null; startedAt?: string;
-      } | null>`case when ${outboxActions.kind}='tmdb.refresh' and (${providerInstances.settings}->'metadataScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerInstances.settings}->'metadataScan'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerInstances.settings}->'metadataScan' when ${outboxActions.kind}='jellyfin.library' and (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerInstances.settings}->'libraryScan' when ${outboxActions.kind}='jellyfin.bootstrap' and (${providerConnections.settings}->'initialSync'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerConnections.settings}->'initialSync'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerConnections.settings}->'initialSync' when ${outboxActions.kind}='jellyfin.sync' and (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerConnections.settings}->'userSync'
+      } | null>`case when ${outboxActions.kind} in ('jellyfin.sync','jellyfin.library') and ${outboxActions.payload}->'_checkpoint'->>'task'='jellyfin-reading-access' and ${outboxActions.payload}->'_checkpoint'->>'done'='false' then jsonb_build_object('phase','reading','processed',${outboxActions.payload}->'_checkpoint'->'offset','total',${outboxActions.payload}->'_checkpoint'->'total') when ${outboxActions.kind}='tmdb.refresh' and (${providerInstances.settings}->'metadataScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerInstances.settings}->'metadataScan'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerInstances.settings}->'metadataScan' when ${outboxActions.kind}='jellyfin.library' and (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerInstances.settings}->'libraryScan'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerInstances.settings}->'libraryScan' when ${outboxActions.kind}='jellyfin.bootstrap' and (${providerConnections.settings}->'initialSync'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerConnections.settings}->'initialSync'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerConnections.settings}->'initialSync' when ${outboxActions.kind}='jellyfin.sync' and (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz >= ${outboxActions.createdAt} and (${outboxActions.state} in ('pending','running') or (${providerConnections.settings}->'userSync'->>'startedAt')::timestamptz <= ${outboxActions.updatedAt}) then ${providerConnections.settings}->'userSync'
         when ${outboxActions.kind}='steam.sync' then (select jsonb_build_object('phase','owned-games','processed',j.data->'next','total',jsonb_array_length(j.data->'items')) from provider_job_snapshots j where j.action_id=${outboxActions.id})
         when ${outboxActions.kind}='steam.achievements' and ${outboxActions.payload}->'_checkpoint'->>'task'='steam-achievements' then jsonb_build_object('phase','achievements','processed',${outboxActions.payload}->'_checkpoint'->'next','total',jsonb_array_length(${outboxActions.payload}->'_checkpoint'->'titles'))
         when ${outboxActions.kind} in ('trakt.import','trakt.lists-import') then (select jsonb_build_object('phase','trakt-'||case when t.category like 'list:%' then 'list' else t.category end||'-'||t.phase,'processed',(select count(*) from trakt_import_records r where r.stage_id=t.id and (t.phase='fetching' or r.applied)),'total',case when t.phase='fetching' then null else (select count(*) from trakt_import_records r where r.stage_id=t.id) end) from trakt_import_stages t where t.action_id=${outboxActions.id} and t.phase<>'done' order by t.updated_at desc limit 1)
@@ -521,10 +549,12 @@ async function actionDetails(ids: string[]) {
         when (${providerInstances.settings}->>'jobsRetryAt')::timestamptz>now() then 'service-cooldown'
         when ${outboxActions.nextAttemptAt}>now() then 'retry-backoff'
         when (select value->>'developerMode' from system_settings where key='coast')='true' and ${outboxActions.kind} in (${sql.join(automaticQueueKinds.map(kind=>sql`${kind}`),sql`,`)}) and coalesce(${outboxActions.payload}->>'_manual','false')<>'true' then 'paused'
-        when ${providerConnections.id} is not null and (${providerConnections.status}<>'connected' or ${providerConnections.accountGeneration} is distinct from ${outboxActions.accountGeneration}) then 'connection-attention'
-        when ${outboxActions.kind} not in (${sql.join(independentQueueKinds.map(kind=>sql`${kind}`),sql`,`)}) and ${outboxActions.kind} not like '%.live' and ${sql.raw(accountOrderBlockedSql('outbox_actions','provider_connections'))} then 'account-order'
+        when ${sql.raw(featureTransitionBlockedSql('outbox_actions'))} then 'feature-transition'
+        when ${providerConnections.id} is not null and (${providerConnections.status}<>'connected' or (${outboxActions.accountGeneration} is not null and ${providerConnections.accountGeneration} is distinct from ${outboxActions.accountGeneration})) then 'connection-attention'
+        when ${outboxActions.kind} not in (${sql.join(independentQueueKinds.map(kind=>sql`${kind}`),sql`,`)}) and ${outboxActions.kind} not like '%.live' and ${sql.raw(accountOrderBlockedSql('outbox_actions','provider_connections',false))} then 'account-order'
         when ${outboxActions.kind} in (${sql.join(traversalKinds.map(kind=>sql`${kind}`),sql`,`)}) and exists(select 1 from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.state='running' and a.kind in (${sql.join(traversalKinds.map(kind=>sql`${kind}`),sql`,`)}) and coalesce(c.instance_id::text,a.payload->>'instanceId')=${providerInstances.id}::text and a.id<>${outboxActions.id}) then 'provider-capacity'
         when ${outboxActions.payload}->>'_yielded'='true' then 'yielded' else 'worker-capacity' end`,
+      blockingAction:sql<{id:string;kind:string;state:string}|null>`case when ${outboxActions.state}='pending' and ${outboxActions.kind} not in (${sql.join(independentQueueKinds.map(kind=>sql`${kind}`),sql`,`)}) and ${outboxActions.kind} not like '%.live' then (select jsonb_build_object('id',b.id,'kind',b.kind,'state',b.state) from outbox_actions b where b.id=(${sql.raw(accountOrderBlockerSql('outbox_actions'))})) else null end`,
       failure: sql<JobFailure | null>`${outboxActions.payload}->'_jobFailure'`,
       outcome: sql<JobOutcome | null>`${outboxActions.payload}->'_jobOutcome'`,
       instanceId: providerInstances.id,
@@ -549,7 +579,7 @@ async function actionDetails(ids: string[]) {
     .where(inArray(outboxActions.id, ids))
     .orderBy(
       sql`case ${outboxActions.state} when 'running' then 0 when 'pending' then 1 when 'failed' then 2 else 3 end`,
-      sql`case when ${outboxActions.state}='pending' then case when ${sql.raw(pendingEligibleSql('outbox_actions','provider_connections','provider_instances'))} then 0 else 1 end else null end`,
+      sql`case when ${outboxActions.state}='pending' then case when ${sql.raw(pendingEligibleSql('outbox_actions','provider_connections','provider_instances',false))} then 0 else 1 end else null end`,
       sql`case when ${outboxActions.state}='pending' then ${sql.raw(agedPrioritySql('outbox_actions','provider_connections'))} else null end`,
       sql`case when ${outboxActions.state}='pending' then ${outboxActions.nextAttemptAt} else null end`,
       sql`case when ${outboxActions.state} in ('running','pending') then ${outboxActions.createdAt} else null end`,
@@ -566,7 +596,7 @@ export async function listTaskActions(actor: SessionUser | null) {
   const scope = db.unsafe(taskInstanceSql('outbox_actions','provider_connections'));
   const current = db.unsafe(currentTaskGenerationSql('outbox_actions','provider_connections'));
   const [active, terminal] = await Promise.all([
-    db<{id:string;count:number;instanceId:string|null}[]>`with ranked as (
+    db<{id:string;count:number;instanceId:string|null}[]>`${db.unsafe(queueOrderCteSql(independentQueueKinds,automaticQueueKinds))}, ranked as (
       select outbox_actions.id,${scope} as "instanceId",
         count(*) over(partition by outbox_actions.kind,${scope},outbox_actions.state)::int as count,
         row_number() over(partition by outbox_actions.kind,${scope},outbox_actions.state order by
@@ -596,6 +626,18 @@ function taskInstanceSql(action:string,connection:string) {
 function currentTaskGenerationSql(action:string,connection:string) {
   return `(${connection}.id is null or ${action}.account_generation is null or ${action}.account_generation=${connection}.account_generation)`;
 }
+/** Canonical retry conflicts also filter bounded bulk selection, so an old
+ * blocked prefix cannot hide eligible jobs for other accounts. */
+function retryConflictSql(action:string,connection:string){
+  const instance=`coalesce(${connection}.instance_id::text,${action}.payload->>'instanceId')`;
+  const shared=sqlKinds(maintenanceKinds.filter(kind=>jobIdentityScope(kind)==='instance'));
+  return `(${action}.kind in ${sqlKinds(maintenanceKinds)} and ${instance} is not null and exists(
+    select 1 from outbox_actions busy left join provider_connections busy_connection on busy_connection.id=busy.connection_id
+    where busy.id<>${action}.id and busy.kind=${action}.kind and busy.state in ('pending','running')
+      and ((${action}.kind in ${shared} and coalesce(busy_connection.instance_id::text,busy.payload->>'instanceId')=${instance})
+        or (${action}.kind not in ${shared} and busy.connection_id is not distinct from ${action}.connection_id
+          and busy.user_id=${action}.user_id and busy.account_generation is not distinct from ${action}.account_generation))))`;
+}
 /** Apply a task control to all matching current jobs, retaining each job's
  * identity, deduplication and notification handling. Running work is never
  * cancelled by this control. Expected races/conflicting work are skipped. */
@@ -607,9 +649,18 @@ export async function updateTaskActions(actor: SessionUser | null, kind: string,
     left join provider_connections on provider_connections.id=outbox_actions.connection_id
     where outbox_actions.kind=${kind} and ${db.unsafe(taskInstanceSql('outbox_actions','provider_connections'))} is not distinct from ${instanceId}
       and outbox_actions.state=any(${db.array(states,'TEXT')}) and ${db.unsafe(currentTaskGenerationSql('outbox_actions','provider_connections'))}
-    order by outbox_actions.created_at,outbox_actions.id`;
+      and (${action}<>'promote' or coalesce(outbox_actions.payload->>'_jobPurpose','scheduled') in ('scheduled','live'))
+      and (${action}<>'retry' or not ${db.unsafe(retryConflictSql('outbox_actions','provider_connections'))})
+    order by outbox_actions.created_at,outbox_actions.id limit ${taskControlLimit+1}`;
+  const blocked=action==='retry'&&(await db`select outbox_actions.id from outbox_actions
+    left join provider_connections on provider_connections.id=outbox_actions.connection_id
+    where outbox_actions.kind=${kind} and outbox_actions.state='failed'
+      and ${db.unsafe(taskInstanceSql('outbox_actions','provider_connections'))} is not distinct from ${instanceId}
+      and ${db.unsafe(currentTaskGenerationSql('outbox_actions','provider_connections'))}
+      and ${db.unsafe(retryConflictSql('outbox_actions','provider_connections'))} limit 1`).length>0;
+  const selected=rows.slice(0,taskControlLimit);
   let updated=0,skipped=0;
-  for(const row of rows){
+  for(const row of selected){
     try{
       if(action==='cancel')await cancelAction(actor,row.id);
       else if(action==='retry')await retryAction(actor,row.id);
@@ -617,7 +668,7 @@ export async function updateTaskActions(actor: SessionUser | null, kind: string,
       updated++;
     }catch(cause){if(cause instanceof AppError&&cause.status===409)skipped++;else throw cause;}
   }
-  return {updated,skipped};
+  return {updated,skipped,hasMore:rows.length>taskControlLimit,limit:taskControlLimit,blocked};
 }
 
 export async function cancelAction(actor: SessionUser | null, id: string) {
@@ -653,7 +704,7 @@ export async function retryAction(actor: SessionUser | null, id: string) {
     if(!action)throw new AppError(409,'This action cannot be retried.');
     if(action.kind==='benchmark.run')throw new AppError(409,'Run a new benchmark in Benchmarking settings to preserve the recorded result.');
     if(maintenanceKinds.includes(action.kind)&&action.instance){
-      const [busy]=await sql`select a.id from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id<>${id} and a.kind=${action.kind} and a.state in ('pending','running') and (${jobIdentityScope(action.kind)}='instance' and coalesce(c.instance_id::text,a.payload->>'instanceId')=${action.instance} or ${jobIdentityScope(action.kind)}='account' and a.connection_id is not distinct from ${action.connection_id}::uuid and a.user_id=${action.user_id} and a.account_generation is not distinct from ${action.account_generation}::uuid) limit 1`;
+      const [busy]=await sql`select a.id from outbox_actions a left join provider_connections c on c.id=a.connection_id where a.id=${id} and ${getSql().unsafe(retryConflictSql('a','c'))}`;
       if(busy)throw new AppError(409,'This task is already queued or running for this service.');
     }
     const budget=action.kind==='webhook.deliver'&&action.state==='failed'?{_webhookAttemptBase:action.attempts}:{};
