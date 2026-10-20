@@ -1,43 +1,45 @@
 {
   "recordedAt": "2026-10-20T13:28:11.761285+00:00",
   "baselineRef": "9575de2cdec348f39d50bf812d960df52817007d",
-  "meaning": "Focused shared-method acceptance; not every finding is fully accepted, no live rollout, no merge.",
+  "meaning": "Focused shared-method acceptance, not every finding fully accepted or a live rollout. Latest user instruction authorizes merge only after green CI and clear final-head Codex code/security reviews.",
   "sourceSha256": {
     "src/lib/diagnostics.ts": "eff5f9bd3296f1fe5bd9b7d5ed3feb1899a5b137733d55d3c52ca5ace4c0bfdc",
     "src/lib/providers/actions.server.ts": "ac3917ba6d50edfee3a2f513f07186a9a2e37b354b7f17efabc314237611260f",
     "src/lib/providers/jellyfin/updates.server.ts": "6c4532ba998202cf86c85b9b95efe809528e02fb0a59350ec695b18baf67da16",
-    "src/lib/providers/job-policy.ts": "dbbbea94ffe4e4e51a3ce3f28834ff44d7ac19077862e010fc3ebaa08a63f23b",
-    "src/lib/providers/maintenance.server.ts": "3c1cc934055ad9a20720511d520d1570082c26fe80f4d94014e32d80d6f6a197",
+    "src/lib/providers/job-policy.ts": "271cdf2ee4028a35002ba57348632969799821d1a45cee5db268f162e9f5738e",
+    "src/lib/providers/maintenance.server.ts": "cc27a3cf921c167ff8a7b094210111ad89f1e7394b1a85416a01eaaf535f4337",
     "src/lib/providers/seerr/requests.server.ts": "8fc6ab654589ff4d38d53751de557f25720bb48104475d14cc3b6be8c6b362a6",
-    "src/lib/server/queue/index.ts": "3c86413cb7bd1bfa1164ba49559721b045a36847617a4f9b0df2225b47a5b0ee",
+    "src/lib/server/queue/dependencies.ts": "2dd95d9823568008f9137e514b0a7b1f3e2f262129ae228e2ae21f400b67820c",
+    "src/lib/server/queue/index.ts": "67415d9da64bdf0196f26e22501039905887e04723965c4de53e476d267a1687",
     "src/lib/server/storage/retention.server.ts": "8dfc8ac25f8a036de52b7b0a5e366e74fcdf6d9a96b0c17721d3458112e3b3b7",
     "src/lib/social/taste-cache.server.ts": "722d6533f4b911b4c998ec79ba3aa0f462b08dd5d270d2a8e820a2fcf547dfd7",
     "src/lib/sync/jellyfin.server.ts": "b7e83f59082ebe810fd4a6f3706f1b9cf8c2fc663245626484215435db375625",
-    "src/lib/ui/components/JobSchedule.svelte": "230c0015e4c91fb82f30e73193b9534191495bb8e28b91bcc38007cd1185ed11",
+    "src/lib/ui/components/JobSchedule.svelte": "f8c44d66db60c4760c9e9b6597e538deae57587b72269dc64768e76cb09ec889",
     "src/lib/ui/components/QueueList.svelte": "450725b812099cc0108f593c2a49d84dbbe55fc0570dfbfa86402c05d8596f08",
-    "src/lib/ui/queue.ts": "b6acec413b1c246040f1638ebcaf7426438e217f29f9f17830f16d0d53cc33cb",
+    "src/lib/ui/queue.ts": "20afec0587a305dbd3e9834dd31d8fa6276eae1063b5bd2080d8492eb1d6f038",
+    "tests/jellyfin-recovery-db.test.ts": "57079cacb90b3b7823214888b6736cdc411917a93b952622cca5c0d3c0acfe84",
     "tests/job-outcomes.test.ts": "36aeef5f9422c647a8798078bd3d0cef517077229dd0409c5a4b158096eb5400",
     "tests/job-task-summary-db.test.ts": "763af9f9f6e99a98e3e3b1147e02da0df5b86b385920821ec8bd6ee0a270b347",
+    "tests/maintenance-runner-db.test.ts": "4390b52526d7f6b7f6c02ece87db719acfa451762343345d51175f0a18df0209",
     "tests/queue-diagnostics.test.ts": "0b8c28ecb41372a7327155606602344fec77bcfa42d9641ba824d6b6eb4d3db2",
+    "tests/reading-sync-db.test.ts": "c022a7eedc7c6c7b5dcaad36197fc0774e439ba4b5960b9cc2a460259a693cd2",
     "tests/task-timing.test.ts": "d070eb60a36fffa61dff4979bfcc83fa5ed55dd2dd8e7ac833d19ee693e7cfc7",
-    "src/lib/server/queue/dependencies.ts": "f5a90d4233b746735e9501e07667ccfca177195064e5d3bedc004ee0be44d6e9"
+    "tests/trakt-staging-db.test.ts": "7e96b8701b8963e57b631e985cb3850ac35c8df91f818d0a8bbdec2c16b7ea05"
   },
   "privateInputSha256": {
-    "connection-state-implementation.private.json": "48e29e1abeb884e704c9fb07756c626a54511576514ea1198bbd4908cf848998",
-    "outbox-implementation.private.json": "9e2d820592f309b0090aeb256935b4625ed891e7a216e2c55ca734fb06381c44",
-    "instance-state-implementation.private.json": "d9db877d937662cc49ba1cb02ee31a083ee7fd0dd97d453989334b48adc87522"
+    "connection-state-implementation.private.json": "50b44325a31586fec9ba864a8e31eb831f439341e3baf77f7c8269ad44908258",
+    "outbox-implementation.private.json": "db1590d5b3101343a25e18d1eec9cea10db80aa2a7f54ea8bf1ea7331dc799e1",
+    "instance-state-implementation.private.json": "f23cdec311a55cd0e04b2472564f50f2b9fb505204e01a0b4251f529ce6b3636"
   },
   "privatePlanSha256": {
-    "coast-task-plan-original-0-0.json": "c98824edbe544b02a7fd16df8f0bc8ef0725fde2577f99d5f2e143cab97a0d1a",
-    "coast-task-plan-candidate-1-0.json": "d2c4897f9381934f2417d6ba0c893bb430eaa86b2938de655a5d6693a5b0834a",
-    "coast-task-plan-warmup-original-0.json": "5ff41dc5d1a40332b17d8711a177c3ee834738a04a2fd500a234eb322355bbed",
-    "coast-task-plan-original-2-0.json": "992e8ca65102892d3c9fbe6f6b3bb47216166887665286fbbba21079b579918e",
-    "coast-task-plan-original-0.json": "102db88a90702bac98819fd3e4e6bed6ce20a2e500eaa2f98e0090114a522ff4",
-    "coast-task-plan-candidate-0.json": "da3d14af610be3bd5fcb325a16546a66de0b8903012da988fb99a849171297a2",
-    "coast-task-plan-original-1-0.json": "0c59f29b61d37c2335420923373926b3faea6005d69a76f9a253a0f049bcec10",
-    "coast-task-plan-candidate-0-0.json": "d43b77e6c1a327c15fa06abb2a3a83c29913cb694f1c7c47e59a88bbd80d3830",
-    "coast-task-plan-warmup-candidate-0.json": "43f3fad1e663b4238678731e8e3069b4ebb29126fdd9adf6ae91e957ce5c668b",
-    "coast-task-plan-candidate-2-0.json": "72bac2d4a924ab4c940c9fc1476d44b052e74688051cef006354571a4483e750"
+    "coast-task-plan-original-0-0.json": "06a96afb90f042ea501e6db02d9d5680563362b5e5fb5c26590c092a33544805",
+    "coast-task-plan-candidate-1-0.json": "1e32b932d3032d71caf748795980913942e9e152894e05f9da517cb0bf166d9f",
+    "coast-task-plan-warmup-original-0.json": "6be48cb7bd320a6b4d2495931954815ccc05fae5747155b06ad55041ceea5136",
+    "coast-task-plan-original-2-0.json": "466dd642a050a3e466b2066117d17abc1679667fa0e6462c8bc5c676d8e60c56",
+    "coast-task-plan-original-1-0.json": "12848b50d16f7512389883cf9e7f4b1c2c92e5be18a5fe89007d75dccd3c8087",
+    "coast-task-plan-candidate-0-0.json": "4f59c8917c4136c54dd8f2532bba0816861b1f1b3a4260be2da151eaeaeb7006",
+    "coast-task-plan-warmup-candidate-0.json": "2d2219cd3823e9c0b5757fa6af65b433eb2a1683df351a80a964e47aee6078be",
+    "coast-task-plan-candidate-2-0.json": "f1e08a6eb067ce53a9a6a3ded36bf75f351fcd90582d36d5da52dc15414ec0a9"
   },
   "selectionComparison": {
     "boundary": "Exact approved live task/connection/instance rows in temporary shadow tables on the disposable catalogue copy. No users, credentials or provider dispatch. Controlled developerMode=false on both sides. Missing live playback/checkpoint parents are not imported; scrobble scopes stay conservative. Read-only selection analogue, not claim/recovery cost.",
@@ -45,97 +47,11 @@
       {
         "name": "All scoped active rows agree with independent ordered real-row reference",
         "status": "passed",
-        "compared": 12819,
-        "blocked": 14,
-        "observationsPassing": 3854,
-        "unrelatedPassing": 8942,
-        "sameEffectBlocked": 13
-      },
-      {
-        "name": "Presentation scalar and worker CTE parity on 250 actual representatives",
-        "status": "passed",
-        "checked": 250,
-        "mismatches": 0
-      }
-    ],
-    "baseline": [
-      {
-        "executionMs": 9040.576,
-        "sharedHits": 2,
-        "sharedReads": 0,
-        "localHits": 4386860,
-        "localReads": 49187,
-        "tempReads": 0,
-        "tempWrites": 0,
-        "rows": 1
-      },
-      {
-        "executionMs": 9384.044,
-        "sharedHits": 2,
-        "sharedReads": 0,
-        "localHits": 4386860,
-        "localReads": 49187,
-        "tempReads": 0,
-        "tempWrites": 0,
-        "rows": 1
-      },
-      {
-        "executionMs": 9593.995,
-        "sharedHits": 2,
-        "sharedReads": 0,
-        "localHits": 4386860,
-        "localReads": 49187,
-        "tempReads": 0,
-        "tempWrites": 0,
-        "rows": 1
-      }
-    ],
-    "candidate": [
-      {
-        "executionMs": 159.223,
-        "sharedHits": 13,
-        "sharedReads": 0,
-        "localHits": 3053,
-        "localReads": 47394,
-        "tempReads": 0,
-        "tempWrites": 0,
-        "rows": 1
-      },
-      {
-        "executionMs": 168.7,
-        "sharedHits": 13,
-        "sharedReads": 0,
-        "localHits": 3053,
-        "localReads": 47394,
-        "tempReads": 0,
-        "tempWrites": 0,
-        "rows": 1
-      },
-      {
-        "executionMs": 185.807,
-        "sharedHits": 13,
-        "sharedReads": 0,
-        "localHits": 3053,
-        "localReads": 47394,
-        "tempReads": 0,
-        "tempWrites": 0,
-        "rows": 1
-      }
-    ],
-    "rows": 118104,
-    "status": "passed"
-  },
-  "controlledBacklogAcceptance": {
-    "boundary": "Exact approved live task/connection/instance rows in temporary shadow tables on the disposable catalogue copy. No users, credentials or provider dispatch. Controlled developerMode=false on both sides. Missing live playback/checkpoint parents are not imported; scrobble scopes stay conservative. Read-only selection analogue, not claim/recovery cost.",
-    "cases": [
-      {
-        "name": "All scoped active rows agree with independent ordered real-row reference",
-        "status": "passed",
-        "compared": 12819,
-        "blocked": 14,
-        "observationsPassing": 3854,
-        "unrelatedPassing": 8942,
-        "sameEffectBlocked": 13
+        "compared": 13095,
+        "blocked": 15,
+        "observationsPassing": 4078,
+        "unrelatedPassing": 8993,
+        "sameEffectBlocked": 14
       },
       {
         "name": "Presentation scalar and worker CTE parity on 250 actual representatives",
@@ -146,7 +62,7 @@
       {
         "name": "Controlled running actual jobs exclude every other scoped job in their account lanes",
         "status": "passed",
-        "scoped": 12819,
+        "scoped": 13095,
         "running": 9,
         "escaped": 0
       },
@@ -166,7 +82,115 @@
         "selected": 1
       }
     ],
-    "rows": 118104,
+    "baseline": [
+      {
+        "executionMs": 9192.351,
+        "sharedHits": 0,
+        "sharedReads": 0,
+        "localHits": 4510002,
+        "localReads": 52355,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      },
+      {
+        "executionMs": 10004.389,
+        "sharedHits": 0,
+        "sharedReads": 0,
+        "localHits": 4510002,
+        "localReads": 52355,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      },
+      {
+        "executionMs": 10494.315,
+        "sharedHits": 0,
+        "sharedReads": 0,
+        "localHits": 4510002,
+        "localReads": 52355,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      }
+    ],
+    "candidate": [
+      {
+        "executionMs": 164.779,
+        "sharedHits": 13,
+        "sharedReads": 0,
+        "localHits": 2717,
+        "localReads": 51324,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      },
+      {
+        "executionMs": 170.749,
+        "sharedHits": 13,
+        "sharedReads": 0,
+        "localHits": 2717,
+        "localReads": 51324,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      },
+      {
+        "executionMs": 181.469,
+        "sharedHits": 13,
+        "sharedReads": 0,
+        "localHits": 2717,
+        "localReads": 51324,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      }
+    ],
+    "rows": 118586,
+    "status": "passed"
+  },
+  "controlledBacklogAcceptance": {
+    "boundary": "Exact approved live task/connection/instance rows in temporary shadow tables on the disposable catalogue copy. No users, credentials or provider dispatch. Controlled developerMode=false on both sides. Missing live playback/checkpoint parents are not imported; scrobble scopes stay conservative. Read-only selection analogue, not claim/recovery cost.",
+    "cases": [
+      {
+        "name": "All scoped active rows agree with independent ordered real-row reference",
+        "status": "passed",
+        "compared": 13095,
+        "blocked": 15,
+        "observationsPassing": 4078,
+        "unrelatedPassing": 8993,
+        "sameEffectBlocked": 14
+      },
+      {
+        "name": "Presentation scalar and worker CTE parity on 250 actual representatives",
+        "status": "passed",
+        "checked": 250,
+        "mismatches": 0
+      },
+      {
+        "name": "Controlled running actual jobs exclude every other scoped job in their account lanes",
+        "status": "passed",
+        "scoped": 13095,
+        "running": 9,
+        "escaped": 0
+      },
+      {
+        "name": "Controlled account replacement excludes every revoked-generation actual task from dependency heads",
+        "status": "passed",
+        "retained": 0
+      },
+      {
+        "name": "Developer pause excludes automatic actual backlog rows without manual intent",
+        "status": "passed",
+        "leaked": 0
+      },
+      {
+        "name": "Candidate row-locking selector executes on the actual temporary backlog",
+        "status": "passed",
+        "selected": 1
+      }
+    ],
+    "rows": 118586,
     "status": "passed"
   },
   "reading": {
@@ -288,8 +312,9 @@
       {
         "name": "Provider Run now reports actual failed rows as needsAttention and preserves Retry state/attempts/checkpoint",
         "status": "passed",
-        "queued": 0,
-        "healthy": 3,
+        "queued": 3,
+        "healthyExisting": 0,
+        "healthyTotal": 3,
         "needsAttention": 1
       },
       {
@@ -352,7 +377,12 @@
     "build": "passed",
     "sourceStyle": "passed",
     "codeInventory": "passed",
-    "uiInventory": "passed"
+    "uiInventory": "passed",
+    "affectedDatabaseGuards": {
+      "passed": 54,
+      "failed": 0,
+      "meaning": "Existing authored fixtures; separate from actual-data acceptance"
+    }
   },
   "adverseTrials": {
     "joinCandidate": {
@@ -418,11 +448,23 @@
       "insufficient scalar projection",
       "text-array binding",
       "incorrect browser heading",
-      "unbounded direct-call reading trial terminated"
+      "unbounded direct-call reading trial terminated",
+      "baseline fixture probe initially lacked temporary-module aliases/package resolution; corrected; original owner passes"
     ],
     "blockedRetryPrefix": {
       "status": "found-in-review-and-fixed",
       "acceptance": "201 actual older blocked failures do not hide another genuine account job; blocked status returned."
+    },
+    "codeReview": {
+      "head": "53ea1f3",
+      "finding": "A fresh pending representative masked another sustained retry",
+      "status": "fixed; original/candidate actual-job comparison passed"
+    },
+    "ciInitial": {
+      "head": "53ea1f3",
+      "run": 39431641340,
+      "failed": "Both PostgreSQL compatibility jobs: existing-active count contract plus outdated cursor/order/retention assertions",
+      "status": "count contract restored; affected existing guards pass locally; final CI pending"
     }
   },
   "cleanup": {
@@ -436,7 +478,7 @@
       "earlier actual-catalogue checkpoint",
       "original narrow audit receipts"
     ],
-    "at": "2026-10-20T13:33:46.936931+00:00",
+    "at": "2026-10-20T13:52:27.872826+00:00",
     "deletedFiles": [
       "connection-state-implementation.private.json",
       "outbox-implementation.private.json",
@@ -454,18 +496,209 @@
       "coast-task-window-mismatch.private.json"
     ],
     "databaseDrop": "completed successfully",
-    "disposableRestoresRemoved": 2,
-    "additionalLiveUsersExported": false
+    "disposableRestoresRemoved": 3,
+    "additionalLiveUsersExported": false,
+    "finalReviewDeletedFiles": [
+      "connection-state-implementation.private.json",
+      "outbox-implementation.private.json",
+      "instance-state-implementation.private.json",
+      "coast-task-plan-original-0-0.json",
+      "coast-task-plan-candidate-1-0.json",
+      "coast-task-plan-warmup-original-0.json",
+      "coast-task-plan-original-2-0.json",
+      "coast-task-plan-original-1-0.json",
+      "coast-task-plan-candidate-0-0.json",
+      "coast-task-plan-warmup-candidate-0.json",
+      "coast-task-plan-candidate-2-0.json"
+    ]
   },
   "verificationSourceSha256": {
     "docs/audits/2026-10-20-task-system/verify-seerr.ts": "0a5238eff2661baf6f82b74be9a7b471be7d793f7baadf3ed163eb66b838cdd3",
     "docs/audits/2026-10-20-task-system/verify-presentation.ts": "5b98b2ad7a90503ba5f03853e11ab1fe3c623275a05c41a9efe799de488217f1",
     "docs/audits/2026-10-20-task-system/verify-actual-tasks.ts": "8cbacff84ab0bf8bdd75e8e8994e24b229011951398caed22f76e5404d0e93d3",
     "docs/audits/2026-10-20-task-system/selection-sql.ts": "4146a09b913de46c6865ee3e1e9e0b146e2ffc9f74d92fc5342a79a7fe0c83a0",
-    "docs/audits/2026-10-20-task-system/baseline-module.ts": "faa95b82b656924ce13f9dfc3c7d7f8b359df380cacc04bd1d47de1232c167bb",
+    "docs/audits/2026-10-20-task-system/baseline-module.ts": "a857236940426d7edac449a166bdb56e1f9f2d4084978ab63db40f84351ae52b",
+    "docs/audits/2026-10-20-task-system/verify-attention.ts": "d177bf40ee80782c0aa664ac07c3c1181c209bb1c755d2d7989245942246283e",
     "docs/audits/2026-10-20-task-system/verify-backlog.ts": "b65a8b3e43763cab38ceae96af179bcf2ef1cbf85b579d9ceb132d6a6883e783",
-    "docs/audits/2026-10-20-task-system/verify-run-now.ts": "ed8ad87f9a2aa93f7a734da23225ad2601f591792024c795de2a0dea3a874cb4",
+    "docs/audits/2026-10-20-task-system/verify-run-now.ts": "e3f9c7f1583a7675dabf5bc1e154dc3a0ab853db60b56c08c2c8a440b73c8cca",
     "docs/audits/2026-10-20-task-system/verify-reading.ts": "eb7c04f0faa6e407b811aa4261c86b1a7a8aa84aea1361c1866aad1964dec2a5",
     "docs/audits/2026-10-20-task-system/verify-controls.ts": "74734ce508dbd32bc3cb4bf01ff7131914f6647213eee05721907d818ecdecfd"
+  },
+  "preReviewSelectionComparison": {
+    "boundary": "Exact approved live task/connection/instance rows in temporary shadow tables on the disposable catalogue copy. No users, credentials or provider dispatch. Controlled developerMode=false on both sides. Missing live playback/checkpoint parents are not imported; scrobble scopes stay conservative. Read-only selection analogue, not claim/recovery cost.",
+    "cases": [
+      {
+        "name": "All scoped active rows agree with independent ordered real-row reference",
+        "status": "passed",
+        "compared": 12819,
+        "blocked": 14,
+        "observationsPassing": 3854,
+        "unrelatedPassing": 8942,
+        "sameEffectBlocked": 13
+      },
+      {
+        "name": "Presentation scalar and worker CTE parity on 250 actual representatives",
+        "status": "passed",
+        "checked": 250,
+        "mismatches": 0
+      }
+    ],
+    "baseline": [
+      {
+        "executionMs": 9040.576,
+        "sharedHits": 2,
+        "sharedReads": 0,
+        "localHits": 4386860,
+        "localReads": 49187,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      },
+      {
+        "executionMs": 9384.044,
+        "sharedHits": 2,
+        "sharedReads": 0,
+        "localHits": 4386860,
+        "localReads": 49187,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      },
+      {
+        "executionMs": 9593.995,
+        "sharedHits": 2,
+        "sharedReads": 0,
+        "localHits": 4386860,
+        "localReads": 49187,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      }
+    ],
+    "candidate": [
+      {
+        "executionMs": 159.223,
+        "sharedHits": 13,
+        "sharedReads": 0,
+        "localHits": 3053,
+        "localReads": 47394,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      },
+      {
+        "executionMs": 168.7,
+        "sharedHits": 13,
+        "sharedReads": 0,
+        "localHits": 3053,
+        "localReads": 47394,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      },
+      {
+        "executionMs": 185.807,
+        "sharedHits": 13,
+        "sharedReads": 0,
+        "localHits": 3053,
+        "localReads": 47394,
+        "tempReads": 0,
+        "tempWrites": 0,
+        "rows": 1
+      }
+    ],
+    "rows": 118104,
+    "status": "passed"
+  },
+  "preReviewControlledBacklogAcceptance": {
+    "boundary": "Exact approved live task/connection/instance rows in temporary shadow tables on the disposable catalogue copy. No users, credentials or provider dispatch. Controlled developerMode=false on both sides. Missing live playback/checkpoint parents are not imported; scrobble scopes stay conservative. Read-only selection analogue, not claim/recovery cost.",
+    "cases": [
+      {
+        "name": "All scoped active rows agree with independent ordered real-row reference",
+        "status": "passed",
+        "compared": 12819,
+        "blocked": 14,
+        "observationsPassing": 3854,
+        "unrelatedPassing": 8942,
+        "sameEffectBlocked": 13
+      },
+      {
+        "name": "Presentation scalar and worker CTE parity on 250 actual representatives",
+        "status": "passed",
+        "checked": 250,
+        "mismatches": 0
+      },
+      {
+        "name": "Controlled running actual jobs exclude every other scoped job in their account lanes",
+        "status": "passed",
+        "scoped": 12819,
+        "running": 9,
+        "escaped": 0
+      },
+      {
+        "name": "Controlled account replacement excludes every revoked-generation actual task from dependency heads",
+        "status": "passed",
+        "retained": 0
+      },
+      {
+        "name": "Developer pause excludes automatic actual backlog rows without manual intent",
+        "status": "passed",
+        "leaked": 0
+      },
+      {
+        "name": "Candidate row-locking selector executes on the actual temporary backlog",
+        "status": "passed",
+        "selected": 1
+      }
+    ],
+    "rows": 118104,
+    "status": "passed"
+  },
+  "reviewAttentionAcceptance": {
+    "boundary": "Controlled scheduling/failure states on existing real admin tasks in the approved disposable catalogue. Failure context/attempt count comes from captured actual IGDB metadata; no fabricated provider response or dispatch.",
+    "cases": [
+      {
+        "name": "Original fresh eligible representative hides an actual-job sustained retry in backoff",
+        "status": "reproduced"
+      },
+      {
+        "name": "Aggregate attention and failing representative preserve two pending jobs but report exactly one needing attention",
+        "status": "passed",
+        "pending": 2,
+        "attention": 1
+      },
+      {
+        "name": "Equivalent UUID spellings retain the same dependency identity on actual admin work references",
+        "status": "passed",
+        "checked": 10,
+        "mismatches": 0
+      }
+    ],
+    "status": "passed"
+  },
+  "preReviewInputSha256": {
+    "connection-state-implementation.private.json": "48e29e1abeb884e704c9fb07756c626a54511576514ea1198bbd4908cf848998",
+    "outbox-implementation.private.json": "9e2d820592f309b0090aeb256935b4625ed891e7a216e2c55ca734fb06381c44",
+    "instance-state-implementation.private.json": "d9db877d937662cc49ba1cb02ee31a083ee7fd0dd97d453989334b48adc87522"
+  },
+  "preReviewSourceSha256": {
+    "src/lib/diagnostics.ts": "eff5f9bd3296f1fe5bd9b7d5ed3feb1899a5b137733d55d3c52ca5ace4c0bfdc",
+    "src/lib/providers/actions.server.ts": "ac3917ba6d50edfee3a2f513f07186a9a2e37b354b7f17efabc314237611260f",
+    "src/lib/providers/jellyfin/updates.server.ts": "6c4532ba998202cf86c85b9b95efe809528e02fb0a59350ec695b18baf67da16",
+    "src/lib/providers/job-policy.ts": "dbbbea94ffe4e4e51a3ce3f28834ff44d7ac19077862e010fc3ebaa08a63f23b",
+    "src/lib/providers/maintenance.server.ts": "3c1cc934055ad9a20720511d520d1570082c26fe80f4d94014e32d80d6f6a197",
+    "src/lib/providers/seerr/requests.server.ts": "8fc6ab654589ff4d38d53751de557f25720bb48104475d14cc3b6be8c6b362a6",
+    "src/lib/server/queue/index.ts": "3c86413cb7bd1bfa1164ba49559721b045a36847617a4f9b0df2225b47a5b0ee",
+    "src/lib/server/storage/retention.server.ts": "8dfc8ac25f8a036de52b7b0a5e366e74fcdf6d9a96b0c17721d3458112e3b3b7",
+    "src/lib/social/taste-cache.server.ts": "722d6533f4b911b4c998ec79ba3aa0f462b08dd5d270d2a8e820a2fcf547dfd7",
+    "src/lib/sync/jellyfin.server.ts": "b7e83f59082ebe810fd4a6f3706f1b9cf8c2fc663245626484215435db375625",
+    "src/lib/ui/components/JobSchedule.svelte": "230c0015e4c91fb82f30e73193b9534191495bb8e28b91bcc38007cd1185ed11",
+    "src/lib/ui/components/QueueList.svelte": "450725b812099cc0108f593c2a49d84dbbe55fc0570dfbfa86402c05d8596f08",
+    "src/lib/ui/queue.ts": "b6acec413b1c246040f1638ebcaf7426438e217f29f9f17830f16d0d53cc33cb",
+    "tests/job-outcomes.test.ts": "36aeef5f9422c647a8798078bd3d0cef517077229dd0409c5a4b158096eb5400",
+    "tests/job-task-summary-db.test.ts": "763af9f9f6e99a98e3e3b1147e02da0df5b86b385920821ec8bd6ee0a270b347",
+    "tests/queue-diagnostics.test.ts": "0b8c28ecb41372a7327155606602344fec77bcfa42d9641ba824d6b6eb4d3db2",
+    "tests/task-timing.test.ts": "d070eb60a36fffa61dff4979bfcc83fa5ed55dd2dd8e7ac833d19ee693e7cfc7",
+    "src/lib/server/queue/dependencies.ts": "f5a90d4233b746735e9501e07667ccfca177195064e5d3bedc004ee0be44d6e9"
   }
 }

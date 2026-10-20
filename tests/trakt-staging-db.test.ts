@@ -132,7 +132,7 @@ run('repeated activity changes back off with a fresh fence and a stable retry ca
   await db.update(s.outboxActions).set({state:'succeeded'}).where(eq(s.outboxActions.id,id));
 });
 
-run('staging is removed on reconnect, connection deletion and stale non-running retention',async()=>{
+run('staging is removed on reconnect, connection deletion and terminal-only retention',async()=>{
   const db=getDb();
   const seed=async(id:string)=>{
     const [stage]=await db.insert(s.traktImportStages).values({actionId:id,connectionId,accountGeneration:generation,category:'history',activity:'stable'}).returning();
@@ -153,7 +153,11 @@ run('staging is removed on reconnect, connection deletion and stale non-running 
   id=await action();const stage=await seed(id);
   await db.update(s.traktImportStages).set({updatedAt:sql`now()-interval '31 days'`}).where(eq(s.traktImportStages.id,stage.id));
   await pruneTransientRecords();expect(await db.select().from(s.traktImportStages)).toHaveLength(1);
-  await db.update(s.outboxActions).set({state:'failed'}).where(eq(s.outboxActions.id,id));
+  for(const state of ['pending','failed'] as const){
+    await db.update(s.outboxActions).set({state}).where(eq(s.outboxActions.id,id));
+    await pruneTransientRecords();expect(await db.select().from(s.traktImportStages)).toHaveLength(1);
+  }
+  await db.update(s.outboxActions).set({state:'cancelled'}).where(eq(s.outboxActions.id,id));
   await pruneTransientRecords();expect(await db.select().from(s.traktImportStages)).toHaveLength(0);
   id=await action();await seed(id);
   await db.delete(s.providerConnections).where(eq(s.providerConnections.id,connectionId));

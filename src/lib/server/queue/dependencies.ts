@@ -13,13 +13,13 @@ export function dependencyScopeSql(action: string) {
   return `case
     when ${action}.kind in ${kinds(observationKinds)} then null
     when ${action}.kind in ('jellyfin.user-state','jellyfin.reconcile','trakt.export','trakt.progress','history.remove','trakt.scrobble')
-      then coalesce('work:'||(${action}.payload->>'mediaId'),'*')
+      then coalesce('work:'||lower(${action}.payload->>'mediaId'),'*')
     when ${action}.kind='jellyfin.scrobble' then coalesce('work:'||(select p.media_id::text from playback_sessions p
       where p.id=case when ${action}.payload->>'sessionId' ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' then (${action}.payload->>'sessionId')::uuid end
         and p.user_id=${action}.user_id and p.connection_id=${action}.connection_id),'*')
-    when ${action}.kind in ('trakt.list-export','trakt.list-delete') then coalesce('list:'||(${action}.payload->>'listId'),'*')
+    when ${action}.kind in ('trakt.list-export','trakt.list-delete') then coalesce('list:'||lower(${action}.payload->>'listId'),'*')
     when ${action}.kind in ('seerr.request','seerr.manage') then coalesce('request:'||(${action}.payload->>'requestId'),'*')
-    when ${action}.kind='trakt.checkin' then coalesce('checkin:'||(${action}.payload->>'checkinId'),'*')
+    when ${action}.kind='trakt.checkin' then coalesce('checkin:'||lower(${action}.payload->>'checkinId'),'*')
     else '*' end`;
 }
 

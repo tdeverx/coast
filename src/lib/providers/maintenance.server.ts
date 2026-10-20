@@ -93,7 +93,7 @@ export async function runProviderJob(
       and coalesce(c.instance_id::text,a.payload->>'instanceId')=${instanceId}
       and (a.account_generation is null or a.account_generation=c.account_generation)`);
   const needsAttention=failures?.count??0;
-  return {...result,active:failures?.active??0,needsAttention};
+  return {...result,active:Math.max(0,(failures?.active??0)-result.queued),needsAttention};
 }
 
 let maintenanceTimer: ReturnType<typeof setInterval> | undefined;

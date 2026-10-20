@@ -16,13 +16,13 @@ try{
  const result=await runProviderJob(admin.id,link.instance_id,'all','seerr.sync');assert(result.needsAttention>=1);
  assert.deepEqual((await sql`select state,attempts,payload from outbox_actions where id=${job.id}`)[0],before);
  const [counts]=await sql`select count(*) filter(where a.state in ('pending','running'))::int healthy,count(*) filter(where a.state='failed')::int failed from outbox_actions a join provider_connections c on c.id=a.connection_id where c.instance_id=${link.instance_id} and a.kind='seerr.sync' and a.account_generation=c.account_generation`;
- assert.equal(result.active,counts.healthy);assert.equal(result.needsAttention,counts.failed);
+ assert.equal(result.active+result.queued,counts.healthy);assert.equal(result.needsAttention,counts.failed);
  const actor={...(await sql`select id,username,role,settings from users where id=${admin.id}`)[0],email:null};
  const jobs=(await listTaskActions(actor)).filter(job=>job.kind==='seerr.sync'&&job.instanceId===link.instance_id);
  assert.equal(taskJobCount(jobs,'failed'),counts.failed);assert.equal(taskJobCount(jobs,'pending')+taskJobCount(jobs,'running'),counts.healthy);
  const entry={jobs};assert(jobTaskSections([entry]).attention.includes(entry));
  report.cases.push({name:'Native representative totals preserve mixed actual states and classify their shared card under Attention',status:'passed',failed:counts.failed,healthy:counts.healthy});
- report.cases.push({name:'Provider Run now reports actual failed rows as needsAttention and preserves Retry state/attempts/checkpoint',status:'passed',queued:result.queued,healthy:result.active,needsAttention:result.needsAttention});
+ report.cases.push({name:'Provider Run now reports actual failed rows as needsAttention and preserves Retry state/attempts/checkpoint',status:'passed',queued:result.queued,healthyExisting:result.active,healthyTotal:counts.healthy,needsAttention:result.needsAttention});
  const [taste]=await sql`select * from outbox_actions where user_id=${admin.id} and kind='taste.refresh' order by created_at limit 1`;assert(taste);
  await sql`update outbox_actions set state='cancelled' where kind='taste.refresh' and state in ('pending','running','failed')`;
  await sql`update outbox_actions set state='failed' where id=${taste.id}`;

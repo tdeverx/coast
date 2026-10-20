@@ -1,7 +1,7 @@
 import type { ProviderActionError } from '$lib/providers/contracts';
 import { dependencyScopeSql, queueOrderCteSql } from './dependencies';
 import { maintenanceKinds, serviceTraversalKinds } from '$lib/providers/tasks';
-import { taskControlLimit, jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, type JobPurpose } from '$lib/providers/job-policy';
+import { taskRetryAttentionAttempts, taskControlLimit, jobIdentityScope, purposePriority, readJobPurpose, promotedPurpose, type JobPurpose } from '$lib/providers/job-policy';
 import { jobExecution, JobYield } from './execution';
 import { requestPriority, providerJob, registerJobRequestPriority, updateJobRequestPriority, releaseJobRequestPriority, ProviderQueueBusyError, type RequestPriority } from '../security/request-priority';
 import { context, logDiagnostic, classifyFailure } from '../diagnostics';
@@ -445,7 +445,7 @@ export async function runQueueOnce(urgentOnly=false): Promise<boolean> {
             const until = new Date(Date.now() + retryAfter).toISOString();
             await sql`UPDATE provider_instances SET settings = jsonb_set(settings, '{jobsRetryAt}', to_jsonb(GREATEST(COALESCE(settings->>'jobsRetryAt', ''), ${until})::text), true) WHERE id = ${action.instanceId}`;
           }
-          if (permanent || action.attempts >= 3)
+          if (permanent || action.attempts >= taskRetryAttentionAttempts)
             await notify(
               {
                 userId: action.userId,
@@ -587,6 +587,11 @@ async function actionDetails(ids: string[]) {
     )
     .limit(ids.length);
 }
+function jobAttentionSql(action:string){
+  return `(${action}.state='failed' or (${action}.state='pending' and ${action}.attempts>=${taskRetryAttentionAttempts}
+    and jsonb_typeof(${action}.payload->'_jobFailure')='object'
+    and coalesce(${action}.payload->'_jobFailure'->>'code','')<>'local.provider-busy'))`;
+}
 /** Jobs returns one representative per active state and one last terminal run
  * per service/task. Counts cover every current-generation job, not the recent
  * individual-job sample used by diagnostics. */
@@ -596,10 +601,12 @@ export async function listTaskActions(actor: SessionUser | null) {
   const scope = db.unsafe(taskInstanceSql('outbox_actions','provider_connections'));
   const current = db.unsafe(currentTaskGenerationSql('outbox_actions','provider_connections'));
   const [active, terminal] = await Promise.all([
-    db<{id:string;count:number;instanceId:string|null}[]>`${db.unsafe(queueOrderCteSql(independentQueueKinds,automaticQueueKinds))}, ranked as (
+    db<{id:string;count:number;attentionCount:number;instanceId:string|null}[]>`${db.unsafe(queueOrderCteSql(independentQueueKinds,automaticQueueKinds))}, ranked as (
       select outbox_actions.id,${scope} as "instanceId",
         count(*) over(partition by outbox_actions.kind,${scope},outbox_actions.state)::int as count,
+        count(*) filter(where ${db.unsafe(jobAttentionSql('outbox_actions'))}) over(partition by outbox_actions.kind,${scope},outbox_actions.state)::int as "attentionCount",
         row_number() over(partition by outbox_actions.kind,${scope},outbox_actions.state order by
+          case when ${db.unsafe(jobAttentionSql('outbox_actions'))} then 0 else 1 end,
           case when outbox_actions.state='pending' then case when ${db.unsafe(pendingEligibleSql('outbox_actions','provider_connections','provider_instances'))} then 0 else 1 end end,
           case when outbox_actions.state='pending' then ${db.unsafe(agedPrioritySql('outbox_actions','provider_connections'))} end,
           case when outbox_actions.state='pending' then outbox_actions.next_attempt_at end,
@@ -609,16 +616,17 @@ export async function listTaskActions(actor: SessionUser | null) {
       from outbox_actions left join provider_connections on provider_connections.id=outbox_actions.connection_id
       left join provider_instances on provider_instances.id::text=${scope}
       where outbox_actions.state in ('pending','running','failed') and ${current}
-    ) select id,count,"instanceId" from ranked where position=1`,
+    ) select id,count,"attentionCount","instanceId" from ranked where position=1`,
     db<{id:string;instanceId:string|null}[]>`select distinct on(outbox_actions.kind,${scope}) outbox_actions.id,${scope} as "instanceId"
       from outbox_actions left join provider_connections on provider_connections.id=outbox_actions.connection_id
       where outbox_actions.state in ('succeeded','failed','cancelled') and ${current}
       order by outbox_actions.kind,${scope},outbox_actions.updated_at desc,outbox_actions.id desc`,
   ]);
   const counts = new Map(active.map(row=>[row.id,row.count]));
+  const attentionCounts=new Map(active.map(row=>[row.id,row.attentionCount]));
   const scopes = new Map([...active,...terminal].map(row=>[row.id,row.instanceId]));
   const actions = await actionDetails([...scopes.keys()]);
-  return actions.map(action=>({...action,instanceId:scopes.get(action.id)??null,taskCount:counts.get(action.id)??0}));
+  return actions.map(action=>({...action,instanceId:scopes.get(action.id)??null,taskCount:counts.get(action.id)??0,attentionCount:attentionCounts.get(action.id)??0}));
 }
 function taskInstanceSql(action:string,connection:string) {
   return `coalesce(${connection}.instance_id::text,case when ${action}.kind in ('tmdb.refresh','tmdb.recommendations','igdb.recommendations','igdb.steam-metadata') then ${action}.payload->>'instanceId' end)`;

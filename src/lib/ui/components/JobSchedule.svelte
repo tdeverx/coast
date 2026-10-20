@@ -16,7 +16,7 @@
 
   import Dialog from './Dialog.svelte';
   import RowFilter from './RowFilter.svelte';
-  import { jobNeedsAttention, taskJobCount, taskLastRun, lastJobOutcome, jobOutcome, jobRemedy, jobWaiting, jobWaitingReason, jobBlockerHref, jobPurposeLabel, type QueueAction } from '$lib/ui/queue';
+  import { jobAttentionCount, jobNeedsAttention, taskJobCount, taskLastRun, lastJobOutcome, jobOutcome, jobRemedy, jobWaiting, jobWaitingReason, jobBlockerHref, jobPurposeLabel, type QueueAction } from '$lib/ui/queue';
   import type { JobTiming } from '$lib/providers/job-timing.server';
   import {displayLabel} from '$lib/ui/labels';
   import {companionHealthy,type CompanionState} from '$lib/providers/jellyfin/companion';
@@ -86,7 +86,7 @@
   const queued = $derived(active.filter(job => job.state === 'pending'));
   const counts = $derived({running:taskJobCount(jobs,'running'),waiting:taskJobCount(jobs,'pending'),failed:taskJobCount(jobs,'failed')});
   const lastRun = $derived(taskLastRun(jobs) ?? timing?.lastRun);
-  const status = $derived(retrying.length ? `${retrying.reduce((total,job)=>total+(job.taskCount??1),0)} need attention · Automatic retries remain scheduled` : active.length
+  const status = $derived(retrying.length ? `${retrying.reduce((total,job)=>total+jobAttentionCount(job),0)} need attention · Automatic retries remain scheduled` : active.length
     ? [running ? `${counts.running} running` : null, queued.length ? `${counts.waiting} waiting` : null, failed.length ? `${counts.failed} ${counts.failed === 1 ? 'needs' : 'need'} attention` : null].filter(Boolean).join(' · ')
     : timing?.reason ?? (countdown === 0 ? 'Due now' : countdown !== null ? `Next in ${durationLabel(countdown)}` : task.scope ? 'No automatic run scheduled' : 'On demand'));
   const lastResult = $derived(lastRun ? lastJobOutcome(task.kinds[0], lastRun) ?? displayLabel(lastRun.state) : null);
@@ -138,7 +138,7 @@
       if (!preview) notifyAction(
         result.busy
           ? 'Maintenance is already being checked.'
-          : `${result.queued} jobs queued${result.active ? `; ${result.active} jobs queued or running now` : ''}${result.needsAttention ? `; ${result.needsAttention} failed jobs need Retry or review` : ''}.`
+          : `${result.queued} jobs queued${result.active ? `; ${result.active} jobs already queued or running` : ''}${result.needsAttention ? `; ${result.needsAttention} failed jobs need Retry or review` : ''}.`
       );
     } catch (cause) {
       error = message(cause);

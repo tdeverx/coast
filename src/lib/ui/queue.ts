@@ -1,3 +1,4 @@
+import {taskRetryAttentionAttempts} from '$lib/providers/job-policy';
 import {serviceTasks} from '$lib/providers/tasks';
 import {displayLabel} from './labels';
 import type { JobPurpose } from '$lib/providers/job-policy';
@@ -19,6 +20,7 @@ export type QueueAction = {
     connectionLabel?: string;
     instanceId?: string | null;
     provider?:string|null;
+    attentionCount?:number;
     blockingAction?:{id:string;kind:string;state:string}|null;
     failure?: { stage?:string;validation?:{path:string;expected:string;receivedType:string}[]; code: string; remedy: 'connection' | 'permissions' | 'metadata' | 'retry'; retryable: boolean } | null;
     outcome?: { checked?: number; added?: number; refreshed?: number; deferred?: number;applied?:number;review?:number;skipped?:number } | null;
@@ -108,10 +110,13 @@ export function jobRemedy(action: QueueAction) {
 
 /** Terminal failures and sustained automatic retries stay visible even while
  * other work runs. Three attempts matches the existing notice escalation. */
-export function jobNeedsAttention(job: QueueAction) {
-  return (job.taskCount ?? 1) > 0 && (job.state === 'failed' || job.state === 'pending'
-    && job.attempts >= 3 && !!job.failure && job.failure.code !== 'local.provider-busy');
+export function jobAttentionCount(job: QueueAction) {
+  if((job.taskCount??1)<=0)return 0;
+  if(job.attentionCount!==undefined)return job.attentionCount;
+  return job.state==='failed'||job.state==='pending'&&job.attempts>=taskRetryAttentionAttempts
+    &&!!job.failure&&job.failure.code!=='local.provider-busy' ? job.taskCount??1 : 0;
 }
+export const jobNeedsAttention=(job:QueueAction)=>jobAttentionCount(job)>0;
 
 /** Scheduled task cards are not additional jobs. A queued/running/failed run
  * already represents the task; finished runs do not suppress its next run. */

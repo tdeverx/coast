@@ -5,6 +5,8 @@ export type JobPurpose = typeof jobPurposes[number];
 
 /** One visible bound for task-card commands and their server selection. */
 export const taskControlLimit = 100;
+/** Match the existing persistent-failure notification threshold. */
+export const taskRetryAttentionAttempts = 3;
 
 /** Scheduling scope does not determine whose work a job represents. */
 export function jobIdentityScope(kind: string): 'account' | 'instance' {
