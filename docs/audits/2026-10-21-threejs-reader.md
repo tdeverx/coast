@@ -2,6 +2,8 @@
 
 The physical reader now avoids duplicate animation renders, reuses unchanged binding geometry and shadows, merges adjacent groups sharing a material, and bounds optional page-texture residency. Printed faces retain their original resolution and geometry. The approved interface is unchanged.
 
+Reader startup uses the existing indeterminate indicator with a generic “Loading…” label, without byte totals, percentages or page counts. A normal-dev browser check using an actual comic verified 1280×800 and 390×844 layouts, reduced motion, readiness and Escape cancellation, with unchanged saved progress/history. Type checking passed; the only browser console errors were existing remote artwork CORS failures.
+
 ## Resource and correctness contracts
 
 - Position and normal buffers use dynamic usage; static UVs and vertex colours remain unchanged between equivalent poses. Indexed normal accumulation preserves Three.js results.

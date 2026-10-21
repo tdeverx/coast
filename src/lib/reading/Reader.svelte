@@ -25,9 +25,6 @@
  let host=$state<HTMLElement>();
  let engine:ReaderEngine|undefined,busy=$state(false),loading=$state(false);
  let loadProgress=$state<ReaderProgress>({phase:'prepare'});
- const loadingLabel=$derived(loadProgress.phase==='download'?`Downloading ${reader.session?.kind==='comic'?'comic':'book'}…`:loadProgress.phase==='inspect'?'Checking pages…':loadProgress.phase==='render'?'Preparing reader…':`Opening ${reader.session?.kind==='comic'?'comic':'book'}…`);
- const loadingTotal=$derived(Number.isFinite(loadProgress.total)&&loadProgress.total!>0?loadProgress.total!:null);
- const loadingDetail=$derived(loadProgress.phase==='download'?`${((loadProgress.loaded??0)/1_000_000).toFixed(1)}${loadingTotal===null?' MB downloaded':` of ${(loadingTotal/1_000_000).toFixed(1)} MB · ${Math.min(100,Math.round((loadProgress.loaded??0)/loadingTotal*100))}%`}`:loadProgress.phase==='inspect'?`${loadProgress.loaded??0} of ${loadingTotal??'unknown'} pages`:reader.session?.title??'');
  const following=$derived(!preview&&syncedPlayer.room?.mediaType==='reading'&&!!reader.session&&syncedPlayer.room.mediaId===reader.session.workId&&syncedPlayer.room.edition===reader.session.edition&&syncedPlayer.room.readingFormat===reader.session.format);
  const controlled=$derived(preview ? example?.state!=='follower' : !following||canControlPlayback());
  let external=false,minimizing=false,readerOwner=0;
@@ -96,9 +93,8 @@
 {#snippet loadingNotice()}
  {#if loading&&loadProgress.phase!=='render'&&!reader.error}
   <div class="reader-loading">
-   <p role="status">{loadingLabel}</p>
-   <OperationProgress label={loadingLabel} processed={loadProgress.loaded??0} total={loadingTotal} valueText={loadingDetail} />
-   <span>{loadingDetail}</span>
+   <p role="status">Loading…</p>
+   <OperationProgress label="Loading reader" processed={0} total={null} valueText="Loading…" />
   </div>
  {/if}
 {/snippet}
@@ -135,7 +131,7 @@
  .reader-dim{z-index:-1;background:color-mix(in srgb,var(--canvas) 75%,transparent);}
  .reader-blur{z-index:-2;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
  .reader-loading{position:fixed;inset:0;z-index:71;display:flex;flex-direction:column;justify-content:center;gap:12px;width:min(320px,calc(100% - 48px));margin:auto;pointer-events:none;text-align:center;color:var(--ink);}
- .reader-loading p{margin:0;font-weight:var(--weight-semibold);}.reader-loading span{font-size:var(--text-sm);overflow-wrap:anywhere;}
+ .reader-loading p{margin:0;font-weight:var(--weight-semibold);}
  .reader-surface{position:relative;}.reader-surface .reader-loading{position:absolute;z-index:1;}
  .reader-heading{padding:16px;gap:16px;}.reader-heading strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
  .reading-view{height:max(0px,calc(85dvh - 150px));min-height:0;display:flex;align-items:center;justify-content:center;overflow:auto;background:var(--white);color:var(--black);}
