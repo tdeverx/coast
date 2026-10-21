@@ -115,6 +115,8 @@
   );
   const recordAgain = $derived(active.watched || active.playCount > 0);
   const isAdmin = $derived(page.data.user?.role === 'admin');
+  const featureTarget=$derived(['movie','show','season','episode'].includes(active.kind)?active:null);
+  const featuredHere=$derived(!!featureTarget&&page.data.featuredHeroIds?.includes(featureTarget.id));
   const isGroup = $derived(isMediaGroup(active));
   const playable = $derived(data ? data.playable : isMediaGroup(item) ? next : item);
   const editions = $derived(data?.editions ?? []);
@@ -431,6 +433,11 @@
     if (target)
       void perform(() => change(`media/${target.id}/refresh`, {}), 'Metadata refreshed.');
   }
+  function featureOnForYou(){
+    const target=featureTarget,remove=featuredHere;
+    if(!target||!isAdmin||preview)return;
+    void perform(()=>change('admin/featured-hero',{mediaId:target.id,featured:!remove}),remove?'Title removed from For You heroes.':`${target.title} · Featured on For You.`);
+  }
   async function checkIn(){try{await change('social/checkins',{workId:active.id});}catch(cause){mutation.error=message(cause);}}
 
   reportFailure(()=>error);
@@ -735,6 +742,7 @@
           )}>Reset my changes…</Button>
     {/if}
   {:else if view === 'admin' && isAdmin}
+    {#if featureTarget}<Button item icon="star" checked={featuredHere} disabled={busy||preview} onclick={featureOnForYou}>{featuredHere?'Remove from For You hero':'Feature on For You'}</Button>{/if}
     {#if data?.refreshTarget}<Button item icon="refresh" disabled={busy} onclick={refresh}
         >Refresh {data.refreshTarget.id === active.id
           ? 'title details'

@@ -47,7 +47,7 @@
   </div>
   {#if actions || previous || controls || next}<div class="actions">
     {@render actions?.()}
-    {#if previous || controls || next}<div class="navigation">
+    {#if previous || controls || next}<div class="page-navigation">
       {@render previous?.()}{@render controls?.()}{@render next?.()}
     </div>{/if}
   </div>{/if}
@@ -98,18 +98,6 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-  .navigation {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    min-width: 0;
-  }
-  .navigation :global(.icon-button) {
-    width: var(--control-compact-height);
-    height: var(--control-compact-height);
-    color: var(--muted);
-  }
-  .navigation :global(.icon-button:disabled) { opacity: .25; }
   @media (max-width: 600px) {
     .identity:has(:global(.picker-container)) {
       flex-basis: 100%;

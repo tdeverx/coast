@@ -555,7 +555,6 @@
     ],
     "usedBy": [
       "src/lib/ui/components/MediaPage.svelte",
-      "src/routes/+layout.svelte",
       "src/routes/discover/+page.svelte",
       "src/routes/for-you/+page.svelte"
     ],
@@ -914,6 +913,7 @@
       "src/routes/music/+page.svelte",
       "src/routes/planning/+page.svelte",
       "src/routes/profile/[username]/+page.svelte",
+      "src/routes/progress-experiment/+page.svelte",
       "src/routes/progress/+page.svelte",
       "src/routes/requests/+page.svelte",
       "src/routes/search/+page.svelte",

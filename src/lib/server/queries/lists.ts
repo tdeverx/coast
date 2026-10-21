@@ -27,8 +27,61 @@ export const listsOptionsSchema = v.object({
   kind: v.optional(v.picklist(['all', 'movie', 'show', 'album', 'track', 'game', 'book', 'comic']), 'all'),
 });
 
+function savedListCondition(userId:string,input:v.InferOutput<typeof listsOptionsSchema>,categoryAllowed:import('drizzle-orm').SQL|undefined,available:import('drizzle-orm').SQL|undefined) {
+    // Show progress also includes a partly watched regular episode. Collection
+    // progress follows its leaves, just as it does in the shared card read model.
+    const progress = sql`(${s.trackingState.positionSeconds} > 0 or ${s.trackingState.completedEpisodes} > 0 or exists (
+      select 1 from episodes e join tracking_state child on child.media_id = e.media_id and child.user_id = ${userId}
+      where e.show_id = ${s.media.id} and not e.is_special and child.position_seconds > 0
+    ) or (${s.media.kind} = 'collection' and exists (
+      with recursive descendants(id, path) as (
+        select child_id, array[parent_id, child_id] from media_relationships
+        where parent_id = ${s.media.id} and kind in ('collection', 'franchise')
+        union all
+        select r.child_id, d.path || r.child_id from descendants d join media_relationships r on r.parent_id = d.id
+        where r.kind in ('collection', 'franchise') and not r.child_id = any(d.path)
+      )
+      select 1 from descendants d
+      join media child_media on child_media.id = d.id
+      left join episodes e on e.show_id = d.id or e.season_id = d.id or e.media_id = d.id
+      join tracking_state child on child.media_id = coalesce(e.media_id, d.id) and child.user_id = ${userId}
+      where (child_media.kind = 'movie' or e.media_id is not null) and not coalesce(e.is_special, false)
+        and (child.position_seconds > 0 or (child.watched and coalesce(child.duration_seconds, e.runtime_minutes * 60, child_media.runtime_minutes * 60, 0) > 0))
+    )))`;
+    const gameStatus=sql`(select gp.status from game_playthroughs gp where gp.user_id=${userId} and gp.game_id=${s.works.id} order by gp.created_at desc,gp.id desc limit 1)`;
+    const readingState=sql`(select rp.state from reading_progress rp where rp.user_id=${userId} and rp.work_id=${s.works.id})`;
+    const completed=sql`coalesce(${s.trackingState.watched},false) or exists(select 1 from music_listens ml where ml.user_id=${userId} and ml.track_id=${s.works.id}) or coalesce(${gameStatus}='completed',false) or coalesce(${readingState}='completed',false)`;
+    const dropped=sql`coalesce(${s.trackingState.dropped},false) or coalesce(${gameStatus}='dropped',false) or coalesce(${readingState}='dropped',false)`;
+    const started=sql`(${progress}) or exists(select 1 from music_progress mp where mp.user_id=${userId} and mp.track_id=${s.works.id} and mp.position_seconds>0) or coalesce(${gameStatus} in ('in-progress','paused'),false) or coalesce(${readingState} in ('reading','paused'),false)`;
+    const watchlistFilter =
+      input.filter === 'complete'
+        ? sql`(${completed})`
+        : input.filter === 'dropped'
+          ? sql`(${dropped})`
+          : input.filter === 'all'
+            ? undefined
+            : and(
+                sql`not (${completed})`,
+                sql`not (${dropped})`,
+                input.filter === 'progress'
+                  ? started
+                  : sql`not ((${s.works.kind} in ('show','game','track','book','comic')) and (${started}))`
+              );
+    return and(
+      available,
+      categoryAllowed,
+      eq(s.trackingState.userId, userId),
+      input.kind === 'all'
+        ? inArray(s.works.kind, ['movie', 'show', 'collection', 'album', 'track', 'game', 'book', 'comic'])
+        : eq(s.works.kind, input.kind),
+      input.view === 'favourites'
+        ? eq(s.trackingState.favourite, true)
+        : and(eq(s.trackingState.watchlist, true), watchlistFilter)
+    );
+}
+
 /** Read list summaries, then hydrate only the selected list's visible page. */
-export async function listsData(userId: string, rawOptions: unknown = {}, viewerId = userId) {
+async function listPlan(userId: string, rawOptions: unknown = {}, viewerId = userId) {
   v.parse(uuidSchema, userId);
   const input = v.parse(listsOptionsSchema, rawOptions);
   const db = getDb();
@@ -75,56 +128,7 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
       .limit(pageSize)
       .offset((page - 1) * pageSize);
   } else {
-    // Show progress also includes a partly watched regular episode. Collection
-    // progress follows its leaves, just as it does in the shared card read model.
-    const progress = sql`(${s.trackingState.positionSeconds} > 0 or ${s.trackingState.completedEpisodes} > 0 or exists (
-      select 1 from episodes e join tracking_state child on child.media_id = e.media_id and child.user_id = ${userId}
-      where e.show_id = ${s.media.id} and not e.is_special and child.position_seconds > 0
-    ) or (${s.media.kind} = 'collection' and exists (
-      with recursive descendants(id, path) as (
-        select child_id, array[parent_id, child_id] from media_relationships
-        where parent_id = ${s.media.id} and kind in ('collection', 'franchise')
-        union all
-        select r.child_id, d.path || r.child_id from descendants d join media_relationships r on r.parent_id = d.id
-        where r.kind in ('collection', 'franchise') and not r.child_id = any(d.path)
-      )
-      select 1 from descendants d
-      join media child_media on child_media.id = d.id
-      left join episodes e on e.show_id = d.id or e.season_id = d.id or e.media_id = d.id
-      join tracking_state child on child.media_id = coalesce(e.media_id, d.id) and child.user_id = ${userId}
-      where (child_media.kind = 'movie' or e.media_id is not null) and not coalesce(e.is_special, false)
-        and (child.position_seconds > 0 or (child.watched and coalesce(child.duration_seconds, e.runtime_minutes * 60, child_media.runtime_minutes * 60, 0) > 0))
-    )))`;
-    const gameStatus=sql`(select gp.status from game_playthroughs gp where gp.user_id=${userId} and gp.game_id=${s.works.id} order by gp.created_at desc,gp.id desc limit 1)`;
-    const readingState=sql`(select rp.state from reading_progress rp where rp.user_id=${userId} and rp.work_id=${s.works.id})`;
-    const completed=sql`coalesce(${s.trackingState.watched},false) or exists(select 1 from music_listens ml where ml.user_id=${userId} and ml.track_id=${s.works.id}) or coalesce(${gameStatus}='completed',false) or coalesce(${readingState}='completed',false)`;
-    const dropped=sql`coalesce(${s.trackingState.dropped},false) or coalesce(${gameStatus}='dropped',false) or coalesce(${readingState}='dropped',false)`;
-    const started=sql`(${progress}) or exists(select 1 from music_progress mp where mp.user_id=${userId} and mp.track_id=${s.works.id} and mp.position_seconds>0) or coalesce(${gameStatus} in ('in-progress','paused'),false) or coalesce(${readingState} in ('reading','paused'),false)`;
-    const watchlistFilter =
-      input.filter === 'complete'
-        ? sql`(${completed})`
-        : input.filter === 'dropped'
-          ? sql`(${dropped})`
-          : input.filter === 'all'
-            ? undefined
-            : and(
-                sql`not (${completed})`,
-                sql`not (${dropped})`,
-                input.filter === 'progress'
-                  ? started
-                  : sql`not ((${s.works.kind} in ('show','game','track','book','comic')) and (${started}))`
-              );
-    const where = and(
-      available,
-      categoryAllowed,
-      eq(s.trackingState.userId, userId),
-      input.kind === 'all'
-        ? inArray(s.works.kind, ['movie', 'show', 'collection', 'album', 'track', 'game', 'book', 'comic'])
-        : eq(s.works.kind, input.kind),
-      input.view === 'favourites'
-        ? eq(s.trackingState.favourite, true)
-        : and(eq(s.trackingState.watchlist, true), watchlistFilter)
-    );
+    const where=savedListCondition(userId,input,categoryAllowed,available);
     const [count] = await db
       .select({ total: sql<number>`count(*)::int` })
       .from(s.trackingState)
@@ -153,6 +157,25 @@ export async function listsData(userId: string, rawOptions: unknown = {}, viewer
       .limit(pageSize)
       .offset((page - 1) * pageSize);
   }
+  return {lists,selected,selectedIds,total,page,pages,pageSize,input};
+}
+
+/** Saved candidate identities for mixed pagination; no cards are hydrated here. */
+export async function listCandidateIds(userId:string, options:unknown,viewerId=userId) {
+  v.parse(uuidSchema,userId);
+  const input=v.parse(listsOptionsSchema,options);
+  v.parse(v.picklist(['watchlist','favourites']),input.view);
+  const config=await getFeatureConfig(viewerId);
+  const categoryAllowed=and(enabledCategories(sql`${s.works.category}`,config),selectedCategory(sql`${s.works.category}`,input.category));
+  const where=savedListCondition(userId,input,categoryAllowed,input.scope==='available'?hasPermittedWorkSource(viewerId):undefined);
+  const rows=await getDb().select({id:s.works.id}).from(s.trackingState)
+    .innerJoin(s.works,eq(s.works.id,s.trackingState.mediaId)).leftJoin(s.media,eq(s.media.id,s.works.id)).where(where);
+  return rows.map(row=>row.id);
+}
+
+export async function listsData(userId:string,rawOptions:unknown={},viewerId=userId) {
+  const {lists,selected,selectedIds,total,page,pages,pageSize,input}=await listPlan(userId,rawOptions,viewerId);
+  const db=getDb();
   const views = new Map(
     (
       await workCards(userId,viewerId,selectedIds.map(row=>row.id))

@@ -237,3 +237,15 @@ test('a reader already retired by durable cleanup also closes on its terminal se
  expect(await c.recordReading({format:'pdf',page:60,total:100})).toBe(false);
  expect(c.reader.session).toBeNull();expect(c.reader.visible).toBe(false);expect(c.reader.unsaved).toBe(false);
 });
+
+test('hero trailer attachment preserves the mute choice made during artwork and across titles',async()=>{
+ const {client:c}=await loadClient('playback');
+ expect(c.heroPlayer.muted).toBe(true);
+ c.setHeroMuted(false);expect(c.player.muted).toBe(true);
+ c.presentTrailer('first','trailer-a');
+ expect(c.heroPlayer.muted).toBe(false);
+ c.presentTrailer('second','trailer-b');
+ expect(c.heroPlayer.muted).toBe(false);
+ c.setHeroMuted(true);c.presentTrailer('third','trailer-c');
+ expect(c.heroPlayer.muted).toBe(true);
+});

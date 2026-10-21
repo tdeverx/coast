@@ -5,7 +5,7 @@ type Playback = { player: typeof player; heroPlayer: typeof heroPlayer; preview:
 export function usePlayback(): Playback { return getContext<Playback>(key) ?? { player, heroPlayer, preview: false }; }
 export function providePreviewPlayback() {
  const local = $state<typeof player>({ session: null, audioQueue: [], audioIndex: -1, audioNotice: '', role: 'idle', paused: true, controlsVisible: true, browsing: false, subtitlePrompt: false, continuationId: '', muted: true, loading: false, preparationMediaType: 'video', preparationStartedAt: 0 });
- const hero = $state<typeof heroPlayer>({ id: '', url: '', rect: null, visible: false, paused: true, ready: false, playing: false, muted: true });
+ const hero = $state<typeof heroPlayer>({ outcome:'idle',generation:0,crop:null, id: '', url: '', visible: false, paused: true, ready: false, playing: false, muted: true });
  const value = { player: local, heroPlayer: hero, preview: true };
  setContext<Playback>(key, value);
  return value;

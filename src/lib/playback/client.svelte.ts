@@ -20,9 +20,11 @@ export const player = $state({
   preparationStartedAt: 0,
 });
 export const heroPlayer = $state({
+  outcome: 'idle' as 'idle'|'ended'|'failed',
+  generation: 0,
+  crop: null as import('./crop').FrameCrop|null,
   id: '',
   url: '',
-  rect: null as { top: number; left: number; width: number; height: number } | null,
   visible: false,
   paused: false,
   ready: false,
@@ -159,17 +161,16 @@ export async function playMedia(
 export function presentTrailer(
   id: string,
   url: string,
-  rect: { top: number; left: number; width: number; height: number }
+  crop: import('./crop').FrameCrop|null = null
 ) {
-  heroPlayer.rect = rect;
-  if (heroPlayer.id !== id || heroPlayer.url !== url) {
-    heroPlayer.id = id;
-    heroPlayer.url = url;
-    heroPlayer.playing = false;
-    heroPlayer.ready = false;
-    heroPlayer.paused = false;
-    heroPlayer.muted = true;
-  }
+  heroPlayer.id = id;
+  heroPlayer.url = url;
+  heroPlayer.crop = crop;
+  heroPlayer.playing = false;
+  heroPlayer.ready = false;
+  heroPlayer.paused = false;
+  heroPlayer.outcome = 'idle';
+  heroPlayer.generation++;
   heroPlayer.visible = true;
 }
 

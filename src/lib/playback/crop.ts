@@ -95,3 +95,10 @@ export function videoFitStyle(
     centerY = videoHeight * (active.top + (1 - active.top - active.bottom) / 2);
   return `width:${videoWidth * scale}px;height:${videoHeight * scale}px;left:${width / 2 - centerX * scale}px;top:${height / 2 - centerY * scale}px;`;
 }
+
+/** Normalize the companion's pixel rectangle against the selected source's frame. */
+export function companionFrameCrop(crop:{Width:number;Height:number;X:number;Y:number}|null,width?:number,height?:number):FrameCrop|null{
+  if(!crop||!width||!height||![width,height,crop.Width,crop.Height,crop.X,crop.Y].every(Number.isFinite)
+    ||crop.Width<=0||crop.Height<=0||crop.X<0||crop.Y<0||crop.X+crop.Width>width||crop.Y+crop.Height>height)return null;
+  return {left:crop.X/width,top:crop.Y/height,right:(width-crop.X-crop.Width)/width,bottom:(height-crop.Y-crop.Height)/height};
+}

@@ -1,3 +1,4 @@
+import {providerVideoCrop} from './provider-crop.server';
 import {namedEdition} from '#lib/media/editions.js';
 import { requireEnabledCategory } from '#lib/server/experimental.js';
 import { lockFeaturePolicyInTransaction, requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
@@ -215,6 +216,7 @@ async function preparePlayback(
     playSessionId?: string;
     instance: Awaited<ReturnType<typeof getJellyfin>>['instance'];
     accountGeneration: string;
+    adapter: Awaited<ReturnType<typeof getJellyfin>>['adapter'];
   }[] = [];
   const queried = new Set<string>();
   const [account] = await getDb().select({settings:users.settings}).from(users).where(eq(users.id,userId));
@@ -261,7 +263,7 @@ async function preparePlayback(
             maxBitrate: maximum,
             allowTranscoding: config.allowTranscoding,
           },undefined,mediaType);
-          candidates.push({ row: sourceRow, plan, playSessionId: info.playSessionId, instance, accountGeneration: connection.accountGeneration });
+          candidates.push({ row: sourceRow, adapter, plan, playSessionId: info.playSessionId, instance, accountGeneration: connection.accountGeneration });
         } catch {
           /* Try all sources before reporting incompatibility. */
         }
@@ -281,6 +283,8 @@ async function preparePlayback(
       data.expectedDuration!==undefined ? 'No accessible source matches the synced session edition and duration.' : 'No available version can play on this device under the current playback policy.'
     );
   const { source } = best.plan;
+  const initialCrop=mediaType==='video'?await providerVideoCrop(best.adapter,best.row.providerItem.externalId,source,signal):null;
+  signal?.throwIfAborted();
   const query = new URLSearchParams({
     static: 'true',
     mediaSourceId: source.id,
@@ -451,6 +455,7 @@ async function preparePlayback(
 
   return {
     id: session.id,
+    initialCrop,
     mediaType,
     sequence: data.sequence,
     mediaId: item.id,
@@ -744,7 +749,7 @@ export async function streamPlayback(
 }
 
 /** Local trailers use the persistent native video element without creating tracking events. */
-export async function getTrailer(userId: string, mediaId: string,signal?:AbortSignal): Promise<string | null> {
+export async function getTrailer(userId: string, mediaId: string,signal?:AbortSignal): Promise<{url:string|null;crop:import('./crop').FrameCrop|null}> {
   signal?.throwIfAborted();
   await requireFeature(userId,'playback');
   await requireFeature(userId,'screen');
@@ -797,14 +802,16 @@ export async function getTrailer(userId: string, mediaId: string,signal?:AbortSi
               expiresAt: Date.now() + 24 * 3600000,
             })
           );
-          return `/api/v1/trailer/${mediaId}?resource=${encodeURIComponent(token)}`;
+          const crop=await providerVideoCrop(adapter,trailer.id,source,signal);
+          signal?.throwIfAborted();
+          return {url:`/api/v1/trailer/${mediaId}?resource=${encodeURIComponent(token)}`,crop};
         }
       }
     } catch {
       signal?.throwIfAborted();
       /* Trailer failure leaves the artwork in place. */
     }
-  return null;
+  return {url:null,crop:null};
 }
 export async function streamTrailer(
   userId: string,

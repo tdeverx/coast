@@ -9,7 +9,8 @@ const components=await Promise.all(paths.map(path=>Bun.file(new URL('../'+path,i
 const feedbackPaths=['src/lib/ui/components/Dialog.svelte','src/lib/ui/components/NotificationToasts.svelte'];
 const feedbackComponents=await Promise.all(feedbackPaths.map(path=>Bun.file(new URL('../'+path,import.meta.url)).text()));
 const rootScript=(await componentScript(paths[0])).split('const watching =')[0].replace('let { data, children } = $props();','');
-const feedScript=(await componentScript(paths[1])).replace('let { data } = $props();','');
+// Vite supplies this constant in the app; the standalone development fixture has no Vite environment.
+const feedScript=(await componentScript(paths[1])).replace('let { data } = $props();','').replaceAll('import.meta.env.DEV','true');
 const playerScript=await componentScript(paths[2]);
 const startup=playerScript.slice(playerScript.indexOf('$effect(() => {\n    if (preview) return;\n    const url = src,'),playerScript.indexOf('// Analysis has a shorter lifetime'));
 if(!startup.includes('ownsStartup')||!startup.includes('void start().catch'))throw Error('Actual player startup fixture boundary changed');

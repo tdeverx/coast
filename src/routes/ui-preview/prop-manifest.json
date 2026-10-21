@@ -2041,20 +2041,6 @@
     "path": "src/lib/ui/components/MediaHero.svelte",
     "props": [
       {
-        "name": "mode",
-        "type": "'content' | 'player'",
-        "optional": true,
-        "bindable": false,
-        "kind": "select",
-        "nullable": false,
-        "choices": [
-          "content",
-          "player"
-        ],
-        "defaultSource": "'content'",
-        "defaultValue": "content"
-      },
-      {
         "name": "item",
         "type": "HeroItem",
         "optional": true,
@@ -3557,6 +3543,16 @@
         ],
         "defaultSource": "'poster'",
         "defaultValue": "poster"
+      },
+      {
+        "name": "mixed",
+        "type": "boolean",
+        "optional": true,
+        "bindable": false,
+        "kind": "boolean",
+        "nullable": false,
+        "defaultSource": "false",
+        "defaultValue": false
       },
       {
         "name": "overlay",

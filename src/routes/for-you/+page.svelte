@@ -1,4 +1,5 @@
 <script lang="ts">
+  const dev=import.meta.env.DEV;
   import {onDestroy,untrack} from 'svelte';
   import {createResource} from '#lib/ui/resource.svelte.js';
   import {reportImportFailure} from '#lib/ui/client-context.js';
@@ -21,8 +22,8 @@
 </script>
 
 <svelte:head><title>For You · Coast</title></svelte:head>
-{#if data.hero && !section}<MediaHero item={data.hero} next={data.heroNext} context="home" />{/if}
-<div class="content" class:page={!data.hero || !!section} style:padding-bottom={!section ? '0px' : '90px'}>
+{#if data.heroes.length && !section}<MediaHero items={data.heroes} next={data.heroNext} context="home" />{/if}
+<div class="content" class:page={!data.heroes.length || !!section} style:padding-bottom={!section ? '0px' : '90px'}>
   {#if section}
     <Button href="/for-you" emphasis="subtle" icon="left">For You</Button>
     {#if section === 'upcoming' && page.data.experiments.planning}
@@ -37,7 +38,7 @@
       <Shelf source={{type:'social',layout:'grid',mediums:true,category:page.url.searchParams.get('category')??'screen'}} />
     {/if}
   {:else}
-    {#if !data.hero}
+    {#if !data.heroes.length}
       <Heading variant="page" title="For You" description="Your stories, all together." />
       <EmptyState
         title="Your next story starts here."
@@ -48,10 +49,11 @@
         </div></EmptyState
       >
     {/if}
-    <Shelf source={{type:'progress',mediums:true}} />
-    <Shelf source={{type:'progress',surface:'next',mediums:true}} />
+    {#if dev}<Shelf source={{type:'progress-experiment'}} hideEmpty={false} />
+    {:else}<Shelf source={{type:'progress',mediums:true}} />
+    <Shelf source={{type:'progress',surface:'next',mediums:true}} />{/if}
     {#if page.data.capabilities.social}<Shelf source={{type:'progress',surface:'recommendations',mediums:true}} />{/if}
-    <Shelf source={{type:'progress',surface:'favourites',mediums:true}} />
+    {#if !dev}<Shelf source={{type:'progress',surface:'favourites',mediums:true}} />{/if}
     {#if page.data.experiments.planning}<Shelf source={{type:'for-you',feature:'upcoming'}} />{/if}
     {#if page.data.capabilities.social}<Shelf source={{type:'social',mediums:true}} />{/if}
     {#if page.data.capabilities?.personalisation&&DynamicFeed}<DynamicFeed />{/if}

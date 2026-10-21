@@ -9,14 +9,24 @@ import { mediaViewsForIds, nextPlayable, permittedAvailability } from './media';
 
 /** Keep the initial route limited to its hero; every shelf loads through its own source. */
 export async function homeData(userId: string) {
-  if(!(await getFeatureConfig(userId)).features.screen)return {hero:null,heroNext:null};
+  const config=await getFeatureConfig(userId);
+  if(!config.features.screen)return {heroes:[],heroNext:null};
+  if(config.featuredHeroIds.length){
+    const views=await mediaViewsForIds(userId,config.featuredHeroIds);
+    const byId=new Map(views.map(item=>[item.id,item]));
+    const heroes=config.featuredHeroIds.flatMap(id=>{
+      const item=byId.get(id);
+      return item&&['movie','show','season','episode'].includes(item.kind)?[item]:[];
+    });
+    if(heroes.length)return {heroes,heroNext:await nextPlayable(userId,heroes[0])};
+  }
   const heroId = await continueHeroId(userId)
     ?? await trackedHeroId(userId, true)
     ?? await libraryHeroId(userId)
     ?? await trackedHeroId(userId, false);
   const candidate = heroId ? (await mediaViewsForIds(userId, [heroId]))[0] : null;
   const hero = candidate && isHeroTitle(candidate) ? candidate : null;
-  return { hero, heroNext: hero ? await nextPlayable(userId, hero) : null };
+  return { heroes:hero?[hero]:[], heroNext: hero ? await nextPlayable(userId, hero) : null };
 }
 
 async function trackedHeroId(userId: string, saved: boolean) {

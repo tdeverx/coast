@@ -10,8 +10,8 @@ export const pageNumberSchema = v.pipe(
 );
 
 /** Keep every paged read model on the same bounds, including an empty result. */
-export function pagination(total: number, requestedPage: number) {
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+export function pagination(total: number, requestedPage: number, pageSize = PAGE_SIZE) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
   return { page: Math.min(requestedPage, pages), pages };
 }
 

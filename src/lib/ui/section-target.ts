@@ -1,3 +1,5 @@
+import {progressExperimentParameters,progressExperimentSchema} from '#lib/progress-experiment.js';
+import * as v from 'valibot';
 import type {ShelfConfig} from './shelves';
 import {dynamicKind} from '#lib/recommendations/model.js';
 import type {ProgressOptions} from '#lib/progress.js';
@@ -9,7 +11,11 @@ export function sectionTarget(href:string,base:Pick<URL,'href'|'origin'>):({href
  const p=url.searchParams,get=(key:string,fallback='')=>p.get(key)??fallback;
  if([...p.keys()].some(key=>p.getAll(key).length!==1)||p.has('action'))return null;
  let source:ShelfConfig|undefined;
- if(url.pathname==='/progress'){
+ if(url.pathname==='/progress-experiment'){
+  const filters=v.safeParse(progressExperimentSchema,progressExperimentParameters(url));
+  if(!filters.success)return null;
+  source={type:'progress-experiment',layout:'grid',filters:filters.output,username:get('username')||undefined};
+ }else if(url.pathname==='/progress'){
   const view=get('view','watching');if(!['watching','up-next','next','recommendations','watchlist','favourites','finished','dropped'].includes(view))return null;
   const category=get('category','screen'),kind=get('kind','all'),scope=get('scope','all');
   if(!['screen','game','music','reading'].includes(category)||!['all','movie','show','book','comic'].includes(kind)||!['all','available'].includes(scope))return null;

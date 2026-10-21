@@ -23,7 +23,6 @@
   import NotificationToasts from '#lib/ui/components/NotificationToasts.svelte';
   import Header from '#lib/ui/components/Header.svelte';
   import PersistentPlayer from '#lib/ui/components/PersistentPlayer.svelte';
-  import MediaHero from '#lib/ui/components/MediaHero.svelte';
   import { player, pausePlayback, stopPlayback } from '#lib/playback/client.svelte.js';
   import Button from '#lib/ui/components/Button.svelte';
   let { data, children } = $props();
@@ -263,7 +262,7 @@
   class:watching
 >
   {#if data.user&&Reader}<Reader />{/if}
-  {#if data.user&&MediaDetailPanel}<MediaDetailPanel />{/if}<PersistentPlayer /><MediaHero mode="player" />
+  {#if data.user&&MediaDetailPanel}<MediaDetailPanel />{/if}<PersistentPlayer />
   {#if !watching}<a class="skip-link" href="#main-content">Skip to content</a>{/if}
   {#if (data.user || data.publicRead || data.publicProfiles) && page.url.pathname !== '/onboarding' && page.url.pathname !== '/share'}<Header
       user={data.user}
@@ -305,7 +304,7 @@
     padding-bottom: 100px;
   }
   .page-shell::before {
-    /* Keep the black canvas outside the route fade and above the hero video. */
+    /* Keep the black canvas outside the route fade. */
     content: '';
     position: absolute;
     inset: 0;

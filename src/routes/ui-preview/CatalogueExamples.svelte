@@ -52,13 +52,17 @@
   const detailPanels = overviewPanels(movie.overview,[{label:'Released',value:'2026'},{label:'Duration',value:'1h 50m'}]);
 </script>
 
-<div class="catalogue-examples" onclickcapture={event => { if ((event.target as Element).closest('a')) event.preventDefault(); }} onsubmitcapture={event => event.preventDefault()}>
+<div class="catalogue-examples" class:progress-preview={name==='catalogue.progress'} onclickcapture={event => { if ((event.target as Element).closest('a')) event.preventDefault(); }} onsubmitcapture={event => event.preventDefault()}>
   {#if name === 'catalogue.cards'}
     {#if ['available', 'unavailable', 'missing-art', 'long-copy', 'broken-art'].includes(scenario)}
       <Shelf title="Media card states" hideEmpty={false} items={rowItems.map((item, index) => ({ ...item, id: `${item.id}-${index}`, available: scenario === 'available', ...(scenario === 'missing-art' ? { poster: null, backdrop: null } : {}), ...(scenario === 'broken-art' ? { poster: 'data:image/png;base64,AA==', backdrop: null } : {}), ...(scenario === 'long-copy' ? { title: 'A deliberately long title that wraps across the shared caption without hiding the actions', captionSubtitle: 'Long artist, author or collection information remains part of the existing card caption.' } : {}) }))} />
     {:else}
       <Shelf title={`${chosen.kind} presentation`} items={[chosen]} shape={shape(chosen.kind)} hideEmpty={false} />
     {/if}
+  {:else if name === 'catalogue.progress'}
+    <p class="small quiet">Non-approved · Mixed-media Progress sizing experiment.</p>
+    <Shelf title="Progress" mixed hideEmpty={false} enrichSocial={false} busy={scenario==='loading'||scenario==='refresh'} items={scenario==='loading'||scenario==='empty'?[]:[allCards.episode,allCards.movie,allCards.game,allCards.book,allCards.comic,allCards.season,allCards.show]} />
+
   {:else if name === 'catalogue.rows'}
     <Shelf title="Related titles" href="/discover" items={scenario === 'loading' || scenario === 'empty' || scenario === 'error' ? [] : rowItems} busy={scenario === 'loading' || scenario === 'refresh'} hideEmpty={false} error={scenario === 'error' ? 'This preview source is temporarily unavailable.' : ''} retry={() => delivery.notify('Preview retry requested.')} />
 
@@ -124,6 +128,7 @@
 
 <style>
   .catalogue-examples { min-width: 0; }
+  .progress-preview {width:100%;}
   .edition-details { padding: 24px 0; }
   .request-details { gap: 10px; margin-top: 14px; align-items: start; }
   .request-details p { overflow-wrap: anywhere; }

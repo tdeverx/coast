@@ -17,6 +17,7 @@ const browser={containers:['mp4','m4a'],videoCodecs:['h264'],audioCodecs:['aac']
 const deferred=()=>{let resolve!:()=>void;const promise=new Promise<void>(done=>resolve=done);return {promise,resolve};};
 let config:CoastConfig,credential:string,onInfo:(signal?:AbortSignal)=>Promise<void>=async()=>{},onPresentation:()=>Promise<void>=async()=>{};
 let onIdentity:(signal?:AbortSignal)=>Promise<void>=async()=>{};
+let onCrop:(signal?:AbortSignal)=>Promise<void>=async()=>{};
 let infos=0,relays=0,scrobbles:string[]=[],editionSources:PlaybackSource[]=[];
 let restore:()=>void=()=>{};
 beforeAll(async()=>{
@@ -38,6 +39,7 @@ beforeAll(async()=>{
  const account=spyOn(connections,'getJellyfin').mockImplementation(async(uid,id)=>{
   const context=await original(uid,id);
   context.adapter.identity=async(_expected,signal)=>{await onIdentity(signal);return {id:'synthetic-server',name:'Fixture',version:'fixture'};};
+  context.adapter.mediaCrop=async(_itemId,signal)=>{await onCrop(signal);return null;};
   context.adapter.playbackInfo=async(itemId,_userId,_capabilities,_maxBitrate,options)=>{
    infos++;await onInfo(options?.signal);
    const audio=itemId==='audio-item';
@@ -53,7 +55,7 @@ beforeAll(async()=>{
 });
 beforeEach(async()=>{
  if(process.env.COAST_DB_TEST!=='1')return;
- onIdentity=async()=>{};onInfo=async()=>{};onPresentation=async()=>{};infos=0;relays=0;scrobbles=[];editionSources=[];
+ onIdentity=async()=>{};onInfo=async()=>{};onCrop=async()=>{};onPresentation=async()=>{};infos=0;relays=0;scrobbles=[];editionSources=[];
  const db=getSql();
  await db`DELETE FROM synced_rooms WHERE host_id=${user}`;
  await db`DELETE FROM playback_sessions WHERE user_id=${user}`;
@@ -135,6 +137,20 @@ run('cancelling PlaybackInfo reaches the provider boundary and publishes no sess
  const pending=startPlayback(user,{mediaId:movie,browser},undefined,abort.signal);await entered.promise;
  expect(received).toBe(abort.signal);abort.abort(reason);
  await expect(pending).rejects.toBe(reason);expect(infos).toBe(1);expect(await sessionRows()).toEqual([]);
+});
+run('cancelling companion crop preparation reaches the provider and publishes no session or stream',async()=>{
+ const entered=deferred(),abort=new AbortController(),reason=new DOMException('Closed','AbortError');
+ let received:AbortSignal|undefined;
+ onCrop=signal=>{received=signal;entered.resolve();return new Promise((_resolve,reject)=>signal?.addEventListener('abort',()=>reject(signal.reason),{once:true}));};
+ const pending=startPlayback(user,{mediaId:movie,browser},undefined,abort.signal);await entered.promise;
+ expect(received?.aborted).toBe(false);abort.abort(reason);
+ await expect(pending).rejects.toBe(reason);expect(received?.aborted).toBe(true);
+ expect(await sessionRows()).toEqual([]);expect(relays).toBe(0);
+});
+run('account replacement during companion crop preparation cannot publish the old candidate',async()=>{
+ const entered=deferred(),release=deferred();onCrop=async()=>{entered.resolve();await release.promise;};
+ const pending=startPlayback(user,{mediaId:movie,browser});await entered.promise;await replaceAccount();release.resolve();
+ await expect(pending).rejects.toThrow('account changed');expect(await sessionRows()).toEqual([]);expect(relays).toBe(0);
 });
 run('abort during final presentation leaves no new session and preserves existing active playback',async()=>{
  const active=await startPlayback(user,{mediaId:movie,browser});await progressPlayback(user,active.id,{event:'start',positionSeconds:0});
