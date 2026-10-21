@@ -10,8 +10,8 @@ const source = await Bun.file(new URL('../src/lib/ui/controls/requests.svelte.ts
 const messageModule = `data:text/javascript;base64,${Buffer.from('export const message = error => error.message;').toString('base64')}`;
 const compiled = compileModule(new Bun.Transpiler({loader: 'ts'}).transformSync(source), {filename: 'requests.svelte.js', generate: 'client'}).js.code
   .replaceAll('svelte/internal/client', import.meta.resolve('svelte/internal/client'))
-  .replaceAll('$lib/ui/client', messageModule)
-  .replaceAll('$lib/media/requests', import.meta.resolve('../src/lib/media/requests'))
+  .replaceAll('#lib/ui/client.js', messageModule)
+  .replaceAll('#lib/media/requests.js', import.meta.resolve('../src/lib/media/requests'))
   .replaceAll('./request-options.svelte', requestOptionsUrl);
 const controlsUrl = `data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`;
 const { createRequestControls }: typeof import('../src/lib/ui/controls/requests.svelte') = await import(controlsUrl);

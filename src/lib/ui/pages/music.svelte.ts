@@ -1,17 +1,18 @@
+import type { ReadonlyURL } from '$app/state';
 import { page } from '$app/state';
-import { playMusic } from '$lib/playback/client.svelte';
-import { message } from '$lib/ui/client';
-import { useClient } from '$lib/ui/client-context';
-import { musicDuration, musicHero, musicHref } from '$lib/music/presentation';
-import type { MusicItem, MusicPage } from '$lib/music/model';
-import { overviewPanels } from '$lib/ui/insights/overview';
+import { playMusic } from '#lib/playback/client.svelte.js';
+import { message } from '#lib/ui/client.js';
+import { useClient } from '#lib/ui/client-context.js';
+import { musicDuration, musicHero, musicHref } from '#lib/music/presentation.js';
+import type { MusicItem, MusicPage } from '#lib/music/model.js';
+import { overviewPanels } from '#lib/ui/insights/overview.js';
 import type {PageCommand} from './types';
 import type {DetailRow} from './detail';
 import type {DetailRowsModel} from './detail-rows';
 export type MusicPageData = { item: MusicItem; connectionId: string; children: MusicPage; failure: string; page: number; pages: number };
 
 /** Music supplies data and commands to the same hero/content/shelf page as other media. */
-export function createMusicPage(get: () => MusicPageData, getUrl: () => URL, canAct:()=>boolean=()=>true) {
+export function createMusicPage(get: () => MusicPageData, getUrl: () => ReadonlyURL, canAct:()=>boolean=()=>true) {
   const { preview } = useClient();
 
   let failure = $state('');

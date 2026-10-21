@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
-  import Button from '$lib/ui/components/Button.svelte';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import Button from '#lib/ui/components/Button.svelte';
   import { untrack } from 'svelte';
-  import { createQueueActions } from '$lib/ui/controls/queue.svelte';
+  import { createQueueActions } from '#lib/ui/controls/queue.svelte.js';
   import EmptyState from './EmptyState.svelte';
-  import { jobWaiting, jobOutcome, jobRemedy, jobWaitingReason, jobBlockerHref, jobPurposeLabel, type QueueAction } from '$lib/ui/queue';
-  import { displayLabel } from '$lib/ui/labels';
-  import { contextGesture } from '$lib/ui/context-gesture';
+  import { jobWaiting, jobOutcome, jobRemedy, jobWaitingReason, jobBlockerHref, jobPurposeLabel, type QueueAction } from '#lib/ui/queue.js';
+  import { displayLabel } from '#lib/ui/labels.js';
+  import { contextGesture } from '#lib/ui/context-gesture.js';
   const queue = createQueueActions();
 
 

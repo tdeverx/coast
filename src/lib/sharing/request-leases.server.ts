@@ -1,5 +1,5 @@
-import { getSql } from '$lib/server/db';
-import { AppError } from '$lib/server/security/errors';
+import { getSql } from '#lib/server/db/index.js';
+import { AppError } from '#lib/server/security/errors.js';
 
 /** Waits remain cheap under saturation and wake immediately when their request is withdrawn. */
 export function waitSharedRetry(milliseconds:number,signal?:AbortSignal) {

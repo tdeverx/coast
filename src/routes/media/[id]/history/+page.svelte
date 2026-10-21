@@ -1,14 +1,14 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
-  import Shelf from '$lib/ui/components/Shelf.svelte';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import Shelf from '#lib/ui/components/Shelf.svelte';
   import { untrack } from 'svelte';
-  import { change, message } from '$lib/ui/client';
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import type { JournalEntry } from '$lib/profile/journal';
-  import MediaPage from '$lib/ui/components/MediaPage.svelte';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import Dialog from '$lib/ui/components/Dialog.svelte';
+  import { change, message } from '#lib/ui/client.js';
+  import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
+  import type { JournalEntry } from '#lib/profile/journal.js';
+  import MediaPage from '#lib/ui/components/MediaPage.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import Dialog from '#lib/ui/components/Dialog.svelte';
   let { data } = $props();
   let selected = $state<string[]>([]),
     excluded = $state<string[]>([]),

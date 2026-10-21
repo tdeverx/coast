@@ -1,5 +1,5 @@
-import type { JournalEntry } from '$lib/profile/journal';
-import { mediaCategories } from '$lib/media/model';
+import type { JournalEntry } from '#lib/profile/journal.js';
+import { mediaCategories } from '#lib/media/model.js';
 
 export type JournalSelection = { checked: (id: string) => boolean; toggle: (id: string) => void; disabled?: boolean };
 export type JournalCards = { runs: JournalEntry[][]; selection?: JournalSelection };

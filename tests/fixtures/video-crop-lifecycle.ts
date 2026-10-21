@@ -29,10 +29,10 @@ const visibilityUrl=import.meta.resolve('../../src/lib/playback/visibility.ts');
 const heroSource=(await Bun.file('src/lib/ui/heroes/playback.svelte.ts').text())
  .replaceAll(/from ['"]\$app\/state['"]/g,`from ${JSON.stringify(stubUrl)}`)
  .replaceAll(/from ['"]svelte['"]/g,`from ${JSON.stringify(lifecycleUrl)}`)
- .replaceAll(/from ['"]\$lib\/playback\/context.svelte['"]/g,`from ${JSON.stringify(stubUrl)}`)
- .replaceAll(/from ['"]\$lib\/playback\/observe-crop['"]/g,`from ${JSON.stringify(cropUrl)}`)
- .replaceAll(/from ['"]\$lib\/playback\/crop['"]/g,`from ${JSON.stringify(cropModelUrl)}`)
- .replaceAll(/from ['"]\$lib\/playback\/visibility['"]/g,`from ${JSON.stringify(visibilityUrl)}`);
+ .replaceAll(/from ['"]#lib\/playback\/context.svelte\.js['\"]/g,`from ${JSON.stringify(stubUrl)}`)
+ .replaceAll(/from ['"]#lib\/playback\/observe-crop\.js['\"]/g,`from ${JSON.stringify(cropUrl)}`)
+ .replaceAll(/from ['"]#lib\/playback\/crop\.js['\"]/g,`from ${JSON.stringify(cropModelUrl)}`)
+ .replaceAll(/from ['"]#lib\/playback\/visibility\.js['\"]/g,`from ${JSON.stringify(visibilityUrl)}`);
 const {createHeroPlayback}=await import(moduleUrl(compileRunes(heroSource)));
 const stub=await import(stubUrl),lifecycle=await import(lifecycleUrl),video=new Video();
 let hero:any;

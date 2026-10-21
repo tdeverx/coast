@@ -1,4 +1,4 @@
-import type { RequestPriority } from '$lib/server/security/request-priority';
+import type { RequestPriority } from '#lib/server/security/request-priority.js';
 
 export const jobPurposes = ['playback', 'interactive', 'bootstrap', 'manual', 'live', 'scheduled'] as const;
 export type JobPurpose = typeof jobPurposes[number];

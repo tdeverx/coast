@@ -1,33 +1,33 @@
-import {useShelfLocation} from '$lib/ui/detail-section.svelte';
-import { mediumOptions, categoryEnabled } from '$lib/experimental';
+import {useShelfLocation} from '#lib/ui/detail-section.svelte.js';
+import { mediumOptions, categoryEnabled } from '#lib/experimental.js';
 
-  import { onDestroy, untrack } from 'svelte';
-  import { replaceState } from '$app/navigation';
-  import { page as route } from '$app/state';
-  import {
-    progressTabs,
-    progressTitles,
-    type ProgressSurface,
-    type ProgressContent,
+import { onDestroy, untrack } from 'svelte';
+import { goto } from '$app/navigation';
+import { page as route } from '$app/state';
+import {
+  progressTabs,
+  progressTitles,
+  type ProgressSurface,
+  type ProgressContent,
     type ProgressOptions,
-  } from '$lib/progress';
-  import { useClient } from '$lib/ui/client-context';
-  import { ApiError } from '$lib/ui/client';
-  import { createResource,uniqueItems } from '$lib/ui/resource.svelte';
-  import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
-  import type { MediaView, MediaCardPresentation } from '$lib/ui/types';
-  import type { ShelfSource, ShelfControl } from './types';
-  import { readingTypeOptions } from '$lib/ui/filter-options';
+} from '#lib/progress.js';
+import { useClient } from '#lib/ui/client-context.js';
+import { ApiError } from '#lib/ui/client.js';
+  import { createResource,uniqueItems } from '#lib/ui/resource.svelte.js';
+import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
+import type { MediaView, MediaCardPresentation } from '#lib/ui/types.js';
+import type { ShelfSource, ShelfControl } from './types';
+import { readingTypeOptions } from '#lib/ui/filter-options.js';
 
 export type ProgressSourceOptions = {
-    initial?: ProgressContent;
+  initial?: ProgressContent;
     filters?:ProgressOptions;
-    mediums?: boolean;
-    surface?: ProgressSurface;
-    username?: string;
-    layout?: 'row' | 'grid';
+  mediums?: boolean;
+  surface?: ProgressSurface;
+  username?: string;
+  layout?: 'row' | 'grid';
     onitems?: (items: (MediaView | MediaCardPresentation)[], selection: string) => void;
-  };
+ };
 export function createProgressSource(getOptions: () => ProgressSourceOptions): ShelfSource {
  const location=useShelfLocation();
   const { api, preview } = useClient();
@@ -44,15 +44,9 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   const initialFilters=untrack(()=>getOptions().filters??initial);
   const title = $derived(progressTitles[surface]);
   const saved = $derived(surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites');
-  const options = $derived(
-    progressTabs.filter(
-      (option) =>
-        ['watching', 'up-next'].includes(option.value) ||
-        (surface === 'profile' && ['finished', 'dropped'].includes(option.value))
-    )
-  );
-  const defaultView = (): ProgressOptions['view'] =>
-    surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites' ? surface : 'watching';
+  const options = $derived(progressTabs.filter((option) => ['watching', 'up-next'].includes(option.value) || surface === 'profile' && ['finished', 'dropped'].includes(option.value)));
+  const defaultView = (): ProgressOptions['view'] => surface === 'recommendations' || surface === 'next' || surface === 'watchlist' || surface === 'favourites' ? surface : 'watching';
+
   type Filters = Pick<ProgressOptions, 'kind' | 'scope'>;
   const defaults = (): Filters => ({ kind: 'all', scope: 'all' });
   const emptyContent = (): ProgressContent => ({
@@ -80,15 +74,15 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
   const error = $derived(resource.error);
   const ready = $derived(resource.ready);
   const visible = $derived(layout === 'row' ? content.items.slice(0, 20) : content.items);
-  const parameters = (number = 1) =>
-    new URLSearchParams({
-      ...(username ? { username } : {}),
-      view: tab,
-      category,
-      kind: category === 'screen' || category === 'reading' ? current.kind : 'all',
-      scope: surface === 'profile' ? 'all' : current.scope,
+
+  const parameters = (number = 1) => new URLSearchParams({
+    ...username ? { username } : {},
+    view: tab,
+    category,
+    kind: category === 'screen' || category === 'reading' ? current.kind : 'all',
+    scope: surface === 'profile' ? 'all' : current.scope,
       page: String(number),
-    });
+  });
   const href = (number = 1) => '/progress?' + parameters(number);
   const refreshKey = $derived(JSON.stringify([contentRevisionKey(route.data, ['tracking', 'social']), username, surface, route.data.experimentalMusic, route.data.experimentalGaming, route.data.experimentalBooks, route.data.experimentalComics,route.data.capabilities]));
   let previousRefreshKey = untrack(() => refreshKey);
@@ -135,17 +129,30 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
     if(surface==='recommendations'&&route.data.capabilities?.social===false){resource.replace(emptyContent());return;}
     const path = `progress?${parameters(number)}`;
     const owner = username;
-    const result = await resource.load(async signal => {
-      try {
-        return await api<ProgressContent>(path, undefined, 'GET', { signal });
+
+    const result = await resource.load(
+      async (signal) => {
+        try {
+          return await api<ProgressContent>(path, undefined, 'GET', { signal });
       } catch (cause) {
         if (owner && owner === username && !signal.aborted && cause instanceof ApiError && [403, 404].includes(cause.status))
           resource.replace({ ...resource.data, items: [], total: 0, page: 1, pages: 1 }, cause.message);
-        throw cause;
+          throw cause;
+        }
+      },
+      {
+        merge: (old, next) => ({
+          ...next,
+          items: append
+            ? uniqueItems([...old.items, ...next.items], (item) => item.entryId ?? item.id)
+            : next.items
+        })
       }
-    },{merge:(old,next)=>({...next,items:append?uniqueItems([...old.items,...next.items],item=>item.entryId??item.id):next.items})});
-    if (result && !location.embedded && !preview && layout === 'grid') replaceState(href(result.page), route.state);
+    );
+
+    if (result && !location.embedded && !preview && layout === 'grid') goto(href(result.page), { shallow: true, replace: true, reset: false, state: route.state });
   }
+
   function update(patch: Partial<Filters>) {
     preferences[tab] = { ...current, ...patch };
     void select();
@@ -154,22 +161,141 @@ export function createProgressSource(getOptions: () => ProgressSourceOptions): S
 
 
   return {
-    get pagination() { return { kind: 'pages' as const, page: content.page, pages: content.pages, append: false, controls: layout === 'grid' ? 'both' as const : 'none' as const }; },
-    get title() { return title; }, get items() { return content.category === category ? visible : []; }, get busy() { return busy; },
-    get emptyConfirmed() { return !mediums || content.emptyAllMedia === true; },
-    get ready() { return ready; }, get error() { return error; }, get activated() { return resource.activated; },
-    get href() { return layout === 'row' ? href() : undefined; },
-    get shape() { return category === 'music' ? 'square' : saved || category === 'reading' ? 'poster' : 'fanart'; }, get mediaKind() { return category; }, get artworkStyle() { return category !== 'screen' || saved ? 'auto' : 'thumb'; },
-    get artworkPriority() { return ['watching','up-next'].includes(content.view) ? 'season-show-episode' : undefined; },
+    get pagination() {
+      return {
+        kind: 'pages' as const,
+        page: content.page,
+        pages: content.pages,
+        append: false,
+        controls: layout === 'grid' ? 'both' as const : 'none' as const
+      };
+    },
 
+    get title() {
+      return title;
+    },
 
-    get filters(): ShelfControl[] { return [
-      ...(mediums ? [{type:'segments' as const,label:`${title} medium`,value:category,options:mediumOptions({...route.data,features:route.data.capabilities}),change:(value:string)=>{category=value as ProgressOptions['category'];preferences[tab]=defaults();void select();}}] : []),
-      ...(!saved && !mediums ? [{type:'segments' as const, label:`${title} selection`, value:tab, options, change:(value:string)=>{tab=value;void select();}}] : []),
-      ...(surface !== 'profile' ? [{type:'availability' as const,label:category==='reading'?'Available to read only':'Available to play only',value:current.scope,change:(value:string)=>update({scope:value as Filters['scope']})}] : []),
-    ]; },
-    get controls(): ShelfControl[] { return category === 'screen' ? [{type:'media-type',label:`${title} media type`,value:current.kind,change:value=>update({kind:value as Filters['kind']})}] : category === 'reading' ? [{type:'select',label:`${title} reading type`,value:current.kind,options:readingTypeOptions({...route.data,features:route.data.capabilities}),change:value=>update({kind:value as Filters['kind']})}] : []; },
-    get empty() { return busy ? 'Loading titles…' : ready ? 'No titles in this selection.' : 'Loading titles…'; },
-    retryLabel:'Retry', load:select,
+    get items() {
+      return content.category === category ? visible : [];
+    },
+
+    get busy() {
+      return busy;
+    },
+
+    get emptyConfirmed() {
+      return !mediums || content.emptyAllMedia === true;
+    },
+
+    get ready() {
+      return ready;
+    },
+
+    get error() {
+      return error;
+    },
+
+    get activated() {
+      return resource.activated;
+    },
+
+    get href() {
+      return layout === 'row' ? href() : undefined;
+    },
+
+    get shape() {
+      return category === 'music'
+        ? 'square'
+        : saved || category === 'reading' ? 'poster' : 'fanart';
+    },
+
+    get mediaKind() {
+      return category;
+    },
+
+    get artworkStyle() {
+      return category !== 'screen' || saved ? 'auto' : 'thumb';
+    },
+
+    get artworkPriority() {
+      return ['watching', 'up-next'].includes(content.view) ? 'season-show-episode' : undefined;
+    },
+
+    get filters(): ShelfControl[] {
+      return [
+        ...mediums
+          ? [
+            {
+              type: 'segments' as const,
+              label: `${title} medium`,
+              value: category,
+              options: mediumOptions({ ...route.data, features: route.data.capabilities }),
+              change: (value: string) => {
+                category = value as ProgressOptions['category'];
+                preferences[tab] = defaults();
+                void select();
+              }
+            }
+          ]
+          : [],
+
+        ...!saved && !mediums
+          ? [
+            {
+              type: 'segments' as const,
+              label: `${title} selection`,
+              value: tab,
+              options,
+              change: (value: string) => {
+                tab = value;
+                void select();
+              }
+            }
+          ]
+          : [],
+
+        ...surface !== 'profile'
+          ? [
+            {
+              type: 'availability' as const,
+              label: category === 'reading' ? 'Available to read only' : 'Available to play only',
+              value: current.scope,
+              change: (value: string) => update({ scope: value as Filters['scope'] })
+            }
+          ]
+          : []
+      ];
+    },
+
+    get controls(): ShelfControl[] {
+      return category === 'screen'
+        ? [
+          {
+            type: 'media-type',
+            label: `${title} media type`,
+            value: current.kind,
+            change: (value) => update({ kind: value as Filters['kind'] })
+          }
+        ]
+        : category === 'reading'
+          ? [
+            {
+              type: 'select',
+              label: `${title} reading type`,
+              value: current.kind,
+              options: readingTypeOptions({ ...route.data, features: route.data.capabilities }),
+              change: (value) => update({ kind: value as Filters['kind'] })
+            }
+          ]
+          : [];
+    },
+
+    get empty() {
+      return busy
+        ? 'Loading titles…'
+        : ready ? 'No titles in this selection.' : 'Loading titles…';
+    },
+    retryLabel: 'Retry',
+    load: select
   };
 }

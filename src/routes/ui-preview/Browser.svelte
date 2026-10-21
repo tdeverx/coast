@@ -1,8 +1,8 @@
 <script lang="ts">
   import {tick,type Snippet} from 'svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import Icon from '$lib/ui/components/Icon.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import Icon from '#lib/ui/components/Icon.svelte';
   import {approvalStatus} from './reference';
   let { title, options, value, change, heading: sectionHeading, thumbnail, thumbnailHeight = 44, disabled = false, search = $bindable('') }: {
     title: string; options: {value:string;label:string;detail?:string}[]; value:string; change:(value:string)=>void;

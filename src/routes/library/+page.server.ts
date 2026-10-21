@@ -1,16 +1,16 @@
-import { requestedPageInterval } from '$lib/server/queries/pagination';
-import { getFeatureConfig } from '$lib/server/features';
+import { requestedPageInterval } from '#lib/server/queries/pagination.js';
+import { getFeatureConfig } from '#lib/server/features.js';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { libraryOptionsSchema } from '$lib/server/queries/library';
-import { libraryContent } from '$lib/server/queries/library-content';
-import { collectionData, collectionOptionsSchema, collectionParameters } from '$lib/collection/query.server';
-import { missingDemand } from '$lib/collection/demand.server';
-import { profileUser } from '$lib/server/queries/profile-user';
+import { libraryOptionsSchema } from '#lib/server/queries/library.js';
+import { libraryContent } from '#lib/server/queries/library-content.js';
+import { collectionData, collectionOptionsSchema, collectionParameters } from '#lib/collection/query.server.js';
+import { missingDemand } from '#lib/collection/demand.server.js';
+import { profileUser } from '#lib/server/queries/profile-user.js';
 import type { PageServerLoad } from './$types';
-import { libraryBrowseDefaults } from '$lib/library';
-import { requireEnabledCategory } from '$lib/server/experimental';
-import { AppError } from '$lib/server/security/errors';
+import { libraryBrowseDefaults } from '#lib/library.js';
+import { requireEnabledCategory } from '#lib/server/experimental.js';
+import { AppError } from '#lib/server/security/errors.js';
 
 const loadLibrary = async ({ locals, url, depends, request }: Parameters<PageServerLoad>[0]) => {
   depends('coast:tracking');

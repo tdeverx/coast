@@ -1,5 +1,5 @@
-import type { ActivitySession } from '$lib/media/model';
-import type { MediaView } from '$lib/ui/types';
+import type { ActivitySession } from '#lib/media/model.js';
+import type { MediaView } from '#lib/ui/types.js';
 export type JournalEntry = MediaView & {
   eventId: string;
   action?: 'watch' | 'unwatch' | 'progress';

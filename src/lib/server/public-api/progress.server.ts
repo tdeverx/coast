@@ -1,6 +1,6 @@
-import { getDb } from '$lib/server/db';
+import { getDb } from '#lib/server/db/index.js';
 import { sql } from 'drizzle-orm';
-import type { MediaView,MediaCardPresentation } from '$lib/ui/types';
+import type { MediaView,MediaCardPresentation } from '#lib/ui/types.js';
 import { publicWork } from './response';
 
 /** Hydrate concrete activity for just the already filtered page; never export private notes. */

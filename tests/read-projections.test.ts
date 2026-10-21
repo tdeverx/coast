@@ -119,11 +119,12 @@ test('insight projection reuses identical totals without activating profile card
 test('profile section handlers select the narrow requested reader',async()=>{
   const source=await Bun.file(new URL('../src/lib/server/api/profile.server.ts',import.meta.url)).text();
   const sectionReads:unknown[]=[],insightReads:unknown[]=[];
-  const handleProfile=compile(source.slice(source.indexOf('export async function handleProfile(')),{v,json:(value:unknown)=>value,
+  const deliverProfile=compile(source.slice(source.indexOf('export async function handleProfile(')),{v,json:(value:unknown)=>value,
     profileSectionData:async(...args:unknown[])=>{sectionReads.push(args);return {...((args[1] as {view:string}).view==='history'?{items:['event']}:{favourites:['favourite']}),page:1,pages:1,total:1};},
     profileData:()=>{throw Error('Unexpected full-profile read');},
     profileInsightsData:async(...args:unknown[])=>{insightReads.push(args);return {totals:{watches:4},activity:{days:[]}};},updateProfile:async()=>{},
   },'handleProfile');
+  const handleProfile=async(context:unknown)=>await (await deliverProfile(context)).json();
   const context={uid:owner,subjectId:owner,method:'GET',body:{}};
   expect(await handleProfile({...context,path:['profile','section'],url:new URL('https://fixture.invalid/api/v1/profile/section?section=insights&period=month')})).toEqual({totals:{watches:4},activity:{days:[]}});
   expect(sectionReads).toHaveLength(0);expect(insightReads).toHaveLength(1);

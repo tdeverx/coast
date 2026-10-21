@@ -1,5 +1,5 @@
-import type { FilterGroup } from '$lib/ui/controls/filters';
-import { mediaTypeOptions } from '$lib/ui/filter-options';
+import type { FilterGroup } from '#lib/ui/controls/filters.js';
+import { mediaTypeOptions } from '#lib/ui/filter-options.js';
 import type { ShelfControl } from './types';
 
 /** One placement rule for every source: segments and availability beside the title, secondary choices in the menu. */

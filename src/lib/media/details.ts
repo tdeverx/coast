@@ -1,4 +1,4 @@
-import type { CastMember, Metadata } from '$lib/providers/contracts';
+import type { CastMember, Metadata } from '#lib/providers/contracts.js';
 export interface Review {
   id: string;
   author: string;

@@ -1,14 +1,14 @@
 import {and,eq,sql} from 'drizzle-orm';
 import * as v from 'valibot';
-import {getDb} from '$lib/server/db';
-import {readingGroups,readingGroupMembers,readingWorks,workIdentifiers,readingProgress} from '$lib/server/db/schema';
-import {requireEnabledCategory} from '$lib/server/experimental';
-import {getFeatureConfig} from '$lib/server/features';
-import {AppError} from '$lib/server/security/errors';
+import {getDb} from '#lib/server/db/index.js';
+import {readingGroups,readingGroupMembers,readingWorks,workIdentifiers,readingProgress} from '#lib/server/db/schema.js';
+import {requireEnabledCategory} from '#lib/server/experimental.js';
+import {getFeatureConfig} from '#lib/server/features.js';
+import {AppError} from '#lib/server/security/errors.js';
 import {readingWork,readingProviderCards} from './query.server';
-import {readingGroupIssues,readingProviderDetails,readingEditions} from '$lib/providers/reading.server';
-import {importReading} from '$lib/catalogue/reading.server';
-import {pageNumberSchema} from '$lib/server/queries/pagination';
+import {readingGroupIssues,readingProviderDetails,readingEditions} from '#lib/providers/reading.server.js';
+import {importReading} from '#lib/catalogue/reading.server.js';
+import {pageNumberSchema} from '#lib/server/queries/pagination.js';
 
 async function groupsForReading(userId:string,workId:string){
  const item=await readingWork(userId,workId),db=getDb();

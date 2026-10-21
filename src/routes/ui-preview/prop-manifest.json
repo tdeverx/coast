@@ -1284,7 +1284,7 @@
     "props": [
       {
         "name": "user",
-        "type": "{ username: string; role: string; settings?:import('$lib/server/db/schema').UserSettings } | null",
+        "type": "{ username: string; role: string; settings?:import('#lib/server/db/schema.js').UserSettings } | null",
         "optional": false,
         "bindable": false,
         "kind": "data",
@@ -1692,7 +1692,7 @@
       },
       {
         "name": "timing",
-        "type": "import('$lib/providers/job-timing.server').JobTiming[]",
+        "type": "import('#lib/providers/job-timing.server.js').JobTiming[]",
         "optional": true,
         "bindable": false,
         "kind": "data",
@@ -1701,7 +1701,7 @@
       },
       {
         "name": "tasteJob",
-        "type": "Awaited<ReturnType<typeof import('$lib/social/taste-cache.server').tasteJob>>|null",
+        "type": "Awaited<ReturnType<typeof import('#lib/social/taste-cache.server.js').tasteJob>>|null",
         "optional": true,
         "bindable": false,
         "kind": "data",
@@ -1825,7 +1825,7 @@
       },
       {
         "name": "social",
-        "type": "{friends:{username:string;avatar?:string|null;status?:import('$lib/social/status').ActivityStatus}[];total:number}",
+        "type": "{friends:{username:string;avatar?:string|null;status?:import('#lib/social/status.js').ActivityStatus}[];total:number}",
         "optional": true,
         "bindable": false,
         "kind": "data",
@@ -2756,7 +2756,7 @@
       },
       {
         "name": "reading",
-        "type": "import('$lib/reading/model').ReadingLocation | null",
+        "type": "import('#lib/reading/model.js').ReadingLocation | null",
         "optional": true,
         "bindable": false,
         "kind": "data",
@@ -3831,7 +3831,7 @@
       },
       {
         "name": "url",
-        "type": "URL",
+        "type": "ReadonlyURL",
         "optional": true,
         "bindable": false,
         "kind": "data",

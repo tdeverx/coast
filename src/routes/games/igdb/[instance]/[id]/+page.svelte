@@ -1,5 +1,5 @@
 <script lang="ts">
- import Details from '$lib/games/RemoteDetails.svelte';
+ import Details from '#lib/games/RemoteDetails.svelte';
  let {data}=$props();
 </script>
 <Details {data} />

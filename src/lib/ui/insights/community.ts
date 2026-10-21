@@ -1,5 +1,5 @@
 import { distributionModel, barModel } from '../charts/insights';
-import type { MediaInsights } from '$lib/media/details';
+import type { MediaInsights } from '#lib/media/details.js';
 import type { InsightPanel } from './types';
 export function communityPanels(details:MediaInsights):InsightPanel[] {
   const panels:InsightPanel[]=[];

@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { requireUser } from '$lib/server/auth';
-import { mediaViewsForIds } from '$lib/server/queries/media';
-import { mediaActivity } from '$lib/server/queries/media-actions';
+import { requireUser } from '#lib/server/auth/index.js';
+import { mediaViewsForIds } from '#lib/server/queries/media.js';
+import { mediaActivity } from '#lib/server/queries/media-actions.js';
 
 export const load: PageServerLoad = async ({locals, params, depends}) => {
   depends('coast:tracking');

@@ -1,12 +1,12 @@
 <script lang="ts">
   import OperationProgress from './OperationProgress.svelte';
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import CollectionProjectionSettings from './CollectionProjectionSettings.svelte';
-  import type {SourceImpact} from '$lib/collection/source-changes.server';
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
+  import type {SourceImpact} from '#lib/collection/source-changes.server.js';
+  import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
   import { onMount, untrack } from 'svelte';
-  import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
   import Button from './Button.svelte';
   import Icon from './Icon.svelte';
   import Dialog from './Dialog.svelte';

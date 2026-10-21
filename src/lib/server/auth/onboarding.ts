@@ -1,14 +1,14 @@
-import { provisioningAuthority } from '$lib/providers/jellyfin/provisioning.server';
+import { provisioningAuthority } from '#lib/providers/jellyfin/provisioning.server.js';
 import * as v from 'valibot';
 import { getSql } from '../db';
-import { registrationSchema } from '$lib/auth/registration';
+import { registrationSchema } from '#lib/auth/registration.js';
 import { getConfig } from '../config';
-import { startTraktDevice, finishTraktDevice } from '$lib/providers/trakt/connection.server';
+import { startTraktDevice, finishTraktDevice } from '#lib/providers/trakt/connection.server.js';
 import { hashToken, randomToken, newSession, requireAdmin, checkLoginRate, type SessionUser } from './index';
 import { AppError } from '../security/errors';
-import { connectJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { libraryScanProgress } from '$lib/sync/jellyfin.server';
-import { jellyfinImportStage } from '$lib/sync/jellyfin-progress';
+import { connectJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import { libraryScanProgress } from '#lib/sync/jellyfin.server.js';
+import { jellyfinImportStage } from '#lib/sync/jellyfin-progress.js';
 import { enqueueAction } from '../queue';
 
 export async function listInvites(actor: SessionUser | null) {
@@ -108,7 +108,7 @@ export async function startOnboardingTrakt(userId:string,input:unknown) {
     and c.user_id=${userId} and c.instance_id=${instanceId} and c.account_generation=${onboarding.trakt_account_generation}
     and exists(select 1 from outbox_actions a where a.connection_id=c.id and a.account_generation=c.account_generation
       and a.user_id=${userId} and a.state='failed' and a.payload->'_jobFailure'->>'code'='provider.authentication')`;
-  if(failed)await (await import('$lib/application/provider-sources.server')).disconnectProvider(userId,failed.id);
+  if(failed)await (await import('#lib/application/provider-sources.server.js')).disconnectProvider(userId,failed.id);
  }
  return {...await startTraktDevice(userId,instanceId),instanceId};
 }

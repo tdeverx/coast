@@ -1,6 +1,6 @@
 <script module lang="ts">
   // Decorative, local samples are computed once. These miniatures never mount a live chart.
-  import { chartColors as colours } from '$lib/ui/charts/types';
+  import { chartColors as colours } from '#lib/ui/charts/types.js';
   const lineValues = [12, 18, 15, 24, 20, 30];
   const stacks = [[8, 12, 10, 15, 12, 18], [6, 8, 11, 10, 14, 12], [4, 6, 7, 10, 8, 14]];
   const trendPoints = (values: number[], left = 18, top = 20, width = 144, height = 66, maximum = 36) => values.map((value, index) => ({ x: left + index * width / Math.max(1, values.length - 1), y: top + height * (1 - value / maximum) }));

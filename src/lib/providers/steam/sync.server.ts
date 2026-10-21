@@ -1,17 +1,17 @@
 import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb, type Database } from '$lib/server/db';
-import * as s from '$lib/server/db/schema';
+import { getDb, type Database } from '#lib/server/db/index.js';
+import * as s from '#lib/server/db/schema.js';
 import { getSteam } from './connection.server';
 import { steamOwnedGameSchema, type SteamOwnedGame } from './adapter.server';
-import { ProviderHttpError } from '$lib/server/security/provider-fetch';
-import { ProviderQueueBusyError } from '$lib/server/security/request-priority';
-import { PermanentActionError, enqueueAction, type OutboxAction } from '$lib/server/queue';
-import { trackInTransaction } from '$lib/core/tracking/service.server';
-import { lockFeaturePolicyInTransaction } from '$lib/server/features';
-import { importIgdbMetadata } from '$lib/core/games/service.server';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
+import { ProviderQueueBusyError } from '#lib/server/security/request-priority.js';
+import { PermanentActionError, enqueueAction, type OutboxAction } from '#lib/server/queue/index.js';
+import { trackInTransaction } from '#lib/core/tracking/service.server.js';
+import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
+import { importIgdbMetadata } from '#lib/core/games/service.server.js';
 import { igdbSteamMatches } from '../igdb/service.server';
-import { jobExecution, JobYield, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
+import { jobExecution, JobYield, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
 async function assertAccount(tx:Tx, action:OutboxAction, accountId:string) {
   // Reconnect/reset holds the connection before cancelling its outbox rows.

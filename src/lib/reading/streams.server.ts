@@ -1,8 +1,8 @@
-import { getSql } from '$lib/server/db';
-import { workCards } from '$lib/collection/query.server';
-import { profilePath } from '$lib/profile/url';
+import { getSql } from '#lib/server/db/index.js';
+import { workCards } from '#lib/collection/query.server.js';
+import { profilePath } from '#lib/profile/url.js';
 import type { ReadingLocation } from './model';
-import type { StreamsSnapshot } from '$lib/application/streams.server';
+import type { StreamsSnapshot } from '#lib/application/streams.server.js';
 
 // Admin operational activity uses the existing reader sessions, not a provider
 // playback scan: downloading a comic never creates a Jellyfin playback session.

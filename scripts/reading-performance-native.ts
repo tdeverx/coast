@@ -1,10 +1,10 @@
 // Opt-in mutation checks: real admin/catalogue, disposable actual-data copy only.
 // Run with the normal encrypted-data directory, never a live database. No worker
 // is started, so queued clone effects cannot be delivered to external services.
-import { getSql, closeDb } from '$lib/server/db';
-import { prepareReading, closeReading, moveReading } from '$lib/reading/sessions.server';
-import { readingDetails } from '$lib/reading/query.server';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
+import { getSql, closeDb } from '#lib/server/db/index.js';
+import { prepareReading, closeReading, moveReading } from '#lib/reading/sessions.server.js';
+import { readingDetails } from '#lib/reading/query.server.js';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import assert from 'node:assert/strict';
 const output = process.env.COAST_READING_AUDIT_OUTPUT;
 assert(output, 'Supply a private result path');

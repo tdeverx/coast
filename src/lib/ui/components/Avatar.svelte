@@ -1,5 +1,5 @@
 <script lang="ts">
-  import {statusLabels,type ActivityStatus} from '$lib/social/status';
+  import {statusLabels,type ActivityStatus} from '#lib/social/status.js';
   let { name, src, label, class: className = '', size = 32, status }: {
     name: string; src?: string | null; label?: string; class?: string; size?: number; status?:ActivityStatus;
   } = $props();

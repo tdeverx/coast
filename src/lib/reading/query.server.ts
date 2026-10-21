@@ -1,20 +1,20 @@
-import { getFeatureConfig } from '$lib/server/features';
-import { presentationPreferences, personaliseWorkCards, presentationSearch } from '$lib/catalogue/overrides/presentation.server';
+import { getFeatureConfig } from '#lib/server/features.js';
+import { presentationPreferences, personaliseWorkCards, presentationSearch } from '#lib/catalogue/overrides/presentation.server.js';
 import { and, asc, count, desc, eq, or, sql, getTableColumns } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '$lib/server/db';
-import { ratings, readingProgress, readingWorks, workIdentifiers, trackingState } from '$lib/server/db/schema';
-import { DomainError } from '$lib/core/errors';
-import { PAGE_SIZE, pageNumberSchema, pagination, requestedPageInterval } from '$lib/server/queries/pagination';
-import { getConfig } from '$lib/server/config';
-import { enabledCategories, requireEnabledCategory } from '$lib/server/experimental';
+import { getDb } from '#lib/server/db/index.js';
+import { ratings, readingProgress, readingWorks, workIdentifiers, trackingState } from '#lib/server/db/schema.js';
+import { DomainError } from '#lib/core/errors.js';
+import { PAGE_SIZE, pageNumberSchema, pagination, requestedPageInterval } from '#lib/server/queries/pagination.js';
+import { getConfig } from '#lib/server/config.js';
+import { enabledCategories, requireEnabledCategory } from '#lib/server/experimental.js';
 import type { ReadingMetadata } from './model';
 import { readingStates, readingReferenceSchema, readingProviderForId, type ReadingKind } from './model';
 import { readingCard,type ReadingDetailData } from './presentation';
-import {readingProviderDetails} from '$lib/providers/reading.server';
-import { searchDocument, searchSql } from '$lib/server/queries/search-ranking';
+import {readingProviderDetails} from '#lib/providers/reading.server.js';
+import { searchDocument, searchSql } from '#lib/server/queries/search-ranking.js';
 
-import { pageInterval } from '$lib/page-window';
+import { pageInterval } from '#lib/page-window.js';
 
 const uuid = v.pipe(v.string(), v.uuid());
 /** Resolve exact identity before fetching a preview; saved metadata survives source outages. */
@@ -145,7 +145,7 @@ export async function readingProviderCards(userId: string, metadata: ReadingMeta
 /** Owner-only journal. State transitions use real timestamps; page turns never fabricate read events. */
 export async function readingHistoryData(userId:string,id:string,requested=1){
  await readingWork(userId,id);const page=v.parse(pageNumberSchema,requested),db=getDb();
- const {readingHistory}=await import('$lib/server/db/schema');
+ const {readingHistory}=await import('#lib/server/db/schema.js');
  const where=and(eq(readingHistory.userId,userId),eq(readingHistory.workId,id));
  const [result]=await db.select({total:count()}).from(readingHistory).where(where);const paging=pagination(result.total,page);
  const items=await db.select({id:readingHistory.id,state:readingHistory.state,page:readingHistory.page,totalPages:readingHistory.totalPages,occurredAt:readingHistory.occurredAt}).from(readingHistory).where(where).orderBy(sql`${readingHistory.occurredAt} desc`,sql`${readingHistory.id} desc`).limit(PAGE_SIZE).offset((paging.page-1)*PAGE_SIZE);

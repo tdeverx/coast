@@ -1,18 +1,18 @@
 import {and,eq,sql} from 'drizzle-orm';
-import {getDb} from '$lib/server/db';
-import {workEditions,readingWorks,workIdentifiers} from '$lib/server/db/schema';
-import {getFeatureConfig} from '$lib/server/features';
-import type {JellyfinBook} from '$lib/providers/jellyfin/reading.server';
-import {readingProviderDetails} from '$lib/providers/reading.server';
-import {importReading} from '$lib/catalogue/reading.server';
-import {observeReadingFile,readingFileReference} from '$lib/catalogue/reading-files.server';
-import {sourceEdition} from '$lib/reading/sessions.server';
-import {jellyfinItemKey} from '$lib/providers/jellyfin/paging';
-import {AppError} from '$lib/server/security/errors';
-import {DomainError} from '$lib/core/errors';
-import {ProviderHttpError} from '$lib/server/security/provider-fetch';
-import {logDiagnostic} from '$lib/server/diagnostics';
-type Context=Awaited<ReturnType<typeof import('$lib/providers/jellyfin/connection.server').getJellyfin>>;
+import {getDb} from '#lib/server/db/index.js';
+import {workEditions,readingWorks,workIdentifiers} from '#lib/server/db/schema.js';
+import {getFeatureConfig} from '#lib/server/features.js';
+import type {JellyfinBook} from '#lib/providers/jellyfin/reading.server.js';
+import {readingProviderDetails} from '#lib/providers/reading.server.js';
+import {importReading} from '#lib/catalogue/reading.server.js';
+import {observeReadingFile,readingFileReference} from '#lib/catalogue/reading-files.server.js';
+import {sourceEdition} from '#lib/reading/sessions.server.js';
+import {jellyfinItemKey} from '#lib/providers/jellyfin/paging.js';
+import {AppError} from '#lib/server/security/errors.js';
+import {DomainError} from '#lib/core/errors.js';
+import {ProviderHttpError} from '#lib/server/security/provider-fetch.js';
+import {logDiagnostic} from '#lib/server/diagnostics/index.js';
+type Context=Awaited<ReturnType<typeof import('#lib/providers/jellyfin/connection.server.js').getJellyfin>>;
 /** Exact plugin identifiers or the user's explicit file link; never a title/filename guess. */
 export async function importJellyfinReading(context:Context,books:JellyfinBook[],options:{access:boolean;scanId?:string;expectedResetId?:string|null;checkpoint?:(processed:number)=>Promise<void>}){
  const config=await getFeatureConfig(options.access?context.connection.userId:null);let imported=0;

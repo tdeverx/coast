@@ -1,7 +1,7 @@
 import { distributionModel, targetModel, barModel } from '../charts/insights';
-import type { MediaView } from '$lib/ui/types';
-import type { MediaStatistics } from '$lib/media/statistics';
-import type { ProfilePeriod } from '$lib/profile/period';
+import type { MediaView } from '#lib/ui/types.js';
+import type { MediaStatistics } from '#lib/media/statistics.js';
+import type { ProfilePeriod } from '#lib/profile/period.js';
 import { activityChart } from '../charts/activity';
 import type { InsightPanel } from './types';
 export function mediaOverviewPanels(item:MediaView,members:MediaView[]=[],seasons:MediaView[]=[]):InsightPanel[] {

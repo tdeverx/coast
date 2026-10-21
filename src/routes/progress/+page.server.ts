@@ -1,9 +1,9 @@
-import { profileUser } from '$lib/server/queries/profile-user';
-import { AppError } from '$lib/server/security/errors';
+import { profileUser } from '#lib/server/queries/profile-user.js';
+import { AppError } from '#lib/server/security/errors.js';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { progressOptionsSchema, progressParameters, progressSurface } from '$lib/progress';
-import { progressData } from '$lib/server/queries/progress';
+import { progressOptionsSchema, progressParameters, progressSurface } from '#lib/progress.js';
+import { progressData } from '#lib/server/queries/progress.js';
 import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ locals, url, depends }) => {
   depends('coast:tracking', 'coast:social');

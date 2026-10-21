@@ -1,15 +1,15 @@
 // Opt-in actual-data integration checks. Private restore only; do not run a worker.
-import { getSql, closeDb } from '$lib/server/db';
-import { updateUserSettings, resetUserSettings } from '$lib/server/auth';
-import { prepareReading, moveReading, closeReading } from '$lib/reading/sessions.server';
-import { updateReading } from '$lib/core/reading/service.server';
-import { readingHistoryData } from '$lib/reading/query.server';
-import { presence } from '$lib/social/presence.server';
-import { activityFeed } from '$lib/social/queries.server';
-import { activeStreams } from '$lib/application/streams.server';
-import { readingStreamCount } from '$lib/reading/streams.server';
-import { createRoom, joinRoom, commandRoom, roomState, leaveRoom } from '$lib/playback/synced/service.server';
-import { createShare } from '$lib/sharing/service.server';
+import { getSql, closeDb } from '#lib/server/db/index.js';
+import { updateUserSettings, resetUserSettings } from '#lib/server/auth/index.js';
+import { prepareReading, moveReading, closeReading } from '#lib/reading/sessions.server.js';
+import { updateReading } from '#lib/core/reading/service.server.js';
+import { readingHistoryData } from '#lib/reading/query.server.js';
+import { presence } from '#lib/social/presence.server.js';
+import { activityFeed } from '#lib/social/queries.server.js';
+import { activeStreams } from '#lib/application/streams.server.js';
+import { readingStreamCount } from '#lib/reading/streams.server.js';
+import { createRoom, joinRoom, commandRoom, roomState, leaveRoom } from '#lib/playback/synced/service.server.js';
+import { createShare } from '#lib/sharing/service.server.js';
 import assert from 'node:assert/strict';
 const output = process.env.COAST_READING_AUDIT_OUTPUT, manifest = process.env.COAST_READING_ACTUAL_MANIFEST;
 assert(output && manifest, 'Supply private result and actual-file manifest paths');

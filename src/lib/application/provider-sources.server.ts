@@ -1,11 +1,11 @@
 import { eq, and, sql, inArray, or } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { providerConnections, providerInstances, availability, outboxActions } from '$lib/server/db/schema';
-import { connectionFor } from '$lib/providers/connections.server';
-import { requireProviderAdmin } from '$lib/providers/instances.server';
-import { resolveNotification } from '$lib/server/notifications';
-import { AppError } from '$lib/server/security/errors';
-import { validateSourceChange, markSourceChange, notifySourceChange, notifySourceChangeUsers } from '$lib/collection/source-changes.server';
+import { getDb } from '#lib/server/db/index.js';
+import { providerConnections, providerInstances, availability, outboxActions } from '#lib/server/db/schema.js';
+import { connectionFor } from '#lib/providers/connections.server.js';
+import { requireProviderAdmin } from '#lib/providers/instances.server.js';
+import { resolveNotification } from '#lib/server/notifications/index.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { validateSourceChange, markSourceChange, notifySourceChange, notifySourceChangeUsers } from '#lib/collection/source-changes.server.js';
 
 export async function disconnectProvider(userId: string, connectionId: string,previewId?:string) {
   const {instance}=await connectionFor(userId, connectionId);

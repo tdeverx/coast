@@ -5,7 +5,7 @@ import {
   type DiagnosticEvent,
   type DiagnosticLevel,
   safeFields,
-} from '$lib/diagnostics';
+} from '#lib/diagnostics.js';
 export let browserCorrelationId = '';
 let level: DiagnosticLevel = 'info';
 let sent = 0,

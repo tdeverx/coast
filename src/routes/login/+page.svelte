@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
  import {enhance} from '$app/forms';
- import Brand from '$lib/ui/components/Brand.svelte';
- import Button from '$lib/ui/components/Button.svelte';
- import Field from '$lib/ui/components/Field.svelte';
+ import Brand from '#lib/ui/components/Brand.svelte';
+ import Button from '#lib/ui/components/Button.svelte';
+ import Field from '#lib/ui/components/Field.svelte';
  let {form}=$props();let busy=$state(false);
   reportFailure(()=>form?.error);
 </script>

@@ -4,10 +4,10 @@ const moduleUrl=(source:string)=>`data:text/javascript;base64,${Buffer.from(sour
 const stateUrl=moduleUrl('export let works=[],reads=0,queries=0;export const setWorks=next=>{works=next;reads=0;queries=0;};export const interestWorks=async()=>{reads++;return works;};const sql=async()=>{queries++;return [];};sql.array=value=>value;export const getSql=()=>sql;export const getFeatureConfig=async()=>({features:{screen:true,personalisation:true,social:true},experimentalGaming:true,experimentalMusic:true,experimentalBooks:true,experimentalComics:true});');
 const source=(await Bun.file(new URL('../src/lib/recommendations/feed.server.ts',import.meta.url)).text())
  .replaceAll("'valibot'",JSON.stringify(import.meta.resolve('valibot')))
- .replaceAll("'$lib/server/db/index'",JSON.stringify(stateUrl))
- .replaceAll("'$lib/server/features'",JSON.stringify(stateUrl))
+ .replaceAll("'#lib/server/db/index.js'",JSON.stringify(stateUrl))
+ .replaceAll("'#lib/server/features.js'",JSON.stringify(stateUrl))
  .replaceAll("'./interests.server'",JSON.stringify(stateUrl))
- .replaceAll("'$lib/server/security/errors'",JSON.stringify(import.meta.resolve('../src/lib/server/security/errors')))
+ .replaceAll("'#lib/server/security/errors.js'",JSON.stringify(import.meta.resolve('../src/lib/server/security/errors')))
  .replaceAll("'./row-titles'",JSON.stringify(import.meta.resolve('../src/lib/recommendations/row-titles')))
  .replaceAll("'./row-ranking'",JSON.stringify(import.meta.resolve('../src/lib/recommendations/row-ranking')));
 // Only configuration/evidence/SQL are synthetic; definition construction and

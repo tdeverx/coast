@@ -1,6 +1,6 @@
 import catalog from './catalog.json';
 import type { ChartContext, ChartDataset, ChartFixture, ChartMedium, ChartStyle } from './types';
-import type { ChartModel, ChartRow } from '$lib/ui/charts/model';
+import type { ChartModel, ChartRow } from '#lib/ui/charts/model.js';
 
 /** This catalog belongs exclusively to the lazy UI-preview route. Every value is fictional. */
 export const styles = catalog.styles as ChartStyle[];

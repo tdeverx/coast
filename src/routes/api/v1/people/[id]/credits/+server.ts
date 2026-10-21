@@ -1,6 +1,6 @@
-import { AppError } from '$lib/server/security/errors';
-import { json, error } from '@sveltejs/kit';
-import { personCredits } from '$lib/catalogue/details.server';
+import { AppError } from '#lib/server/security/errors.js';
+import { error } from '@sveltejs/kit';
+import { personCredits } from '#lib/catalogue/details.server.js';
 export const GET = async ({ locals, params, url }) => {
   if(!locals.user)error(401,'Sign in to view credits.');
   const id = Number(params.id),
@@ -17,7 +17,7 @@ export const GET = async ({ locals, params, url }) => {
     !['all', 'library', 'known'].includes(scope)
   )
     error(400, 'Invalid credit filter.');
-  try { return json(
+  try { return Response.json(
     await personCredits(locals.user!.id, id, {
       page,
       type,
@@ -26,7 +26,7 @@ export const GET = async ({ locals, params, url }) => {
       available: url.searchParams.get('available') === 'true',
     })
   ); } catch(cause) {
-    if(cause instanceof AppError)return json({error:cause.message,code:cause.code},{status:cause.status});
+    if(cause instanceof AppError)return Response.json({error:cause.message,code:cause.code},{status:cause.status});
     throw cause;
   }
 };

@@ -1,4 +1,4 @@
-import { apiScopes } from '$lib/public-api';
+import { apiScopes } from '#lib/public-api.js';
 import { webhookEvents } from './webhooks.server';
 const uuid={type:'string',format:'uuid'},boolean={type:'boolean'},seconds={type:'number',minimum:0,maximum:2592000};
 const object=(properties:Record<string,unknown>,required:string[]=[])=>({type:'object',additionalProperties:false,properties,required});

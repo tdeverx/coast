@@ -1,20 +1,20 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { onDestroy, untrack,type Snippet } from 'svelte';
-  import type { MediaView } from '$lib/ui/types';
-  import type { CastMember } from '$lib/providers/contracts';
-  import type { MediaInsights } from '$lib/media/details';
-  import type { ProfilePeriod } from '$lib/profile/period';
-  import { useClient } from '$lib/ui/client-context';
-  import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
-  import { creditRoles } from '$lib/media/credits';
-  import { createCastSelection } from '$lib/ui/shelves/cast.svelte';
-  import { mediaOverviewPanels } from '$lib/ui/insights/media';
-  import MediaActivity from '$lib/ui/components/MediaActivity.svelte';
-  import { communityPanels } from '$lib/ui/insights/community';
+  import type { MediaView } from '#lib/ui/types.js';
+  import type { CastMember } from '#lib/providers/contracts.js';
+  import type { MediaInsights } from '#lib/media/details.js';
+  import type { ProfilePeriod } from '#lib/profile/period.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  import { createResource, uniqueItems } from '#lib/ui/resource.svelte.js';
+  import { creditRoles } from '#lib/media/credits.js';
+  import { createCastSelection } from '#lib/ui/shelves/cast.svelte.js';
+  import { mediaOverviewPanels } from '#lib/ui/insights/media.js';
+  import MediaActivity from '#lib/ui/components/MediaActivity.svelte';
+  import { communityPanels } from '#lib/ui/insights/community.js';
 
-  import type {DetailRowsModel,DetailFailure} from '$lib/ui/pages/detail-rows';
-  import type {MediaCardPresentation} from '$lib/ui/types';
+  import type {DetailRowsModel,DetailFailure} from '#lib/ui/pages/detail-rows.js';
+  import type {MediaCardPresentation} from '#lib/ui/types.js';
   const { api, preview } = useClient();
   const canLoadPrivate = $derived(preview || !!page.data.user);
 
@@ -31,7 +31,7 @@
     seasons?: MediaView[];
     cast?: CastMember[];
   } = $props();
-  const detailUrl=$derived(detailHref?new URL(detailHref,page.url):page.url);
+  const detailUrl=$derived(detailHref?new URL(detailHref,page.url.href):page.url);
   type Source = 'tmdb' | 'trakt';
   const sources: Source[] = ['tmdb', 'trakt'];
   const options = [

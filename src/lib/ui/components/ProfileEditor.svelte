@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import FormActions from './FormActions.svelte';
   import Field from './Field.svelte';
-  import { createOperation } from '$lib/ui/operation.svelte';
-  import type { ProfileSettings } from '$lib/server/db/schema';
-  import { useClient } from '$lib/ui/client-context';
+  import { createOperation } from '#lib/ui/operation.svelte.js';
+  import type { ProfileSettings } from '#lib/server/db/schema.js';
+  import { useClient } from '#lib/ui/client-context.js';
   import AvatarPicker from './AvatarPicker.svelte';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';

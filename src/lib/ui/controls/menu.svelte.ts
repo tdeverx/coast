@@ -195,7 +195,7 @@ export function createMenuController(options: MenuOptions) {
       void tick().then(place);
       options.onopen?.();
     }
-    if (focus || (parent && compact)) void focusFirst(last);
+    if (focus || parent && compact) void focusFirst(last);
   }
   function triggerKey(event: KeyboardEvent) {
     if (event.key === 'Escape' && open) {
@@ -204,23 +204,17 @@ export function createMenuController(options: MenuOptions) {
       closeMenu(true);
       return;
     }
-    if (
-      event.key === 'ArrowDown' ||
-      event.key === 'ArrowUp' ||
-      (parent && event.key === 'ArrowRight')
-    ) {
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || parent && event.key === 'ArrowRight') {
       event.preventDefault();
       event.stopPropagation();
       openMenu(true, event.key === 'ArrowUp');
     }
   }
   function menuKey(event: KeyboardEvent) {
-    if (!(event.target instanceof Element) || event.target.closest('[role="menu"],dialog,[role="dialog"]') !== options.surface())
-      return;
-    if (
-      event.key === 'Escape' ||
-      (parent && event.key === 'ArrowLeft' && !event.target.closest('[data-menu-interactive]'))
-    ) {
+    if (!(event.target instanceof Element) || event.target.closest('[role="menu"],dialog,[role="dialog"]') !== options.surface()) return;
+
+    if (event.key === 'Escape' || parent && event.key === 'ArrowLeft' && !event.target.closest('[data-menu-interactive]')) {
       event.preventDefault();
       event.stopPropagation();
       closeMenu(true);
@@ -236,14 +230,8 @@ export function createMenuController(options: MenuOptions) {
       (event.target.closest('[aria-haspopup="menu"]') as HTMLElement).click();
       return;
     }
-    if (
-      event.key.length === 1 &&
-      /\S/.test(event.key) &&
-      !event.ctrlKey &&
-      !event.metaKey &&
-      !event.altKey &&
-      !event.target.closest('[data-menu-interactive]')
-    ) {
+
+    if (event.key.length === 1 && (/\S/).test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey && !event.target.closest('[data-menu-interactive]')) {
       const now = Date.now();
       search = (now - lastTyped < 700 ? search : '') + event.key.toLowerCase();
       lastTyped = now;
@@ -286,7 +274,13 @@ export function createMenuController(options: MenuOptions) {
     const focus = options.root()?.contains(document.activeElement) ?? false;
     queueMicrotask(() => { if (!disposed) closeAll(focus); });
   }
-  afterNavigate(() => closeMenu());
+
+  afterNavigate(({ shallow }) => {
+    if (shallow) return;
+
+    return closeMenu();
+  });
+
   onMount(() => {
     const query = modeQuery = window.matchMedia('(max-width: 640px), (hover: none)');
     const updateMode = () => {

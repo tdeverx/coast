@@ -1,17 +1,17 @@
 import {and,eq,sql} from 'drizzle-orm';
-import {getDb,type Database} from '$lib/server/db';
-import {providerConnections,providerInstances,users,outboxActions,socialLiveState} from '$lib/server/db/schema';
+import {getDb,type Database} from '#lib/server/db/index.js';
+import {providerConnections,providerInstances,users,outboxActions,socialLiveState} from '#lib/server/db/schema.js';
 import {getJellyfin} from './connection.server';
 import {providerSchedule} from '../schedule';
-import {ProviderHttpError} from '$lib/server/security/provider-fetch';
-import {ProviderQueueBusyError} from '$lib/server/security/request-priority';
-import {PermanentActionError,type OutboxAction} from '$lib/server/queue';
-import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '$lib/server/queue/execution';
+import {ProviderHttpError} from '#lib/server/security/provider-fetch.js';
+import {ProviderQueueBusyError} from '#lib/server/security/request-priority.js';
+import {PermanentActionError,type OutboxAction} from '#lib/server/queue/index.js';
+import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '#lib/server/queue/execution.js';
 import {companionPlan,validateCompanionPage,type CompanionPage,type CompanionState} from './companion';
 import {streamPresentation} from './streams';
 import {recordServerStreams} from './stream-history.server';
-import {getConfig} from '$lib/server/config';
-import {syncJellyfinChanges} from '$lib/sync/jellyfin.server';
+import {getConfig} from '#lib/server/config.js';
+import {syncJellyfinChanges} from '#lib/sync/jellyfin.server.js';
 import * as v from 'valibot';
 
 type Context=Awaited<ReturnType<typeof getJellyfin>>;

@@ -1,7 +1,7 @@
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig } from '#lib/server/features.js';
 import * as v from 'valibot';
-import {getSql} from '$lib/server/db/index';
-import {AppError} from '$lib/server/security/errors';
+import {getSql} from '#lib/server/db/index.js';
+import {AppError} from '#lib/server/security/errors.js';
 import {genreRowTitle,relatedRowTitle,popularRowTitle,recommendationRowTitle} from './row-titles';
 import {genreReason,rankRows} from './row-ranking';
 import {interestWorks} from './interests.server';

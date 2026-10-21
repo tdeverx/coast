@@ -1,4 +1,4 @@
-import type { mediaRows } from '$lib/server/queries/media-rows';
+import type { mediaRows } from '#lib/server/queries/media-rows.js';
 import type { ShelfConfig } from './index';
 /** Feature gates and personal scope are data, not another row component. */
 export function homeShelves(rows: Awaited<ReturnType<typeof mediaRows>>, personal = false): ShelfConfig[] {

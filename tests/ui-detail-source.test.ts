@@ -9,9 +9,9 @@ const {page}=await import(routeUrl);
 const source=(await Bun.file(new URL('../src/lib/ui/shelves/detail.svelte.ts',import.meta.url)).text())
  .replace("from 'svelte'",`from ${JSON.stringify(lifecycleUrl)}`)
  .replace("from '$app/state'",`from ${JSON.stringify(routeUrl)}`)
- .replace("import {useClient} from '$lib/ui/client-context';",'const useClient=()=>({api:transport});')
- .replace("from '$lib/ui/resource.svelte'",`from ${JSON.stringify(resourceUrl)}`)
- .replace("import {contentRevisionKey} from '$lib/ui/content-revision.svelte';",'const contentRevisionKey=data=>data.revision;');
+ .replace("import {useClient} from '#lib/ui/client-context.js';",'const useClient=()=>({api:transport});')
+ .replace("from '#lib/ui/resource.svelte.js'",`from ${JSON.stringify(resourceUrl)}`)
+ .replace("import {contentRevisionKey} from '#lib/ui/content-revision.svelte.js';",'const contentRevisionKey=data=>data.revision;');
 // Each owner receives its transport at construction through the ordinary client boundary.
 const module=await import(moduleUrl(compileRunes(`let transport;export const setTransport=value=>transport=value;${source}`)));
 const settle=async()=>{for(let i=0;i<8;i++){runtime.flush();await Promise.resolve();}};

@@ -1,5 +1,5 @@
-import { api, refreshRouteDependencies } from '$lib/ui/client';
-import { invalidateContentRevision } from '$lib/ui/content-revision.svelte';
+import { api, refreshRouteDependencies } from '#lib/ui/client.js';
+import { invalidateContentRevision } from '#lib/ui/content-revision.svelte.js';
 import type { ActivityStatus, StatusPreference } from './status';
 export const userStatus = $state<{preference:StatusPreference; status:ActivityStatus; busy:boolean; error:string; sharePresence:boolean}>({preference:'automatic',status:'offline',busy:false,error:'',sharePresence:true});
 export function chooseStatus(preference:StatusPreference) {return updateStatus('status',{preference});}

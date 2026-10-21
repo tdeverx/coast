@@ -1,5 +1,5 @@
 import { onDestroy, tick, untrack } from 'svelte';
-import type { ArtworkPriority, MediaCardArtwork, MediaCardOverlay, MediaCardShape, MediaRowStyle } from '$lib/ui/types';
+import type { ArtworkPriority, MediaCardArtwork, MediaCardOverlay, MediaCardShape, MediaRowStyle } from '#lib/ui/types.js';
 import {captureShelfPosition,restoreShelfPosition,shelfScrollOwner,type ShelfPosition} from '../shelf-position';
 
 type LayoutOptions = {

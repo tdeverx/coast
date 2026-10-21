@@ -1,14 +1,14 @@
 import { serverArtwork } from './server-artwork.server';
 import { fallbackArtwork } from './tmdb/fallback.server';
-import { artworkTypes, isArtworkType } from '$lib/artwork';
+import { artworkTypes, isArtworkType } from '#lib/artwork.js';
 import { and, eq, sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { availability, providerItems } from '$lib/server/db/schema';
+import { getDb } from '#lib/server/db/index.js';
+import { availability, providerItems } from '#lib/server/db/schema.js';
 import { getJellyfin } from './jellyfin/connection.server';
 import { instanceFetchConfig } from './instances.server';
 import { jellyfinAuthorization } from './jellyfin/adapter.server';
-import { decryptCredential } from '$lib/server/security/credentials';
-import { secureProviderFetch } from '$lib/server/security/provider-fetch';
+import { decryptCredential } from '#lib/server/security/credentials.js';
+import { secureProviderFetch } from '#lib/server/security/provider-fetch.js';
 
 /** Relay authorized Jellyfin artwork; use TMDB when the source image is missing. */
 export async function streamArtwork(

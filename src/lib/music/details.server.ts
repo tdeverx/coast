@@ -1,10 +1,10 @@
 import {eq,sql} from 'drizzle-orm';
 import * as v from 'valibot';
-import {getDb} from '$lib/server/db';
-import {musicWorks} from '$lib/server/db/schema';
-import {requireFeature} from '$lib/server/features';
-import {AppError} from '$lib/server/security/errors';
-import {PAGE_SIZE,pagination,pageNumberSchema} from '$lib/server/queries/pagination';
+import {getDb} from '#lib/server/db/index.js';
+import {musicWorks} from '#lib/server/db/schema.js';
+import {requireFeature} from '#lib/server/features.js';
+import {AppError} from '#lib/server/security/errors.js';
+import {PAGE_SIZE,pagination,pageNumberSchema} from '#lib/server/queries/pagination.js';
 import {musicAlbumMembers,musicAlbumMembersSql} from './editions.server';
 import {musicDetails,musicLibrary,personaliseMusicItems} from './service.server';
 import {hydrateMusicItems} from './presentation.server';

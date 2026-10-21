@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
-  import { displayLabel } from '$lib/ui/labels';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import { change, message } from '$lib/ui/client';
-  import Shelf from '$lib/ui/components/Shelf.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import Dialog from '$lib/ui/components/Dialog.svelte';
-  import Pagination from '$lib/ui/components/Pagination.svelte';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import { displayLabel } from '#lib/ui/labels.js';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import { change, message } from '#lib/ui/client.js';
+  import Shelf from '#lib/ui/components/Shelf.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import EmptyState from '#lib/ui/components/EmptyState.svelte';
+  import Dialog from '#lib/ui/components/Dialog.svelte';
+  import Pagination from '#lib/ui/components/Pagination.svelte';
   let { data } = $props();
   let error = $state(''),
     cancelId = $state(''),

@@ -1,7 +1,7 @@
 import { onDestroy, untrack, type Snippet } from 'svelte';
-import { useClient } from '$lib/ui/client-context';
-import { createResource, uniqueItems } from '$lib/ui/resource.svelte';
-import { journalGroups, type JournalEntry } from '$lib/profile/journal';
+import { useClient } from '#lib/ui/client-context.js';
+import { createResource, uniqueItems } from '#lib/ui/resource.svelte.js';
+import { journalGroups, type JournalEntry } from '#lib/profile/journal.js';
 import { journalDay, visibleJournalEntries } from './journal-visible';
 import type { ShelfSource } from './types';
 export type JournalOptions = {

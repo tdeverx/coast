@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { createImageCache } from '$lib/server/storage/image-cache.server';
-import { dataDirectory } from '$lib/server/security/credentials';
-import { getConfig } from '$lib/server/config';
+import { createImageCache } from '#lib/server/storage/image-cache.server.js';
+import { dataDirectory } from '#lib/server/security/credentials.js';
+import { getConfig } from '#lib/server/config.js';
 import { createArtworkFlights } from './artwork-flight.server';
 const flights=createArtworkFlights();
 const caches=new Map<string,ReturnType<typeof createImageCache>>();

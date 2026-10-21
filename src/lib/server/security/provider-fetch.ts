@@ -1,4 +1,4 @@
-import { assertJobFeaturePolicy, JobYield } from '$lib/server/queue/execution';
+import { assertJobFeaturePolicy, JobYield } from '#lib/server/queue/execution.js';
 import { logDiagnostic, classifyFailure, context } from '../diagnostics';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';

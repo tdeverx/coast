@@ -1,4 +1,4 @@
-import type { MediaCategory } from '$lib/media/model';
+import type { MediaCategory } from '#lib/media/model.js';
 export type ProviderField =
   | 'achievements'
   | 'metadata'

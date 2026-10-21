@@ -1,26 +1,26 @@
 <script lang="ts">
-  import FormActions from '$lib/ui/components/FormActions.svelte';
-  import Field from '$lib/ui/components/Field.svelte';
-  import { reportFailure } from '$lib/ui/client-context';
+  import FormActions from '#lib/ui/components/FormActions.svelte';
+  import Field from '#lib/ui/components/Field.svelte';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import {page} from '$app/state';
-  import { useClock } from '$lib/ui/clock.svelte';
+  import { useClock } from '#lib/ui/clock.svelte.js';
   import { untrack } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
-  import { contextGesture } from '$lib/ui/context-gesture';
-  import type { ServiceTask } from '$lib/providers/tasks';
-  import type { ProviderSchedule } from '$lib/providers/schedule';
+  import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  import { contextGesture } from '#lib/ui/context-gesture.js';
+  import type { ServiceTask } from '#lib/providers/tasks.js';
+  import type { ProviderSchedule } from '#lib/providers/schedule.js';
   import Button from './Button.svelte';
 
   import Dialog from './Dialog.svelte';
   import RowFilter from './RowFilter.svelte';
-  import { jobAttentionCount, jobNeedsAttention, taskJobCount, taskLastRun, lastJobOutcome, jobOutcome, jobRemedy, jobWaiting, jobWaitingReason, jobBlockerHref, jobPurposeLabel, type QueueAction } from '$lib/ui/queue';
-  import type { JobTiming } from '$lib/providers/job-timing.server';
-  import {displayLabel} from '$lib/ui/labels';
-  import {companionHealthy,type CompanionState} from '$lib/providers/jellyfin/companion';
-  import {taskControlLimit,jobIdentityScope} from '$lib/providers/job-policy';
+  import { jobAttentionCount, jobNeedsAttention, taskJobCount, taskLastRun, lastJobOutcome, jobOutcome, jobRemedy, jobWaiting, jobWaitingReason, jobBlockerHref, jobPurposeLabel, type QueueAction } from '#lib/ui/queue.js';
+  import type { JobTiming } from '#lib/providers/job-timing.server.js';
+  import {displayLabel} from '#lib/ui/labels.js';
+  import {companionHealthy,type CompanionState} from '#lib/providers/jellyfin/companion.js';
+  import {taskControlLimit,jobIdentityScope} from '#lib/providers/job-policy.js';
 
   const { change, preview } = useClient();
 
@@ -48,20 +48,53 @@
     timing?: JobTiming;
     local?:boolean;
     showSource?:boolean;
-  } = $props();
-  const clock = useClock('second',()=>!preview);
-  const companion=$derived(provider.companion as CompanionState|undefined);
-  const pluginHealthy=$derived(provider.schedule.updatesEnabled&&companionHealthy(companion,clock.now,provider.schedule.updatesIntervalMinutes));
-  const countdown = $derived(timing?.nextAt ? Math.max(0, Math.ceil((new Date(timing.nextAt).getTime() - clock.now) / 1000)) : null);
-  function durationLabel(seconds: number) { const minutes = Math.floor(seconds / 60); return `${Math.floor(minutes / 60) ? `${Math.floor(minutes / 60)}h ` : ''}${minutes % 60 ? `${minutes % 60}m ` : ''}${seconds % 60}s`; }
-  async function updateActive(action:'retry'|'cancel'|'promote') {
-    if(busy)return;
-    busy=true;error='';
-    try{
-      const result=await change<{updated:number;skipped:number;hasMore:boolean;limit:number;blocked:boolean}>(`queue/tasks/${action}`,{kind:task.kinds[0],instanceId:jobs[0]?.instanceId??null});
-      if (!preview) notifyAction(`${result.updated} jobs ${action==='retry'?'queued for retry':action==='cancel'?'cancelled':'prioritized'}${result.skipped?` · ${result.skipped} unchanged because the job changed or already has active work`:''}${result.hasMore?' · More eligible jobs remain; use the action again for the next batch':''}${result.blocked?' · Some failures must wait for queued or running work for the same task':''}.`);
-    }catch(cause){error=message(cause);}finally{busy=false;}
+   } = $props();
+
+  const clock = useClock('second', () => !preview);
+  const companion = $derived(provider.companion as CompanionState | undefined);
+  const pluginHealthy = $derived(provider.schedule.updatesEnabled && companionHealthy(companion, clock.now, provider.schedule.updatesIntervalMinutes));
+
+  const countdown = $derived(timing?.nextAt
+    ? Math.max(0, Math.ceil((new Date(timing.nextAt).getTime() - clock.now) / 1000))
+    : null);
+
+  function durationLabel(seconds: number) {
+    const minutes = Math.floor(seconds / 60);
+
+    return `${Math.floor(minutes / 60) ? `${Math.floor(minutes / 60)}h ` : ''}${minutes % 60 ? `${minutes % 60}m ` : ''}${seconds % 60}s`;
   }
+
+  async function updateActive(action: 'retry' | 'cancel' | 'promote') {
+    if (busy) return;
+
+    busy = true;
+    error = '';
+
+    try {
+      const result = await change<{
+        updated: number;
+        skipped: number;
+        hasMore: boolean;
+        limit: number;
+        blocked: boolean
+       }>(`queue/tasks/${action}`, { kind: task.kinds[0], instanceId: jobs[0]?.instanceId ?? null });
+
+      if (!preview) notifyAction(`${result.updated} jobs ${action === 'retry'
+        ? 'queued for retry'
+        : action === 'cancel' ? 'cancelled' : 'prioritized'}${result.skipped
+        ? ` · ${result.skipped} unchanged because the job changed or already has active work`
+        : ''}${result.hasMore
+        ? ' · More eligible jobs remain; use the action again for the next batch'
+        : ''}${result.blocked
+        ? ' · Some failures must wait for queued or running work for the same task'
+        : ''}.`);
+    } catch(cause) {
+      error = message(cause);
+    } finally {
+      busy = false;
+    }
+  }
+
   let open = $state(false),
     busy = $state(false),
     error = $state(''),
@@ -77,14 +110,18 @@
       (!task.enabled || !!provider.schedule[task.enabled])
   );
   const interval = $derived(task.interval ? provider.schedule[task.interval] : 0);
-  const active = $derived(
-    jobs.filter((job) => ['pending', 'running', 'failed'].includes(job.state) && (job.taskCount ?? 1) > 0)
-  );
-  const running = $derived(active.find(job => job.state === 'running'));
-  const failed = $derived(active.filter(job => job.state === 'failed'));
-  const retrying = $derived(active.filter(job => job.state === 'pending' && jobNeedsAttention(job)));
-  const queued = $derived(active.filter(job => job.state === 'pending'));
-  const counts = $derived({running:taskJobCount(jobs,'running'),waiting:taskJobCount(jobs,'pending'),failed:taskJobCount(jobs,'failed')});
+  const active = $derived(jobs.filter((job) => ['pending', 'running', 'failed'].includes(job.state) && (job.taskCount ?? 1) > 0));
+  const running = $derived(active.find((job) => job.state === 'running'));
+  const failed = $derived(active.filter((job) => job.state === 'failed'));
+  const retrying = $derived(active.filter((job) => job.state === 'pending' && jobNeedsAttention(job)));
+  const queued = $derived(active.filter((job) => job.state === 'pending'));
+
+  const counts = $derived({
+    running: taskJobCount(jobs, 'running'),
+    waiting: taskJobCount(jobs, 'pending'),
+    failed: taskJobCount(jobs, 'failed')
+  });
+
   const lastRun = $derived(taskLastRun(jobs) ?? timing?.lastRun);
   const status = $derived(retrying.length ? `${retrying.reduce((total,job)=>total+jobAttentionCount(job),0)} need attention · Automatic retries remain scheduled` : active.length
     ? [running ? `${counts.running} running` : null, queued.length ? `${counts.waiting} waiting` : null, failed.length ? `${counts.failed} ${counts.failed === 1 ? 'needs' : 'need'} attention` : null].filter(Boolean).join(' · ')
@@ -114,8 +151,13 @@
     error = '';
     try {
       await change(
-        local?'admin/taste-schedule':`providers/${provider.id}/schedule`,
-        {...Object.fromEntries(fields.map((field) => [field, draft[field as keyof ProviderSchedule]])),...(local?{enabled:draft.enabled}:{})}
+        local
+          ? 'admin/taste-schedule'
+          : `providers/${provider.id}/schedule`,
+        {
+          ...Object.fromEntries(fields.map((field) => [field, draft[field as keyof ProviderSchedule]])),
+          ...local ? { enabled: draft.enabled } : {}
+        }
       );
       saved = JSON.stringify(draft);
       open = false;
@@ -146,13 +188,10 @@
       busy = false;
     }
   }
-  beforeNavigate(({ cancel, to }) => {
-    if (
-      !preview && to &&
-      to.url.pathname !== window.location.pathname &&
-      (busy || (dirty && !window.confirm('Discard unsaved schedule changes?')))
-    )
-      cancel();
+
+  beforeNavigate(({ cancel, to, shallow }) => {
+    if (shallow) return;
+    if (!preview && to && to.url.pathname !== window.location.pathname && (busy || dirty && !window.confirm('Discard unsaved schedule changes?'))) cancel();
   });
 
   reportFailure(()=>error);
@@ -173,11 +212,24 @@
       {#if task.kinds[0]==='benchmark.run'}<Button item icon="refresh" href="/settings/benchmarks" keepOpen={false}>Run a new benchmark</Button>{/if}
       {#if queued.length || failed.length}<Button item icon="close" danger keepOpen={false} onclick={()=>void updateActive('cancel')}>Cancel up to {taskControlLimit} waiting jobs</Button>{/if}
       {#if task.scope}
-        <Button item icon="refresh" keepOpen={false}
-          disabled={!provider.enabled || (!provider.connectedAccounts && !local && !['tmdb','igdb'].includes(provider.provider))}
-          disabledReason={!provider.enabled ? 'Enable this service in Integrations.' : 'Connect an account before running this task.'}
-          onclick={() => void run()}>Run now</Button>
-        <Button item icon="clock" keepOpen={false} disabled={!provider.enabled} onclick={editSchedule}>Edit schedule</Button>
+        <Button
+          item
+          icon="refresh"
+          keepOpen={false}
+          disabled={!provider.enabled || !provider.connectedAccounts && !local && !['tmdb', 'igdb'].includes(provider.provider)}
+          disabledReason={!provider.enabled
+            ? 'Enable this service in Integrations.'
+            : 'Connect an account before running this task.'}
+          onclick={() => void run()}
+        >Run now</Button>
+
+        <Button
+          item
+          icon="clock"
+          keepOpen={false}
+          disabled={!provider.enabled}
+          onclick={editSchedule}
+        >Edit schedule</Button>
       {/if}
       <Button item icon="list" keepOpen={false} onclick={()=>detailsOpen=true}>Details</Button>
       {#if !local}<div class="menu-divider" role="separator"></div><Button item icon="settings" href="/settings/integrations" keepOpen={false}>Manage integration</Button>{/if}
@@ -187,8 +239,8 @@
 </article>
 <Dialog bind:open={detailsOpen} title={`${task.title} · ${provider.name}`}>
   {#if detailsOpen}<div class="stack task-details">
-  <p class="small task-description">{task.description}</p>
-  <div class="row small">
+      <p class="small task-description">{task.description}</p>
+      <div class="row small">
     <span class="badge"
       >{task.scope
         ? automatic
@@ -203,48 +255,132 @@
     {#if active.some((job) => job.state === 'failed')}<span class="text-danger"
         >Needs attention</span
       >{/if}
-  </div>
+      </div>
   {#if provider.provider==='jellyfin'&&task.kinds[0]==='jellyfin.updates'}<p class="small">{pluginHealthy?'Caught up · Native live polling is replaced; full reconciliation remains.':companion?.reason??(companion?.status==='reconciling'?'Reconciling after a feed reset or incomplete updates · Native polling remains.':'Plugin not detected yet · Native polling remains.')}</p>{/if}
   {#if provider.provider==='jellyfin'&&['jellyfin.sync','jellyfin.library'].includes(task.kinds[0])&&pluginHealthy}<p class="small">Plugin changes between full reconciliations every {provider.schedule.fullIntervalHours} hours. The minute interval is the polling fallback.</p>{/if}
   {#if task.scope === 'library'}<p class="small">
-      Full scan every {provider.schedule.fullIntervalHours} hours{#if progress?.fullCompletedAt}
+          Full scan every {provider.schedule.fullIntervalHours} hours{#if progress?.fullCompletedAt}
         · Last full scan {new Date(progress.fullCompletedAt).toLocaleString()}{/if}
-    </p>
-{/if}
-  {#if running}
-    <p class="small" role="status">{['Running', jobPurposeLabel(running)].filter(Boolean).join(' · ')}</p>
+        </p>
+      {/if}
+      {#if running}
+        <p class="small" role="status">{['Running', jobPurposeLabel(running)].filter(Boolean).join(' · ')}</p>
     {#if jobOutcome(running)}<p class="small">{jobOutcome(running)}</p>{/if}
-  {:else if queued.length}
+      {:else if queued.length}
     <p class="small" role="status">{[jobWaitingReason(queued[0]), jobPurposeLabel(queued[0]), queued[0].waitingReason === 'yielded' ? jobOutcome(queued[0]) : null].filter(Boolean).join(' · ')}</p>
     {#if jobBlockerHref(queued[0])}<a class="small" href={jobBlockerHref(queued[0])!} onclick={()=>detailsOpen=false}>Review the earlier blocking task</a>{/if}
     {#if jobWaiting(queued[0])}<p class="small">Next attempt · {new Date(queued[0].nextAttemptAt!).toLocaleString()}</p>{/if}
-  {:else if task.scope}
-    <p class="small" role="status">{timing?.reason ?? (countdown === 0 ? 'Due now · checked within one minute' : countdown !== null ? `Next run in ${durationLabel(countdown)}` : 'Schedule assessment unavailable')}</p>
-    {#if timing?.nextAt && countdown !== null && countdown > 0}<p class="small">Next eligible {task.scope === 'metadata' ? 'batch' : 'account'} · {new Date(timing.nextAt).toLocaleString()}</p>{/if}
-  {:else}<p class="small">{task.id === 'metadata' ? 'Fetched when requested.' : 'Runs when a change needs delivery.'}</p>{/if}
-  {#if lastRun}<p class="small">Last run · {new Date(lastRun.at).toLocaleString()} · {displayLabel(lastRun.state)}</p>
-    {#if lastJobOutcome(task.kinds[0],lastRun)}<p class="small">{lastJobOutcome(task.kinds[0],lastRun)}</p>{/if}
-  {/if}
-  {#if timing?.lastAt && timing.lastAt !== lastRun?.at}<p class="small">Freshness · Last successful {local || provider.provider === 'tmdb' ? 'batch' : 'account'} {new Date(timing.lastAt).toLocaleString()}</p>{/if}
-  {#if timing && task.scope && !local && jobIdentityScope(task.kinds[0])==='account'}<p class="small">{timing.fresh}/{timing.eligible} users fresh · Within two schedule intervals</p>{/if}
-  {#if active.length}<p class="small">{[counts.running?`${counts.running} running`:null,counts.waiting?`${counts.waiting} waiting`:null,counts.failed?`${counts.failed} ${counts.failed === 1 ? 'needs' : 'need'} attention`:null].filter(Boolean).join(' · ')}</p>{/if}
-  {#if timing?.reviews}<p class="small">{timing.reviews} titles need tracking review · Each owner can review them in <a href="/settings/pending" class="text-accent">Sync conflicts</a>.</p>{/if}
-  {#if retrying.length}<p class="small text-danger">Repeated failures · {retrying[0].lastError} Automatic retries remain scheduled.</p>{/if}
-  {#if failed.length}
-    <p class="small">{failed[0].lastError || 'Review diagnostics for the failure reason.'}</p>
-    {#if failed[0].failure?.stage}<p class="small">Stage · {failed[0].failure.stage}</p>{/if}
-    {#each failed[0].failure?.validation??[] as issue}<p class="small">{issue.path} · Expected {issue.expected}; received {issue.receivedType}</p>{/each}
-    {#if failed.some(job=>jobRemedy(job)==='connection')}<a href="/settings/connections" class="text-accent">Reconnect accounts</a>{/if}
-    {#if failed.some(job=>jobRemedy(job)==='permissions')}<a href="/settings/integrations" class="text-accent">Review permissions</a>{/if}
-    {#if failed.some(job=>jobRemedy(job)==='metadata')}<a href="/settings/activity" class="text-accent">Review diagnostics</a>{/if}
-  {/if}
-  <div class="row task-controls">
-    {#if failed.length && task.kinds[0]!=='benchmark.run'}<Button emphasis="subtle" icon="refresh" disabled={busy} onclick={()=>void updateActive('retry')}>Retry</Button>{/if}
-    {#if task.scope}<Button  icon="refresh" disabled={busy || !provider.enabled || (!provider.connectedAccounts && !local && !['tmdb','igdb'].includes(provider.provider))} onclick={() => void run()}>Run now</Button>
-      <Button emphasis="subtle" icon="clock" disabled={busy || !provider.enabled} onclick={editSchedule}>Edit schedule</Button>{/if}
-  </div>
+      {:else if task.scope}
+        <p class="small" role="status">
+          {timing?.reason ?? (countdown === 0
+            ? 'Due now · checked within one minute'
+            : countdown !== null
+              ? `Next run in ${durationLabel(countdown)}`
+              : 'Schedule assessment unavailable')}
+        </p>
 
-  </div>{/if}
+        {#if timing?.nextAt && countdown !== null && countdown > 0}
+          <p class="small">Next eligible {task.scope === 'metadata' ? 'batch' : 'account'} · {new Date(timing.nextAt).toLocaleString()}</p>
+        {/if}
+      {:else}
+        <p class="small">
+          {task.id === 'metadata'
+            ? 'Fetched when requested.'
+            : 'Runs when a change needs delivery.'}
+        </p>
+      {/if}
+
+      {#if lastRun}
+        <p class="small">Last run · {new Date(lastRun.at).toLocaleString()} · {displayLabel(lastRun.state)}</p>
+
+        {#if lastJobOutcome(task.kinds[0], lastRun)}
+          <p class="small">{lastJobOutcome(task.kinds[0], lastRun)}</p>
+        {/if}
+      {/if}
+
+      {#if timing?.lastAt && timing.lastAt !== lastRun?.at}
+        <p class="small">Freshness · Last successful {local || provider.provider === 'tmdb' ? 'batch' : 'account'} {new Date(timing.lastAt).toLocaleString()}</p>
+      {/if}
+
+      {#if timing && task.scope && !local && jobIdentityScope(task.kinds[0]) === 'account'}
+        <p class="small">{timing.fresh}/{timing.eligible} users fresh · Within two schedule intervals</p>
+      {/if}
+
+      {#if active.length}
+        <p class="small">
+          {[
+            counts.running ? `${counts.running} running` : null,
+            counts.waiting ? `${counts.waiting} waiting` : null,
+            counts.failed
+              ? `${counts.failed} ${counts.failed === 1 ? 'needs' : 'need'} attention`
+              : null
+          ].filter(Boolean).join(' · ')}
+        </p>
+      {/if}
+
+      {#if timing?.reviews}
+        <p class="small">
+          {timing.reviews} titles need tracking review · Each owner can review them in
+          <a href="/settings/pending" class="text-accent">Sync conflicts</a>
+          .
+        </p>
+      {/if}
+
+      {#if retrying.length}
+        <p class="small text-danger">Repeated failures · {retrying[0].lastError} Automatic retries remain scheduled.</p>
+      {/if}
+
+      {#if failed.length}
+        <p class="small">{failed[0].lastError || 'Review diagnostics for the failure reason.'}</p>
+
+        {#if failed[0].failure?.stage}
+          <p class="small">Stage · {failed[0].failure.stage}</p>
+        {/if}
+
+        {#each failed[0].failure?.validation ?? [] as issue}
+          <p class="small">{issue.path} · Expected {issue.expected}; received {issue.receivedType}</p>
+        {/each}
+
+        {#if failed.some((job) => jobRemedy(job) === 'connection')}
+          <a href="/settings/connections" class="text-accent">Reconnect accounts</a>
+        {/if}
+
+        {#if failed.some((job) => jobRemedy(job) === 'permissions')}
+          <a href="/settings/integrations" class="text-accent">Review permissions</a>
+        {/if}
+
+        {#if failed.some((job) => jobRemedy(job) === 'metadata')}
+          <a href="/settings/activity" class="text-accent">Review diagnostics</a>
+        {/if}
+      {/if}
+
+      <div class="row task-controls">
+        {#if failed.length && task.kinds[0] !== 'benchmark.run'}
+          <Button
+            emphasis="subtle"
+            icon="refresh"
+            disabled={busy}
+            onclick={() => void updateActive('retry')}
+          >Retry</Button>
+        {/if}
+
+        {#if task.scope}
+          <Button
+            icon="refresh"
+            disabled={busy || !provider.enabled || !provider.connectedAccounts && !local && !['tmdb', 'igdb'].includes(provider.provider)}
+            onclick={() => void run()}
+          >Run now</Button>
+
+          <Button
+            emphasis="subtle"
+            icon="clock"
+            disabled={busy || !provider.enabled}
+            onclick={editSchedule}
+          >Edit schedule</Button>
+        {/if}
+      </div>
+    </div>
+  {/if}
 </Dialog>
 <Dialog bind:open title={`${task.title} schedule · ${provider.name}`}>
   <form
@@ -259,13 +395,19 @@
       toggles in <a class="text-accent" href="/settings/integrations">Integrations</a>.
     </p>{/if}
     {#if task.interval}<Field label={local?'Refresh taste profiles every (minutes)':task.interval==='recommendationsIntervalMinutes' ? 'Refresh recommendations every (minutes)' : task.scope === 'library'
-          ? 'Library changes every (minutes)'
-          : task.scope === 'users'
-            ? 'User activity every (minutes)'
-            : task.scope==='streams'?(task.kinds[0]==='jellyfin.updates'?'Check plugin updates every (minutes)':'Server streams every (minutes)'):task.scope === 'live' ? 'Idle checks every (minutes)' : task.scope === 'lists'
-              ? 'Lists every (minutes)'
-              : task.scope === 'tracking'
-                ? 'Tracking every (minutes)'
+              ? 'Library changes every (minutes)'
+              : task.scope === 'users'
+                ? 'User activity every (minutes)'
+                : task.scope === 'streams'
+                  ? task.kinds[0] === 'jellyfin.updates'
+                    ? 'Check plugin updates every (minutes)'
+                    : 'Server streams every (minutes)'
+                  : task.scope === 'live'
+                    ? 'Idle checks every (minutes)'
+                    : task.scope === 'lists'
+                      ? 'Lists every (minutes)'
+                      : task.scope === 'tracking'
+                        ? 'Tracking every (minutes)'
                 : task.scope === 'catalogue' ? 'User catalogue every (minutes)' : task.scope === 'metadata' ? 'Refresh each title every (minutes)' : 'Requests every (minutes)'}><input
           type="number"
           min="1"
@@ -274,9 +416,50 @@
           required
           bind:value={draft[task.interval]}
           disabled={busy}
-        /></Field>{/if}
-    {#if task.scope==='streams'}<div class="field"><span>Server administrator account</span><RowFilter selection groups={[{label:'Administrator account',value:draft.streamsConnectionId??'auto',options:[{value:'auto',label:'Automatic · first connected administrator'},...provider.accounts.filter(account=>account.role==='admin').map(account=>({value:account.id,label:account.username}))],change:value=>(draft.streamsConnectionId=value==='auto'?null:value)}]}/><small>This account must also be a Jellyfin administrator.</small></div>{/if}
-    {#if task.scope==='live'}<Field label="Active checks every (minutes)"><input type="number" min="1" max="10080" step="1" required bind:value={draft.liveActiveMinutes} disabled={busy} /></Field>{/if}
+        />
+      </Field>
+    {/if}
+
+    {#if task.scope === 'streams'}
+      <div class="field">
+        <span>Server administrator account</span>
+
+        <RowFilter
+          selection
+          groups={[
+            {
+              label: 'Administrator account',
+              value: draft.streamsConnectionId ?? 'auto',
+              options: [
+                {
+                  value: 'auto',
+                  label: 'Automatic · first connected administrator'
+                },
+                ...provider.accounts.filter((account) => account.role === 'admin').map((account) => ({ value: account.id, label: account.username }))
+              ],
+              change: (value) => draft.streamsConnectionId = value === 'auto' ? null : value
+            }
+          ]}
+        />
+
+        <small>This account must also be a Jellyfin administrator.</small>
+      </div>
+    {/if}
+
+    {#if task.scope === 'live'}
+      <Field label="Active checks every (minutes)">
+        <input
+          type="number"
+          min="1"
+          max="10080"
+          step="1"
+          required
+          bind:value={draft.liveActiveMinutes}
+          disabled={busy}
+        />
+      </Field>
+    {/if}
+
     {#if task.scope === 'library'}
       <Field label="Full library scan every (hours)"><input
           type="number"
@@ -289,19 +472,26 @@
         /></Field>
       <div class="field">
         <span>Library source account</span><RowFilter selection groups={[{label:"Library source account", value:draft.libraryConnectionId ?? 'auto', options:[
-            { value: 'auto', label: 'Automatic · first connected account' },
-            ...provider.accounts.map((account) => ({ value: account.id, label: account.username })),
-          ], change:(value) => (draft.libraryConnectionId = value === 'auto' ? null : value)}]} /><small
-          >Choose an account that can access every library you want to catalogue. Each user’s access
-          is checked separately.</small
-        >
+                { value: 'auto', label: 'Automatic · first connected account' },
+                ...provider.accounts.map((account) => ({ value: account.id, label: account.username }))
+              ],
+              change: (value) => draft.libraryConnectionId = value === 'auto' ? null : value
+            }
+          ]}
+        />
+
+        <small>Choose an account that can access every library you want to catalogue. Each user’s access is checked separately.</small>
       </div>
     {/if}
     <FormActions>
-      <Button type="submit" disabled={busy || !dirty}>{busy ? 'Saving…' : 'Save schedule'}</Button
-      ><Button emphasis="subtle" disabled={busy} onclick={() => (open = false)}>Cancel</Button>
-    </FormActions>
+      <Button type="submit" disabled={busy || !dirty}>{busy ? 'Saving…' : 'Save schedule'}</Button>
 
+      <Button
+        emphasis="subtle"
+        disabled={busy}
+        onclick={() => open = false}
+      >Cancel</Button>
+    </FormActions>
   </form>
 </Dialog>
 

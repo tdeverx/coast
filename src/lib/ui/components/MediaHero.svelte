@@ -1,11 +1,11 @@
 <script lang="ts">
   import { untrack, type Snippet } from 'svelte';
-  import { blackFadeGradient } from '$lib/ui/materials/black-fade';
-  import type { MediaView } from '$lib/ui/types';
-  import { createHeroPresentation, screenItem, type HeroItem } from '$lib/ui/heroes/presentation.svelte';
-  import { createHeroPlayback } from '$lib/ui/heroes/playback.svelte';
-  import { setHeroMuted } from '$lib/playback/client.svelte';
-  import { usePlayback } from '$lib/playback/context.svelte';
+  import { blackFadeGradient } from '#lib/ui/materials/black-fade.js';
+  import type { MediaView } from '#lib/ui/types.js';
+  import { createHeroPresentation, screenItem, type HeroItem } from '#lib/ui/heroes/presentation.svelte.js';
+  import { createHeroPlayback } from '#lib/ui/heroes/playback.svelte.js';
+  import { setHeroMuted } from '#lib/playback/client.svelte.js';
+  import { usePlayback } from '#lib/playback/context.svelte.js';
   import WorkMenu from './WorkMenu.svelte';
   import Button from './Button.svelte';
 

@@ -1,4 +1,4 @@
-import { requireWorkFeature } from '$lib/server/features';
+import { requireWorkFeature } from '#lib/server/features.js';
 import { and, eq } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';

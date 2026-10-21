@@ -1,6 +1,6 @@
 import { sql, type SQL } from 'drizzle-orm';
 import { collectionCTE, collectionRead } from './query.server';
-import { pagination, PAGE_SIZE } from '$lib/server/queries/pagination';
+import { pagination, PAGE_SIZE } from '#lib/server/queries/pagination.js';
 import * as v from 'valibot';
 
 /** A read projection: relationship/activity and access changes are immediately reflected. */

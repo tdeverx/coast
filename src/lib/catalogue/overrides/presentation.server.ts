@@ -1,9 +1,9 @@
 import { and, eq, inArray, sql, type SQL } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { userMetadataPreferences } from '$lib/server/db/schema';
-import { PAGE_SIZE } from '$lib/server/queries/pagination';
-import type { MediaCardPresentation } from '$lib/ui/types';
-import { searchDocument, searchSql } from '$lib/server/queries/search-ranking';
+import { getDb } from '#lib/server/db/index.js';
+import { userMetadataPreferences } from '#lib/server/db/schema.js';
+import { PAGE_SIZE } from '#lib/server/queries/pagination.js';
+import type { MediaCardPresentation } from '#lib/ui/types.js';
+import { searchDocument, searchSql } from '#lib/server/queries/search-ranking.js';
 
 /** Viewer-owned preferences; never borrow the displayed profile owner's private aliases. */
 export async function presentationPreferences(viewerId: string | null, ids: string[]) {

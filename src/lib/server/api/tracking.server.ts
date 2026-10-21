@@ -1,7 +1,7 @@
-import { json } from '@sveltejs/kit';
+
 import * as v from 'valibot';
-import { trackingInputSchema, bulkTrackingInputSchema } from '$lib/core/tracking/service.server';
-import { trackWithExports, bulkTrackWithExports } from '$lib/sync/changes.server';
+import { trackingInputSchema, bulkTrackingInputSchema } from '#lib/core/tracking/service.server.js';
+import { trackWithExports, bulkTrackWithExports } from '#lib/sync/changes.server.js';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleTracking(context: ApiContext): Promise<Response | undefined> {
@@ -19,5 +19,5 @@ export async function handleTracking(context: ApiContext): Promise<Response | un
           ? await bulkTrackWithExports(uid, v.parse(bulkTrackingInputSchema, clean))
           : await trackWithExports(uid, v.parse(trackingInputSchema, clean));
     } else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

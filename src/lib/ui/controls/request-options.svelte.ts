@@ -1,6 +1,6 @@
-import type { RequestDestination } from '$lib/media/requests';
-import type { api } from '$lib/ui/client';
-import { createResource } from '$lib/ui/resource.svelte';
+import type { RequestDestination } from '#lib/media/requests.js';
+import type { api } from '#lib/ui/client.js';
+import { createResource } from '#lib/ui/resource.svelte.js';
 
 /** Menu and dialog reads share publication/cancellation policy, not a global cache. */
 export function createRequestOptions(request: typeof api) {

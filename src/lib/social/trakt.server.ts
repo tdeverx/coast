@@ -1,13 +1,13 @@
-import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
+import { requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
 import {and,eq} from 'drizzle-orm';
-import {getDb,getSql} from '$lib/server/db';
-import {socialLiveState,socialLiveDeliveries,providerConnections,externalIds} from '$lib/server/db/schema';
-import {getTrakt} from '$lib/providers/trakt/connection.server';
+import {getDb,getSql} from '#lib/server/db/index.js';
+import {socialLiveState,socialLiveDeliveries,providerConnections,externalIds} from '#lib/server/db/schema.js';
+import {getTrakt} from '#lib/providers/trakt/connection.server.js';
 import {liveObservationExpiry} from './live-freshness.server';
-import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
-import {reconcileProviderValue} from '$lib/sync/values.server';
-import {trackInTransaction} from '$lib/core/tracking/service.server';
-import {PermanentActionError} from '$lib/server/queue';
+import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
+import {reconcileProviderValue} from '#lib/sync/values.server.js';
+import {trackInTransaction} from '#lib/core/tracking/service.server.js';
+import {PermanentActionError} from '#lib/server/queue/index.js';
 type TraktContext=Awaited<ReturnType<typeof getTrakt>>;
 export async function pollLive(userId:string,connectionId:string) {
  return pollLiveFromAdapter(userId,connectionId,await getTrakt(userId,connectionId));

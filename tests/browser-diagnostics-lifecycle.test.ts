@@ -2,7 +2,7 @@ import {expect,test} from 'bun:test';
 import {moduleUrl} from './fixtures/ui-script';
 
 const original=(await Bun.file(new URL('../src/lib/ui/diagnostics.ts',import.meta.url)).text())
- .replace("from '$lib/diagnostics'",`from ${JSON.stringify(import.meta.resolve('../src/lib/diagnostics'))}`);
+ .replace("from '#lib/diagnostics.js'",`from ${JSON.stringify(import.meta.resolve('../src/lib/diagnostics'))}`);
 const {installBrowserDiagnostics,browserDiagnostic}=await import(moduleUrl(new Bun.Transpiler({loader:'ts'}).transformSync(original)));
 const settle=async()=>{for(let i=0;i<8;i++)await Promise.resolve();};
 

@@ -1,20 +1,20 @@
 <script lang="ts">
  import {onDestroy,untrack} from 'svelte';
- import {useClient} from '$lib/ui/client-context';
- import {createResource,uniqueItems} from '$lib/ui/resource.svelte';
- import {profileActivityPanels,profileBreakdownPanels} from '$lib/ui/insights/profile';
- import {mediaTypeOptions} from '$lib/ui/filter-options';
+ import {useClient} from '#lib/ui/client-context.js';
+ import {createResource,uniqueItems} from '#lib/ui/resource.svelte.js';
+ import {profileActivityPanels,profileBreakdownPanels} from '#lib/ui/insights/profile.js';
+ import {mediaTypeOptions} from '#lib/ui/filter-options.js';
  import DetailCard from '../components/DetailCard.svelte';
  import MetricGrid from '../components/MetricGrid.svelte';
  import ProfileRecap from '../components/ProfileRecap.svelte';
  import SegmentedControl from '../components/SegmentedControl.svelte';
  import {page} from '$app/state';
- import {sectionTarget} from '$lib/ui/section-target';
+ import {sectionTarget} from '#lib/ui/section-target.js';
  import Shelf from '../components/Shelf.svelte';
  let {href}:{href:string}=$props();
  const target=$derived(sectionTarget(href,page.url));
  const selection=$derived(target&&'profile' in target?target.profile:undefined);
- type Content=Partial<Awaited<ReturnType<typeof import('$lib/server/queries/profile').profileInsightsData>>>&{items:import('$lib/ui/shelves/types').ShelfItem[];page:number;pages:number;favourites?:import('$lib/ui/shelves/types').ShelfItem[]};
+ type Content=Partial<Awaited<ReturnType<typeof import('#lib/server/queries/profile.js').profileInsightsData>>>&{items:import('#lib/ui/shelves/types.js').ShelfItem[];page:number;pages:number;favourites?:import('#lib/ui/shelves/types.js').ShelfItem[]};
  const resource=createResource<Content>({items:[],page:1,pages:1});
  const {api}=useClient();
  let period=$state<'all'|'month'|'year'>(untrack(()=>selection?.period??'all'));

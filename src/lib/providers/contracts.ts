@@ -1,5 +1,5 @@
-import type { ScreenKind } from '$lib/media/model';
-import type { ArtworkImages, ArtworkType } from '$lib/artwork';
+import type { ScreenKind } from '#lib/media/model.js';
+import type { ArtworkImages, ArtworkType } from '#lib/artwork.js';
 /** Provider transports are injected server-side and must enforce Coast network policy. */
 export type ProviderTransport = (path: string, init?: RequestInit) => Promise<unknown>;
 export type MediaKind = ScreenKind;
@@ -24,7 +24,7 @@ export interface Metadata {
   releaseDate?: string;
   runtimeMinutes?: number;
   genres?: string[];
-  tasteFeatures?: import('$lib/social/taste-profile').TasteFeatures;
+  tasteFeatures?: import('#lib/social/taste-profile.js').TasteFeatures;
   language?: string;
   region?: string;
   certificate?: string;

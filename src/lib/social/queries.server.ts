@@ -1,11 +1,11 @@
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig } from '#lib/server/features.js';
 import {statusesForUsers} from './status.server';
 import {activityAction,workFriendFilters,workFriendOptions} from './model';
 import {activityRelationships,relationshipEdges,relationshipReasons,relationshipEventFilter} from './relationships.server';
-import {getDb} from '$lib/server/db';
+import {getDb} from '#lib/server/db/index.js';
 import {sql} from 'drizzle-orm';
 import * as v from 'valibot';
-import {workCards} from '$lib/collection/query.server';
+import {workCards} from '#lib/collection/query.server.js';
 const uuid=v.pipe(v.string(),v.uuid());
 export const feedOptionsSchema=v.object({category:v.optional(v.picklist(['all','screen','music','game','reading']),'all'),kind:v.optional(v.pipe(v.string(),v.maxLength(40)),'all'),friendId:v.optional(uuid),workId:v.optional(uuid),artistId:v.optional(uuid),readingGroupId:v.optional(uuid),relationship:v.optional(v.picklist(workFriendFilters)),beforeRelationship:v.optional(v.picklist(['true','false'])),beforeKnown:v.optional(v.picklist(['true','false'])),period:v.optional(v.picklist(['month','year','all']),'all'),before:v.optional(v.pipe(v.string(),v.isoTimestamp())),beforeId:v.optional(uuid)});
 export async function activityFeed(userId:string,raw:unknown={},activityIds?:string[]) {

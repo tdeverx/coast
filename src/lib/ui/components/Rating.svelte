@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
-  import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
   import Icon from './Icon.svelte';
 
   const { change, feedback } = useClient();

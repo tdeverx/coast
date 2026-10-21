@@ -1,7 +1,7 @@
-import { wholeWorkId } from '$lib/core/tracking/continue.server';
-import { setRewatch } from '$lib/core/tracking/rewatch.server';
-import { json } from '@sveltejs/kit';
-import { getDb } from '$lib/server/db';
+import { wholeWorkId } from '#lib/core/tracking/continue.server.js';
+import { setRewatch } from '#lib/core/tracking/rewatch.server.js';
+
+import { getDb } from '#lib/server/db/index.js';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleRewatch(context: ApiContext): Promise<Response | undefined> {
@@ -11,5 +11,5 @@ export async function handleRewatch(context: ApiContext): Promise<Response | und
         ...body,
         mediaId: await wholeWorkId(getDb(), uuid(body.mediaId)),
       }); else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

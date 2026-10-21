@@ -1,13 +1,13 @@
-import { getFeatureConfig } from '$lib/server/features';
-import {discoveryContent,discoveryParameters} from '$lib/server/queries/discovery';
-import { mediaRows } from '$lib/server/queries/media-rows';
+import { getFeatureConfig } from '#lib/server/features.js';
+import {discoveryContent,discoveryParameters} from '#lib/server/queries/discovery.js';
+import { mediaRows } from '#lib/server/queries/media-rows.js';
 import type { PageServerLoad } from './$types';
-import { discoverMedia } from '$lib/catalogue/service.server';
-import { mediaViews } from '$lib/server/queries/media';
-import { categoryEnabled, surfaceEnabled } from '$lib/experimental';
+import { discoverMedia } from '#lib/catalogue/service.server.js';
+import { mediaViews } from '#lib/server/queries/media.js';
+import { categoryEnabled, surfaceEnabled } from '#lib/experimental.js';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { READING_PROVIDER_PAGE_LIMIT } from '$lib/reading/model';
+import { READING_PROVIDER_PAGE_LIMIT } from '#lib/reading/model.js';
 export const load = (async ({locals, depends,url}) => {
   depends('coast:tracking');
   depends('coast:reading');
@@ -24,7 +24,7 @@ export const load = (async ({locals, depends,url}) => {
   }
   const selected=locals.user&&selection.surface!=='watch'&&(url.searchParams.has('section')||selection.surface==='read')?await discoveryContent(locals.user.id,selection):undefined;
   const result = selected||!featureConfig.features.screen?{items:[],trending:[],recent:[],configured:true,providerUnavailable:false}:await discoverMedia(locals.user?.id??null);
-  const items = locals.user ? await mediaViews(locals.user.id,{ids:result.items.map(i=>i.id)}) : await (await import('$lib/social/public.server')).publicMedia(result.items.map(i=>i.id));
+  const items = locals.user ? await mediaViews(locals.user.id,{ids:result.items.map(i=>i.id)}) : await (await import('#lib/social/public.server.js')).publicMedia(result.items.map(i=>i.id));
   const byId = new Map(items.map((item) => [item.id, item]));
   const selectItems = (ids: string[]) => ids.flatMap((id) => {
     const item = byId.get(id);

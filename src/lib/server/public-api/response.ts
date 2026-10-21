@@ -1,5 +1,5 @@
-import type { MediaView, MediaCardPresentation, WorkSummary } from '$lib/ui/types';
-import { PAGE_SIZE } from '$lib/server/queries/pagination';
+import type { MediaView, MediaCardPresentation, WorkSummary } from '#lib/ui/types.js';
+import { PAGE_SIZE } from '#lib/server/queries/pagination.js';
 
 /** Explicit DTOs prevent a browser read model from leaking new internal fields. */
 export function publicWork(item:MediaView|MediaCardPresentation|WorkSummary,personal=false) {

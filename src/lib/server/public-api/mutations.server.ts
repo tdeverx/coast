@@ -1,21 +1,21 @@
-import { updateReading } from '$lib/core/reading/service.server';
-import { categoryEnabled } from '$lib/experimental';
-import { readJsonBody } from '$lib/server/security/request-body';
-import { encryptCredential,decryptCredential } from '$lib/server/security/credentials';
+import { updateReading } from '#lib/core/reading/service.server.js';
+import { categoryEnabled } from '#lib/experimental.js';
+import { readJsonBody } from '#lib/server/security/request-body.js';
+import { encryptCredential,decryptCredential } from '#lib/server/security/credentials.js';
 import * as v from 'valibot';
 import { createHash } from 'node:crypto';
 import { and,eq,sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { apiIdempotency,apiTokens,users,works } from '$lib/server/db/schema';
-import { AppError } from '$lib/server/security/errors';
-import { trackingInputSchema,bulkTrackingInputSchema } from '$lib/core/tracking/service.server';
-import { trackWithExports,bulkTrackWithExports,rateWithExports } from '$lib/sync/changes.server';
-import { ratingInputSchema } from '$lib/core/ratings/service.server';
-import { logMusic } from '$lib/music/persistence.server';
-import { createPlaythrough,updatePlaythrough,logGameSession } from '$lib/core/games/service.server';
+import { getDb } from '#lib/server/db/index.js';
+import { apiIdempotency,apiTokens,users,works } from '#lib/server/db/schema.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { trackingInputSchema,bulkTrackingInputSchema } from '#lib/core/tracking/service.server.js';
+import { trackWithExports,bulkTrackWithExports,rateWithExports } from '#lib/sync/changes.server.js';
+import { ratingInputSchema } from '#lib/core/ratings/service.server.js';
+import { logMusic } from '#lib/music/persistence.server.js';
+import { createPlaythrough,updatePlaythrough,logGameSession } from '#lib/core/games/service.server.js';
 import { createWebhook,removeWebhook } from './webhooks.server';
 import type { authenticateApiToken } from './tokens.server';
-import { getFeatureConfig, requireFeatureInTransaction } from '$lib/server/features';
+import { getFeatureConfig, requireFeatureInTransaction } from '#lib/server/features.js';
 
 const uuid=v.pipe(v.string(),v.uuid());
 export function canonicalJson(value:unknown):string{if(Array.isArray(value))return `[${value.map(canonicalJson).join(',')}]`;if(value!==null&&typeof value==='object')return `{${Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>`${JSON.stringify(key)}:${canonicalJson(item)}`).join(',')}}`;return JSON.stringify(value);}

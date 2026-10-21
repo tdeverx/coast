@@ -2,7 +2,7 @@
  import type {Snippet} from 'svelte';
  import Dialog from './Dialog.svelte';
  import Button from './Button.svelte';
- import {provideDetailSection} from '$lib/ui/detail-section.svelte';
+ import {provideDetailSection} from '#lib/ui/detail-section.svelte.js';
  import SegmentedControl from './SegmentedControl.svelte';
  let {open=$bindable(false),editions=[],editionName=$bindable(),children,onclose,onback,contentKey,sectionPage=false}:{open:boolean;editions?:{value:string;label:string}[];editionName?:string;children?:Snippet;onclose?:()=>void;onback?:()=>void;contentKey?:string;sectionPage?:boolean}=$props();
  const sectionView=$derived(sectionPage||!!contentKey&&!!new URL(contentKey,'http://coast/').searchParams.get('section'));

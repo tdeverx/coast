@@ -1,5 +1,5 @@
 import type { MusicItem } from './model';
-import type { MediaCardDisplay, MediaCardPresentation, MediaHeroPresentation } from '$lib/ui/types';
+import type { MediaCardDisplay, MediaCardPresentation, MediaHeroPresentation } from '#lib/ui/types.js';
 
 /** Artists are browse destinations; tracks/albums use their music queue. */
 export function canPlayMusicCard(item: Pick<MediaCardDisplay, 'kind' | 'available' | 'workId' | 'connectionId'>) {

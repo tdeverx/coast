@@ -1,5 +1,5 @@
 export type FilterOption = { value: string; label: string };
-export function mediaTypeOptions(features: Partial<import('$lib/experimental').MediumFeatures> = {}): FilterOption[] {
+export function mediaTypeOptions(features: Partial<import('#lib/experimental.js').MediumFeatures> = {}): FilterOption[] {
   return [
     { value: 'all', label: 'All' },
     ...(features.features?.screen===false ? [] : [{ value: 'movie', label: 'Movies' }, { value: 'show', label: 'Shows' }]),
@@ -13,6 +13,6 @@ export function mediaTypeOptions(features: Partial<import('$lib/experimental').M
   ];
 }
 
-export function readingTypeOptions(features: Partial<import('$lib/experimental').MediumFeatures>): FilterOption[] {
+export function readingTypeOptions(features: Partial<import('#lib/experimental.js').MediumFeatures>): FilterOption[] {
   return mediaTypeOptions(features).filter(option => ['all', 'book', 'comic'].includes(option.value));
 }

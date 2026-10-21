@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
-  import { surfaceEnabled } from '$lib/experimental';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import { surfaceEnabled } from '#lib/experimental.js';
   import { setContext } from 'svelte';
   import { page } from '$app/state';
-  import Shelf from '$lib/ui/components/Shelf.svelte';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import Pagination from '$lib/ui/components/Pagination.svelte';
-  import type { LibrarySurface } from '$lib/library';
+  import Shelf from '#lib/ui/components/Shelf.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import Pagination from '#lib/ui/components/Pagination.svelte';
+  import type { LibrarySurface } from '#lib/library.js';
   let { data } = $props();
   setContext('profile-read-only', () => !data.owner);
   const title = $derived(data.username ? `${data.username}’s Collection` : 'Library');
   const missing = $derived(page.url.searchParams.get('missing') === 'true');
   const overviewUrl = $derived(data.collection ? `/library?collection=true${data.username ? `&username=${encodeURIComponent(data.username)}` : ''}` : '/library?collection=false');
-  function missingUrl() { const url = new URL(page.url); url.searchParams.set('collection', 'true'); url.searchParams.set('missing', String(!missing)); url.searchParams.delete('missingPage'); return url.pathname + url.search; }
-  function missingPageUrl(number: number) { const url = new URL(page.url); url.searchParams.set('missingPage', String(number)); return url.pathname + url.search; }
+  function missingUrl() { const url = new URL(page.url.href); url.searchParams.set('collection', 'true'); url.searchParams.set('missing', String(!missing)); url.searchParams.delete('missingPage'); return url.pathname + url.search; }
+  function missingPageUrl(number: number) { const url = new URL(page.url.href); url.searchParams.set('missingPage', String(number)); return url.pathname + url.search; }
   function selection(surface: LibrarySurface) {
     if (data.view !== surface && surface !== 'watch') return 'all';
     return surface === 'listen' ? data.filters.kind : data.filters.tracking;

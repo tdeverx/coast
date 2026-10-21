@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { InsightContent } from '$lib/ui/insights/types';
+  import type { InsightContent } from '#lib/ui/insights/types.js';
   import ChartView from '../charts/ChartView.svelte';
   import FactList from './FactList.svelte';
   import MetricGrid from './MetricGrid.svelte';

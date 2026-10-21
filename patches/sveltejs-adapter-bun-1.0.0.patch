@@ -1,0 +1,44 @@
+diff --git a/src/env.js b/src/env.js
+index 2dc88c6529f0cbaf47a68e3fcb1ceda704665574..599c332f07364fd3bc0b1f6b946ff5bb4bd3df43 100644
+--- a/src/env.js
++++ b/src/env.js
+@@ -4,6 +4,7 @@ import { env_prefix } from '#@sveltejs/adapter-bun';
+ const expected = new Set([
+ 	'SOCKET_PATH',
+ 	'HOST',
++	'ORIGIN',
+ 	'PORT',
+ 	'REUSE_PORT',
+ 	'IPV6_ONLY',
+diff --git a/src/handler.js b/src/handler.js
+index a5cce744b7873975a161beb1deb02766e5635deb..7edfeed48ac03ffffd5dffb2924b7681a58fd475 100644
+--- a/src/handler.js
++++ b/src/handler.js
+@@ -3,6 +3,18 @@ import { env_prefix, origin, server } from '#@sveltejs/adapter-bun';
+ import { server_assets } from './routes.js';
+ import { env, number_env } from './env.js';
+ 
++// Preserve Coast's runtime-configured origin for reusable self-hosted images.
++const configured_origin = env('ORIGIN', origin);
++let runtime_origin;
++if (configured_origin) {
++	const parsed = new URL(configured_origin);
++	if (!['http:', 'https:'].includes(parsed.protocol) || parsed.username || parsed.password ||
++		parsed.pathname !== '/' || parsed.search || parsed.hash) {
++		throw new Error('ORIGIN must be an HTTP(S) origin without credentials, path, query or fragment');
++	}
++	runtime_origin = parsed.origin;
++}
++
+ const address_header = env('ADDRESS_HEADER', '').toLowerCase();
+ const protocol_header = env('PROTOCOL_HEADER', '').toLowerCase();
+ const host_header = env('HOST_HEADER', '').toLowerCase();
+@@ -46,7 +58,7 @@ function normalize_request(request) {
+ 	try {
+ 		// an empty Host header makes request.url relative, so parsing belongs in the try
+ 		const url = new URL(request.url);
+-		const request_origin = origin || get_origin(request, url);
++		const request_origin = runtime_origin || get_origin(request, url);
+ 		return request_origin === url.origin
+ 			? request
+ 			: new Request(request_origin + url.pathname + url.search, request);

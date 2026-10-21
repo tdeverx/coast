@@ -1,8 +1,8 @@
 import {error} from '@sveltejs/kit';
 import * as v from 'valibot';
-import {AppError} from '$lib/server/security/errors';
-import {friendInsights} from '$lib/social/insights.server';
-import {workCards} from '$lib/collection/query.server';
+import {AppError} from '#lib/server/security/errors.js';
+import {friendInsights} from '#lib/social/insights.server.js';
+import {workCards} from '#lib/collection/query.server.js';
 import type {PageServerLoad} from './$types';
 export const load:PageServerLoad=async({locals,url,params,depends})=>{
   depends('coast:social');
@@ -18,5 +18,5 @@ export const load:PageServerLoad=async({locals,url,params,depends})=>{
  const overlapIds=comparison?.ids??[];
  return {page:comparison?.page??1,medium,overlap,overlapTotal:comparison?.total??0,overlapPages:comparison?.pages??1,overlapItems:await workCards(user.id,user.id,overlapIds),
  comparison,
- username:(await (await import('$lib/server/db')).getSql()`select username from users where id=${friendId}::uuid`)[0]?.username??''};
+ username:(await (await import('#lib/server/db/index.js')).getSql()`select username from users where id=${friendId}::uuid`)[0]?.username??''};
 };

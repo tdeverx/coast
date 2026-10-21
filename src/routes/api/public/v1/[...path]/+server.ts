@@ -1,4 +1,4 @@
-import { publicApiHandler } from '$lib/server/public-api/handler.server';
+import { publicApiHandler } from '#lib/server/public-api/handler.server.js';
 export const GET=publicApiHandler;
 export const HEAD=publicApiHandler;
 export const POST=publicApiHandler;

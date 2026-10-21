@@ -1,4 +1,4 @@
-import type { ReadingLocation, ReadingFormat } from '$lib/reading/model';
+import type { ReadingLocation, ReadingFormat } from '#lib/reading/model.js';
 export type PartySettings = {
   playback: 'host' | 'everyone' | 'selected'; controllers: string[];
   invitations: 'host' | 'everyone'; acceptInvites: boolean;

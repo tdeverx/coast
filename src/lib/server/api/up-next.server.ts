@@ -1,5 +1,5 @@
-import { setUpNext } from '$lib/core/lists/up-next.server';
-import { json } from '@sveltejs/kit';
+import { setUpNext } from '#lib/core/lists/up-next.server.js';
+
 import { type ApiContext } from './context.server';
 
 export async function handleUpNext(context: ApiContext): Promise<Response | undefined> {
@@ -9,5 +9,5 @@ export async function handleUpNext(context: ApiContext): Promise<Response | unde
       await setUpNext(uid, body);
       result = { ok: true };
     } else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

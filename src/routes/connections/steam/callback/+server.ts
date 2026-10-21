@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
-import { finishSteam } from '$lib/providers/steam/connection.server';
-import { AppError } from '$lib/server/security/errors';
+import { finishSteam } from '#lib/providers/steam/connection.server.js';
+import { AppError } from '#lib/server/security/errors.js';
 import * as v from 'valibot';
 import type { RequestHandler } from './$types';
 export const GET:RequestHandler=async ({locals,url})=>{

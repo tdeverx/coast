@@ -1,4 +1,4 @@
-import manifest from '$lib/ui/component-manifest.json';
+import manifest from '#lib/ui/component-manifest.json';
 import { compositions } from './reference';
 export { manifest };
 export const components = Object.keys(manifest) as (keyof typeof manifest)[];

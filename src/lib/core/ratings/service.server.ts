@@ -1,4 +1,4 @@
-import { requireWorkFeature } from '$lib/server/features';
+import { requireWorkFeature } from '#lib/server/features.js';
 import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb, type Database } from '../../server/db';
@@ -42,7 +42,7 @@ export async function rateInTransaction(
       await tx
         .delete(ratings)
         .where(and(eq(ratings.userId, userId), eq(ratings.mediaId, input.mediaId)));
-    if(existing)await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'rating.changed',{workId:input.mediaId,value:null});
+    if(existing)await (await import('#lib/server/public-api/webhooks.server.js')).emitWebhook(tx,userId,'rating.changed',{workId:input.mediaId,value:null});
     return { rating: null, changed: Boolean(existing) };
   }
   if (existing?.value === input.value && existing.source === 'coast')
@@ -55,6 +55,6 @@ export async function rateInTransaction(
       set: { value: input.value, source: 'coast', updatedAt: new Date() },
     })
     .returning();
-  if(existing?.value!==input.value)await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'rating.changed',{workId:input.mediaId,value:input.value});
+  if(existing?.value!==input.value)await (await import('#lib/server/public-api/webhooks.server.js')).emitWebhook(tx,userId,'rating.changed',{workId:input.mediaId,value:input.value});
   return { rating, changed: existing?.value !== input.value };
 }

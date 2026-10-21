@@ -15,8 +15,8 @@ const source = await Bun.file(new URL('../src/lib/ui/shelves/episodes.svelte.ts'
 const javascript = new Bun.Transpiler({ loader: 'ts' }).transformSync(source);
 const compiled = compileModule(javascript, { filename: 'episodes.svelte.js', generate: 'client' }).js.code
   .replaceAll('svelte/internal/client', import.meta.resolve('svelte/internal/client'))
-  .replaceAll('$lib/ui/client-context', clientUrl)
-  .replaceAll('$lib/ui/client', clientUrl);
+  .replaceAll('#lib/ui/client-context.js', clientUrl)
+  .replaceAll('#lib/ui/client.js', clientUrl);
 const { createEpisodeTracking }: typeof import('../src/lib/ui/shelves/episodes.svelte') =
   await import(`data:text/javascript;base64,${Buffer.from(compiled).toString('base64')}`);
 

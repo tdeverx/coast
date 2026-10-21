@@ -1,11 +1,11 @@
-import { mediaRows } from '$lib/server/queries/media-rows';
+import { mediaRows } from '#lib/server/queries/media-rows.js';
 import type { PageServerLoad } from './$types';
 import * as v from 'valibot';
-import { profileUser } from '$lib/server/queries/profile-user';
-import { profilePath } from '$lib/profile/url';
-import { AppError } from '$lib/server/security/errors';
+import { profileUser } from '#lib/server/queries/profile-user.js';
+import { profilePath } from '#lib/profile/url.js';
+import { AppError } from '#lib/server/security/errors.js';
 import { error, redirect } from '@sveltejs/kit';
-import { profileData, profileActivity, profileOptionsSchema } from '$lib/server/queries/profile';
+import { profileData, profileActivity, profileOptionsSchema } from '#lib/server/queries/profile.js';
 export const load = (async ({locals, url, params, depends}) => {
   depends('coast:tracking');
 

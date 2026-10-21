@@ -1,14 +1,14 @@
 import type { Snippet } from 'svelte';
-import type { JournalEntry } from '$lib/profile/journal';
-import type { MediaView, MediaCardPresentation, MediaCardShape, MediaCardArtwork, ArtworkPriority } from '$lib/ui/types';
-import type { SequenceContext } from '$lib/media/sequence';
+import type { JournalEntry } from '#lib/profile/journal.js';
+import type { MediaView, MediaCardPresentation, MediaCardShape, MediaCardArtwork, ArtworkPriority } from '#lib/ui/types.js';
+import type { SequenceContext } from '#lib/media/sequence.js';
 export type ShelfItem = MediaView | MediaCardPresentation;
 export type ShelfControl = {
   type: 'segments' | 'select' | 'availability' | 'collection' | 'media-type';
   label: string;
   value: string;
   options?: { value: string; label: string }[];
-  mediums?: import('$lib/experimental').MediumFeatures;
+  mediums?: import('#lib/experimental.js').MediumFeatures;
   change: (value: string) => unknown;
 };
 export type ShelfAction = { label: string; run: () => unknown };

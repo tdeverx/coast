@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { slidingPill } from '$lib/ui/materials/sliding-pill';
-  import {liquidGlass} from '$lib/ui/materials/glass';
-  import type {GlassVariant} from '$lib/ui/materials/presets';
+  import { slidingPill } from '#lib/ui/materials/sliding-pill.js';
+  import {liquidGlass} from '#lib/ui/materials/glass.js';
+  import type {GlassVariant} from '#lib/ui/materials/presets.js';
   let {
     options,
     value = $bindable(),

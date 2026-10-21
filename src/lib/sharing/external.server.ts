@@ -1,8 +1,8 @@
 import * as v from 'valibot';
-import { getSql } from '$lib/server/db';
-import { hashToken, randomToken } from '$lib/server/auth';
-import { encryptCredential, decryptCredential } from '$lib/server/security/credentials';
-import { AppError } from '$lib/server/security/errors';
+import { getSql } from '#lib/server/db/index.js';
+import { hashToken, randomToken } from '#lib/server/auth/index.js';
+import { encryptCredential, decryptCredential } from '#lib/server/security/credentials.js';
+import { AppError } from '#lib/server/security/errors.js';
 import { assertShare, prepareShared, streamForViewer } from './service.server';
 import { shareTokenPattern, wantsSharePage } from './policy';
 

@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import {onMount} from 'svelte';
   import {enhance} from '$app/forms';
-  import Brand from '$lib/ui/components/Brand.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import AccountFields from '$lib/ui/components/AccountFields.svelte';
+  import Brand from '#lib/ui/components/Brand.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import AccountFields from '#lib/ui/components/AccountFields.svelte';
   let {data,form}=$props(); let busy=$state(false),code=$state('');
   onMount(()=>{const params=new URLSearchParams(location.hash.slice(1));code=params.get('invite')??'';if(code)history.replaceState(history.state,'',location.pathname+location.search);});
   reportFailure(()=>form?.error);

@@ -1,6 +1,6 @@
-import { profileSectionData, profileInsightsData } from '$lib/server/queries/profile';
-import { updateProfile } from '$lib/core/profile/service.server';
-import { json } from '@sveltejs/kit';
+import { profileSectionData, profileInsightsData } from '#lib/server/queries/profile.js';
+import { updateProfile } from '#lib/core/profile/service.server.js';
+
 import * as v from 'valibot';
 import { type ApiContext } from './context.server';
 
@@ -49,5 +49,5 @@ export async function handleProfile(context: ApiContext): Promise<Response | und
         uid
       );
     } else if (path[0] === 'profile' && path.length === 1 && method === 'POST') result = await updateProfile(uid, body); else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

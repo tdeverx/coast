@@ -1,4 +1,4 @@
-import type { JournalEntry } from '$lib/profile/journal';
+import type { JournalEntry } from '#lib/profile/journal.js';
 
 export const journalDay = (item: JournalEntry) =>
   item.dateKnown === false ? 'unknown' : item.watchedAt.slice(0, 10);

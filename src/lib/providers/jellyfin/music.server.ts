@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import type { MusicItem, MusicPage } from '$lib/music/model';
+import type { MusicItem, MusicPage } from '#lib/music/model.js';
 import type { ProviderTransport } from '../contracts';
 import { jellyfinItemKey, validateJellyfinItems, validateJellyfinPage } from './paging';
 

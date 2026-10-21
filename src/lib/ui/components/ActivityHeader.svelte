@@ -1,9 +1,9 @@
 <script lang="ts">
  import type {Snippet} from 'svelte';
- import type {ActivityStatus} from '$lib/social/status';
+ import type {ActivityStatus} from '#lib/social/status.js';
  import Avatar from './Avatar.svelte';
  import TextLink from './TextLink.svelte';
- import {profilePath} from '$lib/profile/url';
+ import {profilePath} from '#lib/profile/url.js';
  let {username,avatar,status,trailing,nonApproved=false,showAvatar=true,profileHref=profilePath(username)}:{username:string;avatar?:string|null;status?:ActivityStatus;trailing?:Snippet;nonApproved?:boolean;showAvatar?:boolean;profileHref?:string|null}=$props();
 </script>
 <div class="activity-header">

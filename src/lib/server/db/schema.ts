@@ -1,5 +1,5 @@
-import type { ScreenKind, MediaRelationship } from '$lib/media/model';
-import type { ReadingKind, ReadingProvider, ReadingState, ReadingFormat, ReadingLocation } from '$lib/reading/model';
+import type { ScreenKind, MediaRelationship } from '#lib/media/model.js';
+import type { ReadingKind, ReadingProvider, ReadingState, ReadingFormat, ReadingLocation } from '#lib/reading/model.js';
 import { sql } from 'drizzle-orm';
 import {
   pgTable,
@@ -756,7 +756,7 @@ export const traktImportRecords = pgTable('trakt_import_records', {
   stageId: uuid('stage_id').notNull().references(() => traktImportStages.id, {onDelete:'cascade'}),
   ordinal: integer('ordinal').notNull(),
   sortKey: text('sort_key').notNull(),
-  record: jsonb('record').$type<import('$lib/providers/trakt/adapter.server').TraktRecord>().notNull(),
+  record: jsonb('record').$type<import('#lib/providers/trakt/adapter.server.js').TraktRecord>().notNull(),
   applied: boolean('applied').notNull().default(false),
   observedMediaId: uuid('observed_media_id'),
 }, t => [primaryKey({columns:[t.stageId,t.ordinal]}),index('trakt_import_records_apply_idx').on(t.stageId,t.sortKey,t.ordinal).where(sql`not ${t.applied}`),index('trakt_import_records_observed_idx').on(t.stageId,t.observedMediaId)]);
@@ -962,7 +962,7 @@ export const gamePlaythroughs = pgTable('game_playthroughs', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   gameId: uuid('game_id').notNull().references(() => games.id, { onDelete: 'cascade' }),
   platform: text('platform'),
-  status: text('status').$type<import('$lib/games/model').GameStatus>().notNull().default('planned'),
+  status: text('status').$type<import('#lib/games/model.js').GameStatus>().notNull().default('planned'),
   progressPercent: real('progress_percent').notNull().default(0),
   repeat: boolean('repeat').notNull().default(false),
   startedAt: timestamp('started_at', { withTimezone: true }),
@@ -1281,7 +1281,7 @@ export const syncedRooms = pgTable('synced_rooms', {
   paused: boolean('paused').notNull().default(true),
   bufferingPaused: boolean('buffering_paused').notNull().default(false),
   bufferingPolicy: text('buffering_policy').$type<'together' | 'catch-up'>().notNull().default('together'),
-  settings: jsonb('settings').$type<import('$lib/playback/synced/model').PartySettings>().notNull().default({playback:'host',controllers:[],invitations:'host',acceptInvites:true,readyCheck:false,hostDisconnect:'wait',queue:'host'}),
+  settings: jsonb('settings').$type<import('#lib/playback/synced/model.js').PartySettings>().notNull().default({playback:'host',controllers:[],invitations:'host',acceptInvites:true,readyCheck:false,hostDisconnect:'wait',queue:'host'}),
   queue: jsonb('queue').$type<string[]>().notNull().default([]),
   queueIndex: integer('queue_index').notNull().default(0),
   revision: integer('revision').notNull().default(1),
@@ -1407,11 +1407,11 @@ export const benchmarkRuns = pgTable('benchmark_runs', {
   userId: uuid('user_id').references(()=>users.id,{onDelete:'set null'}),
   actionId: uuid('action_id').references(()=>outboxActions.id,{onDelete:'set null'}),
   workloadVersion: text('workload_version').notNull(),
-  state: text('state').$type<import('$lib/benchmarks/model').BenchmarkState>().notNull().default('queued'),
+  state: text('state').$type<import('#lib/benchmarks/model.js').BenchmarkState>().notNull().default('queued'),
   createdAt: createdAt(), startedAt: timestamp('started_at',{withTimezone:true}),
   finishedAt: timestamp('finished_at',{withTimezone:true}),
-  context: jsonb('context').$type<import('$lib/benchmarks/model').BenchmarkContext>(),
-  measurements: jsonb('measurements').$type<import('$lib/benchmarks/model').BenchmarkMeasurements>(),
+  context: jsonb('context').$type<import('#lib/benchmarks/model.js').BenchmarkContext>(),
+  measurements: jsonb('measurements').$type<import('#lib/benchmarks/model.js').BenchmarkMeasurements>(),
   comparisonKey: text('comparison_key'), errors: jsonb('errors').$type<string[]>().notNull().default([]),
 }, t => [
   uniqueIndex('benchmark_one_active_idx').on(sql`(true)`).where(sql`${t.state} in ('queued','running')`),
@@ -1435,7 +1435,7 @@ export const recommendationSets=pgTable('recommendation_sets',{
 
 export const workFeatures=pgTable('work_features',{
  workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),provider:text('provider').notNull(),
- features:jsonb('features').$type<import('$lib/social/taste-profile').TasteFeatures>().notNull().default({}),updatedAt:updatedAt(),
+ features:jsonb('features').$type<import('#lib/social/taste-profile.js').TasteFeatures>().notNull().default({}),updatedAt:updatedAt(),
 },t=>[primaryKey({columns:[t.workId,t.provider]}),index('work_features_lookup_idx').using('gin',t.features)]);
 /** A verified provider parent is presentation metadata, never full-game ownership. */
 export const gameVariants=pgTable('game_variants',{
@@ -1444,12 +1444,12 @@ export const gameVariants=pgTable('game_variants',{
 },t=>[index('game_variants_parent_idx').on(t.parentId),check('game_variants_distinct_check',sql`${t.gameId}<>${t.parentId}`)]);
 export const userTasteProfiles=pgTable('user_taste_profiles',{
  userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),medium:text('medium').notNull(),revision:text('revision').notNull(),
- profile:jsonb('profile').$type<import('$lib/social/taste-profile').TasteProfile>().notNull(),updatedAt:updatedAt(),
+ profile:jsonb('profile').$type<import('#lib/social/taste-profile.js').TasteProfile>().notNull(),updatedAt:updatedAt(),
 },t=>[primaryKey({columns:[t.userId,t.medium]})]);
 export const userTasteScores=pgTable('user_taste_scores',{
  userId:uuid('user_id').notNull().references(()=>users.id,{onDelete:'cascade'}),workId:uuid('work_id').notNull().references(()=>works.id,{onDelete:'cascade'}),
  score:real('score'),confidence:real('confidence').notNull(),revision:text('revision').notNull(),
- breakdown:jsonb('breakdown').$type<ReturnType<typeof import('$lib/social/taste-profile').scoreTaste>>().notNull(),updatedAt:updatedAt(),
+ breakdown:jsonb('breakdown').$type<ReturnType<typeof import('#lib/social/taste-profile.js').scoreTaste>>().notNull(),updatedAt:updatedAt(),
 },t=>[primaryKey({columns:[t.userId,t.workId]}),index('user_taste_scores_rank_idx').on(t.userId,t.score,t.workId)]);
 
 export const serverStreamScans=pgTable('server_stream_scans',{

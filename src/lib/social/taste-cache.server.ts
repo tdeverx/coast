@@ -1,13 +1,13 @@
-import { getFeatureConfig } from '$lib/server/features';
-import { categoryEnabled } from '$lib/experimental';
+import { getFeatureConfig } from '#lib/server/features.js';
+import { categoryEnabled } from '#lib/experimental.js';
 import {sql as query} from 'drizzle-orm';
-import {getDb,getSql,type Database} from '$lib/server/db';
-import {getConfig} from '$lib/server/config';
-import {interestWorks} from '$lib/recommendations/interests.server';
+import {getDb,getSql,type Database} from '#lib/server/db/index.js';
+import {getConfig} from '#lib/server/config.js';
+import {interestWorks} from '#lib/recommendations/interests.server.js';
 import {buildTasteProfile,compileTasteScorer,namedFeatures,type TasteProfile} from './taste-profile';
 import {workTasteFeatures} from './work-features.server';
 import * as v from 'valibot';
-import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '$lib/server/queue/execution';
+import {assertJobLease,jobCheckpoint,readJobCheckpoint,saveJobCheckpoint} from '#lib/server/queue/execution.js';
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
 export const tasteRevisionSql=query`'taste-v1:'||md5(concat_ws(':',
  coalesce((select revision::text from content_revisions where scope=u.id::text and domain='tracking'),'0'),

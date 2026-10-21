@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import { tick } from 'svelte';
-  import type { ProviderSchedule } from '$lib/providers/schedule';
-  import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
+  import type { ProviderSchedule } from '#lib/providers/schedule.js';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
   import Heading from './Heading.svelte';
 
   const { change, feedback } = useClient();

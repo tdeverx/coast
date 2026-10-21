@@ -1,9 +1,9 @@
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
-import { createImageCache } from '$lib/server/storage/image-cache.server';
-import { getConfig } from '$lib/server/config';
-import { dataDirectory } from '$lib/server/security/credentials';
-import { secureProviderFetch } from '$lib/server/security/provider-fetch';
+import { createImageCache } from '#lib/server/storage/image-cache.server.js';
+import { getConfig } from '#lib/server/config.js';
+import { dataDirectory } from '#lib/server/security/credentials.js';
+import { secureProviderFetch } from '#lib/server/security/provider-fetch.js';
 import { createArtworkFlights } from '../artwork-flight.server';
 
 const caches = new Map<string, ReturnType<typeof createImageCache>>();

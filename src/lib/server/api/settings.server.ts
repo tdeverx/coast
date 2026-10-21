@@ -1,8 +1,8 @@
-import { json } from '@sveltejs/kit';
-import { updatePassword, updateUserSettings, resetUserSettings } from '$lib/server/auth';
-import { updateConfig } from '$lib/application/configuration.server';
-import { AppError } from '$lib/server/security/errors';
-import {createApiToken,listApiTokens,revokeApiToken} from '$lib/server/public-api/tokens.server';
+
+import { updatePassword, updateUserSettings, resetUserSettings } from '#lib/server/auth/index.js';
+import { updateConfig } from '#lib/application/configuration.server.js';
+import { AppError } from '#lib/server/security/errors.js';
+import {createApiToken,listApiTokens,revokeApiToken} from '#lib/server/public-api/tokens.server.js';
 import { uuid,text, type ApiContext } from './context.server';
 
 export async function handleSettings(context: ApiContext): Promise<Response | undefined> {
@@ -22,5 +22,5 @@ export async function handleSettings(context: ApiContext): Promise<Response | un
       else if (path[1] === 'system' && method === 'POST') result = await updateConfig(user, body);
       else throw new AppError(404, 'Action not found.');
     } else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

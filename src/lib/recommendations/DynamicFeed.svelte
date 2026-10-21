@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
  import {onDestroy,untrack} from 'svelte';
  import {page} from '$app/state';
- import {useClient} from '$lib/ui/client-context';
- import {createResource} from '$lib/ui/resource.svelte';
- import {lazyContent} from '$lib/ui/lazy-content';
- import Shelf from '$lib/ui/components/Shelf.svelte';
+ import {useClient} from '#lib/ui/client-context.js';
+ import {createResource} from '#lib/ui/resource.svelte.js';
+ import {lazyContent} from '#lib/ui/lazy-content.js';
+ import Shelf from '#lib/ui/components/Shelf.svelte';
  import type {DynamicRow} from './model';
  import {dynamicRowShape} from './row-ranking';
  const {api}=useClient();

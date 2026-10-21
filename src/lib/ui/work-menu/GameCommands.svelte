@@ -1,13 +1,13 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
-  import Field from '$lib/ui/components/Field.svelte';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import Field from '#lib/ui/components/Field.svelte';
   import { onDestroy } from 'svelte';
-  import { randomId } from '$lib/diagnostics';
+  import { randomId } from '#lib/diagnostics.js';
   import { useClient } from '../client-context';
   import { createMutation } from '../mutation.svelte';
-  import { gameStatuses, type GameStatus } from '$lib/games/model';
-  import type { GameActionState } from '$lib/media/work-actions';
+  import { gameStatuses, type GameStatus } from '#lib/games/model.js';
+  import type { GameActionState } from '#lib/media/work-actions.js';
   import { displayLabel } from '../labels';
   import Button from '../components/Button.svelte';
   import Dialog from '../components/Dialog.svelte';

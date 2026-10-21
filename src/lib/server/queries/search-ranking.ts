@@ -1,5 +1,5 @@
 import { or, sql, type SQL } from 'drizzle-orm';
-import { normalizeSearch, searchWords } from '$lib/search';
+import { normalizeSearch, searchWords } from '#lib/search.js';
 
 /** Expression matches the GIN indexes in 0049; no catalogue-wide JS scoring. */
 export function searchDocument(title: SQL, extra = sql`null`, labels = sql`'{}'::text[]`) {

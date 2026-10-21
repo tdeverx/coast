@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
-  import { displayLabel } from '$lib/ui/labels';
-  import { message } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import { displayLabel } from '#lib/ui/labels.js';
+  import { message } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
   import Button from './Button.svelte';
   import Dialog from './Dialog.svelte';
 

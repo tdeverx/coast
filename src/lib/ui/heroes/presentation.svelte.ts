@@ -1,12 +1,12 @@
 import { page } from '$app/state';
-import {reader} from '$lib/reading/client.svelte';
+import {reader} from '#lib/reading/client.svelte.js';
 import { onMount, untrack } from 'svelte';
-import { useClient } from '$lib/ui/client-context';
-import { heroTitleIds, isHeroTitle } from '$lib/media/hero';
-import type { MediaView, MediaHeroPresentation } from '$lib/ui/types';
-import { playbackVisible } from '$lib/playback/visibility';
-import { presentTrailer } from '$lib/playback/client.svelte';
-import { usePlayback } from '$lib/playback/context.svelte';
+import { useClient } from '#lib/ui/client-context.js';
+import { heroTitleIds, isHeroTitle } from '#lib/media/hero.js';
+import type { MediaView, MediaHeroPresentation } from '#lib/ui/types.js';
+import { playbackVisible } from '#lib/playback/visibility.js';
+import { presentTrailer } from '#lib/playback/client.svelte.js';
+import { usePlayback } from '#lib/playback/context.svelte.js';
 export type HeroItem = MediaView | MediaHeroPresentation;
 export type HeroOptions = {
   item?: HeroItem;

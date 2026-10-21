@@ -1,9 +1,9 @@
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig } from '#lib/server/features.js';
 import type { LayoutServerLoad } from './$types';
-import { notificationUnread } from '$lib/server/notifications/inbox';
-import {incomingFriendRequests} from '$lib/social/service.server';
-import { inbox } from '$lib/server/notifications';
-import { contentRevision } from '$lib/server/content-revision.server';
+import { notificationUnread } from '#lib/server/notifications/inbox.js';
+import {incomingFriendRequests} from '#lib/social/service.server.js';
+import { inbox } from '#lib/server/notifications/index.js';
+import { contentRevision } from '#lib/server/content-revision.server.js';
 export const load = (async ({ locals, depends,params,url }) => {
   depends('coast:session', 'coast:notifications', 'coast:social', 'coast:tracking', 'coast:planning');
   const config=await getFeatureConfig(locals.user?.id??null);

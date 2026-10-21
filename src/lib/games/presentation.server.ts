@@ -1,7 +1,7 @@
-import { personaliseWorkCards } from '$lib/catalogue/overrides/presentation.server';
+import { personaliseWorkCards } from '#lib/catalogue/overrides/presentation.server.js';
 import { and, eq, inArray } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { gameExternalIds, games } from '$lib/server/db/schema';
+import { getDb } from '#lib/server/db/index.js';
+import { gameExternalIds, games } from '#lib/server/db/schema.js';
 import { ownedGameAvailable } from './availability.server';
 import { gameCard, type GameMetadata } from './presentation';
 

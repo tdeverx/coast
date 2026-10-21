@@ -1,4 +1,4 @@
-import { requireFeatureInTransaction } from '$lib/server/features';
+import { requireFeatureInTransaction } from '#lib/server/features.js';
 import { and, eq, sql } from 'drizzle-orm';
 import * as v from 'valibot';
 import { getDb } from '../../server/db';

@@ -1,12 +1,12 @@
 <script lang="ts">
  import {page} from '$app/state';
  import {setContext} from 'svelte';
- import MediaDetails from '$lib/ui/components/MediaDetails.svelte';
- import WorkMenu from '$lib/ui/components/WorkMenu.svelte';
- import {createMusicPage,type MusicPageData} from '$lib/ui/pages/music.svelte';
+ import MediaDetails from '#lib/ui/components/MediaDetails.svelte';
+ import WorkMenu from '#lib/ui/components/WorkMenu.svelte';
+ import {createMusicPage,type MusicPageData} from '#lib/ui/pages/music.svelte.js';
  import {musicCard} from './presentation';
  let {data,modal=false,detailHref}:{data:MusicPageData;modal?:boolean;detailHref?:string}=$props();
- const detailUrl=$derived(modal?new URL(detailHref??`/music/work/${data.item.workId??data.item.id}`,page.url):page.url);
+ const detailUrl=$derived(modal?new URL(detailHref??`/music/work/${data.item.workId??data.item.id}`,page.url.href):page.url);
  setContext('profile-read-only',()=>!page.data.user);
  const view=createMusicPage(()=>data,()=>detailUrl,()=>!!page.data.user);
  const section=$derived(detailUrl.searchParams.get('section'));

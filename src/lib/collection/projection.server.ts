@@ -1,16 +1,16 @@
 import { and,eq,sql,inArray } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '$lib/server/db';
-import { providerConnections, collectionProjectionEntries as ledger, collectionProjectionPreviews as previews, media, episodes } from '$lib/server/db/schema';
-import { getTrakt } from '$lib/providers/trakt/connection.server';
-import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
-import { exportIdentities } from '$lib/sync/trakt-identity.server';
-import { ingestMetadata } from '$lib/catalogue/service.server';
-import { PermanentActionError } from '$lib/server/queue';
-import { enqueueInTransaction } from '$lib/sync/changes.server';
+import { getDb } from '#lib/server/db/index.js';
+import { providerConnections, collectionProjectionEntries as ledger, collectionProjectionPreviews as previews, media, episodes } from '#lib/server/db/schema.js';
+import { getTrakt } from '#lib/providers/trakt/connection.server.js';
+import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
+import { exportIdentities } from '#lib/sync/trakt-identity.server.js';
+import { ingestMetadata } from '#lib/catalogue/service.server.js';
+import { PermanentActionError } from '#lib/server/queue/index.js';
+import { enqueueInTransaction } from '#lib/sync/changes.server.js';
 import { collectionCTE, collectionRead } from './query.server';
-import { notify } from '$lib/server/notifications';
-import type { TraktAdapter } from '$lib/providers/trakt/adapter.server';
+import { notify } from '#lib/server/notifications/index.js';
+import type { TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
 
 export const projectionSchema=v.object({enabled:v.optional(v.boolean(),false),source:v.optional(v.picklist(['collected','personal','server']),'collected'),availableOnly:v.optional(v.boolean(),false),scope:v.optional(v.picklist(['dynamic','fixed']),'dynamic'),sourceIds:v.optional(v.pipe(v.array(v.pipe(v.string(),v.uuid())),v.maxLength(100)),[])});
 export type ProjectionConfig=v.InferOutput<typeof projectionSchema>;

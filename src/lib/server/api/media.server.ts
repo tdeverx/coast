@@ -1,22 +1,22 @@
-import { requireFeature } from '$lib/server/features';
-import { readingDetails } from '$lib/reading/query.server';
-import { getDb } from '$lib/server/db';
-import { readingWorks } from '$lib/server/db/schema';
+import { requireFeature } from '#lib/server/features.js';
+import { readingDetails } from '#lib/reading/query.server.js';
+import { getDb } from '#lib/server/db/index.js';
+import { readingWorks } from '#lib/server/db/schema.js';
 import { eq } from 'drizzle-orm';
-import { removeHistory } from '$lib/sync/history-removal.server';
-import { mediaActionData, mediaHistory, mediaActivity } from '$lib/server/queries/media-actions';
-import { json } from '@sveltejs/kit';
+import { removeHistory } from '#lib/sync/history-removal.server.js';
+import { mediaActionData, mediaHistory, mediaActivity } from '#lib/server/queries/media-actions.js';
+
 import * as v from 'valibot';
-import { AppError } from '$lib/server/security/errors';
-import { addLocalSeasonEpisodes } from '$lib/core/media/service.server';
-import { getMetadataEditor, getPresentationEditor, saveMetadataOverrides, savePresentationPreference, resetPresentationPreference } from '$lib/catalogue/overrides/service.server';
-import { loadMediaDetails } from '$lib/application/media-details.server';
-import { mediaViews,mediaViewsForIds, nextPlayable, detailsData } from '$lib/server/queries/media';
-import { refreshMedia } from '$lib/catalogue/service.server';
-import { getTrailer } from '$lib/playback/service.server';
+import { AppError } from '#lib/server/security/errors.js';
+import { addLocalSeasonEpisodes } from '#lib/core/media/service.server.js';
+import { getMetadataEditor, getPresentationEditor, saveMetadataOverrides, savePresentationPreference, resetPresentationPreference } from '#lib/catalogue/overrides/service.server.js';
+import { loadMediaDetails } from '#lib/application/media-details.server.js';
+import { mediaViews,mediaViewsForIds, nextPlayable, detailsData } from '#lib/server/queries/media.js';
+import { refreshMedia } from '#lib/catalogue/service.server.js';
+import { getTrailer } from '#lib/playback/service.server.js';
 import { uuid, type ApiContext } from './context.server';
-import {mediaDetailData} from '$lib/application/work-details.server';
-import { showNext } from '$lib/server/queries/show-next';
+import {mediaDetailData} from '#lib/application/work-details.server.js';
+import { showNext } from '#lib/server/queries/show-next.js';
 
 export async function handleMedia(context: ApiContext): Promise<Response | undefined> {
  const { user, uid, path, method, url, body } = context;
@@ -24,18 +24,18 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
  if (path[0] === 'media') {
       if(path.length===2&&path[1]==='details'&&method==='GET'){
         const href=v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(2048)),url.searchParams.get('href'));
-        return json(await mediaDetailData(uid,href,context.request.signal,url.searchParams.get('enhance')==='true'));
+        return Response.json(await mediaDetailData(uid,href,context.request.signal,url.searchParams.get('enhance')==='true'));
       }
       if(path.length===3&&path[2]==='edition'&&method==='GET'){
         const editionName=v.parse(v.pipe(v.string(),v.minLength(1),v.maxLength(500)),url.searchParams.get('name'));
         const [item]=await mediaViews(uid,{ids:[uuid(path[1])],editionName});
         if(!item)throw new AppError(404,'This title was not found.');
-        return json(item);
+        return Response.json(item);
       }
       if (path.length === 2 && method === 'GET') {
         const id = uuid(path[1]);
         const [reading] = await getDb().select({kind:readingWorks.kind}).from(readingWorks).where(eq(readingWorks.id,id));
-        if (reading) return json({reading:{...await readingDetails(uid,id),kind:reading.kind,remote:false}});
+        if (reading) return Response.json({reading:{...await readingDetails(uid,id),kind:reading.kind,remote:false}});
         result = url.searchParams.get('enhance') === 'true'
           ? await (await loadMediaDetails(uid, uuid(path[1]), context.request.signal)).enhancement
           : await detailsData(uid, id);
@@ -82,5 +82,5 @@ export async function handleMedia(context: ApiContext): Promise<Response | undef
         result = await resetPresentationPreference(uid, uuid(path[1]));
       else throw new AppError(404, 'Action not found.');
     } else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

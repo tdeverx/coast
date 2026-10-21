@@ -1,7 +1,7 @@
 import {error} from '@sveltejs/kit';
 import * as v from 'valibot';
-import {AppError} from '$lib/server/security/errors';
-import {musicDetailData} from '$lib/music/detail.server';
+import {AppError} from '#lib/server/security/errors.js';
+import {musicDetailData} from '#lib/music/detail.server.js';
 import type {PageServerLoad} from './$types';
 export const load:PageServerLoad=async({locals,params,url,depends})=>{
  depends('coast:tracking');

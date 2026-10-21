@@ -1,7 +1,7 @@
-import {reader,alignReading,attachReading,closeReading} from '$lib/reading/client.svelte';
-import type { ReadingSessionView } from '$lib/reading/model';
-import {api,message,ApiError,isFeatureDisabled} from '$lib/ui/client';
-import {player,playMedia,playbackSnapshot,alignPlayback,stopPlayback} from '$lib/playback/client.svelte';
+import {reader,alignReading,attachReading,closeReading} from '#lib/reading/client.svelte.js';
+import type { ReadingSessionView } from '#lib/reading/model.js';
+import {api,message,ApiError,isFeatureDisabled} from '#lib/ui/client.js';
+import {player,playMedia,playbackSnapshot,alignPlayback,stopPlayback} from '#lib/playback/client.svelte.js';
 import {timelinePosition,canControl,compatibleSource,type RoomState,type PartySettings} from './model';
 export const syncedPlayer=$state({room:null as RoomState|null,userId:'',busy:false,notice:'',changing:false,joining:false,unavailableMediaId:null as string|null});
 let unavailableSource:string|null=null;

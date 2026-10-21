@@ -1,15 +1,15 @@
 <script lang="ts">
-  import {syncedPlayer,startSynced,joinSynced,isSyncHost,syncedCommand,leaveSynced} from '$lib/playback/synced/client.svelte';
-  import { useClient } from '$lib/ui/client-context';
-  import {timelinePosition} from '$lib/playback/synced/model';
+  import {syncedPlayer,startSynced,joinSynced,isSyncHost,syncedCommand,leaveSynced} from '#lib/playback/synced/client.svelte.js';
+  import { useClient } from '#lib/ui/client-context.js';
+  import {timelinePosition} from '#lib/playback/synced/model.js';
   import {onDestroy} from 'svelte';
-  import {createResource} from '$lib/ui/resource.svelte';
-  import type {MediaCardPresentation} from '$lib/ui/types';
+  import {createResource} from '#lib/ui/resource.svelte.js';
+  import type {MediaCardPresentation} from '#lib/ui/types.js';
   import PlaybackTimeline from './PlaybackTimeline.svelte';
-  import {playbackArtwork,playbackBackground} from '$lib/media/artwork';
-  import {useClock} from '$lib/ui/clock.svelte';
-  import {profilePath} from '$lib/profile/url';
-  import {playbackTime} from '$lib/playback/time';
+  import {playbackArtwork,playbackBackground} from '#lib/media/artwork.js';
+  import {useClock} from '#lib/ui/clock.svelte.js';
+  import {profilePath} from '#lib/profile/url.js';
+  import {playbackTime} from '#lib/playback/time.js';
   import PartyCard from './PartyCard.svelte';
   import PartyMenu from './PartyMenu.svelte';
   import Dialog from './Dialog.svelte'; import Button from './Button.svelte';

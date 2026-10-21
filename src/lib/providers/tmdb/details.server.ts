@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import type { MediaInsights, PersonDetails } from '$lib/media/details';
+import type { MediaInsights, PersonDetails } from '#lib/media/details.js';
 import type { ProviderTransport } from '../contracts';
 import { tmdbArtwork } from './artwork';
 const text = v.nullish(v.string());

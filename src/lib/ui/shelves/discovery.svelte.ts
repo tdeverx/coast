@@ -1,13 +1,13 @@
-import {useShelfLocation} from '$lib/ui/detail-section.svelte';
-import { surfaceEnabled } from '$lib/experimental';
+import {useShelfLocation} from '#lib/ui/detail-section.svelte.js';
+import { surfaceEnabled } from '#lib/experimental.js';
 import { onDestroy, untrack } from 'svelte';
 import { page } from '$app/state';
-import { goto, replaceState } from '$app/navigation';
-import { useClient } from '$lib/ui/client-context';
-import { createResource,uniqueItems } from '$lib/ui/resource.svelte';
-import { contentRevisionKey } from '$lib/ui/content-revision.svelte';
-import { readingTypeOptions } from '$lib/ui/filter-options';
-import { discoverySegments, discoveryTitles, type DiscoveryContent, type DiscoverySurface, type DiscoverySection } from '$lib/discovery';
+import { goto } from '$app/navigation';
+import { useClient } from '#lib/ui/client-context.js';
+import { createResource,uniqueItems } from '#lib/ui/resource.svelte.js';
+import { contentRevisionKey } from '#lib/ui/content-revision.svelte.js';
+import { readingTypeOptions } from '#lib/ui/filter-options.js';
+import { discoverySegments, discoveryTitles, type DiscoveryContent, type DiscoverySurface, type DiscoverySection } from '#lib/discovery.js';
 import type { ShelfSource, ShelfControl, ShelfPagination } from './types';
 export type DiscoveryOptions = {
   type: 'discovery';
@@ -16,7 +16,7 @@ export type DiscoveryOptions = {
   surface?: DiscoverySurface;
   kind?: 'all' | 'book' | 'comic';
   page?: number;
-  mediums?: import('$lib/experimental').MediumFeatures;
+  mediums?: import('#lib/experimental.js').MediumFeatures;
   layout?: 'row' | 'grid';
 };
 export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource {
@@ -42,7 +42,11 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
   if (initial.initial)
     remember(initial.initial);
   function parameters(number = currentPage) {
-    return new URLSearchParams({ section: get().section, surface, ...(surface === 'read' ? { kind, page: String(number) } : {}) });
+    return new URLSearchParams({
+      section: get().section,
+      surface,
+      ...surface === 'read' ? { kind, page: String(number) } : {}
+    });
   }
   function pageUrl(number: number) { return `/discover?${parameters(number)}`; }
   async function load(number=currentPage,append=false) {
@@ -52,9 +56,18 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
       return;
     }
     const key = cacheKey();
-    const result = await resource.load(signal => api<DiscoveryContent>(`discover?${parameters()}`, undefined, 'GET', { signal }), { failure: result => result.failure,merge:(old,next)=>({...next,items:append?uniqueItems([...old.items,...next.items],item=>item.entryId??item.id):next.items}) });
-    if (result && key === cacheKey())
-      remember(result);
+
+    const result = await resource.load((signal) => api<DiscoveryContent>(`discover?${parameters()}`, undefined, 'GET', { signal }), {
+      failure: (result) => result.failure,
+      merge: (old, next) => ({
+        ...next,
+        items: append
+          ? uniqueItems([...old.items, ...next.items], (item) => item.entryId ?? item.id)
+          : next.items
+      })
+    });
+
+    if (result && key === cacheKey()) remember(result);
   }
   function restoreOrLoad() {
     const previous = cached.get(cacheKey());
@@ -74,8 +87,9 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     kind = 'all';
     currentPage = 1;
     available = false;
-    if (!location.embedded && !preview && get().layout === 'grid')
-      replaceState(pageUrl(1), page.state);
+
+    if (!location.embedded && !preview && get().layout === 'grid') goto(pageUrl(1), { shallow: true, replace: true, reset: false, state: page.state });
+
     resource.replace({ items: [], failure: '' });
     restoreOrLoad();
   }
@@ -83,7 +97,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     kind = value;
     currentPage = 1;
     if (!location.embedded && !preview && get().layout === 'grid') {
-      void goto(pageUrl(1), { keepFocus: true, noScroll: true });
+      void goto(pageUrl(1), { reset: false, });
       return;
     }
     resource.replace({ items: [], failure: '' });
@@ -123,7 +137,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
       previousSelection = selection;
       const withdrawn = !surfaceAvailable(surface);
       if (withdrawn) {
-        surface = discoverySegments.find(option=>surfaceAvailable(option.value))?.value as DiscoverySurface??'watch';
+        surface = discoverySegments.find((option) => surfaceAvailable(option.value))?.value as DiscoverySurface ?? 'watch';
         kind = 'all';
         currentPage = 1;
         available = false;
@@ -137,10 +151,10 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
         kind = 'all';
         currentPage = 1;
       }
-      if (!location.embedded && !preview && (withdrawn || kindWithdrawn) && option.layout === 'grid')
-        replaceState(pageUrl(currentPage), page.state);
-      if (!changed && !withdrawn && !kindWithdrawn)
-        return;
+
+      if (!location.embedded && !preview && (withdrawn || kindWithdrawn) && option.layout === 'grid') goto(pageUrl(currentPage), { shallow: true, replace: true, reset: false, state: page.state });
+      if (!changed && !withdrawn && !kindWithdrawn) return;
+
       const activated = resource.activated || resource.ready;
       cached.clear();
       resource.cancel();
@@ -168,10 +182,7 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     },
     get title() { return title; },
     get items() {
-      return resource.data.items.filter(item =>
-        (surface === 'read' || kind === 'all' || item.kind === kind)
-        && (surface === 'read' || !available || item.available)
-      );
+      return resource.data.items.filter((item) => (surface === 'read' || kind === 'all' || item.kind === kind) && (surface === 'read' || !available || item.available));
     },
     get busy() { return resource.busy; },
     get ready() { return resource.ready; },
@@ -184,30 +195,47 @@ export function createDiscoverySource(get: () => DiscoveryOptions): ShelfSource 
     get filters(): ShelfControl[] {
       return [
         {
-          type: 'segments', label: `${title} medium`, value: surface,
-          options: discoverySegments.filter(option =>
-            option.value === 'watch' && surfaceAvailable('watch')
-            || option.value === 'play' && get().mediums?.experimentalGaming
-            || option.value === 'listen' && get().mediums?.experimentalMusic
-            || option.value === 'read' && (get().mediums?.experimentalBooks || get().mediums?.experimentalComics)
-          ),
-          change: select,
+          type: 'segments',
+          label: `${title} medium`,
+          value: surface,
+          options: discoverySegments.filter((option) => option.value === 'watch' && surfaceAvailable('watch') || option.value === 'play' && get().mediums?.experimentalGaming || option.value === 'listen' && get().mediums?.experimentalMusic || option.value === 'read' && (get().mediums?.experimentalBooks || get().mediums?.experimentalComics)),
+          change: select
         },
-        ...(surface === 'read'
-          ? [{
-              type: 'select' as const, label: 'Reading type', value: kind,
-              options: readingTypeOptions(get().mediums ?? {}), change: selectKind,
-            }]
-          : [{
-              type: 'availability' as const, label: 'Available to play only',
+
+        ...surface === 'read'
+          ? [
+            {
+              type: 'select' as const,
+              label: 'Reading type',
+              value: kind,
+              options: readingTypeOptions(get().mediums ?? {}),
+              change: selectKind
+            }
+          ]
+          : [
+            {
+              type: 'availability' as const,
+              label: 'Available to play only',
               value: available ? 'available' : 'all',
-              change: (value: string) => { available = value === 'available'; },
-            }]),
+              change: (value: string) => {
+                available = value === 'available';
+              }
+            }
+          ]
       ];
     },
     get controls(): ShelfControl[] {
       return surface === 'watch'
-        ? [{ type: 'media-type', label: `${title} type`, value: kind, change: value => { kind = value; } }]
+        ? [
+          {
+            type: 'media-type',
+            label: `${title} type`,
+            value: kind,
+            change: (value) => {
+              kind = value;
+            }
+          }
+        ]
         : [];
     },
     actions: [],

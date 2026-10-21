@@ -1,6 +1,6 @@
 // Actual-file regression and resource ownership receipt. No invented media or provider replies.
-import { createReadingCache } from '$lib/reading/cache.server';
-import { ComicDecoder } from '$lib/reading/reader/archive-decoder';
+import { createReadingCache } from '#lib/reading/cache.server.js';
+import { ComicDecoder } from '#lib/reading/reader/archive-decoder.js';
 import { ZipReader, BlobReader, Uint8ArrayWriter } from '@zip.js/zip.js';
 import { readdir, mkdir, writeFile, symlink, readFile, rm, statfs } from 'node:fs/promises';
 import { join, dirname, resolve } from 'node:path';

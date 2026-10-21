@@ -1,8 +1,8 @@
 import manifest from './prop-manifest.json';
-import {serviceTasks} from '$lib/providers/tasks';
-import {providerSchedule} from '$lib/providers/schedule';
-import {defaultNotificationFilters} from '$lib/notifications/model';
-import {defaultPartySettings} from '$lib/playback/synced/model';
+import {serviceTasks} from '#lib/providers/tasks.js';
+import {providerSchedule} from '#lib/providers/schedule.js';
+import {defaultNotificationFilters} from '#lib/notifications/model.js';
+import {defaultPartySettings} from '#lib/playback/synced/model.js';
 import {id,today,movie,show,items,facts,provider,job} from './demo/fixtures';
 
 export type PropContract={name:string;type:string;optional:boolean;bindable:boolean;kind:'text'|'number'|'boolean'|'select'|'data'|'snippet'|'callback';nullable:boolean;choices?:Array<string|number>;defaultSource?:string;defaultValue?:unknown};

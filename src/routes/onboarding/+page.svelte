@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { reportFailure } from '$lib/ui/client-context';
- import OperationProgress from '$lib/ui/components/OperationProgress.svelte';
- import {enhance,deserialize} from '$app/forms';import {refreshRouteDependencies} from '$lib/ui/client';import {onMount,untrack} from 'svelte';
- import AvatarPicker from '$lib/ui/components/AvatarPicker.svelte';
- import {createResource} from '$lib/ui/resource.svelte';
- import Brand from '$lib/ui/components/Brand.svelte';import Button from '$lib/ui/components/Button.svelte';
+  import { reportFailure } from '#lib/ui/client-context.js';
+ import OperationProgress from '#lib/ui/components/OperationProgress.svelte';
+ import {enhance,deserialize} from '$app/forms';import {refreshRouteDependencies} from '#lib/ui/client.js';import {onMount,untrack} from 'svelte';
+ import AvatarPicker from '#lib/ui/components/AvatarPicker.svelte';
+ import {createResource} from '#lib/ui/resource.svelte.js';
+ import Brand from '#lib/ui/components/Brand.svelte';import Button from '#lib/ui/components/Button.svelte';
  let {data,form}=$props();let busy=$state(false),deviceError=$state(''),avatar=$state<string|null>(untrack(()=>data.profile.avatar??null)),reading=$state(false);
  $effect(()=>{if(form&&'device' in form)deviceError='';});
  const device=$derived(form&&'device' in form?form.device:null);

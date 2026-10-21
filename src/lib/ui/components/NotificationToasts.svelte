@@ -1,9 +1,9 @@
 <script lang="ts">
-  import {openNotifications} from '$lib/ui/panels/notifications.svelte';
+  import {openNotifications} from '#lib/ui/panels/notifications.svelte.js';
   import { onMount } from 'svelte';
-  import { useClient } from '$lib/ui/client-context';
-  import { ApiError, refreshAfterChange } from '$lib/ui/client';
-  import { createNotificationToasts, type ToastNotification } from '$lib/ui/controls/notification-toasts';
+  import { useClient } from '#lib/ui/client-context.js';
+  import { ApiError, refreshAfterChange } from '#lib/ui/client.js';
+  import { createNotificationToasts, type ToastNotification } from '#lib/ui/controls/notification-toasts.js';
   import Toast from './Toast.svelte';
 
   const { preview, api, feedback:delivery } = useClient();

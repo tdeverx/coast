@@ -1,17 +1,17 @@
-import { requireFeature,lockFeaturePolicyInTransaction } from '$lib/server/features';
+import { requireFeature,lockFeaturePolicyInTransaction } from '#lib/server/features.js';
 import * as v from 'valibot';
 import {and,eq,sql} from 'drizzle-orm';
-import {collectionCTE,collectionRead} from '$lib/collection/query.server';
-import {getSql,getDb} from '$lib/server/db';
-import {socialRecommendations,friendships,notifications,works} from '$lib/server/db/schema';
-import {trackInTransaction} from '$lib/core/tracking/service.server';
-import {enqueueTraktChangeInTransaction,enqueueCollectionProjectionInTransaction} from '$lib/sync/changes.server';
-import {notify,resolveNotification} from '$lib/server/notifications';
-import {AppError} from '$lib/server/security/errors';
+import {collectionCTE,collectionRead} from '#lib/collection/query.server.js';
+import {getSql,getDb} from '#lib/server/db/index.js';
+import {socialRecommendations,friendships,notifications,works} from '#lib/server/db/schema.js';
+import {trackInTransaction} from '#lib/core/tracking/service.server.js';
+import {enqueueTraktChangeInTransaction,enqueueCollectionProjectionInTransaction} from '#lib/sync/changes.server.js';
+import {notify,resolveNotification} from '#lib/server/notifications/index.js';
+import {AppError} from '#lib/server/security/errors.js';
 import {emojis} from './model';
 import {friendStatusSql} from './status.server';
-import {categoryEnabled} from '$lib/experimental';
-import {enabledCategories} from '$lib/server/experimental';
+import {categoryEnabled} from '#lib/experimental.js';
+import {enabledCategories} from '#lib/server/experimental.js';
 const uuid=v.pipe(v.string(),v.uuid());
 export async function incomingFriendRequests(userId:string){
  const [row]=await getSql()`select count(*)::int as count from friendships f join users u on u.id=f.requested_by where coast_feature_enabled(u.id,'social') and coast_feature_enabled(${userId}::uuid,'social') and f.state='pending' and f.requested_by<>${userId}::uuid and (${userId}::uuid=f.user_a or ${userId}::uuid=f.user_b) and not u.disabled`;

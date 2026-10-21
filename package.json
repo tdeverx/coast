@@ -10,7 +10,7 @@
   },
   "scripts": {
     "dev": "bun run reading:native && bun --bun vite dev --host 0.0.0.0",
-    "build": "bun run navigation:check && bun --bun vite build && bun scripts/build-reading-extractor.ts build/reading-extractor",
+    "build": "bun run adapter:check && bun run navigation:check && bun --bun vite build && bun scripts/build-reading-extractor.ts build/reading-extractor",
     "start": "bun build/index.js",
     "check": "bun --bun svelte-kit sync && bun --bun svelte-check --tsconfig ./tsconfig.json",
     "test": "bun test ./tests",
@@ -23,7 +23,8 @@
     "code:style": "bun scripts/source-style.ts",
     "code:inventory": "bun scripts/code-inventory.ts --check",
     "navigation:check": "bun scripts/check-navigation-runtime.ts",
-    "reading:native": "bun scripts/build-reading-extractor.ts"
+    "reading:native": "bun scripts/build-reading-extractor.ts",
+    "adapter:check": "bun scripts/check-bun-adapter.ts"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.5",
@@ -40,20 +41,25 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.64.1",
-    "@sveltejs/kit": "2.70.3",
+    "@sveltejs/adapter-bun": "1.0.0",
+    "@sveltejs/kit": "3.1.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/bun": "^1.4.3",
     "@types/three": "^0.186.0",
     "drizzle-kit": "^0.31.11",
     "svelte": "^5.57.2",
-    "svelte-adapter-bun": "1.0.2",
     "svelte-check": "^4.7.7",
     "tailwindcss": "^4.3.3",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vite": "^8.3.5"
   },
+  "imports": {
+    "#lib": "./src/lib/index.js",
+    "#lib/*": "./src/lib/*"
+  },
   "patchedDependencies": {
-    "@sveltejs/kit@2.70.3": "patches/sveltejs-kit-2.70.3.patch"
+    "@sveltejs/adapter-bun@1.0.0": "patches/sveltejs-adapter-bun-1.0.0.patch",
+    "@sveltejs/kit@3.1.0": "patches/sveltejs-kit-3.1.0.patch"
   }
 }

@@ -1,10 +1,10 @@
 <script lang="ts">
  import {page} from '$app/state';
- import MediaDetails from '$lib/ui/components/MediaDetails.svelte';
- import Shelf from '$lib/ui/components/Shelf.svelte';
- import type {DetailRowsModel} from '$lib/ui/pages/detail-rows';
+ import MediaDetails from '#lib/ui/components/MediaDetails.svelte';
+ import Shelf from '#lib/ui/components/Shelf.svelte';
+ import type {DetailRowsModel} from '#lib/ui/pages/detail-rows.js';
  let {data,detailHref}:{detailHref?:string;data:{group:{id:string;title:string};cover:string|null;statistics?:{issues:number;completed:number;reading:number;available:number}}}=$props();
- const detailUrl=$derived(detailHref?new URL(detailHref,page.url):page.url);
+ const detailUrl=$derived(detailHref?new URL(detailHref,page.url.href):page.url);
  const section=$derived(detailUrl.searchParams.get('section'));
  const model=$derived<DetailRowsModel>({insights:data.statistics?{selection:'overview',href:`/media/reading-collection/${data.group.id}?section=insights`,tabs:[{value:'overview',label:'Overview',panels:[{title:'Your reading',content:{kind:'metrics',props:{items:[
   {label:'Known issues',value:data.statistics.issues},{label:'Available to you',value:data.statistics.available},{label:'Reading',value:data.statistics.reading},{label:'Completed',value:data.statistics.completed},

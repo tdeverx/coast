@@ -1,6 +1,6 @@
 # Third-party notices
 
-Coast is licensed under AGPL-3.0-only. Direct application dependencies include Drizzle ORM (Apache-2.0), Valibot (MIT), hls.js (Apache-2.0), Svelte/SvelteKit (MIT), Tailwind CSS (MIT), and Hugeicons (MIT). Bun and PostgreSQL retain their respective upstream notices. Inter uses SIL OFL-1.1; its license is included at `static/fonts/Inter-LICENSE.txt`.
+Coast is licensed under AGPL-3.0-only. Direct application dependencies include Drizzle ORM (Apache-2.0), Valibot (MIT), hls.js (Apache-2.0), Svelte/SvelteKit and the official Bun adapter (MIT), Tailwind CSS (MIT), and Hugeicons (MIT). Bun and PostgreSQL retain their respective upstream notices. Inter uses SIL OFL-1.1; its license is included at `static/fonts/Inter-LICENSE.txt`.
 
 This file records known notices; it is not a complete software bill of materials. Before a stable release or third-party redistribution, generate and review a complete SBOM for the resolved production dependency tree and container, and include all notices required by those exact versions. Preserve upstream notices and provide the corresponding Coast source and build instructions with distributed copies.
 

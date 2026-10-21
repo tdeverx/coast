@@ -1,4 +1,4 @@
-import { api, message, refreshAfterChange, isFeatureDisabled, ApiError } from '$lib/ui/client';
+import { api, message, refreshAfterChange, isFeatureDisabled, ApiError } from '#lib/ui/client.js';
 import { readingFormat, readingFileLabel, sameReadingLocation, type ReadingLocation, type ReadingSessionView, type ReadingPrepareInput } from './model';
 export const reader = $state({session:null as ReadingSessionView|null,file:null as File|null,visible:false,loading:false,rendering:false,syncing:false,unsaved:false,error:'',location:null as ReadingLocation|null});
 let move:((location:ReadingLocation)=>Promise<void>)|null=null;
@@ -19,7 +19,7 @@ export function publishReading(roomId:string,location:ReadingLocation){
  sharedPosition={sessionId:session.id,roomId,location};reader.syncing=true;
  if(!publishing)publishing=(async()=>{
   try{
-   const {syncedPlayer,canControlPlayback,syncedCommand}=await import('$lib/playback/synced/client.svelte');
+   const {syncedPlayer,canControlPlayback,syncedCommand}=await import('#lib/playback/synced/client.svelte.js');
    while(sharedPosition){const next=sharedPosition;sharedPosition=null;
     if(reader.session?.id===next.sessionId&&syncedPlayer.room?.id===next.roomId&&syncedPlayer.room.mediaId===reader.session.workId&&syncedPlayer.room.edition===reader.session.edition&&canControlPlayback())await syncedCommand('location',{location:next.location});
    }
@@ -47,10 +47,10 @@ export async function openReading(workId:string,input?:{file:File}|{connectionId
   // Keep the old party source alive until the replacement has been handed over.
   if(reader.location&&!await recordReading(reader.location))throw new Error(reader.error);
   if(!current())return;
-  const {stopPlayback}=await import('$lib/playback/client.svelte');
+  const {stopPlayback}=await import('#lib/playback/client.svelte.js');
   if(!current())return;
   await stopPlayback();if(!current())return;
-  const {syncedPlayer,canControlPlayback,syncedCommand}=await import('$lib/playback/synced/client.svelte');
+  const {syncedPlayer,canControlPlayback,syncedCommand}=await import('#lib/playback/synced/client.svelte.js');
   if(!current())return;
   if(syncedPlayer.room&&!syncedPlayer.joining&&!syncedPlayer.changing&&canControlPlayback())await syncedCommand('item',{readingSessionId:session.id});
   if(!current())return;
@@ -66,7 +66,7 @@ export async function attachReading(session:ReadingSessionView){
  try{
   if(reader.session)await closeReading(false);
   if(epoch!==generation)return;
-  const {stopPlayback}=await import('$lib/playback/client.svelte');
+  const {stopPlayback}=await import('#lib/playback/client.svelte.js');
   if(epoch!==generation)return;
   await stopPlayback();if(epoch!==generation)return;
   install(session,null);installed=true;

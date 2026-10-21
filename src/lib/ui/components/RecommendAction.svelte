@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import {page} from '$app/state';
-  import { createOperation } from '$lib/ui/operation.svelte';
+  import { createOperation } from '#lib/ui/operation.svelte.js';
   import FormActions from './FormActions.svelte';
-  import { useClient } from '$lib/ui/client-context';
+  import { useClient } from '#lib/ui/client-context.js';
   import { getContext, setContext } from 'svelte';
-  import type { MenuContext } from '$lib/ui/controls/menu.svelte';
+  import type { MenuContext } from '#lib/ui/controls/menu.svelte.js';
 
   import Dialog from './Dialog.svelte';
   import RowFilter from './RowFilter.svelte';
@@ -19,7 +19,7 @@
   const operation = createOperation(useRetention());
 
   let {workId,disabled=false}:{workId:string;disabled?:boolean}=$props();
-  import { createFriendsResource } from '$lib/ui/friends.svelte';
+  import { createFriendsResource } from '#lib/ui/friends.svelte.js';
   const friends = createFriendsResource();
   let open=$state(false),failure=$state(''),recipient=$state('');
   const busy=$derived(operation.busy || friends.busy);

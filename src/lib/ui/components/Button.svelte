@@ -2,11 +2,11 @@
   import Button from './Button.svelte';
   import { untrack, type Snippet } from 'svelte';
   import Icon, { type IconName } from './Icon.svelte';
-  import { liquidGlass } from '$lib/ui/materials/glass';
-  import type { GlassVariant } from '$lib/ui/materials/presets';
-  import { createMenuController } from '$lib/ui/controls/menu.svelte';
-  import { notifyAction } from '$lib/ui/action-feedback.svelte';
-  import { useClient } from '$lib/ui/client-context';
+  import { liquidGlass } from '#lib/ui/materials/glass.js';
+  import type { GlassVariant } from '#lib/ui/materials/presets.js';
+  import { createMenuController } from '#lib/ui/controls/menu.svelte.js';
+  import { notifyAction } from '#lib/ui/action-feedback.svelte.js';
+  import { useClient } from '#lib/ui/client-context.js';
   const { preview } = useClient();
 
   type ButtonProps = {

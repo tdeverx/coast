@@ -1,8 +1,8 @@
 import { and, eq } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { media, externalIds, seasons } from '$lib/server/db/schema';
-import { traktEntry } from '$lib/sync/trakt-identity.server';
-import type { TraktRecord } from '$lib/providers/trakt/adapter.server';
+import { getDb } from '#lib/server/db/index.js';
+import { media, externalIds, seasons } from '#lib/server/db/schema.js';
+import { traktEntry } from '#lib/sync/trakt-identity.server.js';
+import type { TraktRecord } from '#lib/providers/trakt/adapter.server.js';
 import { ingestMetadata, importTmdb, getTmdb } from './service.server';
 
 export async function resolveTrakt(

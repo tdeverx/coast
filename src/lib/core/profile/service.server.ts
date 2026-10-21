@@ -1,9 +1,9 @@
-import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
+import { logDiagnostic, classifyFailure } from '#lib/server/diagnostics/index.js';
 import * as v from 'valibot';
 import { and, desc, eq, sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { users, media, trackingState, type ProfileSettings } from '$lib/server/db/schema';
-import { AppError } from '$lib/server/security/errors';
+import { getDb } from '#lib/server/db/index.js';
+import { users, media, trackingState, type ProfileSettings } from '#lib/server/db/schema.js';
+import { AppError } from '#lib/server/security/errors.js';
 import { avatarRequestLimit, avatarImage, storeAvatar, pruneAvatars } from './avatar-storage.server';
 const uuid = v.pipe(v.string(), v.uuid());
 const profileInput = v.variant('action', [

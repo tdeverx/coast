@@ -1,15 +1,15 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
   import Field from './Field.svelte';
-  import { createOperation } from '$lib/ui/operation.svelte';
+  import { createOperation } from '#lib/ui/operation.svelte.js';
   import { onDestroy, untrack } from 'svelte';
-  import type { MediaView } from '$lib/ui/types';
-  import { useClient } from '$lib/ui/client-context';
+  import type { MediaView } from '#lib/ui/types.js';
+  import { useClient } from '#lib/ui/client-context.js';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
-  import type { RequestDestination } from '$lib/media/requests';
-  import { createRequestOptions } from '$lib/ui/controls/request-options.svelte';
+  import type { RequestDestination } from '#lib/media/requests.js';
+  import { createRequestOptions } from '#lib/ui/controls/request-options.svelte.js';
 
   const { api, change } = useClient();
   const operation = createOperation(useRetention());

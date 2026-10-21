@@ -1,5 +1,5 @@
-import { getSql } from '$lib/server/db';
-import { getConfig } from '$lib/server/config';
+import { getSql } from '#lib/server/db/index.js';
+import { getConfig } from '#lib/server/config.js';
 import { providerSchedule } from './schedule';
 import { serviceTasks, maintenanceKinds } from './tasks';
 import { jobIdentityScope } from './job-policy';
@@ -9,7 +9,7 @@ type Settings = TaskSettings;
 type Instance = { id: string; provider: string; enabled: boolean; settings: Settings; configured: boolean };
 type Account = { account_generation:string; role:string; id: string; instance_id: string; external_user_id: string; settings: Settings; configured: boolean; live: boolean; user_completed: Date | null; reviews: number };
 type Evidence = { connection_id: string | null; kind: string; instance_id: string | null; completed: Date | null; blocked: boolean; latest_state: string | null; allowed?:boolean };
-export type LastJobRun = {id:string;state:'succeeded'|'failed'|'cancelled';at:string;outcome:import('$lib/server/queue').JobOutcome|null;lastError:string|null};
+export type LastJobRun = {id:string;state:'succeeded'|'failed'|'cancelled';at:string;outcome:import('#lib/server/queue/index.js').JobOutcome|null;lastError:string|null};
 export type JobTiming = {lastRun?:LastJobRun|null; completed?:number; instanceId: string; kind: string; nextAt: string | null; lastAt: string | null; eligible: number; fresh: number; reviews: number; reason?: string };
 /** Scheduling evidence is read independently of the bounded recent-run display. */
 export async function jobTimings(): Promise<JobTiming[]> {

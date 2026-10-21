@@ -7,9 +7,9 @@
   const name = $derived(page.url.searchParams.get('component') ?? 'Button');
   const entry = $derived(referenceEntries.find(entry => entry.id === name));
   function changeScenario(value: string) {
-    const url = new URL(page.url);
+    const url = new URL(page.url.href);
     url.searchParams.set('scenario', value);
-    void goto(url, {noScroll:true,keepFocus:true,replaceState:true});
+    void goto(url, {reset: false,replace: true});
   }
 </script>
 <svelte:head><title>{entry?.title ?? 'Unknown example'} · UI preview</title></svelte:head>

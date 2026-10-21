@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
  import {page} from '$app/state';
- import {mediumOptions} from '$lib/experimental';
+ import {mediumOptions} from '#lib/experimental.js';
  import FriendRoster from './FriendRoster.svelte';
  import {onDestroy,untrack} from 'svelte';
  import Dialog from './Dialog.svelte';
@@ -16,11 +16,11 @@
  import Icon from './Icon.svelte';
 
  import EmptyState from './EmptyState.svelte';
- import {useClient} from '$lib/ui/client-context';
- import {createResource,uniqueItems} from '$lib/ui/resource.svelte';
- import {createOperation} from '$lib/ui/operation.svelte';
- import {activityDateLabel} from '$lib/social/model';
- import {notificationKinds,notificationSegments,defaultNotificationFilters,type NotificationEntry,type NotificationResult,type NotificationFilters} from '$lib/notifications/model';
+ import {useClient} from '#lib/ui/client-context.js';
+ import {createResource,uniqueItems} from '#lib/ui/resource.svelte.js';
+ import {createOperation} from '#lib/ui/operation.svelte.js';
+ import {activityDateLabel} from '#lib/social/model.js';
+ import {notificationKinds,notificationSegments,defaultNotificationFilters,type NotificationEntry,type NotificationResult,type NotificationFilters} from '#lib/notifications/model.js';
  let {open=$bindable(false),initialKind='all',initialFilters,onclose}:{open:boolean;initialKind?:string;initialFilters?:NotificationFilters;onclose?:()=>void}=$props();
  const {api,change,preview}=useClient();
  let criteria=$state<NotificationFilters>(untrack(()=>({...defaultNotificationFilters,kind:notificationKinds.some(k=>k.value===initialKind)?initialKind:'all',...initialFilters})));

@@ -8,9 +8,9 @@ async function owner(fixture:Fixture){
  globals[boundary]=fixture;
  const source=(await Bun.file(new URL('../src/lib/providers/server-artwork.server.ts',import.meta.url)).text())
  .replace("from './artwork-flight.server'",`from ${JSON.stringify(new URL('../src/lib/providers/artwork-flight.server.ts',import.meta.url).pathname)}`)
- .replace("import { createImageCache } from '$lib/server/storage/image-cache.server';",'const createImageCache=()=>fixture;')
- .replace("import { getConfig } from '$lib/server/config';",'const getConfig=async()=>{fixture.configReads++;return fixture.policy?fixture.policy():{cacheServerArtwork:fixture.enabled};};')
- .replace("import { dataDirectory } from '$lib/server/security/credentials';",'const dataDirectory=()=>"/controlled-private-artwork";');
+ .replace("import { createImageCache } from '#lib/server/storage/image-cache.server.js';",'const createImageCache=()=>fixture;')
+ .replace("import { getConfig } from '#lib/server/config.js';",'const getConfig=async()=>{fixture.configReads++;return fixture.policy?fixture.policy():{cacheServerArtwork:fixture.enabled};};')
+ .replace("import { dataDirectory } from '#lib/server/security/credentials.js';",'const dataDirectory=()=>"/controlled-private-artwork";');
  return import(compile(`const fixture=globalThis[Symbol.for('coast.test.private-artwork-flight')];\n`+source+`\nexport const specimen=${specimen++};`)) as Promise<typeof import('../src/lib/providers/server-artwork.server')>;
 }
 function deferred<T>(){let resolve!:(value:T)=>void;return {promise:new Promise<T>(done=>resolve=done),resolve:(value:T)=>resolve(value)};}

@@ -1,10 +1,10 @@
-import { requireFeature, requireFeatureInTransaction, getFeatureConfig } from '$lib/server/features';
-import { context } from '$lib/server/diagnostics';
-import { correlationId } from '$lib/diagnostics';
-import { conflictPreference } from '$lib/sync/preference.server';
+import { requireFeature, requireFeatureInTransaction, getFeatureConfig } from '#lib/server/features.js';
+import { context } from '#lib/server/diagnostics/index.js';
+import { correlationId } from '#lib/diagnostics.js';
+import { conflictPreference } from '#lib/sync/preference.server.js';
 import * as v from 'valibot';
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
-import { getDb, type Database } from '$lib/server/db';
+import { getDb, type Database } from '#lib/server/db/index.js';
 import {
   providerInstances,
   providerConnections,
@@ -14,8 +14,8 @@ import {
   outboxActions,
   syncValues,
   providerJobSnapshots,
-} from '$lib/server/db/schema';
-import { enqueueAction, PermanentActionError, type OutboxAction } from '$lib/server/queue';
+} from '#lib/server/db/schema.js';
+import { enqueueAction, PermanentActionError, type OutboxAction } from '#lib/server/queue/index.js';
 import {
   SeerrAdapter,
   groupDestination,
@@ -23,15 +23,15 @@ import {
   SeerrPermission,
   requestSchema,
   type SeerrRequest,
-} from '$lib/providers/seerr/adapter.server';
-import { ProviderActionError, type DiscoverKind } from '$lib/providers/contracts';
-import { notifyMany } from '$lib/server/notifications';
-import { trackInTransaction } from '$lib/core/tracking/service.server';
-import { getInstance, instanceFetchConfig } from '$lib/providers/instances.server';
-import { connectionFor } from '$lib/providers/connections.server';
-import { getSeerr, assertSeerrAccount } from '$lib/providers/seerr/connection.server';
-import { ProviderHttpError } from '$lib/server/security/provider-fetch';
-import { jobExecution, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
+} from '#lib/providers/seerr/adapter.server.js';
+import { ProviderActionError, type DiscoverKind } from '#lib/providers/contracts.js';
+import { notifyMany } from '#lib/server/notifications/index.js';
+import { trackInTransaction } from '#lib/core/tracking/service.server.js';
+import { getInstance, instanceFetchConfig } from '#lib/providers/instances.server.js';
+import { connectionFor } from '#lib/providers/connections.server.js';
+import { getSeerr, assertSeerrAccount } from '#lib/providers/seerr/connection.server.js';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
+import { jobExecution, jobCheckpoint, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
 
 const uuid = v.pipe(v.string(), v.uuid());
 
@@ -392,7 +392,7 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
   let point:SeerrCheckpoint=saved?v.parse(seerrCheckpointSchema,saved):{task:'seerr-sync',scanId:crypto.randomUUID(),phase:'scanning',offset:0,next:0,after:null};
   const retain=async(tx:Tx,next:SeerrCheckpoint)=>{await saveJobCheckpoint(next,tx);point=next;};
   const expired=()=>!!execution&&performance.now()-execution.started>=10_000;
-  const {importTmdb}=await import('$lib/catalogue/service.server');
+  const {importTmdb}=await import('#lib/catalogue/service.server.js');
   while(point.phase==='scanning'){
     if(point.offset>100000)throw new Error('Seerr request sync exceeded the supported page bound.');
     const [stored]=execution?await db.select().from(providerJobSnapshots).where(eq(providerJobSnapshots.actionId,execution.id)):[];
@@ -506,7 +506,7 @@ export async function refreshRequests(userId:string,instanceId:string,expected?:
           await tx.update(syncValues).set({remote,updatedAt:new Date()}).where(and(eq(syncValues.id,entry.id),sql`${syncValues.remote} is distinct from ${remote}::jsonb`));
           const preference=await conflictPreference(tx,userId,connection.id);
           if(preference!=='manual'){
-            const {resolveConflict}=await import('$lib/sync/conflicts.server');
+            const {resolveConflict}=await import('#lib/sync/conflicts.server.js');
             await resolveConflict(userId,entry.id,preference==='remote'?'accepted':'ignored',tx);
           }
         }

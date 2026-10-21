@@ -3,7 +3,7 @@ import { sql } from 'drizzle-orm';
 import { getConfig, parseConfig, featureSubject, type CoastConfig } from './config';
 import { getSql, type Database } from './db';
 import { AppError } from './security/errors';
-import { featureDefinitions, featureValues, type Feature, type FeatureChoices, type FeatureValues } from '$lib/features';
+import { featureDefinitions, featureValues, type Feature, type FeatureChoices, type FeatureValues } from '#lib/features.js';
 
 export const featureChoicesSchema = v.partial(v.object(Object.fromEntries(featureDefinitions.filter(([key]) => key !== 'api').map(([key]) => [key, v.boolean()])) as Record<keyof FeatureChoices, v.BooleanSchema<undefined>>));
 export type FeatureConfig = CoastConfig & { features: FeatureValues };

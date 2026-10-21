@@ -1,7 +1,7 @@
-import { requireFeature } from '$lib/server/features';
+import { requireFeature } from '#lib/server/features.js';
 import * as v from 'valibot';
 import {workTasteFeatures} from './work-features.server';
-import {getSql} from '$lib/server/db';
+import {getSql} from '#lib/server/db/index.js';
 import {requireFriend} from './service.server';
 import {requireVisible} from './privacy.server';
 import {median,tasteSignals,type TasteWork} from './taste';

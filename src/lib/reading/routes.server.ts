@@ -1,14 +1,14 @@
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig } from '#lib/server/features.js';
 import * as v from 'valibot';
 import { error, redirect, type ServerLoadEvent } from '@sveltejs/kit';
-import { readingDetails, readingRemoteDetail } from '$lib/reading/query.server';
-import type { ReadingDetailData } from '$lib/reading/presentation';
-import type { ReadingKind } from '$lib/reading/model';
-import { requireEnabledCategory } from '$lib/server/experimental';
-import { AppError } from '$lib/server/security/errors';
-import { ProviderHttpError } from '$lib/server/security/provider-fetch';
-import { providerApiError } from '$lib/server/security/provider-api-error';
-import { DomainError } from '$lib/core/errors';
+import { readingDetails, readingRemoteDetail } from '#lib/reading/query.server.js';
+import type { ReadingDetailData } from '#lib/reading/presentation.js';
+import type { ReadingKind } from '#lib/reading/model.js';
+import { requireEnabledCategory } from '#lib/server/experimental.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
+import { providerApiError } from '#lib/server/security/provider-api-error.js';
+import { DomainError } from '#lib/core/errors.js';
 
 function routeError(cause: unknown, event: ServerLoadEvent): never {
   if (v.isValiError(cause)) error(400, 'Check the reading filters or identifier.');

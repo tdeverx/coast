@@ -1,19 +1,19 @@
 <script lang="ts">
   import {page} from '$app/state';
-  import {providerSchedule} from '$lib/providers/schedule';
-  import {recurringTask} from '$lib/providers/task-timing';
+  import {providerSchedule} from '#lib/providers/schedule.js';
+  import {recurringTask} from '#lib/providers/task-timing.js';
   import { onMount } from 'svelte';
-  import { refreshRouteDependencies } from '$lib/ui/client';
-  import { useClient } from '$lib/ui/client-context';
+  import { refreshRouteDependencies } from '#lib/ui/client.js';
+  import { useClient } from '#lib/ui/client-context.js';
   const { preview } = useClient();
-  import { maintenanceKinds, serviceTasks, type ServiceTask } from '$lib/providers/tasks';
-  import type { ProviderSchedule } from '$lib/providers/schedule';
+  import { maintenanceKinds, serviceTasks, type ServiceTask } from '#lib/providers/tasks.js';
+  import type { ProviderSchedule } from '#lib/providers/schedule.js';
   import Heading from './Heading.svelte';
   import RowFilter from './RowFilter.svelte';
   import JobSchedule from './JobSchedule.svelte';
   import EmptyState from './EmptyState.svelte';
-  import {displayLabel} from '$lib/ui/labels';
-  import {jobTaskSections,type QueueAction} from '$lib/ui/queue';
+  import {displayLabel} from '#lib/ui/labels.js';
+  import {jobTaskSections,type QueueAction} from '#lib/ui/queue.js';
 
   let {
     providers,
@@ -31,9 +31,9 @@
       libraryScan?: unknown;
       schedule: ProviderSchedule;
     }[];
-    tasteJob?:Awaited<ReturnType<typeof import('$lib/social/taste-cache.server').tasteJob>>|null;
+    tasteJob?:Awaited<ReturnType<typeof import('#lib/social/taste-cache.server.js').tasteJob>>|null;
     actions: QueueAction[];
-    timing?: import('$lib/providers/job-timing.server').JobTiming[];
+    timing?: import('#lib/providers/job-timing.server.js').JobTiming[];
   } = $props();
   let filter = $state('all'),
     service = $state('all'),

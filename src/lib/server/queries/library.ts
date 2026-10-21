@@ -1,4 +1,4 @@
-import { getFeatureConfig } from '$lib/server/features';
+import { getFeatureConfig } from '#lib/server/features.js';
 import { rewatchBoundary, rewatchFields } from '../../core/tracking/rewatch.server';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
@@ -7,7 +7,7 @@ import * as s from '../db/schema';
 import { mediaViews, hasPermittedMediaSource } from './media';
 import { pageNumberSchema, PAGE_SIZE, pagination, requestedPageInterval } from './pagination';
 
-import { pageInterval } from '$lib/page-window';
+import { pageInterval } from '#lib/page-window.js';
 
 const uuidSchema = v.pipe(v.string(), v.uuid());
 

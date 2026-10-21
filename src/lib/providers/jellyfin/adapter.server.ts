@@ -1,11 +1,11 @@
 import { jellyfinBook, jellyfinBooks, jellyfinBookPage } from './reading.server';
 import {companionPageSchema} from './companion';
-import { artworkKeys, artworkTypes } from '$lib/artwork';
+import { artworkKeys, artworkTypes } from '#lib/artwork.js';
 import {activeSessionsSchema,streamPresentation} from './streams';
 import * as v from 'valibot';
 import { browseMusic, musicItem, musicItems, type MusicBrowseOptions, type MusicScanOptions } from './music.server';
 import { jellyfinItemKey, validateJellyfinItems, validateJellyfinPage } from './paging';
-import { ProviderHttpError } from '$lib/server/security/provider-fetch';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 import { ProviderActionError } from '../contracts';
 import type {
   AvailableItem,

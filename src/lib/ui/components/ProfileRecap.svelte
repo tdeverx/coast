@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { periodLabel, type ProfilePeriod } from '$lib/profile/period';
+  import { periodLabel, type ProfilePeriod } from '#lib/profile/period.js';
   let {
     subject = 'you',
     movies,

@@ -1,5 +1,5 @@
 import type { SQL } from 'bun';
-import { getSql } from '$lib/server/db';
+import { getSql } from '#lib/server/db/index.js';
 
 /** Time can change availability without a write. Each source contributes one
  * checkpoint boolean and one indexed expired predecessor, never a row count. */

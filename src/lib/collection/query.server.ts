@@ -1,20 +1,20 @@
-import { getFeatureConfig } from '$lib/server/features';
-import { personaliseWorkCards } from '$lib/catalogue/overrides/presentation.server';
-import { enabledCategories, requireEnabledCategory, selectedCategory } from '$lib/server/experimental';
+import { getFeatureConfig } from '#lib/server/features.js';
+import { personaliseWorkCards } from '#lib/catalogue/overrides/presentation.server.js';
+import { enabledCategories, requireEnabledCategory, selectedCategory } from '#lib/server/experimental.js';
 import { sql, eq, inArray, type SQL } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '$lib/server/db';
-import { logDiagnostic } from '$lib/server/diagnostics';
-import { works, musicWorks, readingWorks, providerItems, providerConnections, providerInstances } from '$lib/server/db/schema';
-import { mediaViews, screenWorkSummaries } from '$lib/server/queries/media';
-import { profileUser } from '$lib/server/queries/profile-user';
-import { PAGE_SIZE, pageNumberSchema, pagination, requestedPageInterval } from '$lib/server/queries/pagination';
-import type { MediaCardPresentation, MediaView, WorkSummary } from '$lib/ui/types';
-import { readingCards } from '$lib/reading/query.server';
-import { musicWorkCredits } from '$lib/music/credits.server';
-import { readingCard } from '$lib/reading/presentation';
+import { getDb } from '#lib/server/db/index.js';
+import { logDiagnostic } from '#lib/server/diagnostics/index.js';
+import { works, musicWorks, readingWorks, providerItems, providerConnections, providerInstances } from '#lib/server/db/schema.js';
+import { mediaViews, screenWorkSummaries } from '#lib/server/queries/media.js';
+import { profileUser } from '#lib/server/queries/profile-user.js';
+import { PAGE_SIZE, pageNumberSchema, pagination, requestedPageInterval } from '#lib/server/queries/pagination.js';
+import type { MediaCardPresentation, MediaView, WorkSummary } from '#lib/ui/types.js';
+import { readingCards } from '#lib/reading/query.server.js';
+import { musicWorkCredits } from '#lib/music/credits.server.js';
+import { readingCard } from '#lib/reading/presentation.js';
 
-import { pageInterval, type PageInterval } from '$lib/page-window';
+import { pageInterval, type PageInterval } from '#lib/page-window.js';
 
 /** Cached inventory proves positive access only with this account's fresh grant
  * and the exact completed library census; it never proves negative user state. */
@@ -253,10 +253,10 @@ export async function workAssessments(ownerId: string, viewerId: string, ids: st
   return Array.from(result).map(mapAssessment);
 }
 /** Shared action data is local and loaded only when the existing menu opens. */
-export async function workActionData(userId: string, id: string, playthroughId?: string): Promise<import('$lib/media/work-actions').WorkActionState> {
+export async function workActionData(userId: string, id: string, playthroughId?: string): Promise<import('#lib/media/work-actions.js').WorkActionState> {
   // The menu edits direct relationships. It does not need Collection's recursive
   // coverage/ancestor assessment or every inherited member's reason payload.
-  const rows = await getDb().execute<import('$lib/media/work-actions').WorkActionState>(sql`
+  const rows = await getDb().execute<import('#lib/media/work-actions.js').WorkActionState>(sql`
     select coalesce((select jsonb_agg(jsonb_build_object('relationship',v.relationship,'origin','direct'))
       from tracking_state t cross join lateral (values ('collected',t.collected),('watchlist',t.watchlist),('favourite',t.favourite)) v(relationship,enabled)
       where t.user_id=${userId} and t.media_id=${id} and v.enabled),'[]'::jsonb) as reasons,
@@ -269,13 +269,13 @@ export async function workActionData(userId: string, id: string, playthroughId?:
          order by p.created_at desc,p.id desc limit 1)) from games g where g.id=${id}) as game,
       (select jsonb_build_object('state',state,'page',page,'totalPages',total_pages)
        from reading_progress where user_id=${userId} and work_id=${id}) as reading`);
-  return rows[0] as import('$lib/media/work-actions').WorkActionState;
+  return rows[0] as import('#lib/media/work-actions.js').WorkActionState;
 }
 
 /** Lists are a branch read: one row per list, bounded page, exact membership count.
  * Only the first occurrence is needed for ordinary-list toggling; contextual actions
  * retain their own selected entry ID and never substitute this occurrence. */
-export async function workActionLists(userId: string, id: string, requestedPage = 1, readingOnly = false): Promise<import('$lib/media/work-actions').WorkListPage> {
+export async function workActionLists(userId: string, id: string, requestedPage = 1, readingOnly = false): Promise<import('#lib/media/work-actions.js').WorkListPage> {
   v.parse(pageNumberSchema, requestedPage);
   const db = getDb();
   const where = sql`l.user_id=${userId} and (not ${readingOnly} or not l.playlist)`;
@@ -348,7 +348,7 @@ async function workCardPage(ownerId: string, viewerId: string | null, ids: strin
   const readingIds=identities.filter(work=>work.category==='book'||work.category==='comic').map(work=>work.id);
   const [screen,gameRows,musicRows,readingRows] = await Promise.all([
     screenIds.length?mediaViews(ownerId,{ids:screenIds,limit:PAGE_SIZE},viewerId):[],
-    gameIds.length?(await import('$lib/core/games/service.server')).gamePresentationMetadata(gameIds).then(rows=>[...rows.values()]):[],
+    gameIds.length?(await import('#lib/core/games/service.server.js')).gamePresentationMetadata(gameIds).then(rows=>[...rows.values()]):[],
     musicIds.length?db.select().from(musicWorks).where(inArray(musicWorks.id,musicIds)):[],
     readingIds.length&&(config.experimentalBooks||config.experimentalComics)
       ? db.select().from(readingWorks).where(sql`${inArray(readingWorks.id,readingIds)} and ${enabledCategories(sql`${readingWorks.kind}`,config)}`).limit(PAGE_SIZE)
@@ -380,7 +380,7 @@ async function collectionPage(viewerId: string, raw: unknown={}, username?: stri
     requestedPageInterval(input.page, interval.firstPage);
     v.parse(v.literal(input.page), interval.lastPage);
   }
-  if(ownerId!==viewerId && input.category!=='reading')await (await import('$lib/social/privacy.server')).requireVisible(ownerId,viewerId,'collection',input.category==='all'?undefined:input.category);
+  if(ownerId!==viewerId && input.category!=='reading')await (await import('#lib/social/privacy.server.js')).requireVisible(ownerId,viewerId,'collection',input.category==='all'?undefined:input.category);
   const config=await getFeatureConfig(viewerId);if(input.category!=='all')requireEnabledCategory(config,input.category);
   const condition=sql`(select collection_visible from visibility where category=c.category) and ${enabledCategories(sql`c.category`,config)} and ${selectedCategory(sql`c.category`,input.category)} and (${input.kind}='all' or c.kind=${input.kind})
     and (${input.level}='all' or (c.kind not in ('episode','season') and not exists(select 1 from edges e join works parent on parent.id=e.parent_id where e.child_id=c.id and parent.kind in ('show','season','album'))))

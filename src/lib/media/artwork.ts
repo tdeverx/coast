@@ -1,4 +1,4 @@
-import type { ArtworkImages, ArtworkType } from '$lib/artwork';
+import type { ArtworkImages, ArtworkType } from '#lib/artwork.js';
 import type { ArtworkLevel, ArtworkPriority, MediaView, MediaCardShape } from '../ui/types';
 type ArtworkItem = Pick<MediaView, 'artworkSources' | 'poster' | 'backdrop' | 'artwork'>;
 

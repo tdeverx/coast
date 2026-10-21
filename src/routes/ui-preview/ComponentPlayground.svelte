@@ -1,10 +1,10 @@
 <script lang="ts">
-  import {useClient} from '$lib/ui/client-context';
+  import {useClient} from '#lib/ui/client-context.js';
   const delivery=useClient().feedback;
   import type { Snippet } from 'svelte';
   import { untrack } from 'svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import Field from '$lib/ui/components/Field.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import Field from '#lib/ui/components/Field.svelte';
   import PreviewExample from './PreviewExample.svelte';
   import Browser from './Browser.svelte';
   import { referenceEntries, elements } from './catalog';

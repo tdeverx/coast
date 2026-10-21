@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
-  import Field from '$lib/ui/components/Field.svelte';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import Field from '#lib/ui/components/Field.svelte';
   import { useClient } from '../client-context';
   import { createMutation } from '../mutation.svelte';
   import Dialog from '../components/Dialog.svelte';

@@ -61,7 +61,7 @@ resize(true);expect(child.compact).toBe(true);expect(parent.childHidden).toBe(tr
 child.triggerKey({key:'Escape',preventDefault(){},stopPropagation(){}});await Promise.resolve();runtime.flush();expect(document.activeElement).toBe(nested.trigger);expect(mediaListeners()).toBe(1);
 parent.close();runtime.flush();expect(mediaListeners()).toBe(0);expect(activeObservers).toBe(0);expect(globalListeners()).toBe(0);expect(frames.size).toBe(0);
 resize(false);parent.toggle({newState:'open'});runtime.flush();expect(parent.compact).toBe(false);expect(mediaListeners()).toBe(1);
-for(const navigate of lifecycle.navigations)navigate();runtime.flush();expect(mediaListeners()).toBe(0);
+for(const navigate of lifecycle.navigations)navigate({shallow:false,type:'goto'});runtime.flush();expect(mediaListeners()).toBe(0);
 for(const cleanup of [...lifecycle.cleanups].reverse())cleanup();dispose();
 expect(mediaListeners()+activeObservers+globalListeners()+frames.size).toBe(0);
 parent.openMenu();child.openMenu();expect(mediaListeners()).toBe(0);

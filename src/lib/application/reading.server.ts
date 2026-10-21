@@ -1,10 +1,10 @@
-import { getFeatureConfig } from '$lib/server/features';
-import { requireEnabledCategory } from '$lib/server/experimental';
+import { getFeatureConfig } from '#lib/server/features.js';
+import { requireEnabledCategory } from '#lib/server/experimental.js';
 import * as v from 'valibot';
-import { importReading } from '$lib/catalogue/reading.server';
-import { ensureReadingSaved } from '$lib/core/reading/service.server';
-import { readingReferenceSchema } from '$lib/reading/model';
-import { readingProviderDetails } from '$lib/providers/reading.server';
+import { importReading } from '#lib/catalogue/reading.server.js';
+import { ensureReadingSaved } from '#lib/core/reading/service.server.js';
+import { readingReferenceSchema } from '#lib/reading/model.js';
+import { readingProviderDetails } from '#lib/providers/reading.server.js';
 
 /** Explicit additions compose provider reads, shared identity and private state.
  * Network work completes before either domain acquires transaction locks. */

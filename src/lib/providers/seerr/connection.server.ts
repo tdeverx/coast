@@ -1,14 +1,14 @@
 import * as v from 'valibot';
 import { and, eq, sql } from 'drizzle-orm';
-import { getDb, type Database } from '$lib/server/db';
-import { providerConnections, providerInstances, users } from '$lib/server/db/schema';
-import { decryptCredential } from '$lib/server/security/credentials';
-import { getConfig } from '$lib/server/config';
-import { SeerrAdapter } from '$lib/providers/seerr/adapter.server';
-import { getInstance, instanceTransport } from '$lib/providers/instances.server';
-import { saveConnection } from '$lib/providers/connections.server';
-import { PermanentActionError } from '$lib/server/queue';
-import { assertJobLease } from '$lib/server/queue/execution';
+import { getDb, type Database } from '#lib/server/db/index.js';
+import { providerConnections, providerInstances, users } from '#lib/server/db/schema.js';
+import { decryptCredential } from '#lib/server/security/credentials.js';
+import { getConfig } from '#lib/server/config.js';
+import { SeerrAdapter } from '#lib/providers/seerr/adapter.server.js';
+import { getInstance, instanceTransport } from '#lib/providers/instances.server.js';
+import { saveConnection } from '#lib/providers/connections.server.js';
+import { PermanentActionError } from '#lib/server/queue/index.js';
+import { assertJobLease } from '#lib/server/queue/execution.js';
 
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];
 export type SeerrAccountScope={userId:string;instanceId:string;connectionId:string;accountGeneration:string;externalUserId:string;

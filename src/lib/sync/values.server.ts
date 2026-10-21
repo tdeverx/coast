@@ -1,7 +1,7 @@
 import { conflictPreference } from './preference.server';
-import { lockFeaturePolicyInTransaction } from '$lib/server/features';
+import { lockFeaturePolicyInTransaction } from '#lib/server/features.js';
 import { and, eq, sql, inArray } from 'drizzle-orm';
-import { getDb, type Database } from '$lib/server/db';
+import { getDb, type Database } from '#lib/server/db/index.js';
 import {
   providerConnections,
   syncValues,
@@ -11,11 +11,11 @@ import {
   outboxActions,
   works, musicProgress,
   type JsonObject,
-} from '$lib/server/db/schema';
-import { trackInTransaction } from '$lib/core/tracking/service.server';
-import { rateInTransaction } from '$lib/core/ratings/service.server';
+} from '#lib/server/db/schema.js';
+import { trackInTransaction } from '#lib/core/tracking/service.server.js';
+import { rateInTransaction } from '#lib/core/ratings/service.server.js';
 import { enqueueSyncValueInTransaction } from './changes.server';
-import { assertJobLease } from '$lib/server/queue/execution';
+import { assertJobLease } from '#lib/server/queue/execution.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 export type ValueCategory =

@@ -1,9 +1,9 @@
 import { error } from '@sveltejs/kit';
-import {AppError} from '$lib/server/security/errors';
+import {AppError} from '#lib/server/security/errors.js';
 import * as v from 'valibot';
-import { musicSourceDetailData } from '$lib/music/detail.server';
-import { jellyfinMusicIdSchema } from '$lib/providers/jellyfin/music.server';
-import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
+import { musicSourceDetailData } from '#lib/music/detail.server.js';
+import { jellyfinMusicIdSchema } from '#lib/providers/jellyfin/music.server.js';
+import { logDiagnostic, classifyFailure } from '#lib/server/diagnostics/index.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({locals, params, url, depends,request}) => {

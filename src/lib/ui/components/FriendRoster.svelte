@@ -1,9 +1,9 @@
 <script lang="ts">
- import {statusLabels,type ActivityStatus} from '$lib/social/status';
+ import {statusLabels,type ActivityStatus} from '#lib/social/status.js';
  import Button from './Button.svelte';
  import Avatar from './Avatar.svelte';
  import IdentityCard from './IdentityCard.svelte';
- import type {FriendEntry} from '$lib/social/model';
+ import type {FriendEntry} from '#lib/social/model.js';
  let {friends,userId,busy=false,act,oninvite,inviteDisabled=false}:{oninvite?:(userId:string)=>void;inviteDisabled?:boolean;friends:FriendEntry[];userId:string;busy?:boolean;act:(path:string,body:unknown)=>void}=$props();
 </script>
 <div class="friend-roster">

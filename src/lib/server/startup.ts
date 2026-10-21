@@ -1,9 +1,9 @@
-import { initializeReadingCache, stopReadingCache } from '$lib/reading/cache.server';
+import { initializeReadingCache, stopReadingCache } from '#lib/reading/cache.server.js';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { dataDirectory, initializeCredentialKey } from './security/credentials';
 import { startQueueWorker, stopQueueWorker } from './queue';
-import { stopProviderMaintenance } from '$lib/providers/maintenance.server';
+import { stopProviderMaintenance } from '#lib/providers/maintenance.server.js';
 import { runtimeEvidence } from './diagnostics/runtime';
 import {closeDb} from './db';
 

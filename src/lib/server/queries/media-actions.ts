@@ -1,4 +1,4 @@
-import { effectiveReleaseDate } from '$lib/catalogue/metadata/release-date.server';
+import { effectiveReleaseDate } from '#lib/catalogue/metadata/release-date.server.js';
 import { historyScope } from '../../core/tracking/history-scope.server';
 import { wholeWorkId } from '../../core/tracking/continue.server';
 import { rewatchFields } from '../../core/tracking/rewatch.server';

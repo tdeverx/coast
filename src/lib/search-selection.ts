@@ -1,3 +1,4 @@
+import type { ReadonlyURL } from '$app/state';
 import * as v from 'valibot';
 import { surfaceEnabled, type MediumFeatures } from './experimental';
 import { READING_PROVIDER_PAGE_LIMIT } from './reading/model';
@@ -59,8 +60,8 @@ export function searchRowMatches(selection: { kind?: string; view?: SearchView }
 }
 
 /** Changes to one row preserve the other primitive and the incoming defaults. */
-export function searchSelectionUrl(url: URL, query: string, row?: { bucket: SearchBucket; kind: string }) {
-  const parameters = new URLSearchParams(url.searchParams);
+export function searchSelectionUrl(url: ReadonlyURL, query: string, row?: { bucket: SearchBucket; kind: string }) {
+  const parameters = new URLSearchParams(url.searchParams.toString());
   parameters.set('q', query.trim().slice(0, 200));
   if (row) parameters.set(rowParameter[row.bucket], v.parse(typeSchema, row.kind));
   parameters.delete('page');

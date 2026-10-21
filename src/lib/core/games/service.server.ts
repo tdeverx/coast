@@ -1,5 +1,5 @@
-import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
-import { presentationPreferences, presentationSearch } from '$lib/catalogue/overrides/presentation.server';
+import { requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
+import { presentationPreferences, presentationSearch } from '#lib/catalogue/overrides/presentation.server.js';
 import { and, asc, count, desc, eq, sql, getTableColumns } from 'drizzle-orm';
 import * as v from 'valibot';
 import { searchDocument, searchSql } from '../../server/queries/search-ranking';
@@ -13,7 +13,7 @@ import { trackInTransaction } from '../tracking/service.server';
 import { enqueueCollectionProjectionInTransaction } from '../../sync/changes.server';
 import { gameInputSchema, playthroughInputSchema, playthroughUpdateSchema, gameSessionInputSchema } from '../../games/model';
 
-import { pageInterval } from '$lib/page-window';
+import { pageInterval } from '#lib/page-window.js';
 
 const uuid = (value: string) => v.parse(v.pipe(v.string(), v.uuid()), value);
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
@@ -116,7 +116,7 @@ export async function createPlaythrough(userId: string, gameId: string, raw: unk
     const [row] = await tx.insert(gamePlaythroughs).values({ userId, gameId, ...input, startedAt: input.status === 'in-progress' ? new Date() : null }).returning();
     if(input.status==='planned')await trackInTransaction(tx,userId,{mediaId:gameId,action:'watchlist',value:true});
     await enqueueCollectionProjectionInTransaction(tx,userId);
-    await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'game.changed',{workId:gameId,playthroughId:row.id,action:'created',status:row.status});
+    await (await import('#lib/server/public-api/webhooks.server.js')).emitWebhook(tx,userId,'game.changed',{workId:gameId,playthroughId:row.id,action:'created',status:row.status});
     return { ...row, minutesPlayed: 0 };
   };
   return transaction?apply(transaction):getDb().transaction(apply);
@@ -148,7 +148,7 @@ export async function updatePlaythrough(userId: string, id: string, raw: unknown
       updatedAt: now,
     }).where(eq(gamePlaythroughs.id, id)).returning();
     await enqueueCollectionProjectionInTransaction(tx,userId);
-    await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'game.changed',{workId:current.gameId,playthroughId:id,action:'updated',status:row.status,progressPercent:row.progressPercent});
+    await (await import('#lib/server/public-api/webhooks.server.js')).emitWebhook(tx,userId,'game.changed',{workId:current.gameId,playthroughId:id,action:'updated',status:row.status,progressPercent:row.progressPercent});
     return row;
   };
   return transaction?apply(transaction):getDb().transaction(apply);
@@ -179,7 +179,7 @@ export async function logGameSession(userId: string, id: string, raw: unknown, t
       updatedAt: new Date(),
     }).where(eq(gamePlaythroughs.id, id));
     await enqueueCollectionProjectionInTransaction(tx,userId);
-    await (await import('$lib/server/public-api/webhooks.server')).emitWebhook(tx,userId,'game.changed',{workId:current.gameId,playthroughId:id,sessionId:session.id,action:'session',minutesPlayed:session.minutesPlayed,playedAt:session.playedAt.toISOString()});
+    await (await import('#lib/server/public-api/webhooks.server.js')).emitWebhook(tx,userId,'game.changed',{workId:current.gameId,playthroughId:id,sessionId:session.id,action:'session',minutesPlayed:session.minutesPlayed,playedAt:session.playedAt.toISOString()});
     return session;
   };
   return transaction?apply(transaction):getDb().transaction(apply);

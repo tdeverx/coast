@@ -1,5 +1,5 @@
-import {getSql} from '$lib/server/db';
-import {providerSchedule} from '$lib/providers/schedule';
+import {getSql} from '#lib/server/db/index.js';
+import {providerSchedule} from '#lib/providers/schedule.js';
 /** A service scans one account per turn. Allow a full round plus two delayed turns,
  * but never keep an unconfirmed observation longer than 30 minutes. A successful
  * empty response still clears immediately, and provider expiries remain authoritative. */

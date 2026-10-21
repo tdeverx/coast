@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { validPageInterval, type PageInterval } from '$lib/page-window';
+import { validPageInterval, type PageInterval } from '#lib/page-window.js';
 
 export const PAGE_SIZE = 60;
 export const pageNumberSchema = v.pipe(

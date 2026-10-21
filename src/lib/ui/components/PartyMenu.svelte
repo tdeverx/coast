@@ -1,15 +1,15 @@
 <script lang="ts">
  import Button from './Button.svelte';
- import {syncedPlayer,isSyncHost as liveIsSyncHost,canControlPlayback as liveCanControlPlayback,canEditPartyQueue as liveCanEditPartyQueue,syncedCommand as liveCommand,updatePartySettings as liveSettings,resyncNow as liveResync,leaveSynced as liveLeave,syncPreferences as liveSyncPreferences,setSyncPreferences as livePreferences,localSyncDrift} from '$lib/playback/synced/client.svelte';
- import {player,advanceMusic} from '$lib/playback/client.svelte';
- import {type RoomState,type PartySettings,canControl} from '$lib/playback/synced/model';
- import {useClock} from '$lib/ui/clock.svelte';
- import {useClient} from '$lib/ui/client-context';
- import {message} from '$lib/ui/client';
+ import {syncedPlayer,isSyncHost as liveIsSyncHost,canControlPlayback as liveCanControlPlayback,canEditPartyQueue as liveCanEditPartyQueue,syncedCommand as liveCommand,updatePartySettings as liveSettings,resyncNow as liveResync,leaveSynced as liveLeave,syncPreferences as liveSyncPreferences,setSyncPreferences as livePreferences,localSyncDrift} from '#lib/playback/synced/client.svelte.js';
+ import {player,advanceMusic} from '#lib/playback/client.svelte.js';
+ import {type RoomState,type PartySettings,canControl} from '#lib/playback/synced/model.js';
+ import {useClock} from '#lib/ui/clock.svelte.js';
+ import {useClient} from '#lib/ui/client-context.js';
+ import {message} from '#lib/ui/client.js';
  import {onDestroy,untrack} from 'svelte';
- import {createMenuResource} from '$lib/ui/controls/menu-resource.svelte';
- import {workMenuScope} from '$lib/ui/controls/work.svelte';
- import {readingLocationLabel} from '$lib/reading/model';
+ import {createMenuResource} from '#lib/ui/controls/menu-resource.svelte.js';
+ import {workMenuScope} from '#lib/ui/controls/work.svelte.js';
+ import {readingLocationLabel} from '#lib/reading/model.js';
  let {demoRoom,demoUserId}:{demoRoom?:RoomState;demoUserId?:string}=$props();
  const {api,preview}=useClient();
  const clock=useClock('second',()=>!preview);

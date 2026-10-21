@@ -1,4 +1,4 @@
-import type { MediaCardPresentation, MediaHeroPresentation } from '$lib/ui/types';
+import type { MediaCardPresentation, MediaHeroPresentation } from '#lib/ui/types.js';
 import type { ReadingKind, ReadingProvider, ReadingState } from './model';
 export type ReadingDisplay = {
   id: string; kind: ReadingKind; provider: ReadingProvider; externalId: string;

@@ -1,15 +1,15 @@
 <script lang="ts">
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
-  import { refreshRouteDependencies } from '$lib/ui/client';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import { browseHeading } from '$lib/ui/headings';
-  import SegmentedControl from '$lib/ui/components/SegmentedControl.svelte';
-  import { librarySelections } from '$lib/library';
-  import RowFilter from '$lib/ui/components/RowFilter.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import Shelf from '$lib/ui/components/Shelf.svelte';
+  import { refreshRouteDependencies } from '#lib/ui/client.js';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import { browseHeading } from '#lib/ui/headings.js';
+  import SegmentedControl from '#lib/ui/components/SegmentedControl.svelte';
+  import { librarySelections } from '#lib/library.js';
+  import RowFilter from '#lib/ui/components/RowFilter.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import EmptyState from '#lib/ui/components/EmptyState.svelte';
+  import Shelf from '#lib/ui/components/Shelf.svelte';
   let { data } = $props();
   function pageUrl(
     page: number,
@@ -27,10 +27,10 @@
 
   <Shelf title="Games" layout="grid" items={data.items} shape="poster" mediaKind="game" enrichSocial={false} artworkOptions={false} hideEmpty={false} error={data.failure} retry={()=>refreshRouteDependencies('all')} pageNumber={data.page} pages={data.pages} {pageUrl}>
     {#snippet heading()}<Heading title="Library" level={1} variant="title" />{/snippet}
-    {#snippet segments()}{@const browse=browseHeading('play',{...data,features:data.capabilities})}{#if browse.selection}<SegmentedControl label={browse.selection.label} value={browse.selection.value} options={browse.selection.options} onchange={browse.selection.change} />{/if}{#if data.filters.view==='library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state=>goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{keepFocus:true,noScroll:true})}/>{/if}{/snippet}
+    {#snippet segments()}{@const browse=browseHeading('play',{...data,features:data.capabilities})}{#if browse.selection}<SegmentedControl label={browse.selection.label} value={browse.selection.value} options={browse.selection.options} onchange={browse.selection.change} />{/if}{#if data.filters.view==='library'}<SegmentedControl label="Play state" value={data.filters.state} options={librarySelections.play} onchange={state=>goto(pageUrl(1,data.filters.view,state as typeof data.filters.state),{reset: false,})}/>{/if}{/snippet}
     {#snippet controls()}<RowFilter groups={[
-      {label:'Games view',value:data.filters.view==='library'&&data.filters.personal?'personal':data.filters.view,options:[{value:'library',label:'All games'},{value:'personal',label:'Your games'},{value:'igdb',label:'Discover'}],change:view=>{void goto(pageUrl(1,view==='igdb'?'igdb':'library',data.filters.state,view==='personal'),{keepFocus:true,noScroll:true});}},
-      ...(data.filters.view==='library'?[{label:'Availability',value:data.filters.scope,options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:(value:string)=>{void goto(pageUrl(1,data.filters.view,data.filters.state,data.filters.personal,value as typeof data.filters.scope),{keepFocus:true,noScroll:true});}}]:[]),
+      {label:'Games view',value:data.filters.view==='library'&&data.filters.personal?'personal':data.filters.view,options:[{value:'library',label:'All games'},{value:'personal',label:'Your games'},{value:'igdb',label:'Discover'}],change:view=>{void goto(pageUrl(1,view==='igdb'?'igdb':'library',data.filters.state,view==='personal'),{reset: false,});}},
+      ...(data.filters.view==='library'?[{label:'Availability',value:data.filters.scope,options:[{value:'all',label:'All titles'},{value:'available',label:'Available only'}],change:(value:string)=>{void goto(pageUrl(1,data.filters.view,data.filters.state,data.filters.personal,value as typeof data.filters.scope),{reset: false,});}}]:[]),
     ]}>{#snippet actions()}{#if page.data.user?.role==='admin'}<Button item href="/settings/integrations" icon="server">Integrations</Button>{/if}{/snippet}</RowFilter>{/snippet}
     {#snippet before()}
   <form class="filter-row browse-search" action="/games" method="GET">

@@ -1,10 +1,10 @@
-import { restartPlaylist } from '$lib/core/lists/sequence.server';
-import { json } from '@sveltejs/kit';
+import { restartPlaylist } from '#lib/core/lists/sequence.server.js';
+
 import * as v from 'valibot';
-import { AppError } from '$lib/server/security/errors';
-import * as lists from '$lib/core/lists/service.server';
-import { userLists } from '$lib/server/queries/lists';
-import { deleteListWithExports } from '$lib/sync/trakt-lists.server';
+import { AppError } from '#lib/server/security/errors.js';
+import * as lists from '#lib/core/lists/service.server.js';
+import { userLists } from '#lib/server/queries/lists.js';
+import { deleteListWithExports } from '#lib/sync/trakt-lists.server.js';
 import { uuid, type ApiContext } from './context.server';
 
 export async function handleLists(context: ApiContext): Promise<Response | undefined> {
@@ -48,5 +48,5 @@ export async function handleLists(context: ApiContext): Promise<Response | undef
       else throw new AppError(404, 'Action not found.');
 
     } else return undefined;
- return json(result ?? { ok: true });
+ return Response.json(result ?? { ok: true });
 }

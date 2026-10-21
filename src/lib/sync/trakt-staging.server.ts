@@ -1,13 +1,13 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
-import { getDb, type Database } from '$lib/server/db';
-import { traktImportStages as stages, traktImportRecords as records, syncValues, syncListValues, providerConnections, lists } from '$lib/server/db/schema';
-import { JobYield, jobCheckpoint, jobExecution } from '$lib/server/queue/execution';
-import { PermanentActionError } from '$lib/server/queue';
-import type { TraktAdapter, TraktRecord } from '$lib/providers/trakt/adapter.server';
+import { getDb, type Database } from '#lib/server/db/index.js';
+import { traktImportStages as stages, traktImportRecords as records, syncValues, syncListValues, providerConnections, lists } from '#lib/server/db/schema.js';
+import { JobYield, jobCheckpoint, jobExecution } from '#lib/server/queue/execution.js';
+import { PermanentActionError } from '#lib/server/queue/index.js';
+import type { TraktAdapter, TraktRecord } from '#lib/providers/trakt/adapter.server.js';
 import { compactTraktHistory } from './trakt-history';
 import { reconcileProviderValue, type ValueCategory } from './values.server';
 import { reconcileProviderList } from './list-values.server';
-import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
+import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
 
 type Tx = Parameters<Parameters<Database['transaction']>[0]>[0];
 type Decision = 'agree'|'local'|'remote'|'conflict';
@@ -151,7 +151,7 @@ export async function stagedTraktCategory(options: {
     )).orderBy(asc(syncValues.mediaId)).limit(20);
     for(const entry of previous){
       if(category==='collection'){
-        const {isGeneratedProjection}=await import('$lib/collection/projection.server');
+        const {isGeneratedProjection}=await import('#lib/collection/projection.server.js');
         if(await isGeneratedProjection(connectionId,entry.mediaId)){
           await db.transaction(async tx=>{await assertLease(tx,userId,connectionId);await tx.update(stages).set({cleanedThrough:entry.mediaId,updatedAt:new Date()}).where(eq(stages.id,stage.id));});
           continue;

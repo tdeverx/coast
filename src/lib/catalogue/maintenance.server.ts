@@ -1,6 +1,6 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import * as v from 'valibot';
-import { getDb } from '$lib/server/db';
+import { getDb } from '#lib/server/db/index.js';
 import {
   externalIds,
   providerConnections,
@@ -8,20 +8,20 @@ import {
   providerItems,
   metadataSnapshots,
   media,
-} from '$lib/server/db/schema';
+} from '#lib/server/db/schema.js';
 import { ingestMetadata, refreshMedia } from './service.server';
-import { getTrakt } from '$lib/providers/trakt/connection.server';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
+import { getTrakt } from '#lib/providers/trakt/connection.server.js';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
 import type {
   TraktAdapter,
   TraktRecord,
-} from '$lib/providers/trakt/adapter.server';
-import type { JellyfinAdapter } from '$lib/providers/jellyfin/adapter.server';
-import type { DiscoverKind } from '$lib/providers/contracts';
-import { ProviderHttpError } from '$lib/server/security/provider-fetch';
-import { providerSchedule } from '$lib/providers/schedule';
-import { PermanentActionError, type OutboxAction } from '$lib/server/queue';
-import { readJobCheckpoint, saveJobCheckpoint, jobCheckpoint } from '$lib/server/queue/execution';
+} from '#lib/providers/trakt/adapter.server.js';
+import type { JellyfinAdapter } from '#lib/providers/jellyfin/adapter.server.js';
+import type { DiscoverKind } from '#lib/providers/contracts.js';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
+import { providerSchedule } from '#lib/providers/schedule.js';
+import { PermanentActionError, type OutboxAction } from '#lib/server/queue/index.js';
+import { readJobCheckpoint, saveJobCheckpoint, jobCheckpoint } from '#lib/server/queue/execution.js';
 
 type Tx = Parameters<Parameters<ReturnType<typeof getDb>['transaction']>[0]>[0];
 

@@ -2,11 +2,11 @@ import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
 import { eq } from 'drizzle-orm';
-import { loadMediaDetails } from '$lib/application/media-details.server';
-import { readingDetailLoad } from '$lib/reading/routes.server';
-import {screenDetailChildren} from '$lib/media/detail-target';
-import { getDb } from '$lib/server/db';
-import { readingWorks } from '$lib/server/db/schema';
+import { loadMediaDetails } from '#lib/application/media-details.server.js';
+import { readingDetailLoad } from '#lib/reading/routes.server.js';
+import {screenDetailChildren} from '#lib/media/detail-target.js';
+import { getDb } from '#lib/server/db/index.js';
+import { readingWorks } from '#lib/server/db/schema.js';
 
 export const load = (async (event) => {
   const { locals, params, depends } = event;
@@ -17,6 +17,6 @@ export const load = (async (event) => {
   if (reading) return { reading: await readingDetailLoad(reading.kind)(event) };
 
   const includeChildren=screenDetailChildren(event.url.searchParams.get('section'));
-  if(!locals.user){const initial={...(await (await import('$lib/social/public.server')).publicDetails(params.id,includeChildren)),requestable:false,refreshUnavailable:false};return {...initial,enhancement:Promise.resolve(initial)};}
+  if(!locals.user){const initial={...(await (await import('#lib/social/public.server.js')).publicDetails(params.id,includeChildren)),requestable:false,refreshUnavailable:false};return {...initial,enhancement:Promise.resolve(initial)};}
   return loadMediaDetails(locals.user.id, params.id, event.request.signal,includeChildren);
 }) satisfies PageServerLoad;

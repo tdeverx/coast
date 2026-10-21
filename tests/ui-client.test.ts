@@ -53,8 +53,8 @@ test('open shallow overlays use a state-preserving refresh while ordinary pages 
   expect(navigation.refreshes).toBe(before+8);expect(invalidations).toEqual([]);expect(navigation.fullInvalidations).toBe(0);
   page.state={};await refreshRouteDependencies(['tracking']);
   expect(invalidations).toEqual(['coast:tracking']);
-  await refreshRouteDependencies('all');expect(navigation.fullInvalidations).toBe(1);
-  page.state={friendsPopover:true};await refreshRouteDependencies([]);expect(navigation.refreshes).toBe(before+8);
+  await refreshRouteDependencies('all');expect(navigation.refreshes).toBe(before+9);
+  page.state={friendsPopover:true};await refreshRouteDependencies([]);expect(navigation.refreshes).toBe(before+9);
   page.state={};
 });
 

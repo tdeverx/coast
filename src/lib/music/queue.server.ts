@@ -1,9 +1,9 @@
-import { requireFeature } from '$lib/server/features';
+import { requireFeature } from '#lib/server/features.js';
 import { and,eq,inArray,sql } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { musicWorks,musicProgress,lists } from '$lib/server/db/schema';
-import { workAssessments } from '$lib/collection/query.server';
-import { DomainError } from '$lib/core/errors';
+import { getDb } from '#lib/server/db/index.js';
+import { musicWorks,musicProgress,lists } from '#lib/server/db/schema.js';
+import { workAssessments } from '#lib/collection/query.server.js';
+import { DomainError } from '#lib/core/errors.js';
 import { musicAlbumMembers, musicAlbumMembersSql } from './editions.server';
 const MUSIC_QUEUE_LIMIT=10000;
 function requireQueueWithinLimit(entries:readonly unknown[]){
@@ -48,7 +48,7 @@ export async function savedMusicQueue(userId:string,listId?:string){
 /** Party picker: unique choices from the personal queue, never the full playback payload. */
 export async function savedMusicQueuePage(userId: string, requestedPage = 1) {
  await requireFeature(userId,'music');
- const { pageNumberSchema, pagination, PAGE_SIZE } = await import('$lib/server/queries/pagination');
+ const { pageNumberSchema, pagination, PAGE_SIZE } = await import('#lib/server/queries/pagination.js');
  const { parse } = await import('valibot');
  parse(pageNumberSchema, requestedPage);
  const db = getDb();

@@ -1,10 +1,10 @@
 import {onDestroy,untrack} from 'svelte';
 import {page as route} from '$app/state';
-import {useClient} from '$lib/ui/client-context';
-import {createResource,uniqueItems} from '$lib/ui/resource.svelte';
-import {contentRevisionKey} from '$lib/ui/content-revision.svelte';
+import {useClient} from '#lib/ui/client-context.js';
+import {createResource,uniqueItems} from '#lib/ui/resource.svelte.js';
+import {contentRevisionKey} from '#lib/ui/content-revision.svelte.js';
 import type {ShelfItem,ShelfSource} from './types';
-import type {MediaCardShape} from '$lib/ui/types';
+import type {MediaCardShape} from '#lib/ui/types.js';
 export type DetailSourceOptions={type:'detail';title:string;path:string;href?:string;layout?:'row'|'grid';shape?:MediaCardShape;mediaKind?:'music'|'reading';page?:number;anchor?:boolean;availability?:boolean;available?:boolean;items?:ShelfItem[]};
 type Content={items:ShelfItem[];page:number;pages:number;total:number;title?:string;href?:string;focusId?:string};
 /** Detail children use the same lazy activation, cancellation and ordered append as other shelves. */

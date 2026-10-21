@@ -1,15 +1,15 @@
 <script lang="ts">
-  import SettingsRow from '$lib/ui/components/SettingsRow.svelte';
-  import OperationProgress from '$lib/ui/components/OperationProgress.svelte';
-  import AccountFields from '$lib/ui/components/AccountFields.svelte';
-  import Brand from '$lib/ui/components/Brand.svelte';
-  import Button from '$lib/ui/components/Button.svelte';
-  import EmptyState from '$lib/ui/components/EmptyState.svelte';
-  import Field from '$lib/ui/components/Field.svelte';
-  import Heading from '$lib/ui/components/Heading.svelte';
-  import Icon from '$lib/ui/components/Icon.svelte';
-  import Toast from '$lib/ui/components/Toast.svelte';
-  import type { BenchmarkRun } from '$lib/benchmarks/model';
+  import SettingsRow from '#lib/ui/components/SettingsRow.svelte';
+  import OperationProgress from '#lib/ui/components/OperationProgress.svelte';
+  import AccountFields from '#lib/ui/components/AccountFields.svelte';
+  import Brand from '#lib/ui/components/Brand.svelte';
+  import Button from '#lib/ui/components/Button.svelte';
+  import EmptyState from '#lib/ui/components/EmptyState.svelte';
+  import Field from '#lib/ui/components/Field.svelte';
+  import Heading from '#lib/ui/components/Heading.svelte';
+  import Icon from '#lib/ui/components/Icon.svelte';
+  import Toast from '#lib/ui/components/Toast.svelte';
+  import type { BenchmarkRun } from '#lib/benchmarks/model.js';
 
   let { name, scenario }: { name: string; scenario: string } = $props();
   let enabled = $state(true), partyEnabled = $state(true), dirty = $state(false), saved = $state(''), revealed = $state(true);
@@ -117,7 +117,7 @@
     {#if revealed}<p role="status">{scenario === 'invite' ? 'Copy this code — shown once' : 'Copy this token now. It will not be shown again.'}</p><Field label={scenario === 'invite' ? 'Invite link' : 'API token'}><input readonly autocomplete="off" spellcheck={false} value={scenario === 'invite' ? 'https://coast.example/register#invite=synthetic-invite' : 'coast_preview_only_not_a_real_token'} onfocus={event => event.currentTarget.select()} /></Field><Button emphasis="subtle" onclick={() => revealed = false}>Hide</Button>{:else}<p class="small">The one-time value is hidden.</p>{/if}
   </div>
 {:else if name === 'benchmark'}
-  {#await import('$lib/benchmarks/BenchmarkSettings.svelte')}
+  {#await import('#lib/benchmarks/BenchmarkSettings.svelte')}
     <p class="small quiet" role="status">{'Loading benchmark example…'}</p>
   {:then module}<module.default history={benchmarkHistory} />{:catch}<Toast kind="error" text={'The benchmark example could not load.'} />{/await}
 {:else}<EmptyState title="No example available" description="Choose a registered example from the UI reference." />{/if}

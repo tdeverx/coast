@@ -1,7 +1,7 @@
-import type { MediaActionData } from '$lib/media/actions';
-import type { MediaView } from '$lib/ui/types';
-import { requestScopeFormatter, type RequestDestination } from '$lib/media/requests';
-import type { api } from '$lib/ui/client';
+import type { MediaActionData } from '#lib/media/actions.js';
+import type { MediaView } from '#lib/ui/types.js';
+import { requestScopeFormatter, type RequestDestination } from '#lib/media/requests.js';
+import type { api } from '#lib/ui/client.js';
 import { createRequestOptions } from './request-options.svelte';
 
 /** Lazy request state, independent of the button/menu rendering. */

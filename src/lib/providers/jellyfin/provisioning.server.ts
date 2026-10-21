@@ -1,11 +1,11 @@
 import * as v from 'valibot';
-import { getSql } from '$lib/server/db';
-import { passwordSchema } from '$lib/auth/registration';
+import { getSql } from '#lib/server/db/index.js';
+import { passwordSchema } from '#lib/auth/registration.js';
 import { getJellyfin } from './connection.server';
 import { connectJellyfin } from './connection.server';
-import { AppError } from '$lib/server/security/errors';
-import { randomToken } from '$lib/server/auth';
-import { ProviderHttpError } from '$lib/server/security/provider-fetch';
+import { AppError } from '#lib/server/security/errors.js';
+import { randomToken } from '#lib/server/auth/index.js';
+import { ProviderHttpError } from '#lib/server/security/provider-fetch.js';
 
 const remoteId=v.pipe(v.string(),v.regex(/^(?:[0-9a-f]{32}|[0-9a-f-]{36})$/i));
 export function provisionPolicy(policy:Record<string,unknown>,folders:string[]){

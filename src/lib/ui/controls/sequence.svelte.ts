@@ -1,7 +1,7 @@
-import { refreshAfterChange, message, type api, type change } from '$lib/ui/client';
-import { sequencePath, type SequenceSource } from '$lib/media/sequence';
-import type { MediaView } from '$lib/ui/types';
-import { playMedia, playMusicQueue } from '$lib/playback/client.svelte';
+import { refreshAfterChange, message, type api, type change } from '#lib/ui/client.js';
+import { sequencePath, type SequenceSource } from '#lib/media/sequence.js';
+import type { MediaView } from '#lib/ui/types.js';
+import { playMedia, playMusicQueue } from '#lib/playback/client.svelte.js';
 
 /** Playback state supplies ordinary buttons and a Dialog, never a second control renderer. */
 export function createSequencePlayback(options: {

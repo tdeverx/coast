@@ -1,3 +1,4 @@
+import type { ReadonlyURL } from '$app/state';
 import { untrack } from 'svelte';
 import type { ShelfControl, ShelfItem } from './types';
 
@@ -10,7 +11,7 @@ type LocalOptions<T> = {
   availableOnly: boolean;
   title: string;
   href?: string;
-  url: URL;
+  url: ReadonlyURL;
 };
 
 const kinds = [
@@ -48,7 +49,7 @@ export function createShelfSelection<T extends ShelfItem>(get: () => LocalOption
   const href = $derived.by(() => {
     const config = get();
     if (!config.href || config.mode === 'none') return config.href;
-    const url = new URL(config.href, config.url);
+    const url = new URL(config.href, config.url.href);
     url.searchParams.set(url.pathname === '/library' ? 'kind' : 'rowKind', kind);
     if (config.mode === 'watched') url.searchParams.set('rowProgress', progress);
     if (config.availability) {

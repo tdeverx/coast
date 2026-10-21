@@ -1,13 +1,13 @@
 import {and,eq,sql} from 'drizzle-orm';
 import * as v from 'valibot';
-import {getDb,type Database} from '$lib/server/db';
-import {providerConnections,providerInstances,users} from '$lib/server/db/schema';
-import {PermanentActionError} from '$lib/server/queue';
-import {ProviderHttpError} from '$lib/server/security/provider-fetch';
+import {getDb,type Database} from '#lib/server/db/index.js';
+import {providerConnections,providerInstances,users} from '#lib/server/db/schema.js';
+import {PermanentActionError} from '#lib/server/queue/index.js';
+import {ProviderHttpError} from '#lib/server/security/provider-fetch.js';
 import type {JellyfinAdapter} from './adapter.server';
 import type {AvailableItem} from '../contracts';
 import {jellyfinItemKey} from './paging';
-import {assertJobLease} from '$lib/server/queue/execution';
+import {assertJobLease} from '#lib/server/queue/execution.js';
 import {providerSchedule} from '../schedule';
 
 type Tx=Parameters<Parameters<Database['transaction']>[0]>[0];

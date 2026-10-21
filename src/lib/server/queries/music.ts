@@ -1,15 +1,15 @@
 import { error } from '@sveltejs/kit';
 import * as v from 'valibot';
-import { listProviders } from '$lib/providers/instances.server';
-import { musicLibrary } from '$lib/music/service.server';
-import { musicBrowseSchema } from '$lib/providers/jellyfin/music.server';
-import { musicCard } from '$lib/music/presentation';
-import { mapConcurrent } from '$lib/server/utils/async';
-import { logDiagnostic, classifyFailure } from '$lib/server/diagnostics';
+import { listProviders } from '#lib/providers/instances.server.js';
+import { musicLibrary } from '#lib/music/service.server.js';
+import { musicBrowseSchema } from '#lib/providers/jellyfin/music.server.js';
+import { musicCard } from '#lib/music/presentation.js';
+import { mapConcurrent } from '#lib/server/utils/async.js';
+import { logDiagnostic, classifyFailure } from '#lib/server/diagnostics/index.js';
 import { pageNumberSchema, requestedPageInterval } from './pagination';
-import { pageInterval, type PageWindow } from '$lib/page-window';
-import { AppError } from '$lib/server/security/errors';
-import { requireFeature } from '$lib/server/features';
+import { pageInterval, type PageWindow } from '#lib/page-window.js';
+import { AppError } from '#lib/server/security/errors.js';
+import { requireFeature } from '#lib/server/features.js';
 
 /** Page each connected library independently; identities and artwork stay connection-scoped. */
 export async function musicBrowseData(userId: string, url: URL,signal?:AbortSignal) {

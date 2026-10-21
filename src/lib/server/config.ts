@@ -1,5 +1,5 @@
 import * as v from 'valibot';
-import { administratorFeatures } from '$lib/features';
+import { administratorFeatures } from '#lib/features.js';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { diagnosticLevels } from '../diagnostics';
 import { diagnosticStore } from './diagnostics';

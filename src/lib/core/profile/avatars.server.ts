@@ -1,14 +1,14 @@
 import {and,eq,inArray} from 'drizzle-orm';
-import {getDb} from '$lib/server/db';
-import {providerConnections,providerInstances} from '$lib/server/db/schema';
-import {getConfig} from '$lib/server/config';
-import {getJellyfin} from '$lib/providers/jellyfin/connection.server';
-import {getTrakt} from '$lib/providers/trakt/connection.server';
-import {jellyfinAuthorization} from '$lib/providers/jellyfin/adapter.server';
-import {instanceFetchConfig} from '$lib/providers/instances.server';
-import {decryptCredential} from '$lib/server/security/credentials';
-import {secureProviderFetch} from '$lib/server/security/provider-fetch';
-import {AppError} from '$lib/server/security/errors';
+import {getDb} from '#lib/server/db/index.js';
+import {providerConnections,providerInstances} from '#lib/server/db/schema.js';
+import {getConfig} from '#lib/server/config.js';
+import {getJellyfin} from '#lib/providers/jellyfin/connection.server.js';
+import {getTrakt} from '#lib/providers/trakt/connection.server.js';
+import {jellyfinAuthorization} from '#lib/providers/jellyfin/adapter.server.js';
+import {instanceFetchConfig} from '#lib/providers/instances.server.js';
+import {decryptCredential} from '#lib/server/security/credentials.js';
+import {secureProviderFetch} from '#lib/server/security/provider-fetch.js';
+import {AppError} from '#lib/server/security/errors.js';
 
 export async function profileAvatarChoices(userId:string){
  const config=await getConfig();

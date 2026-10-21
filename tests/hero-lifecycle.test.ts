@@ -16,7 +16,7 @@ const stub=await import(stubUrl);
 const source=(await Bun.file(new URL('../src/lib/ui/heroes/presentation.svelte.ts',import.meta.url)).text())
  .replaceAll(/from ['"]svelte['"]/g,`from ${JSON.stringify(lifecycleUrl)}`)
  .replaceAll(/from ['"]\$app\/state['"]/g,`from ${JSON.stringify(stubUrl)}`)
- .replaceAll(/from ['"]\$lib\/[^'"]+['"]/g,`from ${JSON.stringify(stubUrl)}`);
+ .replaceAll(/from ['"]#lib\/[^'"]+['"]/g,`from ${JSON.stringify(stubUrl)}`);
 const {createHeroPresentation}=await import(moduleUrl(compileRunes(source)));
 
 test('hero replacement and teardown abort optional trailer lookups and ignore late responses',async()=>{

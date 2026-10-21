@@ -1,11 +1,11 @@
 import { and, eq, desc } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { media, metadataSnapshots, externalIds, episodes, seasons } from '$lib/server/db/schema';
-import { getTmdb, ingestMetadata } from '$lib/catalogue/service.server';
-import { getConfig } from '$lib/server/config';
-import type { ArtworkImages } from '$lib/artwork';
+import { getDb } from '#lib/server/db/index.js';
+import { media, metadataSnapshots, externalIds, episodes, seasons } from '#lib/server/db/schema.js';
+import { getTmdb, ingestMetadata } from '#lib/catalogue/service.server.js';
+import { getConfig } from '#lib/server/config.js';
+import type { ArtworkImages } from '#lib/artwork.js';
 import { tmdbArtworkUrl } from './artwork.server';
-import { providerSingleFlight } from '$lib/server/utils/provider-single-flight';
+import { providerSingleFlight } from '#lib/server/utils/provider-single-flight.js';
 
 const pending = providerSingleFlight<ArtworkImages>('tmdb-artwork');
 async function lookup(id: string): Promise<ArtworkImages> {

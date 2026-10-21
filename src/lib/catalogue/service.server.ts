@@ -1,9 +1,9 @@
-import { getFeatureConfig, requireFeature } from '$lib/server/features';
-import { mapConcurrent } from '$lib/server/utils/async';
-import { searchFallback, searchScore } from '$lib/search';
-import { providerSingleFlight } from '$lib/server/utils/provider-single-flight';
+import { getFeatureConfig, requireFeature } from '#lib/server/features.js';
+import { mapConcurrent } from '#lib/server/utils/async.js';
+import { searchFallback, searchScore } from '#lib/search.js';
+import { providerSingleFlight } from '#lib/server/utils/provider-single-flight.js';
 import { and, eq, inArray, isNull, or, sql, desc } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { getDb } from '#lib/server/db/index.js';
 import {
   media,
   movies,
@@ -16,13 +16,13 @@ import {
   providerInstances,
   mediaRelationships,
   users,
-} from '$lib/server/db/schema';
-import { mediaViews } from '$lib/server/queries/media';
-import { createProviderTransport } from '$lib/server/security/provider-fetch';
-import { decryptCredential } from '$lib/server/security/credentials';
-import { TmdbAdapter } from '$lib/providers/tmdb/adapter.server';
-import type { DiscoverKind, Metadata } from '$lib/providers/contracts';
-import type { DiscoverySection } from '$lib/discovery';
+} from '#lib/server/db/schema.js';
+import { mediaViews } from '#lib/server/queries/media.js';
+import { createProviderTransport } from '#lib/server/security/provider-fetch.js';
+import { decryptCredential } from '#lib/server/security/credentials.js';
+import { TmdbAdapter } from '#lib/providers/tmdb/adapter.server.js';
+import type { DiscoverKind, Metadata } from '#lib/providers/contracts.js';
+import type { DiscoverySection } from '#lib/discovery.js';
 
 export async function getTmdb(language = 'en-US', region = 'GB', instanceId?:string) {
   const [instance] = await getDb()
@@ -465,7 +465,7 @@ async function seerrDiscovery(userId: string) {
     .select()
     .from(providerInstances)
     .where(and(eq(providerInstances.provider, 'seerr'), eq(providerInstances.enabled, true)));
-  const { getSeerr } = await import('$lib/providers/seerr/connection.server');
+  const { getSeerr } = await import('#lib/providers/seerr/connection.server.js');
   for (const instance of instances)
     try {
       return (await getSeerr(userId, instance.id)).adapter;

@@ -22,7 +22,7 @@ const modules:Record<string,{source:string;svelte?:boolean;runes?:boolean}>={
  revision:{source:`export const contentRevisionKey=data=>data.revision;`},
  dynamic:{source:`export const dynamicKind=()=>undefined;`},
  overlay:{svelte:true,source:`<script>let {children,open,sectionPage,contentKey}=$props();$effect.pre(()=>{if(open){sectionPage;contentKey;window.fixture?.readSection?.();}});</script>{#if open}<section data-overlay>{@render children?.()}</section>{/if}`},
- row:{svelte:true,source:`<script>import {onDestroy} from 'svelte';import {sectionTarget} from '$lib/ui/section-target';let {href}=$props();const source=$derived(sectionTarget(href,new URL('http://fixture/'))?.source);const options=()=>source;const initialHref=href,family=source.type;const read=()=>{const current=options();if(current.type!==family)throw Error('Outgoing source family changed before disposal');return current.preview;};window.fixture.readSection=read;onDestroy(()=>{window.fixture.disposals.push({family:'row',initialHref,href,type:options().type});if(window.fixture.readSection===read)delete window.fixture.readSection;});</script><main data-kind="row" data-source={source.type}>{href}</main>`},
+ row:{svelte:true,source:`<script>import {onDestroy} from 'svelte';import {sectionTarget} from '#lib/ui/section-target.js';let {href}=$props();const source=$derived(sectionTarget(href,new URL('http://fixture/'))?.source);const options=()=>source;const initialHref=href,family=source.type;const read=()=>{const current=options();if(current.type!==family)throw Error('Outgoing source family changed before disposal');return current.preview;};window.fixture.readSection=read;onDestroy(()=>{window.fixture.disposals.push({family:'row',initialHref,href,type:options().type});if(window.fixture.readSection===read)delete window.fixture.readSection;});</script><main data-kind="row" data-source={source.type}>{href}</main>`},
 };
 for(const family of ['screen','reading','game','music','reading-group','remote-game','person'])modules[family]={svelte:true,source:`<script>import {onDestroy} from 'svelte';let {data,detailHref}=$props();const initialId=data.item.id;onDestroy(()=>window.fixture.disposals.push({family:'${family}',initialId,id:data.item.id,href:detailHref}));</script><main data-kind="${family}">{data.item.title}</main>`};
 // Keep the exact current Details enrichment effect; only the presenter DOM is
@@ -35,12 +35,12 @@ ${enhancementEffect}
 onDestroy(()=>window.fixture.disposals.push({family:'screen',initialId,id:data.item.id,href:detailHref}));</script><main data-kind="screen" data-href={detailHref} data-episodes={view.episodes?.length??-1} data-refresh={view.refreshUnavailable?'yes':'no'}>{view.item.title}</main>`};
 
 const aliases:Record<string,string>={
- '$app/state':'route','$lib/ui/client':'client','$lib/ui/client-context':'context','$lib/ui/media-navigation':'navigation',
- '$lib/playback/client.svelte':'player','$lib/reading/client.svelte':'reader','$lib/playback/visibility':'visibility',
- '$lib/media/editions':'editions','$lib/ui/content-revision.svelte':'revision','$lib/recommendations/model':'dynamic',
- '$lib/ui/components/DetailOverlay.svelte':'overlay','$lib/ui/pages/SectionDetails.svelte':'row',
- '$lib/media/Details.svelte':'screen','$lib/reading/Details.svelte':'reading','$lib/games/Details.svelte':'game',
- '$lib/music/Details.svelte':'music','$lib/reading/GroupDetails.svelte':'reading-group','$lib/games/RemoteDetails.svelte':'remote-game','$lib/media/PersonDetails.svelte':'person',
+ '$app/state':'route','#lib/ui/client.js':'client','#lib/ui/client-context.js':'context','#lib/ui/media-navigation.js':'navigation',
+ '#lib/playback/client.svelte.js':'player','#lib/reading/client.svelte.js':'reader','#lib/playback/visibility.js':'visibility',
+ '#lib/media/editions.js':'editions','#lib/ui/content-revision.svelte.js':'revision','#lib/recommendations/model.js':'dynamic',
+ '#lib/ui/components/DetailOverlay.svelte':'overlay','#lib/ui/pages/SectionDetails.svelte':'row',
+ '#lib/media/Details.svelte':'screen','#lib/reading/Details.svelte':'reading','#lib/games/Details.svelte':'game',
+ '#lib/music/Details.svelte':'music','#lib/reading/GroupDetails.svelte':'reading-group','#lib/games/RemoteDetails.svelte':'remote-game','#lib/media/PersonDetails.svelte':'person',
 };
 const browserEnabled=process.env.COAST_TEST_BROWSER==='1';
 const browserTest=browserEnabled?test:test.skip;
@@ -49,7 +49,7 @@ beforeAll(async()=>{
  if(!browserEnabled)return;
  const result=await Bun.build({entrypoints:['panel-fixture:entry'],target:'browser',conditions:['browser'],plugins:[{name:'detail-panel-runtime',setup(build){
   build.onResolve({filter:/^panel-fixture:/},args=>({path:args.path.slice('panel-fixture:'.length),namespace:'panel-fixture'}));
-  build.onResolve({filter:/^\$app\/|^\$lib\//},args=>aliases[args.path]?{path:aliases[args.path],namespace:'panel-fixture'}:{path:root+'src/lib/'+args.path.slice('$lib/'.length)+'.ts'});
+  build.onResolve({filter:/^\$app\/|^#lib\//},args=>aliases[args.path]?{path:aliases[args.path],namespace:'panel-fixture'}:{path:root+'src/lib/'+args.path.slice('#lib/'.length)+'.ts'});
   build.onLoad({filter:/.*/,namespace:'panel-fixture'},args=>{const mod=modules[args.path];return {contents:mod.svelte?compile(mod.source,{filename:args.path+'.svelte',generate:'client'}).js.code:mod.runes?compileModule(mod.source,{filename:args.path+'.svelte.js',generate:'client'}).js.code:mod.source,loader:'js',resolveDir:root};});
   build.onLoad({filter:/\.svelte$/},async args=>({contents:compile(await Bun.file(args.path).text(),{filename:args.path,generate:'client'}).js.code,loader:'js',resolveDir:root}));
  }}]});

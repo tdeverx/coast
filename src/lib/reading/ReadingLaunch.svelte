@@ -1,10 +1,10 @@
 <script lang="ts">
  import { onDestroy, untrack } from 'svelte';
- import { useRetention } from '$lib/ui/retention';
- import { useClient, reportFailure } from '$lib/ui/client-context';
- import { createOperation } from '$lib/ui/operation.svelte';
+ import { useRetention } from '#lib/ui/retention.js';
+ import { useClient, reportFailure } from '#lib/ui/client-context.js';
+ import { createOperation } from '#lib/ui/operation.svelte.js';
  import { openReading, reader } from './client.svelte';
- import Button from '$lib/ui/components/Button.svelte';
+ import Button from '#lib/ui/components/Button.svelte';
  let {workId,compact=false,hideTrigger=false,onopened}:{workId:string;compact?:boolean;hideTrigger?:boolean;onopened?:()=>Promise<void>}=$props();
  const {preview}=useClient(),operation=createOperation(useRetention());
  let target='',opening:AbortController|undefined;

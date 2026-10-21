@@ -1,14 +1,14 @@
-import { requireFeature, requireFeatureInTransaction } from '$lib/server/features';
-import { presentationPreferences } from '$lib/catalogue/overrides/presentation.server';
+import { requireFeature, requireFeatureInTransaction } from '#lib/server/features.js';
+import { presentationPreferences } from '#lib/catalogue/overrides/presentation.server.js';
 import type { MusicItem } from './model';
 import { and,eq } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
-import { trackingState, musicArtistPreferences,musicProgress } from '$lib/server/db/schema';
-import { trackWithExports } from '$lib/sync/changes.server';
+import { getDb } from '#lib/server/db/index.js';
+import { trackingState, musicArtistPreferences,musicProgress } from '#lib/server/db/schema.js';
+import { trackWithExports } from '#lib/sync/changes.server.js';
 import { observeMusicAccess, observeMusicLibraryAccess, persistMusic } from './persistence.server';
 import * as v from 'valibot';
-import { getJellyfin } from '$lib/providers/jellyfin/connection.server';
-import { jellyfinMusicIdSchema, musicBrowseSchema } from '$lib/providers/jellyfin/music.server';
+import { getJellyfin } from '#lib/providers/jellyfin/connection.server.js';
+import { jellyfinMusicIdSchema, musicBrowseSchema } from '#lib/providers/jellyfin/music.server.js';
 
 export async function musicLibrary(userId: string, connectionId: string, input: unknown = {},signal?:AbortSignal) {
   signal?.throwIfAborted();

@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { Component } from 'svelte';
   import { untrack } from 'svelte';
-  import { providePreviewClient, reportFailure } from '$lib/ui/client-context';
-  import { providePreviewPlayback } from '$lib/playback/context.svelte';
-  import NotificationToasts from '$lib/ui/components/NotificationToasts.svelte';
-  import RowFilter from '$lib/ui/components/RowFilter.svelte';
+  import { providePreviewClient, reportFailure } from '#lib/ui/client-context.js';
+  import { providePreviewPlayback } from '#lib/playback/context.svelte.js';
+  import NotificationToasts from '#lib/ui/components/NotificationToasts.svelte';
+  import RowFilter from '#lib/ui/components/RowFilter.svelte';
   import Demo from './Demo.svelte';
   import { createPreviewTransport } from './demo/fixtures';
   import { recipe, scenarios, selectedScenario, scenarioLabel, type ReferenceFamily } from './reference';

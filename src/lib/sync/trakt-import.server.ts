@@ -1,24 +1,24 @@
-import { reconcileProviderList } from '$lib/sync/list-values.server';
-import { reconcileProviderValue } from '$lib/sync/values.server';
+import { reconcileProviderList } from '#lib/sync/list-values.server.js';
+import { reconcileProviderValue } from '#lib/sync/values.server.js';
 import { and, eq } from 'drizzle-orm';
-import { getDb } from '$lib/server/db';
+import { getDb } from '#lib/server/db/index.js';
 import {
   lists,
   providerConnections,
   removedTrackingSources,
   syncValues,
   syncListValues,
-} from '$lib/server/db/schema';
-import { notify } from '$lib/server/notifications';
-import { getTrakt } from '$lib/providers/trakt/connection.server';
-import { ingestMetadata } from '$lib/catalogue/service.server';
-import { resolveTrakt } from '$lib/catalogue/trakt-identity.server';
-import { trackInTransaction } from '$lib/core/tracking/service.server';
-import type { Metadata, SyncCategory, SyncPreferences } from '$lib/providers/contracts';
-import type { TraktRecord, TraktAdapter } from '$lib/providers/trakt/adapter.server';
-import { traktEntry } from '$lib/sync/trakt-identity.server';
-import { compactTraktHistory, type TraktHistoryTitles } from '$lib/sync/trakt-history';
-import { jobCheckpoint, jobExecution, readJobCheckpoint, saveJobCheckpoint } from '$lib/server/queue/execution';
+} from '#lib/server/db/schema.js';
+import { notify } from '#lib/server/notifications/index.js';
+import { getTrakt } from '#lib/providers/trakt/connection.server.js';
+import { ingestMetadata } from '#lib/catalogue/service.server.js';
+import { resolveTrakt } from '#lib/catalogue/trakt-identity.server.js';
+import { trackInTransaction } from '#lib/core/tracking/service.server.js';
+import type { Metadata, SyncCategory, SyncPreferences } from '#lib/providers/contracts.js';
+import type { TraktRecord, TraktAdapter } from '#lib/providers/trakt/adapter.server.js';
+import { traktEntry } from '#lib/sync/trakt-identity.server.js';
+import { compactTraktHistory, type TraktHistoryTitles } from '#lib/sync/trakt-history.js';
+import { jobCheckpoint, jobExecution, readJobCheckpoint, saveJobCheckpoint } from '#lib/server/queue/execution.js';
 import { stagedTraktCategory, stagedTraktLists, type StageCommit } from './trakt-staging.server';
 
 export async function importTrakt(
@@ -75,7 +75,7 @@ export async function importTraktFromAdapter(
     if (!item) return;
     if(category==='collection'){
       if(!staged)seen.add(item.id);
-      const {isGeneratedProjection}=await import('$lib/collection/projection.server');
+      const {isGeneratedProjection}=await import('#lib/collection/projection.server.js');
       if(await isGeneratedProjection(connectionId,item.id))return;
     }
     const timestamp =
@@ -212,7 +212,7 @@ export async function importTraktFromAdapter(
             };
             const item = await ingestMetadata(shell, { showId: show.id });
             seen.add(item.id);
-            const {isGeneratedProjection}=await import('$lib/collection/projection.server');
+            const {isGeneratedProjection}=await import('#lib/collection/projection.server.js');
             if(await isGeneratedProjection(connectionId,item.id))continue;
             await reconcileProviderValue(
               userId,
@@ -230,7 +230,7 @@ export async function importTraktFromAdapter(
       .where(and(eq(syncValues.connectionId, connectionId), eq(syncValues.category, category)));
     for (const entry of previous)
       if (!seen.has(entry.mediaId)) {
-        if(category==='collection'){const {isGeneratedProjection}=await import('$lib/collection/projection.server');if(await isGeneratedProjection(connectionId,entry.mediaId))continue;}
+        if(category==='collection'){const {isGeneratedProjection}=await import('#lib/collection/projection.server.js');if(await isGeneratedProjection(connectionId,entry.mediaId))continue;}
         const remote =
           category === 'ratings'
             ? { value: null }

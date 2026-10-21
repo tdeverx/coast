@@ -1,4 +1,4 @@
-import type { TraktRecord } from '$lib/providers/trakt/adapter.server';
+import type { TraktRecord } from '#lib/providers/trakt/adapter.server.js';
 
 type Title = NonNullable<TraktRecord['movie' | 'show' | 'season' | 'episode']>;
 export type TraktHistoryTitles = Map<string, Title>;

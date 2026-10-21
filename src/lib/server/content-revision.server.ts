@@ -1,6 +1,6 @@
-import { getSql } from '$lib/server/db';
-import { friendStatusSql } from '$lib/social/status.server';
-import { collectionFreshnessSql } from '$lib/collection/freshness.server';
+import { getSql } from '#lib/server/db/index.js';
+import { friendStatusSql } from '#lib/social/status.server.js';
+import { collectionFreshnessSql } from '#lib/collection/freshness.server.js';
 
 export type ContentRevision = { tracking: string; social: string; planning: string };
 

@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { useRetention } from '$lib/ui/retention';
-  import { reportFailure } from '$lib/ui/client-context';
-  import { createOperation } from '$lib/ui/operation.svelte';
+  import { useRetention } from '#lib/ui/retention.js';
+  import { reportFailure } from '#lib/ui/client-context.js';
+  import { createOperation } from '#lib/ui/operation.svelte.js';
   import Field from './Field.svelte';
   import FormActions from './FormActions.svelte';
   import Dialog from './Dialog.svelte';
   import Button from './Button.svelte';
-  import { useClient } from '$lib/ui/client-context';
+  import { useClient } from '#lib/ui/client-context.js';
 
   const { change } = useClient();
   const operation = createOperation(useRetention());

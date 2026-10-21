@@ -38,3 +38,7 @@ The lockfile still contains upstream transitive **`@polka/url@1.0.0-next.29`**, 
 ## Approved sequence
 
 The user explicitly approved the full SvelteKit 3 migration and requested pushing/merging the verified current work first. The framework migration remains a temporary candidate in this first group and has not changed application source, the navigation patch, configuration or adapter ownership. Continue it after this group merges; no further scope approval is required for the documented migration.
+
+## Separate framework implementation
+
+The independent group merged in [PR #46](https://github.com/tdeverx/coast/pull/46). The subsequent authorized implementation and its distinct verification are tracked in the [Kit 3 migration record](2026-10-21-sveltekit-3.md); the first-group receipts above remain historical.
