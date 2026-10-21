@@ -962,7 +962,10 @@ suite('application PostgreSQL read models', () => {
       expect((await libraryData(owner,{kind:'movie',segment:'later'})).items.map(item=>item.id)).toEqual([rows[0].id]);
       expect((await libraryData(owner,{kind:'movie',segment:'favourites'})).items.map(item=>item.id)).toEqual([rows[0].id]);
 
-    }finally{await db.delete(s.users).where(eq(s.users.id,owner));}
+    }finally{
+      await db.delete(s.users).where(eq(s.users.id,owner));
+      await db.delete(s.media).where(inArray(s.media.id,rows.map(row=>row.id)));
+    }
   });
   test('library filters precede pagination, including an available title beyond 500 newer catalogue entries', async () => {
     const oldAvailable = crypto.randomUUID();
