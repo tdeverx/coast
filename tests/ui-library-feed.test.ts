@@ -4,10 +4,10 @@ import * as runtime from 'svelte/internal/client';
 import {compileRunes,moduleUrl,resourceUrl} from './fixtures/ui-script';
 const routeUrl=moduleUrl(compileRunes(`export const page=$state({url:new URL('http://fixture/for-you'),data:{user:{id:'owner',role:'admin'},capabilities:{screen:true,requests:true,music:true,game:true,book:true,comic:true},experimentalMusic:true,experimentalGaming:true,experimentalBooks:true,experimentalComics:true,contentRevision:{tracking:'one'}}});`));
 const lifecycleUrl=moduleUrl(`export {untrack} from '${import.meta.resolve('svelte/internal/client')}';const hooks=[];export const onDestroy=fn=>hooks.push(fn);export const destroy=()=>hooks.splice(0).forEach(fn=>fn());`);
-const clientUrl=moduleUrl(`export let deliver;export const set=fn=>deliver=fn;export const useClient=()=>({preview:true,api:(...args)=>deliver(...args)});export const goto=()=>{};export const useShelfLocation=()=>({url:new URL('http://fixture/for-you'),embedded:true});`);
+const clientUrl=moduleUrl(`export class ApiError extends Error{constructor(message,status){super(message);this.status=status;}}export let deliver;export const set=fn=>deliver=fn;export const useClient=()=>({preview:true,api:(...args)=>deliver(...args)});export const goto=()=>{};export const useShelfLocation=()=>({url:new URL('http://fixture/for-you'),embedded:true});`);
 const client=await import(clientUrl),lifecycle=await import(lifecycleUrl),route=await import(routeUrl);
 const code=compileRunes((await Bun.file(new URL('../src/lib/ui/shelves/library-feed.svelte.ts',import.meta.url)).text())
- .replaceAll('$app/state',routeUrl).replaceAll('$app/navigation',clientUrl).replaceAll('#lib/ui/client-context.js',clientUrl).replaceAll('#lib/ui/detail-section.svelte.js',clientUrl)
+ .replaceAll('#lib/ui/client.js',clientUrl).replaceAll('$app/state',routeUrl).replaceAll('$app/navigation',clientUrl).replaceAll('#lib/ui/client-context.js',clientUrl).replaceAll('#lib/ui/detail-section.svelte.js',clientUrl)
  .replaceAll('#lib/ui/resource.svelte.js',resourceUrl).replaceAll('#lib/library.js',import.meta.resolve('../src/lib/library')).replaceAll('#lib/library-feed.js',import.meta.resolve('../src/lib/library-feed'))
  .replaceAll('#lib/ui/content-revision.svelte.js',moduleUrl('export const contentRevisionKey=data=>data.contentRevision.tracking;')).replaceAll("from 'svelte'",`from '${lifecycleUrl}'`));
 const {createLibraryFeedSource}:typeof import('../src/lib/ui/shelves/library-feed.svelte')=await import(moduleUrl(code));
@@ -63,5 +63,22 @@ test('feed scope and replacement cards publish atomically without revealing prio
   calls[1].resolve(result(['new-filter']));
   for(let turn=0;turn<12;turn++){await Promise.resolve();runtime.flush();expect(source.items.map(item=>item.id)).not.toContain('old-filter');}
   expect(source.items.map(item=>item.id)).toEqual(['new-filter']);
+ }finally{lifecycle.destroy();dispose();}
+});
+
+test('current feed permission denial clears retained cards while transient and stale failures cannot withdraw fresh content',async()=>{
+ const calls:{resolve:(data:ReturnType<typeof result>)=>void;reject:(cause:Error)=>void}[]=[];
+ client.set(()=>new Promise((resolve,reject)=>calls.push({resolve,reject})));
+ let source!:ReturnType<typeof createLibraryFeedSource>;
+ const dispose=runtime.effect_root(()=>source=createLibraryFeedSource(()=>({type:'library-feed',feature:'requests'})));await settle();
+ try{
+  const first=source.load();calls[0].resolve(result(['private']));await first;
+  const transient=source.load();calls[1].reject(new client.ApiError('Temporary',502));await transient;
+  expect(source.items.map(item=>item.id)).toEqual(['private']);
+  const stale=source.load();source.filters[0].change('approved');calls[3].resolve(result(['fresh']));await settle();
+  calls[2].reject(new client.ApiError('Old scope denied',403));await stale;
+  expect(source.items.map(item=>item.id)).toEqual(['fresh']);expect(source.error).toBe('');
+  const denied=source.load();calls[4].reject(new client.ApiError('Access withdrawn',403));await denied;
+  expect(source.items).toEqual([]);expect(source.error).toBe('Access withdrawn');
  }finally{lifecycle.destroy();dispose();}
 });

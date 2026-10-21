@@ -3,6 +3,7 @@ import {page} from '$app/state';
 import {goto} from '$app/navigation';
 import {libraryTypeOptions} from '#lib/library.js';
 import {requestStates,type LibraryFeedContent} from '#lib/library-feed.js';
+import {ApiError} from '#lib/ui/client.js';
 import {useClient} from '#lib/ui/client-context.js';
 import {useShelfLocation} from '#lib/ui/detail-section.svelte.js';
 import {createResource,uniqueItems} from '#lib/ui/resource.svelte.js';
@@ -30,8 +31,13 @@ export function createLibraryFeedSource(get:()=>LibraryFeedOptions):ShelfSource{
     const requested=scope,params=parameters(number);
     if(get().layout!=='grid')params.set('preview','true');
     const result=await resource.load(async signal=>{
-      const data=await api<LibraryFeedContent>(`${get().feature==='recent'?'library/recent':'requests'}?${params}`,undefined,'GET',{signal});
-      return {...data,scope:requested};
+      try{
+        const data=await api<LibraryFeedContent>(`${get().feature==='recent'?'library/recent':'requests'}?${params}`,undefined,'GET',{signal});
+        return {...data,scope:requested};
+      }catch(cause){
+        if(!signal.aborted&&scope===requested&&cause instanceof ApiError&&[403,404].includes(cause.status))resource.replace(empty(),cause.message);
+        throw cause;
+      }
     },{merge:(old,next)=>({...next,items:append?uniqueItems([...old.items,...next.items],item=>item.entryId??item.id):next.items})});
     if(result&&scope===requested&&get().layout==='grid'&&!location.embedded&&!preview){
       const url=new URL(href(),page.url.href);url.searchParams.set('page',String(result.page));

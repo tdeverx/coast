@@ -352,7 +352,7 @@
 {/if}
 {#if !adapter?.appendOnly && displayLayout === 'grid' && displayHasMore && (infiniteGrid||pagination?.kind === 'cursor'||sectionCandidate||!adapter&&!!onend)}
 <div class="load-more" use:lazyContent={{load:()=>{if(!displayBusy)void displayOnend?.();},enabled:()=>!manualGrid&&!displayBusy&&!displayError,repeat:true}} aria-busy={displayBusy}>
- <Button emphasis="subtle" disabled={displayBusy} onclick={()=>displayOnend?.()}>{displayBusy?'Loading…':displayError?'Retry':'Load more'}</Button>
+ <Button emphasis="subtle" disabled={displayBusy} onclick={()=>displayError?continuation.retry():displayOnend?.()}>{displayBusy?'Loading…':displayError?'Retry':'Load more'}</Button>
 </div>
 {/if}
 {#if adapter?.appendOnly}<div class="load-more" use:lazyContent={{load:()=>adapter.load(),enabled:()=>!adapter.error,repeat:true}} aria-busy={adapter.busy} aria-live="polite">
