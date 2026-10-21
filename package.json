@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-only",
-  "packageManager": "bun@1.4.3",
+  "packageManager": "bun@1.4.4-canary.1+6bb5dc195",
   "engines": {
-    "bun": ">=1.4.3"
+    "bun": ">=1.4.4-canary.1"
   },
   "scripts": {
     "dev": "bun run reading:native && bun --bun vite dev --host 0.0.0.0",
@@ -28,30 +28,30 @@
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.3.5",
     "@hugeicons/svelte": "^1.1.5",
-    "@zip.js/zip.js": "^2.23.0",
-    "drizzle-orm": "^0.45.2",
+    "@zip.js/zip.js": "^2.24.0",
+    "drizzle-orm": "^0.45.4",
     "epubjs": "^0.3.93",
-    "hls.js": "^1.6.0",
+    "hls.js": "^1.7.3",
     "libarchive-wasm": "1.2.0",
     "pdfjs-dist": "^6.4.299",
     "sharp": "0.35.5",
     "three": "0.186.1",
-    "valibot": "^1.1.0"
+    "valibot": "^1.5.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.55.0",
+    "@playwright/test": "^1.64.1",
     "@sveltejs/kit": "2.70.3",
-    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tailwindcss/vite": "^4.3.3",
-    "@types/bun": "^1.4.0",
+    "@types/bun": "^1.4.3",
     "@types/three": "^0.186.0",
-    "drizzle-kit": "^0.31.4",
-    "svelte": "^5.57.0",
-    "svelte-adapter-bun": "1.0.1",
-    "svelte-check": "^4.7.6",
+    "drizzle-kit": "^0.31.11",
+    "svelte": "^5.57.2",
+    "svelte-adapter-bun": "1.0.2",
+    "svelte-check": "^4.7.7",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
-    "vite": "^8.2.2"
+    "vite": "^8.3.5"
   },
   "patchedDependencies": {
     "@sveltejs/kit@2.70.3": "patches/sveltejs-kit-2.70.3.patch"

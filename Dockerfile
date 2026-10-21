@@ -1,4 +1,5 @@
-FROM oven/bun:1.4.3-debian AS bun-runtime
+# Bun 1.4.4-canary.1+6bb5dc195: immutable multi-platform image; see docs/deployment.md.
+FROM oven/bun:canary-debian@sha256:8902bf25498a9ac3c75ce0d5c8f87771d113ea5a1bd75084bdaa82bf70ab7ab1 AS bun-runtime
 
 # Compile native code against the same distribution as the shipping runtime.
 FROM debian:bookworm-slim AS build
@@ -11,7 +12,7 @@ RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run build
 
-FROM oven/bun:1.4.3-debian AS production-dependencies
+FROM bun-runtime AS production-dependencies
 WORKDIR /app
 COPY package.json bun.lock ./
 COPY patches/ ./patches/

@@ -1,0 +1,219 @@
+{
+  "bun": "1.4.3",
+  "platform": "linux",
+  "source": "Previously approved actual catalogue checkpoint; media table only",
+  "trials": [
+    {
+      "prepare": true,
+      "codec": "native",
+      "actualRows": 8000,
+      "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+      "metadataRows": 32,
+      "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+      "before": {
+        "statements": 4,
+        "context_bytes": "2277008",
+        "used_bytes": "1294032",
+        "cached_sources": 4,
+        "bulk_statements": 0,
+        "bulk_sql_shapes": 0,
+        "clientRssBytes": 54054912
+      },
+      "afterInsert": {
+        "statements": 168,
+        "context_bytes": "23466992",
+        "used_bytes": "19058504",
+        "cached_sources": 168,
+        "bulk_statements": 160,
+        "bulk_sql_shapes": 1,
+        "clientRssBytes": 87855104
+      },
+      "afterVaried": {
+        "statements": 469,
+        "context_bytes": "52387488",
+        "used_bytes": "38252464",
+        "cached_sources": 469,
+        "bulk_statements": 160,
+        "bulk_sql_shapes": 1,
+        "clientRssBytes": 96677888
+      },
+      "afterFixed": {
+        "statements": 470,
+        "context_bytes": "52403872",
+        "used_bytes": "38263360",
+        "cached_sources": 470,
+        "bulk_statements": 160,
+        "bulk_sql_shapes": 1,
+        "clientRssBytes": 105934848
+      },
+      "insertMs": 297.433167,
+      "variedReadsMs": 320.9345,
+      "fixedReadsMs": 110.90300000000002,
+      "rollback": true,
+      "reservation": true,
+      "status": "passed"
+    },
+    {
+      "prepare": false,
+      "codec": "native",
+      "status": "failed",
+      "stage": "native-metadata-insert",
+      "code": "22P02",
+      "expectedFailure": true
+    },
+    {
+      "prepare": false,
+      "codec": "text-cast",
+      "actualRows": 8000,
+      "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+      "metadataRows": 32,
+      "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+      "before": {
+        "statements": 0,
+        "context_bytes": "2291856",
+        "used_bytes": "1276552",
+        "cached_sources": 1,
+        "bulk_statements": 0,
+        "bulk_sql_shapes": 0,
+        "clientRssBytes": 146165760
+      },
+      "afterInsert": {
+        "statements": 0,
+        "context_bytes": "6407592",
+        "used_bytes": "5491472",
+        "cached_sources": 1,
+        "bulk_statements": 0,
+        "bulk_sql_shapes": 0,
+        "clientRssBytes": 129769472
+      },
+      "afterVaried": {
+        "statements": 0,
+        "context_bytes": "6407592",
+        "used_bytes": "5496288",
+        "cached_sources": 1,
+        "bulk_statements": 0,
+        "bulk_sql_shapes": 0,
+        "clientRssBytes": 147042304
+      },
+      "afterFixed": {
+        "statements": 0,
+        "context_bytes": "6407592",
+        "used_bytes": "5496288",
+        "cached_sources": 1,
+        "bulk_statements": 0,
+        "bulk_sql_shapes": 0,
+        "clientRssBytes": 107847680
+      },
+      "insertMs": 332.051334,
+      "variedReadsMs": 186.93629099999998,
+      "fixedReadsMs": 167.83299999999986,
+      "rollback": true,
+      "reservation": true,
+      "status": "passed"
+    },
+    {
+      "prepare": true,
+      "codec": "native",
+      "actualRows": 8000,
+      "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+      "metadataRows": 32,
+      "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+      "before": {
+        "statements": 4,
+        "context_bytes": "2277008",
+        "used_bytes": "1294032",
+        "cached_sources": 4,
+        "bulk_statements": 0,
+        "bulk_sql_shapes": 0,
+        "clientRssBytes": 150790144
+      },
+      "afterInsert": {
+        "statements": 168,
+        "context_bytes": "23466992",
+        "used_bytes": "19058504",
+        "cached_sources": 168,
+        "bulk_statements": 160,
+        "bulk_sql_shapes": 1,
+        "clientRssBytes": 139231232
+      },
+      "afterVaried": {
+        "statements": 469,
+        "context_bytes": "52387488",
+        "used_bytes": "38252464",
+        "cached_sources": 469,
+        "bulk_statements": 160,
+        "bulk_sql_shapes": 1,
+        "clientRssBytes": 153546752
+      },
+      "afterFixed": {
+        "statements": 470,
+        "context_bytes": "52403872",
+        "used_bytes": "38263360",
+        "cached_sources": 470,
+        "bulk_statements": 160,
+        "bulk_sql_shapes": 1,
+        "clientRssBytes": 131317760
+      },
+      "insertMs": 328.6657090000001,
+      "variedReadsMs": 182.24366599999985,
+      "fixedReadsMs": 106.25787500000024,
+      "rollback": true,
+      "reservation": true,
+      "status": "passed"
+    },
+    {
+      "prepare": false,
+      "codec": "text-cast",
+      "actualRows": 8000,
+      "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+      "metadataRows": 32,
+      "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+      "before": {
+        "statements": 0,
+        "context_bytes": "2291856",
+        "used_bytes": "1276552",
+        "cached_sources": 1,
+        "bulk_statements": 0,
+        "bulk_sql_shapes": 0,
+        "clientRssBytes": 151941120
+      },
+      "afterInsert": {
+        "statements": 0,
+        "context_bytes": "6407592",
+        "used_bytes": "5491472",
+        "cached_sources": 1,
+        "bulk_statements": 0,
+        "bulk_sql_shapes": 0,
+        "clientRssBytes": 151072768
+      },
+      "afterVaried": {
+        "statements": 0,
+        "context_bytes": "6407592",
+        "used_bytes": "5496288",
+        "cached_sources": 1,
+        "bulk_statements": 0,
+        "bulk_sql_shapes": 0,
+        "clientRssBytes": 156274688
+      },
+      "afterFixed": {
+        "statements": 0,
+        "context_bytes": "6407592",
+        "used_bytes": "5496288",
+        "cached_sources": 1,
+        "bulk_statements": 0,
+        "bulk_sql_shapes": 0,
+        "clientRssBytes": 159813632
+      },
+      "insertMs": 219.85529199999974,
+      "variedReadsMs": 191.3652079999997,
+      "fixedReadsMs": 203.09466600000042,
+      "rollback": true,
+      "reservation": true,
+      "status": "passed"
+    }
+  ],
+  "postgres": "15.19 (Debian 15.19-0+deb12u1)",
+  "harnessSha256": "48cd498074002fc1ee82b3c2ef87ca18b6db1ad8aa40e8b13c77d4f076454974",
+  "deployedBuild": "f7a3e3f71f1241a967106d5c6615726e965c3a5b",
+  "imageDigest": "sha256:117fd211a847a3eaa88c00b9aac469a3cc2d9de9b2a8477dc6da31fc380a29f0"
+}

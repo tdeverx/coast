@@ -1,0 +1,29 @@
+{
+  "latestStable": "bun-v1.4.3",
+  "stableSource": "c6da4a4d3010e5553438c60f6bd76d981976867c",
+  "canaryRevision": "1.4.4-canary.1+963452075",
+  "canaryBinarySha256": "9614d2bc0c3edd657197403a1980d8d6d0df1d450eb1b8aa107bdc99f8dab68c",
+  "history": [
+    {
+      "sha": "017b2439a7a75c82c7a86a294badd8ef2fc30e28",
+      "date": "2026-10-17T06:59:24Z",
+      "subject": "sql: consolidate the open Bun.sql, bun:sqlite and node:sqlite pull requests (#45304)",
+      "url": "https://github.com/oven-sh/bun/commit/017b2439a7a75c82c7a86a294badd8ef2fc30e28",
+      "paths": [
+        "src/sql_jsc/postgres/PostgresSQLStatement.rs",
+        "src/sql_jsc/shared/ConnectionTimers.rs"
+      ]
+    }
+  ],
+  "deployedRuntimeRevision": "1.4.3+c6da4a4d3",
+  "canaryArchiveSha256": "7341c3b1572c4c1c7f372360b5a17313180cac11dd670e0a2f6a3aec1ce40d05",
+  "canaryAsset": {
+    "id": 662275146,
+    "name": "bun-linux-aarch64.zip",
+    "size": 51777598,
+    "updated_at": "2026-10-21T11:26:35Z",
+    "digest": "sha256:7341c3b1572c4c1c7f372360b5a17313180cac11dd670e0a2f6a3aec1ce40d05",
+    "browser_download_url": "https://github.com/oven-sh/bun/releases/download/canary/bun-linux-aarch64.zip"
+  },
+  "recordedAt": "2026-10-21T12:35:04.519431+00:00"
+}

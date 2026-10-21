@@ -1,0 +1,90 @@
+[
+  {
+    "bun": "1.4.3",
+    "postgres": "15.19",
+    "cases": [
+      {
+        "maxLifetime": 0,
+        "stage": "reserved-idle",
+        "sameBackend": true,
+        "lockHeld": true,
+        "status": "passed"
+      },
+      {
+        "maxLifetime": 0,
+        "stage": "after-reservation-release",
+        "retired": false,
+        "status": "passed"
+      },
+      {
+        "maxLifetime": 0,
+        "stage": "active-transaction",
+        "status": "passed"
+      },
+      {
+        "maxLifetime": 1,
+        "stage": "reserved-idle",
+        "status": "failed",
+        "code": "ERR_POSTGRES_CONNECTION_CLOSED"
+      },
+      {
+        "maxLifetime": 1,
+        "stage": "after-reservation-release",
+        "retired": true,
+        "status": "passed"
+      },
+      {
+        "maxLifetime": 1,
+        "stage": "active-transaction",
+        "status": "failed",
+        "code": "ERR_POSTGRES_LIFETIME_TIMEOUT"
+      }
+    ],
+    "runtime": "bun",
+    "harnessSha256": "14a6e0fc74906759d5aaeda6c767e4cfb955d1151b8dcf015a4466cd8f66800b"
+  },
+  {
+    "bun": "1.4.4",
+    "postgres": "15.19",
+    "cases": [
+      {
+        "maxLifetime": 0,
+        "stage": "reserved-idle",
+        "sameBackend": true,
+        "lockHeld": true,
+        "status": "passed"
+      },
+      {
+        "maxLifetime": 0,
+        "stage": "after-reservation-release",
+        "retired": false,
+        "status": "passed"
+      },
+      {
+        "maxLifetime": 0,
+        "stage": "active-transaction",
+        "status": "passed"
+      },
+      {
+        "maxLifetime": 1,
+        "stage": "reserved-idle",
+        "sameBackend": true,
+        "lockHeld": true,
+        "status": "passed"
+      },
+      {
+        "maxLifetime": 1,
+        "stage": "after-reservation-release",
+        "retired": true,
+        "status": "passed"
+      },
+      {
+        "maxLifetime": 1,
+        "stage": "active-transaction",
+        "status": "passed"
+      }
+    ],
+    "runtime": "/tmp/bun-canary",
+    "harnessSha256": "14a6e0fc74906759d5aaeda6c767e4cfb955d1151b8dcf015a4466cd8f66800b"
+  }
+]

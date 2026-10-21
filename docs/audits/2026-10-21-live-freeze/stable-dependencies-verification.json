@@ -1,0 +1,769 @@
+{
+  "scope": "Verified stable direct-package updates; Bun remains pinned canary. Aggregate timings, checksums and outcomes only; no private source rows, provider settings or archive files.",
+  "selectedFiles": {
+    "package.json": "e300eca48370649200c5fe205bd0213af92adedd96168f05be96850c96ddd5cb",
+    "bun.lock": "0feda5f99bb00e1dcdcc98f645c2074254a6dc8d1efc3618c00450a9e2628ea2",
+    "Dockerfile": "511efcb0d214d684d81b23c55321b95d5762e010e5d980a40095f6cad5324e1c",
+    ".github/workflows/verify-and-publish-preview.yml": "c515d963c6f555c66cb00dd9e4845fab4d8a7a6f1dc5d53d5043133aad976ecf"
+  },
+  "sql": {
+    "checkedAt": "2026-10-21T13:05:35.272157+00:00",
+    "revision": "6bb5dc1956505dd1113455f58d4757c924f3ad54",
+    "drizzle": "0.45.4",
+    "postgres": "17.11",
+    "actualMediaRows": 8000,
+    "actualMetadataRows": 32,
+    "boundary": "Previously approved actual media/metadata checkpoint restored into private disposable tables with primary keys only; no other live data or provider work",
+    "probes": [
+      {
+        "probe": "verify-prepared.ts",
+        "sha256": "48cd498074002fc1ee82b3c2ef87ca18b6db1ad8aa40e8b13c77d4f076454974",
+        "exitCode": 0,
+        "report": {
+          "bun": "1.4.4",
+          "platform": "linux",
+          "source": "Previously approved actual catalogue checkpoint; media table only",
+          "trials": [
+            {
+              "prepare": true,
+              "codec": "native",
+              "actualRows": 8000,
+              "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+              "metadataRows": 32,
+              "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+              "before": {
+                "statements": 4,
+                "context_bytes": "2207872",
+                "used_bytes": "1280416",
+                "cached_sources": 4,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 51429376
+              },
+              "afterInsert": {
+                "statements": 9,
+                "context_bytes": "6753104",
+                "used_bytes": "5795864",
+                "cached_sources": 9,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 88338432
+              },
+              "afterVaried": {
+                "statements": 310,
+                "context_bytes": "30472288",
+                "used_bytes": "22323736",
+                "cached_sources": 310,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 123781120
+              },
+              "afterFixed": {
+                "statements": 311,
+                "context_bytes": "30488672",
+                "used_bytes": "22333872",
+                "cached_sources": 311,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 126054400
+              },
+              "insertMs": 157.441541,
+              "variedReadsMs": 161.97812499999998,
+              "fixedReadsMs": 76.21625000000006,
+              "rollback": true,
+              "reservation": true,
+              "status": "passed"
+            },
+            {
+              "prepare": false,
+              "codec": "native",
+              "actualRows": 8000,
+              "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+              "metadataRows": 32,
+              "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+              "before": {
+                "statements": 0,
+                "context_bytes": "2192112",
+                "used_bytes": "1263016",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 169586688
+              },
+              "afterInsert": {
+                "statements": 0,
+                "context_bytes": "6424984",
+                "used_bytes": "5572224",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 148381696
+              },
+              "afterVaried": {
+                "statements": 0,
+                "context_bytes": "6424984",
+                "used_bytes": "5577016",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 166653952
+              },
+              "afterFixed": {
+                "statements": 0,
+                "context_bytes": "6424984",
+                "used_bytes": "5577016",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 169144320
+              },
+              "insertMs": 157.36537500000009,
+              "variedReadsMs": 114.82787500000006,
+              "fixedReadsMs": 74.06491699999992,
+              "rollback": true,
+              "reservation": true,
+              "status": "passed"
+            },
+            {
+              "prepare": false,
+              "codec": "text-cast",
+              "actualRows": 8000,
+              "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+              "metadataRows": 32,
+              "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+              "before": {
+                "statements": 0,
+                "context_bytes": "2192112",
+                "used_bytes": "1263016",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 194248704
+              },
+              "afterInsert": {
+                "statements": 0,
+                "context_bytes": "6424984",
+                "used_bytes": "5575272",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 171249664
+              },
+              "afterVaried": {
+                "statements": 0,
+                "context_bytes": "6424984",
+                "used_bytes": "5580064",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 175628288
+              },
+              "afterFixed": {
+                "statements": 0,
+                "context_bytes": "6424984",
+                "used_bytes": "5580064",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 174346240
+              },
+              "insertMs": 160.97133299999996,
+              "variedReadsMs": 98.10304199999996,
+              "fixedReadsMs": 69.41812500000015,
+              "rollback": true,
+              "reservation": true,
+              "status": "passed"
+            },
+            {
+              "prepare": true,
+              "codec": "native",
+              "actualRows": 8000,
+              "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+              "metadataRows": 32,
+              "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+              "before": {
+                "statements": 4,
+                "context_bytes": "2207872",
+                "used_bytes": "1280416",
+                "cached_sources": 4,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 219172864
+              },
+              "afterInsert": {
+                "statements": 9,
+                "context_bytes": "6753104",
+                "used_bytes": "5797192",
+                "cached_sources": 9,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 178200576
+              },
+              "afterVaried": {
+                "statements": 310,
+                "context_bytes": "30472288",
+                "used_bytes": "22325064",
+                "cached_sources": 310,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 180989952
+              },
+              "afterFixed": {
+                "statements": 311,
+                "context_bytes": "30488672",
+                "used_bytes": "22335200",
+                "cached_sources": 311,
+                "bulk_statements": 1,
+                "bulk_sql_shapes": 1,
+                "clientRssBytes": 190164992
+              },
+              "insertMs": 115.3014169999999,
+              "variedReadsMs": 136.68833399999994,
+              "fixedReadsMs": 64.86879199999998,
+              "rollback": true,
+              "reservation": true,
+              "status": "passed"
+            },
+            {
+              "prepare": false,
+              "codec": "text-cast",
+              "actualRows": 8000,
+              "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+              "metadataRows": 32,
+              "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+              "before": {
+                "statements": 0,
+                "context_bytes": "2192112",
+                "used_bytes": "1263016",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 211972096
+              },
+              "afterInsert": {
+                "statements": 0,
+                "context_bytes": "6424984",
+                "used_bytes": "5575240",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 189775872
+              },
+              "afterVaried": {
+                "statements": 0,
+                "context_bytes": "6424984",
+                "used_bytes": "5580032",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 188448768
+              },
+              "afterFixed": {
+                "statements": 0,
+                "context_bytes": "6424984",
+                "used_bytes": "5580032",
+                "cached_sources": 1,
+                "bulk_statements": 0,
+                "bulk_sql_shapes": 0,
+                "clientRssBytes": 181268480
+              },
+              "insertMs": 143.70433299999968,
+              "variedReadsMs": 95.27204200000006,
+              "fixedReadsMs": 71.42433400000027,
+              "rollback": true,
+              "reservation": true,
+              "status": "passed"
+            }
+          ],
+          "postgres": "17.11"
+        }
+      },
+      {
+        "probe": "verify-bulk-strategy.ts",
+        "sha256": "7ba96c319d5287dcfdc88c50fba493802d967064d3e65895ba7a8470e460c2e0",
+        "exitCode": 0,
+        "report": {
+          "bun": "1.4.4",
+          "mode": "default",
+          "cycles": [
+            {
+              "round": 0,
+              "insertMs": 237.56804100000002,
+              "contextBytes": "6768864",
+              "usedBytes": "5804064",
+              "statements": 9,
+              "bulkStatements": 2,
+              "bulkSqlShapes": 2,
+              "clientRssBytes": 114155520
+            },
+            {
+              "round": 1,
+              "insertMs": 232.422709,
+              "contextBytes": "11000080",
+              "usedBytes": "10014888",
+              "statements": 9,
+              "bulkStatements": 2,
+              "bulkSqlShapes": 2,
+              "clientRssBytes": 157782016
+            },
+            {
+              "round": 2,
+              "insertMs": 279.63766599999997,
+              "contextBytes": "11000080",
+              "usedBytes": "10027224",
+              "statements": 9,
+              "bulkStatements": 2,
+              "bulkSqlShapes": 2,
+              "clientRssBytes": 163131392
+            },
+            {
+              "round": 3,
+              "insertMs": 301.09583399999997,
+              "contextBytes": "11135296",
+              "usedBytes": "10146016",
+              "statements": 9,
+              "bulkStatements": 2,
+              "bulkSqlShapes": 2,
+              "clientRssBytes": 167124992
+            },
+            {
+              "round": 4,
+              "insertMs": 333.37045799999987,
+              "contextBytes": "11135296",
+              "usedBytes": "10146016",
+              "statements": 9,
+              "bulkStatements": 2,
+              "bulkSqlShapes": 2,
+              "clientRssBytes": 172453888
+            },
+            {
+              "round": 5,
+              "insertMs": 347.65145800000005,
+              "contextBytes": "11135296",
+              "usedBytes": "10146016",
+              "statements": 9,
+              "bulkStatements": 2,
+              "bulkSqlShapes": 2,
+              "clientRssBytes": 166907904
+            },
+            {
+              "round": 6,
+              "insertMs": 316.8073339999996,
+              "contextBytes": "11135296",
+              "usedBytes": "10146016",
+              "statements": 9,
+              "bulkStatements": 2,
+              "bulkSqlShapes": 2,
+              "clientRssBytes": 167706624
+            },
+            {
+              "round": 7,
+              "insertMs": 283.838291,
+              "contextBytes": "11135296",
+              "usedBytes": "10146016",
+              "statements": 9,
+              "bulkStatements": 2,
+              "bulkSqlShapes": 2,
+              "clientRssBytes": 173084672
+            }
+          ],
+          "status": "passed",
+          "before": {
+            "contextBytes": "2594832",
+            "usedBytes": "1690768",
+            "statements": 6,
+            "bulkStatements": 1,
+            "bulkSqlShapes": 1,
+            "clientRssBytes": 58982400
+          },
+          "fixedReadsMs": [
+            79.78912499999979,
+            64.39479200000005,
+            60.072625000000244,
+            62.15975000000026
+          ],
+          "rowHash": "7e8ecafcfb3c812bb1b2c90d84ff3b53a1f32a20f221fe045cb9435ae429e58d",
+          "metadataHash": "d90582978407126f9f29422f6a78ba9046f5055eaa44fc015c53e8bc0304cd44",
+          "after": {
+            "contextBytes": "11157824",
+            "usedBytes": "10163368",
+            "statements": 11,
+            "bulkStatements": 2,
+            "bulkSqlShapes": 2,
+            "clientRssBytes": 191635456
+          }
+        }
+      },
+      {
+        "probe": "verify-cache-bound.ts",
+        "sha256": "c7713d627c65fd12fa1b46b86fd621df883fefee15a01adf64fe6a9067c88c98",
+        "exitCode": 0,
+        "report": {
+          "bun": "1.4.4",
+          "controlledShapes": true,
+          "samples": [
+            {
+              "shapes": 300,
+              "statements": 302,
+              "bytes": "4993152"
+            },
+            {
+              "shapes": 900,
+              "statements": 902,
+              "bytes": "12111240"
+            },
+            {
+              "shapes": 1100,
+              "statements": 1024,
+              "bytes": "14060320"
+            },
+            {
+              "shapes": 1500,
+              "statements": 1024,
+              "bytes": "14796840"
+            },
+            {
+              "shapes": 2200,
+              "statements": 1024,
+              "bytes": "15754000"
+            }
+          ],
+          "status": "passed",
+          "concurrentProjections": 80,
+          "cancelRejected": true,
+          "lockSurvivesCancellation": true,
+          "abortedTransactionRejected": true,
+          "after": {
+            "statements": 1024,
+            "bytes": "15679736"
+          },
+          "rowHash": "02bd93ae8971ddb4bb09ecae182981f5181a2a3e7b5e483d4c7e25f65023111a"
+        }
+      }
+    ],
+    "beforeAfterHashChecks": [
+      {
+        "schedule": 0,
+        "mediaHashEqual": true,
+        "metadataHashEqual": true,
+        "status": "passed"
+      },
+      {
+        "schedule": 1,
+        "mediaHashEqual": true,
+        "metadataHashEqual": true,
+        "status": "passed"
+      },
+      {
+        "schedule": 2,
+        "mediaHashEqual": true,
+        "metadataHashEqual": true,
+        "status": "passed"
+      },
+      {
+        "schedule": 3,
+        "mediaHashEqual": true,
+        "metadataHashEqual": true,
+        "status": "passed"
+      },
+      {
+        "schedule": 4,
+        "mediaHashEqual": true,
+        "metadataHashEqual": true,
+        "status": "passed"
+      }
+    ],
+    "cleanup": {
+      "disposableDatabaseDropped": true,
+      "temporaryDumpRemoved": true,
+      "probeContainerRemoved": true,
+      "originalCheckpointRetained": true
+    }
+  },
+  "reading": {
+    "boundary": "Actual archived file replay on private temporary disk. No database/provider/browser timings or production admission claim for missing formats. Controlled leases/capacity/abort use exact original bytes.",
+    "source": "64c28428a5ad83266ae6141f056274223cf9ebad",
+    "cases": [
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbr: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: independent concurrent leases share one acquisition",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: every naturally ordered original page matches baseline bytes",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: closing one party reader preserves another's files",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: last-reader release retains completed pages within the idle budget",
+        "status": "passed"
+      },
+      {
+        "name": "cbz: shared completed pages reopen without another source download",
+        "status": "passed"
+      },
+      {
+        "name": "actual source rejects disk/metadata capacity pressure and returns both reservations",
+        "status": "passed"
+      },
+      {
+        "name": "actual source concurrent preparations reject combined free-space overcommit",
+        "status": "passed"
+      },
+      {
+        "name": "actual image metadata with controlled latency advances every inspection notification",
+        "status": "passed"
+      },
+      {
+        "name": "actual source admits two personal preparations and close/reopen while preserving another reader",
+        "status": "passed"
+      },
+      {
+        "name": "actual completed pages expire after a controlled idle TTL and reacquire cleanly",
+        "status": "passed"
+      },
+      {
+        "name": "actual idle pages evict under disk or metadata pressure without exceeding either budget",
+        "status": "passed"
+      },
+      {
+        "name": "concurrent actual-source idle eviction cannot over-admit an account or start its rejected job",
+        "status": "passed"
+      },
+      {
+        "name": "actual-source cancellation drains extraction and deletes partial files",
+        "status": "passed"
+      },
+      {
+        "name": "startup orphan cleanup removes its symlink without following its target",
+        "status": "passed"
+      }
+    ],
+    "samples": [
+      {
+        "format": "cbr",
+        "bytes": 73339323,
+        "sha256": "9740d2a4669e129daf3874acb5558995b52f060b554b81690850afc8859c5639",
+        "pages": 24,
+        "coldPreparationMs": 447.08466699999997,
+        "resources": {
+          "mainCpuMicros": 185317,
+          "beforeRss": 18023120,
+          "sampledPeakRss": 59802536,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 39372234,
+        "sha256": "f80d9626c8d92fbef5c5066f4f200051a4d16a76ea7cfce52052b87badd1e425",
+        "pages": 33,
+        "coldPreparationMs": 220.08566599999995,
+        "resources": {
+          "mainCpuMicros": 69727,
+          "beforeRss": 122914040,
+          "sampledPeakRss": 146834680,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 74500125,
+        "sha256": "0bdafcc152e177ae7a8b3f4f6decb18a919a3e85214ae056280589269b272849",
+        "pages": 24,
+        "coldPreparationMs": 399.1109170000002,
+        "resources": {
+          "mainCpuMicros": 101711,
+          "beforeRss": 89146616,
+          "sampledPeakRss": 89146616,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 41725042,
+        "sha256": "368840b883c775eeb76ee25edca0a81e910901ff13c747f28ba6b48facdbfb4a",
+        "pages": 30,
+        "coldPreparationMs": 229.093167,
+        "resources": {
+          "mainCpuMicros": 68364,
+          "beforeRss": 121374016,
+          "sampledPeakRss": 121374016,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbr",
+        "bytes": 82635611,
+        "sha256": "397ce45a645cf147f28740180a8a5355a6ba25d382a56aed05c7b225bff63a3a",
+        "pages": 24,
+        "coldPreparationMs": 401.68058299999984,
+        "resources": {
+          "mainCpuMicros": 106280,
+          "beforeRss": 89359656,
+          "sampledPeakRss": 123831592,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      },
+      {
+        "format": "cbz",
+        "bytes": 401719147,
+        "sha256": "3bbd45629aa9f32f62faaf78d6671a4d03b955d1c6794105aef72f70245202f5",
+        "pages": 265,
+        "coldPreparationMs": 581.2992080000004,
+        "resources": {
+          "mainCpuMicros": 527615,
+          "beforeRss": 147375520,
+          "sampledPeakRss": 154617248,
+          "boundary": "Coordinator including sharp/hash/disk; sampled every 10ms, excludes native child CPU/RSS and browser. Not a process-tree peak or production memory bound."
+        },
+        "actualPageByteEquivalence": true
+      }
+    ],
+    "controlledProgress": [
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      24,
+      24
+    ],
+    "status": "passed"
+  },
+  "supplementary": {
+    "tests": {
+      "passed": 895,
+      "guardedSkip": 718,
+      "failed": 0
+    },
+    "navigationSchedules": 21,
+    "svelteCheck": {
+      "errors": 0,
+      "warnings": 0
+    },
+    "productionBuild": "passed",
+    "finalImageHealth": 200,
+    "browser": "Signed-in in-app browser, localhost:5173, 1280x720, For You/Library/title text/details/Back; no captured error or warning; initial cover navigation entered playback and is not a passing detail assertion."
+  }
+}

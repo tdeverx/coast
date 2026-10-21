@@ -10,15 +10,23 @@ on:
 permissions:
   contents: read
 
+# Match the immutable Bun 1.4.4 canary in Dockerfile.
+env:
+  BUN_IMAGE: oven/bun:canary-debian@sha256:8902bf25498a9ac3c75ce0d5c8f87771d113ea5a1bd75084bdaa82bf70ab7ab1
+
 jobs:
   verify:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.3
+      - name: Install pinned Bun runtime
+        run: |
+          mkdir -p "$RUNNER_TEMP/bun-runtime"
+          docker run --rm --entrypoint cat "$BUN_IMAGE" /usr/local/bin/bun > "$RUNNER_TEMP/bun-runtime/bun"
+          chmod +x "$RUNNER_TEMP/bun-runtime/bun"
+          test "$("$RUNNER_TEMP/bun-runtime/bun" --revision)" = "1.4.4-canary.1+6bb5dc195"
+          echo "$RUNNER_TEMP/bun-runtime" >> "$GITHUB_PATH"
       - run: bun install --frozen-lockfile
       - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++ libarchive-dev
       - run: bun run reading:native
@@ -52,9 +60,13 @@ jobs:
           --health-retries 10
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.3
+      - name: Install pinned Bun runtime
+        run: |
+          mkdir -p "$RUNNER_TEMP/bun-runtime"
+          docker run --rm --entrypoint cat "$BUN_IMAGE" /usr/local/bin/bun > "$RUNNER_TEMP/bun-runtime/bun"
+          chmod +x "$RUNNER_TEMP/bun-runtime/bun"
+          test "$("$RUNNER_TEMP/bun-runtime/bun" --revision)" = "1.4.4-canary.1+6bb5dc195"
+          echo "$RUNNER_TEMP/bun-runtime" >> "$GITHUB_PATH"
       - run: bun install --frozen-lockfile
       - run: bun --bun svelte-kit sync
       - run: bun run test:db
@@ -69,9 +81,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.3
+      - name: Install pinned Bun runtime
+        run: |
+          mkdir -p "$RUNNER_TEMP/bun-runtime"
+          docker run --rm --entrypoint cat "$BUN_IMAGE" /usr/local/bin/bun > "$RUNNER_TEMP/bun-runtime/bun"
+          chmod +x "$RUNNER_TEMP/bun-runtime/bun"
+          test "$("$RUNNER_TEMP/bun-runtime/bun" --revision)" = "1.4.4-canary.1+6bb5dc195"
+          echo "$RUNNER_TEMP/bun-runtime" >> "$GITHUB_PATH"
       - name: Build without publishing
         run: docker build --build-arg COAST_BUILD_ID=${{ github.sha }} -t coast-pr-smoke .
       - name: Verify startup, independent evidence and shutdown
