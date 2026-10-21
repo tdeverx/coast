@@ -22,14 +22,6 @@ export function spreadSheetPages(index: number, count: number) {
 export function nearbyPages(index: number, count: number) {
   return [0, 1, -1, 2, -2, 3, -3, 4, -4, 5, -5, 6].map((offset: number) => index + offset).filter((page: number) => page >= 0 && page < count);
 }
-export function retainedPages(count: number, indices: (number | undefined)[]) {
-  const keep = new Set([0, 1, count - 2, count - 1].filter((page: number) => page >= 0 && page < count));
-  for (const index of indices)
-    if (index !== undefined)
-      for (const page of nearbyPages(index, count))
-        keep.add(page);
-  return keep;
-}
 export const sheetPitch = (count: number, depth: number) => depth / Math.max(1, (count - 4) / 2);
 export const defaultCurlTargets = Object.freeze([2, 1.4, 1, .9]);
 export const defaultWeightMultipliers = Object.freeze([2, 1, .5]); // light, equal, heavy
@@ -67,6 +59,7 @@ export class NeighborPreloader {
     load(page: number): Promise<unknown>;
     has(page: number): boolean;
     onLoad?(page: number): void;
+    canLoad?(page: number): boolean;
   };
   constructor(options: NeighborPreloader['options']) {
     this.options = options;
@@ -99,6 +92,7 @@ export class NeighborPreloader {
       if (page === undefined)
         return;
       this.attempted.add(page);
+      if (this.options.canLoad?.(page) === false) continue;
       try {
         await this.load(page);
         if (!this.stopped)

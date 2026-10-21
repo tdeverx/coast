@@ -3,9 +3,11 @@ import { wrapAngle, coverFlipTarget } from './orientation.ts';
 import { finalSpreadIndex, interiorPage, spreadForPage } from './page-layout.ts';
 import { dragTurns, turnEase } from './turn-gesture.ts';
 import { PageCascade } from './turn-cascade.ts';
-import { underPageIndex, reversePageIndex, spreadSheetPages, nearbyPages, retainedPages, sheetPitch, layerCurl, turningLayer, defaultCurlTargets, defaultWeightMultipliers, turningCurlScale, NeighborPreloader } from './page-stack.ts';
+import { underPageIndex, reversePageIndex, spreadSheetPages, nearbyPages, sheetPitch, layerCurl, turningLayer, defaultCurlTargets, defaultWeightMultipliers, turningCurlScale, NeighborPreloader } from './page-stack.ts';
 import { pageFrame, frameZoomDistance, reframeSurface, clampScroll, swipeDirection, anchoredPosition, manualFocusProgress, manualFocusZoom, manualFocusPose, canRetargetFocus, advanceFocusBlend, focusReturnAnchor, recoverFocusProgress, wheelFocusMode, readingTurnBlend, readingStep } from './view.ts';
 import * as THREE from 'three';
+import { dynamicPageGeometry, updatePageGeometry } from './geometry.ts';
+import { budgetedPages, canPreloadPage, pageTextureBytes } from './texture-budget.ts';
 import { sampleLeaf, layerRestCurl, pageMeshSegments, comicThicknessPercent, hingeSample, gutterWeight, maxPageCurl, pageDimensions, paperEdgeLinesPerTile } from './page-geometry.ts';
 import { createBookModel, bindingDimensions, stackDepths } from './book-model.ts';
 import { bindReversePage } from './materials.ts';
@@ -122,7 +124,8 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   };
   let gesture: ReturnType<typeof dragTurns>;
   let automaticGrab: PageGrab | undefined;
-  const textures = new Map<number, THREE.Texture>(), textureLoads = new Map<number, Promise<THREE.Texture>>();
+  const textureSizes = new Map<number, number>();
+  const textures = new Map<number, THREE.Texture>(), textureLoads = new Map<number, Promise<HTMLCanvasElement>>();
   cleanups.push(() => textures.forEach(texture => texture.dispose()));
   function texture(canvas: HTMLCanvasElement) {
     const t = new THREE.CanvasTexture(canvas);
@@ -132,26 +135,42 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   }
   const emptyTexture = texture(paper);
   cleanups.push(() => emptyTexture.dispose());
-  async function pageTexture(i: number): Promise<THREE.Texture> {
+  async function loadPageTexture(i: number, speculative: boolean): Promise<THREE.Texture | undefined> {
     if (i < 0 || i >= count)
       return emptyTexture;
     if (textures.has(i))
       return textures.get(i)!;
-    if (!textureLoads.has(i))
-      textureLoads.set(i, (async () => {
-        const canvas = await getPage(i);
-        if (disposed)
-          throw new DOMException('Renderer disposed.', 'AbortError');
-        const t = texture(canvas);
-        surface?.prepare?.([t]);
-        textures.set(i, t);
-        return t;
-      })().finally(() => textureLoads.delete(i)));
-    return textureLoads.get(i)!;
+    if (!textureLoads.has(i)) textureLoads.set(i, getPage(i));
+    // Share decoding, rather than a speculative GPU-admission decision, with
+    // required callers that can arrive while this page is still loading.
+    const pending = textureLoads.get(i)!;
+    try {
+      const canvas = await pending;
+      if (disposed) throw new DOMException('Renderer disposed.', 'AbortError');
+      const existing = textures.get(i);
+      if (existing) return existing;
+      const bytes = pageTextureBytes(canvas.width, canvas.height);
+      if (speculative && !canPreloadPage(textureSizes, requiredPages(), preloader.wanted, i, bytes)) return;
+      const t = texture(canvas);
+      try { surface?.prepare?.([t]); }
+      catch (cause) {
+        t.dispose();
+        throw cause;
+      }
+      textures.set(i, t);
+      textureSizes.set(i, bytes);
+      return t;
+    }
+    finally {
+      if (textureLoads.get(i) === pending) textureLoads.delete(i);
+    }
   }
+  const pageTexture = async (i: number) => (await loadPageTexture(i, false))!;
   for (const [page, canvas] of [[0, coverCanvas], [count - 1, lastCanvas]] as const) {
-    if (!textures.has(page))
+    if (!textures.has(page)) {
       textures.set(page, texture(canvas));
+      textureSizes.set(page, pageTextureBytes(canvas.width, canvas.height));
+    }
   }
   const cover = textures.get(0)!;
   const last = textures.get(count - 1)!;
@@ -202,7 +221,6 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     const map = await pageTexture(back ? Math.max(0, count - 2) : Math.min(1, count - 1));
     if (disposed) return;
     material.map = map;
-    material.needsUpdate = true;
   }
   const stapleMaterial = new THREE.MeshStandardMaterial({ color: '#adb0ac', metalness: .65, roughness: .45 });
   const boardEdge = new THREE.MeshStandardMaterial({ color: '#c5bda9', roughness: .8 });
@@ -218,6 +236,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   book.add(bindingRoot);
   function makePage(side: number, map: THREE.Texture) {
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height, pageMeshSegments.width, pageMeshSegments.height), sheetMaterial(map));
+    dynamicPageGeometry(mesh.geometry);
     mesh.frustumCulled = false;
     mesh.userData.side = side;
     mesh.userData.baseUV = new Float32Array(mesh.geometry.attributes.uv.array);
@@ -238,26 +257,32 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
   function deform(mesh: PageMesh, turn = 0) {
     const positions = mesh.geometry.attributes.position, uv = mesh.geometry.attributes.uv, baseUV = mesh.userData.baseUV;
     const side = mesh.userData.side;
+    if (mesh.userData.uvSide !== side) {
+      for (let i = 0; i < positions.count; i++) {
+        const u = hingeSample(side > 0 ? baseUV[i * 2] : 1 - baseUV[i * 2]);
+        uv.setX(i, side > 0 ? u : 1 - u);
+        const shade = 1 - .13 * Math.exp(-u * 32);
+        mesh.geometry.attributes.color.setXYZ(i, shade, shade, shade);
+      }
+      uv.needsUpdate = mesh.geometry.attributes.color.needsUpdate = true;
+      mesh.userData.uvSide = side;
+    }
     const size = pageDimensions(modelKind, width, height);
     const from = mesh.userData.record?.from ?? index, level = turningLayer(from, side, turn, stackIndex ?? from), paperDepth = bindingDimensions(modelKind, height, thicknessPercent).depth;
     const depths = stackDepths(stackIndex ?? from, count, paperDepth), weight = turningCurlScale(side, turn, paperDepth > 0 ? depths.left / paperDepth : .5, weightMultipliers);
     const restCurl = layerRestCurl(layerCurl(level, [curl, ...layerCurls]) * weight);
     const depth = sheetPitch(count, paperDepth) * level;
     const grab = mesh.userData.record?.grab ?? (mesh === turning ? (gesture?.grab() ?? automaticGrab) : undefined);
+    const sampleOptions = { ...size, side, curl: .45, restCurl, stiffness: paperStiffness, grab };
+    const clearance = Math.sin(Math.PI * turn) * (.006 + (mesh.userData.layer || 0) * .001);
     for (let i = 0; i < positions.count; i++) {
       const u = hingeSample(side > 0 ? baseUV[i * 2] : 1 - baseUV[i * 2]), v = baseUV[i * 2 + 1];
-      uv.setX(i, side > 0 ? u : 1 - u);
-      const p = sampleLeaf(u, v, turn, { ...size, side, curl: .45, restCurl, stiffness: paperStiffness, grab });
+      const p = sampleLeaf(u, v, turn, sampleOptions);
       // Start and land in the exact nested-sheet pose. Extra clearance exists
       // only during the curl, so joining a cascade cannot pop the sheet upward.
-      positions.setXYZ(i, p.x, p.y, p.z + .003 + gutterWeight(u) * (-depth + Math.sin(Math.PI * turn) * (.006 + (mesh.userData.layer || 0) * .001)));
-      const shade = 1 - .13 * Math.exp(-u * 32);
-      mesh.geometry.attributes.color.setXYZ(i, shade, shade, shade);
+      positions.setXYZ(i, p.x, p.y, p.z + .003 + gutterWeight(u) * (-depth + clearance));
     }
-    positions.needsUpdate = uv.needsUpdate = true;
-    mesh.geometry.attributes.color.needsUpdate = true;
-    mesh.geometry.computeVertexNormals();
-    mesh.geometry.computeBoundingSphere();
+    updatePageGeometry(mesh.geometry);
   }
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.ShadowMaterial({ opacity: .24, depthWrite: false, side: THREE.DoubleSide }));
   floor.material.onBeforeCompile = softenShadows;
@@ -307,6 +332,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.toneMappingExposure = 1.05;
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.autoUpdate = false;
     renderer.shadowMap.type = THREE.PCFShadowMap;
     host.append(renderer.domElement);
     surface = { prepare: (ts: THREE.Texture[]) => ts.forEach(t => renderer.initTexture(t)), canvas: renderer.domElement, render: () => renderer.render(scene, camera), resize: (w: number, h: number) => renderer.setSize(w, h) };
@@ -326,7 +352,6 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       if (ready) {
         if (page.material.map !== map) {
           page.material.map = map!;
-          page.material.needsUpdate = true;
         }
         page.material.userData.reversePage.value = back;
       }
@@ -358,7 +383,11 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     const surface = coverSurface();
     return { ...pageFrame(surface.width, surface.height, camera.aspect, surface.center.z, controlInset()), width: surface.width, height: surface.height, centerX: surface.center.x };
   }
+  const shadowCasters = bindingRoot.children.filter((mesh): mesh is THREE.Mesh => mesh instanceof THREE.Mesh && mesh.castShadow);
+  let previousShadow = '';
   function render() {
+    cancelAnimationFrame(frame);
+    frame = 0;
     if (!disposed && !document.hidden) {
       updateBinding();
       rotX = wrapAngle(rotX);
@@ -377,11 +406,17 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       shadowOffset.set(.06, -.08, -.01).applyQuaternion(floor.quaternion);
       contact.position.copy(floor.position).add(shadowOffset);
       contact.scale.x = 1 + .8 * spreadAmount;
+      light.updateMatrixWorld();
+      light.target.updateMatrixWorld();
+      const shadow = [book.visible, ...book.matrixWorld.elements, ...light.matrixWorld.elements, ...light.target.matrixWorld.elements,
+        ...shadowCasters.flatMap(mesh => mesh.visible ? [true, (mesh.geometry.attributes.position as THREE.BufferAttribute).version, ...mesh.matrixWorld.elements] : [false])].join(',');
+      if (shadow !== previousShadow) webgl.shadowMap.needsUpdate = true;
+      previousShadow = shadow;
       surface.render();
     }
   }
   function redraw() {
-    if (!frame && !disposed && !document.hidden)
+    if (!frame && !cascadeFrame && !disposed && !document.hidden)
       frame = requestAnimationFrame(() => {
         frame = 0;
         render();
@@ -463,10 +498,10 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
     if (!disposed)
       onState({ opened, index, busy, cascadeDirection: cascade.direction, canCascade: cascade.available, curlingPages: cascade.records.filter(record => record.start !== null).length, backCover: backClosed, focused: view !== 'inspect', focusedPage: isReading() && opened ? focusedSide : null, readingCover: isReading() && !opened });
   }
-  async function animate(duration: number, step: (progress: number) => void) {
+  async function animate(duration: number, step: (progress: number) => void, renderStep = true) {
     if (reduced || document.hidden || duration === 0) {
       step(1);
-      render();
+      if (renderStep) render();
       return;
     }
     await new Promise<void>(resolve => {
@@ -479,7 +514,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
         animations.delete(finish);
         if (complete && !disposed) {
           step(1);
-          render();
+          if (renderStep) render();
         }
         resolve();
       };
@@ -488,24 +523,35 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
         if (disposed) return finish(false);
         const t = Math.min(1, (now - start) / duration);
         step(ease(t));
-        render();
+        if (renderStep) render();
         if (t < 1) pending = requestAnimationFrame(tick);
         else finish(false);
       }
       pending = requestAnimationFrame(tick);
     });
   }
-  function trim() {
-    const keep = retainedPages(count, [index, loadingSpread, turnSurfaces?.[0], turnSurfaces ? turnSurfaces[1] - 1 : undefined, ...cascade.records.flatMap(record => [record.from, record.target])]);
-    for (const page of preloader.wanted)
-      keep.add(page);
-    for (const [i, t] of textures)
-      if (!keep.has(i)) {
-        t.dispose();
-        textures.delete(i);
-      }
+  function requiredPages() {
+    const keep = new Set([0, 1, count - 2, count - 1].filter(page => page >= 0 && page < count));
+    const spreads = [index, loadingSpread, turnSurfaces?.[0], turnSurfaces ? turnSurfaces[1] - 1 : undefined, ...cascade.records.flatMap(record => [record.from, record.target])];
+    for (const spread of spreads) if (spread !== undefined) {
+      keep.add(spread);
+      keep.add(spread + 1);
+      for (const page of spreadSheetPages(spread, count)) keep.add(page);
+    }
+    return keep;
   }
-  const preloader = new NeighborPreloader({ load: pageTexture, has: i => textures.has(i), onLoad: () => {
+  function trim() {
+    const keep = budgetedPages(textureSizes, requiredPages(), preloader.wanted);
+    for (const [i, t] of textures) if (!keep.has(i)) {
+      t.dispose();
+      textures.delete(i);
+      textureSizes.delete(i);
+    }
+  }
+  const preloader: NeighborPreloader = new NeighborPreloader({ load: i => loadPageTexture(i, true), has: i => textures.has(i), canLoad: i => {
+      const estimate = pageTextureBytes(coverCanvas.width, coverCanvas.height);
+      return canPreloadPage(textureSizes, requiredPages(), preloader.wanted, i, estimate);
+    }, onLoad: () => {
       trim();
       redraw();
     } });
@@ -526,7 +572,6 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       return;
     left.material.map = a;
     right.material.map = b;
-    left.material.needsUpdate = right.material.needsUpdate = true;
     trim();
     warmNeighbors();
   }
@@ -645,7 +690,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
         else if (!keepCamera)
           openingCamera(openingStart, destination, t);
         render();
-      }, animate);
+      }, (duration, draw) => animate(duration, draw, false));
       if (!committed) {
         opened = false;
         index = startIndex;
@@ -746,7 +791,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
           rotZ = fromRotation[2] * (1 - t);
         }
         render();
-      }, animate);
+      }, (duration, draw) => animate(duration, draw, false));
       if (!committed) {
         frontFold = backFold = 0;
         spreadAmount = 1;
@@ -797,7 +842,6 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       mesh.userData.layer = cascadePages.indexOf(mesh);
       mesh.material.map = record.maps![forward ? 1 : 0];
       mesh.userData.reverse.value = record.maps![forward ? 2 : 3];
-      mesh.material.needsUpdate = true;
       mesh.visible = true;
       (forward ? right : left).material.map = record.maps![forward ? 3 : 2];
       if (cascadeFocus)
@@ -930,7 +974,6 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       turning.material.map = forward ? right.material.map : left.material.map;
       reverseUniform.value = forward ? nextLeft : nextRight;
       turning.material.side = THREE.DoubleSide;
-      turning.material.needsUpdate = true;
       (forward ? right : left).material.map = forward ? nextRight : nextLeft;
       deform(turning, 0);
       turning.visible = true;
@@ -941,7 +984,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
         if (focusSide)
           readingMotion(start, t, focusSide, target);
         render();
-      }, animate);
+      }, (duration, draw) => animate(duration, draw, false));
       if (!committed) {
         turning.visible = false;
         await spread();
@@ -1002,7 +1045,7 @@ export async function createRenderer(host: HTMLElement, options: PhysicalOptions
       const committed = await gesture.animate(280, (t: number) => {
         camera.position.copy(from).lerp(destination, t);
         render();
-      }, animate);
+      }, (duration, draw) => animate(duration, draw, false));
       if (committed)
         focusedSide = side;
       else
